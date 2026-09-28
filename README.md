@@ -17,6 +17,13 @@
 
 O proxy reverso da VPN deve terminar TLS e encaminhar somente tráfego interno para `VPN_HOST:PORT`. Configure a origem interna em `APP_URL`.
 
+## Preview na Vercel
+
+Cada Pull Request gera um preview automático na Vercel (`vercel.json`). O build detecta a Vercel e gera a saída no formato dela; em qualquer outro lugar continua gerando o servidor Node da VPN.
+
+- Sem variáveis configuradas, o preview abre em **modo demonstração**, com dados fictícios salvos no navegador.
+- Para testar com login real, configure no painel da Vercel as variáveis da seção "Navegador" e "Servidor" do `.env.example` e defina `VITE_DEMO_MODE=false`. Use um projeto Supabase de testes, nunca o de produção, e ative a proteção de deploy da Vercel, porque o link do preview é público.
+
 ## CONTEXTO
 
 Você está desenvolvendo um sistema de controle de patrimônio e estoque para o grupo GEMAPE. O sistema deve gerenciar EPIs, Uniformes, Ferramentas e Veículos, com módulos separados, dashboard gerencial integrado e banco de dados PostgreSQL.
