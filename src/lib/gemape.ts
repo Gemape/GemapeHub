@@ -14,6 +14,7 @@ export const TIPO_MOVIMENTACAO_LABEL: Record<string, string> = {
   Saida: "Saída",
   Devolucao: "Devolução",
   Transferencia: "Transferência",
+  Vistoria: "Vistoria",
 };
 
 export const MOTIVOS_BAIXA = [
