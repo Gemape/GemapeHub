@@ -10,12 +10,12 @@ import {
   Wrench,
   FileSpreadsheet,
   Settings2,
-  AlertTriangle,
   ClipboardList,
   History,
   ShoppingCart,
   FileText,
   Archive,
+  Truck,
 } from "lucide-react";
 
 import {
@@ -54,7 +54,7 @@ const grupos = [
       { titulo: "Veículos", url: "/cadastros/veiculos", icone: Car },
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
-      { titulo: "Ocorrências", url: "/ocorrencias", icone: AlertTriangle },
+      { titulo: "Fornecedores", url: "/cadastros/fornecedores", icone: Truck },
       { titulo: "Relatórios", url: "/relatorios", icone: FileSpreadsheet },
     ],
   },
@@ -80,7 +80,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {isAdmin && <SidebarGroup><SidebarMenu><SidebarMenuItem><SidebarMenuButton asChild><Link to="/usuarios"><Users /><span>Usuários e permissões</span></Link></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroup>}
+        {isAdmin && import.meta.env["VITE_DEMO_MODE"] === "false" && <SidebarGroup><SidebarMenu><SidebarMenuItem><SidebarMenuButton asChild><Link to="/usuarios"><Users /><span>Usuários e permissões</span></Link></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroup>}
         {grupos.map((grupo) => (
           <SidebarGroup key={grupo.titulo}>
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>

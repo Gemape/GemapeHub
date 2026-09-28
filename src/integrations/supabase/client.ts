@@ -32,7 +32,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
-  if (import.meta.env["VITE_DEMO_MODE"] === "true") return demoSupabase as unknown as ReturnType<typeof createClient<Database>>;
+  if (import.meta.env["VITE_DEMO_MODE"] !== "false") return demoSupabase as unknown as ReturnType<typeof createClient<Database>>;
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
   const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];

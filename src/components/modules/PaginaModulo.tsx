@@ -15,6 +15,7 @@ import { FerramentasCaixasModulo } from "@/components/modules/FerramentasCaixasM
 import { FerramentasTermoResponsabilidade } from "@/components/modules/FerramentasTermoResponsabilidade";
 import { FerramentasTermoEncerramento } from "@/components/modules/FerramentasTermoEncerramento";
 import { FerramentasTermoVistoria } from "@/components/modules/FerramentasTermoVistoria";
+import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Modulo } from "@/lib/gemape";
 
@@ -174,6 +175,12 @@ export function PaginaModulo({
                 )}
               </>
             )}
+            <TabsTrigger
+              value="ocorrencias"
+              className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
+            >
+              Ocorrências
+            </TabsTrigger>
           </div>
         </TabsList>
         <TabsContent value="dashboard" className="mt-5">
@@ -181,6 +188,9 @@ export function PaginaModulo({
         </TabsContent>
         <TabsContent value="cadastro" className="mt-5">
           <ItensModulo modulo={modulo} />
+        </TabsContent>
+        <TabsContent value="ocorrencias" className="mt-5">
+          <OcorrenciasModulo modulo={modulo} />
         </TabsContent>
 
         {modulo !== "epi" && (

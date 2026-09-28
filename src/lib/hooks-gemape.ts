@@ -253,12 +253,16 @@ export function useMovimentacoes(modulo: Modulo, empresaId: string, limite = PAG
   });
 }
 
-export function useOcorrencias(busca = "") {
+export function useOcorrencias(busca = "", modulo?: Modulo) {
   return useQuery({
     ...opcoesBase,
-    queryKey: ["ocorrencias", busca],
+    queryKey: ["ocorrencias", modulo, busca],
     queryFn: async () => {
       let q = supabase.from("ocorrencias").select("*");
+      if (modulo) {
+        const tipo = { epi: "EPI", uniforme: "Uniforme", ferramenta: "Ferramenta", veiculo: "Veículo" }[modulo];
+        q = q.eq("tipo_ocorrencia", tipo);
+      }
       if (busca.trim()) {
         // As searching for employee name requires a join, we'll search in descricao or responsavel for now
         // A more advanced search would join with empregados

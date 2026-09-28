@@ -11,6 +11,7 @@
    - **gestor**: somente a própria empresa, cadastra e altera.
    - **operador**: somente a própria empresa, consulta e registra movimentações e ocorrências.
    - Perfis que eram `consulta` viram `operador` e só enxergam dados depois que o admin definir a empresa.
+   - Defina `VITE_DEMO_MODE=false` no `.env`; sem isso o app abre em modo demonstração, sem login real.
    - No painel do Supabase, em Authentication > URL Configuration, inclua `APP_URL` e `APP_URL/auth` nas Redirect URLs para a recuperação de senha funcionar.
 4. Execute `npm ci`, `npm run build` e `npm start`. `GET /health` confirma a aplicação e a conexão com o banco, sem expor dados.
 

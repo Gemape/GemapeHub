@@ -3,6 +3,7 @@ import { Car, Wrench, CircleSlash } from "lucide-react";
 import { useState } from "react";
 
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
+import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { VeiculosCadastroModulo } from "@/components/modules/VeiculosCadastroModulo";
 import { StatCard } from "@/components/StatCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,7 +45,8 @@ function PaginaVeiculos() {
       <Tabs defaultValue="frota">
         <TabsList>
           <TabsTrigger value="frota">Frota</TabsTrigger>
-          <TabsTrigger value="ocorrencias">Ocorrências e manutenções</TabsTrigger>
+          <TabsTrigger value="movimentacoes">Movimentações e manutenções</TabsTrigger>
+          <TabsTrigger value="ocorrencias">Ocorrências</TabsTrigger>
         </TabsList>
 
         <TabsContent value="frota" className="mt-5 space-y-5">
@@ -69,8 +71,11 @@ function PaginaVeiculos() {
           <VeiculosCadastroModulo />
         </TabsContent>
 
-        <TabsContent value="ocorrencias" className="mt-5">
+        <TabsContent value="movimentacoes" className="mt-5">
           <MovimentacoesModulo modulo="veiculo" />
+        </TabsContent>
+        <TabsContent value="ocorrencias" className="mt-5">
+          <OcorrenciasModulo modulo="veiculo" />
         </TabsContent>
       </Tabs>
     </div>

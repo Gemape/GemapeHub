@@ -20,7 +20,8 @@ function Usuarios() {
   const { isAdmin, perfil } = useAccess(); const queryClient = useQueryClient();
   const { data: empresas = [] } = useEmpresasQuery();
   const [page, setPage] = useState(1); const [busy, setBusy] = useState(false);
-  const { data = [], error, isLoading } = useQuery<Usuario[]>({ queryKey: ["usuarios", page], queryFn: () => api("GET", undefined, page), enabled: isAdmin });
+  const demo = import.meta.env["VITE_DEMO_MODE"] !== "false";
+  const { data = [], error, isLoading } = useQuery<Usuario[]>({ queryKey: ["usuarios", page], queryFn: () => api("GET", undefined, page), enabled: isAdmin && !demo });
   async function executar(action: () => Promise<unknown>) {
     setBusy(true);
     try { await action(); await queryClient.invalidateQueries({ queryKey: ["usuarios"] }); toast.success("Operação concluída"); }
@@ -28,6 +29,7 @@ function Usuarios() {
   }
   const nomeEmpresa = (id: string | null) => id ? empresas.find(e => e.id === id)?.nome_fantasia ?? "—" : "Todas";
   if (!isAdmin) return <p role="alert">Acesso restrito ao administrador.</p>;
+  if (demo) return <p>Usuários e permissões estarão disponíveis quando a autenticação e o banco de dados forem configurados.</p>;
   return <section className="space-y-6"><h1 className="text-2xl font-bold">Usuários e permissões</h1>
     <form className="panel flex flex-wrap items-end gap-3 p-4" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); void executar(() => api("POST", { email: f.get("email"), password: f.get("password") })); }}>
       <div><Label htmlFor="new-email">E-mail</Label><Input name="email" id="new-email" type="email" required /></div><div><Label htmlFor="new-password">Senha inicial</Label><Input name="password" id="new-password" type="password" minLength={12} required autoComplete="new-password" /></div><Button type="submit" disabled={busy}>Criar conta desativada</Button>
