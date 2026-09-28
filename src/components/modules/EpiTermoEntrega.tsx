@@ -314,7 +314,7 @@ export function EpiTermoEntrega() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite onClick={gerarTermo} disabled={registrarLote.isPending}>
+          <Button requiresWrite="operar" onClick={gerarTermo} disabled={registrarLote.isPending}>
             Gerar Termo de Entrega
           </Button>
         </div>
