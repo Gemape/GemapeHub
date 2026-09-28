@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedCaixasFerramentasRouteImport } from './routes/_authenticated/caixas-ferramentas'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEmpregadosRouteImport } from './routes/_authenticated/empregados'
 import { Route as AuthenticatedEmpresasRouteImport } from './routes/_authenticated/empresas'
+import { Route as AuthenticatedEnderecamentoRouteImport } from './routes/_authenticated/enderecamento'
 import { Route as AuthenticatedEpiRouteImport } from './routes/_authenticated/epi'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedOcorrenciasRouteImport } from './routes/_authenticated/ocorrencias'
@@ -44,6 +46,12 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCaixasFerramentasRoute =
+  AuthenticatedCaixasFerramentasRouteImport.update({
+    id: '/caixas-ferramentas',
+    path: '/caixas-ferramentas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -59,6 +67,12 @@ const AuthenticatedEmpresasRoute = AuthenticatedEmpresasRouteImport.update({
   path: '/empresas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEnderecamentoRoute =
+  AuthenticatedEnderecamentoRouteImport.update({
+    id: '/enderecamento',
+    path: '/enderecamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEpiRoute = AuthenticatedEpiRouteImport.update({
   id: '/epi',
   path: '/epi',
@@ -142,9 +156,11 @@ const AuthenticatedCadastrosVeiculosRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/caixas-ferramentas': typeof AuthenticatedCaixasFerramentasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/empregados': typeof AuthenticatedEmpregadosRoute
   '/empresas': typeof AuthenticatedEmpresasRoute
+  '/enderecamento': typeof AuthenticatedEnderecamentoRoute
   '/epi': typeof AuthenticatedEpiRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
@@ -163,9 +179,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/caixas-ferramentas': typeof AuthenticatedCaixasFerramentasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/empregados': typeof AuthenticatedEmpregadosRoute
   '/empresas': typeof AuthenticatedEmpresasRoute
+  '/enderecamento': typeof AuthenticatedEnderecamentoRoute
   '/epi': typeof AuthenticatedEpiRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
@@ -186,9 +204,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/caixas-ferramentas': typeof AuthenticatedCaixasFerramentasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/empregados': typeof AuthenticatedEmpregadosRoute
   '/_authenticated/empresas': typeof AuthenticatedEmpresasRoute
+  '/_authenticated/enderecamento': typeof AuthenticatedEnderecamentoRoute
   '/_authenticated/epi': typeof AuthenticatedEpiRoute
   '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRoute
   '/_authenticated/ocorrencias': typeof AuthenticatedOcorrenciasRoute
@@ -209,9 +229,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/caixas-ferramentas'
     | '/dashboard'
     | '/empregados'
     | '/empresas'
+    | '/enderecamento'
     | '/epi'
     | '/ferramentas'
     | '/ocorrencias'
@@ -230,9 +252,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/caixas-ferramentas'
     | '/dashboard'
     | '/empregados'
     | '/empresas'
+    | '/enderecamento'
     | '/epi'
     | '/ferramentas'
     | '/ocorrencias'
@@ -252,9 +276,11 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/caixas-ferramentas'
     | '/_authenticated/dashboard'
     | '/_authenticated/empregados'
     | '/_authenticated/empresas'
+    | '/_authenticated/enderecamento'
     | '/_authenticated/epi'
     | '/_authenticated/ferramentas'
     | '/_authenticated/ocorrencias'
@@ -300,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/caixas-ferramentas': {
+      id: '/_authenticated/caixas-ferramentas'
+      path: '/caixas-ferramentas'
+      fullPath: '/caixas-ferramentas'
+      preLoaderRoute: typeof AuthenticatedCaixasFerramentasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -319,6 +352,13 @@ declare module '@tanstack/react-router' {
       path: '/empresas'
       fullPath: '/empresas'
       preLoaderRoute: typeof AuthenticatedEmpresasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/enderecamento': {
+      id: '/_authenticated/enderecamento'
+      path: '/enderecamento'
+      fullPath: '/enderecamento'
+      preLoaderRoute: typeof AuthenticatedEnderecamentoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/epi': {
@@ -423,9 +463,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCaixasFerramentasRoute: typeof AuthenticatedCaixasFerramentasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmpregadosRoute: typeof AuthenticatedEmpregadosRoute
   AuthenticatedEmpresasRoute: typeof AuthenticatedEmpresasRoute
+  AuthenticatedEnderecamentoRoute: typeof AuthenticatedEnderecamentoRoute
   AuthenticatedEpiRoute: typeof AuthenticatedEpiRoute
   AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRoute
   AuthenticatedOcorrenciasRoute: typeof AuthenticatedOcorrenciasRoute
@@ -443,9 +485,11 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCaixasFerramentasRoute: AuthenticatedCaixasFerramentasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmpregadosRoute: AuthenticatedEmpregadosRoute,
   AuthenticatedEmpresasRoute: AuthenticatedEmpresasRoute,
+  AuthenticatedEnderecamentoRoute: AuthenticatedEnderecamentoRoute,
   AuthenticatedEpiRoute: AuthenticatedEpiRoute,
   AuthenticatedFerramentasRoute: AuthenticatedFerramentasRoute,
   AuthenticatedOcorrenciasRoute: AuthenticatedOcorrenciasRoute,
