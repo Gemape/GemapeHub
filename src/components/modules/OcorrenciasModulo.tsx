@@ -1,0 +1,330 @@
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { exportarCsv, formatarData, type Modulo } from "@/lib/gemape";
+import {
+  useEmpregados,
+  useExcluir,
+  useItens,
+  useOcorrencias,
+  useSalvar,
+  useVeiculos,
+  type Ocorrencia,
+} from "@/lib/hooks-gemape";
+
+const CHAVES = ["ocorrencias"];
+const NENHUM = "nenhum";
+
+export function OcorrenciasModulo() {
+  const { empresaId } = useEmpresa();
+  const [busca, setBusca] = useState("");
+  const [aberto, setAberto] = useState(false);
+  const [editando, setEditando] = useState<Ocorrencia | null>(null);
+  const [tipoSelecionado, setTipoSelecionado] = useState<string>("EPI");
+
+  const { data: ocorrencias = [], isLoading } = useOcorrencias(busca);
+  const { data: empregados = [] } = useEmpregados(TODAS, true);
+
+  // Buscar itens baseados no tipo selecionado (exceto veículos)
+  const moduloItem =
+    tipoSelecionado === "EPI" ? "epi" : tipoSelecionado === "Uniforme" ? "uniforme" : "ferramenta";
+  const { data: itens = [] } = useItens(moduloItem, TODAS);
+  const { data: veiculos = [] } = useVeiculos(TODAS);
+
+  const salvar = useSalvar("ocorrencias", CHAVES);
+  const excluir = useExcluir("ocorrencias", CHAVES);
+
+  const nomeEmpregado = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "—";
+
+  const descricaoAlvo = (o: Ocorrencia) => {
+    if (o.veiculo_id) return veiculos.find((v) => v.id === o.veiculo_id)?.placa ?? "—";
+    if (o.item_id) return itens.find((i) => i.id === o.item_id)?.nome ?? "—";
+    return "—";
+  };
+
+  function abrirNovo() {
+    setEditando(null);
+    setAberto(true);
+  }
+
+  function enviar(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+
+    const texto = (k: string) => {
+      const v = String(f.get(k) ?? "").trim();
+      return v === "" || v === NENHUM ? null : v;
+    };
+
+    const valores = {
+      data: String(f.get("data") ?? new Date().toISOString().slice(0, 10)),
+      hora: String(f.get("hora") ?? new Date().toLocaleTimeString("pt-BR", { hour12: false })),
+      responsavel_registro: String(f.get("responsavel_registro") ?? "").trim(),
+      descricao_ocorrencia: String(f.get("descricao_ocorrencia") ?? "").trim(),
+      tipo_ocorrencia: tipoSelecionado,
+      empregado_id: texto("empregado_id"),
+      item_id: tipoSelecionado !== "Veículo" ? texto("alvo_id") : null,
+      veiculo_id: tipoSelecionado === "Veículo" ? texto("alvo_id") : null,
+    };
+
+    salvar.mutate(
+      { ...(editando ? { id: editando.id } : {}), valores },
+      { onSuccess: () => setAberto(false) },
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          placeholder="Buscar por descrição ou responsável"
+          className="max-w-xs"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+        <div className="ml-auto flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() =>
+              exportarCsv(
+                "ocorrencias",
+                ocorrencias.map((o) => ({
+                  Data: formatarData(o.data),
+                  Hora: o.hora,
+                  Responsavel: o.responsavel_registro,
+                  Descricao: o.descricao_ocorrencia,
+                  Tipo: o.tipo_ocorrencia,
+                  Alvo: o.veiculo_id
+                    ? veiculos.find((v) => v.id === o.veiculo_id)?.placa
+                    : itens.find((i) => i.id === o.item_id)?.nome,
+                  Empregado: nomeEmpregado(o.empregado_id),
+                })),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+          <Button
+            onClick={() => {
+              setTipoSelecionado("EPI");
+              abrirNovo();
+            }}
+          >
+            Nova Ocorrência
+          </Button>
+        </div>
+      </div>
+
+      <div className="panel overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Data</TableHead>
+              <TableHead>Hora</TableHead>
+              <TableHead>Empregado</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Item/Veículo</TableHead>
+              <TableHead>Responsável</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  Carregando…
+                </TableCell>
+              </TableRow>
+            ) : ocorrencias.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  Nenhuma ocorrência registrada.
+                </TableCell>
+              </TableRow>
+            ) : (
+              ocorrencias.map((o) => (
+                <TableRow key={o.id}>
+                  <TableCell>{formatarData(o.data)}</TableCell>
+                  <TableCell>{o.hora.slice(0, 5)}</TableCell>
+                  <TableCell>{nomeEmpregado(o.empregado_id)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{o.tipo_ocorrencia}</Badge>
+                  </TableCell>
+                  <TableCell className="font-medium">{descricaoAlvo(o)}</TableCell>
+                  <TableCell>{o.responsavel_registro}</TableCell>
+                  <TableCell className="max-w-xs truncate">{o.descricao_ocorrencia}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    <Button requiresWrite
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setTipoSelecionado(o.tipo_ocorrencia);
+                        setEditando(o);
+                        setAberto(true);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button requiresWrite
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Excluir esta ocorrência?")) excluir.mutate(o.id);
+                      }}
+                    >
+                      Excluir
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editando ? "Editar Ocorrência" : "Registrar Nova Ocorrência"}
+            </DialogTitle>
+            <DialogDescription>Preencha os detalhes da ocorrência patrimonial.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="data">Data</Label>
+              <Input
+                id="data"
+                name="data"
+                type="date"
+                required
+                defaultValue={editando?.data ?? new Date().toISOString().slice(0, 10)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="hora">Hora</Label>
+              <Input
+                id="hora"
+                name="hora"
+                type="time"
+                required
+                defaultValue={
+                  editando?.hora.slice(0, 5) ??
+                  new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="empregado_id">Empregado</Label>
+              <Select name="empregado_id" defaultValue={editando?.empregado_id ?? ""}>
+                <SelectTrigger id="empregado_id">
+                  <SelectValue placeholder="Selecione o empregado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NENHUM}>Sem empregado específico</SelectItem>
+                  {empregados.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="tipo_ocorrencia">Tipo de Ocorrência</Label>
+              <Select
+                name="tipo_ocorrencia"
+                defaultValue={editando?.tipo_ocorrencia ?? "EPI"}
+                onValueChange={setTipoSelecionado}
+              >
+                <SelectTrigger id="tipo_ocorrencia">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EPI">EPI</SelectItem>
+                  <SelectItem value="Uniforme">Uniforme</SelectItem>
+                  <SelectItem value="Ferramenta">Ferramenta</SelectItem>
+                  <SelectItem value="Veículo">Veículo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="alvo_id">{tipoSelecionado === "Veículo" ? "Veículo" : "Item"}</Label>
+              <Select name="alvo_id" defaultValue={editando?.item_id || editando?.veiculo_id || ""}>
+                <SelectTrigger id="alvo_id">
+                  <SelectValue placeholder="Selecione o alvo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NENHUM}>Nenhum selecionado</SelectItem>
+                  {(tipoSelecionado === "Veículo" ? veiculos : itens).map((o) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {"placa" in o
+                        ? `${o.placa} — ${o.modelo ?? ""}`
+                        : `${o.codigo_sku} — ${o.nome}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="responsavel_registro">Responsável pelo registro</Label>
+              <Input
+                id="responsavel_registro"
+                name="responsavel_registro"
+                required
+                defaultValue={editando?.responsavel_registro ?? ""}
+                placeholder="Nome de quem está registrando"
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="descricao_ocorrencia">Descrição da ocorrência</Label>
+              <Textarea
+                id="descricao_ocorrencia"
+                name="descricao_ocorrencia"
+                required
+                rows={4}
+                defaultValue={editando?.descricao_ocorrencia ?? ""}
+              />
+            </div>
+            <DialogFooter className="sm:col-span-2">
+              <Button type="button" variant="outline" onClick={() => setAberto(false)}>
+                Cancelar
+              </Button>
+              <Button requiresWrite type="submit" disabled={salvar.isPending}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
