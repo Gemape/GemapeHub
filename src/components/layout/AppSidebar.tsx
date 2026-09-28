@@ -61,7 +61,7 @@ const grupos = [
 ] as const;
 
 export function AppSidebar() {
-  const { canWrite } = useAccess();
+  const { isAdmin } = useAccess();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
@@ -80,7 +80,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {canWrite && import.meta.env["VITE_DEMO_MODE"] === "false" && <SidebarGroup><SidebarMenu><SidebarMenuItem><SidebarMenuButton asChild><Link to="/usuarios"><Users /><span>Usuários e permissões</span></Link></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroup>}
+        {isAdmin && import.meta.env["VITE_DEMO_MODE"] === "false" && <SidebarGroup><SidebarMenu><SidebarMenuItem><SidebarMenuButton asChild><Link to="/usuarios"><Users /><span>Usuários e permissões</span></Link></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroup>}
         {grupos.map((grupo) => (
           <SidebarGroup key={grupo.titulo}>
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>

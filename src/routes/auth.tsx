@@ -6,9 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { variaveisSupabaseFaltando } from "@/lib/supabase-env";
 
 export const Route = createFileRoute("/auth")({ ssr: false, component: PaginaAuth });
 function PaginaAuth() {
+  const faltando = variaveisSupabaseFaltando();
+  if (faltando.length) return <ConfiguracaoAusente variaveis={faltando} />;
+  return <FormularioAuth />;
+}
+
+function ConfiguracaoAusente({ variaveis }: { variaveis: string[] }) {
+  return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4">
+    <Card className="w-full max-w-md shadow-xl"><CardHeader><p className="text-sm font-semibold tracking-widest text-primary">GEMAPE</p><CardTitle className="text-2xl">Conexão com o banco não configurada</CardTitle><p className="text-sm text-muted-foreground">Defina estas variáveis no arquivo <code>.env</code> e reinicie o servidor:</p></CardHeader>
+      <CardContent><ul role="alert" className="space-y-1 font-mono text-sm">{variaveis.map(v => <li key={v}>{v}</li>)}</ul><p className="mt-4 text-xs text-muted-foreground">Os valores ficam no painel do Supabase em Project Settings, API. Veja o <code>.env.example</code>.</p></CardContent>
+    </Card>
+  </main>;
+}
+
+function FormularioAuth() {
   const navigate = useNavigate();
   const demo = import.meta.env["VITE_DEMO_MODE"] !== "false";
   const [email, setEmail] = useState("");
@@ -36,9 +51,13 @@ function PaginaAuth() {
         window.history.replaceState(null, "", "/auth"); toast.success("Senha alterada. Entre novamente.");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha });
-        if (error) throw new Error("E-mail ou senha inválidos");
+        if (error) throw new Error(error.message === "Invalid login credentials" ? "E-mail ou senha inválidos" : `Não foi possível entrar: ${error.message}`);
         const { data: perfil, error: profileError } = await supabase.from("perfis" as never).select("ativo").eq("id", data.user.id).single();
-        if (profileError || !(perfil as { ativo: boolean } | null)?.ativo) {
+        if (profileError) {
+          console.error("[Auth] Falha ao consultar perfil", profileError);
+          await supabase.auth.signOut(); throw new Error("Não foi possível verificar seu perfil. Contate o administrador.");
+        }
+        if (!(perfil as { ativo: boolean } | null)?.ativo) {
           await supabase.auth.signOut(); throw new Error("Seu acesso não está ativo. Contate o administrador.");
         }
         navigate({ to: "/dashboard", replace: true });

@@ -144,7 +144,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite
+          <Button requiresWrite="operar"
             onClick={() => {
               setComOcorrencia(false);
               setAberto(true);
@@ -464,7 +464,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>
                 Cancelar
               </Button>
-              <Button requiresWrite type="submit" disabled={registrarLote.isPending}>
+              <Button requiresWrite="operar" type="submit" disabled={registrarLote.isPending}>
                 Registrar
               </Button>
             </DialogFooter>
