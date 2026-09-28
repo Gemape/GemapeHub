@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/auth")({ ssr: false, component: PaginaAuth });
 function PaginaAuth() {
   const navigate = useNavigate();
+  const demo = import.meta.env["VITE_DEMO_MODE"] !== "false";
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -45,6 +46,11 @@ function PaginaAuth() {
     } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível concluir"); }
     finally { setCarregando(false); }
   }
+  if (demo) return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4">
+    <Card className="w-full max-w-md shadow-xl"><CardHeader><p className="text-sm font-semibold tracking-widest text-primary">GEMAPE</p><CardTitle className="text-2xl">Modo demonstração</CardTitle><p className="text-sm text-muted-foreground">Explore o sistema com dados salvos neste navegador. O acesso real será configurado após a aprovação.</p></CardHeader>
+      <CardContent><Button className="w-full" onClick={() => { void supabase.auth.signInWithPassword({ email: "demo@local", password: "demo" }).then(() => navigate({ to: "/dashboard", replace: true })); }}>Acessar demonstração</Button></CardContent>
+    </Card>
+  </main>;
   return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4">
     <Card className="w-full max-w-md shadow-xl"><CardHeader><p className="text-sm font-semibold tracking-widest text-primary">GEMAPE</p><CardTitle className="text-2xl">Gestão de patrimônio</CardTitle><p className="text-sm text-muted-foreground">{modo === "entrar" ? "Entre com sua conta corporativa." : modo === "recuperar" ? "Recupere seu acesso por e-mail." : "Defina uma nova senha com pelo menos 12 caracteres."}</p></CardHeader>
       <CardContent><form onSubmit={enviar} className="space-y-4">

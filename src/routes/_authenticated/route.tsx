@@ -71,13 +71,13 @@ function LayoutAutenticado() {
           <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b bg-card/95 px-4 py-3 backdrop-blur">
             <SidebarTrigger />
             <span className="text-eyebrow hidden sm:inline">Grupo GEMAPE</span>
-            <span className="text-xs text-muted-foreground">{perfil.papel === "admin" ? "Administrador" : "Somente consulta"}</span>
+            <span className="text-xs text-muted-foreground">{import.meta.env["VITE_DEMO_MODE"] !== "false" ? "Demonstração · dados locais" : perfil.papel === "admin" ? "Administrador" : "Somente consulta"}</span>
             <div className="ml-auto flex items-center gap-2">
               <FiltroEmpresa />
-              <a className="text-xs underline" href="/auth?password=update">Trocar senha</a>
+              {import.meta.env["VITE_DEMO_MODE"] === "false" && <><a className="text-xs underline" href="/auth?password=update">Trocar senha</a>
               <Button variant="ghost" size="sm" onClick={sair}>
                 <LogOut className="mr-1 size-4" /> Sair
-              </Button>
+              </Button></>}
             </div>
           </header>
           <div className="flex-1 p-4 md:p-6">

@@ -42,20 +42,17 @@ import {
 const CHAVES = ["ocorrencias"];
 const NENHUM = "nenhum";
 
-export function OcorrenciasModulo() {
+export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
   const { empresaId } = useEmpresa();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Ocorrencia | null>(null);
-  const [tipoSelecionado, setTipoSelecionado] = useState<string>("EPI");
+  const tipoOcorrencia = { epi: "EPI", uniforme: "Uniforme", ferramenta: "Ferramenta", veiculo: "Veículo" }[modulo];
 
-  const { data: ocorrencias = [], isLoading } = useOcorrencias(busca);
+  const { data: ocorrencias = [], isLoading } = useOcorrencias(busca, modulo);
   const { data: empregados = [] } = useEmpregados(TODAS, true);
 
-  // Buscar itens baseados no tipo selecionado (exceto veículos)
-  const moduloItem =
-    tipoSelecionado === "EPI" ? "epi" : tipoSelecionado === "Uniforme" ? "uniforme" : "ferramenta";
-  const { data: itens = [] } = useItens(moduloItem, TODAS);
+  const { data: itens = [] } = useItens(modulo === "veiculo" ? "ferramenta" : modulo, TODAS);
   const { data: veiculos = [] } = useVeiculos(TODAS);
 
   const salvar = useSalvar("ocorrencias", CHAVES);
@@ -88,10 +85,10 @@ export function OcorrenciasModulo() {
       hora: String(f.get("hora") ?? new Date().toLocaleTimeString("pt-BR", { hour12: false })),
       responsavel_registro: String(f.get("responsavel_registro") ?? "").trim(),
       descricao_ocorrencia: String(f.get("descricao_ocorrencia") ?? "").trim(),
-      tipo_ocorrencia: tipoSelecionado,
+      tipo_ocorrencia: tipoOcorrencia,
       empregado_id: texto("empregado_id"),
-      item_id: tipoSelecionado !== "Veículo" ? texto("alvo_id") : null,
-      veiculo_id: tipoSelecionado === "Veículo" ? texto("alvo_id") : null,
+      item_id: modulo !== "veiculo" ? texto("alvo_id") : null,
+      veiculo_id: modulo === "veiculo" ? texto("alvo_id") : null,
     };
 
     salvar.mutate(
@@ -120,7 +117,7 @@ export function OcorrenciasModulo() {
                   Hora: o.hora,
                   Responsavel: o.responsavel_registro,
                   Descricao: o.descricao_ocorrencia,
-                  Tipo: o.tipo_ocorrencia,
+                  Modulo: o.tipo_ocorrencia,
                   Alvo: o.veiculo_id
                     ? veiculos.find((v) => v.id === o.veiculo_id)?.placa
                     : itens.find((i) => i.id === o.item_id)?.nome,
@@ -133,7 +130,6 @@ export function OcorrenciasModulo() {
           </Button>
           <Button
             onClick={() => {
-              setTipoSelecionado("EPI");
               abrirNovo();
             }}
           >
@@ -149,8 +145,8 @@ export function OcorrenciasModulo() {
               <TableHead>Data</TableHead>
               <TableHead>Hora</TableHead>
               <TableHead>Empregado</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Item/Veículo</TableHead>
+              <TableHead>Módulo</TableHead>
+              <TableHead>{modulo === "veiculo" ? "Veículo" : "Item"}</TableHead>
               <TableHead>Responsável</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead />
@@ -186,7 +182,6 @@ export function OcorrenciasModulo() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setTipoSelecionado(o.tipo_ocorrencia);
                         setEditando(o);
                         setAberto(true);
                       }}
@@ -259,32 +254,18 @@ export function OcorrenciasModulo() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="tipo_ocorrencia">Tipo de Ocorrência</Label>
-              <Select
-                name="tipo_ocorrencia"
-                defaultValue={editando?.tipo_ocorrencia ?? "EPI"}
-                onValueChange={setTipoSelecionado}
-              >
-                <SelectTrigger id="tipo_ocorrencia">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EPI">EPI</SelectItem>
-                  <SelectItem value="Uniforme">Uniforme</SelectItem>
-                  <SelectItem value="Ferramenta">Ferramenta</SelectItem>
-                  <SelectItem value="Veículo">Veículo</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Módulo</Label>
+              <Input value={tipoOcorrencia} readOnly />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="alvo_id">{tipoSelecionado === "Veículo" ? "Veículo" : "Item"}</Label>
+              <Label htmlFor="alvo_id">{modulo === "veiculo" ? "Veículo" : "Item"}</Label>
               <Select name="alvo_id" defaultValue={editando?.item_id || editando?.veiculo_id || ""}>
                 <SelectTrigger id="alvo_id">
                   <SelectValue placeholder="Selecione o alvo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NENHUM}>Nenhum selecionado</SelectItem>
-                  {(tipoSelecionado === "Veículo" ? veiculos : itens).map((o) => (
+                  {(modulo === "veiculo" ? veiculos : itens).map((o) => (
                     <SelectItem key={o.id} value={o.id}>
                       {"placa" in o
                         ? `${o.placa} — ${o.modelo ?? ""}`
