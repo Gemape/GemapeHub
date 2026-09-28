@@ -42,7 +42,9 @@ const grupos = [
       { titulo: "EPIs", url: "/epi", icone: HardHat },
       { titulo: "Uniformes", url: "/uniformes", icone: Shirt },
       { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench },
+      { titulo: "Caixas de Ferramentas", url: "/caixas-ferramentas", icone: Archive },
       { titulo: "Veículos", url: "/veiculos", icone: Car },
+      { titulo: "Endereçamento", url: "/enderecamento", icone: MapPin },
     ],
   },
   {
