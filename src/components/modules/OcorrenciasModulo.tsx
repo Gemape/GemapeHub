@@ -318,7 +318,7 @@ export function OcorrenciasModulo() {
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>
                 Cancelar
               </Button>
-              <Button requiresWrite type="submit" disabled={salvar.isPending}>
+              <Button requiresWrite="operar" type="submit" disabled={salvar.isPending}>
                 Salvar
               </Button>
             </DialogFooter>

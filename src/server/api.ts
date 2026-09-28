@@ -3,7 +3,9 @@ import { z } from "zod";
 import { allowedOrigin } from "./security";
 
 const response = (data: unknown, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
-const userUpdate = z.object({ id: z.string().uuid(), papel: z.enum(["admin", "consulta"]), ativo: z.boolean() }).strict();
+const userUpdate = z.object({ id: z.string().uuid(), papel: z.enum(["admin", "gestor", "operador"]), ativo: z.boolean(), empresa_id: z.string().uuid().nullable() }).strict()
+  // Gestor e operador só enxergam a própria empresa; sem ela, não teriam acesso a nada.
+  .refine(v => v.papel === "admin" || !v.ativo || v.empresa_id !== null);
 const userCreate = z.object({ email: z.string().email(), password: z.string().min(12).max(128) }).strict();
 
 export async function handleApi(request: Request): Promise<Response | null> {
@@ -55,7 +57,7 @@ export async function handleApi(request: Request): Promise<Response | null> {
   }
   if (path === "/api/admin/users" && request.method === "PATCH") {
     const parsed = userUpdate.safeParse(body);
-    if (!parsed.success) return response({ error: "Perfil inválido" }, 400);
+    if (!parsed.success) return response({ error: "Perfil inválido: gestor e operador ativos precisam de uma empresa" }, 400);
     if (parsed.data.id === userData.user.id) return response({ error: "Outro administrador deve alterar seu perfil" }, 409);
     const { id, ...values } = parsed.data;
     const { data, error } = await admin.from("perfis").update(values).eq("id", id).select("id").single();

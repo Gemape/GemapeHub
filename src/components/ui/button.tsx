@@ -35,13 +35,14 @@ const buttonVariants = cva(
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  requiresWrite?: boolean;
+  /** true: admin/gestor; "operar": qualquer perfil ativo (movimentações e ocorrências). */
+  requiresWrite?: boolean | "operar";
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, requiresWrite = false, ...props }, ref) => {
-    const { canWrite } = useAccess();
-    if (requiresWrite && !canWrite) return null;
+    const { canWrite, canOperate } = useAccess();
+    if (requiresWrite === "operar" ? !canOperate : requiresWrite && !canWrite) return null;
     const Comp = asChild ? Slot : "button";
     return (
       <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { variaveisSupabaseFaltando } from "@/lib/supabase-env";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -36,6 +37,7 @@ function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (variaveisSupabaseFaltando().length) return;
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/dashboard", replace: true });
     });
