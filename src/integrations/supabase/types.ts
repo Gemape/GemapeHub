@@ -319,6 +319,47 @@ export type Database = {
         }
         Relationships: []
       }
+      enderecamentos: {
+        Row: {
+          apartamento: string
+          codigo_produto: string
+          created_at: string
+          empresa_id: string
+          id: string
+          prateleira: string
+          rua: string
+          updated_at: string
+        }
+        Insert: {
+          apartamento: string
+          codigo_produto: string
+          created_at?: string
+          empresa_id: string
+          id?: string
+          prateleira: string
+          rua: string
+          updated_at?: string
+        }
+        Update: {
+          apartamento?: string
+          codigo_produto?: string
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          prateleira?: string
+          rua?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enderecamentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       epis: {
         Row: {
           preco_unitario: number | null
