@@ -38,7 +38,15 @@ Leia também o `AGENTS.md`. A `main` sincroniza com o Lovable: não reescreva hi
 
 ## Preview na Vercel
 
-- Cada push numa branch com PR gera um preview. Confira o check da Vercel no PR.
-- Se o deploy falhar, leia o log de erro, corrija na mesma branch e faça push até o preview funcionar.
+Rotina em todo PR:
+
+1. Antes de abrir o PR, rode o build de produção (`npm run build`) e corrija falhas.
+2. Abra o PR. A Vercel gera o link de preview a cada push na branch.
+3. Confira o status do deploy nos checks do PR (`gh pr checks` ou a aba Checks). Se falhar, leia o log de erro, corrija na mesma branch e faça push até o preview funcionar.
+4. Coloque na descrição do PR o link do preview e o passo a passo para testar nele.
+5. A tarefa só está concluída com o preview funcionando.
+
+Configuração:
+
 - O build detecta a Vercel pela variável `VERCEL` e gera a saída no formato dela (`vite.config.ts`). Fora da Vercel, o build continua gerando o servidor Node usado na VPN (`npm start`).
 - Sem variáveis configuradas, o preview abre em modo demonstração, com dados fictícios salvos no navegador. A lista completa de variáveis está no `.env.example`.
