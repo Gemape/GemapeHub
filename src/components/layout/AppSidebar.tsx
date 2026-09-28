@@ -53,7 +53,6 @@ const grupos = [
       { titulo: "EPIs", url: "/cadastros/epi", icone: HardHat },
       { titulo: "Uniformes", url: "/cadastros/uniformes", icone: Shirt },
       { titulo: "Ferramentas", url: "/cadastros/ferramentas", icone: Wrench },
-      { titulo: "Caixas de Ferramentas", url: "/cadastros/caixas-ferramentas", icone: Archive },
       { titulo: "Veículos", url: "/cadastros/veiculos", icone: Car },
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
