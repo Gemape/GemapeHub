@@ -29,9 +29,6 @@ import {
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import {
-  CATEGORIAS_EPI,
-  CATEGORIAS_FERRAMENTA,
-  CATEGORIAS_UNIFORME,
   ESTADOS_ITEM,
   STATUS_EPI,
   STATUS_FERRAMENTA,
@@ -44,6 +41,8 @@ import {
   formatarMoeda,
   type Modulo,
 } from "@/lib/gemape";
+import { opcoesSubcategoria } from "@/lib/categorias-produto";
+import { useSubcategorias } from "@/lib/use-subcategorias";
 import { useExcluir, useItens, useProximoCodigo, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -60,6 +59,7 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Item | null>(null);
   const tabela = getTabela(modulo);
+  const subcategorias = useSubcategorias(modulo);
   const { data: itens = [], isLoading } = useItens(modulo, empresaId, busca);
   const salvar = useSalvar(tabela, [tabela, "saidas-por-item"]);
   const excluir = useExcluir(tabela, [tabela, "saidas-por-item"]);
@@ -268,24 +268,11 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   <SelectValue placeholder="Selecione a categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {modulo === "epi" &&
-                    CATEGORIAS_EPI.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  {modulo === "uniforme" &&
-                    CATEGORIAS_UNIFORME.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  {modulo === "ferramenta" &&
-                    CATEGORIAS_FERRAMENTA.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
+                  {opcoesSubcategoria(subcategorias, editando?.categoria).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

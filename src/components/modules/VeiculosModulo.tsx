@@ -28,12 +28,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { opcoesSubcategoria } from "@/lib/categorias-produto";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { useSubcategorias } from "@/lib/use-subcategorias";
 import {
   COMBUSTIVEIS_VEICULO,
   STATUS_VEICULO,
   STATUS_VEICULO_LABEL,
-  TIPOS_VEICULO,
   exportarCsv,
 } from "@/lib/gemape";
 import {
@@ -51,6 +52,7 @@ export function VeiculosModulo({ showStats = true }: { showStats?: boolean }) {
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Veiculo | null>(null);
+  const tiposVeiculo = useSubcategorias("veiculo");
   const { data: veiculos = [], isLoading } = useVeiculos(empresaId);
   const { data: empregados = [] } = useEmpregados(empresaId, true);
   const salvar = useSalvar("veiculos", ["veiculos"]);
@@ -287,7 +289,7 @@ export function VeiculosModulo({ showStats = true }: { showStats?: boolean }) {
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS_VEICULO.map((t) => (
+                  {opcoesSubcategoria(tiposVeiculo, editando?.tipo).map((t) => (
                     <SelectItem key={t} value={t}>
                       {t}
                     </SelectItem>

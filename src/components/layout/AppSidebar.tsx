@@ -17,6 +17,7 @@ import {
   Archive,
   Truck,
   MapPin,
+  Tags,
 } from "lucide-react";
 
 import {
@@ -50,6 +51,7 @@ const grupos = [
   {
     titulo: "Cadastros",
     itens: [
+      { titulo: "Categorias de Produto", url: "/cadastros/categorias-produto", icone: Tags },
       { titulo: "EPIs", url: "/cadastros/epi", icone: HardHat },
       { titulo: "Uniformes", url: "/cadastros/uniformes", icone: Shirt },
       { titulo: "Ferramentas", url: "/cadastros/ferramentas", icone: Wrench },
