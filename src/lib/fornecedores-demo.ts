@@ -19,14 +19,15 @@ export type FornecedorDados = {
   naturezas: NaturezaFornecedor[];
 };
 
-// O código é gerado em sequência (FOR-0001, FOR-0002...) e não muda ao editar.
+// O código é gerado em sequência de 5 dígitos (00001, 00002...) e não muda ao editar.
 export type Fornecedor = FornecedorDados & { id: string; codigo: string };
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-fornecedores";
 // Último número já usado. Guardado à parte para um código excluído não ser reaproveitado.
 const CHAVE_SEQUENCIA = "gemape-demo-fornecedores-sequencia";
-const formatarCodigo = (n: number) => `FOR-${String(n).padStart(4, "0")}`;
-const numeroDoCodigo = (codigo: string | undefined) => Number(/^FOR-(\d+)$/.exec(codigo ?? "")?.[1] ?? 0);
+const formatarCodigo = (n: number) => String(n).padStart(5, "0");
+// Aceita também o formato antigo do preview (FOR-0001).
+const numeroDoCodigo = (codigo: string | undefined) => Number(/^(?:FOR-)?(\d+)$/.exec(codigo ?? "")?.[1] ?? 0);
 const soDigitos = (valor: string) => valor.replace(/\D/g, "");
 
 export function listarFornecedores(storage: StorageLike = localStorage): Fornecedor[] {
@@ -38,7 +39,9 @@ export function listarFornecedores(storage: StorageLike = localStorage): Fornece
     return [];
   }
   // Fornecedores cadastrados antes do código recebem um, na ordem em que foram cadastrados.
-  if (dados.some((item) => !item.codigo)) {
+  // Códigos no formato antigo (FOR-0001) passam para 5 dígitos, mantendo o número.
+  if (dados.some((item) => !item.codigo || item.codigo !== formatarCodigo(numeroDoCodigo(item.codigo)))) {
+    for (const item of dados) if (item.codigo) item.codigo = formatarCodigo(numeroDoCodigo(item.codigo));
     for (const item of dados) if (!item.codigo) item.codigo = formatarCodigo(reservarNumero(dados, storage));
     storage.setItem(CHAVE, JSON.stringify(dados));
   }

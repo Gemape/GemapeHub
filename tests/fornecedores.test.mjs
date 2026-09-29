@@ -21,7 +21,7 @@ const fornecedor = {
 test('fornecedor mantém vários tipos e todos os dados após salvar e editar', () => {
   const local = storage();
   const criado = salvarFornecedor(fornecedor, local);
-  assert.deepEqual(listarFornecedores(local), [{ ...fornecedor, id: criado.id, codigo: 'FOR-0001' }]);
+  assert.deepEqual(listarFornecedores(local), [{ ...fornecedor, id: criado.id, codigo: '00001' }]);
   salvarFornecedor({ ...criado, cidade: 'Campinas', naturezas: ['Ferramentas', 'Veículos'] }, local);
   assert.equal(listarFornecedores(local)[0].cidade, 'Campinas');
   assert.deepEqual(listarFornecedores(local)[0].naturezas, ['Ferramentas', 'Veículos']);
@@ -44,14 +44,14 @@ test('excluir remove somente o fornecedor escolhido', () => {
 
 test('código do fornecedor é sequencial e não muda ao editar', () => {
   const local = storage();
-  assert.equal(proximoCodigoFornecedor(local), 'FOR-0001');
+  assert.equal(proximoCodigoFornecedor(local), '00001');
   const primeiro = salvarFornecedor(fornecedor, local);
   const segundo = salvarFornecedor({ ...fornecedor, cnpj: '98.765.432/0001-10' }, local);
-  assert.equal(primeiro.codigo, 'FOR-0001');
-  assert.equal(segundo.codigo, 'FOR-0002');
-  const editado = salvarFornecedor({ ...primeiro, cidade: 'Campinas', codigo: 'FOR-9999' }, local);
-  assert.equal(editado.codigo, 'FOR-0001');
-  assert.equal(proximoCodigoFornecedor(local), 'FOR-0003');
+  assert.equal(primeiro.codigo, '00001');
+  assert.equal(segundo.codigo, '00002');
+  const editado = salvarFornecedor({ ...primeiro, cidade: 'Campinas', codigo: '99999' }, local);
+  assert.equal(editado.codigo, '00001');
+  assert.equal(proximoCodigoFornecedor(local), '00003');
 });
 
 test('código de fornecedor excluído não é reaproveitado', () => {
@@ -60,7 +60,7 @@ test('código de fornecedor excluído não é reaproveitado', () => {
   const segundo = salvarFornecedor({ ...fornecedor, cnpj: '98.765.432/0001-10' }, local);
   removerFornecedor(segundo.id, local);
   const terceiro = salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81' }, local);
-  assert.equal(terceiro.codigo, 'FOR-0003');
+  assert.equal(terceiro.codigo, '00003');
 });
 
 test('fornecedores antigos sem código recebem código na ordem do cadastro', () => {
@@ -69,6 +69,13 @@ test('fornecedores antigos sem código recebem código na ordem do cadastro', ()
     { ...fornecedor, id: 'a' },
     { ...fornecedor, id: 'b', cnpj: '98.765.432/0001-10' },
   ]));
-  assert.deepEqual(listarFornecedores(local).map(item => item.codigo), ['FOR-0001', 'FOR-0002']);
-  assert.equal(salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81' }, local).codigo, 'FOR-0003');
+  assert.deepEqual(listarFornecedores(local).map(item => item.codigo), ['00001', '00002']);
+  assert.equal(salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81' }, local).codigo, '00003');
+});
+
+test('código antigo do preview (FOR-0001) passa para 5 dígitos sem mudar o número', () => {
+  const local = storage();
+  local.setItem('gemape-demo-fornecedores', JSON.stringify([{ ...fornecedor, id: 'a', codigo: 'FOR-0007' }]));
+  assert.equal(listarFornecedores(local)[0].codigo, '00007');
+  assert.equal(salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81' }, local).codigo, '00008');
 });
