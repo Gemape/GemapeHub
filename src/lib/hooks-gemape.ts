@@ -430,7 +430,8 @@ type Tabela =
   | "compras_uniformes"
   | "compras_epis"
   | "caixas_ferramentas"
-  | "enderecamentos";
+  | "enderecamentos"
+  | "codigos_fabrica";
 
 export function useSalvar(tabela: Tabela, chaves: string[]) {
   const queryClient = useQueryClient();

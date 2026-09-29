@@ -319,6 +319,65 @@ export type Database = {
         }
         Relationships: []
       }
+      codigos_fabrica: {
+        Row: {
+          ca: string | null
+          codigo_fornecedor: string
+          codigo_gemape: string
+          codigo_item_fornecedor: string
+          created_at: string
+          descricao_nota: string | null
+          empresa_id: string
+          fornecedor_cnpj: string | null
+          fornecedor_nome: string | null
+          id: string
+          modulo: string
+          nota_chave: string | null
+          nota_numero: string | null
+          updated_at: string
+        }
+        Insert: {
+          ca?: string | null
+          codigo_fornecedor: string
+          codigo_gemape: string
+          codigo_item_fornecedor: string
+          created_at?: string
+          descricao_nota?: string | null
+          empresa_id: string
+          fornecedor_cnpj?: string | null
+          fornecedor_nome?: string | null
+          id?: string
+          modulo: string
+          nota_chave?: string | null
+          nota_numero?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ca?: string | null
+          codigo_fornecedor?: string
+          codigo_gemape?: string
+          codigo_item_fornecedor?: string
+          created_at?: string
+          descricao_nota?: string | null
+          empresa_id?: string
+          fornecedor_cnpj?: string | null
+          fornecedor_nome?: string | null
+          id?: string
+          modulo?: string
+          nota_chave?: string | null
+          nota_numero?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "codigos_fabrica_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enderecamentos: {
         Row: {
           apartamento: string
