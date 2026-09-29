@@ -19,22 +19,49 @@ export type FornecedorDados = {
   naturezas: NaturezaFornecedor[];
 };
 
-export type Fornecedor = FornecedorDados & { id: string };
+// O código é gerado em sequência (FOR-0001, FOR-0002...) e não muda ao editar.
+export type Fornecedor = FornecedorDados & { id: string; codigo: string };
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-fornecedores";
+// Último número já usado. Guardado à parte para um código excluído não ser reaproveitado.
+const CHAVE_SEQUENCIA = "gemape-demo-fornecedores-sequencia";
+const formatarCodigo = (n: number) => `FOR-${String(n).padStart(4, "0")}`;
+const numeroDoCodigo = (codigo: string | undefined) => Number(/^FOR-(\d+)$/.exec(codigo ?? "")?.[1] ?? 0);
 const soDigitos = (valor: string) => valor.replace(/\D/g, "");
 
 export function listarFornecedores(storage: StorageLike = localStorage): Fornecedor[] {
+  let dados: Fornecedor[];
   try {
-    const dados = JSON.parse(storage.getItem(CHAVE) ?? "[]");
-    return Array.isArray(dados) ? dados as Fornecedor[] : [];
+    const lidos = JSON.parse(storage.getItem(CHAVE) ?? "[]");
+    dados = Array.isArray(lidos) ? lidos as Fornecedor[] : [];
   } catch {
     return [];
   }
+  // Fornecedores cadastrados antes do código recebem um, na ordem em que foram cadastrados.
+  if (dados.some((item) => !item.codigo)) {
+    for (const item of dados) if (!item.codigo) item.codigo = formatarCodigo(reservarNumero(dados, storage));
+    storage.setItem(CHAVE, JSON.stringify(dados));
+  }
+  return dados;
+}
+
+function ultimoNumero(fornecedores: Fornecedor[], storage: StorageLike): number {
+  return Math.max(Number(storage.getItem(CHAVE_SEQUENCIA)) || 0, ...fornecedores.map((item) => numeroDoCodigo(item.codigo)));
+}
+
+function reservarNumero(fornecedores: Fornecedor[], storage: StorageLike): number {
+  const numero = ultimoNumero(fornecedores, storage) + 1;
+  storage.setItem(CHAVE_SEQUENCIA, String(numero));
+  return numero;
+}
+
+// Código que o próximo fornecedor vai receber, para mostrar no formulário.
+export function proximoCodigoFornecedor(storage: StorageLike = localStorage): string {
+  return formatarCodigo(ultimoNumero(listarFornecedores(storage), storage) + 1);
 }
 
 export function salvarFornecedor(
-  valores: FornecedorDados | Fornecedor,
+  valores: FornecedorDados | (FornecedorDados & { id: string }),
   storage: StorageLike = localStorage,
 ): Fornecedor {
   if (!valores.razao_social.trim() || !valores.nome_fantasia.trim()) {
@@ -53,8 +80,10 @@ export function salvarFornecedor(
     throw new Error("CNPJ já cadastrado.");
   }
 
-  const fornecedor = { ...valores, id };
   const indice = fornecedores.findIndex((item) => item.id === id);
+  const existente = fornecedores[indice];
+  const codigo = existente ? existente.codigo : formatarCodigo(reservarNumero(fornecedores, storage));
+  const fornecedor: Fornecedor = { ...valores, id, codigo };
   if (indice >= 0) fornecedores[indice] = fornecedor;
   else fornecedores.push(fornecedor);
   storage.setItem(CHAVE, JSON.stringify(fornecedores));

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  listarFornecedores, NATUREZAS_FORNECEDOR, removerFornecedor, salvarFornecedor,
+  listarFornecedores, NATUREZAS_FORNECEDOR, proximoCodigoFornecedor, removerFornecedor, salvarFornecedor,
   type Fornecedor, type FornecedorDados, type NaturezaFornecedor,
 } from "@/lib/fornecedores-demo";
 
@@ -41,9 +41,12 @@ function PaginaFornecedores() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>(listarFornecedores);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Fornecedor | null>(null);
+  // Calculado ao abrir, para não trocar enquanto o diálogo fecha depois de salvar.
+  const [codigoPrevisto, setCodigoPrevisto] = useState("");
 
   function abrir(fornecedor: Fornecedor | null) {
     setEditando(fornecedor);
+    setCodigoPrevisto(fornecedor?.codigo ?? proximoCodigoFornecedor());
     setAberto(true);
   }
 
@@ -102,13 +105,14 @@ function PaginaFornecedores() {
     <div className="panel overflow-x-auto">
       <Table>
         <TableHeader><TableRow>
-          <TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead>
+          <TableHead>Código</TableHead><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead>
           <TableHead>CNPJ</TableHead><TableHead>Cidade/Estado</TableHead>
           <TableHead>Natureza</TableHead><TableHead>Contato</TableHead><TableHead />
         </TableRow></TableHeader>
         <TableBody>
-          {fornecedores.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Nenhum fornecedor cadastrado.</TableCell></TableRow> :
+          {fornecedores.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Nenhum fornecedor cadastrado.</TableCell></TableRow> :
             fornecedores.map((fornecedor) => <TableRow key={fornecedor.id}>
+              <TableCell className="font-mono text-xs">{fornecedor.codigo}</TableCell>
               <TableCell className="font-medium">{fornecedor.nome_fantasia}</TableCell>
               <TableCell>{fornecedor.razao_social}</TableCell>
               <TableCell>{fornecedor.cnpj}</TableCell>
@@ -131,6 +135,8 @@ function PaginaFornecedores() {
           <DialogDescription>Informações cadastrais do fornecedor.</DialogDescription>
         </DialogHeader>
         <form key={editando?.id ?? "novo"} onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5"><Label htmlFor="codigo">Código do fornecedor</Label><Input id="codigo" readOnly tabIndex={-1} className="bg-muted font-mono" value={codigoPrevisto} /><p className="text-xs text-muted-foreground">Gerado automaticamente.</p></div>
+          <div className="hidden sm:block" />
           <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" required defaultValue={editando?.razao_social ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" required defaultValue={editando?.nome_fantasia ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" required defaultValue={editando?.cnpj ?? ""} /></div>
