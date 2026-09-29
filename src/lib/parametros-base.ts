@@ -1,4 +1,4 @@
-// Parâmetros Base > Produtos (especificação: categorias, subcategorias, tamanhos, unidades,
+// Cadastros > Gerais (especificação rev1: categorias, subcategorias, tamanhos, unidades,
 // associação tamanho/medida, código do produto e código de fábrica).
 // Fase 1: tudo fica salvo no navegador, sem banco. Os módulos passam a ler daqui numa etapa seguinte.
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
@@ -113,15 +113,20 @@ function padrao(): ParametrosBase {
         unidades: ["uni-par"],
       },
     ],
-    // Mesmo formato dos códigos de demonstração (EPI-001, UNI-001, FER-001).
+    // Especificação rev1: EPI-0001, UNI-0001, VEI-0001.
     regrasCodigo: [
-      { categoriaId: "cat-epi", sigla: "EPI", inicial: "001" },
-      { categoriaId: "cat-uniformes", sigla: "UNI", inicial: "001" },
-      { categoriaId: "cat-ferramentas", sigla: "FER", inicial: "001" },
+      { categoriaId: "cat-epi", sigla: "EPI", inicial: "0001" },
+      { categoriaId: "cat-uniformes", sigla: "UNI", inicial: "0001" },
+      { categoriaId: "cat-ferramentas", sigla: "FER", inicial: "0001" },
+      { categoriaId: "cat-veiculos", sigla: "VEI", inicial: "0001" },
     ],
     codigosFabrica: [],
   };
 }
+
+// Numeração do código do produto: 4 dígitos (especificação rev1).
+export const DIGITOS_CODIGO = 4;
+const completarDigitos = (n: string) => n.padStart(DIGITOS_CODIGO, "0");
 
 const storagePadrao = (): StorageLike | null =>
   typeof localStorage === "undefined" ? null : localStorage;
@@ -143,6 +148,11 @@ export function lerParametros(storage: StorageLike | null = storagePadrao()): Pa
     for (const chave of Object.keys(base) as (keyof ParametrosBase)[]) {
       if (Array.isArray(salvos[chave])) (base[chave] as unknown[]) = salvos[chave];
     }
+    // Regras salvas antes da definição de 4 dígitos (ex.: 001) passam para 0001.
+    base.regrasCodigo = base.regrasCodigo.map((r) => ({
+      ...r,
+      inicial: completarDigitos(r.inicial),
+    }));
     return base;
   } catch {
     return base;
@@ -349,7 +359,7 @@ export const desautorizar = (
 
 // ---------- Código do produto ----------
 
-// Sigla + numeração com a mesma quantidade de dígitos da inicial: EPI + 001 -> EPI-001, EPI-002...
+// Sigla + numeração de 4 dígitos: EPI + 0001 -> EPI-0001, EPI-0002...
 export function gerarCodigo(regra: Pick<RegraCodigo, "sigla" | "inicial">, posicao = 0): string {
   const numero = Number(regra.inicial) + posicao;
   return `${regra.sigla}-${String(numero).padStart(regra.inicial.length, "0")}`;
@@ -364,11 +374,13 @@ export function salvarRegraCodigo(
   return alterar(storage, (d) => {
     achar(d.categorias, categoriaId, "Categoria");
     const s = semAcento(sigla).trim().toUpperCase();
-    const n = inicial.trim();
+    const n = completarDigitos(inicial.trim());
     if (!/^[A-Z0-9]{1,6}$/.test(s))
       throw new Error("A sigla deve ter de 1 a 6 letras ou números, sem espaços.");
-    if (!/^\d{1,9}$/.test(n) || Number(n) < 1) {
-      throw new Error("A numeração inicial deve ter só números e ser maior que zero (ex.: 001).");
+    if (!/^\d{4}$/.test(n) || Number(n) < 1) {
+      throw new Error(
+        "A numeração inicial deve ter até 4 dígitos, só números, maior que zero (ex.: 0001).",
+      );
     }
     const outra = d.regrasCodigo.find((r) => r.categoriaId !== categoriaId && r.sigla === s);
     if (outra) {

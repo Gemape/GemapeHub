@@ -22,7 +22,7 @@ type Props = {
   vazio?: string;
 };
 
-// Lista com inclusão, renomeação e exclusão, usada nos cadastros dos Parâmetros Base.
+// Lista com inclusão, renomeação e exclusão, usada em Cadastros > Gerais.
 export function ListaEditavel({
   titulo,
   itens,

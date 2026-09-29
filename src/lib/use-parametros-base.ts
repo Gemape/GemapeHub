@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { EVENTO_PARAMETROS, lerParametros, type ParametrosBase } from "@/lib/parametros-base";
 
-// Lê os Parâmetros Base e atualiza a tela quando mudam (nesta aba ou em outra).
+// Lê os Cadastros Gerais e atualiza a tela quando mudam (nesta aba ou em outra).
 export function useParametrosBase(): ParametrosBase {
   const [dados, setDados] = useState(() => lerParametros());
   useEffect(() => {

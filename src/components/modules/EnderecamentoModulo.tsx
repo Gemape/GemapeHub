@@ -120,7 +120,7 @@ export function EnderecamentoModulo() {
   return <div className="space-y-5">
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <p className="text-eyebrow">Parâmetros Base · Produtos</p>
+        <p className="text-eyebrow">Cadastros · Gerais</p>
         <h1 className="text-2xl font-bold">Endereçamento de estoque</h1>
         <p className="mt-1 text-sm text-muted-foreground">Onde cada produto deve ser guardado no almoxarifado depois da entrada da nota fiscal: rua (corredor), número (estante) e apartamento (nível da prateleira, contado de cima para baixo).</p>
       </div>

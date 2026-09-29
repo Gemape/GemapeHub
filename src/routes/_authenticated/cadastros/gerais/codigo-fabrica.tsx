@@ -33,7 +33,7 @@ import {
 import { ROTULO_TABELA, useProdutosGemape, type ProdutoGemape } from "@/lib/produtos-gemape";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
-export const Route = createFileRoute("/_authenticated/parametros/codigo-fabrica")({
+export const Route = createFileRoute("/_authenticated/cadastros/gerais/codigo-fabrica")({
   head: () => ({ meta: [{ title: "Código de fábrica | Patrimônio GEMAPE" }] }),
   component: CodigoFabricaPagina,
 });

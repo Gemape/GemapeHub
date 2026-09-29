@@ -13,10 +13,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
-import { gerarCodigo, removerRegraCodigo, salvarRegraCodigo } from "@/lib/parametros-base";
+import {
+  DIGITOS_CODIGO,
+  gerarCodigo,
+  removerRegraCodigo,
+  salvarRegraCodigo,
+} from "@/lib/parametros-base";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
-export const Route = createFileRoute("/_authenticated/parametros/codigo-produto")({
+export const Route = createFileRoute("/_authenticated/cadastros/gerais/codigo-produto")({
   head: () => ({ meta: [{ title: "Código do produto | Patrimônio GEMAPE" }] }),
   component: CodigoProduto,
 });
@@ -32,8 +37,11 @@ function CodigoProduto() {
   const [inicial, setInicial] = useState("");
   const nomeCategoria = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? "—";
   const previa =
-    /^[A-Za-z0-9]{1,6}$/.test(sigla.trim()) && /^\d{1,9}$/.test(inicial) && Number(inicial) > 0
-      ? exemplos({ sigla: sigla.trim().toUpperCase(), inicial })
+    /^[A-Za-z0-9]{1,6}$/.test(sigla.trim()) && /^\d{1,4}$/.test(inicial) && Number(inicial) > 0
+      ? exemplos({
+          sigla: sigla.trim().toUpperCase(),
+          inicial: inicial.padStart(DIGITOS_CODIGO, "0"),
+        })
       : "";
 
   function escolher(id: string) {
@@ -54,7 +62,7 @@ function CodigoProduto() {
     <div className="space-y-5">
       <Cabecalho
         titulo="Código do produto"
-        descricao="Ensina o sistema a gerar o código interno da GEMAPE: para cada categoria, a sigla e a numeração inicial. A quantidade de dígitos da numeração inicial se mantém (001, 002…)."
+        descricao="Ensina o sistema a gerar o código interno da GEMAPE: para cada categoria, a sigla e a numeração inicial. A numeração tem 4 dígitos (EPI-0001, EPI-0002…)."
       />
       <form
         onSubmit={enviar}
@@ -96,10 +104,10 @@ function CodigoProduto() {
             id="inicial"
             required
             inputMode="numeric"
-            maxLength={9}
+            maxLength={DIGITOS_CODIGO}
             value={inicial}
             onChange={(e) => setInicial(e.target.value.replace(/\D/g, ""))}
-            placeholder="001"
+            placeholder="0001"
           />
         </div>
         <Button type="submit" disabled={!categoriaId}>

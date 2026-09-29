@@ -15,7 +15,7 @@ import {
 } from "@/lib/parametros-base";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
-export const Route = createFileRoute("/_authenticated/parametros/categorias")({
+export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
   head: () => ({ meta: [{ title: "Categorias e subcategorias | Patrimônio GEMAPE" }] }),
   component: Categorias,
 });

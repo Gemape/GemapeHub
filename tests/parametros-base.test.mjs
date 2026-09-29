@@ -72,32 +72,41 @@ test('associação: autoriza e desautoriza mantendo a ordem da lista', () => {
   assert.ok(!lerParametros(s).associacoes.some((a) => a.subcategoriaId === 'sub-uniformes-camisa'));
 });
 
-test('código do produto: sigla e numeração inicial', () => {
+test('código do produto: sigla e numeração de 4 dígitos', () => {
   const s = storage();
-  assert.equal(gerarCodigo({ sigla: 'EPI', inicial: '001' }), 'EPI-001');
-  assert.equal(gerarCodigo({ sigla: 'EPI', inicial: '001' }, 2), 'EPI-003');
-  assert.equal(gerarCodigo({ sigla: 'VEI', inicial: '9' }, 1), 'VEI-10');
-  const r = salvarRegraCodigo('cat-veiculos', ' vei ', '0100', s);
-  assert.deepEqual(r, { categoriaId: 'cat-veiculos', sigla: 'VEI', inicial: '0100' });
+  const d = lerParametros(s);
+  assert.deepEqual(d.regrasCodigo.map((r) => gerarCodigo(r)), ['EPI-0001', 'UNI-0001', 'FER-0001', 'VEI-0001']);
+  assert.equal(gerarCodigo({ sigla: 'EPI', inicial: '0001' }, 2), 'EPI-0003');
+  assert.equal(gerarCodigo({ sigla: 'EPI', inicial: '9999' }, 1), 'EPI-10000');
+  const r = salvarRegraCodigo('cat-veiculos', ' vei ', '1', s);
+  assert.deepEqual(r, { categoriaId: 'cat-veiculos', sigla: 'VEI', inicial: '0001' });
+  assert.equal(salvarRegraCodigo('cat-veiculos', 'VEI', '0100', s).inicial, '0100');
   assert.throws(() => salvarRegraCodigo('cat-veiculos', 'EPI', '1', s), /já é usada em EPI/);
   assert.throws(() => salvarRegraCodigo('cat-veiculos', 'V E', '1', s), /sigla/);
-  assert.throws(() => salvarRegraCodigo('cat-veiculos', 'VEI', '000', s), /maior que zero/);
+  assert.throws(() => salvarRegraCodigo('cat-veiculos', 'VEI', '0000', s), /maior que zero/);
   assert.throws(() => salvarRegraCodigo('cat-veiculos', 'VEI', '1a', s), /só números/);
+  assert.throws(() => salvarRegraCodigo('cat-veiculos', 'VEI', '12345', s), /4 dígitos/);
   salvarRegraCodigo('cat-epi', 'EPI', '1000', s); // a própria categoria pode manter a sigla
   removerRegraCodigo('cat-veiculos', s);
   assert.equal(lerParametros(s).regrasCodigo.length, 3);
 });
 
+test('regras salvas com 3 dígitos passam para 4', () => {
+  const s = storage();
+  s.setItem('gemape-demo-parametros-base', JSON.stringify({ regrasCodigo: [{ categoriaId: 'cat-epi', sigla: 'EPI', inicial: '001' }] }));
+  assert.equal(gerarCodigo(lerParametros(s).regrasCodigo[0]), 'EPI-0001');
+});
+
 test('código de fábrica: CA obrigatório para EPI e sem código repetido por fornecedor', () => {
   const s = storage();
   const base = {
-    empresa_id: 'e1', tabela: 'epis', codigo_produto: 'EPI-001', nome_produto: 'Capacete',
+    empresa_id: 'e1', tabela: 'epis', codigo_produto: 'EPI-0001', nome_produto: 'Capacete',
     fornecedor_id: 'f1', fornecedor_nome: 'Proteção Brasil', codigo_fornecedor: 'CAP-778', ca: '',
   };
   assert.throws(() => salvarCodigoFabrica(base, undefined, s), /CA/);
   const c = salvarCodigoFabrica({ ...base, ca: ' 12345 ' }, undefined, s);
   assert.equal(c.ca, '12345');
-  assert.throws(() => salvarCodigoFabrica({ ...base, ca: '1', codigo_fornecedor: 'cap-778' }, undefined, s), /já está associado a EPI-001/);
+  assert.throws(() => salvarCodigoFabrica({ ...base, ca: '1', codigo_fornecedor: 'cap-778' }, undefined, s), /já está associado a EPI-0001/);
   // Outro fornecedor pode usar o mesmo código.
   salvarCodigoFabrica({ ...base, ca: '1', fornecedor_id: 'f2' }, undefined, s);
   // Fora de EPI o CA é descartado.
@@ -121,7 +130,7 @@ test('dados salvos com defeito voltam ao padrão', () => {
 });
 
 test('busca por palavras sem acento', () => {
-  assert.ok(combinaBusca('oculos prot', 'Óculos de proteção', 'EPI-002'));
+  assert.ok(combinaBusca('oculos prot', 'Óculos de proteção', 'EPI-0002'));
   assert.ok(!combinaBusca('luva', 'Óculos'));
   assert.ok(combinaBusca('', 'qualquer'));
 });
