@@ -1,10 +1,14 @@
-# Especificação funcional — GEMAPE Hub
+# Especificação funcional — GEMAPE Hub (rev1)
 
-Transcrição do documento enviado pelo responsável (md gemapehub.pdf, 29/09/2026). A implementação segue módulo por módulo, na ordem definida pelo responsável e com aprovação entre cada um. Fase 1: ambiente de teste com dados fictícios, sem Supabase real.
+Transcrição do documento enviado pelo responsável (md gemape rev1.pdf, 29/09/2026), que substitui a versão anterior. A implementação segue etapa por etapa, com aprovação entre cada uma. Fase 1: ambiente de teste com dados fictícios, sem Supabase real.
 
-## Menu > Parâmetros Base
+Regras permanentes do responsável:
+- Nenhum módulo cria lista própria de subcategoria ou de código. Todos puxam de Cadastros > Gerais.
+- Campo extra só com aprovação prévia no PR.
 
-### Produtos
+## Menu > Cadastros
+
+### Gerais
 
 Permissão de acesso: Administrador. Usuário simples: não tem acesso.
 
@@ -17,7 +21,7 @@ Permissão de acesso: Administrador. Usuário simples: não tem acesso.
 2. Permite cadastrar as subcategorias (ex.: luvas, capacete, bota).
 
 **Cadastrar código de fábrica**
-Associa o código de produto de um fornecedor ao código interno do produto na GEMAPE. Ao dar entrada na nota fiscal, o sistema já entende a qual produto associar o estoque ao importar o XML.
+Associa o código de produto de um fornecedor ao código interno do produto na GEMAPE. Ao dar entrada na nota fiscal, o sistema já entende a qual produto associar o estoque ao importar o arquivo XML.
 1. Informa o produto cadastrado na GEMAPE (campo com busca dos produtos já cadastrados).
 2. Seleciona o produto da GEMAPE desejado.
 3. Informa o fornecedor (campo com busca dos fornecedores já cadastrados).
@@ -26,7 +30,7 @@ Associa o código de produto de um fornecedor ao código interno do produto na G
 6. Se for EPI, informa o código do CA que está na nota fiscal do fornecedor.
 
 **Cadastrar endereçamento de estoque**
-Localização onde o item deve ser guardado no almoxarifado, depois da entrada da nota fiscal.
+Localização onde o item deve ser guardado (espaço físico no almoxarifado), depois da entrada da nota fiscal e da alimentação do estoque.
 1. Informa o produto cadastrado na GEMAPE (campo com busca).
 2. Seleciona o produto.
 3. Informa a rua (corredor).
@@ -38,7 +42,7 @@ Localização onde o item deve ser guardado no almoxarifado, depois da entrada d
 - Unidade de medida de produtos: cadastrar todas as unidades de medida (ex.: unidade, par, jogo, caixa).
 
 **Associar tamanho e medida ao produto**
-Associa a uma categoria as opções de tamanho e unidade de medida.
+Associa a uma categoria as opções de tamanho e unidade de medida de um produto.
 1. Categoria (vem de Cadastro > Categoria de Produtos).
 2. Subcategoria (vem de Cadastro > Subcategoria de Produtos).
 3. Na lista da esquerda (Existentes), seleciono as opções desejadas e confirmo a transferência para a lista da direita (Autorizados).
@@ -47,7 +51,71 @@ Associa a uma categoria as opções de tamanho e unidade de medida.
 **Código do produto** (ensina o sistema a gerar o código interno da GEMAPE)
 1. Categoria (vem de Cadastro > Categoria de Produtos).
 2. Sigla a ser usada.
-3. Numeração inicial.
+3. Numeração inicial. Numeração de 4 dígitos, confirmada pelo responsável (ex.: EPI-0001).
+
+### EPI
+
+**Cadastrar EPI**
+1. Código gerado automaticamente em sequência, conforme a regra de Cadastro > Código do Produto (ex.: EPI-0001).
+2. Subcategoria (lista suspensa de Cadastro > Cadastrar Subcategoria) (ex.: capacete).
+3. Descrição do item (campo aberto) (ex.: capacete de segurança em ABS de alto impacto).
+4. Estoque mínimo (número, quantidade mínima).
+
+**Cadastrar ficha de EPI**
+1. Seleciona o EPI (busca por palavra-chave ou código do produto).
+2. Setores aplicáveis (cadastro manual).
+3. Finalidade e riscos protegidos (cadastro manual).
+4. Instruções de uso e forma de vestir (cadastro manual).
+5. Verificação de eficácia, antes do uso (cadastro manual).
+6. Higienização e conservação (cadastro manual).
+7. Descarte (cadastro manual).
+8. Responsabilidades do empregado, NR6 (cadastro manual).
+
+### Uniforme
+
+**Cadastrar uniforme**
+1. Código gerado automaticamente em sequência, conforme a regra do Código do Produto (ex.: UNI-0001).
+2. Subcategoria (lista suspensa de Cadastro > Cadastrar Subcategoria) (ex.: camiseta).
+3. Descrição do item (campo aberto) (ex.: camiseta manga curta em algodão azul royal).
+4. Estoque mínimo.
+
+### Veículo
+
+**Cadastrar veículo**
+1. Código gerado automaticamente em sequência, conforme a regra do Código do Produto (ex.: VEI-0001).
+2. Subcategoria (lista suspensa de Cadastro > Cadastrar Subcategoria) (ex.: caminhonete).
+3. Descrição do item (campo aberto) (ex.: caminhonete S10).
+4. Placa.
+5. Marca.
+6. Modelo.
+7. Ano de fabricação.
+8. Cor.
+9. Combustível.
+
+### Ferramentas
+
+Permissão: Administrador cadastra caixa, portador, categoria e grupo. Usuário simples cadastra modelo.
+
+**Cadastrar modelo**
+1. Código automático, numeração sequencial.
+2. Categoria (lista de Cadastro > Ferramentas > Cadastrar Categorias de Ferramentas).
+3. Grupo (lista de Cadastro > Ferramentas > Cadastrar Grupos de Ferramentas).
+4. Modelo (campo aberto).
+
+**Cadastrar categorias de ferramentas:** Manual, Elétrica, Pneumático, Hidráulica, Medição, Corte. Permitir cadastrar novas se necessário.
+
+**Cadastrar grupos de ferramentas:** Chave de fenda, Chave estria, Chave boca, Meia lua, Combinada, Canhão, Alicates, Lima, Chave Philips, Chave L, Chave Allen, Cachimbo, Diversos.
+
+**Cadastrar marcas:** conforme necessidade.
+
+**Cadastrar caixa:** caixas numeradas de 01 a 100; marcar com flag as que ficam habilitadas.
+
+**Cadastrar portador**
+1. Número da caixa (lista suspensa das caixas habilitadas).
+2. Empregado portador (busca por palavra-chave).
+3. Status (ativa ou inativa).
+4. Observação.
+5. Histórico de portadores.
 
 ### Empregados
 
@@ -83,56 +151,6 @@ Campos:
 9. Contato.
 10. Observações.
 
-### Ferramentas
+## Fora do rev1
 
-Permissão: Administrador cadastra caixa, portador, categoria e grupo. Usuário simples cadastra modelo.
-
-**Cadastrar modelo (ferramentas)**
-1. Código automático, numeração sequencial.
-2. Categoria (lista de Cadastro > Ferramentas > Categorias de ferramentas).
-3. Grupo (lista de Cadastro > Ferramentas > Grupos de ferramentas).
-4. Modelo (campo aberto).
-
-**Cadastrar categorias de ferramentas:** Manual, Elétrica, Pneumático, Hidráulica, Medição, Corte. Permitir cadastrar novas se necessário.
-
-**Cadastrar grupos de ferramentas:** Chave de fenda, Chave estria, Chave boca, Meia lua, Combinada, Canhão, Alicates, Lima, Chave Philips, Chave L, Chave Allen, Cachimbo, Diversos.
-
-**Cadastrar marcas:** conforme necessidade.
-
-**Cadastrar caixa:** caixas numeradas de 01 a 100; marcar com flag as que ficam habilitadas.
-
-**Cadastrar portador**
-1. Número da caixa (lista das caixas habilitadas em Parâmetros Base).
-2. Empregado portador (busca por palavra-chave).
-3. Status (ativa ou inativa).
-4. Observação.
-5. Histórico de portadores.
-
-## Menu > Cadastro
-
-(Sem conteúdo no documento.)
-
-## Menu > Permissões de acesso
-
-**Cadastrar grupo:** Administrador, RH, Padrão.
-
-**Cadastrar usuário**
-1. Empregado (busca em Cadastros > Empregados).
-2. Login no padrão primeiro.último nome (ex.: paula.vasconcelos).
-3. Senha automática para o primeiro acesso; nova senha cadastrada no primeiro acesso.
-4. Envio dos dados de primeiro acesso para o e-mail do usuário.
-
-**Gerenciar acesso:** listar todas as rotinas; para cada rotina, informar se o usuário pode editar, consultar ou não ter acesso.
-
-## Rascunho (destacado no documento)
-
-**Cadastrar as ferramentas**
-1. Código automático, numeração sequencial.
-2. Categoria (Cadastro > Ferramentas > Categorias de ferramentas).
-3. Marca (Cadastro > Ferramentas > Marcas).
-4. Grupo (Cadastro > Ferramentas > Grupos de ferramentas).
-5. Modelo (campo aberto).
-6. Número de série (campo aberto).
-7. Chave para informar se terá patrimônio associado; se sim, habilita o campo de patrimônio.
-8. Patrimônio (código automático, numeração sequencial).
-9. Data de aquisição.
+A versão anterior trazia também "Permissões de acesso" (grupos Administrador, RH e Padrão; cadastro de usuário; matriz de acesso) e um rascunho de cadastro de ferramentas com patrimônio. O rev1 não traz essas seções. As decisões já tomadas sobre perfis (Administrador, RH e Padrão, sem Gestor) continuam valendo até nova orientação.
