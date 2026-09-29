@@ -8,6 +8,14 @@ export interface Empresa {
   nome_fantasia: string;
   razao_social: string;
   cnpj: string;
+  // Endereço e status entram nesta fase de demonstração; no banco real virão na Fase 2.
+  rua?: string | null;
+  numero?: string | null;
+  bairro?: string | null;
+  cep?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  status?: string | null;
 }
 
 interface EmpresaContextValue {
@@ -29,7 +37,7 @@ export function useEmpresasQuery() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("id, nome_fantasia, razao_social, cnpj")
+        .select("*")
         .order("nome_fantasia");
       if (error) throw error;
       return (data ?? []) as Empresa[];

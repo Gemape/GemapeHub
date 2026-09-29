@@ -54,7 +54,7 @@ const grupos = [
       { titulo: "Uniformes", url: "/cadastros/uniformes", icone: Shirt },
       { titulo: "Ferramentas", url: "/cadastros/ferramentas", icone: Wrench },
       { titulo: "Veículos", url: "/cadastros/veiculos", icone: Car },
-      { titulo: "Empresas", url: "/empresas", icone: Building2 },
+      { titulo: "Empresas", url: "/empresas", icone: Building2, somenteAdmin: true },
       { titulo: "Empregados", url: "/empregados", icone: Users },
       { titulo: "Fornecedores", url: "/cadastros/fornecedores", icone: Truck },
       { titulo: "Relatórios", url: "/relatorios", icone: FileSpreadsheet },
@@ -88,7 +88,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {grupo.itens.map((item) => (
+                {grupo.itens.filter((item) => isAdmin || !("somenteAdmin" in item)).map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={pathname.startsWith(item.url)}>
                       <Link to={item.url}>

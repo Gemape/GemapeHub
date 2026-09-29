@@ -2,10 +2,16 @@
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
 type Linha = Record<string, unknown>;
 const agora = new Date().toISOString();
-const empresa = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração", cnpj: "00.000.000/0001-00", created_at: agora };
+// Empresas fictícias (CNPJs válidos só no formato, não pertencem a ninguém).
+const empresa = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração Ltda", cnpj: "11.222.333/0001-81", rua: "Rua Exemplo", numero: "100", bairro: "Centro", cep: "01000-000", cidade: "São Paulo", estado: "SP", status: "Ativa", created_at: agora };
+const empresasDemo = [
+  empresa,
+  { id: "empresa-demo-gmp", nome_fantasia: "GMP", razao_social: "GMP Demonstração Ltda", cnpj: "44.555.666/0001-81", rua: "Avenida Fictícia", numero: "2000", bairro: "Industrial", cep: "02000-000", cidade: "Campinas", estado: "SP", status: "Ativa", created_at: agora },
+  { id: "empresa-demo-lapa", nome_fantasia: "LAPA", razao_social: "LAPA Demonstração Ltda", cnpj: "77.888.999/0001-81", rua: "Travessa Teste", numero: "30", bairro: "Lapa", cep: "05000-000", cidade: "São Paulo", estado: "SP", status: "Inativa", created_at: agora },
+];
 const usuario = { id: "admin-demo", email: "admin@demo.local" };
 const dadosIniciais: Record<string, Linha[]> = {
-  perfis: [{ id: usuario.id, papel: "admin", ativo: true }], empresas: [empresa],
+  perfis: [{ id: usuario.id, papel: "admin", ativo: true }], empresas: empresasDemo,
   empregados: [{ id: "emp-demo", empresa_id: empresa.id, nome: "Maria da Silva", cpf: "000.000.000-00", cargo: "Técnica", matricula: "1001", ativo: true }],
   epis: [{ id: "epi-demo", empresa_id: empresa.id, nome: "Capacete de segurança", codigo_sku: "EPI-001", categoria: "Capacete", ca: "12345", estoque_atual: 12, estoque_minimo: 5, status: "Ativo", preco_unitario: 85, created_at: agora }],
   uniformes: [{ id: "uni-demo", empresa_id: empresa.id, nome: "Camisa operacional", codigo_sku: "UNI-001", categoria: "Camisa", tamanho: "M", estoque_atual: 20, estoque_minimo: 8, status: "Ativo", preco_unitario: 55, created_at: agora }],
