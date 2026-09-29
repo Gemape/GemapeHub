@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -39,27 +39,30 @@ type Edicao = { categoria: DefinicaoCategoria; atual: string | null };
 
 // A tabela muda conforme a categoria, e os tipos gerados do Supabase não aceitam essa união.
 type TabelaProdutos = {
-  select(coluna: string): PromiseLike<{ data: unknown[] | null; error: unknown }>;
-  update(valores: Record<string, string>): {
-    eq(coluna: string, valor: string): PromiseLike<{ error: unknown }>;
-  };
+  select(
+    coluna: string,
+    opcoes: { count: "exact"; head: true },
+  ): { eq(coluna: string, valor: string): PromiseLike<{ count: number | null; error: unknown }> };
 };
 const tabelaProdutos = (definicao: DefinicaoCategoria) =>
   supabase.from(definicao.tabela) as unknown as TabelaProdutos;
 
-// Quantos produtos usam cada subcategoria: as em uso não podem sair da seleção.
-function useUsoSubcategorias(definicao: DefinicaoCategoria) {
+// Quantos produtos usam cada subcategoria: as em uso não podem sair da seleção nem ser
+// renomeadas. Conta uma a uma para não esbarrar no limite de linhas de uma consulta.
+function useUsoSubcategorias(definicao: DefinicaoCategoria, opcoes: string[]) {
   return useQuery({
-    queryKey: [definicao.tabela, "uso-subcategorias"],
+    queryKey: [definicao.tabela, "uso-subcategorias", opcoes],
     queryFn: async () => {
-      const { data, error } = await tabelaProdutos(definicao).select(definicao.coluna);
-      if (error) throw error;
-      const uso = new Map<string, number>();
-      for (const linha of (data ?? []) as Record<string, string | null>[]) {
-        const valor = linha[definicao.coluna];
-        if (valor) uso.set(valor, (uso.get(valor) ?? 0) + 1);
-      }
-      return uso;
+      const contagens = await Promise.all(
+        opcoes.map(async (nome) => {
+          const { count, error } = await tabelaProdutos(definicao)
+            .select("id", { count: "exact", head: true })
+            .eq(definicao.coluna, nome);
+          if (error) throw error;
+          return [nome, count ?? 0] as const;
+        }),
+      );
+      return new Map(contagens);
     },
   });
 }
@@ -102,7 +105,7 @@ function CartaoCategoria({
   onRenomear: (atual: string) => void;
 }) {
   const lista = useCategoria(definicao.chave);
-  const { data: uso, isLoading, isError } = useUsoSubcategorias(definicao);
+  const { data: uso, isLoading, isError } = useUsoSubcategorias(definicao, lista.opcoes);
   const emUso = (nome: string) => uso?.get(nome) ?? 0;
 
   function remover(nomes: string[]) {
@@ -155,7 +158,12 @@ function CartaoCategoria({
                 requiresWrite
                 size="sm"
                 variant="ghost"
-                disabled={todos.length !== 1}
+                disabled={todos.length !== 1 || isLoading || isError || emUso(todos[0] ?? "") > 0}
+                title={
+                  todos.length === 1 && emUso(todos[0] ?? "") > 0
+                    ? "Subcategoria em uso por produtos não pode ser renomeada"
+                    : undefined
+                }
                 onClick={() => todos[0] && onRenomear(todos[0])}
               >
                 Renomear
@@ -179,12 +187,11 @@ function CartaoCategoria({
 }
 
 function DialogoSubcategoria({ edicao, onFechar }: { edicao: Edicao; onFechar: () => void }) {
-  const queryClient = useQueryClient();
   const [salvando, setSalvando] = useState(false);
   const { categoria, atual } = edicao;
   const chave: CategoriaProduto = categoria.chave;
 
-  async function enviar(evento: React.FormEvent<HTMLFormElement>) {
+  function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     const nome = String(new FormData(evento.currentTarget).get("nome") ?? "");
     setSalvando(true);
@@ -192,18 +199,7 @@ function DialogoSubcategoria({ edicao, onFechar }: { edicao: Edicao; onFechar: (
       if (atual === null) {
         criarSubcategoria(chave, nome);
       } else {
-        const novo = renomearSubcategoria(chave, atual, nome);
-        // Os produtos que usavam o nome antigo passam a usar o novo.
-        if (novo !== atual) {
-          const { error } = await tabelaProdutos(categoria)
-            .update({ [categoria.coluna]: novo })
-            .eq(categoria.coluna, atual);
-          if (error) {
-            renomearSubcategoria(chave, novo, atual);
-            throw new Error("Não foi possível atualizar os produtos com o novo nome.");
-          }
-          await queryClient.invalidateQueries({ queryKey: [categoria.tabela] });
-        }
+        renomearSubcategoria(chave, atual, nome);
       }
       toast.success("Subcategoria salva");
       onFechar();
@@ -230,7 +226,7 @@ function DialogoSubcategoria({ edicao, onFechar }: { edicao: Edicao; onFechar: (
             Categoria {categoria.nome}.
             {atual === null
               ? " A nova opção entra em Disponíveis."
-              : " Os produtos com o nome antigo passam a usar o novo."}
+              : " Só é possível renomear subcategorias que nenhum produto usa."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={enviar} className="space-y-4">
