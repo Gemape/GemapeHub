@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Nota fiscal FICTÍCIA para testes (layout 4.00). CNPJs e chave não existem. -->
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+    <infNFe Id="NFe35260900000000000191550010000012341000012345" versao="4.00">
+      <ide>
+        <cUF>35</cUF><natOp>VENDA DE MERCADORIA</natOp><mod>55</mod><serie>1</serie><nNF>1234</nNF>
+        <dhEmi>2026-09-29T10:15:00-03:00</dhEmi><tpNF>1</tpNF>
+      </ide>
+      <emit>
+        <CNPJ>00000000000191</CNPJ><xNome>FORNECEDOR FICTICIO DE EPI &amp; UNIFORMES LTDA</xNome><xFant>FICTICIO EPI</xFant>
+      </emit>
+      <dest><CNPJ>00000000000272</CNPJ><xNome>GEMAPE DEMONSTRACAO</xNome></dest>
+      <det nItem="1">
+        <prod>
+          <cProd>CAP-7788</cProd><cEAN>7890000000017</cEAN><xProd>CAPACETE DE SEGURANCA ABA FRONTAL CA 12345</xProd>
+          <NCM>65061000</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>10.0000</qCom><vUnCom>45.0000000000</vUnCom><vProd>450.00</vProd>
+        </prod>
+        <imposto><ICMS><ICMS00><orig>0</orig></ICMS00></ICMS></imposto>
+      </det>
+      <det nItem="2">
+        <prod>
+          <cProd>LUV-0042</cProd><cEAN>SEM GTIN</cEAN><xProd>LUVA DE VAQUETA</xProd>
+          <NCM>42032100</NCM><CFOP>5102</CFOP><uCom>PAR</uCom><qCom>20.0000</qCom><vUnCom>12.5000000000</vUnCom><vProd>250.00</vProd>
+        </prod>
+        <imposto><ICMS><ICMS00><orig>0</orig></ICMS00></ICMS></imposto>
+        <infAdProd>C.A. N 98765 - VALIDADE 2028</infAdProd>
+      </det>
+      <det nItem="3">
+        <prod>
+          <cProd>CAM-M-AZ</cProd><cEAN>SEM GTIN</cEAN><xProd>CAMISA OPERACIONAL AZUL TAM M</xProd>
+          <NCM>62052000</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>30.0000</qCom><vUnCom>38.0000000000</vUnCom><vProd>1140.00</vProd>
+        </prod>
+        <imposto><ICMS><ICMS00><orig>0</orig></ICMS00></ICMS></imposto>
+      </det>
+      <det nItem="4">
+        <prod>
+          <cProd>FUR-500W</cProd><cEAN>SEM GTIN</cEAN><xProd>FURADEIRA DE IMPACTO 500W</xProd>
+          <NCM>84672100</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>2.0000</qCom><vUnCom>240.0000000000</vUnCom><vProd>480.00</vProd>
+        </prod>
+        <imposto><ICMS><ICMS00><orig>0</orig></ICMS00></ICMS></imposto>
+      </det>
+      <total><ICMSTot><vNF>2320.00</vNF></ICMSTot></total>
+      <detPag><tPag>01</tPag><vPag>2320.00</vPag></detPag>
+    </infNFe>
+  </NFe>
+  <protNFe versao="4.00"><infProt><chNFe>35260900000000000191550010000012341000012345</chNFe></infProt></protNFe>
+</nfeProc>
