@@ -137,3 +137,12 @@ test('busca por palavras sem acento', () => {
   assert.ok(!combinaBusca('luva', 'Óculos'));
   assert.ok(combinaBusca('', 'qualquer'));
 });
+
+test('dados salvos ilegíveis não são apagados por uma alteração', () => {
+  const s = storage();
+  s.setItem('gemape-demo-parametros-base', '{quebrado');
+  assert.throws(() => adicionarCategoria('Nova', s), /não puderam ser lidos/);
+  assert.equal(s.getItem('gemape-demo-parametros-base'), '{quebrado');
+  s.setItem('gemape-demo-parametros-base', JSON.stringify({ regrasCodigo: [{ categoriaId: 'cat-epi', sigla: 'EPI', inicial: 7 }] }));
+  assert.equal(gerarCodigo(lerParametros(s).regrasCodigo[0]), 'EPI-0007');
+});

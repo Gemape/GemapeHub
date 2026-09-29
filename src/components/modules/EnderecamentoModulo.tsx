@@ -76,9 +76,17 @@ export function EnderecamentoModulo() {
   }, [enderecos, busca, produtos]);
 
   // Só produtos cadastrados na empresa escolhida. Ao editar, mantém o código salvo mesmo que o produto tenha saído.
-  const opcoesProduto = produtos
-    .filter((p) => p.empresa_id === empresaForm)
-    .map((p) => ({ valor: p.codigo_sku, rotulo: `${p.codigo_sku} · ${p.nome}`, detalhe: ROTULO_TABELA[p.tabela] }));
+  // O endereço guarda só o código: códigos repetidos na mesma empresa viram uma opção só.
+  const opcoesProduto: { valor: string; rotulo: string; detalhe: string }[] = [];
+  for (const p of produtos.filter((p) => p.empresa_id === empresaForm)) {
+    const igual = opcoesProduto.find((o) => chave(o.valor) === chave(p.codigo_sku));
+    if (igual) {
+      igual.rotulo += ` / ${p.nome}`;
+      igual.detalhe += ` / ${ROTULO_TABELA[p.tabela]}`;
+    } else {
+      opcoesProduto.push({ valor: p.codigo_sku, rotulo: `${p.codigo_sku} · ${p.nome}`, detalhe: ROTULO_TABELA[p.tabela] });
+    }
+  }
   if (produtoForm && !opcoesProduto.some((o) => o.valor === produtoForm)) {
     opcoesProduto.push({ valor: produtoForm, rotulo: produtoForm, detalhe: "Produto não encontrado no cadastro" });
   }
@@ -86,7 +94,10 @@ export function EnderecamentoModulo() {
   function abrir(endereco: Endereco | null) {
     setEditando(endereco);
     setEmpresaForm(endereco?.empresa_id ?? (empresaId !== TODAS ? empresaId : empresas[0]?.id ?? ""));
-    setProdutoForm(endereco?.codigo_produto ?? "");
+    // Encontra o produto sem diferenciar maiúsculas, como a tabela faz.
+    const salvo = endereco?.codigo_produto ?? "";
+    const produto = endereco && produtos.find((p) => p.empresa_id === endereco.empresa_id && chave(p.codigo_sku) === chave(salvo));
+    setProdutoForm(produto ? produto.codigo_sku : salvo);
     setAberto(true);
   }
 

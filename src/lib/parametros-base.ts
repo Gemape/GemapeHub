@@ -139,29 +139,43 @@ const novoId = () =>
     ? crypto.randomUUID()
     : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
-export function lerParametros(storage: StorageLike | null = storagePadrao()): ParametrosBase {
+// Lê os dados salvos. `integro` é false quando havia dados que não puderam ser lidos:
+// nesse caso a tela mostra o padrão, mas nenhuma alteração é gravada por cima deles.
+function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; integro: boolean } {
   const base = padrao();
-  if (!storage) return base;
+  if (!storage) return { dados: base, integro: true };
+  const bruto = storage.getItem(CHAVE);
+  if (bruto === null) return { dados: base, integro: true };
   try {
-    const salvos = JSON.parse(storage.getItem(CHAVE) ?? "null") as Partial<ParametrosBase> | null;
-    if (!salvos || typeof salvos !== "object") return base;
+    const salvos = JSON.parse(bruto) as Partial<ParametrosBase> | null;
+    if (!salvos || typeof salvos !== "object" || Array.isArray(salvos)) {
+      return { dados: base, integro: false };
+    }
     for (const chave of Object.keys(base) as (keyof ParametrosBase)[]) {
       if (Array.isArray(salvos[chave])) (base[chave] as unknown[]) = salvos[chave];
     }
     // Regras salvas antes da definição de 4 dígitos (ex.: 001) passam para 0001.
     base.regrasCodigo = base.regrasCodigo.map((r) => ({
       ...r,
-      inicial: completarDigitos(r.inicial),
+      inicial: completarDigitos(String(r.inicial ?? "")),
     }));
-    return base;
+    return { dados: base, integro: true };
   } catch {
-    return base;
+    return { dados: base, integro: false };
   }
 }
 
+export const lerParametros = (storage: StorageLike | null = storagePadrao()): ParametrosBase =>
+  lerComEstado(storage).dados;
+
 function alterar<T>(storage: StorageLike | null, mudanca: (dados: ParametrosBase) => T): T {
   if (!storage) throw new Error("Armazenamento do navegador indisponível.");
-  const dados = lerParametros(storage);
+  const { dados, integro } = lerComEstado(storage);
+  if (!integro) {
+    throw new Error(
+      "Os cadastros salvos neste navegador não puderam ser lidos. Nada foi alterado, para não apagá-los.",
+    );
+  }
   const resultado = mudanca(dados);
   storage.setItem(CHAVE, JSON.stringify(dados));
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_PARAMETROS));
