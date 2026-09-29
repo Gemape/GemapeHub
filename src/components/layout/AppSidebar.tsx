@@ -17,6 +17,7 @@ import {
   Archive,
   Truck,
   MapPin,
+  Barcode,
 } from "lucide-react";
 
 import {
@@ -57,6 +58,7 @@ const grupos = [
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
       { titulo: "Fornecedores", url: "/cadastros/fornecedores", icone: Truck },
+      { titulo: "Código de Fábrica", url: "/cadastros/codigo-fabrica", icone: Barcode },
       { titulo: "Relatórios", url: "/relatorios", icone: FileSpreadsheet },
     ],
   },

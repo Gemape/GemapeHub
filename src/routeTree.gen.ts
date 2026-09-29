@@ -25,6 +25,7 @@ import { Route as AuthenticatedUniformesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedVeiculosRouteImport } from './routes/_authenticated/veiculos'
 import { Route as AuthenticatedCadastrosCaixasFerramentasRouteImport } from './routes/_authenticated/cadastros/caixas-ferramentas'
+import { Route as AuthenticatedCadastrosCodigoFabricaRouteImport } from './routes/_authenticated/cadastros/codigo-fabrica'
 import { Route as AuthenticatedCadastrosEnderecamentoRouteImport } from './routes/_authenticated/cadastros/enderecamento'
 import { Route as AuthenticatedCadastrosEpiRouteImport } from './routes/_authenticated/cadastros/epi'
 import { Route as AuthenticatedCadastrosFerramentasRouteImport } from './routes/_authenticated/cadastros/ferramentas'
@@ -116,6 +117,12 @@ const AuthenticatedCadastrosCaixasFerramentasRoute =
     path: '/cadastros/caixas-ferramentas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCadastrosCodigoFabricaRoute =
+  AuthenticatedCadastrosCodigoFabricaRouteImport.update({
+    id: '/cadastros/codigo-fabrica',
+    path: '/cadastros/codigo-fabrica',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCadastrosEnderecamentoRoute =
   AuthenticatedCadastrosEnderecamentoRouteImport.update({
     id: '/cadastros/enderecamento',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/veiculos': typeof AuthenticatedVeiculosRoute
   '/cadastros/caixas-ferramentas': typeof AuthenticatedCadastrosCaixasFerramentasRoute
+  '/cadastros/codigo-fabrica': typeof AuthenticatedCadastrosCodigoFabricaRoute
   '/cadastros/enderecamento': typeof AuthenticatedCadastrosEnderecamentoRoute
   '/cadastros/epi': typeof AuthenticatedCadastrosEpiRoute
   '/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
@@ -192,6 +200,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/veiculos': typeof AuthenticatedVeiculosRoute
   '/cadastros/caixas-ferramentas': typeof AuthenticatedCadastrosCaixasFerramentasRoute
+  '/cadastros/codigo-fabrica': typeof AuthenticatedCadastrosCodigoFabricaRoute
   '/cadastros/enderecamento': typeof AuthenticatedCadastrosEnderecamentoRoute
   '/cadastros/epi': typeof AuthenticatedCadastrosEpiRoute
   '/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
@@ -217,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/veiculos': typeof AuthenticatedVeiculosRoute
   '/_authenticated/cadastros/caixas-ferramentas': typeof AuthenticatedCadastrosCaixasFerramentasRoute
+  '/_authenticated/cadastros/codigo-fabrica': typeof AuthenticatedCadastrosCodigoFabricaRoute
   '/_authenticated/cadastros/enderecamento': typeof AuthenticatedCadastrosEnderecamentoRoute
   '/_authenticated/cadastros/epi': typeof AuthenticatedCadastrosEpiRoute
   '/_authenticated/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/veiculos'
     | '/cadastros/caixas-ferramentas'
+    | '/cadastros/codigo-fabrica'
     | '/cadastros/enderecamento'
     | '/cadastros/epi'
     | '/cadastros/ferramentas'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/veiculos'
     | '/cadastros/caixas-ferramentas'
+    | '/cadastros/codigo-fabrica'
     | '/cadastros/enderecamento'
     | '/cadastros/epi'
     | '/cadastros/ferramentas'
@@ -289,6 +301,7 @@ export interface FileRouteTypes {
     | '/_authenticated/usuarios'
     | '/_authenticated/veiculos'
     | '/_authenticated/cadastros/caixas-ferramentas'
+    | '/_authenticated/cadastros/codigo-fabrica'
     | '/_authenticated/cadastros/enderecamento'
     | '/_authenticated/cadastros/epi'
     | '/_authenticated/cadastros/ferramentas'
@@ -417,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosCaixasFerramentasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cadastros/codigo-fabrica': {
+      id: '/_authenticated/cadastros/codigo-fabrica'
+      path: '/cadastros/codigo-fabrica'
+      fullPath: '/cadastros/codigo-fabrica'
+      preLoaderRoute: typeof AuthenticatedCadastrosCodigoFabricaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cadastros/enderecamento': {
       id: '/_authenticated/cadastros/enderecamento'
       path: '/cadastros/enderecamento'
@@ -476,6 +496,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedVeiculosRoute: typeof AuthenticatedVeiculosRoute
   AuthenticatedCadastrosCaixasFerramentasRoute: typeof AuthenticatedCadastrosCaixasFerramentasRoute
+  AuthenticatedCadastrosCodigoFabricaRoute: typeof AuthenticatedCadastrosCodigoFabricaRoute
   AuthenticatedCadastrosEnderecamentoRoute: typeof AuthenticatedCadastrosEnderecamentoRoute
   AuthenticatedCadastrosEpiRoute: typeof AuthenticatedCadastrosEpiRoute
   AuthenticatedCadastrosFerramentasRoute: typeof AuthenticatedCadastrosFerramentasRoute
@@ -499,6 +520,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVeiculosRoute: AuthenticatedVeiculosRoute,
   AuthenticatedCadastrosCaixasFerramentasRoute:
     AuthenticatedCadastrosCaixasFerramentasRoute,
+  AuthenticatedCadastrosCodigoFabricaRoute:
+    AuthenticatedCadastrosCodigoFabricaRoute,
   AuthenticatedCadastrosEnderecamentoRoute:
     AuthenticatedCadastrosEnderecamentoRoute,
   AuthenticatedCadastrosEpiRoute: AuthenticatedCadastrosEpiRoute,
