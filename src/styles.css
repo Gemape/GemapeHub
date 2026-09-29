@@ -125,14 +125,14 @@
   --chart-4: oklch(0.57 0.21 27);
   --chart-5: oklch(0.6 0.12 285);
 
-  --sidebar: oklch(0.12 0.08 262); /* Sidebar no azul marinho escuro */
+  --sidebar: oklch(0.32 0.25 266); /* Sidebar no mesmo azul dos botões principais */
   --sidebar-foreground: oklch(0.98 0.01 260);
-  --sidebar-primary: oklch(0.32 0.25 266);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.2 0.1 262);
+  --sidebar-primary: oklch(1 0 0);
+  --sidebar-primary-foreground: oklch(0.32 0.25 266);
+  --sidebar-accent: oklch(0.24 0.2 266);
   --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.2 0.1 262);
-  --sidebar-ring: oklch(0.32 0.25 266);
+  --sidebar-border: oklch(1 0 0 / 15%);
+  --sidebar-ring: oklch(1 0 0);
 }
 
 .dark {
