@@ -27,7 +27,7 @@ type Produto = { codigo_sku: string | null; nome: string; empresa_id: string | n
 
 const CAMPOS = [
   { nome: "rua", rotulo: "Rua" },
-  { nome: "prateleira", rotulo: "Prateleira" },
+  { nome: "prateleira", rotulo: "Nº" },
   { nome: "apartamento", rotulo: "Apartamento" },
 ] as const;
 const chave = (v: string) => v.trim().toUpperCase();
@@ -124,7 +124,7 @@ export function EnderecamentoModulo({ secao }: { secao: "Módulo" | "Cadastros" 
       <div>
         <p className="text-eyebrow">{secao}</p>
         <h1 className="text-2xl font-bold">Endereçamento de estoque</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Localização de cada produto no almoxarifado por rua, prateleira e apartamento.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Localização de cada produto no almoxarifado por rua, número e apartamento.</p>
       </div>
       <Button requiresWrite onClick={() => abrir(null)}>Novo endereço</Button>
     </header>
@@ -135,7 +135,7 @@ export function EnderecamentoModulo({ secao }: { secao: "Módulo" | "Cadastros" 
       <Table>
         <TableHeader><TableRow>
           <TableHead>Código do produto</TableHead><TableHead>Produto</TableHead>
-          <TableHead>Rua</TableHead><TableHead>Prateleira</TableHead><TableHead>Apartamento</TableHead>
+          <TableHead>Rua</TableHead><TableHead>Nº</TableHead><TableHead>Apartamento</TableHead>
           <TableHead>Empresa</TableHead><TableHead />
         </TableRow></TableHeader>
         <TableBody>
