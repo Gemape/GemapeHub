@@ -17,6 +17,11 @@ import {
   Archive,
   Truck,
   MapPin,
+  Tags,
+  Ruler,
+  ListChecks,
+  Barcode,
+  Factory,
 } from "lucide-react";
 
 import {
@@ -44,7 +49,19 @@ const grupos = [
       { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench },
       { titulo: "Caixas de Ferramentas", url: "/caixas-ferramentas", icone: Archive },
       { titulo: "Veículos", url: "/veiculos", icone: Car },
-      { titulo: "Endereçamento", url: "/enderecamento", icone: MapPin },
+    ],
+  },
+  {
+    // Especificação: só o Administrador acessa os Parâmetros Base.
+    titulo: "Parâmetros Base",
+    somenteAdmin: true,
+    itens: [
+      { titulo: "Categorias", url: "/parametros/categorias", icone: Tags },
+      { titulo: "Tamanhos e Unidades", url: "/parametros/tamanhos-unidades", icone: Ruler },
+      { titulo: "Associar Tamanho e Medida", url: "/parametros/associar-tamanhos", icone: ListChecks },
+      { titulo: "Código do Produto", url: "/parametros/codigo-produto", icone: Barcode },
+      { titulo: "Código de Fábrica", url: "/parametros/codigo-fabrica", icone: Factory },
+      { titulo: "Endereçamento", url: "/parametros/enderecamento", icone: MapPin },
     ],
   },
   {
@@ -83,7 +100,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         {isAdmin && import.meta.env["VITE_DEMO_MODE"] === "false" && <SidebarGroup><SidebarMenu><SidebarMenuItem><SidebarMenuButton asChild><Link to="/usuarios"><Users /><span>Usuários e permissões</span></Link></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroup>}
-        {grupos.map((grupo) => (
+        {grupos.filter((grupo) => isAdmin || !("somenteAdmin" in grupo)).map((grupo) => (
           <SidebarGroup key={grupo.titulo}>
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
