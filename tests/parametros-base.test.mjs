@@ -109,6 +109,9 @@ test('código de fábrica: CA obrigatório para EPI e sem código repetido por f
   assert.throws(() => salvarCodigoFabrica({ ...base, ca: '1', codigo_fornecedor: 'cap-778' }, undefined, s), /já está associado a EPI-0001/);
   // Outro fornecedor pode usar o mesmo código.
   salvarCodigoFabrica({ ...base, ca: '1', fornecedor_id: 'f2' }, undefined, s);
+  // Outra empresa também pode (cada empresa tem seus produtos).
+  const outra = salvarCodigoFabrica({ ...base, ca: '1', empresa_id: 'e2' }, undefined, s);
+  removerCodigoFabrica(outra.id, s);
   // Fora de EPI o CA é descartado.
   const u = salvarCodigoFabrica({ ...base, tabela: 'uniformes', codigo_fornecedor: 'CAM-1', ca: '999' }, undefined, s);
   assert.equal(u.ca, '');

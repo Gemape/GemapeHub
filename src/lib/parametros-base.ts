@@ -420,6 +420,8 @@ export function salvarCodigoFabrica(
     const repetido = d.codigosFabrica.find(
       (c) =>
         c.id !== id &&
+        // Cada empresa tem seus produtos: o mesmo código do fornecedor pode existir em outra empresa.
+        c.empresa_id === v.empresa_id &&
         c.fornecedor_id === v.fornecedor_id &&
         mesmoNome(c.codigo_fornecedor, v.codigo_fornecedor),
     );

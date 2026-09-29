@@ -79,7 +79,8 @@ export function CampoBusca({
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
-            if (encontradas[0]) onChange(encontradas[0].valor);
+            // Com o campo vazio, Enter não escolhe nada (evita selecionar um item qualquer).
+            if (termo.trim() && encontradas[0]) onChange(encontradas[0].valor);
           }
           if (e.key === "Escape") setAberto(false);
         }}

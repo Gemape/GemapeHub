@@ -60,11 +60,14 @@ function CodigoFabricaPagina() {
   const nomeEmpresa = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
 
-  const opcoesProduto: OpcaoBusca[] = produtos.map((p) => ({
-    valor: chaveProduto(p),
-    rotulo: `${p.codigo_sku} · ${p.nome}`,
-    detalhe: `${ROTULO_TABELA[p.tabela]} · ${nomeEmpresa(p.empresa_id)}`,
-  }));
+  // Só produtos com empresa: a associação é sempre de um produto de uma empresa.
+  const opcoesProduto: OpcaoBusca[] = produtos
+    .filter((p) => p.empresa_id)
+    .map((p) => ({
+      valor: chaveProduto(p),
+      rotulo: `${p.codigo_sku} · ${p.nome}`,
+      detalhe: `${ROTULO_TABELA[p.tabela]} · ${nomeEmpresa(p.empresa_id)}`,
+    }));
   const opcoesFornecedor: OpcaoBusca[] = fornecedores.map((f) => ({
     valor: f.id,
     rotulo: f.nome_fantasia,
