@@ -16,14 +16,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { DualList } from "@/components/DualList";
 import {
-  adicionarSubcategoria,
   CATEGORIAS_PRODUTO,
-  removerSubcategoria,
+  criarSubcategoria,
+  disponiveis,
+  excluirSubcategorias,
+  removerDaSelecao,
   renomearSubcategoria,
+  selecionarSubcategorias,
   type CategoriaProduto,
 } from "@/lib/categorias-produto";
-import { useSubcategorias } from "@/lib/use-subcategorias";
+import { useCategoria } from "@/lib/use-subcategorias";
 
 export const Route = createFileRoute("/_authenticated/cadastros/categorias-produto")({
   head: () => ({ meta: [{ title: "Categorias de Produto | Patrimônio GEMAPE" }] }),
@@ -43,7 +47,7 @@ type TabelaProdutos = {
 const tabelaProdutos = (definicao: DefinicaoCategoria) =>
   supabase.from(definicao.tabela) as unknown as TabelaProdutos;
 
-// Quantos produtos usam cada subcategoria, para impedir a exclusão de uma que está em uso.
+// Quantos produtos usam cada subcategoria: as em uso não podem sair da seleção.
 function useUsoSubcategorias(definicao: DefinicaoCategoria) {
   return useQuery({
     queryKey: [definicao.tabela, "uso-subcategorias"],
@@ -69,11 +73,11 @@ function PaginaCategorias() {
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Categorias de Produto</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Subcategorias de cada categoria, usadas nos cadastros de EPIs, Ferramentas, Uniformes e
-          Veículos.
+          Escolha as subcategorias de cada categoria. Só as selecionadas aparecem nos cadastros de
+          EPIs, Ferramentas, Uniformes e Veículos.
         </p>
       </header>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         {CATEGORIAS_PRODUTO.map((definicao) => (
           <CartaoCategoria
             key={definicao.chave}
@@ -97,30 +101,35 @@ function CartaoCategoria({
   onNova: () => void;
   onRenomear: (atual: string) => void;
 }) {
-  const subcategorias = useSubcategorias(definicao.chave);
+  const lista = useCategoria(definicao.chave);
   const { data: uso, isLoading, isError } = useUsoSubcategorias(definicao);
+  const emUso = (nome: string) => uso?.get(nome) ?? 0;
 
-  function excluir(nome: string) {
-    const emUso = uso?.get(nome) ?? 0;
-    if (emUso > 0) {
-      toast.error(`"${nome}" está em uso por ${emUso} produto(s) e não pode ser excluída.`);
+  function remover(nomes: string[]) {
+    if (isLoading || isError) {
+      toast.error("Aguarde a verificação das subcategorias em uso e tente de novo.");
       return;
     }
-    if (!confirm(`Excluir a subcategoria ${nome}?`)) return;
-    removerSubcategoria(definicao.chave, nome);
-    toast.success("Subcategoria excluída");
+    const bloqueadas = nomes.filter((nome) => emUso(nome) > 0);
+    const livres = nomes.filter((nome) => emUso(nome) === 0);
+    if (livres.length > 0) removerDaSelecao(definicao.chave, livres);
+    if (bloqueadas.length > 0) {
+      toast.error(`Em uso por produtos, continuam selecionadas: ${bloqueadas.join(", ")}.`);
+    }
+  }
+
+  function excluir(nomes: string[], limpar: () => void) {
+    if (!confirm(`Excluir ${nomes.join(", ")} das opções?`)) return;
+    excluirSubcategorias(definicao.chave, nomes);
+    limpar();
+    toast.success(nomes.length === 1 ? "Subcategoria excluída" : "Subcategorias excluídas");
   }
 
   return (
     <section className="panel space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">
-          {definicao.nome}{" "}
-          <span className="text-sm font-normal text-muted-foreground">
-            ({subcategorias.length})
-          </span>
-        </h2>
-        <Button requiresWrite size="sm" onClick={onNova}>
+        <h2 className="text-lg font-semibold">{definicao.nome}</h2>
+        <Button requiresWrite size="sm" variant="outline" onClick={onNova}>
           Nova subcategoria
         </Button>
       </div>
@@ -129,37 +138,42 @@ function CartaoCategoria({
           Não foi possível verificar quais subcategorias estão em uso.
         </p>
       )}
-      <ul className="divide-y rounded-md border">
-        {subcategorias.length === 0 && (
-          <li className="p-3 text-sm text-muted-foreground">Nenhuma subcategoria cadastrada.</li>
-        )}
-        {subcategorias.map((nome) => {
-          const emUso = uso?.get(nome) ?? 0;
+      <DualList
+        titulo={`Subcategorias de ${definicao.nome}`}
+        disponiveis={disponiveis(lista)}
+        selecionadas={lista.selecionadas}
+        onAdicionar={(nomes) => selecionarSubcategorias(definicao.chave, nomes)}
+        onRemover={remover}
+        detalhe={(nome) =>
+          emUso(nome) > 0 ? <Badge variant="secondary">{emUso(nome)} em uso</Badge> : null
+        }
+        acoes={(marcados, limpar) => {
+          const todos = [...marcados.disponiveis, ...marcados.selecionadas];
           return (
-            <li key={nome} className="flex items-center justify-between gap-2 px-3 py-1.5">
-              <span className="flex items-center gap-2 text-sm">
-                {nome}
-                {emUso > 0 && <Badge variant="secondary">{emUso} em uso</Badge>}
-              </span>
-              <span className="whitespace-nowrap">
-                <Button requiresWrite variant="ghost" size="sm" onClick={() => onRenomear(nome)}>
-                  Renomear
-                </Button>
-                <Button
-                  requiresWrite
-                  variant="ghost"
-                  size="sm"
-                  disabled={isLoading || isError || emUso > 0}
-                  title={emUso > 0 ? "Em uso por produtos cadastrados" : undefined}
-                  onClick={() => excluir(nome)}
-                >
-                  Excluir
-                </Button>
-              </span>
-            </li>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                requiresWrite
+                size="sm"
+                variant="ghost"
+                disabled={todos.length !== 1}
+                onClick={() => todos[0] && onRenomear(todos[0])}
+              >
+                Renomear
+              </Button>
+              <Button
+                requiresWrite
+                size="sm"
+                variant="ghost"
+                disabled={marcados.disponiveis.length === 0 || marcados.selecionadas.length > 0}
+                title="Exclui as opções marcadas em Disponíveis"
+                onClick={() => excluir(marcados.disponiveis, limpar)}
+              >
+                Excluir
+              </Button>
+            </div>
           );
-        })}
-      </ul>
+        }}
+      />
     </section>
   );
 }
@@ -176,7 +190,7 @@ function DialogoSubcategoria({ edicao, onFechar }: { edicao: Edicao; onFechar: (
     setSalvando(true);
     try {
       if (atual === null) {
-        adicionarSubcategoria(chave, nome);
+        criarSubcategoria(chave, nome);
       } else {
         const novo = renomearSubcategoria(chave, atual, nome);
         // Os produtos que usavam o nome antigo passam a usar o novo.
@@ -214,7 +228,9 @@ function DialogoSubcategoria({ edicao, onFechar }: { edicao: Edicao; onFechar: (
           </DialogTitle>
           <DialogDescription>
             Categoria {categoria.nome}.
-            {atual !== null && " Os produtos com o nome antigo passam a usar o novo."}
+            {atual === null
+              ? " A nova opção entra em Disponíveis."
+              : " Os produtos com o nome antigo passam a usar o novo."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={enviar} className="space-y-4">

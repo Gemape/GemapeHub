@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 
 import {
   EVENTO_SUBCATEGORIAS,
-  listarSubcategorias,
+  listarCategorias,
   type CategoriaProduto,
+  type ListaCategoria,
 } from "@/lib/categorias-produto";
 
-export function useSubcategorias(categoria: CategoriaProduto): string[] {
-  const [lista, setLista] = useState(() => listarSubcategorias()[categoria]);
+// Catálogo e seleção de uma categoria, atualizados quando outra tela ou aba muda a lista.
+export function useCategoria(categoria: CategoriaProduto): ListaCategoria {
+  const [lista, setLista] = useState(() => listarCategorias()[categoria]);
   useEffect(() => {
-    const atualizar = () => setLista(listarSubcategorias()[categoria]);
+    const atualizar = () => setLista(listarCategorias()[categoria]);
     atualizar();
     window.addEventListener(EVENTO_SUBCATEGORIAS, atualizar);
     window.addEventListener("storage", atualizar);
@@ -19,4 +21,9 @@ export function useSubcategorias(categoria: CategoriaProduto): string[] {
     };
   }, [categoria]);
   return lista;
+}
+
+// Subcategorias que aparecem nos formulários.
+export function useSubcategorias(categoria: CategoriaProduto): string[] {
+  return useCategoria(categoria).selecionadas;
 }
