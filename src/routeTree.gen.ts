@@ -20,6 +20,7 @@ import { Route as AuthenticatedEnderecamentoRouteImport } from './routes/_authen
 import { Route as AuthenticatedEpiRouteImport } from './routes/_authenticated/epi'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedOcorrenciasRouteImport } from './routes/_authenticated/ocorrencias'
+import { Route as AuthenticatedParametrosRouteRouteImport } from './routes/_authenticated/parametros/route'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedUniformesRouteImport } from './routes/_authenticated/uniformes'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
@@ -31,6 +32,13 @@ import { Route as AuthenticatedCadastrosFerramentasRouteImport } from './routes/
 import { Route as AuthenticatedCadastrosFornecedoresRouteImport } from './routes/_authenticated/cadastros/fornecedores'
 import { Route as AuthenticatedCadastrosUniformesRouteImport } from './routes/_authenticated/cadastros/uniformes'
 import { Route as AuthenticatedCadastrosVeiculosRouteImport } from './routes/_authenticated/cadastros/veiculos'
+import { Route as AuthenticatedParametrosIndexRouteImport } from './routes/_authenticated/parametros/index'
+import { Route as AuthenticatedParametrosAssociarTamanhosRouteImport } from './routes/_authenticated/parametros/associar-tamanhos'
+import { Route as AuthenticatedParametrosCategoriasRouteImport } from './routes/_authenticated/parametros/categorias'
+import { Route as AuthenticatedParametrosCodigoFabricaRouteImport } from './routes/_authenticated/parametros/codigo-fabrica'
+import { Route as AuthenticatedParametrosCodigoProdutoRouteImport } from './routes/_authenticated/parametros/codigo-produto'
+import { Route as AuthenticatedParametrosEnderecamentoRouteImport } from './routes/_authenticated/parametros/enderecamento'
+import { Route as AuthenticatedParametrosTamanhosUnidadesRouteImport } from './routes/_authenticated/parametros/tamanhos-unidades'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +96,12 @@ const AuthenticatedOcorrenciasRoute =
   AuthenticatedOcorrenciasRouteImport.update({
     id: '/ocorrencias',
     path: '/ocorrencias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedParametrosRouteRoute =
+  AuthenticatedParametrosRouteRouteImport.update({
+    id: '/parametros',
+    path: '/parametros',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
@@ -152,10 +166,53 @@ const AuthenticatedCadastrosVeiculosRoute =
     path: '/cadastros/veiculos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedParametrosIndexRoute =
+  AuthenticatedParametrosIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedParametrosRouteRoute,
+  } as any)
+const AuthenticatedParametrosAssociarTamanhosRoute =
+  AuthenticatedParametrosAssociarTamanhosRouteImport.update({
+    id: '/associar-tamanhos',
+    path: '/associar-tamanhos',
+    getParentRoute: () => AuthenticatedParametrosRouteRoute,
+  } as any)
+const AuthenticatedParametrosCategoriasRoute =
+  AuthenticatedParametrosCategoriasRouteImport.update({
+    id: '/categorias',
+    path: '/categorias',
+    getParentRoute: () => AuthenticatedParametrosRouteRoute,
+  } as any)
+const AuthenticatedParametrosCodigoFabricaRoute =
+  AuthenticatedParametrosCodigoFabricaRouteImport.update({
+    id: '/codigo-fabrica',
+    path: '/codigo-fabrica',
+    getParentRoute: () => AuthenticatedParametrosRouteRoute,
+  } as any)
+const AuthenticatedParametrosCodigoProdutoRoute =
+  AuthenticatedParametrosCodigoProdutoRouteImport.update({
+    id: '/codigo-produto',
+    path: '/codigo-produto',
+    getParentRoute: () => AuthenticatedParametrosRouteRoute,
+  } as any)
+const AuthenticatedParametrosEnderecamentoRoute =
+  AuthenticatedParametrosEnderecamentoRouteImport.update({
+    id: '/enderecamento',
+    path: '/enderecamento',
+    getParentRoute: () => AuthenticatedParametrosRouteRoute,
+  } as any)
+const AuthenticatedParametrosTamanhosUnidadesRoute =
+  AuthenticatedParametrosTamanhosUnidadesRouteImport.update({
+    id: '/tamanhos-unidades',
+    path: '/tamanhos-unidades',
+    getParentRoute: () => AuthenticatedParametrosRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/parametros': typeof AuthenticatedParametrosRouteRouteWithChildren
   '/caixas-ferramentas': typeof AuthenticatedCaixasFerramentasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/empregados': typeof AuthenticatedEmpregadosRoute
@@ -175,6 +232,13 @@ export interface FileRoutesByFullPath {
   '/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
+  '/parametros/associar-tamanhos': typeof AuthenticatedParametrosAssociarTamanhosRoute
+  '/parametros/categorias': typeof AuthenticatedParametrosCategoriasRoute
+  '/parametros/codigo-fabrica': typeof AuthenticatedParametrosCodigoFabricaRoute
+  '/parametros/codigo-produto': typeof AuthenticatedParametrosCodigoProdutoRoute
+  '/parametros/enderecamento': typeof AuthenticatedParametrosEnderecamentoRoute
+  '/parametros/tamanhos-unidades': typeof AuthenticatedParametrosTamanhosUnidadesRoute
+  '/parametros/': typeof AuthenticatedParametrosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -198,12 +262,20 @@ export interface FileRoutesByTo {
   '/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
+  '/parametros/associar-tamanhos': typeof AuthenticatedParametrosAssociarTamanhosRoute
+  '/parametros/categorias': typeof AuthenticatedParametrosCategoriasRoute
+  '/parametros/codigo-fabrica': typeof AuthenticatedParametrosCodigoFabricaRoute
+  '/parametros/codigo-produto': typeof AuthenticatedParametrosCodigoProdutoRoute
+  '/parametros/enderecamento': typeof AuthenticatedParametrosEnderecamentoRoute
+  '/parametros/tamanhos-unidades': typeof AuthenticatedParametrosTamanhosUnidadesRoute
+  '/parametros': typeof AuthenticatedParametrosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/parametros': typeof AuthenticatedParametrosRouteRouteWithChildren
   '/_authenticated/caixas-ferramentas': typeof AuthenticatedCaixasFerramentasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/empregados': typeof AuthenticatedEmpregadosRoute
@@ -223,12 +295,20 @@ export interface FileRoutesById {
   '/_authenticated/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/_authenticated/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/_authenticated/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
+  '/_authenticated/parametros/associar-tamanhos': typeof AuthenticatedParametrosAssociarTamanhosRoute
+  '/_authenticated/parametros/categorias': typeof AuthenticatedParametrosCategoriasRoute
+  '/_authenticated/parametros/codigo-fabrica': typeof AuthenticatedParametrosCodigoFabricaRoute
+  '/_authenticated/parametros/codigo-produto': typeof AuthenticatedParametrosCodigoProdutoRoute
+  '/_authenticated/parametros/enderecamento': typeof AuthenticatedParametrosEnderecamentoRoute
+  '/_authenticated/parametros/tamanhos-unidades': typeof AuthenticatedParametrosTamanhosUnidadesRoute
+  '/_authenticated/parametros/': typeof AuthenticatedParametrosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/parametros'
     | '/caixas-ferramentas'
     | '/dashboard'
     | '/empregados'
@@ -248,6 +328,13 @@ export interface FileRouteTypes {
     | '/cadastros/fornecedores'
     | '/cadastros/uniformes'
     | '/cadastros/veiculos'
+    | '/parametros/associar-tamanhos'
+    | '/parametros/categorias'
+    | '/parametros/codigo-fabrica'
+    | '/parametros/codigo-produto'
+    | '/parametros/enderecamento'
+    | '/parametros/tamanhos-unidades'
+    | '/parametros/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -271,11 +358,19 @@ export interface FileRouteTypes {
     | '/cadastros/fornecedores'
     | '/cadastros/uniformes'
     | '/cadastros/veiculos'
+    | '/parametros/associar-tamanhos'
+    | '/parametros/categorias'
+    | '/parametros/codigo-fabrica'
+    | '/parametros/codigo-produto'
+    | '/parametros/enderecamento'
+    | '/parametros/tamanhos-unidades'
+    | '/parametros'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/parametros'
     | '/_authenticated/caixas-ferramentas'
     | '/_authenticated/dashboard'
     | '/_authenticated/empregados'
@@ -295,6 +390,13 @@ export interface FileRouteTypes {
     | '/_authenticated/cadastros/fornecedores'
     | '/_authenticated/cadastros/uniformes'
     | '/_authenticated/cadastros/veiculos'
+    | '/_authenticated/parametros/associar-tamanhos'
+    | '/_authenticated/parametros/categorias'
+    | '/_authenticated/parametros/codigo-fabrica'
+    | '/_authenticated/parametros/codigo-produto'
+    | '/_authenticated/parametros/enderecamento'
+    | '/_authenticated/parametros/tamanhos-unidades'
+    | '/_authenticated/parametros/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -382,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOcorrenciasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/parametros': {
+      id: '/_authenticated/parametros'
+      path: '/parametros'
+      fullPath: '/parametros'
+      preLoaderRoute: typeof AuthenticatedParametrosRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/relatorios': {
       id: '/_authenticated/relatorios'
       path: '/relatorios'
@@ -459,10 +568,92 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosVeiculosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/parametros/': {
+      id: '/_authenticated/parametros/'
+      path: '/'
+      fullPath: '/parametros/'
+      preLoaderRoute: typeof AuthenticatedParametrosIndexRouteImport
+      parentRoute: typeof AuthenticatedParametrosRouteRoute
+    }
+    '/_authenticated/parametros/associar-tamanhos': {
+      id: '/_authenticated/parametros/associar-tamanhos'
+      path: '/associar-tamanhos'
+      fullPath: '/parametros/associar-tamanhos'
+      preLoaderRoute: typeof AuthenticatedParametrosAssociarTamanhosRouteImport
+      parentRoute: typeof AuthenticatedParametrosRouteRoute
+    }
+    '/_authenticated/parametros/categorias': {
+      id: '/_authenticated/parametros/categorias'
+      path: '/categorias'
+      fullPath: '/parametros/categorias'
+      preLoaderRoute: typeof AuthenticatedParametrosCategoriasRouteImport
+      parentRoute: typeof AuthenticatedParametrosRouteRoute
+    }
+    '/_authenticated/parametros/codigo-fabrica': {
+      id: '/_authenticated/parametros/codigo-fabrica'
+      path: '/codigo-fabrica'
+      fullPath: '/parametros/codigo-fabrica'
+      preLoaderRoute: typeof AuthenticatedParametrosCodigoFabricaRouteImport
+      parentRoute: typeof AuthenticatedParametrosRouteRoute
+    }
+    '/_authenticated/parametros/codigo-produto': {
+      id: '/_authenticated/parametros/codigo-produto'
+      path: '/codigo-produto'
+      fullPath: '/parametros/codigo-produto'
+      preLoaderRoute: typeof AuthenticatedParametrosCodigoProdutoRouteImport
+      parentRoute: typeof AuthenticatedParametrosRouteRoute
+    }
+    '/_authenticated/parametros/enderecamento': {
+      id: '/_authenticated/parametros/enderecamento'
+      path: '/enderecamento'
+      fullPath: '/parametros/enderecamento'
+      preLoaderRoute: typeof AuthenticatedParametrosEnderecamentoRouteImport
+      parentRoute: typeof AuthenticatedParametrosRouteRoute
+    }
+    '/_authenticated/parametros/tamanhos-unidades': {
+      id: '/_authenticated/parametros/tamanhos-unidades'
+      path: '/tamanhos-unidades'
+      fullPath: '/parametros/tamanhos-unidades'
+      preLoaderRoute: typeof AuthenticatedParametrosTamanhosUnidadesRouteImport
+      parentRoute: typeof AuthenticatedParametrosRouteRoute
+    }
   }
 }
 
+interface AuthenticatedParametrosRouteRouteChildren {
+  AuthenticatedParametrosAssociarTamanhosRoute: typeof AuthenticatedParametrosAssociarTamanhosRoute
+  AuthenticatedParametrosCategoriasRoute: typeof AuthenticatedParametrosCategoriasRoute
+  AuthenticatedParametrosCodigoFabricaRoute: typeof AuthenticatedParametrosCodigoFabricaRoute
+  AuthenticatedParametrosCodigoProdutoRoute: typeof AuthenticatedParametrosCodigoProdutoRoute
+  AuthenticatedParametrosEnderecamentoRoute: typeof AuthenticatedParametrosEnderecamentoRoute
+  AuthenticatedParametrosTamanhosUnidadesRoute: typeof AuthenticatedParametrosTamanhosUnidadesRoute
+  AuthenticatedParametrosIndexRoute: typeof AuthenticatedParametrosIndexRoute
+}
+
+const AuthenticatedParametrosRouteRouteChildren: AuthenticatedParametrosRouteRouteChildren =
+  {
+    AuthenticatedParametrosAssociarTamanhosRoute:
+      AuthenticatedParametrosAssociarTamanhosRoute,
+    AuthenticatedParametrosCategoriasRoute:
+      AuthenticatedParametrosCategoriasRoute,
+    AuthenticatedParametrosCodigoFabricaRoute:
+      AuthenticatedParametrosCodigoFabricaRoute,
+    AuthenticatedParametrosCodigoProdutoRoute:
+      AuthenticatedParametrosCodigoProdutoRoute,
+    AuthenticatedParametrosEnderecamentoRoute:
+      AuthenticatedParametrosEnderecamentoRoute,
+    AuthenticatedParametrosTamanhosUnidadesRoute:
+      AuthenticatedParametrosTamanhosUnidadesRoute,
+    AuthenticatedParametrosIndexRoute: AuthenticatedParametrosIndexRoute,
+  }
+
+const AuthenticatedParametrosRouteRouteWithChildren =
+  AuthenticatedParametrosRouteRoute._addFileChildren(
+    AuthenticatedParametrosRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedParametrosRouteRoute: typeof AuthenticatedParametrosRouteRouteWithChildren
   AuthenticatedCaixasFerramentasRoute: typeof AuthenticatedCaixasFerramentasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmpregadosRoute: typeof AuthenticatedEmpregadosRoute
@@ -485,6 +676,8 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedParametrosRouteRoute:
+    AuthenticatedParametrosRouteRouteWithChildren,
   AuthenticatedCaixasFerramentasRoute: AuthenticatedCaixasFerramentasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmpregadosRoute: AuthenticatedEmpregadosRoute,

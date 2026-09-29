@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { EnderecamentoModulo } from "@/components/modules/EnderecamentoModulo";
-
+// O Endereçamento passou para Parâmetros Base. O endereço antigo continua funcionando.
 export const Route = createFileRoute("/_authenticated/enderecamento")({
-  head: () => ({ meta: [{ title: "Endereçamento de estoque | Patrimônio GEMAPE" }] }),
-  component: () => <EnderecamentoModulo secao="Módulo" />,
+  beforeLoad: () => {
+    throw redirect({ to: "/parametros/enderecamento" });
+  },
 });

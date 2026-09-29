@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { CampoBusca } from "@/components/CampoBusca";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -14,6 +15,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
+import { ROTULO_TABELA, useProdutosGemape } from "@/lib/produtos-gemape";
 
 type Endereco = {
   id: string;
@@ -23,12 +25,13 @@ type Endereco = {
   prateleira: string;
   apartamento: string;
 };
-type Produto = { codigo_sku: string | null; nome: string; empresa_id: string | null };
 
+// Especificação: rua (corredor), número (estante) e apartamento (nível da prateleira, de cima para baixo).
+// No banco o número continua na coluna "prateleira".
 const CAMPOS = [
-  { nome: "rua", rotulo: "Rua" },
-  { nome: "prateleira", rotulo: "Prateleira" },
-  { nome: "apartamento", rotulo: "Apartamento" },
+  { nome: "rua", rotulo: "Rua (corredor)" },
+  { nome: "prateleira", rotulo: "Número (estante)" },
+  { nome: "apartamento", rotulo: "Apartamento (nível)" },
 ] as const;
 const chave = (v: string) => v.trim().toUpperCase();
 const ordem = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
@@ -46,32 +49,17 @@ function useEnderecos(empresaId: string) {
   });
 }
 
-// Códigos já cadastrados em EPIs, uniformes e ferramentas, para sugerir no formulário.
-function useProdutos() {
-  return useQuery({
-    queryKey: ["enderecamentos-produtos"],
-    staleTime: 60_000,
-    queryFn: async () => {
-      const listas = await Promise.all((["epis", "uniformes", "ferramentas"] as const).map(async (tabela) => {
-        const { data, error } = await supabase.from(tabela).select("codigo_sku,nome,empresa_id").order("nome");
-        if (error) throw error;
-        return (data ?? []) as Produto[];
-      }));
-      return listas.flat().filter((p) => p.codigo_sku);
-    },
-  });
-}
-
-export function EnderecamentoModulo({ secao }: { secao: "Módulo" | "Cadastros" }) {
+export function EnderecamentoModulo() {
   const { empresas, empresaId } = useEmpresa();
   const { data: enderecos = [], isLoading, error } = useEnderecos(empresaId);
-  const { data: produtos = [] } = useProdutos();
+  const { data: produtos = [] } = useProdutosGemape();
   const salvar = useSalvar("enderecamentos", ["enderecamentos"]);
   const excluir = useExcluir("enderecamentos", ["enderecamentos"]);
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Endereco | null>(null);
   const [empresaForm, setEmpresaForm] = useState("");
+  const [produtoForm, setProdutoForm] = useState("");
 
   const nomeProduto = (e: Pick<Endereco, "codigo_produto" | "empresa_id">) =>
     produtos.find((p) => chave(p.codigo_sku ?? "") === chave(e.codigo_produto) && p.empresa_id === e.empresa_id)?.nome;
@@ -87,9 +75,18 @@ export function EnderecamentoModulo({ secao }: { secao: "Módulo" | "Cadastros" 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enderecos, busca, produtos]);
 
+  // Só produtos cadastrados na empresa escolhida. Ao editar, mantém o código salvo mesmo que o produto tenha saído.
+  const opcoesProduto = produtos
+    .filter((p) => p.empresa_id === empresaForm)
+    .map((p) => ({ valor: p.codigo_sku, rotulo: `${p.codigo_sku} · ${p.nome}`, detalhe: ROTULO_TABELA[p.tabela] }));
+  if (produtoForm && !opcoesProduto.some((o) => o.valor === produtoForm)) {
+    opcoesProduto.push({ valor: produtoForm, rotulo: produtoForm, detalhe: "Produto não encontrado no cadastro" });
+  }
+
   function abrir(endereco: Endereco | null) {
     setEditando(endereco);
     setEmpresaForm(endereco?.empresa_id ?? (empresaId !== TODAS ? empresaId : empresas[0]?.id ?? ""));
+    setProdutoForm(endereco?.codigo_produto ?? "");
     setAberto(true);
   }
 
@@ -99,12 +96,13 @@ export function EnderecamentoModulo({ secao }: { secao: "Módulo" | "Cadastros" 
     const texto = (nome: string) => String(f.get(nome) ?? "").trim();
     const valores = {
       empresa_id: empresaForm,
-      codigo_produto: texto("codigo_produto"),
+      codigo_produto: produtoForm,
       rua: texto("rua"),
       prateleira: texto("prateleira"),
       apartamento: texto("apartamento"),
     };
     if (!valores.empresa_id) return void toast.error("Selecione a empresa.");
+    if (!valores.codigo_produto) return void toast.error("Selecione o produto.");
     // A lista na tela segue o filtro do cabeçalho; se o formulário aponta outra empresa, consulta a dela.
     let existentes = enderecos;
     if (empresaId !== TODAS && valores.empresa_id !== empresaId) {
@@ -122,9 +120,9 @@ export function EnderecamentoModulo({ secao }: { secao: "Módulo" | "Cadastros" 
   return <div className="space-y-5">
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <p className="text-eyebrow">{secao}</p>
+        <p className="text-eyebrow">Parâmetros Base · Produtos</p>
         <h1 className="text-2xl font-bold">Endereçamento de estoque</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Localização de cada produto no almoxarifado por rua, prateleira e apartamento.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Onde cada produto deve ser guardado no almoxarifado depois da entrada da nota fiscal: rua (corredor), número (estante) e apartamento (nível da prateleira, contado de cima para baixo).</p>
       </div>
       <Button requiresWrite onClick={() => abrir(null)}>Novo endereço</Button>
     </header>
@@ -135,7 +133,7 @@ export function EnderecamentoModulo({ secao }: { secao: "Módulo" | "Cadastros" 
       <Table>
         <TableHeader><TableRow>
           <TableHead>Código do produto</TableHead><TableHead>Produto</TableHead>
-          <TableHead>Rua</TableHead><TableHead>Prateleira</TableHead><TableHead>Apartamento</TableHead>
+          <TableHead>Rua</TableHead><TableHead>Número</TableHead><TableHead>Apartamento</TableHead>
           <TableHead>Empresa</TableHead><TableHead />
         </TableRow></TableHeader>
         <TableBody>
@@ -168,18 +166,22 @@ export function EnderecamentoModulo({ secao }: { secao: "Módulo" | "Cadastros" 
         <form key={editando?.id ?? "novo"} onSubmit={(e) => void enviar(e)} className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5 sm:col-span-3">
             <Label htmlFor="empresa_id">Empresa</Label>
-            <select id="empresa_id" required value={empresaForm} onChange={(e) => setEmpresaForm(e.target.value)}
+            <select id="empresa_id" required value={empresaForm} onChange={(e) => { setEmpresaForm(e.target.value); setProdutoForm(""); }}
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
               <option value="" disabled>Selecione</option>
               {empresas.map((e) => <option key={e.id} value={e.id}>{e.nome_fantasia}</option>)}
             </select>
           </div>
           <div className="space-y-1.5 sm:col-span-3">
-            <Label htmlFor="codigo_produto">Código do produto</Label>
-            <Input id="codigo_produto" name="codigo_produto" required maxLength={60} list="codigos-produto" autoComplete="off" defaultValue={editando?.codigo_produto ?? ""} />
-            <datalist id="codigos-produto">
-              {produtos.filter((p) => p.empresa_id === empresaForm).map((p) => <option key={`${p.codigo_sku}-${p.nome}`} value={p.codigo_sku ?? ""}>{p.nome}</option>)}
-            </datalist>
+            <Label htmlFor="codigo_produto">Produto</Label>
+            <CampoBusca
+              id="codigo_produto"
+              opcoes={opcoesProduto}
+              valor={produtoForm}
+              onChange={setProdutoForm}
+              placeholder="Digite código ou nome do produto"
+              vazio="Nenhum produto desta empresa com esse termo."
+            />
           </div>
           {CAMPOS.map((c) => <div key={c.nome} className="space-y-1.5">
             <Label htmlFor={c.nome}>{c.rotulo}</Label>
