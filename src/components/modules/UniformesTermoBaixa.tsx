@@ -333,7 +333,7 @@ export function UniformesTermoBaixa() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite
+          <Button requiresWrite="operar"
             size="lg"
             variant="destructive"
             onClick={gerarTermo}

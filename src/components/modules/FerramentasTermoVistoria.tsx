@@ -118,7 +118,7 @@ export function FerramentasTermoVistoria() {
       await salvarMovimentacao.mutateAsync({
         valores: {
           modulo: "ferramenta",
-          tipo_movimentacao: "Entrada", // Apenas registro, não altera estoque físico de saída/entrada real
+          tipo_movimentacao: "Vistoria", // Só registra a vistoria; o banco não altera o estoque
           quantidade: item.quantidade,
           data_movimentacao: dataVistoria,
           item_id: item.item_id,
@@ -395,7 +395,7 @@ export function FerramentasTermoVistoria() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
+          <Button requiresWrite="operar" onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
             Gerar Termo de Vistoria
           </Button>
         </div>

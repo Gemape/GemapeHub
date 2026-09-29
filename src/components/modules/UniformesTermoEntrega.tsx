@@ -291,7 +291,7 @@ export function UniformesTermoEntrega() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite size="lg" onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
+          <Button requiresWrite="operar" size="lg" onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
             Gerar Termo de Entrega
           </Button>
         </div>

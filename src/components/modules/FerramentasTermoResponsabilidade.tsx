@@ -363,7 +363,7 @@ export function FerramentasTermoResponsabilidade() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
+          <Button requiresWrite="operar" onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
             Gerar Termo de Responsabilidade
           </Button>
         </div>
