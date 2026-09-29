@@ -2,7 +2,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useAccess } from "@/lib/access-context";
 import { cn } from "@/lib/utils";
 
 export type MarcadosDualList = { disponiveis: string[]; selecionadas: string[] };
@@ -30,8 +29,6 @@ export function DualList({
   acoes,
   titulo = "opções",
 }: Props) {
-  // Quem só consulta pode marcar itens, mas não mover (os botões já ficam ocultos).
-  const { canWrite } = useAccess();
   const [marcadosEsq, setMarcadosEsq] = useState<string[]>([]);
   const [marcadosDir, setMarcadosDir] = useState<string[]>([]);
   // Ignora marcações de itens que já mudaram de lado ou deixaram de existir.
@@ -43,12 +40,12 @@ export function DualList({
     setMarcadosDir([]);
   };
   const adicionar = (nomes: string[]) => {
-    if (!canWrite || nomes.length === 0) return;
+    if (nomes.length === 0) return;
     onAdicionar(nomes);
     setMarcadosEsq([]);
   };
   const remover = (nomes: string[]) => {
-    if (!canWrite || nomes.length === 0) return;
+    if (nomes.length === 0) return;
     onRemover(nomes);
     setMarcadosDir([]);
   };
