@@ -261,7 +261,8 @@ function PaginaEmpregados() {
             </div>
             <p className="text-xs text-muted-foreground sm:col-span-2">
               O empregado continua ativo até a data de demissão. A partir dela, fica inativo, passa
-              para o bloco de demitidos e não recebe mais entregas, devoluções ou baixas.
+              para o bloco de demitidos e não recebe mais entregas, devoluções ou baixas. Só o
+              Termo de Encerramento de ferramentas (devolução na saída) continua liberado.
             </p>
             <DialogFooter className="sm:col-span-2">
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>

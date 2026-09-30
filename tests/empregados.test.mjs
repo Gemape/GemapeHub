@@ -76,15 +76,26 @@ test('demissão futura = ativo; demissão passada = inativo', () => {
 
 test('movimentação com demissão vencida é bloqueada', () => {
   const hoje = '2026-09-30';
-  assert.equal(bloqueioPorDemissao({ nome: 'Ana', data_demissao: null }, '', hoje), null);
-  assert.equal(bloqueioPorDemissao({ nome: 'Ana', data_demissao: '2026-10-15' }, hoje, hoje), null);
-  assert.equal(bloqueioPorDemissao(undefined, '', hoje), null);
-  const msg = bloqueioPorDemissao({ nome: 'Ana', data_demissao: '2026-09-01' }, '', hoje);
+  assert.equal(bloqueioPorDemissao({ nome: 'Ana', data_demissao: null }, 'entrega', '', hoje), null);
+  assert.equal(bloqueioPorDemissao({ nome: 'Ana', data_demissao: '2026-10-15' }, 'entrega', hoje, hoje), null);
+  assert.equal(bloqueioPorDemissao(undefined, 'entrega', '', hoje), null);
+  const msg = bloqueioPorDemissao({ nome: 'Ana', data_demissao: '2026-09-01' }, 'entrega', '', hoje);
   assert.match(msg, /Ana foi demitido\(a\) em 01\/09\/2026/);
   assert.match(msg, /entrega, devolução ou baixa/);
-  assert.ok(bloqueioPorDemissao({ nome: 'Ana', data_demissao: hoje }, '', hoje));
+  assert.ok(bloqueioPorDemissao({ nome: 'Ana', data_demissao: hoje }, 'entrega', '', hoje));
   // Entrega lançada hoje, mas datada depois da demissão futura: bloqueada.
-  assert.ok(bloqueioPorDemissao({ nome: 'Ana', data_demissao: '2026-10-15' }, '2026-10-20', hoje));
+  assert.ok(bloqueioPorDemissao({ nome: 'Ana', data_demissao: '2026-10-15' }, 'entrega', '2026-10-20', hoje));
   // Depois da demissão, uma movimentação com data antiga também é bloqueada.
-  assert.ok(bloqueioPorDemissao({ nome: 'Ana', data_demissao: '2026-09-01' }, '2026-08-01', hoje));
+  assert.ok(bloqueioPorDemissao({ nome: 'Ana', data_demissao: '2026-09-01' }, 'entrega', '2026-08-01', hoje));
+});
+
+test('termo de encerramento é liberado após a demissão; entrega e baixa continuam bloqueadas', () => {
+  const hoje = '2026-09-30';
+  const demitido = { nome: 'Ana', data_demissao: '2026-09-01' };
+  assert.equal(bloqueioPorDemissao(demitido, 'encerramento', hoje, hoje), null);
+  assert.equal(bloqueioPorDemissao(demitido, 'encerramento', '2026-10-05', hoje), null);
+  assert.match(bloqueioPorDemissao(demitido, 'entrega', hoje, hoje), /Não é possível registrar/);
+  assert.match(bloqueioPorDemissao(demitido, 'baixa', hoje, hoje), /Termo de Encerramento/);
+  assert.ok(bloqueioPorDemissao(demitido, 'devolucao', hoje, hoje));
+  assert.ok(bloqueioPorDemissao(demitido, 'movimentacao', hoje, hoje));
 });

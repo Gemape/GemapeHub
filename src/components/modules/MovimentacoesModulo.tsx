@@ -88,6 +88,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
     const alvo = ehVeiculo ? null : texto("alvo_id");
     const bloqueio = bloqueioPorDemissao(
       todosEmpregados.find((p) => p.id === texto("empregado_id")),
+      tipo === "Saida" ? "entrega" : tipo === "Devolucao" ? "devolucao" : "movimentacao",
       String(f.get("data_movimentacao") ?? ""),
     );
     if (bloqueio) {

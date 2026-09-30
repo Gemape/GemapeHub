@@ -109,7 +109,7 @@ export function FerramentasTermoEncerramento() {
 
     const empregado = empregados.find((e) => e.id === empregadoId);
     const empresa = empresas.find((e) => e.id === empresaSel);
-    const bloqueio = bloqueioPorDemissao(empregado, dataEncerramento);
+    const bloqueio = bloqueioPorDemissao(empregado, "encerramento", dataEncerramento);
     if (bloqueio) {
       alert(bloqueio);
       return;

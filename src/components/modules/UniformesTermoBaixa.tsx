@@ -68,7 +68,11 @@ export function UniformesTermoBaixa() {
       alert("Preencha os campos obrigatórios e adicione pelo menos um item.");
       return;
     }
-    const bloqueio = bloqueioPorDemissao(todosEmpregados.find((p) => p.id === empregadoId), dataBaixa);
+    const bloqueio = bloqueioPorDemissao(
+      todosEmpregados.find((p) => p.id === empregadoId),
+      "baixa",
+      dataBaixa,
+    );
     if (bloqueio) {
       alert(bloqueio);
       return;
