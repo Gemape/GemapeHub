@@ -42,4 +42,4 @@ Cada caso recebeu teste reproduzindo a falha antes da correção. Validação fi
 - Cada etapa usa branch própria; nada vai direto à `main`. O token disponível para `gh pr create` devolve `Post "https://api.github.com/graphql": Forbidden`; após push, o responsável abre os PRs manualmente.
 - Visualização local: `VITE_DEMO_MODE=true npm run dev -- --host 0.0.0.0 --port 5173`. O responsável verifica no navegador. Não consultar a Vercel nem disparar deploys.
 - Produção só sai da `main` após merge do responsável. O deploy final será na VPS da Mega Provedor.
-- O servidor local da etapa 2 foi iniciado na porta 5173 para visualização; confirmar se o responsável terminou antes de pará-lo.
+- O servidor local foi iniciado na porta 5173 para visualização da etapa 2. A branch de trabalho agora é a etapa 3; confirmar a versão servida e se o responsável terminou antes de pará-lo.
