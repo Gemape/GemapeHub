@@ -112,13 +112,22 @@ O CA não entra no uniforme: é exigência da NR6 e pertence ao EPI e à Ficha d
 Permissão: Administrador cadastra caixa, portador, categoria e grupo. Usuário simples cadastra modelo.
 
 **Cadastrar modelo**
-1. Código automático, numeração sequencial.
-2. Categoria (lista de Cadastro > Ferramentas > Cadastrar Categorias de Ferramentas).
-3. Grupo (lista de Cadastro > Ferramentas > Cadastrar Grupos de Ferramentas).
+1. Código interno gerado automaticamente ao salvar, conforme a regra de Cadastros > Gerais > Código do Produto para Ferramentas (ex.: FER-0001, FER-0002). A sequência considera os códigos de todas as empresas; a edição mantém o código.
+2. Subcategoria da categoria Ferramentas em Cadastros > Gerais > Cadastrar subcategorias. O cadastro do produto não mantém lista própria de subcategorias.
+3. Descrição do item (campo aberto) e estoque mínimo (quantidade não negativa).
 4. Modelo (campo aberto).
-5. Número de série (aprovado em 30/09/2026: essencial para garantia e baixa).
-6. Patrimônio (aprovado em 30/09/2026: liga a ferramenta ao ativo).
-7. Data de aquisição (aprovado em 30/09/2026: sustenta a depreciação).
+5. Número de série informado pelo usuário, obrigatório; não gerar série fictícia (decisão 8).
+6. Patrimônio, opcional (decisão 8: liga a ferramenta ao ativo).
+7. Data de aquisição, opcional (decisão 8: sustenta a depreciação).
+8. Preço de custo em reais, informado no cadastro, não negativo e com duas casas decimais; alimenta o indicador de valor em estoque do dashboard.
+9. Empresa à qual pertence o item, para identificação e consolidação do estoque.
+
+As categorias e os grupos próprios de Cadastros > Ferramentas continuam disponíveis para a organização de ferramentas e caixas; não substituem a subcategoria de Cadastros > Gerais no cadastro do produto.
+
+**Listas e movimentos de ferramentas (Fase 1, modo demonstração)**
+- Compra corresponde a uma entrada no histórico de movimentações; entrega e baixa correspondem a saídas no mesmo histórico. Não criar telas de listas separadas. Exibir o código interno junto da descrição em cada linha e na exportação.
+- O Termo de Responsabilidade registra a saída para o empregado. O Termo de Encerramento registra a devolução da ferramenta ainda sob responsabilidade dele, inclusive após a demissão, e devolve a quantidade uma única vez ao estoque disponível. Não permitir devolução acima do saldo entregue nem repetir a devolução.
+- Esses fluxos usam somente dados fictícios locais na Fase 1. A revisão do estoque histórico de ferramentas permanece na Fase 2; não criar nem alterar tabelas, migrations ou autenticação no Supabase real nesta etapa.
 
 **Cadastrar categorias de ferramentas:** Manual, Elétrica, Pneumático, Hidráulica, Medição, Corte. Permitir cadastrar novas se necessário.
 
