@@ -31,8 +31,19 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { COMBUSTIVEIS_VEICULO, STATUS_VEICULO_LABEL, exportarCsv } from "@/lib/gemape";
-import { useExcluir, useSalvar, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
+import {
+  COMBUSTIVEIS_VEICULO,
+  STATUS_VEICULO,
+  STATUS_VEICULO_LABEL,
+  exportarCsv,
+} from "@/lib/gemape";
+import {
+  useEmpregados,
+  useExcluir,
+  useSalvar,
+  useVeiculos,
+  type Veiculo,
+} from "@/lib/hooks-gemape";
 import { combinaBusca, mesmoNome, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
@@ -48,6 +59,8 @@ const CATEGORIA_VEICULO = "cat-veiculos";
 
 // Código e descrição ainda não existem na tabela real de veículos: nesta fase só são
 // gravados no modo demonstração. As colunas entram na Fase 2.
+const NENHUM = "nenhum";
+
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 
 type VeiculoCadastro = Veiculo & { codigo_sku?: string | null; descricao?: string | null };
@@ -59,9 +72,9 @@ async function todosVeiculos(): Promise<{ id: string; placa: string; codigo_sku?
   return (data ?? []) as { id: string; placa: string; codigo_sku?: string }[];
 }
 
-// Cadastrar veículo (especificação rev1): código automático, subcategoria, descrição,
-// placa, marca, modelo, ano de fabricação, cor e combustível. A empresa continua sendo
-// informada porque cada veículo pertence a uma.
+// Cadastrar veículo (especificação rev1 + decisões especiais 9 e 10): código automático,
+// subcategoria, descrição, placa, marca, modelo, ano de fabricação, cor, combustível,
+// empresa, RENAVAM, quilometragem, situação, responsável e observações.
 export function VeiculosCadastroModulo() {
   const { empresas, empresaId } = useEmpresa();
   const parametros = useParametrosBase();
@@ -75,6 +88,7 @@ export function VeiculosCadastroModulo() {
   const salvando = useRef(false);
   const [gerando, setGerando] = useState(false);
   const { data: lista = [], isLoading } = useVeiculos(empresaId);
+  const { data: empregados = [] } = useEmpregados(TODAS, true);
   const salvar = useSalvar("veiculos", ["veiculos"]);
   const excluir = useExcluir("veiculos", ["veiculos"]);
 
@@ -135,9 +149,12 @@ export function VeiculosCadastroModulo() {
     const anoTexto = texto("ano");
     const ano = anoTexto ? Number(anoTexto) : null;
     const cor = texto("cor");
+    const kmTexto = texto("quilometragem_atual");
+    const km = kmTexto ? Number(kmTexto) : 0;
+    const status = texto("status") || "Ativo";
+    const responsavel = texto("empregado_responsavel_id");
     const combustivel = texto("combustivel");
-    // A empresa não muda na edição.
-    const empresa = editando ? (editando.empresa_id ?? "") : empresaSel || empresaPadrao;
+    const empresa = empresaSel || editando?.empresa_id || empresaPadrao;
     // Placa já salva que não segue o padrão pode continuar como está na edição.
     const placaMantida = editando && placa === normalizarPlaca(editando.placa ?? "");
     const erro = !tipo
@@ -154,9 +171,11 @@ export function VeiculosCadastroModulo() {
                 ? "Informe o modelo."
                 : ano !== null && !anoValido(ano)
                   ? `Ano de fabricação inválido. Use de 1950 a ${new Date().getFullYear() + 1}.`
-                  : !empresa
-                    ? "Selecione a empresa."
-                    : null;
+                  : !Number.isFinite(km) || km < 0
+                    ? "Quilometragem inválida."
+                    : !empresa
+                      ? "Selecione a empresa."
+                      : null;
     if (erro) {
       toast.error(erro);
       return;
@@ -173,6 +192,12 @@ export function VeiculosCadastroModulo() {
       ano,
       cor: cor || null,
       combustivel: combustivel || null,
+      empresa_id: empresa,
+      renavam: texto("renavam") || null,
+      quilometragem_atual: km,
+      status,
+      empregado_responsavel_id: responsavel && responsavel !== NENHUM ? responsavel : null,
+      observacoes: texto("observacoes") || null,
     };
     if (MODO_DEMO) valores["descricao"] = descricao;
     try {
@@ -182,17 +207,13 @@ export function VeiculosCadastroModulo() {
         destravar();
         return;
       }
-      if (!editando) {
-        valores["empresa_id"] = empresa;
-        valores["status"] = "Ativo";
-        valores["quilometragem_atual"] = 0;
-        // O código é gerado na hora de salvar, para não repetir um já usado.
-        if (MODO_DEMO && regra) {
-          valores["codigo_sku"] = proximoCodigo(
-            regra,
-            todos.map((v) => v.codigo_sku),
-          );
-        }
+      // O código é gerado na hora de salvar, para não repetir um já usado. Veículo
+      // cadastrado antes da regra ganha o código na primeira edição.
+      if (MODO_DEMO && regra && !editando?.codigo_sku) {
+        valores["codigo_sku"] = proximoCodigo(
+          regra,
+          todos.map((v) => v.codigo_sku),
+        );
       }
     } catch (falha) {
       toast.error("Não foi possível conferir os veículos já cadastrados.", {
@@ -207,6 +228,7 @@ export function VeiculosCadastroModulo() {
     );
   }
 
+  const nomeEmpregado = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "—";
   const nomeEmpresa = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
 
@@ -236,6 +258,11 @@ export function VeiculosCadastroModulo() {
                   Cor: v.cor ?? "",
                   Combustível: v.combustivel ?? "",
                   Empresa: nomeEmpresa(v.empresa_id),
+                  RENAVAM: v.renavam ?? "",
+                  Km: v.quilometragem_atual ?? 0,
+                  Situação: STATUS_VEICULO_LABEL[v.status] ?? v.status,
+                  Responsável: nomeEmpregado(v.empregado_responsavel_id),
+                  Observações: v.observacoes ?? "",
                 })),
               )
             }
@@ -261,6 +288,8 @@ export function VeiculosCadastroModulo() {
               <TableHead>Cor</TableHead>
               <TableHead>Combustível</TableHead>
               <TableHead>Empresa</TableHead>
+              <TableHead className="text-right">Km</TableHead>
+              <TableHead>Responsável</TableHead>
               <TableHead>Situação</TableHead>
               <TableHead />
             </TableRow>
@@ -268,20 +297,22 @@ export function VeiculosCadastroModulo() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center text-muted-foreground">
+                <TableCell colSpan={13} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : veiculos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center text-muted-foreground">
+                <TableCell colSpan={13} className="text-center text-muted-foreground">
                   Nenhum veículo cadastrado.
                 </TableCell>
               </TableRow>
             ) : (
               veiculos.map((v) => (
                 <TableRow key={v.id}>
-                  <TableCell className="font-mono text-xs">{v.codigo_sku || "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap font-mono text-xs">
+                    {v.codigo_sku || "—"}
+                  </TableCell>
                   <TableCell>{v.tipo || "—"}</TableCell>
                   <TableCell className="font-medium">{v.descricao || "—"}</TableCell>
                   <TableCell className="whitespace-nowrap font-mono text-xs">
@@ -292,6 +323,10 @@ export function VeiculosCadastroModulo() {
                   <TableCell>{v.cor || "—"}</TableCell>
                   <TableCell>{v.combustivel || "—"}</TableCell>
                   <TableCell>{nomeEmpresa(v.empresa_id)}</TableCell>
+                  <TableCell className="text-right">
+                    {(v.quilometragem_atual ?? 0).toLocaleString("pt-BR")}
+                  </TableCell>
+                  <TableCell>{nomeEmpregado(v.empregado_responsavel_id)}</TableCell>
                   <TableCell>
                     <Badge variant={v.status === "Ativo" ? "secondary" : "outline"}>
                       {STATUS_VEICULO_LABEL[v.status] ?? v.status}
@@ -304,6 +339,8 @@ export function VeiculosCadastroModulo() {
                       size="sm"
                       onClick={() => {
                         destravar();
+                        setEmpresaSel(v.empresa_id ?? "");
+                        setPrevia("");
                         setEditando(v);
                         setAberto(true);
                       }}
@@ -338,7 +375,7 @@ export function VeiculosCadastroModulo() {
             </DialogTitle>
             <DialogDescription>
               {editando
-                ? "O código do produto e a empresa não mudam."
+                ? "O código do produto não muda."
                 : "O código é gerado automaticamente ao salvar, pela regra de Cadastros > Gerais > Código do Produto."}
             </DialogDescription>
           </DialogHeader>
@@ -350,8 +387,8 @@ export function VeiculosCadastroModulo() {
                 readOnly
                 className="bg-muted font-mono"
                 value={
-                  editando
-                    ? editando.codigo_sku || "—"
+                  editando?.codigo_sku
+                    ? editando.codigo_sku
                     : MODO_DEMO
                       ? previa || "Gerado ao salvar"
                       : "Disponível na Fase 2"
@@ -458,9 +495,8 @@ export function VeiculosCadastroModulo() {
             <div className="space-y-1.5">
               <Label htmlFor="empresa_id">Empresa</Label>
               <Select
-                value={editando ? (editando.empresa_id ?? "") : empresaSel || empresaPadrao}
+                value={empresaSel || editando?.empresa_id || empresaPadrao}
                 onValueChange={setEmpresaSel}
-                disabled={!!editando}
               >
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione" />
@@ -473,6 +509,67 @@ export function VeiculosCadastroModulo() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="renavam">RENAVAM</Label>
+              <Input id="renavam" name="renavam" defaultValue={editando?.renavam ?? ""} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="quilometragem_atual">Quilometragem atual</Label>
+              <Input
+                id="quilometragem_atual"
+                name="quilometragem_atual"
+                type="number"
+                min={0}
+                defaultValue={editando?.quilometragem_atual ?? 0}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="status">Situação</Label>
+              <Select name="status" defaultValue={editando?.status ?? "Ativo"}>
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_VEICULO.map((st) => (
+                    <SelectItem key={st} value={st}>
+                      {STATUS_VEICULO_LABEL[st] ?? st}
+                    </SelectItem>
+                  ))}
+                  {editando?.status &&
+                    !(STATUS_VEICULO as readonly string[]).includes(editando.status) && (
+                      <SelectItem value={editando.status}>{editando.status}</SelectItem>
+                    )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="empregado_responsavel_id">Empregado responsável</Label>
+              <Select
+                name="empregado_responsavel_id"
+                defaultValue={editando?.empregado_responsavel_id ?? NENHUM}
+              >
+                <SelectTrigger id="empregado_responsavel_id">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NENHUM}>Sem responsável</SelectItem>
+                  {empregados.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                name="observacoes"
+                defaultValue={editando?.observacoes ?? ""}
+                placeholder="Histórico ou detalhes do veículo..."
+              />
             </div>
 
             <DialogFooter className="sm:col-span-2">
