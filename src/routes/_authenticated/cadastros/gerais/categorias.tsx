@@ -6,10 +6,13 @@ import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
   adicionarCategoria,
+  adicionarListaFerramenta,
   adicionarSubcategoria,
   removerCategoria,
+  removerListaFerramenta,
   removerSubcategoria,
   renomearCategoria,
+  renomearListaFerramenta,
   renomearSubcategoria,
   subcategoriasDa,
 } from "@/lib/parametros-base";
@@ -74,6 +77,30 @@ function Categorias() {
             Cadastre uma categoria para incluir subcategorias.
           </div>
         )}
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <ListaEditavel
+          titulo="Categorias de ferramentas"
+          novo="Nova categoria de ferramenta"
+          itens={dados.categoriasFerramenta}
+          onAdicionar={(nome) => executar(() => adicionarListaFerramenta("categoriasFerramenta", nome), "Categoria incluída.")}
+          onRenomear={(id, nome) => executar(() => renomearListaFerramenta("categoriasFerramenta", id, nome))}
+          onRemover={(item) => {
+            if (confirm(`Excluir a categoria de ferramenta ${item.nome}?`))
+              executar(() => removerListaFerramenta("categoriasFerramenta", item.id), "Categoria excluída.");
+          }}
+        />
+        <ListaEditavel
+          titulo="Grupos de ferramentas"
+          novo="Novo grupo de ferramenta"
+          itens={dados.gruposFerramenta}
+          onAdicionar={(nome) => executar(() => adicionarListaFerramenta("gruposFerramenta", nome), "Grupo incluído.")}
+          onRenomear={(id, nome) => executar(() => renomearListaFerramenta("gruposFerramenta", id, nome))}
+          onRemover={(item) => {
+            if (confirm(`Excluir o grupo de ferramenta ${item.nome}?`))
+              executar(() => removerListaFerramenta("gruposFerramenta", item.id), "Grupo excluído.");
+          }}
+        />
       </div>
     </div>
   );

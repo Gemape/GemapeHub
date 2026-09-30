@@ -17,6 +17,8 @@ export interface Item {
   nome: string;
   codigo_sku: string;
   categoria: string;
+  categoria_ferramenta?: string | null;
+  grupo_ferramenta?: string | null;
   marca: string | null;
   modelo: string | null;
   numero_serie: string | null;
