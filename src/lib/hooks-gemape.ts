@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { TOTAL_CAIXAS } from "@/lib/caixas-habilitadas";
 import { TODAS } from "@/lib/empresa-context";
 import type { Modulo } from "@/lib/gemape";
 import { empregadoAtivo } from "@/lib/empregados";
@@ -327,7 +328,8 @@ export function useCaixasFerramentas(empresaId: string, busca = "") {
       if (busca.trim()) {
         q = q.or(`nome.ilike.%${buscaSegura(busca)}%,codigo.ilike.%${buscaSegura(busca)}%`);
       }
-      const { data, error } = await q.order("codigo", { ascending: false }).limit(PAGINA);
+      // No máximo 100 caixas (CX-0001 a CX-0100): a lista vem inteira, sem cortar em PAGINA.
+      const { data, error } = await q.order("codigo", { ascending: false }).limit(TOTAL_CAIXAS);
       if (error) throw error;
       return (data ?? []) as (CaixaFerramenta & { responsavel?: { nome: string } })[];
     },
@@ -347,25 +349,6 @@ export function useCaixaItens(caixaId: string | null) {
       if (error) throw error;
       return (data ?? []) as CaixaFerramentaItem[];
     },
-  });
-}
-
-export function useProximoCodigoCaixa() {
-  return useQuery({
-    ...opcoesBase,
-    queryKey: ["proximo-codigo-caixa"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("caixas_ferramentas")
-        .select("codigo_num")
-        .order("codigo_num", { ascending: false })
-        .limit(1);
-      if (error) throw error;
-      const ultimo = data?.[0]?.codigo_num ?? 0;
-      const proximo = ultimo + 1;
-      return `CX-${proximo.toString().padStart(4, "0")}`;
-    },
-    staleTime: 0,
   });
 }
 

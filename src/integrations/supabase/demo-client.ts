@@ -104,6 +104,11 @@ export const demoSupabase = {
   from: (tabela: string) => new Consulta(tabela),
   rpc: async (nome: string, args: { p_id?: string; p_valores?: Linha; p_itens?: Linha[] }) => {
     if (nome !== "salvar_caixa") return { data: null, error: new Error("Operação indisponível na demonstração") };
+    // Código único, como a restrição UNIQUE do banco: nada é gravado se repetir.
+    const codigo = args.p_valores?.codigo;
+    if (codigo && dados.caixas_ferramentas.some(x => x.codigo === codigo && x.id !== args.p_id)) {
+      return { data: null, error: new Error(`Já existe a caixa ${codigo}.`) };
+    }
     const caixa = args.p_id ? (dados.caixas_ferramentas.find(x => x.id === args.p_id) ?? {}) : { id: id(), created_at: agora };
     Object.assign(caixa, args.p_valores); if (!args.p_id) dados.caixas_ferramentas.push(caixa);
     dados.caixa_ferramenta_itens = dados.caixa_ferramenta_itens.filter(x => x.caixa_id !== caixa.id);

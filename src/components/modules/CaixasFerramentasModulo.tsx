@@ -38,6 +38,13 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import {
+  codigoCaixa,
+  numeroDaCaixa,
+  numerosDisponiveis,
+  rotuloNumeroCaixa,
+  validarNumeroCaixa,
+} from "@/lib/caixas-habilitadas";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { STATUS_CAIXA, exportarCsv, formatarData } from "@/lib/gemape";
 import {
@@ -46,11 +53,11 @@ import {
   useItens,
   useCaixasFerramentas,
   useCaixaItens,
-  useProximoCodigoCaixa,
   useSalvarCaixa,
   type CaixaFerramenta,
   type Item,
 } from "@/lib/hooks-gemape";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 import { toast } from "sonner";
 
 const NENHUM = "nenhum";
@@ -81,7 +88,12 @@ export function CaixasFerramentasModulo() {
       )
     : undefined;
   const { data: todasFerramentas = [] } = useItens("ferramenta", empresaId);
-  const { data: proximoCodigo } = useProximoCodigoCaixa();
+  // Numeração única de CX-0001 a CX-0100 para as três empresas: confere com todas as caixas.
+  const { caixasHabilitadas: habilitadas } = useParametrosBase();
+  const { data: todasCaixas = [] } = useCaixasFerramentas(TODAS);
+  const [numero, setNumero] = useState<number | null>(null);
+  const numeroFixo = editando ? numeroDaCaixa(editando) : null;
+  const disponiveis = numerosDisponiveis(habilitadas, todasCaixas, editando?.id);
   const { data: itensCarregados = [] } = useCaixaItens(editando?.id ?? null);
 
   const salvar = useSalvarCaixa();
@@ -105,6 +117,7 @@ export function CaixasFerramentasModulo() {
 
   function abrirNovo() {
     setEditando(null);
+    setNumero(null);
     setItensVinculados([]);
     setAberto(true);
   }
@@ -145,6 +158,12 @@ export function CaixasFerramentasModulo() {
       return;
     }
 
+    const erroNumero = validarNumeroCaixa(numero, habilitadas, todasCaixas, editando?.id);
+    if (erroNumero || numero === null) {
+      toast.error(erroNumero ?? "Selecione o número da caixa.");
+      return;
+    }
+
     const f = new FormData(e.currentTarget);
     const texto = (k: string) => {
       const v = String(f.get(k) ?? "").trim();
@@ -152,6 +171,8 @@ export function CaixasFerramentasModulo() {
     };
 
     const valores = {
+      codigo: codigoCaixa(numero),
+      codigo_num: numero,
       empresa_id: texto("empresa_id"),
       nome: String(f.get("nome") ?? "").trim(),
       descricao: texto("descricao"),
@@ -263,6 +284,7 @@ export function CaixasFerramentasModulo() {
                       size="sm"
                       onClick={() => {
                         setEditando(c);
+                        setNumero(numeroDaCaixa(c));
                         setAberto(true);
                       }}
                     >
@@ -298,14 +320,37 @@ export function CaixasFerramentasModulo() {
           <form onSubmit={enviar} className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="codigo">Código da Caixa</Label>
-                <Input
-                  id="codigo"
-                  readOnly
-                  disabled
-                  value={editando?.codigo ?? proximoCodigo ?? "Gerando..."}
-                  className="bg-muted font-mono"
-                />
+                <Label htmlFor="numero">Número da Caixa</Label>
+                {numeroFixo !== null ? (
+                  <Input
+                    id="numero"
+                    readOnly
+                    disabled
+                    value={`${rotuloNumeroCaixa(numeroFixo)} · ${codigoCaixa(numeroFixo)}`}
+                    className="bg-muted font-mono"
+                  />
+                ) : disponiveis.length === 0 ? (
+                  <p className="rounded-md border border-dashed p-2 text-sm text-muted-foreground">
+                    Nenhuma caixa habilitada livre. Habilite caixas em Cadastros &gt; Gerais &gt;
+                    Caixas.
+                  </p>
+                ) : (
+                  <Select
+                    value={numero === null ? "" : String(numero)}
+                    onValueChange={(v) => setNumero(Number(v))}
+                  >
+                    <SelectTrigger id="numero" className="font-mono">
+                      <SelectValue placeholder="Selecione o número" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {disponiveis.map((n) => (
+                        <SelectItem key={n} value={String(n)} className="font-mono">
+                          {rotuloNumeroCaixa(n)} · {codigoCaixa(n)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-1.5">

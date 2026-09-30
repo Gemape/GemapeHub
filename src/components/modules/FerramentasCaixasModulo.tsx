@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -25,7 +27,9 @@ export function FerramentasCaixasModulo() {
   const { empresaId } = useEmpresa();
   const [buscaCaixa, setBuscaCaixa] = useState("");
 
-  const { data: caixas = [], isLoading } = useCaixasFerramentas(empresaId, buscaCaixa);
+  const { data: todasAsCaixas = [], isLoading } = useCaixasFerramentas(empresaId, buscaCaixa);
+  // Só caixas habilitadas em Cadastros > Gerais > Caixas.
+  const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
   const { data: empresas = [] } = useEmpresas();
 
   return (

@@ -1,6 +1,7 @@
 // Cadastros > Gerais (especificação rev1: categorias, subcategorias, tamanhos, unidades,
 // associação tamanho/medida, código do produto e código de fábrica).
 // Fase 1: tudo fica salvo no navegador, sem banco. Os módulos passam a ler daqui numa etapa seguinte.
+import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 
 export type Categoria = { id: string; nome: string };
@@ -35,6 +36,8 @@ export type ParametrosBase = {
   associacoes: Associacao[];
   regrasCodigo: RegraCodigo[];
   codigosFabrica: CodigoFabrica[];
+  // Números das caixas de ferramentas habilitadas (1 a 100).
+  caixasHabilitadas: number[];
 };
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -128,6 +131,7 @@ function padrao(): ParametrosBase {
       { categoriaId: "cat-veiculos", sigla: "VEI", inicial: "0001" },
     ],
     codigosFabrica: [],
+    caixasHabilitadas: [],
   };
 }
 
@@ -517,4 +521,25 @@ export function combinaBusca(termo: string, ...campos: (string | null | undefine
     .split(/\s+/)
     .filter(Boolean)
     .every((p) => texto.includes(p));
+}
+
+// ---------- Caixas de ferramentas habilitadas ----------
+
+/**
+ * Grava de uma vez a lista de caixas habilitadas; recusa desabilitar caixa já cadastrada.
+ * `cadastradas` null (lista não carregada ou com erro) recusa, para não liberar caixa em uso.
+ */
+export function salvarCaixasHabilitadas(
+  numeros: number[],
+  cadastradas: Parameters<typeof validarHabilitacao>[1] | null,
+  storage = storagePadrao(),
+): void {
+  if (!cadastradas) {
+    throw new Error("Não foi possível ler as caixas cadastradas. Nada foi alterado; tente de novo.");
+  }
+  const erro = validarHabilitacao(numeros, cadastradas);
+  if (erro) throw new Error(erro);
+  alterar(storage, (d) => {
+    d.caixasHabilitadas = [...new Set(numeros)].sort((a, b) => a - b);
+  });
 }
