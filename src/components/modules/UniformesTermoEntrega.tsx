@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS } from "@/lib/empresa-context";
-import { escaparHtml, formatarData } from "@/lib/gemape";
+import { montarTermoEntregaUniformeHtml } from "@/lib/termo-entrega-uniforme-html";
 import {
   useEmpresas,
   useItens,
@@ -117,77 +117,21 @@ export function UniformesTermoEntrega() {
     // Gerar visualização de impressão
     const printWindow = window.open("", "_blank");
     if (printWindow) {
-      const html = `
-        <html>
-          <head>
-            <title>Termo de Entrega - ${empregado?.nome}</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
-              .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; }
-              .title { font-size: 20px; font-weight: bold; text-transform: uppercase; }
-              .content { margin-bottom: 40px; }
-              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-              th, td { border: 1px solid #000; padding: 10px; text-align: left; }
-              .footer { margin-top: 60px; }
-              .signatures { display: flex; justify-content: space-between; margin-top: 80px; }
-              .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 10px; }
-              @print { .no-print { display: none; } }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <div class="title">Termo de Entrega de Uniforme</div>
-              <div style="margin-top: 10px; font-weight: bold;">${empresa?.razao_social}</div>
-              <div>CNPJ: ${empresa?.cnpj}</div>
-            </div>
-            
-            <div class="content">
-              <p>Declaramos que nesta data, <strong>${formatarData(dataEntrega)}</strong>, entregamos ao colaborador(a) 
-              <strong>${empregado?.nome}</strong>, CPF nº <strong>${empregado?.cpf}</strong>, os seguintes itens de uniforme:</p>
-              
-              <table>
-                <thead>
-                  <tr>
-                    <th>Descrição</th>
-                    <th>Marca/Modelo</th>
-                    <th>Qtd</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itensDoTermo
-                    .map((i) => {
-                      const u = uniformes.find((uni) => uni.id === i.item_id);
-                      return `
-                      <tr>
-                        <td>${escaparHtml(u?.nome)}</td>
-                        <td>${escaparHtml(u?.marca)} ${escaparHtml(u?.modelo)}</td>
-                        <td>${i.quantidade}</td>
-                        <td>${escaparHtml(i.estado)}</td>
-                      </tr>
-                    `;
-                    })
-                    .join("")}
-                </tbody>
-              </table>
-              
-              <p style="margin-top: 30px;">O(A) empregado(a) declara ter recebido os itens acima descritos em perfeito estado de conservação, 
-              comprometendo-se a utilizá-los exclusivamente para fins de trabalho e a devolvê-los à empresa quando solicitado ou no ato de desligamento.</p>
-            </div>
-            
-            <div class="signatures">
-              <div class="sig-box">
-                <strong>${empregado?.nome}</strong><br>Empregado(a)
-              </div>
-              <div class="sig-box">
-                <strong>Responsável</strong><br>${empresa?.nome_fantasia}
-              </div>
-            </div>
-            
-            <script>window.print();</script>
-          </body>
-        </html>
-      `;
+      const html = montarTermoEntregaUniformeHtml({
+        empresa,
+        empregado,
+        data: dataEntrega,
+        linhas: itensDoTermo.map((i) => {
+          const u = uniformes.find((uni) => uni.id === i.item_id);
+          return {
+            nome: u?.nome,
+            marca: u?.marca,
+            modelo: u?.modelo,
+            quantidade: i.quantidade,
+            estado: i.estado,
+          };
+        }),
+      });
       printWindow.document.write(html);
       printWindow.document.close();
     }
