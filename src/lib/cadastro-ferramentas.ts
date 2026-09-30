@@ -1,4 +1,4 @@
-import { proximoCodigo, subcategoriasDa, type ParametrosBase } from "./parametros-base.ts";
+import { proximoCodigo, subcategoriasDa, type ListaFerramenta, type ParametrosBase } from "./parametros-base.ts";
 
 export type EntradaCadastroFerramenta = {
   parametros: ParametrosBase;
@@ -16,6 +16,15 @@ export type EntradaCadastroFerramenta = {
 export function protegerEstoqueNaEdicao<T extends Record<string, unknown>>(valores: T): Omit<T, "estoque_atual"> {
   const { estoque_atual: _estoqueAtual, ...editaveis } = valores;
   return editaveis;
+}
+
+export function opcaoFerramentaEmUso(
+  modelos: { categoria_ferramenta?: string | null; grupo_ferramenta?: string | null }[],
+  tipo: ListaFerramenta,
+  nome: string,
+): boolean {
+  const campo = tipo === "categoriasFerramenta" ? "categoria_ferramenta" : "grupo_ferramenta";
+  return modelos.some((modelo) => modelo[campo] === nome);
 }
 
 export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {

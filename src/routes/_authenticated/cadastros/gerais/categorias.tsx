@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { demoSupabase } from "@/integrations/supabase/demo-client";
+import { opcaoFerramentaEmUso } from "@/lib/cadastro-ferramentas";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
@@ -15,8 +17,10 @@ import {
   renomearListaFerramenta,
   renomearSubcategoria,
   subcategoriasDa,
+  type ListaFerramenta,
 } from "@/lib/parametros-base";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
   head: () => ({ meta: [{ title: "Categorias e subcategorias | Patrimônio GEMAPE" }] }),
@@ -28,6 +32,19 @@ function Categorias() {
   const [escolhida, setEscolhida] = useState("");
   const categoria = dados.categorias.find((c) => c.id === escolhida) ?? dados.categorias[0];
   const subcategorias = categoria ? subcategoriasDa(dados, categoria.id) : [];
+
+  async function vinculoImpedeAlteracao(tipo: ListaFerramenta, nome: string): Promise<boolean> {
+    const { data, error } = await demoSupabase.from("ferramentas").select("categoria_ferramenta,grupo_ferramenta");
+    if (error) {
+      toast.error("Não foi possível conferir os modelos de ferramentas.");
+      return true;
+    }
+    if (opcaoFerramentaEmUso((data ?? []) as { categoria_ferramenta?: string | null; grupo_ferramenta?: string | null }[], tipo, nome)) {
+      toast.error(`A opção "${nome}" está em uso por uma ferramenta.`);
+      return true;
+    }
+    return false;
+  }
 
   return (
     <div className="space-y-5">
@@ -84,9 +101,13 @@ function Categorias() {
           novo="Nova categoria de ferramenta"
           itens={dados.categoriasFerramenta}
           onAdicionar={(nome) => executar(() => adicionarListaFerramenta("categoriasFerramenta", nome), "Categoria incluída.")}
-          onRenomear={(id, nome) => executar(() => renomearListaFerramenta("categoriasFerramenta", id, nome))}
-          onRemover={(item) => {
-            if (confirm(`Excluir a categoria de ferramenta ${item.nome}?`))
+          onRenomear={async (id, nome) => {
+            const atual = dados.categoriasFerramenta.find((item) => item.id === id);
+            if (!atual || (atual.nome !== nome.trim() && await vinculoImpedeAlteracao("categoriasFerramenta", atual.nome))) return false;
+            return executar(() => renomearListaFerramenta("categoriasFerramenta", id, nome));
+          }}
+          onRemover={async (item) => {
+            if (confirm(`Excluir a categoria de ferramenta ${item.nome}?`) && !await vinculoImpedeAlteracao("categoriasFerramenta", item.nome))
               executar(() => removerListaFerramenta("categoriasFerramenta", item.id), "Categoria excluída.");
           }}
         />
@@ -95,9 +116,13 @@ function Categorias() {
           novo="Novo grupo de ferramenta"
           itens={dados.gruposFerramenta}
           onAdicionar={(nome) => executar(() => adicionarListaFerramenta("gruposFerramenta", nome), "Grupo incluído.")}
-          onRenomear={(id, nome) => executar(() => renomearListaFerramenta("gruposFerramenta", id, nome))}
-          onRemover={(item) => {
-            if (confirm(`Excluir o grupo de ferramenta ${item.nome}?`))
+          onRenomear={async (id, nome) => {
+            const atual = dados.gruposFerramenta.find((item) => item.id === id);
+            if (!atual || (atual.nome !== nome.trim() && await vinculoImpedeAlteracao("gruposFerramenta", atual.nome))) return false;
+            return executar(() => renomearListaFerramenta("gruposFerramenta", id, nome));
+          }}
+          onRemover={async (item) => {
+            if (confirm(`Excluir o grupo de ferramenta ${item.nome}?`) && !await vinculoImpedeAlteracao("gruposFerramenta", item.nome))
               executar(() => removerListaFerramenta("gruposFerramenta", item.id), "Grupo excluído.");
           }}
         />
