@@ -147,3 +147,18 @@ a especificação atualizada; complementa a decisão 16:
 - Caixas de 01 a 100 com flag de habilitação, fluxo completo de
   Portador e cadastro de marcas ficam fora do plano de Ferramentas.
   São proposta separada de Caixas e Portador, sujeita a aprovação.
+
+## 18. CAIXAS E PORTADOR — ETAPAS E RESPOSTAS
+Decidido pelo responsável em 30/09/2026, ao aprovar a proposta
+`docs/proposta-caixas-portador.md` e as etapas do handoff:
+- Etapas, na ordem: (1) caixas 01 a 100 habilitadas em Cadastros >
+  Gerais; (2) Portador com histórico; (3) marcas em Gerais;
+  (4) validação de ponta a ponta. Um PR por etapa, parando para
+  validação e merge do responsável.
+- A habilitação das caixas fica em Cadastros > Gerais, conforme a
+  proposta. Isso substitui a frase da decisão 3 de que a habilitação
+  "segue onde já está implementada": não havia habilitação no código.
+- Código das caixas de CX-0001 a CX-0100, sequência única para as três
+  empresas.
+- O portador ativo passa a ser o responsável exibido da caixa; o campo
+  Responsável estático do cadastro de caixa deixa de ser usado.

@@ -1,8 +1,8 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 30/09/2026. A referência remota é `origin/main` em `fc108b2` (merge do PR #32).
+Atualizado em 30/09/2026. A referência remota é `origin/main` em `0853e00` (merge do PR #36).
 
-**Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) foi aprovada pelo responsável em 30/09/2026. Ela não define etapas, então a divisão abaixo aguarda o ok dele antes de qualquer código. A Fase 2 continua aguardando decisão: não iniciar.
+**Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) foi aprovada pelo responsável em 30/09/2026, e as quatro etapas abaixo também, na ordem proposta (decisão 18). Cada etapa para após o PR, para validação e merge do responsável. A Fase 2 continua aguardando decisão: não iniciar.
 
 ## Estado das etapas
 
@@ -35,9 +35,9 @@ Roteiro executado no navegador em 30/09/2026 sobre a `main` em `c4b2ada` mais as
 
 Validação automática: `npm test`, `npm run typecheck`, `npm run build` e `git diff --check`.
 
-## Caixas e Portador — etapas propostas (aguardam ok do responsável)
+## Caixas e Portador — etapas aprovadas
 
-A proposta aprovada lista o escopo, mas não define etapas. Cada etapa terá branch e PR próprios, a partir da `main` e só depois do merge da anterior, com testes antes do código, validação completa (testes, typecheck, build, `git diff --check`), screenshots e preview da Vercel. Tudo roda no modo demonstração; nada vai para o Supabase real. As tabelas, migrações e permissões por tela ficam registradas como pendência da Fase 2.
+A proposta aprovada lista o escopo, mas não define etapas; a divisão abaixo foi aprovada em 30/09/2026. Cada etapa terá branch e PR próprios, a partir da `main` e só depois do merge da anterior, com testes antes do código, validação completa (testes, typecheck, build, `git diff --check`), screenshots e preview da Vercel. Tudo roda no modo demonstração; nada vai para o Supabase real. As tabelas, migrações e permissões por tela ficam registradas como pendência da Fase 2.
 
 Padrões obrigatórios em todas as etapas:
 - código automático no padrão sigla + numeração;
@@ -50,16 +50,23 @@ Padrões obrigatórios em todas as etapas:
 
 | Etapa | Entrega | Critérios de aceite |
 | --- | --- | --- |
-| 1 — caixas habilitadas | Em Cadastros > Gerais, a lista das caixas numeradas de 01 a 100, cada uma com a flag de habilitação. O cadastro de caixa e as telas que escolhem caixa (Termo de Responsabilidade, Termo de Vistoria, aba Caixas de Ferramentas) só oferecem caixas habilitadas. | Numeração fixa de 1 a 100, sem repetir nem pular. Desabilitar uma caixa em uso é recusado, com o motivo. A caixa desabilitada some das listas de escolha, mas continua no histórico. |
+| 1 — caixas habilitadas (em andamento na branch `feat/caixas-habilitadas`) | Em Cadastros > Gerais, a lista das caixas numeradas de 01 a 100, cada uma com a flag de habilitação. O cadastro de caixa e as telas que escolhem caixa (Termo de Responsabilidade, Termo de Vistoria, aba Caixas de Ferramentas) só oferecem caixas habilitadas. | Numeração fixa de 1 a 100, sem repetir nem pular. Desabilitar uma caixa em uso é recusado, com o motivo. A caixa desabilitada some das listas de escolha, mas continua no histórico. |
 | 2 — portador | Cadastro de Portador: caixa (só as habilitadas), empregado por busca de palavra-chave, status ativa/inativa e observação. Histórico de portadores por caixa. | Uma caixa tem no máximo um portador ativo. Trocar o portador encerra o anterior no histórico, com data local. Empregado demitido não pode ser novo portador (decisão 15). O histórico é lido por inteiro. A gravação é atômica e trava o segundo clique. |
 | 3 — marcas | Cadastro de marcas de ferramentas em Cadastros > Gerais. O cadastro de ferramenta passa a escolher a marca dessa lista, em vez de texto livre. | Marca em uso não pode ser renomeada nem excluída sem aviso, como categoria e grupo (etapa 2 de Ferramentas). As ferramentas já cadastradas com marca em texto continuam exibindo a marca. |
 | 4 — validação | Fluxo completo no navegador (habilitar caixa, atribuir portador, trocar portador, termos com a caixa, marca na ferramenta), handoff atualizado e pendências da Fase 2 registradas. | Roteiro de ponta a ponta registrado aqui, como na etapa 6 de Ferramentas. |
 
-Pontos que dependem do responsável antes da etapa 1:
+Respostas do responsável aos pontos da etapa 1 (30/09/2026, decisão 18):
 
-1. **Onde fica a habilitação.** A proposta põe a flag em Cadastros > Gerais. A decisão 3 diz que a habilitação "segue onde já está implementada", mas o código não tem habilitação de caixa em lugar nenhum; o que existe é o status Ativa/Inativa no cadastro de caixa. Recomendação: seguir a proposta (Gerais) e registrar isso como decisão.
-2. **Código da caixa.** Hoje o código é automático no formato `CX-0001`, sem limite. Recomendação: manter a sigla CX com quatro dígitos e limitar de `CX-0001` a `CX-0100`, uma sequência para as três empresas, exibindo o número da caixa (01 a 100) nas listas.
-3. **Portador e o campo Responsável da caixa.** O cadastro de caixa já tem um "Responsável" (empregado). Recomendação: o portador ativo passa a ser o responsável exibido, e o campo deixa de ser editado no cadastro de caixa, para não haver dois donos diferentes.
+1. **Habilitação** em Cadastros > Gerais > Caixas, conforme a proposta.
+2. **Código** de `CX-0001` a `CX-0100`, sequência única para as três empresas. O número da caixa (01 a 100) é escolhido no cadastro entre as habilitadas livres, e o código sai dele; depois de gravado, não muda.
+3. **Responsável:** o portador ativo passa a ser o responsável exibido, e o campo Responsável estático deixa de ser usado (etapa 2).
+
+Etapa 1 na branch `feat/caixas-habilitadas`:
+- A tela Cadastros > Gerais > Caixas marca as caixas habilitadas e grava tudo de uma vez. Uma caixa cadastrada não pode ser desabilitada.
+- O cadastro de caixa escolhe o número entre as habilitadas livres. O demo recusa código repetido, como a restrição única do banco.
+- Os termos de Responsabilidade e de Vistoria e a aba Caixas de Ferramentas listam só as caixas habilitadas, em ordem de número.
+- Caixas antigas sem número não aparecem nas listas de escolha até receberem um número na edição.
+- As regras estão em `src/lib/caixas-habilitadas.ts`.
 
 ## Pendências para PRs separados
 
@@ -69,7 +76,7 @@ Ordem sugerida pelo responsável em 30/09/2026. Cada item tem branch e PR própr
 | --- | --- | --- |
 | 1 | HTML do Termo de Responsabilidade sem escape de textos: aplicar o mesmo tratamento do Termo de Encerramento. | Concluída: PR #27, merge `4f220ee`. O HTML está em `src/lib/termo-responsabilidade-html.ts`, com `escaparHtml` e a data impressa sem cair no dia anterior. |
 | 2 | Termos de Uniformes (entrega e baixa) e Termo de Vistoria gravam item a item: usar o mesmo padrão atômico dos termos de Ferramentas (validar antes e gravar tudo de uma vez). | Concluída: PR #28, merge `47272e8`. Regras em `src/lib/termos-atomicos.ts`: entrega e baixa de uniformes não passam do estoque disponível; vistoria confere as linhas, mas não o estoque; "Nenhum / Empresa" grava sem empregado. Os três termos gravam tudo de uma vez, travam o segundo clique e limpam a lista após gravar. |
-| 3 | Abertura dos termos em aba nova é bloqueada por alguns navegadores, porque a aba abre depois da gravação. Vale para todos os termos (EPI, Uniformes e Ferramentas). | Não iniciada. |
+| 3 | Abertura dos termos em aba nova é bloqueada por alguns navegadores, porque a aba abre depois da gravação. Vale para todos os termos (EPI, Uniformes e Ferramentas). | Concluída: PR #35, merge `cb55f0d`. Os 7 termos abrem num visualizador dentro da tela (`abrirDocumento` em `src/lib/visualizador-documento.ts`), com Imprimir, Baixar e Fechar; nenhuma aba nova. |
 | 4 | Data padrão das compras de EPI e Uniformes usa o fuso UTC (`toISOString`) e mostra o dia seguinte no fim da noite: usar `hojeLocal()`. O code review da pendência 7 achou o mesmo `toISOString` em outras datas padrão: Termo de Vistoria, relatórios de baixa de EPI e de Uniformes, e Ocorrências. | Não iniciada. |
 | 5 | HTML dos termos de Baixa de Uniforme e de Vistoria sem escape de textos (nome do item, estado, motivo e observação digitada): aplicar `escaparHtml`, como no Termo de Responsabilidade. Achado no code review da pendência 2; o problema já existia antes dela. | Concluída: PR #29, merge `82e681d`. HTML em `src/lib/termo-baixa-uniforme-html.ts` e `src/lib/termo-vistoria-html.ts`, com `escaparHtml` em todos os textos; a data da vistoria é impressa sem cair no dia anterior. |
 | 6 | HTML de outros termos ainda sem escape: Termo de Entrega de EPI e Ficha de EPI Avulsa (empresa, empregado e nome do item) e Termo de Entrega de Uniforme (empresa e empregado; os itens já são escapados). Achado no code review da pendência 5; o problema já existia antes. | Concluída: PR #30, merge `7cdcb40`. HTML em `src/lib/termo-entrega-epi-html.ts`, `src/lib/ficha-epi-avulsa-html.ts` e `src/lib/termo-entrega-uniforme-html.ts`. Com as pendências 1, 5 e 6, os 7 termos que abrem em aba nova escapam os textos: classe de risco fechada. |
