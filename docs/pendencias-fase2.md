@@ -23,6 +23,7 @@ Nada abaixo deve ser feito antes da ordem do responsável.
   - `20260928130000_enderecamentos.sql` (endereçamento de estoque);
   - `20260928140000_vistoria_sem_estoque.sql` (vistoria não altera estoque).
 - **Código do produto:** gerar o próximo código (EPI-0001 etc.) no próprio banco, para não repetir quando duas pessoas salvam ao mesmo tempo.
+- **Empregados:** criar a coluna `email`. No gatilho de movimentações, bloquear também empregado com demissão vencida, ou seja, exigir `data_demissao IS NULL OR data_demissao > (now() AT TIME ZONE 'America/Sao_Paulo')::date`. Hoje o gatilho só olha `ativo`, e quem foi salvo com demissão futura continua `ativo = true` depois da data. A tela já bloqueia (decisão de 30/09/2026).
 - **Estoque de ferramentas:** revisar o estoque inflado por vistorias antigas, que foram gravadas como entrada.
 - **Cadastros que hoje ficam só no navegador** e vão precisar de tabela: Cadastros > Gerais (categorias, subcategorias, tamanhos, unidades, associações, regras de código do produto, códigos de fábrica), fornecedores e Ficha de EPI (uma por EPI, com os 7 campos da NR6).
 

@@ -102,9 +102,8 @@ export function EpiFichaEpiAvulsa() {
               <td><strong>Matrícula:</strong> ${empregado.matricula || "—"}</td>
             </tr>
             <tr>
-              <td><strong>Função:</strong> ${empregado.cargo || "—"}</td>
               <td><strong>Admissão:</strong> ${empregado.data_admissao ? formatarData(empregado.data_admissao) : "—"}</td>
-              <td><strong>Setor:</strong> Operacional</td>
+              <td colspan="2"><strong>Setor:</strong> Operacional</td>
             </tr>
           </table>
 

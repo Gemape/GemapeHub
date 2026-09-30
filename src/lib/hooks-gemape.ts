@@ -219,8 +219,8 @@ export function useEmpregados(empresaId: string, apenasAtivos = false) {
       const { data, error } = await q.order("nome").limit(PAGINA);
       if (error) throw error;
       const lista = (data ?? []) as Empregado[];
-      // Com data de demissão o empregado também conta como inativo, mesmo em registros antigos.
-      return apenasAtivos ? lista.filter(empregadoAtivo) : lista;
+      // Com demissão vencida o empregado também conta como inativo, mesmo em registros antigos.
+      return apenasAtivos ? lista.filter((e) => empregadoAtivo(e)) : lista;
     },
   });
 }

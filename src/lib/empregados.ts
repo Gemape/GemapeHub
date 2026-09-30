@@ -35,15 +35,34 @@ export type DadosEmpregado = {
   data_demissao: string;
 };
 
-type Existente = { id: string; cpf: string | null; matricula: string | null; ativo?: boolean };
+type Existente = {
+  id: string;
+  cpf: string | null;
+  matricula: string | null;
+  ativo?: boolean;
+  data_demissao?: string | null;
+};
+
+// Data de hoje no fuso local, no formato das colunas de data (AAAA-MM-DD).
+export function hojeLocal(agora = new Date()): string {
+  const d = (n: number) => String(n).padStart(2, "0");
+  return `${agora.getFullYear()}-${d(agora.getMonth() + 1)}-${d(agora.getDate())}`;
+}
+
+// Decisão do responsável (30/09/2026): o empregado continua ativo até a data de demissão
+// chegar. A partir dessa data, a demissão está vencida.
+export const demissaoVencida = (e: { data_demissao?: string | null }, hoje = hojeLocal()) =>
+  !!e.data_demissao && e.data_demissao <= hoje;
 
 // Valida e prepara os valores para salvar. Na edição, CPF e matrícula antigos que não seguem
-// o padrão podem continuar como estão, sem reformatar. Com data de demissão, o empregado
-// fica inativo; um empregado já inativo sem data continua inativo.
+// o padrão podem continuar como estão, sem reformatar. Com demissão vencida, o empregado
+// fica inativo; com demissão futura, continua ativo até a data. Um empregado inativado à
+// mão (sem data de demissão) continua inativo.
 export function prepararEmpregado(
   dados: DadosEmpregado,
   outros: Existente[],
   anterior?: Existente,
+  hoje = hojeLocal(),
 ): Record<string, string | boolean | null> {
   const nome = dados.nome.trim().replace(/\s+/g, " ");
   let cpf = formatarCpf(dados.cpf.trim());
@@ -83,19 +102,37 @@ export function prepararEmpregado(
     email: email || null,
     data_admissao: dados.data_admissao || null,
     data_demissao: dados.data_demissao || null,
-    ativo: !dados.data_demissao && anterior?.ativo !== false,
+    ativo: !demissaoVencida(dados, hoje) && !(anterior?.ativo === false && !anterior.data_demissao),
   };
 }
 
-// Ativos no bloco de cima, demitidos no de baixo, cada um em ordem de nome.
-export const empregadoAtivo = (e: { ativo: boolean; data_demissao: string | null }) =>
-  e.ativo && !e.data_demissao;
+export const empregadoAtivo = (
+  e: { ativo: boolean; data_demissao: string | null },
+  hoje = hojeLocal(),
+) => e.ativo && !demissaoVencida(e, hoje);
 
+const dataBr = (iso: string) => iso.split("-").reverse().join("/");
+
+// Entrega, devolução e baixa para empregado com demissão vencida são bloqueadas: vale a
+// data de hoje e também a data da movimentação, se for posterior (não dá para lançar
+// hoje uma entrega datada depois da demissão).
+// Devolve a mensagem para o usuário, ou null quando a movimentação pode seguir.
+export function bloqueioPorDemissao(
+  e: { nome: string; data_demissao: string | null } | null | undefined,
+  dataMovimentacao = "",
+  hoje = hojeLocal(),
+): string | null {
+  const referencia = dataMovimentacao > hoje ? dataMovimentacao : hoje;
+  if (!e?.data_demissao || !demissaoVencida(e, referencia)) return null;
+  return `${e.nome} foi demitido(a) em ${dataBr(e.data_demissao)}. Não é possível registrar entrega, devolução ou baixa para este empregado.`;
+}
+
+// Ativos no bloco de cima, demitidos no de baixo, cada um em ordem de nome.
 export function separarEmpregados<
   T extends { nome: string; ativo: boolean; data_demissao: string | null },
->(lista: T[]): { ativos: T[]; inativos: T[] } {
+>(lista: T[], hoje = hojeLocal()): { ativos: T[]; inativos: T[] } {
   const ordenar = (a: T, b: T) => a.nome.localeCompare(b.nome, "pt-BR");
-  const inativo = (e: T) => !empregadoAtivo(e);
+  const inativo = (e: T) => !empregadoAtivo(e, hoje);
   return {
     ativos: lista.filter((e) => !inativo(e)).sort(ordenar),
     inativos: lista.filter(inativo).sort(ordenar),
