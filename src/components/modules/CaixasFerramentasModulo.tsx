@@ -48,7 +48,6 @@ import {
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { STATUS_CAIXA, exportarCsv, formatarData } from "@/lib/gemape";
 import {
-  useEmpregados,
   useExcluir,
   useItens,
   useCaixasFerramentas,
@@ -57,10 +56,10 @@ import {
   type CaixaFerramenta,
   type Item,
 } from "@/lib/hooks-gemape";
+import { portadorAtivo, validarAlteracaoCaixaComPortador } from "@/lib/portadores-caixa";
+import { usePortadoresCaixa } from "@/lib/use-portadores-caixa";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { toast } from "sonner";
-
-const NENHUM = "nenhum";
 
 interface ItemVinculado {
   ferramenta_id: string;
@@ -78,15 +77,8 @@ export function CaixasFerramentasModulo() {
   const [itensVinculados, setItensVinculados] = useState<ItemVinculado[]>([]);
 
   const { data: caixas = [], isLoading } = useCaixasFerramentas(empresaId, busca);
-  const { data: empregados = [] } = useEmpregados(empresaId, true);
-  // Lista completa: o responsável atual continua na lista mesmo se já foi demitido, para a
-  // edição da caixa não apagar o vínculo sem querer.
-  const { data: todosEmpregados = [] } = useEmpregados(empresaId);
-  const responsavelFora = editando?.responsavel_id
-    ? todosEmpregados.find(
-        (e) => e.id === editando.responsavel_id && !empregados.some((a) => a.id === e.id),
-      )
-    : undefined;
+  const portadores = usePortadoresCaixa();
+  const nomePortador = (caixaId: string) => portadorAtivo(portadores, caixaId)?.empregado_nome ?? "—";
   const { data: todasFerramentas = [] } = useItens("ferramenta", empresaId);
   // Numeração única de CX-0001 a CX-0100 para as três empresas: confere com todas as caixas.
   const { caixasHabilitadas: habilitadas } = useParametrosBase();
@@ -167,7 +159,7 @@ export function CaixasFerramentasModulo() {
     const f = new FormData(e.currentTarget);
     const texto = (k: string) => {
       const v = String(f.get(k) ?? "").trim();
-      return v === "" || v === NENHUM ? null : v;
+      return v === "" ? null : v;
     };
 
     const valores = {
@@ -176,10 +168,14 @@ export function CaixasFerramentasModulo() {
       empresa_id: texto("empresa_id"),
       nome: String(f.get("nome") ?? "").trim(),
       descricao: texto("descricao"),
-      responsavel_id: texto("responsavel_id"),
       localizacao: texto("localizacao"),
       status: String(f.get("status") ?? "Ativa"),
     };
+
+    if (editando) {
+      const erroPortador = validarAlteracaoCaixaComPortador(editando, portadores, valores);
+      if (erroPortador) { toast.error(erroPortador); return; }
+    }
 
     salvar.mutate(
       {
@@ -223,7 +219,7 @@ export function CaixasFerramentasModulo() {
                 caixas.map((c) => ({
                   Codigo: c.codigo,
                   Nome: c.nome,
-                  Responsavel: c.responsavel?.nome ?? "—",
+                  PortadorAtivo: nomePortador(c.id),
                   Localizacao: c.localizacao ?? "—",
                   Status: c.status,
                   DataCadastro: formatarData(c.created_at),
@@ -243,7 +239,7 @@ export function CaixasFerramentasModulo() {
             <TableRow>
               <TableHead className="font-mono">Código</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>Responsável</TableHead>
+              <TableHead>Portador ativo</TableHead>
               <TableHead>Localização</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Data Cadastro</TableHead>
@@ -268,7 +264,7 @@ export function CaixasFerramentasModulo() {
                 <TableRow key={c.id}>
                   <TableCell className="font-mono font-medium">{c.codigo}</TableCell>
                   <TableCell>{c.nome}</TableCell>
-                  <TableCell>{c.responsavel?.nome ?? "—"}</TableCell>
+                  <TableCell>{nomePortador(c.id)}</TableCell>
                   <TableCell>{c.localizacao ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant={c.status === "Ativa" ? "secondary" : "outline"}>
@@ -294,6 +290,8 @@ export function CaixasFerramentasModulo() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
+                        const erroPortador = validarAlteracaoCaixaComPortador(c, portadores, null);
+                        if (erroPortador) { toast.error(erroPortador); return; }
                         if (confirm(`Excluir a caixa ${c.codigo}?`)) excluir.mutate(c.id);
                       }}
                     >
@@ -388,25 +386,9 @@ export function CaixasFerramentasModulo() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="responsavel_id">Responsável Atual</Label>
-                <Select name="responsavel_id" defaultValue={editando?.responsavel_id ?? NENHUM}>
-                  <SelectTrigger id="responsavel_id">
-                    <SelectValue placeholder="Selecione o funcionário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NENHUM}>Sem responsável</SelectItem>
-                    {responsavelFora && (
-                      <SelectItem value={responsavelFora.id}>
-                        {responsavelFora.nome} (inativo)
-                      </SelectItem>
-                    )}
-                    {empregados.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="portador-ativo-caixa">Portador ativo</Label>
+                <Input id="portador-ativo-caixa" readOnly value={editando ? nomePortador(editando.id) : "—"} />
+                <p className="text-xs text-muted-foreground">Gerencie o vínculo na aba Portadores.</p>
               </div>
 
               <div className="space-y-1.5">

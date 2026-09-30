@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
+import { portadorNaData } from "@/lib/portadores-caixa";
+import { usePortadoresCaixa } from "@/lib/use-portadores-caixa";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +58,7 @@ export function FerramentasTermoVistoria() {
   const { data: todasAsCaixas = [] } = useCaixasFerramentas(empresaSel || TODAS);
   // Só caixas habilitadas em Cadastros > Gerais > Caixas.
   const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
+  const portadores = usePortadoresCaixa();
 
   const { data: itensCaixa = [], refetch: buscarItensCaixa } = useCaixaItens(caixaSel || null);
 
@@ -152,7 +155,7 @@ export function FerramentasTermoVistoria() {
     const html = montarTermoVistoriaHtml({
       empresa,
       caixa,
-      responsavel: empregado?.nome || caixa?.responsavel?.nome,
+      responsavel: empregado?.nome || (caixa ? portadorNaData(portadores, caixa.id, dataVistoria)?.empregado_nome : undefined),
       data: dataVistoria,
       linhas: itensDoTermo.map((it) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);

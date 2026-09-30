@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { CaixasFerramentasModulo } from "@/components/modules/CaixasFerramentasModulo";
 import { FerramentasCaixasModulo } from "@/components/modules/FerramentasCaixasModulo";
+import { PortadoresCaixaModulo } from "@/components/modules/PortadoresCaixaModulo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/caixas-ferramentas")({
@@ -31,10 +32,12 @@ function PaginaCaixas() {
           <div className="flex flex-nowrap gap-1">
             <TabsTrigger value="caixas" className={aba}>Caixas e itens</TabsTrigger>
             <TabsTrigger value="cadastro" className={aba}>Cadastro</TabsTrigger>
+            <TabsTrigger value="portadores" className={aba}>Portadores</TabsTrigger>
           </div>
         </TabsList>
         <TabsContent value="caixas" className="mt-5"><FerramentasCaixasModulo /></TabsContent>
         <TabsContent value="cadastro" className="mt-5"><CaixasFerramentasModulo /></TabsContent>
+        <TabsContent value="portadores" className="mt-5"><PortadoresCaixaModulo /></TabsContent>
       </Tabs>
     </div>
   );
