@@ -46,6 +46,19 @@ test('listas de categorias e grupos de ferramentas em Gerais aceitam novas opç�
   assert.equal(adicionarListaFerramenta('categoriasFerramenta', 'Solda', local).nome, 'Solda');
 });
 
+test('marcas de ferramentas começam vazias e podem ser cadastradas sem duplicação', async () => {
+  const { adicionarListaFerramenta, renomearListaFerramenta, removerListaFerramenta } = await import('../src/lib/parametros-base.ts');
+  const local = storage();
+  assert.deepEqual(lerParametros(local).marcasFerramenta, []);
+  const marca = adicionarListaFerramenta('marcasFerramenta', ' Bosch ', local);
+  assert.equal(lerParametros(local).marcasFerramenta[0].nome, 'Bosch');
+  assert.throws(() => adicionarListaFerramenta('marcasFerramenta', 'BOSCH', local), /Já existe/);
+  renomearListaFerramenta('marcasFerramenta', marca.id, 'Makita', local);
+  assert.equal(lerParametros(local).marcasFerramenta[0].nome, 'Makita');
+  removerListaFerramenta('marcasFerramenta', marca.id, local);
+  assert.deepEqual(lerParametros(local).marcasFerramenta, []);
+});
+
 test('categorias: sem nome repetido (ignora acento e maiúsculas) e só exclui vazia', () => {
   const s = storage();
   assert.throws(() => adicionarCategoria(' veiculos ', s), /Já existe a categoria "Veículos"/);

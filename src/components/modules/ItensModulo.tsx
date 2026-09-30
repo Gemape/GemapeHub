@@ -48,7 +48,7 @@ import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { codigosReservadosFerramenta, prepararCadastroFerramenta, reservarCodigoFerramenta, valoresItemNaEdicao } from "@/lib/cadastro-ferramentas";
+import { codigosReservadosFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, selecaoMarcaCadastrada, valoresItemNaEdicao } from "@/lib/cadastro-ferramentas";
 import { proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -68,6 +68,8 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
   const parametros = useParametrosBase();
   const regraFerramenta = parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
   const subcategoriasFerramenta = subcategoriasDa(parametros, "cat-ferramentas");
+  const marcaCadastrada = parametros.marcasFerramenta.find((m) => m.nome === editando?.marca);
+  const marcaAntiga = editando?.marca && !marcaCadastrada ? editando.marca : null;
   const tabela = getTabela(modulo);
   const { data: itens = [], isLoading } = useItens(modulo, empresaId, busca);
   const salvar = useSalvar(tabela, [tabela, "saidas-por-item"]);
@@ -141,6 +143,8 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
           estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
           categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
           grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
+          marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametros.marcasFerramenta, editando?.marca ?? null),
+          marcaAtual: editando?.marca ?? "",
           numeroSerie: String(f.get("numero_serie") ?? ""),
           precoCusto: String(f.get("preco_unitario") ?? ""),
           ...(editando ? { codigoAtual: editando.codigo_sku } : {}),
@@ -183,6 +187,7 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   ...(modulo === "ferramenta" ? {
                     "Categoria de ferramenta": i.categoria_ferramenta,
                     "Grupo de ferramenta": i.grupo_ferramenta,
+                    Marca: i.marca,
                     "Número de série": i.numero_serie,
                     Patrimônio: i.patrimonio,
                     "Data de aquisição": i.data_aquisicao,
@@ -210,6 +215,7 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
               <TableHead>{modulo === "ferramenta" ? "Subcategoria" : "Categoria"}</TableHead>
               {modulo === "ferramenta" && <TableHead>Categoria de ferramenta</TableHead>}
               {modulo === "ferramenta" && <TableHead>Grupo de ferramenta</TableHead>}
+              {modulo === "ferramenta" && <TableHead>Marca</TableHead>}
               {modulo === "ferramenta" && <TableHead>Número de série</TableHead>}
               {modulo === "ferramenta" && <TableHead>Patrimônio</TableHead>}
               {modulo === "ferramenta" && <TableHead>Aquisição</TableHead>}
@@ -224,13 +230,13 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={modulo === "ferramenta" ? 13 : modulo === "epi" ? 8 : 7} className="text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "ferramenta" ? 14 : modulo === "epi" ? 8 : 7} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={modulo === "ferramenta" ? 13 : modulo === "epi" ? 8 : 7} className="text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "ferramenta" ? 14 : modulo === "epi" ? 8 : 7} className="text-center text-muted-foreground">
                   Nenhum item cadastrado.
                 </TableCell>
               </TableRow>
@@ -242,6 +248,7 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   <TableCell>{item.categoria ?? "—"}</TableCell>
                   {modulo === "ferramenta" && <TableCell>{item.categoria_ferramenta ?? "—"}</TableCell>}
                   {modulo === "ferramenta" && <TableCell>{item.grupo_ferramenta ?? "—"}</TableCell>}
+                  {modulo === "ferramenta" && <TableCell>{item.marca ?? "—"}</TableCell>}
                   {modulo === "ferramenta" && <TableCell>{item.numero_serie ?? "—"}</TableCell>}
                   {modulo === "ferramenta" && <TableCell>{item.patrimonio ?? "—"}</TableCell>}
                   {modulo === "ferramenta" && <TableCell>{formatarData(item.data_aquisicao)}</TableCell>}
@@ -401,7 +408,15 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
               <>
                 <div className="space-y-1.5">
                   <Label htmlFor="marca">Marca</Label>
-                  <Input id="marca" name="marca" defaultValue={editando?.marca ?? ""} />
+                  <Select name="marca" defaultValue={marcaCadastrada ? selecaoMarcaCadastrada(marcaCadastrada.id) : marcaAntiga ? SELECAO_MARCA_LEGADA : SELECAO_SEM_MARCA}>
+                    <SelectTrigger id="marca"><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={SELECAO_SEM_MARCA}>Sem marca</SelectItem>
+                      {parametros.marcasFerramenta.map((m) => <SelectItem key={m.id} value={selecaoMarcaCadastrada(m.id)}>{m.nome}</SelectItem>)}
+                      {marcaAntiga && <SelectItem value={SELECAO_MARCA_LEGADA}>{marcaAntiga} (fora de Cadastros &gt; Gerais)</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                  {parametros.marcasFerramenta.length === 0 && <p className="text-xs text-muted-foreground">Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="modelo">Modelo</Label>

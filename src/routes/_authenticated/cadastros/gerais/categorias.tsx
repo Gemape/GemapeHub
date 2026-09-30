@@ -34,12 +34,12 @@ function Categorias() {
   const subcategorias = categoria ? subcategoriasDa(dados, categoria.id) : [];
 
   async function vinculoImpedeAlteracao(tipo: ListaFerramenta, nome: string): Promise<boolean> {
-    const { data, error } = await demoSupabase.from("ferramentas").select("categoria_ferramenta,grupo_ferramenta");
+    const { data, error } = await demoSupabase.from("ferramentas").select("categoria_ferramenta,grupo_ferramenta,marca");
     if (error) {
       toast.error("Não foi possível conferir os modelos de ferramentas.");
       return true;
     }
-    if (opcaoFerramentaEmUso((data ?? []) as { categoria_ferramenta?: string | null; grupo_ferramenta?: string | null }[], tipo, nome)) {
+    if (opcaoFerramentaEmUso((data ?? []) as { categoria_ferramenta?: string | null; grupo_ferramenta?: string | null; marca?: string | null }[], tipo, nome)) {
       toast.error(`A opção "${nome}" está em uso por uma ferramenta.`);
       return true;
     }
@@ -94,6 +94,23 @@ function Categorias() {
             Cadastre uma categoria para incluir subcategorias.
           </div>
         )}
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <ListaEditavel
+          titulo="Marcas de ferramentas"
+          novo="Nova marca de ferramenta"
+          itens={dados.marcasFerramenta}
+          onAdicionar={(nome) => executar(() => adicionarListaFerramenta("marcasFerramenta", nome), "Marca incluída.")}
+          onRenomear={async (id, nome) => {
+            const atual = dados.marcasFerramenta.find((item) => item.id === id);
+            if (!atual || (atual.nome !== nome.trim() && await vinculoImpedeAlteracao("marcasFerramenta", atual.nome))) return false;
+            return executar(() => renomearListaFerramenta("marcasFerramenta", id, nome));
+          }}
+          onRemover={async (item) => {
+            if (confirm(`Excluir a marca de ferramenta ${item.nome}?`) && !await vinculoImpedeAlteracao("marcasFerramenta", item.nome))
+              executar(() => removerListaFerramenta("marcasFerramenta", item.id), "Marca excluída.");
+          }}
+        />
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
         <ListaEditavel

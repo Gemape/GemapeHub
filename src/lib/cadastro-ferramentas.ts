@@ -1,4 +1,17 @@
-import { proximoCodigo, subcategoriasDa, type ListaFerramenta, type ParametrosBase } from "./parametros-base.ts";
+import { mesmoNome, proximoCodigo, subcategoriasDa, type ListaFerramenta, type Opcao, type ParametrosBase } from "./parametros-base.ts";
+
+export const SELECAO_SEM_MARCA = "sem-marca";
+export const SELECAO_MARCA_LEGADA = "marca-legada";
+export const selecaoMarcaCadastrada = (id: string) => `marca:${id}`;
+
+/** O formulário usa ids, para que um nome de marca nunca se confunda com "Sem marca". */
+export function marcaDaSelecao(selecao: string, marcas: Opcao[], marcaAtual: string | null): string {
+  if (selecao === SELECAO_SEM_MARCA) return "";
+  if (selecao === SELECAO_MARCA_LEGADA && marcaAtual) return marcaAtual;
+  const marca = marcas.find((item) => selecaoMarcaCadastrada(item.id) === selecao);
+  if (!marca) throw new Error("Marca de ferramenta inválida. Escolha uma marca de Cadastros > Gerais.");
+  return marca.nome;
+}
 
 export type EntradaCadastroFerramenta = {
   parametros: ParametrosBase;
@@ -10,6 +23,8 @@ export type EntradaCadastroFerramenta = {
   grupoFerramenta: string;
   numeroSerie: string;
   precoCusto: string;
+  marca?: string;
+  marcaAtual?: string;
   codigoAtual?: string;
 };
 
@@ -23,12 +38,12 @@ export function valoresItemNaEdicao<T extends Record<string, unknown>>(valores: 
 }
 
 export function opcaoFerramentaEmUso(
-  modelos: { categoria_ferramenta?: string | null; grupo_ferramenta?: string | null }[],
+  modelos: { categoria_ferramenta?: string | null; grupo_ferramenta?: string | null; marca?: string | null }[],
   tipo: ListaFerramenta,
   nome: string,
 ): boolean {
-  const campo = tipo === "categoriasFerramenta" ? "categoria_ferramenta" : "grupo_ferramenta";
-  return modelos.some((modelo) => modelo[campo] === nome);
+  const campo = tipo === "categoriasFerramenta" ? "categoria_ferramenta" : tipo === "gruposFerramenta" ? "grupo_ferramenta" : "marca";
+  return modelos.some((modelo) => !!modelo[campo] && mesmoNome(modelo[campo], nome));
 }
 
 type ArmazenamentoCodigos = Pick<Storage, "getItem" | "setItem">;
@@ -71,6 +86,15 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
   if (!categoriaFerramenta) throw new Error("Categoria de ferramenta inválida.");
   const grupoFerramenta = entrada.parametros.gruposFerramenta.find((g) => g.nome === entrada.grupoFerramenta.trim());
   if (!grupoFerramenta) throw new Error("Grupo de ferramenta inválido.");
+  const marcaInformada = entrada.marca?.trim() ?? "";
+  const marcaCadastrada = entrada.parametros.marcasFerramenta.find((m) => mesmoNome(m.nome, marcaInformada));
+  if (marcaInformada && !marcaCadastrada && (!entrada.marcaAtual || !mesmoNome(marcaInformada, entrada.marcaAtual))) {
+    throw new Error("Marca de ferramenta inválida. Cadastre a marca em Cadastros > Gerais.");
+  }
+  const marca = marcaInformada
+    ? (entrada.marcaAtual && marcaInformada === entrada.marcaAtual.trim()
+      ? entrada.marcaAtual : marcaCadastrada?.nome ?? entrada.marcaAtual!.trim())
+    : null;
   const numeroSerie = entrada.numeroSerie.trim();
   if (!numeroSerie) throw new Error("Número de série obrigatório.");
   const precoTexto = entrada.precoCusto.trim();
@@ -87,6 +111,7 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
     estoque_minimo: minimo,
     categoria_ferramenta: categoriaFerramenta.nome,
     grupo_ferramenta: grupoFerramenta.nome,
+    marca,
     numero_serie: numeroSerie,
     preco_unitario: preco,
   };

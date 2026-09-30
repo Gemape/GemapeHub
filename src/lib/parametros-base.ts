@@ -7,7 +7,7 @@ import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts"
 export type Categoria = { id: string; nome: string };
 export type Subcategoria = { id: string; categoriaId: string; nome: string };
 export type Opcao = { id: string; nome: string };
-export type ListaFerramenta = "categoriasFerramenta" | "gruposFerramenta";
+export type ListaFerramenta = "categoriasFerramenta" | "gruposFerramenta" | "marcasFerramenta";
 export type TipoOpcao = "tamanhos" | "unidades";
 // Tamanhos e unidades autorizados para uma subcategoria (guarda os ids).
 export type Associacao = { subcategoriaId: string } & Record<TipoOpcao, string[]>;
@@ -31,6 +31,7 @@ export type ParametrosBase = {
   subcategorias: Subcategoria[];
   categoriasFerramenta: Opcao[];
   gruposFerramenta: Opcao[];
+  marcasFerramenta: Opcao[];
   tamanhos: Opcao[];
   unidades: Opcao[];
   associacoes: Associacao[];
@@ -109,6 +110,7 @@ function padrao(): ParametrosBase {
       .map((nome) => ({ id: `cat-fer-${slug(nome)}`, nome })),
     gruposFerramenta: ["Chave de fenda", "Chave estria", "Chave boca", "Meia lua", "Combinada", "Canhão", "Alicates", "Lima", "Chave Philips", "Chave L", "Chave Allen", "Cachimbo", "Diversos"]
       .map((nome) => ({ id: `grupo-fer-${slug(nome)}`, nome })),
+    marcasFerramenta: [],
     tamanhos,
     unidades,
     associacoes: [
