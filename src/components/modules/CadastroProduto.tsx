@@ -42,11 +42,22 @@ import { useParametrosBase } from "@/lib/use-parametros-base";
 
 type Tabela = "epis" | "uniformes";
 
+const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
+
 // Cada tipo de produto: tabela, categoria de Cadastros > Gerais (id fixo; o nome pode ser
 // renomeado) e textos da tela.
 const CONFIG: Record<
   Tabela,
-  { modulo: Modulo; categoriaId: string; nome: string; exemplo: string; ficha: boolean }
+  {
+    modulo: Modulo;
+    categoriaId: string;
+    nome: string;
+    exemplo: string;
+    ficha: boolean;
+    // Preço de custo, marca e modelo: exceção aprovada pelo responsável para uniforme
+    // (dashboard e termo de entrega dependem deles).
+    custoMarcaModelo: boolean;
+  }
 > = {
   epis: {
     modulo: "epi",
@@ -54,6 +65,7 @@ const CONFIG: Record<
     nome: "EPI",
     exemplo: "capacete de segurança em ABS de alto impacto",
     ficha: true,
+    custoMarcaModelo: false,
   },
   uniformes: {
     modulo: "uniforme",
@@ -61,6 +73,7 @@ const CONFIG: Record<
     nome: "uniforme",
     exemplo: "camiseta manga curta em algodão azul royal",
     ficha: false,
+    custoMarcaModelo: true,
   },
 };
 
@@ -157,6 +170,21 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       nome,
       estoque_minimo: Math.max(0, Number(f.get("estoque_minimo") ?? 0) || 0),
     };
+    if (config.custoMarcaModelo) {
+      const preco = String(f.get("preco_unitario") ?? "").trim();
+      const precoNumero = Number(preco.replace(",", "."));
+      if (preco && (!Number.isFinite(precoNumero) || precoNumero < 0)) {
+        toast.error("Preço de custo inválido.");
+        return;
+      }
+      valores["preco_unitario"] = preco ? precoNumero : null;
+      // Marca e modelo ainda não existem na tabela real de uniformes: nesta fase só são
+      // gravados no modo demonstração. As colunas entram na Fase 2.
+      if (MODO_DEMO) {
+        valores["marca"] = String(f.get("marca") ?? "").trim() || null;
+        valores["modelo"] = String(f.get("modelo") ?? "").trim() || null;
+      }
+    }
     if (!editando) {
       valores["empresa_id"] = empresa;
       if (!regra) {
@@ -396,6 +424,33 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 defaultValue={editando?.estoque_minimo ?? 0}
               />
             </div>
+            {config.custoMarcaModelo && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="preco_unitario">Preço de custo (R$)</Label>
+                  <Input
+                    id="preco_unitario"
+                    name="preco_unitario"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    defaultValue={editando?.preco_unitario ?? ""}
+                  />
+                </div>
+                {MODO_DEMO && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="marca">Marca</Label>
+                      <Input id="marca" name="marca" defaultValue={editando?.marca ?? ""} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="modelo">Modelo</Label>
+                      <Input id="modelo" name="modelo" defaultValue={editando?.modelo ?? ""} />
+                    </div>
+                  </>
+                )}
+              </>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="empresa_id">Empresa</Label>
               <Select
