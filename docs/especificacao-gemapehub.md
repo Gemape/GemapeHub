@@ -2,6 +2,8 @@
 
 Transcrição do documento enviado pelo responsável (md gemape rev1.pdf, 29/09/2026), que substitui a versão anterior. A implementação segue etapa por etapa, com aprovação entre cada uma. Fase 1: ambiente de teste com dados fictícios, sem Supabase real.
 
+Leia junto com `docs/decisoes-especiais.md`: as decisões registradas lá complementam ou corrigem este texto e prevalecem em caso de conflito.
+
 Regras permanentes do responsável:
 - Nenhum módulo cria lista própria de subcategoria ou de código. Todos puxam de Cadastros > Gerais.
 - Campo extra só com aprovação prévia no PR.
@@ -46,7 +48,7 @@ Associa a uma categoria as opções de tamanho e unidade de medida de um produto
 1. Categoria (vem de Cadastro > Categoria de Produtos).
 2. Subcategoria (vem de Cadastro > Subcategoria de Produtos).
 3. Na lista da esquerda (Existentes), seleciono as opções desejadas e confirmo a transferência para a lista da direita (Autorizados).
-4. Para desautorizar, seleciono na lista da direita e confirmo a transferência de volta.
+4. Para desautorizar, seleciono na lista da direita (Autorizados) e confirmo a transferência de volta para a lista da esquerda (Existentes). O PDF original diz "direita" neste passo por erro de digitação (ver `docs/decisoes-especiais.md`).
 
 **Código do produto** (ensina o sistema a gerar o código interno da GEMAPE)
 1. Categoria (vem de Cadastro > Categoria de Produtos).
@@ -78,6 +80,11 @@ Associa a uma categoria as opções de tamanho e unidade de medida de um produto
 2. Subcategoria (lista suspensa de Cadastro > Cadastrar Subcategoria) (ex.: camiseta).
 3. Descrição do item (campo aberto) (ex.: camiseta manga curta em algodão azul royal).
 4. Estoque mínimo.
+5. Preço de custo (aprovado pelo responsável em 30/09/2026, ver `docs/decisoes-especiais.md`).
+6. Marca (aprovado em 30/09/2026).
+7. Modelo (aprovado em 30/09/2026).
+
+O CA não entra no uniforme: é exigência da NR6 e pertence ao EPI e à Ficha de EPI.
 
 ### Veículo
 
