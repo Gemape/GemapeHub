@@ -40,6 +40,7 @@ import {
   UNIDADES_EPI,
   UNIDADES_UNIFORME,
   exportarCsv,
+  formatarData,
   formatarMoeda,
   type Modulo,
 } from "@/lib/gemape";
@@ -182,6 +183,10 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   ...(modulo === "ferramenta" ? {
                     "Categoria de ferramenta": i.categoria_ferramenta,
                     "Grupo de ferramenta": i.grupo_ferramenta,
+                    "Número de série": i.numero_serie,
+                    Patrimônio: i.patrimonio,
+                    "Data de aquisição": i.data_aquisicao,
+                    "Preço de custo (R$)": i.preco_unitario,
                   } : {}),
                   Estoque: i.estoque_atual,
                   Mínimo: i.estoque_minimo,
@@ -205,6 +210,10 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
               <TableHead>{modulo === "ferramenta" ? "Subcategoria" : "Categoria"}</TableHead>
               {modulo === "ferramenta" && <TableHead>Categoria de ferramenta</TableHead>}
               {modulo === "ferramenta" && <TableHead>Grupo de ferramenta</TableHead>}
+              {modulo === "ferramenta" && <TableHead>Número de série</TableHead>}
+              {modulo === "ferramenta" && <TableHead>Patrimônio</TableHead>}
+              {modulo === "ferramenta" && <TableHead>Aquisição</TableHead>}
+              {modulo === "ferramenta" && <TableHead className="text-right">Custo</TableHead>}
               <TableHead className="text-right">Estoque</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Cadastro</TableHead>
@@ -215,13 +224,13 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={modulo === "ferramenta" ? 10 : 8} className="text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "ferramenta" ? 13 : modulo === "epi" ? 8 : 7} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={modulo === "ferramenta" ? 10 : 8} className="text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "ferramenta" ? 13 : modulo === "epi" ? 8 : 7} className="text-center text-muted-foreground">
                   Nenhum item cadastrado.
                 </TableCell>
               </TableRow>
@@ -233,6 +242,10 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   <TableCell>{item.categoria ?? "—"}</TableCell>
                   {modulo === "ferramenta" && <TableCell>{item.categoria_ferramenta ?? "—"}</TableCell>}
                   {modulo === "ferramenta" && <TableCell>{item.grupo_ferramenta ?? "—"}</TableCell>}
+                  {modulo === "ferramenta" && <TableCell>{item.numero_serie ?? "—"}</TableCell>}
+                  {modulo === "ferramenta" && <TableCell>{item.patrimonio ?? "—"}</TableCell>}
+                  {modulo === "ferramenta" && <TableCell>{formatarData(item.data_aquisicao)}</TableCell>}
+                  {modulo === "ferramenta" && <TableCell className="text-right">{item.preco_unitario == null ? "—" : formatarMoeda(item.preco_unitario)}</TableCell>}
                   <TableCell className="text-right">
                     <span
                       className={

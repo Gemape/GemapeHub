@@ -16,7 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
-import { formatarMoeda, MODULO_LABEL, type Modulo } from "@/lib/gemape";
+import { formatarMoeda, valorTotalEmEstoque, MODULO_LABEL, type Modulo } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -95,7 +95,7 @@ function DashboardGeral() {
     },
   });
 
-  const valorTotal = itens.reduce((s, i) => s + (i.estoque_atual ?? 0) * (i.preco_unitario ?? 0), 0);
+  const valorTotal = valorTotalEmEstoque(itens);
   const criticos = itens.filter((i) => (i.estoque_atual ?? 0) <= (i.estoque_minimo ?? 0));
 
   const porModulo = MODULOS.map((m) => {
@@ -104,7 +104,7 @@ function DashboardGeral() {
       modulo: m,
       itens: doModulo.length,
       unidades: doModulo.reduce((s, i) => s + (i.estoque_atual ?? 0), 0),
-      valor: doModulo.reduce((s, i) => s + (i.estoque_atual ?? 0) * (i.preco_unitario ?? 0), 0),
+      valor: valorTotalEmEstoque(doModulo),
     };
   });
 
@@ -236,7 +236,7 @@ function DashboardGeral() {
                   <p className="text-eyebrow">{empresa.nome_fantasia}</p>
                   <p className="mt-1 font-display text-xl font-bold">{doGrupo.length} itens</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatarMoeda(doGrupo.reduce((s, i) => s + (i.estoque_atual ?? 0) * (i.preco_unitario ?? 0), 0))} em estoque
+                    {formatarMoeda(valorTotalEmEstoque(doGrupo))} em estoque
                     · {veiculos.filter((v) => v.empresa_id === empresa.id).length} veículos
                   </p>
                 </div>

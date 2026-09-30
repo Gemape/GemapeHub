@@ -172,6 +172,16 @@ export function formatarMoeda(valor: number | null | undefined): string {
   return (valor ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+export function valorTotalEmEstoque(
+  itens: { estoque_atual?: number | null; preco_unitario?: number | null }[],
+): number {
+  const centavos = itens.reduce(
+    (soma, item) => soma + Math.round((item.estoque_atual ?? 0) * (item.preco_unitario ?? 0) * 100),
+    0,
+  );
+  return centavos / 100;
+}
+
 export function formatarData(data: string | null | undefined): string {
   if (!data) return "—";
   const [ano, mes, dia] = data.slice(0, 10).split("-");
