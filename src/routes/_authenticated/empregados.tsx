@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { prepararEmpregado, separarEmpregados } from "@/lib/empregados";
@@ -65,11 +66,11 @@ function PaginaEmpregados() {
   const [empresaSel, setEmpresaSel] = useState("");
   const salvando = useRef(false);
   const { data: lista = [], isLoading } = useEmpregados(empresaId);
-  // Todos, de todas as empresas, para não repetir CPF nem matrícula.
-  const { data: todos = [] } = useEmpregados(TODAS);
   const empregados = lista as EmpregadoCadastro[];
   const { ativos, inativos } = separarEmpregados(empregados);
   const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
+  // Empregado antigo sem empresa: a empresa precisa ser escolhida, não é preenchida sozinha.
+  const empresaForm = empresaSel || (editando ? "" : empresaPadrao);
   const salvar = useSalvar("empregados", ["empregados", "empregados-total"]);
   const excluir = useExcluir("empregados", ["empregados", "empregados-total"]);
 
@@ -80,32 +81,36 @@ function PaginaEmpregados() {
     setAberto(true);
   }
 
-  function enviar(e: React.FormEvent<HTMLFormElement>) {
+  async function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (salvando.current) return;
+    salvando.current = true;
     const f = new FormData(e.currentTarget);
     const texto = (k: string) => String(f.get(k) ?? "");
     let valores: Record<string, unknown>;
     try {
+      // Confere CPF e matrícula contra todos os empregados, de todas as empresas.
+      const { data: todos, error } = await supabase.from("empregados").select("id,cpf,matricula");
+      if (error) throw new Error("Não foi possível conferir CPF e matrícula. Tente de novo.");
       valores = prepararEmpregado(
         {
           nome: texto("nome"),
           cpf: texto("cpf"),
           matricula: texto("matricula"),
-          empresa_id: empresaSel || empresaPadrao,
+          empresa_id: empresaForm,
           email: MODO_DEMO ? texto("email") : "",
           data_admissao: texto("data_admissao"),
           data_demissao: texto("data_demissao"),
         },
-        todos,
+        todos ?? [],
         editando ?? undefined,
       );
     } catch (erro) {
+      salvando.current = false;
       toast.error(erro instanceof Error ? erro.message : "Dados inválidos.");
       return;
     }
     if (!MODO_DEMO) delete valores["email"];
-    salvando.current = true;
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
       {
@@ -190,7 +195,7 @@ function PaginaEmpregados() {
             <DialogTitle>{editando ? "Editar empregado" : "Novo empregado"}</DialogTitle>
             <DialogDescription>Dados do empregado.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
+          <form onSubmit={(e) => void enviar(e)} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Nome completo</Label>
               <Input id="nome" name="nome" aria-required defaultValue={editando?.nome ?? ""} />
@@ -208,7 +213,7 @@ function PaginaEmpregados() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="empresa_id">Empresa</Label>
-              <Select value={empresaSel || empresaPadrao} onValueChange={setEmpresaSel}>
+              <Select value={empresaForm} onValueChange={setEmpresaSel}>
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>

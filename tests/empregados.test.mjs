@@ -43,3 +43,16 @@ test('separa ativos e demitidos', () => {
   assert.deepEqual(r.ativos.map((e) => e.nome), ['Bia', 'Zé']);
   assert.deepEqual(r.inativos.map((e) => e.nome), ['Ana', 'Caio']);
 });
+
+test('edição preserva inativo manual e dados antigos repetidos', () => {
+  const inativo = { id: 'c', cpf: '52998224725', matricula: 'l3p25', ativo: false };
+  const v = prepararEmpregado({ ...base, cpf: '52998224725', matricula: 'l3p25' }, [inativo], inativo);
+  assert.equal(v.ativo, false);
+  // CPF e matrícula sem mudança ficam exatamente como estavam.
+  assert.equal(v.cpf, '52998224725');
+  assert.equal(v.matricula, 'l3p25');
+  // Dois registros antigos com o mesmo valor: editar um deles sem mexer no valor não bloqueia.
+  const a = { id: 'a', cpf: 'N/A', matricula: '1001', ativo: true };
+  const b = { id: 'b', cpf: 'N/A', matricula: '1001', ativo: true };
+  assert.doesNotThrow(() => prepararEmpregado({ ...base, cpf: 'N/A', matricula: '1001' }, [a, b], a));
+});

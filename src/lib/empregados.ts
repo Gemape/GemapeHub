@@ -35,23 +35,26 @@ export type DadosEmpregado = {
   data_demissao: string;
 };
 
-type Existente = { id: string; cpf: string | null; matricula: string | null };
+type Existente = { id: string; cpf: string | null; matricula: string | null; ativo?: boolean };
 
 // Valida e prepara os valores para salvar. Na edição, CPF e matrícula antigos que não seguem
-// o padrão podem continuar como estão. A situação vem só da data de demissão.
+// o padrão podem continuar como estão, sem reformatar. Com data de demissão, o empregado
+// fica inativo; um empregado já inativo sem data continua inativo.
 export function prepararEmpregado(
   dados: DadosEmpregado,
   outros: Existente[],
   anterior?: Existente,
 ): Record<string, string | boolean | null> {
   const nome = dados.nome.trim().replace(/\s+/g, " ");
-  const cpf = formatarCpf(dados.cpf.trim());
-  const matricula = normalizarMatricula(dados.matricula);
+  let cpf = formatarCpf(dados.cpf.trim());
+  let matricula = normalizarMatricula(dados.matricula);
   const email = dados.email.trim().toLowerCase();
   if (!nome) throw new Error("Informe o nome completo.");
   const cpfMantido = anterior && digitos(cpf) === digitos(anterior.cpf ?? "");
   if (!cpfMantido && !cpfValido(cpf)) throw new Error("CPF inválido.");
+  if (cpfMantido) cpf = anterior.cpf ?? cpf;
   const matriculaMantida = anterior && matricula === normalizarMatricula(anterior.matricula ?? "");
+  if (matriculaMantida) matricula = anterior.matricula ?? matricula;
   if (matricula && !matriculaMantida && !matriculaValida(matricula)) {
     throw new Error("Matrícula no formato LxPx (livro e página), ex.: L3P25.");
   }
@@ -60,12 +63,14 @@ export function prepararEmpregado(
   if (dados.data_admissao && dados.data_demissao && dados.data_demissao < dados.data_admissao) {
     throw new Error("A data de demissão não pode ser anterior à admissão.");
   }
+  // Valor que não mudou na edição não é conferido de novo (dados antigos podem repetir).
   const outrosSemEste = outros.filter((o) => o.id !== anterior?.id);
-  if (outrosSemEste.some((o) => digitos(o.cpf ?? "") === digitos(cpf))) {
+  if (!cpfMantido && outrosSemEste.some((o) => digitos(o.cpf ?? "") === digitos(cpf))) {
     throw new Error("Já existe um empregado com este CPF.");
   }
   if (
     matricula &&
+    !matriculaMantida &&
     outrosSemEste.some((o) => normalizarMatricula(o.matricula ?? "") === matricula)
   ) {
     throw new Error("Já existe um empregado com esta matrícula.");
@@ -78,17 +83,19 @@ export function prepararEmpregado(
     email: email || null,
     data_admissao: dados.data_admissao || null,
     data_demissao: dados.data_demissao || null,
-    // Com data de demissão, o empregado fica inativo automaticamente.
-    ativo: !dados.data_demissao,
+    ativo: !dados.data_demissao && anterior?.ativo !== false,
   };
 }
 
 // Ativos no bloco de cima, demitidos no de baixo, cada um em ordem de nome.
+export const empregadoAtivo = (e: { ativo: boolean; data_demissao: string | null }) =>
+  e.ativo && !e.data_demissao;
+
 export function separarEmpregados<
   T extends { nome: string; ativo: boolean; data_demissao: string | null },
 >(lista: T[]): { ativos: T[]; inativos: T[] } {
   const ordenar = (a: T, b: T) => a.nome.localeCompare(b.nome, "pt-BR");
-  const inativo = (e: T) => !e.ativo || !!e.data_demissao;
+  const inativo = (e: T) => !empregadoAtivo(e);
   return {
     ativos: lista.filter((e) => !inativo(e)).sort(ordenar),
     inativos: lista.filter(inativo).sort(ordenar),
