@@ -199,3 +199,12 @@ export function exportarCsv(nomeArquivo: string, linhas: Record<string, unknown>
   link.click();
   URL.revokeObjectURL(url);
 }
+
+// Texto do usuário dentro do HTML dos termos impressos.
+export const escaparHtml = (v: unknown) =>
+  String(v ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
