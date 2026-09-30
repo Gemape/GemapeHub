@@ -8,9 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { montarFichaEpiAvulsaHtml } from "@/lib/ficha-epi-avulsa-html";
-import { useEmpresas, useItens, useEmpregados, useMovimentacoes } from "@/lib/hooks-gemape";
+import { lerHistoricoEpiEmpregado, type MovimentacaoFicha } from "@/lib/historico-epi-empregado";
+import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
 
 export function EpiFichaEpiAvulsa() {
   const { empresaId } = useEmpresa();
@@ -20,15 +22,27 @@ export function EpiFichaEpiAvulsa() {
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("epi", TODAS);
-  const { data: movimentacoes = [] } = useMovimentacoes("epi", TODAS, 1000);
-
-  const historico = movimentacoes.filter((m) => m.empregado_id === empregadoId);
   const empregado = empregados.find((e) => e.id === empregadoId);
   const empresa = empresas.find((e) => e.id === empresaSel);
 
-  function gerarFicha() {
+  async function gerarFicha() {
     if (!empregado || !empresa) {
       alert("Selecione um empregado.");
+      return;
+    }
+
+    // A aba abre antes da leitura, ainda no clique, para o navegador não bloqueá-la.
+    const win = window.open("", "_blank");
+    // Histórico inteiro do empregado nesta empresa, lido do banco na hora de gerar a ficha.
+    let historico: MovimentacaoFicha[];
+    try {
+      historico = await lerHistoricoEpiEmpregado(supabase, {
+        empregadoId: empregado.id,
+        empresaId: empresa.id,
+      });
+    } catch (erro) {
+      win?.close();
+      alert(`Não foi possível carregar o histórico: ${(erro as Error).message}`);
       return;
     }
 
@@ -47,7 +61,6 @@ export function EpiFichaEpiAvulsa() {
       }),
     });
 
-    const win = window.open("", "_blank");
     win?.document.write(html);
     win?.document.close();
   }
