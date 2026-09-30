@@ -88,12 +88,28 @@ export function VeiculosCadastroModulo() {
   const salvando = useRef(false);
   const [gerando, setGerando] = useState(false);
   const { data: lista = [], isLoading } = useVeiculos(empresaId);
-  const { data: empregados = [] } = useEmpregados(TODAS, true);
+  const empresaForm = empresaSel || editando?.empresa_id || "";
+  // Responsável: empregados ativos da empresa do veículo; os nomes da lista vêm de todos.
+  const { data: empregadosEmpresa = [] } = useEmpregados(empresaForm || TODAS, true);
+  const { data: empregados = [] } = useEmpregados(TODAS);
+  const responsavelAtual = editando?.empregado_responsavel_id
+    ? empregados.find((e) => e.id === editando.empregado_responsavel_id)
+    : undefined;
+  // Evita que a prévia do código de um "Novo" atrasado apareça numa edição aberta depois.
+  const pedidoPrevia = useRef(0);
   const salvar = useSalvar("veiculos", ["veiculos"]);
   const excluir = useExcluir("veiculos", ["veiculos"]);
 
   const veiculos = (lista as VeiculoCadastro[]).filter((v) =>
-    combinaBusca(busca, v.codigo_sku, v.tipo, v.descricao, v.placa, v.marca, v.modelo),
+    combinaBusca(
+      busca.replace(/-/g, ""),
+      v.codigo_sku,
+      v.tipo,
+      v.descricao,
+      normalizarPlaca(v.placa ?? ""),
+      v.marca,
+      v.modelo,
+    ),
   );
   const regra = parametros.regrasCodigo.find((r) => r.categoriaId === CATEGORIA_VEICULO);
   const subcategorias = subcategoriasDa(parametros, CATEGORIA_VEICULO);
@@ -123,15 +139,15 @@ export function VeiculosCadastroModulo() {
     setEditando(null);
     setEmpresaSel("");
     setPrevia("");
+    const pedido = ++pedidoPrevia.current;
     setAberto(true);
     if (!MODO_DEMO || !regra) return;
     try {
-      setPrevia(
-        proximoCodigo(
-          regra,
-          (await todosVeiculos()).map((v) => v.codigo_sku),
-        ),
+      const codigo = proximoCodigo(
+        regra,
+        (await todosVeiculos()).map((v) => v.codigo_sku),
       );
+      if (pedido === pedidoPrevia.current) setPrevia(codigo);
     } catch {
       setPrevia("");
     }
@@ -143,7 +159,7 @@ export function VeiculosCadastroModulo() {
     const texto = (k: string) => String(f.get(k) ?? "").trim();
     const tipo = texto("tipo");
     const descricao = texto("descricao");
-    const placa = normalizarPlaca(texto("placa"));
+    const placaDigitada = normalizarPlaca(texto("placa"));
     const marca = texto("marca");
     const modelo = texto("modelo");
     const anoTexto = texto("ano");
@@ -156,14 +172,16 @@ export function VeiculosCadastroModulo() {
     const combustivel = texto("combustivel");
     const empresa = empresaSel || editando?.empresa_id || empresaPadrao;
     // Placa já salva que não segue o padrão pode continuar como está na edição.
-    const placaMantida = editando && placa === normalizarPlaca(editando.placa ?? "");
+    const placaMantida = !!editando && placaDigitada === normalizarPlaca(editando.placa ?? "");
+    // Grava no mesmo formato das placas antigas (ABC-1234 ou ABC1D23); a mantida fica igual.
+    const placa = placaMantida && editando ? editando.placa : formatarPlaca(placaDigitada);
     const erro = !tipo
       ? "Selecione a subcategoria."
       : MODO_DEMO && !descricao
         ? "Informe a descrição do item."
-        : !placa
+        : !placaDigitada
           ? "Informe a placa."
-          : !placaMantida && !placaValida(placa)
+          : !placaMantida && !placaValida(placaDigitada)
             ? "Placa inválida. Use o padrão ABC-1234 ou ABC1D23."
             : !marca
               ? "Informe a marca."
@@ -171,7 +189,7 @@ export function VeiculosCadastroModulo() {
                 ? "Informe o modelo."
                 : ano !== null && !anoValido(ano)
                   ? `Ano de fabricação inválido. Use de 1950 a ${new Date().getFullYear() + 1}.`
-                  : !Number.isFinite(km) || km < 0
+                  : !Number.isInteger(km) || km < 0
                     ? "Quilometragem inválida."
                     : !empresa
                       ? "Selecione a empresa."
@@ -339,6 +357,7 @@ export function VeiculosCadastroModulo() {
                       size="sm"
                       onClick={() => {
                         destravar();
+                        pedidoPrevia.current++;
                         setEmpresaSel(v.empresa_id ?? "");
                         setPrevia("");
                         setEditando(v);
@@ -554,7 +573,14 @@ export function VeiculosCadastroModulo() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NENHUM}>Sem responsável</SelectItem>
-                  {empregados.map((e) => (
+                  {/* O responsável atual continua na lista mesmo se inativo ou de outra empresa. */}
+                  {editando?.empregado_responsavel_id &&
+                    !empregadosEmpresa.some((e) => e.id === editando.empregado_responsavel_id) && (
+                      <SelectItem value={editando.empregado_responsavel_id}>
+                        {responsavelAtual?.nome ?? "Responsável atual"}
+                      </SelectItem>
+                    )}
+                  {empregadosEmpresa.map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome}
                     </SelectItem>

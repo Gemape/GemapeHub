@@ -58,7 +58,7 @@ function PaginaVeiculos() {
             />
             <StatCard
               titulo="Em manutenção"
-              valor={veiculos.filter((v) => v.status === "Em Manutenção").length}
+              valor={veiculos.filter((v) => v.status === "Manutencao").length}
               icone={Wrench}
             />
             <StatCard
