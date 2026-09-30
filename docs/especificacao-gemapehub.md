@@ -62,6 +62,7 @@ Associa a uma categoria as opções de tamanho e unidade de medida de um produto
 2. Subcategoria (lista suspensa de Cadastro > Cadastrar Subcategoria) (ex.: capacete).
 3. Descrição do item (campo aberto) (ex.: capacete de segurança em ABS de alto impacto).
 4. Estoque mínimo (número, quantidade mínima).
+5. Empresa (aprovado em 30/09/2026: o dashboard consolida por empresa).
 
 **Cadastrar ficha de EPI**
 1. Seleciona o EPI (busca por palavra-chave ou código do produto).
@@ -83,6 +84,7 @@ Associa a uma categoria as opções de tamanho e unidade de medida de um produto
 5. Preço de custo (aprovado pelo responsável em 30/09/2026, ver `docs/decisoes-especiais.md`).
 6. Marca (aprovado em 30/09/2026).
 7. Modelo (aprovado em 30/09/2026).
+8. Empresa (aprovado em 30/09/2026).
 
 O CA não entra no uniforme: é exigência da NR6 e pertence ao EPI e à Ficha de EPI.
 
@@ -98,6 +100,12 @@ O CA não entra no uniforme: é exigência da NR6 e pertence ao EPI e à Ficha d
 7. Ano de fabricação.
 8. Cor.
 9. Combustível.
+10. Empresa (aprovado em 30/09/2026).
+11. RENAVAM (aprovado em 30/09/2026).
+12. Quilometragem atual (aprovado em 30/09/2026).
+13. Situação (aprovado em 30/09/2026).
+14. Empregado responsável (aprovado em 30/09/2026).
+15. Observações (aprovado em 30/09/2026).
 
 ### Ferramentas
 
@@ -108,6 +116,9 @@ Permissão: Administrador cadastra caixa, portador, categoria e grupo. Usuário 
 2. Categoria (lista de Cadastro > Ferramentas > Cadastrar Categorias de Ferramentas).
 3. Grupo (lista de Cadastro > Ferramentas > Cadastrar Grupos de Ferramentas).
 4. Modelo (campo aberto).
+5. Número de série (aprovado em 30/09/2026: essencial para garantia e baixa).
+6. Patrimônio (aprovado em 30/09/2026: liga a ferramenta ao ativo).
+7. Data de aquisição (aprovado em 30/09/2026: sustenta a depreciação).
 
 **Cadastrar categorias de ferramentas:** Manual, Elétrica, Pneumático, Hidráulica, Medição, Corte. Permitir cadastrar novas se necessário.
 
@@ -130,6 +141,8 @@ Permissão: Administrador e usuário RH. Usuário simples: não tem acesso.
 
 Campos: nome completo, CPF, matrícula interna (LxPx: livro x, página x), empresa, e-mail, data de admissão, data de demissão.
 
+Não há campo de cargo nem botão "ativo": a situação vem só da data de demissão (confirmado em 30/09/2026).
+
 - Ao entrar, vejo todos os empregados, com os ativos no bloco superior.
 - Ao lançar data de demissão, o sistema inativa a pessoa automaticamente e a leva para um bloco inferior separado.
 - Excluir o cadastro do empregado apenas com permissão de administrador.
@@ -138,7 +151,7 @@ Campos: nome completo, CPF, matrícula interna (LxPx: livro x, página x), empre
 
 Permissão: Administrador e usuário RH. Usuário simples: não tem acesso.
 
-Campos: razão social, CNPJ, endereço, status (ativa ou inativa).
+Campos: nome fantasia (aprovado em 30/09/2026), razão social, CNPJ, endereço, status (ativa ou inativa).
 
 - Excluir o cadastro da empresa apenas com permissão de administrador.
 
@@ -148,7 +161,7 @@ Permissão: Administrador. Usuário simples: não tem acesso.
 
 Campos:
 1. Numeração sequencial automática de 5 dígitos.
-2. Categoria (vem de Cadastro > Categoria de Produtos).
+2. Categorias: uma ou mais, vindas de Cadastros > Gerais > Categorias (aprovado em 30/09/2026; o fornecedor pode vender mais de um tipo de produto).
 3. Razão social.
 4. Nome fantasia.
 5. CNPJ.

@@ -62,7 +62,31 @@ auth, PARAR e avisar o usuário.
 - Se houver contradição entre o MD e este arquivo ou o histórico
   do projeto, PARAR e perguntar antes de implementar.
 
-## 8. EM ABERTO (AGUARDANDO DECISÃO DO USUÁRIO)
-- "Cadastrar as Ferramentas": o rev1 removeu os campos de número
-  de série, patrimônio e data de aquisição. Confirmar se voltam
-  ao módulo Ferramentas.
+## 8. FERRAMENTAS — NÚMERO DE SÉRIE, PATRIMÔNIO E DATA DE AQUISIÇÃO
+Decidido em 30/09/2026: VOLTAM ao cadastro de ferramentas.
+Série é essencial para garantia e baixa; patrimônio liga ao ativo;
+data de aquisição sustenta depreciação. MD atualizado.
+
+## 9. EMPRESA NOS CADASTROS DE EPI, UNIFORME E VEÍCULO
+Decidido em 30/09/2026: MANTER o campo Empresa. O dashboard
+consolida por empresa, e o dado precisa de origem. MD atualizado.
+
+## 10. VEÍCULO — CAMPOS ALÉM DO MD
+Decidido em 30/09/2026: MANTER RENAVAM, quilometragem, situação,
+empregado responsável e observações, junto com os campos do MD.
+O módulo Veículos estava conforme e nada é removido. MD atualizado.
+
+## 11. EMPRESAS — NOME FANTASIA
+Decidido em 30/09/2026: MANTER o nome fantasia. MD atualizado.
+
+## 12. EMPREGADOS
+Decidido em 30/09/2026: SEGUIR O MD. E-mail no cadastro, sem cargo,
+sem botão "ativo"; a inativação é automática pela data de demissão.
+
+## 13. FORNECEDORES — CATEGORIAS
+Decidido em 30/09/2026: VÁRIAS categorias por fornecedor, vindas de
+Cadastros > Gerais > Categorias (não de lista fixa). MD atualizado.
+
+## 14. REGISTRO DE MUDANÇAS NO MD
+Toda mudança no MD deve ser registrada aqui como decisão aprovada,
+para a auditoria futura conferir o código contra a spec atualizada.
