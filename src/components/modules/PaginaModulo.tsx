@@ -1,4 +1,5 @@
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
+import { CadastroProduto } from "@/components/modules/CadastroProduto";
 import { ItensModulo } from "@/components/modules/ItensModulo";
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { UniformesComprasModulo } from "@/components/modules/UniformesComprasModulo";
@@ -187,7 +188,14 @@ export function PaginaModulo({
           <DashboardModulo modulo={modulo} />
         </TabsContent>
         <TabsContent value="cadastro" className="mt-5">
-          <ItensModulo modulo={modulo} />
+          {/* EPI e uniforme usam o cadastro da especificação rev1, o mesmo de Cadastros. */}
+          {modulo === "epi" ? (
+            <CadastroProduto tabela="epis" />
+          ) : modulo === "uniforme" ? (
+            <CadastroProduto tabela="uniformes" />
+          ) : (
+            <ItensModulo modulo={modulo} />
+          )}
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />

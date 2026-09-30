@@ -34,24 +34,49 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { useFichasEpi } from "@/lib/use-fichas-epi";
 import { exportarCsv } from "@/lib/gemape";
+import type { Modulo } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { removerFicha } from "@/lib/fichas-epi";
 import { combinaBusca, mesmoNome, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
-// Categoria EPI de Cadastros > Gerais (id fixo; o nome pode ser renomeado).
-const CATEGORIA_EPI = "cat-epi";
+type Tabela = "epis" | "uniformes";
 
-// Todos os códigos de EPI já usados, de todas as empresas, para seguir a sequência.
-async function codigosUsados(): Promise<string[]> {
-  const { data, error } = await supabase.from("epis").select("codigo_sku");
+// Cada tipo de produto: tabela, categoria de Cadastros > Gerais (id fixo; o nome pode ser
+// renomeado) e textos da tela.
+const CONFIG: Record<
+  Tabela,
+  { modulo: Modulo; categoriaId: string; nome: string; exemplo: string; ficha: boolean }
+> = {
+  epis: {
+    modulo: "epi",
+    categoriaId: "cat-epi",
+    nome: "EPI",
+    exemplo: "capacete de segurança em ABS de alto impacto",
+    ficha: true,
+  },
+  uniformes: {
+    modulo: "uniforme",
+    categoriaId: "cat-uniformes",
+    nome: "uniforme",
+    exemplo: "camiseta manga curta em algodão azul royal",
+    ficha: false,
+  },
+};
+
+// Todos os códigos já usados na tabela, de todas as empresas, para seguir a sequência.
+async function codigosUsados(tabela: Tabela): Promise<string[]> {
+  const { data, error } = await supabase.from(tabela).select("codigo_sku");
   if (error) throw error;
   return ((data ?? []) as { codigo_sku: string | null }[]).map((e) => e.codigo_sku ?? "");
 }
 
-// Cadastrar EPI (especificação rev1): código automático, subcategoria, descrição e
-// estoque mínimo. A empresa continua sendo informada porque cada EPI pertence a uma.
-export function CadastroEpi() {
+// Cadastrar EPI e Cadastrar uniforme (especificação rev1): código automático,
+// subcategoria, descrição e estoque mínimo. A empresa continua sendo informada porque
+// cada produto pertence a uma.
+export function CadastroProduto({ tabela }: { tabela: Tabela }) {
+  const config = CONFIG[tabela];
+  const nomeMaiusculo = config.nome.charAt(0).toUpperCase() + config.nome.slice(1);
   const { empresas, empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const fichas = useFichasEpi();
@@ -65,15 +90,15 @@ export function CadastroEpi() {
   // o formulário fica travado até ser aberto de novo (o diálogo ainda está fechando).
   const salvando = useRef(false);
   const [gerando, setGerando] = useState(false);
-  const { data: lista = [], isLoading } = useItens("epi", empresaId, busca);
+  const { data: lista = [], isLoading } = useItens(config.modulo, empresaId, busca);
   // Filtro também na tela, porque o modo demonstração não filtra pela busca.
   const itens = lista.filter((i) => combinaBusca(busca, i.codigo_sku, i.nome, i.categoria));
-  const salvar = useSalvar("epis", ["epis", "produtos-gemape", "saidas-por-item"]);
-  const excluir = useExcluir("epis", ["epis", "produtos-gemape", "saidas-por-item"]);
+  const salvar = useSalvar(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
+  const excluir = useExcluir(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
 
-  const regra = parametros.regrasCodigo.find((r) => r.categoriaId === CATEGORIA_EPI);
-  const subcategorias = subcategoriasDa(parametros, CATEGORIA_EPI);
-  // Ao editar um EPI antigo cuja subcategoria não está em Cadastros > Gerais, ela
+  const regra = parametros.regrasCodigo.find((r) => r.categoriaId === config.categoriaId);
+  const subcategorias = subcategoriasDa(parametros, config.categoriaId);
+  // Ao editar um produto antigo cuja subcategoria não está em Cadastros > Gerais, ela
   // continua aparecendo para não ser apagada sem querer.
   const subcategoriaAtual = editando?.categoria
     ? (subcategorias.find((s) => mesmoNome(s.nome, editando.categoria))?.nome ?? editando.categoria)
@@ -92,7 +117,7 @@ export function CadastroEpi() {
   async function abrirNovo() {
     if (!regra) {
       toast.error(
-        "Cadastre antes a regra do código de EPI em Cadastros > Gerais > Código do Produto.",
+        `Cadastre antes a regra do código de ${config.nome} em Cadastros > Gerais > Código do Produto.`,
       );
       return;
     }
@@ -102,7 +127,7 @@ export function CadastroEpi() {
     setPrevia("");
     setAberto(true);
     try {
-      setPrevia(proximoCodigo(regra, await codigosUsados()));
+      setPrevia(proximoCodigo(regra, await codigosUsados(tabela)));
     } catch {
       setPrevia("");
     }
@@ -136,7 +161,7 @@ export function CadastroEpi() {
     if (!editando) {
       valores["empresa_id"] = empresa;
       if (!regra) {
-        toast.error("Regra do código de EPI não encontrada.");
+        toast.error(`Regra do código de ${config.nome} não encontrada.`);
         return;
       }
     }
@@ -146,7 +171,7 @@ export function CadastroEpi() {
     if (!editando && regra) {
       try {
         // O código é gerado na hora de salvar, para não repetir um já usado.
-        valores["codigo_sku"] = proximoCodigo(regra, await codigosUsados());
+        valores["codigo_sku"] = proximoCodigo(regra, await codigosUsados(tabela));
       } catch (erro) {
         liberar();
         toast.error("Não foi possível gerar o código.", {
@@ -181,7 +206,7 @@ export function CadastroEpi() {
             variant="outline"
             onClick={() =>
               exportarCsv(
-                "epi",
+                config.modulo,
                 itens.map((i) => ({
                   Código: i.codigo_sku,
                   Subcategoria: i.categoria,
@@ -196,7 +221,7 @@ export function CadastroEpi() {
             Exportar CSV
           </Button>
           <Button requiresWrite onClick={abrirNovo}>
-            Novo EPI
+            Novo {config.nome}
           </Button>
         </div>
       </div>
@@ -211,21 +236,27 @@ export function CadastroEpi() {
               <TableHead className="text-right">Estoque mínimo</TableHead>
               <TableHead className="text-right">Estoque</TableHead>
               <TableHead>Empresa</TableHead>
-              <TableHead>Ficha</TableHead>
+              {config.ficha && <TableHead>Ficha</TableHead>}
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={config.ficha ? 8 : 7}
+                  className="text-center text-muted-foreground"
+                >
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
-                  Nenhum EPI cadastrado.
+                <TableCell
+                  colSpan={config.ficha ? 8 : 7}
+                  className="text-center text-muted-foreground"
+                >
+                  Nenhum {config.nome} cadastrado.
                 </TableCell>
               </TableRow>
             ) : (
@@ -247,13 +278,15 @@ export function CadastroEpi() {
                     </span>
                   </TableCell>
                   <TableCell>{nomeEmpresa(item.empresa_id)}</TableCell>
-                  <TableCell>
-                    <Link to="/cadastros/epi-ficha" search={{ epi: item.id }}>
-                      <Badge variant={temFicha(item.id) ? "secondary" : "outline"}>
-                        {temFicha(item.id) ? "Cadastrada" : "Pendente"}
-                      </Badge>
-                    </Link>
-                  </TableCell>
+                  {config.ficha && (
+                    <TableCell>
+                      <Link to="/cadastros/epi-ficha" search={{ epi: item.id }}>
+                        <Badge variant={temFicha(item.id) ? "secondary" : "outline"}>
+                          {temFicha(item.id) ? "Cadastrada" : "Pendente"}
+                        </Badge>
+                      </Link>
+                    </TableCell>
+                  )}
                   <TableCell className="whitespace-nowrap text-right">
                     <Button
                       requiresWrite
@@ -274,10 +307,10 @@ export function CadastroEpi() {
                       onClick={() => {
                         if (confirm(`Excluir ${item.codigo_sku} ${item.nome}?`))
                           excluir.mutate(item.id, {
-                            // A ficha do EPI excluído sai junto.
+                            // A ficha do EPI excluído sai junto (só EPI tem ficha).
                             onSuccess: () => {
                               try {
-                                removerFicha(item.id);
+                                if (config.ficha) removerFicha(item.id);
                               } catch {
                                 // Fichas ilegíveis ficam como estão.
                               }
@@ -299,7 +332,7 @@ export function CadastroEpi() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
-              {editando ? `Editar ${editando.codigo_sku}` : "Cadastrar EPI"}
+              {editando ? `Editar ${editando.codigo_sku}` : `Cadastrar ${config.nome}`}
             </DialogTitle>
             <DialogDescription>
               {editando
@@ -338,7 +371,7 @@ export function CadastroEpi() {
               </Select>
               {subcategorias.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Nenhuma subcategoria de EPI em Cadastros &gt; Gerais &gt; Categorias.
+                  Nenhuma subcategoria de {nomeMaiusculo} em Cadastros &gt; Gerais &gt; Categorias.
                 </p>
               )}
             </div>
@@ -350,7 +383,7 @@ export function CadastroEpi() {
                 name="nome"
                 rows={2}
                 defaultValue={editando?.nome ?? ""}
-                placeholder="Ex.: capacete de segurança em ABS de alto impacto"
+                placeholder={`Ex.: ${config.exemplo}`}
               />
             </div>
             <div className="space-y-1.5">
