@@ -42,7 +42,9 @@ Rotina em todo PR:
 
 1. Antes de abrir o PR, rode o build de produção (`npm run build`) e corrija falhas.
 2. Abra o PR. A Vercel gera o link de preview a cada push na branch.
-3. Confira o status do deploy nos checks do PR (`gh pr checks` ou a aba Checks). Se falhar, leia o log de erro, corrija na mesma branch e faça push até o preview funcionar.
+3. Confira o status do deploy nos checks do PR (`gh pr checks` ou a aba Checks). Se o build falhar por erro no código, corrija na mesma branch e faça push até o preview funcionar. Se o deployment falhar ou ficar bloqueado por configuração ou permissão da Vercel, informe o motivo exato ao responsável e aguarde: não altere configurações da Vercel.
+   - Se o ambiente de trabalho não alcançar a Vercel, rode o app localmente em modo demonstração (`VITE_DEMO_MODE` diferente de `false`) e informe a URL local e os pontos de conferência.
+   - Se a API do GitHub devolver Forbidden, faça push da branch, informe o título do PR e aguarde: o responsável abre o PR manualmente.
 4. Coloque na descrição do PR o link do preview e o passo a passo para testar nele.
 5. A tarefa só está concluída com o preview funcionando.
 
