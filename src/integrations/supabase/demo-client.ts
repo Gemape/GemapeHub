@@ -29,6 +29,23 @@ const persistirDados = () => {
   if (typeof window !== "undefined") window.localStorage.setItem(chaveArmazenamento, JSON.stringify(dados));
 };
 const id = () => crypto.randomUUID();
+// Emula o gatilho de movimentações do banco real (migration 20260928140000): entrada e
+// devolução somam, saída subtrai, vistoria e transferência não mexem no saldo. Tudo ou nada.
+const TABELA_DO_MODULO: Record<string, string> = { epi: "epis", uniforme: "uniformes", ferramenta: "ferramentas" };
+const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
+  const saldos = new Map<Linha, number>();
+  for (const m of movimentacoes) {
+    const item = (dados[TABELA_DO_MODULO[m.modulo as string]] ?? []).find(i => i.id === m.item_id);
+    const quantidade = Number(m.quantidade) || 0;
+    const delta = m.tipo_movimentacao === "Entrada" || m.tipo_movimentacao === "Devolucao" ? quantidade : m.tipo_movimentacao === "Saida" ? -quantidade : 0;
+    if (!item || delta === 0) continue;
+    const saldo = (saldos.get(item) ?? (Number(item.estoque_atual) || 0)) + delta;
+    if (saldo < 0) return new Error("Estoque insuficiente");
+    saldos.set(item, saldo);
+  }
+  saldos.forEach((saldo, item) => { item.estoque_atual = saldo; });
+  return null;
+};
 class Consulta {
   private filtros: Array<(l: Linha) => boolean> = []; private ordem?: string; private limite?: number; private payload?: Linha | Linha[]; private acao = "select"; private contagem = false;
   private tabela: string;
@@ -48,7 +65,11 @@ class Consulta {
   then<TResult1 = { data: Linha[] | null; error: null; count?: number }, TResult2 = never>(ok?: ((v: { data: Linha[] | null; error: null; count?: number }) => TResult1 | PromiseLike<TResult1>) | null, bad?: ((e: unknown) => TResult2 | PromiseLike<TResult2>) | null) { return this.executar(false).then(ok, bad); }
   private async executar(unico: boolean) {
     const linhas = dados[this.tabela] ?? (dados[this.tabela] = []); let selecionadas = linhas.filter(l => this.filtros.every(f => f(l)));
-    if (this.acao === "insert") { const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: agora, ...l })); linhas.push(...novos); selecionadas = novos; persistirDados(); }
+    if (this.acao === "insert") {
+      const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: agora, ...l }));
+      if (this.tabela === "movimentacoes") { const erro = aplicarEstoque(novos); if (erro) return { data: null, error: erro }; }
+      linhas.push(...novos); selecionadas = novos; persistirDados();
+    }
     if (this.acao === "update") { selecionadas.forEach(l => Object.assign(l, this.payload)); persistirDados(); }
     if (this.acao === "delete") { selecionadas.forEach(l => linhas.splice(linhas.indexOf(l), 1)); persistirDados(); }
     if (this.ordem) { const [c,d] = this.ordem.split(":"); selecionadas.sort((a,b) => String(a[c]).localeCompare(String(b[c])) * (d === "desc" ? -1 : 1)); }
