@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,16 +17,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { formatarData } from "@/lib/gemape";
+import { escaparHtml } from "@/lib/gemape";
 import {
   useEmpresas,
   useItens,
   useEmpregados,
-  useSalvar,
+  useRegistrarMovimentacoesLote,
   useMovimentacoes,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { saldosSobResponsabilidade, validarEncerramento } from "@/lib/encerramento-ferramentas";
 
 interface ItemEncerramento {
   id: string;
@@ -48,33 +50,50 @@ export function FerramentasTermoEncerramento() {
   const { data: itens = [] } = useItens("ferramenta", TODAS);
   const { data: movimentacoes = [] } = useMovimentacoes("ferramenta", TODAS, 1000);
 
-  const salvarMovimentacao = useSalvar("movimentacoes", ["movimentacoes", "itens"]);
+  const registrarDevolucoes = useRegistrarMovimentacoesLote([
+    "movimentacoes",
+    "ferramentas",
+    "saidas-por-item",
+  ]);
+  const salvando = useRef(false);
+
+  // Saldo ainda sob responsabilidade do empregado, por ferramenta, nesta empresa.
+  const saldos = useMemo(
+    () => saldosSobResponsabilidade(movimentacoes, { empregadoId, empresaId: empresaSel }),
+    [movimentacoes, empregadoId, empresaSel],
+  );
+  const itensComSaldo = itens.filter((i) => saldos.has(i.id));
+
+  function trocarEmpresa(valor: string) {
+    setEmpresaSel(valor);
+    setItensEncerramento([]);
+  }
+
+  function trocarEmpregado(valor: string) {
+    setEmpregadoId(valor);
+    setItensEncerramento([]);
+  }
 
   function carregarHistoricoEmpregado() {
-    if (!empregadoId) {
-      alert("Selecione um empregado.");
+    if (!empresaSel || !empregadoId) {
+      alert("Selecione a empresa e o empregado.");
+      return;
+    }
+    if (saldos.size === 0) {
+      alert("Nenhuma ferramenta está sob responsabilidade deste empregado nesta empresa.");
+      setItensEncerramento([]);
       return;
     }
 
-    // Filtrar o que está com o empregado (Saídas - Devoluções - Baixas)
-    const historico = movimentacoes.filter((m) => m.empregado_id === empregadoId);
-
-    // Simplificadamente, vamos listar as ferramentas que tiveram saída para este empregado
-    const idsItens = Array.from(new Set(historico.map((h) => h.item_id))).filter(
-      Boolean,
-    ) as string[];
-
+    // Carrega cada ferramenta com o saldo que o empregado ainda deve devolver.
     setItensEncerramento(
-      idsItens.map((id) => {
-        const item = itens.find((i) => i.id === id);
-        return {
-          id: Math.random().toString(36).substr(2, 9),
-          item_id: id,
-          quantidade: 1,
-          estado: "Usado",
-          observacao: "",
-        };
-      }),
+      Array.from(saldos, ([itemId, saldo]) => ({
+        id: crypto.randomUUID(),
+        item_id: itemId,
+        quantidade: saldo,
+        estado: "Usado",
+        observacao: "",
+      })),
     );
   }
 
@@ -82,7 +101,7 @@ export function FerramentasTermoEncerramento() {
     setItensEncerramento([
       ...itensEncerramento,
       {
-        id: Math.random().toString(36).substr(2, 9),
+        id: crypto.randomUUID(),
         item_id: "",
         quantidade: 1,
         estado: "Usado",
@@ -102,8 +121,9 @@ export function FerramentasTermoEncerramento() {
   }
 
   async function gerarTermo() {
-    if (!empregadoId || itensEncerramento.length === 0) {
-      alert("Selecione um empregado e adicione pelo menos um item.");
+    if (salvando.current) return;
+    if (!empresaSel || !empregadoId) {
+      alert("Selecione a empresa e o empregado.");
       return;
     }
 
@@ -117,10 +137,31 @@ export function FerramentasTermoEncerramento() {
 
     if (!empregado || !empresa) return;
 
-    // Registrar movimentações (Devolução)
-    for (const item of itensEncerramento) {
-      await salvarMovimentacao.mutateAsync({
-        valores: {
+    // Registra todas as devoluções de uma vez: ou entram todas, ou nenhuma.
+    salvando.current = true;
+    try {
+      // Só devolve o saldo ainda sob responsabilidade dele, e uma única vez. O saldo é relido
+      // na hora de gravar, para não aceitar de novo um termo que acabou de ser registrado.
+      const { data: historico, error: erroLeitura } = await supabase
+        .from("movimentacoes")
+        .select("modulo,tipo_movimentacao,item_id,empresa_id,empregado_id,motivo_baixa,quantidade")
+        .eq("modulo", "ferramenta")
+        .eq("empresa_id", empresaSel)
+        .eq("empregado_id", empregadoId);
+      if (erroLeitura) {
+        alert(`Não foi possível conferir o saldo: ${erroLeitura.message}`);
+        return;
+      }
+      const erro = validarEncerramento(
+        itensEncerramento,
+        saldosSobResponsabilidade(historico ?? [], { empregadoId, empresaId: empresaSel }),
+      );
+      if (erro) {
+        alert(erro);
+        return;
+      }
+      await registrarDevolucoes.mutateAsync(
+        itensEncerramento.map((item) => ({
           modulo: "ferramenta",
           tipo_movimentacao: "Devolucao",
           quantidade: item.quantidade,
@@ -130,27 +171,35 @@ export function FerramentasTermoEncerramento() {
           empregado_id: empregadoId,
           tipo_vistoria: "Final (Desligamento)",
           observacao: `Devolução de ferramenta - Termo de Encerramento de Responsabilidade. Obs: ${item.observacao}`,
-        },
-      });
+        })),
+      );
+    } catch {
+      // A falha já aparece no aviso da gravação.
+      return;
+    } finally {
+      salvando.current = false;
     }
+    const itensDoTermo = itensEncerramento;
+    setItensEncerramento([]);
 
-    const itensHtml = itensEncerramento
+    const itensHtml = itensDoTermo
       .map((it, index) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return `
         <tr>
           <td style="border: 1px solid #000; padding: 8px; text-align: center;">${index + 1}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${itemInfo?.codigo_sku || "—"}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${itemInfo?.nome || "—"}</td>
+          <td style="border: 1px solid #000; padding: 8px;">${escaparHtml(itemInfo?.codigo_sku || "—")}</td>
+          <td style="border: 1px solid #000; padding: 8px;">${escaparHtml(itemInfo?.nome || "—")}</td>
           <td style="border: 1px solid #000; padding: 8px; text-align: center;">${it.quantidade}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${it.estado}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${it.observacao || "OK"}</td>
+          <td style="border: 1px solid #000; padding: 8px;">${escaparHtml(it.estado)}</td>
+          <td style="border: 1px solid #000; padding: 8px;">${escaparHtml(it.observacao || "OK")}</td>
         </tr>
       `;
       })
       .join("");
 
-    const dataObj = new Date(dataEncerramento);
+    // Meio-dia local evita que a data em UTC caia no dia anterior.
+    const dataObj = new Date(`${dataEncerramento}T12:00:00`);
     const dataFormatada = dataObj.toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "long",
@@ -160,7 +209,7 @@ export function FerramentasTermoEncerramento() {
     const html = `
       <html>
         <head>
-          <title>Termo de Encerramento de Responsabilidade - ${empregado.nome}</title>
+          <title>Termo de Encerramento de Responsabilidade - ${escaparHtml(empregado.nome)}</title>
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.4; padding: 30px; font-size: 11pt; }
             .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
@@ -175,12 +224,12 @@ export function FerramentasTermoEncerramento() {
         <body>
           <div class="header">
             <div class="title">TERMO DE ENCERRAMENTO DE RESPONSABILIDADE</div>
-            <strong>${empresa.razao_social}</strong><br>
-            CNPJ: ${empresa.cnpj}
+            <strong>${escaparHtml(empresa.razao_social)}</strong><br>
+            CNPJ: ${escaparHtml(empresa.cnpj)}
           </div>
           
           <div class="content">
-            <p>Pelo presente instrumento, a empresa <strong>${empresa.razao_social}</strong> declara que o(a) empregado(a) <strong>${empregado.nome}</strong>, CPF <strong>${empregado.cpf}</strong>, efetuou nesta data a devolução das ferramentas e equipamentos abaixo relacionados, que estavam sob sua responsabilidade conforme termo assinado anteriormente.</p>
+            <p>Pelo presente instrumento, a empresa <strong>${escaparHtml(empresa.razao_social)}</strong> declara que o(a) empregado(a) <strong>${escaparHtml(empregado.nome)}</strong>, CPF <strong>${escaparHtml(empregado.cpf)}</strong>, efetuou nesta data a devolução das ferramentas e equipamentos abaixo relacionados, que estavam sob sua responsabilidade conforme termo assinado anteriormente.</p>
             
             <p>Após conferência, atesta-se que os itens foram devolvidos conforme o estado de conservação indicado na tabela abaixo, dando-se por encerrada a responsabilidade individual do referido empregado sobre os mesmos.</p>
           </div>
@@ -234,7 +283,7 @@ export function FerramentasTermoEncerramento() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end">
           <div className="space-y-1.5 lg:col-span-3">
             <Label>Empresa</Label>
-            <Select value={empresaSel} onValueChange={setEmpresaSel}>
+            <Select value={empresaSel} onValueChange={trocarEmpresa}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
@@ -249,7 +298,7 @@ export function FerramentasTermoEncerramento() {
           </div>
           <div className="space-y-1.5 lg:col-span-4">
             <Label>Empregado</Label>
-            <Select value={empregadoId} onValueChange={setEmpregadoId}>
+            <Select value={empregadoId} onValueChange={trocarEmpregado}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o empregado" />
               </SelectTrigger>
@@ -320,9 +369,9 @@ export function FerramentasTermoEncerramento() {
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
                           <SelectContent>
-                            {itens.map((i) => (
+                            {itensComSaldo.map((i) => (
                               <SelectItem key={i.id} value={i.id}>
-                                {i.nome} ({i.codigo_sku})
+                                {i.nome} ({i.codigo_sku}) · saldo {saldos.get(i.id)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -332,6 +381,7 @@ export function FerramentasTermoEncerramento() {
                         <Input
                           type="number"
                           min="1"
+                          max={saldos.get(it.item_id) ?? undefined}
                           value={it.quantidade}
                           onChange={(e) =>
                             atualizarItem(it.id, "quantidade", Number(e.target.value))
@@ -380,7 +430,7 @@ export function FerramentasTermoEncerramento() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite="operar" onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
+          <Button requiresWrite="operar" onClick={gerarTermo} disabled={registrarDevolucoes.isPending}>
             Gerar Termo de Encerramento
           </Button>
         </div>
