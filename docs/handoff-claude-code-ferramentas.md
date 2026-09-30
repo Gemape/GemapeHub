@@ -1,6 +1,8 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 30/09/2026. A referência remota é `origin/main` em `c4b2ada` (PR #25).
+Atualizado em 30/09/2026. A referência remota é `origin/main` em `21f43ce` (PR #26).
+
+**Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) e a Fase 2 aguardam decisão do responsável: não iniciar nenhuma das duas.
 
 ## Estado das etapas
 
@@ -12,7 +14,7 @@ Atualizado em 30/09/2026. A referência remota é `origin/main` em `c4b2ada` (PR
 | 3 — identificação e custo | Concluída e mergeada | PR #23, merge `09c5880`. Série obrigatória, patrimônio e data opcionais, custo com duas casas e valor em estoque em centavos. |
 | 4 — listas | Concluída e mergeada | PR #24, merge `009f037`. A aba Movimentações mostra a coluna Código e a natureza (Entrada (compra), Saída (entrega), Saída (baixa)); o CSV tem a coluna Codigo. Regras em `src/lib/historico-movimentacoes.ts`. |
 | 5 — encerramento | Concluída e mergeada | PR #25, merge `c4b2ada`. O termo carrega o saldo devido por empregado e empresa (lido do histórico inteiro), recusa excesso, item sem saldo, repetição e data vazia, e grava as devoluções de uma vez. O cliente de demonstração emula o gatilho de estoque. |
-| 6 — validação | Implementada na branch; aguarda PR e merge | Branch `test/ferramentas-validacao-fase1`. Fluxo completo percorrido no navegador (ver "Validação de ponta a ponta"). Correções: Termo de Responsabilidade valida o estoque e grava as saídas de uma vez; compras de EPI e uniforme viram entrada e somam no estoque do demo, com valor total calculado. |
+| 6 — validação | Concluída e mergeada | PR #26, merge `21f43ce`. Fluxo completo percorrido no navegador (ver "Validação de ponta a ponta"). Termo de Responsabilidade valida o estoque, grava as saídas de uma vez e não repete a entrega num segundo clique; compras de EPI e uniforme viram entrada e somam no estoque do demo, com valor total calculado. |
 
 ## Validação de ponta a ponta (etapa 6, modo demonstração)
 
@@ -33,11 +35,18 @@ Roteiro executado no navegador em 30/09/2026 sobre a `main` em `c4b2ada` mais as
 
 Validação automática: `npm test`, `npm run typecheck`, `npm run build` e `git diff --check`.
 
-## Pendências registradas
+## Pendências para PRs separados
 
-- **Termos em aba nova:** a abertura dos termos em aba nova é bloqueada por alguns navegadores, porque a aba abre depois da gravação. Vale para todos os termos (EPI, Uniformes e Ferramentas) e será tratada em correção separada, depois da etapa 6.
-- **Termos de Uniformes e Termo de Vistoria gravam item a item:** se um item falhar (por exemplo, estoque insuficiente), os anteriores já ficaram gravados. O Termo de Responsabilidade e o de Encerramento de ferramentas já gravam tudo de uma vez. Tratar junto com a correção dos termos.
-- **Compras no modo demonstração:** editar ou excluir uma compra de EPI ou uniforme não ajusta o estoque. No banco real, compras são imutáveis (gatilho `gemape_compra_imutavel`) e a tela recebe erro. Decidir na Fase 2 se os botões Editar e Excluir de compras saem da tela.
+Ordem sugerida pelo responsável em 30/09/2026. Cada item tem branch e PR próprios, com testes antes do código e validação completa; o próximo só começa depois do merge do anterior.
+
+| # | Pendência | Estado |
+| --- | --- | --- |
+| 1 | HTML do Termo de Responsabilidade sem escape de textos: aplicar o mesmo tratamento do Termo de Encerramento. | Em andamento: branch `fix/termo-responsabilidade-escape`. O HTML foi para `src/lib/termo-responsabilidade-html.ts`, com `escaparHtml` e a data impressa sem cair no dia anterior. |
+| 2 | Termos de Uniformes (entrega e baixa) e Termo de Vistoria gravam item a item: usar o mesmo padrão atômico dos termos de Ferramentas (validar antes e gravar tudo de uma vez). | Não iniciada. |
+| 3 | Abertura dos termos em aba nova é bloqueada por alguns navegadores, porque a aba abre depois da gravação. Vale para todos os termos (EPI, Uniformes e Ferramentas). | Não iniciada. |
+| 4 | Data padrão das compras de EPI e Uniformes usa o fuso UTC (`toISOString`) e mostra o dia seguinte no fim da noite: usar `hojeLocal()`. | Não iniciada. |
+
+Fica para a Fase 2: editar ou excluir uma compra de EPI ou uniforme não ajusta o estoque do demo. No banco real, compras são imutáveis (gatilho `gemape_compra_imutavel`) e a tela recebe erro. Decidir se os botões Editar e Excluir de compras saem da tela.
 
 ## Decisões vigentes
 
