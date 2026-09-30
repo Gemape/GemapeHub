@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS } from "@/lib/empresa-context";
-import { formatarData } from "@/lib/gemape";
+import { escaparHtml, formatarData } from "@/lib/gemape";
 import { useEmpresas, useItens, useEmpregados, useSalvar } from "@/lib/hooks-gemape";
 
 interface ItemTermo {
@@ -134,10 +134,10 @@ export function UniformesTermoEntrega() {
                       const u = uniformes.find((uni) => uni.id === i.item_id);
                       return `
                       <tr>
-                        <td>${u?.nome}</td>
-                        <td>${u?.marca || ""} ${u?.modelo || ""}</td>
+                        <td>${escaparHtml(u?.nome)}</td>
+                        <td>${escaparHtml(u?.marca)} ${escaparHtml(u?.modelo)}</td>
                         <td>${i.quantidade}</td>
-                        <td>${i.estado}</td>
+                        <td>${escaparHtml(i.estado)}</td>
                       </tr>
                     `;
                     })

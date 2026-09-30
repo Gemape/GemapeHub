@@ -172,12 +172,13 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     };
     if (config.custoMarcaModelo) {
       const preco = String(f.get("preco_unitario") ?? "").trim();
-      const precoNumero = Number(preco.replace(",", "."));
+      const precoNumero = Number(preco);
       if (preco && (!Number.isFinite(precoNumero) || precoNumero < 0)) {
         toast.error("Preço de custo inválido.");
         return;
       }
-      valores["preco_unitario"] = preco ? precoNumero : null;
+      // Centavos: arredonda para 2 casas (preços antigos podem ter mais).
+      valores["preco_unitario"] = preco ? Math.round(precoNumero * 100) / 100 : null;
       // Marca e modelo ainda não existem na tabela real de uniformes: nesta fase só são
       // gravados no modo demonstração. As colunas entram na Fase 2.
       if (MODO_DEMO) {
@@ -433,7 +434,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                     name="preco_unitario"
                     type="number"
                     min={0}
-                    step="0.01"
+                    step="any"
                     defaultValue={editando?.preco_unitario ?? ""}
                   />
                 </div>
