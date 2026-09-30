@@ -2,7 +2,7 @@
 
 Atualizado em 30/09/2026. A referência remota é `origin/main` em `fc108b2` (merge do PR #32).
 
-**Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) e a Fase 2 aguardam decisão do responsável: não iniciar nenhuma das duas.
+**Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) foi aprovada pelo responsável em 30/09/2026. Ela não define etapas, então a divisão abaixo aguarda o ok dele antes de qualquer código. A Fase 2 continua aguardando decisão: não iniciar.
 
 ## Estado das etapas
 
@@ -34,6 +34,32 @@ Roteiro executado no navegador em 30/09/2026 sobre a `main` em `c4b2ada` mais as
 | Compra de EPI (4 × R$ 10,00) | Estoque 12 → 16; total da compra R$ 40,00. |
 
 Validação automática: `npm test`, `npm run typecheck`, `npm run build` e `git diff --check`.
+
+## Caixas e Portador — etapas propostas (aguardam ok do responsável)
+
+A proposta aprovada lista o escopo, mas não define etapas. Cada etapa terá branch e PR próprios, a partir da `main` e só depois do merge da anterior, com testes antes do código, validação completa (testes, typecheck, build, `git diff --check`), screenshots e preview da Vercel. Tudo roda no modo demonstração; nada vai para o Supabase real. As tabelas, migrações e permissões por tela ficam registradas como pendência da Fase 2.
+
+Padrões obrigatórios em todas as etapas:
+- código automático no padrão sigla + numeração;
+- listas vindas de Cadastros > Gerais;
+- operações atômicas: validação das linhas e do estoque, aviso quando passar do disponível, gravação de tudo de uma vez, trava contra segundo clique e lista limpa após gravar;
+- escape de textos em todo documento gerado;
+- datas locais de Brasília;
+- histórico completo por empregado e empresa, sem o limite de 1000 linhas;
+- estoque do demo reativo.
+
+| Etapa | Entrega | Critérios de aceite |
+| --- | --- | --- |
+| 1 — caixas habilitadas | Em Cadastros > Gerais, a lista das caixas numeradas de 01 a 100, cada uma com a flag de habilitação. O cadastro de caixa e as telas que escolhem caixa (Termo de Responsabilidade, Termo de Vistoria, aba Caixas de Ferramentas) só oferecem caixas habilitadas. | Numeração fixa de 1 a 100, sem repetir nem pular. Desabilitar uma caixa em uso é recusado, com o motivo. A caixa desabilitada some das listas de escolha, mas continua no histórico. |
+| 2 — portador | Cadastro de Portador: caixa (só as habilitadas), empregado por busca de palavra-chave, status ativa/inativa e observação. Histórico de portadores por caixa. | Uma caixa tem no máximo um portador ativo. Trocar o portador encerra o anterior no histórico, com data local. Empregado demitido não pode ser novo portador (decisão 15). O histórico é lido por inteiro. A gravação é atômica e trava o segundo clique. |
+| 3 — marcas | Cadastro de marcas de ferramentas em Cadastros > Gerais. O cadastro de ferramenta passa a escolher a marca dessa lista, em vez de texto livre. | Marca em uso não pode ser renomeada nem excluída sem aviso, como categoria e grupo (etapa 2 de Ferramentas). As ferramentas já cadastradas com marca em texto continuam exibindo a marca. |
+| 4 — validação | Fluxo completo no navegador (habilitar caixa, atribuir portador, trocar portador, termos com a caixa, marca na ferramenta), handoff atualizado e pendências da Fase 2 registradas. | Roteiro de ponta a ponta registrado aqui, como na etapa 6 de Ferramentas. |
+
+Pontos que dependem do responsável antes da etapa 1:
+
+1. **Onde fica a habilitação.** A proposta põe a flag em Cadastros > Gerais. A decisão 3 diz que a habilitação "segue onde já está implementada", mas o código não tem habilitação de caixa em lugar nenhum; o que existe é o status Ativa/Inativa no cadastro de caixa. Recomendação: seguir a proposta (Gerais) e registrar isso como decisão.
+2. **Código da caixa.** Hoje o código é automático no formato `CX-0001`, sem limite. Recomendação: manter a sigla CX com quatro dígitos e limitar de `CX-0001` a `CX-0100`, uma sequência para as três empresas, exibindo o número da caixa (01 a 100) nas listas.
+3. **Portador e o campo Responsável da caixa.** O cadastro de caixa já tem um "Responsável" (empregado). Recomendação: o portador ativo passa a ser o responsável exibido, e o campo deixa de ser editado no cadastro de caixa, para não haver dois donos diferentes.
 
 ## Pendências para PRs separados
 
