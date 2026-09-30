@@ -67,7 +67,7 @@ Etapa 3 concluída após o merge do PR #39 (`48a3e28`): marcas de ferramentas s�
 
 ### Validação de ponta a ponta de Caixas e Portador (etapa 4)
 
-Roteiro executado no Chromium em 30/09/2026, com sessão limpa e `VITE_DEMO_MODE=true`, sobre a `main` em `48a3e28`. A ferramenta de teste percorreu a interface real, conferiu tabelas, documentos renderizados e CSVs baixados. Nenhum erro de página foi registrado. Os dados abaixo são locais e fictícios.
+Roteiro executado no Chromium em 30/09/2026, com sessão limpa e `VITE_DEMO_MODE=true`. A primeira passagem usou a `main` em `48a3e28`; após corrigir o desvio encontrado, o roteiro completo foi repetido na branch `feat/caixas-portador-validacao`. A ferramenta de teste percorreu a interface real, conferiu tabelas, documentos renderizados e CSVs baixados. Nenhum erro de página foi registrado. Os dados abaixo são locais e fictícios.
 
 | Passo | Resultado |
 | --- | --- |
