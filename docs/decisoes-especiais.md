@@ -90,3 +90,16 @@ Cadastros > Gerais > Categorias (não de lista fixa). MD atualizado.
 ## 14. REGISTRO DE MUDANÇAS NO MD
 Toda mudança no MD deve ser registrada aqui como decisão aprovada,
 para a auditoria futura conferir o código contra a spec atualizada.
+
+## 15. EMPREGADO DEMITIDO
+Decidido em 30/09/2026 (complementa o item 12):
+- Demissão futura: o empregado permanece ATIVO até a data de demissão
+  chegar. A data não inativa o empregado na hora de salvar.
+- A partir da data de demissão (demissão vencida): entregas novas,
+  baixas e devoluções avulsas ficam BLOQUEADAS. A mensagem orienta usar
+  o Termo de Encerramento.
+- Termo de Encerramento de ferramentas (devolução na saída): PERMITIDO
+  mesmo após a demissão, porque é o movimento que fecha o ciclo do
+  empregado.
+- Cargo: a linha de cargo/função saiu dos termos, porque o cadastro de
+  empregados não tem mais cargo.
