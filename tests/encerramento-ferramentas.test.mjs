@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { demoSupabase } from '../src/integrations/supabase/demo-client.ts';
 import { bloqueioPorDemissao } from '../src/lib/empregados.ts';
 import {
+  lerSaldosSobResponsabilidade,
   saldosSobResponsabilidade,
   validarEncerramento,
 } from '../src/lib/encerramento-ferramentas.ts';
@@ -87,4 +88,27 @@ test('saída acima do estoque local é recusada, como no banco real', async () =
 test('encerramento continua permitido após a demissão (decisão 15)', () => {
   const demitido = { nome: 'Ana', ativo: false, data_demissao: '2026-09-01' };
   assert.equal(bloqueioPorDemissao(demitido, 'encerramento', '2026-09-30', '2026-09-30'), null);
+});
+
+test('o saldo é lido do histórico inteiro do empregado, não só das últimas movimentações', async () => {
+  const empresa = crypto.randomUUID();
+  const item = crypto.randomUUID();
+  await demoSupabase.from('ferramentas').insert({ id: item, empresa_id: empresa, nome: 'Marreta', estoque_atual: 1 });
+  await demoSupabase.from('movimentacoes').insert(
+    mov('Saida', item, 1, { empresa_id: empresa, data_movimentacao: '2020-01-01' }),
+  );
+  // Muitas movimentações mais novas de outras pessoas empurram a entrega para fora da lista da tela.
+  await demoSupabase.from('movimentacoes').insert(
+    Array.from({ length: 1001 }, () =>
+      mov('Vistoria', item, 1, { empresa_id: empresa, empregado_id: 'outra', data_movimentacao: '2026-09-30' }),
+    ),
+  );
+  const saldos = await lerSaldosSobResponsabilidade(demoSupabase, { empregadoId: 'pessoa', empresaId: empresa });
+  assert.deepEqual(Object.fromEntries(saldos), { [item]: 1 });
+});
+
+test('o termo exige a data de encerramento', () => {
+  const saldos = new Map([['alicate', 2]]);
+  assert.match(validarEncerramento([{ item_id: 'alicate', quantidade: 1 }], saldos, ''), /data/i);
+  assert.equal(validarEncerramento([{ item_id: 'alicate', quantidade: 1 }], saldos, '2026-09-30'), null);
 });

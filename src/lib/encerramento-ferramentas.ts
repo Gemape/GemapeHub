@@ -36,11 +36,38 @@ export function saldosSobResponsabilidade(
   return saldos;
 }
 
+type ConsultaMovimentacoes = PromiseLike<{
+  data: MovimentacaoSaldo[] | null;
+  error: { message: string } | null;
+}> & { eq: (coluna: string, valor: string) => ConsultaMovimentacoes };
+
+/** Lê do banco todo o histórico do empregado na empresa, sem limite de linhas, e calcula o saldo. */
+export async function lerSaldosSobResponsabilidade(
+  cliente: { from: (tabela: "movimentacoes") => { select: (colunas: string) => unknown } },
+  filtro: { empregadoId: string; empresaId: string },
+): Promise<Map<string, number>> {
+  const consulta = cliente
+    .from("movimentacoes")
+    .select(
+      "modulo,tipo_movimentacao,item_id,empresa_id,empregado_id,motivo_baixa,quantidade",
+    ) as ConsultaMovimentacoes;
+  const { data, error } = await consulta
+    .eq("modulo", "ferramenta")
+    .eq("empresa_id", filtro.empresaId)
+    .eq("empregado_id", filtro.empregadoId);
+  if (error) throw new Error(error.message);
+  return saldosSobResponsabilidade(data ?? [], filtro);
+}
+
 /** Devolve a mensagem de erro, ou null quando todas as linhas cabem no saldo. */
 export function validarEncerramento(
   linhas: { item_id: string; quantidade: number }[],
   saldos: Map<string, number>,
+  dataEncerramento?: string,
 ): string | null {
+  if (dataEncerramento !== undefined && !dataEncerramento) {
+    return "Informe a data de encerramento.";
+  }
   if (linhas.length === 0) return "Adicione pelo menos uma ferramenta.";
   const pedidas = new Map<string, number>();
   for (const linha of linhas) {

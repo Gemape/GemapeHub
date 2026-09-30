@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,10 +25,9 @@ import {
   useItens,
   useEmpregados,
   useRegistrarMovimentacoesLote,
-  useMovimentacoes,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
-import { saldosSobResponsabilidade, validarEncerramento } from "@/lib/encerramento-ferramentas";
+import { lerSaldosSobResponsabilidade, validarEncerramento } from "@/lib/encerramento-ferramentas";
 
 interface ItemEncerramento {
   id: string;
@@ -48,7 +47,6 @@ export function FerramentasTermoEncerramento() {
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("ferramenta", TODAS);
-  const { data: movimentacoes = [] } = useMovimentacoes("ferramenta", TODAS, 1000);
 
   const registrarDevolucoes = useRegistrarMovimentacoesLote([
     "movimentacoes",
@@ -58,27 +56,34 @@ export function FerramentasTermoEncerramento() {
   const salvando = useRef(false);
 
   // Saldo ainda sob responsabilidade do empregado, por ferramenta, nesta empresa.
-  const saldos = useMemo(
-    () => saldosSobResponsabilidade(movimentacoes, { empregadoId, empresaId: empresaSel }),
-    [movimentacoes, empregadoId, empresaSel],
-  );
+  const [saldos, setSaldos] = useState<Map<string, number>>(new Map());
   const itensComSaldo = itens.filter((i) => saldos.has(i.id));
 
   function trocarEmpresa(valor: string) {
     setEmpresaSel(valor);
+    setSaldos(new Map());
     setItensEncerramento([]);
   }
 
   function trocarEmpregado(valor: string) {
     setEmpregadoId(valor);
+    setSaldos(new Map());
     setItensEncerramento([]);
   }
 
-  function carregarHistoricoEmpregado() {
+  async function carregarHistoricoEmpregado() {
     if (!empresaSel || !empregadoId) {
       alert("Selecione a empresa e o empregado.");
       return;
     }
+    let saldos: Map<string, number>;
+    try {
+      saldos = await lerSaldosSobResponsabilidade(supabase, { empregadoId, empresaId: empresaSel });
+    } catch (erro) {
+      alert(`Não foi possível carregar o histórico: ${(erro as Error).message}`);
+      return;
+    }
+    setSaldos(saldos);
     if (saldos.size === 0) {
       alert("Nenhuma ferramenta está sob responsabilidade deste empregado nesta empresa.");
       setItensEncerramento([]);
@@ -142,20 +147,18 @@ export function FerramentasTermoEncerramento() {
     try {
       // Só devolve o saldo ainda sob responsabilidade dele, e uma única vez. O saldo é relido
       // na hora de gravar, para não aceitar de novo um termo que acabou de ser registrado.
-      const { data: historico, error: erroLeitura } = await supabase
-        .from("movimentacoes")
-        .select("modulo,tipo_movimentacao,item_id,empresa_id,empregado_id,motivo_baixa,quantidade")
-        .eq("modulo", "ferramenta")
-        .eq("empresa_id", empresaSel)
-        .eq("empregado_id", empregadoId);
-      if (erroLeitura) {
-        alert(`Não foi possível conferir o saldo: ${erroLeitura.message}`);
+      let saldosAtuais: Map<string, number>;
+      try {
+        saldosAtuais = await lerSaldosSobResponsabilidade(supabase, {
+          empregadoId,
+          empresaId: empresaSel,
+        });
+      } catch (erroLeitura) {
+        alert(`Não foi possível conferir o saldo: ${(erroLeitura as Error).message}`);
         return;
       }
-      const erro = validarEncerramento(
-        itensEncerramento,
-        saldosSobResponsabilidade(historico ?? [], { empregadoId, empresaId: empresaSel }),
-      );
+      setSaldos(saldosAtuais);
+      const erro = validarEncerramento(itensEncerramento, saldosAtuais, dataEncerramento);
       if (erro) {
         alert(erro);
         return;
@@ -181,6 +184,7 @@ export function FerramentasTermoEncerramento() {
     }
     const itensDoTermo = itensEncerramento;
     setItensEncerramento([]);
+    setSaldos(new Map());
 
     const itensHtml = itensDoTermo
       .map((it, index) => {
