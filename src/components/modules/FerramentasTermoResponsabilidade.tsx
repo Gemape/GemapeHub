@@ -29,6 +29,7 @@ import {
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { validarTermoResponsabilidade } from "@/lib/encerramento-ferramentas";
+import { montarTermoResponsabilidadeHtml } from "@/lib/termo-responsabilidade-html";
 
 interface ItemTermo {
   id: string;
@@ -145,94 +146,22 @@ export function FerramentasTermoResponsabilidade() {
     const itensDoTermo = itensTermo;
     setItensTermo([]);
 
-    const itensHtml = itensDoTermo
-      .map((it, index) => {
+    const html = montarTermoResponsabilidadeHtml({
+      empresa,
+      empregado,
+      caixaCodigo: caixa?.codigo,
+      data: dataTermo,
+      linhas: itensDoTermo.map((it) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
-        return `
-        <tr>
-          <td style="border: 1px solid #000; padding: 8px; text-align: center;">${index + 1}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${itemInfo?.codigo_sku || "—"}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${itemInfo?.nome || "—"}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${itemInfo?.marca || "—"}</td>
-          <td style="border: 1px solid #000; padding: 8px; text-align: center;">${it.quantidade}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${it.estado}</td>
-        </tr>
-      `;
-      })
-      .join("");
-
-    const dataObj = new Date(dataTermo);
-    const dataFormatada = dataObj.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+        return {
+          codigo: itemInfo?.codigo_sku,
+          nome: itemInfo?.nome,
+          marca: itemInfo?.marca,
+          quantidade: it.quantidade,
+          estado: it.estado,
+        };
+      }),
     });
-
-    const html = `
-      <html>
-        <head>
-          <title>Termo de Responsabilidade Individual - ${empregado.nome}</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.4; padding: 30px; font-size: 11pt; }
-            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-            .title { font-size: 16pt; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
-            .content { margin-bottom: 20px; text-align: justify; }
-            .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            .signatures { display: flex; justify-content: space-between; margin-top: 60px; }
-            .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px; }
-            @media print { .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="title">TERMO DE RESPONSABILIDADE INDIVIDUAL DE FERRAMENTAS</div>
-            <strong>${empresa.razao_social}</strong><br>
-            CNPJ: ${empresa.cnpj}
-          </div>
-          
-          <div class="content">
-            <p>Pelo presente instrumento, eu <strong>${empregado.nome}</strong>, CPF <strong>${empregado.cpf}</strong>, declaro que recebi da empresa supra citada, em perfeito estado de conservação e funcionamento, as ferramentas e equipamentos abaixo relacionados, componentes da <strong>CAIXA Nº ${caixa?.codigo || "AVULSA"}</strong>, para uso exclusivo no desempenho de minhas atividades profissionais.</p>
-            
-            <p>Comprometo-me a zelar pela guarda, conservação e limpeza das mesmas, assumindo total responsabilidade pelo seu uso correto. Estou ciente de que, em caso de perda, extravio ou danos causados por mau uso ou negligência, poderei ser responsabilizado pelos custos de reparo ou reposição, conforme preceitua o Art. 462, § 1º da CLT.</p>
-          </div>
-          
-          <table class="table">
-            <thead>
-              <tr style="background-color: #eee;">
-                <th style="border: 1px solid #000; padding: 8px;">Item</th>
-                <th style="border: 1px solid #000; padding: 8px;">Código</th>
-                <th style="border: 1px solid #000; padding: 8px;">Descrição</th>
-                <th style="border: 1px solid #000; padding: 8px;">Marca</th>
-                <th style="border: 1px solid #000; padding: 8px;">Qtd</th>
-                <th style="border: 1px solid #000; padding: 8px;">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itensHtml}
-            </tbody>
-          </table>
-          
-          <div class="content">
-            <p>Comprometo-me, ainda, a devolver todos os itens acima relacionados no ato de meu desligamento da empresa ou sempre que me for solicitado, sob as mesmas condições em que foram recebidos.</p>
-          </div>
-          
-          <p style="text-align: right; margin-top: 30px;">Local e data: ____________________, ${dataFormatada}</p>
-          
-          <div class="signatures">
-            <div class="sig-box">
-              Assinatura do Empregado
-            </div>
-            <div class="sig-box">
-              Assinatura do Responsável
-            </div>
-          </div>
-          
-          <div class="no-print" style="margin-top: 50px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Imprimir Termo</button>
-          </div>
-        </body>
-      </html>
-    `;
 
     const win = window.open("", "_blank");
     win?.document.write(html);
