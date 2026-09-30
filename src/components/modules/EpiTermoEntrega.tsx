@@ -21,6 +21,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { montarTermoEntregaEpiHtml } from "@/lib/termo-entrega-epi-html";
 
 interface ItemTermo {
   id: string;
@@ -92,95 +93,20 @@ export function EpiTermoEntrega() {
       return;
     }
 
-    // Gerar HTML para impressão
-    const itensHtml = itensTermo
-      .map((it, index) => {
+    const html = montarTermoEntregaEpiHtml({
+      empresa,
+      empregado,
+      data: dataEntrega,
+      linhas: itensTermo.map((it) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
-        return `
-        <tr>
-          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${itemInfo?.nome || "—"}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${itemInfo?.ca || "—"}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${it.quantidade}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${it.estado}</td>
-        </tr>
-      `;
-      })
-      .join("");
-
-    const dataObj = new Date(dataEntrega);
-    const dataFormatada = dataObj.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+        return {
+          nome: itemInfo?.nome,
+          ca: itemInfo?.ca,
+          quantidade: it.quantidade,
+          estado: it.estado,
+        };
+      }),
     });
-
-    const html = `
-      <html>
-        <head>
-          <title>Termo de Entrega de EPI</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; padding: 40px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .title { font-size: 20px; font-weight: bold; text-decoration: underline; margin-bottom: 20px; }
-            .content { margin-bottom: 30px; }
-            .table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            .footer { margin-top: 50px; }
-            .signatures { display: flex; justify-content: space-between; margin-top: 80px; }
-            .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px; }
-            @media print { .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h2>${empresa.razao_social}</h2>
-            <p>CNPJ: ${empresa.cnpj}</p>
-            <div class="title">TERMO DE RESPONSABILIDADE E ENTREGA DE EPI</div>
-          </div>
-          <div class="content">
-            <p>Declaro ter recebido da empresa <strong>${empresa.razao_social}</strong>, os Equipamentos de Proteção Individual (EPI) abaixo relacionados, novos e/ou em perfeitas condições de uso, obrigando-me a utilizá-los corretamente, zelar pela sua guarda e conservação, bem como devolvê-los quando solicitado ou no ato de minha rescisão contratual.</p>
-            
-            <p><strong>Empregado:</strong> ${empregado.nome}<br>
-            <strong>CPF:</strong> ${empregado.cpf}<br>
-            <strong>Matrícula:</strong> ${empregado.matricula || "—"}</p>
-          </div>
-          
-          <table class="table">
-            <thead>
-              <tr style="background-color: #f2f2f2;">
-                <th style="border: 1px solid #ddd; padding: 8px;">Nº</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Descrição</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">CA</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Qtd</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itensHtml}
-            </tbody>
-          </table>
-          
-          <div class="content">
-            <p>Estou ciente de que o uso do EPI é obrigatório e que a sua não utilização poderá acarretar sanções disciplinares conforme a legislação vigente.</p>
-          </div>
-          
-          <p style="text-align: right;">${empresa.nome_fantasia}, ${dataFormatada}</p>
-          
-          <div class="signatures">
-            <div class="sig-box">
-              Assinatura do Empregado
-            </div>
-            <div class="sig-box">
-              Assinatura do Responsável
-            </div>
-          </div>
-          
-          <div class="no-print" style="margin-top: 50px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Imprimir Termo</button>
-          </div>
-        </body>
-      </html>
-    `;
 
     const win = window.open("", "_blank");
     win?.document.write(html);
