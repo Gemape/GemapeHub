@@ -141,8 +141,11 @@ export function FerramentasTermoResponsabilidade() {
     } finally {
       salvando.current = false;
     }
+    // Limpa a lista para um segundo clique não registrar a mesma entrega de novo.
+    const itensDoTermo = itensTermo;
+    setItensTermo([]);
 
-    const itensHtml = itensTermo
+    const itensHtml = itensDoTermo
       .map((it, index) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return `
