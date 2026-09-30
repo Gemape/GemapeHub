@@ -50,6 +50,11 @@ import {
   useVeiculos,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import {
+  alvoHistorico,
+  linhaCsvHistorico,
+  naturezaMovimentacao,
+} from "@/lib/historico-movimentacoes";
 
 const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
@@ -71,10 +76,6 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   const ehVeiculo = modulo === "veiculo";
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
-  const descricaoItem = (m: { item_id: string | null; veiculo_id: string | null }) =>
-    m.item_id
-      ? (itens.find((i) => i.id === m.item_id)?.nome ?? "—")
-      : (veiculos.find((v) => v.id === m.veiculo_id)?.placa ?? "—");
 
   function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -138,20 +139,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             onClick={() =>
               exportarCsv(
                 `movimentacoes-${modulo}`,
-                movimentacoes.map((m) => ({
-                  Data: formatarData(m.data_movimentacao),
-                  Tipo: TIPO_MOVIMENTACAO_LABEL[m.tipo_movimentacao] ?? m.tipo_movimentacao,
-                  Item: descricaoItem(m),
-                  Empregado: nomeEmpregado(m.empregado_id),
-                  Quantidade: m.quantidade,
-                  MotivoBaixa: m.motivo_baixa,
-                  Onus: m.onus_baixa,
-                  Vistoria: m.tipo_vistoria,
-                  Ocorrencia: m.sinalizar_ocorrencia ? "Sim" : "Não",
-                  TipoOcorrencia: m.tipo_ocorrencia,
-                  Conducao: m.conducao_ocorrencia,
-                  Observacao: m.observacao,
-                })),
+                movimentacoes.map((m) =>
+                  linhaCsvHistorico(m, { itens, veiculos, nomeEmpregado }),
+                ),
               )
             }
           >
@@ -174,6 +164,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             <TableRow>
               <TableHead>Data</TableHead>
               <TableHead>Tipo</TableHead>
+              {!ehVeiculo && <TableHead>Código</TableHead>}
               <TableHead>{ehVeiculo ? "Veículo" : "Item"}</TableHead>
               <TableHead>Empregado</TableHead>
               <TableHead className="text-right">Qtde</TableHead>
@@ -185,13 +176,13 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                <TableCell colSpan={ehVeiculo ? 8 : 9} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : movimentacoes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                <TableCell colSpan={ehVeiculo ? 8 : 9} className="text-center text-muted-foreground">
                   Nenhuma movimentação registrada.
                 </TableCell>
               </TableRow>
@@ -200,11 +191,14 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">
-                      {TIPO_MOVIMENTACAO_LABEL[m.tipo_movimentacao] ?? m.tipo_movimentacao}
-                    </Badge>
+                    <Badge variant="secondary">{naturezaMovimentacao(m)}</Badge>
                   </TableCell>
-                  <TableCell>{descricaoItem(m)}</TableCell>
+                  {!ehVeiculo && (
+                    <TableCell className="font-mono text-xs">
+                      {alvoHistorico(m, itens, veiculos).codigo}
+                    </TableCell>
+                  )}
+                  <TableCell>{alvoHistorico(m, itens, veiculos).descricao}</TableCell>
                   <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>
                   <TableCell className="text-right">{m.quantidade}</TableCell>
                   <TableCell>{m.motivo_baixa ?? "—"}</TableCell>
