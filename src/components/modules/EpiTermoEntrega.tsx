@@ -65,7 +65,7 @@ export function EpiTermoEntrega() {
 
     const empregado = empregados.find((e) => e.id === empregadoId);
     const empresa = empresas.find((e) => e.id === empresaSel);
-    const bloqueio = bloqueioPorDemissao(empregado, dataEntrega);
+    const bloqueio = bloqueioPorDemissao(empregado, "entrega", dataEntrega);
     if (bloqueio) {
       alert(bloqueio);
       return;

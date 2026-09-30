@@ -64,7 +64,11 @@ export function UniformesTermoEntrega() {
       alert("Preencha todos os campos e adicione pelo menos um item.");
       return;
     }
-    const bloqueio = bloqueioPorDemissao(todosEmpregados.find((p) => p.id === empregadoId), dataEntrega);
+    const bloqueio = bloqueioPorDemissao(
+      todosEmpregados.find((p) => p.id === empregadoId),
+      "entrega",
+      dataEntrega,
+    );
     if (bloqueio) {
       alert(bloqueio);
       return;

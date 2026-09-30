@@ -101,7 +101,7 @@ export function FerramentasTermoResponsabilidade() {
     const empregado = empregados.find((e) => e.id === empregadoId);
     const empresa = empresas.find((e) => e.id === empresaSel);
     const caixa = caixas.find((c) => c.id === caixaSel);
-    const bloqueio = bloqueioPorDemissao(empregado, dataTermo);
+    const bloqueio = bloqueioPorDemissao(empregado, "entrega", dataTermo);
     if (bloqueio) {
       alert(bloqueio);
       return;

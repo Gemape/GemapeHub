@@ -113,18 +113,23 @@ export const empregadoAtivo = (
 
 const dataBr = (iso: string) => iso.split("-").reverse().join("/");
 
-// Entrega, devolução e baixa para empregado com demissão vencida são bloqueadas: vale a
-// data de hoje e também a data da movimentação, se for posterior (não dá para lançar
-// hoje uma entrega datada depois da demissão).
+export type OperacaoEmpregado = "entrega" | "baixa" | "devolucao" | "movimentacao" | "encerramento";
+
+// Movimentação para empregado com demissão vencida é bloqueada: vale a data de hoje e
+// também a data da movimentação, se for posterior (não dá para lançar hoje uma entrega
+// datada depois da demissão). Exceção (decisão do responsável, 30/09/2026): o termo de
+// encerramento, a devolução na saída, é liberado, porque é o que fecha o ciclo do empregado.
 // Devolve a mensagem para o usuário, ou null quando a movimentação pode seguir.
 export function bloqueioPorDemissao(
   e: { nome: string; data_demissao: string | null } | null | undefined,
+  operacao: OperacaoEmpregado,
   dataMovimentacao = "",
   hoje = hojeLocal(),
 ): string | null {
+  if (operacao === "encerramento") return null;
   const referencia = dataMovimentacao > hoje ? dataMovimentacao : hoje;
   if (!e?.data_demissao || !demissaoVencida(e, referencia)) return null;
-  return `${e.nome} foi demitido(a) em ${dataBr(e.data_demissao)}. Não é possível registrar entrega, devolução ou baixa para este empregado.`;
+  return `${e.nome} foi demitido(a) em ${dataBr(e.data_demissao)}. Não é possível registrar entrega, devolução ou baixa para este empregado. A devolução na saída é feita pelo Termo de Encerramento de ferramentas.`;
 }
 
 // Ativos no bloco de cima, demitidos no de baixo, cada um em ordem de nome.
