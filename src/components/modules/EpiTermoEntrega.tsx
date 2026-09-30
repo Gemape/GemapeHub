@@ -265,7 +265,8 @@ export function EpiTermoEntrega() {
                           <SelectContent>
                             {itens.map((i) => (
                               <SelectItem key={i.id} value={i.id}>
-                                {i.nome} (CA: {i.ca || "N/A"})
+                                {i.codigo_sku} · {i.nome}
+                                {i.ca ? ` (CA: ${i.ca})` : ""}
                               </SelectItem>
                             ))}
                           </SelectContent>

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CadastroEpi } from "@/components/modules/CadastroEpi";
+import { CadastroProduto } from "@/components/modules/CadastroProduto";
 
 export const Route = createFileRoute("/_authenticated/cadastros/epi")({
   head: () => ({
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/epi")({
           Código automático, subcategoria de Cadastros &gt; Gerais, descrição e estoque mínimo.
         </p>
       </header>
-      <CadastroEpi />
+      <CadastroProduto tabela="epis" />
     </div>
   ),
 });

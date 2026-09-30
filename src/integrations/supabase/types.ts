@@ -745,6 +745,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          preco_unitario?: number | null
           categoria: string
           codigo_sku: string
           cor?: string | null
@@ -762,6 +763,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          preco_unitario?: number | null
           categoria?: string
           codigo_sku?: string
           cor?: string | null
