@@ -1,6 +1,6 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 30/09/2026. A referência remota é `origin/main` em `b495094` (PR #22).
+Atualizado em 30/09/2026. A referência remota é `origin/main` em `09c5880` (PR #23).
 
 ## Estado das etapas
 
@@ -9,8 +9,8 @@ Atualizado em 30/09/2026. A referência remota é `origin/main` em `b495094` (PR
 | 1 — documentação | Mergeada | Plano em `docs/plano-ferramentas-fase1.md`; PR #20 na `main`. |
 | Emenda documental | Na `main` | Conferido pelo conteúdo de `docs/especificacao-gemapehub.md`: categoria e grupo de ferramentas vêm de Gerais, e a subcategoria da categoria de produto Ferramentas identifica a regra do código. A branch histórica é `docs/ferramentas-categoria-grupo-gerais`. |
 | 2 — cadastro | Concluída e mergeada | Commit `c983454`, PR #22, merge `b495094`. Teste explícito de editar, salvar e reabrir preserva estoque positivo. Branch histórica: `feat/ferramentas-cadastro-gerais`. Não há PR da etapa 2 pendente de abertura ou merge. |
-| 3 — identificação e custo | Implementada na branch; sem PR ou merge | Branch `feat/ferramentas-identificacao-custo`. O teste cobre persistência e reabertura de série, patrimônio, data e custo, campos opcionais e cálculo do valor em centavos. Lista e CSV exibem os campos; dashboards usam o cálculo em centavos. Ainda falta revisão visual pelo responsável e PR manual. |
-| 4 — listas | Não iniciada | Mostrar código nas linhas e no CSV do histórico: compra = entrada; entrega e baixa = saídas, sem telas novas. |
+| 3 — identificação e custo | Concluída e mergeada | PR #23, merge `09c5880`. Série obrigatória, patrimônio e data opcionais, custo com duas casas e valor em estoque em centavos. |
+| 4 — listas | Implementada na branch; aguarda PR e merge | Branch `feat/ferramentas-listas-codigo`. A aba Movimentações mostra a coluna Código e a natureza (Entrada (compra), Saída (entrega), Saída (baixa)); o CSV ganhou a coluna Codigo. Regras em `src/lib/historico-movimentacoes.ts`, teste em `tests/historico-movimentacoes.test.mjs`. |
 | 5 — encerramento | Não iniciada | Calcular saldo ainda devido por empregado, empresa e ferramenta; devolver ao estoque uma vez, inclusive após demissão. |
 | 6 — validação | Pendente | Validar cada PR de código com testes, typecheck e build antes de solicitar revisão visual. |
 
@@ -39,7 +39,9 @@ Cada caso recebeu teste reproduzindo a falha antes da correção. Validação fi
 
 ## Processo e acesso
 
-- Cada etapa usa branch própria; nada vai direto à `main`. O token disponível para `gh pr create` devolve `Post "https://api.github.com/graphql": Forbidden`; após push, o responsável abre os PRs manualmente.
-- Visualização local: `VITE_DEMO_MODE=true npm run dev -- --host 0.0.0.0 --port 5173`. O responsável verifica no navegador. Não consultar a Vercel nem disparar deploys.
-- Produção só sai da `main` após merge do responsável. O deploy final será na VPS da Mega Provedor.
-- O servidor local foi iniciado na porta 5173 para visualização da etapa 2. A branch de trabalho agora é a etapa 3; confirmar a versão servida e se o responsável terminou antes de pará-lo.
+- Cada etapa usa branch própria a partir da `main`, só depois do merge da etapa anterior; nada vai direto à `main`.
+- Commits com o e-mail `ti@gemape.com.br` (`git config user.email`), sem mudar o nome do autor, para a Vercel reconhecer o autor e criar o preview. O PR #23 não teve preview porque os commits saíram com um autor sem acesso ao projeto na Vercel.
+- Se a API do GitHub devolver Forbidden, faça push da branch, informe o título do PR e aguarde: o responsável abre o PR manualmente.
+- Preview da Vercel (regra vigente desde 30/09/2026, 16:05): após cada push ou PR, conferir o deployment de preview (Ready, Building ou Error) e informar o link completo quando estiver Ready. Se falhar ou ficar bloqueado, informar o motivo exato e aguardar; não alterar configurações da Vercel.
+- Fallback: se o ambiente não alcançar a Vercel, rodar `VITE_DEMO_MODE=true npm run dev -- --host 0.0.0.0 --port 5173` e informar a URL local e os pontos de conferência.
+- Só avançar de etapa depois do aviso "PR mergeado". Produção só sai da `main` após merge do responsável; o deploy final será na VPS da Mega Provedor.

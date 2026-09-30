@@ -7,7 +7,7 @@ Primeiro construímos a **lógica e o funcionamento** do sistema. O banco de dad
 **Fase atual: lógica e funcionamento**
 1. Telas, fluxos, regras, cálculos e validações são construídos e ajustados em **modo demonstração**, com dados fictícios locais.
 2. Nada toca o Supabase real: sem tabelas novas, sem migrations, sem auth.
-3. Cada entrega passa pela validação visual do responsável no preview da Vercel antes de ser considerada pronta.
+3. Cada entrega passa pela validação visual do responsável no preview da Vercel antes de ser considerada pronta. Se o ambiente de trabalho não alcançar a Vercel, a visualização local em modo demonstração é o fallback.
 4. Quando tudo estiver validado (módulos, cadastros, telas e fluxos), constrói-se o banco real e a autenticação no Supabase: tabelas, vínculos, políticas de acesso e perfis. **Essa fase só começa com ordem explícita do responsável.**
 
 **Regra prática:** se uma tarefa exigir criar tabela no Supabase ou mexer em auth, pare e avise o responsável. É sinal de que chegamos à Fase 2, e ela só começa com a ordem dele.
