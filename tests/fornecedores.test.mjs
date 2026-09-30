@@ -15,16 +15,16 @@ const fornecedor = {
   cnpj: '12.345.678/0001-90', rua: 'Rua das Flores', numero: '42', bairro: 'Centro',
   cep: '01001-000', cidade: 'São Paulo', estado: 'SP', pais: 'Brasil',
   inscricao_estadual: '123456789', telefone: '(11) 99999-9999', contato: 'Ana',
-  observacoes: 'Entregas às segundas', naturezas: ['EPI', 'Uniforme'],
+  observacoes: 'Entregas às segundas', categorias: ['cat-epi', 'cat-uniformes'],
 };
 
 test('fornecedor mantém vários tipos e todos os dados após salvar e editar', () => {
   const local = storage();
   const criado = salvarFornecedor(fornecedor, local);
   assert.deepEqual(listarFornecedores(local), [{ ...fornecedor, id: criado.id, codigo: '00001' }]);
-  salvarFornecedor({ ...criado, cidade: 'Campinas', naturezas: ['Ferramentas', 'Veículos'] }, local);
+  salvarFornecedor({ ...criado, cidade: 'Campinas', categorias: ['cat-ferramentas', 'cat-veiculos'] }, local);
   assert.equal(listarFornecedores(local)[0].cidade, 'Campinas');
-  assert.deepEqual(listarFornecedores(local)[0].naturezas, ['Ferramentas', 'Veículos']);
+  assert.deepEqual(listarFornecedores(local)[0].categorias, ['cat-ferramentas', 'cat-veiculos']);
 });
 
 test('não aceita CNPJ duplicado mesmo com pontuação diferente', () => {
@@ -78,4 +78,14 @@ test('código antigo do preview (FOR-0001) passa para 5 dígitos sem mudar o nú
   local.setItem('gemape-demo-fornecedores', JSON.stringify([{ ...fornecedor, id: 'a', codigo: 'FOR-0007' }]));
   assert.equal(listarFornecedores(local)[0].codigo, '00007');
   assert.equal(salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81' }, local).codigo, '00008');
+});
+
+test('naturezas antigas passam para as categorias de Cadastros > Gerais', () => {
+  const local = storage();
+  const { categorias, ...semCategorias } = fornecedor;
+  local.setItem('gemape-demo-fornecedores', JSON.stringify([{ ...semCategorias, id: 'a', codigo: '00001', naturezas: ['EPI', 'Veículos', 'EPI'] }]));
+  const [lido] = listarFornecedores(local);
+  assert.deepEqual(lido.categorias, ['cat-epi', 'cat-veiculos']);
+  assert.equal('naturezas' in lido, false);
+  assert.throws(() => salvarFornecedor({ ...fornecedor, categorias: [] }, local), /pelo menos uma categoria/);
 });

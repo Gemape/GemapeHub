@@ -1,5 +1,11 @@
-export const NATUREZAS_FORNECEDOR = ["EPI", "Uniforme", "Ferramentas", "Veículos"] as const;
-export type NaturezaFornecedor = (typeof NATUREZAS_FORNECEDOR)[number];
+// Naturezas fixas usadas antes das categorias de Cadastros > Gerais (decisão especial 13),
+// convertidas para as categorias equivalentes ao ler os fornecedores já salvos.
+const NATUREZA_PARA_CATEGORIA: Record<string, string> = {
+  EPI: "cat-epi",
+  Uniforme: "cat-uniformes",
+  Ferramentas: "cat-ferramentas",
+  Veículos: "cat-veiculos",
+};
 
 export type FornecedorDados = {
   razao_social: string;
@@ -16,7 +22,8 @@ export type FornecedorDados = {
   telefone: string;
   contato: string;
   observacoes: string;
-  naturezas: NaturezaFornecedor[];
+  // Ids das categorias de Cadastros > Gerais (uma ou mais).
+  categorias: string[];
 };
 
 // O código é gerado em sequência de 5 dígitos (00001, 00002...) e não muda ao editar.
@@ -38,6 +45,18 @@ export function listarFornecedores(storage: StorageLike = localStorage): Fornece
   } catch {
     return [];
   }
+  // Fornecedores salvos com as naturezas antigas passam a usar as categorias equivalentes.
+  let migrou = false;
+  for (const item of dados as (Fornecedor & { naturezas?: string[] })[]) {
+    if (!Array.isArray(item.categorias)) {
+      item.categorias = [
+        ...new Set((item.naturezas ?? []).map((n) => NATUREZA_PARA_CATEGORIA[n]).filter(Boolean)),
+      ] as string[];
+      delete item.naturezas;
+      migrou = true;
+    }
+  }
+  if (migrou) storage.setItem(CHAVE, JSON.stringify(dados));
   // Fornecedores cadastrados antes do código recebem um, na ordem em que foram cadastrados.
   // Códigos no formato antigo (FOR-0001) passam para 5 dígitos, mantendo o número.
   if (dados.some((item) => !item.codigo || item.codigo !== formatarCodigo(numeroDoCodigo(item.codigo)))) {
@@ -73,8 +92,8 @@ export function salvarFornecedor(
   if (soDigitos(valores.cnpj).length !== 14) {
     throw new Error("Informe um CNPJ com 14 dígitos.");
   }
-  if (valores.naturezas.length === 0) {
-    throw new Error("Selecione pelo menos uma natureza.");
+  if (valores.categorias.length === 0) {
+    throw new Error("Selecione pelo menos uma categoria.");
   }
 
   const fornecedores = listarFornecedores(storage);
@@ -86,7 +105,7 @@ export function salvarFornecedor(
   const indice = fornecedores.findIndex((item) => item.id === id);
   const existente = fornecedores[indice];
   const codigo = existente ? existente.codigo : formatarCodigo(reservarNumero(fornecedores, storage));
-  const fornecedor: Fornecedor = { ...valores, id, codigo };
+  const fornecedor: Fornecedor = { ...valores, categorias: [...new Set(valores.categorias)], id, codigo };
   if (indice >= 0) fornecedores[indice] = fornecedor;
   else fornecedores.push(fornecedor);
   storage.setItem(CHAVE, JSON.stringify(fornecedores));

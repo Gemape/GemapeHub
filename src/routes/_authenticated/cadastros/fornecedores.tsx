@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  listarFornecedores, NATUREZAS_FORNECEDOR, proximoCodigoFornecedor, removerFornecedor, salvarFornecedor,
-  type Fornecedor, type FornecedorDados, type NaturezaFornecedor,
+  listarFornecedores, proximoCodigoFornecedor, removerFornecedor, salvarFornecedor,
+  type Fornecedor, type FornecedorDados,
 } from "@/lib/fornecedores-demo";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/cadastros/fornecedores")({
   head: () => ({ meta: [{ title: "Fornecedores | Patrimônio GEMAPE" }] }),
@@ -39,6 +40,9 @@ const camposContato = [
 
 function PaginaFornecedores() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>(listarFornecedores);
+  // Categorias de Cadastros > Gerais (decisão especial 13: uma ou mais por fornecedor).
+  const { categorias } = useParametrosBase();
+  const nomeCategoria = (id: string) => categorias.find((c) => c.id === id)?.nome;
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Fornecedor | null>(null);
   // Calculado ao abrir, para não trocar enquanto o diálogo fecha depois de salvar.
@@ -69,7 +73,7 @@ function PaginaFornecedores() {
       telefone: texto("telefone"),
       contato: texto("contato"),
       observacoes: texto("observacoes"),
-      naturezas: formulario.getAll("naturezas") as NaturezaFornecedor[],
+      categorias: formulario.getAll("categorias").map(String),
     };
     try {
       salvarFornecedor(editando ? { ...valores, id: editando.id } : valores);
@@ -97,7 +101,7 @@ function PaginaFornecedores() {
       <div>
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Fornecedores</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Dados cadastrais e naturezas de fornecimento.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Dados cadastrais e categorias de produtos fornecidos.</p>
       </div>
       <Button requiresWrite onClick={() => abrir(null)}>Novo fornecedor</Button>
     </header>
@@ -107,7 +111,7 @@ function PaginaFornecedores() {
         <TableHeader><TableRow>
           <TableHead>Código</TableHead><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead>
           <TableHead>CNPJ</TableHead><TableHead>Cidade/Estado</TableHead>
-          <TableHead>Natureza</TableHead><TableHead>Contato</TableHead><TableHead />
+          <TableHead>Categorias</TableHead><TableHead>Contato</TableHead><TableHead />
         </TableRow></TableHeader>
         <TableBody>
           {fornecedores.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Nenhum fornecedor cadastrado.</TableCell></TableRow> :
@@ -117,7 +121,7 @@ function PaginaFornecedores() {
               <TableCell>{fornecedor.razao_social}</TableCell>
               <TableCell>{fornecedor.cnpj}</TableCell>
               <TableCell>{[fornecedor.cidade, fornecedor.estado].filter(Boolean).join("/") || "—"}</TableCell>
-              <TableCell>{fornecedor.naturezas.join(", ")}</TableCell>
+              <TableCell>{fornecedor.categorias.map((id) => nomeCategoria(id) ?? "(categoria excluída)").join(", ") || "—"}</TableCell>
               <TableCell>{fornecedor.contato || fornecedor.telefone || "—"}</TableCell>
               <TableCell className="whitespace-nowrap text-right">
                 <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(fornecedor)}>Editar</Button>
@@ -141,10 +145,15 @@ function PaginaFornecedores() {
           <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" required defaultValue={editando?.nome_fantasia ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" required defaultValue={editando?.cnpj ?? ""} /></div>
           <fieldset className="space-y-2 sm:col-span-2">
-            <legend className="text-sm font-medium">Natureza</legend>
+            <legend className="text-sm font-medium">Categorias</legend>
+            <p className="text-xs text-muted-foreground">Uma ou mais, de Cadastros &gt; Gerais &gt; Categorias.</p>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
-              {NATUREZAS_FORNECEDOR.map((natureza) => <label key={natureza} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="naturezas" value={natureza} defaultChecked={editando?.naturezas.includes(natureza) ?? false} />{natureza}
+              {categorias.map((categoria) => <label key={categoria.id} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="categorias" value={categoria.id} defaultChecked={editando?.categorias.includes(categoria.id) ?? false} />{categoria.nome}
+              </label>)}
+              {/* Categoria já excluída de Cadastros > Gerais continua marcada até ser desmarcada. */}
+              {editando?.categorias.filter((id) => !nomeCategoria(id)).map((id) => <label key={id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input type="checkbox" name="categorias" value={id} defaultChecked />(categoria excluída)
               </label>)}
             </div>
           </fieldset>
