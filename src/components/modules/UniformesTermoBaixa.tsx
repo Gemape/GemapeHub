@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +20,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
 import { formatarData, formatarMoeda } from "@/lib/gemape";
-import { useEmpresas, useItens, useEmpregados, useSalvar } from "@/lib/hooks-gemape";
+import {
+  useEmpresas,
+  useItens,
+  useEmpregados,
+  useRegistrarMovimentacoesLote,
+} from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { empregadoDoTermo, validarSaidaDeUniformes } from "@/lib/termos-atomicos";
 
 interface ItemBaixa {
   item_id: string;
@@ -44,7 +50,8 @@ export function UniformesTermoBaixa() {
   const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
   const { data: uniformes = [] } = useItens("uniforme", TODAS);
 
-  const salvarMovimentacao = useSalvar("movimentacoes", ["movimentacoes", "uniformes"]);
+  const registrarBaixas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"]);
+  const salvando = useRef(false);
 
   const empresa = empresas.find((e) => e.id === empresaId);
   const empregado = empregados.find((e) => e.id === empregadoId);
@@ -64,6 +71,7 @@ export function UniformesTermoBaixa() {
   }
 
   async function gerarTermo() {
+    if (salvando.current) return;
     if (!empresaId || itensBaixa.length === 0) {
       alert("Preencha os campos obrigatórios e adicione pelo menos um item.");
       return;
@@ -78,28 +86,41 @@ export function UniformesTermoBaixa() {
       return;
     }
 
-    let valorTotalBaixa = 0;
+    // Não baixa mais do que o estoque disponível de cada uniforme.
+    const erro = validarSaidaDeUniformes(itensBaixa, uniformes, "baixa");
+    if (erro) {
+      alert(erro);
+      return;
+    }
 
-    // Registrar movimentações
-    for (const item of itensBaixa) {
-      const u = uniformes.find((uni) => uni.id === item.item_id);
-      valorTotalBaixa += item.quantidade * 0;
-
-      await salvarMovimentacao.mutateAsync({
-        valores: {
+    // Registra todas as baixas de uma vez: ou entram todas, ou nenhuma.
+    salvando.current = true;
+    try {
+      await registrarBaixas.mutateAsync(
+        itensBaixa.map((item) => ({
           modulo: "uniforme",
           tipo_movimentacao: "Saida",
           motivo_baixa: motivoBaixa,
           onus_baixa: onusBaixa,
           item_id: item.item_id,
           empresa_id: empresaId,
-          empregado_id: empregadoId || null,
+          empregado_id: empregadoDoTermo(empregadoId),
           quantidade: item.quantidade,
           data_movimentacao: dataBaixa,
           observacao: `Baixa de uniforme via termo - Motivo: ${motivoBaixa} - Obs: ${item.observacao}`,
-        },
-      });
+        })),
+      );
+    } catch {
+      // A falha já aparece no aviso da gravação.
+      return;
+    } finally {
+      salvando.current = false;
     }
+    // Limpa a lista para um segundo clique não registrar a mesma baixa de novo.
+    const itensDoTermo = itensBaixa;
+    setItensBaixa([]);
+    // O termo de baixa não traz preço (como antes): o total fica zerado.
+    const valorTotalBaixa = 0;
 
     // Gerar visualização de impressão
     const printWindow = window.open("", "_blank");
@@ -145,7 +166,7 @@ export function UniformesTermoBaixa() {
                   </tr>
                 </thead>
                 <tbody>
-                  ${itensBaixa
+                  ${itensDoTermo
                     .map((i) => {
                       const u = uniformes.find((uni) => uni.id === i.item_id);
                       const total = i.quantidade * 0;
@@ -349,7 +370,7 @@ export function UniformesTermoBaixa() {
             size="lg"
             variant="destructive"
             onClick={gerarTermo}
-            disabled={salvarMovimentacao.isPending}
+            disabled={registrarBaixas.isPending}
           >
             Gerar Termo de Baixa
           </Button>

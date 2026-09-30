@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +19,14 @@ import {
 } from "@/components/ui/table";
 import { TODAS } from "@/lib/empresa-context";
 import { escaparHtml, formatarData } from "@/lib/gemape";
-import { useEmpresas, useItens, useEmpregados, useSalvar } from "@/lib/hooks-gemape";
+import {
+  useEmpresas,
+  useItens,
+  useEmpregados,
+  useRegistrarMovimentacoesLote,
+} from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { validarSaidaDeUniformes } from "@/lib/termos-atomicos";
 
 interface ItemTermo {
   item_id: string;
@@ -40,7 +46,8 @@ export function UniformesTermoEntrega() {
   const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
   const { data: uniformes = [] } = useItens("uniforme", TODAS);
 
-  const salvarMovimentacao = useSalvar("movimentacoes", ["movimentacoes", "uniformes"]);
+  const registrarEntregas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"]);
+  const salvando = useRef(false);
 
   const empresa = empresas.find((e) => e.id === empresaId);
   const empregado = empregados.find((e) => e.id === empregadoId);
@@ -60,6 +67,7 @@ export function UniformesTermoEntrega() {
   }
 
   async function gerarTermo() {
+    if (salvando.current) return;
     if (!empresaId || !empregadoId || itensEntrega.length === 0) {
       alert("Preencha todos os campos e adicione pelo menos um item.");
       return;
@@ -74,10 +82,18 @@ export function UniformesTermoEntrega() {
       return;
     }
 
-    // Registrar movimentações
-    for (const item of itensEntrega) {
-      await salvarMovimentacao.mutateAsync({
-        valores: {
+    // Não entrega mais do que o estoque disponível de cada uniforme.
+    const erro = validarSaidaDeUniformes(itensEntrega, uniformes, "entrega");
+    if (erro) {
+      alert(erro);
+      return;
+    }
+
+    // Registra todas as saídas de uma vez: ou entram todas, ou nenhuma.
+    salvando.current = true;
+    try {
+      await registrarEntregas.mutateAsync(
+        itensEntrega.map((item) => ({
           modulo: "uniforme",
           tipo_movimentacao: "Saida",
           item_id: item.item_id,
@@ -86,18 +102,17 @@ export function UniformesTermoEntrega() {
           quantidade: item.quantidade,
           data_movimentacao: dataEntrega,
           observacao: `Entrega de uniforme via termo - Estado: ${item.estado}`,
-        },
-      });
-
-      // Update item stock
-      const uniforme = uniformes.find((u) => u.id === item.item_id);
-      if (uniforme) {
-        // useSalvar handles updates if ID is provided
-        // But here we need to manually trigger stock update or rely on a trigger
-        // The trigger trg_compra_uniforme was only for purchases.
-        // I should probably add a general trigger for stock in the migration if not present.
-      }
+        })),
+      );
+    } catch {
+      // A falha já aparece no aviso da gravação.
+      return;
+    } finally {
+      salvando.current = false;
     }
+    // Limpa a lista para um segundo clique não registrar a mesma entrega de novo.
+    const itensDoTermo = itensEntrega;
+    setItensEntrega([]);
 
     // Gerar visualização de impressão
     const printWindow = window.open("", "_blank");
@@ -140,7 +155,7 @@ export function UniformesTermoEntrega() {
                   </tr>
                 </thead>
                 <tbody>
-                  ${itensEntrega
+                  ${itensDoTermo
                     .map((i) => {
                       const u = uniformes.find((uni) => uni.id === i.item_id);
                       return `
@@ -302,7 +317,7 @@ export function UniformesTermoEntrega() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite="operar" size="lg" onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
+          <Button requiresWrite="operar" size="lg" onClick={gerarTermo} disabled={registrarEntregas.isPending}>
             Gerar Termo de Entrega
           </Button>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,10 +23,11 @@ import {
   useEmpresas,
   useItens,
   useEmpregados,
-  useSalvar,
+  useRegistrarMovimentacoesLote,
   useCaixasFerramentas,
   useCaixaItens,
 } from "@/lib/hooks-gemape";
+import { empregadoDoTermo, validarTermoVistoria } from "@/lib/termos-atomicos";
 
 interface ItemVistoria {
   id: string;
@@ -52,7 +53,8 @@ export function FerramentasTermoVistoria() {
 
   const { data: itensCaixa = [], refetch: buscarItensCaixa } = useCaixaItens(caixaSel || null);
 
-  const salvarMovimentacao = useSalvar("movimentacoes", ["movimentacoes", "ferramentas"]);
+  const registrarVistorias = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
+  const salvando = useRef(false);
 
   async function carregarItensDaCaixa() {
     if (!caixaSel) {
@@ -102,8 +104,10 @@ export function FerramentasTermoVistoria() {
   }
 
   async function gerarTermo() {
-    if (itensVistoria.length === 0) {
-      alert("Adicione pelo menos um item para vistoria.");
+    if (salvando.current) return;
+    const erro = validarTermoVistoria(itensVistoria);
+    if (erro) {
+      alert(erro);
       return;
     }
 
@@ -113,24 +117,33 @@ export function FerramentasTermoVistoria() {
 
     if (!empresa) return;
 
-    // Registrar movimentações (Vistoria Periódica)
-    for (const item of itensVistoria) {
-      await salvarMovimentacao.mutateAsync({
-        valores: {
+    // Registra todas as vistorias de uma vez: ou entram todas, ou nenhuma.
+    salvando.current = true;
+    try {
+      await registrarVistorias.mutateAsync(
+        itensVistoria.map((item) => ({
           modulo: "ferramenta",
           tipo_movimentacao: "Vistoria", // Só registra a vistoria; o banco não altera o estoque
           quantidade: item.quantidade,
           data_movimentacao: dataVistoria,
           item_id: item.item_id,
           empresa_id: empresaSel,
-          empregado_id: empregadoId || null,
+          empregado_id: empregadoDoTermo(empregadoId),
           tipo_vistoria: "Periódica",
           observacao: `Vistoria Periódica - Caixa: ${caixa?.codigo || "N/A"} - Status: ${item.conformidade}. Obs: ${item.observacao}`,
-        },
-      });
+        })),
+      );
+    } catch {
+      // A falha já aparece no aviso da gravação.
+      return;
+    } finally {
+      salvando.current = false;
     }
+    // Limpa a lista para um segundo clique não registrar a mesma vistoria de novo.
+    const itensDoTermo = itensVistoria;
+    setItensVistoria([]);
 
-    const itensHtml = itensVistoria
+    const itensHtml = itensDoTermo
       .map((it, index) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return `
@@ -395,7 +408,7 @@ export function FerramentasTermoVistoria() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite="operar" onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
+          <Button requiresWrite="operar" onClick={gerarTermo} disabled={registrarVistorias.isPending}>
             Gerar Termo de Vistoria
           </Button>
         </div>
