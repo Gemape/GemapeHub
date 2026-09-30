@@ -28,7 +28,7 @@ const NUMEROS = Array.from({ length: TOTAL_CAIXAS }, (_, i) => i + 1);
 function CaixasHabilitadas() {
   const dados = useParametrosBase();
   // Todas as empresas: a numeração é única para as três.
-  const { data: cadastradas = [], isLoading } = useCaixasFerramentas(TODAS);
+  const { data: cadastradas = [], isLoading, isError } = useCaixasFerramentas(TODAS);
   const [marcadas, setMarcadas] = useState<Set<number>>(() => new Set(dados.caixasHabilitadas));
   const salvando = useRef(false);
 
@@ -65,11 +65,11 @@ function CaixasHabilitadas() {
   }
 
   function salvar() {
-    if (salvando.current || isLoading) return;
+    if (salvando.current) return;
     salvando.current = true;
     try {
       const salvou = executar(
-        () => salvarCaixasHabilitadas([...marcadas], cadastradas),
+        () => salvarCaixasHabilitadas([...marcadas], isLoading || isError ? null : cadastradas),
         "Caixas habilitadas salvas.",
       );
       // Recusado: a tela volta a mostrar o que está salvo.
@@ -102,7 +102,7 @@ function CaixasHabilitadas() {
             >
               Desmarcar as livres
             </Button>
-            <Button size="sm" onClick={salvar} disabled={!alterado || isLoading}>
+            <Button size="sm" onClick={salvar} disabled={!alterado || isLoading || isError}>
               Salvar habilitação
             </Button>
           </div>
@@ -138,6 +138,11 @@ function CaixasHabilitadas() {
             );
           })}
         </div>
+        {isError && (
+          <p className="text-sm text-destructive">
+            Não foi possível ler as caixas cadastradas. A habilitação não pode ser salva agora.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           Marcadas: habilitadas. Ponto laranja: caixa já cadastrada, que não pode ser desabilitada
           sem antes ser excluída.

@@ -66,6 +66,13 @@ test("salvar a habilitação grava de uma vez, em ordem e sem repetição", () =
   assert.deepEqual(lerParametros(s).caixasHabilitadas, [1, 2, 3]);
 });
 
+test("sem conseguir ler as caixas cadastradas, a habilitação não é gravada", () => {
+  const s = storage();
+  salvarCaixasHabilitadas([1, 2], [], s);
+  assert.throws(() => salvarCaixasHabilitadas([1], null, s), /Não foi possível ler as caixas/);
+  assert.deepEqual(lerParametros(s).caixasHabilitadas, [1, 2]);
+});
+
 test("o cadastro de caixa oferece só números habilitados e livres", () => {
   const cadastradas = [caixa("a", 1), caixa("b", 3)];
   assert.deepEqual(numerosDisponiveis([1, 2, 3, 4], cadastradas), [2, 4]);

@@ -525,12 +525,18 @@ export function combinaBusca(termo: string, ...campos: (string | null | undefine
 
 // ---------- Caixas de ferramentas habilitadas ----------
 
-/** Grava de uma vez a lista de caixas habilitadas; recusa desabilitar caixa já cadastrada. */
+/**
+ * Grava de uma vez a lista de caixas habilitadas; recusa desabilitar caixa já cadastrada.
+ * `cadastradas` null (lista não carregada ou com erro) recusa, para não liberar caixa em uso.
+ */
 export function salvarCaixasHabilitadas(
   numeros: number[],
-  cadastradas: Parameters<typeof validarHabilitacao>[1],
+  cadastradas: Parameters<typeof validarHabilitacao>[1] | null,
   storage = storagePadrao(),
 ): void {
+  if (!cadastradas) {
+    throw new Error("Não foi possível ler as caixas cadastradas. Nada foi alterado; tente de novo.");
+  }
   const erro = validarHabilitacao(numeros, cadastradas);
   if (erro) throw new Error(erro);
   alterar(storage, (d) => {
