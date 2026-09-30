@@ -46,6 +46,26 @@ const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
   saldos.forEach((saldo, item) => { item.estoque_atual = saldo; });
   return null;
 };
+// Emula o gatilho gemape_compra (migration 20260916001000): cada compra de EPI ou uniforme
+// vira uma entrada no histórico de movimentações, que soma no estoque.
+const MODULO_DA_COMPRA: Record<string, string> = { compras_epis: "epi", compras_uniformes: "uniforme" };
+const registrarCompras = (tabela: string, compras: Linha[]): Error | null => {
+  if (compras.some(c => !(Number(c.quantidade) > 0) || c.valor_unitario == null || Number(c.valor_unitario) < 0)) {
+    return new Error("Quantidade e valor de compra inválidos");
+  }
+  const entradas = compras.map(c => ({
+    id: id(), created_at: agora, modulo: MODULO_DA_COMPRA[tabela], tipo_movimentacao: "Entrada",
+    quantidade: Number(c.quantidade), data_movimentacao: c.data_compra, item_id: c.item_id, empresa_id: c.empresa_id,
+    empregado_id: null, motivo_baixa: null, onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false,
+    observacao: `Compra: NF ${c.nota_fiscal || "não informada"} / ${c.fornecedor ?? ""}`.slice(0, 500),
+  }));
+  const erro = aplicarEstoque(entradas);
+  if (erro) return erro;
+  // valor_total é coluna calculada no banco real (quantidade × valor unitário).
+  compras.forEach(c => { c.valor_total = Math.round(Number(c.quantidade) * Number(c.valor_unitario) * 100) / 100; });
+  (dados.movimentacoes ?? (dados.movimentacoes = [])).push(...entradas);
+  return null;
+};
 class Consulta {
   private filtros: Array<(l: Linha) => boolean> = []; private ordem?: string; private limite?: number; private payload?: Linha | Linha[]; private acao = "select"; private contagem = false;
   private tabela: string;
@@ -68,6 +88,7 @@ class Consulta {
     if (this.acao === "insert") {
       const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: agora, ...l }));
       if (this.tabela === "movimentacoes") { const erro = aplicarEstoque(novos); if (erro) return { data: null, error: erro }; }
+      if (this.tabela in MODULO_DA_COMPRA) { const erro = registrarCompras(this.tabela, novos); if (erro) return { data: null, error: erro }; }
       linhas.push(...novos); selecionadas = novos; persistirDados();
     }
     if (this.acao === "update") { selecionadas.forEach(l => Object.assign(l, this.payload)); persistirDados(); }

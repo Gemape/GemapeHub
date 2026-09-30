@@ -87,3 +87,27 @@ export function validarEncerramento(
   }
   return null;
 }
+
+/** Termo de Responsabilidade: não entrega mais do que o estoque disponível de cada ferramenta. */
+export function validarTermoResponsabilidade(
+  linhas: { item_id: string; quantidade: number }[],
+  itens: { id: string; nome: string; estoque_atual: number | null }[],
+): string | null {
+  if (linhas.length === 0) return "Adicione pelo menos uma ferramenta.";
+  const pedidas = new Map<string, number>();
+  for (const linha of linhas) {
+    if (!linha.item_id) return "Selecione a ferramenta de cada linha.";
+    if (!Number.isInteger(linha.quantidade) || linha.quantidade < 1) {
+      return "A quantidade de cada ferramenta deve ser um número inteiro maior que zero.";
+    }
+    pedidas.set(linha.item_id, (pedidas.get(linha.item_id) ?? 0) + linha.quantidade);
+  }
+  for (const [itemId, quantidade] of pedidas) {
+    const item = itens.find((i) => i.id === itemId);
+    const estoque = item?.estoque_atual ?? 0;
+    if (quantidade > estoque) {
+      return `A entrega de ${quantidade} unidade(s) de ${item?.nome ?? "uma ferramenta"} passa do estoque disponível (${estoque}).`;
+    }
+  }
+  return null;
+}

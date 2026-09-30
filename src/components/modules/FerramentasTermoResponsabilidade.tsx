@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,11 +23,12 @@ import {
   useEmpresas,
   useItens,
   useEmpregados,
-  useSalvar,
+  useRegistrarMovimentacoesLote,
   useCaixasFerramentas,
   useCaixaItens,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { validarTermoResponsabilidade } from "@/lib/encerramento-ferramentas";
 
 interface ItemTermo {
   id: string;
@@ -51,7 +52,8 @@ export function FerramentasTermoResponsabilidade() {
 
   const { data: itensCaixa = [], refetch: buscarItensCaixa } = useCaixaItens(caixaSel || null);
 
-  const salvarMovimentacao = useSalvar("movimentacoes", ["movimentacoes", "ferramentas"]);
+  const registrarEntregas = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
+  const salvando = useRef(false);
 
   function adicionarItem() {
     setItensTermo([
@@ -93,6 +95,7 @@ export function FerramentasTermoResponsabilidade() {
   }
 
   async function gerarTermo() {
+    if (salvando.current) return;
     if (!empregadoId || itensTermo.length === 0) {
       alert("Selecione um empregado e adicione pelo menos um item.");
       return;
@@ -109,10 +112,18 @@ export function FerramentasTermoResponsabilidade() {
 
     if (!empregado || !empresa) return;
 
-    // Registrar movimentações (Saída para o empregado)
-    for (const item of itensTermo) {
-      await salvarMovimentacao.mutateAsync({
-        valores: {
+    // Não entrega mais do que o estoque disponível de cada ferramenta.
+    const erro = validarTermoResponsabilidade(itensTermo, itens);
+    if (erro) {
+      alert(erro);
+      return;
+    }
+
+    // Registra todas as saídas de uma vez: ou entram todas, ou nenhuma.
+    salvando.current = true;
+    try {
+      await registrarEntregas.mutateAsync(
+        itensTermo.map((item) => ({
           modulo: "ferramenta",
           tipo_movimentacao: "Saida",
           quantidade: item.quantidade,
@@ -122,11 +133,19 @@ export function FerramentasTermoResponsabilidade() {
           empregado_id: empregadoId,
           tipo_vistoria: "Inicial (Entrega da caixa)",
           observacao: `Entrega de ferramentas/caixa ${caixa?.codigo || "AVULSA"} - Termo de Responsabilidade Individual`,
-        },
-      });
+        })),
+      );
+    } catch {
+      // A falha já aparece no aviso da gravação.
+      return;
+    } finally {
+      salvando.current = false;
     }
+    // Limpa a lista para um segundo clique não registrar a mesma entrega de novo.
+    const itensDoTermo = itensTermo;
+    setItensTermo([]);
 
-    const itensHtml = itensTermo
+    const itensHtml = itensDoTermo
       .map((it, index) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return `
@@ -369,7 +388,7 @@ export function FerramentasTermoResponsabilidade() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite="operar" onClick={gerarTermo} disabled={salvarMovimentacao.isPending}>
+          <Button requiresWrite="operar" onClick={gerarTermo} disabled={registrarEntregas.isPending}>
             Gerar Termo de Responsabilidade
           </Button>
         </div>

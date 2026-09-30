@@ -1,6 +1,6 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 30/09/2026. A referência remota é `origin/main` em `009f037` (PR #24).
+Atualizado em 30/09/2026. A referência remota é `origin/main` em `c4b2ada` (PR #25).
 
 ## Estado das etapas
 
@@ -11,8 +11,33 @@ Atualizado em 30/09/2026. A referência remota é `origin/main` em `009f037` (PR
 | 2 — cadastro | Concluída e mergeada | Commit `c983454`, PR #22, merge `b495094`. Teste explícito de editar, salvar e reabrir preserva estoque positivo. Branch histórica: `feat/ferramentas-cadastro-gerais`. Não há PR da etapa 2 pendente de abertura ou merge. |
 | 3 — identificação e custo | Concluída e mergeada | PR #23, merge `09c5880`. Série obrigatória, patrimônio e data opcionais, custo com duas casas e valor em estoque em centavos. |
 | 4 — listas | Concluída e mergeada | PR #24, merge `009f037`. A aba Movimentações mostra a coluna Código e a natureza (Entrada (compra), Saída (entrega), Saída (baixa)); o CSV tem a coluna Codigo. Regras em `src/lib/historico-movimentacoes.ts`. |
-| 5 — encerramento | Implementada na branch; aguarda PR e merge | Branch `feat/ferramentas-encerramento-saldo`. "Carregar Histórico" traz cada ferramenta com o saldo devido (entregue menos devolvido e baixado) por empregado e empresa; o termo recusa quantidade acima do saldo, item sem saldo e repetição, e grava as devoluções de uma vez. O cliente de demonstração passou a emular o gatilho de estoque do banco real. Regras em `src/lib/encerramento-ferramentas.ts`, testes em `tests/encerramento-ferramentas.test.mjs`. |
-| 6 — validação | Pendente | Validar cada PR de código com testes, typecheck e build antes de solicitar revisão visual. |
+| 5 — encerramento | Concluída e mergeada | PR #25, merge `c4b2ada`. O termo carrega o saldo devido por empregado e empresa (lido do histórico inteiro), recusa excesso, item sem saldo, repetição e data vazia, e grava as devoluções de uma vez. O cliente de demonstração emula o gatilho de estoque. |
+| 6 — validação | Implementada na branch; aguarda PR e merge | Branch `test/ferramentas-validacao-fase1`. Fluxo completo percorrido no navegador (ver "Validação de ponta a ponta"). Correções: Termo de Responsabilidade valida o estoque e grava as saídas de uma vez; compras de EPI e uniforme viram entrada e somam no estoque do demo, com valor total calculado. |
+
+## Validação de ponta a ponta (etapa 6, modo demonstração)
+
+Roteiro executado no navegador em 30/09/2026 sobre a `main` em `c4b2ada` mais as correções da etapa 6:
+
+| Passo | Resultado |
+| --- | --- |
+| Cadastrar ferramenta sem série | Recusado; o diálogo continua aberto. |
+| Cadastrar com série e custo R$ 199,90 | Salvo como FER-0002, estoque 0, custo exibido. |
+| Entrada (compra) de 5 | Estoque 0 → 5; histórico mostra "Entrada (compra)" e o código. |
+| Termo de Responsabilidade com 6 | Recusado: passa do estoque disponível (5). |
+| Termo de Responsabilidade com 3 | Estoque 5 → 2; termo aberto; "Saída (entrega)". |
+| Saída com motivo Quebra, 1 | Estoque 2 → 1; "Saída (baixa)". |
+| Demissão com data vencida | A empregada some da lista de nova saída. |
+| Termo de Encerramento após a demissão | Carrega saldo 2 (3 entregues − 1 baixa); devolve; estoque 1 → 3; recarregar avisa que não há saldo. |
+| Dashboard de Ferramentas | Valor em estoque R$ 1.319,70 (3 × 199,90 + 3 × 240,00). |
+| Compra de EPI (4 × R$ 10,00) | Estoque 12 → 16; total da compra R$ 40,00. |
+
+Validação automática: `npm test`, `npm run typecheck`, `npm run build` e `git diff --check`.
+
+## Pendências registradas
+
+- **Termos em aba nova:** a abertura dos termos em aba nova é bloqueada por alguns navegadores, porque a aba abre depois da gravação. Vale para todos os termos (EPI, Uniformes e Ferramentas) e será tratada em correção separada, depois da etapa 6.
+- **Termos de Uniformes e Termo de Vistoria gravam item a item:** se um item falhar (por exemplo, estoque insuficiente), os anteriores já ficaram gravados. O Termo de Responsabilidade e o de Encerramento de ferramentas já gravam tudo de uma vez. Tratar junto com a correção dos termos.
+- **Compras no modo demonstração:** editar ou excluir uma compra de EPI ou uniforme não ajusta o estoque. No banco real, compras são imutáveis (gatilho `gemape_compra_imutavel`) e a tela recebe erro. Decidir na Fase 2 se os botões Editar e Excluir de compras saem da tela.
 
 ## Decisões vigentes
 
