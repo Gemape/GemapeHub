@@ -379,6 +379,24 @@ export function gerarCodigo(regra: Pick<RegraCodigo, "sigla" | "inicial">, posic
   return `${regra.sigla}-${String(numero).padStart(regra.inicial.length, "0")}`;
 }
 
+// Próximo código da sequência: um depois do maior já usado com a mesma sigla,
+// nunca abaixo da numeração inicial da regra.
+export function proximoCodigo(
+  regra: Pick<RegraCodigo, "sigla" | "inicial">,
+  existentes: (string | null | undefined)[],
+): string {
+  const prefixo = `${regra.sigla}-`.toUpperCase();
+  const inicial = Number(regra.inicial);
+  let maior = inicial - 1;
+  for (const codigo of existentes) {
+    const texto = String(codigo ?? "").trim().toUpperCase();
+    if (!texto.startsWith(prefixo)) continue;
+    const numero = texto.slice(prefixo.length);
+    if (/^\d+$/.test(numero)) maior = Math.max(maior, Number(numero));
+  }
+  return gerarCodigo(regra, maior + 1 - inicial);
+}
+
 export function salvarRegraCodigo(
   categoriaId: string,
   sigla: string,
