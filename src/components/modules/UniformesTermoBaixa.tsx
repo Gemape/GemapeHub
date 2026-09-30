@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
-import { formatarData, formatarMoeda } from "@/lib/gemape";
 import {
   useEmpresas,
   useItens,
@@ -28,6 +27,7 @@ import {
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { empregadoDoTermo, validarSaidaDeUniformes } from "@/lib/termos-atomicos";
+import { montarTermoBaixaUniformeHtml } from "@/lib/termo-baixa-uniforme-html";
 
 interface ItemBaixa {
   item_id: string;
@@ -119,95 +119,22 @@ export function UniformesTermoBaixa() {
     // Limpa a lista para um segundo clique não registrar a mesma baixa de novo.
     const itensDoTermo = itensBaixa;
     setItensBaixa([]);
-    // O termo de baixa não traz preço (como antes): o total fica zerado.
-    const valorTotalBaixa = 0;
 
     // Gerar visualização de impressão
     const printWindow = window.open("", "_blank");
     if (printWindow) {
-      const html = `
-        <html>
-          <head>
-            <title>Termo de Baixa - Uniforme</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
-              .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; }
-              .title { font-size: 20px; font-weight: bold; text-transform: uppercase; }
-              .content { margin-bottom: 40px; }
-              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-              th, td { border: 1px solid #000; padding: 10px; text-align: left; }
-              .footer { margin-top: 60px; }
-              .signatures { display: flex; justify-content: space-between; margin-top: 80px; }
-              .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 10px; }
-              .total-box { text-align: right; font-weight: bold; font-size: 18px; margin-top: 20px; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <div class="title">Termo de Baixa Definitiva de Uniforme</div>
-              <div style="margin-top: 10px; font-weight: bold;">${empresa?.razao_social}</div>
-              <div>CNPJ: ${empresa?.cnpj}</div>
-            </div>
-            
-            <div class="content">
-              <p>Registramos nesta data, <strong>${formatarData(dataBaixa)}</strong>, a baixa definitiva 
-              dos seguintes itens de uniforme vinculados ao colaborador(a) 
-              <strong>${empregado?.nome || "N/A"}</strong>:</p>
-              
-              <table>
-                <thead>
-                  <tr>
-                    <th>Descrição</th>
-                    <th>Qtd</th>
-                    <th>Estado</th>
-                    <th>Motivo</th>
-                    <th>Valor Unit.</th>
-                    <th>Valor Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itensDoTermo
-                    .map((i) => {
-                      const u = uniformes.find((uni) => uni.id === i.item_id);
-                      const total = i.quantidade * 0;
-                      return `
-                      <tr>
-                        <td>${u?.nome}</td>
-                        <td>${i.quantidade}</td>
-                        <td>${i.estado}</td>
-                        <td>${motivoBaixa}</td>
-                        <td>${formatarMoeda(0)}</td>
-                        <td>${formatarMoeda(total)}</td>
-                      </tr>
-                    `;
-                    })
-                    .join("")}
-                </tbody>
-              </table>
-              
-              <div class="total-box">VALOR TOTAL DA BAIXA: ${formatarMoeda(valorTotalBaixa)}</div>
-              
-              <div style="margin-top: 30px; border: 1px solid #ddd; padding: 15px; background: #f9f9f9;">
-                <strong>Motivo:</strong> ${motivoBaixa}<br>
-                <strong>Ônus:</strong> ${onusBaixa}
-              </div>
-
-              <p style="margin-top: 30px;">O(A) empregado(a) está ciente da baixa dos itens acima e das responsabilidades financeiras caso o ônus seja do colaborador.</p>
-            </div>
-            
-            <div class="signatures">
-              <div class="sig-box">
-                <strong>${empregado?.nome || "___________________"}</strong><br>Empregado(a)
-              </div>
-              <div class="sig-box">
-                <strong>Responsável</strong><br>${empresa?.nome_fantasia}
-              </div>
-            </div>
-            
-            <script>window.print();</script>
-          </body>
-        </html>
-      `;
+      const html = montarTermoBaixaUniformeHtml({
+        empresa,
+        empregado,
+        data: dataBaixa,
+        motivo: motivoBaixa,
+        onus: onusBaixa,
+        linhas: itensDoTermo.map((i) => ({
+          nome: uniformes.find((uni) => uni.id === i.item_id)?.nome,
+          quantidade: i.quantidade,
+          estado: i.estado,
+        })),
+      });
       printWindow.document.write(html);
       printWindow.document.close();
     }
