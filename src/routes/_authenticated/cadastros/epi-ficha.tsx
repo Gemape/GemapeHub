@@ -23,6 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import {
@@ -93,8 +95,9 @@ function FichaEpiPagina() {
     .sort((a, b) => a.epi.codigo_sku.localeCompare(b.epi.codigo_sku));
 
   // Na ficha nova, só aparecem os EPIs que ainda não têm ficha.
-  const opcoesEpi: OpcaoBusca[] = epis
-    .filter((e) => e.id === epiSel || !fichas.some((f) => f.epiId === e.id))
+  // O EPI já escolhido (ex.: vindo do Cadastro de EPI) aparece mesmo fora do filtro de empresa.
+  const opcoesEpi: OpcaoBusca[] = todos
+    .filter((e) => e.id === epiSel || (epis.includes(e) && !fichas.some((f) => f.epiId === e.id)))
     .map((e) => ({
       valor: e.id,
       rotulo: `${e.codigo_sku} · ${e.nome}`,
@@ -113,6 +116,7 @@ function FichaEpiPagina() {
   useEffect(() => {
     if (!epiDaUrl || isLoading) return;
     if (epiPorId(epiDaUrl)) abrir(epiDaUrl);
+    else toast.error("EPI não encontrado para abrir a ficha.");
     void navigate({ search: {}, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [epiDaUrl, isLoading]);
@@ -239,6 +243,7 @@ function FichaEpiPagina() {
                 <Textarea
                   id={`ficha-${campo.chave}`}
                   rows={campo.chave === "setores" ? 2 : 3}
+                  aria-required
                   value={conteudo[campo.chave]}
                   onChange={(e) => setConteudo({ ...conteudo, [campo.chave]: e.target.value })}
                 />

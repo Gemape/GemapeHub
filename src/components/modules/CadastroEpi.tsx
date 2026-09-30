@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +35,8 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { useFichasEpi } from "@/lib/use-fichas-epi";
 import { exportarCsv } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
-import { mesmoNome, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import { removerFicha } from "@/lib/fichas-epi";
+import { combinaBusca, mesmoNome, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 // Categoria EPI de Cadastros > Gerais (id fixo; o nome pode ser renomeado).
@@ -58,7 +59,15 @@ export function CadastroEpi() {
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Item | null>(null);
   const [previa, setPrevia] = useState("");
-  const { data: itens = [], isLoading } = useItens("epi", empresaId, busca);
+  const [empresaSel, setEmpresaSel] = useState("");
+  // Evita dois cadastros com o mesmo código num clique duplo em Salvar.
+  // O ref bloqueia na hora; o estado só serve para desabilitar o botão. Depois de salvo,
+  // o formulário fica travado até ser aberto de novo (o diálogo ainda está fechando).
+  const salvando = useRef(false);
+  const [gerando, setGerando] = useState(false);
+  const { data: lista = [], isLoading } = useItens("epi", empresaId, busca);
+  // Filtro também na tela, porque o modo demonstração não filtra pela busca.
+  const itens = lista.filter((i) => combinaBusca(busca, i.codigo_sku, i.nome, i.categoria));
   const salvar = useSalvar("epis", ["epis", "produtos-gemape", "saidas-por-item"]);
   const excluir = useExcluir("epis", ["epis", "produtos-gemape", "saidas-por-item"]);
 
@@ -66,10 +75,19 @@ export function CadastroEpi() {
   const subcategorias = subcategoriasDa(parametros, CATEGORIA_EPI);
   // Ao editar um EPI antigo cuja subcategoria não está em Cadastros > Gerais, ela
   // continua aparecendo para não ser apagada sem querer.
+  const subcategoriaAtual = editando?.categoria
+    ? (subcategorias.find((s) => mesmoNome(s.nome, editando.categoria))?.nome ?? editando.categoria)
+    : "";
   const subcategoriaAntiga =
-    editando?.categoria && !subcategorias.some((s) => mesmoNome(s.nome, editando.categoria))
-      ? editando.categoria
+    subcategoriaAtual && !subcategorias.some((s) => s.nome === subcategoriaAtual)
+      ? subcategoriaAtual
       : null;
+  const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
+
+  function destravar() {
+    salvando.current = false;
+    setGerando(false);
+  }
 
   async function abrirNovo() {
     if (!regra) {
@@ -78,7 +96,9 @@ export function CadastroEpi() {
       );
       return;
     }
+    destravar();
     setEditando(null);
+    setEmpresaSel("");
     setPrevia("");
     setAberto(true);
     try {
@@ -93,7 +113,8 @@ export function CadastroEpi() {
     const f = new FormData(e.currentTarget);
     const categoria = String(f.get("categoria") ?? "").trim();
     const nome = String(f.get("nome") ?? "").trim();
-    const empresa = String(f.get("empresa_id") ?? "").trim();
+    // A empresa não muda na edição: os códigos de fábrica ficam ligados a ela.
+    const empresa = editando ? (editando.empresa_id ?? "") : empresaSel || empresaPadrao;
     if (!categoria) {
       toast.error("Selecione a subcategoria.");
       return;
@@ -106,21 +127,28 @@ export function CadastroEpi() {
       toast.error("Selecione a empresa.");
       return;
     }
+    if (salvando.current) return;
     const valores: Record<string, unknown> = {
-      empresa_id: empresa,
       categoria,
       nome,
       estoque_minimo: Math.max(0, Number(f.get("estoque_minimo") ?? 0) || 0),
     };
     if (!editando) {
+      valores["empresa_id"] = empresa;
       if (!regra) {
         toast.error("Regra do código de EPI não encontrada.");
         return;
       }
+    }
+    salvando.current = true;
+    setGerando(true);
+    const liberar = destravar;
+    if (!editando && regra) {
       try {
         // O código é gerado na hora de salvar, para não repetir um já usado.
         valores["codigo_sku"] = proximoCodigo(regra, await codigosUsados());
       } catch (erro) {
+        liberar();
         toast.error("Não foi possível gerar o código.", {
           description: erro instanceof Error ? erro.message : undefined,
         });
@@ -131,7 +159,7 @@ export function CadastroEpi() {
     }
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
-      { onSuccess: () => setAberto(false) },
+      { onSuccess: () => setAberto(false), onError: liberar },
     );
   }
 
@@ -232,6 +260,7 @@ export function CadastroEpi() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
+                        destravar();
                         setEditando(item);
                         setAberto(true);
                       }}
@@ -244,7 +273,16 @@ export function CadastroEpi() {
                       size="sm"
                       onClick={() => {
                         if (confirm(`Excluir ${item.codigo_sku} ${item.nome}?`))
-                          excluir.mutate(item.id);
+                          excluir.mutate(item.id, {
+                            // A ficha do EPI excluído sai junto.
+                            onSuccess: () => {
+                              try {
+                                removerFicha(item.id);
+                              } catch {
+                                // Fichas ilegíveis ficam como estão.
+                              }
+                            },
+                          });
                       }}
                     >
                       Excluir
@@ -281,7 +319,7 @@ export function CadastroEpi() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Subcategoria</Label>
-              <Select name="categoria" defaultValue={editando?.categoria ?? ""}>
+              <Select name="categoria" defaultValue={subcategoriaAtual}>
                 <SelectTrigger id="categoria">
                   <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
@@ -308,6 +346,7 @@ export function CadastroEpi() {
               <Label htmlFor="nome">Descrição do item</Label>
               <Textarea
                 id="nome"
+                aria-required
                 name="nome"
                 rows={2}
                 defaultValue={editando?.nome ?? ""}
@@ -328,11 +367,9 @@ export function CadastroEpi() {
             <div className="space-y-1.5">
               <Label htmlFor="empresa_id">Empresa</Label>
               <Select
-                name="empresa_id"
-                defaultValue={
-                  editando?.empresa_id ??
-                  (empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? ""))
-                }
+                value={editando ? (editando.empresa_id ?? "") : empresaSel || empresaPadrao}
+                onValueChange={setEmpresaSel}
+                disabled={!!editando}
               >
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione" />
@@ -351,7 +388,7 @@ export function CadastroEpi() {
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>
                 Cancelar
               </Button>
-              <Button requiresWrite type="submit" disabled={salvar.isPending}>
+              <Button requiresWrite type="submit" disabled={salvar.isPending || gerando}>
                 Salvar
               </Button>
             </DialogFooter>
