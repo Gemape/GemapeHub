@@ -22,8 +22,9 @@ Nada abaixo deve ser feito antes da ordem do responsável.
   - `20260928120000_empresa_papeis_rls.sql` (perfis e isolamento por empresa);
   - `20260928130000_enderecamentos.sql` (endereçamento de estoque);
   - `20260928140000_vistoria_sem_estoque.sql` (vistoria não altera estoque).
+- **Código do produto:** gerar o próximo código (EPI-0001 etc.) no próprio banco, para não repetir quando duas pessoas salvam ao mesmo tempo.
 - **Estoque de ferramentas:** revisar o estoque inflado por vistorias antigas, que foram gravadas como entrada.
-- **Cadastros que hoje ficam só no navegador** e vão precisar de tabela: Cadastros > Gerais (categorias, subcategorias, tamanhos, unidades, associações, regras de código do produto, códigos de fábrica) e fornecedores.
+- **Cadastros que hoje ficam só no navegador** e vão precisar de tabela: Cadastros > Gerais (categorias, subcategorias, tamanhos, unidades, associações, regras de código do produto, códigos de fábrica), fornecedores e Ficha de EPI (uma por EPI, com os 7 campos da NR6).
 
 ### Autenticação e permissões
 - **Permissões de acesso por tela** são definidas nesta fase, junto com a auth e o banco.
