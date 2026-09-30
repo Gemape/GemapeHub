@@ -22,6 +22,11 @@ Permissão de acesso: Administrador. Usuário simples: não tem acesso.
 1. Seleciona a categoria (ex.: EPI).
 2. Permite cadastrar as subcategorias (ex.: luvas, capacete, bota).
 
+**Categorias e grupos de ferramentas** (listas de Cadastros > Gerais)
+- Categoria de ferramenta: Manual, Elétrica, Pneumático, Hidráulica, Medição, Corte; permitir novas categorias.
+- Grupo de ferramenta: Chave de fenda, Chave estria, Chave boca, Meia lua, Combinada, Canhão, Alicates, Lima, Chave Philips, Chave L, Chave Allen, Cachimbo, Diversos; permitir novos grupos.
+- Essas são listas de seleção do modelo de ferramenta. São distintas da categoria de produto "Ferramentas" e de suas subcategorias, também cadastradas em Gerais.
+
 **Cadastrar código de fábrica**
 Associa o código de produto de um fornecedor ao código interno do produto na GEMAPE. Ao dar entrada na nota fiscal, o sistema já entende a qual produto associar o estoque ao importar o arquivo XML.
 1. Informa o produto cadastrado na GEMAPE (campo com busca dos produtos já cadastrados).
@@ -112,26 +117,28 @@ O CA não entra no uniforme: é exigência da NR6 e pertence ao EPI e à Ficha d
 Permissão: Administrador cadastra caixa, portador, categoria e grupo. Usuário simples cadastra modelo.
 
 **Cadastrar modelo**
-1. Código interno gerado automaticamente ao salvar, conforme a regra de Cadastros > Gerais > Código do Produto para Ferramentas (ex.: FER-0001, FER-0002). A sequência considera os códigos de todas as empresas; a edição mantém o código.
-2. Subcategoria da categoria Ferramentas em Cadastros > Gerais > Cadastrar subcategorias. O cadastro do produto não mantém lista própria de subcategorias.
-3. Descrição do item (campo aberto) e estoque mínimo (quantidade não negativa).
-4. Modelo (campo aberto).
-5. Número de série informado pelo usuário, obrigatório; não gerar série fictícia (decisão 8).
-6. Patrimônio, opcional (decisão 8: liga a ferramenta ao ativo).
-7. Data de aquisição, opcional (decisão 8: sustenta a depreciação).
-8. Preço de custo em reais, informado no cadastro, não negativo e com duas casas decimais; alimenta o indicador de valor em estoque do dashboard.
-9. Empresa à qual pertence o item, para identificação e consolidação do estoque.
+1. Subcategoria selecionada entre as subcategorias da categoria de produto "Ferramentas" em Cadastros > Gerais. A subcategoria determina a categoria de produto usada pela regra de Cadastros > Gerais > Código do Produto; não há sequência independente por subcategoria.
+2. Código interno gerado automaticamente ao salvar pela regra da categoria de produto "Ferramentas" (sigla e numeração inicial; ex.: FER-0001, FER-0002). A sequência considera os códigos de todas as empresas; não há edição manual, e a edição do modelo mantém o código.
+3. Categoria de ferramenta selecionada da lista de categorias de ferramentas de Cadastros > Gerais (ex.: Pneumático).
+4. Grupo de ferramenta selecionado da lista de grupos de ferramentas de Cadastros > Gerais (ex.: Chave de fenda).
+5. Descrição do item (campo aberto) e estoque mínimo (quantidade não negativa).
+6. Modelo (campo aberto).
+7. Número de série informado pelo usuário, obrigatório; não gerar série fictícia (decisão 8).
+8. Patrimônio, opcional (decisão 8: liga a ferramenta ao ativo).
+9. Data de aquisição, opcional (decisão 8: sustenta a depreciação).
+10. Preço de custo em reais, informado no cadastro, não negativo e com duas casas decimais; alimenta o indicador de valor em estoque do dashboard.
+11. Empresa à qual pertence o item, para identificação e consolidação do estoque.
 
-As categorias e os grupos próprios de Cadastros > Ferramentas continuam disponíveis para a organização de ferramentas e caixas; não substituem a subcategoria de Cadastros > Gerais no cadastro do produto.
+O cadastro do modelo lê as três seleções em Cadastros > Gerais: subcategoria de produto, categoria de ferramenta e grupo de ferramenta. Nenhuma delas usa lista fixa no módulo.
 
 **Listas e movimentos de ferramentas (Fase 1, modo demonstração)**
 - Compra corresponde a uma entrada no histórico de movimentações; entrega e baixa correspondem a saídas no mesmo histórico. Não criar telas de listas separadas. Exibir o código interno junto da descrição em cada linha e na exportação.
 - O Termo de Responsabilidade registra a saída para o empregado. O Termo de Encerramento registra a devolução da ferramenta ainda sob responsabilidade dele, inclusive após a demissão, e devolve a quantidade uma única vez ao estoque disponível. Não permitir devolução acima do saldo entregue nem repetir a devolução.
 - Esses fluxos usam somente dados fictícios locais na Fase 1. A revisão do estoque histórico de ferramentas permanece na Fase 2; não criar nem alterar tabelas, migrations ou autenticação no Supabase real nesta etapa.
 
-**Cadastrar categorias de ferramentas:** Manual, Elétrica, Pneumático, Hidráulica, Medição, Corte. Permitir cadastrar novas se necessário.
+**Cadastrar categorias de ferramentas:** lista mantida em Cadastros > Gerais; Manual, Elétrica, Pneumático, Hidráulica, Medição, Corte. Permitir cadastrar novas se necessário.
 
-**Cadastrar grupos de ferramentas:** Chave de fenda, Chave estria, Chave boca, Meia lua, Combinada, Canhão, Alicates, Lima, Chave Philips, Chave L, Chave Allen, Cachimbo, Diversos.
+**Cadastrar grupos de ferramentas:** lista mantida em Cadastros > Gerais; Chave de fenda, Chave estria, Chave boca, Meia lua, Combinada, Canhão, Alicates, Lima, Chave Philips, Chave L, Chave Allen, Cachimbo, Diversos.
 
 **Cadastrar marcas:** conforme necessidade.
 
