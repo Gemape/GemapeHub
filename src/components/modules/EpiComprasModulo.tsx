@@ -221,7 +221,7 @@ export function EpiComprasModulo() {
                 <SelectContent>
                   {itens.map((i) => (
                     <SelectItem key={i.id} value={i.id}>
-                      {i.nome}
+                      {i.codigo_sku} · {i.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>

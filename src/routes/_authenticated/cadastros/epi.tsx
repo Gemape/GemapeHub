@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ItensModulo } from "@/components/modules/ItensModulo";
+import { CadastroProduto } from "@/components/modules/CadastroProduto";
 
 export const Route = createFileRoute("/_authenticated/cadastros/epi")({
   head: () => ({
@@ -17,10 +17,10 @@ export const Route = createFileRoute("/_authenticated/cadastros/epi")({
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Cadastro de EPIs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gerenciamento completo de EPIs, incluindo CA, tamanhos e estoque mínimo.
+          Código automático, subcategoria de Cadastros &gt; Gerais, descrição e estoque mínimo.
         </p>
       </header>
-      <ItensModulo modulo="epi" />
+      <CadastroProduto tabela="epis" />
     </div>
   ),
 });

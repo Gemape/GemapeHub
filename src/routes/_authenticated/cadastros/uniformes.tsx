@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ItensModulo } from "@/components/modules/ItensModulo";
+import { CadastroProduto } from "@/components/modules/CadastroProduto";
 
 export const Route = createFileRoute("/_authenticated/cadastros/uniformes")({
   head: () => ({
@@ -17,10 +17,10 @@ export const Route = createFileRoute("/_authenticated/cadastros/uniformes")({
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Cadastro de Uniformes</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gerenciamento de uniformes por categoria, tamanho e fornecedor.
+          Código automático, subcategoria de Cadastros &gt; Gerais, descrição e estoque mínimo.
         </p>
       </header>
-      <ItensModulo modulo="uniforme" />
+      <CadastroProduto tabela="uniformes" />
     </div>
   ),
 });
