@@ -1,6 +1,7 @@
 // HTML do Termo de Entrega de EPI. Todo texto informado passa por escaparHtml, como nos
 // termos de Encerramento, Responsabilidade, Baixa e Vistoria.
-import { escaparHtml } from "./gemape.ts";
+import { hojeLocal } from "./empregados.ts";
+import { escaparHtml, formatarData } from "./gemape.ts";
 
 type Texto = string | null | undefined;
 
@@ -101,4 +102,9 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
         </body>
       </html>
   `;
+}
+
+/** Observação gravada em cada saída do termo, com a data local (não a de UTC). */
+export function observacaoEntregaEpi(agora = new Date()): string {
+  return `Entrega de EPI - Termo Gerado em ${formatarData(hojeLocal(agora))}`;
 }

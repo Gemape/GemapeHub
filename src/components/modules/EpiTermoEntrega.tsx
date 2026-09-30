@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +18,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { formatarData } from "@/lib/gemape";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
-import { montarTermoEntregaEpiHtml } from "@/lib/termo-entrega-epi-html";
+import { montarTermoEntregaEpiHtml, observacaoEntregaEpi } from "@/lib/termo-entrega-epi-html";
+import { validarSaidaDeEpis } from "@/lib/termos-atomicos";
 
 interface ItemTermo {
   id: string;
@@ -42,6 +42,7 @@ export function EpiTermoEntrega() {
   const { data: itens = [] } = useItens("epi", TODAS);
 
   const registrarLote = useRegistrarMovimentacoesLote(["movimentacoes", "epis"]);
+  const salvando = useRef(false);
 
   function adicionarItem() {
     setItensTermo([
@@ -59,6 +60,7 @@ export function EpiTermoEntrega() {
   }
 
   async function gerarTermo() {
+    if (salvando.current) return;
     if (!empregadoId || itensTermo.length === 0) {
       alert("Selecione um empregado e adicione pelo menos um item.");
       return;
@@ -74,7 +76,14 @@ export function EpiTermoEntrega() {
 
     if (!empregado || !empresa) return;
 
-    // Registrar movimentações em lote
+    // Não entrega mais do que o estoque disponível nem grava linha sem EPI.
+    const erro = validarSaidaDeEpis(itensTermo, itens);
+    if (erro) {
+      alert(erro);
+      return;
+    }
+
+    // Registra todas as saídas de uma vez: ou entram todas, ou nenhuma.
     const movimentacoesLote = itensTermo.map((item) => ({
       modulo: "epi",
       tipo_movimentacao: "Saida",
@@ -83,21 +92,27 @@ export function EpiTermoEntrega() {
       item_id: item.item_id,
       empresa_id: empresaSel,
       empregado_id: empregadoId,
-      observacao: `Entrega de EPI - Termo Gerado em ${formatarData(new Date().toISOString())}`,
+      observacao: observacaoEntregaEpi(),
     }));
 
+    salvando.current = true;
     try {
       await registrarLote.mutateAsync(movimentacoesLote);
-    } catch (error) {
+    } catch {
       // O hook já mostra toast de erro. Paramos o processo.
       return;
+    } finally {
+      salvando.current = false;
     }
+    // Limpa a lista para um segundo clique não registrar a mesma entrega de novo.
+    const itensDoTermo = itensTermo;
+    setItensTermo([]);
 
     const html = montarTermoEntregaEpiHtml({
       empresa,
       empregado,
       data: dataEntrega,
-      linhas: itensTermo.map((it) => {
+      linhas: itensDoTermo.map((it) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return {
           nome: itemInfo?.nome,
