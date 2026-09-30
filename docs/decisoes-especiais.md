@@ -162,3 +162,14 @@ Decidido pelo responsável em 30/09/2026, ao aprovar a proposta
   empresas.
 - O portador ativo passa a ser o responsável exibido da caixa; o campo
   Responsável estático do cadastro de caixa deixa de ser usado.
+
+## 20. PRODUÇÃO NA VPS APÓS A FASE 2
+Decidido pelo responsável em 30/09/2026:
+- O deploy na VPS da Mega Provedor só ocorre depois que autenticação e
+  banco de dados reais do Supabase estiverem integrados e funcionando
+  com o sistema. Produção real exige Supabase real, não modo demonstração.
+- Ordem final: concluir todo o MD (etapas 2, 3 e 4 de Caixas e Portador
+  e pendência 4), confirmar o sistema 100% funcional, executar a Fase 2
+  com auth e banco reais e, só então, fazer o deploy na VPS.
+- Esta decisão não autoriza iniciar a Fase 2 agora. Cada etapa atual
+  continua em branch e PR próprios para validação do responsável.

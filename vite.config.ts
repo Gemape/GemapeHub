@@ -10,7 +10,11 @@ export default defineConfig({
   // Na Vercel (variável VERCEL=1 durante o build) gera a saída no formato da Vercel;
   // fora dela mantém o servidor Node usado na VPN (npm start).
   nitro: { preset: process.env["VERCEL"] ? "vercel" : "node-server" },
-  vite: { server: { host: "127.0.0.1", strictPort: true }, preview: { host: "127.0.0.1" } },
+  vite: {
+    base: process.env["GITHUB_PAGES"] === "true" ? "/GemapeHub/" : "/",
+    server: { host: "127.0.0.1", strictPort: true },
+    preview: { host: "127.0.0.1" },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

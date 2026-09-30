@@ -1,6 +1,6 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 30/09/2026. A referência remota é `origin/main` em `0853e00` (merge do PR #36).
+Atualizado em 30/09/2026. A etapa 2 de Caixas e Portador parte de `origin/main` em `c5846ac` (merge do PR #37).
 
 **Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) foi aprovada pelo responsável em 30/09/2026, e as quatro etapas abaixo também, na ordem proposta (decisão 18). Cada etapa para após o PR, para validação e merge do responsável. A Fase 2 continua aguardando decisão: não iniciar.
 
@@ -50,7 +50,7 @@ Padrões obrigatórios em todas as etapas:
 
 | Etapa | Entrega | Critérios de aceite |
 | --- | --- | --- |
-| 1 — caixas habilitadas (em andamento na branch `feat/caixas-habilitadas`) | Em Cadastros > Gerais, a lista das caixas numeradas de 01 a 100, cada uma com a flag de habilitação. O cadastro de caixa e as telas que escolhem caixa (Termo de Responsabilidade, Termo de Vistoria, aba Caixas de Ferramentas) só oferecem caixas habilitadas. | Numeração fixa de 1 a 100, sem repetir nem pular. Desabilitar uma caixa em uso é recusado, com o motivo. A caixa desabilitada some das listas de escolha, mas continua no histórico. |
+| 1 — caixas habilitadas (mergeada no PR #37, `c5846ac`) | Em Cadastros > Gerais, a lista das caixas numeradas de 01 a 100, cada uma com a flag de habilitação. O cadastro de caixa e as telas que escolhem caixa (Termo de Responsabilidade, Termo de Vistoria, aba Caixas de Ferramentas) só oferecem caixas habilitadas. | Numeração fixa de 1 a 100, sem repetir nem pular. Desabilitar uma caixa em uso é recusado, com o motivo. A caixa desabilitada some das listas de escolha, mas continua no histórico. |
 | 2 — portador | Cadastro de Portador: caixa (só as habilitadas), empregado por busca de palavra-chave, status ativa/inativa e observação. Histórico de portadores por caixa. | Uma caixa tem no máximo um portador ativo. Trocar o portador encerra o anterior no histórico, com data local. Empregado demitido não pode ser novo portador (decisão 15). O histórico é lido por inteiro. A gravação é atômica e trava o segundo clique. |
 | 3 — marcas | Cadastro de marcas de ferramentas em Cadastros > Gerais. O cadastro de ferramenta passa a escolher a marca dessa lista, em vez de texto livre. | Marca em uso não pode ser renomeada nem excluída sem aviso, como categoria e grupo (etapa 2 de Ferramentas). As ferramentas já cadastradas com marca em texto continuam exibindo a marca. |
 | 4 — validação | Fluxo completo no navegador (habilitar caixa, atribuir portador, trocar portador, termos com a caixa, marca na ferramenta), handoff atualizado e pendências da Fase 2 registradas. | Roteiro de ponta a ponta registrado aqui, como na etapa 6 de Ferramentas. |
@@ -60,6 +60,10 @@ Respostas do responsável aos pontos da etapa 1 (30/09/2026, decisão 18):
 1. **Habilitação** em Cadastros > Gerais > Caixas, conforme a proposta.
 2. **Código** de `CX-0001` a `CX-0100`, sequência única para as três empresas. O número da caixa (01 a 100) é escolhido no cadastro entre as habilitadas livres, e o código sai dele; depois de gravado, não muda.
 3. **Responsável:** o portador ativo passa a ser o responsável exibido, e o campo Responsável estático deixa de ser usado (etapa 2).
+
+Etapa 2 em andamento na branch `feat/caixas-portador-historico`: cadastro de portador com caixa habilitada, busca de empregado, status, observação e histórico completo. O PR desta etapa deve parar para validação do responsável antes da etapa 3.
+
+Visualização: o workflow `.github/workflows/pages-demo.yml` publica a `main` em modo demonstração no endereço fixo `https://gemape.github.io/GemapeHub/` após cada merge. O responsável precisa selecionar uma vez **Settings > Pages > Source: GitHub Actions**. O build usa `/GemapeHub/` como base, gera `index.html` estático e copia para `404.html` para as rotas. No PR, ler o check/comentário da Vercel pelo GitHub e informar o preview; se ausente, informar a URL padrão da branch e aguardar confirmação visual. Não acessar a API da Vercel.
 
 Etapa 1 na branch `feat/caixas-habilitadas`:
 - A tela Cadastros > Gerais > Caixas marca as caixas habilitadas e grava tudo de uma vez. Uma caixa cadastrada não pode ser desabilitada.
@@ -115,4 +119,4 @@ Cada caso recebeu teste reproduzindo a falha antes da correção. Validação fi
 - Se a API do GitHub devolver Forbidden, faça push da branch, informe o título do PR e aguarde: o responsável abre o PR manualmente.
 - Preview da Vercel (regra vigente desde 30/09/2026, 16:05): após cada push ou PR, conferir o deployment de preview (Ready, Building ou Error) e informar o link completo quando estiver Ready. Se falhar ou ficar bloqueado, informar o motivo exato e aguardar; não alterar configurações da Vercel.
 - Fallback: se o ambiente não alcançar a Vercel, rodar `VITE_DEMO_MODE=true npm run dev -- --host 0.0.0.0 --port 5173` e informar a URL local e os pontos de conferência.
-- Só avançar de etapa depois do aviso "PR mergeado". Produção só sai da `main` após merge do responsável; o deploy final será na VPS da Mega Provedor.
+- Só avançar de etapa depois do aviso "PR mergeado". Pela decisão 20, a ordem final é concluir o MD (etapas 2, 3 e 4 de Caixas e Portador e pendência 4), confirmar o sistema 100% funcional, executar a Fase 2 com auth e banco de dados reais do Supabase e somente então fazer o deploy de produção na VPS da Mega Provedor. A Fase 2 ainda não está autorizada.

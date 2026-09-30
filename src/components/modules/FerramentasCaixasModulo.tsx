@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
+import { portadorAtivo } from "@/lib/portadores-caixa";
+import { usePortadoresCaixa } from "@/lib/use-portadores-caixa";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,8 +23,6 @@ import {
 } from "@/lib/hooks-gemape";
 import { Button } from "@/components/ui/button";
 
-type CaixaComResponsavel = CaixaFerramenta & { responsavel?: { nome: string } };
-
 export function FerramentasCaixasModulo() {
   const { empresaId } = useEmpresa();
   const [buscaCaixa, setBuscaCaixa] = useState("");
@@ -30,6 +30,7 @@ export function FerramentasCaixasModulo() {
   const { data: todasAsCaixas = [], isLoading } = useCaixasFerramentas(empresaId, buscaCaixa);
   // Só caixas habilitadas em Cadastros > Gerais > Caixas.
   const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
+  const portadores = usePortadoresCaixa();
   const { data: empresas = [] } = useEmpresas();
 
   return (
@@ -51,7 +52,7 @@ export function FerramentasCaixasModulo() {
             Nenhuma caixa encontrada com os filtros aplicados.
           </div>
         ) : (
-          caixas.map((caixa) => <CaixaItem key={caixa.id} caixa={caixa} empresas={empresas} />)
+          caixas.map((caixa) => <CaixaItem key={caixa.id} caixa={caixa} empresas={empresas} portador={portadorAtivo(portadores, caixa.id)?.empregado_nome} />)
         )}
       </div>
     </div>
@@ -61,9 +62,11 @@ export function FerramentasCaixasModulo() {
 function CaixaItem({
   caixa,
   empresas,
+  portador,
 }: {
-  caixa: CaixaComResponsavel;
+  caixa: CaixaFerramenta;
   empresas: { id: string; nome_fantasia: string }[];
+  portador: string | undefined;
 }) {
   const { data: itens = [], isLoading } = useCaixaItens(caixa.id);
 
@@ -77,9 +80,9 @@ function CaixaItem({
         <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
           {itens.length} {itens.length === 1 ? "item" : "itens"}
         </span>
-        {caixa.responsavel?.nome && (
+        {portador && (
           <span className="text-xs font-medium text-muted-foreground ml-2">
-            Resp: {caixa.responsavel.nome}
+            Portador: {portador}
           </span>
         )}
       </div>

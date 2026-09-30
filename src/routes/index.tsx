@@ -52,7 +52,7 @@ function Home() {
         <div className="flex flex-col items-center text-center gap-12">
           <div className="w-full max-w-[500px] flex flex-col items-center animate-float">
             <img
-              src="/logo.png"
+              src={`${import.meta.env["BASE_URL"]}logo.png`}
               alt="GEMAPE"
               className="w-full h-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
             />

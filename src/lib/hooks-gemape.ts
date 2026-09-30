@@ -323,7 +323,7 @@ export function useCaixasFerramentas(empresaId: string, busca = "") {
     ...opcoesBase,
     queryKey: ["caixas_ferramentas", empresaId, busca],
     queryFn: async () => {
-      let q = supabase.from("caixas_ferramentas").select("*, responsavel:empregados(nome)");
+      let q = supabase.from("caixas_ferramentas").select("*");
       if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
       if (busca.trim()) {
         q = q.or(`nome.ilike.%${buscaSegura(busca)}%,codigo.ilike.%${buscaSegura(busca)}%`);
@@ -331,7 +331,7 @@ export function useCaixasFerramentas(empresaId: string, busca = "") {
       // No máximo 100 caixas (CX-0001 a CX-0100): a lista vem inteira, sem cortar em PAGINA.
       const { data, error } = await q.order("codigo", { ascending: false }).limit(TOTAL_CAIXAS);
       if (error) throw error;
-      return (data ?? []) as (CaixaFerramenta & { responsavel?: { nome: string } })[];
+      return (data ?? []) as CaixaFerramenta[];
     },
   });
 }
