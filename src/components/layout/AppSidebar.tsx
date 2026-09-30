@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   FileText,
   Archive,
+  Hash,
   Truck,
   MapPin,
   Tags,
@@ -85,6 +86,7 @@ const cadastrosGerais = [
   { titulo: "Código do Produto", url: "/cadastros/gerais/codigo-produto", icone: Barcode },
   { titulo: "Código de Fábrica", url: "/cadastros/gerais/codigo-fabrica", icone: Factory },
   { titulo: "Endereçamento", url: "/cadastros/gerais/enderecamento", icone: MapPin },
+  { titulo: "Caixas", url: "/cadastros/gerais/caixas", icone: Hash },
 ] as const;
 
 function MenuGerais({ pathname }: { pathname: string }) {

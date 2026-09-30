@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
+import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,7 +52,9 @@ export function FerramentasTermoResponsabilidade() {
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("ferramenta", TODAS);
-  const { data: caixas = [] } = useCaixasFerramentas(empresaSel || TODAS);
+  const { data: todasAsCaixas = [] } = useCaixasFerramentas(empresaSel || TODAS);
+  // Só caixas habilitadas em Cadastros > Gerais > Caixas.
+  const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
 
   const { data: itensCaixa = [], refetch: buscarItensCaixa } = useCaixaItens(caixaSel || null);
 

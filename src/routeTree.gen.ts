@@ -35,6 +35,7 @@ import { Route as AuthenticatedCadastrosUniformesRouteImport } from './routes/_a
 import { Route as AuthenticatedCadastrosVeiculosRouteImport } from './routes/_authenticated/cadastros/veiculos'
 import { Route as AuthenticatedCadastrosGeraisIndexRouteImport } from './routes/_authenticated/cadastros/gerais/index'
 import { Route as AuthenticatedCadastrosGeraisAssociarTamanhosRouteImport } from './routes/_authenticated/cadastros/gerais/associar-tamanhos'
+import { Route as AuthenticatedCadastrosGeraisCaixasRouteImport } from './routes/_authenticated/cadastros/gerais/caixas'
 import { Route as AuthenticatedCadastrosGeraisCategoriasRouteImport } from './routes/_authenticated/cadastros/gerais/categorias'
 import { Route as AuthenticatedCadastrosGeraisCodigoFabricaRouteImport } from './routes/_authenticated/cadastros/gerais/codigo-fabrica'
 import { Route as AuthenticatedCadastrosGeraisCodigoProdutoRouteImport } from './routes/_authenticated/cadastros/gerais/codigo-produto'
@@ -185,6 +186,12 @@ const AuthenticatedCadastrosGeraisAssociarTamanhosRoute =
     path: '/associar-tamanhos',
     getParentRoute: () => AuthenticatedCadastrosGeraisRouteRoute,
   } as any)
+const AuthenticatedCadastrosGeraisCaixasRoute =
+  AuthenticatedCadastrosGeraisCaixasRouteImport.update({
+    id: '/caixas',
+    path: '/caixas',
+    getParentRoute: () => AuthenticatedCadastrosGeraisRouteRoute,
+  } as any)
 const AuthenticatedCadastrosGeraisCategoriasRoute =
   AuthenticatedCadastrosGeraisCategoriasRouteImport.update({
     id: '/categorias',
@@ -241,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
   '/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
+  '/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
   '/cadastros/gerais/codigo-fabrica': typeof AuthenticatedCadastrosGeraisCodigoFabricaRoute
   '/cadastros/gerais/codigo-produto': typeof AuthenticatedCadastrosGeraisCodigoProdutoRoute
@@ -272,6 +280,7 @@ export interface FileRoutesByTo {
   '/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
   '/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
+  '/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
   '/cadastros/gerais/codigo-fabrica': typeof AuthenticatedCadastrosGeraisCodigoFabricaRoute
   '/cadastros/gerais/codigo-produto': typeof AuthenticatedCadastrosGeraisCodigoProdutoRoute
@@ -306,6 +315,7 @@ export interface FileRoutesById {
   '/_authenticated/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/_authenticated/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
   '/_authenticated/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
+  '/_authenticated/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/_authenticated/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
   '/_authenticated/cadastros/gerais/codigo-fabrica': typeof AuthenticatedCadastrosGeraisCodigoFabricaRoute
   '/_authenticated/cadastros/gerais/codigo-produto': typeof AuthenticatedCadastrosGeraisCodigoProdutoRoute
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/cadastros/uniformes'
     | '/cadastros/veiculos'
     | '/cadastros/gerais/associar-tamanhos'
+    | '/cadastros/gerais/caixas'
     | '/cadastros/gerais/categorias'
     | '/cadastros/gerais/codigo-fabrica'
     | '/cadastros/gerais/codigo-produto'
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/cadastros/uniformes'
     | '/cadastros/veiculos'
     | '/cadastros/gerais/associar-tamanhos'
+    | '/cadastros/gerais/caixas'
     | '/cadastros/gerais/categorias'
     | '/cadastros/gerais/codigo-fabrica'
     | '/cadastros/gerais/codigo-produto'
@@ -404,6 +416,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cadastros/uniformes'
     | '/_authenticated/cadastros/veiculos'
     | '/_authenticated/cadastros/gerais/associar-tamanhos'
+    | '/_authenticated/cadastros/gerais/caixas'
     | '/_authenticated/cadastros/gerais/categorias'
     | '/_authenticated/cadastros/gerais/codigo-fabrica'
     | '/_authenticated/cadastros/gerais/codigo-produto'
@@ -602,6 +615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosGeraisAssociarTamanhosRouteImport
       parentRoute: typeof AuthenticatedCadastrosGeraisRouteRoute
     }
+    '/_authenticated/cadastros/gerais/caixas': {
+      id: '/_authenticated/cadastros/gerais/caixas'
+      path: '/caixas'
+      fullPath: '/cadastros/gerais/caixas'
+      preLoaderRoute: typeof AuthenticatedCadastrosGeraisCaixasRouteImport
+      parentRoute: typeof AuthenticatedCadastrosGeraisRouteRoute
+    }
     '/_authenticated/cadastros/gerais/categorias': {
       id: '/_authenticated/cadastros/gerais/categorias'
       path: '/categorias'
@@ -642,6 +662,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedCadastrosGeraisRouteRouteChildren {
   AuthenticatedCadastrosGeraisAssociarTamanhosRoute: typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
+  AuthenticatedCadastrosGeraisCaixasRoute: typeof AuthenticatedCadastrosGeraisCaixasRoute
   AuthenticatedCadastrosGeraisCategoriasRoute: typeof AuthenticatedCadastrosGeraisCategoriasRoute
   AuthenticatedCadastrosGeraisCodigoFabricaRoute: typeof AuthenticatedCadastrosGeraisCodigoFabricaRoute
   AuthenticatedCadastrosGeraisCodigoProdutoRoute: typeof AuthenticatedCadastrosGeraisCodigoProdutoRoute
@@ -654,6 +675,8 @@ const AuthenticatedCadastrosGeraisRouteRouteChildren: AuthenticatedCadastrosGera
   {
     AuthenticatedCadastrosGeraisAssociarTamanhosRoute:
       AuthenticatedCadastrosGeraisAssociarTamanhosRoute,
+    AuthenticatedCadastrosGeraisCaixasRoute:
+      AuthenticatedCadastrosGeraisCaixasRoute,
     AuthenticatedCadastrosGeraisCategoriasRoute:
       AuthenticatedCadastrosGeraisCategoriasRoute,
     AuthenticatedCadastrosGeraisCodigoFabricaRoute:
