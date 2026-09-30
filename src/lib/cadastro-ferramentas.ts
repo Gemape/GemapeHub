@@ -18,6 +18,10 @@ export function protegerEstoqueNaEdicao<T extends Record<string, unknown>>(valor
   return editaveis;
 }
 
+export function valoresItemNaEdicao<T extends Record<string, unknown>>(valores: T, editando: boolean): T | Omit<T, "estoque_atual"> {
+  return editando ? protegerEstoqueNaEdicao(valores) : valores;
+}
+
 export function opcaoFerramentaEmUso(
   modelos: { categoria_ferramenta?: string | null; grupo_ferramenta?: string | null }[],
   tipo: ListaFerramenta,

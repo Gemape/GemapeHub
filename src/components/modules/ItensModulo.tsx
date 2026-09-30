@@ -47,7 +47,7 @@ import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { codigosReservadosFerramenta, prepararCadastroFerramenta, protegerEstoqueNaEdicao, reservarCodigoFerramenta } from "@/lib/cadastro-ferramentas";
+import { codigosReservadosFerramenta, prepararCadastroFerramenta, reservarCodigoFerramenta, valoresItemNaEdicao } from "@/lib/cadastro-ferramentas";
 import { proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -129,7 +129,7 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
       status: String(f.get("status") ?? "Ativo"),
       observacoes: texto("observacoes"),
     };
-    if (editando && modulo === "ferramenta") valores = protegerEstoqueNaEdicao(valores);
+    valores = valoresItemNaEdicao(valores, !!editando);
     if (modulo === "ferramenta") {
       try {
         const cadastro = prepararCadastroFerramenta({
