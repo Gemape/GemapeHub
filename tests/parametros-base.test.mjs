@@ -146,3 +146,9 @@ test('dados salvos ilegíveis não são apagados por uma alteração', () => {
   s.setItem('gemape-demo-parametros-base', JSON.stringify({ regrasCodigo: [{ categoriaId: 'cat-epi', sigla: 'EPI', inicial: 7 }] }));
   assert.equal(gerarCodigo(lerParametros(s).regrasCodigo[0]), 'EPI-0007');
 });
+
+test('código do uniforme: sequência UNI independente da de EPI', async () => {
+  const { proximoCodigo } = await import('../src/lib/parametros-base.ts');
+  const regra = lerParametros(storage()).regrasCodigo.find((r) => r.categoriaId === 'cat-uniformes');
+  assert.equal(proximoCodigo(regra, ['UNI-0001', 'EPI-0009']), 'UNI-0002');
+});
