@@ -24,13 +24,12 @@ type VeiculoHistorico = { id: string; placa: string };
 // "Fornecimento ao Empregado" é a entrega registrada com motivo; os demais motivos são baixa.
 const MOTIVO_ENTREGA = "Fornecimento ao Empregado";
 
+export const ehBaixa = (m: { tipo_movimentacao: string; motivo_baixa: string | null }) =>
+  m.tipo_movimentacao === "Saida" && !!m.motivo_baixa && m.motivo_baixa !== MOTIVO_ENTREGA;
+
 export function naturezaMovimentacao(m: MovimentacaoHistorico): string {
   if (m.tipo_movimentacao === "Entrada") return "Entrada (compra)";
-  if (m.tipo_movimentacao === "Saida") {
-    return m.motivo_baixa && m.motivo_baixa !== MOTIVO_ENTREGA
-      ? "Saída (baixa)"
-      : "Saída (entrega)";
-  }
+  if (m.tipo_movimentacao === "Saida") return ehBaixa(m) ? "Saída (baixa)" : "Saída (entrega)";
   return TIPO_MOVIMENTACAO_LABEL[m.tipo_movimentacao] ?? m.tipo_movimentacao;
 }
 

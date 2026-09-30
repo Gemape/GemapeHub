@@ -1,6 +1,6 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 30/09/2026. A referência remota é `origin/main` em `09c5880` (PR #23).
+Atualizado em 30/09/2026. A referência remota é `origin/main` em `009f037` (PR #24).
 
 ## Estado das etapas
 
@@ -10,8 +10,8 @@ Atualizado em 30/09/2026. A referência remota é `origin/main` em `09c5880` (PR
 | Emenda documental | Na `main` | Conferido pelo conteúdo de `docs/especificacao-gemapehub.md`: categoria e grupo de ferramentas vêm de Gerais, e a subcategoria da categoria de produto Ferramentas identifica a regra do código. A branch histórica é `docs/ferramentas-categoria-grupo-gerais`. |
 | 2 — cadastro | Concluída e mergeada | Commit `c983454`, PR #22, merge `b495094`. Teste explícito de editar, salvar e reabrir preserva estoque positivo. Branch histórica: `feat/ferramentas-cadastro-gerais`. Não há PR da etapa 2 pendente de abertura ou merge. |
 | 3 — identificação e custo | Concluída e mergeada | PR #23, merge `09c5880`. Série obrigatória, patrimônio e data opcionais, custo com duas casas e valor em estoque em centavos. |
-| 4 — listas | Implementada na branch; aguarda PR e merge | Branch `feat/ferramentas-listas-codigo`. A aba Movimentações mostra a coluna Código e a natureza (Entrada (compra), Saída (entrega), Saída (baixa)); o CSV ganhou a coluna Codigo. Regras em `src/lib/historico-movimentacoes.ts`, teste em `tests/historico-movimentacoes.test.mjs`. |
-| 5 — encerramento | Não iniciada | Calcular saldo ainda devido por empregado, empresa e ferramenta; devolver ao estoque uma vez, inclusive após demissão. |
+| 4 — listas | Concluída e mergeada | PR #24, merge `009f037`. A aba Movimentações mostra a coluna Código e a natureza (Entrada (compra), Saída (entrega), Saída (baixa)); o CSV tem a coluna Codigo. Regras em `src/lib/historico-movimentacoes.ts`. |
+| 5 — encerramento | Implementada na branch; aguarda PR e merge | Branch `feat/ferramentas-encerramento-saldo`. "Carregar Histórico" traz cada ferramenta com o saldo devido (entregue menos devolvido e baixado) por empregado e empresa; o termo recusa quantidade acima do saldo, item sem saldo e repetição, e grava as devoluções de uma vez. O cliente de demonstração passou a emular o gatilho de estoque do banco real. Regras em `src/lib/encerramento-ferramentas.ts`, testes em `tests/encerramento-ferramentas.test.mjs`. |
 | 6 — validação | Pendente | Validar cada PR de código com testes, typecheck e build antes de solicitar revisão visual. |
 
 ## Decisões vigentes
