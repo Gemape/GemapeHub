@@ -20,6 +20,7 @@ import {
 import { TODAS } from "@/lib/empresa-context";
 import { escaparHtml, formatarData } from "@/lib/gemape";
 import { useEmpresas, useItens, useEmpregados, useSalvar } from "@/lib/hooks-gemape";
+import { bloqueioPorDemissao } from "@/lib/empregados";
 
 interface ItemTermo {
   item_id: string;
@@ -59,6 +60,11 @@ export function UniformesTermoEntrega() {
   async function gerarTermo() {
     if (!empresaId || !empregadoId || itensEntrega.length === 0) {
       alert("Preencha todos os campos e adicione pelo menos um item.");
+      return;
+    }
+    const bloqueio = bloqueioPorDemissao(empregado);
+    if (bloqueio) {
+      alert(bloqueio);
       return;
     }
 
@@ -116,8 +122,7 @@ export function UniformesTermoEntrega() {
             
             <div class="content">
               <p>Declaramos que nesta data, <strong>${formatarData(dataEntrega)}</strong>, entregamos ao colaborador(a) 
-              <strong>${empregado?.nome}</strong>, CPF nº <strong>${empregado?.cpf}</strong>, 
-              cargo <strong>${empregado?.cargo || "—"}</strong>, os seguintes itens de uniforme:</p>
+              <strong>${empregado?.nome}</strong>, CPF nº <strong>${empregado?.cpf}</strong>, os seguintes itens de uniforme:</p>
               
               <table>
                 <thead>

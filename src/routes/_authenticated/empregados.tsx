@@ -32,7 +32,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData } from "@/lib/gemape";
-import { prepararEmpregado, separarEmpregados } from "@/lib/empregados";
+import { empregadoAtivo, prepararEmpregado, separarEmpregados } from "@/lib/empregados";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 
 // O e-mail ainda não existe na tabela real de empregados: nesta fase só é gravado no
@@ -149,7 +149,7 @@ function PaginaEmpregados() {
                   "E-mail": e.email ?? "",
                   Admissao: formatarData(e.data_admissao),
                   Demissao: formatarData(e.data_demissao),
-                  Situacao: e.ativo ? "Ativo" : "Inativo",
+                  Situacao: empregadoAtivo(e) ? "Ativo" : "Inativo",
                 })),
               )
             }
@@ -260,8 +260,8 @@ function PaginaEmpregados() {
               />
             </div>
             <p className="text-xs text-muted-foreground sm:col-span-2">
-              Ao informar a data de demissão, o empregado fica inativo automaticamente e passa para
-              o bloco de demitidos.
+              O empregado continua ativo até a data de demissão. A partir dela, fica inativo, passa
+              para o bloco de demitidos e não recebe mais entregas, devoluções ou baixas.
             </p>
             <DialogFooter className="sm:col-span-2">
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>
@@ -329,8 +329,8 @@ function BlocoEmpregados({
                   <TableCell>{formatarData(e.data_admissao)}</TableCell>
                   <TableCell>{formatarData(e.data_demissao)}</TableCell>
                   <TableCell>
-                    <Badge variant={e.ativo && !e.data_demissao ? "secondary" : "outline"}>
-                      {e.ativo && !e.data_demissao ? "Ativo" : "Inativo"}
+                    <Badge variant={empregadoAtivo(e) ? "secondary" : "outline"}>
+                      {empregadoAtivo(e) ? "Ativo" : "Inativo"}
                     </Badge>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-right">

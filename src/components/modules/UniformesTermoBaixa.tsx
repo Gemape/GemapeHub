@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
 import { formatarData, formatarMoeda } from "@/lib/gemape";
 import { useEmpresas, useItens, useEmpregados, useSalvar } from "@/lib/hooks-gemape";
+import { bloqueioPorDemissao } from "@/lib/empregados";
 
 interface ItemBaixa {
   item_id: string;
@@ -63,6 +64,11 @@ export function UniformesTermoBaixa() {
   async function gerarTermo() {
     if (!empresaId || itensBaixa.length === 0) {
       alert("Preencha os campos obrigatórios e adicione pelo menos um item.");
+      return;
+    }
+    const bloqueio = bloqueioPorDemissao(empregado);
+    if (bloqueio) {
+      alert(bloqueio);
       return;
     }
 

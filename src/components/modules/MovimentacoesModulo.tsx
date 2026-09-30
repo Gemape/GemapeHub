@@ -49,6 +49,7 @@ import {
   useRegistrarMovimentacoesLote,
   useVeiculos,
 } from "@/lib/hooks-gemape";
+import { bloqueioPorDemissao } from "@/lib/empregados";
 
 const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
@@ -85,6 +86,11 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
     const quantidadeDigitada = Number(f.get("quantidade") ?? 1);
     const tipo = String(f.get("tipo_movimentacao") ?? "Entrada");
     const alvo = ehVeiculo ? null : texto("alvo_id");
+    const bloqueio = bloqueioPorDemissao(todosEmpregados.find((p) => p.id === texto("empregado_id")));
+    if (bloqueio) {
+      alert(bloqueio);
+      return;
+    }
 
     if (modulo === "epi" && tipo === "Saida" && alvo) {
       const itemSelecionado = itens.find((i) => i.id === alvo);

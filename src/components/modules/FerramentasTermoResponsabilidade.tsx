@@ -27,6 +27,7 @@ import {
   useCaixasFerramentas,
   useCaixaItens,
 } from "@/lib/hooks-gemape";
+import { bloqueioPorDemissao } from "@/lib/empregados";
 
 interface ItemTermo {
   id: string;
@@ -100,6 +101,11 @@ export function FerramentasTermoResponsabilidade() {
     const empregado = empregados.find((e) => e.id === empregadoId);
     const empresa = empresas.find((e) => e.id === empresaSel);
     const caixa = caixas.find((c) => c.id === caixaSel);
+    const bloqueio = bloqueioPorDemissao(empregado);
+    if (bloqueio) {
+      alert(bloqueio);
+      return;
+    }
 
     if (!empregado || !empresa) return;
 
@@ -166,7 +172,7 @@ export function FerramentasTermoResponsabilidade() {
           </div>
           
           <div class="content">
-            <p>Pelo presente instrumento, eu <strong>${empregado.nome}</strong>, CPF <strong>${empregado.cpf}</strong>, ocupante do cargo de <strong>${empregado.cargo || "—"}</strong>, declaro que recebi da empresa supra citada, em perfeito estado de conservação e funcionamento, as ferramentas e equipamentos abaixo relacionados, componentes da <strong>CAIXA Nº ${caixa?.codigo || "AVULSA"}</strong>, para uso exclusivo no desempenho de minhas atividades profissionais.</p>
+            <p>Pelo presente instrumento, eu <strong>${empregado.nome}</strong>, CPF <strong>${empregado.cpf}</strong>, declaro que recebi da empresa supra citada, em perfeito estado de conservação e funcionamento, as ferramentas e equipamentos abaixo relacionados, componentes da <strong>CAIXA Nº ${caixa?.codigo || "AVULSA"}</strong>, para uso exclusivo no desempenho de minhas atividades profissionais.</p>
             
             <p>Comprometo-me a zelar pela guarda, conservação e limpeza das mesmas, assumindo total responsabilidade pelo seu uso correto. Estou ciente de que, em caso de perda, extravio ou danos causados por mau uso ou negligência, poderei ser responsabilizado pelos custos de reparo ou reposição, conforme preceitua o Art. 462, § 1º da CLT.</p>
           </div>
