@@ -1,6 +1,6 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 30/09/2026. A etapa 3 de Caixas e Portador parte de `origin/main` em `ed1f623` (merge do PR #38).
+Atualizado em 30/09/2026. A etapa 4 de Caixas e Portador parte de `origin/main` em `48a3e28` (merge do PR #39).
 
 **Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) foi aprovada pelo responsável em 30/09/2026, e as quatro etapas abaixo também, na ordem proposta (decisão 18). Cada etapa para após o PR, para validação e merge do responsável. A Fase 2 continua aguardando decisão: não iniciar.
 
@@ -52,8 +52,8 @@ Padrões obrigatórios em todas as etapas:
 | --- | --- | --- |
 | 1 — caixas habilitadas (mergeada no PR #37, `c5846ac`) | Em Cadastros > Gerais, a lista das caixas numeradas de 01 a 100, cada uma com a flag de habilitação. O cadastro de caixa e as telas que escolhem caixa (Termo de Responsabilidade, Termo de Vistoria, aba Caixas de Ferramentas) só oferecem caixas habilitadas. | Numeração fixa de 1 a 100, sem repetir nem pular. Desabilitar uma caixa em uso é recusado, com o motivo. A caixa desabilitada some das listas de escolha, mas continua no histórico. |
 | 2 — portador (mergeada no PR #38, `ed1f623`) | Cadastro de Portador: caixa (só as habilitadas), empregado por busca de palavra-chave, status ativa/inativa e observação. Histórico de portadores por caixa. | Uma caixa tem no máximo um portador ativo. Trocar o portador encerra o anterior no histórico, com data local. Empregado demitido não pode ser novo portador (decisão 15). O histórico é lido por inteiro. A gravação é atômica e trava o segundo clique. |
-| 3 — marcas | Cadastro de marcas de ferramentas em Cadastros > Gerais. O cadastro de ferramenta passa a escolher a marca dessa lista, em vez de texto livre. | Marca em uso não pode ser renomeada nem excluída sem aviso, como categoria e grupo (etapa 2 de Ferramentas). As ferramentas já cadastradas com marca em texto continuam exibindo a marca. |
-| 4 — validação | Fluxo completo no navegador (habilitar caixa, atribuir portador, trocar portador, termos com a caixa, marca na ferramenta), handoff atualizado e pendências da Fase 2 registradas. | Roteiro de ponta a ponta registrado aqui, como na etapa 6 de Ferramentas. |
+| 3 — marcas (mergeada no PR #39, `48a3e28`) | Cadastro de marcas de ferramentas em Cadastros > Gerais. O cadastro de ferramenta passa a escolher a marca dessa lista, em vez de texto livre. | Marca em uso não pode ser renomeada nem excluída sem aviso, como categoria e grupo (etapa 2 de Ferramentas). As ferramentas já cadastradas com marca em texto continuam exibindo a marca. |
+| 4 — validação (branch `feat/caixas-portador-validacao`) | Fluxo completo no navegador (habilitar caixa, atribuir portador, trocar portador, termos com a caixa, marca na ferramenta), handoff atualizado e pendências da Fase 2 registradas. | Roteiro e capturas abaixo. Desvio de exibição dos itens da caixa corrigido e revalidado; aguarda validação do responsável após o PR. |
 
 Respostas do responsável aos pontos da etapa 1 (30/09/2026, decisão 18):
 
@@ -63,7 +63,32 @@ Respostas do responsável aos pontos da etapa 1 (30/09/2026, decisão 18):
 
 Etapa 2 concluída pelo responsável após o merge do PR #38. O portador ativo substitui o campo Responsável estático no cadastro e nas listas de caixa. O histórico do modo demonstração fica em `src/lib/portadores-caixa.ts`, com troca atômica, data de Brasília e leitura completa. A `main` contém também o workflow da vitrine GitHub Pages.
 
-Etapa 3 em andamento na branch `feat/caixas-marcas-gerais`: marcas de ferramentas são cadastradas em Gerais e selecionadas no modelo; marcas antigas em texto continuam visíveis. Esta etapa para após o PR, antes da etapa 4. A pendência 4 e a Fase 2 aguardam decisão do responsável.
+Etapa 3 concluída após o merge do PR #39 (`48a3e28`): marcas de ferramentas são cadastradas em Gerais e selecionadas no modelo; marcas antigas em texto continuam visíveis. A etapa 4 valida o fluxo integrado na branch `feat/caixas-portador-validacao`. A pendência 4 e a Fase 2 aguardam decisão do responsável.
+
+### Validação de ponta a ponta de Caixas e Portador (etapa 4)
+
+Roteiro executado no Chromium em 30/09/2026, com sessão limpa e `VITE_DEMO_MODE=true`. A primeira passagem usou a `main` em `48a3e28`; após corrigir o desvio encontrado, o roteiro completo foi repetido na branch `feat/caixas-portador-validacao`. A ferramenta de teste percorreu a interface real, conferiu tabelas, documentos renderizados e CSVs baixados. Nenhum erro de página foi registrado. Os dados abaixo são locais e fictícios.
+
+| Passo | Resultado |
+| --- | --- |
+| Cadastros > Gerais > Caixas: habilitar 01 | Gravada como habilitada (1/100). [Captura](evidencias/caixas-portador-etapa4/habilitacao.png). |
+| Cadastros > Gerais > Marcas: cadastrar Makita | Marca disponível no cadastro do modelo. |
+| Cadastros > Ferramentas: cadastrar Furadeira E2E, marca Makita, série SERIE-E2E, custo R$ 10,50, estoque 3 | Ferramenta salva como FER-0002. [Captura](evidencias/caixas-portador-etapa4/ferramenta.png). |
+| Caixas de Ferramentas: cadastrar número 01 com a ferramenta | Caixa CX-0001 criada com o item. [Captura](evidencias/caixas-portador-etapa4/caixa.png). |
+| Portadores: atribuir Maria da Silva à CX-0001 | Portadora ativa exibida na lista de caixas e na aba Caixas e itens; [CSV de caixas](evidencias/caixas-portador-etapa4/caixas.csv). [Captura do histórico](evidencias/caixas-portador-etapa4/portador-ativo.png). |
+| Criar João Teste e trocá-lo diretamente pelo portador ativo | João fica Ativa; Maria passa a Inativa no histórico, com fim em 30/09/2026, sem etapa intermediária de inativação. [Captura](evidencias/caixas-portador-etapa4/troca-direta.png). |
+| Inativar Maria e consultar histórico | Vínculo anterior consta como Inativa, com datas locais de início e fim; a lista de caixas deixa de mostrar portador ativo. [Captura](evidencias/caixas-portador-etapa4/historico.png). |
+| Atribuir Maria novamente | O histórico mantém o vínculo encerrado e apresenta o novo vínculo Ativa; a lista volta a mostrar Maria. |
+| Termo de Responsabilidade individual: empresa GEMAPE, Maria, CX-0001 | A caixa e FER-0002 aparecem no documento gerado. [Captura](evidencias/caixas-portador-etapa4/termo-gerado.png). |
+| Termo de Vistoria periódica: empresa GEMAPE, CX-0001, sem empregado selecionado | O documento resolve Maria como portadora ativa e inclui CX-0001. [Captura](evidencias/caixas-portador-etapa4/vistoria.png). |
+| Termo de Encerramento: devolver saldo 1 de FER-0002 | O documento identifica Maria e FER-0002; estoque volta a 3. [Captura](evidencias/caixas-portador-etapa4/encerramento.png). |
+| Cadastro de ferramentas e CSV: reabrir lista | FER-0002, marca Makita e estoque 3 permanecem visíveis e constam do [CSV de ferramentas](evidencias/caixas-portador-etapa4/ferramentas.csv). [Captura](evidencias/caixas-portador-etapa4/cadastro-ferramenta-final.png). |
+| Cadastros > Gerais > Caixas: tentar desabilitar 01 em uso | A caixa permanece habilitada, conforme a proteção esperada. |
+| Caixas e itens: abrir CX-0001 com Furadeira E2E vinculada | **Desvio reproduzido e corrigido:** antes apareciam “1 item” e quantidade 1, mas código, nome, marca/modelo, empresa e estado ficavam vazios. Após a correção, FER-0002, Furadeira E2E e Makita aparecem. [Antes](evidencias/caixas-portador-etapa4/caixas-itens-antes-correcao.png) · [Depois](evidencias/caixas-portador-etapa4/caixas-itens-corrigido.png). |
+
+A persistência, concorrência e permissões com Supabase real pertencem à Fase 2. A troca direta para um segundo empregado e a inativação seguida de nova atribuição foram exercidas em sessões limpas separadas. A consulta `select("*, ferramenta:ferramentas(*)")` era ignorada pelo adaptador do modo demonstração; o teste `tests/caixa-itens-demo.test.mjs` reproduziu a ausência da ferramenta antes da correção e passou depois. O roteiro completo foi repetido no navegador sem erros de página.
+
+Validação da branch da etapa 4 após a correção: `npm test` (122/122), `npm run typecheck`, `VITE_DEMO_MODE=true npm run build` e `git diff --check` passaram.
 
 Visualização: o workflow `.github/workflows/pages-demo.yml` publica a `main` em modo demonstração no endereço fixo `https://gemape.github.io/GemapeHub/` após cada merge. O responsável precisa selecionar uma vez **Settings > Pages > Source: GitHub Actions**. O build usa `/GemapeHub/` como base, gera `index.html` estático e copia para `404.html` para as rotas. No PR, ler o check/comentário da Vercel pelo GitHub e informar o preview; se ausente, informar a URL padrão da branch e aguardar confirmação visual. Não acessar a API da Vercel.
 
@@ -96,7 +121,7 @@ Fica para a Fase 2: editar ou excluir uma compra de EPI ou uniforme não ajusta 
 - Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. A subcategoria da categoria de produto Ferramentas vem de Gerais e alimenta a regra global do código (FER-0001 por padrão); código não é editável e permanece na edição.
 - Série informada é obrigatória, sem geração de série fictícia. Patrimônio e data de aquisição são opcionais. Preço de custo não negativo tem até duas casas decimais e alimenta o indicador “Valor total em estoque”.
 - A Fase 1 usa dados locais de demonstração. Não criar ou alterar tabelas, migrations, autenticação ou dados no Supabase real.
-- Permissões por tela e revisão do estoque histórico de ferramentas permanecem na Fase 2 (`docs/pendencias-fase2.md`). A proposta de Caixas e Portador foi aprovada: etapas 1 e 2 mergeadas; etapa 3 em andamento; etapa 4 aguarda o merge da etapa 3.
+- Permissões por tela e revisão do estoque histórico de ferramentas permanecem na Fase 2 (`docs/pendencias-fase2.md`). A proposta de Caixas e Portador foi aprovada: etapas 1, 2 e 3 mergeadas; etapa 4 aguarda validação do responsável após o PR.
 
 ## Commits e validação da branch da etapa 3
 

@@ -68,9 +68,10 @@ const registrarCompras = (tabela: string, compras: Linha[]): Error | null => {
 };
 class Consulta {
   private filtros: Array<(l: Linha) => boolean> = []; private ordem?: string; private limite?: number; private payload?: Linha | Linha[]; private acao = "select"; private contagem = false;
+  private colunas = "*";
   private tabela: string;
   constructor(tabela: string) { this.tabela = tabela; }
-  select(_colunas = "*", opts?: { count?: string; head?: boolean }) { this.contagem = Boolean(opts?.count); return this; }
+  select(colunas = "*", opts?: { count?: string; head?: boolean }) { this.colunas = colunas; this.contagem = Boolean(opts?.count); return this; }
   eq(chave: string, valor: unknown) { this.filtros.push(l => l[chave] === valor); return this; }
   gte(chave: string, valor: unknown) { this.filtros.push(l => String(l[chave] ?? "") >= String(valor)); return this; }
   ilike(chave: string, valor: string) { const texto = valor.replaceAll("%", "").toLowerCase(); this.filtros.push(l => String(l[chave] ?? "").toLowerCase().includes(texto)); return this; }
@@ -95,7 +96,10 @@ class Consulta {
     if (this.acao === "delete") { selecionadas.forEach(l => linhas.splice(linhas.indexOf(l), 1)); persistirDados(); }
     if (this.ordem) { const [c,d] = this.ordem.split(":"); selecionadas.sort((a,b) => String(a[c]).localeCompare(String(b[c])) * (d === "desc" ? -1 : 1)); }
     if (this.limite) selecionadas = selecionadas.slice(0,this.limite);
-    const resultado = unico ? (selecionadas[0] ?? null) : clone(selecionadas);
+    const linhasResultado = this.acao === "select" && this.tabela === "caixa_ferramenta_itens" && this.colunas.includes("ferramenta:ferramentas(")
+      ? selecionadas.map(linha => ({ ...linha, ferramenta: dados.ferramentas.find(f => f.id === linha.ferramenta_id) ?? null }))
+      : selecionadas;
+    const resultado = unico ? (linhasResultado[0] ?? null) : clone(linhasResultado);
     return { data: resultado, error: null, ...(this.contagem ? { count: selecionadas.length } : {}) };
   }
 }
