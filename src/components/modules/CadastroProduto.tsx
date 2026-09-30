@@ -76,7 +76,6 @@ async function codigosUsados(tabela: Tabela): Promise<string[]> {
 // cada produto pertence a uma.
 export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const config = CONFIG[tabela];
-  const nomeMaiusculo = config.nome.charAt(0).toUpperCase() + config.nome.slice(1);
   const { empresas, empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const fichas = useFichasEpi();
@@ -371,7 +370,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
               </Select>
               {subcategorias.length === 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Nenhuma subcategoria de {nomeMaiusculo} em Cadastros &gt; Gerais &gt; Categorias.
+                  Nenhuma subcategoria de {config.nome} em Cadastros &gt; Gerais &gt; Categorias.
                 </p>
               )}
             </div>

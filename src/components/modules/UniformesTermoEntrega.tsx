@@ -243,7 +243,7 @@ export function UniformesTermoEntrega() {
                         <SelectContent>
                           {uniformes.map((u) => (
                             <SelectItem key={u.id} value={u.id}>
-                              {u.nome}
+                              {u.codigo_sku} · {u.nome}
                             </SelectItem>
                           ))}
                         </SelectContent>
