@@ -103,3 +103,26 @@ Decidido em 30/09/2026 (complementa o item 12):
   empregado.
 - Cargo: a linha de cargo/função saiu dos termos, porque o cadastro de
   empregados não tem mais cargo.
+
+## 16. FERRAMENTAS — CADASTRO, CUSTO, LISTAS E DEVOLUÇÃO NA FASE 1
+Plano aprovado pelo responsável em 30/09/2026, complementando a decisão 8:
+- O cadastro de ferramentas gera o código interno pela regra de
+  Cadastros > Gerais > Código do Produto, com sequência FER-0001,
+  FER-0002 etc. compartilhada entre empresas. A edição preserva o código.
+- A subcategoria vem de Cadastros > Gerais. Descrição e estoque mínimo
+  integram o cadastro. Categorias e grupos próprios de Ferramentas não
+  substituem a subcategoria de Gerais.
+- Número de série é obrigatório e informado pelo usuário, sem valor
+  fictício automático. Patrimônio e data de aquisição retornam como
+  campos opcionais, conforme a decisão 8.
+- Preço de custo em reais, não negativo e com duas casas decimais,
+  alimenta o valor em estoque do dashboard.
+- Compra significa entrada no histórico de movimentações; entrega e
+  baixa são saídas no mesmo histórico. Mostrar o código do item nas
+  linhas e na exportação, sem criar telas novas para essas listas.
+- O Termo de Encerramento devolve ao estoque local apenas a quantidade
+  ainda sob responsabilidade do empregado, uma única vez. Continua
+  permitido após a demissão, conforme a decisão 15.
+- A implementação desta etapa fica no modo demonstração, sem Supabase
+  real. A revisão do estoque histórico de ferramentas segue pendente
+  para a Fase 2. Entregar a documentação antes do código.
