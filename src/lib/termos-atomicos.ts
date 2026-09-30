@@ -42,6 +42,27 @@ export function validarSaidaDeUniformes(
   return null;
 }
 
+/** Entrega de EPIs: linhas preenchidas e sem passar do estoque disponível de cada item. */
+export function validarSaidaDeEpis(
+  linhas: LinhaTermo[],
+  itens: { id: string; nome: string; estoque_atual: number | null }[],
+): string | null {
+  const pedidas = somarLinhas(linhas, {
+    vazio: "Adicione pelo menos um EPI.",
+    semItem: "Selecione o EPI de cada linha.",
+    quantidade: "A quantidade de cada EPI deve ser um número inteiro maior que zero.",
+  });
+  if (typeof pedidas === "string") return pedidas;
+  for (const [itemId, quantidade] of pedidas) {
+    const item = itens.find((i) => i.id === itemId);
+    const estoque = item?.estoque_atual ?? 0;
+    if (quantidade > estoque) {
+      return `A entrega de ${quantidade} unidade(s) de ${item?.nome ?? "um EPI"} passa do estoque disponível (${estoque}).`;
+    }
+  }
+  return null;
+}
+
 /** Vistoria só registra o estado das ferramentas; o estoque não muda, então não é conferido. */
 export function validarTermoVistoria(linhas: LinhaTermo[]): string | null {
   const pedidas = somarLinhas(linhas, {

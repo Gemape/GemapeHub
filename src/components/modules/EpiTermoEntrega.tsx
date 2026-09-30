@@ -21,6 +21,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { montarTermoEntregaEpiHtml, observacaoEntregaEpi } from "@/lib/termo-entrega-epi-html";
+import { validarSaidaDeEpis } from "@/lib/termos-atomicos";
 
 interface ItemTermo {
   id: string;
@@ -74,6 +75,13 @@ export function EpiTermoEntrega() {
     }
 
     if (!empregado || !empresa) return;
+
+    // Não entrega mais do que o estoque disponível nem grava linha sem EPI.
+    const erro = validarSaidaDeEpis(itensTermo, itens);
+    if (erro) {
+      alert(erro);
+      return;
+    }
 
     // Registra todas as saídas de uma vez: ou entram todas, ou nenhuma.
     const movimentacoesLote = itensTermo.map((item) => ({
