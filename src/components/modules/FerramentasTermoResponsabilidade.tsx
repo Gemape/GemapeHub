@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -163,9 +164,11 @@ export function FerramentasTermoResponsabilidade() {
       }),
     });
 
-    const win = window.open("", "_blank");
-    win?.document.write(html);
-    win?.document.close();
+    abrirDocumento({
+      titulo: "Termo de Responsabilidade",
+      html,
+      arquivo: nomeArquivoDocumento("Termo de Responsabilidade", empregado?.nome, dataTermo),
+    });
   }
 
   return (
