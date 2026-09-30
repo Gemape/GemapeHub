@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { hojeLocal } from "@/lib/empregados";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData, type Modulo } from "@/lib/gemape";
 import {
@@ -89,7 +90,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
     };
 
     const valores = {
-      data: String(f.get("data") ?? new Date().toISOString().slice(0, 10)),
+      data: String(f.get("data") ?? hojeLocal()),
       hora: String(f.get("hora") ?? new Date().toLocaleTimeString("pt-BR", { hour12: false })),
       responsavel_registro: String(f.get("responsavel_registro") ?? "").trim(),
       descricao_ocorrencia: String(f.get("descricao_ocorrencia") ?? "").trim(),
@@ -229,7 +230,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
                 name="data"
                 type="date"
                 required
-                defaultValue={editando?.data ?? new Date().toISOString().slice(0, 10)}
+                defaultValue={editando?.data ?? hojeLocal()}
               />
             </div>
             <div className="space-y-1.5">

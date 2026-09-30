@@ -28,6 +28,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
+import { hojeLocal } from "@/lib/empregados";
 import {
   useComprasEpis,
   useEmpresas,
@@ -242,7 +243,7 @@ export function EpiComprasModulo() {
                 name="data_compra"
                 type="date"
                 required
-                defaultValue={new Date().toISOString().slice(0, 10)}
+                defaultValue={hojeLocal()}
               />
             </div>
             <div className="space-y-1.5">

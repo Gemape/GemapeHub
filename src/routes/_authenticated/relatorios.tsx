@@ -22,6 +22,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { diasAtrasLocal } from "@/lib/datas-locais";
+import { hojeLocal } from "@/lib/empregados";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import {
   exportarCsv,
@@ -58,8 +60,8 @@ const TODOS = "todos";
 function PaginaRelatorios() {
   const { empresas, empresaId } = useEmpresa();
   const { data: empregados = [] } = useEmpregados(empresaId);
-  const hoje = new Date().toISOString().slice(0, 10);
-  const trintaDias = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const hoje = hojeLocal();
+  const trintaDias = diasAtrasLocal(30);
 
   const [modulo, setModulo] = useState<string>(TODOS);
   const [empregadoId, setEmpregadoId] = useState<string>(TODOS);

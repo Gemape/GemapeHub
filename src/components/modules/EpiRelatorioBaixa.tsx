@@ -18,15 +18,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { primeiroDiaDoMesLocal } from "@/lib/datas-locais";
+import { hojeLocal } from "@/lib/empregados";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
 import { useEmpresas, useItens, useMovimentacoes, useEmpregados } from "@/lib/hooks-gemape";
 
 export function EpiRelatorioBaixa() {
   const { empresaId } = useEmpresa();
   const [dataInicial, setDataInicial] = useState(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
+    primeiroDiaDoMesLocal(),
   );
-  const [dataFinal, setDataFinal] = useState(new Date().toISOString().slice(0, 10));
+  const [dataFinal, setDataFinal] = useState(hojeLocal());
   const [motivoFiltro, setMotivoFiltro] = useState(TODAS);
 
   const { data: movimentacoes = [], isLoading } = useMovimentacoes("epi", empresaId, 1000);

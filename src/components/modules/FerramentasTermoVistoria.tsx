@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
+import { hojeLocal } from "@/lib/empregados";
 import {
   useEmpresas,
   useItens,
@@ -44,7 +45,7 @@ export function FerramentasTermoVistoria() {
   const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
   const [empregadoId, setEmpregadoId] = useState("");
   const [caixaSel, setCaixaSel] = useState("");
-  const [dataVistoria, setDataVistoria] = useState(new Date().toISOString().slice(0, 10));
+  const [dataVistoria, setDataVistoria] = useState(hojeLocal());
   const [itensVistoria, setItensVistoria] = useState<ItemVistoria[]>([]);
 
   const { data: empresas = [] } = useEmpresas();
