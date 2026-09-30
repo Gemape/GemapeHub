@@ -26,7 +26,7 @@ import {
   useSalvar,
   useMovimentacoes,
 } from "@/lib/hooks-gemape";
-import { bloqueioPorDemissao } from "@/lib/empregados";
+import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 
 interface ItemEncerramento {
   id: string;
@@ -40,7 +40,7 @@ export function FerramentasTermoEncerramento() {
   const { empresaId } = useEmpresa();
   const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
   const [empregadoId, setEmpregadoId] = useState("");
-  const [dataEncerramento, setDataEncerramento] = useState(new Date().toISOString().slice(0, 10));
+  const [dataEncerramento, setDataEncerramento] = useState(hojeLocal());
   const [itensEncerramento, setItensEncerramento] = useState<ItemEncerramento[]>([]);
 
   const { data: empresas = [] } = useEmpresas();
@@ -109,7 +109,7 @@ export function FerramentasTermoEncerramento() {
 
     const empregado = empregados.find((e) => e.id === empregadoId);
     const empresa = empresas.find((e) => e.id === empresaSel);
-    const bloqueio = bloqueioPorDemissao(empregado);
+    const bloqueio = bloqueioPorDemissao(empregado, dataEncerramento);
     if (bloqueio) {
       alert(bloqueio);
       return;

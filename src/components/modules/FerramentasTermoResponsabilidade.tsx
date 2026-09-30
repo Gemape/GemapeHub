@@ -27,7 +27,7 @@ import {
   useCaixasFerramentas,
   useCaixaItens,
 } from "@/lib/hooks-gemape";
-import { bloqueioPorDemissao } from "@/lib/empregados";
+import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 
 interface ItemTermo {
   id: string;
@@ -40,7 +40,7 @@ export function FerramentasTermoResponsabilidade() {
   const { empresaId } = useEmpresa();
   const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
   const [empregadoId, setEmpregadoId] = useState("");
-  const [dataTermo, setDataTermo] = useState(new Date().toISOString().slice(0, 10));
+  const [dataTermo, setDataTermo] = useState(hojeLocal());
   const [caixaSel, setCaixaSel] = useState("");
   const [itensTermo, setItensTermo] = useState<ItemTermo[]>([]);
 
@@ -101,7 +101,7 @@ export function FerramentasTermoResponsabilidade() {
     const empregado = empregados.find((e) => e.id === empregadoId);
     const empresa = empresas.find((e) => e.id === empresaSel);
     const caixa = caixas.find((c) => c.id === caixaSel);
-    const bloqueio = bloqueioPorDemissao(empregado);
+    const bloqueio = bloqueioPorDemissao(empregado, dataTermo);
     if (bloqueio) {
       alert(bloqueio);
       return;

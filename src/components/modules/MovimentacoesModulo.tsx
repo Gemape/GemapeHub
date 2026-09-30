@@ -49,7 +49,7 @@ import {
   useRegistrarMovimentacoesLote,
   useVeiculos,
 } from "@/lib/hooks-gemape";
-import { bloqueioPorDemissao } from "@/lib/empregados";
+import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 
 const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
@@ -86,7 +86,10 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
     const quantidadeDigitada = Number(f.get("quantidade") ?? 1);
     const tipo = String(f.get("tipo_movimentacao") ?? "Entrada");
     const alvo = ehVeiculo ? null : texto("alvo_id");
-    const bloqueio = bloqueioPorDemissao(todosEmpregados.find((p) => p.id === texto("empregado_id")));
+    const bloqueio = bloqueioPorDemissao(
+      todosEmpregados.find((p) => p.id === texto("empregado_id")),
+      String(f.get("data_movimentacao") ?? ""),
+    );
     if (bloqueio) {
       alert(bloqueio);
       return;
@@ -235,7 +238,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 name="data_movimentacao"
                 type="date"
                 required
-                defaultValue={new Date().toISOString().slice(0, 10)}
+                defaultValue={hojeLocal()}
               />
             </div>
             <div className="space-y-1.5">

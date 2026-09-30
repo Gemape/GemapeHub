@@ -20,7 +20,7 @@ import {
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
-import { bloqueioPorDemissao } from "@/lib/empregados";
+import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 
 interface ItemTermo {
   id: string;
@@ -33,7 +33,7 @@ export function EpiTermoEntrega() {
   const { empresaId } = useEmpresa();
   const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
   const [empregadoId, setEmpregadoId] = useState("");
-  const [dataEntrega, setDataEntrega] = useState(new Date().toISOString().slice(0, 10));
+  const [dataEntrega, setDataEntrega] = useState(hojeLocal());
   const [itensTermo, setItensTermo] = useState<ItemTermo[]>([]);
 
   const { data: empresas = [] } = useEmpresas();
@@ -65,7 +65,7 @@ export function EpiTermoEntrega() {
 
     const empregado = empregados.find((e) => e.id === empregadoId);
     const empresa = empresas.find((e) => e.id === empresaSel);
-    const bloqueio = bloqueioPorDemissao(empregado);
+    const bloqueio = bloqueioPorDemissao(empregado, dataEntrega);
     if (bloqueio) {
       alert(bloqueio);
       return;

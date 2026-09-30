@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
 import { formatarData, formatarMoeda } from "@/lib/gemape";
 import { useEmpresas, useItens, useEmpregados, useSalvar } from "@/lib/hooks-gemape";
-import { bloqueioPorDemissao } from "@/lib/empregados";
+import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 
 interface ItemBaixa {
   item_id: string;
@@ -33,13 +33,15 @@ interface ItemBaixa {
 export function UniformesTermoBaixa() {
   const [empresaId, setEmpresaId] = useState("");
   const [empregadoId, setEmpregadoId] = useState("");
-  const [dataBaixa, setDataBaixa] = useState(new Date().toISOString().slice(0, 10));
+  const [dataBaixa, setDataBaixa] = useState(hojeLocal());
   const [motivoBaixa, setMotivoBaixa] = useState("Desgaste Natural");
   const [onusBaixa, setOnusBaixa] = useState("Da Empresa");
   const [itensBaixa, setItensBaixa] = useState<ItemBaixa[]>([]);
 
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(empresaId || TODAS, true);
+  // Lista completa só para conferir a demissão: quem já saiu da lista de ativos continua bloqueado.
+  const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
   const { data: uniformes = [] } = useItens("uniforme", TODAS);
 
   const salvarMovimentacao = useSalvar("movimentacoes", ["movimentacoes", "uniformes"]);
@@ -66,7 +68,7 @@ export function UniformesTermoBaixa() {
       alert("Preencha os campos obrigatórios e adicione pelo menos um item.");
       return;
     }
-    const bloqueio = bloqueioPorDemissao(empregado);
+    const bloqueio = bloqueioPorDemissao(todosEmpregados.find((p) => p.id === empregadoId), dataBaixa);
     if (bloqueio) {
       alert(bloqueio);
       return;

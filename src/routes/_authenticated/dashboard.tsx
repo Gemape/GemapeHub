@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empregadoAtivo } from "@/lib/empregados";
 import { formatarMoeda, MODULO_LABEL, type Modulo } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
 
@@ -85,14 +86,12 @@ function DashboardGeral() {
     queryKey: ["empregados-total", empresaId],
     staleTime: 60_000,
     queryFn: async () => {
-      let q = supabase
-        .from("empregados")
-        .select("id", { count: "exact", head: true })
-        .eq("ativo", true);
+      // Conta só quem está ativo hoje: demissão futura conta, demissão vencida não.
+      let q = supabase.from("empregados").select("ativo,data_demissao").eq("ativo", true);
       if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      const { count, error } = await q;
+      const { data, error } = await q;
       if (error) throw error;
-      return count ?? 0;
+      return (data ?? []).filter((e) => empregadoAtivo(e)).length;
     },
   });
 

@@ -113,13 +113,17 @@ export const empregadoAtivo = (
 
 const dataBr = (iso: string) => iso.split("-").reverse().join("/");
 
-// Entrega, devolução e baixa para empregado com demissão vencida são bloqueadas.
+// Entrega, devolução e baixa para empregado com demissão vencida são bloqueadas: vale a
+// data de hoje e também a data da movimentação, se for posterior (não dá para lançar
+// hoje uma entrega datada depois da demissão).
 // Devolve a mensagem para o usuário, ou null quando a movimentação pode seguir.
 export function bloqueioPorDemissao(
   e: { nome: string; data_demissao: string | null } | null | undefined,
+  dataMovimentacao = "",
   hoje = hojeLocal(),
 ): string | null {
-  if (!e?.data_demissao || !demissaoVencida(e, hoje)) return null;
+  const referencia = dataMovimentacao > hoje ? dataMovimentacao : hoje;
+  if (!e?.data_demissao || !demissaoVencida(e, referencia)) return null;
   return `${e.nome} foi demitido(a) em ${dataBr(e.data_demissao)}. Não é possível registrar entrega, devolução ou baixa para este empregado.`;
 }
 
