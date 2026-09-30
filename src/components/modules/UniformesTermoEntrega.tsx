@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,27 +115,26 @@ export function UniformesTermoEntrega() {
     const itensDoTermo = itensEntrega;
     setItensEntrega([]);
 
-    // Gerar visualização de impressão
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      const html = montarTermoEntregaUniformeHtml({
-        empresa,
-        empregado,
-        data: dataEntrega,
-        linhas: itensDoTermo.map((i) => {
-          const u = uniformes.find((uni) => uni.id === i.item_id);
-          return {
-            nome: u?.nome,
-            marca: u?.marca,
-            modelo: u?.modelo,
-            quantidade: i.quantidade,
-            estado: i.estado,
-          };
-        }),
-      });
-      printWindow.document.write(html);
-      printWindow.document.close();
-    }
+    const html = montarTermoEntregaUniformeHtml({
+      empresa,
+      empregado,
+      data: dataEntrega,
+      linhas: itensDoTermo.map((i) => {
+        const u = uniformes.find((uni) => uni.id === i.item_id);
+        return {
+          nome: u?.nome,
+          marca: u?.marca,
+          modelo: u?.modelo,
+          quantidade: i.quantidade,
+          estado: i.estado,
+        };
+      }),
+    });
+    abrirDocumento({
+      titulo: "Termo de Entrega de Uniforme",
+      html,
+      arquivo: nomeArquivoDocumento("Termo de Entrega de Uniforme", empregado?.nome, dataEntrega),
+    });
   }
 
   return (

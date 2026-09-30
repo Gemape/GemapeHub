@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { LogOut } from "lucide-react";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { VisualizadorDocumento } from "@/components/layout/VisualizadorDocumento";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -97,6 +98,7 @@ function LayoutAutenticado() {
           <div className="flex-1 p-4 md:p-6">
             <Outlet />
           </div>
+          <VisualizadorDocumento />
         </main>
       </SidebarProvider>
     </EmpresaProvider></AccessProvider>
