@@ -16,6 +16,7 @@ import {
   coberturaEmDias,
   formatarData,
   formatarMoeda,
+  valorTotalEmEstoque,
   NIVEL_ALERTA_INFO,
   nivelPorCobertura,
   TIPO_MOVIMENTACAO_LABEL,
@@ -31,7 +32,7 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
   const { data: empregados = [] } = useEmpregados(empresaId);
 
   const totalEstoque = itens.reduce((s, i) => s + i.estoque_atual, 0);
-  const valorEstoque = itens.reduce((s, i) => s + i.estoque_atual * (i.preco_unitario ?? 0), 0);
+  const valorEstoque = valorTotalEmEstoque(itens);
   const emUso = movimentacoes
     .filter((m) => m.tipo_movimentacao === "Saida")
     .reduce((s, m) => s + m.quantidade, 0);

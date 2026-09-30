@@ -13,7 +13,7 @@ type Props = {
   // Rótulo do campo de inclusão (ex.: "Nova categoria").
   novo: string;
   onAdicionar: (nome: string) => boolean;
-  onRenomear: (id: string, nome: string) => boolean;
+  onRenomear: (id: string, nome: string) => boolean | Promise<boolean>;
   onRemover: (item: Item) => void;
   onMover?: (id: string, passo: -1 | 1) => void;
   detalhe?: (item: Item) => ReactNode;
@@ -46,8 +46,8 @@ export function ListaEditavel({
     if (onAdicionar(nome)) setNome("");
   }
 
-  function confirmarEdicao(id: string) {
-    if (onRenomear(id, nomeEdicao)) setEditando(null);
+  async function confirmarEdicao(id: string) {
+    if (await onRenomear(id, nomeEdicao)) setEditando(null);
   }
 
   return (
