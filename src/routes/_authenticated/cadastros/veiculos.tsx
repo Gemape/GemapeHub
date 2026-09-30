@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/veiculos")({
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Cadastro de Veículos</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gerenciamento da frota, incluindo placas, RENAVAM e quilometragem.
+          Código automático, subcategoria de Cadastros &gt; Gerais, descrição e dados da frota.
         </p>
       </header>
       <VeiculosCadastroModulo />
