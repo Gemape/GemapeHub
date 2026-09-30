@@ -110,8 +110,8 @@ Plano aprovado pelo responsável em 30/09/2026, complementando a decisão 8:
   Cadastros > Gerais > Código do Produto, com sequência FER-0001,
   FER-0002 etc. compartilhada entre empresas. A edição preserva o código.
 - A subcategoria vem de Cadastros > Gerais. Descrição e estoque mínimo
-  integram o cadastro. Categorias e grupos próprios de Ferramentas não
-  substituem a subcategoria de Gerais.
+  integram o cadastro. Categoria e grupo de ferramenta também vêm de
+  Gerais e são campos distintos da subcategoria (decisão 17).
 - Número de série é obrigatório e informado pelo usuário, sem valor
   fictício automático. Patrimônio e data de aquisição retornam como
   campos opcionais, conforme a decisão 8.
@@ -126,3 +126,24 @@ Plano aprovado pelo responsável em 30/09/2026, complementando a decisão 8:
 - A implementação desta etapa fica no modo demonstração, sem Supabase
   real. A revisão do estoque histórico de ferramentas segue pendente
   para a Fase 2. Entregar a documentação antes do código.
+
+## 17. FERRAMENTAS — CATEGORIA E GRUPO DO MODELO
+Decidido em 30/09/2026 para resolver a divergência entre o PDF do MD e
+a especificação atualizada; complementa a decisão 16:
+- O modelo guarda categoria de ferramenta e grupo de ferramenta,
+  ambos selecionados de listas mantidas em Cadastros > Gerais. As
+  categorias iniciais são Manual, Elétrica, Pneumático, Hidráulica,
+  Medição e Corte; usar os nomes de Gerais, inclusive "Pneumático".
+  Os grupos iniciais são os listados no MD. Não usar listas fixas no módulo.
+- A subcategoria de produto também vem de Gerais, dentro da categoria
+  de produto "Ferramentas". Ela identifica a regra de Código do Produto
+  dessa categoria: sigla FER e numeração inicial configurada em Gerais.
+  Categoria e grupo de ferramenta não criam sequências próprias.
+- A proteção do estoque na edição terá teste explícito de editar,
+  salvar e reabrir uma ferramenta com estoque positivo antes da
+  ligação das regras ao formulário.
+- Permissões por tela e revisão do estoque histórico seguem na Fase 2,
+  conforme `docs/pendencias-fase2.md`.
+- Caixas de 01 a 100 com flag de habilitação, fluxo completo de
+  Portador e cadastro de marcas ficam fora do plano de Ferramentas.
+  São proposta separada de Caixas e Portador, sujeita a aprovação.

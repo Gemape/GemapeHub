@@ -24,6 +24,28 @@ test('parte das categorias e listas que já existiam', () => {
   assert.deepEqual(d.unidades.map((u) => u.nome), ['Unidade', 'Par', 'Jogo', 'Caixa']);
 });
 
+test('Gerais oferece categorias e grupos do MD para ferramentas, separados das subcategorias', () => {
+  const dados = lerParametros(storage());
+  assert.deepEqual(dados.categoriasFerramenta.map((c) => c.nome),
+    ['Manual', 'Elétrica', 'Pneumático', 'Hidráulica', 'Medição', 'Corte']);
+  assert.deepEqual(dados.gruposFerramenta.map((g) => g.nome),
+    ['Chave de fenda', 'Chave estria', 'Chave boca', 'Meia lua', 'Combinada', 'Canhão', 'Alicates', 'Lima', 'Chave Philips', 'Chave L', 'Chave Allen', 'Cachimbo', 'Diversos']);
+  assert.equal(dados.categoriasFerramenta.some((c) => c.nome === 'Ferramentas'), false);
+});
+
+test('listas de categorias e grupos de ferramentas em Gerais aceitam novas opções sem duplicar', async () => {
+  const { adicionarListaFerramenta, renomearListaFerramenta, removerListaFerramenta } = await import('../src/lib/parametros-base.ts');
+  const local = storage();
+  const grupo = adicionarListaFerramenta('gruposFerramenta', 'Chave catraca', local);
+  assert.ok(lerParametros(local).gruposFerramenta.some((g) => g.id === grupo.id));
+  assert.throws(() => adicionarListaFerramenta('gruposFerramenta', 'chave CATRACA', local), /Já existe/);
+  renomearListaFerramenta('gruposFerramenta', grupo.id, 'Catraca', local);
+  assert.equal(lerParametros(local).gruposFerramenta.find((g) => g.id === grupo.id).nome, 'Catraca');
+  removerListaFerramenta('gruposFerramenta', grupo.id, local);
+  assert.ok(!lerParametros(local).gruposFerramenta.some((g) => g.id === grupo.id));
+  assert.equal(adicionarListaFerramenta('categoriasFerramenta', 'Solda', local).nome, 'Solda');
+});
+
 test('categorias: sem nome repetido (ignora acento e maiúsculas) e só exclui vazia', () => {
   const s = storage();
   assert.throws(() => adicionarCategoria(' veiculos ', s), /Já existe a categoria "Veículos"/);

@@ -6,6 +6,7 @@ import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts"
 export type Categoria = { id: string; nome: string };
 export type Subcategoria = { id: string; categoriaId: string; nome: string };
 export type Opcao = { id: string; nome: string };
+export type ListaFerramenta = "categoriasFerramenta" | "gruposFerramenta";
 export type TipoOpcao = "tamanhos" | "unidades";
 // Tamanhos e unidades autorizados para uma subcategoria (guarda os ids).
 export type Associacao = { subcategoriaId: string } & Record<TipoOpcao, string[]>;
@@ -27,6 +28,8 @@ export type DadosCodigoFabrica = Omit<CodigoFabrica, "id">;
 export type ParametrosBase = {
   categorias: Categoria[];
   subcategorias: Subcategoria[];
+  categoriasFerramenta: Opcao[];
+  gruposFerramenta: Opcao[];
   tamanhos: Opcao[];
   unidades: Opcao[];
   associacoes: Associacao[];
@@ -99,6 +102,10 @@ function padrao(): ParametrosBase {
   return {
     categorias,
     subcategorias,
+    categoriasFerramenta: ["Manual", "Elétrica", "Pneumático", "Hidráulica", "Medição", "Corte"]
+      .map((nome) => ({ id: `cat-fer-${slug(nome)}`, nome })),
+    gruposFerramenta: ["Chave de fenda", "Chave estria", "Chave boca", "Meia lua", "Combinada", "Canhão", "Alicates", "Lima", "Chave Philips", "Chave L", "Chave Allen", "Cachimbo", "Diversos"]
+      .map((nome) => ({ id: `grupo-fer-${slug(nome)}`, nome })),
     tamanhos,
     unidades,
     associacoes: [
@@ -264,6 +271,29 @@ export function removerSubcategoria(id: string, storage = storagePadrao()): void
     achar(d.subcategorias, id, "Subcategoria");
     d.subcategorias = d.subcategorias.filter((s) => s.id !== id);
     d.associacoes = d.associacoes.filter((a) => a.subcategoriaId !== id);
+  });
+}
+
+// ---------- Listas de categorias e grupos de ferramentas ----------
+
+export function adicionarListaFerramenta(tipo: ListaFerramenta, nome: string, storage = storagePadrao()): Opcao {
+  return alterar(storage, (d) => {
+    const item = { id: novoId(), nome: nomeUnico(d[tipo], nome, "opção") };
+    d[tipo].push(item);
+    return item;
+  });
+}
+
+export function renomearListaFerramenta(tipo: ListaFerramenta, id: string, nome: string, storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    achar(d[tipo], id, "Opção").nome = nomeUnico(d[tipo], nome, "opção", id);
+  });
+}
+
+export function removerListaFerramenta(tipo: ListaFerramenta, id: string, storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    achar(d[tipo], id, "Opção");
+    d[tipo] = d[tipo].filter((item) => item.id !== id);
   });
 }
 

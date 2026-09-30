@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,6 @@ import {
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import {
   CATEGORIAS_EPI,
-  CATEGORIAS_FERRAMENTA,
   CATEGORIAS_UNIFORME,
   ESTADOS_ITEM,
   STATUS_EPI,
@@ -44,9 +43,13 @@ import {
   formatarMoeda,
   type Modulo,
 } from "@/lib/gemape";
-import { useExcluir, useItens, useProximoCodigo, useSalvar, type Item } from "@/lib/hooks-gemape";
+import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { prepararCadastroFerramenta, protegerEstoqueNaEdicao } from "@/lib/cadastro-ferramentas";
+import { proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 
 const getTabela = (modulo: Modulo): "epis" | "uniformes" | "ferramentas" => {
   if (modulo === "epi") return "epis";
@@ -59,34 +62,56 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Item | null>(null);
+  const [previaCodigo, setPreviaCodigo] = useState("");
+  const salvando = useRef(false);
+  const parametros = useParametrosBase();
+  const regraFerramenta = parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
+  const subcategoriasFerramenta = subcategoriasDa(parametros, "cat-ferramentas");
   const tabela = getTabela(modulo);
   const { data: itens = [], isLoading } = useItens(modulo, empresaId, busca);
   const salvar = useSalvar(tabela, [tabela, "saidas-por-item"]);
   const excluir = useExcluir(tabela, [tabela, "saidas-por-item"]);
 
-  function abrirNovo() {
-    setEditando(null);
-    setAberto(true);
+  async function codigosFerramenta(): Promise<string[]> {
+    const { data, error } = await supabase.from("ferramentas").select("codigo_sku");
+    if (error) throw error;
+    return ((data ?? []) as { codigo_sku: string | null }[]).map((item) => item.codigo_sku ?? "");
   }
 
-  function enviar(e: React.FormEvent<HTMLFormElement>) {
+  async function abrirNovo() {
+    if (modulo === "ferramenta" && !regraFerramenta) {
+      toast.error("Cadastre antes a regra do código de Ferramentas em Cadastros > Gerais.");
+      return;
+    }
+    setEditando(null);
+    setPreviaCodigo("");
+    setAberto(true);
+    if (modulo === "ferramenta" && regraFerramenta) {
+      try {
+        setPreviaCodigo(proximoCodigo(regraFerramenta, await codigosFerramenta()));
+      } catch {
+        setPreviaCodigo("");
+      }
+    }
+  }
+
+  async function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (salvando.current) return;
+    salvando.current = true;
     const f = new FormData(e.currentTarget);
     const texto = (k: string) => {
       const v = String(f.get(k) ?? "").trim();
       return v === "" ? null : v;
     };
-    const valores = {
+    let valores: Record<string, unknown> = {
       empresa_id: texto("empresa_id"),
       codigo_sku: String(f.get("codigo_sku") ?? "").trim(),
       nome: String(f.get("nome") ?? "").trim(),
       categoria: texto("categoria"),
       marca: texto("marca"),
       modelo: texto("modelo"),
-      numero_serie:
-        modulo === "ferramenta"
-          ? (texto("numero_serie") ?? `SN-${Date.now()}`)
-          : texto("numero_serie"),
+      numero_serie: texto("numero_serie"),
       ca: texto("ca"),
       tamanho: texto("tamanho"),
       cor: texto("cor"),
@@ -103,9 +128,31 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
       status: String(f.get("status") ?? "Ativo"),
       observacoes: texto("observacoes"),
     };
+    if (editando && modulo === "ferramenta") valores = protegerEstoqueNaEdicao(valores);
+    if (modulo === "ferramenta") {
+      try {
+        const cadastro = prepararCadastroFerramenta({
+          parametros,
+          codigosExistentes: editando ? [] : await codigosFerramenta(),
+          subcategoria: String(f.get("categoria") ?? ""),
+          descricao: String(f.get("nome") ?? ""),
+          estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
+          categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
+          grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
+          numeroSerie: String(f.get("numero_serie") ?? ""),
+          precoCusto: String(f.get("preco_unitario") ?? ""),
+          ...(editando ? { codigoAtual: editando.codigo_sku } : {}),
+        });
+        Object.assign(valores, cadastro);
+      } catch (erro) {
+        salvando.current = false;
+        toast.error(erro instanceof Error ? erro.message : "Não foi possível gerar o código da ferramenta.");
+        return;
+      }
+    }
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
-      { onSuccess: () => setAberto(false) },
+      { onSuccess: () => setAberto(false), onSettled: () => { salvando.current = false; } },
     );
   }
 
@@ -130,7 +177,11 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                 itens.map((i) => ({
                   "Código/SKU": i.codigo_sku,
                   Nome: i.nome,
-                  Categoria: i.categoria,
+                  [modulo === "ferramenta" ? "Subcategoria" : "Categoria"]: i.categoria,
+                  ...(modulo === "ferramenta" ? {
+                    "Categoria de ferramenta": i.categoria_ferramenta,
+                    "Grupo de ferramenta": i.grupo_ferramenta,
+                  } : {}),
                   Estoque: i.estoque_atual,
                   Mínimo: i.estoque_minimo,
                   Status: i.status,
@@ -150,7 +201,9 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
             <TableRow>
               <TableHead>Código/SKU</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>Categoria</TableHead>
+              <TableHead>{modulo === "ferramenta" ? "Subcategoria" : "Categoria"}</TableHead>
+              {modulo === "ferramenta" && <TableHead>Categoria de ferramenta</TableHead>}
+              {modulo === "ferramenta" && <TableHead>Grupo de ferramenta</TableHead>}
               <TableHead className="text-right">Estoque</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Cadastro</TableHead>
@@ -161,13 +214,13 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "ferramenta" ? 10 : 8} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "ferramenta" ? 10 : 8} className="text-center text-muted-foreground">
                   Nenhum item cadastrado.
                 </TableCell>
               </TableRow>
@@ -177,6 +230,8 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell className="font-medium">{item.nome}</TableCell>
                   <TableCell>{item.categoria ?? "—"}</TableCell>
+                  {modulo === "ferramenta" && <TableCell>{item.categoria_ferramenta ?? "—"}</TableCell>}
+                  {modulo === "ferramenta" && <TableCell>{item.grupo_ferramenta ?? "—"}</TableCell>}
                   <TableCell className="text-right">
                     <span
                       className={
@@ -242,16 +297,14 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="codigo_sku">Código/SKU</Label>
-              <Input
-                id="codigo_sku"
-                name="codigo_sku"
-                required
-                defaultValue={editando?.codigo_sku ?? ""}
-                placeholder="Ex: SKU-001"
-              />
+              {modulo === "ferramenta" ? (
+                <Input id="codigo_sku" readOnly value={editando?.codigo_sku ?? previaCodigo} placeholder="Gerado ao salvar" />
+              ) : (
+                <Input id="codigo_sku" name="codigo_sku" required defaultValue={editando?.codigo_sku ?? ""} placeholder="Ex: SKU-001" />
+              )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="nome">Nome do Item</Label>
+              <Label htmlFor="nome">{modulo === "ferramenta" ? "Descrição do item" : "Nome do Item"}</Label>
               <Input
                 id="nome"
                 name="nome"
@@ -262,10 +315,10 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="categoria">Categoria</Label>
+              <Label htmlFor="categoria">{modulo === "ferramenta" ? "Subcategoria" : "Categoria"}</Label>
               <Select name="categoria" required defaultValue={editando?.categoria ?? ""}>
                 <SelectTrigger id="categoria">
-                  <SelectValue placeholder="Selecione a categoria" />
+                  <SelectValue placeholder={modulo === "ferramenta" ? "Selecione a subcategoria" : "Selecione a categoria"} />
                 </SelectTrigger>
                 <SelectContent>
                   {modulo === "epi" &&
@@ -281,14 +334,37 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                       </SelectItem>
                     ))}
                   {modulo === "ferramenta" &&
-                    CATEGORIAS_FERRAMENTA.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
+                    subcategoriasFerramenta.map((c) => (
+                      <SelectItem key={c.id} value={c.nome}>
+                        {c.nome}
                       </SelectItem>
                     ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {modulo === "ferramenta" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="categoria_ferramenta">Categoria de ferramenta</Label>
+                  <Select name="categoria_ferramenta" required defaultValue={editando?.categoria_ferramenta ?? (editando?.categoria === "Pneumática" ? "Pneumático" : editando?.categoria ?? "")}>
+                    <SelectTrigger id="categoria_ferramenta"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                    <SelectContent>
+                      {parametros.categoriasFerramenta.map((c) => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="grupo_ferramenta">Grupo de ferramenta</Label>
+                  <Select name="grupo_ferramenta" required defaultValue={editando?.grupo_ferramenta ?? ""}>
+                    <SelectTrigger id="grupo_ferramenta"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
+                    <SelectContent>
+                      {parametros.gruposFerramenta.map((g) => <SelectItem key={g.id} value={g.nome}>{g.nome}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
 
             {modulo === "epi" && (
               <div className="space-y-1.5">
@@ -440,15 +516,15 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
               )}
             </div>
 
-            <div className="space-y-1.5">
+            {modulo !== "ferramenta" && <div className="space-y-1.5">
               <Label htmlFor="marca">Marca</Label>
               <Input id="marca" name="marca" defaultValue={editando?.marca ?? ""} />
-            </div>
+            </div>}
 
-            <div className="space-y-1.5">
+            {modulo !== "ferramenta" && <div className="space-y-1.5">
               <Label htmlFor="modelo">Modelo</Label>
               <Input id="modelo" name="modelo" defaultValue={editando?.modelo ?? ""} />
-            </div>
+            </div>}
 
             {modulo === "uniforme" && (
               <div className="space-y-1.5">
@@ -510,13 +586,14 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="preco_unitario">Preço unitário (R$)</Label>
+              <Label htmlFor="preco_unitario">{modulo === "ferramenta" ? "Preço de custo (R$)" : "Preço unitário (R$)"}</Label>
               <Input
                 id="preco_unitario"
                 name="preco_unitario"
                 type="number"
                 step="0.01"
                 min={0}
+                required={modulo === "ferramenta"}
                 defaultValue={editando?.preco_unitario ?? ""}
               />
             </div>

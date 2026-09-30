@@ -31,7 +31,8 @@ const persistirDados = () => {
 const id = () => crypto.randomUUID();
 class Consulta {
   private filtros: Array<(l: Linha) => boolean> = []; private ordem?: string; private limite?: number; private payload?: Linha | Linha[]; private acao = "select"; private contagem = false;
-  constructor(private tabela: string) {}
+  private tabela: string;
+  constructor(tabela: string) { this.tabela = tabela; }
   select(_colunas = "*", opts?: { count?: string; head?: boolean }) { this.contagem = Boolean(opts?.count); return this; }
   eq(chave: string, valor: unknown) { this.filtros.push(l => l[chave] === valor); return this; }
   gte(chave: string, valor: unknown) { this.filtros.push(l => String(l[chave] ?? "") >= String(valor)); return this; }
