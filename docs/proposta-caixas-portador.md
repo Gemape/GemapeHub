@@ -1,6 +1,6 @@
 # Proposta de plano separado — Caixas e Portador
 
-**Status: proposta para aprovação futura.** Este documento não autoriza implementação no plano de Ferramentas da Fase 1.
+**Status: aprovada pelo responsável em 30/09/2026.** A divisão em etapas e os critérios de aceite estão em `docs/handoff-claude-code-ferramentas.md` (seção "Caixas e Portador") e aguardam o ok do responsável antes de qualquer código.
 
 Escopo sugerido:
 1. Caixas numeradas de 01 a 100, com flag de habilitação administrada em Cadastros > Gerais.
