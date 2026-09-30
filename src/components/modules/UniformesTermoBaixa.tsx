@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -120,24 +121,23 @@ export function UniformesTermoBaixa() {
     const itensDoTermo = itensBaixa;
     setItensBaixa([]);
 
-    // Gerar visualização de impressão
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      const html = montarTermoBaixaUniformeHtml({
-        empresa,
-        empregado,
-        data: dataBaixa,
-        motivo: motivoBaixa,
-        onus: onusBaixa,
-        linhas: itensDoTermo.map((i) => ({
-          nome: uniformes.find((uni) => uni.id === i.item_id)?.nome,
-          quantidade: i.quantidade,
-          estado: i.estado,
-        })),
-      });
-      printWindow.document.write(html);
-      printWindow.document.close();
-    }
+    const html = montarTermoBaixaUniformeHtml({
+      empresa,
+      empregado,
+      data: dataBaixa,
+      motivo: motivoBaixa,
+      onus: onusBaixa,
+      linhas: itensDoTermo.map((i) => ({
+        nome: uniformes.find((uni) => uni.id === i.item_id)?.nome,
+        quantidade: i.quantidade,
+        estado: i.estado,
+      })),
+    });
+    abrirDocumento({
+      titulo: "Termo de Baixa de Uniforme",
+      html,
+      arquivo: nomeArquivoDocumento("Termo de Baixa de Uniforme", empregado?.nome, dataBaixa),
+    });
   }
 
   return (

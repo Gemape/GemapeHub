@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,8 +32,6 @@ export function EpiFichaEpiAvulsa() {
       return;
     }
 
-    // A aba abre antes da leitura, ainda no clique, para o navegador não bloqueá-la.
-    const win = window.open("", "_blank");
     // Histórico inteiro do empregado nesta empresa, lido do banco na hora de gerar a ficha.
     let historico: MovimentacaoFicha[];
     try {
@@ -41,7 +40,6 @@ export function EpiFichaEpiAvulsa() {
         empresaId: empresa.id,
       });
     } catch (erro) {
-      win?.close();
       alert(`Não foi possível carregar o histórico: ${(erro as Error).message}`);
       return;
     }
@@ -61,8 +59,11 @@ export function EpiFichaEpiAvulsa() {
       }),
     });
 
-    win?.document.write(html);
-    win?.document.close();
+    abrirDocumento({
+      titulo: "Ficha de EPI",
+      html,
+      arquivo: nomeArquivoDocumento("Ficha de EPI", empregado.nome),
+    });
   }
 
   return (
