@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adicionarSubcategoria, lerParametros, salvarRegraCodigo } from '../src/lib/parametros-base.ts';
-import { prepararCadastroFerramenta } from '../src/lib/cadastro-ferramentas.ts';
+import { adicionarListaFerramenta, adicionarSubcategoria, lerParametros, salvarRegraCodigo } from '../src/lib/parametros-base.ts';
+import * as cadastroFerramentas from '../src/lib/cadastro-ferramentas.ts';
+const { opcaoFerramentaEmUso, prepararCadastroFerramenta } = cadastroFerramentas;
 
 const storage = () => {
   const dados = new Map();
@@ -20,6 +21,7 @@ test('ferramenta usa subcategoria de Gerais e próximo código global ao salvar'
   assert.deepEqual(resultado, {
     codigo_sku: 'FER-0003', categoria: 'Aperto', nome: 'Chave de boca', estoque_minimo: 3,
     categoria_ferramenta: 'Elétrica', grupo_ferramenta: 'Chave de fenda', numero_serie: 'SN-123', preco_unitario: 240.5,
+    marca: null,
   });
 });
 
@@ -48,4 +50,35 @@ test('ferramenta exige categoria e grupo de Gerais, série real e custo válido 
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, precoCusto: '' }), /Preço de custo/);
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, precoCusto: '-1' }), /Preço de custo/);
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, precoCusto: '1.234' }), /Preço de custo/);
+});
+
+test('marca nova precisa vir de Gerais; marca legada continua ao editar sem trocá-la', () => {
+  const local = storage();
+  adicionarListaFerramenta('marcasFerramenta', 'Bosch', local);
+  const entrada = {
+    parametros: lerParametros(local), codigosExistentes: [], subcategoria: 'Manual',
+    descricao: 'Alicate', estoqueMinimo: '0', ...campos,
+  };
+  assert.equal(prepararCadastroFerramenta({ ...entrada, marca: 'Bosch' }).marca, 'Bosch');
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, marca: 'Marca avulsa' }), /Marca de ferramenta/);
+  assert.equal(prepararCadastroFerramenta({ ...entrada, marca: 'Marca antiga', marcaAtual: 'Marca antiga', codigoAtual: 'FER-0009' }).marca, 'Marca antiga');
+  assert.equal(prepararCadastroFerramenta({ ...entrada, marca: 'BOSCH', marcaAtual: 'BOSCH', codigoAtual: 'FER-0009' }).marca, 'BOSCH');
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, marca: 'Outra marca', marcaAtual: 'Marca antiga', codigoAtual: 'FER-0009' }), /Marca de ferramenta/);
+  assert.equal(prepararCadastroFerramenta({ ...entrada, marca: '' }).marca, null);
+});
+
+test('marca em uso é detectada também para texto legado com diferença de caixa', () => {
+  assert.equal(opcaoFerramentaEmUso([{ marca: 'Bosch' }], 'marcasFerramenta', 'bosch'), true);
+  assert.equal(opcaoFerramentaEmUso([{ marca: 'Bosch' }], 'marcasFerramenta', 'Makita'), false);
+});
+
+test('seleção usa o id da marca e não confunde nome cadastrado com a opção sem marca', () => {
+  assert.equal(typeof cadastroFerramentas.marcaDaSelecao, 'function');
+  const local = storage();
+  const marca = adicionarListaFerramenta('marcasFerramenta', '__sem_marca__', local);
+  const marcas = lerParametros(local).marcasFerramenta;
+  assert.equal(cadastroFerramentas.marcaDaSelecao(cadastroFerramentas.selecaoMarcaCadastrada(marca.id), marcas, null), '__sem_marca__');
+  assert.equal(cadastroFerramentas.marcaDaSelecao(cadastroFerramentas.SELECAO_SEM_MARCA, marcas, null), '');
+  assert.equal(cadastroFerramentas.marcaDaSelecao(cadastroFerramentas.SELECAO_MARCA_LEGADA, marcas, 'BOSCH'), 'BOSCH');
+  assert.throws(() => cadastroFerramentas.marcaDaSelecao('marca:id-inexistente', marcas, null), /Marca de ferramenta/);
 });
