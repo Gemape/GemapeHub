@@ -63,10 +63,13 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   const { data: itens = [] } = useItens(modulo === "veiculo" ? "ferramenta" : modulo, empresaId);
   const { data: veiculos = [] } = useVeiculos(empresaId);
   const { data: empregados = [] } = useEmpregados(empresaId, true);
+  // O histórico mostra também quem já foi demitido.
+  const { data: todosEmpregados = [] } = useEmpregados(empresaId);
   const registrarLote = useRegistrarMovimentacoesLote(CHAVES);
 
   const ehVeiculo = modulo === "veiculo";
-  const nomeEmpregado = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "—";
+  const nomeEmpregado = (id: string | null) =>
+    todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
   const descricaoItem = (m: { item_id: string | null; veiculo_id: string | null }) =>
     m.item_id
       ? (itens.find((i) => i.id === m.item_id)?.nome ?? "—")

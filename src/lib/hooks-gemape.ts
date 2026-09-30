@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS } from "@/lib/empresa-context";
 import type { Modulo } from "@/lib/gemape";
+import { empregadoAtivo } from "@/lib/empregados";
 
 const PAGINA = 50;
 
@@ -217,7 +218,9 @@ export function useEmpregados(empresaId: string, apenasAtivos = false) {
       if (apenasAtivos) q = q.eq("ativo", true);
       const { data, error } = await q.order("nome").limit(PAGINA);
       if (error) throw error;
-      return (data ?? []) as Empregado[];
+      const lista = (data ?? []) as Empregado[];
+      // Com data de demissão o empregado também conta como inativo, mesmo em registros antigos.
+      return apenasAtivos ? lista.filter(empregadoAtivo) : lista;
     },
   });
 }
