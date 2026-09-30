@@ -27,6 +27,31 @@ export function opcaoFerramentaEmUso(
   return modelos.some((modelo) => modelo[campo] === nome);
 }
 
+type ArmazenamentoCodigos = Pick<Storage, "getItem" | "setItem">;
+const CHAVE_CODIGOS_RESERVADOS = "gemape-demo-codigos-ferramentas-reservados";
+
+export function codigosReservadosFerramenta(
+  storage: ArmazenamentoCodigos = localStorage,
+): string[] {
+  const salvo = storage.getItem(CHAVE_CODIGOS_RESERVADOS);
+  if (!salvo) return [];
+  const codigos: unknown = JSON.parse(salvo);
+  if (!Array.isArray(codigos) || !codigos.every((codigo) => typeof codigo === "string")) {
+    throw new Error("Histórico de códigos de ferramentas inválido.");
+  }
+  return codigos;
+}
+
+export function reservarCodigoFerramenta(
+  codigo: string,
+  storage: ArmazenamentoCodigos = localStorage,
+): void {
+  const codigos = codigosReservadosFerramenta(storage);
+  if (!codigos.includes(codigo)) {
+    storage.setItem(CHAVE_CODIGOS_RESERVADOS, JSON.stringify([...codigos, codigo]));
+  }
+}
+
 export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
   const subcategoria = entrada.subcategoria.trim();
   if (!subcategoriasDa(entrada.parametros, "cat-ferramentas").some((s) => s.nome === subcategoria)) {

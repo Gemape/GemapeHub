@@ -47,7 +47,7 @@ import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { prepararCadastroFerramenta, protegerEstoqueNaEdicao } from "@/lib/cadastro-ferramentas";
+import { codigosReservadosFerramenta, prepararCadastroFerramenta, protegerEstoqueNaEdicao, reservarCodigoFerramenta } from "@/lib/cadastro-ferramentas";
 import { proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -75,7 +75,8 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
   async function codigosFerramenta(): Promise<string[]> {
     const { data, error } = await supabase.from("ferramentas").select("codigo_sku");
     if (error) throw error;
-    return ((data ?? []) as { codigo_sku: string | null }[]).map((item) => item.codigo_sku ?? "");
+    const ativos = ((data ?? []) as { codigo_sku: string | null }[]).map((item) => item.codigo_sku ?? "");
+    return [...ativos, ...codigosReservadosFerramenta()];
   }
 
   async function abrirNovo() {
@@ -267,7 +268,17 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        if (confirm(`Excluir ${item.nome}?`)) excluir.mutate(item.id);
+                        if (confirm(`Excluir ${item.nome}?`)) {
+                          if (modulo === "ferramenta") {
+                            try {
+                              reservarCodigoFerramenta(item.codigo_sku);
+                            } catch (erro) {
+                              toast.error(erro instanceof Error ? erro.message : "Não foi possível reservar o código.");
+                              return;
+                            }
+                          }
+                          excluir.mutate(item.id);
+                        }
                       }}
                     >
                       Excluir
