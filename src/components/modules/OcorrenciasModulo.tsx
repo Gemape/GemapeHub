@@ -51,6 +51,8 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
 
   const { data: ocorrencias = [], isLoading } = useOcorrencias(busca, modulo);
   const { data: empregados = [] } = useEmpregados(TODAS, true);
+  // Lista completa para os nomes e para manter o empregado já vinculado, mesmo demitido.
+  const { data: todosEmpregados = [] } = useEmpregados(TODAS);
 
   const { data: itens = [] } = useItens(modulo === "veiculo" ? "ferramenta" : modulo, TODAS);
   const { data: veiculos = [] } = useVeiculos(TODAS);
@@ -58,7 +60,13 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
   const salvar = useSalvar("ocorrencias", CHAVES);
   const excluir = useExcluir("ocorrencias", CHAVES);
 
-  const nomeEmpregado = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "—";
+  const nomeEmpregado = (id: string | null) =>
+    todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
+  const empregadoFora = editando?.empregado_id
+    ? todosEmpregados.find(
+        (e) => e.id === editando.empregado_id && !empregados.some((a) => a.id === e.id),
+      )
+    : undefined;
 
   const descricaoAlvo = (o: Ocorrencia) => {
     if (o.veiculo_id) return veiculos.find((v) => v.id === o.veiculo_id)?.placa ?? "—";
@@ -245,6 +253,9 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NENHUM}>Sem empregado específico</SelectItem>
+                  {empregadoFora && (
+                    <SelectItem value={empregadoFora.id}>{empregadoFora.nome} (inativo)</SelectItem>
+                  )}
                   {empregados.map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome}

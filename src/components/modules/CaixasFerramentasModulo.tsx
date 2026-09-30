@@ -72,6 +72,14 @@ export function CaixasFerramentasModulo() {
 
   const { data: caixas = [], isLoading } = useCaixasFerramentas(empresaId, busca);
   const { data: empregados = [] } = useEmpregados(empresaId, true);
+  // Lista completa: o responsável atual continua na lista mesmo se já foi demitido, para a
+  // edição da caixa não apagar o vínculo sem querer.
+  const { data: todosEmpregados = [] } = useEmpregados(empresaId);
+  const responsavelFora = editando?.responsavel_id
+    ? todosEmpregados.find(
+        (e) => e.id === editando.responsavel_id && !empregados.some((a) => a.id === e.id),
+      )
+    : undefined;
   const { data: todasFerramentas = [] } = useItens("ferramenta", empresaId);
   const { data: proximoCodigo } = useProximoCodigoCaixa();
   const { data: itensCarregados = [] } = useCaixaItens(editando?.id ?? null);
@@ -342,6 +350,11 @@ export function CaixasFerramentasModulo() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NENHUM}>Sem responsável</SelectItem>
+                    {responsavelFora && (
+                      <SelectItem value={responsavelFora.id}>
+                        {responsavelFora.nome} (inativo)
+                      </SelectItem>
+                    )}
                     {empregados.map((e) => (
                       <SelectItem key={e.id} value={e.id}>
                         {e.nome}
