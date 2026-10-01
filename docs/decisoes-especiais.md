@@ -203,3 +203,24 @@ Escopo aprovado pelo responsável em 01/10/2026:
   recusados e todo texto do XML é tratado como dado.
 - Nada no Supabase real: a tabela das notas importadas e a função que
   grava tudo numa transação ficam como pendência da Fase 2.
+
+## 22. CADASTROS > GERAIS PARAMETRIZA TODOS OS CADASTROS
+Decidido pelo responsável em 01/10/2026 (pedida como "decisão 21";
+registrada como 22 porque a 21 já é a importação do XML):
+Cadastros > Gerais é a parametrização de TODOS os cadastros. Ele
+configura os parâmetros de todos os cadastros que alimentam os módulos,
+e esses parâmetros conversam com os cadastros. Regras:
+1. Fonte única: toda lista usada em cadastro de módulo (categoria,
+   tamanho/unidade, marca, código de produto, código de fábrica,
+   endereçamento, caixa) vem exclusivamente de Gerais.
+2. Seleção, não digitação: onde existe parâmetro em Gerais, o cadastro
+   do módulo usa lista suspensa preenchida por Gerais.
+3. Propagação: criar, editar ou desativar um parâmetro em Gerais
+   reflete imediatamente nos cadastros e módulos que o usam.
+4. Parâmetros relacionados entre si (ex.: Associar Tamanho e Medida)
+   se conectam dentro de Gerais antes de alimentar os módulos.
+5. Proteção: parâmetro em uso por cadastro ou módulo não pode ser
+   apagado silenciosamente; o sistema avisa o que depende dele.
+A conformidade do código com estas regras está no handoff
+(`docs/handoff-claude-code-ferramentas.md`). Nenhuma correção começa
+sem o ok do responsável; cada uma terá branch e PR próprios.

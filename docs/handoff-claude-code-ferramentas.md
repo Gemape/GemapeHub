@@ -124,7 +124,7 @@ Levantamento de 01/10/2026: cada item da especificação fora do bloco FERRAMENT
 
 | # | Grupo | O que falta | Estado |
 | --- | --- | --- | --- |
-| 1 | Importação do XML da nota fiscal | O MD diz que o código de fábrica serve para o sistema associar o produto ao importar o XML da nota do fornecedor e alimentar o estoque. O cadastro do código de fábrica existe, mas nenhuma tela lê o XML: as compras de EPI e de Uniformes só têm o campo manual Nota Fiscal. | Escopo aprovado em 01/10/2026 (decisão 21); implementado na branch `feat/importacao-xml-nfe`, aguardando validação do responsável após o PR. |
+| 1 | Importação do XML da nota fiscal | O MD diz que o código de fábrica serve para o sistema associar o produto ao importar o XML da nota do fornecedor e alimentar o estoque. O cadastro do código de fábrica existe, mas nenhuma tela lê o XML: as compras de EPI e de Uniformes só têm o campo manual Nota Fiscal. | Concluído: PR #44 mergeado em 01/10/2026 (decisão 21). |
 | 2 | Cadastro de Empresas | Faltam o endereço (rua, número, bairro, CEP, cidade, estado) e o status (ativa ou inativa) do MD. O material está na branch `feat/empresas` (PR #11, fechado sem merge, commit `b0f0c7e`), que será recuperado a partir da `main` atual. | Aguarda ok do responsável. |
 | 3 | Listas fixas remanescentes | `src/components/modules/ItensModulo.tsx` ainda tem trechos de EPI e Uniforme com as listas fixas `CATEGORIAS_EPI` e `CATEGORIAS_UNIFORME` e código digitado à mão; `src/components/modules/VeiculosModulo.tsx` usa a lista fixa `TIPOS_VEICULO` e não é mais importado por nenhuma tela. Nenhum trecho aparece na tela, mas contrariam a regra de puxar tudo de Cadastros > Gerais. As listas em `src/lib/gemape.ts` continuam só como dados iniciais de Gerais. | Remoção aprovada pelo responsável em 01/10/2026: apagar os trechos em PR próprio. |
 | 4 | Pendência 4 (datas UTC) | Ver "Pendências para PRs separados", item 4. | Aguarda decisão do responsável. |
@@ -141,6 +141,38 @@ Fica para a Fase 2 (decisão 19), sem ação agora:
 - exclusão de empregados, empresas e cadastros só pelo Administrador, e as permissões por tela (decisão 4); hoje só Cadastros > Gerais é restrito ao Administrador;
 - marca e modelo do uniforme e código e descrição do veículo, que hoje só são gravados no modo demonstração e precisam de colunas no banco real;
 - endereço e status de empresas no banco real (colunas já registradas em `docs/pendencias-fase2.md`).
+
+## Conformidade com a decisão 22 (Cadastros > Gerais parametriza tudo)
+
+Auditoria de 01/10/2026 sobre a `main` (`59dd52c`), sem nenhuma correção. Cada item vira PR só com o ok do responsável. O PR #43 (listas fixas, ainda não mergeado) já cobre os itens marcados com "#43".
+
+Já conforme:
+- Subcategoria em lista suspensa vinda de Gerais no cadastro de EPI, Uniforme, Ferramenta e Veículo (`CadastroProduto.tsx`, `ItensModulo.tsx`, `VeiculosCadastroModulo.tsx`).
+- Categorias múltiplas do Fornecedor marcadas a partir de Gerais e gravadas pelo id (`fornecedores.tsx`).
+- Categoria, grupo e marca de Ferramenta em lista suspensa de Gerais; renomear ou apagar opção em uso é bloqueado com aviso (`categorias.tsx`).
+- Código do produto gerado pela regra de Gerais e não editável.
+- Código de fábrica ligado a empresa, produto e fornecedor, escolhidos em listas; a importação do XML casa por ele.
+- Caixas: só números habilitados em Gerais aparecem; caixa cadastrada não pode ser desabilitada.
+- Propagação na tela: toda alteração em Gerais avisa as telas abertas na hora (`EVENTO_PARAMETROS` em `parametros-base.ts`).
+
+Ainda fora das regras:
+
+| # | Regra | Achado | Onde |
+| --- | --- | --- | --- |
+| 1 | 1 e 2 | Tamanhos, unidades e Associar Tamanho e Medida existem em Gerais, mas nenhum cadastro de módulo os usa: EPI e Uniforme não têm campo de tamanho ou unidade, e Ferramenta tem a unidade fixa "Unidade". | `CadastroProduto.tsx`, `ItensModulo.tsx` (opção fixa "Unidade") |
+| 2 | 1 e 2 | Marca de Uniforme e de Veículo é digitada; só Ferramenta tem marcas em Gerais. | `CadastroProduto.tsx` (campo `marca`), `VeiculosCadastroModulo.tsx` |
+| 3 | 1 | Listas fixas que sobram: `CATEGORIAS_FERRAMENTA` (sem uso, grafia "Pneumática" diferente de Gerais); `TAMANHOS_*` e `UNIDADES_*` e `VeiculosModulo.tsx` (#43). As listas `CATEGORIAS_EPI`, `CATEGORIAS_UNIFORME` e `TIPOS_VEICULO` servem só de dados iniciais de Gerais. | `src/lib/gemape.ts` |
+| 4 | 3 | Cópia estagnada: produtos guardam o NOME da subcategoria (e o veículo, em `tipo`). Renomear em Gerais deixa o cadastro com o nome antigo, exibido como "fora de Cadastros > Gerais"; em Ferramenta, a edição é recusada até escolher outra. | `CadastroProduto.tsx`, `VeiculosCadastroModulo.tsx`, `cadastro-ferramentas.ts` |
+| 5 | 3 | Ferramenta guarda o nome de categoria, grupo e marca; não fica estagnado porque renomear em uso é bloqueado, mas por isso a opção em uso não pode ser renomeada. | `cadastro-ferramentas.ts` |
+| 6 | 3 | Código de fábrica guarda cópia do nome do produto e do fornecedor e mostra a cópia. | `parametros-base.ts` (`nome_produto`, `fornecedor_nome`) |
+| 7 | 3 | Gerais não tem "desativar": parâmetros só podem ser apagados. | `parametros-base.ts` |
+| 8 | 5 | Apagar subcategoria não confere produtos que a usam. | `removerSubcategoria` em `parametros-base.ts` |
+| 9 | 5 | Apagar categoria só confere subcategorias; não confere fornecedores e apaga junto a regra de código. As categorias-base de EPI, Uniformes, Ferramentas e Veículos podem ser apagadas, embora os módulos dependam delas. | `removerCategoria` em `parametros-base.ts` |
+| 10 | 5 | Apagar regra de código do produto não avisa que novos cadastros daquele módulo ficarão bloqueados. | `codigo-produto.tsx` |
+| 11 | 5 | Apagar fornecedor ou produto não confere os códigos de fábrica que apontam para ele. | `fornecedores-demo.ts`, cadastros de produto |
+| 12 | 5 | A conferência de "em uso" das opções de Ferramenta lê sempre os dados de demonstração, mesmo com o banco real (Fase 2). | `categorias.tsx` |
+
+Fora de Gerais, mas parecido: o fornecedor das Compras de EPI e Uniformes é digitado, embora exista o cadastro de Fornecedores. Endereçamento é cadastrado e lê o produto pelo código, mas ainda não alimenta nenhum módulo.
 
 ## Decisões vigentes
 
