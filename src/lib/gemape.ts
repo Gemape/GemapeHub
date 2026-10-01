@@ -29,6 +29,7 @@ export const MOTIVOS_BAIXA = [
 
 export const ESTADOS_ITEM = ["Novo", "Usado"] as const;
 
+// Só dados iniciais de Cadastros > Gerais (parametros-base.ts): as telas leem as listas de Gerais.
 export const CATEGORIAS_EPI = [
   "Capacete",
   "Luva",
@@ -41,15 +42,7 @@ export const CATEGORIAS_EPI = [
   "Outros",
 ] as const;
 
-export const TAMANHOS_EPI = ["Único", "P", "M", "G", "GG"] as const;
-
-export const UNIDADES_EPI = ["Unidade", "Par", "Jogo"] as const;
-
 export const CATEGORIAS_UNIFORME = ["Camisa", "Calça", "Jaqueta", "Outros"] as const;
-
-export const TAMANHOS_UNIFORME = ["PP", "P", "M", "G", "GG", "XGG", "Único"] as const;
-
-export const UNIDADES_UNIFORME = ["Unidade", "Par"] as const;
 
 export const CATEGORIAS_FERRAMENTA = [
   "Manual",

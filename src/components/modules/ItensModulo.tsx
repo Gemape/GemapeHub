@@ -29,20 +29,11 @@ import {
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import {
-  CATEGORIAS_EPI,
-  CATEGORIAS_UNIFORME,
   ESTADOS_ITEM,
-  STATUS_EPI,
   STATUS_FERRAMENTA,
-  STATUS_UNIFORME,
-  TAMANHOS_EPI,
-  TAMANHOS_UNIFORME,
-  UNIDADES_EPI,
-  UNIDADES_UNIFORME,
   exportarCsv,
   formatarData,
   formatarMoeda,
-  type Modulo,
 } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,13 +43,9 @@ import { codigosReservadosFerramenta, marcaDaSelecao, prepararCadastroFerramenta
 import { proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
-const getTabela = (modulo: Modulo): "epis" | "uniformes" | "ferramentas" => {
-  if (modulo === "epi") return "epis";
-  if (modulo === "uniforme") return "uniformes";
-  return "ferramentas";
-};
-
-export function ItensModulo({ modulo }: { modulo: Modulo }) {
+// Cadastro de ferramentas. EPI e uniforme usam CadastroProduto, e todas as listas
+// vêm de Cadastros > Gerais.
+export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const { empresas, empresaId } = useEmpresa();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
@@ -70,7 +57,7 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
   const subcategoriasFerramenta = subcategoriasDa(parametros, "cat-ferramentas");
   const marcaCadastrada = parametros.marcasFerramenta.find((m) => m.nome === editando?.marca);
   const marcaAntiga = editando?.marca && !marcaCadastrada ? editando.marca : null;
-  const tabela = getTabela(modulo);
+  const tabela = "ferramentas";
   const { data: itens = [], isLoading } = useItens(modulo, empresaId, busca);
   const salvar = useSalvar(tabela, [tabela, "saidas-por-item"]);
   const excluir = useExcluir(tabela, [tabela, "saidas-por-item"]);
@@ -83,19 +70,17 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
   }
 
   async function abrirNovo() {
-    if (modulo === "ferramenta" && !regraFerramenta) {
+    if (!regraFerramenta) {
       toast.error("Cadastre antes a regra do código de Ferramentas em Cadastros > Gerais.");
       return;
     }
     setEditando(null);
     setPreviaCodigo("");
     setAberto(true);
-    if (modulo === "ferramenta" && regraFerramenta) {
-      try {
-        setPreviaCodigo(proximoCodigo(regraFerramenta, await codigosFerramenta()));
-      } catch {
-        setPreviaCodigo("");
-      }
+    try {
+      setPreviaCodigo(proximoCodigo(regraFerramenta, await codigosFerramenta()));
+    } catch {
+      setPreviaCodigo("");
     }
   }
 
@@ -128,42 +113,36 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
       patrimonio: texto("patrimonio"),
       preco_unitario: f.get("preco_unitario") ? Number(f.get("preco_unitario")) : null,
       nota_fiscal: texto("nota_fiscal"),
-      ...(modulo === "epi" ? { ca_validade: texto("ca_validade") } : {}),
       status: String(f.get("status") ?? "Ativo"),
       observacoes: texto("observacoes"),
     };
     valores = valoresItemNaEdicao(valores, !!editando);
-    if (modulo === "ferramenta") {
-      try {
-        const cadastro = prepararCadastroFerramenta({
-          parametros,
-          codigosExistentes: editando ? [] : await codigosFerramenta(),
-          subcategoria: String(f.get("categoria") ?? ""),
-          descricao: String(f.get("nome") ?? ""),
-          estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
-          categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
-          grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
-          marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametros.marcasFerramenta, editando?.marca ?? null),
-          marcaAtual: editando?.marca ?? "",
-          numeroSerie: String(f.get("numero_serie") ?? ""),
-          precoCusto: String(f.get("preco_unitario") ?? ""),
-          ...(editando ? { codigoAtual: editando.codigo_sku } : {}),
-        });
-        Object.assign(valores, cadastro);
-      } catch (erro) {
-        salvando.current = false;
-        toast.error(erro instanceof Error ? erro.message : "Não foi possível gerar o código da ferramenta.");
-        return;
-      }
+    try {
+      const cadastro = prepararCadastroFerramenta({
+        parametros,
+        codigosExistentes: editando ? [] : await codigosFerramenta(),
+        subcategoria: String(f.get("categoria") ?? ""),
+        descricao: String(f.get("nome") ?? ""),
+        estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
+        categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
+        grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
+        marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametros.marcasFerramenta, editando?.marca ?? null),
+        marcaAtual: editando?.marca ?? "",
+        numeroSerie: String(f.get("numero_serie") ?? ""),
+        precoCusto: String(f.get("preco_unitario") ?? ""),
+        ...(editando ? { codigoAtual: editando.codigo_sku } : {}),
+      });
+      Object.assign(valores, cadastro);
+    } catch (erro) {
+      salvando.current = false;
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível gerar o código da ferramenta.");
+      return;
     }
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
       { onSuccess: () => setAberto(false), onSettled: () => { salvando.current = false; } },
     );
   }
-
-  const nomeEmpresa = (id: string | null) =>
-    empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
 
   return (
     <div className="space-y-4">
@@ -183,16 +162,14 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                 itens.map((i) => ({
                   "Código/SKU": i.codigo_sku,
                   Nome: i.nome,
-                  [modulo === "ferramenta" ? "Subcategoria" : "Categoria"]: i.categoria,
-                  ...(modulo === "ferramenta" ? {
-                    "Categoria de ferramenta": i.categoria_ferramenta,
-                    "Grupo de ferramenta": i.grupo_ferramenta,
-                    Marca: i.marca,
-                    "Número de série": i.numero_serie,
-                    Patrimônio: i.patrimonio,
-                    "Data de aquisição": i.data_aquisicao,
-                    "Preço de custo (R$)": i.preco_unitario,
-                  } : {}),
+                  Subcategoria: i.categoria,
+                  "Categoria de ferramenta": i.categoria_ferramenta,
+                  "Grupo de ferramenta": i.grupo_ferramenta,
+                  Marca: i.marca,
+                  "Número de série": i.numero_serie,
+                  Patrimônio: i.patrimonio,
+                  "Data de aquisição": i.data_aquisicao,
+                  "Preço de custo (R$)": i.preco_unitario,
                   Estoque: i.estoque_atual,
                   Mínimo: i.estoque_minimo,
                   Status: i.status,
@@ -212,31 +189,30 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
             <TableRow>
               <TableHead>Código/SKU</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>{modulo === "ferramenta" ? "Subcategoria" : "Categoria"}</TableHead>
-              {modulo === "ferramenta" && <TableHead>Categoria de ferramenta</TableHead>}
-              {modulo === "ferramenta" && <TableHead>Grupo de ferramenta</TableHead>}
-              {modulo === "ferramenta" && <TableHead>Marca</TableHead>}
-              {modulo === "ferramenta" && <TableHead>Número de série</TableHead>}
-              {modulo === "ferramenta" && <TableHead>Patrimônio</TableHead>}
-              {modulo === "ferramenta" && <TableHead>Aquisição</TableHead>}
-              {modulo === "ferramenta" && <TableHead className="text-right">Custo</TableHead>}
+              <TableHead>Subcategoria</TableHead>
+              <TableHead>Categoria de ferramenta</TableHead>
+              <TableHead>Grupo de ferramenta</TableHead>
+              <TableHead>Marca</TableHead>
+              <TableHead>Número de série</TableHead>
+              <TableHead>Patrimônio</TableHead>
+              <TableHead>Aquisição</TableHead>
+              <TableHead className="text-right">Custo</TableHead>
               <TableHead className="text-right">Estoque</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Cadastro</TableHead>
-              {modulo === "epi" ? <TableHead>Empresa</TableHead> : null}
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={modulo === "ferramenta" ? 14 : modulo === "epi" ? 8 : 7} className="text-center text-muted-foreground">
+                <TableCell colSpan={14} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={modulo === "ferramenta" ? 14 : modulo === "epi" ? 8 : 7} className="text-center text-muted-foreground">
+                <TableCell colSpan={14} className="text-center text-muted-foreground">
                   Nenhum item cadastrado.
                 </TableCell>
               </TableRow>
@@ -246,13 +222,13 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell className="font-medium">{item.nome}</TableCell>
                   <TableCell>{item.categoria ?? "—"}</TableCell>
-                  {modulo === "ferramenta" && <TableCell>{item.categoria_ferramenta ?? "—"}</TableCell>}
-                  {modulo === "ferramenta" && <TableCell>{item.grupo_ferramenta ?? "—"}</TableCell>}
-                  {modulo === "ferramenta" && <TableCell>{item.marca ?? "—"}</TableCell>}
-                  {modulo === "ferramenta" && <TableCell>{item.numero_serie ?? "—"}</TableCell>}
-                  {modulo === "ferramenta" && <TableCell>{item.patrimonio ?? "—"}</TableCell>}
-                  {modulo === "ferramenta" && <TableCell>{formatarData(item.data_aquisicao)}</TableCell>}
-                  {modulo === "ferramenta" && <TableCell className="text-right">{item.preco_unitario == null ? "—" : formatarMoeda(item.preco_unitario)}</TableCell>}
+                  <TableCell>{item.categoria_ferramenta ?? "—"}</TableCell>
+                  <TableCell>{item.grupo_ferramenta ?? "—"}</TableCell>
+                  <TableCell>{item.marca ?? "—"}</TableCell>
+                  <TableCell>{item.numero_serie ?? "—"}</TableCell>
+                  <TableCell>{item.patrimonio ?? "—"}</TableCell>
+                  <TableCell>{formatarData(item.data_aquisicao)}</TableCell>
+                  <TableCell className="text-right">{item.preco_unitario == null ? "—" : formatarMoeda(item.preco_unitario)}</TableCell>
                   <TableCell className="text-right">
                     <span
                       className={
@@ -272,7 +248,6 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   <TableCell className="text-[10px] text-muted-foreground">
                     {new Date(item.created_at).toLocaleDateString("pt-BR")}
                   </TableCell>
-                  {modulo === "epi" ? <TableCell>{nomeEmpresa(item.empresa_id)}</TableCell> : null}
                   <TableCell className="text-right whitespace-nowrap">
                     <Button requiresWrite
                       variant="ghost"
@@ -289,13 +264,11 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                       size="sm"
                       onClick={() => {
                         if (confirm(`Excluir ${item.nome}?`)) {
-                          if (modulo === "ferramenta") {
-                            try {
-                              reservarCodigoFerramenta(item.codigo_sku);
-                            } catch (erro) {
-                              toast.error(erro instanceof Error ? erro.message : "Não foi possível reservar o código.");
-                              return;
-                            }
+                          try {
+                            reservarCodigoFerramenta(item.codigo_sku);
+                          } catch (erro) {
+                            toast.error(erro instanceof Error ? erro.message : "Não foi possível reservar o código.");
+                            return;
                           }
                           excluir.mutate(item.id);
                         }
@@ -320,22 +293,16 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                 : `Cadastrar Novo ${modulo.toUpperCase()}`}
             </DialogTitle>
             <DialogDescription>
-              {modulo === "epi" && !editando
-                ? "O código será gerado automaticamente ao salvar."
-                : "Preencha os dados do cadastro."}
+              Preencha os dados do cadastro.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="codigo_sku">Código/SKU</Label>
-              {modulo === "ferramenta" ? (
-                <Input id="codigo_sku" readOnly value={editando?.codigo_sku ?? previaCodigo} placeholder="Gerado ao salvar" />
-              ) : (
-                <Input id="codigo_sku" name="codigo_sku" required defaultValue={editando?.codigo_sku ?? ""} placeholder="Ex: SKU-001" />
-              )}
+              <Input id="codigo_sku" readOnly value={editando?.codigo_sku ?? previaCodigo} placeholder="Gerado ao salvar" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="nome">{modulo === "ferramenta" ? "Descrição do item" : "Nome do Item"}</Label>
+              <Label htmlFor="nome">Descrição do item</Label>
               <Input
                 id="nome"
                 name="nome"
@@ -346,110 +313,82 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="categoria">{modulo === "ferramenta" ? "Subcategoria" : "Categoria"}</Label>
+              <Label htmlFor="categoria">Subcategoria</Label>
               <Select name="categoria" required defaultValue={editando?.categoria ?? ""}>
                 <SelectTrigger id="categoria">
-                  <SelectValue placeholder={modulo === "ferramenta" ? "Selecione a subcategoria" : "Selecione a categoria"} />
+                  <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {modulo === "epi" &&
-                    CATEGORIAS_EPI.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  {modulo === "uniforme" &&
-                    CATEGORIAS_UNIFORME.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  {modulo === "ferramenta" &&
-                    subcategoriasFerramenta.map((c) => (
-                      <SelectItem key={c.id} value={c.nome}>
-                        {c.nome}
-                      </SelectItem>
-                    ))}
+                  {subcategoriasFerramenta.map((c) => (
+                    <SelectItem key={c.id} value={c.nome}>
+                      {c.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {modulo === "ferramenta" && (
-              <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="categoria_ferramenta">Categoria de ferramenta</Label>
-                  <Select name="categoria_ferramenta" required defaultValue={editando?.categoria_ferramenta ?? (editando?.categoria === "Pneumática" ? "Pneumático" : editando?.categoria ?? "")}>
-                    <SelectTrigger id="categoria_ferramenta"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
-                    <SelectContent>
-                      {parametros.categoriasFerramenta.map((c) => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="grupo_ferramenta">Grupo de ferramenta</Label>
-                  <Select name="grupo_ferramenta" required defaultValue={editando?.grupo_ferramenta ?? ""}>
-                    <SelectTrigger id="grupo_ferramenta"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
-                    <SelectContent>
-                      {parametros.gruposFerramenta.map((g) => <SelectItem key={g.id} value={g.nome}>{g.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
-            )}
-
-            {modulo === "epi" && (
               <div className="space-y-1.5">
-                <Label htmlFor="ca">CA - Certificado de Aprovação</Label>
-                <Input id="ca" name="ca" required defaultValue={editando?.ca ?? ""} />
+                <Label htmlFor="categoria_ferramenta">Categoria de ferramenta</Label>
+                <Select name="categoria_ferramenta" required defaultValue={editando?.categoria_ferramenta ?? (editando?.categoria === "Pneumática" ? "Pneumático" : editando?.categoria ?? "")}>
+                  <SelectTrigger id="categoria_ferramenta"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                  <SelectContent>
+                    {parametros.categoriasFerramenta.map((c) => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+              <div className="space-y-1.5">
+                <Label htmlFor="grupo_ferramenta">Grupo de ferramenta</Label>
+                <Select name="grupo_ferramenta" required defaultValue={editando?.grupo_ferramenta ?? ""}>
+                  <SelectTrigger id="grupo_ferramenta"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
+                  <SelectContent>
+                    {parametros.gruposFerramenta.map((g) => <SelectItem key={g.id} value={g.nome}>{g.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {modulo === "ferramenta" && (
-              <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="marca">Marca</Label>
-                  <Select name="marca" defaultValue={marcaCadastrada ? selecaoMarcaCadastrada(marcaCadastrada.id) : marcaAntiga ? SELECAO_MARCA_LEGADA : SELECAO_SEM_MARCA}>
-                    <SelectTrigger id="marca"><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={SELECAO_SEM_MARCA}>Sem marca</SelectItem>
-                      {parametros.marcasFerramenta.map((m) => <SelectItem key={m.id} value={selecaoMarcaCadastrada(m.id)}>{m.nome}</SelectItem>)}
-                      {marcaAntiga && <SelectItem value={SELECAO_MARCA_LEGADA}>{marcaAntiga} (fora de Cadastros &gt; Gerais)</SelectItem>}
-                    </SelectContent>
-                  </Select>
-                  {parametros.marcasFerramenta.length === 0 && <p className="text-xs text-muted-foreground">Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="modelo">Modelo</Label>
-                  <Input id="modelo" name="modelo" defaultValue={editando?.modelo ?? ""} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="numero_serie">Número de Série</Label>
-                  <Input
-                    id="numero_serie"
-                    name="numero_serie"
-                    required
-                    defaultValue={editando?.numero_serie ?? ""}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="patrimonio">Patrimônio</Label>
-                  <Input
-                    id="patrimonio"
-                    name="patrimonio"
-                    defaultValue={editando?.patrimonio ?? ""}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="data_aquisicao">Data de Aquisição</Label>
-                  <Input
-                    id="data_aquisicao"
-                    name="data_aquisicao"
-                    type="date"
-                    defaultValue={editando?.data_aquisicao?.slice(0, 10) ?? ""}
-                  />
-                </div>
-              </>
-            )}
+              <div className="space-y-1.5">
+                <Label htmlFor="marca">Marca</Label>
+                <Select name="marca" defaultValue={marcaCadastrada ? selecaoMarcaCadastrada(marcaCadastrada.id) : marcaAntiga ? SELECAO_MARCA_LEGADA : SELECAO_SEM_MARCA}>
+                  <SelectTrigger id="marca"><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SELECAO_SEM_MARCA}>Sem marca</SelectItem>
+                    {parametros.marcasFerramenta.map((m) => <SelectItem key={m.id} value={selecaoMarcaCadastrada(m.id)}>{m.nome}</SelectItem>)}
+                    {marcaAntiga && <SelectItem value={SELECAO_MARCA_LEGADA}>{marcaAntiga} (fora de Cadastros &gt; Gerais)</SelectItem>}
+                  </SelectContent>
+                </Select>
+                {parametros.marcasFerramenta.length === 0 && <p className="text-xs text-muted-foreground">Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="modelo">Modelo</Label>
+                <Input id="modelo" name="modelo" defaultValue={editando?.modelo ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="numero_serie">Número de Série</Label>
+                <Input
+                  id="numero_serie"
+                  name="numero_serie"
+                  required
+                  defaultValue={editando?.numero_serie ?? ""}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="patrimonio">Patrimônio</Label>
+                <Input
+                  id="patrimonio"
+                  name="patrimonio"
+                  defaultValue={editando?.patrimonio ?? ""}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="data_aquisicao">Data de Aquisição</Label>
+                <Input
+                  id="data_aquisicao"
+                  name="data_aquisicao"
+                  type="date"
+                  defaultValue={editando?.data_aquisicao?.slice(0, 10) ?? ""}
+                />
+              </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="empresa_id">Empresa</Label>
@@ -474,31 +413,6 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
               </Select>
             </div>
 
-            {modulo !== "ferramenta" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="tamanho">Tamanho</Label>
-                <Select name="tamanho" required defaultValue={editando?.tamanho ?? ""}>
-                  <SelectTrigger id="tamanho">
-                    <SelectValue placeholder="Selecione o tamanho" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {modulo === "epi" &&
-                      TAMANHOS_EPI.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                    {modulo === "uniforme" &&
-                      TAMANHOS_UNIFORME.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
             <div className="space-y-1.5">
               <Label htmlFor="unidade_medida">Unidade de Medida</Label>
               <Select
@@ -510,19 +424,7 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {modulo === "epi" &&
-                    UNIDADES_EPI.map((u) => (
-                      <SelectItem key={u} value={u}>
-                        {u}
-                      </SelectItem>
-                    ))}
-                  {modulo === "uniforme" &&
-                    UNIDADES_UNIFORME.map((u) => (
-                      <SelectItem key={u} value={u}>
-                        {u}
-                      </SelectItem>
-                    ))}
-                  {modulo === "ferramenta" && <SelectItem value="Unidade">Unidade</SelectItem>}
+                  <SelectItem value="Unidade">Unidade</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -555,46 +457,6 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
               )}
             </div>
 
-            {modulo !== "ferramenta" && <div className="space-y-1.5">
-              <Label htmlFor="marca">Marca</Label>
-              <Input id="marca" name="marca" defaultValue={editando?.marca ?? ""} />
-            </div>}
-
-            {modulo !== "ferramenta" && <div className="space-y-1.5">
-              <Label htmlFor="modelo">Modelo</Label>
-              <Input id="modelo" name="modelo" defaultValue={editando?.modelo ?? ""} />
-            </div>}
-
-            {modulo === "uniforme" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="cor">Cor</Label>
-                <Input id="cor" name="cor" defaultValue={editando?.cor ?? ""} />
-              </div>
-            )}
-
-            {modulo !== "ferramenta" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="fornecedor">Fornecedor</Label>
-                <Input
-                  id="fornecedor"
-                  name="fornecedor"
-                  defaultValue={editando?.fornecedor ?? ""}
-                />
-              </div>
-            )}
-
-            {modulo === "epi" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="data_validade">Data de Validade</Label>
-                <Input
-                  id="data_validade"
-                  name="data_validade"
-                  type="date"
-                  defaultValue={editando?.data_validade ?? ""}
-                />
-              </div>
-            )}
-
             <div className="space-y-1.5">
               <Label htmlFor="status">Status</Label>
               <Select name="status" required defaultValue={editando?.status ?? "Ativo"}>
@@ -602,43 +464,29 @@ export function ItensModulo({ modulo }: { modulo: Modulo }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {modulo === "epi" &&
-                    STATUS_EPI.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  {modulo === "uniforme" &&
-                    STATUS_UNIFORME.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  {modulo === "ferramenta" &&
-                    STATUS_FERRAMENTA.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
+                  {STATUS_FERRAMENTA.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="preco_unitario">{modulo === "ferramenta" ? "Preço de custo (R$)" : "Preço unitário (R$)"}</Label>
+              <Label htmlFor="preco_unitario">Preço de custo (R$)</Label>
               <Input
                 id="preco_unitario"
                 name="preco_unitario"
                 type="number"
                 step="0.01"
                 min={0}
-                required={modulo === "ferramenta"}
+                required
                 defaultValue={editando?.preco_unitario ?? ""}
               />
             </div>
 
             <div className="space-y-1.5"><Label htmlFor="nota_fiscal">Nota fiscal</Label><Input id="nota_fiscal" name="nota_fiscal" defaultValue={editando?.nota_fiscal ?? ""} /></div>
-            {modulo === "epi" && <div className="space-y-1.5"><Label htmlFor="ca_validade">Vencimento do CA</Label><Input id="ca_validade" name="ca_validade" type="date" defaultValue={editando?.ca_validade ?? ""} /></div>}
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="observacoes">Observações</Label>
               <Textarea
