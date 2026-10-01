@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/epi")({
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Cadastro de EPIs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Código automático, subcategoria de Cadastros &gt; Gerais, descrição e estoque mínimo.
+          Código automático, subcategoria de Cadastros &gt; Gerais e descrição do produto.
         </p>
       </header>
       <CadastroProduto tabela="epis" />

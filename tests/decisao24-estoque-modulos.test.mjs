@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { lerParametros } from '../src/lib/parametros-base.ts';
 import { estadoEstoqueModulo } from '../src/lib/estoque-tamanho.ts';
 import { lerItensEstoque } from '../src/lib/itens-estoque-modulo.ts';
+import { prepararEstoqueFerramenta, prepararMinimoUnico, prepararMinimosEstoque } from '../src/lib/estoque-configuracao.ts';
 
 const ler = (path) => readFileSync(fileURLToPath(new URL(`../src/${path}`, import.meta.url)), 'utf8');
 
@@ -16,8 +17,8 @@ test('cadastros de EPI e Uniforme não exibem saldo nem alerta nem exportam esto
   assert.doesNotMatch(lista, /Abaixo do mínimo|resumoEstoquePorTamanho|item\.estoque_atual|<TableHead[^>]*>Estoque<\/TableHead>/);
   assert.doesNotMatch(fonte, /O alerta de estoque baixo/, 'o cadastro não anuncia alertas de estoque');
   assert.doesNotMatch(fonte, /O estoque é\s+controlado por tamanho/, 'o cadastro não descreve controle de estoque como sua função');
-  assert.match(fonte, /A movimentação e o saldo ficam no módulo/, 'a instrução direciona o usuário ao módulo');
-  assert.match(fonte, /Estoque mínimo por tamanho/, 'a grade de parametrização continua');
+  assert.doesNotMatch(fonte, /A movimentação e o saldo ficam no módulo/, 'o cadastro não instrui sobre estoque');
+  assert.doesNotMatch(fonte, /Estoque mínimo por tamanho|name="estoque_minimo"|minimos_tamanho|campoMinimo/, 'o cadastro não configura estoque');
 });
 
 test('cadastro de Ferramentas não exibe nem exporta saldo ou alerta', () => {
@@ -26,8 +27,7 @@ test('cadastro de Ferramentas não exibe nem exporta saldo ou alerta', () => {
   const lista = fonte.slice(fonte.indexOf('<div className="panel overflow-x-auto">'), fonte.indexOf('Novo item', fonte.indexOf('<div className="panel overflow-x-auto">')));
   assert.doesNotMatch(csv, /Estoque:|Mínimo:/);
   assert.doesNotMatch(lista, /<TableHead[^>]*>Estoque<\/TableHead>|item\.estoque_atual|font-bold text-destructive/);
-  assert.match(fonte, /name="estoque_minimo"/);
-  assert.match(fonte, /name="estoque_atual"/, 'o estoque inicial permanece por decisão do responsável');
+  assert.doesNotMatch(fonte, /name="estoque_minimo"|name="estoque_atual"|Estoque Mínimo|Estoque Atual/, 'mínimo e estoque inicial ficam no módulo');
 });
 
 test('módulos EPI, Uniformes e Ferramentas têm aba de estoque própria', () => {
@@ -39,6 +39,26 @@ test('módulos EPI, Uniformes e Ferramentas têm aba de estoque própria', () =>
   assert.match(estoque, /Estoque mínimo/);
   assert.match(estoque, /Abaixo do mínimo/);
   assert.match(estoque, /estadoEstoqueModulo/);
+  assert.match(estoque, /prepararMinimosEstoque/, 'mínimos são gravados pelo módulo');
+  assert.match(estoque, /Estoque inicial/, 'Ferramentas configura o estoque inicial no módulo');
+});
+
+test('mínimos por tamanho são gravados no mesmo mapa e somados no mínimo do produto', () => {
+  const valores = prepararMinimosEstoque({ 'tam-40': 2, 'tam-42': 5 }, ['tam-40', 'tam-42']);
+  assert.deepEqual(valores, { minimos_tamanho: { 'tam-40': 2, 'tam-42': 5 }, estoque_minimo: 7 });
+  assert.throws(() => prepararMinimosEstoque({ 'tam-40': -1 }, ['tam-40']), /mínimo/i);
+  assert.throws(() => prepararMinimosEstoque({ 'tam-99': 4 }, ['tam-40']), /tamanho/i);
+});
+
+test('módulo de Ferramentas valida e prepara mínimo e saldo editável', () => {
+  assert.deepEqual(prepararEstoqueFerramenta('4', '7'), { estoque_minimo: 4, estoque_atual: 7 });
+  assert.throws(() => prepararEstoqueFerramenta('2', '-1'), /estoque/i);
+  assert.throws(() => prepararEstoqueFerramenta('1.5', '0'), /mínimo/i);
+});
+
+test('módulo de EPI/Uniformes sem tamanhos grava mínimo único e limpa grade antiga', () => {
+  assert.deepEqual(prepararMinimoUnico('3'), { estoque_minimo: 3, minimos_tamanho: {} });
+  assert.throws(() => prepararMinimoUnico('-2'), /mínimo/i);
 });
 
 test('módulo sinaliza mínimo por tamanho e saldo do produto', () => {
@@ -51,6 +71,15 @@ test('módulo sinaliza mínimo por tamanho e saldo do produto', () => {
   assert.match(estado.detalheSaldo, /40.*1/);
   assert.match(estado.detalheMinimo, /40.*2/);
   assert.match(estado.detalheAlerta, /40 \(1\/2\)/);
+});
+
+test('módulo preserva alerta do mínimo legado mesmo após desautorizar o tamanho', () => {
+  const item = { categoria: 'Capacete', subcategoria_id: 'sub-epi-capacete', estoque_atual: 5, estoque_minimo: 2,
+    saldos_tamanho: { 'sem-tamanho': 5 }, minimos_tamanho: { 'tam-40': 2 } };
+  const estado = estadoEstoqueModulo(lerParametros(null), 'epi', item);
+  assert.equal(estado.alerta, true);
+  assert.match(estado.detalheMinimo, /40.*2/);
+  assert.match(estado.detalheAlerta, /40 \(0\/2\)/);
 });
 
 test('módulo lê todos os itens em páginas e respeita a empresa', async () => {

@@ -55,12 +55,8 @@ import {
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
-  controlaTamanho,
-  nomeTamanho,
   nomeUnidade,
-  resumoMinimosPorTamanho,
   tamanhosAssociadosParaCadastro,
-  tamanhosAutorizadosDoProduto,
   unidadesAutorizadasDoProduto,
   type ModuloTamanho,
   type ProdutoTamanho,
@@ -71,7 +67,6 @@ type Tabela = "epis" | "uniformes";
 // Unidade antiga digitada, que não está em Gerais: continua aparecendo na edição.
 const UNIDADE_LEGADA = "unidade-legada";
 const SEM_UNIDADE = "sem-unidade";
-const campoMinimo = (tamanhoId: string) => `minimo_tamanho:${tamanhoId}`;
 
 // Cada tipo de produto: tabela, categoria de Cadastros > Gerais (id fixo; o nome pode ser
 // renomeado) e textos da tela.
@@ -114,7 +109,7 @@ async function codigosUsados(tabela: Tabela): Promise<string[]> {
 }
 
 // Cadastrar EPI e Cadastrar uniforme (especificação rev1): código automático,
-// subcategoria, descrição e estoque mínimo. A empresa continua sendo informada porque
+// subcategoria e descrição. A empresa continua sendo informada porque
 // cada produto pertence a uma.
 export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const config = CONFIG[tabela];
@@ -137,7 +132,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   // Filtro também na tela, porque o modo demonstração não filtra pela busca.
   // A subcategoria mostrada é a de Gerais, pela referência gravada (nome sempre atual).
   const subcategoriaDe = (i: Item) => nomeSubcategoria(parametros, config.categoriaId, i);
-  const temTamanho = (i: Item) => MODO_DEMO && controlaTamanho(parametros, config.modulo, i);
   const itens = lista.filter((i) =>
     combinaBusca(
       busca,
@@ -167,7 +161,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       subEscolhida?.nome ??
       (subSel === SUBCATEGORIA_LEGADA ? (subcategoriaAtual?.nome ?? null) : ""),
     subcategoria_id: subEscolhida?.id ?? null,
-    saldos_tamanho: editando?.saldos_tamanho ?? null,
   };
   const unidadesDaSub = MODO_DEMO
     ? unidadesAutorizadasDoProduto(parametros, config.modulo, produtoNoFormulario)
@@ -187,30 +180,11 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     : unidadeLegada
       ? UNIDADE_LEGADA
       : SEM_UNIDADE;
-  const porTamanho = MODO_DEMO && controlaTamanho(parametros, config.modulo, produtoNoFormulario);
-  // Grade do mínimo por tamanho: os tamanhos ativos autorizados, mais os que já têm mínimo.
-  const minimosAtuais = editando?.minimos_tamanho ?? {};
-  const tamanhosDaGrade = porTamanho
-    ? [
-        ...new Set([
-          ...tamanhosAutorizadosDoProduto(parametros, config.modulo, produtoNoFormulario)
-            .filter((t) => estaAtivo(parametros, t.id))
-            .map((t) => t.id),
-          ...Object.keys(minimosAtuais).filter((id) => Number(minimosAtuais[id]) > 0),
-        ]),
-      ]
-    : [];
   // Todos os tamanhos e numerações associados à subcategoria escolhida (decisão 23).
   const tamanhosAssociados =
     MODO_DEMO && (subEscolhida || subSel === SUBCATEGORIA_LEGADA)
       ? tamanhosAssociadosParaCadastro(parametros, config.modulo, produtoNoFormulario)
       : [];
-  // Sem tamanho ativo para a grade (a subcategoria perdeu os tamanhos), vale o mínimo único.
-  const usaGrade = porTamanho && tamanhosDaGrade.length > 0;
-  const rotuloTamanho = (id: string) =>
-    estaAtivo(parametros, id)
-      ? nomeTamanho(parametros, id)
-      : `${nomeTamanho(parametros, id)} (desativado)`;
   const marcas = paraSelecao(
     parametros,
     parametros.marcasUniforme,
@@ -275,11 +249,10 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     const valores: Record<string, unknown> = {
       categoria: subcategoria.nome,
       nome,
-      estoque_minimo: Math.max(0, Number(f.get("estoque_minimo") ?? 0) || 0),
     };
     // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
     if (MODO_DEMO) valores["subcategoria_id"] = subcategoria.id;
-    // Unidade e mínimo por tamanho de Gerais (decisão 23), só no modo demonstração.
+    // Unidade de Gerais (decisão 23), só no modo demonstração.
     if (MODO_DEMO) {
       const unidade = String(f.get("unidade_id") ?? "");
       if (unidade === UNIDADE_LEGADA && unidadeLegada) {
@@ -302,19 +275,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
         }
         valores["unidade_id"] = escolhida.id;
         valores["unidade_medida"] = escolhida.nome;
-      }
-      if (usaGrade) {
-        const minimos: Record<string, number> = {};
-        for (const id of tamanhosDaGrade) {
-          const minimo = Math.max(0, Math.floor(Number(f.get(campoMinimo(id)) ?? 0) || 0));
-          if (minimo > 0) minimos[id] = minimo;
-        }
-        valores["minimos_tamanho"] = minimos;
-        // O mínimo do produto é a soma dos mínimos por tamanho.
-        valores["estoque_minimo"] = Object.values(minimos).reduce((a, b) => a + b, 0);
-      } else {
-        // Mínimo único: mínimos por tamanho antigos não ficam escondidos no cadastro.
-        valores["minimos_tamanho"] = {};
       }
     }
     if (config.custoMarcaModelo) {
@@ -361,6 +321,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
         return;
       }
       valores["estoque_atual"] = 0;
+      valores["estoque_minimo"] = 0;
       valores["status"] = "Ativo";
     }
     salvar.mutate(
@@ -369,7 +330,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     );
   }
 
-  const resumoMinimos = (i: Item) => resumoMinimosPorTamanho(parametros, i);
   const nomeEmpresa = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
   const temFicha = (id: string) => fichas.some((f) => f.epiId === id);
@@ -415,7 +375,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
               <TableHead>Subcategoria</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Unidade</TableHead>
-              <TableHead className="text-right">Estoque mínimo</TableHead>
               <TableHead>Empresa</TableHead>
               {config.ficha && <TableHead>Ficha</TableHead>}
               <TableHead />
@@ -425,7 +384,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={config.ficha ? 8 : 7}
+                  colSpan={config.ficha ? 7 : 6}
                   className="text-center text-muted-foreground"
                 >
                   Carregando…
@@ -434,7 +393,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             ) : itens.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={config.ficha ? 8 : 7}
+                  colSpan={config.ficha ? 7 : 6}
                   className="text-center text-muted-foreground"
                 >
                   Nenhum {config.nome} cadastrado.
@@ -447,12 +406,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <TableCell>{subcategoriaDe(item) || "—"}</TableCell>
                   <TableCell className="font-medium">{item.nome}</TableCell>
                   <TableCell>{nomeUnidade(parametros, item) || "—"}</TableCell>
-                  <TableCell className="text-right">
-                    {item.estoque_minimo ?? 0}
-                    {temTamanho(item) && resumoMinimos(item) && (
-                      <p className="text-xs text-muted-foreground">{resumoMinimos(item)}</p>
-                    )}
-                  </TableCell>
                   <TableCell>{nomeEmpresa(item.empresa_id)}</TableCell>
                   {config.ficha && (
                     <TableCell>
@@ -621,48 +574,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 {tamanhosAssociados.length > 0 && (
                   <p className="text-xs text-muted-foreground">
                     Os tamanhos vêm de Cadastros &gt; Gerais &gt; Associar Tamanho e Medida.
-                    Defina aqui o estoque mínimo por tamanho. A movimentação e o saldo ficam no módulo{" "}
-                    {config.modulo === "epi" ? "EPI" : "Uniformes"}.
                   </p>
                 )}
-              </div>
-            )}
-            {usaGrade ? (
-              <fieldset className="space-y-2 sm:col-span-2">
-                <legend className="text-sm font-medium">Estoque mínimo por tamanho</legend>
-                <p className="text-xs text-muted-foreground">
-                  Tamanhos autorizados para a subcategoria em Cadastros &gt; Gerais &gt; Associar
-                  Tamanho e Medida. Configure aqui o mínimo de cada tamanho.
-                </p>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  {tamanhosDaGrade.map((id) => (
-                    <div key={id} className="space-y-1">
-                      <Label htmlFor={campoMinimo(id)} className="text-xs">
-                        {rotuloTamanho(id)}
-                      </Label>
-                      <Input
-                        id={campoMinimo(id)}
-                        name={campoMinimo(id)}
-                        type="number"
-                        min={0}
-                        step={1}
-                        defaultValue={minimosAtuais[id] ?? 0}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </fieldset>
-            ) : (
-              <div className="space-y-1.5">
-                <Label htmlFor="estoque_minimo">Estoque mínimo</Label>
-                <Input
-                  id="estoque_minimo"
-                  name="estoque_minimo"
-                  type="number"
-                  min={0}
-                  step={1}
-                  defaultValue={editando?.estoque_minimo ?? 0}
-                />
               </div>
             )}
             {config.custoMarcaModelo && (

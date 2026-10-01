@@ -289,14 +289,12 @@ export function resumoMinimosPorTamanho(p: ParametrosBase, produto: ProdutoTaman
     .join(" · ");
 }
 
-/** O alerta do produto é por tamanho: controla tamanho e tem algum mínimo de tamanho. */
+/** Um mínimo por tamanho gravado permanece visível mesmo após desautorizar o tamanho. */
 export const usaMinimoPorTamanho = (
   p: ParametrosBase,
   modulo: ModuloTamanho,
   produto: ProdutoTamanho,
-) =>
-  controlaTamanho(p, modulo, produto) &&
-  Object.values(produto.minimos_tamanho ?? {}).some((minimo) => numero(minimo) > 0);
+) => Object.values(produto.minimos_tamanho ?? {}).some((minimo) => numero(minimo) > 0);
 
 export type AlertaTamanho = { chave: string; nome: string; saldo: number; minimo: number };
 
@@ -306,7 +304,7 @@ export function alertasPorTamanho(
   modulo: ModuloTamanho,
   produto: ProdutoTamanho,
 ): AlertaTamanho[] {
-  if (!controlaTamanho(p, modulo, produto)) return [];
+  if (!usaMinimoPorTamanho(p, modulo, produto)) return [];
   const saldos = saldosPorTamanho(p, modulo, produto);
   const minimos = produto.minimos_tamanho ?? {};
   return ordenarChaves(p, Object.keys(minimos))
@@ -319,7 +317,7 @@ export function alertasPorTamanho(
     .filter((a) => a.minimo > 0 && a.saldo <= a.minimo);
 }
 
-/** Dados que os módulos exibem; o cadastro só parametriza o mínimo. */
+/** Dados de saldo, mínimo e alerta exibidos pelos módulos. */
 export function estadoEstoqueModulo(
   p: ParametrosBase,
   modulo: string,
@@ -333,7 +331,7 @@ export function estadoEstoqueModulo(
     saldo,
     minimo,
     alerta: porTamanho ? alertas.length > 0 : saldo <= minimo,
-    detalheSaldo: controlaModulo(modulo) && controlaTamanho(p, modulo, produto)
+    detalheSaldo: controlaModulo(modulo) && (controlaTamanho(p, modulo, produto) || porTamanho)
       ? resumoEstoquePorTamanho(p, modulo, produto) : "",
     detalheMinimo: porTamanho ? resumoMinimosPorTamanho(p, produto) : "",
     detalheAlerta: alertas.map((a) => `${a.nome} (${a.saldo}/${a.minimo})`).join(", "),

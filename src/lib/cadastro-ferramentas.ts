@@ -17,7 +17,6 @@ export type EntradaCadastroFerramenta = {
   parametros: ParametrosBase;
   codigosExistentes: string[];
   descricao: string;
-  estoqueMinimo: string;
   categoriaFerramenta: string;
   grupoFerramenta: string;
   numeroSerie: string;
@@ -73,10 +72,6 @@ export function reservarCodigoFerramenta(
 export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
   const nome = entrada.descricao.trim();
   if (!nome) throw new Error("Informe a descrição da ferramenta.");
-  const minimo = Number(entrada.estoqueMinimo);
-  if (!Number.isSafeInteger(minimo) || minimo < 0 || !entrada.estoqueMinimo.trim()) {
-    throw new Error("Estoque mínimo deve ser um número inteiro não negativo.");
-  }
   const categoriaFerramenta = entrada.parametros.categoriasFerramenta.find((c) => c.nome === entrada.categoriaFerramenta.trim());
   if (!categoriaFerramenta) throw new Error("Categoria de ferramenta inválida.");
   const grupoFerramenta = entrada.parametros.gruposFerramenta.find((g) => g.nome === entrada.grupoFerramenta.trim());
@@ -106,7 +101,6 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
     // para a ferramenta antiga manter a subcategoria gravada.
     ...(entrada.codigoAtual ? {} : { categoria: categoriaFerramenta.nome }),
     nome,
-    estoque_minimo: minimo,
     categoria_ferramenta: categoriaFerramenta.nome,
     grupo_ferramenta: grupoFerramenta.nome,
     marca,
