@@ -319,6 +319,27 @@ export function alertasPorTamanho(
     .filter((a) => a.minimo > 0 && a.saldo <= a.minimo);
 }
 
+/** Dados que os módulos exibem; o cadastro só parametriza o mínimo. */
+export function estadoEstoqueModulo(
+  p: ParametrosBase,
+  modulo: string,
+  produto: ProdutoTamanho,
+) {
+  const saldo = Number(produto.estoque_atual ?? 0);
+  const minimo = Number(produto.estoque_minimo ?? 0);
+  const porTamanho = controlaModulo(modulo) && usaMinimoPorTamanho(p, modulo, produto);
+  const alertas = controlaModulo(modulo) && porTamanho ? alertasPorTamanho(p, modulo, produto) : [];
+  return {
+    saldo,
+    minimo,
+    alerta: porTamanho ? alertas.length > 0 : saldo <= minimo,
+    detalheSaldo: controlaModulo(modulo) && controlaTamanho(p, modulo, produto)
+      ? resumoEstoquePorTamanho(p, modulo, produto) : "",
+    detalheMinimo: porTamanho ? resumoMinimosPorTamanho(p, produto) : "",
+    detalheAlerta: alertas.map((a) => `${a.nome} (${a.saldo}/${a.minimo})`).join(", "),
+  };
+}
+
 type LinhaComTamanho = { item_id: string; quantidade: number; tamanho?: string | null };
 type ItemComTamanho = ProdutoTamanho & { id: string; nome: string };
 

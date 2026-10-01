@@ -55,14 +55,11 @@ import {
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
-  alertasPorTamanho,
   controlaTamanho,
   nomeTamanho,
   nomeUnidade,
-  resumoEstoquePorTamanho,
   resumoMinimosPorTamanho,
   tamanhosAssociadosParaCadastro,
-  usaMinimoPorTamanho,
   tamanhosAutorizadosDoProduto,
   unidadesAutorizadasDoProduto,
   type ModuloTamanho,
@@ -141,9 +138,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   // A subcategoria mostrada é a de Gerais, pela referência gravada (nome sempre atual).
   const subcategoriaDe = (i: Item) => nomeSubcategoria(parametros, config.categoriaId, i);
   const temTamanho = (i: Item) => MODO_DEMO && controlaTamanho(parametros, config.modulo, i);
-  // Alerta por tamanho só com mínimo por tamanho; senão, o total contra o mínimo do produto.
-  const alertaPorTamanho = (i: Item) =>
-    MODO_DEMO && usaMinimoPorTamanho(parametros, config.modulo, i);
   const itens = lista.filter((i) =>
     combinaBusca(
       busca,
@@ -151,8 +145,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       i.nome,
       subcategoriaDe(i),
       nomeUnidade(parametros, i),
-      // O resumo por tamanho só entra na busca de quem controla tamanho.
-      temTamanho(i) ? resumoEstoquePorTamanho(parametros, config.modulo, i) : "",
     ),
   );
   const salvar = useSalvar(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
@@ -402,12 +394,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   Subcategoria: subcategoriaDe(i),
                   Descrição: i.nome,
                   Unidade: nomeUnidade(parametros, i),
-                  "Estoque mínimo": i.estoque_minimo,
-                  Estoque: i.estoque_atual,
-                  "Estoque por tamanho": temTamanho(i)
-                    ? resumoEstoquePorTamanho(parametros, config.modulo, i)
-                    : "",
-                  "Mínimo por tamanho": temTamanho(i) ? resumoMinimos(i) : "",
                   Empresa: nomeEmpresa(i.empresa_id),
                 })),
               )
@@ -430,7 +416,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
               <TableHead>Descrição</TableHead>
               <TableHead>Unidade</TableHead>
               <TableHead className="text-right">Estoque mínimo</TableHead>
-              <TableHead className="text-right">Estoque</TableHead>
               <TableHead>Empresa</TableHead>
               {config.ficha && <TableHead>Ficha</TableHead>}
               <TableHead />
@@ -440,7 +425,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={config.ficha ? 9 : 8}
+                  colSpan={config.ficha ? 8 : 7}
                   className="text-center text-muted-foreground"
                 >
                   Carregando…
@@ -449,7 +434,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             ) : itens.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={config.ficha ? 9 : 8}
+                  colSpan={config.ficha ? 8 : 7}
                   className="text-center text-muted-foreground"
                 >
                   Nenhum {config.nome} cadastrado.
@@ -466,34 +451,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                     {item.estoque_minimo ?? 0}
                     {temTamanho(item) && resumoMinimos(item) && (
                       <p className="text-xs text-muted-foreground">{resumoMinimos(item)}</p>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span
-                      className={
-                        !alertaPorTamanho(item) &&
-                        (item.estoque_atual ?? 0) <= (item.estoque_minimo ?? 0)
-                          ? "font-bold text-destructive"
-                          : ""
-                      }
-                    >
-                      {item.estoque_atual ?? 0}
-                    </span>
-                    {temTamanho(item) && (
-                      <>
-                        <p className="text-xs text-muted-foreground">
-                          {resumoEstoquePorTamanho(parametros, config.modulo, item) || "—"}
-                        </p>
-                        {alertaPorTamanho(item) &&
-                          alertasPorTamanho(parametros, config.modulo, item).length > 0 && (
-                            <p className="text-xs font-bold text-destructive">
-                              Abaixo do mínimo:{" "}
-                              {alertasPorTamanho(parametros, config.modulo, item)
-                                .map((a) => `${a.nome} (${a.saldo}/${a.minimo})`)
-                                .join(", ")}
-                            </p>
-                          )}
-                      </>
                     )}
                   </TableCell>
                   <TableCell>{nomeEmpresa(item.empresa_id)}</TableCell>
@@ -675,7 +632,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 <legend className="text-sm font-medium">Estoque mínimo por tamanho</legend>
                 <p className="text-xs text-muted-foreground">
                   Tamanhos autorizados para a subcategoria em Cadastros &gt; Gerais &gt; Associar
-                  Tamanho e Medida. O alerta de estoque baixo é por tamanho.
+                  Tamanho e Medida. Configure aqui o mínimo de cada tamanho.
                 </p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                   {tamanhosDaGrade.map((id) => (

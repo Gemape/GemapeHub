@@ -176,8 +176,6 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   Patrimônio: i.patrimonio,
                   "Data de aquisição": i.data_aquisicao,
                   "Preço de custo (R$)": i.preco_unitario,
-                  Estoque: i.estoque_atual,
-                  Mínimo: i.estoque_minimo,
                   Status: i.status,
                 })),
               )
@@ -202,7 +200,6 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               <TableHead>Patrimônio</TableHead>
               <TableHead>Aquisição</TableHead>
               <TableHead className="text-right">Custo</TableHead>
-              <TableHead className="text-right">Estoque</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Cadastro</TableHead>
               <TableHead />
@@ -211,13 +208,13 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={13} className="text-center text-muted-foreground">
+                <TableCell colSpan={12} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={13} className="text-center text-muted-foreground">
+                <TableCell colSpan={12} className="text-center text-muted-foreground">
                   Nenhum item cadastrado.
                 </TableCell>
               </TableRow>
@@ -233,17 +230,6 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   <TableCell>{item.patrimonio ?? "—"}</TableCell>
                   <TableCell>{formatarData(item.data_aquisicao)}</TableCell>
                   <TableCell className="text-right">{item.preco_unitario == null ? "—" : formatarMoeda(item.preco_unitario)}</TableCell>
-                  <TableCell className="text-right">
-                    <span
-                      className={
-                        item.estoque_atual <= item.estoque_minimo
-                          ? "font-bold text-destructive"
-                          : ""
-                      }
-                    >
-                      {item.estoque_atual}
-                    </span>
-                  </TableCell>
                   <TableCell>
                     <Badge variant={item.status === "Ativo" ? "secondary" : "outline"}>
                       {item.status}
