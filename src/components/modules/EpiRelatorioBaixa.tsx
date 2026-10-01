@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
+import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens, useMovimentacoes, useEmpregados } from "@/lib/hooks-gemape";
 
 export function EpiRelatorioBaixa() {
@@ -28,6 +30,9 @@ export function EpiRelatorioBaixa() {
   );
   const [dataFinal, setDataFinal] = useState(new Date().toISOString().slice(0, 10));
   const [motivoFiltro, setMotivoFiltro] = useState(TODAS);
+  const parametros = useParametrosBase();
+  const tamanhoDe = (m: { tamanho_id?: string | null }) =>
+    nomeTamanhoGravado(parametros, m.tamanho_id);
 
   const { data: movimentacoes = [], isLoading } = useMovimentacoes("epi", empresaId, 1000);
   const { data: itens = [] } = useItens("epi", TODAS);
@@ -92,6 +97,7 @@ export function EpiRelatorioBaixa() {
                   Empresa: empresas.find((e) => e.id === b.empresa_id)?.nome_fantasia,
                   Empregado: empregados.find((e) => e.id === b.empregado_id)?.nome ?? "—",
                   EPI: itens.find((i) => i.id === b.item_id)?.nome,
+                  Tamanho: tamanhoDe(b),
                   Motivo: b.motivo_baixa,
                   Qtd: b.quantidade,
                   Valor: "R$ 0,00",
@@ -127,6 +133,7 @@ export function EpiRelatorioBaixa() {
               <TableHead>Empresa</TableHead>
               <TableHead>Empregado</TableHead>
               <TableHead>EPI</TableHead>
+              <TableHead>Tamanho</TableHead>
               <TableHead>Motivo</TableHead>
               <TableHead className="text-right">Qtd</TableHead>
               <TableHead className="text-right">Valor Total</TableHead>
@@ -135,13 +142,13 @@ export function EpiRelatorioBaixa() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : baixas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Nenhuma baixa no período.
                 </TableCell>
               </TableRow>
@@ -159,6 +166,7 @@ export function EpiRelatorioBaixa() {
                       {empregados.find((e) => e.id === b.empregado_id)?.nome ?? "—"}
                     </TableCell>
                     <TableCell>{item?.nome}</TableCell>
+                    <TableCell>{tamanhoDe(b) || "—"}</TableCell>
                     <TableCell>{b.motivo_baixa}</TableCell>
                     <TableCell className="text-right">{b.quantidade}</TableCell>
                     <TableCell className="text-right font-bold">{formatarMoeda(valorB)}</TableCell>

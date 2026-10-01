@@ -27,6 +27,9 @@ import {
   useRegistrarMovimentacoesLote,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 import { empregadoDoTermo, validarSaidaDeUniformes } from "@/lib/termos-atomicos";
 import { montarTermoBaixaUniformeHtml } from "@/lib/termo-baixa-uniforme-html";
 
@@ -34,6 +37,8 @@ interface ItemBaixa {
   item_id: string;
   quantidade: number;
   estado: string;
+  // Tamanho da saída, quando o uniforme tem tamanho em Gerais (decisão 23).
+  tamanho: string;
   observacao: string;
 }
 
@@ -50,6 +55,7 @@ export function UniformesTermoBaixa() {
   // Lista completa só para conferir a demissão: quem já saiu da lista de ativos continua bloqueado.
   const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
   const { data: uniformes = [] } = useItens("uniforme", TODAS);
+  const parametros = useParametrosBase();
 
   const registrarBaixas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"]);
   const salvando = useRef(false);
@@ -58,7 +64,10 @@ export function UniformesTermoBaixa() {
   const empregado = empregados.find((e) => e.id === empregadoId);
 
   function adicionarItem() {
-    setItensBaixa([...itensBaixa, { item_id: "", quantidade: 1, estado: "Usado", observacao: "" }]);
+    setItensBaixa([
+      ...itensBaixa,
+      { item_id: "", quantidade: 1, estado: "Usado", observacao: "", tamanho: "" },
+    ]);
   }
 
   function removerItem(index: number) {
@@ -66,9 +75,14 @@ export function UniformesTermoBaixa() {
   }
 
   function atualizarItem(index: number, campo: keyof ItemBaixa, valor: string | number) {
-    const novos = [...itensBaixa];
-    novos[index] = { ...novos[index], [campo]: valor } as ItemBaixa;
-    setItensBaixa(novos);
+    setItensBaixa((atuais) =>
+      atuais.map((item, i) =>
+        i !== index
+          ? item
+          : // Trocar o uniforme limpa o tamanho escolhido para o anterior.
+            { ...item, [campo]: valor, ...(campo === "item_id" ? { tamanho: "" } : {}) },
+      ),
+    );
   }
 
   async function gerarTermo() {
@@ -88,7 +102,12 @@ export function UniformesTermoBaixa() {
     }
 
     // Não baixa mais do que o estoque disponível de cada uniforme.
-    const erro = validarSaidaDeUniformes(itensBaixa, uniformes, "baixa");
+    // Com tamanho, a conta é feita no saldo de cada tamanho.
+    const erro =
+      validarSaidaDeUniformes(itensBaixa, uniformes, "baixa") ??
+      (TAMANHO_DISPONIVEL
+        ? validarLinhasTamanho(itensBaixa, uniformes, parametros, "uniforme", "baixa")
+        : null);
     if (erro) {
       alert(erro);
       return;
@@ -107,6 +126,7 @@ export function UniformesTermoBaixa() {
           empresa_id: empresaId,
           empregado_id: empregadoDoTermo(empregadoId),
           quantidade: item.quantidade,
+          ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
           data_movimentacao: dataBaixa,
           observacao: `Baixa de uniforme via termo - Motivo: ${motivoBaixa} - Obs: ${item.observacao}`,
         })),
@@ -129,6 +149,7 @@ export function UniformesTermoBaixa() {
       onus: onusBaixa,
       linhas: itensDoTermo.map((i) => ({
         nome: uniformes.find((uni) => uni.id === i.item_id)?.nome,
+        tamanho: tamanhoParaGravar(i.tamanho) ? nomeTamanho(parametros, i.tamanho) : undefined,
         quantidade: i.quantidade,
         estado: i.estado,
       })),
@@ -218,6 +239,7 @@ export function UniformesTermoBaixa() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Uniforme</TableHead>
+                  <TableHead className="w-40">Tamanho</TableHead>
                   <TableHead className="w-24">Qtd</TableHead>
                   <TableHead className="w-32">Estado</TableHead>
                   <TableHead>Observação</TableHead>
@@ -243,6 +265,16 @@ export function UniformesTermoBaixa() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <SeletorTamanho
+                        parametros={parametros}
+                        modulo="uniforme"
+                        produto={uniformes.find((u) => u.id === item.item_id)}
+                        uso="saida"
+                        valor={item.tamanho}
+                        onChange={(v) => atualizarItem(index, "tamanho", v)}
+                      />
                     </TableCell>
                     <TableCell>
                       <Input
@@ -282,7 +314,7 @@ export function UniformesTermoBaixa() {
                 ))}
                 {itensBaixa.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       Nenhum item adicionado.
                     </TableCell>
                   </TableRow>

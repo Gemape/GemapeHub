@@ -14,6 +14,9 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { montarFichaEpiAvulsaHtml } from "@/lib/ficha-epi-avulsa-html";
 import { lerHistoricoEpiEmpregado, type MovimentacaoFicha } from "@/lib/historico-epi-empregado";
 import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
+import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 
 export function EpiFichaEpiAvulsa() {
   const { empresaId } = useEmpresa();
@@ -25,6 +28,7 @@ export function EpiFichaEpiAvulsa() {
   const { data: itens = [] } = useItens("epi", TODAS);
   const empregado = empregados.find((e) => e.id === empregadoId);
   const empresa = empresas.find((e) => e.id === empresaSel);
+  const parametros = useParametrosBase();
 
   async function gerarFicha() {
     if (!empregado || !empresa) {
@@ -38,6 +42,7 @@ export function EpiFichaEpiAvulsa() {
       historico = await lerHistoricoEpiEmpregado(supabase, {
         empregadoId: empregado.id,
         empresaId: empresa.id,
+        comTamanho: TAMANHO_DISPONIVEL,
       });
     } catch (erro) {
       alert(`Não foi possível carregar o histórico: ${(erro as Error).message}`);
@@ -55,6 +60,7 @@ export function EpiFichaEpiAvulsa() {
           nome: itemInfo?.nome,
           ca: itemInfo?.ca,
           tipo: h.tipo_movimentacao,
+          tamanho: nomeTamanhoGravado(parametros, h.tamanho_id),
         };
       }),
     });

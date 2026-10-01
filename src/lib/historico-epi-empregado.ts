@@ -7,6 +7,8 @@ export type MovimentacaoFicha = {
   quantidade: number;
   data_movimentacao: string;
   created_at?: string | null;
+  // Só no modo demonstração; no banco real a coluna entra na Fase 2 (decisão 23).
+  tamanho_id?: string | null;
 };
 
 type ConsultaMovimentacoes = PromiseLike<{
@@ -17,12 +19,12 @@ type ConsultaMovimentacoes = PromiseLike<{
 /** Lê todas as movimentações de EPI do empregado na empresa, da mais nova para a mais antiga. */
 export async function lerHistoricoEpiEmpregado(
   cliente: { from: (tabela: "movimentacoes") => { select: (colunas: string) => unknown } },
-  filtro: { empregadoId: string; empresaId: string },
+  filtro: { empregadoId: string; empresaId: string; comTamanho?: boolean },
 ): Promise<MovimentacaoFicha[]> {
   const consulta = cliente
     .from("movimentacoes")
     .select(
-      "item_id,tipo_movimentacao,quantidade,data_movimentacao,created_at",
+      `item_id,tipo_movimentacao,quantidade,data_movimentacao,created_at${filtro.comTamanho ? ",tamanho_id" : ""}`,
     ) as ConsultaMovimentacoes;
   const { data, error } = await consulta
     .eq("modulo", "epi")

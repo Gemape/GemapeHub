@@ -23,12 +23,17 @@ import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } f
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { montarTermoEntregaEpiHtml, observacaoEntregaEpi } from "@/lib/termo-entrega-epi-html";
 import { validarSaidaDeEpis } from "@/lib/termos-atomicos";
+import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 
 interface ItemTermo {
   id: string;
   item_id: string;
   quantidade: number;
   estado: string;
+  // Tamanho da saída, quando o EPI tem tamanho em Gerais (decisão 23).
+  tamanho: string;
 }
 
 export function EpiTermoEntrega() {
@@ -42,13 +47,20 @@ export function EpiTermoEntrega() {
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("epi", TODAS);
 
+  const parametros = useParametrosBase();
   const registrarLote = useRegistrarMovimentacoesLote(["movimentacoes", "epis"]);
   const salvando = useRef(false);
 
   function adicionarItem() {
     setItensTermo([
       ...itensTermo,
-      { id: Math.random().toString(36).substr(2, 9), item_id: "", quantidade: 1, estado: "Novo" },
+      {
+        id: Math.random().toString(36).substr(2, 9),
+        item_id: "",
+        quantidade: 1,
+        estado: "Novo",
+        tamanho: "",
+      },
     ]);
   }
 
@@ -57,7 +69,7 @@ export function EpiTermoEntrega() {
   }
 
   function atualizarItem(id: string, campo: keyof ItemTermo, valor: string | number) {
-    setItensTermo(itensTermo.map((i) => (i.id === id ? { ...i, [campo]: valor } : i)));
+    setItensTermo((atuais) => atuais.map((i) => (i.id === id ? { ...i, [campo]: valor } : i)));
   }
 
   async function gerarTermo() {
@@ -78,7 +90,12 @@ export function EpiTermoEntrega() {
     if (!empregado || !empresa) return;
 
     // Não entrega mais do que o estoque disponível nem grava linha sem EPI.
-    const erro = validarSaidaDeEpis(itensTermo, itens);
+    // Com tamanho, a conta é feita no saldo de cada tamanho.
+    const erro =
+      validarSaidaDeEpis(itensTermo, itens) ??
+      (TAMANHO_DISPONIVEL
+        ? validarLinhasTamanho(itensTermo, itens, parametros, "epi", "entrega")
+        : null);
     if (erro) {
       alert(erro);
       return;
@@ -94,6 +111,7 @@ export function EpiTermoEntrega() {
       empresa_id: empresaSel,
       empregado_id: empregadoId,
       observacao: observacaoEntregaEpi(),
+      ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
     }));
 
     salvando.current = true;
@@ -118,6 +136,7 @@ export function EpiTermoEntrega() {
         return {
           nome: itemInfo?.nome,
           ca: itemInfo?.ca,
+          tamanho: tamanhoParaGravar(it.tamanho) ? nomeTamanho(parametros, it.tamanho) : undefined,
           quantidade: it.quantidade,
           estado: it.estado,
         };
@@ -188,6 +207,7 @@ export function EpiTermoEntrega() {
               <TableHeader>
                 <TableRow>
                   <TableHead>EPI</TableHead>
+                  <TableHead className="w-40">Tamanho</TableHead>
                   <TableHead className="w-32">Quantidade</TableHead>
                   <TableHead className="w-40">Estado</TableHead>
                   <TableHead className="w-20"></TableHead>
@@ -196,7 +216,7 @@ export function EpiTermoEntrega() {
               <TableBody>
                 {itensTermo.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                       Nenhum item adicionado. Clique em "+ Adicionar EPI".
                     </TableCell>
                   </TableRow>
@@ -206,7 +226,10 @@ export function EpiTermoEntrega() {
                       <TableCell>
                         <Select
                           value={it.item_id}
-                          onValueChange={(v) => atualizarItem(it.id, "item_id", v)}
+                          onValueChange={(v) => {
+                            atualizarItem(it.id, "item_id", v);
+                            atualizarItem(it.id, "tamanho", "");
+                          }}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o EPI" />
@@ -220,6 +243,16 @@ export function EpiTermoEntrega() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell>
+                        <SeletorTamanho
+                          parametros={parametros}
+                          modulo="epi"
+                          produto={itens.find((i) => i.id === it.item_id)}
+                          uso="saida"
+                          valor={it.tamanho}
+                          onChange={(v) => atualizarItem(it.id, "tamanho", v)}
+                        />
                       </TableCell>
                       <TableCell>
                         <Input

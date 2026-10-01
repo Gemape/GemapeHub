@@ -1,13 +1,20 @@
 // HTML da Ficha de Controle de Entrega de EPI (avulsa). Todo texto informado passa por
 // escaparHtml, como nos demais termos.
-import { escaparHtml, formatarData } from "./gemape.ts";
+import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
 
 type Texto = string | null | undefined;
 
 export interface DadosFichaEpiAvulsa {
   empresa: { razao_social: Texto; cnpj: Texto };
   empregado: { nome: Texto; cpf: Texto; matricula?: Texto; data_admissao?: Texto };
-  linhas: { data: string; quantidade: number; nome?: Texto; ca?: Texto; tipo: string }[];
+  linhas: {
+    data: string;
+    quantidade: number;
+    nome?: Texto;
+    ca?: Texto;
+    tamanho?: Texto;
+    tipo: string;
+  }[];
 }
 
 export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
@@ -18,7 +25,7 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
       <tr>
         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${formatarData(h.data)}</td>
         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.quantidade}</td>
-        <td style="border: 1px solid #000; padding: 5px;">${escaparHtml(h.nome || "—")}</td>
+        <td style="border: 1px solid #000; padding: 5px;">${escaparHtml(h.nome || "—")}${comTamanho(h.tamanho)}</td>
         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${escaparHtml(h.ca || "—")}</td>
         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.tipo === "Saida" ? "ENTREGA" : "DEVOLUÇÃO"}</td>
         <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>

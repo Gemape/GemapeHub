@@ -34,7 +34,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { useFichasEpi } from "@/lib/use-fichas-epi";
 import { exportarCsv } from "@/lib/gemape";
-import type { Modulo } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { removerFicha } from "@/lib/fichas-epi";
 import {
@@ -54,17 +53,33 @@ import {
   valorSelecaoSubcategoria,
 } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import {
+  alertasPorTamanho,
+  controlaTamanho,
+  nomeTamanho,
+  nomeUnidade,
+  resumoEstoquePorTamanho,
+  resumoMinimosPorTamanho,
+  tamanhosAutorizadosDoProduto,
+  unidadesAutorizadasDoProduto,
+  type ModuloTamanho,
+  type ProdutoTamanho,
+} from "@/lib/estoque-tamanho";
 
 type Tabela = "epis" | "uniformes";
 
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
+// Unidade antiga digitada, que não está em Gerais: continua aparecendo na edição.
+const UNIDADE_LEGADA = "unidade-legada";
+const SEM_UNIDADE = "sem-unidade";
+const campoMinimo = (tamanhoId: string) => `minimo_tamanho:${tamanhoId}`;
 
 // Cada tipo de produto: tabela, categoria de Cadastros > Gerais (id fixo; o nome pode ser
 // renomeado) e textos da tela.
 const CONFIG: Record<
   Tabela,
   {
-    modulo: Modulo;
+    modulo: ModuloTamanho;
     categoriaId: string;
     nome: string;
     exemplo: string;
@@ -112,6 +127,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const [editando, setEditando] = useState<Item | null>(null);
   const [previa, setPrevia] = useState("");
   const [empresaSel, setEmpresaSel] = useState("");
+  // Subcategoria escolhida no formulário: define as unidades e os tamanhos de Gerais (decisão 23).
+  const [subSel, setSubSel] = useState("");
   // Evita dois cadastros com o mesmo código num clique duplo em Salvar.
   // O ref bloqueia na hora; o estado só serve para desabilitar o botão. Depois de salvo,
   // o formulário fica travado até ser aberto de novo (o diálogo ainda está fechando).
@@ -121,7 +138,16 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   // Filtro também na tela, porque o modo demonstração não filtra pela busca.
   // A subcategoria mostrada é a de Gerais, pela referência gravada (nome sempre atual).
   const subcategoriaDe = (i: Item) => nomeSubcategoria(parametros, config.categoriaId, i);
-  const itens = lista.filter((i) => combinaBusca(busca, i.codigo_sku, i.nome, subcategoriaDe(i)));
+  const itens = lista.filter((i) =>
+    combinaBusca(
+      busca,
+      i.codigo_sku,
+      i.nome,
+      subcategoriaDe(i),
+      nomeUnidade(parametros, i),
+      resumoEstoquePorTamanho(parametros, config.modulo, i),
+    ),
+  );
   const salvar = useSalvar(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
   const excluir = useExcluir(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
 
@@ -135,6 +161,50 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const marcaInicial = selecaoInicialMarca(parametros.marcasUniforme, editando?.marca);
   // Parâmetro desativado em Gerais sai da escolha; o que o cadastro já usa continua na edição.
   const subcategorias = subcategoriasParaSelecao(parametros, config.categoriaId, subcategoriaAtual);
+  // Produto como fica com a subcategoria escolhida: dele saem as unidades e os tamanhos.
+  const subEscolhida = subcategorias.find((s) => s.id === subSel);
+  const produtoNoFormulario: ProdutoTamanho = {
+    categoria:
+      subEscolhida?.nome ??
+      (subSel === SUBCATEGORIA_LEGADA ? (subcategoriaAtual?.nome ?? null) : ""),
+    subcategoria_id: subEscolhida?.id ?? null,
+    saldos_tamanho: editando?.saldos_tamanho ?? null,
+  };
+  const unidadesDaSub = MODO_DEMO
+    ? unidadesAutorizadasDoProduto(parametros, config.modulo, produtoNoFormulario)
+    : [];
+  const unidadeAtualId = editando?.unidade_id ?? null;
+  const unidades = paraSelecao(parametros, unidadesDaSub, (u) => u.id === unidadeAtualId);
+  const unidadeLegada =
+    editando && !unidadeAtualId && editando.unidade_medida?.trim() ? editando.unidade_medida : null;
+  // A unidade atual que saiu da subcategoria continua aparecendo, para não ser trocada sem querer.
+  const unidadeForaDaSub =
+    unidadeAtualId && !unidades.some((u) => u.id === unidadeAtualId)
+      ? (parametros.unidades.find((u) => u.id === unidadeAtualId) ?? null)
+      : null;
+  const pedeUnidade = unidades.some((u) => estaAtivo(parametros, u.id));
+  const valorInicialUnidade = unidadeAtualId
+    ? unidadeAtualId
+    : unidadeLegada
+      ? UNIDADE_LEGADA
+      : SEM_UNIDADE;
+  const porTamanho = MODO_DEMO && controlaTamanho(parametros, config.modulo, produtoNoFormulario);
+  // Grade do mínimo por tamanho: os tamanhos ativos autorizados, mais os que já têm mínimo.
+  const minimosAtuais = editando?.minimos_tamanho ?? {};
+  const tamanhosDaGrade = porTamanho
+    ? [
+        ...new Set([
+          ...tamanhosAutorizadosDoProduto(parametros, config.modulo, produtoNoFormulario)
+            .filter((t) => estaAtivo(parametros, t.id))
+            .map((t) => t.id),
+          ...Object.keys(minimosAtuais).filter((id) => Number(minimosAtuais[id]) > 0),
+        ]),
+      ]
+    : [];
+  const rotuloTamanho = (id: string) =>
+    estaAtivo(parametros, id)
+      ? nomeTamanho(parametros, id)
+      : `${nomeTamanho(parametros, id)} (desativado)`;
   const marcas = paraSelecao(
     parametros,
     parametros.marcasUniforme,
@@ -159,6 +229,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     destravar();
     setEditando(null);
     setEmpresaSel("");
+    setSubSel("");
     setPrevia("");
     setAberto(true);
     try {
@@ -202,6 +273,41 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     };
     // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
     if (MODO_DEMO) valores["subcategoria_id"] = subcategoria.id;
+    // Unidade e mínimo por tamanho de Gerais (decisão 23), só no modo demonstração.
+    if (MODO_DEMO) {
+      const unidade = String(f.get("unidade_id") ?? "");
+      if (unidade === UNIDADE_LEGADA && unidadeLegada) {
+        valores["unidade_id"] = null;
+        valores["unidade_medida"] = unidadeLegada;
+      } else if (!unidade || unidade === SEM_UNIDADE) {
+        if (pedeUnidade) {
+          toast.error("Selecione a unidade.");
+          return;
+        }
+        valores["unidade_id"] = null;
+        valores["unidade_medida"] = null;
+      } else {
+        const escolhida = [...unidades, ...(unidadeForaDaSub ? [unidadeForaDaSub] : [])].find(
+          (u) => u.id === unidade,
+        );
+        if (!escolhida) {
+          toast.error("Unidade inválida. Escolha uma unidade autorizada em Cadastros > Gerais.");
+          return;
+        }
+        valores["unidade_id"] = escolhida.id;
+        valores["unidade_medida"] = escolhida.nome;
+      }
+      if (porTamanho) {
+        const minimos: Record<string, number> = {};
+        for (const id of tamanhosDaGrade) {
+          const minimo = Math.max(0, Math.floor(Number(f.get(campoMinimo(id)) ?? 0) || 0));
+          if (minimo > 0) minimos[id] = minimo;
+        }
+        valores["minimos_tamanho"] = minimos;
+        // O mínimo do produto é a soma dos mínimos por tamanho.
+        valores["estoque_minimo"] = Object.values(minimos).reduce((a, b) => a + b, 0);
+      }
+    }
     if (config.custoMarcaModelo) {
       const preco = String(f.get("preco_unitario") ?? "").trim();
       const precoNumero = Number(preco);
@@ -254,6 +360,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     );
   }
 
+  const temTamanho = (i: Item) => MODO_DEMO && controlaTamanho(parametros, config.modulo, i);
+  const resumoMinimos = (i: Item) => resumoMinimosPorTamanho(parametros, i);
   const nomeEmpresa = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
   const temFicha = (id: string) => fichas.some((f) => f.epiId === id);
@@ -277,8 +385,13 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   Código: i.codigo_sku,
                   Subcategoria: subcategoriaDe(i),
                   Descrição: i.nome,
+                  Unidade: nomeUnidade(parametros, i),
                   "Estoque mínimo": i.estoque_minimo,
                   Estoque: i.estoque_atual,
+                  "Estoque por tamanho": temTamanho(i)
+                    ? resumoEstoquePorTamanho(parametros, config.modulo, i)
+                    : "",
+                  "Mínimo por tamanho": temTamanho(i) ? resumoMinimos(i) : "",
                   Empresa: nomeEmpresa(i.empresa_id),
                 })),
               )
@@ -299,6 +412,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
               <TableHead>Código</TableHead>
               <TableHead>Subcategoria</TableHead>
               <TableHead>Descrição</TableHead>
+              <TableHead>Unidade</TableHead>
               <TableHead className="text-right">Estoque mínimo</TableHead>
               <TableHead className="text-right">Estoque</TableHead>
               <TableHead>Empresa</TableHead>
@@ -310,7 +424,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={config.ficha ? 8 : 7}
+                  colSpan={config.ficha ? 9 : 8}
                   className="text-center text-muted-foreground"
                 >
                   Carregando…
@@ -319,7 +433,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             ) : itens.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={config.ficha ? 8 : 7}
+                  colSpan={config.ficha ? 9 : 8}
                   className="text-center text-muted-foreground"
                 >
                   Nenhum {config.nome} cadastrado.
@@ -331,17 +445,40 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell>{subcategoriaDe(item) || "—"}</TableCell>
                   <TableCell className="font-medium">{item.nome}</TableCell>
-                  <TableCell className="text-right">{item.estoque_minimo ?? 0}</TableCell>
+                  <TableCell>{nomeUnidade(parametros, item) || "—"}</TableCell>
                   <TableCell className="text-right">
-                    <span
-                      className={
-                        (item.estoque_atual ?? 0) <= (item.estoque_minimo ?? 0)
-                          ? "font-bold text-destructive"
-                          : ""
-                      }
-                    >
-                      {item.estoque_atual ?? 0}
-                    </span>
+                    {item.estoque_minimo ?? 0}
+                    {temTamanho(item) && resumoMinimos(item) && (
+                      <p className="text-xs text-muted-foreground">{resumoMinimos(item)}</p>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {temTamanho(item) ? (
+                      <>
+                        <span>{item.estoque_atual ?? 0}</span>
+                        <p className="text-xs text-muted-foreground">
+                          {resumoEstoquePorTamanho(parametros, config.modulo, item) || "—"}
+                        </p>
+                        {alertasPorTamanho(parametros, config.modulo, item).length > 0 && (
+                          <p className="text-xs font-bold text-destructive">
+                            Abaixo do mínimo:{" "}
+                            {alertasPorTamanho(parametros, config.modulo, item)
+                              .map((a) => `${a.nome} (${a.saldo}/${a.minimo})`)
+                              .join(", ")}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <span
+                        className={
+                          (item.estoque_atual ?? 0) <= (item.estoque_minimo ?? 0)
+                            ? "font-bold text-destructive"
+                            : ""
+                        }
+                      >
+                        {item.estoque_atual ?? 0}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>{nomeEmpresa(item.empresa_id)}</TableCell>
                   {config.ficha && (
@@ -361,6 +498,11 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                       onClick={() => {
                         destravar();
                         setEditando(item);
+                        setSubSel(
+                          valorSelecaoSubcategoria(
+                            resolverSubcategoria(parametros, config.categoriaId, item),
+                          ),
+                        );
                         setAberto(true);
                       }}
                     >
@@ -418,7 +560,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Subcategoria</Label>
-              <Select name="categoria" defaultValue={valorSelecaoSubcategoria(subcategoriaAtual)}>
+              <Select name="categoria" value={subSel} onValueChange={setSubSel}>
                 <SelectTrigger id="categoria">
                   <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
@@ -452,17 +594,76 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 placeholder={`Ex.: ${config.exemplo}`}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="estoque_minimo">Estoque mínimo</Label>
-              <Input
-                id="estoque_minimo"
-                name="estoque_minimo"
-                type="number"
-                min={0}
-                step={1}
-                defaultValue={editando?.estoque_minimo ?? 0}
-              />
-            </div>
+            {(unidades.length > 0 || unidadeLegada || unidadeForaDaSub) && (
+              <div className="space-y-1.5">
+                <Label htmlFor="unidade_id">Unidade</Label>
+                <Select
+                  key={`${subSel}-${editando?.id ?? "novo"}`}
+                  name="unidade_id"
+                  defaultValue={valorInicialUnidade}
+                >
+                  <SelectTrigger id="unidade_id">
+                    <SelectValue placeholder="Selecione a unidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!pedeUnidade && <SelectItem value={SEM_UNIDADE}>Sem unidade</SelectItem>}
+                    {unidades.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {rotulo(u)}
+                      </SelectItem>
+                    ))}
+                    {unidadeForaDaSub && (
+                      <SelectItem value={unidadeForaDaSub.id}>
+                        {unidadeForaDaSub.nome} (não autorizada nesta subcategoria)
+                      </SelectItem>
+                    )}
+                    {unidadeLegada && (
+                      <SelectItem value={UNIDADE_LEGADA}>
+                        {unidadeLegada} (fora de Cadastros &gt; Gerais)
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {porTamanho ? (
+              <fieldset className="space-y-2 sm:col-span-2">
+                <legend className="text-sm font-medium">Estoque mínimo por tamanho</legend>
+                <p className="text-xs text-muted-foreground">
+                  Tamanhos autorizados para a subcategoria em Cadastros &gt; Gerais &gt; Associar
+                  Tamanho e Medida. O alerta de estoque baixo é por tamanho.
+                </p>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  {tamanhosDaGrade.map((id) => (
+                    <div key={id} className="space-y-1">
+                      <Label htmlFor={campoMinimo(id)} className="text-xs">
+                        {rotuloTamanho(id)}
+                      </Label>
+                      <Input
+                        id={campoMinimo(id)}
+                        name={campoMinimo(id)}
+                        type="number"
+                        min={0}
+                        step={1}
+                        defaultValue={minimosAtuais[id] ?? 0}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </fieldset>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="estoque_minimo">Estoque mínimo</Label>
+                <Input
+                  id="estoque_minimo"
+                  name="estoque_minimo"
+                  type="number"
+                  min={0}
+                  step={1}
+                  defaultValue={editando?.estoque_minimo ?? 0}
+                />
+              </div>
+            )}
             {config.custoMarcaModelo && (
               <>
                 <div className="space-y-1.5">
