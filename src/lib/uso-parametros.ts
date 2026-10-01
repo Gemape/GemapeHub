@@ -9,7 +9,12 @@ import {
   type TipoOpcao,
 } from "./parametros-base.ts";
 import { resolverSubcategoria, SUBCATEGORIA_DAS_TABELAS } from "./subcategoria-referencia.ts";
-import { saldosPorTamanho, type ModuloTamanho, type ProdutoTamanho } from "./estoque-tamanho.ts";
+import {
+  CATEGORIA_DO_MODULO,
+  saldosPorTamanho,
+  type ModuloTamanho,
+  type ProdutoTamanho,
+} from "./estoque-tamanho.ts";
 
 export type UsoParametro = { modulo: string; codigos: string[] };
 type Registro = Record<string, unknown>;
@@ -84,8 +89,13 @@ const PRODUTOS_COM_TAMANHO: {
   rotulo: string;
   categoriaId: string;
 }[] = [
-  { tabela: "epis", modulo: "epi", rotulo: "EPI", categoriaId: "cat-epi" },
-  { tabela: "uniformes", modulo: "uniforme", rotulo: "Uniforme", categoriaId: "cat-uniformes" },
+  { tabela: "epis", modulo: "epi", rotulo: "EPI", categoriaId: CATEGORIA_DO_MODULO.epi },
+  {
+    tabela: "uniformes",
+    modulo: "uniforme",
+    rotulo: "Uniforme",
+    categoriaId: CATEGORIA_DO_MODULO.uniforme,
+  },
 ];
 export type CadastrosComTamanho = Partial<
   Record<TabelaComTamanho | "movimentacoes" | "compras_epis" | "compras_uniformes", Registro[]>
@@ -149,12 +159,14 @@ export function dependenciasDaDesautorizacao(
   cadastros: CadastrosComTamanho,
 ): UsoParametro[] {
   const alvo = new Set(ids);
+  const unidadesAlvo = parametros.unidades.filter((u) => alvo.has(u.id));
   return PRODUTOS_COM_TAMANHO.flatMap(({ tabela, modulo, rotulo, categoriaId }) => {
     const codigos = (cadastros[tabela] ?? [])
       .filter((r) => resolverSubcategoria(parametros, categoriaId, r)?.id === subcategoriaId)
       .filter((r) => {
         const produto = r as ProdutoTamanho;
-        if (tipo === "unidades") return !!produto.unidade_id && alvo.has(produto.unidade_id);
+        // Unidade pela referência ou pelo texto antigo, como na proteção de exclusão.
+        if (tipo === "unidades") return unidadesAlvo.some((u) => usaUnidade(r, u));
         const saldos = saldosPorTamanho(parametros, modulo, produto);
         const minimos = produto.minimos_tamanho ?? {};
         return (

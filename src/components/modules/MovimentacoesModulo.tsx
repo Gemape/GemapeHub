@@ -152,7 +152,8 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       origem_local: texto("origem_local"),
       destino_local: texto("destino_local"),
       observacao: texto("observacao")?.slice(0, 500) ?? null,
-      ...(comTamanho ? { tamanho_id: tamanhoParaGravar(tamanho) } : {}),
+      // A devolução grava "Sem tamanho" explícito, para não confundir com tamanho ausente.
+      ...(comTamanho ? { tamanho_id: tamanhoParaGravar(tamanho, tipo === "Devolucao") } : {}),
     };
     registrarLote.mutate([valores], { onSuccess: () => setAberto(false) });
   }
@@ -368,7 +369,13 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   parametros={parametros}
                   modulo={modulo}
                   produto={itens.find((i) => i.id === alvoId)}
-                  uso={tipoMovimentacao === "Saida" ? "saida" : "entrada"}
+                  uso={
+                    tipoMovimentacao === "Saida"
+                      ? "saida"
+                      : tipoMovimentacao === "Devolucao"
+                        ? "devolucao"
+                        : "entrada"
+                  }
                   valor={tamanho}
                   onChange={setTamanho}
                 />

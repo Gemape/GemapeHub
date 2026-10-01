@@ -5,12 +5,13 @@ import { toast } from "sonner";
 import { DualList } from "@/components/DualList";
 import { Label } from "@/components/ui/label";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
-import { supabase } from "@/integrations/supabase/client";
+import { lerCadastrosDeUso } from "@/lib/ler-cadastros-uso";
 import {
   autorizados,
   autorizar,
   desautorizar,
   estaAtivo,
+  lerParametros,
   ROTULO_OPCAO,
   subcategoriasDa,
   type TipoOpcao,
@@ -19,7 +20,6 @@ import {
   avisoAutorizacaoTamanhos,
   dependenciasDaDesautorizacao,
   descreverUso,
-  type CadastrosComTamanho,
 } from "@/lib/uso-parametros";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -30,49 +30,33 @@ export const Route = createFileRoute("/_authenticated/cadastros/gerais/associar-
 
 const selectClasse = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm";
 
-// Produtos e histórico de EPI e Uniforme, para avisar o que depende da associação (decisão 23).
-async function lerCadastros(
-  tabelas: (keyof CadastrosComTamanho)[],
-): Promise<CadastrosComTamanho | null> {
-  const cadastros: CadastrosComTamanho = {};
-  for (const tabela of tabelas) {
-    const { data, error } = await supabase.from(tabela).select("*");
-    if (error) return null;
-    cadastros[tabela] = (data ?? []) as Record<string, unknown>[];
-  }
-  return cadastros;
-}
-
 function AssociarTamanhos() {
   const dados = useParametrosBase();
   const [categoriaId, setCategoriaId] = useState(dados.categorias[0]?.id ?? "");
   const [subcategoriaId, setSubcategoriaId] = useState("");
   const subcategorias = subcategoriasDa(dados, categoriaId);
   const sub = subcategorias.find((s) => s.id === subcategoriaId);
-  // Uma confirmação por vez, mesmo com dois cliques rápidos.
-  const ocupado = useRef(false);
+  // Uma confirmação por vez: o clique feito durante a conferência anterior espera a vez em
+  // fila (a lista já tirou a seleção), e cada uma lê Gerais na hora, sem dados velhos.
+  const fila = useRef<Promise<unknown>>(Promise.resolve());
 
-  async function conferir(acao: () => Promise<boolean>) {
-    if (ocupado.current) return;
-    ocupado.current = true;
-    try {
-      await acao();
-    } finally {
-      ocupado.current = false;
-    }
+  function conferir(acao: () => Promise<boolean>) {
+    fila.current = fila.current.then(acao).catch(() => {
+      toast.error("Não foi possível concluir a alteração.");
+    });
   }
 
   // Autorizar o primeiro tamanho avisa que o saldo dos produtos fica em "Sem tamanho".
   const autorizarComAviso = (subId: string, tipo: TipoOpcao, ids: string[]) =>
     conferir(async () => {
       if (tipo === "tamanhos") {
-        const cadastros = await lerCadastros(["epis", "uniformes"]);
+        const cadastros = await lerCadastrosDeUso(["epis", "uniformes"]);
         if (!cadastros) {
           toast.error("Não foi possível conferir os produtos desta subcategoria.");
           return false;
         }
         const aviso = avisoAutorizacaoTamanhos(
-          dados,
+          lerParametros(),
           subId,
           [...(cadastros.epis ?? []), ...(cadastros.uniformes ?? [])],
           ids,
@@ -85,12 +69,12 @@ function AssociarTamanhos() {
   // Desautorizar tamanho ou unidade em uso avisa quais produtos dependem dele.
   const desautorizarComAviso = (subId: string, tipo: TipoOpcao, ids: string[]) =>
     conferir(async () => {
-      const cadastros = await lerCadastros(["epis", "uniformes", "movimentacoes"]);
+      const cadastros = await lerCadastrosDeUso(["epis", "uniformes", "movimentacoes"]);
       if (!cadastros) {
         toast.error("Não foi possível conferir os produtos desta subcategoria.");
         return false;
       }
-      const usos = dependenciasDaDesautorizacao(dados, subId, tipo, ids, cadastros);
+      const usos = dependenciasDaDesautorizacao(lerParametros(), subId, tipo, ids, cadastros);
       if (usos.length > 0) {
         const efeito =
           tipo === "tamanhos"

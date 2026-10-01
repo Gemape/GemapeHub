@@ -220,6 +220,19 @@ Branch `feat/tamanho-estoque-por-tamanho`, aguardando validação e merge do res
 - Produto cuja subcategoria perde os tamanhos volta a estoque único quando não há saldo em nenhum tamanho; o mapa antigo é descartado na próxima movimentação, sem perder saldo. Tamanho desativado não recebe entrada nem pelo gatilho do demo.
 - Testes: `estoque-tamanho`, `gerais-tamanhos-protecao` e `tamanho-telas-documentos`.
 
+Correções do code review do PR #54 (`revisoes/code-review-pr54-estoque-por-tamanho.md`, os 10 achados):
+- A devolução volta no tamanho em que o item saiu: qualquer tamanho de Gerais (mesmo desativado ou desautorizado depois) ou "Sem tamanho", escolhido explicitamente (`opcoesTamanhoDevolucao`).
+- Quando a subcategoria perde todos os tamanhos:
+  - a compra explica que é preciso autorizar um tamanho em Associar;
+  - o cadastro volta ao mínimo único, e os mínimos por tamanho antigos são limpos.
+- Busca e alerta:
+  - a busca do cadastro só usa o resumo por tamanho de quem controla tamanho;
+  - lista e Dashboard usam o mesmo critério de alerta (`usaMinimoPorTamanho`).
+- Associar Tamanho e Medida:
+  - processa os cliques em fila, lendo Gerais na hora;
+  - a leitura dos cadastros é única e em paralelo (`src/lib/ler-cadastros-uso.ts`);
+  - desautorizar unidade também avisa quem usa o texto antigo.
+
 ## Decisões vigentes
 
 - Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. O código vem da regra global da categoria-base Ferramentas (FER-0001 por padrão); não é editável e permanece na edição. Desde a decisão 24, a ferramenta não tem subcategoria e o módulo Ferramentas não tem aba Cadastro.

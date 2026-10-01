@@ -7,6 +7,7 @@ import {
   controlaTamanho,
   movimentarTamanho,
   saldosPorTamanho,
+  SEM_TAMANHO,
   somaSaldos,
 } from "../../lib/estoque-tamanho.ts";
 
@@ -78,7 +79,8 @@ const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
         }
         continue;
       }
-      if (m.tamanho_id && delta !== 0)
+      // "Sem tamanho" explícito (devolução) vale também para o produto sem tamanho.
+      if (m.tamanho_id && m.tamanho_id !== SEM_TAMANHO && delta !== 0)
         return new Error(
           `${item.nome ?? "O produto"} não tem tamanho autorizado em Cadastros > Gerais.`,
         );

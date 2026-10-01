@@ -67,6 +67,21 @@ export const tamanhosAutorizadosDoProduto = (
   produto: ProdutoTamanho,
 ) => opcoesAutorizadas(p, modulo, produto, "tamanhos");
 
+/**
+ * Tamanhos e numerações associados à subcategoria do produto em Associar Tamanho e Medida,
+ * para o cadastro mostrar: todos, na ordem de Gerais, com o desativado marcado.
+ */
+export function tamanhosAssociadosParaCadastro(
+  p: ParametrosBase,
+  modulo: ModuloTamanho,
+  produto: ProdutoTamanho,
+): { id: string; rotulo: string }[] {
+  return tamanhosAutorizadosDoProduto(p, modulo, produto).map((t) => ({
+    id: t.id,
+    rotulo: estaAtivo(p, t.id) ? t.nome : `${t.nome} (desativado)`,
+  }));
+}
+
 /** Unidades autorizadas para a subcategoria do produto (inclui as desativadas). */
 export const unidadesAutorizadasDoProduto = (
   p: ParametrosBase,
@@ -139,8 +154,10 @@ const nomeProduto = (produto: ProdutoTamanho) => produto.nome?.trim() || "o prod
 
 /**
  * Aplica uma movimentação nos saldos por tamanho (mesma regra do gatilho do demo).
- * Entrada e devolução somam e exigem tamanho autorizado; saída subtrai do tamanho escolhido
- * (ou do "Sem tamanho"); vistoria e transferência não mexem. Saldo negativo é recusado.
+ * Entrada soma e exige tamanho autorizado e ativo. Devolução soma no tamanho em que o item
+ * saiu: qualquer tamanho de Gerais (mesmo desativado ou desautorizado depois) ou "Sem tamanho",
+ * informado explicitamente. Saída subtrai do tamanho escolhido (ou do "Sem tamanho");
+ * vistoria e transferência não mexem. Saldo negativo é recusado.
  */
 export function movimentarTamanho(
   p: ParametrosBase,
@@ -155,7 +172,14 @@ export function movimentarTamanho(
   if (!soma && tipo !== "Saida") return { ...saldos };
   const chave = mov.tamanho_id || SEM_TAMANHO;
   const autorizadosIds = new Set(tamanhosAutorizadosDoProduto(p, modulo, produto).map((t) => t.id));
-  if (soma) {
+  if (tipo === "Devolucao") {
+    if (!mov.tamanho_id) throw new Error(`Informe o tamanho de ${nomeProduto(produto)}.`);
+    if (chave !== SEM_TAMANHO && !p.tamanhos.some((t) => t.id === chave)) {
+      throw new Error(
+        `O tamanho ${nomeTamanho(p, chave)} não está autorizado para ${nomeProduto(produto)}.`,
+      );
+    }
+  } else if (soma) {
     if (chave === SEM_TAMANHO) throw new Error(`Informe o tamanho de ${nomeProduto(produto)}.`);
     if (!autorizadosIds.has(chave)) {
       throw new Error(
@@ -187,7 +211,7 @@ export function movimentarTamanho(
 export const somaSaldos = (saldos: Saldos) =>
   Object.values(saldos).reduce((total, valor) => total + numero(valor), 0);
 
-/** Tamanhos para entrada (compra, devolução): os autorizados e ativos. */
+/** Tamanhos para entrada (compra): os autorizados e ativos. */
 export function opcoesTamanhoEntrada(
   p: ParametrosBase,
   modulo: ModuloTamanho,
@@ -196,6 +220,28 @@ export function opcoesTamanhoEntrada(
   return tamanhosAutorizadosDoProduto(p, modulo, produto)
     .filter((t) => estaAtivo(p, t.id))
     .map((t) => ({ valor: t.id, rotulo: t.nome }));
+}
+
+/**
+ * Tamanhos para devolução: o item volta no tamanho em que saiu. Mostra os autorizados (mesmo
+ * desativados), os que o produto já tem gravados e "Sem tamanho", na ordem de Gerais.
+ */
+export function opcoesTamanhoDevolucao(
+  p: ParametrosBase,
+  modulo: ModuloTamanho,
+  produto: ProdutoTamanho,
+): { valor: string; rotulo: string }[] {
+  const chaves = new Set([
+    ...tamanhosAutorizadosDoProduto(p, modulo, produto).map((t) => t.id),
+    ...Object.keys(saldosPorTamanho(p, modulo, produto)).filter((chave) =>
+      p.tamanhos.some((t) => t.id === chave),
+    ),
+    SEM_TAMANHO,
+  ]);
+  return ordenarChaves(p, [...chaves]).map((chave) => ({
+    valor: chave,
+    rotulo: rotuloComEstado(p, chave),
+  }));
 }
 
 /** Tamanhos para saída (entrega, baixa): os que têm saldo, inclusive "Sem tamanho". */
@@ -243,6 +289,15 @@ export function resumoMinimosPorTamanho(p: ParametrosBase, produto: ProdutoTaman
     .join(" · ");
 }
 
+/** O alerta do produto é por tamanho: controla tamanho e tem algum mínimo de tamanho. */
+export const usaMinimoPorTamanho = (
+  p: ParametrosBase,
+  modulo: ModuloTamanho,
+  produto: ProdutoTamanho,
+) =>
+  controlaTamanho(p, modulo, produto) &&
+  Object.values(produto.minimos_tamanho ?? {}).some((minimo) => numero(minimo) > 0);
+
 export type AlertaTamanho = { chave: string; nome: string; saldo: number; minimo: number };
 
 /** Tamanhos com mínimo definido e saldo igual ou abaixo dele (produto com tamanhos). */
@@ -280,15 +335,22 @@ export function validarLinhasTamanho(
 ): string | null {
   const pedidas = new Map<string, { item: ItemComTamanho; chave: string; quantidade: number }>();
   const entrada = acao === "entrada" || acao === "devolução";
+  const opcoes = (item: ItemComTamanho) =>
+    acao === "devolução"
+      ? opcoesTamanhoDevolucao(p, modulo, item)
+      : acao === "entrada"
+        ? opcoesTamanhoEntrada(p, modulo, item)
+        : opcoesTamanhoSaida(p, modulo, item);
   for (const linha of linhas) {
     const item = itens.find((i) => i.id === linha.item_id);
     if (!item) continue;
     let chave = SEM_TAMANHO;
     if (controlaTamanho(p, modulo, item)) {
       const escolhido = linha.tamanho ?? "";
-      const validos = entrada
-        ? opcoesTamanhoEntrada(p, modulo, item).map((o) => o.valor)
-        : opcoesTamanhoSaida(p, modulo, item).map((o) => o.valor);
+      const validos = opcoes(item).map((o) => o.valor);
+      if (acao === "entrada" && validos.length === 0) {
+        return `${item.nome} não tem tamanho ativo autorizado em Cadastros > Gerais > Associar Tamanho e Medida. Autorize um tamanho para registrar a entrada.`;
+      }
       if (!escolhido || !validos.includes(escolhido)) {
         return `Escolha o tamanho de ${item.nome}.`;
       }
@@ -312,9 +374,15 @@ export function validarLinhasTamanho(
   return null;
 }
 
-/** Tamanho escolhido na tela para gravar: "Sem tamanho" e vazio viram nulo. */
-export const tamanhoParaGravar = (escolhido: string | null | undefined): string | null =>
-  !escolhido || escolhido === SEM_TAMANHO ? null : escolhido;
+/**
+ * Tamanho escolhido na tela para gravar: vazio vira nulo. "Sem tamanho" também vira nulo, a não
+ * ser na devolução, que precisa dizer explicitamente que o item volta para "Sem tamanho".
+ */
+export const tamanhoParaGravar = (
+  escolhido: string | null | undefined,
+  manterSemTamanho = false,
+): string | null =>
+  !escolhido || (escolhido === SEM_TAMANHO && !manterSemTamanho) ? null : escolhido;
 
 /** Nome do tamanho de uma movimentação ou compra; vazio quando não tem tamanho. */
 export const nomeTamanhoGravado = (p: ParametrosBase, tamanhoId: string | null | undefined) =>

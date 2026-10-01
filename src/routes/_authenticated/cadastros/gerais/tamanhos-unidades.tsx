@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
-import { supabase } from "@/integrations/supabase/client";
+import { lerCadastrosDeUso } from "@/lib/ler-cadastros-uso";
 import {
   adicionarOpcao,
   alterarAtivo,
@@ -39,17 +39,6 @@ const TABELAS: (keyof CadastrosComTamanho)[] = [
   "compras_uniformes",
 ];
 
-// Lê de uma vez os cadastros que podem usar um tamanho ou uma unidade (decisão 23).
-async function lerCadastros(): Promise<CadastrosComTamanho | null> {
-  const cadastros: CadastrosComTamanho = {};
-  for (const tabela of TABELAS) {
-    const { data, error } = await supabase.from(tabela).select("*");
-    if (error) return null;
-    cadastros[tabela] = (data ?? []) as Record<string, unknown>[];
-  }
-  return cadastros;
-}
-
 function TamanhosUnidades() {
   const dados = useParametrosBase();
   // Evita duas confirmações quando o botão de excluir recebe dois cliques rápidos.
@@ -60,7 +49,7 @@ function TamanhosUnidades() {
     if (ocupado.current) return;
     ocupado.current = true;
     try {
-      const cadastros = await lerCadastros();
+      const cadastros = await lerCadastrosDeUso(TABELAS);
       if (!cadastros) {
         toast.error("Não foi possível conferir os cadastros que usam este parâmetro.");
         return;
