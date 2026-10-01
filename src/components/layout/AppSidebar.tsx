@@ -9,7 +9,6 @@ import {
   Shirt,
   Users,
   Wrench,
-  FileSpreadsheet,
   Settings2,
   ClipboardList,
   History,
@@ -69,7 +68,6 @@ const grupos = [
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
       { titulo: "Fornecedores", url: "/cadastros/fornecedores", icone: Truck },
-      { titulo: "Relatórios", url: "/relatorios", icone: FileSpreadsheet },
     ],
   },
 ] as const;
