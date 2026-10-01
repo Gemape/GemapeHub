@@ -157,7 +157,7 @@ const importarNotaFiscal = (e: Linha): Error | null => {
   return null;
 };
 class Consulta {
-  private filtros: Array<(l: Linha) => boolean> = []; private ordem?: string; private limite?: number; private payload?: Linha | Linha[]; private acao = "select"; private contagem = false;
+  private filtros: Array<(l: Linha) => boolean> = []; private ordens: string[] = []; private limite?: number; private intervalo?: [number, number]; private payload?: Linha | Linha[]; private acao = "select"; private contagem = false;
   private colunas = "*";
   private tabela: string;
   constructor(tabela: string) { this.tabela = tabela; }
@@ -167,8 +167,9 @@ class Consulta {
   ilike(chave: string, valor: string) { const texto = valor.replaceAll("%", "").toLowerCase(); this.filtros.push(l => String(l[chave] ?? "").toLowerCase().includes(texto)); return this; }
   or(_valor: string) { return this; }
   not(_a: string, _b: string, _c: string) { return this; }
-  order(chave: string, opts?: { ascending?: boolean }) { this.ordem = `${chave}:${opts?.ascending === false ? "desc" : "asc"}`; return this; }
+  order(chave: string, opts?: { ascending?: boolean }) { this.ordens.push(`${chave}:${opts?.ascending === false ? "desc" : "asc"}`); return this; }
   limit(n: number) { this.limite = n; return this; }
+  range(inicio: number, fim: number) { this.intervalo = [inicio, fim]; return this; }
   insert(v: Linha | Linha[]) { this.acao = "insert"; this.payload = v; return this; }
   update(v: Linha) { this.acao = "update"; this.payload = v; return this; }
   delete() { this.acao = "delete"; return this; }
@@ -184,8 +185,16 @@ class Consulta {
     }
     if (this.acao === "update") { selecionadas.forEach(l => Object.assign(l, this.payload)); persistirDados(); }
     if (this.acao === "delete") { selecionadas.forEach(l => linhas.splice(linhas.indexOf(l), 1)); persistirDados(); }
-    if (this.ordem) { const [c,d] = this.ordem.split(":"); selecionadas.sort((a,b) => String(a[c]).localeCompare(String(b[c])) * (d === "desc" ? -1 : 1)); }
+    if (this.ordens.length) selecionadas.sort((a,b) => {
+      for (const ordem of this.ordens) {
+        const [c,d] = ordem.split(":");
+        const diferenca = String(a[c]).localeCompare(String(b[c])) * (d === "desc" ? -1 : 1);
+        if (diferenca) return diferenca;
+      }
+      return 0;
+    });
     if (this.limite) selecionadas = selecionadas.slice(0,this.limite);
+    if (this.intervalo) selecionadas = selecionadas.slice(this.intervalo[0], this.intervalo[1] + 1);
     const linhasResultado = this.acao === "select" && this.tabela === "caixa_ferramenta_itens" && this.colunas.includes("ferramenta:ferramentas(")
       ? selecionadas.map(linha => ({ ...linha, ferramenta: dados.ferramentas.find(f => f.id === linha.ferramenta_id) ?? null }))
       : selecionadas;
