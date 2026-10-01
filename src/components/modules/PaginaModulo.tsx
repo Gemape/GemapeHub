@@ -193,9 +193,9 @@ export function PaginaModulo({
             <CadastroProduto tabela="epis" />
           ) : modulo === "uniforme" ? (
             <CadastroProduto tabela="uniformes" />
-          ) : (
-            <ItensModulo modulo={modulo} />
-          )}
+          ) : modulo === "ferramenta" ? (
+            <ItensModulo modulo="ferramenta" />
+          ) : null}
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />
