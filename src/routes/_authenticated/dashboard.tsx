@@ -19,7 +19,7 @@ import { empregadoAtivo } from "@/lib/empregados";
 import { formatarMoeda, valorTotalEmEstoque, MODULO_LABEL, type Modulo } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
 import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
-import { alertasPorTamanho, controlaModulo, controlaTamanho } from "@/lib/estoque-tamanho";
+import { alertasPorTamanho, controlaModulo, usaMinimoPorTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -107,8 +107,8 @@ function DashboardGeral() {
   const alertasDe = (i: (typeof itens)[number]) => {
     const produto = i as typeof i & Parameters<typeof alertasPorTamanho>[2];
     if (!TAMANHO_DISPONIVEL || !controlaModulo(i.modulo)) return null;
-    if (!controlaTamanho(parametros, i.modulo, produto)) return null;
-    if (Object.keys(produto.minimos_tamanho ?? {}).length === 0) return null;
+    // Mesmo critério da lista do cadastro: sem mínimo por tamanho, vale o mínimo do produto.
+    if (!usaMinimoPorTamanho(parametros, i.modulo, produto)) return null;
     return alertasPorTamanho(parametros, i.modulo, produto);
   };
   const criticos = itens.filter((i) => {
