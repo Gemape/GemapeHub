@@ -260,6 +260,8 @@ Cada caso recebeu teste reproduzindo a falha antes da correção. Validação fi
 
 ## Processo e acesso
 
+Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar um preview da Vercel do sistema em modo demonstração, permitindo a visualização navegável antes de qualquer merge.
+
 - Cada etapa usa branch própria a partir da `main`, só depois do merge da etapa anterior; nada vai direto à `main`.
 - Commits com o e-mail `ti@gemape.com.br` (`git config user.email`), sem mudar o nome do autor, para a Vercel reconhecer o autor e criar o preview. O PR #23 não teve preview porque os commits saíram com um autor sem acesso ao projeto na Vercel.
 - Se a API do GitHub devolver Forbidden, faça push da branch, informe o título do PR e aguarde: o responsável abre o PR manualmente.
