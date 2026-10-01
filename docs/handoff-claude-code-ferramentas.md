@@ -1,6 +1,6 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 01/10/2026, sobre a `main` com os PRs #40 (etapa 4 de Caixas e Portador, `ab134d6`) e #41 (Relatórios fora do menu Cadastros).
+Atualizado em 01/10/2026, sobre a `main` após o merge do PR #48 (`b6f94eb`).
 
 **Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) foi aprovada pelo responsável em 30/09/2026, e as quatro etapas abaixo também, na ordem proposta (decisão 18). Cada etapa para após o PR, para validação e merge do responsável. A Fase 2 continua aguardando decisão: não iniciar.
 
@@ -126,7 +126,7 @@ Levantamento de 01/10/2026: cada item da especificação fora do bloco FERRAMENT
 | --- | --- | --- | --- |
 | 1 | Importação do XML da nota fiscal | O MD diz que o código de fábrica serve para o sistema associar o produto ao importar o XML da nota do fornecedor e alimentar o estoque. O cadastro do código de fábrica existe, mas nenhuma tela lê o XML: as compras de EPI e de Uniformes só têm o campo manual Nota Fiscal. | Concluído: PR #44 mergeado em 01/10/2026 (decisão 21). |
 | 2 | Cadastro de Empresas | Faltam o endereço (rua, número, bairro, CEP, cidade, estado) e o status (ativa ou inativa) do MD. O material está na branch `feat/empresas` (PR #11, fechado sem merge, commit `b0f0c7e`), que será recuperado a partir da `main` atual. | Aguarda ok do responsável. |
-| 3 | Listas fixas remanescentes | `src/components/modules/ItensModulo.tsx` ainda tem trechos de EPI e Uniforme com as listas fixas `CATEGORIAS_EPI` e `CATEGORIAS_UNIFORME` e código digitado à mão; `src/components/modules/VeiculosModulo.tsx` usa a lista fixa `TIPOS_VEICULO` e não é mais importado por nenhuma tela. Nenhum trecho aparece na tela, mas contrariam a regra de puxar tudo de Cadastros > Gerais. As listas em `src/lib/gemape.ts` continuam só como dados iniciais de Gerais. | Remoção aprovada pelo responsável em 01/10/2026: apagar os trechos em PR próprio. |
+| 3 | Listas fixas remanescentes | Os trechos sem uso com listas fixas foram removidos; as listas em `src/lib/gemape.ts` servem apenas como dados iniciais de Gerais. | Concluído: PR #43 mergeado em 01/10/2026. |
 | 4 | Pendência 4 (datas UTC) | Ver "Pendências para PRs separados", item 4. | Aguarda decisão do responsável. |
 
 ### Importação do XML da NF-e (grupo 1)
@@ -144,7 +144,13 @@ Fica para a Fase 2 (decisão 19), sem ação agora:
 
 ## Conformidade com a decisão 22 (Cadastros > Gerais parametriza tudo)
 
-Auditoria de 01/10/2026 sobre a `main` (`59dd52c`), sem nenhuma correção. Cada item vira PR só com o ok do responsável. O PR #43 (listas fixas, ainda não mergeado) já cobre os itens marcados com "#43".
+Auditoria de 01/10/2026 sobre a `main` (`59dd52c`), **encerrada após o merge dos PRs A, B e C**. O PR #43 removeu listas fixas sem uso e o PR #45 registrou a decisão 22 na documentação. As entregas aprovadas da auditoria estão na `main`:
+
+- **PR A (#46):** marcas de Uniforme e Veículo passaram a ser selecionadas em Gerais; a lista fixa `CATEGORIAS_FERRAMENTA` foi removida.
+- **PR B (#47):** EPI, Uniforme, Ferramenta e Veículo passaram a guardar a subcategoria por referência (`subcategoria_id`), acompanhando o nome atual de Gerais.
+- **PR C (#48):** proteção de exclusão dos parâmetros em uso, categorias-base e regras de código; opção de desativar/reativar os parâmetros aplicáveis em Gerais. A conferência de marca de ferramenta consulta o banco ativo.
+
+O achado sobre tamanhos e unidades fica para a decisão do responsável sobre o PR D; nenhum trabalho nele foi iniciado. Os demais achados e limites documentados abaixo não são autorização para novas correções.
 
 Já conforme:
 - Subcategoria em lista suspensa vinda de Gerais no cadastro de EPI, Uniforme, Ferramenta e Veículo (`CadastroProduto.tsx`, `ItensModulo.tsx`, `VeiculosCadastroModulo.tsx`).
@@ -155,7 +161,7 @@ Já conforme:
 - Caixas: só números habilitados em Gerais aparecem; caixa cadastrada não pode ser desabilitada.
 - Propagação na tela: toda alteração em Gerais avisa as telas abertas na hora (`EVENTO_PARAMETROS` em `parametros-base.ts`).
 
-Ainda fora das regras:
+Registro dos achados e encaminhamentos:
 
 | # | Regra | Achado | Onde |
 | --- | --- | --- | --- |
@@ -165,12 +171,12 @@ Ainda fora das regras:
 | 4 | 3 | ~~Cópia estagnada: produtos guardam o NOME da subcategoria.~~ Resolvido no PR #47 (PR B, mergeado): EPI, Uniforme, Ferramenta e Veículo gravam `subcategoria_id` e mostram sempre o nome atual de Gerais (lista, busca, CSV, edição e Ficha de EPI); renomear em Gerais muda os cadastros na hora. Migração do demo: ao abrir e a cada mudança em Gerais, cadastro só com nome, ou ligado a subcategoria excluída, é ligado à subcategoria de mesmo nome (sem diferença de acento ou maiúscula) da categoria do módulo, e o nome gravado acompanha o nome atual de Gerais. Nome que não casa continua aparecendo como "fora de Cadastros > Gerais" e é mantido ao editar outros campos, inclusive em Ferramenta. | `src/lib/subcategoria-referencia.ts`, `demo-client.ts` |
 | 5 | 3 | Ferramenta guarda o nome de categoria, grupo e marca; não fica estagnado porque renomear em uso é bloqueado, mas por isso a opção em uso não pode ser renomeada. | `cadastro-ferramentas.ts` |
 | 6 | 3 | Código de fábrica guarda cópia do nome do produto e do fornecedor e mostra a cópia. | `parametros-base.ts` (`nome_produto`, `fornecedor_nome`) |
-| 7 | 3 | ~~Gerais não tem "desativar".~~ Resolvido no PR C (`feat/gerais-protecao-desativar`): subcategorias, marcas (ferramenta, uniforme e veículo), categorias e grupos de ferramenta têm o botão Desativar/Reativar. Desativado sai das listas de seleção dos cadastros novos, mas o cadastro que já o usa continua mostrando e mantendo o parâmetro na edição, marcado "(desativado)". Categorias de Gerais e tamanhos/unidades não são desativáveis (tamanhos e unidades ficam para o PR D). | `alterarAtivo`, `paraSelecao` em `parametros-base.ts` |
-| 8 | 5 | ~~Apagar subcategoria não confere produtos que a usam.~~ Resolvido no PR C: a exclusão é recusada e o aviso mostra os cadastros que a usam (até 5 códigos por módulo, "e mais N"), sugerindo desativar. O mesmo aviso com códigos vale para marcas e opções de Ferramenta. | `src/lib/uso-parametros.ts`, `categorias.tsx` |
-| 9 | 5 | ~~Apagar categoria não confere fornecedores e as categorias-base podem ser apagadas.~~ Resolvido no PR C: categoria marcada por fornecedor é recusada com a lista dos fornecedores; as categorias-base de EPI, Uniformes, Ferramentas e Veículos não podem ser excluídas nem desativadas (só renomeadas). | `CATEGORIAS_BASE`, `removerCategoria` em `parametros-base.ts` |
-| 10 | 5 | ~~Apagar regra de código não avisa o que depende.~~ Resolvido no PR C: a regra de uma categoria-base não pode ser excluída; o aviso diz que novos cadastros do módulo ficariam bloqueados e orienta a editar sigla ou numeração. | `removerRegraCodigo`, `codigo-produto.tsx` |
+| 7 | 3 | ~~Gerais não tem "desativar".~~ Resolvido no PR #48 (PR C): subcategorias, marcas (ferramenta, uniforme e veículo), categorias e grupos de ferramenta têm o botão Desativar/Reativar. Desativado sai das listas de seleção dos cadastros novos, mas o cadastro que já o usa continua mostrando e mantendo o parâmetro na edição, marcado "(desativado)". Categorias-base e tamanhos/unidades não são desativáveis (tamanhos e unidades ficam para o PR D). | `alterarAtivo`, `paraSelecao` em `parametros-base.ts` |
+| 8 | 5 | ~~Apagar subcategoria não confere produtos que a usam.~~ Resolvido no PR #48 (PR C): a exclusão é recusada e o aviso mostra os cadastros que a usam (até 5 códigos por módulo, "e mais N"), sugerindo desativar. O mesmo aviso com códigos vale para marcas e opções de Ferramenta. | `src/lib/uso-parametros.ts`, `categorias.tsx` |
+| 9 | 5 | ~~Apagar categoria não confere fornecedores e as categorias-base podem ser apagadas.~~ Resolvido no PR #48 (PR C): categoria marcada por fornecedor é recusada com a lista dos fornecedores; as categorias-base de EPI, Uniformes, Ferramentas e Veículos não podem ser excluídas nem desativadas (só renomeadas). | `CATEGORIAS_BASE`, `removerCategoria` em `parametros-base.ts` |
+| 10 | 5 | ~~Apagar regra de código não avisa o que depende.~~ Resolvido no PR #48 (PR C): a regra de uma categoria-base não pode ser excluída; o aviso diz que novos cadastros do módulo ficariam bloqueados e orienta a editar sigla ou numeração. | `removerRegraCodigo`, `codigo-produto.tsx` |
 | 11 | 5 | Apagar fornecedor ou produto não confere os códigos de fábrica que apontam para ele. | `fornecedores-demo.ts`, cadastros de produto |
-| 12 | 5 | A conferência de "em uso" das opções de Ferramenta lê sempre os dados de demonstração, mesmo com o banco real (Fase 2). | `categorias.tsx` |
+| 12 | 5 | ~~A conferência de "em uso" da marca de Ferramenta lê sempre os dados de demonstração.~~ Resolvido no PR #48 (PR C): a marca consulta o banco ativo. Categoria e grupo continuam no demo, onde seus campos existem; a migração desses parâmetros para o banco real pertence à Fase 2. | `categorias.tsx` |
 
 Fora de Gerais, mas parecido: o fornecedor das Compras de EPI e Uniformes é digitado, embora exista o cadastro de Fornecedores. Endereçamento é cadastrado e lê o produto pelo código, mas ainda não alimenta nenhum módulo.
 
