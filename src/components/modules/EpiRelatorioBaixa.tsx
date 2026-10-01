@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +24,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
-import { useEmpresas, useItens, useMovimentacoes, useEmpregados } from "@/lib/hooks-gemape";
+import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
 
 export function EpiRelatorioBaixa() {
   const { empresaId } = useEmpresa();
@@ -34,7 +37,10 @@ export function EpiRelatorioBaixa() {
   const tamanhoDe = (m: { tamanho_id?: string | null }) =>
     nomeTamanhoGravado(parametros, m.tamanho_id);
 
-  const { data: movimentacoes = [], isLoading } = useMovimentacoes("epi", empresaId, 1000);
+  const { data: movimentacoes = [], isLoading, isError, error } = useQuery({
+    queryKey: ["relatorio-baixas", "epi", empresaId, dataInicial, dataFinal],
+    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo: "epi", empresaId: empresaId === TODAS ? undefined : empresaId, de: dataInicial, ate: dataFinal }),
+  });
   const { data: itens = [] } = useItens("epi", TODAS);
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(TODAS);
@@ -52,6 +58,8 @@ export function EpiRelatorioBaixa() {
   const totalValor = baixas.reduce((acc, b) => {
     return acc + b.quantidade * 0;
   }, 0);
+
+  if (isError) return <div role="alert">Não foi possível carregar o histórico completo: {error.message}</div>;
 
   return (
     <div className="space-y-6">

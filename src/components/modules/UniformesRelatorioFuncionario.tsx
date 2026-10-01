@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { lerEmpregadosRelatorio, lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,7 +23,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
-import { useEmpresas, useItens, useMovimentacoes, useEmpregados } from "@/lib/hooks-gemape";
+import { useEmpresas, useItens } from "@/lib/hooks-gemape";
 
 export function UniformesRelatorioFuncionario() {
   const [empresaSel, setEmpresaSel] = useState(TODAS);
@@ -30,12 +33,16 @@ export function UniformesRelatorioFuncionario() {
     nomeTamanhoGravado(parametros, m.tamanho_id);
 
   const { data: empresas = [] } = useEmpresas();
-  const { data: empregados = [] } = useEmpregados(empresaSel);
+  const { data: empregados = [] } = useQuery({ queryKey: ["empregados-relatorio", empresaSel], queryFn: () => lerEmpregadosRelatorio(supabase, empresaSel) });
   const { data: itens = [] } = useItens("uniforme", TODAS);
-  const { data: movimentacoes = [], isLoading } = useMovimentacoes("uniforme", TODAS, 1000);
+  const empregado = empregados.find((e) => e.id === empregadoId);
+  const { data: movimentacoes = [], isLoading, isError, error } = useQuery({
+    queryKey: ["relatorio-funcionario", "uniforme", empregadoId, empregado?.empresa_id],
+    enabled: Boolean(empregadoId && empregado?.empresa_id),
+    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo: "uniforme", empregadoId, empresaId: empregado?.empresa_id ?? undefined }),
+  });
 
   const historico = movimentacoes.filter((m) => m.empregado_id === empregadoId);
-  const empregado = empregados.find((e) => e.id === empregadoId);
 
   const totalEntregue = historico
     .filter((m) => m.tipo_movimentacao === "Saida" && !m.motivo_baixa)
@@ -47,6 +54,9 @@ export function UniformesRelatorioFuncionario() {
     .filter((m) => m.tipo_movimentacao === "Saida" && m.motivo_baixa)
     .reduce((acc, m) => acc + m.quantidade, 0);
   const emPosse = totalEntregue - totalDevolvido - totalBaixado;
+
+  if (isError) return <div role="alert">Não foi possível carregar o histórico completo: {error.message}</div>;
+  if (empregado && isLoading) return <div>Carregando histórico completo…</div>;
 
   return (
     <div className="space-y-6">

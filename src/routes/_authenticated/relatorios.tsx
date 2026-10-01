@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { lerEmpregadosRelatorio, lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import {
   exportarCsv,
@@ -30,7 +31,7 @@ import {
   TIPO_MOVIMENTACAO_LABEL,
   type Modulo,
 } from "@/lib/gemape";
-import { useEmpregados } from "@/lib/hooks-gemape";
+
 
 export const Route = createFileRoute("/_authenticated/relatorios")({
   head: () => ({
@@ -57,7 +58,7 @@ const TODOS = "todos";
 
 function PaginaRelatorios() {
   const { empresas, empresaId } = useEmpresa();
-  const { data: empregados = [] } = useEmpregados(empresaId);
+  const { data: empregados = [] } = useQuery({ queryKey: ["empregados-relatorio", empresaId], queryFn: () => lerEmpregadosRelatorio(supabase, empresaId) });
   const hoje = new Date().toISOString().slice(0, 10);
   const trintaDias = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
 
@@ -66,23 +67,16 @@ function PaginaRelatorios() {
   const [de, setDe] = useState(trintaDias);
   const [ate, setAte] = useState(hoje);
 
-  const { data: linhas = [], isFetching } = useQuery({
+  const { data: linhas = [], isFetching, isError, error } = useQuery({
     queryKey: ["relatorio", empresaId, modulo, empregadoId, de, ate],
     staleTime: 60_000,
     queryFn: async () => {
-      let q = supabase
-        .from("movimentacoes")
-        .select(
-          "id, modulo, tipo_movimentacao, quantidade, motivo_baixa, onus_baixa, tipo_vistoria, sinalizar_ocorrencia, tipo_ocorrencia, conducao_ocorrencia, data_movimentacao, observacao, empresa_id, empregado_id, item_id, veiculo_id",
-        )
-        .gte("data_movimentacao", de)
-        .lte("data_movimentacao", ate);
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      if (modulo !== TODOS) q = q.eq("modulo", modulo);
-      if (empregadoId !== TODOS) q = q.eq("empregado_id", empregadoId);
-      const { data, error } = await q.order("data_movimentacao", { ascending: false }).limit(500);
-      if (error) throw error;
-      return data ?? [];
+      return lerMovimentacoesRelatorio(supabase, {
+        empresaId: empresaId === TODAS ? undefined : empresaId,
+        modulo: modulo === TODOS ? undefined : modulo,
+        empregadoId: empregadoId === TODOS ? undefined : empregadoId,
+        de, ate,
+      });
     },
   });
 
@@ -167,12 +161,12 @@ function PaginaRelatorios() {
 
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm text-muted-foreground">
-          {isFetching ? "Buscando…" : `${linhas.length} movimentações encontradas.`}
+          {isError ? `Falha ao carregar o histórico completo: ${error.message}` : isFetching ? "Buscando…" : `${linhas.length} movimentações encontradas.`}
         </p>
         <Button
           className="ml-auto"
           variant="outline"
-          disabled={linhas.length === 0}
+          disabled={isError || isFetching || linhas.length === 0}
           onClick={() => exportarCsv("relatorio-movimentacoes", paraCsv())}
         >
           Exportar CSV (Excel)
