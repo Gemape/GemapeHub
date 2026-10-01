@@ -41,7 +41,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { codigosReservadosFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, selecaoMarcaCadastrada, valoresItemNaEdicao } from "@/lib/cadastro-ferramentas";
 import { proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import { nomeSubcategoria, resolverSubcategoria, SUBCATEGORIA_LEGADA, subcategoriaDaSelecao, valorSelecaoSubcategoria } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+
+const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 
 // Cadastro de ferramentas. EPI e uniforme usam CadastroProduto, e todas as listas
 // vêm de Cadastros > Gerais.
@@ -55,6 +58,9 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const parametros = useParametrosBase();
   const regraFerramenta = parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
   const subcategoriasFerramenta = subcategoriasDa(parametros, "cat-ferramentas");
+  // Subcategoria pela referência gravada: o nome mostrado é sempre o atual de Gerais.
+  const subcategoriaDe = (i: Item) => nomeSubcategoria(parametros, "cat-ferramentas", i);
+  const subcategoriaAtual = editando ? resolverSubcategoria(parametros, "cat-ferramentas", editando) : null;
   const marcaCadastrada = parametros.marcasFerramenta.find((m) => m.nome === editando?.marca);
   const marcaAntiga = editando?.marca && !marcaCadastrada ? editando.marca : null;
   const tabela = "ferramentas";
@@ -118,10 +124,14 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
     };
     valores = valoresItemNaEdicao(valores, !!editando);
     try {
+      const subcategoria = subcategoriaDaSelecao(String(f.get("categoria") ?? ""), parametros, "cat-ferramentas", subcategoriaAtual);
+      // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
+      if (MODO_DEMO) valores["subcategoria_id"] = subcategoria.id;
       const cadastro = prepararCadastroFerramenta({
         parametros,
         codigosExistentes: editando ? [] : await codigosFerramenta(),
-        subcategoria: String(f.get("categoria") ?? ""),
+        subcategoria: subcategoria.nome,
+        ...(subcategoriaAtual?.foraDeGerais ? { subcategoriaAtual: subcategoriaAtual.nome } : {}),
         descricao: String(f.get("nome") ?? ""),
         estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
@@ -162,7 +172,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 itens.map((i) => ({
                   "Código/SKU": i.codigo_sku,
                   Nome: i.nome,
-                  Subcategoria: i.categoria,
+                  Subcategoria: subcategoriaDe(i),
                   "Categoria de ferramenta": i.categoria_ferramenta,
                   "Grupo de ferramenta": i.grupo_ferramenta,
                   Marca: i.marca,
@@ -221,7 +231,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell className="font-medium">{item.nome}</TableCell>
-                  <TableCell>{item.categoria ?? "—"}</TableCell>
+                  <TableCell>{subcategoriaDe(item) || "—"}</TableCell>
                   <TableCell>{item.categoria_ferramenta ?? "—"}</TableCell>
                   <TableCell>{item.grupo_ferramenta ?? "—"}</TableCell>
                   <TableCell>{item.marca ?? "—"}</TableCell>
@@ -314,16 +324,21 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
 
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Subcategoria</Label>
-              <Select name="categoria" required defaultValue={editando?.categoria ?? ""}>
+              <Select name="categoria" required defaultValue={valorSelecaoSubcategoria(subcategoriaAtual)}>
                 <SelectTrigger id="categoria">
                   <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subcategoriasFerramenta.map((c) => (
-                    <SelectItem key={c.id} value={c.nome}>
-                      {c.nome}
+                  {subcategoriasFerramenta.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.nome}
                     </SelectItem>
                   ))}
+                  {subcategoriaAtual?.foraDeGerais && (
+                    <SelectItem value={SUBCATEGORIA_LEGADA}>
+                      {subcategoriaAtual.nome} (fora de Cadastros &gt; Gerais)
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>

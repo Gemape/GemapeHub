@@ -36,13 +36,15 @@ import {
 } from "@/lib/fichas-epi";
 import { combinaBusca } from "@/lib/parametros-base";
 import { useFichasEpi } from "@/lib/use-fichas-epi";
-import { executar } from "@/lib/use-parametros-base";
+import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
+import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 type EpiResumo = {
   id: string;
   codigo_sku: string;
   nome: string;
   categoria: string | null;
+  subcategoria_id?: string | null;
   empresa_id: string | null;
 };
 
@@ -58,10 +60,7 @@ function useEpis() {
     queryKey: ["epis", "resumo-fichas"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("epis")
-        .select("id,codigo_sku,nome,categoria,empresa_id")
-        .order("codigo_sku");
+      const { data, error } = await supabase.from("epis").select("*").order("codigo_sku");
       if (error) throw error;
       return (data ?? []) as EpiResumo[];
     },
@@ -73,6 +72,7 @@ function FichaEpiPagina() {
   const navigate = useNavigate({ from: Route.fullPath });
   const { empresas, empresaId } = useEmpresa();
   const fichas = useFichasEpi();
+  const parametros = useParametrosBase();
   const { data: todos = [], isLoading } = useEpis();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
@@ -101,7 +101,10 @@ function FichaEpiPagina() {
     .map((e) => ({
       valor: e.id,
       rotulo: `${e.codigo_sku} · ${e.nome}`,
-      detalhe: [e.categoria, nomeEmpresa(e.empresa_id)].filter(Boolean).join(" · "),
+      // Subcategoria pela referência gravada (nome atual de Gerais).
+      detalhe: [nomeSubcategoria(parametros, "cat-epi", e), nomeEmpresa(e.empresa_id)]
+        .filter(Boolean)
+        .join(" · "),
     }));
 
   function abrir(epiId: string | null) {
