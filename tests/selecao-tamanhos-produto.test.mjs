@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { demoSupabase } from '../src/integrations/supabase/demo-client.ts';
 import { lerParametros } from '../src/lib/parametros-base.ts';
 import { alternarTamanhoSelecionado, estadoEstoqueModulo, preservarMinimosNaoSelecionados, tamanhosDisponiveisDoProduto } from '../src/lib/estoque-tamanho.ts';
+import { tamanhosConfiguraveisNoModulo } from '../src/lib/estoque-configuracao.ts';
 
 const produto = { id: crypto.randomUUID(), empresa_id: 'emp-a', nome: 'Botina', codigo_sku: 'EPI-9010', categoria: 'Botina', subcategoria_id: 'sub-epi-botina', estoque_atual: 3, estoque_minimo: 2, saldos_tamanho: { 'tam-37': 1, 'tam-38': 2 }, minimos_tamanho: { 'tam-37': 2, 'tam-38': 0 } };
 
@@ -25,12 +26,42 @@ test('clique inclui, persiste no demo e segundo clique remove o tamanho', async 
 test('aba de Estoque mostra detalhes apenas dos tamanhos selecionados', () => {
   const p = lerParametros(null);
   const ids = tamanhosDisponiveisDoProduto(p, 'epi', produto).map(t => t.id);
-  const item = { ...produto, saldos_tamanho: { [ids[0]]: 1, [ids[1]]: 2 }, minimos_tamanho: { [ids[0]]: 2, [ids[1]]: 3 }, tamanhos_selecionados: [ids[0]] };
+  const item = { ...produto, estoque_minimo: 5, saldos_tamanho: { [ids[0]]: 1, [ids[1]]: 2 }, minimos_tamanho: { [ids[0]]: 2, [ids[1]]: 3 }, tamanhos_selecionados: [ids[0]] };
   const estado = estadoEstoqueModulo(p, 'epi', item);
   assert.match(estado.detalheSaldo, /37: 1/);
   assert.doesNotMatch(estado.detalheSaldo, /38/);
   assert.match(estado.detalheMinimo, /37: 2/);
   assert.doesNotMatch(estado.detalheMinimo, /38/);
+  assert.equal(estado.minimo, 2, 'mínimo total exibido segue a seleção');
+  assert.equal(estado.saldo, 1, 'saldo exibido soma apenas os tamanhos selecionados');
+  assert.equal(estado.saldoForaDaSelecao, 2, 'saldo histórico fica identificado à parte');
+});
+
+test('tamanho selecionado sem movimentação aparece com saldo e mínimo zero', () => {
+  const p = lerParametros(null);
+  const ids = tamanhosDisponiveisDoProduto(p, 'epi', produto).map(t => t.id);
+  const estado = estadoEstoqueModulo(p, 'epi', { ...produto, estoque_atual: 0, estoque_minimo: 0,
+    saldos_tamanho: {}, minimos_tamanho: {}, tamanhos_selecionados: [ids[0]] });
+  assert.match(estado.detalheSaldo, /37: 0/);
+  assert.match(estado.detalheMinimo, /37: 0/);
+});
+
+test('saldo legado sem mapa fica identificado fora da seleção', () => {
+  const p = lerParametros(null);
+  const id = tamanhosDisponiveisDoProduto(p, 'epi', produto)[0].id;
+  const estado = estadoEstoqueModulo(p, 'epi', { ...produto, saldos_tamanho: null, tamanho: null,
+    estoque_atual: 3, tamanhos_selecionados: [id] });
+  assert.equal(estado.saldo, 0);
+  assert.equal(estado.saldoForaDaSelecao, 3);
+});
+
+test('mínimo antigo de tamanho removido não aciona alerta nem aparece no total', () => {
+  const p = lerParametros(null);
+  const ids = tamanhosDisponiveisDoProduto(p, 'epi', produto).map(t => t.id);
+  const estado = estadoEstoqueModulo(p, 'epi', { ...produto, estoque_atual: 0,
+    tamanhos_selecionados: [ids[0]], minimos_tamanho: { [ids[1]]: 4 }, estoque_minimo: 4 });
+  assert.equal(estado.minimo, 0);
+  assert.equal(estado.alerta, false);
 });
 
 test('sem tamanho selecionado o módulo não produz alerta de mínimo antigo', () => {
@@ -46,5 +77,11 @@ test('desmarcar um tamanho preserva seu mínimo histórico no produto', () => {
 test('cadastro apresenta chips como botões com estado pressionado', () => {
   const fonte = readFileSync(new URL('../src/components/modules/CadastroProduto.tsx', import.meta.url), 'utf8');
   assert.match(fonte, /aria-pressed=\{tamanhosSelecionados\.includes/);
-  assert.match(fonte, /tamanhos_selecionados/);
+  assert.match(fonte, /valores\["tamanhos_selecionados"\]\s*=/);
+  assert.match(fonte, /import\s*\{[^}]*alternarTamanhoSelecionado/s);
+});
+
+test('grade do módulo exclui tamanho desmarcado mesmo com mínimo antigo', () => {
+  assert.deepEqual(tamanhosConfiguraveisNoModulo(['tam-37', 'tam-38'], { 'tam-38': 4 }, ['tam-37']), ['tam-37']);
+  assert.deepEqual(tamanhosConfiguraveisNoModulo(['tam-37'], { 'tam-38': 4 }, null), ['tam-37', 'tam-38']);
 });

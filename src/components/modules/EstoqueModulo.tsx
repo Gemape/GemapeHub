@@ -7,8 +7,8 @@ import { useEmpresa } from '@/lib/empresa-context';
 import { MODO_DEMO } from '@/lib/modo-demo';
 import { exportarCsv } from '@/lib/gemape';
 import { lerItensEstoque } from '@/lib/itens-estoque-modulo';
-import { prepararEstoqueFerramenta, prepararMinimoUnico, prepararMinimosEstoque } from '@/lib/estoque-configuracao';
-import { controlaTamanho, estadoEstoqueModulo, nomeTamanho, tamanhosAutorizadosDoProduto } from '@/lib/estoque-tamanho';
+import { prepararEstoqueFerramenta, prepararMinimoUnico, prepararMinimosEstoque, tamanhosConfiguraveisNoModulo } from '@/lib/estoque-configuracao';
+import { controlaTamanho, estadoEstoqueModulo, nomeTamanho, preservarMinimosNaoSelecionados, tamanhosAutorizadosDoProduto, tamanhosDisponiveisDoProduto } from '@/lib/estoque-tamanho';
 import { useSalvar } from '@/lib/hooks-gemape';
 import { estaAtivo } from '@/lib/parametros-base';
 import { useParametrosBase } from '@/lib/use-parametros-base';
@@ -37,17 +37,22 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
     || Object.values(itemEditado.minimos_tamanho ?? {}).some((minimo) => Number(minimo) > 0)
   ));
   const tamanhosDaGrade = itemEditado && modulo !== 'ferramenta' && porTamanho
-    ? [...new Set([
-      ...tamanhosAutorizadosDoProduto(parametros, modulo, itemEditado)
+    ? tamanhosConfiguraveisNoModulo(
+      tamanhosAutorizadosDoProduto(parametros, modulo, itemEditado)
         .filter((tamanho) => estaAtivo(parametros, tamanho.id)).map((tamanho) => tamanho.id),
-      ...Object.keys(itemEditado.minimos_tamanho ?? {}).filter((id) => Number(itemEditado.minimos_tamanho?.[id]) > 0),
-    ])]
+      itemEditado.minimos_tamanho ?? {},
+      itemEditado.tamanhos_selecionados,
+    )
     : [];
   const usaGrade = porTamanho && tamanhosDaGrade.length > 0;
+  const semSelecao = Boolean(itemEditado && modulo !== 'ferramenta' && MODO_DEMO &&
+    Array.isArray(itemEditado.tamanhos_selecionados) && itemEditado.tamanhos_selecionados.length === 0 &&
+    (tamanhosDisponiveisDoProduto(parametros, modulo, itemEditado).length > 0 ||
+      Object.values(itemEditado.minimos_tamanho ?? {}).some((valor) => Number(valor) > 0)));
 
   function salvarConfiguracao(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    if (!itemEditado || salvar.isPending) return;
+    if (!itemEditado || salvar.isPending || semSelecao) return;
     const formulario = new FormData(evento.currentTarget);
     try {
       let valores: Record<string, unknown>;
@@ -56,6 +61,11 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
       } else if (usaGrade) {
         const digitados = Object.fromEntries(tamanhosDaGrade.map((id) => [id, Number(formulario.get(`minimo:${id}`))]));
         valores = prepararMinimosEstoque(digitados, tamanhosDaGrade);
+        if (MODO_DEMO && Array.isArray(itemEditado.tamanhos_selecionados)) {
+          const minimos = preservarMinimosNaoSelecionados(itemEditado.minimos_tamanho ?? {}, itemEditado.tamanhos_selecionados, valores['minimos_tamanho'] as Record<string, number>);
+          valores['minimos_tamanho'] = minimos;
+          valores['estoque_minimo'] = Object.values(minimos).reduce((soma, minimo) => soma + minimo, 0);
+        }
       } else {
         valores = prepararMinimoUnico(String(formulario.get('estoque_minimo') ?? ''));
         if (!MODO_DEMO) delete valores['minimos_tamanho'];
@@ -77,6 +87,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             Código: item.codigo_sku,
             Item: item.nome,
             Saldo: estado.saldo,
+            'Saldo histórico fora da seleção': estado.saldoForaDaSelecao,
             'Estoque mínimo': estado.minimo,
             'Saldo por tamanho': estado.detalheSaldo,
             'Mínimo por tamanho': estado.detalheMinimo,
@@ -98,7 +109,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
                 : linhas.map(({ item, estado }) => <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell>{item.nome}</TableCell>
-                  <TableCell className="text-right">{estado.saldo}{estado.detalheSaldo && <p className="text-xs text-muted-foreground">{estado.detalheSaldo}</p>}</TableCell>
+                  <TableCell className="text-right">{estado.saldo}{estado.detalheSaldo && <p className="text-xs text-muted-foreground">{estado.detalheSaldo}</p>}{estado.saldoForaDaSelecao !== 0 && <p className="text-xs text-muted-foreground">Saldo histórico fora da seleção: {estado.saldoForaDaSelecao}</p>}</TableCell>
                   <TableCell className="text-right">{estado.minimo}{estado.detalheMinimo && <p className="text-xs text-muted-foreground">{estado.detalheMinimo}</p>}</TableCell>
                   <TableCell className={estado.alerta ? 'font-bold text-destructive' : ''}>
                     {estado.alerta ? `Abaixo do mínimo${estado.detalheAlerta ? `: ${estado.detalheAlerta}` : ''}` : '—'}
@@ -115,7 +126,8 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             <DialogDescription>Saldo, mínimo e alertas pertencem ao módulo.</DialogDescription>
           </DialogHeader>
           {itemEditado && <form key={itemEditado.id} onSubmit={salvarConfiguracao} className="space-y-4">
-            {usaGrade ? <fieldset className="space-y-2">
+            {semSelecao ? <p className="text-sm text-muted-foreground">Selecione um tamanho no cadastro do produto para configurar o mínimo.</p>
+              : usaGrade ? <fieldset className="space-y-2">
               <legend className="font-medium">Estoque mínimo por tamanho</legend>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                 {tamanhosDaGrade.map((id) => <div key={id} className="space-y-1">
@@ -134,7 +146,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             </div>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setItemId(null)}>Cancelar</Button>
-              <Button requiresWrite type="submit" disabled={salvar.isPending}>Salvar</Button>
+              <Button requiresWrite type="submit" disabled={salvar.isPending || semSelecao}>Salvar</Button>
             </DialogFooter>
           </form>}
         </DialogContent>

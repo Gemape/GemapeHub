@@ -55,6 +55,7 @@ import {
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
+  alternarTamanhoSelecionado,
   nomeUnidade,
   tamanhosAssociadosParaCadastro,
   unidadesAutorizadasDoProduto,
@@ -253,7 +254,12 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       nome,
     };
     // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
-    if (MODO_DEMO) valores["subcategoria_id"] = subcategoria.id;
+    if (MODO_DEMO) {
+      valores["subcategoria_id"] = subcategoria.id;
+      valores["tamanhos_selecionados"] = tamanhosSelecionados.filter((id) =>
+        tamanhosAssociados.some((tamanho) => tamanho.id === id),
+      );
+    }
     // Unidade de Gerais (decisão 23), só no modo demonstração.
     if (MODO_DEMO) {
       const unidade = String(f.get("unidade_id") ?? "");
