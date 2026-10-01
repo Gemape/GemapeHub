@@ -61,6 +61,7 @@ import {
   nomeUnidade,
   resumoEstoquePorTamanho,
   resumoMinimosPorTamanho,
+  tamanhosAssociadosParaCadastro,
   usaMinimoPorTamanho,
   tamanhosAutorizadosDoProduto,
   unidadesAutorizadasDoProduto,
@@ -207,6 +208,11 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
         ]),
       ]
     : [];
+  // Todos os tamanhos e numerações associados à subcategoria escolhida (decisão 23).
+  const tamanhosAssociados =
+    MODO_DEMO && (subEscolhida || subSel === SUBCATEGORIA_LEGADA)
+      ? tamanhosAssociadosParaCadastro(parametros, config.modulo, produtoNoFormulario)
+      : [];
   // Sem tamanho ativo para a grade (a subcategoria perdeu os tamanhos), vale o mínimo único.
   const usaGrade = porTamanho && tamanhosDaGrade.length > 0;
   const rotuloTamanho = (id: string) =>
@@ -634,6 +640,34 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                     )}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+            {MODO_DEMO && (subEscolhida || subSel === SUBCATEGORIA_LEGADA) && (
+              <div className="space-y-1.5 sm:col-span-2">
+                <p id="tamanhos_associados" className="text-sm font-medium">
+                  Tamanhos e numerações
+                </p>
+                {tamanhosAssociados.length > 0 ? (
+                  <ul aria-labelledby="tamanhos_associados" className="flex flex-wrap gap-1.5">
+                    {tamanhosAssociados.map((t) => (
+                      <li key={t.id}>
+                        <Badge variant="secondary">{t.rotulo}</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhum tamanho associado a esta subcategoria. Associe em Cadastros &gt; Gerais
+                    &gt; Associar Tamanho e Medida.
+                  </p>
+                )}
+                {tamanhosAssociados.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Vêm de Cadastros &gt; Gerais &gt; Associar Tamanho e Medida. O estoque é
+                    controlado por tamanho: compras, entregas, baixas e devoluções informam o
+                    tamanho.
+                  </p>
+                )}
               </div>
             )}
             {usaGrade ? (

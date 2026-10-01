@@ -67,6 +67,21 @@ export const tamanhosAutorizadosDoProduto = (
   produto: ProdutoTamanho,
 ) => opcoesAutorizadas(p, modulo, produto, "tamanhos");
 
+/**
+ * Tamanhos e numerações associados à subcategoria do produto em Associar Tamanho e Medida,
+ * para o cadastro mostrar: todos, na ordem de Gerais, com o desativado marcado.
+ */
+export function tamanhosAssociadosParaCadastro(
+  p: ParametrosBase,
+  modulo: ModuloTamanho,
+  produto: ProdutoTamanho,
+): { id: string; rotulo: string }[] {
+  return tamanhosAutorizadosDoProduto(p, modulo, produto).map((t) => ({
+    id: t.id,
+    rotulo: estaAtivo(p, t.id) ? t.nome : `${t.nome} (desativado)`,
+  }));
+}
+
 /** Unidades autorizadas para a subcategoria do produto (inclui as desativadas). */
 export const unidadesAutorizadasDoProduto = (
   p: ParametrosBase,
