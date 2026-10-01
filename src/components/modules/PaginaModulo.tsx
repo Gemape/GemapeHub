@@ -1,5 +1,5 @@
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
-import { CadastroProduto } from "@/components/modules/CadastroProduto";
+import { EstoqueModulo } from "@/components/modules/EstoqueModulo";
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { UniformesComprasModulo } from "@/components/modules/UniformesComprasModulo";
 import { UniformesRelatorioFuncionario } from "@/components/modules/UniformesRelatorioFuncionario";
@@ -24,7 +24,7 @@ export function PaginaModulo({
   titulo,
   descricao,
 }: {
-  modulo: Modulo;
+  modulo: Extract<Modulo, 'epi' | 'uniforme' | 'ferramenta'>;
   titulo: string;
   descricao: string;
 }) {
@@ -45,6 +45,9 @@ export function PaginaModulo({
             >
               Dashboard
             </TabsTrigger>
+            <TabsTrigger value="estoque" className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">
+              Estoque
+            </TabsTrigger>
 
             {modulo === "epi" ? (
               <>
@@ -59,12 +62,6 @@ export function PaginaModulo({
                   className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
                 >
                   Histórico do empregado
-                </TabsTrigger>
-                <TabsTrigger
-                  value="cadastro"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Estoque
                 </TabsTrigger>
                 <TabsTrigger
                   value="baixas"
@@ -176,9 +173,8 @@ export function PaginaModulo({
         <TabsContent value="dashboard" className="mt-5">
           <DashboardModulo modulo={modulo} />
         </TabsContent>
-        <TabsContent value="cadastro" className="mt-5">
-          {/* Aba Estoque do EPI: o cadastro da especificação rev1, o mesmo de Cadastros. */}
-          {modulo === "epi" ? <CadastroProduto tabela="epis" /> : null}
+        <TabsContent value="estoque" className="mt-5">
+          <EstoqueModulo modulo={modulo} />
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />

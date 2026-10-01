@@ -173,8 +173,9 @@ test("o cadastro de EPI e de uniforme escolhe a unidade e o mínimo por tamanho 
   assert.match(tela, /unidadesAutorizadasDoProduto/);
   assert.match(tela, /htmlFor="unidade_id"/);
   assert.match(tela, /minimos_tamanho/);
-  assert.match(tela, /resumoEstoquePorTamanho/);
-  assert.match(tela, /alertasPorTamanho/);
+  assert.doesNotMatch(tela, /resumoEstoquePorTamanho|alertasPorTamanho/);
+  const estoque = fonte("components/modules/EstoqueModulo.tsx");
+  assert.match(estoque, /estadoEstoqueModulo/);
   // A edição nunca envia o saldo por tamanho: só o gatilho mexe nele.
   assert.equal(/valores\[?["']?saldos_tamanho/.test(tela), false);
 });
