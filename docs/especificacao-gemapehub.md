@@ -93,6 +93,8 @@ Associa a uma categoria as opções de tamanho e unidade de medida de um produto
 
 O CA não entra no uniforme: é exigência da NR6 e pertence ao EPI e à Ficha de EPI.
 
+O cadastro fica só em Cadastros > Uniformes; o módulo Uniformes não tem aba Cadastro (decisão 25).
+
 ### Veículo
 
 **Cadastrar veículo**
