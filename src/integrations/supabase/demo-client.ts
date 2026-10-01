@@ -1,5 +1,8 @@
 // @ts-nocheck -- adaptador propositalmente genérico para emular a API de consulta no demo.
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
+import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
+import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
+
 type Linha = Record<string, unknown>;
 const agora = new Date().toISOString();
 const empresa = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração", cnpj: "00.000.000/0001-00", created_at: agora };
@@ -7,9 +10,9 @@ const usuario = { id: "admin-demo", email: "admin@demo.local" };
 const dadosIniciais: Record<string, Linha[]> = {
   perfis: [{ id: usuario.id, papel: "admin", ativo: true }], empresas: [empresa],
   empregados: [{ id: "emp-demo", empresa_id: empresa.id, nome: "Maria da Silva", cpf: "000.000.000-00", cargo: "Técnica", matricula: "1001", ativo: true }],
-  epis: [{ id: "epi-demo", empresa_id: empresa.id, nome: "Capacete de segurança", codigo_sku: "EPI-0001", categoria: "Capacete", ca: "12345", estoque_atual: 12, estoque_minimo: 5, status: "Ativo", preco_unitario: 85, created_at: agora }],
-  uniformes: [{ id: "uni-demo", empresa_id: empresa.id, nome: "Camisa operacional", codigo_sku: "UNI-0001", categoria: "Camisa", tamanho: "M", estoque_atual: 20, estoque_minimo: 8, status: "Ativo", preco_unitario: 55, created_at: agora }],
-  ferramentas: [{ id: "fer-demo", empresa_id: empresa.id, nome: "Furadeira", codigo_sku: "FER-0001", categoria: "Elétrica", estoque_atual: 3, estoque_minimo: 2, status: "Ativo", preco_unitario: 240, created_at: agora }],
+  epis: [{ id: "epi-demo", empresa_id: empresa.id, nome: "Capacete de segurança", codigo_sku: "EPI-0001", categoria: "Capacete", subcategoria_id: "sub-epi-capacete", ca: "12345", estoque_atual: 12, estoque_minimo: 5, status: "Ativo", preco_unitario: 85, created_at: agora }],
+  uniformes: [{ id: "uni-demo", empresa_id: empresa.id, nome: "Camisa operacional", codigo_sku: "UNI-0001", categoria: "Camisa", subcategoria_id: "sub-uniformes-camisa", tamanho: "M", estoque_atual: 20, estoque_minimo: 8, status: "Ativo", preco_unitario: 55, created_at: agora }],
+  ferramentas: [{ id: "fer-demo", empresa_id: empresa.id, nome: "Furadeira", codigo_sku: "FER-0001", categoria: "Elétrica", subcategoria_id: "sub-ferramentas-eletrica", estoque_atual: 3, estoque_minimo: 2, status: "Ativo", preco_unitario: 240, created_at: agora }],
   veiculos: [{ id: "vei-demo", empresa_id: empresa.id, placa: "GEM-2026", marca: "Fiat", modelo: "Strada", quilometragem_atual: 25000, status: "Ativo", created_at: agora }],
   movimentacoes: [], ocorrencias: [], compras_epis: [], compras_uniformes: [], caixas_ferramentas: [], caixa_ferramenta_itens: [], cadastros_auxiliares: [], auditoria: [],
   notas_fiscais_importadas: [],
@@ -29,6 +32,18 @@ const dados = lerDados();
 const persistirDados = () => {
   if (typeof window !== "undefined") window.localStorage.setItem(chaveArmazenamento, JSON.stringify(dados));
 };
+// Cadastros gravados só com o nome da subcategoria ganham a referência dela (decisão 22).
+// Roda ao abrir e a cada mudança em Gerais, para ligar nomes que passem a existir lá.
+const vincularSubcategoriasGravadas = () => {
+  if (typeof window === "undefined") return;
+  try {
+    if (vincularSubcategorias(dados, lerParametros()) > 0) persistirDados();
+  } catch {
+    // Gerais ilegível: os cadastros continuam como estão.
+  }
+};
+vincularSubcategoriasGravadas();
+if (typeof window !== "undefined") window.addEventListener?.(EVENTO_PARAMETROS, vincularSubcategoriasGravadas);
 const id = () => crypto.randomUUID();
 // Emula o gatilho de movimentações do banco real (migration 20260928140000): entrada e
 // devolução somam, saída subtrai, vistoria e transferência não mexem no saldo. Tudo ou nada.

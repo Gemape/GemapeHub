@@ -17,6 +17,8 @@ export type EntradaCadastroFerramenta = {
   parametros: ParametrosBase;
   codigosExistentes: string[];
   subcategoria: string;
+  // Subcategoria antiga, fora de Gerais, que a ferramenta já tinha: continua aceita na edição.
+  subcategoriaAtual?: string;
   descricao: string;
   estoqueMinimo: string;
   categoriaFerramenta: string;
@@ -73,7 +75,8 @@ export function reservarCodigoFerramenta(
 
 export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
   const subcategoria = entrada.subcategoria.trim();
-  if (!subcategoriasDa(entrada.parametros, "cat-ferramentas").some((s) => s.nome === subcategoria)) {
+  const mantida = !!entrada.subcategoriaAtual && subcategoria === entrada.subcategoriaAtual.trim();
+  if (!mantida && !subcategoriasDa(entrada.parametros, "cat-ferramentas").some((s) => s.nome === subcategoria)) {
     throw new Error("Subcategoria de ferramentas inválida.");
   }
   const nome = entrada.descricao.trim();

@@ -51,7 +51,14 @@ import {
   selecaoInicialMarca,
   selecaoMarca,
 } from "@/lib/marcas-gerais";
-import { combinaBusca, mesmoNome, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import { combinaBusca, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import {
+  nomeSubcategoria,
+  resolverSubcategoria,
+  SUBCATEGORIA_LEGADA,
+  subcategoriaDaSelecao,
+  valorSelecaoSubcategoria,
+} from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
   anoValido,
@@ -107,11 +114,13 @@ export function VeiculosCadastroModulo() {
   const salvar = useSalvar("veiculos", ["veiculos"]);
   const excluir = useExcluir("veiculos", ["veiculos"]);
 
+  // A subcategoria mostrada é a de Gerais, pela referência gravada (nome sempre atual).
+  const subcategoriaDe = (v: VeiculoCadastro) => nomeSubcategoria(parametros, CATEGORIA_VEICULO, v);
   const veiculos = (lista as VeiculoCadastro[]).filter((v) =>
     combinaBusca(
       busca.replace(/-/g, ""),
       v.codigo_sku,
-      v.tipo,
+      subcategoriaDe(v),
       v.descricao,
       normalizarPlaca(v.placa ?? ""),
       v.marca,
@@ -120,14 +129,10 @@ export function VeiculosCadastroModulo() {
   );
   const regra = parametros.regrasCodigo.find((r) => r.categoriaId === CATEGORIA_VEICULO);
   const subcategorias = subcategoriasDa(parametros, CATEGORIA_VEICULO);
-  const subcategoriaAtual = editando?.tipo
-    ? (subcategorias.find((s) => mesmoNome(s.nome, editando.tipo ?? ""))?.nome ?? editando.tipo)
-    : "";
   // Tipo antigo que não está em Cadastros > Gerais continua aparecendo na edição.
-  const subcategoriaAntiga =
-    subcategoriaAtual && !subcategorias.some((s) => s.nome === subcategoriaAtual)
-      ? subcategoriaAtual
-      : null;
+  const subcategoriaAtual = editando
+    ? resolverSubcategoria(parametros, CATEGORIA_VEICULO, editando)
+    : null;
   // Marca de Cadastros > Gerais; a marca antiga digitada continua aparecendo na edição.
   const marcaInicial = selecaoInicialMarca(parametros.marcasVeiculo, editando?.marca);
   const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
@@ -166,7 +171,19 @@ export function VeiculosCadastroModulo() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const texto = (k: string) => String(f.get(k) ?? "").trim();
-    const tipo = texto("tipo");
+    let subcategoria: { id: string | null; nome: string } | null = null;
+    let erroSubcategoria: string | null = null;
+    try {
+      subcategoria = subcategoriaDaSelecao(
+        texto("tipo"),
+        parametros,
+        CATEGORIA_VEICULO,
+        subcategoriaAtual,
+      );
+    } catch (falha) {
+      erroSubcategoria = falha instanceof Error ? falha.message : "Selecione a subcategoria.";
+    }
+    const tipo = subcategoria?.nome ?? "";
     const descricao = texto("descricao");
     const placaDigitada = normalizarPlaca(texto("placa"));
     let marca = "";
@@ -192,8 +209,8 @@ export function VeiculosCadastroModulo() {
     const placaMantida = !!editando && placaDigitada === normalizarPlaca(editando.placa ?? "");
     // Grava no mesmo formato das placas antigas (ABC-1234 ou ABC1D23); a mantida fica igual.
     const placa = placaMantida && editando ? editando.placa : formatarPlaca(placaDigitada);
-    const erro = !tipo
-      ? "Selecione a subcategoria."
+    const erro = erroSubcategoria
+      ? erroSubcategoria
       : MODO_DEMO && !descricao
         ? "Informe a descrição do item."
         : !placaDigitada
@@ -234,7 +251,11 @@ export function VeiculosCadastroModulo() {
       empregado_responsavel_id: responsavel && responsavel !== NENHUM ? responsavel : null,
       observacoes: texto("observacoes") || null,
     };
-    if (MODO_DEMO) valores["descricao"] = descricao;
+    if (MODO_DEMO) {
+      valores["descricao"] = descricao;
+      // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
+      valores["subcategoria_id"] = subcategoria?.id ?? null;
+    }
     try {
       const todos = await todosVeiculos();
       if (placaRepetida(placa, todos, editando?.id)) {
@@ -284,7 +305,7 @@ export function VeiculosCadastroModulo() {
                 "veiculos",
                 veiculos.map((v) => ({
                   Código: v.codigo_sku ?? "",
-                  Subcategoria: v.tipo ?? "",
+                  Subcategoria: subcategoriaDe(v),
                   Descrição: v.descricao ?? "",
                   Placa: formatarPlaca(v.placa),
                   Marca: v.marca,
@@ -348,7 +369,7 @@ export function VeiculosCadastroModulo() {
                   <TableCell className="whitespace-nowrap font-mono text-xs">
                     {v.codigo_sku || "—"}
                   </TableCell>
-                  <TableCell>{v.tipo || "—"}</TableCell>
+                  <TableCell>{subcategoriaDe(v) || "—"}</TableCell>
                   <TableCell className="font-medium">{v.descricao || "—"}</TableCell>
                   <TableCell className="whitespace-nowrap font-mono text-xs">
                     {formatarPlaca(v.placa)}
@@ -433,19 +454,19 @@ export function VeiculosCadastroModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tipo">Subcategoria</Label>
-              <Select name="tipo" defaultValue={subcategoriaAtual}>
+              <Select name="tipo" defaultValue={valorSelecaoSubcategoria(subcategoriaAtual)}>
                 <SelectTrigger id="tipo" aria-required>
                   <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
                 <SelectContent>
                   {subcategorias.map((s) => (
-                    <SelectItem key={s.id} value={s.nome}>
+                    <SelectItem key={s.id} value={s.id}>
                       {s.nome}
                     </SelectItem>
                   ))}
-                  {subcategoriaAntiga && (
-                    <SelectItem value={subcategoriaAntiga}>
-                      {subcategoriaAntiga} (fora de Cadastros &gt; Gerais)
+                  {subcategoriaAtual?.foraDeGerais && (
+                    <SelectItem value={SUBCATEGORIA_LEGADA}>
+                      {subcategoriaAtual.nome} (fora de Cadastros &gt; Gerais)
                     </SelectItem>
                   )}
                 </SelectContent>

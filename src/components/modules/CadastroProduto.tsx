@@ -44,7 +44,14 @@ import {
   selecaoInicialMarca,
   selecaoMarca,
 } from "@/lib/marcas-gerais";
-import { combinaBusca, mesmoNome, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import { combinaBusca, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import {
+  nomeSubcategoria,
+  resolverSubcategoria,
+  SUBCATEGORIA_LEGADA,
+  subcategoriaDaSelecao,
+  valorSelecaoSubcategoria,
+} from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 type Tabela = "epis" | "uniformes";
@@ -111,7 +118,9 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const [gerando, setGerando] = useState(false);
   const { data: lista = [], isLoading } = useItens(config.modulo, empresaId, busca);
   // Filtro também na tela, porque o modo demonstração não filtra pela busca.
-  const itens = lista.filter((i) => combinaBusca(busca, i.codigo_sku, i.nome, i.categoria));
+  // A subcategoria mostrada é a de Gerais, pela referência gravada (nome sempre atual).
+  const subcategoriaDe = (i: Item) => nomeSubcategoria(parametros, config.categoriaId, i);
+  const itens = lista.filter((i) => combinaBusca(busca, i.codigo_sku, i.nome, subcategoriaDe(i)));
   const salvar = useSalvar(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
   const excluir = useExcluir(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
 
@@ -119,13 +128,9 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const subcategorias = subcategoriasDa(parametros, config.categoriaId);
   // Ao editar um produto antigo cuja subcategoria não está em Cadastros > Gerais, ela
   // continua aparecendo para não ser apagada sem querer.
-  const subcategoriaAtual = editando?.categoria
-    ? (subcategorias.find((s) => mesmoNome(s.nome, editando.categoria))?.nome ?? editando.categoria)
-    : "";
-  const subcategoriaAntiga =
-    subcategoriaAtual && !subcategorias.some((s) => s.nome === subcategoriaAtual)
-      ? subcategoriaAtual
-      : null;
+  const subcategoriaAtual = editando
+    ? resolverSubcategoria(parametros, config.categoriaId, editando)
+    : null;
   // Marca de Cadastros > Gerais; a marca antiga digitada continua aparecendo na edição.
   const marcaInicial = selecaoInicialMarca(parametros.marcasUniforme, editando?.marca);
   const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
@@ -157,12 +162,19 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   async function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const categoria = String(f.get("categoria") ?? "").trim();
     const nome = String(f.get("nome") ?? "").trim();
     // A empresa não muda na edição: os códigos de fábrica ficam ligados a ela.
     const empresa = editando ? (editando.empresa_id ?? "") : empresaSel || empresaPadrao;
-    if (!categoria) {
-      toast.error("Selecione a subcategoria.");
+    let subcategoria: { id: string | null; nome: string };
+    try {
+      subcategoria = subcategoriaDaSelecao(
+        String(f.get("categoria") ?? ""),
+        parametros,
+        config.categoriaId,
+        subcategoriaAtual,
+      );
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Selecione a subcategoria.");
       return;
     }
     if (!nome) {
@@ -175,10 +187,12 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     }
     if (salvando.current) return;
     const valores: Record<string, unknown> = {
-      categoria,
+      categoria: subcategoria.nome,
       nome,
       estoque_minimo: Math.max(0, Number(f.get("estoque_minimo") ?? 0) || 0),
     };
+    // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
+    if (MODO_DEMO) valores["subcategoria_id"] = subcategoria.id;
     if (config.custoMarcaModelo) {
       const preco = String(f.get("preco_unitario") ?? "").trim();
       const precoNumero = Number(preco);
@@ -256,7 +270,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 config.modulo,
                 itens.map((i) => ({
                   Código: i.codigo_sku,
-                  Subcategoria: i.categoria,
+                  Subcategoria: subcategoriaDe(i),
                   Descrição: i.nome,
                   "Estoque mínimo": i.estoque_minimo,
                   Estoque: i.estoque_atual,
@@ -310,7 +324,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
               itens.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
-                  <TableCell>{item.categoria || "—"}</TableCell>
+                  <TableCell>{subcategoriaDe(item) || "—"}</TableCell>
                   <TableCell className="font-medium">{item.nome}</TableCell>
                   <TableCell className="text-right">{item.estoque_minimo ?? 0}</TableCell>
                   <TableCell className="text-right">
@@ -399,19 +413,19 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Subcategoria</Label>
-              <Select name="categoria" defaultValue={subcategoriaAtual}>
+              <Select name="categoria" defaultValue={valorSelecaoSubcategoria(subcategoriaAtual)}>
                 <SelectTrigger id="categoria">
                   <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
                 <SelectContent>
                   {subcategorias.map((s) => (
-                    <SelectItem key={s.id} value={s.nome}>
+                    <SelectItem key={s.id} value={s.id}>
                       {s.nome}
                     </SelectItem>
                   ))}
-                  {subcategoriaAntiga && (
-                    <SelectItem value={subcategoriaAntiga}>
-                      {subcategoriaAntiga} (fora de Cadastros &gt; Gerais)
+                  {subcategoriaAtual?.foraDeGerais && (
+                    <SelectItem value={SUBCATEGORIA_LEGADA}>
+                      {subcategoriaAtual.nome} (fora de Cadastros &gt; Gerais)
                     </SelectItem>
                   )}
                 </SelectContent>
