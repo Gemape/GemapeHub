@@ -16,6 +16,7 @@ type MovimentacaoHistorico = {
   conducao_ocorrencia: string | null;
   data_movimentacao: string;
   observacao: string | null;
+  tamanho_id?: string | null;
 };
 
 type ItemHistorico = { id: string; codigo_sku: string | null; nome: string };
@@ -51,6 +52,8 @@ export function linhaCsvHistorico(
     itens: ItemHistorico[];
     veiculos: VeiculoHistorico[];
     nomeEmpregado: (id: string | null) => string;
+    // Nome atual do tamanho em Gerais (decisão 23); sem tamanho, a coluna fica vazia.
+    nomeTamanho?: (id: string | null | undefined) => string;
   },
 ): Record<string, unknown> {
   const alvo = alvoHistorico(m, contexto.itens, contexto.veiculos);
@@ -59,6 +62,7 @@ export function linhaCsvHistorico(
     Tipo: naturezaMovimentacao(m),
     Codigo: alvo.codigo,
     Item: alvo.descricao,
+    Tamanho: m.tamanho_id ? (contexto.nomeTamanho?.(m.tamanho_id) ?? "") : "",
     Empregado: contexto.nomeEmpregado(m.empregado_id),
     Quantidade: m.quantidade,
     MotivoBaixa: m.motivo_baixa,

@@ -2,6 +2,13 @@
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
 import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
 import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
+import {
+  controlaModulo,
+  controlaTamanho,
+  movimentarTamanho,
+  saldosPorTamanho,
+  somaSaldos,
+} from "../../lib/estoque-tamanho.ts";
 
 type Linha = Record<string, unknown>;
 const agora = new Date().toISOString();
@@ -48,18 +55,49 @@ const id = () => crypto.randomUUID();
 // Emula o gatilho de movimentações do banco real (migration 20260928140000): entrada e
 // devolução somam, saída subtrai, vistoria e transferência não mexem no saldo. Tudo ou nada.
 const TABELA_DO_MODULO: Record<string, string> = { epi: "epis", uniforme: "uniformes", ferramenta: "ferramentas" };
+// EPI e uniforme com tamanho autorizado em Gerais têm saldo por tamanho (decisão 23): a
+// movimentação informa o tamanho e só mexe no saldo dele; o estoque do produto é a soma.
 const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
   const saldos = new Map<Linha, number>();
+  const porTamanho = new Map<Linha, Record<string, number>>();
+  let parametros: ReturnType<typeof lerParametros> | null = null;
   for (const m of movimentacoes) {
     const item = (dados[TABELA_DO_MODULO[m.modulo as string]] ?? []).find(i => i.id === m.item_id);
     const quantidade = Number(m.quantidade) || 0;
     const delta = m.tipo_movimentacao === "Entrada" || m.tipo_movimentacao === "Devolucao" ? quantidade : m.tipo_movimentacao === "Saida" ? -quantidade : 0;
-    if (!item || delta === 0) continue;
+    if (!item) continue;
+    if (controlaModulo(m.modulo as string)) {
+      parametros ??= lerParametros();
+      const modulo = m.modulo as "epi" | "uniforme";
+      if (controlaTamanho(parametros, modulo, item)) {
+        try {
+          const atuais = porTamanho.get(item) ?? saldosPorTamanho(parametros, modulo, item);
+          porTamanho.set(item, movimentarTamanho(parametros, modulo, item, atuais, m));
+        } catch (erro) {
+          return erro as Error;
+        }
+        continue;
+      }
+      if (m.tamanho_id && delta !== 0)
+        return new Error(
+          `${item.nome ?? "O produto"} não tem tamanho autorizado em Cadastros > Gerais.`,
+        );
+    }
+    if (delta === 0) continue;
     const saldo = (saldos.get(item) ?? (Number(item.estoque_atual) || 0)) + delta;
     if (saldo < 0) return new Error("Estoque insuficiente");
     saldos.set(item, saldo);
   }
-  saldos.forEach((saldo, item) => { item.estoque_atual = saldo; });
+  saldos.forEach((saldo, item) => {
+    item.estoque_atual = saldo;
+    // Produto que deixou de controlar tamanho: o mapa antigo (só "Sem tamanho" ou tamanhos
+    // zerados) sai, para o saldo voltar inteiro se a subcategoria ganhar tamanhos de novo.
+    if (item.saldos_tamanho) item.saldos_tamanho = null;
+  });
+  porTamanho.forEach((saldosDoItem, item) => {
+    item.saldos_tamanho = saldosDoItem;
+    item.estoque_atual = somaSaldos(saldosDoItem);
+  });
   return null;
 };
 // Emula o gatilho gemape_compra (migration 20260916001000): cada compra de EPI ou uniforme
@@ -72,6 +110,7 @@ const registrarCompras = (tabela: string, compras: Linha[]): Error | null => {
   const entradas = compras.map(c => ({
     id: id(), created_at: agora, modulo: MODULO_DA_COMPRA[tabela], tipo_movimentacao: "Entrada",
     quantidade: Number(c.quantidade), data_movimentacao: c.data_compra, item_id: c.item_id, empresa_id: c.empresa_id,
+    tamanho_id: c.tamanho_id ?? null,
     empregado_id: null, motivo_baixa: null, onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false,
     observacao: `Compra: NF ${c.nota_fiscal || "não informada"} / ${c.fornecedor ?? ""}`.slice(0, 500),
   }));

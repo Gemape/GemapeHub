@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
+import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,6 +57,13 @@ import {
   linhaCsvHistorico,
   naturezaMovimentacao,
 } from "@/lib/historico-movimentacoes";
+import {
+  controlaModulo,
+  nomeTamanhoGravado,
+  tamanhoParaGravar,
+  validarLinhasTamanho,
+} from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 
 const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
@@ -66,6 +74,10 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   const [comOcorrencia, setComOcorrencia] = useState(false);
   const [tipoMovimentacao, setTipoMovimentacao] = useState<string>("Saida");
   const [alvoId, setAlvoId] = useState<string>("");
+  // Tamanho de EPI e uniforme com tamanho em Gerais (decisão 23).
+  const [tamanho, setTamanho] = useState("");
+  const parametros = useParametrosBase();
+  const comTamanho = TAMANHO_DISPONIVEL && controlaModulo(modulo);
   const { data: movimentacoes = [], isLoading } = useMovimentacoes(modulo, empresaId);
   const { data: itens = [] } = useItens(modulo === "veiculo" ? "ferramenta" : modulo, empresaId);
   const { data: veiculos = [] } = useVeiculos(empresaId);
@@ -98,6 +110,22 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       return;
     }
 
+    // Entrada e devolução pedem um tamanho autorizado; saída, um tamanho com saldo.
+    if (comTamanho && alvo && controlaModulo(modulo) && tipo !== "Transferencia") {
+      const acao = tipo === "Saida" ? "saída" : tipo === "Devolucao" ? "devolução" : "entrada";
+      const erro = validarLinhasTamanho(
+        [{ item_id: alvo, quantidade: quantidadeDigitada, tamanho }],
+        itens,
+        parametros,
+        modulo,
+        acao,
+      );
+      if (erro) {
+        alert(erro);
+        return;
+      }
+    }
+
     if (modulo === "epi" && tipo === "Saida" && alvo) {
       const itemSelecionado = itens.find((i) => i.id === alvo);
       if (itemSelecionado && quantidadeDigitada > itemSelecionado.estoque_atual) {
@@ -124,6 +152,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       origem_local: texto("origem_local"),
       destino_local: texto("destino_local"),
       observacao: texto("observacao")?.slice(0, 500) ?? null,
+      ...(comTamanho ? { tamanho_id: tamanhoParaGravar(tamanho) } : {}),
     };
     registrarLote.mutate([valores], { onSuccess: () => setAberto(false) });
   }
@@ -141,7 +170,12 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               exportarCsv(
                 `movimentacoes-${modulo}`,
                 movimentacoes.map((m) =>
-                  linhaCsvHistorico(m, { itens, veiculos, nomeEmpregado }),
+                  linhaCsvHistorico(m, {
+                    itens,
+                    veiculos,
+                    nomeEmpregado,
+                    nomeTamanho: (id) => nomeTamanhoGravado(parametros, id),
+                  }),
                 ),
               )
             }
@@ -152,6 +186,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           <Button requiresWrite="operar"
             onClick={() => {
               setComOcorrencia(false);
+              setTamanho("");
+              // O tipo volta para Saída como o formulário, que reabre com o valor padrão.
+              setTipoMovimentacao("Saida");
               setAberto(true);
             }}
           >
@@ -168,6 +205,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               <TableHead>Tipo</TableHead>
               {!ehVeiculo && <TableHead>Código</TableHead>}
               <TableHead>{ehVeiculo ? "Veículo" : "Item"}</TableHead>
+              {comTamanho && <TableHead>Tamanho</TableHead>}
               <TableHead>Empregado</TableHead>
               <TableHead className="text-right">Qtde</TableHead>
               <TableHead>Motivo da baixa</TableHead>
@@ -178,13 +216,19 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={ehVeiculo ? 8 : 9} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={ehVeiculo ? 8 : comTamanho ? 10 : 9}
+                  className="text-center text-muted-foreground"
+                >
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : movimentacoes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={ehVeiculo ? 8 : 9} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={ehVeiculo ? 8 : comTamanho ? 10 : 9}
+                  className="text-center text-muted-foreground"
+                >
                   Nenhuma movimentação registrada.
                 </TableCell>
               </TableRow>
@@ -201,6 +245,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                     </TableCell>
                   )}
                   <TableCell>{alvoHistorico(m, itens, veiculos).descricao}</TableCell>
+                  {comTamanho && (
+                    <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) || "—"}</TableCell>
+                  )}
                   <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>
                   <TableCell className="text-right">{m.quantidade}</TableCell>
                   <TableCell>{m.motivo_baixa ?? "—"}</TableCell>
@@ -243,7 +290,10 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               <Select
                 name="tipo_movimentacao"
                 defaultValue="Saida"
-                onValueChange={setTipoMovimentacao}
+                onValueChange={(v) => {
+                  setTipoMovimentacao(v);
+                  setTamanho("");
+                }}
               >
                 <SelectTrigger id="tipo_movimentacao">
                   <SelectValue />
@@ -268,7 +318,10 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               <Select
                 name="alvo_id"
                 required
-                onValueChange={(v) => setAlvoId(v)}
+                onValueChange={(v) => {
+                  setAlvoId(v);
+                  setTamanho("");
+                }}
                 defaultValue={alvoId}
               >
                 <SelectTrigger id="alvo_id">
@@ -307,6 +360,20 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </p>
               )}
             </div>
+            {comTamanho && controlaModulo(modulo) && tipoMovimentacao !== "Transferencia" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="tamanho_movimentacao">Tamanho</Label>
+                <SeletorTamanho
+                  id="tamanho_movimentacao"
+                  parametros={parametros}
+                  modulo={modulo}
+                  produto={itens.find((i) => i.id === alvoId)}
+                  uso={tipoMovimentacao === "Saida" ? "saida" : "entrada"}
+                  valor={tamanho}
+                  onChange={setTamanho}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="empresa_id">Empresa</Label>
               <Select

@@ -18,11 +18,16 @@ import {
 } from "@/components/ui/table";
 import { TODAS } from "@/lib/empresa-context";
 import { exportarCsv, formatarData } from "@/lib/gemape";
+import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens, useMovimentacoes, useEmpregados } from "@/lib/hooks-gemape";
 
 export function EpiRelatorioFuncionario() {
   const [empresaSel, setEmpresaSel] = useState(TODAS);
   const [empregadoId, setEmpregadoId] = useState("");
+  const parametros = useParametrosBase();
+  const tamanhoDe = (m: { tamanho_id?: string | null }) =>
+    nomeTamanhoGravado(parametros, m.tamanho_id);
 
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(empresaSel);
@@ -115,6 +120,7 @@ export function EpiRelatorioFuncionario() {
                     historico.map((h) => ({
                       Data: formatarData(h.data_movimentacao),
                       EPI: itens.find((i) => i.id === h.item_id)?.nome,
+                      Tamanho: tamanhoDe(h),
                       Tipo: h.tipo_movimentacao,
                       Qtd: h.quantidade,
                       Motivo: h.motivo_baixa || "Entrega/Uso",
@@ -134,6 +140,7 @@ export function EpiRelatorioFuncionario() {
                 <TableRow>
                   <TableHead>Data</TableHead>
                   <TableHead>EPI</TableHead>
+                  <TableHead>Tamanho</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Qtd</TableHead>
                   <TableHead>Status/Motivo</TableHead>
@@ -143,7 +150,7 @@ export function EpiRelatorioFuncionario() {
               <TableBody>
                 {historico.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center">
+                    <TableCell colSpan={7} className="text-center">
                       Nenhuma movimentação para este empregado.
                     </TableCell>
                   </TableRow>
@@ -152,6 +159,7 @@ export function EpiRelatorioFuncionario() {
                     <TableRow key={h.id}>
                       <TableCell>{formatarData(h.data_movimentacao)}</TableCell>
                       <TableCell>{itens.find((i) => i.id === h.item_id)?.nome}</TableCell>
+                      <TableCell>{tamanhoDe(h) || "—"}</TableCell>
                       <TableCell>{h.tipo_movimentacao}</TableCell>
                       <TableCell className="text-right">{h.quantidade}</TableCell>
                       <TableCell>

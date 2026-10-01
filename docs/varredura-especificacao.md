@@ -5,7 +5,7 @@ Feita em 01/10/2026 sobre a `main` em `ec1b9c7` (merge do PR #52). Compara cada 
 ## Estado de partida
 
 - PR #50 (decisão 23), PR #51 (decisão 23 corrigida com as 4 regras do code review e decisão 24) e PR #52 (ferramenta sem subcategoria e sem aba Cadastro no módulo) estão mergeados.
-- O PR D (código do estoque por tamanho, decisão 23) **não foi aberto**: não há branch nem PR dele no GitHub. Está aprovado e aguarda a liberação do responsável.
+- O PR D (código do estoque por tamanho, decisão 23) foi liberado pelo responsável e está na branch `feat/tamanho-estoque-por-tamanho`, aguardando validação e merge.
 - Não há PR aberto no repositório.
 
 ## Legenda
@@ -28,9 +28,9 @@ Observação geral: tudo o que está "implementado" funciona no modo demonstraç
 | Código de fábrica: produto e fornecedor com busca, código na NF, CA se EPI | Implementado | Gerais > Código de fábrica (`codigo-fabrica.tsx`). Observação: guarda cópia do nome do produto e do fornecedor (achado 6 da decisão 22) e excluir fornecedor ou produto não confere os códigos que apontam para ele (achado 11). Ver prioridade 5. |
 | Código de fábrica: uso na importação do XML | Implementado | PR #44 (decisão 21). Evoluções do XML: **BLOQUEADO** (aguardam o responsável). |
 | Endereçamento: produto com busca, rua, número (estante), apartamento (nível) | Implementado | Gerais > Endereçamento (`EnderecamentoModulo.tsx`); rotas antigas redirecionam. Migration real `20260928130000_enderecamentos` não aplicada: **BLOQUEADO** (Fase 2). |
-| Tamanhos e numerações, em sequência | Implementado | Gerais > Tamanhos e Unidades, com ordenação. Falta desativar e proteção de uso: escopo do PR D. |
-| Unidades de medida | Implementado | Mesma tela. Falta desativar e proteção de uso: escopo do PR D. |
-| Associar tamanho e medida (Existentes → Autorizados; desautorizar volta à esquerda, decisão 2) | Parcial | A tela existe (`associar-tamanhos.tsx`, por subcategoria), mas **nenhum cadastro usa a associação**: EPI e Uniforme não têm tamanho nem unidade. É o PR D (decisão 23). |
+| Tamanhos e numerações, em sequência | Implementado | Gerais > Tamanhos e Unidades, com ordenação; desativar e proteção de uso no PR D. |
+| Unidades de medida | Implementado | Mesma tela; desativar e proteção de uso no PR D. |
+| Associar tamanho e medida (Existentes → Autorizados; desautorizar volta à esquerda, decisão 2) | Implementado no PR D | A associação por subcategoria (`associar-tamanhos.tsx`) alimenta a unidade do cadastro e o tamanho das linhas de EPI e Uniforme (decisão 23). |
 | Código do produto (categoria, sigla, numeração inicial de 4 dígitos) | Implementado | Gerais > Código do Produto. Regras de categoria-base protegidas (PR #48). |
 | Caixas 01 a 100 com flag | Implementado | Gerais > Caixas (PR #37). |
 
@@ -41,7 +41,7 @@ Observação geral: tudo o que está "implementado" funciona no modo demonstraç
 | Código automático (EPI-0001) | Implementado | Cadastros > EPIs (`CadastroProduto.tsx`). |
 | Subcategoria em lista de Gerais | Implementado | Por referência (`subcategoria_id`, PR #47). |
 | Descrição, estoque mínimo, empresa (decisão 9) | Implementado | Mesmo formulário. |
-| Tamanho e unidade de Gerais, estoque e mínimo por tamanho (decisão 23) | Não iniciado | PR D, aprovado com as 4 regras e aguardando liberação. |
+| Tamanho e unidade de Gerais, estoque e mínimo por tamanho (decisão 23) | Implementado no PR D | Aguardando merge. |
 | Ficha de EPI: busca do EPI e os 7 campos manuais | Implementado | Cadastros > Ficha de EPI (`epi-ficha.tsx`, `fichas-epi.ts`). Gravação só no navegador; tabela real é Fase 2. |
 
 ## 3. Uniforme
@@ -50,7 +50,7 @@ Observação geral: tudo o que está "implementado" funciona no modo demonstraç
 | --- | --- | --- |
 | Código automático (UNI-0001), subcategoria de Gerais, descrição, estoque mínimo | Implementado | Cadastros > Uniformes (`CadastroProduto.tsx`). |
 | Preço de custo, marca (lista de Gerais, PR #46), modelo, empresa (decisões 1 e 9); sem CA | Implementado | Mesmo formulário. Marca e modelo só gravam no demo; colunas reais: **BLOQUEADO** (Fase 2). |
-| Tamanho e unidade de Gerais, estoque por tamanho (decisão 23) | Não iniciado | PR D. |
+| Tamanho e unidade de Gerais, estoque por tamanho (decisão 23) | Implementado no PR D | Aguardando merge. |
 
 ## 4. Veículo
 

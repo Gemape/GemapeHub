@@ -26,7 +26,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEmpresa } from "@/lib/empresa-context";
 import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { formatarData, formatarMoeda } from "@/lib/gemape";
+import { controlaTamanho, type ProdutoTamanho } from "@/lib/estoque-tamanho";
 import {
+  MODULO_DA_TABELA,
   montarEntradas,
   prepararImportacao,
   ROTULO_MODULO,
@@ -51,9 +53,13 @@ function useDadosImportacao(ativo: boolean) {
         TABELAS.map(async (tabela) => {
           const { data, error } = await supabase
             .from(tabela)
-            .select("id,codigo_sku,nome,empresa_id");
+            // Linha inteira: a subcategoria e o saldo dizem se o produto controla tamanho.
+            .select("*");
           if (error) throw error;
-          return ((data ?? []) as Omit<ProdutoComId, "tabela">[]).map((p) => ({ ...p, tabela }));
+          return ((data ?? []) as (Omit<ProdutoComId, "tabela"> & ProdutoTamanho)[]).map((p) => ({
+            ...p,
+            tabela,
+          }));
         }),
       );
       const { data: notas, error } = await supabase
@@ -111,7 +117,14 @@ export function ImportarNfeXml() {
           empresas,
           fornecedores: listarFornecedores(),
           codigosFabrica: parametros.codigosFabrica,
-          produtos: atuais.data.produtos,
+          // Produto com estoque por tamanho fica como pendência: a nota não traz o tamanho.
+          produtos: atuais.data.produtos.map((p) => {
+            const modulo = MODULO_DA_TABELA[p.tabela];
+            return {
+              ...p,
+              controlaTamanho: modulo !== "ferramenta" && controlaTamanho(parametros, modulo, p),
+            };
+          }),
           chavesImportadas: atuais.data.chaves,
         }),
       );

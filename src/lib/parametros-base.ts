@@ -351,7 +351,8 @@ export function paraSelecao<T extends { id: string }>(
   return lista.filter((item) => estaAtivo(d, item.id) || manter(item));
 }
 
-// Vale para subcategorias e para as listas de opções (categorias, grupos e marcas).
+// Vale para subcategorias, listas de opções (categorias, grupos e marcas), tamanhos e
+// unidades (decisão 23).
 export function alterarAtivo(id: string, ativo: boolean, storage = storagePadrao()): void {
   alterar(storage, (d) => {
     if (CATEGORIAS_BASE[id]) throw new Error("Categoria-base de módulo não pode ser desativada.");
@@ -362,6 +363,8 @@ export function alterarAtivo(id: string, ativo: boolean, storage = storagePadrao
       d.marcasFerramenta,
       d.marcasUniforme,
       d.marcasVeiculo,
+      d.tamanhos,
+      d.unidades,
     ];
     if (!listas.some((lista) => lista.some((item) => item.id === id))) {
       throw new Error("Parâmetro não encontrado.");
@@ -401,10 +404,12 @@ export function renomearOpcao(
   });
 }
 
-// Excluir também tira a opção das subcategorias que a autorizavam.
+// Excluir também tira a opção das subcategorias que a autorizavam. A tela confere antes
+// se ela está em uso (uso-parametros.ts) e recusa.
 export function removerOpcao(tipo: TipoOpcao, id: string, storage = storagePadrao()): void {
   alterar(storage, (d) => {
     d[tipo] = d[tipo].filter((o) => o.id !== id);
+    d.inativos = d.inativos.filter((item) => item !== id);
     for (const a of d.associacoes) a[tipo] = a[tipo].filter((item) => item !== id);
   });
 }

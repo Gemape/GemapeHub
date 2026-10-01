@@ -201,3 +201,6 @@ export const escaparHtml = (v: unknown) =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+
+/** Tamanho ao lado da descrição nos documentos (decisão 23), já escapado; vazio sem tamanho. */
+export const comTamanho = (tamanho: unknown) => (tamanho ? ` (tam. ${escaparHtml(tamanho)})` : "");

@@ -25,6 +25,8 @@ export type ProdutoComId = {
   codigo_sku: string;
   nome: string;
   empresa_id: string | null;
+  // Estoque por tamanho (decisão 23): a nota não traz o tamanho, então o item não é gravado.
+  controlaTamanho?: boolean;
 };
 
 export type DestinoItem = {
@@ -121,6 +123,12 @@ export function prepararImportacao(entrada: {
     if (!produto) {
       return pendente(
         `O produto ${codigo.codigo_produto} do código de fábrica não está mais cadastrado.`,
+      );
+    }
+    if (produto.controlaTamanho) {
+      return pendente(
+        `O produto ${produto.codigo_sku} tem estoque por tamanho e a nota não informa o tamanho. ` +
+          "Registre esta entrada pela tela de Compras, escolhendo o tamanho.",
       );
     }
     return {

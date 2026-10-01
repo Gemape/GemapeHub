@@ -150,7 +150,7 @@ Auditoria de 01/10/2026 sobre a `main` (`59dd52c`), **encerrada após o merge do
 - **PR B (#47):** EPI, Uniforme, Ferramenta e Veículo passaram a guardar a subcategoria por referência (`subcategoria_id`), acompanhando o nome atual de Gerais.
 - **PR C (#48):** proteção de exclusão dos parâmetros em uso, categorias-base e regras de código; opção de desativar/reativar os parâmetros aplicáveis em Gerais. A conferência de marca de ferramenta consulta o banco ativo.
 
-O achado sobre tamanhos e unidades (linha 1) virou a decisão 23 e será resolvido no PR D para EPI e Uniforme (a unidade fixa de Ferramenta continua aberta); o plano está em "PR D — tamanho e unidade de EPI e Uniforme", abaixo. Os demais achados e limites documentados abaixo não são autorização para novas correções.
+O achado sobre tamanhos e unidades (linha 1) virou a decisão 23 e foi resolvido no PR D para EPI e Uniforme (a unidade fixa de Ferramenta continua aberta); veja "PR D — tamanho e unidade de EPI e Uniforme", abaixo. Os demais achados e limites documentados abaixo não são autorização para novas correções.
 
 Já conforme:
 - Subcategoria em lista suspensa vinda de Gerais no cadastro de EPI, Uniforme e Veículo (`CadastroProduto.tsx`, `VeiculosCadastroModulo.tsx`); Ferramenta não tem subcategoria desde a decisão 24.
@@ -165,13 +165,13 @@ Registro dos achados e encaminhamentos:
 
 | # | Regra | Achado | Onde |
 | --- | --- | --- | --- |
-| 1 | 1 e 2 | Tamanhos, unidades e Associar Tamanho e Medida existem em Gerais, mas nenhum cadastro de módulo os usa: EPI e Uniforme não têm campo de tamanho ou unidade, e Ferramenta tem a unidade fixa "Unidade". | `CadastroProduto.tsx`, `ItensModulo.tsx` (opção fixa "Unidade") |
+| 1 | 1 e 2 | ~~EPI e Uniforme não usam tamanhos, unidades nem Associar Tamanho e Medida.~~ Resolvido no PR D (decisão 23): unidade e tamanho em lista vinda da associação da subcategoria, com estoque por tamanho. Continua aberto: Ferramenta tem a unidade fixa "Unidade". | `CadastroProduto.tsx`, `ItensModulo.tsx` (opção fixa "Unidade") |
 | 2 | 1 e 2 | ~~Marca de Uniforme e de Veículo é digitada.~~ Resolvido no PR #46 (PR A, mergeado em 01/10/2026): listas Marcas de uniformes e Marcas de veículos em Gerais; marca antiga digitada fica visível e é mantida na edição; marca em uso não pode ser renomeada nem excluída. | `src/lib/marcas-gerais.ts` |
 | 3 | 1 | ~~Listas fixas que sobram~~: `TAMANHOS_*`, `UNIDADES_*` e `VeiculosModulo.tsx` saíram no PR #43; `CATEGORIAS_FERRAMENTA` saiu no PR A. As listas `CATEGORIAS_EPI`, `CATEGORIAS_UNIFORME` e `TIPOS_VEICULO` servem só de dados iniciais de Gerais. | `src/lib/gemape.ts` |
 | 4 | 3 | ~~Cópia estagnada: produtos guardam o NOME da subcategoria.~~ Resolvido no PR #47 (PR B, mergeado): EPI, Uniforme, Ferramenta e Veículo gravam `subcategoria_id` e mostram sempre o nome atual de Gerais (lista, busca, CSV, edição e Ficha de EPI); renomear em Gerais muda os cadastros na hora. Migração do demo: ao abrir e a cada mudança em Gerais, cadastro só com nome, ou ligado a subcategoria excluída, é ligado à subcategoria de mesmo nome (sem diferença de acento ou maiúscula) da categoria do módulo, e o nome gravado acompanha o nome atual de Gerais. Nome que não casa continua aparecendo como "fora de Cadastros > Gerais" e é mantido ao editar outros campos, inclusive em Ferramenta. | `src/lib/subcategoria-referencia.ts`, `demo-client.ts` |
 | 5 | 3 | Ferramenta guarda o nome de categoria, grupo e marca; não fica estagnado porque renomear em uso é bloqueado, mas por isso a opção em uso não pode ser renomeada. | `cadastro-ferramentas.ts` |
 | 6 | 3 | Código de fábrica guarda cópia do nome do produto e do fornecedor e mostra a cópia. | `parametros-base.ts` (`nome_produto`, `fornecedor_nome`) |
-| 7 | 3 | ~~Gerais não tem "desativar".~~ Resolvido no PR #48 (PR C): subcategorias, marcas (ferramenta, uniforme e veículo), categorias e grupos de ferramenta têm o botão Desativar/Reativar. Desativado sai das listas de seleção dos cadastros novos, mas o cadastro que já o usa continua mostrando e mantendo o parâmetro na edição, marcado "(desativado)". Categorias-base e tamanhos/unidades não são desativáveis (tamanhos e unidades ficam para o PR D). | `alterarAtivo`, `paraSelecao` em `parametros-base.ts` |
+| 7 | 3 | ~~Gerais não tem "desativar".~~ Resolvido no PR #48 (PR C): subcategorias, marcas (ferramenta, uniforme e veículo), categorias e grupos de ferramenta têm o botão Desativar/Reativar. Desativado sai das listas de seleção dos cadastros novos, mas o cadastro que já o usa continua mostrando e mantendo o parâmetro na edição, marcado "(desativado)". Categorias-base não são desativáveis. Tamanhos e unidades ganharam Desativar/Reativar e proteção de uso no PR D. | `alterarAtivo`, `paraSelecao` em `parametros-base.ts` |
 | 8 | 5 | ~~Apagar subcategoria não confere produtos que a usam.~~ Resolvido no PR #48 (PR C): a exclusão é recusada e o aviso mostra os cadastros que a usam (até 5 códigos por módulo, "e mais N"), sugerindo desativar. O mesmo aviso com códigos vale para marcas e opções de Ferramenta. | `src/lib/uso-parametros.ts`, `categorias.tsx` |
 | 9 | 5 | ~~Apagar categoria não confere fornecedores e as categorias-base podem ser apagadas.~~ Resolvido no PR #48 (PR C): categoria marcada por fornecedor é recusada com a lista dos fornecedores; as categorias-base de EPI, Uniformes, Ferramentas e Veículos não podem ser excluídas nem desativadas (só renomeadas). | `CATEGORIAS_BASE`, `removerCategoria` em `parametros-base.ts` |
 | 10 | 5 | ~~Apagar regra de código não avisa o que depende.~~ Resolvido no PR #48 (PR C): a regra de uma categoria-base não pode ser excluída; o aviso diz que novos cadastros do módulo ficariam bloqueados e orienta a editar sigla ou numeração. | `removerRegraCodigo`, `codigo-produto.tsx` |
@@ -204,6 +204,21 @@ Testes obrigatórios: movimentar uma numeração não altera o saldo de outra; t
 As regras das linhas 3 a 5 (XML sem tamanho como pendência, migração do saldo, unidade não exigida sem associação, mínimo e alerta por tamanho) foram aprovadas pelo responsável em 01/10/2026 após o code review do PR #50 e fazem parte do escopo do PR D.
 
 Fora do escopo: demais evoluções da importação do XML, pendência 4 e Fase 2.
+
+### Entrega da etapa 2 (código)
+
+Branch `feat/tamanho-estoque-por-tamanho`, aguardando validação e merge do responsável. Tudo vale só no modo demonstração; fora dele nenhum campo novo é enviado ao banco real (as colunas são pendência da Fase 2).
+
+- `src/lib/estoque-tamanho.ts`: regras do saldo por tamanho (`saldosPorTamanho`, `movimentarTamanho`, opções de entrada e saída, resumo, alertas, validação das linhas antes de gravar).
+- `demo-client.ts`: o gatilho do demo mexe só no saldo do tamanho (`saldos_tamanho` no produto, `estoque_atual` é a soma), recusa tamanho ausente, não autorizado ou sem saldo e grava tudo ou nada; a compra repassa `tamanho_id` à Entrada.
+- `src/components/SeletorTamanho.tsx`: lista de tamanho das linhas. Entrada mostra os autorizados e ativos; saída mostra os que têm saldo, inclusive "Sem tamanho" e o tamanho desativado.
+- Cadastro de EPI e Uniforme: Unidade de Gerais (`unidade_id`), grade de mínimo por tamanho (`minimos_tamanho`), coluna Unidade, saldo e mínimo por tamanho na lista, busca e CSV, alerta "Abaixo do mínimo" por tamanho.
+- Compras, Termos de Entrega (EPI e Uniforme), Termo de Baixa de Uniforme e Movimentações escolhem o tamanho; relatórios do empregado e de baixas, Ficha de EPI Avulsa, CSV do histórico e termos mostram o tamanho, escapado nos documentos.
+- Gerais: Tamanhos e Unidades com Desativar/Reativar e exclusão recusada em uso (`usoDoTamanho`, `usoDaUnidade`); Associar avisa ao desautorizar (`dependenciasDaDesautorizacao`) e ao autorizar numa subcategoria com saldo antigo (`avisoAutorizacaoTamanhos`).
+- Importação do XML: item casado com produto que controla tamanho fica como pendência.
+- Dashboard: produto com mínimo por tamanho entra nos alertas pelo tamanho abaixo do mínimo (demais itens, pelo total).
+- Produto cuja subcategoria perde os tamanhos volta a estoque único quando não há saldo em nenhum tamanho; o mapa antigo é descartado na próxima movimentação, sem perder saldo. Tamanho desativado não recebe entrada nem pelo gatilho do demo.
+- Testes: `estoque-tamanho`, `gerais-tamanhos-protecao` e `tamanho-telas-documentos`.
 
 ## Decisões vigentes
 

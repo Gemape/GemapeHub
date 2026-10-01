@@ -27,12 +27,17 @@ import {
   useRegistrarMovimentacoesLote,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 import { validarSaidaDeUniformes } from "@/lib/termos-atomicos";
 
 interface ItemTermo {
   item_id: string;
   quantidade: number;
   estado: string;
+  // Tamanho da saída, quando o uniforme tem tamanho em Gerais (decisão 23).
+  tamanho: string;
 }
 
 export function UniformesTermoEntrega() {
@@ -46,6 +51,7 @@ export function UniformesTermoEntrega() {
   // Lista completa só para conferir a demissão: quem já saiu da lista de ativos continua bloqueado.
   const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
   const { data: uniformes = [] } = useItens("uniforme", TODAS);
+  const parametros = useParametrosBase();
 
   const registrarEntregas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"]);
   const salvando = useRef(false);
@@ -54,7 +60,7 @@ export function UniformesTermoEntrega() {
   const empregado = empregados.find((e) => e.id === empregadoId);
 
   function adicionarItem() {
-    setItensEntrega([...itensEntrega, { item_id: "", quantidade: 1, estado: "Novo" }]);
+    setItensEntrega([...itensEntrega, { item_id: "", quantidade: 1, estado: "Novo", tamanho: "" }]);
   }
 
   function removerItem(index: number) {
@@ -63,7 +69,12 @@ export function UniformesTermoEntrega() {
 
   function atualizarItem(index: number, campo: keyof ItemTermo, valor: string | number) {
     setItensEntrega((atuais) =>
-      atuais.map((item, i) => (i === index ? { ...item, [campo]: valor } : item)),
+      atuais.map((item, i) =>
+        i !== index
+          ? item
+          : // Trocar o uniforme limpa o tamanho escolhido para o anterior.
+            { ...item, [campo]: valor, ...(campo === "item_id" ? { tamanho: "" } : {}) },
+      ),
     );
   }
 
@@ -84,7 +95,12 @@ export function UniformesTermoEntrega() {
     }
 
     // Não entrega mais do que o estoque disponível de cada uniforme.
-    const erro = validarSaidaDeUniformes(itensEntrega, uniformes, "entrega");
+    // Com tamanho, a conta é feita no saldo de cada tamanho.
+    const erro =
+      validarSaidaDeUniformes(itensEntrega, uniformes, "entrega") ??
+      (TAMANHO_DISPONIVEL
+        ? validarLinhasTamanho(itensEntrega, uniformes, parametros, "uniforme", "entrega")
+        : null);
     if (erro) {
       alert(erro);
       return;
@@ -101,6 +117,7 @@ export function UniformesTermoEntrega() {
           empresa_id: empresaId,
           empregado_id: empregadoId,
           quantidade: item.quantidade,
+          ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
           data_movimentacao: dataEntrega,
           observacao: `Entrega de uniforme via termo - Estado: ${item.estado}`,
         })),
@@ -125,6 +142,7 @@ export function UniformesTermoEntrega() {
           nome: u?.nome,
           marca: u?.marca,
           modelo: u?.modelo,
+          tamanho: tamanhoParaGravar(i.tamanho) ? nomeTamanho(parametros, i.tamanho) : undefined,
           quantidade: i.quantidade,
           estado: i.estado,
         };
@@ -194,6 +212,7 @@ export function UniformesTermoEntrega() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Uniforme</TableHead>
+                  <TableHead className="w-40">Tamanho</TableHead>
                   <TableHead className="w-24">Qtd</TableHead>
                   <TableHead className="w-32">Estado</TableHead>
                   <TableHead className="w-20"></TableHead>
@@ -218,6 +237,16 @@ export function UniformesTermoEntrega() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <SeletorTamanho
+                        parametros={parametros}
+                        modulo="uniforme"
+                        produto={uniformes.find((u) => u.id === item.item_id)}
+                        uso="saida"
+                        valor={item.tamanho}
+                        onChange={(v) => atualizarItem(index, "tamanho", v)}
+                      />
                     </TableCell>
                     <TableCell>
                       <Input
@@ -250,7 +279,7 @@ export function UniformesTermoEntrega() {
                 ))}
                 {itensEntrega.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                       Nenhum item adicionado.
                     </TableCell>
                   </TableRow>

@@ -1,7 +1,7 @@
 // HTML do Termo de Entrega de EPI. Todo texto informado passa por escaparHtml, como nos
 // termos de Encerramento, Responsabilidade, Baixa e Vistoria.
 import { hojeLocal } from "./empregados.ts";
-import { escaparHtml, formatarData } from "./gemape.ts";
+import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
 
 type Texto = string | null | undefined;
 
@@ -9,7 +9,7 @@ export interface DadosTermoEntregaEpi {
   empresa: { razao_social: Texto; cnpj: Texto; nome_fantasia: Texto };
   empregado: { nome: Texto; cpf: Texto; matricula?: Texto };
   data: string;
-  linhas: { nome?: Texto; ca?: Texto; quantidade: number; estado: string }[];
+  linhas: { nome?: Texto; ca?: Texto; tamanho?: Texto; quantidade: number; estado: string }[];
 }
 
 export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
@@ -19,7 +19,7 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
       (it, index) => `
         <tr>
           <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${escaparHtml(it.nome || "—")}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${escaparHtml(it.nome || "—")}${comTamanho(it.tamanho)}</td>
           <td style="border: 1px solid #ddd; padding: 8px;">${escaparHtml(it.ca || "—")}</td>
           <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${it.quantidade}</td>
           <td style="border: 1px solid #ddd; padding: 8px;">${escaparHtml(it.estado)}</td>

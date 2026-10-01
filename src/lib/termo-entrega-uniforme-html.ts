@@ -1,6 +1,6 @@
 // HTML do Termo de Entrega de Uniforme. Todo texto informado, inclusive empresa e empregado,
 // passa por escaparHtml, como nos demais termos.
-import { escaparHtml, formatarData } from "./gemape.ts";
+import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
 
 type Texto = string | null | undefined;
 
@@ -8,7 +8,14 @@ export interface DadosTermoEntregaUniforme {
   empresa: { razao_social: Texto; cnpj: Texto; nome_fantasia: Texto } | undefined;
   empregado: { nome: Texto; cpf: Texto } | undefined;
   data: string;
-  linhas: { nome?: Texto; marca?: Texto; modelo?: Texto; quantidade: number; estado: string }[];
+  linhas: {
+    nome?: Texto;
+    marca?: Texto;
+    modelo?: Texto;
+    tamanho?: Texto;
+    quantidade: number;
+    estado: string;
+  }[];
 }
 
 export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme): string {
@@ -17,7 +24,7 @@ export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme)
     .map(
       (i) => `
                       <tr>
-                        <td>${escaparHtml(i.nome)}</td>
+                        <td>${escaparHtml(i.nome)}${comTamanho(i.tamanho)}</td>
                         <td>${escaparHtml(i.marca)} ${escaparHtml(i.modelo)}</td>
                         <td>${i.quantidade}</td>
                         <td>${escaparHtml(i.estado)}</td>

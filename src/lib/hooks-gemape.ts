@@ -42,6 +42,11 @@ export interface Item {
   updated_at: string;
   // Campo legado para compatibilidade temporária se necessário
   caixa?: string | null;
+  // Só no modo demonstração (decisões 22 e 23); as colunas reais entram na Fase 2.
+  subcategoria_id?: string | null;
+  unidade_id?: string | null;
+  saldos_tamanho?: Record<string, number> | null;
+  minimos_tamanho?: Record<string, number> | null;
 }
 
 export interface Empregado {
@@ -99,6 +104,8 @@ export interface Movimentacao {
   data_movimentacao: string;
   observacao: string | null;
   created_at: string;
+  // Tamanho de EPI ou uniforme (decisão 23), só no modo demonstração.
+  tamanho_id?: string | null;
 }
 
 export interface Ocorrencia {
@@ -126,6 +133,7 @@ export interface CompraUniforme {
   valor_total: number | null;
   observacao: string | null;
   created_at: string;
+  tamanho_id?: string | null;
 }
 
 export interface CompraEpi {
@@ -140,6 +148,7 @@ export interface CompraEpi {
   valor_total: number | null;
   observacao: string | null;
   created_at: string;
+  tamanho_id?: string | null;
 }
 
 export interface CaixaFerramenta {

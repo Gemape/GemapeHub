@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
+import { pedeTamanho, SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +38,8 @@ import {
   useExcluir,
   type CompraUniforme,
 } from "@/lib/hooks-gemape";
+import { nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 
 const CHAVES = ["compras_uniformes", "itens", "movimentacoes"];
 
@@ -47,6 +50,10 @@ export function UniformesComprasModulo() {
   const [editando, setEditando] = useState<CompraUniforme | null>(null);
   const [quantidade, setQuantidade] = useState(0);
   const [valorUnitario, setValorUnitario] = useState(0);
+  // Produto e tamanho escolhidos: produto com tamanho em Gerais pede o tamanho (decisão 23).
+  const [itemSel, setItemSel] = useState("");
+  const [tamanho, setTamanho] = useState("");
+  const parametros = useParametrosBase();
 
   const { data: compras = [], isLoading } = useComprasUniformes(empresaId, busca);
   const { data: empresas = [] } = useEmpresas();
@@ -59,23 +66,41 @@ export function UniformesComprasModulo() {
     setEditando(null);
     setQuantidade(0);
     setValorUnitario(0);
+    setItemSel("");
+    setTamanho("");
     setAberto(true);
   }
 
   function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    const itemId = String(f.get("item_id"));
+    const quantidadeCompra = Number(f.get("quantidade"));
+    if (TAMANHO_DISPONIVEL) {
+      const erro = validarLinhasTamanho(
+        [{ item_id: itemId, quantidade: quantidadeCompra, tamanho }],
+        itens,
+        parametros,
+        "uniforme",
+        "entrada",
+      );
+      if (erro) {
+        alert(erro);
+        return;
+      }
+    }
 
-    const valores = {
+    const valores: Record<string, unknown> = {
       empresa_id: String(f.get("empresa_id")),
-      item_id: String(f.get("item_id")),
+      item_id: itemId,
       fornecedor: String(f.get("fornecedor")),
       nota_fiscal: String(f.get("nota_fiscal") || ""),
       data_compra: String(f.get("data_compra")),
-      quantidade: Number(f.get("quantidade")),
+      quantidade: quantidadeCompra,
       valor_unitario: Number(f.get("valor_unitario")),
       observacao: String(f.get("observacao") || ""),
     };
+    if (TAMANHO_DISPONIVEL) valores["tamanho_id"] = tamanhoParaGravar(tamanho);
 
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
@@ -102,6 +127,7 @@ export function UniformesComprasModulo() {
                   Data: formatarData(c.data_compra),
                   Empresa: empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia,
                   Uniforme: itens.find((i) => i.id === c.item_id)?.nome,
+                  Tamanho: nomeTamanhoGravado(parametros, c.tamanho_id),
                   Fornecedor: c.fornecedor,
                   NF: c.nota_fiscal,
                   Qtd: c.quantidade,
@@ -125,6 +151,7 @@ export function UniformesComprasModulo() {
               <TableHead>Data</TableHead>
               <TableHead>Empresa</TableHead>
               <TableHead>Uniforme</TableHead>
+              <TableHead>Tamanho</TableHead>
               <TableHead>Fornecedor</TableHead>
               <TableHead>NF</TableHead>
               <TableHead className="text-right">Qtd</TableHead>
@@ -136,13 +163,13 @@ export function UniformesComprasModulo() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center">
+                <TableCell colSpan={10} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : compras.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center">
+                <TableCell colSpan={10} className="text-center">
                   Nenhuma compra registrada.
                 </TableCell>
               </TableRow>
@@ -154,6 +181,7 @@ export function UniformesComprasModulo() {
                     {empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia}
                   </TableCell>
                   <TableCell>{itens.find((i) => i.id === c.item_id)?.nome}</TableCell>
+                  <TableCell>{nomeTamanhoGravado(parametros, c.tamanho_id) || "—"}</TableCell>
                   <TableCell>{c.fornecedor}</TableCell>
                   <TableCell>{c.nota_fiscal || "—"}</TableCell>
                   <TableCell className="text-right">{c.quantidade}</TableCell>
@@ -216,7 +244,15 @@ export function UniformesComprasModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="item_id">Uniforme</Label>
-              <Select name="item_id" required>
+              <Select
+                name="item_id"
+                required
+                value={itemSel}
+                onValueChange={(v) => {
+                  setItemSel(v);
+                  setTamanho("");
+                }}
+              >
                 <SelectTrigger id="item_id">
                   <SelectValue placeholder="Selecione o uniforme" />
                 </SelectTrigger>
@@ -229,6 +265,24 @@ export function UniformesComprasModulo() {
                 </SelectContent>
               </Select>
             </div>
+            {pedeTamanho(
+              parametros,
+              "uniforme",
+              itens.find((i) => i.id === itemSel),
+            ) && (
+              <div className="space-y-1.5">
+                <Label htmlFor="tamanho_compra">Tamanho</Label>
+                <SeletorTamanho
+                  id="tamanho_compra"
+                  parametros={parametros}
+                  modulo="uniforme"
+                  produto={itens.find((i) => i.id === itemSel)}
+                  uso="entrada"
+                  valor={tamanho}
+                  onChange={setTamanho}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="fornecedor">Fornecedor</Label>
               <Input id="fornecedor" name="fornecedor" required placeholder="Nome do fornecedor" />
