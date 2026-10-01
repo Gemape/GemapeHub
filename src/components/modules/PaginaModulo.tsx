@@ -111,7 +111,7 @@ export function PaginaModulo({
                 >
                   Termo de vistoria periódica
                 </TabsTrigger>
-                {/* O cadastro de ferramentas fica só em Cadastros > Ferramentas (decisão 24). */}
+                {/* O cadastro de ferramentas fica só em Cadastros > Ferramentas (decisão 25). */}
                 <TabsTrigger
                   value="movimentacoes"
                   className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
@@ -121,7 +121,7 @@ export function PaginaModulo({
               </>
             ) : (
               <>
-                {/* O cadastro de uniformes fica só em Cadastros > Uniformes (decisão 25). */}
+                {/* O cadastro de uniformes fica só em Cadastros > Uniformes (decisão 26). */}
                 <TabsTrigger
                   value="movimentacoes"
                   className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"

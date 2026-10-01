@@ -44,7 +44,7 @@ import { estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 // Cadastro de ferramentas. EPI e uniforme usam CadastroProduto, e todas as listas
-// vêm de Cadastros > Gerais. Ferramenta não tem subcategoria (decisão 24).
+// vêm de Cadastros > Gerais. Ferramenta não tem subcategoria (decisão 25).
 export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const { empresas, empresaId } = useEmpresa();
   const [busca, setBusca] = useState("");

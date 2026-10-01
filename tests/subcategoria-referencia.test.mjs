@@ -96,7 +96,7 @@ test('migração: nomes gravados em EPI, Uniforme e Veículo ganham a referênci
     veiculos: [{ id: 'v1', tipo: 'Carro' }, { id: 'v2', tipo: null }],
     movimentacoes: [{ id: 'm1', categoria: 'Capacete' }],
   };
-  // Ferramenta não tem subcategoria desde a decisão 24: a migração não mexe nela.
+  // Ferramenta não tem subcategoria desde a decisão 25: a migração não mexe nela.
   assert.equal(ref.vincularSubcategorias(dados, p), 3);
   assert.equal(dados.epis[0].subcategoria_id, 'sub-epi-capacete');
   assert.equal(dados.epis[0].categoria, 'Capacete', 'o nome gravado passa a ser o de Gerais');
@@ -112,7 +112,7 @@ test('migração: nomes gravados em EPI, Uniforme e Veículo ganham a referênci
   assert.equal(ref.vincularSubcategorias(dados, p), 0);
 });
 
-test('ferramenta não usa subcategoria (decisão 24)', () => {
+test('ferramenta não usa subcategoria (decisão 25)', () => {
   assert.equal('ferramentas' in ref.SUBCATEGORIA_DAS_TABELAS, false);
   const itens = ler('components/modules/ItensModulo.tsx');
   assert.doesNotMatch(itens, /Subcategoria/);

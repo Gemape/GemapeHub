@@ -101,7 +101,7 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
   if (!entrada.codigoAtual && !regra) throw new Error("Cadastre a regra do código de ferramentas em Cadastros > Gerais.");
   return {
     codigo_sku: entrada.codigoAtual || proximoCodigo(regra!, entrada.codigosExistentes),
-    // Ferramenta não tem subcategoria (decisão 24). A coluna categoria, obrigatória no
+    // Ferramenta não tem subcategoria (decisão 25). A coluna categoria, obrigatória no
     // banco, recebe a categoria de ferramenta no cadastro novo; a edição não a reescreve,
     // para a ferramenta antiga manter a subcategoria gravada.
     ...(entrada.codigoAtual ? {} : { categoria: categoriaFerramenta.nome }),

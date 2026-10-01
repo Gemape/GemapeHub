@@ -10,7 +10,7 @@ const storage = () => {
 };
 const campos = { categoriaFerramenta: 'Elétrica', grupoFerramenta: 'Chave de fenda', numeroSerie: 'SN-123', precoCusto: '240.50' };
 
-test('ferramenta nova não tem subcategoria (decisão 24) e usa o próximo código global', () => {
+test('ferramenta nova não tem subcategoria (decisão 25) e usa o próximo código global', () => {
   const local = storage();
   const resultado = prepararCadastroFerramenta({
     parametros: lerParametros(local),
@@ -41,7 +41,7 @@ test('ferramenta recusa estoque mínimo e descrição inválidos', () => {
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, descricao: ' ' }), /descrição/);
 });
 
-test('editar ferramenta antiga preserva a subcategoria gravada (decisão 24)', () => {
+test('editar ferramenta antiga preserva a subcategoria gravada (decisão 25)', () => {
   const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], descricao: 'Serra', estoqueMinimo: '1', codigoAtual: 'FER-0001', ...campos };
   const resultado = prepararCadastroFerramenta(entrada);
   assert.equal('categoria' in resultado, false, 'a edição não reescreve a coluna categoria');

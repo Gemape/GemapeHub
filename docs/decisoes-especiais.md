@@ -271,7 +271,13 @@ Como se aplica:
 Regras complementares aprovadas pelo responsável em 01/10/2026, após o
 code review do PR #50.
 
-## 24. FERRAMENTA SEM SUBCATEGORIA E SEM ABA CADASTRO NO MÓDULO
+## 24. ESTOQUE É RESPONSABILIDADE DOS MÓDULOS, NÃO DOS CADASTROS
+
+Decisão 24 — Estoque é responsabilidade dos módulos, não dos cadastros. Os menus de Cadastros (Gerais, Empresas, Empregados, Fornecedores, Código de Fábrica, Tamanhos, Unidades, Associar Tamanho e Medida) NÃO contam, exibem nem movimentam estoque. Toda a lógica de contagem de estoque — saldo, mínimo, alerta, entrada, saída, devolução — fica exclusivamente nos menus de módulos (EPI, Uniformes, Ferramentas, Veículos, Ocorrências). Os cadastros apenas fornecem os dados que os módulos consomem (decisão 22).
+
+Esclarecimento do responsável em 01/10/2026: cadastros podem consultar estoque e movimentações internamente para proteções e avisos, como identificar um item em uso ou avisar antes de desautorizar um tamanho. Essa consulta não constitui contagem de estoque. A proibição é exibir saldo ou alerta de estoque na tela de cadastro ou no CSV de cadastro. A configuração do estoque mínimo, inclusive a grade por tamanho, é parametrização do produto e permanece no cadastro. Por esse critério, Gerais > Associar Tamanho e Medida e Gerais > Tamanhos e Unidades estão conformes. O campo de estoque inicial de Ferramentas permanece até a decisão específica sobre os campos fora do MD.
+
+## 25. FERRAMENTA SEM SUBCATEGORIA E SEM ABA CADASTRO NO MÓDULO
 Decidido pelo responsável em 01/10/2026:
 1. O cadastro de ferramentas (Cadastros > Ferramentas) não tem mais o
    campo Subcategoria. A ferramenta é classificada pela categoria e
@@ -284,9 +290,9 @@ Decidido pelo responsável em 01/10/2026:
 Corrige o MD (Ferramentas, "Cadastrar modelo", item 1, e a frase sobre
 as três seleções de Gerais), que foi ajustado junto.
 
-## 25. MÓDULO UNIFORMES SEM ABA CADASTRO
+## 26. MÓDULO UNIFORMES SEM ABA CADASTRO
 Decidido pelo responsável em 01/10/2026: o módulo Uniformes não tem
 mais a aba Cadastro, que duplicava Cadastros > Uniformes. O cadastro de
-uniformes fica só em Cadastros, como o de ferramentas (decisão 24). O
+uniformes fica só em Cadastros, como o de ferramentas (decisão 25). O
 módulo EPI mantém a aba Estoque. Complementa o MD (Uniforme, "Cadastrar
 uniforme"), que foi ajustado junto.

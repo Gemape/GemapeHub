@@ -1,10 +1,10 @@
 # Varredura da especificação contra o sistema
 
-Feita em 01/10/2026 sobre a `main` em `ec1b9c7` (merge do PR #52). Compara cada item de `docs/especificacao-gemapehub.md` (rev1, conferido também contra o PDF `md gemape rev1.pdf`) com o código, à luz de `docs/decisoes-especiais.md` (decisões 1 a 24) e de `docs/pendencias-fase2.md`. Nenhum código foi alterado nesta varredura.
+Feita em 01/10/2026 sobre a `main` em `ec1b9c7` (merge do PR #52). Compara cada item de `docs/especificacao-gemapehub.md` (rev1, conferido também contra o PDF `md gemape rev1.pdf`) com o código, à luz de `docs/decisoes-especiais.md` (decisões 1 a 23 e a atual 25) e de `docs/pendencias-fase2.md`. Nenhum código foi alterado nesta varredura.
 
 ## Estado de partida
 
-- PR #50 (decisão 23), PR #51 (decisão 23 corrigida com as 4 regras do code review e decisão 24) e PR #52 (ferramenta sem subcategoria e sem aba Cadastro no módulo) estão mergeados.
+- PR #50 (decisão 23), PR #51 (decisão 23 corrigida com as 4 regras do code review e decisão 25) e PR #52 (ferramenta sem subcategoria e sem aba Cadastro no módulo) estão mergeados.
 - O PR D (código do estoque por tamanho, decisão 23) foi liberado pelo responsável e está na branch `feat/tamanho-estoque-por-tamanho`, aguardando validação e merge.
 - Não há PR aberto no repositório.
 
@@ -63,7 +63,7 @@ Observação geral: tudo o que está "implementado" funciona no modo demonstraç
 | Item do MD | Status | Onde está / o que falta |
 | --- | --- | --- |
 | Permissão: Administrador cadastra caixa, portador, categoria e grupo; usuário simples cadastra modelo | Parcial / **BLOQUEADO** | Categoria e grupo ficam em Gerais (só admin). Caixa e portador não têm restrição por perfil: permissões por tela são Fase 2 (decisões 4 e 19). |
-| Modelo sem subcategoria (decisão 24) | Implementado | PR #52. |
+| Modelo sem subcategoria (decisão 25) | Implementado | PR #52. |
 | Código FER automático, sequência entre empresas, sem edição | Implementado | `cadastro-ferramentas.ts`. |
 | Categoria e grupo de Gerais | Implementado | Lista suspensa; renomear ou apagar em uso é bloqueado. |
 | Descrição, estoque mínimo, modelo, série obrigatória, patrimônio, data de aquisição, custo, empresa | Implementado | Cadastros > Ferramentas (`ItensModulo.tsx`). |
@@ -71,7 +71,7 @@ Observação geral: tudo o que está "implementado" funciona no modo demonstraç
 | Lista e movimentos (entrada/saída no histórico, código na linha e no CSV, termos de Responsabilidade e Encerramento) | Implementado | PRs #24 a #26. |
 | Caixa 01–100 e Portador com histórico | Implementado | PRs #37 a #40. |
 | Campos fora do MD no cadastro do modelo | Parcial | O formulário ainda tem Unidade de medida fixa "Unidade", Status com lista fixa (`STATUS_FERRAMENTA`: Ativo, Manutenção, Inativo), Nota fiscal, Observações e Estoque atual inicial. Nenhum consta do MD nem de decisão. Precisa da decisão do responsável (manter, tirar ou passar para Gerais). Ver prioridade 6. |
-| Subcategorias da categoria Ferramentas em Gerais | Parcial | Sem uso desde a decisão 24; continuam cadastráveis em Gerais. Precisa de decisão (esconder ou manter). |
+| Subcategorias da categoria Ferramentas em Gerais | Parcial | Sem uso desde a decisão 25; continuam cadastráveis em Gerais. Precisa de decisão (esconder ou manter). |
 
 ## 6. Empregados
 
