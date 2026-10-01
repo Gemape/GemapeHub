@@ -15,11 +15,11 @@ test('ferramenta nova não tem subcategoria (decisão 25) e usa o próximo códi
   const resultado = prepararCadastroFerramenta({
     parametros: lerParametros(local),
     codigosExistentes: ['FER-0001', 'FER-0002', 'EPI-9999'],
-    descricao: '  Chave de boca  ', estoqueMinimo: '3', ...campos,
+    descricao: '  Chave de boca  ', ...campos,
   });
   // A coluna categoria (obrigatória no banco) recebe a categoria de ferramenta.
   assert.deepEqual(resultado, {
-    codigo_sku: 'FER-0003', categoria: 'Elétrica', nome: 'Chave de boca', estoque_minimo: 3,
+    codigo_sku: 'FER-0003', categoria: 'Elétrica', nome: 'Chave de boca',
     categoria_ferramenta: 'Elétrica', grupo_ferramenta: 'Chave de fenda', numero_serie: 'SN-123', preco_unitario: 240.5,
     marca: null,
   });
@@ -34,10 +34,8 @@ test('ferramenta respeita regra alterada e preserva código ao editar', () => {
   assert.equal(prepararCadastroFerramenta({ ...entrada, codigoAtual: 'FER-0009' }).codigo_sku, 'FER-0009');
 });
 
-test('ferramenta recusa estoque mínimo e descrição inválidos', () => {
-  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], descricao: 'Furadeira', estoqueMinimo: '1', ...campos };
-  assert.throws(() => prepararCadastroFerramenta({ ...entrada, estoqueMinimo: '-1' }), /Estoque mínimo/);
-  assert.throws(() => prepararCadastroFerramenta({ ...entrada, estoqueMinimo: '1.5' }), /Estoque mínimo/);
+test('ferramenta recusa descrição inválida', () => {
+  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], descricao: 'Furadeira', ...campos };
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, descricao: ' ' }), /descrição/);
 });
 

@@ -235,7 +235,7 @@ Correções do code review do PR #54 (`revisoes/code-review-pr54-estoque-por-tam
 
 ## Decisões vigentes
 
-- **Decisão 24 — estoque nos módulos:** cadastros não exibem saldo nem alerta de estoque em tela ou CSV; podem consultar estoque e movimentações internamente para proteções e avisos, e continuam configurando mínimos como parâmetros. Gerais > Associar Tamanho e Medida e Gerais > Tamanhos e Unidades estão conformes. A remoção da exibição de saldo e alerta nos cadastros de EPI, Uniformes e Ferramentas fica como próximo item da fila, sem início antes de comando explícito e do merge do PR anterior (ver `docs/decisoes-especiais.md`).
+- **Decisão 24 — estoque nos módulos:** cadastros não exibem nem configuram estoque. A grade de mínimo por tamanho de EPI/Uniformes e os campos de mínimo e estoque inicial de Ferramentas ficam nas abas Estoque dos módulos; o estoque inicial de Ferramentas pode ser ajustado diretamente mesmo após movimentações. Gerais > Associar Tamanho e Medida e Gerais > Tamanhos e Unidades podem consultar estoque para proteções e avisos (ver `docs/decisoes-especiais.md`).
 
 - Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. O código vem da regra global da categoria-base Ferramentas (FER-0001 por padrão); não é editável e permanece na edição. Desde a decisão 25, a ferramenta não tem subcategoria e o módulo Ferramentas não tem aba Cadastro.
 - Série informada é obrigatória, sem geração de série fictícia. Patrimônio e data de aquisição são opcionais. Preço de custo não negativo tem até duas casas decimais e alimenta o indicador “Valor total em estoque”.

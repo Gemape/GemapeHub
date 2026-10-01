@@ -39,7 +39,7 @@ import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { codigosReservadosFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, selecaoMarcaCadastrada, valoresItemNaEdicao } from "@/lib/cadastro-ferramentas";
+import { codigosReservadosFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, selecaoMarcaCadastrada } from "@/lib/cadastro-ferramentas";
 import { estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -113,8 +113,6 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       tamanho: texto("tamanho"),
       cor: texto("cor"),
       unidade_medida: texto("unidade_medida"),
-      estoque_minimo: Number(f.get("estoque_minimo") ?? 0),
-      estoque_atual: Number(f.get("estoque_atual") ?? 0),
       fornecedor: texto("fornecedor"),
       data_validade: texto("data_validade"),
       data_aquisicao: texto("data_aquisicao"),
@@ -124,13 +122,15 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       status: String(f.get("status") ?? "Ativo"),
       observacoes: texto("observacoes"),
     };
-    valores = valoresItemNaEdicao(valores, !!editando);
+    if (!editando) {
+      valores['estoque_minimo'] = 0;
+      valores['estoque_atual'] = 0;
+    }
     try {
       const cadastro = prepararCadastroFerramenta({
         parametros: parametrosSelecao,
         codigosExistentes: editando ? [] : await codigosFerramenta(),
         descricao: String(f.get("nome") ?? ""),
-        estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
         grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
         marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, editando?.marca ?? null),
@@ -403,33 +403,6 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </Select>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="estoque_minimo">Estoque Mínimo</Label>
-              <Input
-                id="estoque_minimo"
-                name="estoque_minimo"
-                type="number"
-                min={0}
-                defaultValue={editando?.estoque_minimo ?? 0}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="estoque_atual">Estoque Atual</Label>
-              <Input
-                id="estoque_atual"
-                name="estoque_atual"
-                type="number"
-                min={0}
-                defaultValue={editando?.estoque_atual ?? 0}
-                disabled={!!editando}
-                className={editando ? "bg-muted" : ""}
-              />
-              {editando && (
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Ajuste via módulo de movimentações
-                </p>
-              )}
-            </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="status">Status</Label>

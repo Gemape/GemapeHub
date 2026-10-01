@@ -168,14 +168,15 @@ test("o CSV do histórico tem a coluna Tamanho", () => {
 
 const fonte = (relativo) => ler(`../src/${relativo}`);
 
-test("o cadastro de EPI e de uniforme escolhe a unidade e o mínimo por tamanho de Gerais", () => {
+test("o cadastro escolhe a unidade; o módulo configura o mínimo por tamanho", () => {
   const tela = fonte("components/modules/CadastroProduto.tsx");
   assert.match(tela, /unidadesAutorizadasDoProduto/);
   assert.match(tela, /htmlFor="unidade_id"/);
-  assert.match(tela, /minimos_tamanho/);
+  assert.doesNotMatch(tela, /minimos_tamanho/);
   assert.doesNotMatch(tela, /resumoEstoquePorTamanho|alertasPorTamanho/);
   const estoque = fonte("components/modules/EstoqueModulo.tsx");
   assert.match(estoque, /estadoEstoqueModulo/);
+  assert.match(estoque, /prepararMinimosEstoque/);
   // A edição nunca envia o saldo por tamanho: só o gatilho mexe nele.
   assert.equal(/valores\[?["']?saldos_tamanho/.test(tela), false);
 });
