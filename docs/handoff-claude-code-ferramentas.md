@@ -150,10 +150,10 @@ Auditoria de 01/10/2026 sobre a `main` (`59dd52c`), **encerrada após o merge do
 - **PR B (#47):** EPI, Uniforme, Ferramenta e Veículo passaram a guardar a subcategoria por referência (`subcategoria_id`), acompanhando o nome atual de Gerais.
 - **PR C (#48):** proteção de exclusão dos parâmetros em uso, categorias-base e regras de código; opção de desativar/reativar os parâmetros aplicáveis em Gerais. A conferência de marca de ferramenta consulta o banco ativo.
 
-O achado sobre tamanhos e unidades (linha 1) virou a decisão 23 e será resolvido no PR D; o plano está em "PR D — tamanho e unidade de EPI e Uniforme", abaixo. Os demais achados e limites documentados abaixo não são autorização para novas correções.
+O achado sobre tamanhos e unidades (linha 1) virou a decisão 23 e será resolvido no PR D para EPI e Uniforme (a unidade fixa de Ferramenta continua aberta); o plano está em "PR D — tamanho e unidade de EPI e Uniforme", abaixo. Os demais achados e limites documentados abaixo não são autorização para novas correções.
 
 Já conforme:
-- Subcategoria em lista suspensa vinda de Gerais no cadastro de EPI, Uniforme, Ferramenta e Veículo (`CadastroProduto.tsx`, `ItensModulo.tsx`, `VeiculosCadastroModulo.tsx`).
+- Subcategoria em lista suspensa vinda de Gerais no cadastro de EPI, Uniforme e Veículo (`CadastroProduto.tsx`, `VeiculosCadastroModulo.tsx`); Ferramenta não tem subcategoria desde a decisão 24.
 - Categorias múltiplas do Fornecedor marcadas a partir de Gerais e gravadas pelo id (`fornecedores.tsx`).
 - Categoria, grupo e marca de Ferramenta em lista suspensa de Gerais; renomear ou apagar opção em uso é bloqueado com aviso (`categorias.tsx`).
 - Código do produto gerado pela regra de Gerais e não editável.
@@ -184,7 +184,7 @@ Fora de Gerais, mas parecido: o fornecedor das Compras de EPI e Uniformes é dig
 
 Liberado pelo responsável em 01/10/2026, em duas etapas, cada uma com PR próprio e parada para o merge:
 
-1. **Documentação** (este PR): decisão 23, pendência da Fase 2 de tamanho e unidade por referência com estoque por tamanho, e este plano.
+1. **Documentação** (PR #50, mergeado, e o PR de correções após o code review): decisão 23, pendência da Fase 2 de tamanho e unidade por referência com estoque por tamanho, e este plano.
 2. **Código**, em branch própria a partir da `main` depois do merge da etapa 1.
 
 Uma sessão anterior (Codex) chegou a começar o PR D, mas o trabalho ficou só na máquina local e não chegou ao GitHub. O responsável decidiu recomeçar do zero a partir da `main`; aquele trabalho pode ser resgatado depois, se necessário.
@@ -193,18 +193,21 @@ Escopo da etapa 2, com os testes escritos antes do código:
 
 | # | Entrega | Como |
 | --- | --- | --- |
-| 1 | Gerais: Tamanhos, Unidades e Associar Tamanho e Medida com Desativar/Reativar e proteção de item em uso | Mesmo padrão do PR #48: botão de olho, item desativado sai das listas de seleção e continua no cadastro que já o usa; exclusão recusada com aviso de onde é usado (produtos, saldos por tamanho, movimentações e compras). Desautorizar um tamanho que tem saldo ou histórico no produto também avisa o que depende. |
-| 2 | EPI e Uniforme: Tamanho e Unidade em lista suspensa | Opções = tamanhos e unidades autorizados para a subcategoria do produto em Associar Tamanho e Medida, só os ativos (mais o valor atual na edição). Referência por id (`unidade_id`, `tamanho_id`), com o nome sempre atual de Gerais, como `subcategoria_id` no PR #47. |
-| 3 | Estoque por tamanho | Cada produto + tamanho tem estoque e estoque mínimo próprios; o estoque do produto é a soma. Compra, entrega, baixa e devolução informam o tamanho. O cliente de demonstração soma e subtrai só no saldo daquele tamanho e recusa tamanho ausente ou não autorizado e saldo negativo, de forma atômica. Listas, busca, CSV, edição, Ficha de EPI, compras, movimentações, relatórios e termos mostram o tamanho, com escape nos documentos. |
-| 4 | Compatibilidade | Subcategoria sem tamanho autorizado não exige tamanho e mantém o estoque único. Registros antigos sem tamanho (ou com texto fora de Gerais) são mostrados e preservados ao editar outros campos, e o texto antigo é ligado ao parâmetro de mesmo nome quando houver. |
+| 1 | Gerais: Tamanhos e Unidades com Desativar/Reativar e proteção de item em uso; Associar Tamanho e Medida com aviso ao desautorizar | Mesmo padrão do PR #48: botão de olho, item desativado sai das listas de seleção e continua no cadastro que já o usa; exclusão recusada com aviso de onde é usado (produtos, saldos por tamanho, movimentações e compras). Desautorizar um tamanho que tem saldo ou histórico no produto também avisa o que depende. |
+| 2 | EPI e Uniforme: Tamanho e Unidade em lista suspensa | Opções = tamanhos e unidades autorizados para a subcategoria do produto em Associar Tamanho e Medida, só os ativos (mais o valor atual na edição). Unidade no cadastro do produto (`unidade_id`); tamanho nas linhas de compra, entrega, baixa e devolução (`tamanho_id`) e na grade de estoque mínimo por tamanho do produto. Referência por id, com o nome sempre atual de Gerais, como `subcategoria_id` no PR #47. Subcategoria sem unidade autorizada não exige unidade. |
+| 3 | Estoque por tamanho | Cada produto + tamanho tem estoque e estoque mínimo próprios, com alerta de estoque baixo por tamanho; o estoque do produto é a soma. Produto sem tamanhos mantém o mínimo único. Compra, entrega, baixa e devolução informam o tamanho. O cliente de demonstração soma e subtrai só no saldo daquele tamanho e recusa tamanho ausente ou não autorizado e saldo negativo, de forma atômica. Listas, busca, CSV, edição, Ficha de EPI, compras, movimentações, relatórios e termos mostram o tamanho, com escape nos documentos. |
+| 4 | Compatibilidade | Subcategoria sem tamanho autorizado não exige tamanho e mantém o estoque único. Registros antigos sem tamanho (ou com texto fora de Gerais) são mostrados e preservados ao editar outros campos, e o texto antigo é ligado ao parâmetro de mesmo nome quando houver. Migração do saldo: produto com tamanho digitado que casa com Gerais leva o saldo inteiro para esse tamanho; sem tamanho, o saldo fica em "sem tamanho", que só pode sair até zerar; autorizar tamanhos depois só avisa, sem converter saldo; uniformes antigos cadastrados um por tamanho continuam separados. |
+| 5 | Importação do XML | A nota não traz tamanho: item casado com produto cuja subcategoria tem tamanho autorizado fica como pendência visível e não é gravado; produto sem tamanho segue como hoje. É a única mudança na importação; o restante do XML (#44) aguarda o responsável. |
 
 Testes obrigatórios: movimentar uma numeração não altera o saldo de outra; tamanho ausente ou diferente dos autorizados é recusado; renomear ou desativar um tamanho em Gerais se reflete nos cadastros.
 
-Fora do escopo: importação do XML (só recebe o tamanho se o responsável decidir depois), pendência 4 e Fase 2.
+As regras das linhas 3 a 5 (XML sem tamanho como pendência, migração do saldo, unidade não exigida sem associação, mínimo e alerta por tamanho) foram aprovadas pelo responsável em 01/10/2026 após o code review do PR #50 e fazem parte do escopo do PR D.
+
+Fora do escopo: demais evoluções da importação do XML, pendência 4 e Fase 2.
 
 ## Decisões vigentes
 
-- Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. A subcategoria da categoria de produto Ferramentas vem de Gerais e alimenta a regra global do código (FER-0001 por padrão); código não é editável e permanece na edição.
+- Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. O código vem da regra global da categoria-base Ferramentas (FER-0001 por padrão); não é editável e permanece na edição. Desde a decisão 24, a ferramenta não tem subcategoria e o módulo Ferramentas não tem aba Cadastro.
 - Série informada é obrigatória, sem geração de série fictícia. Patrimônio e data de aquisição são opcionais. Preço de custo não negativo tem até duas casas decimais e alimenta o indicador “Valor total em estoque”.
 - A Fase 1 usa dados locais de demonstração. Não criar ou alterar tabelas, migrations, autenticação ou dados no Supabase real.
 - Permissões por tela e revisão do estoque histórico de ferramentas permanecem na Fase 2 (`docs/pendencias-fase2.md`). Caixas e Portador concluída: etapas 1 a 4 mergeadas (PRs #37 a #40).
@@ -232,6 +235,6 @@ Cada caso recebeu teste reproduzindo a falha antes da correção. Validação fi
 - Commits com o e-mail `ti@gemape.com.br` (`git config user.email`), sem mudar o nome do autor, para a Vercel reconhecer o autor e criar o preview. O PR #23 não teve preview porque os commits saíram com um autor sem acesso ao projeto na Vercel.
 - Se a API do GitHub devolver Forbidden, faça push da branch, informe o título do PR e aguarde: o responsável abre o PR manualmente.
 - Preview da Vercel (regra vigente desde 30/09/2026, 16:05): após cada push ou PR, conferir o deployment de preview (Ready, Building ou Error) e informar o link completo quando estiver Ready. Se falhar ou ficar bloqueado, informar o motivo exato e aguardar; não alterar configurações da Vercel.
-- Testes no Windows: a suíte falha no Windows local por caminhos `C:\C:\...` montados pelos próprios testes. A referência válida é o check "Validar aplicação" do PR (`.github/workflows/validar.yml`: typecheck, testes e build no Linux).
+- Testes no Windows: no Windows local, 4 testes falham (`gerais-protecao`, `listas-fixas`, `marcas-gerais`, `subcategoria-referencia`) porque montam o caminho com `new URL(...).pathname`, que vira `C:\C:\...`; a correção seria `fileURLToPath`. A referência válida é o check "Validar aplicação" do PR (`.github/workflows/validar.yml`: typecheck, testes e build no Linux).
 - Fallback: se o ambiente não alcançar a Vercel, rodar `VITE_DEMO_MODE=true npm run dev -- --host 0.0.0.0 --port 5173` e informar a URL local e os pontos de conferência.
 - Só avançar de etapa depois do aviso "PR mergeado". Pelas decisões 19 e 20, a ordem final é concluir o MD (o que resta está em "O que resta do MD fora de Ferramentas", mais a pendência 4), confirmar o sistema 100% funcional, executar a Fase 2 com auth e banco de dados reais do Supabase e somente então fazer o deploy de produção na VPS da Mega Provedor. A Fase 2 ainda não está autorizada.
