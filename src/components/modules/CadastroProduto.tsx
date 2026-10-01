@@ -620,9 +620,9 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 )}
                 {tamanhosAssociados.length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Vêm de Cadastros &gt; Gerais &gt; Associar Tamanho e Medida. O estoque é
-                    controlado por tamanho: compras, entregas, baixas e devoluções informam o
-                    tamanho.
+                    Os tamanhos vêm de Cadastros &gt; Gerais &gt; Associar Tamanho e Medida.
+                    Defina aqui o estoque mínimo por tamanho. A movimentação e o saldo ficam no módulo{" "}
+                    {config.modulo === "epi" ? "EPI" : "Uniformes"}.
                   </p>
                 )}
               </div>

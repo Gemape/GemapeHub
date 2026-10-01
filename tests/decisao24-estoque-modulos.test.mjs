@@ -15,6 +15,8 @@ test('cadastros de EPI e Uniforme não exibem saldo nem alerta nem exportam esto
   assert.doesNotMatch(csv, /Estoque|Mínimo|estoque_atual|estoque_minimo/);
   assert.doesNotMatch(lista, /Abaixo do mínimo|resumoEstoquePorTamanho|item\.estoque_atual|<TableHead[^>]*>Estoque<\/TableHead>/);
   assert.doesNotMatch(fonte, /O alerta de estoque baixo/, 'o cadastro não anuncia alertas de estoque');
+  assert.doesNotMatch(fonte, /O estoque é\s+controlado por tamanho/, 'o cadastro não descreve controle de estoque como sua função');
+  assert.match(fonte, /A movimentação e o saldo ficam no módulo/, 'a instrução direciona o usuário ao módulo');
   assert.match(fonte, /Estoque mínimo por tamanho/, 'a grade de parametrização continua');
 });
 
@@ -47,6 +49,8 @@ test('módulo sinaliza mínimo por tamanho e saldo do produto', () => {
   assert.equal(estado.minimo, 6);
   assert.equal(estado.alerta, true, 'um tamanho abaixo do mínimo aciona alerta mesmo com total suficiente');
   assert.match(estado.detalheSaldo, /40.*1/);
+  assert.match(estado.detalheMinimo, /40.*2/);
+  assert.match(estado.detalheAlerta, /40 \(1\/2\)/);
 });
 
 test('módulo lê todos os itens em páginas e respeita a empresa', async () => {
