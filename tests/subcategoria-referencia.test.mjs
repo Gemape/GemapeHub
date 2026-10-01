@@ -47,6 +47,32 @@ test('referência a subcategoria excluída mostra o nome gravado como fora de Ge
     { id: null, nome: 'Jaleco', foraDeGerais: true });
 });
 
+test('referência a subcategoria excluída e recriada com o mesmo nome volta a ser ligada', () => {
+  const local = storage();
+  const antiga = adicionarSubcategoria('cat-uniformes', 'Jaleco', local);
+  removerSubcategoria(antiga.id, local);
+  const nova = adicionarSubcategoria('cat-uniformes', 'jaleco', local);
+  const registro = { subcategoria_id: antiga.id, categoria: 'Jaleco' };
+  assert.deepEqual(ref.resolverSubcategoria(lerParametros(local), 'cat-uniformes', registro),
+    { id: nova.id, nome: 'jaleco', foraDeGerais: false });
+  const dados = { uniformes: [registro] };
+  assert.equal(ref.vincularSubcategorias(dados, lerParametros(local)), 1);
+  assert.equal(registro.subcategoria_id, nova.id);
+});
+
+test('com a referência ligada, o nome gravado acompanha o nome atual de Gerais', () => {
+  const local = storage();
+  renomearSubcategoria('sub-epi-capacete', 'Capacete X', local);
+  const dados = { epis: [{ id: 'e1', subcategoria_id: 'sub-epi-capacete', categoria: 'Capacete' }], veiculos: [{ id: 'v1', subcategoria_id: 'sub-veiculos-moto', tipo: 'Moto' }] };
+  assert.equal(ref.vincularSubcategorias(dados, lerParametros(local)), 1);
+  assert.equal(dados.epis[0].categoria, 'Capacete X');
+  assert.equal(dados.veiculos[0].tipo, 'Moto');
+  // Excluída depois: aparece com o último nome que o usuário viu.
+  removerSubcategoria('sub-epi-capacete', local);
+  assert.deepEqual(ref.resolverSubcategoria(lerParametros(local), 'cat-epi', dados.epis[0]),
+    { id: null, nome: 'Capacete X', foraDeGerais: true });
+});
+
 test('a escolha no formulário vira referência e nome atual; a antiga é mantida', () => {
   const p = lerParametros(storage());
   assert.deepEqual(ref.subcategoriaDaSelecao('sub-epi-luva', p, 'cat-epi', null), { id: 'sub-epi-luva', nome: 'Luva' });
@@ -72,7 +98,8 @@ test('migração: nomes gravados nos quatro cadastros ganham a referência certa
   };
   assert.equal(ref.vincularSubcategorias(dados, p), 4);
   assert.equal(dados.epis[0].subcategoria_id, 'sub-epi-capacete');
-  assert.equal(dados.epis[0].categoria, 'capacete', 'o texto gravado não é apagado');
+  assert.equal(dados.epis[0].categoria, 'Capacete', 'o nome gravado passa a ser o de Gerais');
+  assert.equal(dados.epis[1].categoria, 'Inexistente', 'o que não casa fica como está');
   assert.equal(dados.epis[1].subcategoria_id, undefined);
   assert.equal(dados.epis[2].subcategoria_id, 'sub-epi-luva');
   assert.equal(dados.uniformes[0].subcategoria_id, 'sub-uniformes-camisa');

@@ -28,13 +28,11 @@ export function resolverSubcategoria(
   const subcategorias = subcategoriasDa(parametros, categoriaId);
   const gravado = texto(registro[campo]);
   const id = texto(registro.subcategoria_id);
-  if (id) {
-    const sub = subcategorias.find((s) => s.id === id);
-    if (sub) return { id: sub.id, nome: sub.nome, foraDeGerais: false };
-    return gravado ? { id: null, nome: gravado, foraDeGerais: true } : null;
-  }
+  const ligada = id ? subcategorias.find((s) => s.id === id) : undefined;
+  if (ligada) return { id: ligada.id, nome: ligada.nome, foraDeGerais: false };
   if (!gravado) return null;
-  // Cadastro anterior à referência: liga pelo nome, sem diferença de acento ou maiúscula.
+  // Sem referência (cadastro anterior a ela) ou com referência a subcategoria excluída:
+  // liga pelo nome gravado, sem diferença de acento ou maiúscula.
   const sub = subcategorias.find((s) => mesmoNome(s.nome, gravado));
   if (sub) return { id: sub.id, nome: sub.nome, foraDeGerais: false };
   return { id: null, nome: gravado, foraDeGerais: true };
@@ -67,9 +65,9 @@ export function subcategoriaDaSelecao(
   return { id: sub.id, nome: sub.nome };
 }
 
-// Migração do demo: cadastro gravado só com o nome ganha a referência da subcategoria de
-// mesmo nome. O nome gravado não é apagado; o que não casa fica como está. Devolve
-// quantos cadastros foram ligados.
+// Migração do demo: cadastro gravado só com o nome (ou ligado a subcategoria excluída)
+// ganha a referência da subcategoria de mesmo nome, e o nome gravado acompanha o nome
+// atual de Gerais. O que não casa fica como está. Devolve quantos cadastros mudaram.
 export function vincularSubcategorias(
   dados: Record<string, Record<string, unknown>[] | undefined>,
   parametros: ParametrosBase,
@@ -77,12 +75,12 @@ export function vincularSubcategorias(
   let ligados = 0;
   for (const [tabela, { categoriaId, campo }] of Object.entries(SUBCATEGORIA_DAS_TABELAS)) {
     for (const registro of dados[tabela] ?? []) {
-      if (texto(registro["subcategoria_id"])) continue;
       const sub = resolverSubcategoria(parametros, categoriaId, registro, campo);
-      if (sub?.id) {
-        registro["subcategoria_id"] = sub.id;
-        ligados += 1;
-      }
+      if (!sub?.id) continue;
+      if (registro["subcategoria_id"] === sub.id && registro[campo] === sub.nome) continue;
+      registro["subcategoria_id"] = sub.id;
+      registro[campo] = sub.nome;
+      ligados += 1;
     }
   }
   return ligados;
