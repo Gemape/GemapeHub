@@ -224,3 +224,27 @@ e esses parâmetros conversam com os cadastros. Regras:
 A conformidade do código com estas regras está no handoff
 (`docs/handoff-claude-code-ferramentas.md`). Nenhuma correção começa
 sem o ok do responsável; cada uma terá branch e PR próprios.
+
+## 23. TAMANHO E UNIDADE DE EPI E UNIFORME VÊM DE GERAIS, COM ESTOQUE POR TAMANHO
+Decidido pelo responsável em 01/10/2026: "EPI e Uniforme passam a
+consumir Tamanho e Unidade de Cadastros > Gerais conforme a associação
+da categoria (Associar Tamanho e Medida), com estoque controlado
+separado por tamanho; categoria sem associação configurada não exige
+tamanho".
+Como se aplica:
+- A associação é a de Gerais > Associar Tamanho e Medida, feita por
+  categoria e subcategoria (MD, "Associar tamanho e medida ao
+  produto"). O produto usa os tamanhos e as unidades autorizados para a
+  subcategoria dele.
+- Tamanho e unidade são escolhidos em lista suspensa (decisão 22, regra
+  2), nunca digitados.
+- Cada combinação produto + tamanho tem estoque e estoque mínimo
+  próprios. Entrada (compra), saída (entrega ou baixa) e devolução
+  informam o tamanho; tamanho ausente ou não autorizado é recusado, e
+  movimentar um tamanho nunca altera o saldo de outro.
+- Subcategoria sem tamanho autorizado não exige tamanho: o produto
+  continua com um estoque único, como hoje.
+- Registros antigos sem tamanho são preservados ao editar outros
+  campos, como já ocorre com marca (PR #46) e subcategoria (PR #47).
+- Tamanhos, unidades e associações ganham desativar/reativar e
+  proteção de item em uso, como os demais parâmetros (PR #48).
