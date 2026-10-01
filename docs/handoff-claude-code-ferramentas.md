@@ -1,8 +1,10 @@
 # Handoff para Claude Code — Ferramentas
 
-Atualizado em 30/09/2026. A etapa 4 de Caixas e Portador parte de `origin/main` em `48a3e28` (merge do PR #39).
+Atualizado em 01/10/2026, sobre a `main` com os PRs #40 (etapa 4 de Caixas e Portador, `ab134d6`) e #41 (Relatórios fora do menu Cadastros).
 
 **Marco: o plano de Ferramentas da Fase 1 está completo** (etapas 1 a 6, PRs #20 a #26, confirmado pelo responsável em 30/09/2026). A proposta de Caixas e Portador (`docs/proposta-caixas-portador.md`) foi aprovada pelo responsável em 30/09/2026, e as quatro etapas abaixo também, na ordem proposta (decisão 18). Cada etapa para após o PR, para validação e merge do responsável. A Fase 2 continua aguardando decisão: não iniciar.
+
+**Marco: o bloco FERRAMENTAS do MD está concluído** com as etapas 1 a 4 de Caixas e Portador (PRs #37 a #40), confirmado pelo responsável em 01/10/2026. O que ainda resta do MD fora desse bloco está em "O que resta do MD fora de Ferramentas", abaixo; nenhum item começa sem o ok do responsável.
 
 ## Estado das etapas
 
@@ -53,7 +55,7 @@ Padrões obrigatórios em todas as etapas:
 | 1 — caixas habilitadas (mergeada no PR #37, `c5846ac`) | Em Cadastros > Gerais, a lista das caixas numeradas de 01 a 100, cada uma com a flag de habilitação. O cadastro de caixa e as telas que escolhem caixa (Termo de Responsabilidade, Termo de Vistoria, aba Caixas de Ferramentas) só oferecem caixas habilitadas. | Numeração fixa de 1 a 100, sem repetir nem pular. Desabilitar uma caixa em uso é recusado, com o motivo. A caixa desabilitada some das listas de escolha, mas continua no histórico. |
 | 2 — portador (mergeada no PR #38, `ed1f623`) | Cadastro de Portador: caixa (só as habilitadas), empregado por busca de palavra-chave, status ativa/inativa e observação. Histórico de portadores por caixa. | Uma caixa tem no máximo um portador ativo. Trocar o portador encerra o anterior no histórico, com data local. Empregado demitido não pode ser novo portador (decisão 15). O histórico é lido por inteiro. A gravação é atômica e trava o segundo clique. |
 | 3 — marcas (mergeada no PR #39, `48a3e28`) | Cadastro de marcas de ferramentas em Cadastros > Gerais. O cadastro de ferramenta passa a escolher a marca dessa lista, em vez de texto livre. | Marca em uso não pode ser renomeada nem excluída sem aviso, como categoria e grupo (etapa 2 de Ferramentas). As ferramentas já cadastradas com marca em texto continuam exibindo a marca. |
-| 4 — validação (branch `feat/caixas-portador-validacao`) | Fluxo completo no navegador (habilitar caixa, atribuir portador, trocar portador, termos com a caixa, marca na ferramenta), handoff atualizado e pendências da Fase 2 registradas. | Roteiro e capturas abaixo. Desvio de exibição dos itens da caixa corrigido e revalidado; aguarda validação do responsável após o PR. |
+| 4 — validação (mergeada no PR #40, `ab134d6`) | Fluxo completo no navegador (habilitar caixa, atribuir portador, trocar portador, termos com a caixa, marca na ferramenta), handoff atualizado e pendências da Fase 2 registradas. | Roteiro e capturas abaixo. Desvio de exibição dos itens da caixa corrigido e revalidado. |
 
 Respostas do responsável aos pontos da etapa 1 (30/09/2026, decisão 18):
 
@@ -108,7 +110,7 @@ Ordem sugerida pelo responsável em 30/09/2026. Cada item tem branch e PR própr
 | 1 | HTML do Termo de Responsabilidade sem escape de textos: aplicar o mesmo tratamento do Termo de Encerramento. | Concluída: PR #27, merge `4f220ee`. O HTML está em `src/lib/termo-responsabilidade-html.ts`, com `escaparHtml` e a data impressa sem cair no dia anterior. |
 | 2 | Termos de Uniformes (entrega e baixa) e Termo de Vistoria gravam item a item: usar o mesmo padrão atômico dos termos de Ferramentas (validar antes e gravar tudo de uma vez). | Concluída: PR #28, merge `47272e8`. Regras em `src/lib/termos-atomicos.ts`: entrega e baixa de uniformes não passam do estoque disponível; vistoria confere as linhas, mas não o estoque; "Nenhum / Empresa" grava sem empregado. Os três termos gravam tudo de uma vez, travam o segundo clique e limpam a lista após gravar. |
 | 3 | Abertura dos termos em aba nova é bloqueada por alguns navegadores, porque a aba abre depois da gravação. Vale para todos os termos (EPI, Uniformes e Ferramentas). | Concluída: PR #35, merge `cb55f0d`. Os 7 termos abrem num visualizador dentro da tela (`abrirDocumento` em `src/lib/visualizador-documento.ts`), com Imprimir, Baixar e Fechar; nenhuma aba nova. |
-| 4 | Data padrão das compras de EPI e Uniformes usa o fuso UTC (`toISOString`) e mostra o dia seguinte no fim da noite: usar `hojeLocal()`. O code review da pendência 7 achou o mesmo `toISOString` em outras datas padrão: Termo de Vistoria, relatórios de baixa de EPI e de Uniformes, e Ocorrências. | Não iniciada. |
+| 4 | Data padrão das compras de EPI e Uniformes usa o fuso UTC (`toISOString`) e mostra o dia seguinte no fim da noite: usar `hojeLocal()`. O code review da pendência 7 achou o mesmo `toISOString` em outras datas padrão: Termo de Vistoria, relatórios de baixa de EPI e de Uniformes, e Ocorrências. Inclui a janela interna de 180 dias da cobertura de estoque, também calculada em UTC (`src/lib/hooks-gemape.ts`, saídas dos últimos 180 dias). | Aberta, aguardando decisão do responsável. O PR #34 (branch `fix/datas-padrao-locais`) foi fechado sem merge pelo responsável em 30/09/2026; a correção não está na `main`. |
 | 5 | HTML dos termos de Baixa de Uniforme e de Vistoria sem escape de textos (nome do item, estado, motivo e observação digitada): aplicar `escaparHtml`, como no Termo de Responsabilidade. Achado no code review da pendência 2; o problema já existia antes dela. | Concluída: PR #29, merge `82e681d`. HTML em `src/lib/termo-baixa-uniforme-html.ts` e `src/lib/termo-vistoria-html.ts`, com `escaparHtml` em todos os textos; a data da vistoria é impressa sem cair no dia anterior. |
 | 6 | HTML de outros termos ainda sem escape: Termo de Entrega de EPI e Ficha de EPI Avulsa (empresa, empregado e nome do item) e Termo de Entrega de Uniforme (empresa e empregado; os itens já são escapados). Achado no code review da pendência 5; o problema já existia antes. | Concluída: PR #30, merge `7cdcb40`. HTML em `src/lib/termo-entrega-epi-html.ts`, `src/lib/ficha-epi-avulsa-html.ts` e `src/lib/termo-entrega-uniforme-html.ts`. Com as pendências 1, 5 e 6, os 7 termos que abrem em aba nova escapam os textos: classe de risco fechada. |
 | 7 | Termo de Entrega de EPI já grava em lote, mas não trava o segundo clique nem limpa a lista após gravar: um novo clique registra a mesma entrega de novo. Aplicar o mesmo padrão dos termos de Uniformes e de Ferramentas (validação de estoque, trava e lista limpa). Na mesma tela, a observação gravada usa a data em UTC (`new Date().toISOString()`), mesmo problema da pendência 4. Achado no code review da pendência 6; já existia antes. | Concluída: PR #31, merge `096070f`. Trava contra segundo clique, lista limpa após gravar, gravação em lote e validação das linhas e do estoque (`validarSaidaDeEpis`); a observação usa a data local (`observacaoEntregaEpi`). |
@@ -116,12 +118,29 @@ Ordem sugerida pelo responsável em 30/09/2026. Cada item tem branch e PR própr
 
 Fica para a Fase 2: editar ou excluir uma compra de EPI ou uniforme não ajusta o estoque do demo. No banco real, compras são imutáveis (gatilho `gemape_compra_imutavel`) e a tela recebe erro. Decidir se os botões Editar e Excluir de compras saem da tela.
 
+## O que resta do MD fora de Ferramentas
+
+Levantamento de 01/10/2026: cada item da especificação fora do bloco FERRAMENTAS foi conferido contra o código da `main`. Categorias, subcategorias, código de fábrica (com CA para EPI), endereçamento, tamanhos e unidades, associar tamanho e medida, código do produto, cadastros de EPI, Ficha de EPI, Uniforme, Veículo, Empregados e Fornecedores estão conformes. Restam os grupos abaixo. Nenhum começa sem o ok do responsável; cada um terá branch e PR próprios.
+
+| # | Grupo | O que falta | Estado |
+| --- | --- | --- | --- |
+| 1 | Importação do XML da nota fiscal | O MD diz que o código de fábrica serve para o sistema associar o produto ao importar o XML da nota do fornecedor e alimentar o estoque. O cadastro do código de fábrica existe, mas nenhuma tela lê o XML: as compras de EPI e de Uniformes só têm o campo manual Nota Fiscal. | Aguarda ok do responsável. |
+| 2 | Cadastro de Empresas | Faltam o endereço (rua, número, bairro, CEP, cidade, estado) e o status (ativa ou inativa) do MD. O material está na branch `feat/empresas` (PR #11, fechado sem merge, commit `b0f0c7e`), que será recuperado a partir da `main` atual. | Aguarda ok do responsável. |
+| 3 | Listas fixas remanescentes | `src/components/modules/ItensModulo.tsx` ainda tem trechos de EPI e Uniforme com as listas fixas `CATEGORIAS_EPI` e `CATEGORIAS_UNIFORME` e código digitado à mão; `src/components/modules/VeiculosModulo.tsx` usa a lista fixa `TIPOS_VEICULO` e não é mais importado por nenhuma tela. Nenhum trecho aparece na tela, mas contrariam a regra de puxar tudo de Cadastros > Gerais. As listas em `src/lib/gemape.ts` continuam só como dados iniciais de Gerais. | Remoção aprovada pelo responsável em 01/10/2026: apagar os trechos em PR próprio. |
+| 4 | Pendência 4 (datas UTC) | Ver "Pendências para PRs separados", item 4. | Aguarda decisão do responsável. |
+
+Fica para a Fase 2 (decisão 19), sem ação agora:
+- exclusão de empregados, empresas e cadastros só pelo Administrador, e as permissões por tela (decisão 4); hoje só Cadastros > Gerais é restrito ao Administrador;
+- marca e modelo do uniforme e código e descrição do veículo, que hoje só são gravados no modo demonstração e precisam de colunas no banco real;
+- endereço e status de empresas no banco real (colunas já registradas em `docs/pendencias-fase2.md`).
+
 ## Decisões vigentes
 
 - Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. A subcategoria da categoria de produto Ferramentas vem de Gerais e alimenta a regra global do código (FER-0001 por padrão); código não é editável e permanece na edição.
 - Série informada é obrigatória, sem geração de série fictícia. Patrimônio e data de aquisição são opcionais. Preço de custo não negativo tem até duas casas decimais e alimenta o indicador “Valor total em estoque”.
 - A Fase 1 usa dados locais de demonstração. Não criar ou alterar tabelas, migrations, autenticação ou dados no Supabase real.
-- Permissões por tela e revisão do estoque histórico de ferramentas permanecem na Fase 2 (`docs/pendencias-fase2.md`). A proposta de Caixas e Portador foi aprovada: etapas 1, 2 e 3 mergeadas; etapa 4 aguarda validação do responsável após o PR.
+- Permissões por tela e revisão do estoque histórico de ferramentas permanecem na Fase 2 (`docs/pendencias-fase2.md`). Caixas e Portador concluída: etapas 1 a 4 mergeadas (PRs #37 a #40).
+- Relatórios saiu do menu Cadastros (PR #41): a tela é aberta só pelo atalho Relatórios do Dashboard.
 
 ## Commits e validação da branch da etapa 3
 
@@ -146,4 +165,4 @@ Cada caso recebeu teste reproduzindo a falha antes da correção. Validação fi
 - Se a API do GitHub devolver Forbidden, faça push da branch, informe o título do PR e aguarde: o responsável abre o PR manualmente.
 - Preview da Vercel (regra vigente desde 30/09/2026, 16:05): após cada push ou PR, conferir o deployment de preview (Ready, Building ou Error) e informar o link completo quando estiver Ready. Se falhar ou ficar bloqueado, informar o motivo exato e aguardar; não alterar configurações da Vercel.
 - Fallback: se o ambiente não alcançar a Vercel, rodar `VITE_DEMO_MODE=true npm run dev -- --host 0.0.0.0 --port 5173` e informar a URL local e os pontos de conferência.
-- Só avançar de etapa depois do aviso "PR mergeado". Pela decisão 20, a ordem final é concluir o MD (etapas 2, 3 e 4 de Caixas e Portador e pendência 4), confirmar o sistema 100% funcional, executar a Fase 2 com auth e banco de dados reais do Supabase e somente então fazer o deploy de produção na VPS da Mega Provedor. A Fase 2 ainda não está autorizada.
+- Só avançar de etapa depois do aviso "PR mergeado". Pelas decisões 19 e 20, a ordem final é concluir o MD (o que resta está em "O que resta do MD fora de Ferramentas", mais a pendência 4), confirmar o sistema 100% funcional, executar a Fase 2 com auth e banco de dados reais do Supabase e somente então fazer o deploy de produção na VPS da Mega Provedor. A Fase 2 ainda não está autorizada.

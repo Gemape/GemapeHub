@@ -163,6 +163,15 @@ Decidido pelo responsável em 30/09/2026, ao aprovar a proposta
 - O portador ativo passa a ser o responsável exibido da caixa; o campo
   Responsável estático do cadastro de caixa deixa de ser usado.
 
+## 19. FASE 2 SÓ COM O SISTEMA 100% FUNCIONAL
+Decidido pelo responsável e registrado em 01/10/2026 (a numeração
+pulava da 18 para a 20; a regra já valia e não estava escrita):
+- A Fase 2 (autenticação e banco de dados reais no Supabase) só será
+  implantada após confirmar todo o sistema funcional, com 100% dos
+  módulos funcionando.
+- Mesmo com o sistema completo, a Fase 2 só começa por ordem
+  explícita do responsável.
+
 ## 20. PRODUÇÃO NA VPS APÓS A FASE 2
 Decidido pelo responsável em 30/09/2026:
 - O deploy na VPS da Mega Provedor só ocorre depois que autenticação e
