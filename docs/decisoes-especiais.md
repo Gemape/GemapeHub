@@ -182,3 +182,24 @@ Decidido pelo responsável em 30/09/2026:
   com auth e banco reais e, só então, fazer o deploy na VPS.
 - Esta decisão não autoriza iniciar a Fase 2 agora. Cada etapa atual
   continua em branch e PR próprios para validação do responsável.
+
+## 21. IMPORTAÇÃO DO XML DA NOTA FISCAL
+Escopo aprovado pelo responsável em 01/10/2026:
+- A importação serve para qualquer módulo. Cada item é casado pelo par
+  fornecedor + código do fornecedor em Cadastros > Gerais > Código de
+  fábrica, e a entrada vai para o módulo do produto casado: EPI e
+  Uniforme viram compra, como na tela de Compras; Ferramenta vira
+  Entrada no histórico de movimentações, com a origem na observação.
+- O fornecedor é achado pelo CNPJ do emitente e a empresa pelo CNPJ do
+  destinatário. Item sem casamento, de quantidade fracionada ou de
+  módulo sem código de fábrica (veículo) fica como pendência visível e
+  nunca é gravado automaticamente.
+- A data da compra e da entrada é a DATA DE EMISSÃO da nota, no fuso de
+  Brasília, e não a data da importação.
+- Gravação atômica entre módulos, com desfazer total em caso de falha;
+  trava contra segundo clique, lista limpa após gravar e recusa da mesma
+  chave de acesso.
+- Leitor próprio do XML, sem biblioteca nova: DOCTYPE e ENTITY são
+  recusados e todo texto do XML é tratado como dado.
+- Nada no Supabase real: a tabela das notas importadas e a função que
+  grava tudo numa transação ficam como pendência da Fase 2.

@@ -124,10 +124,18 @@ Levantamento de 01/10/2026: cada item da especificação fora do bloco FERRAMENT
 
 | # | Grupo | O que falta | Estado |
 | --- | --- | --- | --- |
-| 1 | Importação do XML da nota fiscal | O MD diz que o código de fábrica serve para o sistema associar o produto ao importar o XML da nota do fornecedor e alimentar o estoque. O cadastro do código de fábrica existe, mas nenhuma tela lê o XML: as compras de EPI e de Uniformes só têm o campo manual Nota Fiscal. | Aguarda ok do responsável. |
+| 1 | Importação do XML da nota fiscal | O MD diz que o código de fábrica serve para o sistema associar o produto ao importar o XML da nota do fornecedor e alimentar o estoque. O cadastro do código de fábrica existe, mas nenhuma tela lê o XML: as compras de EPI e de Uniformes só têm o campo manual Nota Fiscal. | Escopo aprovado em 01/10/2026 (decisão 21); implementado na branch `feat/importacao-xml-nfe`, aguardando validação do responsável após o PR. |
 | 2 | Cadastro de Empresas | Faltam o endereço (rua, número, bairro, CEP, cidade, estado) e o status (ativa ou inativa) do MD. O material está na branch `feat/empresas` (PR #11, fechado sem merge, commit `b0f0c7e`), que será recuperado a partir da `main` atual. | Aguarda ok do responsável. |
 | 3 | Listas fixas remanescentes | `src/components/modules/ItensModulo.tsx` ainda tem trechos de EPI e Uniforme com as listas fixas `CATEGORIAS_EPI` e `CATEGORIAS_UNIFORME` e código digitado à mão; `src/components/modules/VeiculosModulo.tsx` usa a lista fixa `TIPOS_VEICULO` e não é mais importado por nenhuma tela. Nenhum trecho aparece na tela, mas contrariam a regra de puxar tudo de Cadastros > Gerais. As listas em `src/lib/gemape.ts` continuam só como dados iniciais de Gerais. | Remoção aprovada pelo responsável em 01/10/2026: apagar os trechos em PR próprio. |
 | 4 | Pendência 4 (datas UTC) | Ver "Pendências para PRs separados", item 4. | Aguarda decisão do responsável. |
+
+### Importação do XML da NF-e (grupo 1)
+
+Botão "Importar NF-e (XML)" nas Compras de EPI, nas Compras de Uniformes e nas Movimentações de Ferramentas, todos abrindo a mesma tela (`src/components/modules/ImportarNfeXml.tsx`). Regras da decisão 21:
+- leitura em `src/lib/nfe-xml.ts` (NF-e 4.00, sem biblioteca; recusa DOCTYPE/ENTITY; data de emissão em Brasília);
+- casamento e entradas em `src/lib/importacao-nfe.ts`: fornecedor pelo CNPJ do emitente, empresa pelo CNPJ do destinatário, item pelo código de fábrica; EPI e Uniforme viram compra com a data de emissão; Ferramenta vira Entrada com a origem na observação; o resto fica pendente;
+- gravação numa operação única do modo demonstração (`importar_nota_fiscal`), que desfaz tudo se uma parte falhar e recusa a mesma chave;
+- testes em `tests/importacao-nfe.test.mjs` com a NF-e fictícia `tests/fixtures/nfe-4.00-exemplo.xml`.
 
 Fica para a Fase 2 (decisão 19), sem ação agora:
 - exclusão de empregados, empresas e cadastros só pelo Administrador, e as permissões por tela (decisão 4); hoje só Cadastros > Gerais é restrito ao Administrador;

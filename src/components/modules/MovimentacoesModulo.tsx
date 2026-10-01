@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -147,6 +148,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           >
             Exportar CSV
           </Button>
+          {modulo === "ferramenta" && <ImportarNfeXml />}
           <Button requiresWrite="operar"
             onClick={() => {
               setComOcorrencia(false);

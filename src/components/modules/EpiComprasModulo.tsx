@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -112,6 +113,7 @@ export function EpiComprasModulo() {
           >
             Exportar CSV
           </Button>
+          <ImportarNfeXml />
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
         </div>
       </div>
