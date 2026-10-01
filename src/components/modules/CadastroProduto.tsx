@@ -123,6 +123,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const [empresaSel, setEmpresaSel] = useState("");
   // Subcategoria escolhida no formulário: define as unidades e os tamanhos de Gerais (decisão 23).
   const [subSel, setSubSel] = useState("");
+  const [tamanhosSelecionados, setTamanhosSelecionados] = useState<string[]>([]);
   // Evita dois cadastros com o mesmo código num clique duplo em Salvar.
   // O ref bloqueia na hora; o estado só serve para desabilitar o botão. Depois de salvo,
   // o formulário fica travado até ser aberto de novo (o diálogo ainda está fechando).
@@ -210,6 +211,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     setEditando(null);
     setEmpresaSel("");
     setSubSel("");
+    setTamanhosSelecionados([]);
     setPrevia("");
     setAberto(true);
     try {
@@ -424,6 +426,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                       onClick={() => {
                         destravar();
                         setEditando(item);
+                        setTamanhosSelecionados(item.tamanhos_selecionados ??
+                          tamanhosAssociadosParaCadastro(parametros, config.modulo, item).map((tamanho) => tamanho.id));
                         setSubSel(
                           valorSelecaoSubcategoria(
                             resolverSubcategoria(parametros, config.categoriaId, item),
@@ -486,7 +490,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Subcategoria</Label>
-              <Select name="categoria" value={subSel} onValueChange={setSubSel}>
+              <Select name="categoria" value={subSel} onValueChange={(id) => { setSubSel(id); setTamanhosSelecionados([]); }}>
                 <SelectTrigger id="categoria">
                   <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
@@ -561,7 +565,11 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <ul aria-labelledby="tamanhos_associados" className="flex flex-wrap gap-1.5">
                     {tamanhosAssociados.map((t) => (
                       <li key={t.id}>
-                        <Badge variant="secondary">{t.rotulo}</Badge>
+                        <button type="button" aria-pressed={tamanhosSelecionados.includes(t.id)}
+                          onClick={() => setTamanhosSelecionados((atuais) => alternarTamanhoSelecionado(atuais, t.id))}
+                          className={`rounded-md border px-2.5 py-1 text-sm font-medium transition-colors ${tamanhosSelecionados.includes(t.id) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary text-secondary-foreground hover:bg-accent"}`}>
+                          {t.rotulo}
+                        </button>
                       </li>
                     ))}
                   </ul>

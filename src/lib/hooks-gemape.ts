@@ -47,6 +47,7 @@ export interface Item {
   unidade_id?: string | null;
   saldos_tamanho?: Record<string, number> | null;
   minimos_tamanho?: Record<string, number> | null;
+  tamanhos_selecionados?: string[] | null;
 }
 
 export interface Empregado {

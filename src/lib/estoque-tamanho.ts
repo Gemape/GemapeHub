@@ -38,6 +38,7 @@ export type ProdutoTamanho = {
   estoque_minimo?: number | null;
   saldos_tamanho?: Saldos | null;
   minimos_tamanho?: Saldos | null;
+  tamanhos_selecionados?: string[] | null;
   unidade_id?: string | null;
   unidade_medida?: string | null;
 };
@@ -61,11 +62,32 @@ function opcoesAutorizadas(
 }
 
 /** Tamanhos autorizados para a subcategoria do produto, na ordem de Gerais (inclui os desativados). */
-export const tamanhosAutorizadosDoProduto = (
+export const tamanhosDisponiveisDoProduto = (
   p: ParametrosBase,
   modulo: ModuloTamanho,
   produto: ProdutoTamanho,
 ) => opcoesAutorizadas(p, modulo, produto, "tamanhos");
+
+export function alternarTamanhoSelecionado(selecionados: string[], id: string): string[] {
+  return selecionados.includes(id) ? selecionados.filter((atual) => atual !== id) : [...selecionados, id];
+}
+
+export function preservarMinimosNaoSelecionados(
+  anteriores: Saldos,
+  selecionados: string[],
+  digitados: Saldos,
+): Saldos {
+  return { ...Object.fromEntries(Object.entries(anteriores).filter(([id]) => !selecionados.includes(id))), ...digitados };
+}
+
+const tamanhoVisivel = (produto: ProdutoTamanho, id: string) =>
+  !Array.isArray(produto.tamanhos_selecionados) || produto.tamanhos_selecionados.includes(id);
+
+export const tamanhosAutorizadosDoProduto = (
+  p: ParametrosBase,
+  modulo: ModuloTamanho,
+  produto: ProdutoTamanho,
+) => tamanhosDisponiveisDoProduto(p, modulo, produto).filter((t) => tamanhoVisivel(produto, t.id));
 
 /**
  * Tamanhos e numerações associados à subcategoria do produto em Associar Tamanho e Medida,
@@ -76,7 +98,7 @@ export function tamanhosAssociadosParaCadastro(
   modulo: ModuloTamanho,
   produto: ProdutoTamanho,
 ): { id: string; rotulo: string }[] {
-  return tamanhosAutorizadosDoProduto(p, modulo, produto).map((t) => ({
+  return tamanhosDisponiveisDoProduto(p, modulo, produto).map((t) => ({
     id: t.id,
     rotulo: estaAtivo(p, t.id) ? t.nome : `${t.nome} (desativado)`,
   }));
@@ -270,8 +292,8 @@ export function resumoEstoquePorTamanho(
   const saldos = saldosPorTamanho(p, modulo, produto);
   const minimos = produto.minimos_tamanho ?? {};
   const chaves = new Set([
-    ...Object.keys(saldos).filter((chave) => numero(saldos[chave]) > 0),
-    ...Object.keys(minimos).filter((chave) => numero(minimos[chave]) > 0),
+    ...Object.keys(saldos).filter((chave) => tamanhoVisivel(produto, chave) && numero(saldos[chave]) > 0),
+    ...Object.keys(minimos).filter((chave) => tamanhoVisivel(produto, chave) && numero(minimos[chave]) > 0),
   ]);
   return ordenarChaves(p, [...chaves])
     .map((chave) => `${rotuloComEstado(p, chave)}: ${numero(saldos[chave])}`)
@@ -283,7 +305,7 @@ export function resumoMinimosPorTamanho(p: ParametrosBase, produto: ProdutoTaman
   const minimos = produto.minimos_tamanho ?? {};
   return ordenarChaves(
     p,
-    Object.keys(minimos).filter((chave) => numero(minimos[chave]) > 0),
+    Object.keys(minimos).filter((chave) => tamanhoVisivel(produto, chave) && numero(minimos[chave]) > 0),
   )
     .map((chave) => `${rotuloComEstado(p, chave)}: ${numero(minimos[chave])}`)
     .join(" · ");
@@ -307,7 +329,7 @@ export function alertasPorTamanho(
   if (!usaMinimoPorTamanho(p, modulo, produto)) return [];
   const saldos = saldosPorTamanho(p, modulo, produto);
   const minimos = produto.minimos_tamanho ?? {};
-  return ordenarChaves(p, Object.keys(minimos))
+  return ordenarChaves(p, Object.keys(minimos).filter((id) => tamanhoVisivel(produto, id)))
     .map((chave) => ({
       chave,
       nome: nomeTamanho(p, chave),
@@ -323,6 +345,7 @@ export function estadoEstoqueModulo(
   modulo: string,
   produto: ProdutoTamanho,
 ) {
+  // Totais contábeis incluem saldos antigos; apenas o detalhe por tamanho segue a seleção.
   const saldo = Number(produto.estoque_atual ?? 0);
   const minimo = Number(produto.estoque_minimo ?? 0);
   const porTamanho = controlaModulo(modulo) && usaMinimoPorTamanho(p, modulo, produto);
