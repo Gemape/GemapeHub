@@ -160,8 +160,8 @@ Ainda fora das regras:
 | # | Regra | Achado | Onde |
 | --- | --- | --- | --- |
 | 1 | 1 e 2 | Tamanhos, unidades e Associar Tamanho e Medida existem em Gerais, mas nenhum cadastro de módulo os usa: EPI e Uniforme não têm campo de tamanho ou unidade, e Ferramenta tem a unidade fixa "Unidade". | `CadastroProduto.tsx`, `ItensModulo.tsx` (opção fixa "Unidade") |
-| 2 | 1 e 2 | Marca de Uniforme e de Veículo é digitada; só Ferramenta tem marcas em Gerais. | `CadastroProduto.tsx` (campo `marca`), `VeiculosCadastroModulo.tsx` |
-| 3 | 1 | Listas fixas que sobram: `CATEGORIAS_FERRAMENTA` (sem uso, grafia "Pneumática" diferente de Gerais); `TAMANHOS_*` e `UNIDADES_*` e `VeiculosModulo.tsx` (#43). As listas `CATEGORIAS_EPI`, `CATEGORIAS_UNIFORME` e `TIPOS_VEICULO` servem só de dados iniciais de Gerais. | `src/lib/gemape.ts` |
+| 2 | 1 e 2 | ~~Marca de Uniforme e de Veículo é digitada.~~ Resolvido no PR A (`feat/marcas-gerais`): listas Marcas de uniformes e Marcas de veículos em Gerais; marca antiga digitada fica visível e é mantida na edição; marca em uso não pode ser renomeada nem excluída. | `src/lib/marcas-gerais.ts` |
+| 3 | 1 | ~~Listas fixas que sobram~~: `TAMANHOS_*`, `UNIDADES_*` e `VeiculosModulo.tsx` saíram no PR #43; `CATEGORIAS_FERRAMENTA` saiu no PR A. As listas `CATEGORIAS_EPI`, `CATEGORIAS_UNIFORME` e `TIPOS_VEICULO` servem só de dados iniciais de Gerais. | `src/lib/gemape.ts` |
 | 4 | 3 | Cópia estagnada: produtos guardam o NOME da subcategoria (e o veículo, em `tipo`). Renomear em Gerais deixa o cadastro com o nome antigo, exibido como "fora de Cadastros > Gerais"; em Ferramenta, a edição é recusada até escolher outra. | `CadastroProduto.tsx`, `VeiculosCadastroModulo.tsx`, `cadastro-ferramentas.ts` |
 | 5 | 3 | Ferramenta guarda o nome de categoria, grupo e marca; não fica estagnado porque renomear em uso é bloqueado, mas por isso a opção em uso não pode ser renomeada. | `cadastro-ferramentas.ts` |
 | 6 | 3 | Código de fábrica guarda cópia do nome do produto e do fornecedor e mostra a cópia. | `parametros-base.ts` (`nome_produto`, `fornecedor_nome`) |

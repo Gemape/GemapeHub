@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import { demoSupabase } from "@/integrations/supabase/demo-client";
 import { opcaoFerramentaEmUso } from "@/lib/cadastro-ferramentas";
+import { marcaEmUso } from "@/lib/marcas-gerais";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
@@ -44,6 +46,64 @@ function Categorias() {
       return true;
     }
     return false;
+  }
+
+  // Marca de uniforme ou de veículo usada por um cadastro não pode ser renomeada nem
+  // excluída, para o cadastro não ficar com uma marca fora de Gerais.
+  async function marcaImpedeAlteracao(
+    tipo: "marcasUniforme" | "marcasVeiculo",
+    nome: string,
+  ): Promise<boolean> {
+    const consulta =
+      tipo === "marcasUniforme"
+        ? demoSupabase.from("uniformes").select("marca")
+        : // Veículo tem a coluna marca no banco real; a marca de uniforme só existe no demo.
+          supabase.from("veiculos").select("marca");
+    const { data, error } = await consulta;
+    if (error) {
+      toast.error("Não foi possível conferir os cadastros que usam a marca.");
+      return true;
+    }
+    if (marcaEmUso((data ?? []) as { marca?: string | null }[], nome)) {
+      const onde = tipo === "marcasUniforme" ? "um uniforme" : "um veículo";
+      toast.error(`A marca "${nome}" está em uso por ${onde}.`);
+      return true;
+    }
+    return false;
+  }
+
+  function listaMarcas(
+    tipo: "marcasUniforme" | "marcasVeiculo",
+    titulo: string,
+    novo: string,
+    rotulo: string,
+  ) {
+    return (
+      <ListaEditavel
+        titulo={titulo}
+        novo={novo}
+        itens={dados[tipo]}
+        onAdicionar={(nome) =>
+          executar(() => adicionarListaFerramenta(tipo, nome), "Marca incluída.")
+        }
+        onRenomear={async (id, nome) => {
+          const atual = dados[tipo].find((item) => item.id === id);
+          if (
+            !atual ||
+            (atual.nome !== nome.trim() && (await marcaImpedeAlteracao(tipo, atual.nome)))
+          )
+            return false;
+          return executar(() => renomearListaFerramenta(tipo, id, nome));
+        }}
+        onRemover={async (item) => {
+          if (
+            confirm(`Excluir a marca de ${rotulo} ${item.nome}?`) &&
+            !(await marcaImpedeAlteracao(tipo, item.nome))
+          )
+            executar(() => removerListaFerramenta(tipo, item.id), "Marca excluída.");
+        }}
+      />
+    );
   }
 
   return (
@@ -111,6 +171,10 @@ function Categorias() {
               executar(() => removerListaFerramenta("marcasFerramenta", item.id), "Marca excluída.");
           }}
         />
+        {listaMarcas("marcasUniforme", "Marcas de uniformes", "Nova marca de uniforme", "uniforme")}
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        {listaMarcas("marcasVeiculo", "Marcas de veículos", "Nova marca de veículo", "veículo")}
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
         <ListaEditavel

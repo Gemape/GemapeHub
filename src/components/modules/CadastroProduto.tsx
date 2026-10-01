@@ -37,6 +37,13 @@ import { exportarCsv } from "@/lib/gemape";
 import type { Modulo } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { removerFicha } from "@/lib/fichas-epi";
+import {
+  MARCA_LEGADA,
+  marcaDaSelecao,
+  SEM_MARCA,
+  selecaoInicialMarca,
+  selecaoMarca,
+} from "@/lib/marcas-gerais";
 import { combinaBusca, mesmoNome, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -119,6 +126,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     subcategoriaAtual && !subcategorias.some((s) => s.nome === subcategoriaAtual)
       ? subcategoriaAtual
       : null;
+  // Marca de Cadastros > Gerais; a marca antiga digitada continua aparecendo na edição.
+  const marcaInicial = selecaoInicialMarca(parametros.marcasUniforme, editando?.marca);
   const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
 
   function destravar() {
@@ -182,7 +191,17 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       // Marca e modelo ainda não existem na tabela real de uniformes: nesta fase só são
       // gravados no modo demonstração. As colunas entram na Fase 2.
       if (MODO_DEMO) {
-        valores["marca"] = String(f.get("marca") ?? "").trim() || null;
+        try {
+          valores["marca"] =
+            marcaDaSelecao(
+              String(f.get("marca") ?? ""),
+              parametros.marcasUniforme,
+              editando?.marca,
+            ) || null;
+        } catch (erro) {
+          toast.error(erro instanceof Error ? erro.message : "Marca inválida.");
+          return;
+        }
         valores["modelo"] = String(f.get("modelo") ?? "").trim() || null;
       }
     }
@@ -442,7 +461,29 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <>
                     <div className="space-y-1.5">
                       <Label htmlFor="marca">Marca</Label>
-                      <Input id="marca" name="marca" defaultValue={editando?.marca ?? ""} />
+                      <Select name="marca" defaultValue={marcaInicial.valor}>
+                        <SelectTrigger id="marca">
+                          <SelectValue placeholder="Selecione a marca" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={SEM_MARCA}>Sem marca</SelectItem>
+                          {parametros.marcasUniforme.map((m) => (
+                            <SelectItem key={m.id} value={selecaoMarca(m.id)}>
+                              {m.nome}
+                            </SelectItem>
+                          ))}
+                          {marcaInicial.legada && (
+                            <SelectItem value={MARCA_LEGADA}>
+                              {marcaInicial.legada} (fora de Cadastros &gt; Gerais)
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {parametros.marcasUniforme.length === 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="modelo">Modelo</Label>
