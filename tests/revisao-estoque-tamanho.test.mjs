@@ -138,8 +138,8 @@ test("desautorizar unidade avisa também o produto que a usa pelo texto antigo",
 test("telas: mínimo único quando a grade fica vazia, alerta no módulo e fila em Associar", () => {
   const cadastro = ler("components/modules/CadastroProduto.tsx");
   assert.match(cadastro, /usaGrade/);
-  // Fora da grade o mínimo por tamanho é limpo, para não ficar escondido.
-  assert.match(cadastro, /valores\["minimos_tamanho"\] = \{\}/);
+  // Tamanhos desmarcados ficam preservados no histórico, mas não aparecem no módulo.
+  assert.match(cadastro, /preservarMinimosNaoSelecionados/);
   assert.doesNotMatch(cadastro, /resumoEstoquePorTamanho|alertasPorTamanho/);
   assert.match(ler("components/modules/EstoqueModulo.tsx"), /estadoEstoqueModulo/);
   assert.match(ler("routes/_authenticated/dashboard.tsx"), /usaMinimoPorTamanho/);

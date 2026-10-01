@@ -237,6 +237,8 @@ Correções do code review do PR #54 (`revisoes/code-review-pr54-estoque-por-tam
 
 - **Decisão 24 — estoque nos módulos:** cadastros não exibem saldo nem alerta de estoque em tela ou CSV; podem consultar estoque e movimentações internamente para proteções e avisos, e continuam configurando mínimos como parâmetros. Gerais > Associar Tamanho e Medida e Gerais > Tamanhos e Unidades estão conformes. A remoção da exibição de saldo e alerta nos cadastros de EPI, Uniformes e Ferramentas fica como próximo item da fila, sem início antes de comando explícito e do merge do PR anterior (ver `docs/decisoes-especiais.md`).
 
+- **Seleção de tamanhos por produto:** chips de EPI e Uniformes selecionam tamanhos no modo demonstração; a aba Estoque mostra apenas os selecionados. Fora do demo, falta campo persistente de tamanhos por produto; a migration fica pendente para a fase de montagem do banco no Supabase. Não escrever nem aplicar migration agora.
+
 - Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. O código vem da regra global da categoria-base Ferramentas (FER-0001 por padrão); não é editável e permanece na edição. Desde a decisão 25, a ferramenta não tem subcategoria e o módulo Ferramentas não tem aba Cadastro.
 - Série informada é obrigatória, sem geração de série fictícia. Patrimônio e data de aquisição são opcionais. Preço de custo não negativo tem até duas casas decimais e alimenta o indicador “Valor total em estoque”.
 - A Fase 1 usa dados locais de demonstração. Não criar ou alterar tabelas, migrations, autenticação ou dados no Supabase real.

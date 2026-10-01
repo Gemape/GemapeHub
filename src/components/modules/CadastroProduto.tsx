@@ -56,6 +56,8 @@ import { MODO_DEMO } from "@/lib/modo-demo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
   controlaTamanho,
+  alternarTamanhoSelecionado,
+  preservarMinimosNaoSelecionados,
   nomeTamanho,
   nomeUnidade,
   resumoMinimosPorTamanho,
@@ -128,6 +130,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const [empresaSel, setEmpresaSel] = useState("");
   // Subcategoria escolhida no formulário: define as unidades e os tamanhos de Gerais (decisão 23).
   const [subSel, setSubSel] = useState("");
+  const [tamanhosSelecionados, setTamanhosSelecionados] = useState<string[]>([]);
   // Evita dois cadastros com o mesmo código num clique duplo em Salvar.
   // O ref bloqueia na hora; o estado só serve para desabilitar o botão. Depois de salvo,
   // o formulário fica travado até ser aberto de novo (o diálogo ainda está fechando).
@@ -194,9 +197,9 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     ? [
         ...new Set([
           ...tamanhosAutorizadosDoProduto(parametros, config.modulo, produtoNoFormulario)
-            .filter((t) => estaAtivo(parametros, t.id))
+            .filter((t) => estaAtivo(parametros, t.id) && tamanhosSelecionados.includes(t.id))
             .map((t) => t.id),
-          ...Object.keys(minimosAtuais).filter((id) => Number(minimosAtuais[id]) > 0),
+          ...Object.keys(minimosAtuais).filter((id) => tamanhosSelecionados.includes(id) && Number(minimosAtuais[id]) > 0),
         ]),
       ]
     : [];
@@ -236,6 +239,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     setEditando(null);
     setEmpresaSel("");
     setSubSel("");
+    setTamanhosSelecionados([]);
     setPrevia("");
     setAberto(true);
     try {
@@ -275,10 +279,17 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     const valores: Record<string, unknown> = {
       categoria: subcategoria.nome,
       nome,
-      estoque_minimo: Math.max(0, Number(f.get("estoque_minimo") ?? 0) || 0),
+      estoque_minimo: MODO_DEMO && tamanhosAssociados.length > 0 && tamanhosSelecionados.length === 0
+        ? (editando?.estoque_minimo ?? 0)
+        : Math.max(0, Number(f.get("estoque_minimo") ?? 0) || 0),
     };
     // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
-    if (MODO_DEMO) valores["subcategoria_id"] = subcategoria.id;
+    if (MODO_DEMO) {
+      valores["subcategoria_id"] = subcategoria.id;
+      valores["tamanhos_selecionados"] = tamanhosSelecionados.filter((id) =>
+        tamanhosAssociados.some((tamanho) => tamanho.id === id),
+      );
+    }
     // Unidade e mínimo por tamanho de Gerais (decisão 23), só no modo demonstração.
     if (MODO_DEMO) {
       const unidade = String(f.get("unidade_id") ?? "");
@@ -309,12 +320,12 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
           const minimo = Math.max(0, Math.floor(Number(f.get(campoMinimo(id)) ?? 0) || 0));
           if (minimo > 0) minimos[id] = minimo;
         }
-        valores["minimos_tamanho"] = minimos;
+        valores["minimos_tamanho"] = preservarMinimosNaoSelecionados(minimosAtuais, tamanhosSelecionados, minimos);
         // O mínimo do produto é a soma dos mínimos por tamanho.
-        valores["estoque_minimo"] = Object.values(minimos).reduce((a, b) => a + b, 0);
+        valores["estoque_minimo"] = Object.values(valores["minimos_tamanho"] as Record<string, number>).reduce((a, b) => a + b, 0);
       } else {
         // Mínimo único: mínimos por tamanho antigos não ficam escondidos no cadastro.
-        valores["minimos_tamanho"] = {};
+        valores["minimos_tamanho"] = editando ? minimosAtuais : {};
       }
     }
     if (config.custoMarcaModelo) {
@@ -471,6 +482,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                       onClick={() => {
                         destravar();
                         setEditando(item);
+                        setTamanhosSelecionados(item.tamanhos_selecionados ??
+                          tamanhosAssociadosParaCadastro(parametros, config.modulo, item).map((tamanho) => tamanho.id));
                         setSubSel(
                           valorSelecaoSubcategoria(
                             resolverSubcategoria(parametros, config.categoriaId, item),
@@ -533,7 +546,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Subcategoria</Label>
-              <Select name="categoria" value={subSel} onValueChange={setSubSel}>
+              <Select name="categoria" value={subSel} onValueChange={(id) => { setSubSel(id); setTamanhosSelecionados([]); }}>
                 <SelectTrigger id="categoria">
                   <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
@@ -608,7 +621,11 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <ul aria-labelledby="tamanhos_associados" className="flex flex-wrap gap-1.5">
                     {tamanhosAssociados.map((t) => (
                       <li key={t.id}>
-                        <Badge variant="secondary">{t.rotulo}</Badge>
+                        <button type="button" aria-pressed={tamanhosSelecionados.includes(t.id)}
+                          onClick={() => setTamanhosSelecionados((atuais) => alternarTamanhoSelecionado(atuais, t.id))}
+                          className={`rounded-md border px-2.5 py-1 text-sm font-medium transition-colors ${tamanhosSelecionados.includes(t.id) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary text-secondary-foreground hover:bg-accent"}`}>
+                          {t.rotulo}
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -620,7 +637,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 )}
                 {tamanhosAssociados.length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Os tamanhos vêm de Cadastros &gt; Gerais &gt; Associar Tamanho e Medida.
+                    Clique para incluir ou remover. Os tamanhos vêm de Cadastros &gt; Gerais &gt; Associar Tamanho e Medida.
                     Defina aqui o estoque mínimo por tamanho. A movimentação e o saldo ficam no módulo{" "}
                     {config.modulo === "epi" ? "EPI" : "Uniformes"}.
                   </p>
@@ -652,7 +669,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   ))}
                 </div>
               </fieldset>
-            ) : (
+            ) : tamanhosAssociados.length === 0 ? (
               <div className="space-y-1.5">
                 <Label htmlFor="estoque_minimo">Estoque mínimo</Label>
                 <Input
@@ -664,7 +681,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   defaultValue={editando?.estoque_minimo ?? 0}
                 />
               </div>
-            )}
+            ) : null}
             {config.custoMarcaModelo && (
               <>
                 <div className="space-y-1.5">
