@@ -12,6 +12,7 @@ const dadosIniciais: Record<string, Linha[]> = {
   ferramentas: [{ id: "fer-demo", empresa_id: empresa.id, nome: "Furadeira", codigo_sku: "FER-0001", categoria: "Elétrica", estoque_atual: 3, estoque_minimo: 2, status: "Ativo", preco_unitario: 240, created_at: agora }],
   veiculos: [{ id: "vei-demo", empresa_id: empresa.id, placa: "GEM-2026", marca: "Fiat", modelo: "Strada", quilometragem_atual: 25000, status: "Ativo", created_at: agora }],
   movimentacoes: [], ocorrencias: [], compras_epis: [], compras_uniformes: [], caixas_ferramentas: [], caixa_ferramenta_itens: [], cadastros_auxiliares: [], auditoria: [],
+  notas_fiscais_importadas: [],
 };
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v));
 const chaveArmazenamento = "gemape-demo-dados";
@@ -66,6 +67,39 @@ const registrarCompras = (tabela: string, compras: Linha[]): Error | null => {
   (dados.movimentacoes ?? (dados.movimentacoes = [])).push(...entradas);
   return null;
 };
+// Emula a função do banco real (pendência da Fase 2) que importa uma NF-e numa transação:
+// compras de EPI e uniforme, entradas de ferramenta e o registro da chave de acesso.
+// Qualquer falha desfaz tudo; a mesma chave não é importada duas vezes.
+const importarNotaFiscal = (e: Linha): Error | null => {
+  if (!/^\d{44}$/.test(String(e?.chave ?? ""))) return new Error("Chave de acesso inválida");
+  const notas = dados.notas_fiscais_importadas ?? (dados.notas_fiscais_importadas = []);
+  if (notas.some(n => n.chave === e.chave)) return new Error(`A NF-e ${e.numero} (chave ${e.chave}) já foi importada.`);
+  const total = ["compras_epis", "compras_uniformes", "movimentacoes"].reduce((n, t) => n + (Array.isArray(e[t]) ? e[t].length : 0), 0);
+  if (total === 0) return new Error("A nota não tem nenhum item para gravar.");
+  const copia = clone(dados);
+  // Cada produto precisa ser da empresa da nota, e a quantidade, inteira e positiva.
+  const valido = (l: Linha, tabela: string) => Number.isInteger(l.quantidade) && Number(l.quantidade) > 0 && l.empresa_id === e.empresa_id
+    && (dados[tabela] ?? []).some(i => i.id === l.item_id && i.empresa_id === e.empresa_id);
+  const desfazer = (erro: Error) => { Object.keys(dados).forEach(k => delete dados[k]); Object.assign(dados, copia); return erro; };
+  const novas = (linhas: unknown) => (Array.isArray(linhas) ? linhas : []).map((l: Linha) => ({ id: id(), created_at: agora, ...l }));
+  for (const tabela of ["compras_epis", "compras_uniformes"]) {
+    const compras = novas(e[tabela]);
+    const modulo = MODULO_DA_COMPRA[tabela];
+    if (compras.some(c => !valido(c, TABELA_DO_MODULO[modulo]))) return desfazer(new Error("Compra inválida: produto de outra empresa, inexistente ou quantidade não inteira"));
+    const erro = registrarCompras(tabela, compras);
+    if (erro) return desfazer(erro);
+    (dados[tabela] ?? (dados[tabela] = [])).push(...compras);
+  }
+  const entradas = novas(e.movimentacoes);
+  if (entradas.some(m => m.tipo_movimentacao !== "Entrada" || !valido(m, TABELA_DO_MODULO[m.modulo as string]))) {
+    return desfazer(new Error("Entrada de ferramenta inválida"));
+  }
+  const erro = aplicarEstoque(entradas);
+  if (erro) return desfazer(erro);
+  (dados.movimentacoes ?? (dados.movimentacoes = [])).push(...entradas);
+  notas.push({ id: id(), created_at: agora, chave: e.chave, numero: e.numero, serie: e.serie, data_emissao: e.data_emissao, empresa_id: e.empresa_id, fornecedor_id: e.fornecedor_id });
+  return null;
+};
 class Consulta {
   private filtros: Array<(l: Linha) => boolean> = []; private ordem?: string; private limite?: number; private payload?: Linha | Linha[]; private acao = "select"; private contagem = false;
   private colunas = "*";
@@ -106,7 +140,13 @@ class Consulta {
 let sessao = true; let listeners: Array<(event: string) => void> = [];
 export const demoSupabase = {
   from: (tabela: string) => new Consulta(tabela),
-  rpc: async (nome: string, args: { p_id?: string; p_valores?: Linha; p_itens?: Linha[] }) => {
+  rpc: async (nome: string, args: { p_id?: string; p_valores?: Linha; p_itens?: Linha[]; p_entradas?: Linha }) => {
+    if (nome === "importar_nota_fiscal") {
+      const erro = importarNotaFiscal(args.p_entradas ?? {});
+      if (erro) return { data: null, error: erro };
+      persistirDados();
+      return { data: args.p_entradas?.chave, error: null };
+    }
     if (nome !== "salvar_caixa") return { data: null, error: new Error("Operação indisponível na demonstração") };
     // Código único, como a restrição UNIQUE do banco: nada é gravado se repetir.
     const codigo = args.p_valores?.codigo;
