@@ -88,7 +88,12 @@ const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
     if (saldo < 0) return new Error("Estoque insuficiente");
     saldos.set(item, saldo);
   }
-  saldos.forEach((saldo, item) => { item.estoque_atual = saldo; });
+  saldos.forEach((saldo, item) => {
+    item.estoque_atual = saldo;
+    // Produto que deixou de controlar tamanho: o mapa antigo (só "Sem tamanho" ou tamanhos
+    // zerados) sai, para o saldo voltar inteiro se a subcategoria ganhar tamanhos de novo.
+    if (item.saldos_tamanho) item.saldos_tamanho = null;
+  });
   porTamanho.forEach((saldosDoItem, item) => {
     item.saldos_tamanho = saldosDoItem;
     item.estoque_atual = somaSaldos(saldosDoItem);

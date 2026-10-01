@@ -82,8 +82,9 @@ const saldosGravados = (produto: ProdutoTamanho): Saldos | null =>
     : null;
 
 /**
- * Controla tamanho: a subcategoria tem tamanho autorizado, ou o produto já tem saldo
- * gravado em algum tamanho (que continua podendo sair mesmo se for desautorizado).
+ * Controla tamanho: a subcategoria tem tamanho autorizado, ou o produto ainda tem saldo
+ * positivo em algum tamanho (que continua podendo sair mesmo se for desautorizado).
+ * Tamanho já zerado não prende o produto quando a subcategoria perde os tamanhos.
  */
 export function controlaTamanho(
   p: ParametrosBase,
@@ -91,7 +92,9 @@ export function controlaTamanho(
   produto: ProdutoTamanho,
 ): boolean {
   if (tamanhosAutorizadosDoProduto(p, modulo, produto).length > 0) return true;
-  return Object.keys(saldosGravados(produto) ?? {}).some((chave) => chave !== SEM_TAMANHO);
+  return Object.entries(saldosGravados(produto) ?? {}).some(
+    ([chave, saldo]) => chave !== SEM_TAMANHO && saldo > 0,
+  );
 }
 
 /**
@@ -157,6 +160,11 @@ export function movimentarTamanho(
     if (!autorizadosIds.has(chave)) {
       throw new Error(
         `O tamanho ${nomeTamanho(p, chave)} não está autorizado para ${nomeProduto(produto)}.`,
+      );
+    }
+    if (!estaAtivo(p, chave)) {
+      throw new Error(
+        `O tamanho ${nomeTamanho(p, chave)} está desativado em Cadastros > Gerais e não recebe entrada.`,
       );
     }
   } else if (chave !== SEM_TAMANHO && !autorizadosIds.has(chave) && !(chave in saldos)) {

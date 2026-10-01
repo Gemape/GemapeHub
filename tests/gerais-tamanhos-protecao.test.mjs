@@ -136,14 +136,29 @@ test("autorizar tamanhos numa subcategoria com produtos com saldo avisa e não c
     },
   ];
   assert.match(
-    uso.avisoAutorizacaoTamanhos(d, "sub-epi-capacete", produtos) ?? "",
+    uso.avisoAutorizacaoTamanhos(d, "sub-epi-capacete", produtos, ["tam-m"]) ?? "",
     /EPI-0001.*Sem tamanho/,
   );
   // Botina já controla tamanho: autorizar mais um não muda o saldo de ninguém.
   assert.equal(
-    uso.avisoAutorizacaoTamanhos(d, "sub-epi-botina", [botina({ estoque_atual: 3 })]),
+    uso.avisoAutorizacaoTamanhos(d, "sub-epi-botina", [botina({ estoque_atual: 3 })], ["tam-44"]),
     null,
   );
+  // O tamanho digitado antigo só leva o saldo se estiver entre os que estão sendo autorizados.
+  const capaceteG = [
+    {
+      codigo_sku: "EPI-0011",
+      categoria: "Capacete",
+      subcategoria_id: "sub-epi-capacete",
+      tamanho: "G",
+      estoque_atual: 3,
+    },
+  ];
+  assert.match(
+    uso.avisoAutorizacaoTamanhos(d, "sub-epi-capacete", capaceteG, ["tam-m"]) ?? "",
+    /EPI-0011/,
+  );
+  assert.equal(uso.avisoAutorizacaoTamanhos(d, "sub-epi-capacete", capaceteG, ["tam-g"]), null);
 });
 
 test("as telas de Gerais usam o desativar, a proteção e os avisos", () => {

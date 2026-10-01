@@ -18,6 +18,9 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { formatarMoeda, valorTotalEmEstoque, MODULO_LABEL, type Modulo } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
+import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { alertasPorTamanho, controlaModulo, controlaTamanho } from "@/lib/estoque-tamanho";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -50,7 +53,10 @@ function DashboardGeral() {
     queryKey: ["itens-todos", empresaId],
     staleTime: 60_000,
     queryFn: async () => {
-      const colunas = "id, empresa_id, nome, estoque_atual, estoque_minimo, preco_unitario";
+      const basicas = "id, empresa_id, nome, estoque_atual, estoque_minimo, preco_unitario";
+      // Saldo e mínimo por tamanho (decisão 23) só existem no modo demonstração, que lê tudo;
+      // o banco real continua recebendo só as colunas de sempre.
+      const colunas = (TAMANHO_DISPONIVEL ? "*" : basicas) as typeof basicas;
 
       const [episRes, uniformesRes, ferramentasRes] = await Promise.all([
         empresaId !== TODAS
@@ -96,7 +102,19 @@ function DashboardGeral() {
   });
 
   const valorTotal = valorTotalEmEstoque(itens);
-  const criticos = itens.filter((i) => (i.estoque_atual ?? 0) <= (i.estoque_minimo ?? 0));
+  // EPI e uniforme com tamanho e mínimo por tamanho alertam por tamanho; os demais, pelo total.
+  const parametros = useParametrosBase();
+  const alertasDe = (i: (typeof itens)[number]) => {
+    const produto = i as typeof i & Parameters<typeof alertasPorTamanho>[2];
+    if (!TAMANHO_DISPONIVEL || !controlaModulo(i.modulo)) return null;
+    if (!controlaTamanho(parametros, i.modulo, produto)) return null;
+    if (Object.keys(produto.minimos_tamanho ?? {}).length === 0) return null;
+    return alertasPorTamanho(parametros, i.modulo, produto);
+  };
+  const criticos = itens.filter((i) => {
+    const alertas = alertasDe(i);
+    return alertas ? alertas.length > 0 : (i.estoque_atual ?? 0) <= (i.estoque_minimo ?? 0);
+  });
 
   const porModulo = MODULOS.map((m) => {
     const doModulo = itens.filter((i) => i.modulo === m);
@@ -212,8 +230,14 @@ function DashboardGeral() {
                     <TableRow key={i.id}>
                       <TableCell>{i.nome}</TableCell>
                       <TableCell>{MODULO_LABEL[i.modulo as Modulo] ?? i.modulo}</TableCell>
-                      <TableCell className="text-right">{i.estoque_atual}</TableCell>
-                      <TableCell className="text-right">{i.estoque_minimo}</TableCell>
+                      <TableCell className="text-right">
+                        {alertasDe(i)?.map((a) => `${a.nome}: ${a.saldo}`).join(" · ") ??
+                          i.estoque_atual}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {alertasDe(i)?.map((a) => `${a.nome}: ${a.minimo}`).join(" · ") ??
+                          i.estoque_minimo}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}

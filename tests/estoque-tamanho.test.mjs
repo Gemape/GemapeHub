@@ -7,6 +7,7 @@ import {
   SEM_TAMANHO,
   alertasPorTamanho,
   controlaTamanho,
+  somaSaldos,
   movimentarTamanho,
   nomeTamanho,
   opcoesTamanhoEntrada,
@@ -433,4 +434,73 @@ test("uniforme também controla por tamanho quando a subcategoria tem associaç�
   const atual = await ler("uniformes", item.id);
   assert.equal(atual.estoque_atual, 3);
   assert.equal(atual.saldos_tamanho, undefined);
+});
+
+// ---------- Revisão: produto que deixa de controlar tamanho ----------
+
+test("tamanho com saldo zero não prende o produto quando a subcategoria perde os tamanhos", () => {
+  const p = gerais();
+  const capacete = (saldos_tamanho) => ({
+    nome: "Capacete",
+    categoria: "Capacete",
+    subcategoria_id: "sub-epi-capacete",
+    estoque_atual: 0,
+    saldos_tamanho,
+  });
+  assert.equal(controlaTamanho(p, "epi", capacete({ "tam-m": 0 })), false);
+  assert.equal(controlaTamanho(p, "epi", capacete({ "tam-m": 2 })), true, "saldo ainda pode sair");
+});
+
+test("produto sem tamanho autorizado mantém o mapa de saldos em dia ao movimentar", async () => {
+  const capacete = await inserir("epis", {
+    id: crypto.randomUUID(),
+    empresa_id: "emp-a",
+    nome: "Capacete antigo",
+    codigo_sku: "EPI-0950",
+    categoria: "Capacete",
+    subcategoria_id: "sub-epi-capacete",
+    estoque_atual: 4,
+    saldos_tamanho: { [SEM_TAMANHO]: 4, "tam-m": 0 },
+  });
+  await inserir("movimentacoes", {
+    modulo: "epi",
+    tipo_movimentacao: "Entrada",
+    item_id: capacete.id,
+    empresa_id: "emp-a",
+    quantidade: 10,
+    data_movimentacao: "2026-10-01",
+  });
+  const depois = await ler("epis", capacete.id);
+  assert.equal(depois.estoque_atual, 14);
+  // Se a subcategoria voltar a ter tamanhos, os 14 continuam no saldo do produto.
+  const p = gerais();
+  p.associacoes.push({ subcategoriaId: "sub-epi-capacete", tamanhos: ["tam-m"], unidades: [] });
+  assert.equal(somaSaldos(saldosPorTamanho(p, "epi", depois)), 14);
+});
+
+test("entrada em tamanho desativado é recusada também pelo gatilho", () => {
+  const p = gerais();
+  p.inativos.push("tam-40");
+  assert.throws(
+    () =>
+      movimentarTamanho(
+        p,
+        "epi",
+        botina(),
+        {},
+        { tipo_movimentacao: "Entrada", quantidade: 1, tamanho_id: "tam-40" },
+      ),
+    /desativado/,
+  );
+  // A saída do saldo que já existe continua permitida.
+  assert.deepEqual(
+    movimentarTamanho(
+      p,
+      "epi",
+      botina(),
+      { "tam-40": 2 },
+      { tipo_movimentacao: "Saida", quantidade: 1, tamanho_id: "tam-40" },
+    ),
+    { "tam-40": 1 },
+  );
 });

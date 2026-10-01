@@ -177,17 +177,19 @@ export function avisoAutorizacaoTamanhos(
   parametros: ParametrosBase,
   subcategoriaId: string,
   produtos: Registro[],
+  idsAutorizando: string[],
 ): string | null {
   if (autorizados(parametros, subcategoriaId, "tamanhos").length > 0) return null;
+  const novos = parametros.tamanhos.filter((t) => idsAutorizando.includes(t.id));
   const sub = parametros.subcategorias.find((s) => s.id === subcategoriaId);
   if (!sub) return null;
   const codigos = produtos
     .filter((r) => resolverSubcategoria(parametros, sub.categoriaId, r)?.id === subcategoriaId)
     .filter((r) => positivo(r["estoque_atual"]) && !r["saldos_tamanho"])
-    // Tamanho digitado antigo que casa com Gerais leva o saldo para esse tamanho.
+    // Tamanho digitado antigo que casa com um dos tamanhos autorizados leva o saldo para ele.
     .filter((r) => {
       const digitado = typeof r["tamanho"] === "string" ? r["tamanho"].trim() : "";
-      return !digitado || !parametros.tamanhos.some((t) => mesmoNome(t.nome, digitado));
+      return !digitado || !novos.some((t) => mesmoNome(t.nome, digitado));
     })
     .map(identificar);
   if (codigos.length === 0) return null;

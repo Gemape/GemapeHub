@@ -187,6 +187,8 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             onClick={() => {
               setComOcorrencia(false);
               setTamanho("");
+              // O tipo volta para Saída como o formulário, que reabre com o valor padrão.
+              setTipoMovimentacao("Saida");
               setAberto(true);
             }}
           >

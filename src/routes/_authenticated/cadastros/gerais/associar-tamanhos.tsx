@@ -71,10 +71,12 @@ function AssociarTamanhos() {
           toast.error("Não foi possível conferir os produtos desta subcategoria.");
           return false;
         }
-        const aviso = avisoAutorizacaoTamanhos(dados, subId, [
-          ...(cadastros.epis ?? []),
-          ...(cadastros.uniformes ?? []),
-        ]);
+        const aviso = avisoAutorizacaoTamanhos(
+          dados,
+          subId,
+          [...(cadastros.epis ?? []), ...(cadastros.uniformes ?? [])],
+          ids,
+        );
         if (aviso && !confirm(`${aviso}\n\nAutorizar mesmo assim?`)) return false;
       }
       return executar(() => autorizar(subId, tipo, ids));
