@@ -1,6 +1,5 @@
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
 import { CadastroProduto } from "@/components/modules/CadastroProduto";
-import { ItensModulo } from "@/components/modules/ItensModulo";
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { UniformesComprasModulo } from "@/components/modules/UniformesComprasModulo";
 import { UniformesRelatorioFuncionario } from "@/components/modules/UniformesRelatorioFuncionario";
@@ -112,12 +111,7 @@ export function PaginaModulo({
                 >
                   Termo de vistoria periódica
                 </TabsTrigger>
-                <TabsTrigger
-                  value="cadastro"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Cadastro
-                </TabsTrigger>
+                {/* O cadastro de ferramentas fica só em Cadastros > Ferramentas (decisão 24). */}
                 <TabsTrigger
                   value="movimentacoes"
                   className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
@@ -193,8 +187,6 @@ export function PaginaModulo({
             <CadastroProduto tabela="epis" />
           ) : modulo === "uniforme" ? (
             <CadastroProduto tabela="uniformes" />
-          ) : modulo === "ferramenta" ? (
-            <ItensModulo modulo="ferramenta" />
           ) : null}
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">

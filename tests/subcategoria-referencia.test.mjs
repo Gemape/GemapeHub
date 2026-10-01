@@ -87,7 +87,7 @@ test('a escolha no formulário vira referência e nome atual; a antiga é mantid
   assert.equal(ref.valorSelecaoSubcategoria(null), '');
 });
 
-test('migração: nomes gravados nos quatro cadastros ganham a referência certa', () => {
+test('migração: nomes gravados em EPI, Uniforme e Veículo ganham a referência certa', () => {
   const p = lerParametros(storage());
   const dados = {
     epis: [{ id: 'e1', categoria: 'capacete' }, { id: 'e2', categoria: 'Inexistente' }, { id: 'e3', categoria: 'Luva', subcategoria_id: 'sub-epi-luva' }],
@@ -96,14 +96,15 @@ test('migração: nomes gravados nos quatro cadastros ganham a referência certa
     veiculos: [{ id: 'v1', tipo: 'Carro' }, { id: 'v2', tipo: null }],
     movimentacoes: [{ id: 'm1', categoria: 'Capacete' }],
   };
-  assert.equal(ref.vincularSubcategorias(dados, p), 4);
+  // Ferramenta não tem subcategoria desde a decisão 24: a migração não mexe nela.
+  assert.equal(ref.vincularSubcategorias(dados, p), 3);
   assert.equal(dados.epis[0].subcategoria_id, 'sub-epi-capacete');
   assert.equal(dados.epis[0].categoria, 'Capacete', 'o nome gravado passa a ser o de Gerais');
   assert.equal(dados.epis[1].categoria, 'Inexistente', 'o que não casa fica como está');
   assert.equal(dados.epis[1].subcategoria_id, undefined);
   assert.equal(dados.epis[2].subcategoria_id, 'sub-epi-luva');
   assert.equal(dados.uniformes[0].subcategoria_id, 'sub-uniformes-camisa');
-  assert.equal(dados.ferramentas[0].subcategoria_id, 'sub-ferramentas-eletrica');
+  assert.equal(dados.ferramentas[0].subcategoria_id, undefined);
   assert.equal(dados.veiculos[0].subcategoria_id, 'sub-veiculos-carro');
   assert.equal(dados.veiculos[1].subcategoria_id, undefined);
   assert.equal(dados.movimentacoes[0].subcategoria_id, undefined);
@@ -111,15 +112,15 @@ test('migração: nomes gravados nos quatro cadastros ganham a referência certa
   assert.equal(ref.vincularSubcategorias(dados, p), 0);
 });
 
-test('ferramenta antiga com subcategoria fora de Gerais continua editável', () => {
-  const campos = { categoriaFerramenta: 'Elétrica', grupoFerramenta: 'Diversos', numeroSerie: 'SN-1', precoCusto: '10' };
-  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], descricao: 'Serra', estoqueMinimo: '1', codigoAtual: 'FER-0001', ...campos };
-  assert.equal(prepararCadastroFerramenta({ ...entrada, subcategoria: 'Pneumática antiga', subcategoriaAtual: 'Pneumática antiga' }).categoria, 'Pneumática antiga');
-  assert.throws(() => prepararCadastroFerramenta({ ...entrada, subcategoria: 'Pneumática antiga' }), /Subcategoria/);
+test('ferramenta não usa subcategoria (decisão 24)', () => {
+  assert.equal('ferramentas' in ref.SUBCATEGORIA_DAS_TABELAS, false);
+  const itens = ler('components/modules/ItensModulo.tsx');
+  assert.doesNotMatch(itens, /Subcategoria/);
+  assert.doesNotMatch(itens, /subcategoriaDaSelecao|subcategoria_id|nomeSubcategoria/);
 });
 
 test('os cadastros escolhem a subcategoria pela referência e mostram o nome de Gerais', () => {
-  for (const arquivo of ['components/modules/CadastroProduto.tsx', 'components/modules/VeiculosCadastroModulo.tsx', 'components/modules/ItensModulo.tsx']) {
+  for (const arquivo of ['components/modules/CadastroProduto.tsx', 'components/modules/VeiculosCadastroModulo.tsx']) {
     const fonte = ler(arquivo);
     assert.match(fonte, /<SelectItem key=\{s\.id\} value=\{s\.id\}>/, arquivo);
     assert.match(fonte, /subcategoriaDaSelecao\(/, arquivo);
