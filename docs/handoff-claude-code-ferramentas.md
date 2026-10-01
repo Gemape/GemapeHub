@@ -235,7 +235,7 @@ Correções do code review do PR #54 (`revisoes/code-review-pr54-estoque-por-tam
 
 ## Decisões vigentes
 
-- **Decisão 24 — estoque nos módulos:** cadastros não exibem saldo nem alerta de estoque em tela ou CSV; podem consultar estoque e movimentações internamente para proteções e avisos, e continuam configurando mínimos como parâmetros. Gerais > Associar Tamanho e Medida e Gerais > Tamanhos e Unidades estão conformes. A remoção da exibição de saldo e alerta nos cadastros de EPI, Uniformes e Ferramentas fica como próximo item da fila, sem início antes de comando explícito e do merge do PR anterior (ver `docs/decisoes-especiais.md`).
+- **Decisão 24 — estoque nos módulos:** cadastros não exibem nem configuram estoque. A grade de mínimo por tamanho de EPI/Uniformes e os campos de mínimo e estoque inicial de Ferramentas ficam nas abas Estoque dos módulos; o estoque inicial de Ferramentas pode ser ajustado diretamente mesmo após movimentações. Gerais > Associar Tamanho e Medida e Gerais > Tamanhos e Unidades podem consultar estoque para proteções e avisos (ver `docs/decisoes-especiais.md`).
 
 - **Seleção de tamanhos por produto:** chips de EPI e Uniformes selecionam tamanhos no modo demonstração; a aba Estoque mostra apenas os selecionados. Fora do demo, falta campo persistente de tamanhos por produto; a migration fica pendente para a fase de montagem do banco no Supabase. Não escrever nem aplicar migration agora.
 

@@ -116,13 +116,13 @@ test("mínimo por tamanho só vale com algum mínimo de tamanho maior que zero",
   assert.equal(usaMinimoPorTamanho(p, "epi", botina({ minimos_tamanho: { "tam-40": 2 } })), true);
   assert.equal(usaMinimoPorTamanho(p, "epi", botina({ minimos_tamanho: { "tam-40": 0 } })), false);
   assert.equal(usaMinimoPorTamanho(p, "epi", botina()), false);
-  // Produto sem tamanho nunca usa mínimo por tamanho.
+  // Mínimo legado continua valendo mesmo depois de retirar as autorizações.
   const capacete = {
     categoria: "Capacete",
     subcategoria_id: "sub-epi-capacete",
     minimos_tamanho: { "tam-m": 1 },
   };
-  assert.equal(usaMinimoPorTamanho(p, "epi", capacete), false);
+  assert.equal(usaMinimoPorTamanho(p, "epi", capacete), true);
 });
 
 test("desautorizar unidade avisa também o produto que a usa pelo texto antigo", () => {
@@ -137,11 +137,11 @@ test("desautorizar unidade avisa também o produto que a usa pelo texto antigo",
 
 test("telas: mínimo único quando a grade fica vazia, alerta no módulo e fila em Associar", () => {
   const cadastro = ler("components/modules/CadastroProduto.tsx");
-  assert.match(cadastro, /usaGrade/);
-  // Tamanhos desmarcados ficam preservados no histórico, mas não aparecem no módulo.
-  assert.match(cadastro, /preservarMinimosNaoSelecionados/);
+  assert.doesNotMatch(cadastro, /usaGrade|minimos_tamanho/);
   assert.doesNotMatch(cadastro, /resumoEstoquePorTamanho|alertasPorTamanho/);
-  assert.match(ler("components/modules/EstoqueModulo.tsx"), /estadoEstoqueModulo/);
+  const estoque = ler("components/modules/EstoqueModulo.tsx");
+  assert.match(estoque, /estadoEstoqueModulo/);
+  assert.match(estoque, /prepararMinimosEstoque|prepararMinimoUnico/);
   assert.match(ler("routes/_authenticated/dashboard.tsx"), /usaMinimoPorTamanho/);
   const associar = ler("routes/_authenticated/cadastros/gerais/associar-tamanhos.tsx");
   assert.match(associar, /fila\.current/);
