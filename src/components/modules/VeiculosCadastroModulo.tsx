@@ -44,6 +44,13 @@ import {
   useVeiculos,
   type Veiculo,
 } from "@/lib/hooks-gemape";
+import {
+  MARCA_LEGADA,
+  marcaDaSelecao,
+  SEM_MARCA,
+  selecaoInicialMarca,
+  selecaoMarca,
+} from "@/lib/marcas-gerais";
 import { combinaBusca, mesmoNome, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
@@ -121,6 +128,8 @@ export function VeiculosCadastroModulo() {
     subcategoriaAtual && !subcategorias.some((s) => s.nome === subcategoriaAtual)
       ? subcategoriaAtual
       : null;
+  // Marca de Cadastros > Gerais; a marca antiga digitada continua aparecendo na edição.
+  const marcaInicial = selecaoInicialMarca(parametros.marcasVeiculo, editando?.marca);
   const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
 
   function destravar() {
@@ -160,7 +169,15 @@ export function VeiculosCadastroModulo() {
     const tipo = texto("tipo");
     const descricao = texto("descricao");
     const placaDigitada = normalizarPlaca(texto("placa"));
-    const marca = texto("marca");
+    let marca = "";
+    let erroMarca: string | null = null;
+    try {
+      marca = marcaDaSelecao(texto("marca"), parametros.marcasVeiculo, editando?.marca, {
+        obrigatoria: true,
+      });
+    } catch (falha) {
+      erroMarca = falha instanceof Error ? falha.message : "Marca inválida.";
+    }
     const modelo = texto("modelo");
     const anoTexto = texto("ano");
     const ano = anoTexto ? Number(anoTexto) : null;
@@ -183,8 +200,8 @@ export function VeiculosCadastroModulo() {
           ? "Informe a placa."
           : !placaMantida && !placaValida(placaDigitada)
             ? "Placa inválida. Use o padrão ABC-1234 ou ABC1D23."
-            : !marca
-              ? "Informe a marca."
+            : erroMarca
+              ? erroMarca
               : !modelo
                 ? "Informe o modelo."
                 : ano !== null && !anoValido(ano)
@@ -465,7 +482,31 @@ export function VeiculosCadastroModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="marca">Marca</Label>
-              <Input id="marca" name="marca" aria-required defaultValue={editando?.marca ?? ""} />
+              <Select
+                name="marca"
+                defaultValue={marcaInicial.valor === SEM_MARCA ? "" : marcaInicial.valor}
+              >
+                <SelectTrigger id="marca" aria-required>
+                  <SelectValue placeholder="Selecione a marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  {parametros.marcasVeiculo.map((m) => (
+                    <SelectItem key={m.id} value={selecaoMarca(m.id)}>
+                      {m.nome}
+                    </SelectItem>
+                  ))}
+                  {marcaInicial.legada && (
+                    <SelectItem value={MARCA_LEGADA}>
+                      {marcaInicial.legada} (fora de Cadastros &gt; Gerais)
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {parametros.marcasVeiculo.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="modelo">Modelo</Label>

@@ -44,16 +44,6 @@ export const CATEGORIAS_EPI = [
 
 export const CATEGORIAS_UNIFORME = ["Camisa", "Calça", "Jaqueta", "Outros"] as const;
 
-export const CATEGORIAS_FERRAMENTA = [
-  "Manual",
-  "Elétrica",
-  "Pneumática",
-  "Hidráulica",
-  "Medição",
-  "Corte",
-  "Outros",
-] as const;
-
 export const TIPOS_VEICULO = ["Carro", "Moto", "Caminhão", "Utilitário", "Van", "Outros"] as const;
 
 export const COMBUSTIVEIS_VEICULO = [

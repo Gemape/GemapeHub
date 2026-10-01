@@ -7,7 +7,12 @@ import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts"
 export type Categoria = { id: string; nome: string };
 export type Subcategoria = { id: string; categoriaId: string; nome: string };
 export type Opcao = { id: string; nome: string };
-export type ListaFerramenta = "categoriasFerramenta" | "gruposFerramenta" | "marcasFerramenta";
+export type ListaFerramenta =
+  | "categoriasFerramenta"
+  | "gruposFerramenta"
+  | "marcasFerramenta"
+  | "marcasUniforme"
+  | "marcasVeiculo";
 export type TipoOpcao = "tamanhos" | "unidades";
 // Tamanhos e unidades autorizados para uma subcategoria (guarda os ids).
 export type Associacao = { subcategoriaId: string } & Record<TipoOpcao, string[]>;
@@ -32,6 +37,9 @@ export type ParametrosBase = {
   categoriasFerramenta: Opcao[];
   gruposFerramenta: Opcao[];
   marcasFerramenta: Opcao[];
+  // Marcas escolhidas nos cadastros de uniforme e de veículo (decisão 22).
+  marcasUniforme: Opcao[];
+  marcasVeiculo: Opcao[];
   tamanhos: Opcao[];
   unidades: Opcao[];
   associacoes: Associacao[];
@@ -111,6 +119,8 @@ function padrao(): ParametrosBase {
     gruposFerramenta: ["Chave de fenda", "Chave estria", "Chave boca", "Meia lua", "Combinada", "Canhão", "Alicates", "Lima", "Chave Philips", "Chave L", "Chave Allen", "Cachimbo", "Diversos"]
       .map((nome) => ({ id: `grupo-fer-${slug(nome)}`, nome })),
     marcasFerramenta: [],
+    marcasUniforme: [],
+    marcasVeiculo: [],
     tamanhos,
     unidades,
     associacoes: [
@@ -280,7 +290,7 @@ export function removerSubcategoria(id: string, storage = storagePadrao()): void
   });
 }
 
-// ---------- Listas de categorias e grupos de ferramentas ----------
+// ---------- Listas de opções: categorias, grupos e marcas ----------
 
 export function adicionarListaFerramenta(tipo: ListaFerramenta, nome: string, storage = storagePadrao()): Opcao {
   return alterar(storage, (d) => {
