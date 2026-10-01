@@ -97,9 +97,9 @@ test('Gerais mostra e protege as marcas de uniformes e de veículos', () => {
   const fonte = ler('routes/_authenticated/cadastros/gerais/categorias.tsx');
   assert.match(fonte, /Marcas de uniformes/);
   assert.match(fonte, /Marcas de veículos/);
-  assert.match(fonte, /from\("uniformes"\)\.select\("marca"\)/);
+  assert.match(fonte, /from\("uniformes"\)\.select\("codigo_sku,marca"\)/);
   // Veículo tem a coluna marca no banco real: a conferência usa o cliente ativo.
-  assert.match(fonte, /supabase\.from\("veiculos"\)\.select\("marca"\)/);
+  assert.match(fonte, /supabase\.from\("veiculos"\)\.select\("placa,marca"\)/);
   assert.doesNotMatch(fonte, /demoSupabase\.from\("veiculos"\)/);
 });
 
