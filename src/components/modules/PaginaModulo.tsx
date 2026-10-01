@@ -121,12 +121,7 @@ export function PaginaModulo({
               </>
             ) : (
               <>
-                <TabsTrigger
-                  value="cadastro"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Cadastro
-                </TabsTrigger>
+                {/* O cadastro de uniformes fica só em Cadastros > Uniformes (decisão 25). */}
                 <TabsTrigger
                   value="movimentacoes"
                   className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
@@ -182,12 +177,8 @@ export function PaginaModulo({
           <DashboardModulo modulo={modulo} />
         </TabsContent>
         <TabsContent value="cadastro" className="mt-5">
-          {/* EPI e uniforme usam o cadastro da especificação rev1, o mesmo de Cadastros. */}
-          {modulo === "epi" ? (
-            <CadastroProduto tabela="epis" />
-          ) : modulo === "uniforme" ? (
-            <CadastroProduto tabela="uniformes" />
-          ) : null}
+          {/* Aba Estoque do EPI: o cadastro da especificação rev1, o mesmo de Cadastros. */}
+          {modulo === "epi" ? <CadastroProduto tabela="epis" /> : null}
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />

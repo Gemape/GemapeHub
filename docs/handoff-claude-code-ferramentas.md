@@ -240,6 +240,7 @@ Correções do code review do PR #54 (`revisoes/code-review-pr54-estoque-por-tam
 - A Fase 1 usa dados locais de demonstração. Não criar ou alterar tabelas, migrations, autenticação ou dados no Supabase real.
 - Permissões por tela e revisão do estoque histórico de ferramentas permanecem na Fase 2 (`docs/pendencias-fase2.md`). Caixas e Portador concluída: etapas 1 a 4 mergeadas (PRs #37 a #40).
 - Relatórios saiu do menu Cadastros (PR #41): a tela é aberta só pelo atalho Relatórios do Dashboard.
+- O módulo Uniformes não tem aba Cadastro (decisão 25): o cadastro de uniformes fica só em Cadastros > Uniformes.
 
 ## Commits e validação da branch da etapa 3
 

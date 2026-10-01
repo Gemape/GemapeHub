@@ -283,3 +283,10 @@ Decidido pelo responsável em 01/10/2026:
    Cadastros > Ferramentas. O cadastro de modelos fica só em Cadastros.
 Corrige o MD (Ferramentas, "Cadastrar modelo", item 1, e a frase sobre
 as três seleções de Gerais), que foi ajustado junto.
+
+## 25. MÓDULO UNIFORMES SEM ABA CADASTRO
+Decidido pelo responsável em 01/10/2026: o módulo Uniformes não tem
+mais a aba Cadastro, que duplicava Cadastros > Uniformes. O cadastro de
+uniformes fica só em Cadastros, como o de ferramentas (decisão 24). O
+módulo EPI mantém a aba Estoque. Complementa o MD (Uniforme, "Cadastrar
+uniforme"), que foi ajustado junto.
