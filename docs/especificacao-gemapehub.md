@@ -93,7 +93,7 @@ Associa a uma categoria as opções de tamanho e unidade de medida de um produto
 
 O CA não entra no uniforme: é exigência da NR6 e pertence ao EPI e à Ficha de EPI.
 
-O cadastro fica só em Cadastros > Uniformes; o módulo Uniformes não tem aba Cadastro (decisão 25).
+O cadastro fica só em Cadastros > Uniformes; o módulo Uniformes não tem aba Cadastro (decisão 26).
 
 ### Veículo
 
@@ -119,7 +119,7 @@ O cadastro fica só em Cadastros > Uniformes; o módulo Uniformes não tem aba C
 Permissão: Administrador cadastra caixa, portador, categoria e grupo. Usuário simples cadastra modelo.
 
 **Cadastrar modelo**
-1. Sem subcategoria (decisão 24, 01/10/2026): a ferramenta é classificada pela categoria e pelo grupo de ferramenta.
+1. Sem subcategoria (decisão 25, 01/10/2026): a ferramenta é classificada pela categoria e pelo grupo de ferramenta.
 2. Código interno gerado automaticamente ao salvar pela regra da categoria de produto "Ferramentas" (sigla e numeração inicial; ex.: FER-0001, FER-0002). A sequência considera os códigos de todas as empresas; não há edição manual, e a edição do modelo mantém o código.
 3. Categoria de ferramenta selecionada da lista de categorias de ferramentas de Cadastros > Gerais (ex.: Pneumático).
 4. Grupo de ferramenta selecionado da lista de grupos de ferramentas de Cadastros > Gerais (ex.: Chave de fenda).
@@ -131,7 +131,7 @@ Permissão: Administrador cadastra caixa, portador, categoria e grupo. Usuário 
 10. Preço de custo em reais, informado no cadastro, não negativo e com duas casas decimais; alimenta o indicador de valor em estoque do dashboard.
 11. Empresa à qual pertence o item, para identificação e consolidação do estoque.
 
-O cadastro do modelo lê as seleções em Cadastros > Gerais: categoria de ferramenta, grupo de ferramenta e marca. Nenhuma delas usa lista fixa no módulo. O cadastro fica só em Cadastros > Ferramentas; o módulo Ferramentas não tem aba Cadastro (decisão 24).
+O cadastro do modelo lê as seleções em Cadastros > Gerais: categoria de ferramenta, grupo de ferramenta e marca. Nenhuma delas usa lista fixa no módulo. O cadastro fica só em Cadastros > Ferramentas; o módulo Ferramentas não tem aba Cadastro (decisão 25).
 
 **Listas e movimentos de ferramentas (Fase 1, modo demonstração)**
 - Compra corresponde a uma entrada no histórico de movimentações; entrega e baixa correspondem a saídas no mesmo histórico. Não criar telas de listas separadas. Exibir o código interno junto da descrição em cada linha e na exportação.

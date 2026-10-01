@@ -16,7 +16,7 @@ export type SubcategoriaDoCadastro = {
 type Registro = { subcategoria_id?: unknown; categoria?: unknown; tipo?: unknown };
 
 // Tabela do demo, categoria de Gerais (id fixo) e campo onde o nome era gravado.
-// Ferramenta não tem subcategoria (decisão 24): a gravada nas antigas fica como está.
+// Ferramenta não tem subcategoria (decisão 25): a gravada nas antigas fica como está.
 export const SUBCATEGORIA_DAS_TABELAS = {
   epis: { categoriaId: "cat-epi", campo: "categoria" },
   uniformes: { categoriaId: "cat-uniformes", campo: "categoria" },

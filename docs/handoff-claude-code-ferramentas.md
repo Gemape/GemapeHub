@@ -153,7 +153,7 @@ Auditoria de 01/10/2026 sobre a `main` (`59dd52c`), **encerrada após o merge do
 O achado sobre tamanhos e unidades (linha 1) virou a decisão 23 e foi resolvido no PR D para EPI e Uniforme (a unidade fixa de Ferramenta continua aberta); veja "PR D — tamanho e unidade de EPI e Uniforme", abaixo. Os demais achados e limites documentados abaixo não são autorização para novas correções.
 
 Já conforme:
-- Subcategoria em lista suspensa vinda de Gerais no cadastro de EPI, Uniforme e Veículo (`CadastroProduto.tsx`, `VeiculosCadastroModulo.tsx`); Ferramenta não tem subcategoria desde a decisão 24.
+- Subcategoria em lista suspensa vinda de Gerais no cadastro de EPI, Uniforme e Veículo (`CadastroProduto.tsx`, `VeiculosCadastroModulo.tsx`); Ferramenta não tem subcategoria desde a decisão 25.
 - Categorias múltiplas do Fornecedor marcadas a partir de Gerais e gravadas pelo id (`fornecedores.tsx`).
 - Categoria, grupo e marca de Ferramenta em lista suspensa de Gerais; renomear ou apagar opção em uso é bloqueado com aviso (`categorias.tsx`).
 - Código do produto gerado pela regra de Gerais e não editável.
@@ -235,12 +235,14 @@ Correções do code review do PR #54 (`revisoes/code-review-pr54-estoque-por-tam
 
 ## Decisões vigentes
 
-- Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. O código vem da regra global da categoria-base Ferramentas (FER-0001 por padrão); não é editável e permanece na edição. Desde a decisão 24, a ferramenta não tem subcategoria e o módulo Ferramentas não tem aba Cadastro.
+- **Decisão 24 — estoque nos módulos:** menus de Cadastros apenas fornecem dados; saldo, mínimo, alertas e movimentações pertencem aos módulos. A auditoria encontrou divergências nas telas de cadastro de EPI, Uniformes e Ferramentas e em Gerais > Associar Tamanho e Medida; a correção aguarda decisão do responsável (ver `docs/decisoes-especiais.md`).
+
+- Categoria e grupo do modelo são seleções mantidas em Cadastros > Gerais. O código vem da regra global da categoria-base Ferramentas (FER-0001 por padrão); não é editável e permanece na edição. Desde a decisão 25, a ferramenta não tem subcategoria e o módulo Ferramentas não tem aba Cadastro.
 - Série informada é obrigatória, sem geração de série fictícia. Patrimônio e data de aquisição são opcionais. Preço de custo não negativo tem até duas casas decimais e alimenta o indicador “Valor total em estoque”.
 - A Fase 1 usa dados locais de demonstração. Não criar ou alterar tabelas, migrations, autenticação ou dados no Supabase real.
 - Permissões por tela e revisão do estoque histórico de ferramentas permanecem na Fase 2 (`docs/pendencias-fase2.md`). Caixas e Portador concluída: etapas 1 a 4 mergeadas (PRs #37 a #40).
 - Relatórios saiu do menu Cadastros (PR #41): a tela é aberta só pelo atalho Relatórios do Dashboard.
-- O módulo Uniformes não tem aba Cadastro (decisão 25): o cadastro de uniformes fica só em Cadastros > Uniformes.
+- O módulo Uniformes não tem aba Cadastro (decisão 26): o cadastro de uniformes fica só em Cadastros > Uniformes.
 
 ## Commits e validação da branch da etapa 3
 
