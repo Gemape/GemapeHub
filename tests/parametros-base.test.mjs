@@ -122,8 +122,12 @@ test('código do produto: sigla e numeração de 4 dígitos', () => {
   assert.throws(() => salvarRegraCodigo('cat-veiculos', 'VEI', '1a', s), /só números/);
   assert.throws(() => salvarRegraCodigo('cat-veiculos', 'VEI', '12345', s), /4 dígitos/);
   salvarRegraCodigo('cat-epi', 'EPI', '1000', s); // a própria categoria pode manter a sigla
-  removerRegraCodigo('cat-veiculos', s);
-  assert.equal(lerParametros(s).regrasCodigo.length, 3);
+  // A regra de uma categoria-base de módulo não sai (PR C); a de outra categoria, sim.
+  assert.throws(() => removerRegraCodigo('cat-veiculos', s), /novos cadastros/);
+  const maquinas = adicionarCategoria('Máquinas', s);
+  salvarRegraCodigo(maquinas.id, 'MAQ', '1', s);
+  removerRegraCodigo(maquinas.id, s);
+  assert.equal(lerParametros(s).regrasCodigo.length, 4);
 });
 
 test('regras salvas com 3 dígitos passam para 4', () => {

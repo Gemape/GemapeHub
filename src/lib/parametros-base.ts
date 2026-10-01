@@ -47,6 +47,18 @@ export type ParametrosBase = {
   codigosFabrica: CodigoFabrica[];
   // Números das caixas de ferramentas habilitadas (1 a 100).
   caixasHabilitadas: number[];
+  // Ids dos parâmetros desativados: saem das listas de seleção, mas continuam em Gerais
+  // e nos cadastros que já os usam (decisão 22).
+  inativos: string[];
+};
+
+// Categorias-base: cada módulo acha a sua pelo id fixo, então elas e as regras de código
+// delas não podem ser excluídas.
+export const CATEGORIAS_BASE: Record<string, string> = {
+  "cat-epi": "EPI",
+  "cat-uniformes": "Uniforme",
+  "cat-ferramentas": "Ferramenta",
+  "cat-veiculos": "Veículo",
 };
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -121,6 +133,7 @@ function padrao(): ParametrosBase {
     marcasFerramenta: [],
     marcasUniforme: [],
     marcasVeiculo: [],
+    inativos: [],
     tamanhos,
     unidades,
     associacoes: [
@@ -244,6 +257,12 @@ export function renomearCategoria(id: string, nome: string, storage = storagePad
 export function removerCategoria(id: string, storage = storagePadrao()): void {
   alterar(storage, (d) => {
     const categoria = achar(d.categorias, id, "Categoria");
+    const modulo = CATEGORIAS_BASE[id];
+    if (modulo) {
+      throw new Error(
+        `A categoria "${categoria.nome}" é a base do cadastro de ${modulo} e não pode ser excluída. Ela pode ser renomeada.`,
+      );
+    }
     const qtd = d.subcategorias.filter((s) => s.categoriaId === id).length;
     if (qtd > 0) {
       throw new Error(`Exclua antes as ${qtd} subcategoria(s) de "${categoria.nome}".`);
@@ -257,6 +276,10 @@ export function removerCategoria(id: string, storage = storagePadrao()): void {
 
 export const subcategoriasDa = (d: ParametrosBase, categoriaId: string) =>
   d.subcategorias.filter((s) => s.categoriaId === categoriaId);
+
+// Só as ativas: são as que aparecem para escolha num cadastro novo.
+export const subcategoriasAtivasDa = (d: ParametrosBase, categoriaId: string) =>
+  subcategoriasDa(d, categoriaId).filter((s) => estaAtivo(d, s.id));
 
 export function adicionarSubcategoria(
   categoriaId: string,
@@ -286,6 +309,7 @@ export function removerSubcategoria(id: string, storage = storagePadrao()): void
   alterar(storage, (d) => {
     achar(d.subcategorias, id, "Subcategoria");
     d.subcategorias = d.subcategorias.filter((s) => s.id !== id);
+    d.inativos = d.inativos.filter((item) => item !== id);
     d.associacoes = d.associacoes.filter((a) => a.subcategoriaId !== id);
   });
 }
@@ -310,6 +334,40 @@ export function removerListaFerramenta(tipo: ListaFerramenta, id: string, storag
   alterar(storage, (d) => {
     achar(d[tipo], id, "Opção");
     d[tipo] = d[tipo].filter((item) => item.id !== id);
+    d.inativos = d.inativos.filter((item) => item !== id);
+  });
+}
+
+// ---------- Desativar e reativar ----------
+
+export const estaAtivo = (d: ParametrosBase, id: string) => !d.inativos.includes(id);
+
+// Lista para escolha: só os ativos, mais o que o cadastro já usa (manter).
+export function paraSelecao<T extends { id: string }>(
+  d: ParametrosBase,
+  lista: T[],
+  manter: (item: T) => boolean = () => false,
+): T[] {
+  return lista.filter((item) => estaAtivo(d, item.id) || manter(item));
+}
+
+// Vale para subcategorias e para as listas de opções (categorias, grupos e marcas).
+export function alterarAtivo(id: string, ativo: boolean, storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    if (CATEGORIAS_BASE[id]) throw new Error("Categoria-base de módulo não pode ser desativada.");
+    const listas: { id: string }[][] = [
+      d.subcategorias,
+      d.categoriasFerramenta,
+      d.gruposFerramenta,
+      d.marcasFerramenta,
+      d.marcasUniforme,
+      d.marcasVeiculo,
+    ];
+    if (!listas.some((lista) => lista.some((item) => item.id === id))) {
+      throw new Error("Parâmetro não encontrado.");
+    }
+    d.inativos = d.inativos.filter((item) => item !== id);
+    if (!ativo) d.inativos.push(id);
   });
 }
 
@@ -473,6 +531,12 @@ export function salvarRegraCodigo(
 
 export function removerRegraCodigo(categoriaId: string, storage = storagePadrao()): void {
   alterar(storage, (d) => {
+    const modulo = CATEGORIAS_BASE[categoriaId];
+    if (modulo) {
+      throw new Error(
+        `Sem esta regra, novos cadastros de ${modulo} ficariam bloqueados. Edite a sigla ou a numeração em vez de excluir.`,
+      );
+    }
     d.regrasCodigo = d.regrasCodigo.filter((r) => r.categoriaId !== categoriaId);
   });
 }

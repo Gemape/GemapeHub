@@ -51,12 +51,13 @@ import {
   selecaoInicialMarca,
   selecaoMarca,
 } from "@/lib/marcas-gerais";
-import { combinaBusca, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import { combinaBusca, estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
 import {
   nomeSubcategoria,
   resolverSubcategoria,
   SUBCATEGORIA_LEGADA,
   subcategoriaDaSelecao,
+  subcategoriasParaSelecao,
   valorSelecaoSubcategoria,
 } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -128,13 +129,21 @@ export function VeiculosCadastroModulo() {
     ),
   );
   const regra = parametros.regrasCodigo.find((r) => r.categoriaId === CATEGORIA_VEICULO);
-  const subcategorias = subcategoriasDa(parametros, CATEGORIA_VEICULO);
   // Tipo antigo que não está em Cadastros > Gerais continua aparecendo na edição.
   const subcategoriaAtual = editando
     ? resolverSubcategoria(parametros, CATEGORIA_VEICULO, editando)
     : null;
   // Marca de Cadastros > Gerais; a marca antiga digitada continua aparecendo na edição.
   const marcaInicial = selecaoInicialMarca(parametros.marcasVeiculo, editando?.marca);
+  // Parâmetro desativado em Gerais sai da escolha; o que o cadastro já usa continua na edição.
+  const subcategorias = subcategoriasParaSelecao(parametros, CATEGORIA_VEICULO, subcategoriaAtual);
+  const marcas = paraSelecao(
+    parametros,
+    parametros.marcasVeiculo,
+    (m) => selecaoMarca(m.id) === marcaInicial.valor,
+  );
+  const rotulo = (item: { id: string; nome: string }) =>
+    estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`;
   const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
 
   function destravar() {
@@ -189,7 +198,7 @@ export function VeiculosCadastroModulo() {
     let marca = "";
     let erroMarca: string | null = null;
     try {
-      marca = marcaDaSelecao(texto("marca"), parametros.marcasVeiculo, editando?.marca, {
+      marca = marcaDaSelecao(texto("marca"), marcas, editando?.marca, {
         obrigatoria: true,
       });
     } catch (falha) {
@@ -461,7 +470,7 @@ export function VeiculosCadastroModulo() {
                 <SelectContent>
                   {subcategorias.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.nome}
+                      {rotulo(s)}
                     </SelectItem>
                   ))}
                   {subcategoriaAtual?.foraDeGerais && (
@@ -511,9 +520,9 @@ export function VeiculosCadastroModulo() {
                   <SelectValue placeholder="Selecione a marca" />
                 </SelectTrigger>
                 <SelectContent>
-                  {parametros.marcasVeiculo.map((m) => (
+                  {marcas.map((m) => (
                     <SelectItem key={m.id} value={selecaoMarca(m.id)}>
-                      {m.nome}
+                      {rotulo(m)}
                     </SelectItem>
                   ))}
                   {marcaInicial.legada && (
@@ -523,7 +532,7 @@ export function VeiculosCadastroModulo() {
                   )}
                 </SelectContent>
               </Select>
-              {parametros.marcasVeiculo.length === 0 && (
+              {marcas.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.
                 </p>

@@ -44,12 +44,13 @@ import {
   selecaoInicialMarca,
   selecaoMarca,
 } from "@/lib/marcas-gerais";
-import { combinaBusca, proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
+import { combinaBusca, estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
 import {
   nomeSubcategoria,
   resolverSubcategoria,
   SUBCATEGORIA_LEGADA,
   subcategoriaDaSelecao,
+  subcategoriasParaSelecao,
   valorSelecaoSubcategoria,
 } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -125,7 +126,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const excluir = useExcluir(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
 
   const regra = parametros.regrasCodigo.find((r) => r.categoriaId === config.categoriaId);
-  const subcategorias = subcategoriasDa(parametros, config.categoriaId);
   // Ao editar um produto antigo cuja subcategoria não está em Cadastros > Gerais, ela
   // continua aparecendo para não ser apagada sem querer.
   const subcategoriaAtual = editando
@@ -133,6 +133,15 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     : null;
   // Marca de Cadastros > Gerais; a marca antiga digitada continua aparecendo na edição.
   const marcaInicial = selecaoInicialMarca(parametros.marcasUniforme, editando?.marca);
+  // Parâmetro desativado em Gerais sai da escolha; o que o cadastro já usa continua na edição.
+  const subcategorias = subcategoriasParaSelecao(parametros, config.categoriaId, subcategoriaAtual);
+  const marcas = paraSelecao(
+    parametros,
+    parametros.marcasUniforme,
+    (m) => selecaoMarca(m.id) === marcaInicial.valor,
+  );
+  const rotulo = (item: { id: string; nome: string }) =>
+    estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`;
   const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
 
   function destravar() {
@@ -207,11 +216,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       if (MODO_DEMO) {
         try {
           valores["marca"] =
-            marcaDaSelecao(
-              String(f.get("marca") ?? ""),
-              parametros.marcasUniforme,
-              editando?.marca,
-            ) || null;
+            marcaDaSelecao(String(f.get("marca") ?? ""), marcas, editando?.marca) || null;
         } catch (erro) {
           toast.error(erro instanceof Error ? erro.message : "Marca inválida.");
           return;
@@ -420,7 +425,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 <SelectContent>
                   {subcategorias.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.nome}
+                      {rotulo(s)}
                     </SelectItem>
                   ))}
                   {subcategoriaAtual?.foraDeGerais && (
@@ -481,9 +486,9 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value={SEM_MARCA}>Sem marca</SelectItem>
-                          {parametros.marcasUniforme.map((m) => (
+                          {marcas.map((m) => (
                             <SelectItem key={m.id} value={selecaoMarca(m.id)}>
-                              {m.nome}
+                              {rotulo(m)}
                             </SelectItem>
                           ))}
                           {marcaInicial.legada && (
@@ -493,7 +498,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                           )}
                         </SelectContent>
                       </Select>
-                      {parametros.marcasUniforme.length === 0 && (
+                      {marcas.length === 0 && (
                         <p className="text-xs text-muted-foreground">
                           Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.
                         </p>

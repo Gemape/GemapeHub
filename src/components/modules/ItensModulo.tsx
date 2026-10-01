@@ -40,8 +40,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { codigosReservadosFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, selecaoMarcaCadastrada, valoresItemNaEdicao } from "@/lib/cadastro-ferramentas";
-import { proximoCodigo, subcategoriasDa } from "@/lib/parametros-base";
-import { nomeSubcategoria, resolverSubcategoria, SUBCATEGORIA_LEGADA, subcategoriaDaSelecao, valorSelecaoSubcategoria } from "@/lib/subcategoria-referencia";
+import { estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
+import { nomeSubcategoria, resolverSubcategoria, SUBCATEGORIA_LEGADA, subcategoriaDaSelecao, subcategoriasParaSelecao, valorSelecaoSubcategoria } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
@@ -57,10 +57,20 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const salvando = useRef(false);
   const parametros = useParametrosBase();
   const regraFerramenta = parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
-  const subcategoriasFerramenta = subcategoriasDa(parametros, "cat-ferramentas");
   // Subcategoria pela referência gravada: o nome mostrado é sempre o atual de Gerais.
   const subcategoriaDe = (i: Item) => nomeSubcategoria(parametros, "cat-ferramentas", i);
   const subcategoriaAtual = editando ? resolverSubcategoria(parametros, "cat-ferramentas", editando) : null;
+  const subcategoriasFerramenta = subcategoriasParaSelecao(parametros, "cat-ferramentas", subcategoriaAtual);
+  // Ferramenta antiga sem categoria de ferramenta usa a categoria gravada como valor inicial.
+  const categoriaFerramentaInicial = editando?.categoria_ferramenta ?? (editando?.categoria === "Pneumática" ? "Pneumático" : editando?.categoria ?? "");
+  // Parâmetro desativado em Gerais sai da escolha; o que a ferramenta já usa continua na edição.
+  const parametrosSelecao = {
+    ...parametros,
+    categoriasFerramenta: paraSelecao(parametros, parametros.categoriasFerramenta, (c) => c.nome === categoriaFerramentaInicial),
+    gruposFerramenta: paraSelecao(parametros, parametros.gruposFerramenta, (g) => g.nome === editando?.grupo_ferramenta),
+    marcasFerramenta: paraSelecao(parametros, parametros.marcasFerramenta, (m) => m.nome === editando?.marca),
+  };
+  const rotulo = (item: { id: string; nome: string }) => (estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`);
   const marcaCadastrada = parametros.marcasFerramenta.find((m) => m.nome === editando?.marca);
   const marcaAntiga = editando?.marca && !marcaCadastrada ? editando.marca : null;
   const tabela = "ferramentas";
@@ -128,7 +138,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
       if (MODO_DEMO) valores["subcategoria_id"] = subcategoria.id;
       const cadastro = prepararCadastroFerramenta({
-        parametros,
+        parametros: parametrosSelecao,
         codigosExistentes: editando ? [] : await codigosFerramenta(),
         subcategoria: subcategoria.nome,
         ...(subcategoriaAtual?.foraDeGerais ? { subcategoriaAtual: subcategoriaAtual.nome } : {}),
@@ -136,7 +146,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
         estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
         grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
-        marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametros.marcasFerramenta, editando?.marca ?? null),
+        marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, editando?.marca ?? null),
         marcaAtual: editando?.marca ?? "",
         numeroSerie: String(f.get("numero_serie") ?? ""),
         precoCusto: String(f.get("preco_unitario") ?? ""),
@@ -331,7 +341,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 <SelectContent>
                   {subcategoriasFerramenta.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.nome}
+                      {rotulo(s)}
                     </SelectItem>
                   ))}
                   {subcategoriaAtual?.foraDeGerais && (
@@ -345,10 +355,10 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
 
               <div className="space-y-1.5">
                 <Label htmlFor="categoria_ferramenta">Categoria de ferramenta</Label>
-                <Select name="categoria_ferramenta" required defaultValue={editando?.categoria_ferramenta ?? (editando?.categoria === "Pneumática" ? "Pneumático" : editando?.categoria ?? "")}>
+                <Select name="categoria_ferramenta" required defaultValue={categoriaFerramentaInicial}>
                   <SelectTrigger id="categoria_ferramenta"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
                   <SelectContent>
-                    {parametros.categoriasFerramenta.map((c) => <SelectItem key={c.id} value={c.nome}>{c.nome}</SelectItem>)}
+                    {parametrosSelecao.categoriasFerramenta.map((c) => <SelectItem key={c.id} value={c.nome}>{rotulo(c)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -357,7 +367,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 <Select name="grupo_ferramenta" required defaultValue={editando?.grupo_ferramenta ?? ""}>
                   <SelectTrigger id="grupo_ferramenta"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
                   <SelectContent>
-                    {parametros.gruposFerramenta.map((g) => <SelectItem key={g.id} value={g.nome}>{g.nome}</SelectItem>)}
+                    {parametrosSelecao.gruposFerramenta.map((g) => <SelectItem key={g.id} value={g.nome}>{rotulo(g)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -368,11 +378,11 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   <SelectTrigger id="marca"><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={SELECAO_SEM_MARCA}>Sem marca</SelectItem>
-                    {parametros.marcasFerramenta.map((m) => <SelectItem key={m.id} value={selecaoMarcaCadastrada(m.id)}>{m.nome}</SelectItem>)}
+                    {parametrosSelecao.marcasFerramenta.map((m) => <SelectItem key={m.id} value={selecaoMarcaCadastrada(m.id)}>{rotulo(m)}</SelectItem>)}
                     {marcaAntiga && <SelectItem value={SELECAO_MARCA_LEGADA}>{marcaAntiga} (fora de Cadastros &gt; Gerais)</SelectItem>}
                   </SelectContent>
                 </Select>
-                {parametros.marcasFerramenta.length === 0 && <p className="text-xs text-muted-foreground">Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.</p>}
+                {parametrosSelecao.marcasFerramenta.length === 0 && <p className="text-xs text-muted-foreground">Cadastre marcas em Cadastros &gt; Gerais &gt; Categorias.</p>}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="modelo">Modelo</Label>
