@@ -242,9 +242,44 @@ Como se aplica:
   próprios. Entrada (compra), saída (entrega ou baixa) e devolução
   informam o tamanho; tamanho ausente ou não autorizado é recusado, e
   movimentar um tamanho nunca altera o saldo de outro.
+- Unidade: escolhida no cadastro do produto. Tamanho: escolhido em cada
+  compra, entrega, baixa e devolução, e na grade de estoque mínimo por
+  tamanho do produto (um produto com vários tamanhos não tem um tamanho
+  único no cadastro).
 - Subcategoria sem tamanho autorizado não exige tamanho: o produto
-  continua com um estoque único, como hoje.
+  continua com um estoque único, como hoje. Subcategoria sem unidade
+  autorizada não exige unidade.
+- Estoque mínimo: produto com tamanhos tem mínimo e alerta por tamanho;
+  produto sem tamanhos mantém o mínimo único do MD.
+- Saldo existente: produto antigo com tamanho digitado que casa com um
+  tamanho de Gerais leva o saldo inteiro para esse tamanho; produto sem
+  tamanho fica com um saldo "sem tamanho", que só pode sair (entrega ou
+  baixa) até zerar. Autorizar tamanhos depois numa subcategoria com
+  produtos com saldo avisa e não converte o saldo sozinho. Uniformes
+  antigos cadastrados um por tamanho continuam separados.
+- Importação do XML (decisão 21): a nota fiscal não traz tamanho. Item
+  casado com produto cuja subcategoria tem tamanho autorizado fica como
+  pendência visível e não é gravado; produto sem tamanho segue como hoje.
 - Registros antigos sem tamanho são preservados ao editar outros
   campos, como já ocorre com marca (PR #46) e subcategoria (PR #47).
-- Tamanhos, unidades e associações ganham desativar/reativar e
-  proteção de item em uso, como os demais parâmetros (PR #48).
+- Tamanhos e unidades ganham desativar/reativar e proteção de item em
+  uso, como os demais parâmetros (PR #48). Em Associar Tamanho e
+  Medida, desautorizar (decisão 2) um tamanho ou unidade com saldo ou
+  histórico avisa o que depende.
+- Esta decisão é a aprovação dos campos Tamanho e Unidade nos
+  cadastros de EPI e Uniforme, que o MD ainda não lista.
+Regras complementares aprovadas pelo responsável em 01/10/2026, após o
+code review do PR #50.
+
+## 24. FERRAMENTA SEM SUBCATEGORIA E SEM ABA CADASTRO NO MÓDULO
+Decidido pelo responsável em 01/10/2026:
+1. O cadastro de ferramentas (Cadastros > Ferramentas) não tem mais o
+   campo Subcategoria. A ferramenta é classificada pela categoria e
+   pelo grupo de ferramenta de Gerais. O código continua gerado pela
+   regra da categoria-base Ferramentas (FER-0001), que nunca dependeu da
+   subcategoria. Ferramentas antigas mantêm a subcategoria gravada, sem
+   mostrá-la, e ela é preservada ao editar outros campos.
+2. O módulo Ferramentas não tem mais a aba Cadastro, que duplicava
+   Cadastros > Ferramentas. O cadastro de modelos fica só em Cadastros.
+Corrige o MD (Ferramentas, "Cadastrar modelo", item 1, e a frase sobre
+as três seleções de Gerais), que foi ajustado junto.
