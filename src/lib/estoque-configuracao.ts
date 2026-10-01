@@ -1,3 +1,16 @@
+/** Tamanhos antigos sem seleção explícita continuam editáveis; os demais seguem o produto. */
+export function tamanhosConfiguraveisNoModulo(
+  autorizadosAtivos: string[],
+  minimosAnteriores: Record<string, number>,
+  selecionados: string[] | null | undefined,
+): string[] {
+  const visivel = (id: string) => !Array.isArray(selecionados) || selecionados.includes(id);
+  return [...new Set([
+    ...autorizadosAtivos.filter(visivel),
+    ...Object.keys(minimosAnteriores).filter((id) => visivel(id) && Number(minimosAnteriores[id]) > 0),
+  ])];
+}
+
 /** Mantém o formato de dados existente no produto, validando a grade do módulo. */
 export function prepararMinimosEstoque(
   valores: Record<string, number>,

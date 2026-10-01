@@ -292,6 +292,7 @@ export function resumoEstoquePorTamanho(
   const saldos = saldosPorTamanho(p, modulo, produto);
   const minimos = produto.minimos_tamanho ?? {};
   const chaves = new Set([
+    ...(produto.tamanhos_selecionados ?? []),
     ...Object.keys(saldos).filter((chave) => tamanhoVisivel(produto, chave) && numero(saldos[chave]) > 0),
     ...Object.keys(minimos).filter((chave) => tamanhoVisivel(produto, chave) && numero(minimos[chave]) > 0),
   ]);
@@ -305,7 +306,10 @@ export function resumoMinimosPorTamanho(p: ParametrosBase, produto: ProdutoTaman
   const minimos = produto.minimos_tamanho ?? {};
   return ordenarChaves(
     p,
-    Object.keys(minimos).filter((chave) => tamanhoVisivel(produto, chave) && numero(minimos[chave]) > 0),
+    [...new Set([
+      ...(produto.tamanhos_selecionados ?? []),
+      ...Object.keys(minimos).filter((chave) => tamanhoVisivel(produto, chave) && numero(minimos[chave]) > 0),
+    ])],
   )
     .map((chave) => `${rotuloComEstado(p, chave)}: ${numero(minimos[chave])}`)
     .join(" · ");
@@ -316,7 +320,7 @@ export const usaMinimoPorTamanho = (
   p: ParametrosBase,
   modulo: ModuloTamanho,
   produto: ProdutoTamanho,
-) => Object.values(produto.minimos_tamanho ?? {}).some((minimo) => numero(minimo) > 0);
+) => Object.entries(produto.minimos_tamanho ?? {}).some(([id, minimo]) => tamanhoVisivel(produto, id) && numero(minimo) > 0);
 
 export type AlertaTamanho = { chave: string; nome: string; saldo: number; minimo: number };
 
@@ -345,18 +349,30 @@ export function estadoEstoqueModulo(
   modulo: string,
   produto: ProdutoTamanho,
 ) {
-  // Totais contábeis incluem saldos antigos; apenas o detalhe por tamanho segue a seleção.
-  const saldo = Number(produto.estoque_atual ?? 0);
-  const minimo = Number(produto.estoque_minimo ?? 0);
+  const saldoGravado = Number(produto.estoque_atual ?? 0);
+  const selecaoComTamanho = controlaModulo(modulo) && Array.isArray(produto.tamanhos_selecionados) &&
+    (produto.tamanhos_selecionados.length > 0 || tamanhosDisponiveisDoProduto(p, modulo, produto).length > 0);
+  const saldo = selecaoComTamanho
+    ? Object.entries(saldosPorTamanho(p, modulo, produto)).filter(([id]) => tamanhoVisivel(produto, id))
+      .reduce((soma, [, valor]) => soma + numero(valor), 0)
+    : saldoGravado;
+  const selecionaTamanho = controlaModulo(modulo) && Array.isArray(produto.tamanhos_selecionados) &&
+    tamanhosDisponiveisDoProduto(p, modulo, produto).length > 0;
+  const minimo = selecionaTamanho
+    ? Object.entries(produto.minimos_tamanho ?? {}).filter(([id]) => tamanhoVisivel(produto, id))
+      .reduce((soma, [, valor]) => soma + numero(valor), 0)
+    : Number(produto.estoque_minimo ?? 0);
   const porTamanho = controlaModulo(modulo) && usaMinimoPorTamanho(p, modulo, produto);
   const alertas = controlaModulo(modulo) && porTamanho ? alertasPorTamanho(p, modulo, produto) : [];
   return {
     saldo,
+    saldoForaDaSelecao: selecaoComTamanho ? saldoGravado - saldo : 0,
     minimo,
-    alerta: porTamanho ? alertas.length > 0 : saldo <= minimo,
+    alerta: selecionaTamanho ? alertas.length > 0 : porTamanho ? alertas.length > 0 : saldo <= minimo,
     detalheSaldo: controlaModulo(modulo) && (controlaTamanho(p, modulo, produto) || porTamanho)
       ? resumoEstoquePorTamanho(p, modulo, produto) : "",
-    detalheMinimo: porTamanho ? resumoMinimosPorTamanho(p, produto) : "",
+    detalheMinimo: porTamanho || (selecionaTamanho && produto.tamanhos_selecionados?.length)
+      ? resumoMinimosPorTamanho(p, produto) : "",
     detalheAlerta: alertas.map((a) => `${a.nome} (${a.saldo}/${a.minimo})`).join(", "),
   };
 }
