@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowUp, Check, Pencil, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Eye, EyeOff, Pencil, Trash2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,10 @@ type Props = {
   selecionado?: string | undefined;
   onSelecionar?: ((id: string) => void) | undefined;
   vazio?: string;
+  // Desativar: o item sai das listas de seleção dos cadastros, mas continua aqui e nos
+  // cadastros que já o usam.
+  inativos?: string[];
+  onAlternarAtivo?: (item: Item, ativar: boolean) => void;
 };
 
 // Lista com inclusão, renomeação e exclusão, usada em Cadastros > Gerais.
@@ -35,6 +40,8 @@ export function ListaEditavel({
   selecionado,
   onSelecionar,
   vazio = "Nenhum item cadastrado.",
+  inativos = [],
+  onAlternarAtivo,
 }: Props) {
   const [nome, setNome] = useState("");
   const [editando, setEditando] = useState<string | null>(null);
@@ -74,6 +81,7 @@ export function ListaEditavel({
         {itens.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">{vazio}</li>}
         {itens.map((item, i) => {
           const ativo = selecionado === item.id;
+          const desativado = inativos.includes(item.id);
           if (editando === item.id) {
             return (
               <li key={item.id} className="flex items-center gap-2 px-2 py-1.5">
@@ -125,14 +133,23 @@ export function ListaEditavel({
                   className={cn(
                     "flex-1 truncate px-1 py-1 text-left text-sm",
                     ativo && "font-semibold",
+                    desativado && "text-muted-foreground line-through",
                   )}
                   onClick={() => onSelecionar(item.id)}
                 >
                   {item.nome}
                 </button>
               ) : (
-                <span className="flex-1 truncate px-1 py-1 text-sm">{item.nome}</span>
+                <span
+                  className={cn(
+                    "flex-1 truncate px-1 py-1 text-sm",
+                    desativado && "text-muted-foreground line-through",
+                  )}
+                >
+                  {item.nome}
+                </span>
               )}
+              {desativado && <Badge variant="outline">Desativado</Badge>}
               {detalhe?.(item)}
               {onMover && (
                 <>
@@ -170,6 +187,18 @@ export function ListaEditavel({
               >
                 <Pencil className="size-4" />
               </Button>
+              {onAlternarAtivo && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-8"
+                  aria-label={desativado ? `Reativar ${item.nome}` : `Desativar ${item.nome}`}
+                  title={desativado ? "Reativar" : "Desativar"}
+                  onClick={() => onAlternarAtivo(item, desativado)}
+                >
+                  {desativado ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                </Button>
+              )}
               <Button
                 size="icon"
                 variant="ghost"

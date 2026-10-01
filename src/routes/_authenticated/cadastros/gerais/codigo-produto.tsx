@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import {
+  CATEGORIAS_BASE,
   DIGITOS_CODIGO,
   gerarCodigo,
   removerRegraCodigo,
@@ -158,7 +159,12 @@ function CodigoProduto() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          if (confirm(`Excluir a regra de código de ${c.nome}?`))
+                          // Regra de categoria-base não sai: a exclusão é recusada com o aviso
+                          // de quais cadastros ficariam bloqueados, sem pedir confirmação.
+                          if (
+                            CATEGORIAS_BASE[c.id] ||
+                            confirm(`Excluir a regra de código de ${c.nome}?`)
+                          )
                             executar(() => removerRegraCodigo(c.id), "Regra excluída.");
                         }}
                       >
