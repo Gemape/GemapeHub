@@ -1,4 +1,4 @@
-import { mesmoNome, proximoCodigo, subcategoriasDa, type ListaFerramenta, type Opcao, type ParametrosBase } from "./parametros-base.ts";
+import { mesmoNome, proximoCodigo, type ListaFerramenta, type Opcao, type ParametrosBase } from "./parametros-base.ts";
 
 export const SELECAO_SEM_MARCA = "sem-marca";
 export const SELECAO_MARCA_LEGADA = "marca-legada";
@@ -16,9 +16,6 @@ export function marcaDaSelecao(selecao: string, marcas: Opcao[], marcaAtual: str
 export type EntradaCadastroFerramenta = {
   parametros: ParametrosBase;
   codigosExistentes: string[];
-  subcategoria: string;
-  // Subcategoria antiga, fora de Gerais, que a ferramenta já tinha: continua aceita na edição.
-  subcategoriaAtual?: string;
   descricao: string;
   estoqueMinimo: string;
   categoriaFerramenta: string;
@@ -74,11 +71,6 @@ export function reservarCodigoFerramenta(
 }
 
 export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
-  const subcategoria = entrada.subcategoria.trim();
-  const mantida = !!entrada.subcategoriaAtual && subcategoria === entrada.subcategoriaAtual.trim();
-  if (!mantida && !subcategoriasDa(entrada.parametros, "cat-ferramentas").some((s) => s.nome === subcategoria)) {
-    throw new Error("Subcategoria de ferramentas inválida.");
-  }
   const nome = entrada.descricao.trim();
   if (!nome) throw new Error("Informe a descrição da ferramenta.");
   const minimo = Number(entrada.estoqueMinimo);
@@ -109,7 +101,10 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
   if (!entrada.codigoAtual && !regra) throw new Error("Cadastre a regra do código de ferramentas em Cadastros > Gerais.");
   return {
     codigo_sku: entrada.codigoAtual || proximoCodigo(regra!, entrada.codigosExistentes),
-    categoria: subcategoria,
+    // Ferramenta não tem subcategoria (decisão 24). A coluna categoria, obrigatória no
+    // banco, recebe a categoria de ferramenta no cadastro novo; a edição não a reescreve,
+    // para a ferramenta antiga manter a subcategoria gravada.
+    ...(entrada.codigoAtual ? {} : { categoria: categoriaFerramenta.nome }),
     nome,
     estoque_minimo: minimo,
     categoria_ferramenta: categoriaFerramenta.nome,

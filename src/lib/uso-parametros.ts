@@ -9,7 +9,6 @@ type Registro = Record<string, unknown>;
 const MODULO_DA_TABELA: Record<keyof typeof SUBCATEGORIA_DAS_TABELAS, string> = {
   epis: "EPI",
   uniformes: "Uniforme",
-  ferramentas: "Ferramenta",
   veiculos: "Veículo",
 };
 const MAXIMO_NO_AVISO = 5;

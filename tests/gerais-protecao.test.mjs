@@ -124,8 +124,10 @@ test('as telas de Gerais conferem o uso antes de excluir e oferecem desativar', 
   assert.match(lista, /`Desativar \$\{item\.nome\}`/);
   assert.match(lista, /`Reativar \$\{item\.nome\}`/);
   assert.match(ler('routes/_authenticated/cadastros/gerais/codigo-produto.tsx'), /CATEGORIAS_BASE/);
-  for (const arquivo of ['components/modules/CadastroProduto.tsx', 'components/modules/VeiculosCadastroModulo.tsx', 'components/modules/ItensModulo.tsx']) {
+  for (const arquivo of ['components/modules/CadastroProduto.tsx', 'components/modules/VeiculosCadastroModulo.tsx']) {
     assert.match(ler(arquivo), /subcategoriasParaSelecao\(/, arquivo);
+  }
+  for (const arquivo of ['components/modules/CadastroProduto.tsx', 'components/modules/VeiculosCadastroModulo.tsx', 'components/modules/ItensModulo.tsx']) {
     assert.match(ler(arquivo), /paraSelecao\(/, arquivo);
   }
 });

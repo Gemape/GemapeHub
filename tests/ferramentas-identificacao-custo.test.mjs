@@ -8,7 +8,7 @@ import { valorTotalEmEstoque } from '../src/lib/gemape.ts';
 test('série, patrimônio, aquisição e custo persistem ao salvar e reabrir', async () => {
   const cadastro = prepararCadastroFerramenta({
     parametros: lerParametros(null), codigosExistentes: ['FER-0001'],
-    subcategoria: 'Elétrica', categoriaFerramenta: 'Elétrica',
+    categoriaFerramenta: 'Elétrica',
     grupoFerramenta: 'Diversos', descricao: 'Furadeira', estoqueMinimo: '1',
     numeroSerie: '  SERIE-42  ', precoCusto: '240.50',
   });
