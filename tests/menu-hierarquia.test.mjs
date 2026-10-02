@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { MENU_GERAIS, SUBMENU_FERRAMENTAS } from "../src/lib/menu-parametros.ts";
+import { MENU_GERAIS, SUBMENU_FERRAMENTAS, URLS_GERAIS } from "../src/lib/menu-parametros.ts";
 
 const sidebar = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
 
@@ -42,4 +42,13 @@ test("o menu lateral usa os dados de menu-parametros e não lista mais Associar 
   assert.match(sidebar, /MENU_GERAIS/);
   assert.match(sidebar, /SUBMENU_FERRAMENTAS/);
   assert.doesNotMatch(sidebar, /titulo: "Tamanhos e Unidades"/);
+});
+
+test("só o Administrador vê Caixas; o destaque de Gerais não inclui Caixas", () => {
+  const caixas = SUBMENU_FERRAMENTAS.find((i) => i.titulo === "Caixas");
+  assert.equal(caixas?.soAdmin, true);
+  assert.ok(!SUBMENU_FERRAMENTAS.find((i) => i.titulo === "Cadastro de Ferramentas")?.soAdmin);
+  assert.ok(!URLS_GERAIS.includes("/cadastros/gerais/caixas"));
+  assert.ok(URLS_GERAIS.includes("/cadastros/gerais/associar-tamanhos"));
+  assert.match(sidebar, /isAdmin \|\| !i\.soAdmin/);
 });

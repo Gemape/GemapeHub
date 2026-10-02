@@ -29,7 +29,7 @@ import {
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/tamanhos-unidades")({
-  head: () => ({ meta: [{ title: "Tamanhos e unidades | Patrimônio GEMAPE" }] }),
+  head: () => ({ meta: [{ title: "Cadastro de tamanhos e medidas | Patrimônio GEMAPE" }] }),
   component: TamanhosUnidades,
 });
 

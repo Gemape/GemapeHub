@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { useAccess } from "@/lib/access-context";
-import { MENU_GERAIS, SUBMENU_FERRAMENTAS, type ItemMenu } from "@/lib/menu-parametros";
+import { MENU_GERAIS, SUBMENU_FERRAMENTAS, URLS_GERAIS, type ItemMenu, type NomeIcone } from "@/lib/menu-parametros";
 import {
   Building2,
   Car,
@@ -73,10 +73,9 @@ const grupos = [
 ] as const;
 
 const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench } as const;
-type NomeIcone = keyof typeof ICONES;
 
 function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
-  const Icone = ICONES[item.icone as NomeIcone];
+  const Icone = ICONES[item.icone];
   return (
     <SidebarMenuSubItem>
       <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.url)} className="h-auto min-h-7 py-1">
@@ -126,7 +125,7 @@ function GrupoRecolhivel({
 // Especificação rev1: Cadastros > Gerais, só o Administrador acessa.
 function MenuGerais({ pathname }: { pathname: string }) {
   return (
-    <GrupoRecolhivel titulo="Gerais" icone={<FolderCog />} prefixos={["/cadastros/gerais"]} pathname={pathname}>
+    <GrupoRecolhivel titulo="Gerais" icone={<FolderCog />} prefixos={URLS_GERAIS} pathname={pathname}>
       {MENU_GERAIS.map((item) =>
         "filhos" in item ? (
           <SidebarMenuSubItem key={item.titulo}>
@@ -147,7 +146,7 @@ function MenuGerais({ pathname }: { pathname: string }) {
 
 // Parâmetros > Ferramentas: o cadastro e, para o Administrador, Caixas.
 function MenuFerramentas({ pathname, isAdmin }: { pathname: string; isAdmin: boolean }) {
-  const itens = isAdmin ? SUBMENU_FERRAMENTAS : SUBMENU_FERRAMENTAS.slice(0, 1);
+  const itens = SUBMENU_FERRAMENTAS.filter((i) => isAdmin || !i.soAdmin);
   return (
     <GrupoRecolhivel
       titulo="Ferramentas"

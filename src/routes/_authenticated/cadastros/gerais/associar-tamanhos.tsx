@@ -24,7 +24,7 @@ import {
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/associar-tamanhos")({
-  head: () => ({ meta: [{ title: "Associar tamanho e medida | Patrimônio GEMAPE" }] }),
+  head: () => ({ meta: [{ title: "Associar tamanho e medida ao produto | Patrimônio GEMAPE" }] }),
   component: AssociarTamanhos,
 });
 
