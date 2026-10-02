@@ -18,6 +18,8 @@ import { Route as AuthenticatedEmpregadosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEmpresasRouteImport } from './routes/_authenticated/empresas'
 import { Route as AuthenticatedEnderecamentoRouteImport } from './routes/_authenticated/enderecamento'
 import { Route as AuthenticatedEpiRouteImport } from './routes/_authenticated/epi'
+import { Route as AuthenticatedEpiCadastrarRouteImport } from './routes/_authenticated/epi-cadastrar'
+import { Route as AuthenticatedEpiFichaRouteImport } from './routes/_authenticated/epi-ficha'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedOcorrenciasRouteImport } from './routes/_authenticated/ocorrencias'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
@@ -86,6 +88,17 @@ const AuthenticatedEnderecamentoRoute =
 const AuthenticatedEpiRoute = AuthenticatedEpiRouteImport.update({
   id: '/epi',
   path: '/epi',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEpiCadastrarRoute =
+  AuthenticatedEpiCadastrarRouteImport.update({
+    id: '/epi-cadastrar',
+    path: '/epi-cadastrar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEpiFichaRoute = AuthenticatedEpiFichaRouteImport.update({
+  id: '/epi-ficha',
+  path: '/epi-ficha',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedFerramentasRoute =
@@ -232,6 +245,8 @@ export interface FileRoutesByFullPath {
   '/empresas': typeof AuthenticatedEmpresasRoute
   '/enderecamento': typeof AuthenticatedEnderecamentoRoute
   '/epi': typeof AuthenticatedEpiRoute
+  '/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
+  '/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -265,6 +280,8 @@ export interface FileRoutesByTo {
   '/empresas': typeof AuthenticatedEmpresasRoute
   '/enderecamento': typeof AuthenticatedEnderecamentoRoute
   '/epi': typeof AuthenticatedEpiRoute
+  '/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
+  '/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -299,6 +316,8 @@ export interface FileRoutesById {
   '/_authenticated/empresas': typeof AuthenticatedEmpresasRoute
   '/_authenticated/enderecamento': typeof AuthenticatedEnderecamentoRoute
   '/_authenticated/epi': typeof AuthenticatedEpiRoute
+  '/_authenticated/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
+  '/_authenticated/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRoute
   '/_authenticated/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -334,6 +353,8 @@ export interface FileRouteTypes {
     | '/empresas'
     | '/enderecamento'
     | '/epi'
+    | '/epi-cadastrar'
+    | '/epi-ficha'
     | '/ferramentas'
     | '/ocorrencias'
     | '/relatorios'
@@ -367,6 +388,8 @@ export interface FileRouteTypes {
     | '/empresas'
     | '/enderecamento'
     | '/epi'
+    | '/epi-cadastrar'
+    | '/epi-ficha'
     | '/ferramentas'
     | '/ocorrencias'
     | '/relatorios'
@@ -400,6 +423,8 @@ export interface FileRouteTypes {
     | '/_authenticated/empresas'
     | '/_authenticated/enderecamento'
     | '/_authenticated/epi'
+    | '/_authenticated/epi-cadastrar'
+    | '/_authenticated/epi-ficha'
     | '/_authenticated/ferramentas'
     | '/_authenticated/ocorrencias'
     | '/_authenticated/relatorios'
@@ -494,6 +519,20 @@ declare module '@tanstack/react-router' {
       path: '/epi'
       fullPath: '/epi'
       preLoaderRoute: typeof AuthenticatedEpiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/epi-cadastrar': {
+      id: '/_authenticated/epi-cadastrar'
+      path: '/epi-cadastrar'
+      fullPath: '/epi-cadastrar'
+      preLoaderRoute: typeof AuthenticatedEpiCadastrarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/epi-ficha': {
+      id: '/_authenticated/epi-ficha'
+      path: '/epi-ficha'
+      fullPath: '/epi-ficha'
+      preLoaderRoute: typeof AuthenticatedEpiFichaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ferramentas': {
@@ -703,6 +742,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEmpresasRoute: typeof AuthenticatedEmpresasRoute
   AuthenticatedEnderecamentoRoute: typeof AuthenticatedEnderecamentoRoute
   AuthenticatedEpiRoute: typeof AuthenticatedEpiRoute
+  AuthenticatedEpiCadastrarRoute: typeof AuthenticatedEpiCadastrarRoute
+  AuthenticatedEpiFichaRoute: typeof AuthenticatedEpiFichaRoute
   AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRoute
   AuthenticatedOcorrenciasRoute: typeof AuthenticatedOcorrenciasRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
@@ -727,6 +768,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEmpresasRoute: AuthenticatedEmpresasRoute,
   AuthenticatedEnderecamentoRoute: AuthenticatedEnderecamentoRoute,
   AuthenticatedEpiRoute: AuthenticatedEpiRoute,
+  AuthenticatedEpiCadastrarRoute: AuthenticatedEpiCadastrarRoute,
+  AuthenticatedEpiFichaRoute: AuthenticatedEpiFichaRoute,
   AuthenticatedFerramentasRoute: AuthenticatedFerramentasRoute,
   AuthenticatedOcorrenciasRoute: AuthenticatedOcorrenciasRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,

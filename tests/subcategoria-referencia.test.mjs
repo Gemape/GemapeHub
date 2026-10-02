@@ -128,5 +128,5 @@ test('os cadastros escolhem a subcategoria pela referência e mostram o nome de 
     assert.match(fonte, /nomeSubcategoria\(/, arquivo);
     assert.match(fonte, /SUBCATEGORIA_LEGADA/, arquivo);
   }
-  assert.match(ler('routes/_authenticated/cadastros/epi-ficha.tsx'), /nomeSubcategoria\(/);
+  assert.match(ler('routes/_authenticated/epi-ficha.tsx'), /nomeSubcategoria\(/);
 });

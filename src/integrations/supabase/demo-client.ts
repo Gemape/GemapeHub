@@ -1,6 +1,7 @@
 // @ts-nocheck -- adaptador propositalmente genérico para emular a API de consulta no demo.
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
 import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
+import { duplicadoNoCatalogo, sincronizarEstoqueEpis } from "../../lib/epi-catalogo.ts";
 import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
 import {
   controlaModulo,
@@ -51,8 +52,25 @@ const vincularSubcategoriasGravadas = () => {
   }
 };
 vincularSubcategoriasGravadas();
+// O estoque de cada empresa nasce do catálogo de EPI (decisão 35). Ao abrir, completa o que faltar.
 if (typeof window !== "undefined") window.addEventListener?.(EVENTO_PARAMETROS, vincularSubcategoriasGravadas);
 const id = () => crypto.randomUUID();
+const sincronizarEpis = () => {
+  if (sincronizarEstoqueEpis(dados, id, new Date().toISOString())) persistirDados();
+};
+sincronizarEpis();
+// Catálogo de EPI: o mesmo EPI não entra duas vezes no mesmo tamanho e o código é único.
+// Tudo ou nada: se um item do lote falha, nenhum entra.
+const validarCatalogoEpi = (novos: Linha[]): Error | null => {
+  const aceitos: Linha[] = [...(dados.epis_catalogo ?? [])];
+  const codigos = new Set([...aceitos.map(c => String(c.codigo_sku)), ...(dados.epis ?? []).filter(e => !e.catalogo_id).map(e => String(e.codigo_sku))]);
+  for (const n of novos) {
+    if (duplicadoNoCatalogo(aceitos as never, String(n.nome ?? ""), (n.tamanho_id as string | null) ?? null)) return new Error("Este EPI já está cadastrado neste tamanho.");
+    if (codigos.has(String(n.codigo_sku))) return new Error(`O código ${n.codigo_sku} já está em uso.`);
+    aceitos.push(n); codigos.add(String(n.codigo_sku));
+  }
+  return null;
+};
 // Emula o gatilho de movimentações do banco real (migration 20260928140000): entrada e
 // devolução somam, saída subtrai, vistoria e transferência não mexem no saldo. Tudo ou nada.
 const TABELA_DO_MODULO: Record<string, string> = { epi: "epis", uniforme: "uniformes", ferramenta: "ferramentas" };
@@ -181,9 +199,30 @@ class Consulta {
       const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: agora, ...l }));
       if (this.tabela === "movimentacoes") { const erro = aplicarEstoque(novos); if (erro) return { data: null, error: erro }; }
       if (this.tabela in MODULO_DA_COMPRA) { const erro = registrarCompras(this.tabela, novos); if (erro) return { data: null, error: erro }; }
-      linhas.push(...novos); selecionadas = novos; persistirDados();
+      if (this.tabela === "epis_catalogo") { const erro = validarCatalogoEpi(novos); if (erro) return { data: null, error: erro }; }
+      linhas.push(...novos); selecionadas = novos;
+      if (this.tabela === "epis_catalogo" || this.tabela === "empresas") sincronizarEpis();
+      persistirDados();
     }
-    if (this.acao === "update") { selecionadas.forEach(l => Object.assign(l, this.payload)); persistirDados(); }
+    if (this.acao === "update" && this.tabela === "epis_catalogo") {
+      // A edição também não pode repetir o EPI no mesmo tamanho nem o código de outro.
+      const proposto = { ...(this.payload ?? {}) } as Linha;
+      for (const l of selecionadas) {
+        const depois = { ...l, ...proposto };
+        const outros = linhas.filter(o => o !== l);
+        if (duplicadoNoCatalogo(outros as never, String(depois.nome ?? ""), (depois.tamanho_id as string | null) ?? null)) return { data: null, error: new Error("Este EPI já está cadastrado neste tamanho.") };
+        if (outros.some(o => o.codigo_sku === depois.codigo_sku)) return { data: null, error: new Error(`O código ${depois.codigo_sku} já está em uso.`) };
+      }
+    }
+    if (this.acao === "delete" && this.tabela === "epis_catalogo" && selecionadas.length) {
+      // Sem tela de exclusão por enquanto: apagar o catálogo deixaria estoque sem origem.
+      return { data: null, error: new Error("EPI do catálogo não pode ser excluído nesta etapa.") };
+    }
+    if (this.acao === "update") {
+      selecionadas.forEach(l => Object.assign(l, this.payload));
+      if (this.tabela === "epis_catalogo") sincronizarEpis();
+      persistirDados();
+    }
     if (this.acao === "delete") { selecionadas.forEach(l => linhas.splice(linhas.indexOf(l), 1)); persistirDados(); }
     if (this.ordens.length) selecionadas.sort((a,b) => {
       for (const ordem of this.ordens) {

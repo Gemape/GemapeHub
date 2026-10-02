@@ -1,6 +1,7 @@
 // Hierarquia do menu Parâmetros (decisão 34). Só dados: o AppSidebar desenha.
-export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench";
+export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench" | "HardHat" | "ClipboardList";
 export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean };
+export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
 export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
 
 export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
@@ -25,3 +26,14 @@ export const SUBMENU_FERRAMENTAS: readonly ItemMenu[] = [
 
 // URLs de Gerais, para o destaque do grupo (Caixas não conta: pertence a Ferramentas).
 export const URLS_GERAIS: readonly string[] = MENU_GERAIS.flatMap((i) => ("filhos" in i ? i.filhos.map((f) => f.url) : [i.url]));
+
+// Menu EPI (módulo, decisão 35): "Cadastrar Ficha de EPI" fica dentro de "Cadastrar EPI".
+export const MENU_EPI: readonly ItemComFilhos[] = [
+  { titulo: "Controle de EPI", url: "/epi", icone: "HardHat" },
+  {
+    titulo: "Cadastrar EPI",
+    url: "/epi-cadastrar",
+    icone: "Tags",
+    filhos: [{ titulo: "Cadastrar Ficha de EPI", url: "/epi-ficha", icone: "ClipboardList" }],
+  },
+];

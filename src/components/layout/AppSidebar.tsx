@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { useAccess } from "@/lib/access-context";
-import { MENU_GERAIS, SUBMENU_FERRAMENTAS, URLS_GERAIS, type ItemMenu, type NomeIcone } from "@/lib/menu-parametros";
+import { MENU_EPI, MENU_GERAIS, SUBMENU_FERRAMENTAS, URLS_GERAIS, type ItemMenu, type NomeIcone } from "@/lib/menu-parametros";
 import {
   Building2,
   Car,
@@ -51,7 +51,6 @@ const grupos = [
   {
     titulo: "Módulos",
     itens: [
-      { titulo: "EPIs", url: "/epi", icone: HardHat },
       { titulo: "Uniformes", url: "/uniformes", icone: Shirt },
       { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench },
       { titulo: "Caixas de Ferramentas", url: "/caixas-ferramentas", icone: Archive },
@@ -61,8 +60,6 @@ const grupos = [
   {
     titulo: "Parâmetros",
     itens: [
-      { titulo: "EPIs", url: "/cadastros/epi", icone: HardHat },
-      { titulo: "Ficha de EPI", url: "/cadastros/epi-ficha", icone: ClipboardList },
       { titulo: "Uniformes", url: "/cadastros/uniformes", icone: Shirt },
       { titulo: "Veículos", url: "/cadastros/veiculos", icone: Car },
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
@@ -72,13 +69,13 @@ const grupos = [
   },
 ] as const;
 
-const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench } as const;
+const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList } as const;
 
 function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
   const Icone = ICONES[item.icone];
   return (
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.url)} className="h-auto min-h-7 py-1">
+      <SidebarMenuSubButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)} className="h-auto min-h-7 py-1">
         <Link to={item.url}>
           <Icone />
           {/* Nome inteiro, quebrando linha se precisar. */}
@@ -134,6 +131,35 @@ function MenuGerais({ pathname }: { pathname: string }) {
               {item.filhos.map((filho) => (
                 <SubLink key={filho.url} item={filho} pathname={pathname} />
               ))}
+            </SidebarMenuSub>
+          </SidebarMenuSubItem>
+        ) : (
+          <SubLink key={item.url} item={item} pathname={pathname} />
+        ),
+      )}
+    </GrupoRecolhivel>
+  );
+}
+
+// Menu EPI (módulo): controle, Cadastrar EPI e, dentro dele, Cadastrar Ficha de EPI.
+function MenuEpi({ pathname }: { pathname: string }) {
+  return (
+    <GrupoRecolhivel
+      titulo="EPI"
+      icone={<HardHat />}
+      prefixos={MENU_EPI.flatMap((i) => [i.url, ...(i.filhos ?? []).map((f) => f.url)])}
+      pathname={pathname}
+    >
+      {MENU_EPI.map((item) =>
+        item.filhos ? (
+          <SidebarMenuSubItem key={item.url}>
+            <SidebarMenuSub className="mx-0 border-l-0 px-0">
+              <SubLink item={item} pathname={pathname} />
+              <SidebarMenuSub className="mx-0 ml-2 px-1.5">
+                {item.filhos.map((filho) => (
+                  <SubLink key={filho.url} item={filho} pathname={pathname} />
+                ))}
+              </SidebarMenuSub>
             </SidebarMenuSub>
           </SidebarMenuSubItem>
         ) : (
@@ -200,6 +226,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                {grupo.titulo === "Módulos" && <MenuEpi pathname={pathname} />}
                 {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
                 {grupo.titulo === "Parâmetros" && <MenuFerramentas pathname={pathname} isAdmin={isAdmin} />}
                 {grupo.itens.map((item) => (

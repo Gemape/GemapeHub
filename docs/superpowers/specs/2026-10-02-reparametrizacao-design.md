@@ -34,7 +34,11 @@ O menu lateral usa `#0A007C`; a paleta e o vidro das demais áreas continuam com
 - No menu Parâmetros, mover “Caixas” de Gerais para dentro de “Ferramentas”, como submenu da rotina de ferramentas. Distinguir esse parâmetro da tela operacional “Caixas de Ferramentas” do módulo, preservando o acesso a ambas.
 - O menu “EPI” (módulo, com “Cadastrar EPI” e “Cadastrar Ficha de EPI”) é feito no PR 5, por ordem do responsável de 02/10.
 
-## PR 5 — Cadastro de EPI por tamanho
+## PR 5 — Cadastro de EPI por tamanho (dividido em 5A e 5B por escolha do responsável em 02/10)
+
+- **5A (menu EPI e catálogo por tamanho, só demo):** menu EPI como módulo com “Cadastrar EPI” e, dentro dele, “Cadastrar Ficha de EPI”; catálogo global `epis_catalogo` (um registro por descrição e tamanho, sem empresa, com estoque mínimo); os registros de `epis` por empresa continuam sendo a posição de estoque de cada empresa e são criados a partir do catálogo, de modo que estoque, compras, NF-e, termos e dashboard seguem separados por empresa. EPIs antigos aparecem na lista como “antigos” e não são alterados.
+- **5B (migração):** separa os EPIs antigos com vários tamanhos em um cadastro por tamanho, preservando histórico, saldos, endereços, fichas e associações. Só depois do merge do 5A.
+- Mínimo: um só no catálogo, copiado para o estoque de cada empresa (escolha recomendada, ainda não contestada pelo responsável).
 
 - Substituir, no modo demonstração, o produto com vários tamanhos por um cadastro independente para cada tamanho, com novo código automático `EPI-0001`, `EPI-0002` etc. O catálogo de EPI deixa de pertencer a uma empresa; compras, estoque e movimentações continuam separados por empresa. Adaptar as referências atuais a `empresa_id` nas compras, movimentações e associações de NF-e: elas usam o produto do catálogo global, mas preservam a empresa da operação e da nota.
 - “Novo EPI” cria uma descrição ainda não cadastrada em outro tamanho, pergunta o estoque mínimo e não pede empresa. A lista inicial traz todos os EPIs, agrupa os de mesma descrição e permite busca por palavra chave.
