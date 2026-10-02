@@ -299,6 +299,30 @@ uniformes fica só em Cadastros, como o de ferramentas (decisão 25). O
 módulo EPI mantém a aba Estoque. Complementa o MD (Uniforme, "Cadastrar
 uniforme"), que foi ajustado junto.
 
+## 27. LEITOR DE XML NO CÓDIGO DE FÁBRICA PARA CRIAR ASSOCIAÇÕES
+Aprovado pelo responsável em 02/10/2026. Cadastros > Gerais > Código de
+fábrica ganha o botão "Importar NF-e (XML)", com o mesmo leitor da
+decisão 21:
+- A tela lê o XML, acha o fornecedor pelo CNPJ do emitente e a empresa
+  pelo CNPJ do destinatário e lista os itens da nota com o código do
+  fornecedor e a descrição. Itens com o mesmo código aparecem numa linha
+  só, porque uma associação vale para todos.
+- Para cada item o usuário escolhe, no cadastro, o produto da empresa da
+  nota (EPI-0001, UNI-0001, FER-0001) e grava a associação. Para EPI o CA
+  da nota continua obrigatório, como no cadastro manual. A associação vale
+  para as próximas notas do mesmo fornecedor.
+- Item já associado aparece como vinculado; item novo fica pendente. Se o
+  produto de uma associação foi apagado, o item pede nova escolha e a
+  associação é trocada no lugar, sem duplicar.
+- Decisão 24: esta tela NÃO movimenta estoque, não grava compra nem
+  movimentação e não registra a nota como importada. Só cria associações.
+- A entrada da nota com estoque continua nos módulos (Compras de EPI,
+  Compras de Uniformes, Movimentações de Ferramentas), que casam os itens
+  pelas associações criadas aqui. Item sem associação continua pendente,
+  sem gravar, e o aviso indica "Associe o código em Cadastros > Gerais >
+  Código de fábrica".
+- Nada no Supabase: as associações ficam onde o código de fábrica já fica
+  hoje (decisão 22; tabela real é pendência da Fase 2).
 ## 28. TAMANHOS E NUMERAÇÕES PADRÃO, EM SEQUÊNCIA, E TAMANHOS NA LISTA DO CADASTRO
 Aprovado pelo responsável em 02/10/2026:
 - Cadastros > Gerais > Tamanhos e unidades traz cadastradas todas as

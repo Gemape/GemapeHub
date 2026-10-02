@@ -111,7 +111,8 @@ export function prepararImportacao(entrada: {
     );
     if (!codigo) {
       return pendente(
-        `Código ${item.codigo} sem código de fábrica para este fornecedor e empresa.`,
+        `Código ${item.codigo} sem código de fábrica para este fornecedor e empresa. ` +
+          "Associe o código em Cadastros > Gerais > Código de fábrica.",
       );
     }
     const produto = entrada.produtos.find(

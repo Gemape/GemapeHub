@@ -62,7 +62,7 @@ export const CATEGORIAS_BASE: Record<string, string> = {
   "cat-veiculos": "Veículo",
 };
 
-type StorageLike = Pick<Storage, "getItem" | "setItem">;
+export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
 const CHAVE = "gemape-demo-parametros-base";
 // Avisa as telas abertas quando algo muda.

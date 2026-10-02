@@ -158,6 +158,7 @@ Já conforme:
 - Categoria, grupo e marca de Ferramenta em lista suspensa de Gerais; renomear ou apagar opção em uso é bloqueado com aviso (`categorias.tsx`).
 - Código do produto gerado pela regra de Gerais e não editável.
 - Código de fábrica ligado a empresa, produto e fornecedor, escolhidos em listas; a importação do XML casa por ele.
+- Código de fábrica também se cria pelo botão "Importar NF-e (XML)" da própria tela (decisão 27, `src/lib/associacao-nfe.ts` e `ImportarNfeCodigoFabrica.tsx`): lista os itens da nota, o usuário escolhe o produto de cada código e a associação vale para as próximas notas. A tela só cria associações e não mexe em estoque (decisão 24).
 - Caixas: só números habilitados em Gerais aparecem; caixa cadastrada não pode ser desabilitada.
 - Propagação na tela: toda alteração em Gerais avisa as telas abertas na hora (`EVENTO_PARAMETROS` em `parametros-base.ts`).
 
