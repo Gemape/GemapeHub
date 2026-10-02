@@ -26,7 +26,7 @@ O menu lateral usa `#0A007C`; a paleta e o vidro das demais áreas continuam com
 
 - O campo CA de Código de Fábrica aceita somente dígitos, inclusive na validação ao salvar.
 - A rotina Endereçamento abre com todos os produtos cadastrados das categorias que usam endereçamento, com e sem endereço. Mantém a busca por palavra chave sobre ambos. Remove “Novo endereço” e acrescenta “Filtrar itens sem endereçamento”.
-- Cada linha permite incluir ou editar o endereço com os campos atuais e excluir somente o endereço, mantendo o produto. “Clonar” parte de um endereço existente, pede o código do produto de destino e copia seus três campos para ele após validação. Não cria produto nem movimenta estoque. Verificar categoria, empresa de contexto e duplicidade antes de salvar; falhas não deixam cópia parcial.
+- Cada linha permite incluir ou editar o endereço com os campos atuais e excluir somente o endereço, mantendo o produto. “Clonar”, na linha do item de destino, pede o código do item de origem (mesma categoria e empresa, com endereço) e copia seus três campos para o destino após validação (ordem do responsável de 02/10, que prevalece sobre a redação anterior). Não cria produto nem movimenta estoque. Verificar categoria, empresa de contexto e duplicidade antes de salvar; falhas não deixam cópia parcial.
 
 ## PR 4 — Hierarquia dos menus
 

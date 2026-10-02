@@ -102,7 +102,7 @@ function CodigoFabricaPagina() {
     setProdutoSel(codigo ? chaveProduto(codigo) : "");
     setFornecedorSel(codigo?.fornecedor_id ?? "");
     setCodigoNota(codigo?.codigo_fornecedor ?? "");
-    setCa(codigo?.ca ?? "");
+    setCa((codigo?.ca ?? "").replace(/\D/g, ""));
     setAberto(true);
   }
 
@@ -294,9 +294,10 @@ function CodigoFabricaPagina() {
                   <Input
                     id="ca"
                     required
+                    inputMode="numeric"
                     maxLength={20}
                     value={ca}
-                    onChange={(e) => setCa(e.target.value)}
+                    onChange={(e) => setCa(e.target.value.replace(/\D/g, ""))}
                   />
                 </div>
               )}
