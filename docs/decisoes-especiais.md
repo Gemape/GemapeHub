@@ -399,3 +399,7 @@ ao salvar e ao exibir.
 ## 33. CÓDIGO DE FÁBRICA: CA SÓ NÚMEROS; ENDEREÇAMENTO: CLONAR PELO ITEM DE ORIGEM
 
 O campo CA do Código de Fábrica de EPI aceita somente dígitos (filtrado ao digitar e recusado ao salvar). Em Endereçamento de Estoque, "Clonar" fica na linha do item que receberá o endereço e pergunta o código do item de origem; copia rua, estante e apartamento da origem para o destino. A origem precisa ser da mesma categoria e empresa e ter endereço; recusa origem igual ao destino, categoria que não usa endereçamento e destino que já está no mesmo endereço. Não cria produto nem mexe em estoque. Prevalece a mensagem do responsável de 02/10 sobre a redação "código de destino" do desenho da reparametrização.
+
+## 34. MENUS: TAMANHO E MEDIDAS DE PRODUTO E CAIXAS EM FERRAMENTAS
+
+Em Parâmetros > Gerais, "Tamanhos e Unidades" e "Associar Tamanho e Medida" passam a ser submenus de "Tamanho e Medidas de Produto": "Cadastro de Tamanhos e Medidas" e "Associar Tamanho e Medida ao Produto". "Código do Produto" não muda. "Caixas" sai de Gerais e vira submenu de Parâmetros > Ferramentas (junto de "Cadastro de Ferramentas"); só o Administrador vê Caixas. A tela operacional "Caixas de Ferramentas" continua nos Módulos. As URLs não mudam. O menu EPI como módulo fica para o PR 5.

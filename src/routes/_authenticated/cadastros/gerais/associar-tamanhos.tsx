@@ -24,7 +24,7 @@ import {
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/associar-tamanhos")({
-  head: () => ({ meta: [{ title: "Associar tamanho e medida | Patrimônio GEMAPE" }] }),
+  head: () => ({ meta: [{ title: "Associar tamanho e medida ao produto | Patrimônio GEMAPE" }] }),
   component: AssociarTamanhos,
 });
 
@@ -117,7 +117,7 @@ function AssociarTamanhos() {
   return (
     <div className="space-y-5">
       <Cabecalho
-        titulo="Associar tamanho e medida"
+        titulo="Associar tamanho e medida ao produto"
         descricao="Escolha a categoria e a subcategoria. Marque na lista Existentes as opções desejadas e transfira para Autorizados. Para desautorizar, marque em Autorizados e transfira de volta."
       />
       <div className="panel grid gap-4 p-4 sm:grid-cols-2">
