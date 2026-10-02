@@ -32,7 +32,7 @@ Observação geral: tudo o que está "implementado" funciona no modo demonstraç
 | Unidades de medida | Implementado | Mesma tela; desativar e proteção de uso no PR D. |
 | Associar tamanho e medida (Existentes → Autorizados; desautorizar volta à esquerda, decisão 2) | Implementado no PR D | A associação por subcategoria (`associar-tamanhos.tsx`) alimenta a unidade do cadastro e o tamanho das linhas de EPI e Uniforme (decisão 23). |
 | Código do produto (categoria, sigla, numeração inicial de 4 dígitos) | Implementado | Gerais > Código do Produto. Regras de categoria-base protegidas (PR #48). |
-| Caixas 01 a 100 com flag | Implementado | Gerais > Caixas (PR #37). |
+| Caixas 01 a 100 com flag | Implementado | Caixas de Ferramentas > Habilitar caixas (PR #37). |
 
 ## 2. EPI
 
