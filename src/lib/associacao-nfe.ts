@@ -127,10 +127,30 @@ export function associarItemNfe(entrada: {
   produto: ProdutoAssociavel;
   ca?: string;
   storage?: StorageLike | null;
+  // Listas lidas agora, na hora de gravar: se informadas, fornecedor e produto precisam
+  // continuar nelas (podem ter sido excluídos depois da leitura do arquivo).
+  fornecedoresAtuais?: Cadastro[];
+  produtosAtuais?: ProdutoAssociavel[];
 }): CodigoFabrica {
   const { previa, produto } = entrada;
   if (previa.bloqueio || !previa.empresa || !previa.fornecedor) {
     throw new Error(previa.bloqueio ?? "A nota não pode ser associada.");
+  }
+  if (entrada.fornecedoresAtuais && !entrada.fornecedoresAtuais.some((f) => f.id === previa.fornecedor?.id)) {
+    throw new Error(
+      `O fornecedor ${previa.fornecedor.nome_fantasia} não está mais cadastrado. Importe a nota de novo.`,
+    );
+  }
+  if (
+    entrada.produtosAtuais &&
+    !entrada.produtosAtuais.some(
+      (p) =>
+        p.tabela === produto.tabela &&
+        p.codigo_sku === produto.codigo_sku &&
+        p.empresa_id === produto.empresa_id,
+    )
+  ) {
+    throw new Error(`O produto ${produto.codigo_sku} não está mais cadastrado. Escolha outro.`);
   }
   const linha = previa.linhas.find((l) => chaveCodigo(l.codigo) === chaveCodigo(entrada.codigo));
   if (!linha) throw new Error(`O código ${entrada.codigo} não está na nota.`);

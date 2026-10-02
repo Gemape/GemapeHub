@@ -1,5 +1,5 @@
 import { FileUp } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 
 import { CampoBusca, type OpcaoBusca } from "@/components/CampoBusca";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -41,15 +42,17 @@ function LinhaItem({
   linha,
   previa,
   produtos,
+  recarregarProdutos,
 }: {
   linha: LinhaAssociacao;
   previa: PreviaAssociacao;
   produtos: ProdutoGemape[];
+  recarregarProdutos: () => Promise<ProdutoGemape[] | null>;
 }) {
   const [escolhido, setEscolhido] = useState("");
   const [ca, setCa] = useState("");
-  const travado = useRef(false);
-  const idBase = `item-${linha.codigo.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+  const [salvando, setSalvando] = useState(false);
+  const idBase = useId();
 
   const doProduto = produtos.filter((p) => p.empresa_id === previa.empresa?.id);
   const opcoes: OpcaoBusca[] = doProduto.map((p) => ({
@@ -59,12 +62,26 @@ function LinhaItem({
   }));
   const produto = doProduto.find((p) => chaveProduto(p) === escolhido);
 
-  function associar() {
-    if (!produto || travado.current) return;
-    travado.current = true;
+  async function associar() {
+    if (!produto || salvando) return;
+    setSalvando(true);
     try {
+      // Confere de novo, na hora de gravar, se fornecedor e produto ainda existem.
+      const atuais = await recarregarProdutos();
+      if (!atuais) {
+        toast.error("Não foi possível carregar os produtos. Tente de novo.");
+        return;
+      }
       const ok = executar(
-        () => associarItemNfe({ previa, codigo: linha.codigo, produto, ca }),
+        () =>
+          associarItemNfe({
+            previa,
+            codigo: linha.codigo,
+            produto,
+            ca,
+            fornecedoresAtuais: listarFornecedores(),
+            produtosAtuais: atuais,
+          }),
         `Código ${linha.codigo} associado a ${produto.codigo_sku}.`,
       );
       if (ok) {
@@ -72,7 +89,7 @@ function LinhaItem({
         setCa("");
       }
     } finally {
-      travado.current = false;
+      setSalvando(false);
     }
   }
 
@@ -105,6 +122,7 @@ function LinhaItem({
               id={`${idBase}-produto`}
               opcoes={opcoes}
               valor={escolhido}
+              rotulo={`Produto para o código ${linha.codigo}`}
               onChange={setEscolhido}
               placeholder="Digite código ou nome do produto"
               vazio="Nenhum produto da empresa da nota com esse termo."
@@ -127,7 +145,7 @@ function LinhaItem({
             requiresWrite
             size="sm"
             onClick={associar}
-            disabled={!produto || !!previa.bloqueio}
+            disabled={!produto || !!previa.bloqueio || salvando}
             aria-label={`Associar o código ${linha.codigo}`}
           >
             Associar
@@ -166,6 +184,11 @@ export function ImportarNfeCodigoFabrica() {
     [nota, empresas, fornecedores, parametros.codigosFabrica, produtos],
   );
 
+  async function recarregarProdutos() {
+    const { data, error } = await refetch();
+    return error || !data ? null : data;
+  }
+
   function limpar() {
     leitura.current += 1;
     setNota(null);
@@ -182,7 +205,11 @@ export function ImportarNfeCodigoFabrica() {
     try {
       if (escolhido.size > TAMANHO_MAXIMO) throw new Error("O arquivo passa de 5 MB.");
       const lida = lerXmlNfe(await escolhido.text());
-      await refetch();
+      // Sem a lista de produtos, todo código existente apareceria como "Reassociar".
+      const { data: produtosLidos, error: erroProdutos } = await refetch();
+      if (erroProdutos || !produtosLidos) {
+        throw new Error("Não foi possível carregar os produtos. Tente de novo.");
+      }
       if (atual !== leitura.current) return;
       setFornecedores(listarFornecedores());
       setNota(lida);
@@ -271,6 +298,7 @@ export function ImportarNfeCodigoFabrica() {
                         linha={linha}
                         previa={previa}
                         produtos={produtos}
+                        recarregarProdutos={recarregarProdutos}
                       />
                     ))}
                   </TableBody>

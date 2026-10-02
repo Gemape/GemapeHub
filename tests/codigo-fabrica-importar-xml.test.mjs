@@ -208,3 +208,42 @@ test("a tela Código de fábrica tem o botão e o leitor não grava estoque", ()
   assert.match(leitor, /lerXmlNfe/);
   assert.doesNotMatch(leitor, /importar_nota_fiscal|\.rpc\(|montarEntradas|compras_epis|movimentacoes/);
 });
+
+test("associar confere de novo se fornecedor e produto ainda existem", () => {
+  const s = storage();
+  const previa = preparar(s);
+  assert.throws(
+    () => associarItemNfe({ previa, codigo: "BOS-FUR", produto: PRODUTOS[2], storage: s, fornecedoresAtuais: [] }),
+    /fornecedor.*não está mais cadastrado/i,
+  );
+  assert.throws(
+    () => associarItemNfe({ previa, codigo: "BOS-FUR", produto: PRODUTOS[2], storage: s, produtosAtuais: [PRODUTOS[0]] }),
+    /FER-0009.*não está mais cadastrado/,
+  );
+  assert.equal(lerParametros(s).codigosFabrica.length, 0);
+  const ok = associarItemNfe({
+    previa,
+    codigo: "BOS-FUR",
+    produto: PRODUTOS[2],
+    storage: s,
+    fornecedoresAtuais: [FORNECEDOR],
+    produtosAtuais: PRODUTOS,
+  });
+  assert.equal(ok.codigo_produto, "FER-0009");
+});
+
+test("códigos que só diferem na pontuação não repetem o id dos campos", () => {
+  const raiz = new URL("../src/", import.meta.url);
+  const fonte = readFileSync(new URL("components/parametros/ImportarNfeCodigoFabrica.tsx", raiz), "utf8");
+  assert.match(fonte, /useId\(\)/);
+  assert.doesNotMatch(fonte, /replace\(\/\[\^a-zA-Z0-9_-\]\/g/);
+});
+
+test("falha ao carregar os produtos mostra erro e não monta a prévia", () => {
+  const raiz = new URL("../src/", import.meta.url);
+  const fonte = readFileSync(new URL("components/parametros/ImportarNfeCodigoFabrica.tsx", raiz), "utf8");
+  assert.match(fonte, /const \{ data: produtosLidos, error: erroProdutos \} = await refetch\(\)/);
+  assert.match(fonte, /Não foi possível carregar os produtos/);
+  assert.doesNotMatch(fonte, /travado/);
+  assert.match(fonte, /rotulo=\{`Produto para o código/);
+});
