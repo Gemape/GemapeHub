@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
+import { ImportarNfeCodigoFabrica } from "@/components/parametros/ImportarNfeCodigoFabrica";
 import { useEmpresa } from "@/lib/empresa-context";
 import { listarFornecedores, type Fornecedor } from "@/lib/fornecedores-demo";
 import {
@@ -147,7 +148,10 @@ function CodigoFabricaPagina() {
         titulo="Código de fábrica"
         descricao="Associa o código do produto na nota fiscal do fornecedor ao código interno da GEMAPE. Na entrada da nota, o sistema saberá a qual produto somar o estoque."
       >
-        <Button onClick={() => abrir(null)}>Nova associação</Button>
+        <div className="flex flex-wrap gap-2">
+          <ImportarNfeCodigoFabrica />
+          <Button onClick={() => abrir(null)}>Nova associação</Button>
+        </div>
       </Cabecalho>
 
       <Input
