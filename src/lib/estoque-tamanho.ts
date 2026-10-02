@@ -1,5 +1,5 @@
 // Tamanho e unidade de EPI e Uniforme vindos de Cadastros > Gerais, com estoque por tamanho
-// (decisão 23). O produto usa os tamanhos e as unidades que Associar Tamanho e Medida
+// (decisão 23). O produto usa os tamanhos e as unidades que a aba Associar ao produto de Tamanho e Medidas
 // autoriza para a subcategoria dele. Cada tamanho tem saldo e mínimo próprios; o saldo
 // antigo, de antes do controle por tamanho, fica em "Sem tamanho" e só pode sair até zerar.
 import {
@@ -90,7 +90,7 @@ export const tamanhosAutorizadosDoProduto = (
 ) => tamanhosDisponiveisDoProduto(p, modulo, produto).filter((t) => tamanhoVisivel(produto, t.id));
 
 /**
- * Tamanhos e numerações associados à subcategoria do produto em Associar Tamanho e Medida,
+ * Tamanhos e numerações associados à subcategoria do produto em a aba Associar ao produto de Tamanho e Medidas,
  * para o cadastro mostrar: todos, na ordem de Gerais, com o desativado marcado.
  */
 export function tamanhosAssociadosParaCadastro(

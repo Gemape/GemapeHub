@@ -14,7 +14,7 @@ test("Tamanho e Medidas de Produto é um menu só em Gerais, com Associar como a
   const raiz = new URL("../src/routes/_authenticated/cadastros/gerais/", import.meta.url);
   const pagina = readFileSync(new URL("tamanhos-unidades.tsx", raiz), "utf8");
   assert.match(pagina, /ABAS = \["cadastro", "associar"\]/);
-  assert.match(pagina, /<TabsContent value="associar"><AssociarTamanhosPainel/);
+  assert.match(pagina, /<TabsContent value="associar" forceMount[^>]*><AssociarTamanhosPainel/);
   const antigo = readFileSync(new URL("associar-tamanhos.tsx", raiz), "utf8");
   assert.match(antigo, /redirect\(\{ to: "\/cadastros\/gerais\/tamanhos-unidades", search: \{ aba: "associar" \} \}\)/);
 });

@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/gerais/tamanhos-
 const aba = "data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap";
 
 // Um menu só (decisão 38): o cadastro dos tamanhos e medidas e a associação ao produto são abas.
+// As duas ficam montadas (forceMount) para não perder a categoria escolhida nem uma confirmação em andamento ao trocar de aba.
 function TamanhoEMedidas() {
   const { aba: pedida } = Route.useSearch();
   const inicial: Aba = pedida ?? "cadastro";
@@ -26,8 +27,8 @@ function TamanhoEMedidas() {
         <TabsTrigger value="cadastro" className={aba}>Cadastro</TabsTrigger>
         <TabsTrigger value="associar" className={aba}>Associar ao produto</TabsTrigger>
       </TabsList>
-      <TabsContent value="cadastro"><TamanhosMedidasPainel /></TabsContent>
-      <TabsContent value="associar"><AssociarTamanhosPainel /></TabsContent>
+      <TabsContent value="cadastro" forceMount className="data-[state=inactive]:hidden"><TamanhosMedidasPainel /></TabsContent>
+      <TabsContent value="associar" forceMount className="data-[state=inactive]:hidden"><AssociarTamanhosPainel /></TabsContent>
     </Tabs>
   );
 }
