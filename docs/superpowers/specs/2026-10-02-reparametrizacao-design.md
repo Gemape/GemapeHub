@@ -31,14 +31,14 @@ O menu lateral usa `#0A007C`; a paleta e o vidro das demais áreas continuam com
 ## PR 4 — Hierarquia dos menus
 
 - Criar “Tamanho e Medidas de Produto” com os submenus “Cadastro de Tamanhos e Medidas” e “Associar Tamanho e Medida ao Produto”. Manter “Código do Produto” acessível em Gerais.
-- Mover “Caixas” para submenu de “Ferramentas”. Criar menu “EPI” com “Cadastrar EPI” e “Cadastrar Ficha de EPI”. Preservar URLs antigas por navegação compatível, permissões e títulos coerentes.
+- Mover “Caixas” para submenu de “Ferramentas”. Criar menu “EPI” (módulo) com “Cadastrar EPI” e “Cadastrar Ficha de EPI”, retirando essas rotinas do menu Parâmetros. Preservar URLs antigas por navegação compatível, permissões e títulos coerentes.
 
 ## PR 5 — Cadastro de EPI por tamanho
 
-- Substituir, no modo demonstração, o produto com vários tamanhos por um cadastro independente para cada tamanho, com novo código automático `EPI-0001`, `EPI-0002` etc. O catálogo de EPI deixa de pertencer a uma empresa; compras, estoque e movimentações continuam separados por empresa. A associação de NF-e escolhe o produto do catálogo global e continua vinculada à empresa destinatária para a operação.
+- Substituir, no modo demonstração, o produto com vários tamanhos por um cadastro independente para cada tamanho, com novo código automático `EPI-0001`, `EPI-0002` etc. O catálogo de EPI deixa de pertencer a uma empresa; compras, estoque e movimentações continuam separados por empresa. Adaptar as referências atuais a `empresa_id` nas compras, movimentações e associações de NF-e: elas usam o produto do catálogo global, mas preservam a empresa da operação e da nota.
 - “Novo EPI” cria uma descrição ainda não cadastrada em outro tamanho, pergunta o estoque mínimo e não pede empresa. A lista inicial traz todos os EPIs, agrupa os de mesma descrição e permite busca por palavra chave.
 - “Clonar” abre o formulário com descrição e unidade copiadas, gera outro código e oferece só tamanhos ainda não cadastrados para aquele produto. Exige tamanho diferente, pergunta o mínimo e valida novamente na gravação para impedir duplicação por dois cliques. A operação não herda saldo nem movimentações.
-- O estoque mínimo no cadastro de EPI é uma exceção expressa à localização estabelecida pela decisão 24, confirmada pelo responsável para esta reparametrização. Saldo, alertas e movimentações continuam nos módulos; o cadastro não exibe saldo. Registrar essa exceção na decisão de reparametrização.
+- A rotina Cadastrar EPI deixa de ser cadastro e passa a pertencer ao menu EPI (módulo). Por isso o estoque mínimo é perguntado nela. A decisão 24 segue intacta: nenhuma tela do menu Parâmetros exibe ou configura estoque. Registrar essa localização na decisão de reparametrização.
 - Preservar dados e histórico existentes, inclusive EPIs antigos com vários tamanhos; planejar uma adaptação local explícita antes de mudar a leitura dos módulos. Nenhuma migration é escrita ou aplicada nesta fase. Se a implementação exigir tabela ou autenticação no Supabase, parar e avisar o responsável antes.
 
 ## Verificação e entrega de cada PR
