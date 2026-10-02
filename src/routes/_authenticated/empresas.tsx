@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ import {
   valoresDaEmpresa,
 } from "@/lib/empresas";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
+import { formatarCnpj, formatarCep } from "@/lib/formatacao-cadastral";
 // Endereço e status ainda não existem no banco real (Fase 2): só aparecem na demonstração.
 import { MODO_DEMO } from "@/lib/modo-demo";
 
@@ -61,7 +63,9 @@ function PaginaEmpresas() {
   function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const valores = valoresDaEmpresa(f, MODO_DEMO);
+    let valores: Record<string, string>;
+    try { valores = valoresDaEmpresa(f, MODO_DEMO); }
+    catch (erro) { toast.error(erro instanceof Error ? erro.message : "Dados inválidos."); return; }
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
       { onSuccess: () => setAberto(false) },
@@ -105,7 +109,7 @@ function PaginaEmpresas() {
               <TableRow key={empresa.id}>
                 <TableCell className="font-medium">{empresa.nome_fantasia}</TableCell>
                 <TableCell>{empresa.razao_social}</TableCell>
-                <TableCell>{empresa.cnpj}</TableCell>
+                <TableCell>{formatarCnpj(empresa.cnpj)}</TableCell>
                 {MODO_DEMO && <TableCell>{enderecoResumido(empresa) || "—"}</TableCell>}
                 {MODO_DEMO && <TableCell>{statusDaEmpresa(empresa)}</TableCell>}
                 <TableCell className="text-right whitespace-nowrap">
@@ -162,7 +166,7 @@ function PaginaEmpresas() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" name="cnpj" required defaultValue={editando?.cnpj ?? ""} />
+              <Input id="cnpj" name="cnpj" inputMode="numeric" required defaultValue={editando?.cnpj ? formatarCnpj(editando.cnpj) : ""} />
             </div>
             {MODO_DEMO && (
               <>
@@ -173,7 +177,7 @@ function PaginaEmpresas() {
                       <Input
                         id={campo.nome}
                         name={campo.nome}
-                        defaultValue={editando?.[campo.nome] ?? ""}
+                        defaultValue={campo.nome === "cep" ? formatarCep(editando?.cep ?? "") : editando?.[campo.nome] ?? ""}
                       />
                     </div>
                   ))}

@@ -17,6 +17,7 @@ import {
   type Fornecedor, type FornecedorDados,
 } from "@/lib/fornecedores-demo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { formatarCep, formatarCnpj, formatarTelefone } from "@/lib/formatacao-cadastral";
 
 export const Route = createFileRoute("/_authenticated/cadastros/fornecedores")({
   head: () => ({ meta: [{ title: "Fornecedores | Patrimônio GEMAPE" }] }),
@@ -119,10 +120,10 @@ function PaginaFornecedores() {
               <TableCell className="font-mono text-xs">{fornecedor.codigo}</TableCell>
               <TableCell className="font-medium">{fornecedor.nome_fantasia}</TableCell>
               <TableCell>{fornecedor.razao_social}</TableCell>
-              <TableCell>{fornecedor.cnpj}</TableCell>
+              <TableCell>{formatarCnpj(fornecedor.cnpj)}</TableCell>
               <TableCell>{[fornecedor.cidade, fornecedor.estado].filter(Boolean).join("/") || "—"}</TableCell>
               <TableCell>{fornecedor.categorias.map((id) => nomeCategoria(id) ?? "(categoria excluída)").join(", ") || "—"}</TableCell>
-              <TableCell>{fornecedor.contato || fornecedor.telefone || "—"}</TableCell>
+              <TableCell>{fornecedor.contato || formatarTelefone(fornecedor.telefone) || "—"}</TableCell>
               <TableCell className="whitespace-nowrap text-right">
                 <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(fornecedor)}>Editar</Button>
                 <Button requiresWrite variant="ghost" size="sm" onClick={() => excluir(fornecedor)}>Excluir</Button>
@@ -143,7 +144,7 @@ function PaginaFornecedores() {
           <div className="hidden sm:block" />
           <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" required defaultValue={editando?.razao_social ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" required defaultValue={editando?.nome_fantasia ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" required defaultValue={editando?.cnpj ?? ""} /></div>
+          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" required defaultValue={formatarCnpj(editando?.cnpj ?? "")} /></div>
           <fieldset className="space-y-2 sm:col-span-2">
             <legend className="text-sm font-medium">Categorias</legend>
             <p className="text-xs text-muted-foreground">Uma ou mais, de Cadastros &gt; Gerais &gt; Categorias.</p>
@@ -160,12 +161,12 @@ function PaginaFornecedores() {
           <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Endereço</h2>
           {camposEndereco.map((campo) => <div key={campo.nome} className="space-y-1.5">
             <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
-            <Input id={campo.nome} name={campo.nome} defaultValue={editando?.[campo.nome] ?? ""} />
+            <Input id={campo.nome} name={campo.nome} defaultValue={campo.nome === "cep" ? formatarCep(editando?.cep ?? "") : editando?.[campo.nome] ?? ""} />
           </div>)}
           <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Contato e informações adicionais</h2>
           {camposContato.map((campo) => <div key={campo.nome} className="space-y-1.5">
             <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
-            <Input id={campo.nome} name={campo.nome} defaultValue={editando?.[campo.nome] ?? ""} />
+            <Input id={campo.nome} name={campo.nome} defaultValue={campo.nome === "telefone" ? formatarTelefone(editando?.telefone ?? "") : editando?.[campo.nome] ?? ""} />
           </div>)}
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="observacoes">Observações</Label><Textarea id="observacoes" name="observacoes" defaultValue={editando?.observacoes ?? ""} /></div>
           <DialogFooter className="sm:col-span-2">

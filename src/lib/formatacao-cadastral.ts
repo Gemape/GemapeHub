@@ -1,4 +1,5 @@
 const SIGLAS = new Set(["GEMAPE", "EPI", "CA", "SKU"]);
+const PARTICULAS = new Set(["da", "das", "de", "do", "dos", "e"]);
 
 export function somenteDigitos(valor: string): string {
   return valor.replace(/\D/g, "");
@@ -40,10 +41,15 @@ export function formatarCep(valor: string): string {
 }
 
 export function capitalizarCadastro(valor: string): string {
+  if (valor.includes("_")) return valor.trim();
+  let primeiraPalavra = true;
   return valor.trim().replace(/[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*/gu, (palavra) => {
     const maiuscula = palavra.toLocaleUpperCase("pt-BR");
+    const primeira = primeiraPalavra;
+    primeiraPalavra = false;
     if (SIGLAS.has(maiuscula) || /\d/.test(palavra)) return maiuscula;
     const minuscula = palavra.toLocaleLowerCase("pt-BR");
-    return minuscula[0].toLocaleUpperCase("pt-BR") + minuscula.slice(1);
+    if (!primeira && PARTICULAS.has(minuscula)) return minuscula;
+    return minuscula.charAt(0).toLocaleUpperCase("pt-BR") + minuscula.slice(1);
   });
 }

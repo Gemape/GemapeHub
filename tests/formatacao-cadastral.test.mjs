@@ -38,7 +38,8 @@ test("CEP usa máscara e preserva dado antigo incompleto", () => {
 });
 
 test("texto cadastral tem iniciais maiúsculas sem perder siglas ou códigos", () => {
-  assert.equal(capitalizarCadastro("  JOÃO DA SILVA  "), "João Da Silva");
+  assert.equal(capitalizarCadastro("  JOÃO DA SILVA  "), "João da Silva");
   assert.equal(capitalizarCadastro("epi GEMAPE ca sku EPI-0001"), "EPI GEMAPE CA SKU EPI-0001");
   assert.equal(capitalizarCadastro("rua são josé"), "Rua São José");
+  assert.equal(capitalizarCadastro("__sem_marca__"), "__sem_marca__");
 });

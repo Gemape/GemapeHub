@@ -21,7 +21,7 @@ const fornecedor = {
 test('fornecedor mantém vários tipos e todos os dados após salvar e editar', () => {
   const local = storage();
   const criado = salvarFornecedor(fornecedor, local);
-  assert.deepEqual(listarFornecedores(local), [{ ...fornecedor, id: criado.id, codigo: '00001' }]);
+  assert.deepEqual(listarFornecedores(local), [{ ...fornecedor, rua: 'Rua das Flores', cep: '01.001-000', telefone: '(11)9.9999.9999', id: criado.id, codigo: '00001' }]);
   salvarFornecedor({ ...criado, cidade: 'Campinas', categorias: ['cat-ferramentas', 'cat-veiculos'] }, local);
   assert.equal(listarFornecedores(local)[0].cidade, 'Campinas');
   assert.deepEqual(listarFornecedores(local)[0].categorias, ['cat-ferramentas', 'cat-veiculos']);
@@ -32,6 +32,24 @@ test('não aceita CNPJ duplicado mesmo com pontuação diferente', () => {
   salvarFornecedor(fornecedor, local);
   assert.throws(() => salvarFornecedor({ ...fornecedor, cnpj: '12345678000190' }, local), /CNPJ já cadastrado/);
   assert.equal(listarFornecedores(local).length, 1);
+});
+
+test('fornecedor novo formata contatos e textos cadastrais', () => {
+  const local = storage();
+  const criado = salvarFornecedor({
+    ...fornecedor,
+    razao_social: 'PROTEÇÃO BRASIL LTDA',
+    cnpj: '12345678000190',
+    telefone: '11987654321',
+    cep: '12345678',
+  }, local);
+  assert.equal(criado.razao_social, 'Proteção Brasil Ltda');
+  assert.equal(criado.cnpj, '12.345.678/0001-90');
+  assert.equal(criado.telefone, '(11)9.8765.4321');
+  assert.equal(criado.cep, '12.345-678');
+  assert.throws(() => salvarFornecedor({ ...fornecedor, cnpj: '123' }, local), /CNPJ/);
+  assert.throws(() => salvarFornecedor({ ...fornecedor, telefone: '123' }, local), /telefone/i);
+  assert.throws(() => salvarFornecedor({ ...fornecedor, cep: '123' }, local), /CEP/);
 });
 
 test('excluir remove somente o fornecedor escolhido', () => {

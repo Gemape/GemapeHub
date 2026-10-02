@@ -53,6 +53,7 @@ import {
   valorSelecaoSubcategoria,
 } from "@/lib/subcategoria-referencia";
 import { MODO_DEMO } from "@/lib/modo-demo";
+import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
   alternarTamanhoSelecionado,
@@ -226,7 +227,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   async function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const nome = String(f.get("nome") ?? "").trim();
+    const nome = capitalizarCadastro(String(f.get("nome") ?? ""));
     // A empresa não muda na edição: os códigos de fábrica ficam ligados a ela.
     const empresa = editando ? (editando.empresa_id ?? "") : empresaSel || empresaPadrao;
     let subcategoria: { id: string | null; nome: string };
