@@ -74,7 +74,7 @@ const grupos = [
 
 // Especificação rev1: Cadastros > Gerais, só o Administrador acessa.
 const cadastrosGerais = [
-  { titulo: "Categorias", url: "/cadastros/gerais/categorias", icone: Tags },
+  { titulo: "Tabelas de Apoio", url: "/cadastros/gerais/categorias", icone: Tags },
   { titulo: "Tamanhos e Unidades", url: "/cadastros/gerais/tamanhos-unidades", icone: Ruler },
   {
     titulo: "Associar Tamanho e Medida",
