@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import {
   ESTADOS_ITEM,
   STATUS_FERRAMENTA,
@@ -377,14 +378,14 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 required
                 defaultValue={
                   editando?.empresa_id ??
-                  (empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? ""))
+                  empresaPadraoParaEscolha(empresas, empresaId)
                 }
               >
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresas.map((e) => (
+                  {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>

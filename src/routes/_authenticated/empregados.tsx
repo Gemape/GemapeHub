@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { empregadoAtivo, prepararEmpregado, separarEmpregados } from "@/lib/empregados";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
@@ -68,7 +69,7 @@ function PaginaEmpregados() {
   const { data: lista = [], isLoading } = useEmpregados(empresaId);
   const empregados = lista as EmpregadoCadastro[];
   const { ativos, inativos } = separarEmpregados(empregados);
-  const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
+  const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
   // Empregado antigo sem empresa: a empresa precisa ser escolhida, não é preenchida sozinha.
   const empresaForm = empresaSel || (editando ? "" : empresaPadrao);
   const salvar = useSalvar("empregados", ["empregados", "empregados-total"]);
@@ -218,7 +219,7 @@ function PaginaEmpregados() {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresas.map((e) => (
+                  {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>

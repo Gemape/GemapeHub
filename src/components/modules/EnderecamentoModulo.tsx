@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { useExcluir, useSalvar, useVeiculos } from "@/lib/hooks-gemape";
 import { ROTULO_TABELA, useProdutosGemape } from "@/lib/produtos-gemape";
 import {
@@ -104,7 +105,9 @@ export function EnderecamentoModulo() {
 
   function abrir(endereco: Endereco | null, produtoInicial?: ProdutoEnderecavel) {
     setEditando(endereco);
-    setEmpresaForm(endereco?.empresa_id ?? produtoInicial?.empresa_id ?? (empresaId !== TODAS ? empresaId : empresas[0]?.id ?? ""));
+    const doProduto = produtoInicial?.empresa_id;
+    // Empresa inativa não é escolhida em registro novo; a de um endereço em edição fica.
+    setEmpresaForm(endereco?.empresa_id ?? (doProduto && empresasParaEscolha(empresas).some((e) => e.id === doProduto) ? doProduto : empresaPadraoParaEscolha(empresas, empresaId)));
     // Encontra o produto sem diferenciar maiúsculas, como a tabela faz.
     const salvo = endereco?.codigo_produto ?? "";
     const produto = endereco && produtos.find((p) => p.empresa_id === endereco.empresa_id && chave(p.codigo_sku) === chave(salvo));
@@ -249,7 +252,7 @@ export function EnderecamentoModulo() {
             <select id="empresa_id" required value={empresaForm} onChange={(e) => { setEmpresaForm(e.target.value); setProdutoForm(""); }}
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">
               <option value="" disabled>Selecione</option>
-              {empresas.map((e) => <option key={e.id} value={e.id}>{e.nome_fantasia}</option>)}
+              {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => <option key={e.id} value={e.id}>{e.nome_fantasia}</option>)}
             </select>
           </div>
           <div className="space-y-1.5 sm:col-span-3">

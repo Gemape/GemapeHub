@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresasParaEscolha } from "@/lib/empresas";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
 import {
   useComprasUniformes,
@@ -228,13 +229,13 @@ export function UniformesComprasModulo() {
               <Select
                 name="empresa_id"
                 required
-                defaultValue={empresaId !== TODAS ? empresaId : ""}
+                defaultValue={empresasParaEscolha(empresas).some((e) => e.id === empresaId) ? empresaId : ""}
               >
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione a empresa" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresas.map((e) => (
+                  {empresasParaEscolha(empresas).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>

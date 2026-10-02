@@ -32,6 +32,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { useFichasEpi } from "@/lib/use-fichas-epi";
 import { exportarCsv } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
@@ -197,7 +198,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   );
   const rotulo = (item: { id: string; nome: string }) =>
     estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`;
-  const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
+  const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
 
   function destravar() {
     salvando.current = false;
@@ -676,7 +677,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresas.map((e) => (
+                  {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>

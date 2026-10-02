@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import {
   CONDUCOES_OCORRENCIA,
   exportarCsv,
@@ -385,13 +386,13 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               <Label htmlFor="empresa_id">Empresa</Label>
               <Select
                 name="empresa_id"
-                defaultValue={empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "")}
+                defaultValue={empresaPadraoParaEscolha(empresas, empresaId)}
               >
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresas.map((e) => (
+                  {empresasParaEscolha(empresas).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>

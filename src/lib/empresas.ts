@@ -47,3 +47,20 @@ export function valoresDaEmpresa(
   }
   return valores;
 }
+
+// Empresa inativa (decisão 40) sai das listas em que se escolhe a empresa de um registro novo.
+// O histórico, os relatórios e os filtros continuam mostrando todas.
+type EmpresaEscolha = { id: string; status?: string | null };
+
+export const empresaEstaAtiva = (empresa: { status?: string | null }): boolean => statusDaEmpresa(empresa) === "Ativa";
+
+/** Empresas para escolher; `manter` traz de volta a que um registro em edição já usa, ainda que inativa. */
+export function empresasParaEscolha<T extends EmpresaEscolha>(empresas: T[], manter: (string | null | undefined)[] = []): T[] {
+  return empresas.filter((e) => empresaEstaAtiva(e) || manter.includes(e.id));
+}
+
+/** Empresa que já vem escolhida: a do cabeçalho, se estiver ativa; senão a primeira ativa. */
+export function empresaPadraoParaEscolha<T extends EmpresaEscolha>(empresas: T[], empresaId: string): string {
+  const ativas = empresasParaEscolha(empresas);
+  return ativas.find((e) => e.id === empresaId)?.id ?? ativas[0]?.id ?? "";
+}

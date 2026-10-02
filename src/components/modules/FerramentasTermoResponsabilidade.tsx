@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresasParaEscolha } from "@/lib/empresas";
 import { formatarData } from "@/lib/gemape";
 import {
   useEmpresas,
@@ -50,6 +51,10 @@ export function FerramentasTermoResponsabilidade() {
   const [itensTermo, setItensTermo] = useState<ItemTermo[]>([]);
 
   const { data: empresas = [] } = useEmpresas();
+  // Empresa inativa não é escolhida: se o cabeçalho está nela, a escolha começa vazia.
+  useEffect(() => {
+    if (empresas.length > 0 && empresaSel && !empresasParaEscolha(empresas).some((e) => e.id === empresaSel)) setEmpresaSel("");
+  }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("ferramenta", TODAS);
   const { data: todasAsCaixas = [] } = useCaixasFerramentas(empresaSel || TODAS);
@@ -186,7 +191,7 @@ export function FerramentasTermoResponsabilidade() {
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
               <SelectContent>
-                {empresas.map((e) => (
+                {empresasParaEscolha(empresas).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome_fantasia}
                   </SelectItem>

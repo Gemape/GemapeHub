@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS } from "@/lib/empresa-context";
+import { empresasParaEscolha } from "@/lib/empresas";
 import { montarTermoEntregaUniformeHtml } from "@/lib/termo-entrega-uniforme-html";
 import {
   useEmpresas,
@@ -166,7 +167,7 @@ export function UniformesTermoEntrega() {
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
               <SelectContent>
-                {empresas.map((e) => (
+                {empresasParaEscolha(empresas).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome_fantasia}
                   </SelectItem>
