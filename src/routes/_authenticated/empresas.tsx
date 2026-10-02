@@ -167,7 +167,7 @@ function PaginaEmpresas() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" name="cnpj" inputMode="numeric" maxLength={18} onInput={aoDigitarMascarado("cnpj")} required defaultValue={editando?.cnpj ? formatarCnpj(editando.cnpj) : ""} />
+              <Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={editando?.cnpj ? formatarCnpj(editando.cnpj) : ""} />
             </div>
             {MODO_DEMO && (
               <>

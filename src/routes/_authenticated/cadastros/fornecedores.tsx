@@ -145,7 +145,7 @@ function PaginaFornecedores() {
           <div className="hidden sm:block" />
           <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" required defaultValue={editando?.razao_social ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" required defaultValue={editando?.nome_fantasia ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" maxLength={18} onInput={aoDigitarMascarado("cnpj")} required defaultValue={formatarCnpj(editando?.cnpj ?? "")} /></div>
+          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={formatarCnpj(editando?.cnpj ?? "")} /></div>
           <fieldset className="space-y-2 sm:col-span-2">
             <legend className="text-sm font-medium">Categorias</legend>
             <p className="text-xs text-muted-foreground">Uma ou mais, de Cadastros &gt; Gerais &gt; Categorias.</p>
