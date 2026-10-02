@@ -51,6 +51,7 @@ const grupos = [
   {
     titulo: "Módulos",
     itens: [
+      { titulo: "EPIs", url: "/epi", icone: HardHat },
       { titulo: "Uniformes", url: "/uniformes", icone: Shirt },
       { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench },
       { titulo: "Veículos", url: "/veiculos", icone: Car },
@@ -140,7 +141,7 @@ function MenuGerais({ pathname }: { pathname: string }) {
   );
 }
 
-// Menu EPI (módulo): controle, Cadastrar EPI e, dentro dele, Cadastrar Ficha de EPI.
+// Parâmetros > EPI: Cadastrar EPI e, dentro dele, Cadastrar Ficha de EPI.
 function MenuEpi({ pathname }: { pathname: string }) {
   return (
     <GrupoRecolhivel
@@ -224,8 +225,12 @@ export function AppSidebar() {
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {grupo.titulo === "Módulos" && <MenuEpi pathname={pathname} />}
-                {grupo.titulo === "Parâmetros" && <MenuFerramentas pathname={pathname} />}
+                {grupo.titulo === "Parâmetros" && (
+                  <>
+                    <MenuEpi pathname={pathname} />
+                    <MenuFerramentas pathname={pathname} />
+                  </>
+                )}
                 {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
                 {grupo.itens.map((item) => (
                   <SidebarMenuItem key={item.url}>
