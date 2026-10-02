@@ -28,7 +28,7 @@ export function FerramentasCaixasModulo() {
   const [buscaCaixa, setBuscaCaixa] = useState("");
 
   const { data: todasAsCaixas = [], isLoading } = useCaixasFerramentas(empresaId, buscaCaixa);
-  // Só caixas habilitadas em Cadastros > Gerais > Caixas.
+  // Só caixas habilitadas em Caixas de Ferramentas > Habilitar caixas.
   const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
   const portadores = usePortadoresCaixa();
   const { data: empresas = [] } = useEmpresas();

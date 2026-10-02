@@ -1,5 +1,5 @@
 // Hierarquia do menu Parâmetros (decisão 34). Só dados: o AppSidebar desenha.
-export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench" | "HardHat" | "ClipboardList";
+export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench" | "HardHat" | "ClipboardList" | "Archive";
 export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean };
 export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
 export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
@@ -18,13 +18,14 @@ export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
   { titulo: "Endereçamento", url: "/cadastros/gerais/enderecamento", icone: "MapPin" },
 ];
 
-// Caixas (parâmetro) fica dentro de Ferramentas; a tela operacional continua em Módulos.
-export const SUBMENU_FERRAMENTAS: readonly ItemMenu[] = [
+// Parâmetros > Ferramentas (decisão 36): o cadastro e a tela Caixas de Ferramentas, que reúne a
+// habilitação das caixas. Nada disso fica em Módulos.
+export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
   { titulo: "Cadastro de Ferramentas", url: "/cadastros/ferramentas", icone: "Wrench" },
-  { titulo: "Caixas", url: "/cadastros/gerais/caixas", icone: "Hash", soAdmin: true },
+  { titulo: "Caixas", url: "/caixas-ferramentas", icone: "Archive" },
 ];
 
-// URLs de Gerais, para o destaque do grupo (Caixas não conta: pertence a Ferramentas).
+// URLs de Gerais, para o destaque do grupo.
 export const URLS_GERAIS: readonly string[] = MENU_GERAIS.flatMap((i) => ("filhos" in i ? i.filhos.map((f) => f.url) : [i.url]));
 
 // Menu EPI (módulo, decisão 35): "Cadastrar Ficha de EPI" fica dentro de "Cadastrar EPI".

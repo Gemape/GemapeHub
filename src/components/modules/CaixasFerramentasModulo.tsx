@@ -329,8 +329,8 @@ export function CaixasFerramentasModulo() {
                   />
                 ) : disponiveis.length === 0 ? (
                   <p className="rounded-md border border-dashed p-2 text-sm text-muted-foreground">
-                    Nenhuma caixa habilitada livre. Habilite caixas em Cadastros &gt; Gerais &gt;
-                    Caixas.
+                    Nenhuma caixa habilitada livre. Habilite caixas em Caixas de
+                    Ferramentas &gt; Habilitar caixas.
                   </p>
                 ) : (
                   <Select

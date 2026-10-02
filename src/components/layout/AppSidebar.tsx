@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { useAccess } from "@/lib/access-context";
-import { MENU_EPI, MENU_GERAIS, SUBMENU_FERRAMENTAS, URLS_GERAIS, type ItemMenu, type NomeIcone } from "@/lib/menu-parametros";
+import { MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, URLS_GERAIS, type ItemMenu, type NomeIcone } from "@/lib/menu-parametros";
 import {
   Building2,
   Car,
@@ -53,7 +53,6 @@ const grupos = [
     itens: [
       { titulo: "Uniformes", url: "/uniformes", icone: Shirt },
       { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench },
-      { titulo: "Caixas de Ferramentas", url: "/caixas-ferramentas", icone: Archive },
       { titulo: "Veículos", url: "/veiculos", icone: Car },
     ],
   },
@@ -69,7 +68,7 @@ const grupos = [
   },
 ] as const;
 
-const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList } as const;
+const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive } as const;
 
 function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
   const Icone = ICONES[item.icone];
@@ -170,17 +169,16 @@ function MenuEpi({ pathname }: { pathname: string }) {
   );
 }
 
-// Parâmetros > Ferramentas: o cadastro e, para o Administrador, Caixas.
-function MenuFerramentas({ pathname, isAdmin }: { pathname: string; isAdmin: boolean }) {
-  const itens = SUBMENU_FERRAMENTAS.filter((i) => isAdmin || !i.soAdmin);
+// Parâmetros > Ferramentas: o cadastro e a tela Caixas de Ferramentas.
+function MenuFerramentas({ pathname }: { pathname: string }) {
   return (
     <GrupoRecolhivel
       titulo="Ferramentas"
       icone={<Wrench />}
-      prefixos={itens.map((i) => i.url)}
+      prefixos={MENU_FERRAMENTAS.map((i) => i.url)}
       pathname={pathname}
     >
-      {itens.map((item) => (
+      {MENU_FERRAMENTAS.map((item) => (
         <SubLink key={item.url} item={item} pathname={pathname} />
       ))}
     </GrupoRecolhivel>
@@ -227,8 +225,8 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {grupo.titulo === "Módulos" && <MenuEpi pathname={pathname} />}
+                {grupo.titulo === "Parâmetros" && <MenuFerramentas pathname={pathname} />}
                 {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
-                {grupo.titulo === "Parâmetros" && <MenuFerramentas pathname={pathname} isAdmin={isAdmin} />}
                 {grupo.itens.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}>

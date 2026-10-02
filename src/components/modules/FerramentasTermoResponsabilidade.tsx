@@ -53,7 +53,7 @@ export function FerramentasTermoResponsabilidade() {
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("ferramenta", TODAS);
   const { data: todasAsCaixas = [] } = useCaixasFerramentas(empresaSel || TODAS);
-  // Só caixas habilitadas em Cadastros > Gerais > Caixas.
+  // Só caixas habilitadas em Caixas de Ferramentas > Habilitar caixas.
   const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
 
   const { data: itensCaixa = [], refetch: buscarItensCaixa } = useCaixaItens(caixaSel || null);

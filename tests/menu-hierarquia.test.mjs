@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { MENU_GERAIS, SUBMENU_FERRAMENTAS, URLS_GERAIS } from "../src/lib/menu-parametros.ts";
+import { MENU_FERRAMENTAS, MENU_GERAIS, URLS_GERAIS } from "../src/lib/menu-parametros.ts";
 
 const sidebar = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
 
@@ -23,34 +23,41 @@ test("Código do Produto continua em Gerais, no mesmo endereço", () => {
   assert.equal(item?.url, "/cadastros/gerais/codigo-produto");
 });
 
-test("Caixas saiu de Gerais e virou submenu de Ferramentas", () => {
+test("Caixas saiu de Gerais e fica em Parâmetros > Ferramentas, fora de Módulos", () => {
   assert.ok(!MENU_GERAIS.some((i) => i.titulo === "Caixas" || i.url === "/cadastros/gerais/caixas"));
   assert.deepEqual(
-    SUBMENU_FERRAMENTAS.map((f) => [f.titulo, f.url]),
+    MENU_FERRAMENTAS.map((f) => [f.titulo, f.url]),
     [
       ["Cadastro de Ferramentas", "/cadastros/ferramentas"],
-      ["Caixas", "/cadastros/gerais/caixas"],
+      ["Caixas", "/caixas-ferramentas"],
     ],
   );
-});
-
-test("a tela operacional Caixas de Ferramentas continua nos Módulos", () => {
-  assert.match(sidebar, /titulo: "Caixas de Ferramentas", url: "\/caixas-ferramentas"/);
+  const inicio = sidebar.indexOf('titulo: "Parâmetros"');
+  const modulos = sidebar.slice(sidebar.indexOf('titulo: "Módulos"'), inicio);
+  assert.match(modulos, /titulo: "Ferramentas", url: "\/ferramentas"/);
+  assert.ok(!modulos.includes("/caixas-ferramentas"));
+  assert.match(sidebar, /grupo\.titulo === "Parâmetros" && <MenuFerramentas/);
 });
 
 test("o menu lateral usa os dados de menu-parametros e não lista mais Associar solto", () => {
   assert.match(sidebar, /MENU_GERAIS/);
-  assert.match(sidebar, /SUBMENU_FERRAMENTAS/);
+  assert.match(sidebar, /MENU_FERRAMENTAS/);
   assert.doesNotMatch(sidebar, /titulo: "Tamanhos e Unidades"/);
 });
 
-test("só o Administrador vê Caixas; o destaque de Gerais não inclui Caixas", () => {
-  const caixas = SUBMENU_FERRAMENTAS.find((i) => i.titulo === "Caixas");
-  assert.equal(caixas?.soAdmin, true);
-  assert.ok(!SUBMENU_FERRAMENTAS.find((i) => i.titulo === "Cadastro de Ferramentas")?.soAdmin);
+test("o destaque de Gerais não inclui Caixas", () => {
   assert.ok(!URLS_GERAIS.includes("/cadastros/gerais/caixas"));
   assert.ok(URLS_GERAIS.includes("/cadastros/gerais/associar-tamanhos"));
-  assert.match(sidebar, /isAdmin \|\| !i\.soAdmin/);
+});
+
+test("Habilitar caixas é aba da tela Caixas de Ferramentas, só do Administrador, e o endereço antigo redireciona", () => {
+  const raiz = new URL("../src/routes/_authenticated/", import.meta.url);
+  const pagina = readFileSync(new URL("caixas-ferramentas.tsx", raiz), "utf8");
+  assert.match(pagina, /isAdmin && <TabsTrigger value="habilitar"/);
+  assert.match(pagina, /isAdmin && <TabsContent value="habilitar"[^>]*><CaixasHabilitadasPainel/);
+  assert.match(pagina, /pedida !== "habilitar" \|\| isAdmin/);
+  const antigo = readFileSync(new URL("cadastros/gerais/caixas.tsx", raiz), "utf8");
+  assert.match(antigo, /redirect\(\{ to: "\/caixas-ferramentas", search: \{ aba: "habilitar" \} \}\)/);
 });
 
 test("o menu EPI é do módulo: Cadastrar Ficha de EPI fica dentro de Cadastrar EPI", async () => {
