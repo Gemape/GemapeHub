@@ -36,6 +36,8 @@ O menu lateral usa `#0A007C`; a paleta e o vidro das demais áreas continuam com
 
 ## PR 5 — Cadastro de EPI por tamanho (dividido em 5A e 5B por escolha do responsável em 02/10)
 
+> Nota: onde este texto diz "menu EPI (módulo)", vale a decisão 37 (02/10): Cadastrar EPI e Ficha ficam em Parâmetros > EPI.
+
 - **5A (menu EPI e catálogo por tamanho, só demo):** menu EPI como módulo com “Cadastrar EPI” e, dentro dele, “Cadastrar Ficha de EPI”; catálogo global `epis_catalogo` (um registro por descrição e tamanho, sem empresa, com estoque mínimo); os registros de `epis` por empresa continuam sendo a posição de estoque de cada empresa e são criados a partir do catálogo, de modo que estoque, compras, NF-e, termos e dashboard seguem separados por empresa. EPIs antigos aparecem na lista como “antigos” e não são alterados.
 - **5B (migração):** separa os EPIs antigos com vários tamanhos em um cadastro por tamanho, preservando histórico, saldos, endereços, fichas e associações. Só depois do merge do 5A.
 - Mínimo: um só no catálogo, copiado para o estoque de cada empresa (escolha recomendada, ainda não contestada pelo responsável).

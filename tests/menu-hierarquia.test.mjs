@@ -77,7 +77,7 @@ test("Em Módulos, EPIs é um item simples; o menu EPI fica em Parâmetros", () 
   assert.doesNotMatch(sidebar, /grupo\.titulo === "Módulos" && <MenuEpi/);
 });
 
-test("os endereços antigos de Cadastrar EPI e da Ficha redirecionam para o módulo", () => {
+test("os endereços antigos de Cadastrar EPI e da Ficha redirecionam para as telas novas", () => {
   const raiz = new URL("../src/routes/_authenticated/", import.meta.url);
   const epi = readFileSync(new URL("cadastros/epi.tsx", raiz), "utf8");
   const ficha = readFileSync(new URL("cadastros/epi-ficha.tsx", raiz), "utf8");
