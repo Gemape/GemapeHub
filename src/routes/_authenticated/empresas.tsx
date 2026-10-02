@@ -31,6 +31,7 @@ import {
 } from "@/lib/empresas";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
 import { formatarCnpj, formatarCep } from "@/lib/formatacao-cadastral";
+import { aoDigitarMascarado } from "@/lib/mascaras";
 // Endereço e status ainda não existem no banco real (Fase 2): só aparecem na demonstração.
 import { MODO_DEMO } from "@/lib/modo-demo";
 
@@ -166,7 +167,7 @@ function PaginaEmpresas() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" name="cnpj" inputMode="numeric" required defaultValue={editando?.cnpj ? formatarCnpj(editando.cnpj) : ""} />
+              <Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={editando?.cnpj ? formatarCnpj(editando.cnpj) : ""} />
             </div>
             {MODO_DEMO && (
               <>
@@ -177,6 +178,8 @@ function PaginaEmpresas() {
                       <Input
                         id={campo.nome}
                         name={campo.nome}
+                        inputMode={campo.nome === "cep" ? "numeric" : undefined}
+                        onInput={aoDigitarMascarado(campo.nome)}
                         defaultValue={campo.nome === "cep" ? formatarCep(editando?.cep ?? "") : editando?.[campo.nome] ?? ""}
                       />
                     </div>
