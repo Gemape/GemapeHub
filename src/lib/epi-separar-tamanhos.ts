@@ -46,9 +46,13 @@ export function planejarSeparacao(dados: Dados, opcoes: OpcoesSeparacao): PlanoS
   const catalogo = dados.epis_catalogo ?? [];
   const epis = dados.epis ?? [];
   const grupos = new Map<string, { linhas: Linha[]; tamanhos: Set<string> }>();
+  const empresasConhecidas = new Set((dados.empresas ?? []).map((e) => texto(e["id"])));
   for (const e of epis) {
     if (e["catalogo_id"] || e["separado_em"]) continue;
-    const chave = `${normalizarDescricao(texto(e["nome"]))}|${texto(e["subcategoria_id"])}`;
+    // Sem empresa conhecida o saldo não teria para onde ir: o registro fica como está.
+    if (!empresasConhecidas.has(texto(e["empresa_id"]))) continue;
+    // O catálogo tem uma descrição por tamanho (decisão 35), então agrupa só pela descrição.
+    const chave = normalizarDescricao(texto(e["nome"]));
     const g = grupos.get(chave) ?? { linhas: [], tamanhos: new Set<string>() };
     g.linhas.push(e);
     for (const t of tamanhosDoRegistro(e, opcoes.saldosDe)) g.tamanhos.add(t);
@@ -130,6 +134,7 @@ export function aplicarSeparacao(
   };
   const antigosPorId = new Map(copia.epis.map((e) => [texto(e["id"]), e]));
   let criados = 0;
+  const minimosDefinidos = new Map<string, number>();
 
   for (const g of plano.grupos) {
     const linhasAntigas = g.antigos.map((a) => antigosPorId.get(a.id)!);
@@ -178,15 +183,21 @@ export function aplicarSeparacao(
         const atual = destino["saldos_tamanho"] && typeof destino["saldos_tamanho"] === "object"
           ? numero((destino["saldos_tamanho"] as Linha)[tamanhoId])
           : numero(destino["estoque_atual"]);
-        if (saldo > 0 || (novo.jaExiste && destino["saldos_tamanho"])) {
+        if (saldo !== 0 || (novo.jaExiste && destino["saldos_tamanho"])) {
           destino["saldos_tamanho"] = { ...(destino["saldos_tamanho"] as Linha | undefined), [tamanhoId]: atual + saldo };
           destino["estoque_atual"] = numero(destino["estoque_atual"]) + saldo;
         } else if (!destino["saldos_tamanho"]) {
           destino["saldos_tamanho"] = { [tamanhoId]: atual };
         }
-        if (!novo.jaExiste && tamanhoId in minimos) {
-          destino["minimos_tamanho"] = { [tamanhoId]: numero(minimos[tamanhoId]) };
-          destino["estoque_minimo"] = numero(minimos[tamanhoId]);
+        // Mínimo da empresa: o maior entre os antigos dela no tamanho; quem não tinha fica sem mínimo.
+        const minimoAntigo = numero(minimos[tamanhoId]);
+        const chaveMin = `${destino["id"]}|${tamanhoId}`;
+        const jaDefinido = minimosDefinidos.get(chaveMin);
+        if (!novo.jaExiste || numero(destino["estoque_minimo"]) === 0) {
+          const minimo = Math.max(minimoAntigo, jaDefinido ?? 0);
+          minimosDefinidos.set(chaveMin, minimo);
+          destino["minimos_tamanho"] = { ...(destino["minimos_tamanho"] as Linha | undefined), [tamanhoId]: minimo };
+          destino["estoque_minimo"] = minimo;
         }
       }
       // O antigo fica como histórico: o saldo por tamanho vai a zero e só sobra o "Sem tamanho".
@@ -194,6 +205,10 @@ export function aplicarSeparacao(
       antigo["saldos_tamanho"] = zerado;
       const resto = numero(zerado[SEM_TAMANHO]);
       antigo["estoque_atual"] = resto;
+      // O mínimo passou para os novos: o antigo não pode seguir alertando em dobro.
+      const minimoResto = numero(minimos[SEM_TAMANHO]);
+      antigo["minimos_tamanho"] = SEM_TAMANHO in minimos ? { [SEM_TAMANHO]: minimoResto } : {};
+      antigo["estoque_minimo"] = resto > 0 ? minimoResto : 0;
       if (resto === 0) antigo["status"] = "Inativo";
       antigo["separado_em"] = agora;
       antigo["separado_para"] = [...ids.values()];

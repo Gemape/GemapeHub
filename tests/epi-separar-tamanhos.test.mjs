@@ -128,3 +128,48 @@ test("a tela mostra a prévia, só o Administrador separa e o demo expõe a oper
   const demo = readFileSync(new URL("../src/integrations/supabase/demo-client.ts", import.meta.url), "utf8");
   assert.match(demo, /nome === "separar_epis_por_tamanho"/);
 });
+
+test("o antigo separado não guarda mínimo, para não alertar em dobro", () => {
+  const dados = base();
+  aplicarSeparacao(dados, opcoes, novoId, "2026-10-02T12:00:00.000Z");
+  const a1 = dados.epis.find((e) => e.id === "a1");
+  assert.equal(a1.estoque_minimo, 0);
+  assert.deepEqual(a1.minimos_tamanho, {});
+});
+
+test("antigo sem empresa conhecida não é separado, para o saldo não sumir", () => {
+  const dados = base();
+  dados.epis.push({ id: "z1", empresa_id: null, codigo_sku: "EPI-0009", nome: "Luva de raspa", saldos_tamanho: { "t-p": 9, "t-m": 1 }, status: "Ativo" });
+  aplicarSeparacao(dados, opcoes, novoId, "2026-10-02T12:00:00.000Z");
+  const z1 = dados.epis.find((e) => e.id === "z1");
+  assert.deepEqual(z1.saldos_tamanho, { "t-p": 9, "t-m": 1 });
+  assert.equal(z1.separado_em, undefined);
+});
+
+test("mesma descrição em subcategorias diferentes vira um grupo só, sem item duplicado", () => {
+  const dados = base();
+  dados.epis[1].subcategoria_id = "sub-outra";
+  const plano = planejarSeparacao(dados, opcoes);
+  assert.equal(plano.grupos.length, 1);
+  aplicarSeparacao(dados, opcoes, novoId, "2026-10-02T12:00:00.000Z");
+  const chaves = dados.epis_catalogo.map((c) => `${c.nome}|${c.tamanho_id}`);
+  assert.equal(new Set(chaves).size, chaves.length);
+});
+
+test("o mínimo é por empresa: quem não tinha mínimo no tamanho fica com zero", () => {
+  const dados = base();
+  aplicarSeparacao(dados, opcoes, novoId, "2026-10-02T12:00:00.000Z");
+  const cat = (t) => dados.epis_catalogo.find((c) => c.tamanho_id === t).id;
+  const est = (t, emp) => dados.epis.find((e) => e.catalogo_id === cat(t) && e.empresa_id === emp);
+  assert.equal(est("t-g", "e2").estoque_minimo, 1);
+  assert.equal(est("t-g", "e1").estoque_minimo, 0);
+  assert.equal(est("t-p", "e2").estoque_minimo, 0);
+});
+
+test("saldo negativo também é levado para o tamanho", () => {
+  const dados = base();
+  dados.epis[0].saldos_tamanho = { "t-p": -2, "t-m": 6 };
+  aplicarSeparacao(dados, opcoes, novoId, "2026-10-02T12:00:00.000Z");
+  const cat = dados.epis_catalogo.find((c) => c.tamanho_id === "t-p").id;
+  assert.equal(dados.epis.find((e) => e.catalogo_id === cat && e.empresa_id === "e1").estoque_atual, -2);
+});
