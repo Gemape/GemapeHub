@@ -7,12 +7,34 @@ import {
   autorizar, desautorizar, autorizados,
   gerarCodigo, salvarRegraCodigo, removerRegraCodigo,
   salvarCodigoFabrica, removerCodigoFabrica, combinaBusca,
+  enderecamentoDaCategoria, salvarEnderecamentoCategoria,
 } from '../src/lib/parametros-base.ts';
 
 const storage = () => {
   const dados = new Map();
   return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v) };
 };
+
+test('endereçamento por categoria começa em Não usa e persiste sem afetar outras categorias', () => {
+  const local = storage();
+  assert.equal(enderecamentoDaCategoria(lerParametros(local), 'cat-epi'), 'nao_usa');
+  salvarEnderecamentoCategoria('cat-epi', 'opcional', local);
+  assert.equal(enderecamentoDaCategoria(lerParametros(local), 'cat-epi'), 'opcional');
+  assert.equal(enderecamentoDaCategoria(lerParametros(local), 'cat-uniformes'), 'nao_usa');
+  salvarEnderecamentoCategoria('cat-epi', 'obrigatorio', local);
+  assert.equal(enderecamentoDaCategoria(lerParametros(local), 'cat-epi'), 'obrigatorio');
+  assert.throws(() => salvarEnderecamentoCategoria('cat-epi', 'incorreto', local), /inválido/i);
+  assert.equal(enderecamentoDaCategoria(lerParametros(local), 'cat-epi'), 'obrigatorio');
+});
+
+test('categoria nova usa padrão e removê-la elimina a configuração', () => {
+  const local = storage();
+  const categoria = adicionarCategoria('Novidade', local);
+  assert.equal(enderecamentoDaCategoria(lerParametros(local), categoria.id), 'nao_usa');
+  salvarEnderecamentoCategoria(categoria.id, 'opcional', local);
+  removerCategoria(categoria.id, local);
+  assert.equal(lerParametros(local).enderecamentoCategorias[categoria.id], undefined);
+});
 
 test('parte das categorias e listas que já existiam', () => {
   const d = lerParametros(storage());
