@@ -15,6 +15,8 @@ type Props = {
   onChange: (valor: string) => void;
   placeholder?: string;
   vazio?: string;
+  // Nome do campo para leitores de tela.
+  rotulo?: string;
 };
 
 // Campo com busca por palavra-chave: digita, escolhe na lista e o item fica selecionado.
@@ -26,6 +28,7 @@ export function CampoBusca({
   onChange,
   placeholder,
   vazio = "Nada encontrado.",
+  rotulo,
 }: Props) {
   const [termo, setTermo] = useState("");
   const [aberto, setAberto] = useState(false);
@@ -64,6 +67,7 @@ export function CampoBusca({
     <div className="relative">
       <Input
         id={id}
+        aria-label={rotulo}
         role="combobox"
         aria-expanded={aberto}
         aria-controls={listaId}
