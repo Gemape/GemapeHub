@@ -16,7 +16,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { useExcluir, useSalvar, useVeiculos } from "@/lib/hooks-gemape";
 import { ROTULO_TABELA, useProdutosGemape } from "@/lib/produtos-gemape";
-import { montarLinhasEnderecamento, type ProdutoEnderecavel } from "@/lib/enderecamento-categoria";
+import {
+  montarClonagemEndereco,
+  montarLinhasEnderecamento,
+  type ProdutoEnderecavel,
+} from "@/lib/enderecamento-categoria";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 type Endereco = {
@@ -72,6 +76,9 @@ export function EnderecamentoModulo() {
   const [editando, setEditando] = useState<Endereco | null>(null);
   const [empresaForm, setEmpresaForm] = useState("");
   const [produtoForm, setProdutoForm] = useState("");
+  // Clonar: o item de destino é o da linha; a pergunta é o código do item de origem.
+  const [clonando, setClonando] = useState<ProdutoEnderecavel | null>(null);
+  const [origemClone, setOrigemClone] = useState("");
 
   const nomeEmpresa = (id: string) => empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
 
@@ -103,6 +110,27 @@ export function EnderecamentoModulo() {
     const produto = endereco && produtos.find((p) => p.empresa_id === endereco.empresa_id && chave(p.codigo_sku) === chave(salvo));
     setProdutoForm(produtoInicial?.codigo_sku ?? (produto ? produto.codigo_sku : salvo));
     setAberto(true);
+  }
+
+  const opcoesOrigem = useMemo(() => {
+    if (!clonando) return [];
+    const comEndereco = new Set(enderecos.filter((e) => e.empresa_id === clonando.empresa_id).map((e) => chave(e.codigo_produto)));
+    return produtos
+      .filter((p) => p.empresa_id === clonando.empresa_id && p.tabela === clonando.tabela &&
+        chave(p.codigo_sku) !== chave(clonando.codigo_sku) && comEndereco.has(chave(p.codigo_sku)))
+      .map((p) => ({ valor: p.codigo_sku, rotulo: `${p.codigo_sku} · ${p.nome}` }));
+  }, [clonando, produtos, enderecos]);
+
+  function clonar() {
+    if (!clonando || salvar.isPending) return;
+    try {
+      const valores = montarClonagemEndereco({
+        destino: clonando, codigoOrigem: origemClone, produtos, enderecos, dados: parametros,
+      });
+      salvar.mutate({ valores }, { onSuccess: () => setClonando(null) });
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível clonar o endereço.");
+    }
   }
 
   async function enviar(evento: React.FormEvent<HTMLFormElement>) {
@@ -166,6 +194,7 @@ export function EnderecamentoModulo() {
               <TableCell>{nomeEmpresa(produto.empresa_id ?? "")}</TableCell>
               <TableCell className="whitespace-nowrap text-right">
                 <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(e ?? null, produto)}>{e ? "Editar" : "Adicionar endereço"}</Button>
+                <Button requiresWrite variant="ghost" size="sm" onClick={() => { setOrigemClone(""); setClonando(produto); }}>Clonar</Button>
                 {e && <Button requiresWrite variant="ghost" size="sm" disabled={excluir.isPending}
                   onClick={() => { if (confirm(`Excluir o endereço de ${e.codigo_produto}?`)) excluir.mutate(e.id); }}>Excluir</Button>}
               </TableCell>
@@ -174,10 +203,38 @@ export function EnderecamentoModulo() {
       </Table>
     </div>
 
+    <Dialog open={!!clonando} onOpenChange={(aberto) => { if (!aberto) setClonando(null); }}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Clonar endereço</DialogTitle>
+          <DialogDescription>
+            Informe o código do item de origem: o endereço dele (rua, número e apartamento) será copiado para{" "}
+            {clonando ? `${clonando.codigo_sku} · ${clonando.nome}` : "o item"}.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-1.5">
+          <Label htmlFor="origem_clone">Código do item de origem</Label>
+          <CampoBusca
+            id="origem_clone"
+            rotulo="Código do item de origem"
+            opcoes={opcoesOrigem}
+            valor={origemClone}
+            onChange={setOrigemClone}
+            placeholder="Digite o código ou o nome do item"
+            vazio="Nenhum item da mesma categoria e empresa, com endereço, com esse termo."
+          />
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setClonando(null)}>Cancelar</Button>
+          <Button requiresWrite type="button" onClick={clonar} disabled={!origemClone || salvar.isPending}>Clonar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{editando ? "Editar endereço" : "Novo endereço"}</DialogTitle>
+          <DialogTitle>{editando ? "Editar endereço" : "Adicionar endereço"}</DialogTitle>
           <DialogDescription>Informe o produto e onde ele fica guardado.</DialogDescription>
         </DialogHeader>
         <form key={editando?.id ?? "novo"} onSubmit={(e) => void enviar(e)} className="grid gap-4 sm:grid-cols-3">

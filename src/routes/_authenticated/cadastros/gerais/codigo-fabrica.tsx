@@ -294,9 +294,10 @@ function CodigoFabricaPagina() {
                   <Input
                     id="ca"
                     required
+                    inputMode="numeric"
                     maxLength={20}
                     value={ca}
-                    onChange={(e) => setCa(e.target.value)}
+                    onChange={(e) => setCa(e.target.value.replace(/\D/g, ""))}
                   />
                 </div>
               )}

@@ -60,3 +60,42 @@ export function precisaAvisarEnderecamento(
     !enderecos.some((endereco) => endereco.empresa_id === empresaId &&
       chave(endereco.codigo_produto) === chave(codigoProduto));
 }
+
+// Dados do endereço do item de origem copiados para o destino. Valida tudo antes de devolver,
+// para a gravação ser uma única operação, sem cópia parcial.
+export function montarClonagemEndereco(entrada: {
+  destino: Pick<ProdutoEnderecavel, "tabela" | "codigo_sku" | "empresa_id">;
+  codigoOrigem: string;
+  produtos: ProdutoEnderecavel[];
+  enderecos: EnderecoProduto[];
+  dados: ParametrosBase;
+}): Pick<EnderecoProduto, "empresa_id" | "codigo_produto" | "rua" | "prateleira" | "apartamento"> {
+  const { destino, produtos, enderecos, dados } = entrada;
+  const origem = chave(entrada.codigoOrigem);
+  if (!origem) throw new Error("Informe o código do item de origem.");
+  if (!destino.empresa_id) throw new Error("O item de destino não tem empresa.");
+  if (enderecamentoDaCategoria(dados, CATEGORIA[destino.tabela]) === "nao_usa") {
+    throw new Error("A categoria deste item não usa endereçamento.");
+  }
+  if (origem === chave(destino.codigo_sku)) throw new Error("A origem é o mesmo item do destino.");
+  const produto = produtos.find((p) => p.empresa_id === destino.empresa_id && chave(p.codigo_sku) === origem);
+  if (!produto) throw new Error(`Item ${entrada.codigoOrigem.trim()} não encontrado nesta empresa.`);
+  if (produto.tabela !== destino.tabela) {
+    throw new Error("A origem precisa ser da mesma categoria do item de destino.");
+  }
+  const endereco = enderecos.find((e) => e.empresa_id === destino.empresa_id && chave(e.codigo_produto) === origem);
+  if (!endereco) throw new Error(`O item ${produto.codigo_sku} não tem endereço para copiar.`);
+  const copia = {
+    empresa_id: destino.empresa_id,
+    codigo_produto: destino.codigo_sku,
+    rua: endereco.rua,
+    prateleira: endereco.prateleira,
+    apartamento: endereco.apartamento,
+  };
+  const repetido = enderecos.some((e) =>
+    e.empresa_id === copia.empresa_id && chave(e.codigo_produto) === chave(copia.codigo_produto) &&
+    chave(e.rua) === chave(copia.rua) && chave(e.prateleira) === chave(copia.prateleira) &&
+    chave(e.apartamento) === chave(copia.apartamento));
+  if (repetido) throw new Error("O item de destino já está neste endereço.");
+  return copia;
+}

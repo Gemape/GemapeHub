@@ -598,6 +598,8 @@ export function salvarCodigoFabrica(
       throw new Error("Informe o código do produto na nota fiscal do fornecedor.");
     if (v.tabela === "epis" && !v.ca)
       throw new Error("Para EPI, informe o CA que está na nota fiscal.");
+    if (v.tabela === "epis" && !/^\d+$/.test(v.ca))
+      throw new Error("O CA deve ter somente números.");
     if (v.tabela !== "epis") v.ca = "";
     const repetido = d.codigosFabrica.find(
       (c) =>
