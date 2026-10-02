@@ -21,7 +21,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEmpresa, type Empresa } from "@/lib/empresa-context";
+import {
+  CAMPOS_ENDERECO_EMPRESA,
+  STATUS_EMPRESA,
+  enderecoResumido,
+  statusDaEmpresa,
+  valoresDaEmpresa,
+} from "@/lib/empresas";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
+
+// Endereço e status ainda não existem no banco real (Fase 2): só aparecem na demonstração.
+const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 
 export const Route = createFileRoute("/_authenticated/empresas")({
   head: () => ({
@@ -51,11 +61,7 @@ function PaginaEmpresas() {
   function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const valores = {
-      nome_fantasia: String(f.get("nome_fantasia") ?? "").trim(),
-      razao_social: String(f.get("razao_social") ?? "").trim(),
-      cnpj: String(f.get("cnpj") ?? "").trim(),
-    };
+    const valores = valoresDaEmpresa(f, MODO_DEMO);
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
       { onSuccess: () => setAberto(false) },
@@ -89,6 +95,8 @@ function PaginaEmpresas() {
               <TableHead>Nome fantasia</TableHead>
               <TableHead>Razão social</TableHead>
               <TableHead>CNPJ</TableHead>
+              {MODO_DEMO && <TableHead>Endereço</TableHead>}
+              {MODO_DEMO && <TableHead>Status</TableHead>}
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -98,6 +106,8 @@ function PaginaEmpresas() {
                 <TableCell className="font-medium">{empresa.nome_fantasia}</TableCell>
                 <TableCell>{empresa.razao_social}</TableCell>
                 <TableCell>{empresa.cnpj}</TableCell>
+                {MODO_DEMO && <TableCell>{enderecoResumido(empresa) || "—"}</TableCell>}
+                {MODO_DEMO && <TableCell>{statusDaEmpresa(empresa)}</TableCell>}
                 <TableCell className="text-right whitespace-nowrap">
                   <Button requiresWrite
                     variant="ghost"
@@ -126,7 +136,7 @@ function PaginaEmpresas() {
       </div>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editando ? "Editar empresa" : "Nova empresa"}</DialogTitle>
             <DialogDescription>Dados cadastrais da unidade.</DialogDescription>
@@ -154,6 +164,37 @@ function PaginaEmpresas() {
               <Label htmlFor="cnpj">CNPJ</Label>
               <Input id="cnpj" name="cnpj" required defaultValue={editando?.cnpj ?? ""} />
             </div>
+            {MODO_DEMO && (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {CAMPOS_ENDERECO_EMPRESA.map((campo) => (
+                    <div key={campo.nome} className="space-y-1.5">
+                      <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
+                      <Input
+                        id={campo.nome}
+                        name={campo.nome}
+                        defaultValue={editando?.[campo.nome] ?? ""}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="status">Status</Label>
+                  <select
+                    id="status"
+                    name="status"
+                    defaultValue={editando ? statusDaEmpresa(editando) : "Ativa"}
+                    className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                  >
+                    {STATUS_EMPRESA.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>
                 Cancelar
