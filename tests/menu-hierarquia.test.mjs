@@ -36,7 +36,7 @@ test("Caixas saiu de Gerais e fica em Parâmetros > Ferramentas, fora de Módulo
   const modulos = sidebar.slice(sidebar.indexOf('titulo: "Módulos"'), inicio);
   assert.match(modulos, /titulo: "Ferramentas", url: "\/ferramentas"/);
   assert.ok(!modulos.includes("/caixas-ferramentas"));
-  assert.match(sidebar, /grupo\.titulo === "Parâmetros" && <MenuFerramentas/);
+  assert.match(sidebar, /grupo\.titulo === "Parâmetros" && \(\s*<>[\s\S]*<MenuFerramentas pathname/);
 });
 
 test("o menu lateral usa os dados de menu-parametros e não lista mais Associar solto", () => {
@@ -60,23 +60,24 @@ test("Habilitar caixas é aba da tela Caixas de Ferramentas, só do Administrado
   assert.match(antigo, /redirect\(\{ to: "\/caixas-ferramentas", search: \{ aba: "habilitar" \} \}\)/);
 });
 
-test("o menu EPI é do módulo: Cadastrar Ficha de EPI fica dentro de Cadastrar EPI", async () => {
+test("o menu EPI é de Parâmetros: Cadastrar Ficha de EPI fica dentro de Cadastrar EPI", async () => {
   const { MENU_EPI } = await import("../src/lib/menu-parametros.ts");
-  const cadastrar = MENU_EPI.find((i) => i.titulo === "Cadastrar EPI");
-  assert.equal(cadastrar?.url, "/epi-cadastrar");
-  assert.deepEqual(cadastrar?.filhos?.map((f) => [f.titulo, f.url]), [["Cadastrar Ficha de EPI", "/epi-ficha"]]);
-  assert.ok(!MENU_EPI.some((i) => i.titulo === "Cadastrar Ficha de EPI"));
+  assert.deepEqual(MENU_EPI.map((i) => i.titulo), ["Cadastrar EPI"]);
+  const cadastrar = MENU_EPI[0];
+  assert.equal(cadastrar.url, "/epi-cadastrar");
+  assert.deepEqual(cadastrar.filhos?.map((f) => [f.titulo, f.url]), [["Cadastrar Ficha de EPI", "/epi-ficha"]]);
 });
 
-test("Parâmetros não tem mais EPIs nem Ficha de EPI, e o módulo tem o menu EPI", () => {
+test("Em Módulos, EPIs é um item simples; o menu EPI fica em Parâmetros", () => {
   const inicio = sidebar.indexOf('titulo: "Parâmetros"');
-  const parametros = sidebar.slice(inicio, sidebar.indexOf("] as const;", inicio));
-  assert.ok(!parametros.includes("/cadastros/epi"));
-  assert.ok(!parametros.includes("Ficha de EPI"));
-  assert.match(sidebar, /<MenuEpi pathname=\{pathname\}/);
+  const modulos = sidebar.slice(sidebar.indexOf('titulo: "Módulos"'), inicio);
+  assert.match(modulos, /titulo: "EPIs", url: "\/epi"/);
+  assert.ok(!modulos.includes("epi-cadastrar") && !modulos.includes("epi-ficha"));
+  assert.match(sidebar, /grupo\.titulo === "Parâmetros" && \(\s*<>\s*<MenuEpi pathname=\{pathname\}/);
+  assert.doesNotMatch(sidebar, /grupo\.titulo === "Módulos" && <MenuEpi/);
 });
 
-test("os endereços antigos de Cadastrar EPI e da Ficha redirecionam para o módulo", () => {
+test("os endereços antigos de Cadastrar EPI e da Ficha redirecionam para as telas novas", () => {
   const raiz = new URL("../src/routes/_authenticated/", import.meta.url);
   const epi = readFileSync(new URL("cadastros/epi.tsx", raiz), "utf8");
   const ficha = readFileSync(new URL("cadastros/epi-ficha.tsx", raiz), "utf8");

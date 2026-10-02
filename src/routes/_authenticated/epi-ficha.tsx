@@ -134,7 +134,7 @@ function FichaEpiPagina() {
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">EPI</p>
+        <p className="text-eyebrow">Parâmetros · EPI</p>
         <h1 className="text-2xl font-bold">Cadastrar Ficha de EPI</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Orientações de uso de cada EPI: setores, riscos, uso, verificação, higienização, descarte

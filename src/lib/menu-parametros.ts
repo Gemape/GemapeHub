@@ -28,9 +28,8 @@ export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
 // URLs de Gerais, para o destaque do grupo.
 export const URLS_GERAIS: readonly string[] = MENU_GERAIS.flatMap((i) => ("filhos" in i ? i.filhos.map((f) => f.url) : [i.url]));
 
-// Menu EPI (módulo, decisão 35): "Cadastrar Ficha de EPI" fica dentro de "Cadastrar EPI".
+// Parâmetros > EPI (decisão 37): "Cadastrar Ficha de EPI" fica dentro de "Cadastrar EPI".
 export const MENU_EPI: readonly ItemComFilhos[] = [
-  { titulo: "Controle de EPI", url: "/epi", icone: "HardHat" },
   {
     titulo: "Cadastrar EPI",
     url: "/epi-cadastrar",
