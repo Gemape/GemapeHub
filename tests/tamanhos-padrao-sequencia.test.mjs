@@ -124,7 +124,7 @@ test("a tela de cadastro tem a coluna Tamanhos e Gerais tem o botão de cadastra
   const cadastro = readFileSync(new URL("components/modules/CadastroProduto.tsx", raiz), "utf8");
   assert.match(cadastro, /<TableHead>Tamanhos<\/TableHead>/);
   assert.match(cadastro, /tamanhosDoCadastro/);
-  const gerais = readFileSync(new URL("routes/_authenticated/cadastros/gerais/tamanhos-unidades.tsx", raiz), "utf8");
+  const gerais = readFileSync(new URL("components/parametros/TamanhosMedidasPainel.tsx", raiz), "utf8");
   assert.match(gerais, /Cadastrar tamanhos padrão/);
   assert.match(gerais, /cadastrarTamanhosPadrao/);
 });

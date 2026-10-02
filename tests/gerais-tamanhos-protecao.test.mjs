@@ -162,12 +162,12 @@ test("autorizar tamanhos numa subcategoria com produtos com saldo avisa e não c
 });
 
 test("as telas de Gerais usam o desativar, a proteção e os avisos", () => {
-  const tela = ler("routes/_authenticated/cadastros/gerais/tamanhos-unidades.tsx");
+  const tela = ler("components/parametros/TamanhosMedidasPainel.tsx");
   assert.match(tela, /onAlternarAtivo/);
   assert.match(tela, /inativos=\{dados\.inativos\}/);
   assert.match(tela, /usoDoTamanho/);
   assert.match(tela, /usoDaUnidade/);
-  const associar = ler("routes/_authenticated/cadastros/gerais/associar-tamanhos.tsx");
+  const associar = ler("components/parametros/AssociarTamanhosPainel.tsx");
   assert.match(associar, /dependenciasDaDesautorizacao/);
   assert.match(associar, /avisoAutorizacaoTamanhos/);
   assert.match(associar, /\(desativado\)/);

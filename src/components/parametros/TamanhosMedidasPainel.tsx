@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useRef } from "react";
 import { toast } from "sonner";
 
@@ -28,11 +27,6 @@ import {
 } from "@/lib/uso-parametros";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
-export const Route = createFileRoute("/_authenticated/cadastros/gerais/tamanhos-unidades")({
-  head: () => ({ meta: [{ title: "Cadastro de tamanhos e medidas | Patrimônio GEMAPE" }] }),
-  component: TamanhosUnidades,
-});
-
 const TABELAS: (keyof CadastrosComTamanho)[] = [
   "epis",
   "uniformes",
@@ -41,7 +35,7 @@ const TABELAS: (keyof CadastrosComTamanho)[] = [
   "compras_uniformes",
 ];
 
-function TamanhosUnidades() {
+export function TamanhosMedidasPainel() {
   const dados = useParametrosBase();
   // Evita duas confirmações quando o botão de excluir recebe dois cliques rápidos.
   const ocupado = useRef(false);

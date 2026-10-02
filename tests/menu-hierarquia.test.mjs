@@ -6,16 +6,17 @@ import { MENU_FERRAMENTAS, MENU_GERAIS, URLS_GERAIS } from "../src/lib/menu-para
 
 const sidebar = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
 
-test("Gerais tem o grupo Tamanho e Medidas de Produto com Cadastro e Associar", () => {
-  const grupo = MENU_GERAIS.find((i) => i.titulo === "Tamanho e Medidas de Produto");
-  assert.ok(grupo && "filhos" in grupo, "grupo não encontrado");
-  assert.deepEqual(
-    grupo.filhos.map((f) => [f.titulo, f.url]),
-    [
-      ["Cadastro de Tamanhos e Medidas", "/cadastros/gerais/tamanhos-unidades"],
-      ["Associar Tamanho e Medida ao Produto", "/cadastros/gerais/associar-tamanhos"],
-    ],
-  );
+test("Tamanho e Medidas de Produto é um menu só em Gerais, com Associar como aba (decisão 38)", () => {
+  const item = MENU_GERAIS.find((i) => i.titulo === "Tamanho e Medidas de Produto");
+  assert.equal(item?.url, "/cadastros/gerais/tamanhos-unidades");
+  assert.ok(item && !("filhos" in item));
+  assert.ok(!MENU_GERAIS.some((i) => i.titulo.startsWith("Associar")));
+  const raiz = new URL("../src/routes/_authenticated/cadastros/gerais/", import.meta.url);
+  const pagina = readFileSync(new URL("tamanhos-unidades.tsx", raiz), "utf8");
+  assert.match(pagina, /ABAS = \["cadastro", "associar"\]/);
+  assert.match(pagina, /<TabsContent value="associar"><AssociarTamanhosPainel/);
+  const antigo = readFileSync(new URL("associar-tamanhos.tsx", raiz), "utf8");
+  assert.match(antigo, /redirect\(\{ to: "\/cadastros\/gerais\/tamanhos-unidades", search: \{ aba: "associar" \} \}\)/);
 });
 
 test("Código do Produto continua em Gerais, no mesmo endereço", () => {
@@ -47,7 +48,7 @@ test("o menu lateral usa os dados de menu-parametros e não lista mais Associar 
 
 test("o destaque de Gerais não inclui Caixas", () => {
   assert.ok(!URLS_GERAIS.includes("/cadastros/gerais/caixas"));
-  assert.ok(URLS_GERAIS.includes("/cadastros/gerais/associar-tamanhos"));
+  assert.ok(URLS_GERAIS.includes("/cadastros/gerais/tamanhos-unidades"));
 });
 
 test("Habilitar caixas é aba da tela Caixas de Ferramentas, só do Administrador, e o endereço antigo redireciona", () => {

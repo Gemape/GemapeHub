@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -23,14 +22,9 @@ import {
 } from "@/lib/uso-parametros";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
-export const Route = createFileRoute("/_authenticated/cadastros/gerais/associar-tamanhos")({
-  head: () => ({ meta: [{ title: "Associar tamanho e medida ao produto | Patrimônio GEMAPE" }] }),
-  component: AssociarTamanhos,
-});
-
 const selectClasse = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm";
 
-function AssociarTamanhos() {
+export function AssociarTamanhosPainel() {
   const dados = useParametrosBase();
   const [categoriaId, setCategoriaId] = useState(dados.categorias[0]?.id ?? "");
   const [subcategoriaId, setSubcategoriaId] = useState("");

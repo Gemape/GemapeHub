@@ -107,7 +107,7 @@ test("validação: devolução aceita Sem tamanho; entrada sem tamanho ativo exp
       "epi",
       "entrada",
     ) ?? "",
-    /não tem tamanho ativo autorizado.*Associar Tamanho e Medida/,
+    /não tem tamanho ativo autorizado.*aba Associar ao produto/,
   );
 });
 
@@ -143,12 +143,12 @@ test("telas: mínimo único quando a grade fica vazia, alerta no módulo e fila 
   assert.match(estoque, /estadoEstoqueModulo/);
   assert.match(estoque, /prepararMinimosEstoque|prepararMinimoUnico/);
   assert.match(ler("routes/_authenticated/dashboard.tsx"), /usaMinimoPorTamanho/);
-  const associar = ler("routes/_authenticated/cadastros/gerais/associar-tamanhos.tsx");
+  const associar = ler("components/parametros/AssociarTamanhosPainel.tsx");
   assert.match(associar, /fila\.current/);
   assert.match(associar, /lerParametros\(\)/);
   for (const tela of [
     associar,
-    ler("routes/_authenticated/cadastros/gerais/tamanhos-unidades.tsx"),
+    ler("components/parametros/TamanhosMedidasPainel.tsx"),
   ]) {
     assert.match(tela, /lerCadastrosDeUso/);
     assert.doesNotMatch(tela, /async function lerCadastros/);

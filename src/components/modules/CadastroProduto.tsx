@@ -606,12 +606,12 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 ) : (
                   <p className="text-xs text-muted-foreground">
                     Nenhum tamanho associado a esta subcategoria. Associe em Cadastros &gt; Gerais
-                    &gt; Tamanho e Medidas de Produto &gt; Associar Tamanho e Medida ao Produto.
+                    &gt; Tamanho e Medidas de Produto (aba Associar ao produto).
                   </p>
                 )}
                 {tamanhosAssociados.length > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Os tamanhos vêm de Cadastros &gt; Gerais &gt; Tamanho e Medidas de Produto &gt; Associar Tamanho e Medida ao Produto.
+                    Os tamanhos vêm de Cadastros &gt; Gerais &gt; Tamanho e Medidas de Produto (aba Associar ao produto).
                   </p>
                 )}
               </div>

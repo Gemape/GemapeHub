@@ -426,7 +426,7 @@ export function validarLinhasTamanho(
       const escolhido = linha.tamanho ?? "";
       const validos = opcoes(item).map((o) => o.valor);
       if (acao === "entrada" && validos.length === 0) {
-        return `${item.nome} não tem tamanho ativo autorizado em Cadastros > Gerais > Tamanho e Medidas de Produto > Associar Tamanho e Medida ao Produto. Autorize um tamanho para registrar a entrada.`;
+        return `${item.nome} não tem tamanho ativo autorizado em Cadastros > Gerais > Tamanho e Medidas de Produto (aba Associar ao produto). Autorize um tamanho para registrar a entrada.`;
       }
       if (!escolhido || !validos.includes(escolhido)) {
         return `Escolha o tamanho de ${item.nome}.`;
