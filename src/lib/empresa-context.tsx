@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { MODO_DEMO } from "@/lib/modo-demo";
 
 export interface Empresa {
   id: string;
@@ -29,6 +30,9 @@ const EmpresaContext = createContext<EmpresaContextValue | null>(null);
 
 export const TODAS = "todas";
 
+// Fora da demonstração, só as colunas que o banco real já tem (endereço e status: Fase 2).
+const COLUNAS: string = MODO_DEMO ? "*" : "id, nome_fantasia, razao_social, cnpj";
+
 export function useEmpresasQuery() {
   return useQuery({
     queryKey: ["empresas"],
@@ -37,10 +41,10 @@ export function useEmpresasQuery() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas")
-        .select("*")
+        .select(COLUNAS)
         .order("nome_fantasia");
       if (error) throw error;
-      return (data ?? []) as Empresa[];
+      return (data ?? []) as unknown as Empresa[];
     },
   });
 }

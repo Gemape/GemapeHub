@@ -29,9 +29,9 @@ import {
   valoresDaEmpresa,
 } from "@/lib/empresas";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
-
 // Endereço e status ainda não existem no banco real (Fase 2): só aparecem na demonstração.
-const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
+import { MODO_DEMO } from "@/lib/modo-demo";
+
 
 export const Route = createFileRoute("/_authenticated/empresas")({
   head: () => ({
@@ -141,7 +141,7 @@ function PaginaEmpresas() {
             <DialogTitle>{editando ? "Editar empresa" : "Nova empresa"}</DialogTitle>
             <DialogDescription>Dados cadastrais da unidade.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={enviar} className="space-y-4">
+          <form key={editando?.id ?? "nova"} onSubmit={enviar} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="nome_fantasia">Nome fantasia</Label>
               <Input
@@ -184,7 +184,7 @@ function PaginaEmpresas() {
                     id="status"
                     name="status"
                     defaultValue={editando ? statusDaEmpresa(editando) : "Ativa"}
-                    className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                    className="h-9 w-full rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {STATUS_EMPRESA.map((status) => (
                       <option key={status} value={status}>

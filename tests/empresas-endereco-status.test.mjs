@@ -58,3 +58,18 @@ test("a tela de empresas mostra endereço e status e a empresa demo vem com eles
   const demo = readFileSync(new URL("integrations/supabase/demo-client.ts", raiz), "utf8");
   assert.match(demo, /status: "Ativa"/);
 });
+
+test("fora da demonstração a consulta de empresas pede só as colunas que existem", () => {
+  const raiz = new URL("../src/", import.meta.url);
+  const contexto = readFileSync(new URL("lib/empresa-context.tsx", raiz), "utf8");
+  assert.match(contexto, /COLUNAS: string = MODO_DEMO \? "\*" : "id, nome_fantasia, razao_social, cnpj"/);
+  const tela = readFileSync(new URL("routes/_authenticated/empresas.tsx", raiz), "utf8");
+  assert.match(tela, /import \{ MODO_DEMO \} from "@\/lib\/modo-demo"/);
+  assert.doesNotMatch(tela, /const MODO_DEMO =/);
+});
+
+test("empresa antiga, sem os campos novos, aparece sem endereço e como Ativa", () => {
+  const antiga = { id: "x", nome_fantasia: "GEMAPE", razao_social: "GEMAPE", cnpj: "1" };
+  assert.equal(enderecoResumido(antiga), "");
+  assert.equal(statusDaEmpresa(antiga), "Ativa");
+});
