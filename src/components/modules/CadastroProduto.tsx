@@ -441,7 +441,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <TableCell>{nomeEmpresa(item.empresa_id)}</TableCell>
                   {config.ficha && (
                     <TableCell>
-                      <Link to="/cadastros/epi-ficha" search={{ epi: item.id }}>
+                      <Link to="/epi-ficha" search={{ epi: item.id }}>
                         <Badge variant={temFicha(item.id) ? "secondary" : "outline"}>
                           {temFicha(item.id) ? "Cadastrada" : "Pendente"}
                         </Badge>

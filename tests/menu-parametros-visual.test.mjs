@@ -21,7 +21,7 @@ test("Tabelas de Apoio abre em categorias e revela detalhes após seleção", ()
 
 test("menu lateral se chama Parâmetros e mantém as rotas de cadastro", () => {
   assert.match(sidebar, /titulo: "Parâmetros"/);
-  assert.match(sidebar, /url: "\/cadastros\/epi"/);
+  assert.match(sidebar, /url: "\/cadastros\/veiculos"/);
   assert.match(menuDados, /url: "\/cadastros\/gerais\/categorias"/);
 });
 

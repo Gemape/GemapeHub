@@ -1,0 +1,398 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { CadastroProduto } from "@/components/modules/CadastroProduto";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  agruparEpis,
+  filtrarGrupos,
+  montarClonagemEpi,
+  montarNovoEpi,
+  tamanhosLivres,
+  type EpiCatalogo,
+} from "@/lib/epi-catalogo";
+import {
+  nomeTamanho,
+  tamanhosAssociadosParaCadastro,
+  unidadesAutorizadasDoProduto,
+} from "@/lib/estoque-tamanho";
+import { MODO_DEMO } from "@/lib/modo-demo";
+import { estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
+import { subcategoriasParaSelecao } from "@/lib/subcategoria-referencia";
+import { useParametrosBase } from "@/lib/use-parametros-base";
+
+const CATEGORIA_EPI = "cat-epi";
+const PAGINA = 50;
+const SEM_UNIDADE = "sem-unidade";
+
+// Cliente sem tipos: o catálogo só existe no modo demonstração (decisão 35).
+type ClienteLivre = { from: (tabela: string) => any };
+const cliente = supabase as unknown as ClienteLivre;
+
+// Lê a tabela inteira, de página em página, sem o corte do seletor de cadastro.
+async function lerTudo<T>(tabela: string): Promise<T[]> {
+  const todos: T[] = [];
+  for (let inicio = 0; ; inicio += PAGINA) {
+    const { data, error } = await cliente
+      .from(tabela)
+      .select("*")
+      .order("id")
+      .range(inicio, inicio + PAGINA - 1);
+    if (error) throw error;
+    const pagina = (data ?? []) as T[];
+    todos.push(...pagina);
+    if (pagina.length < PAGINA) return todos;
+  }
+}
+
+type EpiAntigo = { id: string; codigo_sku: string | null; nome: string; empresa_id: string | null; catalogo_id?: string | null };
+
+// Cadastrar EPI (decisão 35): catálogo global, um registro por descrição e tamanho. No banco
+// real o catálogo ainda não existe (Fase 2): lá continua o cadastro antigo.
+export function CadastroEpi() {
+  if (!MODO_DEMO) return <CadastroProduto tabela="epis" />;
+  return <CatalogoEpi />;
+}
+
+function CatalogoEpi() {
+  const parametros = useParametrosBase();
+  const queryClient = useQueryClient();
+  const [busca, setBusca] = useState("");
+  const [novoAberto, setNovoAberto] = useState(false);
+  const [clonando, setClonando] = useState<EpiCatalogo | null>(null);
+  const [subSel, setSubSel] = useState("");
+  const [tamanhoSel, setTamanhoSel] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  // O ref bloqueia o clique repetido na hora; o estado só desabilita o botão.
+  const trava = useRef(false);
+
+  const { data: catalogo = [], isLoading } = useQuery({
+    queryKey: ["epis-catalogo"],
+    queryFn: () => lerTudo<EpiCatalogo>("epis_catalogo"),
+  });
+  const { data: estoques = [] } = useQuery({
+    queryKey: ["epis-estoques-todos"],
+    queryFn: () => lerTudo<EpiAntigo>("epis"),
+  });
+  const antigos = estoques.filter((e) => !e.catalogo_id);
+
+  const rotuloTamanho = (id: string | null) => (id ? nomeTamanho(parametros, id) : "");
+  const grupos = filtrarGrupos(agruparEpis(catalogo), busca, rotuloTamanho);
+
+  const regra = parametros.regrasCodigo.find((r) => r.categoriaId === CATEGORIA_EPI);
+  const subcategorias = subcategoriasParaSelecao(parametros, CATEGORIA_EPI, null);
+  const subEscolhida = subcategorias.find((s) => s.id === subSel);
+  const produtoForm = { categoria: subEscolhida?.nome ?? "", subcategoria_id: subEscolhida?.id ?? null };
+  const unidades = subEscolhida
+    ? paraSelecao(parametros, unidadesAutorizadasDoProduto(parametros, "epi", produtoForm))
+    : [];
+  const associados = subEscolhida ? tamanhosAssociadosParaCadastro(parametros, "epi", produtoForm) : [];
+  const pedeUnidade = unidades.some((u) => estaAtivo(parametros, u.id));
+
+  // Tamanhos que o Clonar ainda pode cadastrar para a descrição de origem.
+  const origemProduto = clonando
+    ? { categoria: clonando.categoria, subcategoria_id: clonando.subcategoria_id }
+    : null;
+  const associadosOrigem = origemProduto ? tamanhosAssociadosParaCadastro(parametros, "epi", origemProduto) : [];
+  const livres = clonando ? tamanhosLivres(catalogo, clonando.nome, associadosOrigem) : [];
+
+  async function codigoNovo(): Promise<string> {
+    if (!regra) throw new Error("Cadastre antes a regra do código de EPI em Cadastros > Gerais > Código do Produto.");
+    // Lê de novo na hora de gravar, para não repetir um código já usado.
+    const [cat, est] = await Promise.all([lerTudo<EpiCatalogo>("epis_catalogo"), lerTudo<EpiAntigo>("epis")]);
+    return proximoCodigo(regra, [...cat.map((c) => c.codigo_sku), ...est.map((e) => e.codigo_sku)]);
+  }
+
+  async function gravar(montar: (codigo: string, atual: EpiCatalogo[]) => Omit<EpiCatalogo, "id">, depois: () => void) {
+    if (trava.current) return;
+    trava.current = true;
+    setSalvando(true);
+    try {
+      const codigo = await codigoNovo();
+      // Valida de novo contra o catálogo atual, para um segundo clique não duplicar.
+      const atual = await lerTudo<EpiCatalogo>("epis_catalogo");
+      const registro = montar(codigo, atual);
+      const { error } = await cliente.from("epis_catalogo").insert({ id: crypto.randomUUID(), ...registro });
+      if (error) throw error;
+      await queryClient.invalidateQueries();
+      toast.success(`EPI ${registro.codigo_sku} cadastrado`);
+      depois();
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar o EPI.");
+    } finally {
+      trava.current = false;
+      setSalvando(false);
+    }
+  }
+
+  function abrirNovo() {
+    setSubSel("");
+    setTamanhoSel("");
+    setNovoAberto(true);
+  }
+
+  function enviarNovo(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    if (!subEscolhida) return void toast.error("Selecione a subcategoria.");
+    const unidadeId = String(f.get("unidade_id") ?? "");
+    const unidade = unidades.find((u) => u.id === unidadeId) ?? null;
+    if (pedeUnidade && !unidade) return void toast.error("Selecione a unidade.");
+    void gravar(
+      (codigo, atual) =>
+        montarNovoEpi({
+          nome: String(f.get("nome") ?? ""),
+          subcategoria: { id: subEscolhida.id, nome: subEscolhida.nome },
+          unidade: unidade ? { id: unidade.id, nome: unidade.nome } : null,
+          tamanhoId: tamanhoSel || null,
+          minimo: String(f.get("minimo") ?? ""),
+          catalogo: atual,
+          codigo,
+          pedeTamanho: associados.length > 0,
+        }),
+      () => setNovoAberto(false),
+    );
+  }
+
+  function enviarClone(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!clonando) return;
+    const origem = clonando;
+    const f = new FormData(e.currentTarget);
+    void gravar(
+      (codigo, atual) =>
+        montarClonagemEpi({ origem, tamanhoId: tamanhoSel, minimo: String(f.get("minimo") ?? ""), catalogo: atual, codigo }),
+      () => setClonando(null),
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          aria-label="Buscar EPI por código, descrição, subcategoria ou tamanho"
+          placeholder="Buscar por código, descrição, subcategoria ou tamanho"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="max-w-md"
+        />
+        <Button requiresWrite onClick={abrirNovo} className="ml-auto">
+          Novo EPI
+        </Button>
+      </div>
+
+      <div className="panel overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Código</TableHead>
+              <TableHead>Tamanho</TableHead>
+              <TableHead className="text-right">Estoque mínimo</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">Carregando…</TableCell>
+              </TableRow>
+            )}
+            {!isLoading && grupos.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  {busca.trim() ? "Nenhum EPI encontrado." : "Nenhum EPI cadastrado. Use Novo EPI."}
+                </TableCell>
+              </TableRow>
+            )}
+            {grupos.map((g) => (
+              <GrupoLinhas key={g.chave} grupo={g} rotuloTamanho={rotuloTamanho} onClonar={setClonando} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {antigos.length > 0 && (
+        <section className="panel space-y-2 p-4">
+          <h2 className="text-sm font-semibold">EPIs antigos</h2>
+          <p className="text-xs text-muted-foreground">
+            Cadastrados antes do catálogo por tamanho. Seguem funcionando como estavam e serão separados por tamanho em uma próxima etapa.
+          </p>
+          <ul className="grid gap-1 text-sm sm:grid-cols-2">
+            {antigos.map((a) => (
+              <li key={a.id} className="truncate">
+                <span className="font-mono text-xs">{a.codigo_sku}</span> · {a.nome}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <Dialog open={novoAberto} onOpenChange={setNovoAberto}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Novo EPI</DialogTitle>
+            <DialogDescription>
+              Cadastra uma descrição ainda não existente. O código é gerado ao salvar; outros tamanhos entram pelo Clonar.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={enviarNovo} className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="categoria">Subcategoria</Label>
+              <Select value={subSel} onValueChange={(v) => { setSubSel(v); setTamanhoSel(""); }}>
+                <SelectTrigger id="categoria"><SelectValue placeholder="Selecione a subcategoria" /></SelectTrigger>
+                <SelectContent>
+                  {subcategorias.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {subcategorias.length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhuma subcategoria de EPI em Cadastros &gt; Gerais &gt; Tabelas de Apoio.</p>
+              )}
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="nome">Descrição do item</Label>
+              <Textarea id="nome" name="nome" rows={2} placeholder="Ex.: capacete de segurança em ABS de alto impacto" />
+            </div>
+            {unidades.length > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="unidade_id">Unidade</Label>
+                <Select name="unidade_id" key={subSel} {...(pedeUnidade ? {} : { defaultValue: SEM_UNIDADE })}>
+                  <SelectTrigger id="unidade_id"><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
+                  <SelectContent>
+                    {!pedeUnidade && <SelectItem value={SEM_UNIDADE}>Sem unidade</SelectItem>}
+                    {unidades.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {subEscolhida && (
+              <div className="space-y-1.5">
+                <Label htmlFor="tamanho">Tamanho</Label>
+                {associados.length > 0 ? (
+                  <Select value={tamanhoSel} onValueChange={setTamanhoSel}>
+                    <SelectTrigger id="tamanho"><SelectValue placeholder="Selecione o tamanho" /></SelectTrigger>
+                    <SelectContent>
+                      {associados.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.rotulo}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Nenhum tamanho associado a esta subcategoria. O EPI fica sem tamanho; para ter tamanho, associe em Cadastros &gt; Gerais &gt; Tamanho e Medidas de Produto.
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="minimo">Estoque mínimo</Label>
+              <Input id="minimo" name="minimo" type="number" inputMode="numeric" min={0} step={1} />
+            </div>
+            <DialogFooter className="sm:col-span-2">
+              <Button type="button" variant="outline" onClick={() => setNovoAberto(false)}>Cancelar</Button>
+              <Button requiresWrite type="submit" disabled={salvando}>Salvar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!clonando} onOpenChange={(aberto) => !aberto && setClonando(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Clonar EPI</DialogTitle>
+            <DialogDescription>
+              Copia a descrição e a unidade, gera outro código e cadastra o EPI em um tamanho ainda não cadastrado. Não herda estoque nem movimentações.
+            </DialogDescription>
+          </DialogHeader>
+          {clonando && (
+            <form onSubmit={enviarClone} className="grid gap-3">
+              <div className="rounded-md bg-muted/50 p-2 text-sm">
+                <p className="font-medium">{clonando.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {clonando.categoria}
+                  {clonando.unidade_medida ? ` · ${clonando.unidade_medida}` : ""}
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tamanho_clone">Tamanho</Label>
+                <Select value={tamanhoSel} onValueChange={setTamanhoSel} disabled={livres.length === 0}>
+                  <SelectTrigger id="tamanho_clone"><SelectValue placeholder="Selecione o tamanho" /></SelectTrigger>
+                  <SelectContent>
+                    {livres.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.rotulo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {livres.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Todos os tamanhos associados a esta subcategoria já estão cadastrados.</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="minimo_clone">Estoque mínimo</Label>
+                <Input id="minimo_clone" name="minimo" type="number" inputMode="numeric" min={0} step={1} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setClonando(null)}>Cancelar</Button>
+                <Button requiresWrite type="submit" disabled={salvando || livres.length === 0}>Clonar</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function GrupoLinhas({
+  grupo,
+  rotuloTamanho,
+  onClonar,
+}: {
+  grupo: ReturnType<typeof agruparEpis>[number];
+  rotuloTamanho: (id: string | null) => string;
+  onClonar: (item: EpiCatalogo) => void;
+}) {
+  return (
+    <>
+      <TableRow className="bg-muted/40">
+        <TableCell colSpan={4} className="font-medium">
+          {grupo.nome}
+          <span className="ml-2 text-xs font-normal text-muted-foreground">
+            {grupo.categoria}
+            {grupo.unidade_medida ? ` · ${grupo.unidade_medida}` : ""}
+          </span>
+        </TableCell>
+      </TableRow>
+      {grupo.itens.map((item) => (
+        <TableRow key={item.id}>
+          <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
+          <TableCell>{rotuloTamanho(item.tamanho_id) || "Sem tamanho"}</TableCell>
+          <TableCell className="text-right">{item.estoque_minimo}</TableCell>
+          <TableCell className="text-right">
+            <Button requiresWrite variant="ghost" size="sm" onClick={() => onClonar(item)}>
+              Clonar
+            </Button>
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+}
