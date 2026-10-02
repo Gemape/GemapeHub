@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
+import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -148,7 +149,11 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
     }
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
-      { onSuccess: () => setAberto(false), onSettled: () => { salvando.current = false; } },
+      { onSuccess: () => {
+        setAberto(false);
+        void avisarEnderecamentoObrigatorio(parametros, "cat-ferramentas",
+          String(valores["empresa_id"] ?? ""), String(valores["codigo_sku"] ?? ""));
+      }, onSettled: () => { salvando.current = false; } },
     );
   }
 

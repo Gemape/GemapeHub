@@ -54,6 +54,7 @@ import {
 } from "@/lib/subcategoria-referencia";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
+import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
   alternarTamanhoSelecionado,
@@ -336,7 +337,11 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     }
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
-      { onSuccess: () => setAberto(false), onError: liberar },
+      { onSuccess: () => {
+        setAberto(false);
+        void avisarEnderecamentoObrigatorio(parametros, config.categoriaId, empresa,
+          String(valores["codigo_sku"] ?? editando?.codigo_sku ?? ""));
+      }, onError: liberar },
     );
   }
 

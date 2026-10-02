@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
+import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -290,7 +291,11 @@ export function VeiculosCadastroModulo() {
     }
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
-      { onSuccess: () => setAberto(false), onError: destravar },
+      { onSuccess: () => {
+        setAberto(false);
+        void avisarEnderecamentoObrigatorio(parametros, CATEGORIA_VEICULO, empresa,
+          String(valores["codigo_sku"] ?? editando?.codigo_sku ?? ""));
+      }, onError: destravar },
     );
   }
 
