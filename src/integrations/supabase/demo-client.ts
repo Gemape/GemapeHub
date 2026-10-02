@@ -13,7 +13,7 @@ import {
 
 type Linha = Record<string, unknown>;
 const agora = new Date().toISOString();
-const empresa = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração", cnpj: "00.000.000/0001-00", created_at: agora };
+const empresa = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração", cnpj: "00.000.000/0001-00", rua: "Rua Exemplo", numero: "100", bairro: "Centro", cep: "01000-000", cidade: "São Paulo", estado: "SP", status: "Ativa", created_at: agora };
 const usuario = { id: "admin-demo", email: "admin@demo.local" };
 const dadosIniciais: Record<string, Linha[]> = {
   perfis: [{ id: usuario.id, papel: "admin", ativo: true }], empresas: [empresa],

@@ -335,10 +335,25 @@ Aprovado pelo responsável em 02/10/2026:
   valendo.
 - O botão "Cadastrar tamanhos padrão" completa uma lista já salva: inclui
   só o que falta, cada um na posição certa, sem repetir nome (maiúsculas
-  não contam), sem alterar o que existe e sem mudar ids.
+  não contam), sem alterar o que existe. Um padrão excluído antes volta com id novo, para não reviver referências antigas.
 - Nos cadastros de EPI e Uniforme, a lista mostra os tamanhos e
   numerações escolhidos no produto, na ordem de Gerais, com o desativado
   marcado. Produto sem escolha mostra os tamanhos associados à
   subcategoria; sem associação, "—". É informação do cadastro, não
   estoque (decisão 24).
 - Nada no Supabase: continua demo; a tabela real é pendência da Fase 2.
+
+## 29. EMPRESAS: ENDEREÇO E STATUS NO FORMULÁRIO
+Pedido do responsável em 02/10/2026: incluir no cadastro de Empresas as
+opções Endereço e Status (ativa ou inativa), como no MD.
+- Endereço em seis campos: rua/av., nº, bairro, CEP, cidade e estado.
+  Status: Ativa ou Inativa; empresa nova nasce Ativa.
+- A tabela de Empresas mostra o endereço em uma linha e o status.
+- Por ora o status só informa: nenhuma lista, movimento, relatório ou
+  termo muda por causa dele. O efeito de "inativa" (sumir das listas de
+  escolha de cadastros e movimentos novos, mantendo o histórico) aguarda
+  decisão do responsável.
+- Só no modo demonstração: as colunas ainda não existem no banco real e
+  fazem parte da Fase 2 (docs/pendencias-fase2.md). Fora da demonstração,
+  a tela mostra e salva apenas os campos que o banco já tem.
+- Nada no Supabase.
