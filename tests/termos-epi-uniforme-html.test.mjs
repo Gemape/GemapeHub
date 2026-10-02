@@ -41,6 +41,17 @@ test("o Termo de Entrega de EPI imprime a data sem cair no dia anterior", () => 
   assert.ok(html.includes("30 de setembro de 2026"), "data impressa errada");
 });
 
+test("o Termo de Entrega de EPI formata CNPJ numérico sem perder escape", () => {
+  const html = montarTermoEntregaEpiHtml({
+    empresa: { razao_social: perigoso, nome_fantasia: "GEMAPE", cnpj: "12345678000190" },
+    empregado: { nome: "Ana", cpf: "52998224725" },
+    data: "2026-09-30",
+    linhas: [],
+  });
+  assert.match(html, /12\.345\.678\/0001-90/);
+  assert.equal(html.includes("<img"), false);
+});
+
 test("o Termo de Entrega de EPI não mostra undefined em campos vazios", () => {
   const html = montarTermoEntregaEpiHtml({
     empresa: { razao_social: "GEMAPE", cnpj: null, nome_fantasia: null },

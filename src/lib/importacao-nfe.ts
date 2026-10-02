@@ -3,6 +3,7 @@
 // entradas no estoque do módulo do produto. Item sem casamento fica como pendência.
 import type { CodigoFabrica, TabelaProduto } from "./parametros-base.ts";
 import type { ItemNfe, NotaFiscalXml } from "./nfe-xml.ts";
+import { formatarCnpj } from "./formatacao-cadastral.ts";
 
 export type ModuloEstoque = "epi" | "uniforme" | "ferramenta";
 
@@ -88,13 +89,13 @@ export function prepararImportacao(entrada: {
   if (entrada.chavesImportadas.includes(nota.chave)) {
     bloqueio = `A NF-e ${nota.numero} (chave ${nota.chave}) já foi importada.`;
   } else if (!empresa) {
-    bloqueio = `Nenhuma empresa cadastrada tem o CNPJ ${nota.destinatario.cnpj}, destinatário da nota.`;
+    bloqueio = `Nenhuma empresa cadastrada tem o CNPJ ${formatarCnpj(nota.destinatario.cnpj)}, destinatário da nota.`;
   }
 
   const linhas = nota.itens.map((item): LinhaImportacao => {
     const pendente = (pendencia: string) => ({ item, destino: null, pendencia });
     if (!fornecedor) {
-      return pendente(`Fornecedor com CNPJ ${nota.emitente.cnpj} não cadastrado em Fornecedores.`);
+      return pendente(`Fornecedor com CNPJ ${formatarCnpj(nota.emitente.cnpj)} não cadastrado em Fornecedores.`);
     }
     if (!(item.quantidade > 0) || !Number.isInteger(item.quantidade)) {
       return pendente(

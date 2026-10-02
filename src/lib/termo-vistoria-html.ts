@@ -1,6 +1,7 @@
 // HTML do Relatório de Vistoria Periódica de ferramentas. Todo texto informado, inclusive a
 // observação digitada, passa por escaparHtml, como nos termos de Encerramento e de Responsabilidade.
 import { escaparHtml } from "./gemape.ts";
+import { formatarCnpj } from "./formatacao-cadastral.ts";
 
 export interface DadosTermoVistoria {
   empresa: { razao_social: string; cnpj: string };
@@ -60,7 +61,7 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
           <div class="header">
             <div class="title">RELATÓRIO DE VISTORIA PERIÓDICA DE FERRAMENTAS</div>
             <strong>${escaparHtml(dados.empresa.razao_social)}</strong><br>
-            CNPJ: ${escaparHtml(dados.empresa.cnpj)}
+            CNPJ: ${escaparHtml(formatarCnpj(dados.empresa.cnpj))}
           </div>
 
           <div class="info">

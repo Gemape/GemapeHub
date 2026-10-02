@@ -1,6 +1,7 @@
 // HTML do Termo de Entrega de Uniforme. Todo texto informado, inclusive empresa e empregado,
 // passa por escaparHtml, como nos demais termos.
 import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
+import { formatarCnpj } from "./formatacao-cadastral.ts";
 
 type Texto = string | null | undefined;
 
@@ -54,7 +55,7 @@ export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme)
         <div class="header">
           <div class="title">Termo de Entrega de Uniforme</div>
           <div style="margin-top: 10px; font-weight: bold;">${escaparHtml(empresa?.razao_social)}</div>
-          <div>CNPJ: ${escaparHtml(empresa?.cnpj)}</div>
+          <div>CNPJ: ${escaparHtml(formatarCnpj(empresa?.cnpj ?? ""))}</div>
         </div>
 
         <div class="content">

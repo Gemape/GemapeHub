@@ -1,6 +1,7 @@
 // HTML da Ficha de Controle de Entrega de EPI (avulsa). Todo texto informado passa por
 // escaparHtml, como nos demais termos.
 import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
+import { formatarCnpj } from "./formatacao-cadastral.ts";
 
 type Texto = string | null | undefined;
 
@@ -80,7 +81,7 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
         <table class="info-table">
           <tr>
             <td colspan="2"><strong>Empresa:</strong> ${escaparHtml(empresa.razao_social)}</td>
-            <td><strong>CNPJ:</strong> ${escaparHtml(empresa.cnpj)}</td>
+            <td><strong>CNPJ:</strong> ${escaparHtml(formatarCnpj(empresa.cnpj ?? ""))}</td>
           </tr>
           <tr>
             <td style="width: 60%;"><strong>Nome do Funcionário:</strong> ${escaparHtml(empregado.nome)}</td>

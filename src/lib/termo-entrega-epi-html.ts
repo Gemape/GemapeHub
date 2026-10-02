@@ -2,6 +2,7 @@
 // termos de Encerramento, Responsabilidade, Baixa e Vistoria.
 import { hojeLocal } from "./empregados.ts";
 import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
+import { formatarCnpj } from "./formatacao-cadastral.ts";
 
 type Texto = string | null | undefined;
 
@@ -55,7 +56,7 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
         <body>
           <div class="header">
             <h2>${escaparHtml(empresa.razao_social)}</h2>
-            <p>CNPJ: ${escaparHtml(empresa.cnpj)}</p>
+            <p>CNPJ: ${escaparHtml(formatarCnpj(empresa.cnpj ?? ""))}</p>
             <div class="title">TERMO DE RESPONSABILIDADE E ENTREGA DE EPI</div>
           </div>
           <div class="content">

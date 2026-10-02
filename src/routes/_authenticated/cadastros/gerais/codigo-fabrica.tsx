@@ -24,6 +24,7 @@ import {
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { ImportarNfeCodigoFabrica } from "@/components/parametros/ImportarNfeCodigoFabrica";
 import { useEmpresa } from "@/lib/empresa-context";
+import { formatarCnpj } from "@/lib/formatacao-cadastral";
 import { listarFornecedores, type Fornecedor } from "@/lib/fornecedores-demo";
 import {
   combinaBusca,
@@ -72,7 +73,7 @@ function CodigoFabricaPagina() {
   const opcoesFornecedor: OpcaoBusca[] = fornecedores.map((f) => ({
     valor: f.id,
     rotulo: f.nome_fantasia,
-    detalhe: `${f.razao_social} · ${f.cnpj}`,
+    detalhe: `${f.razao_social} · ${formatarCnpj(f.cnpj)}`,
   }));
   const produto: ProdutoGemape | undefined = produtos.find((p) => chaveProduto(p) === produtoSel);
   const ehEpi = (produto?.tabela ?? editando?.tabela) === "epis";

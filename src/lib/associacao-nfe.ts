@@ -3,6 +3,7 @@
 // fornecedor → código interno da GEMAPE). Não grava entrada nem mexe em estoque: a entrada da
 // nota continua nos módulos (src/lib/importacao-nfe.ts), que casam os itens por estas associações.
 import type { NotaFiscalXml } from "./nfe-xml.ts";
+import { formatarCnpj } from "./formatacao-cadastral.ts";
 import {
   salvarCodigoFabrica,
   type CodigoFabrica,
@@ -60,10 +61,10 @@ export function prepararAssociacoes(entrada: {
 
   let bloqueio: string | null = null;
   if (!empresa) {
-    bloqueio = `Nenhuma empresa cadastrada tem o CNPJ ${nota.destinatario.cnpj}, destinatário da nota.`;
+    bloqueio = `Nenhuma empresa cadastrada tem o CNPJ ${formatarCnpj(nota.destinatario.cnpj)}, destinatário da nota.`;
   } else if (!fornecedor) {
     bloqueio =
-      `O fornecedor com CNPJ ${nota.emitente.cnpj} (${nota.emitente.nome}) não está cadastrado. ` +
+      `O fornecedor com CNPJ ${formatarCnpj(nota.emitente.cnpj)} (${nota.emitente.nome}) não está cadastrado. ` +
       "Cadastre em Cadastros > Fornecedores e importe a nota de novo.";
   }
 
