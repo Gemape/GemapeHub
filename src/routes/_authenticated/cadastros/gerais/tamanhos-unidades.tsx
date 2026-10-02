@@ -3,12 +3,14 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import { lerCadastrosDeUso } from "@/lib/ler-cadastros-uso";
 import {
   adicionarOpcao,
   alterarAtivo,
+  cadastrarTamanhosPadrao,
   estaAtivo,
   moverOpcao,
   removerOpcao,
@@ -112,7 +114,24 @@ function TamanhosUnidades() {
       <Cabecalho
         titulo="Tamanhos e unidades de medida"
         descricao="Cadastro base de todas as possibilidades de tamanho e numeração, na ordem em que devem aparecer, e das unidades de medida. Desativar tira a opção das listas de seleção; o que já usa continua com ela."
-      />
+      >
+        <Button
+          requiresWrite
+          variant="outline"
+          onClick={() => {
+            executar(() => {
+              const incluidos = cadastrarTamanhosPadrao();
+              toast.success(
+                incluidos > 0
+                  ? `${incluidos} tamanho(s) e numeração(ões) cadastrados, em sequência.`
+                  : "Todos os tamanhos e numerações padrão já estão cadastrados.",
+              );
+            });
+          }}
+        >
+          Cadastrar tamanhos padrão
+        </Button>
+      </Cabecalho>
       <div className="grid gap-5 lg:grid-cols-2">
         {lista("tamanhos", "Novo tamanho ou numeração (ex.: 45, XG)", true)}
         {lista("unidades", "Nova unidade (ex.: Rolo)", false)}

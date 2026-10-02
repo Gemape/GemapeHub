@@ -1,6 +1,7 @@
 // Cadastros > Gerais (especificação rev1: categorias, subcategorias, tamanhos, unidades,
 // associação tamanho/medida, código do produto e código de fábrica).
 // Fase 1: tudo fica salvo no navegador, sem banco. Os módulos passam a ler daqui numa etapa seguinte.
+import { posicaoEmSequencia, TAMANHOS_PADRAO } from "./tamanhos-padrao.ts";
 import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 
@@ -101,24 +102,7 @@ function padrao(): ParametrosBase {
       nome,
     })),
   );
-  const tamanhos = [
-    "Único",
-    "PP",
-    "P",
-    "M",
-    "G",
-    "GG",
-    "XGG",
-    "36",
-    "37",
-    "38",
-    "39",
-    "40",
-    "41",
-    "42",
-    "43",
-    "44",
-  ].map((nome) => ({ id: `tam-${slug(nome)}`, nome }));
+  const tamanhos = TAMANHOS_PADRAO.map((nome) => ({ id: `tam-${slug(nome)}`, nome }));
   const unidades = ["Unidade", "Par", "Jogo", "Caixa"].map((nome) => ({
     id: `uni-${slug(nome)}`,
     nome,
@@ -383,8 +367,27 @@ export function adicionarOpcao(tipo: TipoOpcao, nome: string, storage = storageP
     const repetido = d[tipo].find((o) => mesmoNome(o.nome, limpo));
     if (repetido) throw new Error(`"${repetido.nome}" já está cadastrado.`);
     const opcao = { id: novoId(), nome: limpo };
-    d[tipo].push(opcao);
+    // Tamanhos entram na posição da sequência; as unidades vão para o fim.
+    if (tipo === "tamanhos") d.tamanhos.splice(posicaoEmSequencia(d.tamanhos, limpo), 0, opcao);
+    else d[tipo].push(opcao);
     return opcao;
+  });
+}
+
+// Cadastra todos os tamanhos e numerações padrão que ainda não existem, cada um na posição da
+// sequência. O que já está cadastrado (mesmo nome, sem diferenciar maiúsculas) não é repetido
+// nem alterado. Devolve quantos foram incluídos.
+export function cadastrarTamanhosPadrao(storage = storagePadrao()): number {
+  return alterar(storage, (d) => {
+    let incluidos = 0;
+    for (const nome of TAMANHOS_PADRAO) {
+      if (d.tamanhos.some((t) => mesmoNome(t.nome, nome))) continue;
+      const idPadrao = `tam-${slug(nome)}`;
+      const id = d.tamanhos.some((t) => t.id === idPadrao) ? novoId() : idPadrao;
+      d.tamanhos.splice(posicaoEmSequencia(d.tamanhos, nome), 0, { id, nome });
+      incluidos += 1;
+    }
+    return incluidos;
   });
 }
 

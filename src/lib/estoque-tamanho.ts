@@ -104,6 +104,25 @@ export function tamanhosAssociadosParaCadastro(
   }));
 }
 
+/**
+ * Tamanhos e numerações que a lista do cadastro mostra para o produto: os escolhidos no cadastro
+ * (ou todos os associados à subcategoria, se nada foi escolhido ainda), na ordem de Gerais e com
+ * o desativado marcado.
+ */
+export function tamanhosDoCadastro(
+  p: ParametrosBase,
+  modulo: ModuloTamanho,
+  produto: ProdutoTamanho,
+): string[] {
+  const ids = Array.isArray(produto.tamanhos_selecionados)
+    ? produto.tamanhos_selecionados
+    : tamanhosDisponiveisDoProduto(p, modulo, produto).map((t) => t.id);
+  const existentes = new Set(p.tamanhos.map((t) => t.id));
+  return ordenarChaves(p, [...new Set(ids)].filter((id) => existentes.has(id))).map((id) =>
+    rotuloComEstado(p, id),
+  );
+}
+
 /** Unidades autorizadas para a subcategoria do produto (inclui as desativadas). */
 export const unidadesAutorizadasDoProduto = (
   p: ParametrosBase,

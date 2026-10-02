@@ -84,10 +84,12 @@ test('subcategorias: nome único dentro da categoria', () => {
 
 test('tamanhos: ordem sequencial, renomear e excluir tira das associações', () => {
   const s = storage();
-  const t = adicionarOpcao('tamanhos', '45', s);
-  assert.equal(lerParametros(s).tamanhos.at(-1).nome, '45');
+  // O tamanho novo entra na posição da sequência (49 fica entre 48 e 50); mover continua valendo.
+  const t = adicionarOpcao('tamanhos', '49', s);
+  const nomes = () => lerParametros(s).tamanhos.map((o) => o.nome);
+  assert.deepEqual(nomes().slice(nomes().indexOf('49') - 1, nomes().indexOf('49') + 2), ['48', '49', '50']);
   moverOpcao('tamanhos', t.id, -1, s);
-  assert.deepEqual(lerParametros(s).tamanhos.slice(-2).map((o) => o.nome), ['45', '44']);
+  assert.deepEqual(nomes().slice(nomes().indexOf('49'), nomes().indexOf('49') + 3), ['49', '48', '50']);
   assert.throws(() => adicionarOpcao('tamanhos', 'm', s), /"M" já está cadastrado/);
   assert.throws(() => renomearOpcao('unidades', 'uni-par', 'caixa', s), /"Caixa"/);
   assert.equal(usoDaOpcao(lerParametros(s), 'unidades', 'uni-par'), 2);

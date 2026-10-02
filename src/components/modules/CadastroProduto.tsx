@@ -58,6 +58,7 @@ import {
   alternarTamanhoSelecionado,
   nomeUnidade,
   tamanhosAssociadosParaCadastro,
+  tamanhosDoCadastro,
   unidadesAutorizadasDoProduto,
   type ModuloTamanho,
   type ProdutoTamanho,
@@ -383,6 +384,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
               <TableHead>Subcategoria</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Unidade</TableHead>
+              <TableHead>Tamanhos</TableHead>
               <TableHead>Empresa</TableHead>
               {config.ficha && <TableHead>Ficha</TableHead>}
               <TableHead />
@@ -392,7 +394,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={config.ficha ? 7 : 6}
+                  colSpan={config.ficha ? 8 : 7}
                   className="text-center text-muted-foreground"
                 >
                   Carregando…
@@ -401,7 +403,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             ) : itens.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={config.ficha ? 7 : 6}
+                  colSpan={config.ficha ? 8 : 7}
                   className="text-center text-muted-foreground"
                 >
                   Nenhum {config.nome} cadastrado.
@@ -414,6 +416,22 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <TableCell>{subcategoriaDe(item) || "—"}</TableCell>
                   <TableCell className="font-medium">{item.nome}</TableCell>
                   <TableCell>{nomeUnidade(parametros, item) || "—"}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const tamanhos = tamanhosDoCadastro(parametros, config.modulo, item);
+                      return tamanhos.length > 0 ? (
+                        <span className="flex flex-wrap gap-1">
+                          {tamanhos.map((nome) => (
+                            <Badge key={nome} variant="secondary">
+                              {nome}
+                            </Badge>
+                          ))}
+                        </span>
+                      ) : (
+                        "—"
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell>{nomeEmpresa(item.empresa_id)}</TableCell>
                   {config.ficha && (
                     <TableCell>
