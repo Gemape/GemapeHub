@@ -64,7 +64,7 @@ function PaginaEmpresas() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     let valores: Record<string, string>;
-    try { valores = valoresDaEmpresa(f, MODO_DEMO); }
+    try { valores = valoresDaEmpresa(f, MODO_DEMO, editando ?? undefined); }
     catch (erro) { toast.error(erro instanceof Error ? erro.message : "Dados inválidos."); return; }
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },

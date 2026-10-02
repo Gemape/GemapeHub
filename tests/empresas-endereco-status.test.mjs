@@ -93,3 +93,12 @@ test("empresa nova normaliza texto e CNPJ sem afetar sigla", () => {
   assert.equal(valores.cep, "12.345-678");
   assert.equal(valores.estado, "SP");
 });
+
+test("edição de empresa antiga preserva CNPJ e CEP incompletos não alterados", () => {
+  const antigo = { cnpj: "123", cep: "123" };
+  const valores = valoresDaEmpresa(form({ ...BASE, ...antigo, nome_fantasia: "NOVA EMPRESA" }), true, antigo);
+  assert.equal(valores.cnpj, "123");
+  assert.equal(valores.cep, "123");
+  assert.equal(valores.nome_fantasia, "Nova Empresa");
+  assert.throws(() => valoresDaEmpresa(form({ ...BASE, cnpj: "456" }), true, antigo), /CNPJ/);
+});

@@ -29,10 +29,11 @@ export function enderecoResumido(empresa: Partial<Record<CampoEndereco, string |
 export function valoresDaEmpresa(
   f: { get: (chave: string) => unknown },
   comEnderecoEStatus: boolean,
+  anterior?: { cnpj?: string | null; cep?: string | null },
 ): Record<string, string> {
   const texto = (chave: string) => String(f.get(chave) ?? "").trim();
-  if (!validarCnpj(texto("cnpj"))) throw new Error("Informe um CNPJ com 14 dígitos.");
-  if (comEnderecoEStatus && texto("cep") && !validarCep(texto("cep"))) throw new Error("Informe um CEP com 8 dígitos.");
+  if (!validarCnpj(texto("cnpj")) && texto("cnpj") !== anterior?.cnpj) throw new Error("Informe um CNPJ com 14 dígitos.");
+  if (comEnderecoEStatus && texto("cep") && !validarCep(texto("cep")) && texto("cep") !== anterior?.cep) throw new Error("Informe um CEP com 8 dígitos.");
   const valores: Record<string, string> = {
     nome_fantasia: capitalizarCadastro(texto("nome_fantasia")),
     razao_social: capitalizarCadastro(texto("razao_social")),

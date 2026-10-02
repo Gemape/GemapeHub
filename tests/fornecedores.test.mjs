@@ -52,6 +52,20 @@ test('fornecedor novo formata contatos e textos cadastrais', () => {
   assert.throws(() => salvarFornecedor({ ...fornecedor, cep: '123' }, local), /CEP/);
 });
 
+test('fornecedor antigo aceita editar nome sem alterar CEP e telefone incompletos', () => {
+  const local = storage();
+  const criado = salvarFornecedor(fornecedor, local);
+  const antigos = listarFornecedores(local);
+  antigos[0].cep = '123';
+  antigos[0].telefone = '456';
+  local.setItem('gemape-demo-fornecedores', JSON.stringify(antigos));
+  const editado = salvarFornecedor({ ...antigos[0], nome_fantasia: 'NOVA MARCA' }, local);
+  assert.equal(editado.nome_fantasia, 'Nova Marca');
+  assert.equal(editado.cep, '123');
+  assert.equal(editado.telefone, '456');
+  assert.equal(editado.id, criado.id);
+});
+
 test('excluir remove somente o fornecedor escolhido', () => {
   const local = storage();
   const primeiro = salvarFornecedor(fornecedor, local);
