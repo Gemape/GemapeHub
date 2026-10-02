@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
 import { pedeTamanho, SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,9 @@ import {
   useExcluir,
   type CompraUniforme,
 } from "@/lib/hooks-gemape";
+import { escolherFornecedorDaCompra } from "@/lib/compras-fornecedor";
+import { listarFornecedores } from "@/lib/fornecedores-demo";
+import { MODO_DEMO } from "@/lib/modo-demo";
 import { nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -54,6 +58,7 @@ export function UniformesComprasModulo() {
   // Produto e tamanho escolhidos: produto com tamanho em Gerais pede o tamanho (decisão 23).
   const [itemSel, setItemSel] = useState("");
   const [tamanho, setTamanho] = useState("");
+  const [fornecedorId, setFornecedorId] = useState("");
   const parametros = useParametrosBase();
 
   const { data: compras = [], isLoading } = useComprasUniformes(empresaId, busca);
@@ -69,6 +74,7 @@ export function UniformesComprasModulo() {
     setValorUnitario(0);
     setItemSel("");
     setTamanho("");
+    setFornecedorId("");
     setAberto(true);
   }
 
@@ -91,16 +97,30 @@ export function UniformesComprasModulo() {
       }
     }
 
+    // No demonstrativo o fornecedor vem do cadastro e é conferido de novo na hora de gravar.
+    let fornecedor = String(f.get("fornecedor") ?? "");
+    let fornecedorGravado: { id: string } | null = null;
+    if (MODO_DEMO) {
+      const escolha = escolherFornecedorDaCompra(listarFornecedores(), "cat-uniformes", fornecedorId);
+      if ("erro" in escolha) {
+        alert(escolha.erro);
+        return;
+      }
+      fornecedor = escolha.nome;
+      fornecedorGravado = { id: escolha.id };
+    }
+
     const valores: Record<string, unknown> = {
       empresa_id: String(f.get("empresa_id")),
       item_id: itemId,
-      fornecedor: String(f.get("fornecedor")),
+      fornecedor,
       nota_fiscal: String(f.get("nota_fiscal") || ""),
       data_compra: String(f.get("data_compra")),
       quantidade: quantidadeCompra,
       valor_unitario: Number(f.get("valor_unitario")),
       observacao: String(f.get("observacao") || ""),
     };
+    if (fornecedorGravado) valores["fornecedor_id"] = fornecedorGravado.id;
     if (TAMANHO_DISPONIVEL) valores["tamanho_id"] = tamanhoParaGravar(tamanho);
 
     salvar.mutate(
@@ -284,10 +304,7 @@ export function UniformesComprasModulo() {
                 />
               </div>
             )}
-            <div className="space-y-1.5">
-              <Label htmlFor="fornecedor">Fornecedor</Label>
-              <Input id="fornecedor" name="fornecedor" required placeholder="Nome do fornecedor" />
-            </div>
+            <SeletorFornecedorCompra categoriaId="cat-uniformes" nomeCategoria="Uniforme" valor={fornecedorId} onChange={setFornecedorId} />
             <div className="space-y-1.5">
               <Label htmlFor="nota_fiscal">Nota Fiscal</Label>
               <Input id="nota_fiscal" name="nota_fiscal" placeholder="Número da NF" />
