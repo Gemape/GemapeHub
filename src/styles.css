@@ -116,7 +116,7 @@
   --chart-4: oklch(0.57 0.21 27);
   --chart-5: oklch(0.6 0.12 285);
 
-  --sidebar: oklch(0.32 0.25 266); /* Sidebar no mesmo azul dos botões principais */
+  --sidebar: #0A007C;
   --sidebar-foreground: oklch(0.98 0.01 260);
   --sidebar-primary: oklch(1 0 0);
   --sidebar-primary-foreground: oklch(0.32 0.25 266);
@@ -166,7 +166,7 @@
   --input: oklch(1 0 0 / 16%);
   --ring: oklch(0.4 0.15 262);
 
-  --sidebar: oklch(0.08 0.04 262);
+  --sidebar: #0A007C;
   --sidebar-foreground: oklch(0.98 0.01 260);
   --sidebar-primary: oklch(0.4 0.15 262);
   --sidebar-primary-foreground: oklch(1 0 0);
