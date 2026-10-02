@@ -121,3 +121,10 @@ test("o estoque por empresa nasce do catálogo, uma vez por empresa, sem mexer e
   assert.equal(dados.epis.filter((e) => e.catalogo_id === "c1").length, 3);
   assert.ok(dados.epis.filter((e) => e.catalogo_id === "c1").every((e) => e.nome === "Luva de raspa reforçada"));
 });
+
+test("o tamanho escolhido precisa estar entre os associados à subcategoria", () => {
+  assert.throws(() => montarNovoEpi({ ...base, tamanhosPermitidos: ["t-p"] }), /não associado/);
+  assert.equal(montarNovoEpi({ ...base, tamanhosPermitidos: ["t-u"] }).tamanho_id, "t-u");
+  assert.throws(() => montarClonagemEpi({ origem: catalogo[0], tamanhoId: "t-xx", minimo: "1", catalogo, codigo: "EPI-0004", tamanhosPermitidos: ["t-g"] }), /não associado/);
+  assert.equal(montarClonagemEpi({ origem: catalogo[0], tamanhoId: "t-g", minimo: "1", catalogo, codigo: "EPI-0004", tamanhosPermitidos: ["t-g"] }).tamanho_id, "t-g");
+});

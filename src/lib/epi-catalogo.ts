@@ -108,10 +108,15 @@ export function montarNovoEpi(entrada: {
   catalogo: EpiCatalogo[];
   codigo: string;
   pedeTamanho: boolean;
+  // Tamanhos associados à subcategoria em Gerais; o escolhido precisa estar entre eles.
+  tamanhosPermitidos?: string[];
 }): Omit<EpiCatalogo, "id"> {
   const nome = entrada.nome.trim().replace(/\s+/g, " ");
   if (!nome) throw new Error("Informe a descrição do item.");
   if (entrada.pedeTamanho && !entrada.tamanhoId) throw new Error("Selecione o tamanho.");
+  if (entrada.tamanhoId && entrada.tamanhosPermitidos && !entrada.tamanhosPermitidos.includes(entrada.tamanhoId)) {
+    throw new Error("Tamanho não associado a esta subcategoria em Cadastros > Gerais.");
+  }
   const minimo = validarMinimo(entrada.minimo);
   const jaExiste = entrada.catalogo.some((c) => normalizarDescricao(c.nome) === normalizarDescricao(nome));
   if (jaExiste) {
@@ -136,9 +141,13 @@ export function montarClonagemEpi(entrada: {
   minimo: string | number;
   catalogo: EpiCatalogo[];
   codigo: string;
+  tamanhosPermitidos?: string[];
 }): Omit<EpiCatalogo, "id"> {
   const { origem } = entrada;
   if (!entrada.tamanhoId) throw new Error("Selecione o tamanho.");
+  if (entrada.tamanhosPermitidos && !entrada.tamanhosPermitidos.includes(entrada.tamanhoId)) {
+    throw new Error("Tamanho não associado a esta subcategoria em Cadastros > Gerais.");
+  }
   const minimo = validarMinimo(entrada.minimo);
   if (duplicadoNoCatalogo(entrada.catalogo, origem.nome, entrada.tamanhoId)) {
     throw new Error("Este EPI já está cadastrado neste tamanho.");
@@ -170,6 +179,8 @@ export function sincronizarEstoqueEpis(
   if (catalogo.length === 0) return false;
   const epis = dados.epis ?? (dados.epis = []);
   let mudou = false;
+  const porChave = new Map<string, Linha>();
+  for (const e of epis) if (e["catalogo_id"]) porChave.set(`${e["catalogo_id"]}|${e["empresa_id"]}`, e);
   for (const item of catalogo) {
     const tamanho = (item["tamanho_id"] as string | null) ?? null;
     const comuns = {
@@ -181,13 +192,15 @@ export function sincronizarEstoqueEpis(
       unidade_medida: item["unidade_medida"],
     };
     for (const empresa of dados.empresas ?? []) {
-      const existente = epis.find((e) => e["catalogo_id"] === item["id"] && e["empresa_id"] === empresa["id"]);
+      const existente = porChave.get(`${item["id"]}|${empresa["id"]}`);
       if (!existente) {
-        epis.push({
+        const nova: Linha = {
           id: novoId(), created_at: agora, empresa_id: empresa["id"], catalogo_id: item["id"], ...comuns,
           tamanhos_selecionados: tamanho ? [tamanho] : [], estoque_atual: 0,
           estoque_minimo: item["estoque_minimo"] ?? 0, status: item["status"] ?? "Ativo",
-        });
+        };
+        epis.push(nova);
+        porChave.set(`${item["id"]}|${empresa["id"]}`, nova);
         mudou = true;
       } else if (Object.entries(comuns).some(([k, v]) => existente[k] !== v)) {
         Object.assign(existente, comuns);

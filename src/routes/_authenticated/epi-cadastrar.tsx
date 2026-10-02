@@ -15,8 +15,9 @@ export const Route = createFileRoute("/_authenticated/epi-cadastrar")({
         <p className="text-eyebrow">EPI</p>
         <h1 className="text-2xl font-bold">Cadastrar EPI</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Um cadastro por descrição e tamanho, com código automático e estoque mínimo. O catálogo é
-          de todas as empresas; o estoque de cada uma fica separado.
+          Demonstração: um cadastro por descrição e tamanho, com código automático e estoque mínimo.
+          O catálogo é de todas as empresas; o estoque de cada uma fica separado. No banco real
+          continua o cadastro antigo até a Fase 2.
         </p>
       </header>
       <CadastroEpi />

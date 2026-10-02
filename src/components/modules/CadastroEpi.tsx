@@ -140,6 +140,11 @@ function CatalogoEpi() {
     }
   }
 
+  function abrirClone(item: EpiCatalogo) {
+    setTamanhoSel("");
+    setClonando(item);
+  }
+
   function abrirNovo() {
     setSubSel("");
     setTamanhoSel("");
@@ -164,6 +169,7 @@ function CatalogoEpi() {
           catalogo: atual,
           codigo,
           pedeTamanho: associados.length > 0,
+          tamanhosPermitidos: associados.map((t) => t.id),
         }),
       () => setNovoAberto(false),
     );
@@ -176,7 +182,8 @@ function CatalogoEpi() {
     const f = new FormData(e.currentTarget);
     void gravar(
       (codigo, atual) =>
-        montarClonagemEpi({ origem, tamanhoId: tamanhoSel, minimo: String(f.get("minimo") ?? ""), catalogo: atual, codigo }),
+        montarClonagemEpi({ origem, tamanhoId: tamanhoSel, minimo: String(f.get("minimo") ?? ""), catalogo: atual, codigo,
+          tamanhosPermitidos: associadosOrigem.map((t) => t.id) }),
       () => setClonando(null),
     );
   }
@@ -220,7 +227,7 @@ function CatalogoEpi() {
               </TableRow>
             )}
             {grupos.map((g) => (
-              <GrupoLinhas key={g.chave} grupo={g} rotuloTamanho={rotuloTamanho} onClonar={setClonando} />
+              <GrupoLinhas key={g.chave} grupo={g} rotuloTamanho={rotuloTamanho} onClonar={abrirClone} />
             ))}
           </TableBody>
         </Table>

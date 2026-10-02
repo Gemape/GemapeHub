@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+let contador = 0;
 import { demoSupabase } from "../src/integrations/supabase/demo-client.ts";
 
 const novo = (extra = {}) => ({
-  id: crypto.randomUUID(), codigo_sku: `EPI-9${Math.floor(Math.random() * 900 + 100)}`, nome: `Bota ${crypto.randomUUID()}`,
+  id: crypto.randomUUID(), codigo_sku: `EPI-9${String(++contador).padStart(3, "0")}`, nome: `Bota ${crypto.randomUUID()}`,
   categoria: "Calçado", subcategoria_id: "sub-x", unidade_id: null, unidade_medida: null,
   tamanho_id: "t-40", estoque_minimo: 4, status: "Ativo", ...extra,
 });
@@ -30,7 +31,7 @@ test("o catálogo recusa o mesmo EPI no mesmo tamanho e o mesmo código", async 
   assert.equal(outroTamanho.error, null);
 });
 
-test("duas gravações iguais em lote não passam: só a primeira entra", async () => {
+test("duas gravações iguais no mesmo lote: nenhuma entra", async () => {
   const a = novo();
   const { error } = await demoSupabase.from("epis_catalogo").insert([a, { ...a, id: crypto.randomUUID(), codigo_sku: `${a.codigo_sku}X` }]);
   assert.match(String(error?.message), /já está cadastrado neste tamanho/);
@@ -49,4 +50,18 @@ test("a compra de um EPI do catálogo soma só no estoque da empresa escolhida",
   assert.equal(error, null);
   const { data } = await demoSupabase.from("epis").select("*").eq("id", linha.id).single();
   assert.equal(data.estoque_atual, 3);
+});
+
+test("a edição do catálogo não repete tamanho nem código, e a exclusão é recusada", async () => {
+  const a = novo();
+  const b = novo({ nome: a.nome, tamanho_id: "t-41" });
+  await demoSupabase.from("epis_catalogo").insert([a, b]);
+  const t = await demoSupabase.from("epis_catalogo").update({ tamanho_id: "t-40" }).eq("id", b.id);
+  assert.match(String(t.error?.message), /já está cadastrado neste tamanho/);
+  const c = await demoSupabase.from("epis_catalogo").update({ codigo_sku: a.codigo_sku }).eq("id", b.id);
+  assert.match(String(c.error?.message), /código/i);
+  const d = await demoSupabase.from("epis_catalogo").delete().eq("id", a.id);
+  assert.match(String(d.error?.message), /não pode ser excluído/);
+  const { data } = await demoSupabase.from("epis").select("*").eq("catalogo_id", a.id);
+  assert.ok(data.length > 0);
 });

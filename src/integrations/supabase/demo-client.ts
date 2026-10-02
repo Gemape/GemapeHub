@@ -204,6 +204,20 @@ class Consulta {
       if (this.tabela === "epis_catalogo" || this.tabela === "empresas") sincronizarEpis();
       persistirDados();
     }
+    if (this.acao === "update" && this.tabela === "epis_catalogo") {
+      // A edição também não pode repetir o EPI no mesmo tamanho nem o código de outro.
+      const proposto = { ...(this.payload ?? {}) } as Linha;
+      for (const l of selecionadas) {
+        const depois = { ...l, ...proposto };
+        const outros = linhas.filter(o => o !== l);
+        if (duplicadoNoCatalogo(outros as never, String(depois.nome ?? ""), (depois.tamanho_id as string | null) ?? null)) return { data: null, error: new Error("Este EPI já está cadastrado neste tamanho.") };
+        if (outros.some(o => o.codigo_sku === depois.codigo_sku)) return { data: null, error: new Error(`O código ${depois.codigo_sku} já está em uso.`) };
+      }
+    }
+    if (this.acao === "delete" && this.tabela === "epis_catalogo" && selecionadas.length) {
+      // Sem tela de exclusão por enquanto: apagar o catálogo deixaria estoque sem origem.
+      return { data: null, error: new Error("EPI do catálogo não pode ser excluído nesta etapa.") };
+    }
     if (this.acao === "update") {
       selecionadas.forEach(l => Object.assign(l, this.payload));
       if (this.tabela === "epis_catalogo") sincronizarEpis();
