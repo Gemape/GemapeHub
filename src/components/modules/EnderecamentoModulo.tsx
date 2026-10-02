@@ -105,7 +105,9 @@ export function EnderecamentoModulo() {
 
   function abrir(endereco: Endereco | null, produtoInicial?: ProdutoEnderecavel) {
     setEditando(endereco);
-    setEmpresaForm(endereco?.empresa_id ?? produtoInicial?.empresa_id ?? empresaPadraoParaEscolha(empresas, empresaId));
+    const doProduto = produtoInicial?.empresa_id;
+    // Empresa inativa não é escolhida em registro novo; a de um endereço em edição fica.
+    setEmpresaForm(endereco?.empresa_id ?? (doProduto && empresasParaEscolha(empresas).some((e) => e.id === doProduto) ? doProduto : empresaPadraoParaEscolha(empresas, empresaId)));
     // Encontra o produto sem diferenciar maiúsculas, como a tabela faz.
     const salvo = endereco?.codigo_produto ?? "";
     const produto = endereco && produtos.find((p) => p.empresa_id === endereco.empresa_id && chave(p.codigo_sku) === chave(salvo));

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
-import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
+import { empresasParaEscolha } from "@/lib/empresas";
 import {
   useEmpresas,
   useItens,

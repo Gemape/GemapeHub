@@ -144,3 +144,14 @@ test("os formulários e termos escolhem empresa só entre as ativas; relatórios
     assert.doesNotMatch(ler(arq), /empresasParaEscolha/, arq);
   }
 });
+
+test("o valor que já vem escolhido nunca é empresa inativa (termos, compras e endereçamento)", () => {
+  const ler = (c) => readFileSync(new URL(`../src/components/modules/${c}`, import.meta.url), "utf8");
+  for (const arq of ["EpiTermoEntrega", "EpiFichaEpiAvulsa", "FerramentasTermoEncerramento", "FerramentasTermoResponsabilidade", "FerramentasTermoVistoria"]) {
+    assert.match(ler(`${arq}.tsx`), /empresas\.length > 0 && empresaSel && !empresasParaEscolha\(empresas\)\.some/, arq);
+  }
+  for (const arq of ["EpiComprasModulo", "UniformesComprasModulo"]) {
+    assert.match(ler(`${arq}.tsx`), /defaultValue=\{empresasParaEscolha\(empresas\)\.some\(\(e\) => e\.id === empresaId\)/, arq);
+  }
+  assert.match(ler("EnderecamentoModulo.tsx"), /doProduto && empresasParaEscolha\(empresas\)\.some/);
+});

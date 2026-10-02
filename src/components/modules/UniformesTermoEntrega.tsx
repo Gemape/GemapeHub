@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS } from "@/lib/empresa-context";
-import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
+import { empresasParaEscolha } from "@/lib/empresas";
 import { montarTermoEntregaUniformeHtml } from "@/lib/termo-entrega-uniforme-html";
 import {
   useEmpresas,

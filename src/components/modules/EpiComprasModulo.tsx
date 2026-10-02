@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
+import { empresasParaEscolha } from "@/lib/empresas";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
 import {
   useComprasEpis,
@@ -229,7 +229,7 @@ export function EpiComprasModulo() {
               <Select
                 name="empresa_id"
                 required
-                defaultValue={empresaId !== TODAS ? empresaId : ""}
+                defaultValue={empresasParaEscolha(empresas).some((e) => e.id === empresaId) ? empresaId : ""}
               >
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione a empresa" />
