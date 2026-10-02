@@ -1,4 +1,4 @@
-// Hierarquia do menu Parâmetros (decisão 34). Só dados: o AppSidebar desenha.
+// Hierarquia do menu Parâmetros (decisões 34 e 38). Só dados: o AppSidebar desenha.
 export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench" | "HardHat" | "ClipboardList" | "Archive";
 export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean };
 export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
@@ -6,13 +6,7 @@ export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
 
 export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
   { titulo: "Tabelas de Apoio", url: "/cadastros/gerais/categorias", icone: "Tags" },
-  {
-    titulo: "Tamanho e Medidas de Produto",
-    filhos: [
-      { titulo: "Cadastro de Tamanhos e Medidas", url: "/cadastros/gerais/tamanhos-unidades", icone: "Ruler" },
-      { titulo: "Associar Tamanho e Medida ao Produto", url: "/cadastros/gerais/associar-tamanhos", icone: "ListChecks" },
-    ],
-  },
+  { titulo: "Tamanho e Medidas de Produto", url: "/cadastros/gerais/tamanhos-unidades", icone: "Ruler" },
   { titulo: "Código do Produto", url: "/cadastros/gerais/codigo-produto", icone: "Barcode" },
   { titulo: "Código de Fábrica", url: "/cadastros/gerais/codigo-fabrica", icone: "Factory" },
   { titulo: "Endereçamento", url: "/cadastros/gerais/enderecamento", icone: "MapPin" },

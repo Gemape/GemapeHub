@@ -415,3 +415,8 @@ Pedidos do responsável em 02/10: Caixas de Ferramentas sai de Módulos e vai pa
 ## 37. CADASTRAR EPI E FICHA DE EPI EM PARÂMETROS > EPI
 
 Pedido do responsável em 02/10: por serem cadastros, "Cadastrar EPI" e "Cadastrar Ficha de EPI" ficam em um menu EPI dentro de Parâmetros, não em Módulos. Em Parâmetros > EPI, "Cadastrar EPI" tem "Cadastrar Ficha de EPI" como submenu. Em Módulos, "EPIs" volta a ser um item simples (o controle de estoque, compras, termos e relatórios). Isso substitui a decisão 35 só no ponto de onde o menu fica; o catálogo por tamanho, o mínimo perguntado no Novo EPI e o resto da 35 continuam. As URLs não mudam (`/epi-cadastrar`, `/epi-ficha`). Como o Cadastrar EPI agora é uma tela de Parâmetros, ele continua perguntando o estoque mínimo por pedido expresso do responsável na decisão 35, sem exibir saldo nem movimentação.
+
+
+## 38. TAMANHO E MEDIDAS DE PRODUTO: UM MENU SÓ, COM ASSOCIAR COMO ABA
+
+Pedido do responsável em 02/10: "Associar Tamanho e Medida ao Produto" deixa de ser um item de menu e passa para dentro de "Tamanho e Medidas de Produto", ficando um único menu de parametrização. Em Parâmetros > Gerais, "Tamanho e Medidas de Produto" abre `/cadastros/gerais/tamanhos-unidades` com duas abas: "Cadastro" (tamanhos e numerações, unidades e o botão de tamanhos padrão) e "Associar ao produto" (a associação por subcategoria). O conteúdo das duas abas não muda. `/cadastros/gerais/associar-tamanhos` continua abrindo a aba "Associar ao produto". Isso substitui a decisão 34 só na divisão em dois submenus. Nada no Supabase.
