@@ -31,5 +31,7 @@ export function escolherFornecedorDaCompra(
   const f = lista.find((x) => x.id === id);
   if (!f) return { erro: "O fornecedor escolhido não está mais cadastrado. Selecione outro." };
   if (!f.categorias?.includes(categoriaId)) return { erro: "O fornecedor escolhido não atende esta categoria. Selecione outro." };
-  return { id: f.id, nome: nomeDoFornecedor(f) };
+  const nome = nomeDoFornecedor(f);
+  if (!nome) return { erro: "O fornecedor escolhido está sem nome no cadastro. Corrija em Cadastros > Fornecedores." };
+  return { id: f.id, nome };
 }

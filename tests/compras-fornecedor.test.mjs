@@ -51,3 +51,8 @@ test("as compras de EPI e Uniforme usam o fornecedor do cadastro no demo e grava
   assert.match(seletor, /MODO_DEMO/);
   assert.match(seletor, /Cadastros &gt; Fornecedores/);
 });
+
+test("fornecedor sem nome no cadastro é recusado", () => {
+  const vazio = [{ id: "fx", codigo: "00009", razao_social: "", nome_fantasia: "", categorias: ["cat-epi"] }];
+  assert.match(escolherFornecedorDaCompra(vazio, "cat-epi", "fx").erro, /sem nome/);
+});
