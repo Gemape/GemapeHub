@@ -82,8 +82,8 @@ function LayoutAutenticado() {
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
         <AppSidebar />
-        <main className="flex min-h-screen w-full flex-col bg-background">
-          <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b bg-card/95 px-4 py-3 backdrop-blur">
+        <main className="flex min-h-screen w-full min-w-0 flex-col">
+          <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 glass border-x-0 border-t-0 px-4 py-3 rounded-none">
             <SidebarTrigger />
             <span className="text-eyebrow hidden sm:inline">Grupo GEMAPE</span>
             <span className="text-xs text-muted-foreground">{import.meta.env["VITE_DEMO_MODE"] !== "false" ? "Demonstração · dados locais" : ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</span>

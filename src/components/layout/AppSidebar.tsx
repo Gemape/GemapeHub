@@ -9,7 +9,7 @@ import {
   Shirt,
   Users,
   Wrench,
-  Settings2,
+  Cog,
   ClipboardList,
   History,
   ShoppingCart,
@@ -131,8 +131,8 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="px-4 py-8">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-full bg-white text-primary">
-            <Settings2 className="size-6 animate-spin-slow" />
+          <div className="flex size-10 items-center justify-center rounded-full bg-white/90 text-primary shadow-lg ring-1 ring-white/40">
+            <Cog className="engrenagem-girando size-6" aria-hidden="true" />
           </div>
           <div className="leading-tight">
             <h2 className="font-display text-lg font-black tracking-tighter text-white">GEMAPE</h2>
