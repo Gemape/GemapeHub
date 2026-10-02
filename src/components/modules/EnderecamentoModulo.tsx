@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
+import { useExcluir, useSalvar, useVeiculos } from "@/lib/hooks-gemape";
 import { ROTULO_TABELA, useProdutosGemape } from "@/lib/produtos-gemape";
+import { montarLinhasEnderecamento, type ProdutoEnderecavel } from "@/lib/enderecamento-categoria";
+import { useParametrosBase } from "@/lib/use-parametros-base";
 
 type Endereco = {
   id: string;
@@ -34,7 +36,7 @@ const CAMPOS = [
   { nome: "apartamento", rotulo: "Apartamento (nível)" },
 ] as const;
 const chave = (v: string) => v.trim().toUpperCase();
-const ordem = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
+const ROTULOS = { ...ROTULO_TABELA, veiculos: "Veículo" };
 
 function useEnderecos(empresaId: string) {
   return useQuery({
@@ -52,52 +54,54 @@ function useEnderecos(empresaId: string) {
 export function EnderecamentoModulo() {
   const { empresas, empresaId } = useEmpresa();
   const { data: enderecos = [], isLoading, error } = useEnderecos(empresaId);
-  const { data: produtos = [] } = useProdutosGemape();
+  const { data: produtosBase = [] } = useProdutosGemape();
+  const { data: veiculos = [] } = useVeiculos(TODAS);
+  const parametros = useParametrosBase();
+  const produtos: ProdutoEnderecavel[] = useMemo(() => [
+    ...produtosBase,
+    ...veiculos.map((veiculo) => {
+      const atual = veiculo as typeof veiculo & { codigo_sku?: string; descricao?: string };
+      return { tabela: "veiculos" as const, codigo_sku: atual.codigo_sku ?? "", nome: atual.descricao || veiculo.modelo, empresa_id: veiculo.empresa_id };
+    }),
+  ], [produtosBase, veiculos]);
   const salvar = useSalvar("enderecamentos", ["enderecamentos"]);
   const excluir = useExcluir("enderecamentos", ["enderecamentos"]);
   const [busca, setBusca] = useState("");
+  const [somenteSem, setSomenteSem] = useState(false);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Endereco | null>(null);
   const [empresaForm, setEmpresaForm] = useState("");
   const [produtoForm, setProdutoForm] = useState("");
 
-  const nomeProduto = (e: Pick<Endereco, "codigo_produto" | "empresa_id">) =>
-    produtos.find((p) => chave(p.codigo_sku ?? "") === chave(e.codigo_produto) && p.empresa_id === e.empresa_id)?.nome;
   const nomeEmpresa = (id: string) => empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
 
-  const linhas = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
-    return enderecos
-      .filter((e) => !termo || [e.codigo_produto, e.rua, e.prateleira, e.apartamento, nomeProduto(e) ?? ""]
-        .some((v) => v.toLowerCase().includes(termo)))
-      .sort((x, y) => ordem.compare(x.rua, y.rua) || ordem.compare(x.prateleira, y.prateleira)
-        || ordem.compare(x.apartamento, y.apartamento) || ordem.compare(x.codigo_produto, y.codigo_produto));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enderecos, busca, produtos]);
+  const linhas = useMemo(() => montarLinhasEnderecamento(
+    produtos, enderecos, parametros, empresaId, busca, somenteSem,
+  ), [produtos, enderecos, parametros, empresaId, busca, somenteSem]);
 
   // Só produtos cadastrados na empresa escolhida. Ao editar, mantém o código salvo mesmo que o produto tenha saído.
   // O endereço guarda só o código: códigos repetidos na mesma empresa viram uma opção só.
   const opcoesProduto: { valor: string; rotulo: string; detalhe: string }[] = [];
-  for (const p of produtos.filter((p) => p.empresa_id === empresaForm)) {
+  for (const { produto: p } of montarLinhasEnderecamento(produtos, [], parametros, empresaForm, "", false)) {
     const igual = opcoesProduto.find((o) => chave(o.valor) === chave(p.codigo_sku));
     if (igual) {
       igual.rotulo += ` / ${p.nome}`;
-      igual.detalhe += ` / ${ROTULO_TABELA[p.tabela]}`;
+      igual.detalhe += ` / ${ROTULOS[p.tabela]}`;
     } else {
-      opcoesProduto.push({ valor: p.codigo_sku, rotulo: `${p.codigo_sku} · ${p.nome}`, detalhe: ROTULO_TABELA[p.tabela] });
+      opcoesProduto.push({ valor: p.codigo_sku, rotulo: `${p.codigo_sku} · ${p.nome}`, detalhe: ROTULOS[p.tabela] });
     }
   }
   if (produtoForm && !opcoesProduto.some((o) => o.valor === produtoForm)) {
     opcoesProduto.push({ valor: produtoForm, rotulo: produtoForm, detalhe: "Produto não encontrado no cadastro" });
   }
 
-  function abrir(endereco: Endereco | null) {
+  function abrir(endereco: Endereco | null, produtoInicial?: ProdutoEnderecavel) {
     setEditando(endereco);
-    setEmpresaForm(endereco?.empresa_id ?? (empresaId !== TODAS ? empresaId : empresas[0]?.id ?? ""));
+    setEmpresaForm(endereco?.empresa_id ?? produtoInicial?.empresa_id ?? (empresaId !== TODAS ? empresaId : empresas[0]?.id ?? ""));
     // Encontra o produto sem diferenciar maiúsculas, como a tabela faz.
     const salvo = endereco?.codigo_produto ?? "";
     const produto = endereco && produtos.find((p) => p.empresa_id === endereco.empresa_id && chave(p.codigo_sku) === chave(salvo));
-    setProdutoForm(produto ? produto.codigo_sku : salvo);
+    setProdutoForm(produtoInicial?.codigo_sku ?? (produto ? produto.codigo_sku : salvo));
     setAberto(true);
   }
 
@@ -135,10 +139,12 @@ export function EnderecamentoModulo() {
         <h1 className="text-2xl font-bold">Endereçamento de estoque</h1>
         <p className="mt-1 text-sm text-muted-foreground">Onde cada produto deve ser guardado no almoxarifado depois da entrada da nota fiscal: rua (corredor), número (estante) e apartamento (nível da prateleira, contado de cima para baixo).</p>
       </div>
-      <Button requiresWrite onClick={() => abrir(null)}>Novo endereço</Button>
     </header>
 
-    <Input className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
+    <div className="flex flex-wrap items-center gap-3">
+      <Input className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
+      <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
+    </div>
 
     <div className="panel overflow-x-auto">
       <Table>
@@ -150,18 +156,18 @@ export function EnderecamentoModulo() {
         <TableBody>
           {error ? <TableRow><TableCell colSpan={7} className="text-center text-destructive">Não foi possível carregar: {(error as Error).message}</TableCell></TableRow>
             : isLoading ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Carregando…</TableCell></TableRow>
-            : linhas.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">{busca ? "Nenhum endereço encontrado." : "Nenhum endereço cadastrado."}</TableCell></TableRow>
-            : linhas.map((e) => <TableRow key={e.id}>
-              <TableCell className="font-mono text-xs">{e.codigo_produto}</TableCell>
-              <TableCell>{nomeProduto(e) ?? <span className="text-muted-foreground">—</span>}</TableCell>
-              <TableCell>{e.rua}</TableCell>
-              <TableCell>{e.prateleira}</TableCell>
-              <TableCell>{e.apartamento}</TableCell>
-              <TableCell>{nomeEmpresa(e.empresa_id)}</TableCell>
+            : linhas.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Nenhum produto encontrado para os filtros.</TableCell></TableRow>
+            : linhas.map(({ produto, endereco: e }) => <TableRow key={e?.id ?? `${produto.tabela}-${produto.empresa_id}-${produto.codigo_sku}`}>
+              <TableCell className="font-mono text-xs">{produto.codigo_sku}</TableCell>
+              <TableCell>{produto.nome}</TableCell>
+              <TableCell>{e?.rua ?? "—"}</TableCell>
+              <TableCell>{e?.prateleira ?? "—"}</TableCell>
+              <TableCell>{e?.apartamento ?? "—"}</TableCell>
+              <TableCell>{nomeEmpresa(produto.empresa_id ?? "")}</TableCell>
               <TableCell className="whitespace-nowrap text-right">
-                <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(e)}>Editar</Button>
-                <Button requiresWrite variant="ghost" size="sm" disabled={excluir.isPending}
-                  onClick={() => { if (confirm(`Excluir o endereço de ${e.codigo_produto}?`)) excluir.mutate(e.id); }}>Excluir</Button>
+                <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(e ?? null, produto)}>{e ? "Editar" : "Adicionar endereço"}</Button>
+                {e && <Button requiresWrite variant="ghost" size="sm" disabled={excluir.isPending}
+                  onClick={() => { if (confirm(`Excluir o endereço de ${e.codigo_produto}?`)) excluir.mutate(e.id); }}>Excluir</Button>}
               </TableCell>
             </TableRow>)}
         </TableBody>

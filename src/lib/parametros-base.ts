@@ -7,6 +7,7 @@ import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts"
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
 
 export type Categoria = { id: string; nome: string };
+export type TipoEnderecamento = "nao_usa" | "opcional" | "obrigatorio";
 export type Subcategoria = { id: string; categoriaId: string; nome: string };
 export type Opcao = { id: string; nome: string };
 export type ListaFerramenta =
@@ -35,6 +36,7 @@ export type DadosCodigoFabrica = Omit<CodigoFabrica, "id">;
 
 export type ParametrosBase = {
   categorias: Categoria[];
+  enderecamentoCategorias: Record<string, TipoEnderecamento>;
   subcategorias: Subcategoria[];
   categoriasFerramenta: Opcao[];
   gruposFerramenta: Opcao[];
@@ -110,6 +112,7 @@ function padrao(): ParametrosBase {
   }));
   return {
     categorias,
+    enderecamentoCategorias: {},
     subcategorias,
     categoriasFerramenta: ["Manual", "Elétrica", "Pneumático", "Hidráulica", "Medição", "Corte"]
       .map((nome) => ({ id: `cat-fer-${slug(nome)}`, nome })),
@@ -175,6 +178,15 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
     for (const chave of Object.keys(base) as (keyof ParametrosBase)[]) {
       if (Array.isArray(salvos[chave])) (base[chave] as unknown[]) = salvos[chave];
     }
+    if (salvos.enderecamentoCategorias && typeof salvos.enderecamentoCategorias === "object" &&
+      !Array.isArray(salvos.enderecamentoCategorias)) {
+      for (const [id, tipo] of Object.entries(salvos.enderecamentoCategorias)) {
+        if (base.categorias.some((c) => c.id === id) &&
+          (tipo === "nao_usa" || tipo === "opcional" || tipo === "obrigatorio")) {
+          base.enderecamentoCategorias[id] = tipo;
+        }
+      }
+    }
     // Regras salvas antes da definição de 4 dígitos (ex.: 001) passam para 0001.
     base.regrasCodigo = base.regrasCodigo.map((r) => ({
       ...r,
@@ -224,6 +236,24 @@ function achar<T extends { id: string }>(lista: T[], id: string, oQue: string): 
 
 // ---------- Categorias ----------
 
+export function enderecamentoDaCategoria(dados: ParametrosBase, categoriaId: string): TipoEnderecamento {
+  return dados.enderecamentoCategorias?.[categoriaId] ?? "nao_usa";
+}
+
+export function salvarEnderecamentoCategoria(
+  categoriaId: string,
+  tipo: TipoEnderecamento,
+  storage = storagePadrao(),
+): void {
+  alterar(storage, (dados) => {
+    achar(dados.categorias, categoriaId, "Categoria");
+    if (tipo !== "nao_usa" && tipo !== "opcional" && tipo !== "obrigatorio") {
+      throw new Error("Tipo de endereçamento inválido.");
+    }
+    dados.enderecamentoCategorias[categoriaId] = tipo;
+  });
+}
+
 export function adicionarCategoria(nome: string, storage = storagePadrao()): Categoria {
   return alterar(storage, (d) => {
     const categoria = { id: novoId(), nome: nomeUnico(d.categorias, nome, "categoria") };
@@ -253,6 +283,7 @@ export function removerCategoria(id: string, storage = storagePadrao()): void {
       throw new Error(`Exclua antes as ${qtd} subcategoria(s) de "${categoria.nome}".`);
     }
     d.categorias = d.categorias.filter((c) => c.id !== id);
+    delete d.enderecamentoCategorias[id];
     d.regrasCodigo = d.regrasCodigo.filter((r) => r.categoriaId !== id);
   });
 }

@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { demoSupabase } from "@/integrations/supabase/demo-client";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
@@ -12,6 +14,7 @@ import {
   adicionarListaFerramenta,
   adicionarSubcategoria,
   alterarAtivo,
+  enderecamentoDaCategoria,
   estaAtivo,
   removerCategoria,
   removerListaFerramenta,
@@ -19,6 +22,7 @@ import {
   renomearCategoria,
   renomearListaFerramenta,
   renomearSubcategoria,
+  salvarEnderecamentoCategoria,
   subcategoriasDa,
   type ListaFerramenta,
   type Opcao,
@@ -35,14 +39,14 @@ import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
-  head: () => ({ meta: [{ title: "Categorias e subcategorias | Patrimônio GEMAPE" }] }),
+  head: () => ({ meta: [{ title: "Tabelas de Apoio | Patrimônio GEMAPE" }] }),
   component: Categorias,
 });
 
 function Categorias() {
   const dados = useParametrosBase();
   const [escolhida, setEscolhida] = useState("");
-  const categoria = dados.categorias.find((c) => c.id === escolhida) ?? dados.categorias[0];
+  const categoria = dados.categorias.find((c) => c.id === escolhida);
   const subcategorias = categoria ? subcategoriasDa(dados, categoria.id) : [];
 
   // Campo de cada lista de ferramenta no modelo de ferramenta.
@@ -200,10 +204,10 @@ function Categorias() {
   return (
     <div className="space-y-5">
       <Cabecalho
-        titulo="Categorias e subcategorias"
-        descricao="Categorias de todos os tipos de produto e, dentro de cada uma, as subcategorias. Clique numa categoria para ver as subcategorias dela."
+        titulo="Tabelas de Apoio"
+        descricao="Escolha uma categoria para configurar o endereçamento e abrir as tabelas relacionadas."
       />
-      <div className="grid gap-5 lg:grid-cols-2">
+      {!escolhida && <div className="max-w-3xl">
         <ListaEditavel
           titulo="Categorias"
           novo="Nova categoria"
@@ -211,9 +215,7 @@ function Categorias() {
           selecionado={categoria?.id}
           onSelecionar={setEscolhida}
           detalhe={(c) => <Badge variant="secondary">{subcategoriasDa(dados, c.id).length}</Badge>}
-          onAdicionar={(nome) =>
-            executar(() => setEscolhida(adicionarCategoria(nome).id), "Categoria incluída.")
-          }
+          onAdicionar={(nome) => executar(() => adicionarCategoria(nome), "Categoria incluída.")}
           onRenomear={(id, nome) => executar(() => renomearCategoria(id, nome))}
           onRemover={(c) => {
             if (
@@ -224,7 +226,26 @@ function Categorias() {
               executar(() => removerCategoria(c.id), "Categoria excluída.");
           }}
         />
-        {categoria ? (
+      </div>}
+      {escolhida && categoria ? (
+        <>
+          <Button variant="outline" onClick={() => setEscolhida("")}><ArrowLeft className="mr-2 size-4" />Voltar às categorias</Button>
+          <section className="panel max-w-3xl space-y-3 p-5">
+            <h2 className="text-lg font-semibold">{categoria.nome}</h2>
+            <label htmlFor="enderecamento-categoria" className="block text-sm font-medium">Endereçamento de estoque</label>
+            <select
+              id="enderecamento-categoria"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={enderecamentoDaCategoria(dados, categoria.id)}
+              onChange={(e) => executar(() => salvarEnderecamentoCategoria(categoria.id, e.target.value as "nao_usa" | "opcional" | "obrigatorio"), "Parâmetro de endereçamento salvo.")}
+            >
+              <option value="nao_usa">Não usa</option>
+              <option value="opcional">Opcional</option>
+              <option value="obrigatorio">Obrigatório</option>
+            </select>
+            <p className="text-sm text-muted-foreground">Obrigatório avisa quando o produto está sem endereço, sem impedir o salvamento. Os campos são Rua, Número e Apartamento.</p>
+          </section>
+          <div className="max-w-3xl">
           <ListaEditavel
             titulo={`Subcategorias de ${categoria.nome}`}
             novo="Nova subcategoria"
@@ -249,12 +270,8 @@ function Categorias() {
               })
             }
           />
-        ) : (
-          <div className="panel p-4 text-sm text-muted-foreground">
-            Cadastre uma categoria para incluir subcategorias.
           </div>
-        )}
-      </div>
+          {categoria.id === "cat-ferramentas" && <>
       <div className="grid gap-5 lg:grid-cols-2">
         <ListaEditavel
           titulo="Marcas de ferramentas"
@@ -288,10 +305,6 @@ function Categorias() {
             })
           }
         />
-        {listaMarcas("marcasUniforme", "Marcas de uniformes", "Nova marca de uniforme", "uniforme")}
-      </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        {listaMarcas("marcasVeiculo", "Marcas de veículos", "Nova marca de veículo", "veículo")}
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
         <ListaEditavel
@@ -366,6 +379,11 @@ function Categorias() {
           }
         />
       </div>
+          </>}
+          {categoria.id === "cat-uniformes" && <div className="max-w-3xl">{listaMarcas("marcasUniforme", "Marcas de uniformes", "Nova marca de uniforme", "uniforme")}</div>}
+          {categoria.id === "cat-veiculos" && <div className="max-w-3xl">{listaMarcas("marcasVeiculo", "Marcas de veículos", "Nova marca de veículo", "veículo")}</div>}
+        </>
+      ) : null}
     </div>
   );
 }
