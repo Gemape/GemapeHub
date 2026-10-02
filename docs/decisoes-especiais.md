@@ -357,3 +357,20 @@ opções Endereço e Status (ativa ou inativa), como no MD.
   fazem parte da Fase 2 (docs/pendencias-fase2.md). Fora da demonstração,
   a tela mostra e salva apenas os campos que o banco já tem.
 - Nada no Supabase.
+
+## 30. VISUAL: VIDRO (GLASSMORPHISM), ENGRENAGEM E RESPONSIVO
+Pedido do responsável em 02/10/2026: sistema mais bonito, mesma cor,
+efeito de vidro em todas as páginas, engrenagem girando ao lado do nome
+GEMAPE e telas responsivas.
+- A paleta azul não muda. O fundo vira um gradiente azul suave e os
+  painéis, cartões, cabeçalho, janelas e menus ficam em vidro translúcido
+  com desfoque (classes `glass`, `glass-strong` e `panel` em
+  `src/styles.css`, na camada de componentes para os utilitários do
+  Tailwind poderem sobrescrever).
+- O ícone do logo (barra lateral e login) é uma engrenagem girando. Quem
+  pede menos movimento no sistema operacional a vê parada.
+- Responsivo: cartões e a área principal não estouram a largura (conferido
+  em 390, 820 e 1400 px); abas rolam por dentro quando não cabem.
+- Na impressão o vidro e o gradiente somem.
+- Só visual: nenhuma regra, dado ou tela de lugar mudou. Nada no Supabase.
+

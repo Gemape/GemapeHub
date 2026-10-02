@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Cog } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +17,8 @@ function PaginaAuth() {
 }
 
 function ConfiguracaoAusente({ variaveis }: { variaveis: string[] }) {
-  return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4">
-    <Card className="w-full max-w-md shadow-xl"><CardHeader><p className="text-sm font-semibold tracking-widest text-primary">GEMAPE</p><CardTitle className="text-2xl">Conexão com o banco não configurada</CardTitle><p className="text-sm text-muted-foreground">Defina estas variáveis no arquivo <code>.env</code> e reinicie o servidor:</p></CardHeader>
+  return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4 [background-attachment:fixed]">
+    <Card className="w-full max-w-md bg-white/85! shadow-2xl backdrop-blur-xl"><CardHeader><p className="flex items-center gap-2 text-sm font-semibold tracking-widest text-primary"><Cog className="engrenagem-girando size-5" aria-hidden="true" />GEMAPE</p><CardTitle className="text-2xl">Conexão com o banco não configurada</CardTitle><p className="text-sm text-muted-foreground">Defina estas variáveis no arquivo <code>.env</code> e reinicie o servidor:</p></CardHeader>
       <CardContent><ul role="alert" className="space-y-1 font-mono text-sm">{variaveis.map(v => <li key={v}>{v}</li>)}</ul><p className="mt-4 text-xs text-muted-foreground">Os valores ficam no painel do Supabase em Project Settings, API. Veja o <code>.env.example</code>.</p></CardContent>
     </Card>
   </main>;
@@ -65,13 +66,13 @@ function FormularioAuth() {
     } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível concluir"); }
     finally { setCarregando(false); }
   }
-  if (demo) return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4">
-    <Card className="w-full max-w-md shadow-xl"><CardHeader><p className="text-sm font-semibold tracking-widest text-primary">GEMAPE</p><CardTitle className="text-2xl">Modo demonstração</CardTitle><p className="text-sm text-muted-foreground">Explore o sistema com dados salvos neste navegador. O acesso real será configurado após a aprovação.</p></CardHeader>
+  if (demo) return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4 [background-attachment:fixed]">
+    <Card className="w-full max-w-md bg-white/85! shadow-2xl backdrop-blur-xl"><CardHeader><p className="flex items-center gap-2 text-sm font-semibold tracking-widest text-primary"><Cog className="engrenagem-girando size-5" aria-hidden="true" />GEMAPE</p><CardTitle className="text-2xl">Modo demonstração</CardTitle><p className="text-sm text-muted-foreground">Explore o sistema com dados salvos neste navegador. O acesso real será configurado após a aprovação.</p></CardHeader>
       <CardContent><Button className="w-full" onClick={() => { void supabase.auth.signInWithPassword({ email: "demo@local", password: "demo" }).then(() => navigate({ to: "/dashboard", replace: true })); }}>Acessar demonstração</Button></CardContent>
     </Card>
   </main>;
-  return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4">
-    <Card className="w-full max-w-md shadow-xl"><CardHeader><p className="text-sm font-semibold tracking-widest text-primary">GEMAPE</p><CardTitle className="text-2xl">Gestão de patrimônio</CardTitle><p className="text-sm text-muted-foreground">{modo === "entrar" ? "Entre com sua conta corporativa." : modo === "recuperar" ? "Recupere seu acesso por e-mail." : "Defina uma nova senha com pelo menos 12 caracteres."}</p></CardHeader>
+  return <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4 [background-attachment:fixed]">
+    <Card className="w-full max-w-md bg-white/85! shadow-2xl backdrop-blur-xl"><CardHeader><p className="flex items-center gap-2 text-sm font-semibold tracking-widest text-primary"><Cog className="engrenagem-girando size-5" aria-hidden="true" />GEMAPE</p><CardTitle className="text-2xl">Gestão de patrimônio</CardTitle><p className="text-sm text-muted-foreground">{modo === "entrar" ? "Entre com sua conta corporativa." : modo === "recuperar" ? "Recupere seu acesso por e-mail." : "Defina uma nova senha com pelo menos 12 caracteres."}</p></CardHeader>
       <CardContent><form onSubmit={enviar} className="space-y-4">
         {modo !== "alterar" && <div><Label htmlFor="email">E-mail</Label><Input id="email" type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></div>}
         {modo !== "recuperar" && <div><Label htmlFor="senha">Senha</Label><Input id="senha" type="password" autoComplete={modo === "entrar" ? "current-password" : "new-password"} minLength={modo === "alterar" ? 12 : 1} maxLength={128} required value={senha} onChange={e => setSenha(e.target.value)} /></div>}

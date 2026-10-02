@@ -76,15 +76,6 @@
   }
   --animate-float: float 4s ease-in-out infinite;
 
-  @keyframes spin-slow {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  --animate-spin-slow: spin-slow 8s linear infinite;
 }
 
 :root {
@@ -133,6 +124,16 @@
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(1 0 0 / 15%);
   --sidebar-ring: oklch(1 0 0);
+
+  /* Glassmorphism: mesmas cores, com vidro translúcido sobre o fundo em gradiente azul. */
+  --glass-bg: oklch(1 0 0 / 0.62);
+  --glass-bg-strong: oklch(1 0 0 / 0.82);
+  --glass-border: oklch(1 0 0 / 0.7);
+  --glass-shadow: 0 8px 32px oklch(0.24 0.2 266 / 0.12);
+  --glass-highlight: inset 0 1px 0 oklch(1 0 0 / 0.75);
+  --fundo-a: oklch(0.96 0.025 266);
+  --fundo-b: oklch(0.92 0.045 266);
+  --fundo-brilho: oklch(0.38 0.22 266 / 0.3);
 }
 
 .dark {
@@ -173,6 +174,15 @@
   --sidebar-accent-foreground: oklch(0.98 0.01 260);
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.4 0.15 262);
+
+  --glass-bg: oklch(0.16 0.06 262 / 0.55);
+  --glass-bg-strong: oklch(0.14 0.06 262 / 0.82);
+  --glass-border: oklch(1 0 0 / 0.14);
+  --glass-shadow: 0 8px 32px oklch(0 0 0 / 0.35);
+  --glass-highlight: inset 0 1px 0 oklch(1 0 0 / 0.08);
+  --fundo-a: oklch(0.1 0.05 262);
+  --fundo-b: oklch(0.14 0.07 262);
+  --fundo-brilho: oklch(0.4 0.15 262 / 0.35);
 }
 
 @layer base {
@@ -184,6 +194,14 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    min-height: 100vh;
+    /* Fundo em gradiente azul com manchas de luz: é ele que o vidro desfoca. */
+    background-image:
+      radial-gradient(60rem 40rem at 8% -5%, var(--fundo-brilho), transparent 60%),
+      radial-gradient(50rem 36rem at 100% 15%, var(--fundo-brilho), transparent 55%),
+      radial-gradient(46rem 34rem at 40% 110%, var(--fundo-brilho), transparent 60%),
+      linear-gradient(160deg, var(--fundo-a), var(--fundo-b));
+    background-attachment: fixed;
   }
 
   h1,
@@ -195,11 +213,69 @@
   }
 }
 
-@utility panel {
-  background-color: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-panel);
+/* Na camada de componentes: qualquer utilitário do Tailwind (border-x-0, shadow-none, bg-...) vence o vidro. */
+@layer components {
+  /* Vidro: fundo translúcido, desfoque do que está atrás, borda clara e brilho no topo. */
+  .glass {
+    background-color: var(--glass-bg);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      var(--glass-shadow),
+      var(--glass-highlight);
+  }
+
+  /* Vidro mais opaco para o que precisa de leitura firme: janelas, menus e listas suspensas. */
+  .glass-strong {
+    background-color: var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(22px) saturate(1.6);
+    backdrop-filter: blur(22px) saturate(1.6);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      0 16px 48px oklch(0.24 0.2 266 / 0.22),
+      var(--glass-highlight);
+  }
+
+  .panel {
+    background-color: var(--glass-bg);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    backdrop-filter: blur(16px) saturate(1.5);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      var(--glass-shadow),
+      var(--glass-highlight);
+  }
+}
+
+/* Engrenagem do logo: gira devagar e para para quem pede menos movimento. */
+@keyframes engrenagem-girando {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@utility engrenagem-girando {
+  animation: engrenagem-girando 6s linear infinite;
+  transform-origin: 50% 50%;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Barra lateral: o mesmo azul, em vidro sobre um gradiente. */
+[data-sidebar="sidebar"] {
+  background-image: linear-gradient(
+    175deg,
+    oklch(0.36 0.25 266 / 0.96),
+    oklch(0.26 0.2 266 / 0.96)
+  );
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: inset -1px 0 0 oklch(1 0 0 / 0.12);
 }
 
 @utility text-eyebrow {
@@ -209,4 +285,19 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-muted-foreground);
+}
+
+/* Impressão: sem gradiente e sem vidro, para o papel sair limpo. */
+@media print {
+  body {
+    background: #fff !important;
+  }
+  .glass,
+  .glass-strong,
+  .panel {
+    background: #fff !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
 }
