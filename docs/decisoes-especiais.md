@@ -381,3 +381,17 @@ Por pedido do responsável em 02/10/2026, a tela Código de fábrica deixa de mo
 ## 32. TABELAS DE APOIO E ENDEREÇAMENTO POR CATEGORIA
 
 Em 02/10/2026, o responsável definiu três estados por categoria: `Não usa` (padrão), `Opcional` e `Obrigatório`. O parâmetro apenas habilita ou exige o endereçamento com os campos já existentes Rua, Número e Apartamento; não cria formato nem campos por categoria. Produtos de `Não usa` não aparecem em Endereçamento de Estoque. Produtos `Opcionais` e `Obrigatórios` aparecem com ou sem endereço; o filtro de pendentes inclui ambos. Ao salvar ou editar um produto `Obrigatório` sem endereço, o modo demonstração avisa sem bloquear. A configuração é local nesta fase, sem migration ou alteração no Supabase. Cadastros não exibem nem configuram estoque; a decisão 24 permanece intacta.
+
+## 32. MÁSCARA AO DIGITAR EM CNPJ, TELEFONE E CEP
+Pedido do responsável em 02/10/2026: a máscara vale já na entrada, não só
+ao salvar e ao exibir.
+- CNPJ `XX.XXX.XXX/XXXX-XX` (14 dígitos), CEP `XX.XXX-XXX` (8 dígitos) e
+  telefone `(XX)XXXX.XXXX` (fixo, 10 dígitos) ou `(XX)X.XXXX.XXXX`
+  (celular, 11 dígitos; o 11º dígito troca a máscara).
+- Aplicada em Empresas (CNPJ, CEP) e Fornecedores (CNPJ, CEP, telefone). O
+  que passa de 14, 8 ou 11 dígitos é ignorado; letras não entram.
+- Só muda o que aparece no campo: a validação e o salvamento seguem em
+  `formatacao-cadastral.ts`, e dados antigos não são reescritos.
+- A cor da barra lateral e a regra de capitalização aguardam decisão do
+  responsável e não mudam aqui. Nada no Supabase.
+
