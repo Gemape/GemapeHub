@@ -7,12 +7,12 @@ const fonte = readFileSync(
   "utf8",
 );
 
-test("o grupo Cadastros do menu não tem o item Relatórios", () => {
-  const inicio = fonte.indexOf('titulo: "Cadastros"');
-  assert.ok(inicio > 0, "grupo Cadastros não encontrado");
+test("o grupo Parâmetros do menu não tem o item Relatórios", () => {
+  const inicio = fonte.indexOf('titulo: "Parâmetros"');
+  assert.ok(inicio > 0, "grupo Parâmetros não encontrado");
   const fim = fonte.indexOf("] as const;", inicio);
-  const cadastros = fonte.slice(inicio, fim);
-  assert.ok(cadastros.includes('titulo: "Fornecedores"'));
-  assert.ok(!cadastros.includes("Relatórios"));
-  assert.ok(!cadastros.includes('"/relatorios"'));
+  const parametros = fonte.slice(inicio, fim);
+  assert.ok(parametros.includes('titulo: "Fornecedores"'));
+  assert.ok(!parametros.includes("Relatórios"));
+  assert.ok(!parametros.includes('"/relatorios"'));
 });

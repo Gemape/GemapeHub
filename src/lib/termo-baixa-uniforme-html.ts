@@ -1,6 +1,7 @@
 // HTML do Termo de Baixa Definitiva de Uniforme. Todo texto informado passa por
 // escaparHtml, como nos termos de Encerramento e de Responsabilidade.
 import { comTamanho, escaparHtml, formatarData, formatarMoeda } from "./gemape.ts";
+import { formatarCnpj } from "./formatacao-cadastral.ts";
 
 export interface DadosTermoBaixaUniforme {
   empresa: { razao_social: string; cnpj: string; nome_fantasia: string } | undefined;
@@ -55,7 +56,7 @@ export function montarTermoBaixaUniformeHtml(dados: DadosTermoBaixaUniforme): st
             <div class="header">
               <div class="title">Termo de Baixa Definitiva de Uniforme</div>
               <div style="margin-top: 10px; font-weight: bold;">${escaparHtml(empresa?.razao_social)}</div>
-              <div>CNPJ: ${escaparHtml(empresa?.cnpj)}</div>
+              <div>CNPJ: ${escaparHtml(formatarCnpj(empresa?.cnpj ?? ""))}</div>
             </div>
 
             <div class="content">

@@ -1,3 +1,5 @@
+import { capitalizarCadastro, formatarCep, formatarCnpj, formatarTelefone, somenteDigitos, validarCep, validarCnpj, validarTelefone } from "./formatacao-cadastral.ts";
+
 // Naturezas fixas usadas antes das categorias de Cadastros > Gerais (decisão especial 13),
 // convertidas para as categorias equivalentes ao ler os fornecedores já salvos.
 const NATUREZA_PARA_CATEGORIA: Record<string, string> = {
@@ -35,7 +37,6 @@ const CHAVE_SEQUENCIA = "gemape-demo-fornecedores-sequencia";
 const formatarCodigo = (n: number) => String(n).padStart(5, "0");
 // Aceita também o formato antigo do preview (FOR-0001).
 const numeroDoCodigo = (codigo: string | undefined) => Number(/^(?:FOR-)?(\d+)$/.exec(codigo ?? "")?.[1] ?? 0);
-const soDigitos = (valor: string) => valor.replace(/\D/g, "");
 
 export function listarFornecedores(storage: StorageLike = localStorage): Fornecedor[] {
   let dados: Fornecedor[];
@@ -86,26 +87,42 @@ export function salvarFornecedor(
   valores: FornecedorDados | (FornecedorDados & { id: string }),
   storage: StorageLike = localStorage,
 ): Fornecedor {
+  const fornecedores = listarFornecedores(storage);
+  const id = "id" in valores ? valores.id : crypto.randomUUID();
+  const indice = fornecedores.findIndex((item) => item.id === id);
+  const existente = fornecedores[indice];
   if (!valores.razao_social.trim() || !valores.nome_fantasia.trim()) {
     throw new Error("Informe razão social e nome fantasia.");
   }
-  if (soDigitos(valores.cnpj).length !== 14) {
+  if (!validarCnpj(valores.cnpj) && valores.cnpj !== existente?.cnpj) {
     throw new Error("Informe um CNPJ com 14 dígitos.");
   }
+  if (valores.cep && !validarCep(valores.cep) && valores.cep !== existente?.cep) throw new Error("Informe um CEP com 8 dígitos.");
+  if (valores.telefone && !validarTelefone(valores.telefone) && valores.telefone !== existente?.telefone) throw new Error("Informe um telefone com 10 ou 11 dígitos.");
   if (valores.categorias.length === 0) {
     throw new Error("Selecione pelo menos uma categoria.");
   }
 
-  const fornecedores = listarFornecedores(storage);
-  const id = "id" in valores ? valores.id : crypto.randomUUID();
-  if (fornecedores.some((item) => item.id !== id && soDigitos(item.cnpj) === soDigitos(valores.cnpj))) {
+  if (fornecedores.some((item) => item.id !== id && somenteDigitos(item.cnpj) === somenteDigitos(valores.cnpj))) {
     throw new Error("CNPJ já cadastrado.");
   }
 
-  const indice = fornecedores.findIndex((item) => item.id === id);
-  const existente = fornecedores[indice];
   const codigo = existente ? existente.codigo : formatarCodigo(reservarNumero(fornecedores, storage));
-  const fornecedor: Fornecedor = { ...valores, categorias: [...new Set(valores.categorias)], id, codigo };
+  const fornecedor: Fornecedor = {
+    ...valores,
+    razao_social: capitalizarCadastro(valores.razao_social),
+    nome_fantasia: capitalizarCadastro(valores.nome_fantasia),
+    rua: capitalizarCadastro(valores.rua),
+    bairro: capitalizarCadastro(valores.bairro),
+    cidade: capitalizarCadastro(valores.cidade),
+    pais: capitalizarCadastro(valores.pais),
+    estado: valores.estado.toLocaleUpperCase("pt-BR"),
+    contato: capitalizarCadastro(valores.contato),
+    cnpj: formatarCnpj(valores.cnpj),
+    cep: formatarCep(valores.cep),
+    telefone: formatarTelefone(valores.telefone),
+    categorias: [...new Set(valores.categorias)], id, codigo,
+  };
   if (indice >= 0) fornecedores[indice] = fornecedor;
   else fornecedores.push(fornecedor);
   storage.setItem(CHAVE, JSON.stringify(fornecedores));

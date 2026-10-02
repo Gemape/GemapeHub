@@ -4,6 +4,7 @@
 import { posicaoEmSequencia, TAMANHOS_PADRAO } from "./tamanhos-padrao.ts";
 import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
+import { capitalizarCadastro } from "./formatacao-cadastral.ts";
 
 export type Categoria = { id: string; nome: string };
 export type Subcategoria = { id: string; categoriaId: string; nome: string };
@@ -208,7 +209,7 @@ function nomeUnico(
   oQue: string,
   ignorarId?: string,
 ) {
-  const limpo = limparNome(nome);
+  const limpo = capitalizarCadastro(limparNome(nome));
   if (!limpo) throw new Error(`Informe o nome da ${oQue}.`);
   const repetido = lista.find((item) => item.id !== ignorarId && mesmoNome(item.nome, limpo));
   if (repetido) throw new Error(`Já existe a ${oQue} "${repetido.nome}".`);

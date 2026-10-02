@@ -1,6 +1,7 @@
 // HTML do Termo de Responsabilidade Individual de ferramentas. Todo texto informado passa
 // por escaparHtml, como no Termo de Encerramento.
 import { escaparHtml } from "./gemape.ts";
+import { formatarCnpj } from "./formatacao-cadastral.ts";
 
 export interface DadosTermoResponsabilidade {
   empresa: { razao_social: string; cnpj: string };
@@ -59,7 +60,7 @@ export function montarTermoResponsabilidadeHtml(dados: DadosTermoResponsabilidad
           <div class="header">
             <div class="title">TERMO DE RESPONSABILIDADE INDIVIDUAL DE FERRAMENTAS</div>
             <strong>${escaparHtml(dados.empresa.razao_social)}</strong><br>
-            CNPJ: ${escaparHtml(dados.empresa.cnpj)}
+            CNPJ: ${escaparHtml(formatarCnpj(dados.empresa.cnpj))}
           </div>
 
           <div class="content">

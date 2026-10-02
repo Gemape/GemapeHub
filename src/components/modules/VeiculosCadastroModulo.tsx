@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -193,7 +194,7 @@ export function VeiculosCadastroModulo() {
       erroSubcategoria = falha instanceof Error ? falha.message : "Selecione a subcategoria.";
     }
     const tipo = subcategoria?.nome ?? "";
-    const descricao = texto("descricao");
+    const descricao = capitalizarCadastro(texto("descricao"));
     const placaDigitada = normalizarPlaca(texto("placa"));
     let marca = "";
     let erroMarca: string | null = null;
@@ -204,10 +205,10 @@ export function VeiculosCadastroModulo() {
     } catch (falha) {
       erroMarca = falha instanceof Error ? falha.message : "Marca inválida.";
     }
-    const modelo = texto("modelo");
+    const modelo = capitalizarCadastro(texto("modelo"));
     const anoTexto = texto("ano");
     const ano = anoTexto ? Number(anoTexto) : null;
-    const cor = texto("cor");
+    const cor = capitalizarCadastro(texto("cor"));
     const kmTexto = texto("quilometragem_atual");
     const km = kmTexto ? Number(kmTexto) : 0;
     const status = texto("status") || "Ativo";

@@ -22,8 +22,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
-import { ImportarNfeCodigoFabrica } from "@/components/parametros/ImportarNfeCodigoFabrica";
 import { useEmpresa } from "@/lib/empresa-context";
+import { formatarCnpj } from "@/lib/formatacao-cadastral";
 import { listarFornecedores, type Fornecedor } from "@/lib/fornecedores-demo";
 import {
   combinaBusca,
@@ -72,7 +72,7 @@ function CodigoFabricaPagina() {
   const opcoesFornecedor: OpcaoBusca[] = fornecedores.map((f) => ({
     valor: f.id,
     rotulo: f.nome_fantasia,
-    detalhe: `${f.razao_social} · ${f.cnpj}`,
+    detalhe: `${f.razao_social} · ${formatarCnpj(f.cnpj)}`,
   }));
   const produto: ProdutoGemape | undefined = produtos.find((p) => chaveProduto(p) === produtoSel);
   const ehEpi = (produto?.tabela ?? editando?.tabela) === "epis";
@@ -148,10 +148,7 @@ function CodigoFabricaPagina() {
         titulo="Código de fábrica"
         descricao="Associa o código do produto na nota fiscal do fornecedor ao código interno da GEMAPE. Na entrada da nota, o sistema saberá a qual produto somar o estoque."
       >
-        <div className="flex flex-wrap gap-2">
-          <ImportarNfeCodigoFabrica />
-          <Button onClick={() => abrir(null)}>Nova associação</Button>
-        </div>
+        <Button onClick={() => abrir(null)}>Nova associação</Button>
       </Cabecalho>
 
       <Input

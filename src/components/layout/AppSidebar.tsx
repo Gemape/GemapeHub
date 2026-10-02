@@ -58,7 +58,7 @@ const grupos = [
     ],
   },
   {
-    titulo: "Cadastros",
+    titulo: "Parâmetros",
     itens: [
       { titulo: "EPIs", url: "/cadastros/epi", icone: HardHat },
       { titulo: "Ficha de EPI", url: "/cadastros/epi-ficha", icone: ClipboardList },
@@ -162,7 +162,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {grupo.titulo === "Cadastros" && isAdmin && <MenuGerais pathname={pathname} />}
+                {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
                 {grupo.itens.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}>

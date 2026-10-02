@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -105,13 +106,13 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
     let valores: Record<string, unknown> = {
       empresa_id: texto("empresa_id"),
       codigo_sku: String(f.get("codigo_sku") ?? "").trim(),
-      nome: String(f.get("nome") ?? "").trim(),
+      nome: capitalizarCadastro(String(f.get("nome") ?? "")),
       marca: texto("marca"),
-      modelo: texto("modelo"),
+      modelo: capitalizarCadastro(texto("modelo") ?? "") || null,
       numero_serie: texto("numero_serie"),
       ca: texto("ca"),
       tamanho: texto("tamanho"),
-      cor: texto("cor"),
+      cor: capitalizarCadastro(texto("cor") ?? "") || null,
       unidade_medida: texto("unidade_medida"),
       fornecedor: texto("fornecedor"),
       data_validade: texto("data_validade"),
@@ -130,7 +131,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       const cadastro = prepararCadastroFerramenta({
         parametros: parametrosSelecao,
         codigosExistentes: editando ? [] : await codigosFerramenta(),
-        descricao: String(f.get("nome") ?? ""),
+        descricao: capitalizarCadastro(String(f.get("nome") ?? "")),
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
         grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
         marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, editando?.marca ?? null),

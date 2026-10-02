@@ -24,7 +24,7 @@ test('o cadastro guarda a referência: renomear em Gerais muda o nome mostrado n
   assert.deepEqual(ref.resolverSubcategoria(lerParametros(local), 'cat-epi', registro),
     { id: 'sub-epi-capacete', nome: 'Capacete', foraDeGerais: false });
   renomearSubcategoria('sub-epi-capacete', 'Capacete de segurança', local);
-  assert.equal(ref.nomeSubcategoria(lerParametros(local), 'cat-epi', registro), 'Capacete de segurança');
+  assert.equal(ref.nomeSubcategoria(lerParametros(local), 'cat-epi', registro), 'Capacete de Segurança');
 });
 
 test('nome antigo sem referência é ligado à subcategoria de Gerais de mesmo nome', () => {
@@ -54,7 +54,7 @@ test('referência a subcategoria excluída e recriada com o mesmo nome volta a s
   const nova = adicionarSubcategoria('cat-uniformes', 'jaleco', local);
   const registro = { subcategoria_id: antiga.id, categoria: 'Jaleco' };
   assert.deepEqual(ref.resolverSubcategoria(lerParametros(local), 'cat-uniformes', registro),
-    { id: nova.id, nome: 'jaleco', foraDeGerais: false });
+    { id: nova.id, nome: 'Jaleco', foraDeGerais: false });
   const dados = { uniformes: [registro] };
   assert.equal(ref.vincularSubcategorias(dados, lerParametros(local)), 1);
   assert.equal(registro.subcategoria_id, nova.id);

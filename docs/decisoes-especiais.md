@@ -374,3 +374,6 @@ GEMAPE e telas responsivas.
 - Na impressão o vidro e o gradiente somem.
 - Só visual: nenhuma regra, dado ou tela de lugar mudou. Nada no Supabase.
 
+## 31. CÓDIGO DE FÁBRICA SEM BOTÃO DE IMPORTAÇÃO DE XML
+
+Por pedido do responsável em 02/10/2026, a tela Código de fábrica deixa de mostrar o botão “Importar NF-e (XML)”. A associação manual continua disponível. Esta alteração retira apenas o acesso ao leitor nessa tela; não muda as rotinas de entrada de NF-e nos módulos, não movimenta estoque e não acessa o Supabase. Substitui o trecho da decisão 27 que previa o botão no cadastro.

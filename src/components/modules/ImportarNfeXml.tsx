@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEmpresa } from "@/lib/empresa-context";
 import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { formatarData, formatarMoeda } from "@/lib/gemape";
+import { formatarCnpj } from "@/lib/formatacao-cadastral";
 import { controlaTamanho, type ProdutoTamanho } from "@/lib/estoque-tamanho";
 import {
   MODULO_DA_TABELA,
@@ -229,11 +230,11 @@ export function ImportarNfeXml() {
                 </p>
                 <p>
                   <span className="text-muted-foreground">Fornecedor:</span> {nomeFornecedor} (
-                  {previa.nota.emitente.cnpj}){!previa.fornecedor && " · não cadastrado"}
+                  {formatarCnpj(previa.nota.emitente.cnpj)}){!previa.fornecedor && " · não cadastrado"}
                 </p>
                 <p>
                   <span className="text-muted-foreground">Empresa:</span> {nomeEmpresa} (
-                  {previa.nota.destinatario.cnpj}){!previa.empresa && " · não cadastrada"}
+                  {formatarCnpj(previa.nota.destinatario.cnpj)}){!previa.empresa && " · não cadastrada"}
                 </p>
                 <p className="break-all sm:col-span-2">
                   <span className="text-muted-foreground">Chave:</span> {previa.nota.chave}

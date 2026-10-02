@@ -1,4 +1,5 @@
 import { FileUp } from "lucide-react";
+import { formatarCnpj } from "@/lib/formatacao-cadastral";
 import { useId, useMemo, useRef, useState } from "react";
 
 import { CampoBusca, type OpcaoBusca } from "@/components/CampoBusca";
@@ -268,11 +269,11 @@ export function ImportarNfeCodigoFabrica() {
                 </p>
                 <p>
                   <span className="text-muted-foreground">Fornecedor:</span> {nomeFornecedor} (
-                  {previa.nota.emitente.cnpj}){!previa.fornecedor && " · não cadastrado"}
+                  {formatarCnpj(previa.nota.emitente.cnpj)}){!previa.fornecedor && " · não cadastrado"}
                 </p>
                 <p>
                   <span className="text-muted-foreground">Empresa:</span> {nomeEmpresa} (
-                  {previa.nota.destinatario.cnpj}){!previa.empresa && " · não cadastrada"}
+                  {formatarCnpj(previa.nota.destinatario.cnpj)}){!previa.empresa && " · não cadastrada"}
                 </p>
               </div>
 

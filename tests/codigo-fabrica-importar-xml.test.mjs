@@ -199,10 +199,11 @@ test("item sem associação na entrada do módulo continua pendente e indica ond
   assert.match(camisa.pendencia, /Cadastros > Gerais > Código de fábrica/);
 });
 
-test("a tela Código de fábrica tem o botão e o leitor não grava estoque", () => {
+test("a tela Código de fábrica não oferece importar XML e mantém associação manual", () => {
   const raiz = new URL("../src/", import.meta.url);
   const tela = readFileSync(new URL("routes/_authenticated/cadastros/gerais/codigo-fabrica.tsx", raiz), "utf8");
-  assert.match(tela, /ImportarNfeCodigoFabrica/);
+  assert.doesNotMatch(tela, /ImportarNfeCodigoFabrica|Importar NF-e \(XML\)/);
+  assert.match(tela, /Nova associação/);
   const leitor = readFileSync(new URL("components/parametros/ImportarNfeCodigoFabrica.tsx", raiz), "utf8");
   assert.match(leitor, /Importar NF-e \(XML\)/);
   assert.match(leitor, /lerXmlNfe/);

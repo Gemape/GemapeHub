@@ -64,7 +64,7 @@ test('categorias: sem nome repetido (ignora acento e maiúsculas) e só exclui v
   assert.throws(() => adicionarCategoria(' veiculos ', s), /Já existe a categoria "Veículos"/);
   assert.throws(() => adicionarCategoria('  ', s), /Informe o nome/);
   const nova = adicionarCategoria('Máquinas   pesadas', s);
-  assert.equal(nova.nome, 'Máquinas pesadas');
+  assert.equal(nova.nome, 'Máquinas Pesadas');
   renomearCategoria(nova.id, 'Máquinas', s);
   adicionarSubcategoria(nova.id, 'Guindaste', s);
   assert.throws(() => removerCategoria(nova.id, s), /Exclua antes as 1 subcategoria/);
@@ -72,6 +72,14 @@ test('categorias: sem nome repetido (ignora acento e maiúsculas) e só exclui v
   removerSubcategoria(sub.id, s);
   removerCategoria(nova.id, s);
   assert.ok(!lerParametros(s).categorias.some((c) => c.id === nova.id));
+});
+
+test('categorias e subcategorias novas recebem capitalização cadastral', () => {
+  const s = storage();
+  const categoria = adicionarCategoria('MÁQUINAS DE CORTE', s);
+  assert.equal(categoria.nome, 'Máquinas de Corte');
+  const sub = adicionarSubcategoria(categoria.id, 'SERRA CIRCULAR', s);
+  assert.equal(sub.nome, 'Serra Circular');
 });
 
 test('subcategorias: nome único dentro da categoria', () => {

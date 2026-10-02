@@ -21,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { escaparHtml } from "@/lib/gemape";
+import { formatarCnpj } from "@/lib/formatacao-cadastral";
 import {
   useEmpresas,
   useItens,
@@ -230,7 +231,7 @@ export function FerramentasTermoEncerramento() {
           <div class="header">
             <div class="title">TERMO DE ENCERRAMENTO DE RESPONSABILIDADE</div>
             <strong>${escaparHtml(empresa.razao_social)}</strong><br>
-            CNPJ: ${escaparHtml(empresa.cnpj)}
+            CNPJ: ${escaparHtml(formatarCnpj(empresa.cnpj))}
           </div>
           
           <div class="content">

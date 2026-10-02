@@ -13,10 +13,10 @@ test("o vidro (glassmorphism) existe, desfoca o fundo e vale para painéis e car
   assert.match(ler("components/ui/card.tsx"), /glass min-w-0/);
 });
 
-test("a paleta azul da marca não muda", () => {
+test("a paleta da marca fica e só a barra lateral usa a nova cor", () => {
   const css = ler("styles.css");
   assert.match(css, /--primary: oklch\(0\.32 0\.25 266\)/);
-  assert.match(css, /--sidebar: oklch\(0\.32 0\.25 266\)/);
+  assert.match(css, /--sidebar: #0A007C/);
 });
 
 test("janelas, menus e listas suspensas usam o vidro firme", () => {

@@ -4,6 +4,12 @@ import { bloqueioPorDemissao, cpfValido, empregadoAtivo, formatarCpf, hojeLocal,
 
 const base = { nome: ' Maria  da Silva ', cpf: '52998224725', matricula: 'l3 p25', empresa_id: 'e1', email: ' Maria@Gemape.com.br ', data_admissao: '2024-01-10', data_demissao: '' };
 
+test('nome digitado em caixa alta é normalizado sem mexer em CPF ou matrícula', () => {
+  const salvo = prepararEmpregado({ ...base, nome: 'MARIA DA SILVA' }, []);
+  assert.equal(salvo.nome, 'Maria da Silva');
+  assert.equal(salvo.matricula, 'L3P25');
+});
+
 test('CPF e matrícula', () => {
   assert.ok(cpfValido('529.982.247-25'));
   assert.ok(!cpfValido('111.111.111-11'));
