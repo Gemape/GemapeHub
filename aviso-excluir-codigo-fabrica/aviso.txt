@@ -1,0 +1,7 @@
+Aviso mostrado ao excluir o fornecedor com 2 codigos de fabrica associados:
+
+Segura Mais tem 2 códigos de fábrica associados (EPI-0001 = A100, EPI-0002 = B200). Se excluir, essas associações também serão removidas e as próximas notas desse fornecedor ficarão sem associação.
+
+Excluir mesmo assim?
+
+Sem associação: "Excluir Sem Vinculo?" (confirmação de sempre).
