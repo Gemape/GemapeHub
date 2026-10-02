@@ -631,6 +631,15 @@ export function removerCodigoFabrica(id: string, storage = storagePadrao()): voi
   });
 }
 
+/** Remove vários códigos de fábrica de uma vez (usado quando o fornecedor ou o produto é excluído). */
+export function removerCodigosFabricaPorIds(ids: string[], storage = storagePadrao()): void {
+  if (ids.length === 0) return;
+  const sair = new Set(ids);
+  alterar(storage, (d) => {
+    d.codigosFabrica = d.codigosFabrica.filter((c) => !sair.has(c.id));
+  });
+}
+
 // Busca por palavras em qualquer ordem, sem diferenciar acento e maiúsculas.
 export function combinaBusca(termo: string, ...campos: (string | null | undefined)[]): boolean {
   const texto = semAcento(campos.filter(Boolean).join(" ")).toLowerCase();

@@ -44,7 +44,16 @@ import {
   selecaoInicialMarca,
   selecaoMarca,
 } from "@/lib/marcas-gerais";
-import { combinaBusca, estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
+import { avisoExclusaoDoProduto, vinculosDoProduto } from "@/lib/codigo-fabrica-vinculos";
+import {
+  combinaBusca,
+  estaAtivo,
+  lerParametros,
+  paraSelecao,
+  proximoCodigo,
+  removerCodigosFabricaPorIds,
+  type CodigoFabrica,
+} from "@/lib/parametros-base";
 import {
   nomeSubcategoria,
   resolverSubcategoria,
@@ -474,14 +483,34 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        if (confirm(`Excluir ${item.codigo_sku} ${item.nome}?`))
+                        // Lê as associações na hora, para o aviso não usar dados velhos.
+                        let vinculos: CodigoFabrica[] = [];
+                        try {
+                          vinculos = vinculosDoProduto(lerParametros().codigosFabrica, {
+                            tabela,
+                            codigo_sku: item.codigo_sku ?? "",
+                            empresa_id: item.empresa_id ?? null,
+                          });
+                        } catch {
+                          toast.error("Não foi possível conferir os códigos de fábrica deste produto.");
+                          return;
+                        }
+                        const rotulo = `${item.codigo_sku} ${item.nome}`;
+                        const aviso = avisoExclusaoDoProduto(rotulo, vinculos);
+                        if (confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${rotulo}?`))
                           excluir.mutate(item.id, {
-                            // A ficha do EPI excluído sai junto (só EPI tem ficha).
                             onSuccess: () => {
+                              // A ficha do EPI excluído sai junto (só EPI tem ficha).
                               try {
                                 if (config.ficha) removerFicha(item.id);
                               } catch {
                                 // Fichas ilegíveis ficam como estão.
+                              }
+                              // Os códigos de fábrica do produto excluído também.
+                              try {
+                                removerCodigosFabricaPorIds(vinculos.map((c) => c.id));
+                              } catch {
+                                toast.error("O produto foi excluído, mas os códigos de fábrica dele não puderam ser removidos.");
                               }
                             },
                           });

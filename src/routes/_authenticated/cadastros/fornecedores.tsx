@@ -16,6 +16,8 @@ import {
   listarFornecedores, proximoCodigoFornecedor, removerFornecedor, salvarFornecedor,
   type Fornecedor, type FornecedorDados,
 } from "@/lib/fornecedores-demo";
+import { avisoExclusaoDoFornecedor, vinculosDoFornecedor } from "@/lib/codigo-fabrica-vinculos";
+import { lerParametros, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { formatarCep, formatarCnpj, formatarTelefone } from "@/lib/formatacao-cadastral";
 import { aoDigitarMascarado } from "@/lib/mascaras";
@@ -88,8 +90,24 @@ function PaginaFornecedores() {
   }
 
   function excluir(fornecedor: Fornecedor) {
-    if (!confirm(`Excluir ${fornecedor.nome_fantasia}?`)) return;
-    removerFornecedor(fornecedor.id);
+    // Lê as associações na hora, para o aviso não usar dados velhos.
+    let vinculos: CodigoFabrica[] = [];
+    try {
+      vinculos = vinculosDoFornecedor(lerParametros().codigosFabrica, fornecedor.id);
+    } catch {
+      toast.error("Não foi possível conferir os códigos de fábrica deste fornecedor.");
+      return;
+    }
+    const aviso = avisoExclusaoDoFornecedor(fornecedor.nome_fantasia, vinculos);
+    if (!confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${fornecedor.nome_fantasia}?`)) return;
+    try {
+      // As associações saem primeiro; se falhar, o fornecedor continua cadastrado.
+      removerCodigosFabricaPorIds(vinculos.map((c) => c.id));
+      removerFornecedor(fornecedor.id);
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível excluir o fornecedor.");
+      return;
+    }
     setFornecedores(listarFornecedores());
     toast.success("Fornecedor excluído");
   }
