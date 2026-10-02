@@ -382,9 +382,9 @@ export function cadastrarTamanhosPadrao(storage = storagePadrao()): number {
     let incluidos = 0;
     for (const nome of TAMANHOS_PADRAO) {
       if (d.tamanhos.some((t) => mesmoNome(t.nome, nome))) continue;
-      const idPadrao = `tam-${slug(nome)}`;
-      const id = d.tamanhos.some((t) => t.id === idPadrao) ? novoId() : idPadrao;
-      d.tamanhos.splice(posicaoEmSequencia(d.tamanhos, nome), 0, { id, nome });
+      // Id novo: um tamanho padrão excluído antes pode ainda estar citado em produtos antigos,
+      // e reaproveitar o id antigo faria essa referência órfã voltar a valer.
+      d.tamanhos.splice(posicaoEmSequencia(d.tamanhos, nome), 0, { id: novoId(), nome });
       incluidos += 1;
     }
     return incluidos;

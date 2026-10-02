@@ -421,8 +421,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                       const tamanhos = tamanhosDoCadastro(parametros, config.modulo, item);
                       return tamanhos.length > 0 ? (
                         <span className="flex flex-wrap gap-1">
-                          {tamanhos.map((nome) => (
-                            <Badge key={nome} variant="secondary">
+                          {tamanhos.map((nome, i) => (
+                            <Badge key={`${i}-${nome}`} variant="secondary">
                               {nome}
                             </Badge>
                           ))}

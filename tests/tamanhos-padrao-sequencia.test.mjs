@@ -81,6 +81,16 @@ test("cadastrar os tamanhos padrão completa a lista salva, sem repetir nem apag
   assert.equal(cadastrarTamanhosPadrao(s), 0);
 });
 
+test("tamanho padrão excluído volta com id novo, sem reviver referências antigas", () => {
+  const salvo = lerParametros(storage());
+  salvo.tamanhos = salvo.tamanhos.filter((t) => t.id !== "tam-g");
+  const s = storage(salvo);
+  cadastrarTamanhosPadrao(s);
+  const g = lerParametros(s).tamanhos.find((t) => t.nome === "G");
+  assert.ok(g);
+  assert.notEqual(g.id, "tam-g");
+});
+
 test("não cria cópia de um tamanho que só difere na caixa das letras", () => {
   const salvo = lerParametros(storage());
   salvo.tamanhos = [{ id: "x1", nome: "xgg" }];
