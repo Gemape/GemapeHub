@@ -33,6 +33,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import {
   COMBUSTIVEIS_VEICULO,
   STATUS_VEICULO,
@@ -146,7 +147,7 @@ export function VeiculosCadastroModulo() {
   );
   const rotulo = (item: { id: string; nome: string }) =>
     estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`;
-  const empresaPadrao = empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? "");
+  const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
 
   function destravar() {
     salvando.current = false;
@@ -598,7 +599,7 @@ export function VeiculosCadastroModulo() {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresas.map((e) => (
+                  {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>

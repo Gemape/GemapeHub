@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { formatarData } from "@/lib/gemape";
 import {
   useEmpresas,
@@ -186,7 +187,7 @@ export function FerramentasTermoResponsabilidade() {
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
               <SelectContent>
-                {empresas.map((e) => (
+                {empresasParaEscolha(empresas).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome_fantasia}
                   </SelectItem>

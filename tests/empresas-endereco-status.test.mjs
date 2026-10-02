@@ -102,3 +102,45 @@ test("edição de empresa antiga preserva CNPJ e CEP incompletos não alterados"
   assert.equal(valores.nome_fantasia, "Nova Empresa");
   assert.throws(() => valoresDaEmpresa(form({ ...BASE, cnpj: "456" }), true, antigo), /CNPJ/);
 });
+
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "../src/lib/empresas.ts";
+
+const listaEmpresas = [
+  { id: "e1", status: "Ativa" },
+  { id: "e2", status: "Inativa" },
+  { id: "e3" },
+];
+
+test("empresa inativa sai das listas de escolha; sem status conta como ativa", () => {
+  assert.deepEqual(empresasParaEscolha(listaEmpresas).map((e) => e.id), ["e1", "e3"]);
+});
+
+test("a empresa de um registro em edição continua na lista, ainda que inativa", () => {
+  assert.deepEqual(empresasParaEscolha(listaEmpresas, ["e2"]).map((e) => e.id), ["e1", "e2", "e3"]);
+  assert.deepEqual(empresasParaEscolha(listaEmpresas, [null, undefined]).map((e) => e.id), ["e1", "e3"]);
+});
+
+test("a empresa que já vem escolhida é a do cabeçalho se estiver ativa, senão a primeira ativa", () => {
+  assert.equal(empresaPadraoParaEscolha(listaEmpresas, "e3"), "e3");
+  assert.equal(empresaPadraoParaEscolha(listaEmpresas, "e2"), "e1");
+  assert.equal(empresaPadraoParaEscolha(listaEmpresas, "todas"), "e1");
+  assert.equal(empresaPadraoParaEscolha([{ id: "x", status: "Inativa" }], "todas"), "");
+});
+
+test("os formulários e termos escolhem empresa só entre as ativas; relatórios e cabeçalho seguem com todas", () => {
+  const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  const comEscolha = [
+    "components/modules/CadastroProduto.tsx", "components/modules/ItensModulo.tsx", "components/modules/MovimentacoesModulo.tsx",
+    "components/modules/EpiComprasModulo.tsx", "components/modules/UniformesComprasModulo.tsx", "components/modules/EpiTermoEntrega.tsx",
+    "components/modules/UniformesTermoEntrega.tsx", "components/modules/UniformesTermoBaixa.tsx", "components/modules/EpiFichaEpiAvulsa.tsx",
+    "components/modules/FerramentasTermoVistoria.tsx", "components/modules/FerramentasTermoResponsabilidade.tsx",
+    "components/modules/FerramentasTermoEncerramento.tsx", "components/modules/VeiculosCadastroModulo.tsx",
+    "components/modules/CaixasFerramentasModulo.tsx", "components/modules/EnderecamentoModulo.tsx", "routes/_authenticated/empregados.tsx",
+  ];
+  for (const arq of comEscolha) assert.match(ler(arq), /empresasParaEscolha\(empresas/, arq);
+  // Edição mantém a empresa do registro.
+  assert.match(ler("components/modules/CadastroProduto.tsx"), /empresasParaEscolha\(empresas, \[editando\?\.empresa_id\]\)/);
+  for (const arq of ["components/modules/EpiRelatorioFuncionario.tsx", "components/modules/UniformesRelatorioFuncionario.tsx", "routes/_authenticated/dashboard.tsx", "components/layout/AppSidebar.tsx"]) {
+    assert.doesNotMatch(ler(arq), /empresasParaEscolha/, arq);
+  }
+});

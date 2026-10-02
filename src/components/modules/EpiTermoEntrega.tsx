@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { montarTermoEntregaEpiHtml, observacaoEntregaEpi } from "@/lib/termo-entrega-epi-html";
@@ -161,7 +162,7 @@ export function EpiTermoEntrega() {
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
               <SelectContent>
-                {empresas.map((e) => (
+                {empresasParaEscolha(empresas).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome_fantasia}
                   </SelectItem>

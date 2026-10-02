@@ -46,6 +46,7 @@ import {
   validarNumeroCaixa,
 } from "@/lib/caixas-habilitadas";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { STATUS_CAIXA, exportarCsv, formatarData } from "@/lib/gemape";
 import {
   useExcluir,
@@ -369,14 +370,14 @@ export function CaixasFerramentasModulo() {
                   required
                   defaultValue={
                     editando?.empresa_id ??
-                    (empresaId !== TODAS ? empresaId : (empresas[0]?.id ?? ""))
+                    empresaPadraoParaEscolha(empresas, empresaId)
                   }
                 >
                   <SelectTrigger id="empresa_id">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {empresas.map((e) => (
+                    {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
                       <SelectItem key={e.id} value={e.id}>
                         {e.nome_fantasia}
                       </SelectItem>

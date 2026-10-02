@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { montarFichaEpiAvulsaHtml } from "@/lib/ficha-epi-avulsa-html";
 import { lerHistoricoEpiEmpregado, type MovimentacaoFicha } from "@/lib/historico-epi-empregado";
 import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
@@ -91,7 +92,7 @@ export function EpiFichaEpiAvulsa() {
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
               <SelectContent>
-                {empresas.map((e) => (
+                {empresasParaEscolha(empresas).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome_fantasia}
                   </SelectItem>

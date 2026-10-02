@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import {
   useEmpresas,
   useItens,
@@ -172,7 +173,7 @@ export function UniformesTermoBaixa() {
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
               <SelectContent>
-                {empresas.map((e) => (
+                {empresasParaEscolha(empresas).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome_fantasia}
                   </SelectItem>

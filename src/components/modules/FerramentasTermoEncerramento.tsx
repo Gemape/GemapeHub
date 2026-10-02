@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { escaparHtml } from "@/lib/gemape";
 import { formatarCnpj } from "@/lib/formatacao-cadastral";
 import {
@@ -296,7 +297,7 @@ export function FerramentasTermoEncerramento() {
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
               <SelectContent>
-                {empresas.map((e) => (
+                {empresasParaEscolha(empresas).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome_fantasia}
                   </SelectItem>
