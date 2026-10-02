@@ -1,5 +1,5 @@
 // Caixas de ferramentas numeradas de 01 a 100 (Caixas e Portador, etapa 1). A habilitação
-// fica em Cadastros > Gerais; o código segue sigla + numeração, de CX-0001 a CX-0100,
+// fica em Caixas de Ferramentas > Habilitar caixas; o código segue sigla + numeração, de CX-0001 a CX-0100,
 // numa sequência única para as três empresas.
 export const TOTAL_CAIXAS = 100;
 
@@ -65,7 +65,7 @@ export function validarNumeroCaixa(
 ): string | null {
   if (!valido(numero)) return "Selecione o número da caixa.";
   if (!habilitadas.includes(numero)) {
-    return `A caixa ${codigoCaixa(numero)} não está habilitada em Cadastros > Gerais > Caixas.`;
+    return `A caixa ${codigoCaixa(numero)} não está habilitada em Caixas de Ferramentas > Habilitar caixas.`;
   }
   if (usados(cadastradas, idAtual).has(numero)) return `Já existe a caixa ${codigoCaixa(numero)}.`;
   return null;
