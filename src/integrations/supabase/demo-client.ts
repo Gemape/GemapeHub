@@ -2,6 +2,7 @@
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
 import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
 import { duplicadoNoCatalogo, sincronizarEstoqueEpis } from "../../lib/epi-catalogo.ts";
+import { aplicarSeparacao, opcoesDaSeparacao } from "../../lib/epi-separar-tamanhos.ts";
 import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
 import {
   controlaModulo,
@@ -250,6 +251,13 @@ export const demoSupabase = {
       if (erro) return { data: null, error: erro };
       persistirDados();
       return { data: args.p_entradas?.chave, error: null };
+    }
+    if (nome === "separar_epis_por_tamanho") {
+      // Tudo ou nada: aplicarSeparacao só troca os dados se conseguir terminar.
+      const r = aplicarSeparacao(dados, opcoesDaSeparacao(lerParametros()), id, new Date().toISOString());
+      if (r.erro) return { data: null, error: new Error(r.erro) };
+      persistirDados();
+      return { data: r, error: null };
     }
     if (nome !== "salvar_caixa") return { data: null, error: new Error("Operação indisponível na demonstração") };
     // Código único, como a restrição UNIQUE do banco: nada é gravado se repetir.
