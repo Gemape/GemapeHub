@@ -23,21 +23,20 @@ test("Código do Produto continua em Gerais, no mesmo endereço", () => {
   assert.equal(item?.url, "/cadastros/gerais/codigo-produto");
 });
 
-test("Caixas saiu de Gerais e de Parâmetros: a tela fica dentro do menu Ferramentas do módulo", () => {
+test("Caixas saiu de Gerais e fica em Parâmetros > Ferramentas, fora de Módulos", () => {
   assert.ok(!MENU_GERAIS.some((i) => i.titulo === "Caixas" || i.url === "/cadastros/gerais/caixas"));
   assert.deepEqual(
     MENU_FERRAMENTAS.map((f) => [f.titulo, f.url]),
     [
-      ["Controle de Ferramentas", "/ferramentas"],
-      ["Caixas de Ferramentas", "/caixas-ferramentas"],
+      ["Cadastro de Ferramentas", "/cadastros/ferramentas"],
+      ["Caixas", "/caixas-ferramentas"],
     ],
   );
   const inicio = sidebar.indexOf('titulo: "Parâmetros"');
-  const parametros = sidebar.slice(inicio, sidebar.indexOf("] as const;", inicio));
-  assert.match(parametros, /titulo: "Ferramentas", url: "\/cadastros\/ferramentas"/);
-  assert.ok(!parametros.includes("caixas"));
   const modulos = sidebar.slice(sidebar.indexOf('titulo: "Módulos"'), inicio);
-  assert.ok(!modulos.includes('"/ferramentas"') && !modulos.includes("/caixas-ferramentas"));
+  assert.match(modulos, /titulo: "Ferramentas", url: "\/ferramentas"/);
+  assert.ok(!modulos.includes("/caixas-ferramentas"));
+  assert.match(sidebar, /grupo\.titulo === "Parâmetros" && <MenuFerramentas/);
 });
 
 test("o menu lateral usa os dados de menu-parametros e não lista mais Associar solto", () => {

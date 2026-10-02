@@ -18,11 +18,11 @@ export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
   { titulo: "Endereçamento", url: "/cadastros/gerais/enderecamento", icone: "MapPin" },
 ];
 
-// Menu Ferramentas (módulo, decisão 36): a tela Caixas de Ferramentas fica dentro dele e reúne a
-// habilitação das caixas, que antes era um parâmetro à parte.
+// Parâmetros > Ferramentas (decisão 36): o cadastro e a tela Caixas de Ferramentas, que reúne a
+// habilitação das caixas. Nada disso fica em Módulos.
 export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
-  { titulo: "Controle de Ferramentas", url: "/ferramentas", icone: "Wrench" },
-  { titulo: "Caixas de Ferramentas", url: "/caixas-ferramentas", icone: "Archive" },
+  { titulo: "Cadastro de Ferramentas", url: "/cadastros/ferramentas", icone: "Wrench" },
+  { titulo: "Caixas", url: "/caixas-ferramentas", icone: "Archive" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.

@@ -32,7 +32,7 @@ function PaginaCaixas() {
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Módulo</p>
+        <p className="text-eyebrow">Parâmetros · Ferramentas</p>
         <h1 className="text-2xl font-bold">Caixas de Ferramentas</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Conteúdo de cada caixa, responsável, localização, cadastro dos kits de ferramentas e, para o Administrador, a habilitação das caixas numeradas.

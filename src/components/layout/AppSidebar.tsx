@@ -52,6 +52,7 @@ const grupos = [
     titulo: "Módulos",
     itens: [
       { titulo: "Uniformes", url: "/uniformes", icone: Shirt },
+      { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench },
       { titulo: "Veículos", url: "/veiculos", icone: Car },
     ],
   },
@@ -59,7 +60,6 @@ const grupos = [
     titulo: "Parâmetros",
     itens: [
       { titulo: "Uniformes", url: "/cadastros/uniformes", icone: Shirt },
-      { titulo: "Ferramentas", url: "/cadastros/ferramentas", icone: Wrench },
       { titulo: "Veículos", url: "/cadastros/veiculos", icone: Car },
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
@@ -169,7 +169,7 @@ function MenuEpi({ pathname }: { pathname: string }) {
   );
 }
 
-// Menu Ferramentas (módulo): controle e Caixas de Ferramentas.
+// Parâmetros > Ferramentas: o cadastro e a tela Caixas de Ferramentas.
 function MenuFerramentas({ pathname }: { pathname: string }) {
   return (
     <GrupoRecolhivel
@@ -224,12 +224,8 @@ export function AppSidebar() {
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {grupo.titulo === "Módulos" && (
-                  <>
-                    <MenuEpi pathname={pathname} />
-                    <MenuFerramentas pathname={pathname} />
-                  </>
-                )}
+                {grupo.titulo === "Módulos" && <MenuEpi pathname={pathname} />}
+                {grupo.titulo === "Parâmetros" && <MenuFerramentas pathname={pathname} />}
                 {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
                 {grupo.itens.map((item) => (
                   <SidebarMenuItem key={item.url}>
