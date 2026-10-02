@@ -323,3 +323,22 @@ decisão 21:
   Código de fábrica".
 - Nada no Supabase: as associações ficam onde o código de fábrica já fica
   hoje (decisão 22; tabela real é pendência da Fase 2).
+## 28. TAMANHOS E NUMERAÇÕES PADRÃO, EM SEQUÊNCIA, E TAMANHOS NA LISTA DO CADASTRO
+Aprovado pelo responsável em 02/10/2026:
+- Cadastros > Gerais > Tamanhos e unidades traz cadastradas todas as
+  possibilidades de tamanho e numeração dos produtos controlados, sempre
+  em sequência: Único; letras PP, P, M, G, GG, XG, XGG, G1, G2, G3, G4;
+  numerações 6 a 12 (luvas), 33 a 48 (calçados) e os pares de 50 a 60
+  (vestuário).
+- Tamanho novo entra na posição da sequência (49 fica entre 48 e 50); o
+  que o sistema não reconhece vai para o fim. As setas de mover continuam
+  valendo.
+- O botão "Cadastrar tamanhos padrão" completa uma lista já salva: inclui
+  só o que falta, cada um na posição certa, sem repetir nome (maiúsculas
+  não contam), sem alterar o que existe e sem mudar ids.
+- Nos cadastros de EPI e Uniforme, a lista mostra os tamanhos e
+  numerações escolhidos no produto, na ordem de Gerais, com o desativado
+  marcado. Produto sem escolha mostra os tamanhos associados à
+  subcategoria; sem associação, "—". É informação do cadastro, não
+  estoque (decisão 24).
+- Nada no Supabase: continua demo; a tabela real é pendência da Fase 2.
