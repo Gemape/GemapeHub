@@ -68,5 +68,12 @@ test("a tela tem o botão Clonar com a pergunta do código de origem e trava o c
   assert.match(tela, /montarClonagemEndereco/);
   assert.match(tela, />Clonar</);
   assert.match(tela, /código do item de origem/i);
-  assert.match(tela, /disabled=\{[^}]*isPending/);
+  assert.match(tela, /disabled=\{!origemClone \|\| salvar\.isPending\}/);
+  assert.match(tela, /clonandoAgora\.current/);
+});
+
+test("origem com mais de um endereço copia o primeiro", () => {
+  const extra = [{ id: "e0", empresa_id: "a", codigo_produto: "EPI-0001", rua: "Z", prateleira: "9", apartamento: "9" }];
+  const copia = clonar({ enderecos: [...ENDERECOS, ...extra] });
+  assert.equal(copia.rua, "A");
 });

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CampoBusca } from "@/components/CampoBusca";
@@ -121,13 +121,19 @@ export function EnderecamentoModulo() {
       .map((p) => ({ valor: p.codigo_sku, rotulo: `${p.codigo_sku} · ${p.nome}` }));
   }, [clonando, produtos, enderecos]);
 
+  const clonandoAgora = useRef(false);
+
   function clonar() {
-    if (!clonando || salvar.isPending) return;
+    if (!clonando || salvar.isPending || clonandoAgora.current) return;
     try {
       const valores = montarClonagemEndereco({
         destino: clonando, codigoOrigem: origemClone, produtos, enderecos, dados: parametros,
       });
-      salvar.mutate({ valores }, { onSuccess: () => setClonando(null) });
+      clonandoAgora.current = true;
+      salvar.mutate({ valores }, {
+        onSuccess: () => setClonando(null),
+        onSettled: () => { clonandoAgora.current = false; },
+      });
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível clonar o endereço.");
     }
@@ -208,7 +214,7 @@ export function EnderecamentoModulo() {
         <DialogHeader>
           <DialogTitle>Clonar endereço</DialogTitle>
           <DialogDescription>
-            Informe o código do item de origem: o endereço dele (rua, número e apartamento) será copiado para{" "}
+            Informe o código do item de origem: o primeiro endereço dele (rua, número e apartamento) será copiado, como um endereço a mais, para{" "}
             {clonando ? `${clonando.codigo_sku} · ${clonando.nome}` : "o item"}.
           </DialogDescription>
         </DialogHeader>

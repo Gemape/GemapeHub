@@ -78,7 +78,9 @@ export function montarClonagemEndereco(entrada: {
     throw new Error("A categoria deste item não usa endereçamento.");
   }
   if (origem === chave(destino.codigo_sku)) throw new Error("A origem é o mesmo item do destino.");
-  const produto = produtos.find((p) => p.empresa_id === destino.empresa_id && chave(p.codigo_sku) === origem);
+  const produto = produtos.find((p) => p.empresa_id === destino.empresa_id && p.tabela === destino.tabela && chave(p.codigo_sku) === origem);
+  const outraCategoria = !produto && produtos.some((p) => p.empresa_id === destino.empresa_id && chave(p.codigo_sku) === origem);
+  if (outraCategoria) throw new Error("A origem precisa ser da mesma categoria do item de destino.");
   if (!produto) throw new Error(`Item ${entrada.codigoOrigem.trim()} não encontrado nesta empresa.`);
   if (produto.tabela !== destino.tabela) {
     throw new Error("A origem precisa ser da mesma categoria do item de destino.");

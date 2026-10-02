@@ -102,7 +102,7 @@ function CodigoFabricaPagina() {
     setProdutoSel(codigo ? chaveProduto(codigo) : "");
     setFornecedorSel(codigo?.fornecedor_id ?? "");
     setCodigoNota(codigo?.codigo_fornecedor ?? "");
-    setCa(codigo?.ca ?? "");
+    setCa((codigo?.ca ?? "").replace(/\D/g, ""));
     setAberto(true);
   }
 
