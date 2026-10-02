@@ -31,7 +31,8 @@ O menu lateral usa `#0A007C`; a paleta e o vidro das demais áreas continuam com
 ## PR 4 — Hierarquia dos menus
 
 - Criar “Tamanho e Medidas de Produto” com os submenus “Cadastro de Tamanhos e Medidas” e “Associar Tamanho e Medida ao Produto”. Manter “Código do Produto” acessível em Gerais.
-- Mover “Caixas” para submenu de “Ferramentas”. Criar menu “EPI” (módulo) com “Cadastrar EPI” e “Cadastrar Ficha de EPI”, retirando essas rotinas do menu Parâmetros. Preservar URLs antigas por navegação compatível, permissões e títulos coerentes.
+- No menu Parâmetros, mover “Caixas” de Gerais para dentro de “Ferramentas”, como submenu da rotina de ferramentas. Distinguir esse parâmetro da tela operacional “Caixas de Ferramentas” do módulo, preservando o acesso a ambas.
+- Criar o menu “EPI” (módulo), contendo “Cadastrar EPI”; “Ficha de EPI” fica dentro de “Cadastrar EPI” como submenu, e não como item no mesmo nível. Retirar essas rotinas de Parâmetros. Preservar URLs antigas por navegação compatível, permissões e títulos coerentes.
 
 ## PR 5 — Cadastro de EPI por tamanho
 
