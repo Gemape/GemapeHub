@@ -112,7 +112,7 @@ function TamanhosUnidades() {
   return (
     <div className="space-y-5">
       <Cabecalho
-        titulo="Tamanhos e unidades de medida"
+        titulo="Cadastro de tamanhos e medidas"
         descricao="Cadastro base de todas as possibilidades de tamanho e numeração, na ordem em que devem aparecer, e das unidades de medida. Desativar tira a opção das listas de seleção; o que já usa continua com ela."
       >
         <Button

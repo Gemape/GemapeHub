@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useAccess } from "@/lib/access-context";
+import { MENU_GERAIS, SUBMENU_FERRAMENTAS, type ItemMenu } from "@/lib/menu-parametros";
 import {
   Building2,
   Car,
@@ -63,7 +64,6 @@ const grupos = [
       { titulo: "EPIs", url: "/cadastros/epi", icone: HardHat },
       { titulo: "Ficha de EPI", url: "/cadastros/epi-ficha", icone: ClipboardList },
       { titulo: "Uniformes", url: "/cadastros/uniformes", icone: Shirt },
-      { titulo: "Ferramentas", url: "/cadastros/ferramentas", icone: Wrench },
       { titulo: "Veículos", url: "/cadastros/veiculos", icone: Car },
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
@@ -72,54 +72,93 @@ const grupos = [
   },
 ] as const;
 
-// Especificação rev1: Cadastros > Gerais, só o Administrador acessa.
-const cadastrosGerais = [
-  { titulo: "Tabelas de Apoio", url: "/cadastros/gerais/categorias", icone: Tags },
-  { titulo: "Tamanhos e Unidades", url: "/cadastros/gerais/tamanhos-unidades", icone: Ruler },
-  {
-    titulo: "Associar Tamanho e Medida",
-    url: "/cadastros/gerais/associar-tamanhos",
-    icone: ListChecks,
-  },
-  { titulo: "Código do Produto", url: "/cadastros/gerais/codigo-produto", icone: Barcode },
-  { titulo: "Código de Fábrica", url: "/cadastros/gerais/codigo-fabrica", icone: Factory },
-  { titulo: "Endereçamento", url: "/cadastros/gerais/enderecamento", icone: MapPin },
-  { titulo: "Caixas", url: "/cadastros/gerais/caixas", icone: Hash },
-] as const;
+const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench } as const;
+type NomeIcone = keyof typeof ICONES;
 
-function MenuGerais({ pathname }: { pathname: string }) {
-  const [aberto, setAberto] = useState(true);
+function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
+  const Icone = ICONES[item.icone as NomeIcone];
+  return (
+    <SidebarMenuSubItem>
+      <SidebarMenuSubButton asChild isActive={pathname.startsWith(item.url)} className="h-auto min-h-7 py-1">
+        <Link to={item.url}>
+          <Icone />
+          {/* Nome inteiro, quebrando linha se precisar. */}
+          <span className="!whitespace-normal leading-tight">{item.titulo}</span>
+        </Link>
+      </SidebarMenuSubButton>
+    </SidebarMenuSubItem>
+  );
+}
+
+// Grupo que abre e fecha, com submenus dentro (Gerais, Tamanho e Medidas, Ferramentas).
+function GrupoRecolhivel({
+  titulo,
+  icone: Icone,
+  prefixos,
+  pathname,
+  inicialAberto = true,
+  children,
+}: {
+  titulo: string;
+  icone: ReactNode;
+  prefixos: readonly string[];
+  pathname: string;
+  inicialAberto?: boolean;
+  children: ReactNode;
+}) {
+  const [aberto, setAberto] = useState(inicialAberto);
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         aria-expanded={aberto}
-        isActive={!aberto && pathname.startsWith("/cadastros/gerais")}
+        isActive={!aberto && prefixos.some((p) => pathname.startsWith(p))}
         onClick={() => setAberto(!aberto)}
       >
-        <FolderCog />
-        <span>Gerais</span>
+        {Icone}
+        <span>{titulo}</span>
         <ChevronDown className={`ml-auto transition-transform ${aberto ? "" : "-rotate-90"}`} />
       </SidebarMenuButton>
-      {aberto && (
-        <SidebarMenuSub>
-          {cadastrosGerais.map((item) => (
-            <SidebarMenuSubItem key={item.url}>
-              <SidebarMenuSubButton
-                asChild
-                isActive={pathname.startsWith(item.url)}
-                className="h-auto min-h-7 py-1"
-              >
-                <Link to={item.url}>
-                  <item.icone />
-                  {/* Nome inteiro, quebrando linha se precisar. */}
-                  <span className="!whitespace-normal leading-tight">{item.titulo}</span>
-                </Link>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          ))}
-        </SidebarMenuSub>
-      )}
+      {aberto && <SidebarMenuSub>{children}</SidebarMenuSub>}
     </SidebarMenuItem>
+  );
+}
+
+// Especificação rev1: Cadastros > Gerais, só o Administrador acessa.
+function MenuGerais({ pathname }: { pathname: string }) {
+  return (
+    <GrupoRecolhivel titulo="Gerais" icone={<FolderCog />} prefixos={["/cadastros/gerais"]} pathname={pathname}>
+      {MENU_GERAIS.map((item) =>
+        "filhos" in item ? (
+          <SidebarMenuSubItem key={item.titulo}>
+            <p className="px-2 pt-1 text-xs font-medium text-sidebar-foreground/70">{item.titulo}</p>
+            <SidebarMenuSub className="mx-0 ml-2 px-1.5">
+              {item.filhos.map((filho) => (
+                <SubLink key={filho.url} item={filho} pathname={pathname} />
+              ))}
+            </SidebarMenuSub>
+          </SidebarMenuSubItem>
+        ) : (
+          <SubLink key={item.url} item={item} pathname={pathname} />
+        ),
+      )}
+    </GrupoRecolhivel>
+  );
+}
+
+// Parâmetros > Ferramentas: o cadastro e, para o Administrador, Caixas.
+function MenuFerramentas({ pathname, isAdmin }: { pathname: string; isAdmin: boolean }) {
+  const itens = isAdmin ? SUBMENU_FERRAMENTAS : SUBMENU_FERRAMENTAS.slice(0, 1);
+  return (
+    <GrupoRecolhivel
+      titulo="Ferramentas"
+      icone={<Wrench />}
+      prefixos={itens.map((i) => i.url)}
+      pathname={pathname}
+    >
+      {itens.map((item) => (
+        <SubLink key={item.url} item={item} pathname={pathname} />
+      ))}
+    </GrupoRecolhivel>
   );
 }
 
@@ -163,6 +202,7 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
+                {grupo.titulo === "Parâmetros" && <MenuFerramentas pathname={pathname} isAdmin={isAdmin} />}
                 {grupo.itens.map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}>

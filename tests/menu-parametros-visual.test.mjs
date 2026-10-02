@@ -4,11 +4,12 @@ import { readFileSync } from "node:fs";
 
 const raiz = new URL("../src/", import.meta.url);
 const sidebar = readFileSync(new URL("components/layout/AppSidebar.tsx", raiz), "utf8");
+const menuDados = readFileSync(new URL("lib/menu-parametros.ts", raiz), "utf8");
 const estilos = readFileSync(new URL("styles.css", raiz), "utf8");
 const telaCategorias = readFileSync(new URL("routes/_authenticated/cadastros/gerais/categorias.tsx", raiz), "utf8");
 
 test("Tabelas de Apoio abre em categorias e revela detalhes após seleção", () => {
-  assert.match(sidebar, /titulo: "Tabelas de Apoio", url: "\/cadastros\/gerais\/categorias"/);
+  assert.match(menuDados, /titulo: "Tabelas de Apoio", url: "\/cadastros\/gerais\/categorias"/);
   assert.match(telaCategorias, /titulo="Tabelas de Apoio"/);
   assert.match(telaCategorias, /!escolhida && <div/);
   assert.match(telaCategorias, /escolhida && categoria \? \(/);
@@ -21,7 +22,7 @@ test("Tabelas de Apoio abre em categorias e revela detalhes após seleção", ()
 test("menu lateral se chama Parâmetros e mantém as rotas de cadastro", () => {
   assert.match(sidebar, /titulo: "Parâmetros"/);
   assert.match(sidebar, /url: "\/cadastros\/epi"/);
-  assert.match(sidebar, /url: "\/cadastros\/gerais\/categorias"/);
+  assert.match(menuDados, /url: "\/cadastros\/gerais\/categorias"/);
 });
 
 test("a cor solicitada é exclusiva do token de sidebar", () => {
