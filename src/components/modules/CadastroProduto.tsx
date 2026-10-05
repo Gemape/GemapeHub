@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -133,6 +134,10 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Item | null>(null);
+  // Clonar: item de origem que preenche o formulário de cadastro NOVO. Só os defaultValue
+  // leem dele (base); `editando` continua sendo a flag de edição.
+  const [modelo, setModelo] = useState<Item | null>(null);
+  const base = editando ?? modelo;
   const [previa, setPrevia] = useState("");
   const [empresaSel, setEmpresaSel] = useState("");
   // Subcategoria escolhida no formulário: define as unidades e os tamanhos de Gerais (decisão 23).
@@ -166,7 +171,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     ? resolverSubcategoria(parametros, config.categoriaId, editando)
     : null;
   // Marca de Cadastros > Gerais; a marca antiga digitada continua aparecendo na edição.
-  const marcaInicial = selecaoInicialMarca(parametros.marcasUniforme, editando?.marca);
+  const marcaInicial = selecaoInicialMarca(parametros.marcasUniforme, base?.marca);
   // Parâmetro desativado em Gerais sai da escolha; o que o cadastro já usa continua na edição.
   const subcategorias = subcategoriasParaSelecao(parametros, config.categoriaId, subcategoriaAtual);
   // Produto como fica com a subcategoria escolhida: dele saem as unidades e os tamanhos.
@@ -180,10 +185,10 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const unidadesDaSub = MODO_DEMO
     ? unidadesAutorizadasDoProduto(parametros, config.modulo, produtoNoFormulario)
     : [];
-  const unidadeAtualId = editando?.unidade_id ?? null;
+  const unidadeAtualId = base?.unidade_id ?? null;
   const unidades = paraSelecao(parametros, unidadesDaSub, (u) => u.id === unidadeAtualId);
   const unidadeLegada =
-    editando && !unidadeAtualId && editando.unidade_medida?.trim() ? editando.unidade_medida : null;
+    base && !unidadeAtualId && base.unidade_medida?.trim() ? base.unidade_medida : null;
   // A unidade atual que saiu da subcategoria continua aparecendo, para não ser trocada sem querer.
   const unidadeForaDaSub =
     unidadeAtualId && !unidades.some((u) => u.id === unidadeAtualId)
@@ -214,7 +219,9 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     setGerando(false);
   }
 
-  async function abrirNovo() {
+  // Sem origem: cadastro novo em branco. Com origem (Clonar): mesmo formulário, preenchido com
+  // os dados dela. O código sai da mesma geração do cadastro novo; estoque começa em zero.
+  async function abrirNovo(origem?: Item) {
     if (!regra) {
       toast.error(
         `Cadastre antes a regra do código de ${config.nome} em Cadastros > Gerais > Código do Produto.`,
@@ -223,9 +230,20 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     }
     destravar();
     setEditando(null);
-    setEmpresaSel("");
-    setSubSel("");
-    setTamanhosSelecionados([]);
+    setModelo(origem ?? null);
+    setEmpresaSel(origem?.empresa_id ?? "");
+    if (origem) {
+      const sub = resolverSubcategoria(parametros, config.categoriaId, origem);
+      // Subcategoria fora de Gerais não é oferecida no cadastro novo: a pessoa escolhe outra.
+      setSubSel(sub && !sub.foraDeGerais ? valorSelecaoSubcategoria(sub) : "");
+      setTamanhosSelecionados(
+        origem.tamanhos_selecionados ??
+          tamanhosAssociadosParaCadastro(parametros, config.modulo, origem).map((t) => t.id),
+      );
+    } else {
+      setSubSel("");
+      setTamanhosSelecionados([]);
+    }
     setPrevia("");
     setAberto(true);
     try {
@@ -312,7 +330,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       if (MODO_DEMO) {
         try {
           valores["marca"] =
-            marcaDaSelecao(String(f.get("marca") ?? ""), marcas, editando?.marca) || null;
+            marcaDaSelecao(String(f.get("marca") ?? ""), marcas, base?.marca) || null;
         } catch (erro) {
           toast.error(erro instanceof Error ? erro.message : "Marca inválida.");
           return;
@@ -386,7 +404,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={abrirNovo}>
+          <Button requiresWrite onClick={() => abrirNovo()}>
             Novo {config.nome}
           </Button>
         </div>
@@ -458,13 +476,13 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                       </Link>
                     </TableCell>
                   )}
-                  <TableCell className="whitespace-nowrap text-right">
-                    <Button
-                      requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                  <TableCell className="text-right">
+                    <AcoesLinha
+                      rotulo={`${item.codigo_sku} ${item.nome}`}
+                      onClonar={() => void abrirNovo(item)}
+                      onEditar={() => {
                         destravar();
+                        setModelo(null);
                         setEditando(item);
                         setTamanhosSelecionados(item.tamanhos_selecionados ??
                           tamanhosAssociadosParaCadastro(parametros, config.modulo, item).map((tamanho) => tamanho.id));
@@ -475,14 +493,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                         );
                         setAberto(true);
                       }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                      onExcluir={() => {
                         // Lê as associações na hora, para o aviso não usar dados velhos.
                         let vinculos: CodigoFabrica[] = [];
                         try {
@@ -515,9 +526,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                             },
                           });
                       }}
-                    >
-                      Excluir
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -530,7 +539,11 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
-              {editando ? `Editar ${editando.codigo_sku}` : `Cadastrar ${config.nome}`}
+              {editando
+                ? `Editar ${editando.codigo_sku}`
+                : modelo
+                  ? `Clonar ${config.nome}`
+                  : `Cadastrar ${config.nome}`}
             </DialogTitle>
             <DialogDescription>
               {editando
@@ -580,7 +593,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 aria-required
                 name="nome"
                 rows={2}
-                defaultValue={editando?.nome ?? ""}
+                defaultValue={base?.nome ?? ""}
                 placeholder={`Ex.: ${config.exemplo}`}
               />
             </div>
@@ -588,7 +601,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
               <div className="space-y-1.5">
                 <Label htmlFor="unidade_id">Unidade</Label>
                 <Select
-                  key={`${subSel}-${editando?.id ?? "novo"}`}
+                  key={`${subSel}-${editando?.id ?? modelo?.id ?? "novo"}`}
                   name="unidade_id"
                   defaultValue={valorInicialUnidade}
                 >
@@ -656,7 +669,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                     type="number"
                     min={0}
                     step="any"
-                    defaultValue={editando?.preco_unitario ?? ""}
+                    defaultValue={base?.preco_unitario ?? ""}
                   />
                 </div>
                 {MODO_DEMO && (
@@ -689,7 +702,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="modelo">Modelo</Label>
-                      <Input id="modelo" name="modelo" defaultValue={editando?.modelo ?? ""} />
+                      <Input id="modelo" name="modelo" defaultValue={base?.modelo ?? ""} />
                     </div>
                   </>
                 )}
@@ -706,7 +719,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
+                  {empresasParaEscolha(empresas, [base?.empresa_id]).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>
