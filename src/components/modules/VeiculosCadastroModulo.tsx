@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
+import { descricaoVeiculo, validarAquisicao } from "@/lib/descricao-veiculo";
+import { dataBrasilia } from "@/lib/portadores-caixa";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { toast } from "sonner";
 
@@ -82,7 +84,13 @@ const NENHUM = "nenhum";
 
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 
-type VeiculoCadastro = Veiculo & { codigo_sku?: string | null; descricao?: string | null };
+type VeiculoCadastro = Veiculo & {
+  codigo_sku?: string | null;
+  descricao?: string | null;
+  data_aquisicao?: string | null;
+  custo?: number | null;
+  numero_nota_fiscal?: string | null;
+};
 
 // Todos os veículos (de todas as empresas): códigos para a sequência e placas repetidas.
 async function todosVeiculos(): Promise<{ id: string; placa: string; codigo_sku?: string }[]> {
@@ -92,8 +100,9 @@ async function todosVeiculos(): Promise<{ id: string; placa: string; codigo_sku?
 }
 
 // Cadastrar veículo (especificação rev1 + decisões especiais 9 e 10): código automático,
-// subcategoria, descrição, placa, marca, modelo, ano de fabricação, cor, combustível,
-// empresa, RENAVAM, quilometragem, situação, responsável e observações.
+// subcategoria, placa, marca, modelo, ano de fabricação, cor, combustível,
+// empresa, RENAVAM, data de aquisição, custo, nota fiscal, quilometragem, situação, responsável e
+// observações. A descrição é montada sozinha (decisão 49).
 export function VeiculosCadastroModulo() {
   const { empresas, empresaId } = useEmpresa();
   const parametros = useParametrosBase();
@@ -124,12 +133,15 @@ export function VeiculosCadastroModulo() {
 
   // A subcategoria mostrada é a de Gerais, pela referência gravada (nome sempre atual).
   const subcategoriaDe = (v: VeiculoCadastro) => nomeSubcategoria(parametros, CATEGORIA_VEICULO, v);
+  // A descrição é montada dos dados atuais (decisão 49), então acompanha mudanças de Gerais.
+  const descricaoDe = (v: VeiculoCadastro) =>
+    descricaoVeiculo({ placa: v.placa, subcategoria: subcategoriaDe(v), marca: v.marca, modelo: v.modelo, ano: v.ano, cor: v.cor, combustivel: v.combustivel });
   const veiculos = (lista as VeiculoCadastro[]).filter((v) =>
     combinaBusca(
       busca.replace(/-/g, ""),
       v.codigo_sku,
       subcategoriaDe(v),
-      v.descricao,
+      descricaoDe(v),
       normalizarPlaca(v.placa ?? ""),
       v.marca,
       v.modelo,
@@ -203,7 +215,6 @@ export function VeiculosCadastroModulo() {
       erroSubcategoria = falha instanceof Error ? falha.message : "Selecione a subcategoria.";
     }
     const tipo = subcategoria?.nome ?? "";
-    const descricao = capitalizarCadastro(texto("descricao"));
     const placaDigitada = normalizarPlaca(texto("placa"));
     let marca = "";
     let erroMarca: string | null = null;
@@ -228,11 +239,13 @@ export function VeiculosCadastroModulo() {
     const placaMantida = !!editando && placaDigitada === normalizarPlaca(editando.placa ?? "");
     // Grava no mesmo formato das placas antigas (ABC-1234 ou ABC1D23); a mantida fica igual.
     const placa = placaMantida && editando ? editando.placa : formatarPlaca(placaDigitada);
+    const aquisicao = validarAquisicao(
+      { data: texto("data_aquisicao"), custo: texto("custo"), notaFiscal: texto("numero_nota_fiscal") },
+      dataBrasilia(),
+    );
     const erro = erroSubcategoria
       ? erroSubcategoria
-      : MODO_DEMO && !descricao
-        ? "Informe a descrição do item."
-        : !placaDigitada
+      : !placaDigitada
           ? "Informe a placa."
           : !placaMantida && !placaValida(placaDigitada)
             ? "Placa inválida. Use o padrão ABC-1234 ou ABC1D23."
@@ -246,7 +259,9 @@ export function VeiculosCadastroModulo() {
                     ? "Quilometragem inválida."
                     : !empresa
                       ? "Selecione a empresa."
-                      : null;
+                      : MODO_DEMO && aquisicao.erro
+                        ? aquisicao.erro
+                        : null;
     if (erro) {
       toast.error(erro);
       return;
@@ -271,7 +286,11 @@ export function VeiculosCadastroModulo() {
       observacoes: texto("observacoes") || null,
     };
     if (MODO_DEMO) {
-      valores["descricao"] = descricao;
+      // A descrição é montada sozinha: placa, subcategoria, marca, modelo, ano, cor e combustível.
+      valores["descricao"] = descricaoVeiculo({ placa, subcategoria: tipo, marca, modelo, ano, cor, combustivel });
+      valores["data_aquisicao"] = aquisicao.data;
+      valores["custo"] = aquisicao.custo;
+      valores["numero_nota_fiscal"] = aquisicao.notaFiscal;
       // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
       valores["subcategoria_id"] = subcategoria?.id ?? null;
     }
@@ -329,7 +348,7 @@ export function VeiculosCadastroModulo() {
                 veiculos.map((v) => ({
                   Código: v.codigo_sku ?? "",
                   Subcategoria: subcategoriaDe(v),
-                  Descrição: v.descricao ?? "",
+                  Descrição: descricaoDe(v),
                   Placa: formatarPlaca(v.placa),
                   Marca: v.marca,
                   Modelo: v.modelo,
@@ -338,6 +357,13 @@ export function VeiculosCadastroModulo() {
                   Combustível: v.combustivel ?? "",
                   Empresa: nomeEmpresa(v.empresa_id),
                   RENAVAM: v.renavam ?? "",
+                  ...(MODO_DEMO
+                    ? {
+                        "Data de aquisição": v.data_aquisicao ?? "",
+                        Custo: v.custo ?? "",
+                        "Nota fiscal": v.numero_nota_fiscal ?? "",
+                      }
+                    : {}),
                   Km: v.quilometragem_atual ?? 0,
                   Situação: STATUS_VEICULO_LABEL[v.status] ?? v.status,
                   Responsável: nomeEmpregado(v.empregado_responsavel_id),
@@ -393,7 +419,7 @@ export function VeiculosCadastroModulo() {
                     {v.codigo_sku || "—"}
                   </TableCell>
                   <TableCell>{subcategoriaDe(v) || "—"}</TableCell>
-                  <TableCell className="font-medium">{v.descricao || "—"}</TableCell>
+                  <TableCell className="font-medium">{descricaoDe(v) || "—"}</TableCell>
                   <TableCell className="whitespace-nowrap font-mono text-xs">
                     {formatarPlaca(v.placa)}
                   </TableCell>
@@ -491,19 +517,6 @@ export function VeiculosCadastroModulo() {
                 </p>
               )}
             </div>
-            {MODO_DEMO && (
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="descricao">Descrição do item</Label>
-                <Textarea
-                  id="descricao"
-                  name="descricao"
-                  rows={2}
-                  aria-required
-                  defaultValue={base?.descricao ?? ""}
-                  placeholder="Ex.: caminhonete S10"
-                />
-              </div>
-            )}
             <div className="space-y-1.5">
               <Label htmlFor="placa">Placa</Label>
               <Input
@@ -609,6 +622,42 @@ export function VeiculosCadastroModulo() {
               <Label htmlFor="renavam">RENAVAM</Label>
               <Input id="renavam" name="renavam" defaultValue={editando?.renavam ?? ""} />
             </div>
+            {MODO_DEMO && (
+              <>
+                {/* Aquisição é da compra deste veículo: o Clonar deixa os três em branco. */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="data_aquisicao">Data de aquisição</Label>
+                  <Input
+                    id="data_aquisicao"
+                    name="data_aquisicao"
+                    type="date"
+                    max={dataBrasilia()}
+                    defaultValue={editando?.data_aquisicao ?? ""}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="custo">Custo (R$)</Label>
+                  <Input
+                    id="custo"
+                    name="custo"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="0.01"
+                    defaultValue={editando?.custo ?? ""}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="numero_nota_fiscal">Número da nota fiscal</Label>
+                  <Input
+                    id="numero_nota_fiscal"
+                    name="numero_nota_fiscal"
+                    maxLength={30}
+                    defaultValue={editando?.numero_nota_fiscal ?? ""}
+                  />
+                </div>
+              </>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="quilometragem_atual">Quilometragem atual</Label>
               <Input

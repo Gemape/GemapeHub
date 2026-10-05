@@ -23,6 +23,8 @@ import {
   montarLinhasEnderecamento,
   type ProdutoEnderecavel,
 } from "@/lib/enderecamento-categoria";
+import { descricaoVeiculo } from "@/lib/descricao-veiculo";
+import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 type Endereco = {
@@ -66,10 +68,15 @@ export function EnderecamentoModulo() {
   const produtos: ProdutoEnderecavel[] = useMemo(() => [
     ...produtosBase,
     ...veiculos.map((veiculo) => {
-      const atual = veiculo as typeof veiculo & { codigo_sku?: string; descricao?: string };
-      return { tabela: "veiculos" as const, codigo_sku: atual.codigo_sku ?? "", nome: atual.descricao || veiculo.modelo, empresa_id: veiculo.empresa_id };
+      const atual = veiculo as typeof veiculo & { codigo_sku?: string; descricao?: string; ano?: unknown; cor?: string; combustivel?: string };
+      // Mesma descrição automática do cadastro (decisão 49); sem dados, cai no texto gravado.
+      const montada = descricaoVeiculo({
+        placa: atual.placa, subcategoria: nomeSubcategoria(parametros, "cat-veiculos", atual as never),
+        marca: atual.marca, modelo: atual.modelo, ano: atual.ano as never, cor: atual.cor, combustivel: atual.combustivel,
+      });
+      return { tabela: "veiculos" as const, codigo_sku: atual.codigo_sku ?? "", nome: montada || atual.descricao || veiculo.modelo, empresa_id: veiculo.empresa_id };
     }),
-  ], [produtosBase, veiculos]);
+  ], [produtosBase, veiculos, parametros]);
   const salvar = useSalvar("enderecamentos", ["enderecamentos"]);
   const excluir = useExcluir("enderecamentos", ["enderecamentos"]);
   const [busca, setBusca] = useState("");
