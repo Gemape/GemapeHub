@@ -224,13 +224,51 @@ export function sincronizarEstoqueEpis(
 
 
 
-// Editar um EPI do catálogo (decisão 45): a descrição vale para todos os tamanhos do mesmo EPI e
-// o estoque mínimo é do tamanho, levado ao estoque de todas as empresas. Código, tamanho,
-// subcategoria e unidade não mudam. Tudo ou nada: se algo falha, nada é gravado.
+// Editar um EPI do catálogo (decisões 45 e 51): descrição e estoque mínimo sempre; subcategoria,
+// unidade e tamanho também, mas só em item sem saldo e sem histórico (se não, o estoque por tamanho
+// e os registros antigos ficariam apontando para o dado velho). O código nunca muda. Subcategoria
+// e unidade valem para todos os tamanhos da mesma descrição; o tamanho é só do registro editado.
+// Tudo ou nada: se algo falha, nada é gravado.
+export type EdicaoCatalogo = {
+  nome: string;
+  estoque_minimo: string | number;
+  subcategoria?: { id: string; nome: string };
+  // undefined mantém; null tira a unidade.
+  unidade?: { id: string; nome: string } | null;
+  // undefined mantém; null deixa o item sem tamanho.
+  tamanho_id?: string | null;
+  // Tamanhos que a subcategoria final autoriza em Gerais; confere os tamanhos que ficam.
+  tamanhosPermitidos?: string[];
+};
+
+// Por que o item não aceita mudar subcategoria, unidade ou tamanho; vazio se aceita.
+export function motivoTravaEstrutura(dados: DadosCatalogo, catalogoIds: string[], t: TabelasCatalogo = TABELAS_EPI): string {
+  const estoques = (dados[t.estoque] ?? []).filter((e) => catalogoIds.includes(String(e["catalogo_id"])));
+  if (estoques.some((e) => Number(e["estoque_atual"] ?? 0) !== 0)) return "tem saldo em estoque";
+  const ids = new Set(estoques.map((e) => e["id"]));
+  const temHistorico = Object.entries(dados).some(
+    ([tabela, linhas]) =>
+      tabela !== t.estoque && tabela !== t.catalogo && tabela !== "enderecamentos" &&
+      (linhas ?? []).some((l) => ids.has(l["item_id"])),
+  );
+  return temHistorico ? "tem histórico (movimentações, compras ou ocorrências)" : "";
+}
+
+// Para a tela do Editar: o que trava a descrição inteira (subcategoria e unidade) e o que trava só
+// o registro (tamanho). Vazio quer dizer livre.
+export function travasDoItem(dados: DadosCatalogo, catalogoId: string, t: TabelasCatalogo = TABELAS_EPI): { grupo: string; item: string } {
+  const catalogo = dados[t.catalogo] ?? [];
+  const alvo = catalogo.find((c) => c["id"] === catalogoId);
+  if (!alvo) return { grupo: "", item: "" };
+  const chave = normalizarDescricao(String(alvo["nome"]));
+  const grupo = catalogo.filter((c) => normalizarDescricao(String(c["nome"])) === chave).map((c) => String(c["id"]));
+  return { grupo: motivoTravaEstrutura(dados, grupo, t), item: motivoTravaEstrutura(dados, [catalogoId], t) };
+}
+
 export function editarEpiCatalogo(
   dados: DadosCatalogo,
   catalogoId: string,
-  valores: { nome: string; estoque_minimo: string | number },
+  valores: EdicaoCatalogo,
   t: TabelasCatalogo = TABELAS_EPI,
 ): { erro?: string } {
   const catalogo = dados[t.catalogo] ?? [];
@@ -252,11 +290,54 @@ export function editarEpiCatalogo(
       return { erro: `Já existe um ${t.nome} com esta descrição.` };
     }
   }
-  for (const c of mesmoGrupo) c["nome"] = nome;
+
+  const trocaSub = !!valores.subcategoria && valores.subcategoria.id !== (alvo["subcategoria_id"] ?? null);
+  const trocaUni = valores.unidade !== undefined && (valores.unidade?.id ?? null) !== (alvo["unidade_id"] ?? null);
+  const novoTamanho = valores.tamanho_id === undefined ? ((alvo["tamanho_id"] as string | null) ?? null) : valores.tamanho_id || null;
+  const trocaTam = novoTamanho !== ((alvo["tamanho_id"] as string | null) ?? null);
+  if (trocaSub || trocaUni || trocaTam) {
+    const afetados = trocaSub || trocaUni ? mesmoGrupo : [alvo];
+    const motivo = motivoTravaEstrutura(dados, afetados.map((c) => String(c["id"])), t);
+    if (motivo) {
+      return { erro: `Subcategoria, unidade e tamanho só mudam em ${t.nome} sem saldo e sem histórico, e este ${motivo}.` };
+    }
+  }
+  if (trocaTam && duplicadoNoCatalogo(catalogo as never, nome, novoTamanho, String(alvo["id"]))) {
+    return { erro: `Este ${t.nome} já está cadastrado neste tamanho.` };
+  }
+  if (valores.tamanhosPermitidos && (trocaSub || trocaTam)) {
+    const finais = mesmoGrupo.map((c) => (c === alvo ? novoTamanho : ((c["tamanho_id"] as string | null) ?? null)));
+    if (finais.some((id) => id && !valores.tamanhosPermitidos!.includes(id))) {
+      return { erro: "Tamanho não associado a esta subcategoria em Cadastros > Gerais." };
+    }
+  }
+
+  for (const c of mesmoGrupo) {
+    c["nome"] = nome;
+    if (trocaSub) {
+      c["subcategoria_id"] = valores.subcategoria!.id;
+      c["categoria"] = valores.subcategoria!.nome;
+    }
+    if (trocaUni) {
+      c["unidade_id"] = valores.unidade?.id ?? null;
+      c["unidade_medida"] = valores.unidade?.nome ?? null;
+    }
+  }
   alvo["estoque_minimo"] = minimo;
+  if (trocaTam) alvo["tamanho_id"] = novoTamanho;
   for (const e of dados[t.estoque] ?? []) {
-    if (e["catalogo_id"] === catalogoId) e["estoque_minimo"] = minimo;
-    if (mesmoGrupo.some((c) => c["id"] === e["catalogo_id"])) e["nome"] = nome;
+    if (e["catalogo_id"] === catalogoId) {
+      e["estoque_minimo"] = minimo;
+      if (trocaTam) e["tamanhos_selecionados"] = novoTamanho ? [novoTamanho] : [];
+    }
+    const g = mesmoGrupo.find((c) => c["id"] === e["catalogo_id"]);
+    if (g) {
+      e["nome"] = nome;
+      e["categoria"] = g["categoria"];
+      e["subcategoria_id"] = g["subcategoria_id"];
+      e["unidade_id"] = g["unidade_id"];
+      e["unidade_medida"] = g["unidade_medida"];
+    }
   }
   return {};
 }

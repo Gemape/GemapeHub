@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { EdicaoCatalogoForm } from "@/components/modules/EdicaoCatalogoForm";
 import { CadastroProduto } from "@/components/modules/CadastroProduto";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
@@ -208,14 +209,12 @@ function CatalogoEpi() {
     }
   }
 
-  function enviarEdicao(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function enviarEdicao(valores: Linha) {
     if (!editando) return;
-    const f = new FormData(e.currentTarget);
     void operar(
       "editar_epi_catalogo",
       editando.id,
-      { nome: String(f.get("nome") ?? ""), estoque_minimo: String(f.get("minimo") ?? "") },
+      valores,
       `EPI ${editando.codigo_sku} atualizado`,
       () => setEditando(null),
     );
@@ -492,28 +491,24 @@ function CatalogoEpi() {
       </Dialog>
 
       <Dialog open={editando !== null} onOpenChange={(aberto) => !aberto && setEditando(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Editar EPI {editando?.codigo_sku}</DialogTitle>
             <DialogDescription>
-              A descrição vale para todos os tamanhos deste EPI. O estoque mínimo é só deste tamanho. Código, tamanho e subcategoria não mudam.
+              Altere os dados do cadastro. O código não muda.
             </DialogDescription>
           </DialogHeader>
           {editando && (
-            <form key={editando.id} onSubmit={enviarEdicao} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-nome">Descrição</Label>
-                <Input id="edit-nome" name="nome" defaultValue={editando.nome} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="edit-minimo">Estoque mínimo</Label>
-                <Input id="edit-minimo" name="minimo" inputMode="numeric" pattern="\d+" defaultValue={String(editando.estoque_minimo)} required />
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditando(null)}>Cancelar</Button>
-                <Button requiresWrite type="submit" disabled={salvando}>Salvar</Button>
-              </DialogFooter>
-            </form>
+            <EdicaoCatalogoForm
+              key={editando.id}
+              item={editando}
+              modulo="epi"
+              categoriaId={CATEGORIA_EPI}
+              nomeProduto="EPI"
+              salvando={salvando}
+              onSalvar={enviarEdicao}
+              onCancelar={() => setEditando(null)}
+            />
           )}
         </DialogContent>
       </Dialog>
