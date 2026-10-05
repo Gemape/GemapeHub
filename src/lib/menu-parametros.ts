@@ -1,5 +1,5 @@
 // Hierarquia do menu Parâmetros (decisões 34 e 38). Só dados: o AppSidebar desenha.
-export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench" | "HardHat" | "ClipboardList" | "Archive";
+export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench" | "HardHat" | "ClipboardList" | "Archive" | "Car";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
 export type AbaMenu = { aba: string; titulo: string; soAdmin?: boolean };
 export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[] };
@@ -71,6 +71,13 @@ export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
 export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
   { titulo: "Cadastro de Ferramentas", url: "/cadastros/ferramentas", icone: "Wrench" },
   { titulo: "Caixas", url: "/caixas-ferramentas", icone: "Archive", abas: ABAS_CAIXAS },
+];
+
+// Parâmetros > Veículos (decisão 46): o cadastro da frota e as duas listas de apoio.
+export const MENU_VEICULOS: readonly ItemMenu[] = [
+  { titulo: "Cadastro de Veículos", url: "/cadastros/veiculos", icone: "Car" },
+  { titulo: "Ações de manutenção", url: "/cadastros/veiculos-acoes-manutencao", icone: "Wrench" },
+  { titulo: "Tipos de ocorrência", url: "/cadastros/veiculos-tipos-ocorrencia", icone: "ClipboardList" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.

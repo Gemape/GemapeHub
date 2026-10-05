@@ -65,6 +65,15 @@ import {
   validarLinhasTamanho,
 } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { MODO_DEMO } from "@/lib/modo-demo";
+import { SeletorAcaoManutencao } from "@/components/modules/SeletorAcaoManutencao";
+
+// Ação de manutenção gravada na movimentação (modo demonstração): "Pai: filho, filho".
+function textoManutencao(m: unknown): string {
+  const { acao_manutencao: acao, subitens_manutencao: subs } = m as { acao_manutencao?: string; subitens_manutencao?: string[] };
+  if (!acao) return "";
+  return subs?.length ? `${acao}: ${subs.join(", ")}` : acao;
+}
 
 const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
@@ -78,6 +87,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   // Tamanho de EPI e uniforme com tamanho em Gerais (decisão 23).
   const [tamanho, setTamanho] = useState("");
   const parametros = useParametrosBase();
+  // Ação de manutenção do veículo (decisão 46): o pai e os filhos marcados. Só no modo demonstração.
+  const [acaoManutId, setAcaoManutId] = useState("");
+  const [subitensMarcados, setSubitensMarcados] = useState<string[]>([]);
   const comTamanho = TAMANHO_DISPONIVEL && controlaModulo(modulo);
   const { data: movimentacoes = [], isLoading } = useMovimentacoes(modulo, empresaId);
   const { data: itens = [] } = useItens(modulo === "veiculo" ? "ferramenta" : modulo, empresaId);
@@ -135,6 +147,12 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       }
     }
 
+    const acaoManut = ehVeiculo && MODO_DEMO ? parametros.acoesManutencaoVeiculo.find((a) => a.id === acaoManutId) : undefined;
+    if (acaoManut && acaoManut.subitens.length > 0 && subitensMarcados.length === 0) {
+      alert("Marque ao menos um subitem da ação de manutenção.");
+      return;
+    }
+
     const valores = {
       modulo,
       item_id: alvo,
@@ -153,6 +171,13 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       origem_local: texto("origem_local"),
       destino_local: texto("destino_local"),
       observacao: texto("observacao")?.slice(0, 500) ?? null,
+      // A manutenção ainda não existe no banco real (Fase 2): só vai no modo demonstração.
+      ...(acaoManut
+        ? {
+            acao_manutencao: acaoManut.nome,
+            subitens_manutencao: acaoManut.subitens.filter((i) => subitensMarcados.includes(i.id)).map((i) => i.nome),
+          }
+        : {}),
       // A devolução grava "Sem tamanho" explícito, para não confundir com tamanho ausente.
       ...(comTamanho ? { tamanho_id: tamanhoParaGravar(tamanho, tipo === "Devolucao") } : {}),
     };
@@ -188,6 +213,8 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           <Button requiresWrite="operar"
             onClick={() => {
               setComOcorrencia(false);
+              setAcaoManutId("");
+              setSubitensMarcados([]);
               setTamanho("");
               // O tipo volta para Saída como o formulário, que reabre com o valor padrão.
               setTipoMovimentacao("Saida");
@@ -212,6 +239,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               <TableHead className="text-right">Qtde</TableHead>
               <TableHead>Motivo da baixa</TableHead>
               <TableHead>Ônus</TableHead>
+              {ehVeiculo && MODO_DEMO && <TableHead>Manutenção</TableHead>}
               <TableHead>Ocorrência</TableHead>
             </TableRow>
           </TableHeader>
@@ -219,7 +247,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={ehVeiculo ? 8 : comTamanho ? 10 : 9}
+                  colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
                   className="text-center text-muted-foreground"
                 >
                   Carregando…
@@ -228,7 +256,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             ) : movimentacoes.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={ehVeiculo ? 8 : comTamanho ? 10 : 9}
+                  colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
                   className="text-center text-muted-foreground"
                 >
                   Nenhuma movimentação registrada.
@@ -254,6 +282,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   <TableCell className="text-right">{m.quantidade}</TableCell>
                   <TableCell>{m.motivo_baixa ?? "—"}</TableCell>
                   <TableCell>{m.onus_baixa ?? "—"}</TableCell>
+                  {ehVeiculo && MODO_DEMO && (
+                    <TableCell>{textoManutencao(m) || "—"}</TableCell>
+                  )}
                   <TableCell>
                     {m.sinalizar_ocorrencia ? (
                       <Badge variant="destructive">Sim</Badge>
@@ -488,6 +519,16 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   </SelectContent>
                 </Select>
               </div>
+            )}
+
+            {ehVeiculo && MODO_DEMO && (
+              <SeletorAcaoManutencao
+                acoes={parametros.acoesManutencaoVeiculo}
+                acaoId={acaoManutId}
+                marcados={subitensMarcados}
+                onAcao={setAcaoManutId}
+                onMarcados={setSubitensMarcados}
+              />
             )}
 
             {(modulo === "ferramenta" || ehVeiculo) && (
