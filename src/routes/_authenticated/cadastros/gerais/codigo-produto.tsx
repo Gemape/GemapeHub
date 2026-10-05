@@ -173,6 +173,7 @@ function CodigoProduto() {
                       rotulo={`regra de código de ${c.nome}`}
                       {...(regra ? { onClonar: () => clonar(c.id) } : {})}
                       onEditar={() => escolher(c.id)}
+                      editarLivre
                       {...(regra
                         ? {
                             onExcluir: () => {

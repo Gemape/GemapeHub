@@ -264,7 +264,7 @@ function PaginaEmpregados() {
                 id="data_demissao"
                 name="data_demissao"
                 type="date"
-                defaultValue={base?.data_demissao ?? ""}
+                defaultValue={editando?.data_demissao ?? ""}
               />
             </div>
             <p className="text-xs text-muted-foreground sm:col-span-2">

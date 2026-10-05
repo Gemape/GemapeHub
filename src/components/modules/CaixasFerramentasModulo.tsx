@@ -99,6 +99,8 @@ export function CaixasFerramentasModulo() {
   // Combobox state
   const [openCombo, setOpenCombo] = useState(false);
 
+  // Cada abertura do formulário (novo, clone ou edição) recarrega os itens, mesmo da mesma caixa.
+  const [abertura, setAbertura] = useState(0);
   useEffect(() => {
     if (base && itensCarregados.length > 0) {
       setItensVinculados(
@@ -110,9 +112,10 @@ export function CaixasFerramentasModulo() {
         })) as ItemVinculado[],
       );
     }
-  }, [base, itensCarregados]);
+  }, [base, itensCarregados, abertura]);
 
   function abrirNovo() {
+    setAbertura((n) => n + 1);
     setEditando(null);
     setModelo(null);
     setNumero(null);
@@ -123,6 +126,7 @@ export function CaixasFerramentasModulo() {
   // Clonar: novo cadastro com os dados da origem; o número da caixa fica em branco para ser escolhido
   // entre as habilitadas livres, e o portador não é herdado.
   function abrirClone(c: CaixaFerramenta) {
+    setAbertura((n) => n + 1);
     setEditando(null);
     setModelo(c);
     setNumero(null);
@@ -295,6 +299,7 @@ export function CaixasFerramentasModulo() {
                       rotulo={`caixa ${c.codigo}`}
                       onClonar={() => abrirClone(c)}
                       onEditar={() => {
+                        setAbertura((n) => n + 1);
                         setModelo(null);
                         setEditando(c);
                         setNumero(numeroDaCaixa(c));

@@ -28,3 +28,9 @@ test("Endereçamento usa AcoesLinha mantendo o Clonar atual; Portadores é só h
   assert.match(fonte, /setOrigemClone\(""\); setClonando\(produto\)/);
   assert.doesNotMatch(ler("PortadoresCaixaModulo"), /AcoesLinha/);
 });
+
+test("Caixas recarrega os itens a cada abertura do formulário, inclusive ao clonar a mesma caixa (revisão)", () => {
+  const src = readFileSync(new URL("../src/components/modules/CaixasFerramentasModulo.tsx", import.meta.url), "utf8");
+  assert.match(src, /\[base, itensCarregados, abertura\]/);
+  assert.equal((src.match(/setAbertura\(\(n\) => n \+ 1\)/g) ?? []).length, 3);
+});

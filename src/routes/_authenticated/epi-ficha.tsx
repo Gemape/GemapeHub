@@ -210,6 +210,7 @@ function FichaEpiPagina() {
                       rotulo={`ficha de ${epi.codigo_sku}`}
                       onClonar={() => clonar(ficha.epiId)}
                       onEditar={() => abrir(ficha.epiId)}
+                      editarLivre
                       onExcluir={() => {
                         if (confirm(`Excluir a ficha de ${epi.codigo_sku}?`))
                           executar(() => removerFicha(ficha.epiId), "Ficha excluída");

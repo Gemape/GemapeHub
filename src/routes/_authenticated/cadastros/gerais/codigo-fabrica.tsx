@@ -201,6 +201,7 @@ function CodigoFabricaPagina() {
                     rotulo={`associação ${c.codigo_fornecedor} de ${c.codigo_produto}`}
                     onClonar={() => abrir(c, true)}
                     onEditar={() => abrir(c)}
+                      editarLivre
                     onExcluir={() => {
                       if (
                         confirm(
