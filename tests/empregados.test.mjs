@@ -125,5 +125,5 @@ test('campo CPF do empregado usa a máscara e o placeholder xxx.xxx.xxx-xx', asy
   const src = readFileSync(new URL('../src/routes/_authenticated/empregados.tsx', import.meta.url), 'utf8');
   assert.match(src, /placeholder="xxx\.xxx\.xxx-xx"/);
   assert.match(src, /mascararCpf\(/);
-  assert.match(src, /maxLength=\{14\}/);
+  assert.doesNotMatch(src, /maxLength=\{14\}/);
 });

@@ -216,11 +216,10 @@ function PaginaEmpregados() {
                 aria-required
                 inputMode="numeric"
                 placeholder="xxx.xxx.xxx-xx"
-                maxLength={14}
                 onChange={(ev) => {
                   ev.target.value = mascararCpf(ev.target.value);
                 }}
-                defaultValue={editando?.cpf ? mascararCpf(editando.cpf) : ""}
+                defaultValue={editando?.cpf ? (editando.cpf.replace(/\D/g, "").length > 11 ? editando.cpf : mascararCpf(editando.cpf)) : ""}
               />
             </div>
             <div className="space-y-1.5">
