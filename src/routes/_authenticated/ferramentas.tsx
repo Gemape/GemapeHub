@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PaginaModulo } from "@/components/modules/PaginaModulo";
 
 export const Route = createFileRoute("/_authenticated/ferramentas")({
+  validateSearch: (search: Record<string, unknown>): { aba?: string } =>
+    typeof search["aba"] === "string" ? { aba: search["aba"] } : {},
   head: () => ({
     meta: [
       { title: "Ferramentas | Patrimônio GEMAPE" },
@@ -17,11 +19,17 @@ export const Route = createFileRoute("/_authenticated/ferramentas")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => (
+  component: Pagina,
+});
+
+function Pagina() {
+  const { aba } = Route.useSearch();
+  return (
     <PaginaModulo
+      aba={aba}
       modulo="ferramenta"
       titulo="Ferramentas"
       descricao="Número de série, vistorias (inicial, periódica, reposição e final), ocorrências e histórico de quem estava com cada ferramenta."
     />
-  ),
-});
+  );
+}

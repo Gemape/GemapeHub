@@ -16,18 +16,22 @@ import { FerramentasTermoResponsabilidade } from "@/components/modules/Ferrament
 import { FerramentasTermoEncerramento } from "@/components/modules/FerramentasTermoEncerramento";
 import { FerramentasTermoVistoria } from "@/components/modules/FerramentasTermoVistoria";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { abaDoModulo } from "@/lib/menu-parametros";
 import type { Modulo } from "@/lib/gemape";
 
 export function PaginaModulo({
   modulo,
   titulo,
   descricao,
+  aba,
 }: {
   modulo: Extract<Modulo, 'epi' | 'uniforme' | 'ferramenta'>;
   titulo: string;
   descricao: string;
+  aba?: string | undefined;
 }) {
+  const abaValida = abaDoModulo(modulo, aba);
   return (
     <div className="space-y-5">
       <header>
@@ -36,140 +40,8 @@ export function PaginaModulo({
         <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
       </header>
 
-      <Tabs defaultValue="dashboard">
-        <TabsList className="flex w-full justify-start overflow-x-auto overflow-y-hidden bg-transparent p-0 scrollbar-none">
-          <div className="flex flex-nowrap gap-1">
-            <TabsTrigger
-              value="dashboard"
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-            >
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="estoque" className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap">
-              Estoque
-            </TabsTrigger>
-
-            {modulo === "epi" ? (
-              <>
-                <TabsTrigger
-                  value="compras"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Compras
-                </TabsTrigger>
-                <TabsTrigger
-                  value="historico"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Histórico do empregado
-                </TabsTrigger>
-                <TabsTrigger
-                  value="baixas"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Baixar Definitivas
-                </TabsTrigger>
-                <TabsTrigger
-                  value="termo-entrega"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Termo de Entrega
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ficha-avulsa"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Ficha de EPI Avulsa
-                </TabsTrigger>
-              </>
-            ) : modulo === "ferramenta" ? (
-              <>
-                <TabsTrigger
-                  value="caixas"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Número da caixa
-                </TabsTrigger>
-                <TabsTrigger
-                  value="termo-responsabilidade"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Termo de responsabilidade individual
-                </TabsTrigger>
-                <TabsTrigger
-                  value="termo-encerramento"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Termo de encerramento responsabilidade
-                </TabsTrigger>
-                <TabsTrigger
-                  value="termo-vistoria"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Termo de vistoria periódica
-                </TabsTrigger>
-                {/* O cadastro de ferramentas fica só em Cadastros > Ferramentas (decisão 25). */}
-                <TabsTrigger
-                  value="movimentacoes"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Movimentações
-                </TabsTrigger>
-              </>
-            ) : (
-              <>
-                {/* O cadastro de uniformes fica só em Cadastros > Uniformes (decisão 26). */}
-                <TabsTrigger
-                  value="movimentacoes"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                >
-                  Movimentações
-                </TabsTrigger>
-
-                {modulo === "uniforme" && (
-                  <>
-                    <TabsTrigger
-                      value="compras"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                    >
-                      Compras
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="historico"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                    >
-                      Histórico Empregado
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="baixas"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                    >
-                      Baixas Definitivas
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="termo-entrega"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                    >
-                      Termo de Entrega
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="termo-baixa"
-                      className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-                    >
-                      Termo de Baixa
-                    </TabsTrigger>
-                  </>
-                )}
-              </>
-            )}
-            <TabsTrigger
-              value="ocorrencias"
-              className="data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap"
-            >
-              Ocorrências
-            </TabsTrigger>
-          </div>
-        </TabsList>
+      {/* As abas viraram submenus no menu lateral (decisão 43): a aba vem de ?aba=. */}
+      <Tabs value={abaValida}>
         <TabsContent value="dashboard" className="mt-5">
           <DashboardModulo modulo={modulo} />
         </TabsContent>

@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PaginaModulo } from "@/components/modules/PaginaModulo";
 
 export const Route = createFileRoute("/_authenticated/epi")({
+  validateSearch: (search: Record<string, unknown>): { aba?: string } =>
+    typeof search["aba"] === "string" ? { aba: search["aba"] } : {},
   head: () => ({
     meta: [
       { title: "EPIs | Patrimônio GEMAPE" },
@@ -17,11 +19,17 @@ export const Route = createFileRoute("/_authenticated/epi")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => (
+  component: Pagina,
+});
+
+function Pagina() {
+  const { aba } = Route.useSearch();
+  return (
     <PaginaModulo
+      aba={aba}
       modulo="epi"
       titulo="EPIs"
       descricao="Equipamentos de proteção individual, com Certificado de Aprovação (CA), entrega por empregado e alerta automático de reposição."
     />
-  ),
-});
+  );
+}

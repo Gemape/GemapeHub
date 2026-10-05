@@ -1,7 +1,18 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAccess } from "@/lib/access-context";
-import { MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, URLS_GERAIS, type ItemMenu, type NomeIcone } from "@/lib/menu-parametros";
+import {
+  ABAS_EPI,
+  ABAS_FERRAMENTA,
+  ABAS_UNIFORME,
+  ABAS_VEICULO,
+  MENU_EPI,
+  MENU_FERRAMENTAS,
+  MENU_GERAIS,
+  URLS_GERAIS,
+  type AbaMenu,
+  type ItemMenu,
+} from "@/lib/menu-parametros";
 import {
   Building2,
   Car,
@@ -51,10 +62,10 @@ const grupos = [
   {
     titulo: "Módulos",
     itens: [
-      { titulo: "EPIs", url: "/epi", icone: HardHat },
-      { titulo: "Uniformes", url: "/uniformes", icone: Shirt },
-      { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench },
-      { titulo: "Veículos", url: "/veiculos", icone: Car },
+      { titulo: "EPIs", url: "/epi", icone: HardHat, abas: ABAS_EPI },
+      { titulo: "Uniformes", url: "/uniformes", icone: Shirt, abas: ABAS_UNIFORME },
+      { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench, abas: ABAS_FERRAMENTA },
+      { titulo: "Veículos", url: "/veiculos", icone: Car, abas: ABAS_VEICULO },
     ],
   },
   {
@@ -69,9 +80,49 @@ const grupos = [
   },
 ] as const;
 
+type ItemGrupo = { titulo: string; url: string; icone: typeof LayoutDashboard; abas?: readonly AbaMenu[] };
+
 const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive } as const;
 
+function useAbaAtual(): string | undefined {
+  const aba = useRouterState({ select: (s) => (s.location.search as Record<string, unknown>)["aba"] });
+  return typeof aba === "string" ? aba : undefined;
+}
+
+// Submenus que antes eram abas (decisão 43). Sem ?aba=, vale a primeira aba que a pessoa pode ver.
+function SubAbas({ url, abas, pathname, abaAtual, isAdmin }: { url: string; abas: readonly AbaMenu[]; pathname: string; abaAtual: string | undefined; isAdmin: boolean }) {
+  const visiveis = abas.filter((a) => !a.soAdmin || isAdmin);
+  const ativa = visiveis.some((a) => a.aba === abaAtual) ? abaAtual : visiveis[0]?.aba;
+  return (
+    <>
+      {visiveis.map((a) => (
+        <SidebarMenuSubItem key={a.aba}>
+          <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba} className="h-auto min-h-7 py-1">
+            <Link to={url} search={{ aba: a.aba } as never}>
+              <span className="!whitespace-normal leading-tight">{a.titulo}</span>
+            </Link>
+          </SidebarMenuSubButton>
+        </SidebarMenuSubItem>
+      ))}
+    </>
+  );
+}
+
 function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
+  const { isAdmin } = useAccess();
+  const abaAtual = useAbaAtual();
+  if (item.abas) {
+    return (
+      <SidebarMenuSubItem>
+        <Link to={item.url} className="block px-2 pt-1 text-xs font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground">
+          {item.titulo}
+        </Link>
+        <SidebarMenuSub className="mx-0 ml-2 px-1.5">
+          <SubAbas url={item.url} abas={item.abas} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
+        </SidebarMenuSub>
+      </SidebarMenuSubItem>
+    );
+  }
   const Icone = ICONES[item.icone];
   return (
     <SidebarMenuSubItem>
@@ -102,12 +153,17 @@ function GrupoRecolhivel({
   inicialAberto?: boolean;
   children: ReactNode;
 }) {
-  const [aberto, setAberto] = useState(inicialAberto);
+  const casa = prefixos.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const [aberto, setAberto] = useState(inicialAberto || casa);
+  // Chegando na tela por outro caminho (link, redirecionamento), o grupo dela abre.
+  useEffect(() => {
+    if (casa) setAberto(true);
+  }, [casa]);
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         aria-expanded={aberto}
-        isActive={!aberto && prefixos.some((p) => pathname.startsWith(p))}
+        isActive={!aberto && casa}
         onClick={() => setAberto(!aberto)}
       >
         {Icone}
@@ -186,6 +242,24 @@ function MenuFerramentas({ pathname }: { pathname: string }) {
   );
 }
 
+// Módulos: o menu abre e lista as antigas abas como submenus (decisão 43).
+function ModuloComAbas({ item, pathname }: { item: ItemGrupo; pathname: string }) {
+  const { isAdmin } = useAccess();
+  const abaAtual = useAbaAtual();
+  const Icone = item.icone;
+  return (
+    <GrupoRecolhivel
+      titulo={item.titulo}
+      icone={<Icone />}
+      prefixos={[item.url]}
+      pathname={pathname}
+      inicialAberto={false}
+    >
+      <SubAbas url={item.url} abas={item.abas ?? []} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
+    </GrupoRecolhivel>
+  );
+}
+
 export function AppSidebar() {
   const { isAdmin } = useAccess();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -232,7 +306,10 @@ export function AppSidebar() {
                   </>
                 )}
                 {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
-                {grupo.itens.map((item) => (
+                {grupo.itens.map((item: ItemGrupo) =>
+                  item.abas ? (
+                    <ModuloComAbas key={item.url} item={item} pathname={pathname} />
+                  ) : (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}>
                       <Link to={item.url}>
@@ -241,7 +318,8 @@ export function AppSidebar() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                ))}
+                  ),
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

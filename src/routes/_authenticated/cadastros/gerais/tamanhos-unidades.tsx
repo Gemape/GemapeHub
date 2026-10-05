@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { AssociarTamanhosPainel } from "@/components/parametros/AssociarTamanhosPainel";
 import { TamanhosMedidasPainel } from "@/components/parametros/TamanhosMedidasPainel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 
 const ABAS = ["cadastro", "associar"] as const;
 type Aba = (typeof ABAS)[number];
@@ -14,19 +14,13 @@ export const Route = createFileRoute("/_authenticated/cadastros/gerais/tamanhos-
   component: TamanhoEMedidas,
 });
 
-const aba = "data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap";
-
-// Um menu só (decisão 38): o cadastro dos tamanhos e medidas e a associação ao produto são abas.
+// Um menu só (decisão 38): o cadastro dos tamanhos e medidas e a associação ao produto são submenus no menu lateral (decisão 43).
 // As duas ficam montadas (forceMount) para não perder a categoria escolhida nem uma confirmação em andamento ao trocar de aba.
 function TamanhoEMedidas() {
   const { aba: pedida } = Route.useSearch();
   const inicial: Aba = pedida ?? "cadastro";
   return (
-    <Tabs defaultValue={inicial} key={inicial} className="space-y-5">
-      <TabsList>
-        <TabsTrigger value="cadastro" className={aba}>Cadastro</TabsTrigger>
-        <TabsTrigger value="associar" className={aba}>Associar ao produto</TabsTrigger>
-      </TabsList>
+    <Tabs value={inicial} className="space-y-5">
       <TabsContent value="cadastro" forceMount className="data-[state=inactive]:hidden"><TamanhosMedidasPainel /></TabsContent>
       <TabsContent value="associar" forceMount className="data-[state=inactive]:hidden"><AssociarTamanhosPainel /></TabsContent>
     </Tabs>
