@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Search, Check, ChevronsUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -75,6 +76,9 @@ export function CaixasFerramentasModulo() {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<CaixaFerramenta | null>(null);
+  // Clonar: caixa de origem usada só para preencher o formulário de novo cadastro.
+  const [modelo, setModelo] = useState<CaixaFerramenta | null>(null);
+  const base = editando ?? modelo;
   const [itensVinculados, setItensVinculados] = useState<ItemVinculado[]>([]);
 
   const { data: caixas = [], isLoading } = useCaixasFerramentas(empresaId, busca);
@@ -87,7 +91,7 @@ export function CaixasFerramentasModulo() {
   const [numero, setNumero] = useState<number | null>(null);
   const numeroFixo = editando ? numeroDaCaixa(editando) : null;
   const disponiveis = numerosDisponiveis(habilitadas, todasCaixas, editando?.id);
-  const { data: itensCarregados = [] } = useCaixaItens(editando?.id ?? null);
+  const { data: itensCarregados = [] } = useCaixaItens(base?.id ?? null);
 
   const salvar = useSalvarCaixa();
   const excluir = useExcluir("caixas_ferramentas", ["caixas_ferramentas"]);
@@ -96,7 +100,7 @@ export function CaixasFerramentasModulo() {
   const [openCombo, setOpenCombo] = useState(false);
 
   useEffect(() => {
-    if (editando && itensCarregados.length > 0) {
+    if (base && itensCarregados.length > 0) {
       setItensVinculados(
         itensCarregados.map((i) => ({
           ferramenta_id: i.ferramenta_id,
@@ -106,10 +110,21 @@ export function CaixasFerramentasModulo() {
         })) as ItemVinculado[],
       );
     }
-  }, [editando, itensCarregados]);
+  }, [base, itensCarregados]);
 
   function abrirNovo() {
     setEditando(null);
+    setModelo(null);
+    setNumero(null);
+    setItensVinculados([]);
+    setAberto(true);
+  }
+
+  // Clonar: novo cadastro com os dados da origem; o número da caixa fica em branco para ser escolhido
+  // entre as habilitadas livres, e o portador não é herdado.
+  function abrirClone(c: CaixaFerramenta) {
+    setEditando(null);
+    setModelo(c);
     setNumero(null);
     setItensVinculados([]);
     setAberto(true);
@@ -276,28 +291,21 @@ export function CaixasFerramentasModulo() {
                     {new Date(c.created_at).toLocaleDateString("pt-BR")}
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
-                    <Button requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                    <AcoesLinha
+                      rotulo={`caixa ${c.codigo}`}
+                      onClonar={() => abrirClone(c)}
+                      onEditar={() => {
+                        setModelo(null);
                         setEditando(c);
                         setNumero(numeroDaCaixa(c));
                         setAberto(true);
                       }}
-                    >
-                      Editar
-                    </Button>
-                    <Button requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                      onExcluir={() => {
                         const erroPortador = validarAlteracaoCaixaComPortador(c, portadores, null);
                         if (erroPortador) { toast.error(erroPortador); return; }
                         if (confirm(`Excluir a caixa ${c.codigo}?`)) excluir.mutate(c.id);
                       }}
-                    >
-                      Excluir
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -358,7 +366,7 @@ export function CaixasFerramentasModulo() {
                   id="nome"
                   name="nome"
                   required
-                  defaultValue={editando?.nome ?? ""}
+                  defaultValue={base?.nome ?? ""}
                   placeholder="Ex: Kit Elétrica"
                 />
               </div>
@@ -369,7 +377,7 @@ export function CaixasFerramentasModulo() {
                   name="empresa_id"
                   required
                   defaultValue={
-                    editando?.empresa_id ??
+                    base?.empresa_id ??
                     empresaPadraoParaEscolha(empresas, empresaId)
                   }
                 >
@@ -377,7 +385,7 @@ export function CaixasFerramentasModulo() {
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
+                    {empresasParaEscolha(empresas, [base?.empresa_id]).map((e) => (
                       <SelectItem key={e.id} value={e.id}>
                         {e.nome_fantasia}
                       </SelectItem>
@@ -397,14 +405,14 @@ export function CaixasFerramentasModulo() {
                 <Input
                   id="localizacao"
                   name="localizacao"
-                  defaultValue={editando?.localizacao ?? ""}
+                  defaultValue={base?.localizacao ?? ""}
                   placeholder="Ex: Almoxarifado"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="status">Status</Label>
-                <Select name="status" required defaultValue={editando?.status ?? "Ativa"}>
+                <Select name="status" required defaultValue={base?.status ?? "Ativa"}>
                   <SelectTrigger id="status">
                     <SelectValue />
                   </SelectTrigger>
@@ -423,7 +431,7 @@ export function CaixasFerramentasModulo() {
                 <Textarea
                   id="descricao"
                   name="descricao"
-                  defaultValue={editando?.descricao ?? ""}
+                  defaultValue={base?.descricao ?? ""}
                   placeholder="Detalhes adicionais sobre a caixa..."
                 />
               </div>
