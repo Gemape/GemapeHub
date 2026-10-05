@@ -86,3 +86,27 @@ export function salvarFicha(
 export function removerFicha(epiId: string, storage = storagePadrao()): void {
   alterar(storage, (fichas) => fichas.filter((f) => f.epiId !== epiId));
 }
+
+// Editar a ficha trocando o EPI (decisão 51): a ficha passa para o EPI novo, que não pode ter
+// ficha, e deixa de existir no antigo. Numa só gravação: se algo falha, nada muda.
+export function moverFicha(
+  epiIdAntigo: string,
+  epiIdNovo: string,
+  conteudo: ConteudoFicha,
+  storage = storagePadrao(),
+  agora = new Date(),
+): FichaEpi {
+  if (!epiIdNovo) throw new Error("Selecione o EPI.");
+  if (epiIdNovo === epiIdAntigo) return salvarFicha(epiIdNovo, conteudo, storage, agora);
+  const limpo = { ...fichaVazia() };
+  for (const campo of CAMPOS_FICHA) {
+    limpo[campo.chave] = String(conteudo[campo.chave] ?? "").trim();
+    if (!limpo[campo.chave]) throw new Error(`Preencha "${campo.rotulo}".`);
+  }
+  const ficha: FichaEpi = { ...limpo, epiId: epiIdNovo, atualizadaEm: agora.toISOString() };
+  alterar(storage, (fichas) => {
+    if (fichas.some((f) => f.epiId === epiIdNovo)) throw new Error("Este EPI já tem ficha.");
+    return [...fichas.filter((f) => f.epiId !== epiIdAntigo), ficha];
+  });
+  return ficha;
+}

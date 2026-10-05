@@ -1,7 +1,7 @@
 // @ts-nocheck -- adaptador propositalmente genérico para emular a API de consulta no demo.
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
 import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
-import { TABELAS_EPI, TABELAS_UNIFORME, duplicadoNoCatalogo, editarEpiCatalogo, excluirEpiCatalogo, sincronizarEstoqueEpis, type TabelasCatalogo } from "../../lib/epi-catalogo.ts";
+import { TABELAS_EPI, TABELAS_UNIFORME, duplicadoNoCatalogo, editarEpiCatalogo, excluirEpiCatalogo, sincronizarEstoqueEpis, travasDoItem, type TabelasCatalogo } from "../../lib/epi-catalogo.ts";
 import { aplicarSeparacao, opcoesDaSeparacao } from "../../lib/epi-separar-tamanhos.ts";
 import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
 import {
@@ -261,11 +261,16 @@ export const demoSupabase = {
       // Tudo ou nada: a conferência vem antes de qualquer alteração (decisão 45).
       const t = nome.endsWith("uniforme_catalogo") ? TABELAS_UNIFORME : TABELAS_EPI;
       const r = nome.startsWith("editar")
-        ? editarEpiCatalogo(dados, String(args.p_id ?? ""), { nome: String(args.p_valores?.nome ?? ""), estoque_minimo: args.p_valores?.estoque_minimo as string | number }, t)
+        ? editarEpiCatalogo(dados, String(args.p_id ?? ""), { ...(args.p_valores as object), nome: String(args.p_valores?.nome ?? ""), estoque_minimo: args.p_valores?.estoque_minimo as string | number } as never, t)
         : excluirEpiCatalogo(dados, String(args.p_id ?? ""), t);
       if (r.erro) return { data: null, error: new Error(r.erro) };
       persistirDados();
       return { data: args.p_id, error: null };
+    }
+    if (nome === "travas_catalogo") {
+      // Só leitura: diz o que impede mudar subcategoria, unidade e tamanho (decisão 51).
+      const t = args.p_tabela === "uniforme" ? TABELAS_UNIFORME : TABELAS_EPI;
+      return { data: travasDoItem(dados, String(args.p_id ?? ""), t), error: null };
     }
     if (nome === "separar_epis_por_tamanho") {
       // Tudo ou nada: aplicarSeparacao só troca os dados se conseguir terminar.

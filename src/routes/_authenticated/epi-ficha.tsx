@@ -34,6 +34,7 @@ import {
   CAMPOS_FICHA,
   fichaVazia,
   removerFicha,
+  moverFicha,
   salvarFicha,
   type ConteudoFicha,
 } from "@/lib/fichas-epi";
@@ -102,10 +103,10 @@ function FichaEpiPagina() {
     .filter((l) => combinaBusca(busca, l.epi.codigo_sku, l.epi.nome, l.ficha.setores))
     .sort((a, b) => a.epi.codigo_sku.localeCompare(b.epi.codigo_sku));
 
-  // Na ficha nova, só aparecem os EPIs que ainda não têm ficha.
+  // Só aparecem os EPIs que ainda não têm ficha, mais o da ficha que está sendo editada.
   // O EPI já escolhido (ex.: vindo do Cadastro de EPI) aparece mesmo fora do filtro de empresa.
   const opcoesEpi: OpcaoBusca[] = todos
-    .filter((e) => e.id === epiSel || (epis.includes(e) && !fichas.some((f) => f.epiId === e.id)))
+    .filter((e) => e.id === epiSel || e.id === editandoId || (epis.includes(e) && !fichas.some((f) => f.epiId === e.id)))
     .map((e) => ({
       valor: e.id,
       rotulo: rotuloEpiFicha(e, parametros),
@@ -147,14 +148,17 @@ function FichaEpiPagina() {
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
-    if (executar(() => salvarFicha(epiSel, conteudo), "Ficha de EPI salva")) setAberto(false);
+    const salvou = executar(
+      () => (editandoId ? moverFicha(editandoId, epiSel, conteudo) : salvarFicha(epiSel, conteudo)),
+      "Ficha de EPI salva",
+    );
+    if (salvou) setAberto(false);
   }
 
   const epiAberto = epiPorId(epiSel);
   // Sem tamanho no EPI escolhido, ou nenhum tamanho em Gerais: oferece cadastrar sem sair da tela.
-  // Na edição de uma ficha existente o link não aparece: o EPI já está definido.
   const faltaTamanho =
-    !editandoId && (parametros.tamanhos.length === 0 || (!!epiAberto && !tamanhoDoEpi(epiAberto, parametros)));
+    (parametros.tamanhos.length === 0 || (!!epiAberto && !tamanhoDoEpi(epiAberto, parametros)));
 
   return (
     <div className="space-y-5">
@@ -246,20 +250,14 @@ function FichaEpiPagina() {
           <form onSubmit={salvar} className="grid gap-4">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ficha-epi">EPI</Label>
-              {editandoId && epiAberto ? (
-                <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-                  {rotuloEpiFicha(epiAberto, parametros)}
-                </p>
-              ) : (
-                <CampoBusca
-                  id="ficha-epi"
-                  opcoes={opcoesEpi}
-                  valor={epiSel}
-                  onChange={setEpiSel}
-                  placeholder="Buscar por palavra-chave ou código (ex.: EPI-0001)"
-                  vazio="Nenhum EPI sem ficha encontrado."
-                />
-              )}
+              <CampoBusca
+                id="ficha-epi"
+                opcoes={opcoesEpi}
+                valor={epiSel}
+                onChange={setEpiSel}
+                placeholder="Buscar por palavra-chave ou código (ex.: EPI-0001)"
+                vazio="Nenhum EPI sem ficha encontrado."
+              />
               {faltaTamanho && (
                 <p className="text-xs text-muted-foreground">
                   {parametros.tamanhos.length === 0
