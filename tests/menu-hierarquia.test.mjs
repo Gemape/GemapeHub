@@ -114,3 +114,13 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   assert.match(sidebar, /<ModuloComAbas /);
   assert.match(sidebar, /search=\{\{ aba: a\.aba \} as never\}/);
 });
+
+test("Gerais, com seus submenus, é o primeiro item de Parâmetros, antes de EPI e Ferramentas (decisão 44)", () => {
+  const gerais = sidebar.indexOf('<MenuGerais pathname={pathname} />');
+  const epi = sidebar.indexOf('<MenuEpi pathname={pathname} />');
+  const ferramentas = sidebar.indexOf('<MenuFerramentas pathname={pathname} />');
+  assert.ok(gerais > 0 && gerais < epi && epi < ferramentas);
+  // Nada vem antes dele dentro de Parâmetros.
+  const abertura = sidebar.indexOf('{grupo.titulo === "Parâmetros" && isAdmin');
+  assert.ok(abertura > 0 && sidebar.slice(sidebar.indexOf("<SidebarMenu>\n                {/*"), abertura).indexOf("<MenuEpi") === -1);
+});
