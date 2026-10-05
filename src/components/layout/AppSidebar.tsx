@@ -299,13 +299,14 @@ export function AppSidebar() {
             <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                {/* Gerais, com seus submenus, é o primeiro item de Parâmetros (decisão 44). */}
+                {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
                 {grupo.titulo === "Parâmetros" && (
                   <>
                     <MenuEpi pathname={pathname} />
                     <MenuFerramentas pathname={pathname} />
                   </>
                 )}
-                {grupo.titulo === "Parâmetros" && isAdmin && <MenuGerais pathname={pathname} />}
                 {grupo.itens.map((item: ItemGrupo) =>
                   item.abas ? (
                     <ModuloComAbas key={item.url} item={item} pathname={pathname} />

@@ -445,3 +445,8 @@ Ordem do responsável em 02/10. Ao excluir um fornecedor (Cadastros > Fornecedor
 ## 43. SUBMENUS SEMPRE NO MENU LATERAL, SEM ABAS SUPERIORES
 
 Ordem do responsável em 05/10, para o sistema todo. Nenhuma tela usa mais abas no alto da página: cada aba virou um submenu do menu lateral, abaixo do menu pai. EPIs, Uniformes, Ferramentas e Veículos (em Módulos) abrem e listam Dashboard, Estoque, Compras, Termos, Movimentações, Ocorrências etc., cada um conforme o módulo. Em Parâmetros, Caixas de Ferramentas lista Caixas e itens, Cadastro, Portadores e Habilitar caixas (esta só para o Administrador), e Tamanho e Medidas de Produto lista Cadastro e Associar ao produto, continuando um menu só (decisão 38). Os endereços das telas não mudam; o submenu abre a mesma tela com `?aba=` e, sem aba pedida (ou com aba que a tela não tem), abre a primeira. Os endereços antigos com `?aba=` seguem valendo. A lista de submenus fica em `src/lib/menu-parametros.ts` (`ABAS_*`). O conteúdo e as regras de cada aba não mudam. Só visual; nada no Supabase.
+
+
+## 44. GERAIS É O PRIMEIRO MENU DE PARÂMETROS
+
+Ordem do responsável em 05/10. No menu lateral, dentro de Parâmetros, Gerais (com Tabelas de Apoio, Tamanho e Medidas de Produto, Código do Produto, Código de Fábrica e Endereçamento) passa a ser o primeiro item, antes de EPI e Ferramentas. Continua só para o Administrador; os submenus e os endereços não mudam. Só a ordem na tela; nada no Supabase.
