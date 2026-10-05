@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAccess } from "@/lib/access-context";
 import {
   ABAS_EPI,
@@ -114,7 +114,9 @@ function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
   if (item.abas) {
     return (
       <SidebarMenuSubItem>
-        <p className="px-2 pt-1 text-xs font-medium text-sidebar-foreground/70">{item.titulo}</p>
+        <Link to={item.url} className="block px-2 pt-1 text-xs font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground">
+          {item.titulo}
+        </Link>
         <SidebarMenuSub className="mx-0 ml-2 px-1.5">
           <SubAbas url={item.url} abas={item.abas} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
         </SidebarMenuSub>
@@ -151,12 +153,17 @@ function GrupoRecolhivel({
   inicialAberto?: boolean;
   children: ReactNode;
 }) {
-  const [aberto, setAberto] = useState(inicialAberto);
+  const casa = prefixos.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const [aberto, setAberto] = useState(inicialAberto || casa);
+  // Chegando na tela por outro caminho (link, redirecionamento), o grupo dela abre.
+  useEffect(() => {
+    if (casa) setAberto(true);
+  }, [casa]);
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         aria-expanded={aberto}
-        isActive={!aberto && prefixos.some((p) => pathname.startsWith(p))}
+        isActive={!aberto && casa}
         onClick={() => setAberto(!aberto)}
       >
         {Icone}
@@ -246,7 +253,7 @@ function ModuloComAbas({ item, pathname }: { item: ItemGrupo; pathname: string }
       icone={<Icone />}
       prefixos={[item.url]}
       pathname={pathname}
-      inicialAberto={pathname === item.url}
+      inicialAberto={false}
     >
       <SubAbas url={item.url} abas={item.abas ?? []} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
     </GrupoRecolhivel>
