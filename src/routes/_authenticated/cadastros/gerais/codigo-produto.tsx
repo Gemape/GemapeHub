@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import {
   CATEGORIAS_BASE,
@@ -50,6 +52,22 @@ function CodigoProduto() {
     setCategoriaId(id);
     setSigla(regra?.sigla ?? "");
     setInicial(regra?.inicial ?? "");
+  }
+
+  // Clonar: abre o formulário de nova regra com a numeração inicial copiada, numa categoria
+  // que ainda não tem regra. A sigla (o código) fica em branco para ser informada.
+  function clonar(origemId: string) {
+    const origem = dados.regrasCodigo.find((r) => r.categoriaId === origemId);
+    const destino = dados.categorias.find(
+      (c) => !dados.regrasCodigo.some((r) => r.categoriaId === c.id),
+    );
+    if (!origem || !destino) {
+      toast.error("Todas as categorias já têm regra de código. Edite uma delas.");
+      return;
+    }
+    setCategoriaId(destino.id);
+    setSigla("");
+    setInicial(origem.inicial);
   }
 
   function enviar(e: React.FormEvent) {
@@ -150,27 +168,25 @@ function CodigoProduto() {
                   <TableCell className="font-mono text-xs">
                     {regra ? exemplos(regra) : "—"}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap text-right">
-                    <Button variant="ghost" size="sm" onClick={() => escolher(c.id)}>
-                      {regra ? "Editar" : "Definir"}
-                    </Button>
-                    {regra && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          // Regra de categoria-base não sai: a exclusão é recusada com o aviso
-                          // de quais cadastros ficariam bloqueados, sem pedir confirmação.
-                          if (
-                            CATEGORIAS_BASE[c.id] ||
-                            confirm(`Excluir a regra de código de ${c.nome}?`)
-                          )
-                            executar(() => removerRegraCodigo(c.id), "Regra excluída.");
-                        }}
-                      >
-                        Excluir
-                      </Button>
-                    )}
+                  <TableCell className="whitespace-nowrap">
+                    <AcoesLinha
+                      rotulo={`regra de código de ${c.nome}`}
+                      {...(regra ? { onClonar: () => clonar(c.id) } : {})}
+                      onEditar={() => escolher(c.id)}
+                      {...(regra
+                        ? {
+                            onExcluir: () => {
+                              // Regra de categoria-base não sai: a exclusão é recusada com o aviso
+                              // de quais cadastros ficariam bloqueados, sem pedir confirmação.
+                              if (
+                                CATEGORIAS_BASE[c.id] ||
+                                confirm(`Excluir a regra de código de ${c.nome}?`)
+                              )
+                                executar(() => removerRegraCodigo(c.id), "Regra excluída.");
+                            },
+                          }
+                        : {})}
+                    />
                   </TableCell>
                 </TableRow>
               );

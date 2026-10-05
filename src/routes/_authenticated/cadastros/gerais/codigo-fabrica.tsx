@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarCnpj } from "@/lib/formatacao-cadastral";
@@ -53,6 +54,9 @@ function CodigoFabricaPagina() {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<CodigoFabrica | null>(null);
+  // Clonar: formulário de associação nova, preenchida com os dados da origem.
+  const [modelo, setModelo] = useState<CodigoFabrica | null>(null);
+  const base = editando ?? modelo;
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [produtoSel, setProdutoSel] = useState("");
   const [fornecedorSel, setFornecedorSel] = useState("");
@@ -75,7 +79,7 @@ function CodigoFabricaPagina() {
     detalhe: `${f.razao_social} · ${formatarCnpj(f.cnpj)}`,
   }));
   const produto: ProdutoGemape | undefined = produtos.find((p) => chaveProduto(p) === produtoSel);
-  const ehEpi = (produto?.tabela ?? editando?.tabela) === "epis";
+  const ehEpi = (produto?.tabela ?? base?.tabela) === "epis";
 
   const linhas = useMemo(
     () =>
@@ -96,12 +100,14 @@ function CodigoFabricaPagina() {
     [dados.codigosFabrica, busca],
   );
 
-  function abrir(codigo: CodigoFabrica | null) {
+  // Ao clonar, o código na nota (a parte única da associação) fica em branco.
+  function abrir(codigo: CodigoFabrica | null, clonar = false) {
     setFornecedores(listarFornecedores());
-    setEditando(codigo);
+    setEditando(clonar ? null : codigo);
+    setModelo(clonar ? codigo : null);
     setProdutoSel(codigo ? chaveProduto(codigo) : "");
     setFornecedorSel(codigo?.fornecedor_id ?? "");
-    setCodigoNota(codigo?.codigo_fornecedor ?? "");
+    setCodigoNota(clonar ? "" : (codigo?.codigo_fornecedor ?? ""));
     setCa((codigo?.ca ?? "").replace(/\D/g, ""));
     setAberto(true);
   }
@@ -111,12 +117,12 @@ function CodigoFabricaPagina() {
     // Ao editar, o produto pode não estar mais na lista; mantém o que estava salvo.
     const origem =
       produto ??
-      (editando && produtoSel === chaveProduto(editando)
+      (base && produtoSel === chaveProduto(base)
         ? {
-            tabela: editando.tabela,
-            empresa_id: editando.empresa_id,
-            codigo_sku: editando.codigo_produto,
-            nome: editando.nome_produto,
+            tabela: base.tabela,
+            empresa_id: base.empresa_id,
+            codigo_sku: base.codigo_produto,
+            nome: base.nome_produto,
           }
         : undefined);
     const fornecedor = fornecedores.find((f) => f.id === fornecedorSel);
@@ -130,8 +136,8 @@ function CodigoFabricaPagina() {
             nome_produto: origem?.nome ?? "",
             fornecedor_id:
               fornecedor?.id ??
-              (fornecedorSel === editando?.fornecedor_id ? editando.fornecedor_id : ""),
-            fornecedor_nome: fornecedor?.nome_fantasia ?? editando?.fornecedor_nome ?? "",
+              (fornecedorSel === base?.fornecedor_id ? base.fornecedor_id : ""),
+            fornecedor_nome: fornecedor?.nome_fantasia ?? base?.fornecedor_nome ?? "",
             codigo_fornecedor: codigoNota,
             ca,
           },
@@ -190,14 +196,12 @@ function CodigoFabricaPagina() {
                 <TableCell className="font-mono text-xs">{c.codigo_fornecedor}</TableCell>
                 <TableCell>{c.ca || "—"}</TableCell>
                 <TableCell>{nomeEmpresa(c.empresa_id)}</TableCell>
-                <TableCell className="whitespace-nowrap text-right">
-                  <Button variant="ghost" size="sm" onClick={() => abrir(c)}>
-                    Editar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
+                <TableCell className="whitespace-nowrap">
+                  <AcoesLinha
+                    rotulo={`associação ${c.codigo_fornecedor} de ${c.codigo_produto}`}
+                    onClonar={() => abrir(c, true)}
+                    onEditar={() => abrir(c)}
+                    onExcluir={() => {
                       if (
                         confirm(
                           `Excluir a associação ${c.codigo_fornecedor} → ${c.codigo_produto}?`,
@@ -206,9 +210,7 @@ function CodigoFabricaPagina() {
                         executar(() => removerCodigoFabrica(c.id), "Associação excluída.");
                       }
                     }}
-                  >
-                    Excluir
-                  </Button>
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -232,12 +234,12 @@ function CodigoFabricaPagina() {
               <CampoBusca
                 id="produto"
                 opcoes={
-                  editando && !produto && produtoSel === chaveProduto(editando)
+                  base && !produto && produtoSel === chaveProduto(base)
                     ? [
                         ...opcoesProduto,
                         {
                           valor: produtoSel,
-                          rotulo: `${editando.codigo_produto} · ${editando.nome_produto}`,
+                          rotulo: `${base.codigo_produto} · ${base.nome_produto}`,
                         },
                       ]
                     : opcoesProduto
@@ -255,10 +257,10 @@ function CodigoFabricaPagina() {
               <CampoBusca
                 id="fornecedor"
                 opcoes={
-                  editando && !fornecedores.some((f) => f.id === editando.fornecedor_id)
+                  base && !fornecedores.some((f) => f.id === base.fornecedor_id)
                     ? [
                         ...opcoesFornecedor,
-                        { valor: editando.fornecedor_id, rotulo: editando.fornecedor_nome },
+                        { valor: base.fornecedor_id, rotulo: base.fornecedor_nome },
                       ]
                     : opcoesFornecedor
                 }

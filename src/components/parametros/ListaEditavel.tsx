@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowUp, Check, Eye, EyeOff, Pencil, Trash2, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ArrowDown, ArrowUp, Check, Eye, EyeOff, X } from "lucide-react";
+import { useRef, useState, type ReactNode } from "react";
 
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,15 @@ export function ListaEditavel({
   const [editando, setEditando] = useState<string | null>(null);
   const [nomeEdicao, setNomeEdicao] = useState("");
   const idCampo = `novo-${titulo.toLowerCase().replace(/\W+/g, "-")}`;
+  const campoNovo = useRef<HTMLInputElement>(null);
+
+  // Clonar: leva o nome para o campo de inclusão, como cadastro novo. Quem decide o nome
+  // final e inclui é o usuário; nada do item de origem (uso, autorizações) é herdado.
+  function clonar(item: Item) {
+    setNome(item.nome);
+    campoNovo.current?.focus();
+    campoNovo.current?.select();
+  }
 
   function incluir(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +77,7 @@ export function ListaEditavel({
           {novo}
         </label>
         <Input
+          ref={campoNovo}
           id={idCampo}
           placeholder={novo}
           value={nome}
@@ -175,18 +186,6 @@ export function ListaEditavel({
                   </Button>
                 </>
               )}
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-8"
-                aria-label={`Renomear ${item.nome}`}
-                onClick={() => {
-                  setEditando(item.id);
-                  setNomeEdicao(item.nome);
-                }}
-              >
-                <Pencil className="size-4" />
-              </Button>
               {onAlternarAtivo && (
                 <Button
                   size="icon"
@@ -199,15 +198,15 @@ export function ListaEditavel({
                   {desativado ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
                 </Button>
               )}
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-8 text-destructive"
-                aria-label={`Excluir ${item.nome}`}
-                onClick={() => onRemover(item)}
-              >
-                <Trash2 className="size-4" />
-              </Button>
+              <AcoesLinha
+                rotulo={item.nome}
+                onClonar={() => clonar(item)}
+                onEditar={() => {
+                  setEditando(item.id);
+                  setNomeEdicao(item.nome);
+                }}
+                onExcluir={() => onRemover(item)}
+              />
             </li>
           );
         })}
