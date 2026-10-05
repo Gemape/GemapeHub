@@ -74,3 +74,24 @@ test("dados antigos sem as novas listas continuam legíveis", () => {
   assert.deepEqual(d.tiposOcorrenciaVeiculo, []);
   assert.equal(d.marcasVeiculo[0].nome, "Fiat");
 });
+
+import { readFileSync } from "node:fs";
+
+test("Parâmetros > Veículos é um grupo com cadastro, ações de manutenção e tipos de ocorrência", () => {
+  const menu = readFileSync("src/lib/menu-parametros.ts", "utf8");
+  const sidebar = readFileSync("src/components/layout/AppSidebar.tsx", "utf8");
+  for (const url of ["/cadastros/veiculos", "/cadastros/veiculos-acoes-manutencao", "/cadastros/veiculos-tipos-ocorrencia"]) {
+    assert.ok(menu.includes(`url: "${url}"`), url);
+  }
+  assert.match(sidebar, /<MenuVeiculos pathname=\{pathname\} \/>/);
+  assert.doesNotMatch(sidebar, /titulo: "Veículos", url: "\/cadastros\/veiculos"/);
+});
+
+test("as listas usam Clonar/Editar/Excluir, Cadastrar padrão, trava de duplo clique e não tocam o Supabase", () => {
+  const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
+  assert.match(tela, /<AcoesLinha/);
+  assert.match(tela, /onClonar=/);
+  assert.match(tela, /Cadastrar padrão/);
+  assert.match(tela, /salvando\.current/);
+  assert.doesNotMatch(tela, /supabase/i);
+});
