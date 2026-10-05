@@ -54,6 +54,7 @@ function ListaVeiculos({
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
   const salvando = useRef(false);
+  const [travado, setTravado] = useState(false);
 
   function abrir(linha: Linha | null, clonar: boolean) {
     setEditando(clonar ? null : linha);
@@ -68,11 +69,14 @@ function ListaVeiculos({
     e.preventDefault();
     if (salvando.current) return;
     salvando.current = true;
-    try {
-      if (onSalvar(editando?.id ?? null, nome, descricao)) setAberto(false);
-    } finally {
+    setTravado(true);
+    // Só solta a trava depois de o diálogo fechar ou de o erro aparecer, para o segundo clique não repetir.
+    const ok = onSalvar(editando?.id ?? null, nome, descricao);
+    if (ok) setAberto(false);
+    setTimeout(() => {
       salvando.current = false;
-    }
+      setTravado(false);
+    }, 400);
   }
 
   return (
@@ -161,7 +165,7 @@ function ListaVeiculos({
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={!nome.trim()}>
+              <Button type="submit" disabled={!nome.trim() || travado}>
                 Salvar
               </Button>
             </DialogFooter>

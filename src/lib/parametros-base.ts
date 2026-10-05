@@ -429,13 +429,13 @@ export function cadastrarPadraoVeiculos(storage = storagePadrao()): { acoes: num
     let acoes = 0;
     for (const nome of ACOES_MANUTENCAO_PADRAO) {
       if (d.acoesManutencaoVeiculo.some((a) => mesmoNome(a.nome, nome))) continue;
-      d.acoesManutencaoVeiculo.push({ id: novoId(), nome });
+      d.acoesManutencaoVeiculo.push({ id: novoId(), nome: capitalizarCadastro(nome) });
       acoes += 1;
     }
     let tipos = 0;
     for (const t of TIPOS_OCORRENCIA_VEICULO_PADRAO) {
       if (d.tiposOcorrenciaVeiculo.some((x) => mesmoNome(x.nome, t.nome))) continue;
-      d.tiposOcorrenciaVeiculo.push({ id: novoId(), nome: t.nome, descricao: t.descricao });
+      d.tiposOcorrenciaVeiculo.push({ id: novoId(), nome: capitalizarCadastro(t.nome), descricao: t.descricao });
       tipos += 1;
     }
     return { acoes, tipos };
