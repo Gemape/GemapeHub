@@ -450,3 +450,10 @@ Ordem do responsável em 05/10, para o sistema todo. Nenhuma tela usa mais abas 
 ## 44. GERAIS É O PRIMEIRO MENU DE PARÂMETROS
 
 Ordem do responsável em 05/10. No menu lateral, dentro de Parâmetros, Gerais (com Tabelas de Apoio, Tamanho e Medidas de Produto, Código do Produto, Código de Fábrica e Endereçamento) passa a ser o primeiro item, antes de EPI e Ferramentas. Continua só para o Administrador; os submenus e os endereços não mudam. Só a ordem na tela; nada no Supabase.
+
+
+## 45. BOTÕES PADRÃO NAS LISTAS DE PARÂMETROS: CLONAR, EDITAR E EXCLUIR
+
+Ordem do responsável em 05/10. Todas as listas de Parâmetros passam a ter os mesmos três botões, sempre nesta ordem e neste estilo: Clonar, Editar e Excluir (componente `AcoesLinha`). Excluir só aparece para o Administrador e mantém as proteções e avisos de cada lista. Clonar abre o formulário de novo já preenchido, com código novo gerado e os campos únicos (CNPJ, matrícula, CPF) em branco. A entrega é em dois PRs: primeiro o botão padrão e Cadastrar EPI, depois as demais listas.
+
+Cadastrar EPI (catálogo, decisão 35): Editar muda a descrição, que vale para todos os tamanhos do mesmo EPI, e o estoque mínimo do tamanho, que é levado ao estoque de todas as empresas; código, tamanho, subcategoria e unidade não mudam; a descrição não pode repetir a de outro EPI. Excluir só é permitido sem saldo em nenhuma empresa e sem histórico (movimentações, compras, ocorrências); leva junto o estoque zerado e os endereços do EPI, avisa antes se houver código de fábrica associado e o remove junto. Editar e excluir são feitos de uma vez (tudo ou nada) e com trava de clique repetido. Só modo demonstração; nada no Supabase.
