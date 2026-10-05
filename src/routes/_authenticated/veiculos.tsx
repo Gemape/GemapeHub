@@ -6,11 +6,14 @@ import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { VeiculosCadastroModulo } from "@/components/modules/VeiculosCadastroModulo";
 import { StatCard } from "@/components/StatCard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { abaDoModulo } from "@/lib/menu-parametros";
 import { useEmpresa } from "@/lib/empresa-context";
 import { useVeiculos } from "@/lib/hooks-gemape";
 
 export const Route = createFileRoute("/_authenticated/veiculos")({
+  validateSearch: (search: Record<string, unknown>): { aba?: string } =>
+    typeof search["aba"] === "string" ? { aba: search["aba"] } : {},
   head: () => ({
     meta: [
       { title: "Veículos | Patrimônio GEMAPE" },
@@ -31,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/veiculos")({
 function PaginaVeiculos() {
   const { empresaId } = useEmpresa();
   const { data: veiculos = [] } = useVeiculos(empresaId);
+  const { aba } = Route.useSearch();
+  const abaValida = abaDoModulo("veiculo", aba);
 
   return (
     <div className="space-y-5">
@@ -42,12 +47,8 @@ function PaginaVeiculos() {
         </p>
       </header>
 
-      <Tabs defaultValue="frota">
-        <TabsList>
-          <TabsTrigger value="frota">Frota</TabsTrigger>
-          <TabsTrigger value="movimentacoes">Movimentações e manutenções</TabsTrigger>
-          <TabsTrigger value="ocorrencias">Ocorrências</TabsTrigger>
-        </TabsList>
+      {/* As abas viraram submenus no menu lateral (decisão 43). */}
+      <Tabs value={abaValida}>
 
         <TabsContent value="frota" className="mt-5 space-y-5">
           <div className="grid gap-4 sm:grid-cols-3">

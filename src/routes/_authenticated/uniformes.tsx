@@ -3,6 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PaginaModulo } from "@/components/modules/PaginaModulo";
 
 export const Route = createFileRoute("/_authenticated/uniformes")({
+  validateSearch: (search: Record<string, unknown>): { aba?: string } =>
+    typeof search["aba"] === "string" ? { aba: search["aba"] } : {},
   head: () => ({
     meta: [
       { title: "Uniformes | Patrimônio GEMAPE" },
@@ -17,11 +19,17 @@ export const Route = createFileRoute("/_authenticated/uniformes")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => (
+  component: Pagina,
+});
+
+function Pagina() {
+  const { aba } = Route.useSearch();
+  return (
     <PaginaModulo
+      aba={aba}
       modulo="uniforme"
       titulo="Uniformes"
       descricao="Tipo, tamanho e cor de cada peça, com entrega por empregado e a mesma lógica de baixa dos EPIs."
     />
-  ),
-});
+  );
+}

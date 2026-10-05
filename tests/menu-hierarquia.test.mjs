@@ -54,7 +54,7 @@ test("o destaque de Gerais não inclui Caixas", () => {
 test("Habilitar caixas é aba da tela Caixas de Ferramentas, só do Administrador, e o endereço antigo redireciona", () => {
   const raiz = new URL("../src/routes/_authenticated/", import.meta.url);
   const pagina = readFileSync(new URL("caixas-ferramentas.tsx", raiz), "utf8");
-  assert.match(pagina, /isAdmin && <TabsTrigger value="habilitar"/);
+  assert.doesNotMatch(pagina, /TabsTrigger|TabsList/);
   assert.match(pagina, /isAdmin && <TabsContent value="habilitar"[^>]*><CaixasHabilitadasPainel/);
   assert.match(pagina, /pedida !== "habilitar" \|\| isAdmin/);
   const antigo = readFileSync(new URL("cadastros/gerais/caixas.tsx", raiz), "utf8");
@@ -85,4 +85,32 @@ test("os endereços antigos de Cadastrar EPI e da Ficha redirecionam para as tel
   assert.match(epi, /redirect\(\{ to: "\/epi-cadastrar" \}\)/);
   assert.match(ficha, /redirect\(\{ to: "\/epi-ficha", search \}\)/);
   assert.match(readFileSync(new URL("epi-cadastrar.tsx", raiz), "utf8"), /<CadastroEpi \/>/);
+});
+
+test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu lateral (decisão 43)", async () => {
+  const { ABAS_EPI, ABAS_UNIFORME, ABAS_FERRAMENTA, ABAS_VEICULO, ABAS_CAIXAS, ABAS_TAMANHOS, abaDoModulo } = await import("../src/lib/menu-parametros.ts");
+  const { readdirSync, statSync } = await import("node:fs");
+  const achar = (dir) =>
+    readdirSync(dir).flatMap((n) => {
+      const c = `${dir}/${n}`;
+      return statSync(c).isDirectory() ? achar(c) : [c];
+    });
+  const raiz = new URL("../src/", import.meta.url).pathname;
+  const comAbas = achar(raiz).filter((f) => f.endsWith(".tsx") && !f.includes("/components/ui/") && /<TabsTrigger|<TabsList/.test(readFileSync(f, "utf8")));
+  assert.deepEqual(comAbas, []);
+  assert.deepEqual(ABAS_VEICULO.map((a) => a.aba), ["frota", "movimentacoes", "ocorrencias"]);
+  assert.deepEqual(ABAS_CAIXAS.map((a) => a.aba), ["caixas", "cadastro", "portadores", "habilitar"]);
+  assert.equal(ABAS_CAIXAS.find((a) => a.aba === "habilitar")?.soAdmin, true);
+  assert.deepEqual(ABAS_TAMANHOS.map((a) => a.aba), ["cadastro", "associar"]);
+  assert.equal(ABAS_EPI[0].aba, "dashboard");
+  assert.equal(ABAS_UNIFORME.length, 9);
+  assert.equal(ABAS_FERRAMENTA.length, 8);
+  // Cada submenu aponta para uma aba que a tela realmente tem.
+  const modulos = readFileSync(new URL("../src/components/modules/PaginaModulo.tsx", import.meta.url), "utf8");
+  for (const a of [...ABAS_EPI, ...ABAS_UNIFORME, ...ABAS_FERRAMENTA]) assert.match(modulos, new RegExp(`value="${a.aba}"`));
+  assert.equal(abaDoModulo("epi", "termo-baixa"), "dashboard");
+  assert.equal(abaDoModulo("uniforme", "termo-baixa"), "termo-baixa");
+  assert.equal(abaDoModulo("veiculo", undefined), "frota");
+  assert.match(sidebar, /<ModuloComAbas /);
+  assert.match(sidebar, /search=\{\{ aba: a\.aba \} as never\}/);
 });
