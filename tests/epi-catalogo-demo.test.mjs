@@ -65,3 +65,20 @@ test("a edição do catálogo não repete tamanho nem código, e a exclusão é 
   const { data } = await demoSupabase.from("epis").select("*").eq("catalogo_id", a.id);
   assert.ok(data.length > 0);
 });
+
+test("as operações de editar e excluir EPI do catálogo funcionam no demo e recusam o que não pode", async () => {
+  const a = novo();
+  await demoSupabase.from("epis_catalogo").insert([a]);
+  const ed = await demoSupabase.rpc("editar_epi_catalogo", { p_id: a.id, p_valores: { nome: "Descrição editada", estoque_minimo: "9" } });
+  assert.equal(ed.error, null);
+  const { data: lido } = await demoSupabase.from("epis_catalogo").select("*").eq("id", a.id);
+  assert.equal(lido[0].nome, "Descrição editada");
+  const { data: estoques } = await demoSupabase.from("epis").select("*").eq("catalogo_id", a.id);
+  assert.ok(estoques.length > 0 && estoques.every((e) => e.estoque_minimo === 9 && e.nome === "Descrição editada"));
+  const ruim = await demoSupabase.rpc("editar_epi_catalogo", { p_id: a.id, p_valores: { nome: "x", estoque_minimo: "-3" } });
+  assert.match(String(ruim.error?.message), /estoque mínimo/i);
+  const ex = await demoSupabase.rpc("excluir_epi_catalogo", { p_id: a.id });
+  assert.equal(ex.error, null);
+  const { data: depois } = await demoSupabase.from("epis").select("*").eq("catalogo_id", a.id);
+  assert.equal(depois.length, 0);
+});
