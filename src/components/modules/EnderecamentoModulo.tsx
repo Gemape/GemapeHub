@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CampoBusca } from "@/components/CampoBusca";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -202,10 +203,15 @@ export function EnderecamentoModulo() {
               <TableCell>{e?.apartamento ?? "—"}</TableCell>
               <TableCell>{nomeEmpresa(produto.empresa_id ?? "")}</TableCell>
               <TableCell className="whitespace-nowrap text-right">
-                <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(e ?? null, produto)}>{e ? "Editar" : "Adicionar endereço"}</Button>
-                <Button requiresWrite variant="ghost" size="sm" onClick={() => { setOrigemClone(""); setClonando(produto); }}>Clonar</Button>
-                {e && <Button requiresWrite variant="ghost" size="sm" disabled={excluir.isPending}
-                  onClick={() => { if (confirm(`Excluir o endereço de ${e.codigo_produto}?`)) excluir.mutate(e.id); }}>Excluir</Button>}
+                {e ? <AcoesLinha
+                  rotulo={`endereço de ${e.codigo_produto}`}
+                  onClonar={() => { setOrigemClone(""); setClonando(produto); }}
+                  onEditar={() => abrir(e, produto)}
+                  onExcluir={() => { if (!excluir.isPending && confirm(`Excluir o endereço de ${e.codigo_produto}?`)) excluir.mutate(e.id); }}
+                /> : <div className="flex justify-end gap-1">
+                  <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(null, produto)}>Adicionar endereço</Button>
+                  <AcoesLinha rotulo={`endereço de ${produto.codigo_sku}`} onClonar={() => { setOrigemClone(""); setClonando(produto); }} />
+                </div>}
               </TableCell>
             </TableRow>)}
         </TableBody>

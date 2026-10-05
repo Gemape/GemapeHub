@@ -292,3 +292,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Submenus no menu lateral (decisão 43): as abas das telas viraram itens do `AppSidebar` (`ABAS_EPI`, `ABAS_UNIFORME`, `ABAS_FERRAMENTA`, `ABAS_VEICULO`, `ABAS_CAIXAS`, `ABAS_TAMANHOS` e `abaDoModulo` em `src/lib/menu-parametros.ts`); as páginas leem `?aba=` e não têm mais `TabsList`. Tela nova com seções: criar o `ABAS_*` e o submenu, não abas.
 - Ordem de Parâmetros (decisão 44): `MenuGerais` vem antes de `MenuEpi` e `MenuFerramentas` em `AppSidebar.tsx`.
 - Botões padrão (decisão 45): `AcoesLinha` em `components/parametros/`; EPI usa `editarEpiCatalogo` e `excluirEpiCatalogo` (`epi-catalogo.ts`), expostos no demo como `rpc("editar_epi_catalogo")` e `rpc("excluir_epi_catalogo")`.
+- Botões padrão, parte 2: todas as listas de Parâmetros usam `AcoesLinha`; o Clonar de cada uma abre o formulário de novo com `modelo` e `base = editando ?? modelo`.

@@ -8,11 +8,14 @@ export function AcoesLinha({
   onClonar,
   onEditar,
   onExcluir,
+  editarLivre = false,
 }: {
   rotulo: string;
   onClonar?: () => void;
   onEditar?: () => void;
   onExcluir?: () => void;
+  // Quem só lê também pode abrir o registro (a gravação continua exigindo permissão no formulário).
+  editarLivre?: boolean;
 }) {
   const { isAdmin } = useAccess();
   return (
@@ -23,7 +26,7 @@ export function AcoesLinha({
         </Button>
       )}
       {onEditar && (
-        <Button requiresWrite variant="ghost" size="sm" aria-label={`Editar ${rotulo}`} onClick={onEditar}>
+        <Button requiresWrite={!editarLivre} variant="ghost" size="sm" aria-label={`Editar ${rotulo}`} onClick={onEditar}>
           Editar
         </Button>
       )}

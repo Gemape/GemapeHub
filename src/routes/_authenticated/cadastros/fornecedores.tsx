@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -49,12 +50,16 @@ function PaginaFornecedores() {
   const nomeCategoria = (id: string) => categorias.find((c) => c.id === id)?.nome;
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Fornecedor | null>(null);
+  // Clonar: dados do fornecedor de origem num cadastro NOVO (CNPJ em branco, código novo).
+  const [modelo, setModelo] = useState<Fornecedor | null>(null);
+  const base = editando ?? modelo;
   // Calculado ao abrir, para não trocar enquanto o diálogo fecha depois de salvar.
   const [codigoPrevisto, setCodigoPrevisto] = useState("");
 
-  function abrir(fornecedor: Fornecedor | null) {
-    setEditando(fornecedor);
-    setCodigoPrevisto(fornecedor?.codigo ?? proximoCodigoFornecedor());
+  function abrir(fornecedor: Fornecedor | null, clonar = false) {
+    setEditando(clonar ? null : fornecedor);
+    setModelo(clonar ? fornecedor : null);
+    setCodigoPrevisto(!clonar && fornecedor ? fornecedor.codigo : proximoCodigoFornecedor());
     setAberto(true);
   }
 
@@ -144,8 +149,7 @@ function PaginaFornecedores() {
               <TableCell>{fornecedor.categorias.map((id) => nomeCategoria(id) ?? "(categoria excluída)").join(", ") || "—"}</TableCell>
               <TableCell>{fornecedor.contato || formatarTelefone(fornecedor.telefone) || "—"}</TableCell>
               <TableCell className="whitespace-nowrap text-right">
-                <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(fornecedor)}>Editar</Button>
-                <Button requiresWrite variant="ghost" size="sm" onClick={() => excluir(fornecedor)}>Excluir</Button>
+                <AcoesLinha rotulo={fornecedor.nome_fantasia} onClonar={() => abrir(fornecedor, true)} onEditar={() => abrir(fornecedor)} onExcluir={() => excluir(fornecedor)} />
               </TableCell>
             </TableRow>)}
         </TableBody>
@@ -155,24 +159,24 @@ function PaginaFornecedores() {
     <Dialog open={aberto} onOpenChange={setAberto}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{editando ? "Editar fornecedor" : "Novo fornecedor"}</DialogTitle>
+          <DialogTitle>{editando ? "Editar fornecedor" : modelo ? "Clonar fornecedor" : "Novo fornecedor"}</DialogTitle>
           <DialogDescription>Informações cadastrais do fornecedor.</DialogDescription>
         </DialogHeader>
-        <form key={editando?.id ?? "novo"} onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
+        <form key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "novo")} onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5"><Label htmlFor="codigo">Código do fornecedor</Label><Input id="codigo" readOnly tabIndex={-1} className="bg-muted font-mono" value={codigoPrevisto} /><p className="text-xs text-muted-foreground">Gerado automaticamente.</p></div>
           <div className="hidden sm:block" />
-          <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" required defaultValue={editando?.razao_social ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" required defaultValue={editando?.nome_fantasia ?? ""} /></div>
+          <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" required defaultValue={base?.razao_social ?? ""} /></div>
+          <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" required defaultValue={base?.nome_fantasia ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={formatarCnpj(editando?.cnpj ?? "")} /></div>
           <fieldset className="space-y-2 sm:col-span-2">
             <legend className="text-sm font-medium">Categorias</legend>
             <p className="text-xs text-muted-foreground">Uma ou mais, de Cadastros &gt; Gerais &gt; Categorias.</p>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
               {categorias.map((categoria) => <label key={categoria.id} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="categorias" value={categoria.id} defaultChecked={editando?.categorias.includes(categoria.id) ?? false} />{categoria.nome}
+                <input type="checkbox" name="categorias" value={categoria.id} defaultChecked={base?.categorias.includes(categoria.id) ?? false} />{categoria.nome}
               </label>)}
               {/* Categoria já excluída de Cadastros > Gerais continua marcada até ser desmarcada. */}
-              {editando?.categorias.filter((id) => !nomeCategoria(id)).map((id) => <label key={id} className="flex items-center gap-2 text-sm text-muted-foreground">
+              {base?.categorias.filter((id) => !nomeCategoria(id)).map((id) => <label key={id} className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input type="checkbox" name="categorias" value={id} defaultChecked />(categoria excluída)
               </label>)}
             </div>
@@ -180,14 +184,14 @@ function PaginaFornecedores() {
           <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Endereço</h2>
           {camposEndereco.map((campo) => <div key={campo.nome} className="space-y-1.5">
             <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
-            <Input id={campo.nome} name={campo.nome} inputMode={campo.nome === "cep" ? "numeric" : undefined} onInput={aoDigitarMascarado(campo.nome)} defaultValue={campo.nome === "cep" ? formatarCep(editando?.cep ?? "") : editando?.[campo.nome] ?? ""} />
+            <Input id={campo.nome} name={campo.nome} inputMode={campo.nome === "cep" ? "numeric" : undefined} onInput={aoDigitarMascarado(campo.nome)} defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""} />
           </div>)}
           <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Contato e informações adicionais</h2>
           {camposContato.map((campo) => <div key={campo.nome} className="space-y-1.5">
             <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
-            <Input id={campo.nome} name={campo.nome} inputMode={campo.nome === "telefone" ? "tel" : undefined} onInput={aoDigitarMascarado(campo.nome)} defaultValue={campo.nome === "telefone" ? formatarTelefone(editando?.telefone ?? "") : editando?.[campo.nome] ?? ""} />
+            <Input id={campo.nome} name={campo.nome} inputMode={campo.nome === "telefone" ? "tel" : undefined} onInput={aoDigitarMascarado(campo.nome)} defaultValue={campo.nome === "telefone" ? formatarTelefone(base?.telefone ?? "") : base?.[campo.nome] ?? ""} />
           </div>)}
-          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="observacoes">Observações</Label><Textarea id="observacoes" name="observacoes" defaultValue={editando?.observacoes ?? ""} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="observacoes">Observações</Label><Textarea id="observacoes" name="observacoes" defaultValue={base?.observacoes ?? ""} /></div>
           <DialogFooter className="sm:col-span-2">
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>
             <Button requiresWrite type="submit">Salvar</Button>

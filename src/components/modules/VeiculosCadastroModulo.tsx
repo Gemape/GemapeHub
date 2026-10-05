@@ -4,6 +4,7 @@ import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -99,6 +100,9 @@ export function VeiculosCadastroModulo() {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<VeiculoCadastro | null>(null);
+  // Clonar: veículo de origem que só preenche o formulário de novo cadastro.
+  const [origem, setOrigem] = useState<VeiculoCadastro | null>(null);
+  const base = editando ?? origem;
   const [previa, setPrevia] = useState("");
   const [empresaSel, setEmpresaSel] = useState("");
   // O ref bloqueia na hora; o estado só serve para desabilitar o botão. Depois de salvo,
@@ -106,12 +110,12 @@ export function VeiculosCadastroModulo() {
   const salvando = useRef(false);
   const [gerando, setGerando] = useState(false);
   const { data: lista = [], isLoading } = useVeiculos(empresaId);
-  const empresaForm = empresaSel || editando?.empresa_id || "";
+  const empresaForm = empresaSel || base?.empresa_id || "";
   // Responsável: empregados ativos da empresa do veículo; os nomes da lista vêm de todos.
   const { data: empregadosEmpresa = [] } = useEmpregados(empresaForm || TODAS, true);
   const { data: empregados = [] } = useEmpregados(TODAS);
-  const responsavelAtual = editando?.empregado_responsavel_id
-    ? empregados.find((e) => e.id === editando.empregado_responsavel_id)
+  const responsavelAtual = base?.empregado_responsavel_id
+    ? empregados.find((e) => e.id === base.empregado_responsavel_id)
     : undefined;
   // Evita que a prévia do código de um "Novo" atrasado apareça numa edição aberta depois.
   const pedidoPrevia = useRef(0);
@@ -133,11 +137,11 @@ export function VeiculosCadastroModulo() {
   );
   const regra = parametros.regrasCodigo.find((r) => r.categoriaId === CATEGORIA_VEICULO);
   // Tipo antigo que não está em Cadastros > Gerais continua aparecendo na edição.
-  const subcategoriaAtual = editando
-    ? resolverSubcategoria(parametros, CATEGORIA_VEICULO, editando)
+  const subcategoriaAtual = base
+    ? resolverSubcategoria(parametros, CATEGORIA_VEICULO, base)
     : null;
   // Marca de Cadastros > Gerais; a marca antiga digitada continua aparecendo na edição.
-  const marcaInicial = selecaoInicialMarca(parametros.marcasVeiculo, editando?.marca);
+  const marcaInicial = selecaoInicialMarca(parametros.marcasVeiculo, base?.marca);
   // Parâmetro desativado em Gerais sai da escolha; o que o cadastro já usa continua na edição.
   const subcategorias = subcategoriasParaSelecao(parametros, CATEGORIA_VEICULO, subcategoriaAtual);
   const marcas = paraSelecao(
@@ -154,7 +158,9 @@ export function VeiculosCadastroModulo() {
     setGerando(false);
   }
 
-  async function abrirNovo() {
+  // Sem argumento abre o cadastro em branco; com um veículo, abre como novo já preenchido (Clonar):
+  // placa e RENAVAM ficam em branco, o código é gerado ao salvar e a quilometragem recomeça em 0.
+  async function abrirNovo(clonar: VeiculoCadastro | null = null) {
     if (MODO_DEMO && !regra) {
       toast.error(
         "Cadastre antes a regra do código de veículo em Cadastros > Gerais > Código do Produto.",
@@ -163,7 +169,8 @@ export function VeiculosCadastroModulo() {
     }
     destravar();
     setEditando(null);
-    setEmpresaSel("");
+    setOrigem(clonar);
+    setEmpresaSel(clonar?.empresa_id ?? "");
     setPrevia("");
     const pedido = ++pedidoPrevia.current;
     setAberto(true);
@@ -201,7 +208,7 @@ export function VeiculosCadastroModulo() {
     let marca = "";
     let erroMarca: string | null = null;
     try {
-      marca = marcaDaSelecao(texto("marca"), marcas, editando?.marca, {
+      marca = marcaDaSelecao(texto("marca"), marcas, base?.marca, {
         obrigatoria: true,
       });
     } catch (falha) {
@@ -341,7 +348,7 @@ export function VeiculosCadastroModulo() {
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={abrirNovo}>
+          <Button requiresWrite onClick={() => void abrirNovo()}>
             Novo veículo
           </Button>
         </div>
@@ -405,31 +412,22 @@ export function VeiculosCadastroModulo() {
                     </Badge>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-right">
-                    <Button
-                      requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                    <AcoesLinha
+                      rotulo={`veículo ${formatarPlaca(v.placa)}`}
+                      onClonar={() => void abrirNovo(v)}
+                      onEditar={() => {
                         destravar();
                         pedidoPrevia.current++;
+                        setOrigem(null);
                         setEmpresaSel(v.empresa_id ?? "");
                         setPrevia("");
                         setEditando(v);
                         setAberto(true);
                       }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                      onExcluir={() => {
                         if (confirm(`Excluir ${formatarPlaca(v.placa)}?`)) excluir.mutate(v.id);
                       }}
-                    >
-                      Excluir
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -501,7 +499,7 @@ export function VeiculosCadastroModulo() {
                   name="descricao"
                   rows={2}
                   aria-required
-                  defaultValue={editando?.descricao ?? ""}
+                  defaultValue={base?.descricao ?? ""}
                   placeholder="Ex.: caminhonete S10"
                 />
               </div>
@@ -551,7 +549,7 @@ export function VeiculosCadastroModulo() {
                 id="modelo"
                 name="modelo"
                 aria-required
-                defaultValue={editando?.modelo ?? ""}
+                defaultValue={base?.modelo ?? ""}
               />
             </div>
             <div className="space-y-1.5">
@@ -563,16 +561,16 @@ export function VeiculosCadastroModulo() {
                 min={1950}
                 max={new Date().getFullYear() + 1}
                 step={1}
-                defaultValue={editando?.ano ?? ""}
+                defaultValue={base?.ano ?? ""}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cor">Cor</Label>
-              <Input id="cor" name="cor" defaultValue={editando?.cor ?? ""} />
+              <Input id="cor" name="cor" defaultValue={base?.cor ?? ""} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="combustivel">Combustível</Label>
-              <Select name="combustivel" defaultValue={editando?.combustivel ?? ""}>
+              <Select name="combustivel" defaultValue={base?.combustivel ?? ""}>
                 <SelectTrigger id="combustivel">
                   <SelectValue placeholder="Selecione o combustível" />
                 </SelectTrigger>
@@ -582,9 +580,9 @@ export function VeiculosCadastroModulo() {
                       {c}
                     </SelectItem>
                   ))}
-                  {editando?.combustivel &&
-                    !(COMBUSTIVEIS_VEICULO as readonly string[]).includes(editando.combustivel) && (
-                      <SelectItem value={editando.combustivel}>{editando.combustivel}</SelectItem>
+                  {base?.combustivel &&
+                    !(COMBUSTIVEIS_VEICULO as readonly string[]).includes(base.combustivel) && (
+                      <SelectItem value={base.combustivel}>{base.combustivel}</SelectItem>
                     )}
                 </SelectContent>
               </Select>
@@ -592,14 +590,14 @@ export function VeiculosCadastroModulo() {
             <div className="space-y-1.5">
               <Label htmlFor="empresa_id">Empresa</Label>
               <Select
-                value={empresaSel || editando?.empresa_id || empresaPadrao}
+                value={empresaSel || base?.empresa_id || empresaPadrao}
                 onValueChange={setEmpresaSel}
               >
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
+                  {empresasParaEscolha(empresas, [base?.empresa_id]).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>
@@ -623,7 +621,7 @@ export function VeiculosCadastroModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="status">Situação</Label>
-              <Select name="status" defaultValue={editando?.status ?? "Ativo"}>
+              <Select name="status" defaultValue={base?.status ?? "Ativo"}>
                 <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
@@ -633,9 +631,9 @@ export function VeiculosCadastroModulo() {
                       {STATUS_VEICULO_LABEL[st] ?? st}
                     </SelectItem>
                   ))}
-                  {editando?.status &&
-                    !(STATUS_VEICULO as readonly string[]).includes(editando.status) && (
-                      <SelectItem value={editando.status}>{editando.status}</SelectItem>
+                  {base?.status &&
+                    !(STATUS_VEICULO as readonly string[]).includes(base.status) && (
+                      <SelectItem value={base.status}>{base.status}</SelectItem>
                     )}
                 </SelectContent>
               </Select>
@@ -644,7 +642,7 @@ export function VeiculosCadastroModulo() {
               <Label htmlFor="empregado_responsavel_id">Empregado responsável</Label>
               <Select
                 name="empregado_responsavel_id"
-                defaultValue={editando?.empregado_responsavel_id ?? NENHUM}
+                defaultValue={base?.empregado_responsavel_id ?? NENHUM}
               >
                 <SelectTrigger id="empregado_responsavel_id">
                   <SelectValue placeholder="Selecione" />
@@ -652,9 +650,9 @@ export function VeiculosCadastroModulo() {
                 <SelectContent>
                   <SelectItem value={NENHUM}>Sem responsável</SelectItem>
                   {/* O responsável atual continua na lista mesmo se inativo ou de outra empresa. */}
-                  {editando?.empregado_responsavel_id &&
-                    !empregadosEmpresa.some((e) => e.id === editando.empregado_responsavel_id) && (
-                      <SelectItem value={editando.empregado_responsavel_id}>
+                  {base?.empregado_responsavel_id &&
+                    !empregadosEmpresa.some((e) => e.id === base.empregado_responsavel_id) && (
+                      <SelectItem value={base.empregado_responsavel_id}>
                         {responsavelAtual?.nome ?? "Responsável atual"}
                       </SelectItem>
                     )}
@@ -671,7 +669,7 @@ export function VeiculosCadastroModulo() {
               <Textarea
                 id="observacoes"
                 name="observacoes"
-                defaultValue={editando?.observacoes ?? ""}
+                defaultValue={base?.observacoes ?? ""}
                 placeholder="Histórico ou detalhes do veículo..."
               />
             </div>
