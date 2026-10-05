@@ -5,6 +5,7 @@ import { posicaoEmSequencia, TAMANHOS_PADRAO } from "./tamanhos-padrao.ts";
 import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
+import { ACOES_MANUTENCAO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
 
 export type Categoria = { id: string; nome: string };
 export type TipoEnderecamento = "nao_usa" | "opcional" | "obrigatorio";
@@ -16,6 +17,7 @@ export type ListaFerramenta =
   | "marcasFerramenta"
   | "marcasUniforme"
   | "marcasVeiculo";
+export type TipoOcorrenciaVeiculo = { id: string; nome: string; descricao: string };
 export type TipoOpcao = "tamanhos" | "unidades";
 // Tamanhos e unidades autorizados para uma subcategoria (guarda os ids).
 export type Associacao = { subcategoriaId: string } & Record<TipoOpcao, string[]>;
@@ -44,6 +46,9 @@ export type ParametrosBase = {
   // Marcas escolhidas nos cadastros de uniforme e de veículo (decisão 22).
   marcasUniforme: Opcao[];
   marcasVeiculo: Opcao[];
+  // Parâmetros > Veículos (decisão 46): ações de manutenção e tipos de ocorrência com descrição.
+  acoesManutencaoVeiculo: Opcao[];
+  tiposOcorrenciaVeiculo: TipoOcorrenciaVeiculo[];
   tamanhos: Opcao[];
   unidades: Opcao[];
   associacoes: Associacao[];
@@ -121,6 +126,8 @@ function padrao(): ParametrosBase {
     marcasFerramenta: [],
     marcasUniforme: [],
     marcasVeiculo: [],
+    acoesManutencaoVeiculo: [],
+    tiposOcorrenciaVeiculo: [],
     inativos: [],
     tamanhos,
     unidades,
@@ -351,6 +358,87 @@ export function removerListaFerramenta(tipo: ListaFerramenta, id: string, storag
     achar(d[tipo], id, "Opção");
     d[tipo] = d[tipo].filter((item) => item.id !== id);
     d.inativos = d.inativos.filter((item) => item !== id);
+  });
+}
+
+// ---------- Parâmetros > Veículos: tipos de ocorrência (decisão 46) ----------
+
+const limparDescricao = (texto: string) => texto.trim().replace(/\s+/g, " ");
+
+export function adicionarAcaoManutencaoVeiculo(nome: string, storage = storagePadrao()): Opcao {
+  return alterar(storage, (d) => {
+    const acao = { id: novoId(), nome: nomeUnico(d.acoesManutencaoVeiculo, nome, "ação de manutenção") };
+    d.acoesManutencaoVeiculo.push(acao);
+    return acao;
+  });
+}
+
+export function renomearAcaoManutencaoVeiculo(id: string, nome: string, storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    achar(d.acoesManutencaoVeiculo, id, "Ação de manutenção").nome = nomeUnico(d.acoesManutencaoVeiculo, nome, "ação de manutenção", id);
+  });
+}
+
+export function removerAcaoManutencaoVeiculo(id: string, storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    achar(d.acoesManutencaoVeiculo, id, "Ação de manutenção");
+    d.acoesManutencaoVeiculo = d.acoesManutencaoVeiculo.filter((a) => a.id !== id);
+  });
+}
+
+export function adicionarTipoOcorrenciaVeiculo(
+  nome: string,
+  descricao: string,
+  storage = storagePadrao(),
+): TipoOcorrenciaVeiculo {
+  return alterar(storage, (d) => {
+    const tipo = {
+      id: novoId(),
+      nome: nomeUnico(d.tiposOcorrenciaVeiculo, nome, "tipo de ocorrência"),
+      descricao: limparDescricao(descricao),
+    };
+    d.tiposOcorrenciaVeiculo.push(tipo);
+    return tipo;
+  });
+}
+
+export function editarTipoOcorrenciaVeiculo(
+  id: string,
+  nome: string,
+  descricao: string,
+  storage = storagePadrao(),
+): void {
+  alterar(storage, (d) => {
+    const tipo = achar(d.tiposOcorrenciaVeiculo, id, "Tipo de ocorrência");
+    tipo.nome = nomeUnico(d.tiposOcorrenciaVeiculo, nome, "tipo de ocorrência", id);
+    tipo.descricao = limparDescricao(descricao);
+  });
+}
+
+export function removerTipoOcorrenciaVeiculo(id: string, storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    achar(d.tiposOcorrenciaVeiculo, id, "Tipo de ocorrência");
+    d.tiposOcorrenciaVeiculo = d.tiposOcorrenciaVeiculo.filter((t) => t.id !== id);
+  });
+}
+
+// Cadastra as ações e os tipos padrão que ainda não existem (mesmo nome, sem diferenciar
+// maiúsculas ou acentos). O que já está cadastrado não é repetido nem alterado. Tudo ou nada.
+export function cadastrarPadraoVeiculos(storage = storagePadrao()): { acoes: number; tipos: number } {
+  return alterar(storage, (d) => {
+    let acoes = 0;
+    for (const nome of ACOES_MANUTENCAO_PADRAO) {
+      if (d.acoesManutencaoVeiculo.some((a) => mesmoNome(a.nome, nome))) continue;
+      d.acoesManutencaoVeiculo.push({ id: novoId(), nome });
+      acoes += 1;
+    }
+    let tipos = 0;
+    for (const t of TIPOS_OCORRENCIA_VEICULO_PADRAO) {
+      if (d.tiposOcorrenciaVeiculo.some((x) => mesmoNome(x.nome, t.nome))) continue;
+      d.tiposOcorrenciaVeiculo.push({ id: novoId(), nome: t.nome, descricao: t.descricao });
+      tipos += 1;
+    }
+    return { acoes, tipos };
   });
 }
 

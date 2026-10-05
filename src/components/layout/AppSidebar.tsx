@@ -9,6 +9,7 @@ import {
   MENU_EPI,
   MENU_FERRAMENTAS,
   MENU_GERAIS,
+  MENU_VEICULOS,
   URLS_GERAIS,
   type AbaMenu,
   type ItemMenu,
@@ -72,7 +73,6 @@ const grupos = [
     titulo: "Parâmetros",
     itens: [
       { titulo: "Uniformes", url: "/cadastros/uniformes", icone: Shirt },
-      { titulo: "Veículos", url: "/cadastros/veiculos", icone: Car },
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
       { titulo: "Fornecedores", url: "/cadastros/fornecedores", icone: Truck },
@@ -82,7 +82,7 @@ const grupos = [
 
 type ItemGrupo = { titulo: string; url: string; icone: typeof LayoutDashboard; abas?: readonly AbaMenu[] };
 
-const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive } as const;
+const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive, Car } as const;
 
 function useAbaAtual(): string | undefined {
   const aba = useRouterState({ select: (s) => (s.location.search as Record<string, unknown>)["aba"] });
@@ -242,6 +242,22 @@ function MenuFerramentas({ pathname }: { pathname: string }) {
   );
 }
 
+// Parâmetros > Veículos: o cadastro da frota e as listas de apoio (decisão 46).
+function MenuVeiculos({ pathname }: { pathname: string }) {
+  return (
+    <GrupoRecolhivel
+      titulo="Veículos"
+      icone={<Car />}
+      prefixos={MENU_VEICULOS.map((i) => i.url)}
+      pathname={pathname}
+    >
+      {MENU_VEICULOS.map((item) => (
+        <SubLink key={item.url} item={item} pathname={pathname} />
+      ))}
+    </GrupoRecolhivel>
+  );
+}
+
 // Módulos: o menu abre e lista as antigas abas como submenus (decisão 43).
 function ModuloComAbas({ item, pathname }: { item: ItemGrupo; pathname: string }) {
   const { isAdmin } = useAccess();
@@ -305,6 +321,7 @@ export function AppSidebar() {
                   <>
                     <MenuEpi pathname={pathname} />
                     <MenuFerramentas pathname={pathname} />
+                    <MenuVeiculos pathname={pathname} />
                   </>
                 )}
                 {grupo.itens.map((item: ItemGrupo) =>
