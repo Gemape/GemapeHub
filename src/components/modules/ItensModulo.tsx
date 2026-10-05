@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { avisoExclusaoDoProduto, vinculosDoProduto } from "@/lib/codigo-fabrica-vinculos";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import {
   ESTADOS_ITEM,
@@ -43,7 +44,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { codigosReservadosFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, selecaoMarcaCadastrada } from "@/lib/cadastro-ferramentas";
-import { estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
+import {
+  estaAtivo,
+  lerParametros,
+  paraSelecao,
+  proximoCodigo,
+  removerCodigosFabricaPorIds,
+  type CodigoFabrica,
+} from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 // Cadastro de ferramentas. EPI e uniforme usam CadastroProduto, e todas as listas
@@ -260,14 +268,35 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        if (confirm(`Excluir ${item.nome}?`)) {
+                        // Lê as associações na hora, para o aviso não usar dados velhos.
+                        let vinculos: CodigoFabrica[] = [];
+                        try {
+                          vinculos = vinculosDoProduto(lerParametros().codigosFabrica, {
+                            tabela,
+                            codigo_sku: item.codigo_sku ?? "",
+                            empresa_id: item.empresa_id ?? null,
+                          });
+                        } catch {
+                          toast.error("Não foi possível conferir os códigos de fábrica desta ferramenta.");
+                          return;
+                        }
+                        const aviso = avisoExclusaoDoProduto(`${item.codigo_sku} ${item.nome}`, vinculos);
+                        if (confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${item.nome}?`)) {
                           try {
                             reservarCodigoFerramenta(item.codigo_sku);
                           } catch (erro) {
                             toast.error(erro instanceof Error ? erro.message : "Não foi possível reservar o código.");
                             return;
                           }
-                          excluir.mutate(item.id);
+                          excluir.mutate(item.id, {
+                            onSuccess: () => {
+                              try {
+                                removerCodigosFabricaPorIds(vinculos.map((c) => c.id));
+                              } catch {
+                                toast.error("A ferramenta foi excluída, mas os códigos de fábrica dela não puderam ser removidos.");
+                              }
+                            },
+                          });
                         }
                       }}
                     >
