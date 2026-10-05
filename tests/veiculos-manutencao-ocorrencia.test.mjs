@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   lerParametros,
   adicionarAcaoManutencaoVeiculo,
-  renomearAcaoManutencaoVeiculo,
+  editarAcaoManutencaoVeiculo,
   removerAcaoManutencaoVeiculo,
   adicionarTipoOcorrenciaVeiculo,
   editarTipoOcorrenciaVeiculo,
@@ -18,23 +18,37 @@ const storage = () => {
   return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v) };
 };
 
-test("os padrões trazem as 5 ações e os 8 tipos de ocorrência pedidos, cada tipo com descrição", () => {
-  assert.deepEqual(ACOES_MANUTENCAO_PADRAO, [
-    "Troca de óleo do motor", "Troca de pneu", "Troca de filtro de óleo do motor", "Troca de filtro de ar", "Troca de filtro de combustível",
+test("os padrões trazem os 7 grupos de manutenção com subitens e os 8 tipos de ocorrência com descrição", () => {
+  assert.deepEqual(ACOES_MANUTENCAO_PADRAO.map((a) => a.nome), [
+    "Revisão do Sistema de Lubrificação e Filtros",
+    "Revisão do Sistema de Transmissão e Fluídos",
+    "Manutenção do Sistema de Freios",
+    "Manutenção de Pneus e Alinhamento",
+    "Revisão de Suspensão e Direção",
+    "Revisão do Sistema Elétrico e Iluminação",
+    "Inspeção de Segurança e Correias",
   ]);
+  assert.deepEqual(ACOES_MANUTENCAO_PADRAO.map((a) => a.subitens.length), [5, 4, 7, 6, 6, 5, 5]);
   assert.deepEqual(TIPOS_OCORRENCIA_VEICULO_PADRAO.map((t) => t.nome), [
     "Furto", "Roubo", "Avaria em manobra", "Avaria por fator externo", "Avaria interna", "Infração de trânsito", "Sinistro com vítima", "Colisão em trânsito",
   ]);
   assert.ok(TIPOS_OCORRENCIA_VEICULO_PADRAO.every((t) => t.descricao.length > 10));
 });
 
-test("ações de manutenção: incluir, renomear e excluir, sem repetir o nome", () => {
+test("ações de manutenção: pai com subitens, editar mantém o id de quem já existe, sem repetir nomes", () => {
   const s = storage();
   assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo, []);
-  const a = adicionarAcaoManutencaoVeiculo("Troca de pneu", s);
-  assert.throws(() => adicionarAcaoManutencaoVeiculo("troca de PNEU", s), /já existe/i);
-  renomearAcaoManutencaoVeiculo(a.id, "Troca de pneus", s);
-  assert.equal(lerParametros(s).acoesManutencaoVeiculo[0].nome, "Troca de Pneus");
+  const a = adicionarAcaoManutencaoVeiculo("Manutenção de pneus", ["Calibragem", " ", "Rodízio de pneus"], s);
+  assert.deepEqual(a.subitens.map((i) => i.nome), ["Calibragem", "Rodízio de Pneus"]);
+  assert.throws(() => adicionarAcaoManutencaoVeiculo("manutenção de PNEUS", [], s), /já existe/i);
+  assert.throws(() => adicionarAcaoManutencaoVeiculo("Outra", ["Molas", "molas"], s), /subitem repetido/i);
+  const idCalibragem = a.subitens[0].id;
+  editarAcaoManutencaoVeiculo(a.id, "Pneus", ["Calibragem", "Alinhamento 3D"], s);
+  const lido = lerParametros(s).acoesManutencaoVeiculo[0];
+  assert.equal(lido.nome, "Pneus");
+  assert.deepEqual(lido.subitens.map((i) => i.nome), ["Calibragem", "Alinhamento 3D"]);
+  assert.equal(lido.subitens[0].id, idCalibragem);
+  assert.throws(() => editarAcaoManutencaoVeiculo("nao-existe", "x", [], s), /não encontrad/i);
   removerAcaoManutencaoVeiculo(a.id, s);
   assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo, []);
 });
@@ -56,14 +70,21 @@ test("tipos de ocorrência: nome obrigatório e único, descrição editável, e
 
 test("cadastrar padrão inclui o que falta e não repete nem altera o que já existe", () => {
   const s = storage();
-  adicionarAcaoManutencaoVeiculo("troca de pneu", s);
+  adicionarAcaoManutencaoVeiculo("manutenção do sistema de freios", ["Meu subitem"], s);
   adicionarTipoOcorrenciaVeiculo("Furto", "Minha descrição", s);
   const r = cadastrarPadraoVeiculos(s);
-  assert.deepEqual(r, { acoes: 4, tipos: TIPOS_OCORRENCIA_VEICULO_PADRAO.length - 1 });
+  assert.deepEqual(r, { acoes: ACOES_MANUTENCAO_PADRAO.length - 1, tipos: TIPOS_OCORRENCIA_VEICULO_PADRAO.length - 1 });
   const d = lerParametros(s);
-  assert.equal(d.acoesManutencaoVeiculo.length, 5);
+  assert.equal(d.acoesManutencaoVeiculo.length, ACOES_MANUTENCAO_PADRAO.length);
+  assert.deepEqual(d.acoesManutencaoVeiculo.find((a) => /Freios/.test(a.nome)).subitens.map((i) => i.nome), ["Meu Subitem"]);
   assert.equal(d.tiposOcorrenciaVeiculo.find((t) => t.nome === "Furto").descricao, "Minha descrição");
   assert.deepEqual(cadastrarPadraoVeiculos(s), { acoes: 0, tipos: 0 });
+});
+
+test("ações salvas sem subitens (versão anterior) passam a ter lista vazia", () => {
+  const s = storage();
+  s.setItem("gemape-demo-parametros-base", JSON.stringify({ acoesManutencaoVeiculo: [{ id: "a1", nome: "Troca de pneu" }] }));
+  assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo[0].subitens, []);
 });
 
 test("dados antigos sem as novas listas continuam legíveis", () => {
@@ -94,4 +115,15 @@ test("as listas usam Clonar/Editar/Excluir, Cadastrar padrão, trava de duplo cl
   assert.match(tela, /Cadastrar padrão/);
   assert.match(tela, /salvando\.current/);
   assert.doesNotMatch(tela, /supabase/i);
+});
+
+test("registrar manutenção do veículo: escolhe o pai, marca os filhos, só no modo demonstração", () => {
+  const tela = readFileSync("src/components/modules/MovimentacoesModulo.tsx", "utf8");
+  const seletor = readFileSync("src/components/modules/SeletorAcaoManutencao.tsx", "utf8");
+  assert.match(tela, /ehVeiculo && MODO_DEMO/);
+  assert.match(tela, /Marque ao menos um subitem/);
+  assert.match(tela, /acaoManut\.subitens\.length > 0/);
+  assert.match(tela, /subitens_manutencao/);
+  assert.match(seletor, /<Checkbox/);
+  assert.match(seletor, /acao\.subitens\.map/);
 });

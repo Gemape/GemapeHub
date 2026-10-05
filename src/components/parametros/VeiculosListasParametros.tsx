@@ -18,23 +18,25 @@ import {
   adicionarAcaoManutencaoVeiculo,
   adicionarTipoOcorrenciaVeiculo,
   cadastrarPadraoVeiculos,
+  editarAcaoManutencaoVeiculo,
   editarTipoOcorrenciaVeiculo,
   removerAcaoManutencaoVeiculo,
   removerTipoOcorrenciaVeiculo,
-  renomearAcaoManutencaoVeiculo,
 } from "@/lib/parametros-base";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
-type Linha = { id: string; nome: string; descricao?: string };
+// `extra` é a descrição (tipos de ocorrência) ou os subitens, um por linha (ações de manutenção).
+type Linha = { id: string; nome: string; extra?: string };
+type CampoExtra = "descricao" | "subitens" | null;
 
-// Tela de lista de Parâmetros > Veículos (decisão 46): ações de manutenção (só o nome) e tipos de
+// Tela de lista de Parâmetros > Veículos (decisão 46): ações de manutenção (pai e subitens) e tipos de
 // ocorrência (nome e descrição). Clonar, Editar e Excluir seguem a decisão 45.
 function ListaVeiculos({
   titulo,
   subtitulo,
   singular,
   linhas,
-  comDescricao,
+  campoExtra,
   onSalvar,
   onExcluir,
   onPadrao,
@@ -43,7 +45,7 @@ function ListaVeiculos({
   subtitulo: string;
   singular: string;
   linhas: Linha[];
-  comDescricao: boolean;
+  campoExtra: CampoExtra;
   onSalvar: (id: string | null, nome: string, descricao: string) => boolean;
   onExcluir: (linha: Linha) => void;
   onPadrao: () => void;
@@ -61,7 +63,7 @@ function ListaVeiculos({
     setModelo(clonar ? linha : null);
     // Clonar: o nome é único e fica em branco; a descrição vem copiada.
     setNome(clonar ? "" : (linha?.nome ?? ""));
-    setDescricao(linha?.descricao ?? "");
+    setDescricao(linha?.extra ?? "");
     setAberto(true);
   }
 
@@ -102,14 +104,14 @@ function ListaVeiculos({
           <thead>
             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
               <th className="px-3 py-2">Nome</th>
-              {comDescricao && <th className="px-3 py-2">Descrição</th>}
+              {campoExtra && <th className="px-3 py-2">{campoExtra === "subitens" ? "Subitens" : "Descrição"}</th>}
               <th className="px-3 py-2 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={comDescricao ? 3 : 2} className="px-3 py-4 text-muted-foreground">
+                <td colSpan={campoExtra ? 3 : 2} className="px-3 py-4 text-muted-foreground">
                   Nada cadastrado ainda. Use “Cadastrar padrão” ou “Cadastrar {singular}”.
                 </td>
               </tr>
@@ -117,7 +119,11 @@ function ListaVeiculos({
             {linhas.map((l) => (
               <tr key={l.id}>
                 <td className="px-3 py-2 font-medium">{l.nome}</td>
-                {comDescricao && <td className="px-3 py-2 text-muted-foreground">{l.descricao}</td>}
+                {campoExtra && (
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {campoExtra === "subitens" ? (l.extra ?? "").split("\n").filter(Boolean).join(" · ") : l.extra}
+                  </td>
+                )}
                 <td className="px-3 py-2">
                   <AcoesLinha
                     rotulo={l.nome}
@@ -149,13 +155,15 @@ function ListaVeiculos({
               <Label htmlFor="veiculo-lista-nome">Nome</Label>
               <Input id="veiculo-lista-nome" value={nome} maxLength={80} onChange={(e) => setNome(e.target.value)} />
             </div>
-            {comDescricao && (
+            {campoExtra && (
               <div className="space-y-1">
-                <Label htmlFor="veiculo-lista-descricao">Descrição</Label>
+                <Label htmlFor="veiculo-lista-descricao">
+                  {campoExtra === "subitens" ? "Subitens (um por linha)" : "Descrição"}
+                </Label>
                 <Textarea
                   id="veiculo-lista-descricao"
-                  rows={4}
-                  maxLength={500}
+                  rows={campoExtra === "subitens" ? 8 : 4}
+                  maxLength={campoExtra === "subitens" ? 5000 : 500}
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                 />
@@ -183,16 +191,17 @@ function mensagemPadraoToast(r: { acoes: number; tipos: number }): void {
 
 export function AcoesManutencaoVeiculoLista() {
   const { acoesManutencaoVeiculo } = useParametrosBase();
+  const subitensDe = (texto: string) => texto.split("\n");
   return (
     <ListaVeiculos
       titulo="Ações de manutenção"
-      subtitulo="O que pode ser feito na manutenção de um veículo (troca de óleo, pneu, filtros...)."
+      subtitulo="Cada ação é um grupo (pai) com seus subitens (filhos). Ao registrar uma manutenção, escolhe-se o pai e marcam-se os filhos."
       singular="ação de manutenção"
-      linhas={acoesManutencaoVeiculo}
-      comDescricao={false}
-      onSalvar={(id, nome) =>
+      linhas={acoesManutencaoVeiculo.map((a) => ({ id: a.id, nome: a.nome, extra: a.subitens.map((i) => i.nome).join("\n") }))}
+      campoExtra="subitens"
+      onSalvar={(id, nome, extra) =>
         executar(
-          () => (id ? renomearAcaoManutencaoVeiculo(id, nome) : adicionarAcaoManutencaoVeiculo(nome)),
+          () => (id ? editarAcaoManutencaoVeiculo(id, nome, subitensDe(extra)) : adicionarAcaoManutencaoVeiculo(nome, subitensDe(extra))),
           "Ação de manutenção salva.",
         )
       }
@@ -209,8 +218,8 @@ export function TiposOcorrenciaVeiculoLista() {
       titulo="Tipos de ocorrência"
       subtitulo="As possibilidades de ocorrência com veículos, cada uma com a sua descrição."
       singular="tipo de ocorrência"
-      linhas={tiposOcorrenciaVeiculo}
-      comDescricao
+      linhas={tiposOcorrenciaVeiculo.map((t) => ({ id: t.id, nome: t.nome, extra: t.descricao }))}
+      campoExtra="descricao"
       onSalvar={(id, nome, descricao) =>
         executar(
           () => (id ? editarTipoOcorrenciaVeiculo(id, nome, descricao) : adicionarTipoOcorrenciaVeiculo(nome, descricao)),

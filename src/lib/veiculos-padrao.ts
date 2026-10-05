@@ -1,11 +1,35 @@
 // Cadastros padrão de Parâmetros > Veículos (decisão 46): ações de manutenção e tipos de
 // ocorrência, carregados pelo botão "Cadastrar padrão".
-export const ACOES_MANUTENCAO_PADRAO: readonly string[] = [
-  "Troca de óleo do motor",
-  "Troca de pneu",
-  "Troca de filtro de óleo do motor",
-  "Troca de filtro de ar",
-  "Troca de filtro de combustível",
+// Cada ação de manutenção é um pai com seus subitens (filhos).
+export const ACOES_MANUTENCAO_PADRAO: readonly { nome: string; subitens: readonly string[] }[] = [
+  {
+    nome: "Revisão do Sistema de Lubrificação e Filtros",
+    subitens: ["Troca de óleo do motor", "Filtro de óleo", "Filtro de ar do motor", "Filtro de combustível", "Filtro de cabine (Ar-condicionado)"],
+  },
+  {
+    nome: "Revisão do Sistema de Transmissão e Fluídos",
+    subitens: ["Fluído de freio", "Líquido de arrefecimento", "Óleo do câmbio", "Fluído da direção hidráulica"],
+  },
+  {
+    nome: "Manutenção do Sistema de Freios",
+    subitens: ["Pastilhas dianteiras", "Pastilhas traseiras", "Discos de freio dianteiros", "Discos de freio traseiros", "Lonas de freio", "Tambores de freio", "Cilindro mestre"],
+  },
+  {
+    nome: "Manutenção de Pneus e Alinhamento",
+    subitens: ["Alinhamento 3D", "Balanceamento de rodas", "Rodízio de pneus", "Troca de pneus (parcial ou total)", "Vulcanização", "Calibragem"],
+  },
+  {
+    nome: "Revisão de Suspensão e Direção",
+    subitens: ["Amortecedores dianteiros", "Amortecedores traseiros", "Buchas da balança", "Pivôs de suspensão", "Terminais de direção", "Molas"],
+  },
+  {
+    nome: "Revisão do Sistema Elétrico e Iluminação",
+    subitens: ["Troca de bateria", "Troca de velas de ignição", "Substituição de lâmpadas (Farol/Lanterna)", "Reparo no alternador", "Reparo no motor de partida"],
+  },
+  {
+    nome: "Inspeção de Segurança e Correias",
+    subitens: ["Correia dentada", "Correia de acessórios", "Palhetas do limpador", "Kit de embreagem", "Coxim do motor"],
+  },
 ];
 
 export const TIPOS_OCORRENCIA_VEICULO_PADRAO: readonly { nome: string; descricao: string }[] = [

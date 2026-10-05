@@ -17,6 +17,7 @@ export type ListaFerramenta =
   | "marcasFerramenta"
   | "marcasUniforme"
   | "marcasVeiculo";
+export type AcaoManutencaoVeiculo = { id: string; nome: string; subitens: Opcao[] };
 export type TipoOcorrenciaVeiculo = { id: string; nome: string; descricao: string };
 export type TipoOpcao = "tamanhos" | "unidades";
 // Tamanhos e unidades autorizados para uma subcategoria (guarda os ids).
@@ -47,7 +48,7 @@ export type ParametrosBase = {
   marcasUniforme: Opcao[];
   marcasVeiculo: Opcao[];
   // Parâmetros > Veículos (decisão 46): ações de manutenção e tipos de ocorrência com descrição.
-  acoesManutencaoVeiculo: Opcao[];
+  acoesManutencaoVeiculo: AcaoManutencaoVeiculo[];
   tiposOcorrenciaVeiculo: TipoOcorrenciaVeiculo[];
   tamanhos: Opcao[];
   unidades: Opcao[];
@@ -194,6 +195,8 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
         }
       }
     }
+    // Ações de manutenção salvas sem subitens (versão anterior) passam a ter a lista vazia.
+    base.acoesManutencaoVeiculo = base.acoesManutencaoVeiculo.map((a) => ({ ...a, subitens: Array.isArray(a.subitens) ? a.subitens : [] }));
     // Regras salvas antes da definição de 4 dígitos (ex.: 001) passam para 0001.
     base.regrasCodigo = base.regrasCodigo.map((r) => ({
       ...r,
@@ -365,17 +368,46 @@ export function removerListaFerramenta(tipo: ListaFerramenta, id: string, storag
 
 const limparDescricao = (texto: string) => texto.trim().replace(/\s+/g, " ");
 
-export function adicionarAcaoManutencaoVeiculo(nome: string, storage = storagePadrao()): Opcao {
+// Subitens de uma ação: sem repetir nome dentro do mesmo pai. Os que já existem (mesmo nome)
+// mantêm o id, para uma futura ligação com a manutenção não se perder ao editar.
+function montarSubitens(atuais: Opcao[], nomes: string[]): Opcao[] {
+  const resultado: Opcao[] = [];
+  for (const bruto of nomes) {
+    if (!limparNome(bruto)) continue;
+    const nome = capitalizarCadastro(limparNome(bruto));
+    if (resultado.some((r) => mesmoNome(r.nome, nome))) throw new Error(`Subitem repetido: ${nome}.`);
+    const existente = atuais.find((s) => mesmoNome(s.nome, nome));
+    resultado.push({ id: existente?.id ?? novoId(), nome });
+  }
+  return resultado;
+}
+
+export function adicionarAcaoManutencaoVeiculo(
+  nome: string,
+  subitens: string[],
+  storage = storagePadrao(),
+): AcaoManutencaoVeiculo {
   return alterar(storage, (d) => {
-    const acao = { id: novoId(), nome: nomeUnico(d.acoesManutencaoVeiculo, nome, "ação de manutenção") };
+    const acao = {
+      id: novoId(),
+      nome: nomeUnico(d.acoesManutencaoVeiculo, nome, "ação de manutenção"),
+      subitens: montarSubitens([], subitens),
+    };
     d.acoesManutencaoVeiculo.push(acao);
     return acao;
   });
 }
 
-export function renomearAcaoManutencaoVeiculo(id: string, nome: string, storage = storagePadrao()): void {
+export function editarAcaoManutencaoVeiculo(
+  id: string,
+  nome: string,
+  subitens: string[],
+  storage = storagePadrao(),
+): void {
   alterar(storage, (d) => {
-    achar(d.acoesManutencaoVeiculo, id, "Ação de manutenção").nome = nomeUnico(d.acoesManutencaoVeiculo, nome, "ação de manutenção", id);
+    const acao = achar(d.acoesManutencaoVeiculo, id, "Ação de manutenção");
+    acao.nome = nomeUnico(d.acoesManutencaoVeiculo, nome, "ação de manutenção", id);
+    acao.subitens = montarSubitens(acao.subitens, subitens);
   });
 }
 
@@ -427,9 +459,13 @@ export function removerTipoOcorrenciaVeiculo(id: string, storage = storagePadrao
 export function cadastrarPadraoVeiculos(storage = storagePadrao()): { acoes: number; tipos: number } {
   return alterar(storage, (d) => {
     let acoes = 0;
-    for (const nome of ACOES_MANUTENCAO_PADRAO) {
-      if (d.acoesManutencaoVeiculo.some((a) => mesmoNome(a.nome, nome))) continue;
-      d.acoesManutencaoVeiculo.push({ id: novoId(), nome: capitalizarCadastro(nome) });
+    for (const padrao of ACOES_MANUTENCAO_PADRAO) {
+      if (d.acoesManutencaoVeiculo.some((a) => mesmoNome(a.nome, padrao.nome))) continue;
+      d.acoesManutencaoVeiculo.push({
+        id: novoId(),
+        nome: capitalizarCadastro(padrao.nome),
+        subitens: padrao.subitens.map((nome) => ({ id: novoId(), nome: capitalizarCadastro(nome) })),
+      });
       acoes += 1;
     }
     let tipos = 0;
