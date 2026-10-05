@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bloqueioPorDemissao, cpfValido, empregadoAtivo, formatarCpf, hojeLocal, matriculaValida, prepararEmpregado, separarEmpregados } from '../src/lib/empregados.ts';
+import { bloqueioPorDemissao, cpfValido, empregadoAtivo, formatarCpf, mascararCpf, hojeLocal, matriculaValida, prepararEmpregado, separarEmpregados } from '../src/lib/empregados.ts';
 
 const base = { nome: ' Maria  da Silva ', cpf: '52998224725', matricula: 'l3 p25', empresa_id: 'e1', email: ' Maria@Gemape.com.br ', data_admissao: '2024-01-10', data_demissao: '' };
 
@@ -104,4 +104,26 @@ test('termo de encerramento é liberado após a demissão; entrega e baixa conti
   assert.match(bloqueioPorDemissao(demitido, 'baixa', hoje, hoje), /Termo de Encerramento/);
   assert.ok(bloqueioPorDemissao(demitido, 'devolucao', hoje, hoje));
   assert.ok(bloqueioPorDemissao(demitido, 'movimentacao', hoje, hoje));
+});
+
+test('máscara do CPF formata ao digitar no padrão xxx.xxx.xxx-xx', () => {
+  assert.equal(mascararCpf(''), '');
+  assert.equal(mascararCpf('5'), '5');
+  assert.equal(mascararCpf('5299'), '529.9');
+  assert.equal(mascararCpf('529982'), '529.982');
+  assert.equal(mascararCpf('5299822'), '529.982.2');
+  assert.equal(mascararCpf('529982247'), '529.982.247');
+  assert.equal(mascararCpf('5299822472'), '529.982.247-2');
+  assert.equal(mascararCpf('52998224725'), '529.982.247-25');
+  assert.equal(mascararCpf('529.982.247-25999'), '529.982.247-25');
+  assert.equal(mascararCpf('abc529x'), '529');
+  assert.ok(cpfValido(mascararCpf('52998224725')));
+});
+
+test('campo CPF do empregado usa a máscara e o placeholder xxx.xxx.xxx-xx', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../src/routes/_authenticated/empregados.tsx', import.meta.url), 'utf8');
+  assert.match(src, /placeholder="xxx\.xxx\.xxx-xx"/);
+  assert.match(src, /mascararCpf\(/);
+  assert.doesNotMatch(src, /maxLength=\{14\}/);
 });

@@ -17,7 +17,7 @@ test("Empregados usa AcoesLinha; Clonar limpa CPF, matrícula e e-mail", () => {
   const src = ler("empregados.tsx");
   assert.match(src, /<AcoesLinha rotulo=\{e\.nome\} onClonar=.*onEditar=.*onExcluir=/);
   assert.match(src, /setEditando\(clonar \? null : empregado\)/);
-  assert.match(src, /defaultValue=\{editando\?\.cpf \?\? ""\}/);
+  assert.match(src, /defaultValue=\{editando\?\.cpf \? \(.*mascararCpf\(editando\.cpf\)\) : ""\}/);
   assert.match(src, /defaultValue=\{editando\?\.matricula \?\? ""\}/);
   assert.match(src, /defaultValue=\{editando\?\.email \?\? ""\}/);
 });

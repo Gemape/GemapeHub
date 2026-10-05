@@ -33,7 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { exportarCsv, formatarData } from "@/lib/gemape";
-import { empregadoAtivo, prepararEmpregado, separarEmpregados } from "@/lib/empregados";
+import { empregadoAtivo, mascararCpf, prepararEmpregado, separarEmpregados } from "@/lib/empregados";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 
@@ -215,8 +215,11 @@ function PaginaEmpregados() {
                 name="cpf"
                 aria-required
                 inputMode="numeric"
-                placeholder="000.000.000-00"
-                defaultValue={editando?.cpf ?? ""}
+                placeholder="xxx.xxx.xxx-xx"
+                onChange={(ev) => {
+                  ev.target.value = mascararCpf(ev.target.value);
+                }}
+                defaultValue={editando?.cpf ? (editando.cpf.replace(/\D/g, "").length > 11 ? editando.cpf : mascararCpf(editando.cpf)) : ""}
               />
             </div>
             <div className="space-y-1.5">
