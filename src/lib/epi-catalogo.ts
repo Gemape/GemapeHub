@@ -267,6 +267,7 @@ export function excluirEpiCatalogo(dados: DadosCatalogo, catalogoId: string): { 
   if (temHistorico) return { erro: "Este EPI tem histórico (movimentações, compras ou ocorrências) e não pode ser excluído." };
   dados.epis_catalogo = (dados.epis_catalogo ?? []).filter((c) => c !== alvo);
   dados.epis = (dados.epis ?? []).filter((e) => e["catalogo_id"] !== catalogoId);
-  dados.enderecamentos = (dados.enderecamentos ?? []).filter((e) => e["codigo_produto"] !== alvo["codigo_sku"]);
+  const sku = String(alvo["codigo_sku"]).trim().toUpperCase();
+  dados.enderecamentos = (dados.enderecamentos ?? []).filter((e) => String(e["codigo_produto"] ?? "").trim().toUpperCase() !== sku);
   return {};
 }

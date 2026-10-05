@@ -18,3 +18,11 @@ test("Cadastrar EPI usa o botão padrão com os três botões", () => {
   assert.match(epi, /<AcoesLinha[\s\S]*onClonar=[\s\S]*onEditar=[\s\S]*onExcluir=/);
   assert.match(epi, /rpc\([\s\S]*p_id/);
 });
+
+test("o diálogo de editar EPI é irmão do de clonar, não está dentro dele", () => {
+  const epi = ler("components/modules/CadastroEpi.tsx");
+  const clonar = epi.indexOf("<Dialog open={!!clonando}");
+  const editar = epi.indexOf("<Dialog open={editando !== null}");
+  assert.ok(editar > 0 && clonar > 0 && editar < clonar);
+  assert.match(epi.slice(editar, clonar), /<\/Dialog>\s*$/);
+});

@@ -472,9 +472,7 @@ function CatalogoEpi() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!clonando} onOpenChange={(aberto) => !aberto && setClonando(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-          <Dialog open={editando !== null} onOpenChange={(aberto) => !aberto && setEditando(null)}>
+      <Dialog open={editando !== null} onOpenChange={(aberto) => !aberto && setEditando(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar EPI {editando?.codigo_sku}</DialogTitle>
@@ -501,7 +499,9 @@ function CatalogoEpi() {
         </DialogContent>
       </Dialog>
 
-      <DialogHeader>
+      <Dialog open={!!clonando} onOpenChange={(aberto) => !aberto && setClonando(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
             <DialogTitle>Clonar EPI</DialogTitle>
             <DialogDescription>
               Copia a descrição e a unidade, gera outro código e cadastra o EPI em um tamanho ainda não cadastrado. Não herda estoque nem movimentações.
