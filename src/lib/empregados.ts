@@ -20,6 +20,15 @@ export function formatarCpf(cpf: string): string {
   return d.length === 11 ? `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}` : cpf;
 }
 
+// Máscara de digitação: mostra o CPF no padrão xxx.xxx.xxx-xx enquanto a pessoa digita.
+export function mascararCpf(valor: string): string {
+  const d = digitos(valor).slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
 // Matrícula interna LxPx: livro x, página x (ex.: L3P25). Guarda em maiúsculas, sem espaços.
 export const normalizarMatricula = (m: string) => m.toUpperCase().replace(/\s+/g, "");
 export const matriculaValida = (m: string) => /^L\d+P\d+$/.test(normalizarMatricula(m));
