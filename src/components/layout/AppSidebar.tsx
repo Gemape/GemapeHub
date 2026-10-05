@@ -9,6 +9,7 @@ import {
   MENU_EPI,
   MENU_FERRAMENTAS,
   MENU_GERAIS,
+  MENU_UNIFORMES,
   MENU_VEICULOS,
   URLS_GERAIS,
   type AbaMenu,
@@ -72,7 +73,6 @@ const grupos = [
   {
     titulo: "Parâmetros",
     itens: [
-      { titulo: "Uniformes", url: "/cadastros/uniformes", icone: Shirt },
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
       { titulo: "Fornecedores", url: "/cadastros/fornecedores", icone: Truck },
@@ -242,6 +242,22 @@ function MenuFerramentas({ pathname }: { pathname: string }) {
   );
 }
 
+// Parâmetros > Uniformes: Cadastrar Uniforme (decisão 48).
+function MenuUniformes({ pathname }: { pathname: string }) {
+  return (
+    <GrupoRecolhivel
+      titulo="Uniformes"
+      icone={<Shirt />}
+      prefixos={MENU_UNIFORMES.map((i) => i.url)}
+      pathname={pathname}
+    >
+      {MENU_UNIFORMES.map((item) => (
+        <SubLink key={item.url} item={item} pathname={pathname} />
+      ))}
+    </GrupoRecolhivel>
+  );
+}
+
 // Parâmetros > Veículos: o cadastro da frota e as listas de apoio (decisão 46).
 function MenuVeiculos({ pathname }: { pathname: string }) {
   return (
@@ -320,6 +336,7 @@ export function AppSidebar() {
                 {grupo.titulo === "Parâmetros" && (
                   <>
                     <MenuEpi pathname={pathname} />
+                    <MenuUniformes pathname={pathname} />
                     <MenuFerramentas pathname={pathname} />
                     <MenuVeiculos pathname={pathname} />
                   </>

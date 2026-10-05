@@ -26,6 +26,14 @@ export type GrupoEpi = {
 
 type Linha = Record<string, unknown>;
 
+// O catálogo por tamanho vale para EPI (decisão 35) e Uniforme (decisão 48): só mudam as tabelas
+// e o nome usado nas mensagens.
+export type TabelasCatalogo = { catalogo: string; estoque: string; nome: string };
+export const TABELAS_EPI: TabelasCatalogo = { catalogo: "epis_catalogo", estoque: "epis", nome: "EPI" };
+export const TABELAS_UNIFORME: TabelasCatalogo = { catalogo: "uniformes_catalogo", estoque: "uniformes", nome: "uniforme" };
+type DadosCatalogo = { empresas?: Linha[]; enderecamentos?: Linha[]; [tabela: string]: Linha[] | undefined };
+const inicial = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
+
 export function normalizarDescricao(texto: string): string {
   return texto
     .normalize("NFD")
@@ -110,6 +118,7 @@ export function montarNovoEpi(entrada: {
   pedeTamanho: boolean;
   // Tamanhos associados à subcategoria em Gerais; o escolhido precisa estar entre eles.
   tamanhosPermitidos?: string[];
+  nomeProduto?: string;
 }): Omit<EpiCatalogo, "id"> {
   const nome = entrada.nome.trim().replace(/\s+/g, " ");
   if (!nome) throw new Error("Informe a descrição do item.");
@@ -120,7 +129,7 @@ export function montarNovoEpi(entrada: {
   const minimo = validarMinimo(entrada.minimo);
   const jaExiste = entrada.catalogo.some((c) => normalizarDescricao(c.nome) === normalizarDescricao(nome));
   if (jaExiste) {
-    throw new Error("Já existe um EPI com esta descrição. Use Clonar para cadastrar outro tamanho.");
+    throw new Error(`Já existe um ${entrada.nomeProduto ?? "EPI"} com esta descrição. Use Clonar para cadastrar outro tamanho.`);
   }
   return {
     codigo_sku: entrada.codigo,
@@ -142,6 +151,7 @@ export function montarClonagemEpi(entrada: {
   catalogo: EpiCatalogo[];
   codigo: string;
   tamanhosPermitidos?: string[];
+  nomeProduto?: string;
 }): Omit<EpiCatalogo, "id"> {
   const { origem } = entrada;
   if (!entrada.tamanhoId) throw new Error("Selecione o tamanho.");
@@ -150,7 +160,7 @@ export function montarClonagemEpi(entrada: {
   }
   const minimo = validarMinimo(entrada.minimo);
   if (duplicadoNoCatalogo(entrada.catalogo, origem.nome, entrada.tamanhoId)) {
-    throw new Error("Este EPI já está cadastrado neste tamanho.");
+    throw new Error(`Este ${entrada.nomeProduto ?? "EPI"} já está cadastrado neste tamanho.`);
   }
   return {
     codigo_sku: entrada.codigo,
@@ -171,13 +181,14 @@ export function montarClonagemEpi(entrada: {
  * mexe em saldo nem em mínimo já gravado. Devolve se algo mudou.
  */
 export function sincronizarEstoqueEpis(
-  dados: { empresas?: Linha[]; epis_catalogo?: Linha[]; epis?: Linha[] },
+  dados: DadosCatalogo,
   novoId: () => string,
   agora: string,
+  t: TabelasCatalogo = TABELAS_EPI,
 ): boolean {
-  const catalogo = dados.epis_catalogo ?? [];
+  const catalogo = dados[t.catalogo] ?? [];
   if (catalogo.length === 0) return false;
-  const epis = dados.epis ?? (dados.epis = []);
+  const epis = dados[t.estoque] ?? (dados[t.estoque] = []);
   let mudou = false;
   const porChave = new Map<string, Linha>();
   for (const e of epis) if (e["catalogo_id"]) porChave.set(`${e["catalogo_id"]}|${e["empresa_id"]}`, e);
@@ -211,7 +222,7 @@ export function sincronizarEstoqueEpis(
   return mudou;
 }
 
-type DadosCatalogo = { epis_catalogo?: Linha[]; epis?: Linha[]; enderecamentos?: Linha[]; [tabela: string]: Linha[] | undefined };
+
 
 // Editar um EPI do catálogo (decisão 45): a descrição vale para todos os tamanhos do mesmo EPI e
 // o estoque mínimo é do tamanho, levado ao estoque de todas as empresas. Código, tamanho,
@@ -220,10 +231,11 @@ export function editarEpiCatalogo(
   dados: DadosCatalogo,
   catalogoId: string,
   valores: { nome: string; estoque_minimo: string | number },
+  t: TabelasCatalogo = TABELAS_EPI,
 ): { erro?: string } {
-  const catalogo = dados.epis_catalogo ?? [];
+  const catalogo = dados[t.catalogo] ?? [];
   const alvo = catalogo.find((c) => c["id"] === catalogoId);
-  if (!alvo) return { erro: "EPI não encontrado." };
+  if (!alvo) return { erro: `${inicial(t.nome)} não encontrado.` };
   const nome = String(valores.nome ?? "").trim().replace(/\s+/g, " ");
   if (!nome) return { erro: "Informe a descrição do item." };
   let minimo: number;
@@ -237,12 +249,12 @@ export function editarEpiCatalogo(
   if (normalizarDescricao(nome) !== chaveAtual) {
     const outros = catalogo.filter((c) => !mesmoGrupo.includes(c));
     if (outros.some((c) => normalizarDescricao(String(c["nome"])) === normalizarDescricao(nome))) {
-      return { erro: "Já existe um EPI com esta descrição." };
+      return { erro: `Já existe um ${t.nome} com esta descrição.` };
     }
   }
   for (const c of mesmoGrupo) c["nome"] = nome;
   alvo["estoque_minimo"] = minimo;
-  for (const e of dados.epis ?? []) {
+  for (const e of dados[t.estoque] ?? []) {
     if (e["catalogo_id"] === catalogoId) e["estoque_minimo"] = minimo;
     if (mesmoGrupo.some((c) => c["id"] === e["catalogo_id"])) e["nome"] = nome;
   }
@@ -251,22 +263,22 @@ export function editarEpiCatalogo(
 
 // Excluir um EPI do catálogo (decisão 45): só sem saldo em nenhuma empresa e sem histórico
 // (movimentações, compras, ocorrências etc.). Leva junto o estoque zerado e os endereços dele.
-export function excluirEpiCatalogo(dados: DadosCatalogo, catalogoId: string): { erro?: string } {
-  const alvo = (dados.epis_catalogo ?? []).find((c) => c["id"] === catalogoId);
-  if (!alvo) return { erro: "EPI não encontrado." };
-  const estoques = (dados.epis ?? []).filter((e) => e["catalogo_id"] === catalogoId);
+export function excluirEpiCatalogo(dados: DadosCatalogo, catalogoId: string, t: TabelasCatalogo = TABELAS_EPI): { erro?: string } {
+  const alvo = (dados[t.catalogo] ?? []).find((c) => c["id"] === catalogoId);
+  if (!alvo) return { erro: `${inicial(t.nome)} não encontrado.` };
+  const estoques = (dados[t.estoque] ?? []).filter((e) => e["catalogo_id"] === catalogoId);
   if (estoques.some((e) => Number(e["estoque_atual"] ?? 0) !== 0)) {
-    return { erro: "Este EPI tem saldo em estoque. Dê a baixa do saldo antes de excluir." };
+    return { erro: `Este ${t.nome} tem saldo em estoque. Dê a baixa do saldo antes de excluir.` };
   }
   const ids = new Set(estoques.map((e) => e["id"]));
   const temHistorico = Object.entries(dados).some(
     ([tabela, linhas]) =>
-      tabela !== "epis" && tabela !== "epis_catalogo" && tabela !== "enderecamentos" &&
+      tabela !== t.estoque && tabela !== t.catalogo && tabela !== "enderecamentos" &&
       (linhas ?? []).some((l) => ids.has(l["item_id"])),
   );
-  if (temHistorico) return { erro: "Este EPI tem histórico (movimentações, compras ou ocorrências) e não pode ser excluído." };
-  dados.epis_catalogo = (dados.epis_catalogo ?? []).filter((c) => c !== alvo);
-  dados.epis = (dados.epis ?? []).filter((e) => e["catalogo_id"] !== catalogoId);
+  if (temHistorico) return { erro: `Este ${t.nome} tem histórico (movimentações, compras ou ocorrências) e não pode ser excluído.` };
+  dados[t.catalogo] = (dados[t.catalogo] ?? []).filter((c) => c !== alvo);
+  dados[t.estoque] = (dados[t.estoque] ?? []).filter((e) => e["catalogo_id"] !== catalogoId);
   const sku = String(alvo["codigo_sku"]).trim().toUpperCase();
   dados.enderecamentos = (dados.enderecamentos ?? []).filter((e) => String(e["codigo_produto"] ?? "").trim().toUpperCase() !== sku);
   return {};
