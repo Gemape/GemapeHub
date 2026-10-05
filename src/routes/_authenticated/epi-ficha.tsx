@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { CampoBusca, type OpcaoBusca } from "@/components/CampoBusca";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { NovoTamanhoRapido } from "@/components/parametros/NovoTamanhoRapido";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useAccess } from "@/lib/access-context";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import {
   CAMPOS_FICHA,
@@ -35,6 +37,7 @@ import {
   salvarFicha,
   type ConteudoFicha,
 } from "@/lib/fichas-epi";
+import { rotuloEpiFicha, tamanhoDoEpi } from "@/lib/ficha-epi-rotulo";
 import { combinaBusca } from "@/lib/parametros-base";
 import { useFichasEpi } from "@/lib/use-fichas-epi";
 import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
@@ -46,6 +49,8 @@ type EpiResumo = {
   nome: string;
   categoria: string | null;
   subcategoria_id?: string | null;
+  tamanhos_selecionados?: string[] | null;
+  tamanho?: string | null;
   empresa_id: string | null;
 };
 
@@ -74,9 +79,11 @@ function FichaEpiPagina() {
   const { empresas, empresaId } = useEmpresa();
   const fichas = useFichasEpi();
   const parametros = useParametrosBase();
+  const { isAdmin } = useAccess();
   const { data: todos = [], isLoading } = useEpis();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
+  const [tamanhoAberto, setTamanhoAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [epiSel, setEpiSel] = useState("");
   const [conteudo, setConteudo] = useState<ConteudoFicha>(fichaVazia);
@@ -101,7 +108,7 @@ function FichaEpiPagina() {
     .filter((e) => e.id === epiSel || (epis.includes(e) && !fichas.some((f) => f.epiId === e.id)))
     .map((e) => ({
       valor: e.id,
-      rotulo: `${e.codigo_sku} · ${e.nome}`,
+      rotulo: rotuloEpiFicha(e, parametros),
       // Subcategoria pela referência gravada (nome atual de Gerais).
       detalhe: [nomeSubcategoria(parametros, "cat-epi", e), nomeEmpresa(e.empresa_id)]
         .filter(Boolean)
@@ -144,6 +151,10 @@ function FichaEpiPagina() {
   }
 
   const epiAberto = epiPorId(epiSel);
+  // Sem tamanho no EPI escolhido, ou nenhum tamanho em Gerais: oferece cadastrar sem sair da tela.
+  // Na edição de uma ficha existente o link não aparece: o EPI já está definido.
+  const faltaTamanho =
+    !editandoId && (parametros.tamanhos.length === 0 || (!!epiAberto && !tamanhoDoEpi(epiAberto, parametros)));
 
   return (
     <div className="space-y-5">
@@ -237,7 +248,7 @@ function FichaEpiPagina() {
               <Label htmlFor="ficha-epi">EPI</Label>
               {editandoId && epiAberto ? (
                 <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-                  {epiAberto.codigo_sku} · {epiAberto.nome}
+                  {rotuloEpiFicha(epiAberto, parametros)}
                 </p>
               ) : (
                 <CampoBusca
@@ -248,6 +259,20 @@ function FichaEpiPagina() {
                   placeholder="Buscar por palavra-chave ou código (ex.: EPI-0001)"
                   vazio="Nenhum EPI sem ficha encontrado."
                 />
+              )}
+              {faltaTamanho && (
+                <p className="text-xs text-muted-foreground">
+                  {parametros.tamanhos.length === 0
+                    ? "Nenhum tamanho cadastrado."
+                    : "Este EPI não tem tamanho cadastrado."}{" "}
+                  <button
+                    type="button"
+                    className="font-medium text-primary underline underline-offset-2"
+                    onClick={() => setTamanhoAberto(true)}
+                  >
+                    Cadastrar tamanho
+                  </button>
+                </p>
               )}
             </div>
             {CAMPOS_FICHA.map((campo) => (
@@ -271,6 +296,30 @@ function FichaEpiPagina() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tamanhoAberto} onOpenChange={setTamanhoAberto}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cadastrar tamanho</DialogTitle>
+            <DialogDescription>
+              Os tamanhos ficam em Parâmetros &gt; Gerais. Para um EPI em um tamanho novo, use Clonar em
+              Cadastrar EPI.
+            </DialogDescription>
+          </DialogHeader>
+          {isAdmin ? (
+            <NovoTamanhoRapido />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Só o Administrador cadastra tamanhos. Peça a ele para cadastrar.
+            </p>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setTamanhoAberto(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
