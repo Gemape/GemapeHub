@@ -38,6 +38,7 @@ import { MODO_DEMO } from "@/lib/modo-demo";
 import { avisoExclusaoDoProduto } from "@/lib/codigo-fabrica-vinculos";
 import { estaAtivo, lerParametros, paraSelecao, proximoCodigo, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
 import { subcategoriasParaSelecao } from "@/lib/subcategoria-referencia";
+import { DialogTamanhoSubcategoria } from "@/components/parametros/DialogTamanhoSubcategoria";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 const CATEGORIA_EPI = "cat-epi";
@@ -83,6 +84,7 @@ function CatalogoEpi() {
   const [editando, setEditando] = useState<EpiCatalogo | null>(null);
   const [subSel, setSubSel] = useState("");
   const [tamanhoSel, setTamanhoSel] = useState("");
+  const [tamanhoNovoAberto, setTamanhoNovoAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   // O ref bloqueia o clique repetido na hora; o estado só desabilita o botão.
   const trava = useRef(false);
@@ -400,6 +402,16 @@ function CatalogoEpi() {
         </DialogContent>
       </Dialog>
 
+      {subEscolhida && (
+        <DialogTamanhoSubcategoria
+          aberto={tamanhoNovoAberto}
+          onAbrirMudou={setTamanhoNovoAberto}
+          subcategoriaId={subEscolhida.id}
+          subcategoriaNome={subEscolhida.nome}
+          onCriado={setTamanhoSel}
+        />
+      )}
+
       <Dialog open={novoAberto} onOpenChange={setNovoAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
@@ -455,7 +467,14 @@ function CatalogoEpi() {
                   </Select>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Nenhum tamanho associado a esta subcategoria. O EPI fica sem tamanho; para ter tamanho, associe em Cadastros &gt; Gerais &gt; Tamanho e Medidas de Produto.
+                    Nenhum tamanho associado a esta subcategoria.{" "}
+                    <button
+                      type="button"
+                      className="font-medium text-primary underline underline-offset-2"
+                      onClick={() => setTamanhoNovoAberto(true)}
+                    >
+                      Cadastrar tamanho
+                    </button>
                   </p>
                 )}
               </div>
