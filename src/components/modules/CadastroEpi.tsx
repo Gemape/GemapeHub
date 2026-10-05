@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { CadastroProduto } from "@/components/modules/CadastroProduto";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,7 +35,8 @@ import {
 import { useAccess } from "@/lib/access-context";
 import { opcoesDaSeparacao, planejarSeparacao } from "@/lib/epi-separar-tamanhos";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
+import { avisoExclusaoDoProduto } from "@/lib/codigo-fabrica-vinculos";
+import { estaAtivo, lerParametros, paraSelecao, proximoCodigo, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
 import { subcategoriasParaSelecao } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -78,6 +80,7 @@ function CatalogoEpi() {
   const [busca, setBusca] = useState("");
   const [novoAberto, setNovoAberto] = useState(false);
   const [clonando, setClonando] = useState<EpiCatalogo | null>(null);
+  const [editando, setEditando] = useState<EpiCatalogo | null>(null);
   const [subSel, setSubSel] = useState("");
   const [tamanhoSel, setTamanhoSel] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -184,6 +187,60 @@ function CatalogoEpi() {
     setClonando(item);
   }
 
+  // Editar e excluir passam pela operação do catálogo, que confere tudo antes de gravar (decisão 45).
+  async function operar(nome: "editar_epi_catalogo" | "excluir_epi_catalogo", id: string, valores: Linha | undefined, sucesso: string, depois?: () => void) {
+    if (trava.current) return;
+    trava.current = true;
+    setSalvando(true);
+    try {
+      const { error } = await (supabase as unknown as { rpc: (n: string, a: Linha) => Promise<{ error: Error | null }> }).rpc(nome, { p_id: id, ...(valores ? { p_valores: valores } : {}) });
+      if (error) throw error;
+      await queryClient.invalidateQueries();
+      toast.success(sucesso);
+      depois?.();
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível concluir a operação.");
+    } finally {
+      trava.current = false;
+      setSalvando(false);
+    }
+  }
+
+  function enviarEdicao(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editando) return;
+    const f = new FormData(e.currentTarget);
+    void operar(
+      "editar_epi_catalogo",
+      editando.id,
+      { nome: String(f.get("nome") ?? ""), estoque_minimo: String(f.get("minimo") ?? "") },
+      `EPI ${editando.codigo_sku} atualizado`,
+      () => setEditando(null),
+    );
+  }
+
+  function excluir(item: EpiCatalogo) {
+    // Lê as associações na hora, para o aviso não usar dados velhos.
+    let vinculos: CodigoFabrica[] = [];
+    try {
+      vinculos = lerParametros().codigosFabrica.filter(
+        (c) => c.tabela === "epis" && c.codigo_produto.trim().toUpperCase() === item.codigo_sku.trim().toUpperCase(),
+      );
+    } catch {
+      return void toast.error("Não foi possível conferir os códigos de fábrica deste EPI.");
+    }
+    const rotulo = `${item.codigo_sku} ${item.nome}`;
+    const aviso = avisoExclusaoDoProduto(rotulo, vinculos);
+    if (!confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${rotulo}?`)) return;
+    void operar("excluir_epi_catalogo", item.id, undefined, `EPI ${item.codigo_sku} excluído`, () => {
+      try {
+        removerCodigosFabricaPorIds(vinculos.map((c) => c.id));
+      } catch {
+        toast.error("O EPI foi excluído, mas os códigos de fábrica dele não puderam ser removidos.");
+      }
+    });
+  }
+
   function abrirNovo() {
     setSubSel("");
     setTamanhoSel("");
@@ -266,7 +323,7 @@ function CatalogoEpi() {
               </TableRow>
             )}
             {grupos.map((g) => (
-              <GrupoLinhas key={g.chave} grupo={g} rotuloTamanho={rotuloTamanho} onClonar={abrirClone} />
+              <GrupoLinhas key={g.chave} grupo={g} rotuloTamanho={rotuloTamanho} onClonar={abrirClone} onEditar={setEditando} onExcluir={excluir} />
             ))}
           </TableBody>
         </Table>
@@ -417,7 +474,34 @@ function CatalogoEpi() {
 
       <Dialog open={!!clonando} onOpenChange={(aberto) => !aberto && setClonando(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <Dialog open={editando !== null} onOpenChange={(aberto) => !aberto && setEditando(null)}>
+        <DialogContent>
           <DialogHeader>
+            <DialogTitle>Editar EPI {editando?.codigo_sku}</DialogTitle>
+            <DialogDescription>
+              A descrição vale para todos os tamanhos deste EPI. O estoque mínimo é só deste tamanho. Código, tamanho e subcategoria não mudam.
+            </DialogDescription>
+          </DialogHeader>
+          {editando && (
+            <form key={editando.id} onSubmit={enviarEdicao} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-nome">Descrição</Label>
+                <Input id="edit-nome" name="nome" defaultValue={editando.nome} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-minimo">Estoque mínimo</Label>
+                <Input id="edit-minimo" name="minimo" inputMode="numeric" pattern="\d+" defaultValue={String(editando.estoque_minimo)} required />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditando(null)}>Cancelar</Button>
+                <Button requiresWrite type="submit" disabled={salvando}>Salvar</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <DialogHeader>
             <DialogTitle>Clonar EPI</DialogTitle>
             <DialogDescription>
               Copia a descrição e a unidade, gera outro código e cadastra o EPI em um tamanho ainda não cadastrado. Não herda estoque nem movimentações.
@@ -466,10 +550,14 @@ function GrupoLinhas({
   grupo,
   rotuloTamanho,
   onClonar,
+  onEditar,
+  onExcluir,
 }: {
   grupo: ReturnType<typeof agruparEpis>[number];
   rotuloTamanho: (id: string | null) => string;
   onClonar: (item: EpiCatalogo) => void;
+  onEditar: (item: EpiCatalogo) => void;
+  onExcluir: (item: EpiCatalogo) => void;
 }) {
   return (
     <>
@@ -488,9 +576,12 @@ function GrupoLinhas({
           <TableCell>{rotuloTamanho(item.tamanho_id) || "Sem tamanho"}</TableCell>
           <TableCell className="text-right">{item.estoque_minimo}</TableCell>
           <TableCell className="text-right">
-            <Button requiresWrite variant="ghost" size="sm" onClick={() => onClonar(item)}>
-              Clonar
-            </Button>
+            <AcoesLinha
+              rotulo={item.codigo_sku}
+              onClonar={() => onClonar(item)}
+              onEditar={() => onEditar(item)}
+              onExcluir={() => onExcluir(item)}
+            />
           </TableCell>
         </TableRow>
       ))}

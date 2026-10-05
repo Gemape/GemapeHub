@@ -1,7 +1,7 @@
 // @ts-nocheck -- adaptador propositalmente genérico para emular a API de consulta no demo.
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
 import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
-import { duplicadoNoCatalogo, sincronizarEstoqueEpis } from "../../lib/epi-catalogo.ts";
+import { duplicadoNoCatalogo, editarEpiCatalogo, excluirEpiCatalogo, sincronizarEstoqueEpis } from "../../lib/epi-catalogo.ts";
 import { aplicarSeparacao, opcoesDaSeparacao } from "../../lib/epi-separar-tamanhos.ts";
 import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
 import {
@@ -216,8 +216,8 @@ class Consulta {
       }
     }
     if (this.acao === "delete" && this.tabela === "epis_catalogo" && selecionadas.length) {
-      // Sem tela de exclusão por enquanto: apagar o catálogo deixaria estoque sem origem.
-      return { data: null, error: new Error("EPI do catálogo não pode ser excluído nesta etapa.") };
+      // A exclusão passa pela operação excluir_epi_catalogo, que confere saldo e histórico.
+      return { data: null, error: new Error("EPI do catálogo não pode ser excluído direto: use a operação de excluir, que confere saldo e histórico.") };
     }
     if (this.acao === "update") {
       selecionadas.forEach(l => Object.assign(l, this.payload));
@@ -251,6 +251,15 @@ export const demoSupabase = {
       if (erro) return { data: null, error: erro };
       persistirDados();
       return { data: args.p_entradas?.chave, error: null };
+    }
+    if (nome === "editar_epi_catalogo" || nome === "excluir_epi_catalogo") {
+      // Tudo ou nada: a conferência vem antes de qualquer alteração (decisão 45).
+      const r = nome === "editar_epi_catalogo"
+        ? editarEpiCatalogo(dados, String(args.p_id ?? ""), { nome: String(args.p_valores?.nome ?? ""), estoque_minimo: args.p_valores?.estoque_minimo as string | number })
+        : excluirEpiCatalogo(dados, String(args.p_id ?? ""));
+      if (r.erro) return { data: null, error: new Error(r.erro) };
+      persistirDados();
+      return { data: args.p_id, error: null };
     }
     if (nome === "separar_epis_por_tamanho") {
       // Tudo ou nada: aplicarSeparacao só troca os dados se conseguir terminar.

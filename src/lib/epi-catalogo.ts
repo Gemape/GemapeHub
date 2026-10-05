@@ -210,3 +210,63 @@ export function sincronizarEstoqueEpis(
   }
   return mudou;
 }
+
+type DadosCatalogo = { epis_catalogo?: Linha[]; epis?: Linha[]; enderecamentos?: Linha[]; [tabela: string]: Linha[] | undefined };
+
+// Editar um EPI do catálogo (decisão 45): a descrição vale para todos os tamanhos do mesmo EPI e
+// o estoque mínimo é do tamanho, levado ao estoque de todas as empresas. Código, tamanho,
+// subcategoria e unidade não mudam. Tudo ou nada: se algo falha, nada é gravado.
+export function editarEpiCatalogo(
+  dados: DadosCatalogo,
+  catalogoId: string,
+  valores: { nome: string; estoque_minimo: string | number },
+): { erro?: string } {
+  const catalogo = dados.epis_catalogo ?? [];
+  const alvo = catalogo.find((c) => c["id"] === catalogoId);
+  if (!alvo) return { erro: "EPI não encontrado." };
+  const nome = String(valores.nome ?? "").trim().replace(/\s+/g, " ");
+  if (!nome) return { erro: "Informe a descrição do item." };
+  let minimo: number;
+  try {
+    minimo = validarMinimo(valores.estoque_minimo);
+  } catch (e) {
+    return { erro: (e as Error).message };
+  }
+  const chaveAtual = normalizarDescricao(String(alvo["nome"]));
+  const mesmoGrupo = catalogo.filter((c) => normalizarDescricao(String(c["nome"])) === chaveAtual);
+  if (normalizarDescricao(nome) !== chaveAtual) {
+    const outros = catalogo.filter((c) => !mesmoGrupo.includes(c));
+    if (outros.some((c) => normalizarDescricao(String(c["nome"])) === normalizarDescricao(nome))) {
+      return { erro: "Já existe um EPI com esta descrição." };
+    }
+  }
+  for (const c of mesmoGrupo) c["nome"] = nome;
+  alvo["estoque_minimo"] = minimo;
+  for (const e of dados.epis ?? []) {
+    if (e["catalogo_id"] === catalogoId) e["estoque_minimo"] = minimo;
+    if (mesmoGrupo.some((c) => c["id"] === e["catalogo_id"])) e["nome"] = nome;
+  }
+  return {};
+}
+
+// Excluir um EPI do catálogo (decisão 45): só sem saldo em nenhuma empresa e sem histórico
+// (movimentações, compras, ocorrências etc.). Leva junto o estoque zerado e os endereços dele.
+export function excluirEpiCatalogo(dados: DadosCatalogo, catalogoId: string): { erro?: string } {
+  const alvo = (dados.epis_catalogo ?? []).find((c) => c["id"] === catalogoId);
+  if (!alvo) return { erro: "EPI não encontrado." };
+  const estoques = (dados.epis ?? []).filter((e) => e["catalogo_id"] === catalogoId);
+  if (estoques.some((e) => Number(e["estoque_atual"] ?? 0) !== 0)) {
+    return { erro: "Este EPI tem saldo em estoque. Dê a baixa do saldo antes de excluir." };
+  }
+  const ids = new Set(estoques.map((e) => e["id"]));
+  const temHistorico = Object.entries(dados).some(
+    ([tabela, linhas]) =>
+      tabela !== "epis" && tabela !== "epis_catalogo" && tabela !== "enderecamentos" &&
+      (linhas ?? []).some((l) => ids.has(l["item_id"])),
+  );
+  if (temHistorico) return { erro: "Este EPI tem histórico (movimentações, compras ou ocorrências) e não pode ser excluído." };
+  dados.epis_catalogo = (dados.epis_catalogo ?? []).filter((c) => c !== alvo);
+  dados.epis = (dados.epis ?? []).filter((e) => e["catalogo_id"] !== catalogoId);
+  dados.enderecamentos = (dados.enderecamentos ?? []).filter((e) => e["codigo_produto"] !== alvo["codigo_sku"]);
+  return {};
+}
