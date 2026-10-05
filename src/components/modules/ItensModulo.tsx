@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,22 +62,26 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Item | null>(null);
+  // Clonar: item de origem que preenche o formulário de cadastro NOVO. Só os defaultValue
+  // leem dele (base); `editando` continua sendo a flag de edição.
+  const [modelo, setModelo] = useState<Item | null>(null);
+  const base = editando ?? modelo;
   const [previaCodigo, setPreviaCodigo] = useState("");
   const salvando = useRef(false);
   const parametros = useParametrosBase();
   const regraFerramenta = parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
   // Ferramenta antiga sem categoria de ferramenta usa a categoria gravada como valor inicial.
-  const categoriaFerramentaInicial = editando?.categoria_ferramenta ?? (editando?.categoria === "Pneumática" ? "Pneumático" : editando?.categoria ?? "");
+  const categoriaFerramentaInicial = base?.categoria_ferramenta ?? (base?.categoria === "Pneumática" ? "Pneumático" : base?.categoria ?? "");
   // Parâmetro desativado em Gerais sai da escolha; o que a ferramenta já usa continua na edição.
   const parametrosSelecao = {
     ...parametros,
     categoriasFerramenta: paraSelecao(parametros, parametros.categoriasFerramenta, (c) => c.nome === categoriaFerramentaInicial),
-    gruposFerramenta: paraSelecao(parametros, parametros.gruposFerramenta, (g) => g.nome === editando?.grupo_ferramenta),
-    marcasFerramenta: paraSelecao(parametros, parametros.marcasFerramenta, (m) => m.nome === editando?.marca),
+    gruposFerramenta: paraSelecao(parametros, parametros.gruposFerramenta, (g) => g.nome === base?.grupo_ferramenta),
+    marcasFerramenta: paraSelecao(parametros, parametros.marcasFerramenta, (m) => m.nome === base?.marca),
   };
   const rotulo = (item: { id: string; nome: string }) => (estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`);
-  const marcaCadastrada = parametros.marcasFerramenta.find((m) => m.nome === editando?.marca);
-  const marcaAntiga = editando?.marca && !marcaCadastrada ? editando.marca : null;
+  const marcaCadastrada = parametros.marcasFerramenta.find((m) => m.nome === base?.marca);
+  const marcaAntiga = base?.marca && !marcaCadastrada ? base.marca : null;
   const tabela = "ferramentas";
   const { data: itens = [], isLoading } = useItens(modulo, empresaId, busca);
   const salvar = useSalvar(tabela, [tabela, "saidas-por-item"]);
@@ -89,12 +94,16 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
     return [...ativos, ...codigosReservadosFerramenta()];
   }
 
-  async function abrirNovo() {
+  // Sem origem: cadastro novo em branco. Com origem (Clonar): mesmo formulário, preenchido com
+  // os dados dela, mas número de série e patrimônio (únicos) em branco. O código sai da
+  // mesma geração do cadastro novo; estoque começa em zero.
+  async function abrirNovo(origem?: Item) {
     if (!regraFerramenta) {
       toast.error("Cadastre antes a regra do código de Ferramentas em Cadastros > Gerais.");
       return;
     }
     setEditando(null);
+    setModelo(origem ?? null);
     setPreviaCodigo("");
     setAberto(true);
     try {
@@ -144,8 +153,8 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
         descricao: capitalizarCadastro(String(f.get("nome") ?? "")),
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
         grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
-        marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, editando?.marca ?? null),
-        marcaAtual: editando?.marca ?? "",
+        marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, base?.marca ?? null),
+        marcaAtual: base?.marca ?? "",
         numeroSerie: String(f.get("numero_serie") ?? ""),
         precoCusto: String(f.get("preco_unitario") ?? ""),
         ...(editando ? { codigoAtual: editando.codigo_sku } : {}),
@@ -198,7 +207,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={abrirNovo}>Novo item</Button>
+          <Button requiresWrite onClick={() => void abrirNovo()}>Novo item</Button>
         </div>
       </div>
 
@@ -253,21 +262,16 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   <TableCell className="text-[10px] text-muted-foreground">
                     {new Date(item.created_at).toLocaleDateString("pt-BR")}
                   </TableCell>
-                  <TableCell className="text-right whitespace-nowrap">
-                    <Button requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                  <TableCell className="text-right">
+                    <AcoesLinha
+                      rotulo={`${item.codigo_sku} ${item.nome}`}
+                      onClonar={() => void abrirNovo(item)}
+                      onEditar={() => {
+                        setModelo(null);
                         setEditando(item);
                         setAberto(true);
                       }}
-                    >
-                      Editar
-                    </Button>
-                    <Button requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                      onExcluir={() => {
                         // Lê as associações na hora, para o aviso não usar dados velhos.
                         let vinculos: CodigoFabrica[] = [];
                         try {
@@ -299,9 +303,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                           });
                         }
                       }}
-                    >
-                      Excluir
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -316,7 +318,9 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
             <DialogTitle>
               {editando
                 ? `Editar ${modulo.toUpperCase()}`
-                : `Cadastrar Novo ${modulo.toUpperCase()}`}
+                : modelo
+                  ? `Clonar ${modulo.toUpperCase()}`
+                  : `Cadastrar Novo ${modulo.toUpperCase()}`}
             </DialogTitle>
             <DialogDescription>
               Preencha os dados do cadastro.
@@ -333,7 +337,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 id="nome"
                 name="nome"
                 required
-                defaultValue={editando?.nome ?? ""}
+                defaultValue={base?.nome ?? ""}
                 placeholder="Descrição clara do item"
               />
             </div>
@@ -349,7 +353,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grupo_ferramenta">Grupo de ferramenta</Label>
-                <Select name="grupo_ferramenta" required defaultValue={editando?.grupo_ferramenta ?? ""}>
+                <Select name="grupo_ferramenta" required defaultValue={base?.grupo_ferramenta ?? ""}>
                   <SelectTrigger id="grupo_ferramenta"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
                   <SelectContent>
                     {parametrosSelecao.gruposFerramenta.map((g) => <SelectItem key={g.id} value={g.nome}>{rotulo(g)}</SelectItem>)}
@@ -371,7 +375,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="modelo">Modelo</Label>
-                <Input id="modelo" name="modelo" defaultValue={editando?.modelo ?? ""} />
+                <Input id="modelo" name="modelo" defaultValue={base?.modelo ?? ""} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="numero_serie">Número de Série</Label>
@@ -396,7 +400,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   id="data_aquisicao"
                   name="data_aquisicao"
                   type="date"
-                  defaultValue={editando?.data_aquisicao?.slice(0, 10) ?? ""}
+                  defaultValue={base?.data_aquisicao?.slice(0, 10) ?? ""}
                 />
               </div>
 
@@ -406,7 +410,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 name="empresa_id"
                 required
                 defaultValue={
-                  editando?.empresa_id ??
+                  base?.empresa_id ??
                   empresaPadraoParaEscolha(empresas, empresaId)
                 }
               >
@@ -414,7 +418,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
+                  {empresasParaEscolha(empresas, [base?.empresa_id]).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>
@@ -428,7 +432,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               <Select
                 name="unidade_medida"
                 required
-                defaultValue={editando?.unidade_medida ?? "Unidade"}
+                defaultValue={base?.unidade_medida ?? "Unidade"}
               >
                 <SelectTrigger id="unidade_medida">
                   <SelectValue />
@@ -465,17 +469,17 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 step="0.01"
                 min={0}
                 required
-                defaultValue={editando?.preco_unitario ?? ""}
+                defaultValue={base?.preco_unitario ?? ""}
               />
             </div>
 
-            <div className="space-y-1.5"><Label htmlFor="nota_fiscal">Nota fiscal</Label><Input id="nota_fiscal" name="nota_fiscal" defaultValue={editando?.nota_fiscal ?? ""} /></div>
+            <div className="space-y-1.5"><Label htmlFor="nota_fiscal">Nota fiscal</Label><Input id="nota_fiscal" name="nota_fiscal" defaultValue={base?.nota_fiscal ?? ""} /></div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="observacoes">Observações</Label>
               <Textarea
                 id="observacoes"
                 name="observacoes"
-                defaultValue={editando?.observacoes ?? ""}
+                defaultValue={base?.observacoes ?? ""}
                 placeholder="Detalhes adicionais..."
               />
             </div>

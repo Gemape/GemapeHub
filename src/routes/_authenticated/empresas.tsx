@@ -29,6 +29,7 @@ import {
   statusDaEmpresa,
   valoresDaEmpresa,
 } from "@/lib/empresas";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
 import { formatarCnpj, formatarCep } from "@/lib/formatacao-cadastral";
 import { aoDigitarMascarado } from "@/lib/mascaras";
@@ -58,6 +59,9 @@ function PaginaEmpresas() {
   const { empresas } = useEmpresa();
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Empresa | null>(null);
+  // Clonar: dados da empresa de origem num cadastro NOVO (CNPJ sempre em branco).
+  const [modelo, setModelo] = useState<Empresa | null>(null);
+  const base = editando ?? modelo;
   const salvar = useSalvar("empresas", ["empresas"]);
   const excluir = useExcluir("empresas", ["empresas"]);
 
@@ -86,6 +90,7 @@ function PaginaEmpresas() {
         <Button requiresWrite
           onClick={() => {
             setEditando(null);
+            setModelo(null);
             setAberto(true);
           }}
         >
@@ -114,25 +119,22 @@ function PaginaEmpresas() {
                 {MODO_DEMO && <TableCell>{enderecoResumido(empresa) || "—"}</TableCell>}
                 {MODO_DEMO && <TableCell>{statusDaEmpresa(empresa)}</TableCell>}
                 <TableCell className="text-right whitespace-nowrap">
-                  <Button requiresWrite
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
+                  <AcoesLinha
+                    rotulo={empresa.nome_fantasia}
+                    onClonar={() => {
+                      setEditando(null);
+                      setModelo(empresa);
+                      setAberto(true);
+                    }}
+                    onEditar={() => {
+                      setModelo(null);
                       setEditando(empresa);
                       setAberto(true);
                     }}
-                  >
-                    Editar
-                  </Button>
-                  <Button requiresWrite
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
+                    onExcluir={() => {
                       if (confirm(`Excluir ${empresa.nome_fantasia}?`)) excluir.mutate(empresa.id);
                     }}
-                  >
-                    Excluir
-                  </Button>
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -143,17 +145,17 @@ function PaginaEmpresas() {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editando ? "Editar empresa" : "Nova empresa"}</DialogTitle>
+            <DialogTitle>{editando ? "Editar empresa" : modelo ? "Clonar empresa" : "Nova empresa"}</DialogTitle>
             <DialogDescription>Dados cadastrais da unidade.</DialogDescription>
           </DialogHeader>
-          <form key={editando?.id ?? "nova"} onSubmit={enviar} className="space-y-4">
+          <form key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "nova")} onSubmit={enviar} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="nome_fantasia">Nome fantasia</Label>
               <Input
                 id="nome_fantasia"
                 name="nome_fantasia"
                 required
-                defaultValue={editando?.nome_fantasia ?? ""}
+                defaultValue={base?.nome_fantasia ?? ""}
               />
             </div>
             <div className="space-y-1.5">
@@ -162,7 +164,7 @@ function PaginaEmpresas() {
                 id="razao_social"
                 name="razao_social"
                 required
-                defaultValue={editando?.razao_social ?? ""}
+                defaultValue={base?.razao_social ?? ""}
               />
             </div>
             <div className="space-y-1.5">
@@ -180,7 +182,7 @@ function PaginaEmpresas() {
                         name={campo.nome}
                         inputMode={campo.nome === "cep" ? "numeric" : undefined}
                         onInput={aoDigitarMascarado(campo.nome)}
-                        defaultValue={campo.nome === "cep" ? formatarCep(editando?.cep ?? "") : editando?.[campo.nome] ?? ""}
+                        defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""}
                       />
                     </div>
                   ))}
@@ -190,7 +192,7 @@ function PaginaEmpresas() {
                   <select
                     id="status"
                     name="status"
-                    defaultValue={editando ? statusDaEmpresa(editando) : "Ativa"}
+                    defaultValue={base ? statusDaEmpresa(base) : "Ativa"}
                     className="h-9 w-full rounded-md border bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {STATUS_EMPRESA.map((status) => (

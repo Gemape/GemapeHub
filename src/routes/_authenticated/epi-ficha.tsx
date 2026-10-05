@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { CampoBusca, type OpcaoBusca } from "@/components/CampoBusca";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -115,6 +116,19 @@ function FichaEpiPagina() {
     setAberto(true);
   }
 
+  // Clonar: copia só o texto da ficha para uma ficha NOVA; o EPI fica em branco e precisa ser
+  // escolhido entre os que ainda não têm ficha (a ficha é identificada pelo EPI).
+  function clonar(epiId: string) {
+    const ficha = fichas.find((f) => f.epiId === epiId);
+    if (!ficha) return;
+    const conteudoCopiado = fichaVazia();
+    for (const campo of CAMPOS_FICHA) conteudoCopiado[campo.chave] = ficha[campo.chave];
+    setEditandoId(null);
+    setEpiSel("");
+    setConteudo(conteudoCopiado);
+    setAberto(true);
+  }
+
   // Vindo do Cadastro de EPI (coluna Ficha), abre a ficha daquele EPI.
   useEffect(() => {
     if (!epiDaUrl || isLoading) return;
@@ -192,20 +206,16 @@ function FichaEpiPagina() {
                       : "—"}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-right">
-                    <Button variant="ghost" size="sm" onClick={() => abrir(ficha.epiId)}>
-                      Abrir
-                    </Button>
-                    <Button
-                      requiresWrite
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                    <AcoesLinha
+                      rotulo={`ficha de ${epi.codigo_sku}`}
+                      onClonar={() => clonar(ficha.epiId)}
+                      onEditar={() => abrir(ficha.epiId)}
+                      editarLivre
+                      onExcluir={() => {
                         if (confirm(`Excluir a ficha de ${epi.codigo_sku}?`))
                           executar(() => removerFicha(ficha.epiId), "Ficha excluída");
                       }}
-                    >
-                      Excluir
-                    </Button>
+                    />
                   </TableCell>
                 </TableRow>
               ))

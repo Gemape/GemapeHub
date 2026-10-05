@@ -139,7 +139,7 @@ test("os formulários e termos escolhem empresa só entre as ativas; relatórios
   ];
   for (const arq of comEscolha) assert.match(ler(arq), /empresasParaEscolha\(empresas/, arq);
   // Edição mantém a empresa do registro.
-  assert.match(ler("components/modules/CadastroProduto.tsx"), /empresasParaEscolha\(empresas, \[editando\?\.empresa_id\]\)/);
+  assert.match(ler("components/modules/CadastroProduto.tsx"), /empresasParaEscolha\(empresas, \[base\?\.empresa_id\]\)/);
   for (const arq of ["components/modules/EpiRelatorioFuncionario.tsx", "components/modules/UniformesRelatorioFuncionario.tsx", "routes/_authenticated/dashboard.tsx", "components/layout/AppSidebar.tsx"]) {
     assert.doesNotMatch(ler(arq), /empresasParaEscolha/, arq);
   }
