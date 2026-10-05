@@ -24,6 +24,7 @@ import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenti
 import { Route as AuthenticatedOcorrenciasRouteImport } from './routes/_authenticated/ocorrencias'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedUniformesRouteImport } from './routes/_authenticated/uniformes'
+import { Route as AuthenticatedUniformesCadastrarRouteImport } from './routes/_authenticated/uniformes-cadastrar'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedVeiculosRouteImport } from './routes/_authenticated/veiculos'
 import { Route as AuthenticatedCadastrosCaixasFerramentasRouteImport } from './routes/_authenticated/cadastros/caixas-ferramentas'
@@ -125,6 +126,12 @@ const AuthenticatedUniformesRoute = AuthenticatedUniformesRouteImport.update({
   path: '/uniformes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUniformesCadastrarRoute =
+  AuthenticatedUniformesCadastrarRouteImport.update({
+    id: '/uniformes-cadastrar',
+    path: '/uniformes-cadastrar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -265,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/uniformes': typeof AuthenticatedUniformesRoute
+  '/uniformes-cadastrar': typeof AuthenticatedUniformesCadastrarRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/veiculos': typeof AuthenticatedVeiculosRoute
   '/cadastros/gerais': typeof AuthenticatedCadastrosGeraisRouteRouteWithChildren
@@ -302,6 +310,7 @@ export interface FileRoutesByTo {
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/uniformes': typeof AuthenticatedUniformesRoute
+  '/uniformes-cadastrar': typeof AuthenticatedUniformesCadastrarRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/veiculos': typeof AuthenticatedVeiculosRoute
   '/cadastros/caixas-ferramentas': typeof AuthenticatedCadastrosCaixasFerramentasRoute
@@ -340,6 +349,7 @@ export interface FileRoutesById {
   '/_authenticated/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/uniformes': typeof AuthenticatedUniformesRoute
+  '/_authenticated/uniformes-cadastrar': typeof AuthenticatedUniformesCadastrarRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/veiculos': typeof AuthenticatedVeiculosRoute
   '/_authenticated/cadastros/gerais': typeof AuthenticatedCadastrosGeraisRouteRouteWithChildren
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/ocorrencias'
     | '/relatorios'
     | '/uniformes'
+    | '/uniformes-cadastrar'
     | '/usuarios'
     | '/veiculos'
     | '/cadastros/gerais'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/ocorrencias'
     | '/relatorios'
     | '/uniformes'
+    | '/uniformes-cadastrar'
     | '/usuarios'
     | '/veiculos'
     | '/cadastros/caixas-ferramentas'
@@ -453,6 +465,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ocorrencias'
     | '/_authenticated/relatorios'
     | '/_authenticated/uniformes'
+    | '/_authenticated/uniformes-cadastrar'
     | '/_authenticated/usuarios'
     | '/_authenticated/veiculos'
     | '/_authenticated/cadastros/gerais'
@@ -587,6 +600,13 @@ declare module '@tanstack/react-router' {
       path: '/uniformes'
       fullPath: '/uniformes'
       preLoaderRoute: typeof AuthenticatedUniformesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/uniformes-cadastrar': {
+      id: '/_authenticated/uniformes-cadastrar'
+      path: '/uniformes-cadastrar'
+      fullPath: '/uniformes-cadastrar'
+      preLoaderRoute: typeof AuthenticatedUniformesCadastrarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/usuarios': {
@@ -788,6 +808,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOcorrenciasRoute: typeof AuthenticatedOcorrenciasRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedUniformesRoute: typeof AuthenticatedUniformesRoute
+  AuthenticatedUniformesCadastrarRoute: typeof AuthenticatedUniformesCadastrarRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedVeiculosRoute: typeof AuthenticatedVeiculosRoute
   AuthenticatedCadastrosGeraisRouteRoute: typeof AuthenticatedCadastrosGeraisRouteRouteWithChildren
@@ -816,6 +837,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOcorrenciasRoute: AuthenticatedOcorrenciasRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedUniformesRoute: AuthenticatedUniformesRoute,
+  AuthenticatedUniformesCadastrarRoute: AuthenticatedUniformesCadastrarRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedVeiculosRoute: AuthenticatedVeiculosRoute,
   AuthenticatedCadastrosGeraisRouteRoute:

@@ -73,6 +73,11 @@ export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
   { titulo: "Caixas", url: "/caixas-ferramentas", icone: "Archive", abas: ABAS_CAIXAS },
 ];
 
+// Parâmetros > Uniformes (decisão 48): Cadastrar Uniforme, no mesmo desenho do Cadastrar EPI.
+export const MENU_UNIFORMES: readonly ItemMenu[] = [
+  { titulo: "Cadastrar Uniforme", url: "/uniformes-cadastrar", icone: "Tags" },
+];
+
 // Parâmetros > Veículos (decisão 46): o cadastro da frota e as duas listas de apoio.
 export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Cadastro de Veículos", url: "/cadastros/veiculos", icone: "Car" },

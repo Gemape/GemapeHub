@@ -1,7 +1,7 @@
 // @ts-nocheck -- adaptador propositalmente genérico para emular a API de consulta no demo.
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
 import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
-import { duplicadoNoCatalogo, editarEpiCatalogo, excluirEpiCatalogo, sincronizarEstoqueEpis } from "../../lib/epi-catalogo.ts";
+import { TABELAS_EPI, TABELAS_UNIFORME, duplicadoNoCatalogo, editarEpiCatalogo, excluirEpiCatalogo, sincronizarEstoqueEpis, type TabelasCatalogo } from "../../lib/epi-catalogo.ts";
 import { aplicarSeparacao, opcoesDaSeparacao } from "../../lib/epi-separar-tamanhos.ts";
 import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
 import {
@@ -56,17 +56,22 @@ vincularSubcategoriasGravadas();
 // O estoque de cada empresa nasce do catálogo de EPI (decisão 35). Ao abrir, completa o que faltar.
 if (typeof window !== "undefined") window.addEventListener?.(EVENTO_PARAMETROS, vincularSubcategoriasGravadas);
 const id = () => crypto.randomUUID();
-const sincronizarEpis = () => {
-  if (sincronizarEstoqueEpis(dados, id, new Date().toISOString())) persistirDados();
+// O catálogo de Uniforme segue o mesmo desenho (decisão 48).
+const sincronizarCatalogo = (t: TabelasCatalogo) => {
+  if (sincronizarEstoqueEpis(dados, id, new Date().toISOString(), t)) persistirDados();
 };
+const sincronizarEpis = () => sincronizarCatalogo(TABELAS_EPI);
+const sincronizarUniformes = () => sincronizarCatalogo(TABELAS_UNIFORME);
 sincronizarEpis();
+sincronizarUniformes();
+const CATALOGOS: Record<string, TabelasCatalogo> = { epis_catalogo: TABELAS_EPI, uniformes_catalogo: TABELAS_UNIFORME };
 // Catálogo de EPI: o mesmo EPI não entra duas vezes no mesmo tamanho e o código é único.
 // Tudo ou nada: se um item do lote falha, nenhum entra.
-const validarCatalogoEpi = (novos: Linha[]): Error | null => {
-  const aceitos: Linha[] = [...(dados.epis_catalogo ?? [])];
-  const codigos = new Set([...aceitos.map(c => String(c.codigo_sku)), ...(dados.epis ?? []).filter(e => !e.catalogo_id).map(e => String(e.codigo_sku))]);
+const validarCatalogoEpi = (t: TabelasCatalogo, novos: Linha[]): Error | null => {
+  const aceitos: Linha[] = [...(dados[t.catalogo] ?? [])];
+  const codigos = new Set([...aceitos.map(c => String(c.codigo_sku)), ...(dados[t.estoque] ?? []).filter(e => !e.catalogo_id).map(e => String(e.codigo_sku))]);
   for (const n of novos) {
-    if (duplicadoNoCatalogo(aceitos as never, String(n.nome ?? ""), (n.tamanho_id as string | null) ?? null)) return new Error("Este EPI já está cadastrado neste tamanho.");
+    if (duplicadoNoCatalogo(aceitos as never, String(n.nome ?? ""), (n.tamanho_id as string | null) ?? null)) return new Error(`Este ${t.nome} já está cadastrado neste tamanho.`);
     if (codigos.has(String(n.codigo_sku))) return new Error(`O código ${n.codigo_sku} já está em uso.`);
     aceitos.push(n); codigos.add(String(n.codigo_sku));
   }
@@ -200,28 +205,28 @@ class Consulta {
       const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: agora, ...l }));
       if (this.tabela === "movimentacoes") { const erro = aplicarEstoque(novos); if (erro) return { data: null, error: erro }; }
       if (this.tabela in MODULO_DA_COMPRA) { const erro = registrarCompras(this.tabela, novos); if (erro) return { data: null, error: erro }; }
-      if (this.tabela === "epis_catalogo") { const erro = validarCatalogoEpi(novos); if (erro) return { data: null, error: erro }; }
+      if (this.tabela in CATALOGOS) { const erro = validarCatalogoEpi(CATALOGOS[this.tabela]!, novos); if (erro) return { data: null, error: erro }; }
       linhas.push(...novos); selecionadas = novos;
-      if (this.tabela === "epis_catalogo" || this.tabela === "empresas") sincronizarEpis();
+      if (this.tabela in CATALOGOS || this.tabela === "empresas") { sincronizarEpis(); sincronizarUniformes(); }
       persistirDados();
     }
-    if (this.acao === "update" && this.tabela === "epis_catalogo") {
+    if (this.acao === "update" && this.tabela in CATALOGOS) {
       // A edição também não pode repetir o EPI no mesmo tamanho nem o código de outro.
       const proposto = { ...(this.payload ?? {}) } as Linha;
       for (const l of selecionadas) {
         const depois = { ...l, ...proposto };
         const outros = linhas.filter(o => o !== l);
-        if (duplicadoNoCatalogo(outros as never, String(depois.nome ?? ""), (depois.tamanho_id as string | null) ?? null)) return { data: null, error: new Error("Este EPI já está cadastrado neste tamanho.") };
+        if (duplicadoNoCatalogo(outros as never, String(depois.nome ?? ""), (depois.tamanho_id as string | null) ?? null)) return { data: null, error: new Error(`Este ${CATALOGOS[this.tabela]!.nome} já está cadastrado neste tamanho.`) };
         if (outros.some(o => o.codigo_sku === depois.codigo_sku)) return { data: null, error: new Error(`O código ${depois.codigo_sku} já está em uso.`) };
       }
     }
-    if (this.acao === "delete" && this.tabela === "epis_catalogo" && selecionadas.length) {
+    if (this.acao === "delete" && this.tabela in CATALOGOS && selecionadas.length) {
       // A exclusão passa pela operação excluir_epi_catalogo, que confere saldo e histórico.
-      return { data: null, error: new Error("EPI do catálogo não pode ser excluído direto: use a operação de excluir, que confere saldo e histórico.") };
+      return { data: null, error: new Error(`${CATALOGOS[this.tabela]!.nome === "EPI" ? "EPI" : "Uniforme"} do catálogo não pode ser excluído direto: use a operação de excluir, que confere saldo e histórico.`) };
     }
     if (this.acao === "update") {
       selecionadas.forEach(l => Object.assign(l, this.payload));
-      if (this.tabela === "epis_catalogo") sincronizarEpis();
+      if (this.tabela in CATALOGOS) { sincronizarEpis(); sincronizarUniformes(); }
       persistirDados();
     }
     if (this.acao === "delete") { selecionadas.forEach(l => linhas.splice(linhas.indexOf(l), 1)); persistirDados(); }
@@ -252,11 +257,12 @@ export const demoSupabase = {
       persistirDados();
       return { data: args.p_entradas?.chave, error: null };
     }
-    if (nome === "editar_epi_catalogo" || nome === "excluir_epi_catalogo") {
+    if (nome === "editar_epi_catalogo" || nome === "excluir_epi_catalogo" || nome === "editar_uniforme_catalogo" || nome === "excluir_uniforme_catalogo") {
       // Tudo ou nada: a conferência vem antes de qualquer alteração (decisão 45).
-      const r = nome === "editar_epi_catalogo"
-        ? editarEpiCatalogo(dados, String(args.p_id ?? ""), { nome: String(args.p_valores?.nome ?? ""), estoque_minimo: args.p_valores?.estoque_minimo as string | number })
-        : excluirEpiCatalogo(dados, String(args.p_id ?? ""));
+      const t = nome.endsWith("uniforme_catalogo") ? TABELAS_UNIFORME : TABELAS_EPI;
+      const r = nome.startsWith("editar")
+        ? editarEpiCatalogo(dados, String(args.p_id ?? ""), { nome: String(args.p_valores?.nome ?? ""), estoque_minimo: args.p_valores?.estoque_minimo as string | number }, t)
+        : excluirEpiCatalogo(dados, String(args.p_id ?? ""), t);
       if (r.erro) return { data: null, error: new Error(r.erro) };
       persistirDados();
       return { data: args.p_id, error: null };
