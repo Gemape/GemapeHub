@@ -34,6 +34,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { empregadoAtivo, prepararEmpregado, separarEmpregados } from "@/lib/empregados";
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 
 // O e-mail ainda não existe na tabela real de empregados: nesta fase só é gravado no
@@ -64,6 +65,9 @@ function PaginaEmpregados() {
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<EmpregadoCadastro | null>(null);
+  // Clonar: dados do empregado de origem num cadastro NOVO (CPF, matrícula e e-mail em branco).
+  const [modelo, setModelo] = useState<EmpregadoCadastro | null>(null);
+  const base = editando ?? modelo;
   const [empresaSel, setEmpresaSel] = useState("");
   const salvando = useRef(false);
   const { data: lista = [], isLoading } = useEmpregados(empresaId);
@@ -71,13 +75,14 @@ function PaginaEmpregados() {
   const { ativos, inativos } = separarEmpregados(empregados);
   const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
   // Empregado antigo sem empresa: a empresa precisa ser escolhida, não é preenchida sozinha.
-  const empresaForm = empresaSel || (editando ? "" : empresaPadrao);
+  const empresaForm = empresaSel || (base ? "" : empresaPadrao);
   const salvar = useSalvar("empregados", ["empregados", "empregados-total"]);
   const excluir = useExcluir("empregados", ["empregados", "empregados-total"]);
 
-  function abrir(empregado: EmpregadoCadastro | null) {
+  function abrir(empregado: EmpregadoCadastro | null, clonar = false) {
     salvando.current = false;
-    setEditando(empregado);
+    setEditando(clonar ? null : empregado);
+    setModelo(clonar ? empregado : null);
     setEmpresaSel(empregado?.empresa_id ?? "");
     setAberto(true);
   }
@@ -172,7 +177,8 @@ function PaginaEmpregados() {
             lista={ativos}
             vazio="Nenhum empregado ativo."
             nomeEmpresa={nomeEmpresa}
-            onEditar={abrir}
+            onClonar={(e) => abrir(e, true)}
+            onEditar={(e) => abrir(e)}
             onExcluir={(e) => {
               if (confirm(`Excluir ${e.nome}?`)) excluir.mutate(e.id);
             }}
@@ -182,7 +188,8 @@ function PaginaEmpregados() {
             lista={inativos}
             vazio="Nenhum empregado inativo."
             nomeEmpresa={nomeEmpresa}
-            onEditar={abrir}
+            onClonar={(e) => abrir(e, true)}
+            onEditar={(e) => abrir(e)}
             onExcluir={(e) => {
               if (confirm(`Excluir ${e.nome}?`)) excluir.mutate(e.id);
             }}
@@ -193,13 +200,13 @@ function PaginaEmpregados() {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>{editando ? "Editar empregado" : "Novo empregado"}</DialogTitle>
+            <DialogTitle>{editando ? "Editar empregado" : modelo ? "Clonar empregado" : "Novo empregado"}</DialogTitle>
             <DialogDescription>Dados do empregado.</DialogDescription>
           </DialogHeader>
           <form onSubmit={(e) => void enviar(e)} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Nome completo</Label>
-              <Input id="nome" name="nome" aria-required defaultValue={editando?.nome ?? ""} />
+              <Input id="nome" name="nome" aria-required defaultValue={base?.nome ?? ""} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cpf">CPF</Label>
@@ -219,7 +226,7 @@ function PaginaEmpregados() {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {empresasParaEscolha(empresas, [editando?.empresa_id]).map((e) => (
+                  {empresasParaEscolha(empresas, [base?.empresa_id]).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome_fantasia}
                     </SelectItem>
@@ -248,7 +255,7 @@ function PaginaEmpregados() {
                 id="data_admissao"
                 name="data_admissao"
                 type="date"
-                defaultValue={editando?.data_admissao ?? ""}
+                defaultValue={base?.data_admissao ?? ""}
               />
             </div>
             <div className="space-y-1.5">
@@ -257,7 +264,7 @@ function PaginaEmpregados() {
                 id="data_demissao"
                 name="data_demissao"
                 type="date"
-                defaultValue={editando?.data_demissao ?? ""}
+                defaultValue={base?.data_demissao ?? ""}
               />
             </div>
             <p className="text-xs text-muted-foreground sm:col-span-2">
@@ -285,6 +292,7 @@ function BlocoEmpregados({
   lista,
   vazio,
   nomeEmpresa,
+  onClonar,
   onEditar,
   onExcluir,
 }: {
@@ -292,6 +300,7 @@ function BlocoEmpregados({
   lista: EmpregadoCadastro[];
   vazio: string;
   nomeEmpresa: (id: string | null) => string;
+  onClonar: (e: EmpregadoCadastro) => void;
   onEditar: (e: EmpregadoCadastro) => void;
   onExcluir: (e: EmpregadoCadastro) => void;
 }) {
@@ -336,12 +345,7 @@ function BlocoEmpregados({
                     </Badge>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-right">
-                    <Button requiresWrite variant="ghost" size="sm" onClick={() => onEditar(e)}>
-                      Editar
-                    </Button>
-                    <Button requiresWrite variant="ghost" size="sm" onClick={() => onExcluir(e)}>
-                      Excluir
-                    </Button>
+                    <AcoesLinha rotulo={e.nome} onClonar={() => onClonar(e)} onEditar={() => onEditar(e)} onExcluir={() => onExcluir(e)} />
                   </TableCell>
                 </TableRow>
               ))
