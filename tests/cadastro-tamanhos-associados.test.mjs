@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { lerParametros } from "../src/lib/parametros-base.ts";
-import { tamanhosAssociadosParaCadastro, tamanhosGeraisParaCadastro } from "../src/lib/estoque-tamanho.ts";
+import { tamanhosAssociadosParaCadastro } from "../src/lib/estoque-tamanho.ts";
 
 test("o cadastro lista todos os tamanhos associados à subcategoria, na ordem de Gerais", () => {
   const p = lerParametros(null);
@@ -34,32 +34,29 @@ test("o formulário de Cadastrar EPI e Uniforme mostra o campo Tamanhos e numera
   assert.match(tela, /Nenhum tamanho associado a esta subcategoria/);
 });
 
-test("Novo EPI e Novo Uniforme listam todos os tamanhos ativos de Gerais, com os associados da subcategoria", () => {
+test("Novo EPI e Novo Uniforme só oferecem os tamanhos autorizados da subcategoria (decisão 71)", () => {
   const p = lerParametros(null);
-  p.inativos.push("tam-41");
+  const luva = { categoria: "Luva", subcategoria_id: "sub-epi-luva" };
   const capacete = { categoria: "Capacete", subcategoria_id: "sub-epi-capacete" };
-  const botina = { categoria: "Botina", subcategoria_id: "sub-epi-botina" };
-  const geral = tamanhosGeraisParaCadastro(p, "epi", capacete).map((t) => t.rotulo);
-  // Sem associação, o capacete ainda enxerga os tamanhos ativos do cadastro geral.
-  assert.ok(geral.length > 0);
-  assert.ok(!geral.some((r) => r.includes("41")));
-  // Desativado só aparece se já estiver associado à subcategoria.
-  assert.ok(tamanhosGeraisParaCadastro(p, "epi", botina).some((t) => t.rotulo === "41 (desativado)"));
-  // Sem nenhum tamanho em Gerais, a lista é vazia (a tela sugere Cadastrar tamanho).
-  assert.deepEqual(tamanhosGeraisParaCadastro({ ...p, tamanhos: [] }, "epi", capacete), []);
+  // Luva: só P, M e G autorizados em Associar ao produto; os outros tamanhos de Gerais ficam de fora.
+  assert.deepEqual(tamanhosAssociadosParaCadastro(p, "epi", luva).map((t) => t.rotulo), ["P", "M", "G"]);
+  // Subcategoria sem autorização: lista vazia (a tela mostra o aviso e o link Cadastrar tamanho).
+  assert.deepEqual(tamanhosAssociadosParaCadastro(p, "epi", capacete), []);
 });
 
-test("Novo EPI e Novo Uniforme usam o cadastro geral e mostram sempre o link Cadastrar tamanho (decisão 70)", () => {
+test("Novo EPI e Novo Uniforme usam os tamanhos autorizados e mostram sempre o link Cadastrar tamanho (decisão 70)", () => {
   for (const arquivo of ["CadastroEpi", "CadastroUniforme"]) {
     const tela = readFileSync(
       fileURLToPath(new URL(`../src/components/modules/${arquivo}.tsx`, import.meta.url)),
       "utf8",
     );
-    assert.match(tela, /tamanhosGeraisParaCadastro/);
-    assert.match(tela, /Nenhum tamanho cadastrado em Gerais/);
+    assert.match(tela, /tamanhosAssociadosParaCadastro/);
+    assert.doesNotMatch(tela, /tamanhosGeraisParaCadastro/);
+    assert.match(tela, /Nenhum tamanho autorizado para esta subcategoria/);
     // O link fica no mesmo parágrafo para lista cheia e vazia, e o Select reinicia quando entra tamanho novo.
-    assert.match(tela, /tamanhosGerais\.length > 0 \? "Não achou o tamanho\?" : "Nenhum tamanho cadastrado em Gerais\."/);
-    assert.match(tela, /<Select key=\{tamanhosGerais\.length\} value=\{tamanhoSel\}/);
-    assert.match(tela, /autorizar\(/);
+    assert.match(tela, /associados\.length > 0 \? "Não achou o tamanho\?" : "Nenhum tamanho autorizado para esta subcategoria\."/);
+    assert.match(tela, /<Select key=\{associados\.length\} value=\{tamanhoSel\}/);
+    // Nada é associado em silêncio ao salvar: a associação vem só de Associar ao produto ou do link.
+    assert.doesNotMatch(tela, /autorizar\(/);
   }
 });
