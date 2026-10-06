@@ -395,7 +395,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   {(ehVeiculo ? veiculos : itens).map((o) =>
                     "placa" in o ? (
                       <SelectItem key={o.id} value={o.id}>
-                        {o.placa} — {o.modelo ?? ""}
+                        {[o.placa, o.modelo].filter(Boolean).join(" — ") || "—"}
                       </SelectItem>
                     ) : (
                       <SelectItem key={o.id} value={o.id}>

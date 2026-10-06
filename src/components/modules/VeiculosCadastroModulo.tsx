@@ -73,6 +73,7 @@ import {
   normalizarPlaca,
   placaRepetida,
   placaValida,
+  subcategoriaTemPlaca,
 } from "@/lib/veiculos";
 
 // Categoria Veículos de Cadastros > Gerais (id fixo; o nome pode ser renomeado).
@@ -114,6 +115,8 @@ export function VeiculosCadastroModulo() {
   const base = editando ?? origem;
   const [previa, setPrevia] = useState("");
   const [empresaSel, setEmpresaSel] = useState("");
+  // Subcategoria escolhida no formulário (null = a que o cadastro já tem); decide se o campo Placa aparece.
+  const [subSel, setSubSel] = useState<string | null>(null);
   // O ref bloqueia na hora; o estado só serve para desabilitar o botão. Depois de salvo,
   // o formulário fica travado até ser aberto de novo (o diálogo ainda está fechando).
   const salvando = useRef(false);
@@ -156,6 +159,12 @@ export function VeiculosCadastroModulo() {
   const marcaInicial = selecaoInicialMarca(parametros.marcasVeiculo, base?.marca);
   // Parâmetro desativado em Gerais sai da escolha; o que o cadastro já usa continua na edição.
   const subcategorias = subcategoriasParaSelecao(parametros, CATEGORIA_VEICULO, subcategoriaAtual);
+  const subEscolhida = subSel ?? valorSelecaoSubcategoria(subcategoriaAtual);
+  const nomeSubEscolhida =
+    subEscolhida === SUBCATEGORIA_LEGADA
+      ? subcategoriaAtual?.nome
+      : subcategorias.find((s) => s.id === subEscolhida)?.nome;
+  const temPlaca = subcategoriaTemPlaca(nomeSubEscolhida);
   const marcas = paraSelecao(
     parametros,
     parametros.marcasVeiculo,
@@ -183,6 +192,7 @@ export function VeiculosCadastroModulo() {
     setEditando(null);
     setOrigem(clonar);
     setEmpresaSel(clonar?.empresa_id ?? "");
+    setSubSel(null);
     setPrevia("");
     const pedido = ++pedidoPrevia.current;
     setAberto(true);
@@ -215,7 +225,9 @@ export function VeiculosCadastroModulo() {
       erroSubcategoria = falha instanceof Error ? falha.message : "Selecione a subcategoria.";
     }
     const tipo = subcategoria?.nome ?? "";
-    const placaDigitada = normalizarPlaca(texto("placa"));
+    // Empilhadeira não tem placa (decisão 66): o campo não existe e a placa fica em branco.
+    const semPlaca = !subcategoriaTemPlaca(tipo);
+    const placaDigitada = semPlaca ? "" : normalizarPlaca(texto("placa"));
     let marca = "";
     let erroMarca: string | null = null;
     try {
@@ -238,16 +250,16 @@ export function VeiculosCadastroModulo() {
     // Placa já salva que não segue o padrão pode continuar como está na edição.
     const placaMantida = !!editando && placaDigitada === normalizarPlaca(editando.placa ?? "");
     // Grava no mesmo formato das placas antigas (ABC-1234 ou ABC1D23); a mantida fica igual.
-    const placa = placaMantida && editando ? editando.placa : formatarPlaca(placaDigitada);
+    const placa = semPlaca ? "" : placaMantida && editando ? editando.placa : formatarPlaca(placaDigitada);
     const aquisicao = validarAquisicao(
       { data: texto("data_aquisicao"), custo: texto("custo"), notaFiscal: texto("numero_nota_fiscal") },
       dataBrasilia(),
     );
     const erro = erroSubcategoria
       ? erroSubcategoria
-      : !placaDigitada
+      : !semPlaca && !placaDigitada
           ? "Informe a placa."
-          : !placaMantida && !placaValida(placaDigitada)
+          : !semPlaca && !placaMantida && !placaValida(placaDigitada)
             ? "Placa inválida. Use o padrão ABC-1234 ou ABC1D23."
             : erroMarca
               ? erroMarca
@@ -296,7 +308,7 @@ export function VeiculosCadastroModulo() {
     }
     try {
       const todos = await todosVeiculos();
-      if (placaRepetida(placa, todos, editando?.id)) {
+      if (!semPlaca && placaRepetida(placa, todos, editando?.id)) {
         toast.error(`A placa ${formatarPlaca(placa)} já está cadastrada.`);
         destravar();
         return;
@@ -349,7 +361,7 @@ export function VeiculosCadastroModulo() {
                   Código: v.codigo_sku ?? "",
                   Subcategoria: subcategoriaDe(v),
                   Descrição: descricaoDe(v),
-                  Placa: formatarPlaca(v.placa),
+                  Placa: formatarPlaca(v.placa) || "—",
                   Marca: v.marca,
                   Modelo: v.modelo,
                   "Ano de fabricação": v.ano ?? "",
@@ -421,7 +433,7 @@ export function VeiculosCadastroModulo() {
                   <TableCell>{subcategoriaDe(v) || "—"}</TableCell>
                   <TableCell className="font-medium">{descricaoDe(v) || "—"}</TableCell>
                   <TableCell className="whitespace-nowrap font-mono text-xs">
-                    {formatarPlaca(v.placa)}
+                    {formatarPlaca(v.placa) || "—"}
                   </TableCell>
                   <TableCell>{[v.marca, v.modelo].filter(Boolean).join(" ") || "—"}</TableCell>
                   <TableCell>{v.ano ?? "—"}</TableCell>
@@ -439,19 +451,20 @@ export function VeiculosCadastroModulo() {
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-right">
                     <AcoesLinha
-                      rotulo={`veículo ${formatarPlaca(v.placa)}`}
+                      rotulo={`veículo ${v.codigo_sku || formatarPlaca(v.placa)}`}
                       onClonar={() => void abrirNovo(v)}
                       onEditar={() => {
                         destravar();
                         pedidoPrevia.current++;
                         setOrigem(null);
                         setEmpresaSel(v.empresa_id ?? "");
+                        setSubSel(null);
                         setPrevia("");
                         setEditando(v);
                         setAberto(true);
                       }}
                       onExcluir={() => {
-                        if (confirm(`Excluir ${formatarPlaca(v.placa)}?`)) excluir.mutate(v.id);
+                        if (confirm(`Excluir ${v.codigo_sku || formatarPlaca(v.placa)}?`)) excluir.mutate(v.id);
                       }}
                     />
                   </TableCell>
@@ -494,7 +507,7 @@ export function VeiculosCadastroModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tipo">Subcategoria</Label>
-              <Select name="tipo" defaultValue={valorSelecaoSubcategoria(subcategoriaAtual)}>
+              <Select name="tipo" value={subEscolhida} onValueChange={setSubSel}>
                 <SelectTrigger id="tipo" aria-required>
                   <SelectValue placeholder="Selecione a subcategoria" />
                 </SelectTrigger>
@@ -517,17 +530,19 @@ export function VeiculosCadastroModulo() {
                 </p>
               )}
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="placa">Placa</Label>
-              <Input
-                id="placa"
-                name="placa"
-                aria-required
-                defaultValue={editando ? formatarPlaca(editando.placa) : ""}
-                placeholder="ABC-1234 ou ABC1D23"
-                className="uppercase"
-              />
-            </div>
+            {temPlaca && (
+              <div className="space-y-1.5">
+                <Label htmlFor="placa">Placa</Label>
+                <Input
+                  id="placa"
+                  name="placa"
+                  aria-required
+                  defaultValue={editando ? formatarPlaca(editando.placa) : ""}
+                  placeholder="ABC-1234 ou ABC1D23"
+                  className="uppercase"
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="marca">Marca</Label>
               <Select
