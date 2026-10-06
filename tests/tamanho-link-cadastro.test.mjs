@@ -23,7 +23,7 @@ test("criar tamanho para a subcategoria cadastra em Gerais e já associa", () =>
 });
 
 for (const [arquivo, rotulo] of [["CadastroEpi", "EPI"], ["CadastroUniforme", "uniforme"]]) {
-  test(`${arquivo}: sem tamanho associado mostra o link que abre o cadastro na mesma tela, em diálogo irmão`, () => {
+  test(`${arquivo}: o link Cadastrar tamanho aparece com ou sem tamanho na lista e abre o cadastro na mesma tela, em diálogo irmão`, () => {
     const tela = readFileSync(`src/components/modules/${arquivo}.tsx`, "utf8");
     assert.match(tela, /Cadastrar tamanho/);
     assert.match(tela, /<DialogTamanhoSubcategoria/);
