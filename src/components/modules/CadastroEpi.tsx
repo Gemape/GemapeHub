@@ -468,7 +468,7 @@ function CatalogoEpi() {
             {subEscolhida && (
               <div className="space-y-1.5">
                 <Label htmlFor="tamanho">Tamanho</Label>
-                {tamanhosGerais.length > 0 ? (
+                {tamanhosGerais.length > 0 && (
                   <Select value={tamanhoSel} onValueChange={setTamanhoSel}>
                     <SelectTrigger id="tamanho"><SelectValue placeholder="Selecione o tamanho" /></SelectTrigger>
                     <SelectContent>
@@ -477,18 +477,17 @@ function CatalogoEpi() {
                       ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Nenhum tamanho cadastrado em Gerais.{" "}
-                    <button
-                      type="button"
-                      className="font-medium text-primary underline underline-offset-2"
-                      onClick={() => setTamanhoNovoAberto(true)}
-                    >
-                      Cadastrar tamanho
-                    </button>
-                  </p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  {tamanhosGerais.length > 0 ? "Não achou o tamanho?" : "Nenhum tamanho cadastrado em Gerais."}{" "}
+                  <button
+                    type="button"
+                    className="font-medium text-primary underline underline-offset-2"
+                    onClick={() => setTamanhoNovoAberto(true)}
+                  >
+                    Cadastrar tamanho
+                  </button>
+                </p>
               </div>
             )}
             <div className="space-y-1.5">

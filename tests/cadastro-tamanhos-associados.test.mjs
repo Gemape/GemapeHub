@@ -49,7 +49,7 @@ test("Novo EPI e Novo Uniforme listam todos os tamanhos ativos de Gerais, com os
   assert.deepEqual(tamanhosGeraisParaCadastro({ ...p, tamanhos: [] }, "epi", capacete), []);
 });
 
-test("Novo EPI e Novo Uniforme usam o cadastro geral e sugerem Cadastrar tamanho só quando não há tamanho", () => {
+test("Novo EPI e Novo Uniforme usam o cadastro geral e mostram sempre o link Cadastrar tamanho (decisão 70)", () => {
   for (const arquivo of ["CadastroEpi", "CadastroUniforme"]) {
     const tela = readFileSync(
       fileURLToPath(new URL(`../src/components/modules/${arquivo}.tsx`, import.meta.url)),
@@ -57,6 +57,9 @@ test("Novo EPI e Novo Uniforme usam o cadastro geral e sugerem Cadastrar tamanho
     );
     assert.match(tela, /tamanhosGeraisParaCadastro/);
     assert.match(tela, /Nenhum tamanho cadastrado em Gerais/);
+    assert.match(tela, /Não achou o tamanho\?/);
+    // O link não fica mais preso ao caso de lista vazia.
+    assert.doesNotMatch(tela, /tamanhosGerais\.length > 0 \? \(\s*<Select/);
     assert.match(tela, /Cadastrar tamanho/);
     assert.match(tela, /autorizar\(/);
   }
