@@ -33,3 +33,15 @@ test('código do veículo: sequência VEI', () => {
   assert.equal(proximoCodigo(regra, []), 'VEI-0001');
   assert.equal(proximoCodigo(regra, ['VEI-0001', 'UNI-0005']), 'VEI-0002');
 });
+
+test("empilhadeira não tem placa; os demais tipos continuam com placa (decisão 66)", async () => {
+  const { subcategoriaTemPlaca } = await import("../src/lib/veiculos.ts");
+  assert.equal(subcategoriaTemPlaca("Empilhadeira"), false);
+  for (const nome of ["Carro", "Van", "Utilitário", "Caminhão", "Moto", "Outros"]) assert.equal(subcategoriaTemPlaca(nome), true, nome);
+  assert.equal(subcategoriaTemPlaca(undefined), true);
+});
+
+test("sem placa a descrição do veículo continua montada pelos demais dados", async () => {
+  const { descricaoVeiculo } = await import("../src/lib/descricao-veiculo.ts");
+  assert.equal(descricaoVeiculo({ placa: "", subcategoria: "Empilhadeira", marca: "Toyota", modelo: "Hyster", ano: 2003 }), "Empilhadeira · Toyota · Hyster · 2003");
+});
