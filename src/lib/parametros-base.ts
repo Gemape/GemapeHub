@@ -351,6 +351,8 @@ export function removerSubcategoria(id: string, storage = storagePadrao()): void
     d.subcategorias = d.subcategorias.filter((s) => s.id !== id);
     d.inativos = d.inativos.filter((item) => item !== id);
     d.associacoes = d.associacoes.filter((a) => a.subcategoriaId !== id);
+    // O tipo apagado deixa de valer nos grupos do check list de veículos.
+    d.itensChecklistVeiculo.forEach((g) => { g.tiposVeiculo = g.tiposVeiculo.filter((t) => t !== id); });
   });
 }
 

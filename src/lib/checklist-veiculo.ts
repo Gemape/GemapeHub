@@ -1,6 +1,5 @@
 // Check list de veículos (decisão 63). Fase 1: fica só no navegador, em modo demonstração; as tabelas
 // no banco real são pendência da Fase 2.
-import { hojeLocal } from "./empregados.ts";
 import type { GrupoChecklistVeiculo } from "./parametros-base.ts";
 import { TODOS_OS_TIPOS } from "./parametros-base.ts";
 import { registrarOcorrenciasDoChecklist, removerOcorrenciasPorId } from "./ocorrencias-veiculo.ts";
@@ -77,6 +76,9 @@ export function periodoAtual(periodicidade: Periodicidade, hoje: string): { inic
   return { inicio: texto(inicio), fim: texto(fim) };
 }
 
+// Dia de hoje em Brasília (AAAA-MM-DD), qualquer que seja o fuso do navegador.
+export const hojeBrasilia = (agora = new Date()) => agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+
 export type SituacaoPeriodica = "em_dia" | "em_andamento" | "pendente";
 
 // Em dia: há check list concluído no período atual; em andamento: há um aberto; senão pendente.
@@ -88,7 +90,7 @@ export function situacaoPeriodica(
   const { inicio, fim } = periodoAtual(periodicidade, hoje);
   // Vale o dia da conclusão (Brasília); sem ele, o dia em que foi iniciado.
   const diaDe = (c: { data: string; concluidoEm?: string | null }) =>
-    c.concluidoEm ? new Date(c.concluidoEm).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) : c.data;
+    c.concluidoEm ? hojeBrasilia(new Date(c.concluidoEm)) : c.data;
   if (checklistsDoVeiculo.some((c) => c.status === "Concluído" && diaDe(c) >= inicio && diaDe(c) <= fim)) return "em_dia";
   if (checklistsDoVeiculo.some((c) => c.status === "Em andamento")) return "em_andamento";
   return "pendente";
@@ -164,7 +166,7 @@ export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePad
         responsavelId: entrada.responsavelId,
         responsavelNome: limpar(entrada.responsavelNome, 120),
         criadoEm: agora.toISOString(),
-        data: hojeLocal(agora),
+        data: hojeBrasilia(agora),
         status: "Em andamento",
         concluidoEm: null,
         itens,

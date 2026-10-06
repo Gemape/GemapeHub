@@ -17,11 +17,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
-  gruposAplicaveis, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
+  gruposAplicaveis, hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
   resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
-import { hojeLocal } from "@/lib/empregados";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
@@ -70,7 +69,7 @@ export function ChecklistVeiculoModulo() {
   const [resolvendo, setResolvendo] = useState<string | null>(null);
   const [textoResolucao, setTextoResolucao] = useState("");
   const trava = useRef(false);
-  const hoje = hojeLocal();
+  const hoje = hojeBrasilia();
 
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const rotuloDe = (v: VeiculoChecklist) => rotuloDoVeiculo(parametros, v);
@@ -79,7 +78,7 @@ export function ChecklistVeiculoModulo() {
   const checklists = todos.filter((c) => idsDaEmpresa.has(c.veiculoId));
   const pendencias = pendenciasAbertas(checklists);
   const atual = tela?.tipo === "check" ? (todos.find((c) => c.id === tela.id) ?? null) : null;
-  const veiculoEscolhido = veiculos.find((v) => v.id === veiculoId);
+  const veiculoEscolhido = veiculos.find((v) => v.id === veiculoId && v.status === "Ativo");
 
   const lista = checklists
     .filter((c) => !soPendencias || pendenciaDoChecklist(c) > 0)
@@ -143,7 +142,9 @@ export function ChecklistVeiculoModulo() {
   }
 
   function resolver(c: ChecklistVeiculo) {
-    if (!resolvendo) return;
+    if (!resolvendo || trava.current) return;
+    trava.current = true;
+    window.setTimeout(() => { trava.current = false; }, 600);
     const ok = executar(() => resolverPendencia(c.id, resolvendo, textoResolucao), "Pendência resolvida");
     if (ok) { setResolvendo(null); setTextoResolucao(""); }
   }
@@ -184,9 +185,9 @@ export function ChecklistVeiculoModulo() {
                     <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).length}</TableCell>
                     <TableCell className="text-right">
                       {aberto ? (
-                        <Button variant="ghost" size="sm" onClick={() => setTela({ tipo: "check", id: aberto.id })}>Continuar</Button>
+                        <Button requiresWrite="operar" variant="ghost" size="sm" onClick={() => setTela({ tipo: "check", id: aberto.id })}>Continuar</Button>
                       ) : (
-                        <Button requiresWrite="operar" variant="ghost" size="sm" disabled={!ehPeriodicidade(per)} onClick={() => abrirNovo(v)}>Iniciar</Button>
+                        <Button requiresWrite="operar" variant="ghost" size="sm" disabled={!ehPeriodicidade(per) || v.status !== "Ativo"} onClick={() => abrirNovo(v)}>Iniciar</Button>
                       )}
                     </TableCell>
                   </TableRow>

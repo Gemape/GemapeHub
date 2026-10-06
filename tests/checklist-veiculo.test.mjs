@@ -229,3 +229,8 @@ test("situação periódica vale pelo dia da conclusão e tipos soltos são reco
   assert.equal(chaveDoTipoVeiculo("Caminhonete"), "suv");
   assert.equal(chaveDoTipoVeiculo("Caminhão"), "leve");
 });
+
+test("hojeBrasilia independe do fuso do navegador", async () => {
+  const { hojeBrasilia } = await import("../src/lib/checklist-veiculo.ts");
+  assert.equal(hojeBrasilia(new Date("2026-10-07T01:30:00.000Z")), "2026-10-06");
+});

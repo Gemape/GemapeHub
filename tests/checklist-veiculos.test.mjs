@@ -132,3 +132,12 @@ test("chave do tipo pelo nome da subcategoria", () => {
   assert.equal(chaveDoTipoVeiculo("Utilitário"), "suv");
   assert.equal(chaveDoTipoVeiculo("Outros"), null);
 });
+
+test("apagar o tipo em Gerais tira o vínculo dos grupos do check list", async () => {
+  const { adicionarSubcategoria, removerSubcategoria } = await import("../src/lib/parametros-base.ts");
+  const s = storage();
+  const t = adicionarSubcategoria("cat-veiculos", "Triciclo", s);
+  const g = adicionarGrupoChecklistVeiculo("Triciclos", ["Freio"], [t.id], s);
+  removerSubcategoria(t.id, s);
+  assert.deepEqual(lerParametros(s).itensChecklistVeiculo.find((x) => x.id === g.id).tiposVeiculo, []);
+});
