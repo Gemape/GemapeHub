@@ -104,3 +104,12 @@ test('a categoria da ferramenta é uma subcategoria de Ferramentas em Gerais (de
   // Categoria que não é subcategoria de Ferramentas é recusada.
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, categoriaFerramenta: 'Inexistente' }), /Categoria de ferramenta inválida/);
 });
+
+test('ferramenta antiga com categoria fora de Gerais continua editável com a categoria atual', () => {
+  const local = storage();
+  salvarRegraCodigo('cat-ferramentas', 'FER', '0001', local);
+  const entrada = { parametros: lerParametros(local), codigosExistentes: [], ...campos, categoriaFerramenta: 'Antiga' };
+  assert.throws(() => prepararCadastroFerramenta(entrada), /Categoria de ferramenta inválida/);
+  assert.equal(prepararCadastroFerramenta({ ...entrada, categoriaAtual: 'Antiga', codigoAtual: 'FER-0003' }).categoria_ferramenta, 'Antiga');
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, categoriaAtual: 'Outra', codigoAtual: 'FER-0003' }), /Categoria de ferramenta inválida/);
+});
