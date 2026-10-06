@@ -24,7 +24,7 @@ test("Empregados usa AcoesLinha; Clonar limpa CPF, matrícula e e-mail", () => {
 
 test("Fornecedores usa AcoesLinha; Clonar gera código novo e deixa CNPJ em branco", () => {
   const src = ler("cadastros/fornecedores.tsx");
-  assert.match(src, /<AcoesLinha rotulo=\{fornecedor\.nome_fantasia\} onClonar=.*onEditar=.*onExcluir=/);
+  assert.match(src, /<AcoesLinha rotulo=\{nomeDoFornecedor\(fornecedor\)\} onClonar=.*onEditar=.*onExcluir=/);
   assert.match(src, /!clonar && fornecedor \? fornecedor\.codigo : proximoCodigoFornecedor\(\)/);
   assert.match(src, /formatarCnpj\(editando\?\.cnpj \?\? ""\)/);
 });

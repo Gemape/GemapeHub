@@ -23,9 +23,10 @@ test("o nome do fornecedor é o fantasia, ou a razão social quando não há fan
 });
 
 test("a compra lista só os fornecedores da categoria do módulo, em ordem de nome", () => {
-  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-uniformes").map((f) => f.id), ["f1", "f2"]);
-  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-epi").map((f) => f.id), ["f1"]);
-  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-veiculos"), []);
+  // f4 não tem categoria e atende todas (decisão 55); f2 ordena pela razão social (sem fantasia).
+  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-uniformes").map((f) => f.id), ["f1", "f4", "f2"]);
+  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-epi").map((f) => f.id), ["f1", "f4"]);
+  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-veiculos").map((f) => f.id), ["f4"]);
 });
 
 test("escolher o fornecedor devolve id e nome para gravar", () => {
@@ -55,4 +56,9 @@ test("as compras de EPI e Uniforme usam o fornecedor do cadastro no demo e grava
 test("fornecedor sem nome no cadastro é recusado", () => {
   const vazio = [{ id: "fx", codigo: "00009", razao_social: "", nome_fantasia: "", categorias: ["cat-epi"] }];
   assert.match(escolherFornecedorDaCompra(vazio, "cat-epi", "fx").erro, /sem nome/);
+});
+
+test("fornecedor sem categoria pode ser escolhido em qualquer compra (decisão 55)", () => {
+  assert.deepEqual(escolherFornecedorDaCompra(lista, "cat-epi", "f4"), { id: "f4", nome: "Sem Cat" });
+  assert.deepEqual(escolherFornecedorDaCompra(lista, "cat-uniformes", "f4"), { id: "f4", nome: "Sem Cat" });
 });

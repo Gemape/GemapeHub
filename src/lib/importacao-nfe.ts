@@ -19,7 +19,7 @@ export const ROTULO_MODULO: Record<ModuloEstoque, string> = {
   ferramenta: "Ferramenta",
 };
 
-type Cadastro = { id: string; cnpj: string; nome_fantasia: string };
+type Cadastro = { id: string; cnpj: string; nome_fantasia: string; razao_social?: string };
 export type ProdutoComId = {
   id: string;
   tabela: TabelaProduto;
@@ -193,14 +193,14 @@ export function montarEntradas(previa: PreviaImportacao): EntradasNota {
         // A coluna observacao do banco real aceita até 500 caracteres.
         observacao: (
           `Entrada pela ${origem}, item ${item.numero} (${item.codigo}), de ` +
-          `${fornecedor.nome_fantasia}, a ${moeda(item.valorUnitario)} cada. Chave ${nota.chave}.`
+          `${fornecedor.nome_fantasia?.trim() || fornecedor.razao_social?.trim() || ""}, a ${moeda(item.valorUnitario)} cada. Chave ${nota.chave}.`
         ).slice(0, 500),
       });
     } else {
       const compra = {
         empresa_id: empresa.id,
         item_id: destino.item_id,
-        fornecedor: fornecedor.nome_fantasia,
+        fornecedor: fornecedor.nome_fantasia?.trim() || fornecedor.razao_social?.trim() || "",
         nota_fiscal: nota.numero,
         data_compra: nota.dataEmissao,
         quantidade: item.quantidade,

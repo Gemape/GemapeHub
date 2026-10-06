@@ -222,7 +222,7 @@ export function ImportarNfeCodigoFabrica() {
 
   const vinculados = previa?.linhas.filter((l) => l.status === "vinculado").length ?? 0;
   const nomeEmpresa = previa?.empresa?.nome_fantasia ?? previa?.nota.destinatario.nome;
-  const nomeFornecedor = previa?.fornecedor?.nome_fantasia ?? previa?.nota.emitente.nome;
+  const nomeFornecedor = previa?.fornecedor?.nome_fantasia?.trim() || previa?.fornecedor?.razao_social?.trim() || previa?.nota.emitente.nome;
 
   return (
     <>

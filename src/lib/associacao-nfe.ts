@@ -11,7 +11,8 @@ import {
   type TabelaProduto,
 } from "./parametros-base.ts";
 
-type Cadastro = { id: string; cnpj: string; nome_fantasia: string };
+type Cadastro = { id: string; cnpj: string; nome_fantasia: string; razao_social?: string };
+const nomeCadastro = (c: Cadastro) => c.nome_fantasia?.trim() || c.razao_social?.trim() || "";
 export type ProdutoAssociavel = {
   tabela: TabelaProduto;
   codigo_sku: string;
@@ -139,7 +140,7 @@ export function associarItemNfe(entrada: {
   }
   if (entrada.fornecedoresAtuais && !entrada.fornecedoresAtuais.some((f) => f.id === previa.fornecedor?.id)) {
     throw new Error(
-      `O fornecedor ${previa.fornecedor.nome_fantasia} não está mais cadastrado. Importe a nota de novo.`,
+      `O fornecedor ${nomeCadastro(previa.fornecedor)} não está mais cadastrado. Importe a nota de novo.`,
     );
   }
   if (
@@ -172,7 +173,7 @@ export function associarItemNfe(entrada: {
     codigo_produto: produto.codigo_sku,
     nome_produto: produto.nome,
     fornecedor_id: previa.fornecedor.id,
-    fornecedor_nome: previa.fornecedor.nome_fantasia,
+    fornecedor_nome: nomeCadastro(previa.fornecedor),
     codigo_fornecedor: linha.codigo,
     ca: entrada.ca ?? "",
   };
