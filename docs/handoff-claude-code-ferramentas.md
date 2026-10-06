@@ -315,3 +315,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Empilhadeira sem placa (decisão 66): `subcategoriaTemPlaca` em `src/lib/veiculos.ts`; `VeiculosCadastroModulo` esconde a Placa e salva em branco.
 - Tipo no formulário do check list (decisão 65): `TIPOS_CHECKLIST`, `gruposDoTipoChecklist` e `tipoChecklistDaSubcategoria` em `checklist-veiculo.ts`; campo "Tipo de veículo" em `ChecklistVeiculoModulo`.
 - Marcas de veículos padrão (decisão 67): `MARCAS_VEICULO_PADRAO` em `veiculos-padrao.ts`, semeadas em `padrao()` e completadas por `cadastrarMarcasPadraoVeiculos` (botão em Gerais > Veículos).
+- Categoria de ferramenta = subcategoria de Ferramentas (decisão 68): lista "Categorias de ferramentas" removida de Gerais; `prepararCadastroFerramenta` e `ItensModulo` usam `subcategoriasDa(..., "cat-ferramentas")`; a chave `categoriasFerramenta` segue no armazenamento só por compatibilidade.

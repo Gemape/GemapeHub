@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adicionarListaFerramenta, lerParametros, salvarRegraCodigo } from '../src/lib/parametros-base.ts';
+import { adicionarListaFerramenta, adicionarSubcategoria, lerParametros, salvarRegraCodigo } from '../src/lib/parametros-base.ts';
 import * as cadastroFerramentas from '../src/lib/cadastro-ferramentas.ts';
 const { opcaoFerramentaEmUso, prepararCadastroFerramenta, descricaoFerramenta } = cadastroFerramentas;
 
@@ -91,4 +91,16 @@ test('seleção usa o id da marca e não confunde nome cadastrado com a opção 
   assert.equal(cadastroFerramentas.marcaDaSelecao(cadastroFerramentas.SELECAO_SEM_MARCA, marcas, null), '');
   assert.equal(cadastroFerramentas.marcaDaSelecao(cadastroFerramentas.SELECAO_MARCA_LEGADA, marcas, 'BOSCH'), 'BOSCH');
   assert.throws(() => cadastroFerramentas.marcaDaSelecao('marca:id-inexistente', marcas, null), /Marca de ferramenta/);
+});
+
+test('a categoria da ferramenta é uma subcategoria de Ferramentas em Gerais (decisão 68)', () => {
+  const local = storage();
+  salvarRegraCodigo('cat-ferramentas', 'FER', '0001', local);
+  const entrada = { parametros: lerParametros(local), codigosExistentes: [], ...campos };
+  assert.equal(prepararCadastroFerramenta(entrada).categoria_ferramenta, 'Elétrica');
+  // Subcategoria nova de Ferramentas vira categoria da ferramenta.
+  adicionarSubcategoria('cat-ferramentas', 'Solda', local);
+  assert.equal(prepararCadastroFerramenta({ ...entrada, parametros: lerParametros(local), categoriaFerramenta: 'Solda' }).categoria_ferramenta, 'Solda');
+  // Categoria que não é subcategoria de Ferramentas é recusada.
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, categoriaFerramenta: 'Inexistente' }), /Categoria de ferramenta inválida/);
 });

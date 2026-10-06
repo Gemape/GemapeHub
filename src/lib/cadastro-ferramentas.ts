@@ -1,4 +1,4 @@
-import { mesmoNome, proximoCodigo, type ListaFerramenta, type Opcao, type ParametrosBase } from "./parametros-base.ts";
+import { mesmoNome, proximoCodigo, subcategoriasDa, type ListaFerramenta, type Opcao, type ParametrosBase } from "./parametros-base.ts";
 
 export const SELECAO_SEM_MARCA = "sem-marca";
 export const SELECAO_MARCA_LEGADA = "marca-legada";
@@ -77,7 +77,7 @@ export function reservarCodigoFerramenta(
 }
 
 export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
-  const categoriaFerramenta = entrada.parametros.categoriasFerramenta.find((c) => c.nome === entrada.categoriaFerramenta.trim());
+  const categoriaFerramenta = subcategoriasDa(entrada.parametros, "cat-ferramentas").find((c) => c.nome === entrada.categoriaFerramenta.trim());
   if (!categoriaFerramenta) throw new Error("Categoria de ferramenta inválida.");
   const grupoFerramenta = entrada.parametros.gruposFerramenta.find((g) => g.nome === entrada.grupoFerramenta.trim());
   if (!grupoFerramenta) throw new Error("Grupo de ferramenta inválido.");
