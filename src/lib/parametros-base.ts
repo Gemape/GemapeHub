@@ -5,6 +5,7 @@ import { posicaoEmSequencia, TAMANHOS_PADRAO } from "./tamanhos-padrao.ts";
 import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
+import { CHECKLIST_VEICULOS_PADRAO } from "./checklist-veiculos-padrao.ts";
 import { ACOES_MANUTENCAO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
 
 export type Categoria = { id: string; nome: string };
@@ -18,6 +19,8 @@ export type ListaFerramenta =
   | "marcasUniforme"
   | "marcasVeiculo";
 export type AcaoManutencaoVeiculo = { id: string; nome: string; subitens: Opcao[] };
+// Grupo do check list de veículos (decisão 62): "tipo de veículo · seção" com os itens a conferir.
+export type GrupoChecklistVeiculo = { id: string; nome: string; itens: Opcao[] };
 export type TipoOcorrenciaVeiculo = { id: string; nome: string; descricao: string };
 export type TipoOpcao = "tamanhos" | "unidades";
 // Tamanhos e unidades autorizados para uma subcategoria (guarda os ids).
@@ -50,6 +53,8 @@ export type ParametrosBase = {
   // Parâmetros > Veículos (decisão 46): ações de manutenção e tipos de ocorrência com descrição.
   acoesManutencaoVeiculo: AcaoManutencaoVeiculo[];
   tiposOcorrenciaVeiculo: TipoOcorrenciaVeiculo[];
+  // Itens de check list de veículos (decisão 62).
+  itensChecklistVeiculo: GrupoChecklistVeiculo[];
   tamanhos: Opcao[];
   unidades: Opcao[];
   associacoes: Associacao[];
@@ -129,6 +134,7 @@ function padrao(): ParametrosBase {
     marcasVeiculo: [],
     acoesManutencaoVeiculo: [],
     tiposOcorrenciaVeiculo: [],
+    itensChecklistVeiculo: [],
     inativos: [],
     tamanhos,
     unidades,
@@ -197,6 +203,7 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
     }
     // Ações de manutenção salvas sem subitens (versão anterior) passam a ter a lista vazia.
     base.acoesManutencaoVeiculo = base.acoesManutencaoVeiculo.map((a) => ({ ...a, subitens: Array.isArray(a.subitens) ? a.subitens : [] }));
+    base.itensChecklistVeiculo = base.itensChecklistVeiculo.map((g) => ({ ...g, itens: Array.isArray(g.itens) ? g.itens : [] }));
     // Regras salvas antes da definição de 4 dígitos (ex.: 001) passam para 0001.
     base.regrasCodigo = base.regrasCodigo.map((r) => ({
       ...r,
@@ -451,6 +458,67 @@ export function removerTipoOcorrenciaVeiculo(id: string, storage = storagePadrao
   alterar(storage, (d) => {
     achar(d.tiposOcorrenciaVeiculo, id, "Tipo de ocorrência");
     d.tiposOcorrenciaVeiculo = d.tiposOcorrenciaVeiculo.filter((t) => t.id !== id);
+  });
+}
+
+// ---------- Parâmetros > Veículos: itens do check list (decisão 62) ----------
+
+// Itens do grupo: texto como digitado (siglas como CRLV não são alteradas), sem repetir nome no mesmo
+// grupo. Os que já existem (mesmo nome) mantêm o id.
+function montarItensChecklist(atuais: Opcao[], nomes: string[]): Opcao[] {
+  const resultado: Opcao[] = [];
+  for (const bruto of nomes) {
+    const nome = limparNome(bruto);
+    if (!nome) continue;
+    if (resultado.some((r) => mesmoNome(r.nome, nome))) throw new Error(`Item repetido: ${nome}.`);
+    resultado.push({ id: atuais.find((s) => mesmoNome(s.nome, nome))?.id ?? novoId(), nome });
+  }
+  return resultado;
+}
+
+function nomeGrupoChecklist(lista: GrupoChecklistVeiculo[], nome: string, ignorarId?: string): string {
+  const limpo = limparNome(nome);
+  if (!limpo) throw new Error("Informe o nome do grupo do check list.");
+  const repetido = lista.find((g) => g.id !== ignorarId && mesmoNome(g.nome, limpo));
+  if (repetido) throw new Error(`Já existe o grupo do check list "${repetido.nome}".`);
+  return limpo;
+}
+
+export function adicionarGrupoChecklistVeiculo(nome: string, itens: string[], storage = storagePadrao()): GrupoChecklistVeiculo {
+  return alterar(storage, (d) => {
+    const grupo = { id: novoId(), nome: nomeGrupoChecklist(d.itensChecklistVeiculo, nome), itens: montarItensChecklist([], itens) };
+    d.itensChecklistVeiculo.push(grupo);
+    return grupo;
+  });
+}
+
+export function editarGrupoChecklistVeiculo(id: string, nome: string, itens: string[], storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    const grupo = achar(d.itensChecklistVeiculo, id, "Grupo do check list");
+    grupo.nome = nomeGrupoChecklist(d.itensChecklistVeiculo, nome, id);
+    grupo.itens = montarItensChecklist(grupo.itens, itens);
+  });
+}
+
+export function removerGrupoChecklistVeiculo(id: string, storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    achar(d.itensChecklistVeiculo, id, "Grupo do check list");
+    d.itensChecklistVeiculo = d.itensChecklistVeiculo.filter((g) => g.id !== id);
+  });
+}
+
+// Cadastra os grupos padrão que ainda não existem (mesmo nome); o que já está cadastrado não é alterado.
+export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { grupos: number; itens: number } {
+  return alterar(storage, (d) => {
+    let grupos = 0;
+    let itens = 0;
+    for (const padrao of CHECKLIST_VEICULOS_PADRAO) {
+      if (d.itensChecklistVeiculo.some((g) => mesmoNome(g.nome, padrao.nome))) continue;
+      d.itensChecklistVeiculo.push({ id: novoId(), nome: padrao.nome, itens: montarItensChecklist([], [...padrao.itens]) });
+      grupos += 1;
+      itens += padrao.itens.length;
+    }
+    return { grupos, itens };
   });
 }
 

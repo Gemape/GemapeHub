@@ -73,12 +73,13 @@ export const MENU_UNIFORMES: readonly ItemMenu[] = [
   { titulo: "Cadastrar Uniforme", url: "/uniformes-cadastrar", icone: "Tags" },
 ];
 
-// Parâmetros > Veículos (decisões 46 e 52): o cadastro da frota, as duas listas de apoio e o plano de manutenções.
+// Parâmetros > Veículos (decisões 46, 52 e 62): o cadastro da frota, as listas de apoio (ações de manutenção, tipos de ocorrência e itens de check list) e o plano de manutenções.
 export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Cadastro de Veículos", url: "/cadastros/veiculos", icone: "Car" },
   { titulo: "Ações de manutenção", url: "/cadastros/veiculos-acoes-manutencao", icone: "Wrench" },
   { titulo: "Plano de manutenções", url: "/cadastros/veiculos-plano-manutencao", icone: "ListChecks" },
   { titulo: "Tipos de ocorrência", url: "/cadastros/veiculos-tipos-ocorrencia", icone: "ClipboardList" },
+  { titulo: "Itens check list", url: "/cadastros/veiculos-checklist", icone: "ListChecks" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.

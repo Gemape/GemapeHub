@@ -16,6 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   adicionarAcaoManutencaoVeiculo,
+  adicionarGrupoChecklistVeiculo,
+  cadastrarPadraoChecklistVeiculos,
+  editarGrupoChecklistVeiculo,
+  removerGrupoChecklistVeiculo,
   adicionarTipoOcorrenciaVeiculo,
   cadastrarPadraoVeiculos,
   editarAcaoManutencaoVeiculo,
@@ -27,7 +31,7 @@ import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 // `extra` é a descrição (tipos de ocorrência) ou os subitens, um por linha (ações de manutenção).
 type Linha = { id: string; nome: string; extra?: string };
-type CampoExtra = "descricao" | "subitens" | null;
+type CampoExtra = "descricao" | "subitens" | "itens" | null;
 
 // Tela de lista de Parâmetros > Veículos (decisão 46): ações de manutenção (pai e subitens) e tipos de
 // ocorrência (nome e descrição). Clonar, Editar e Excluir seguem a decisão 45.
@@ -104,7 +108,7 @@ function ListaVeiculos({
           <thead>
             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
               <th className="px-3 py-2">Nome</th>
-              {campoExtra && <th className="px-3 py-2">{campoExtra === "subitens" ? "Subitens" : "Descrição"}</th>}
+              {campoExtra && <th className="px-3 py-2">{campoExtra === "subitens" ? "Subitens" : campoExtra === "itens" ? "Itens" : "Descrição"}</th>}
               <th className="px-3 py-2 text-right">Ações</th>
             </tr>
           </thead>
@@ -121,7 +125,7 @@ function ListaVeiculos({
                 <td className="px-3 py-2 font-medium">{l.nome}</td>
                 {campoExtra && (
                   <td className="px-3 py-2 text-muted-foreground">
-                    {campoExtra === "subitens" ? (l.extra ?? "").split("\n").filter(Boolean).join(" · ") : l.extra}
+                    {campoExtra === "subitens" || campoExtra === "itens" ? (l.extra ?? "").split("\n").filter(Boolean).join(" · ") : l.extra}
                   </td>
                 )}
                 <td className="px-3 py-2">
@@ -158,12 +162,12 @@ function ListaVeiculos({
             {campoExtra && (
               <div className="space-y-1">
                 <Label htmlFor="veiculo-lista-descricao">
-                  {campoExtra === "subitens" ? "Subitens (um por linha)" : "Descrição"}
+                  {campoExtra === "subitens" ? "Subitens (um por linha)" : campoExtra === "itens" ? "Itens do check list (um por linha)" : "Descrição"}
                 </Label>
                 <Textarea
                   id="veiculo-lista-descricao"
-                  rows={campoExtra === "subitens" ? 8 : 4}
-                  maxLength={campoExtra === "subitens" ? 5000 : 500}
+                  rows={campoExtra === "descricao" ? 4 : 8}
+                  maxLength={campoExtra === "descricao" ? 500 : 5000}
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                 />
@@ -228,6 +232,33 @@ export function TiposOcorrenciaVeiculoLista() {
       }
       onExcluir={(l) => executar(() => removerTipoOcorrenciaVeiculo(l.id), "Tipo de ocorrência excluído.")}
       onPadrao={() => executar(() => mensagemPadraoToast(cadastrarPadraoVeiculos()))}
+    />
+  );
+}
+
+export function ChecklistVeiculoLista() {
+  const { itensChecklistVeiculo } = useParametrosBase();
+  const itensDe = (texto: string) => texto.split("\n");
+  return (
+    <ListaVeiculos
+      titulo="Itens check list"
+      subtitulo="Cada grupo é um tipo de veículo e uma seção (ex.: Carros de passeio · Exterior), com os itens a conferir. Os tipos SUVs, vans, pesados e ônibus somam aos grupos do tipo-base."
+      singular="grupo do check list"
+      linhas={itensChecklistVeiculo.map((g) => ({ id: g.id, nome: g.nome, extra: g.itens.map((i) => i.nome).join("\n") }))}
+      campoExtra="itens"
+      onSalvar={(id, nome, extra) =>
+        executar(
+          () => (id ? editarGrupoChecklistVeiculo(id, nome, itensDe(extra)) : adicionarGrupoChecklistVeiculo(nome, itensDe(extra))),
+          "Grupo do check list salvo.",
+        )
+      }
+      onExcluir={(l) => executar(() => removerGrupoChecklistVeiculo(l.id), "Grupo do check list excluído.")}
+      onPadrao={() =>
+        executar(() => {
+          const r = cadastrarPadraoChecklistVeiculos();
+          toast.success(r.grupos === 0 ? "Os itens padrão já estão cadastrados." : `${r.grupos} grupos e ${r.itens} itens padrão cadastrados.`);
+        })
+      }
     />
   );
 }
