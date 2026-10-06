@@ -116,7 +116,7 @@ export function montarNovoEpi(entrada: {
   catalogo: EpiCatalogo[];
   codigo: string;
   pedeTamanho: boolean;
-  // Tamanhos associados à subcategoria em Gerais; o escolhido precisa estar entre eles.
+  // Tamanhos que o chamador aceita (no Novo, os de Gerais; no Clonar e no Editar, os associados à subcategoria).
   tamanhosPermitidos?: string[];
   nomeProduto?: string;
 }): Omit<EpiCatalogo, "id"> {
