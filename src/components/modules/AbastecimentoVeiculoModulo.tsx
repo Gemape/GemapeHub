@@ -13,6 +13,7 @@ import { useEmpresa } from "@/lib/empresa-context";
 import { historicoAbastecimentos, mediaKmPorLitro, ultimoAbastecimentoDoVeiculo } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
+import { combinaBusca } from "@/lib/parametros-base";
 import { registrarAbastecimento, removerAbastecimento } from "@/lib/registros-veiculo";
 import { useAbastecimentos } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
@@ -39,6 +40,7 @@ export function AbastecimentoVeiculoModulo() {
   const [veiculoId, setVeiculoId] = useState("");
   const [km, setKm] = useState("");
   const [filtro, setFiltro] = useState(TODOS);
+  const [busca, setBusca] = useState("");
   const trava = useRef(false);
 
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
@@ -52,9 +54,13 @@ export function AbastecimentoVeiculoModulo() {
       veiculos
         .filter((v) => filtroValido === TODOS || v.id === filtroValido)
         .flatMap((v) => historicoAbastecimentos(daEmpresa.filter((a) => a.veiculoId === v.id)))
+        .filter((a) => {
+          const v = veiculos.find((x) => x.id === a.veiculoId);
+          return combinaBusca(busca, v ? rotuloDoVeiculo(parametros, v) : "", formatarData(a.data), a.hora, String(a.km), String(a.litros), a.valor ? String(a.valor) : "");
+        })
         .sort((a, b) => `${b.data}T${b.hora ?? "00:00"}`.localeCompare(`${a.data}T${a.hora ?? "00:00"}`) || b.km - a.km),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [veiculos, todos, filtroValido],
+    [veiculos, todos, filtroValido, busca],
   );
   const doFiltro = filtroValido === TODOS ? null : veiculo(filtroValido);
   const resumo = doFiltro
@@ -125,6 +131,13 @@ export function AbastecimentoVeiculoModulo() {
             </SelectContent>
           </Select>
         </div>
+        <Input
+          aria-label="Buscar abastecimento"
+          placeholder="Buscar por veículo, data ou km"
+          className="max-w-xs"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
         <Button requiresWrite className="ml-auto" onClick={abrir}>Novo abastecimento</Button>
       </div>
 

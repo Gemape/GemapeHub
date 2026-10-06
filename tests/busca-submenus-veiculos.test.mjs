@@ -7,6 +7,7 @@ const fonte = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8
 test("Frota, Manutenção, Movimentações e Ocorrências de Veículos têm campo de busca", () => {
   assert.match(fonte("components/modules/FrotaModulo.tsx"), /placeholder="Buscar por descrição ou responsável"/);
   assert.match(fonte("components/modules/FrotaModulo.tsx"), /nomeResponsavel\(v\.empregado_responsavel_id\)/);
+  assert.match(fonte("components/modules/AbastecimentoVeiculoModulo.tsx"), /combinaBusca\(busca/);
   assert.match(fonte("components/modules/ManutencaoVeiculoModulo.tsx"), /combinaBusca\(busca/);
   const mov = fonte("components/modules/MovimentacoesModulo.tsx");
   assert.match(mov, /ehVeiculo && busca\.trim\(\)/);
