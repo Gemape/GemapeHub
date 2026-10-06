@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { lerOcorrenciasVeiculo, type OcorrenciaVeiculo } from "./ocorrencias-veiculo";
 import { EVENTO_PLANOS, lerPlanos, type PlanoManutencao } from "./plano-manutencao";
 import {
   EVENTO_REGISTROS_VEICULO, lerAbastecimentos, lerManutencoes,
@@ -26,3 +27,6 @@ export const useAbastecimentos = (): Abastecimento[] =>
 export const useManutencoesVeiculo = (): ManutencaoVeiculo[] =>
   useLeitura(() => lerManutencoes(), [EVENTO_REGISTROS_VEICULO]);
 export const usePlanosVeiculo = (): PlanoManutencao[] => useLeitura(() => lerPlanos(), [EVENTO_PLANOS]);
+
+export const useOcorrenciasVeiculo = (): OcorrenciaVeiculo[] =>
+  useLeitura(() => lerOcorrenciasVeiculo(), [EVENTO_REGISTROS_VEICULO]);

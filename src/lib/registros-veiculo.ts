@@ -2,7 +2,7 @@
 // modo demonstração; as tabelas no banco real são pendência da Fase 2.
 import { hojeLocal } from "./empregados.ts";
 
-type StorageLike = Pick<Storage, "getItem" | "setItem">;
+export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
 const CHAVE_ABASTECIMENTOS = "gemape-demo-abastecimentos";
 const CHAVE_MANUTENCOES = "gemape-demo-manutencoes-veiculo";
@@ -34,7 +34,7 @@ export type ManutencaoVeiculo = {
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
 
 // `integro` é false quando havia dados que não puderam ser lidos: nada é gravado por cima deles.
-function ler<T>(chave: string, storage: StorageLike | null): { lista: T[]; integro: boolean } {
+export function lerLista<T>(chave: string, storage: StorageLike | null): { lista: T[]; integro: boolean } {
   if (!storage) return { lista: [], integro: true };
   const bruto = storage.getItem(chave);
   if (bruto === null) return { lista: [], integro: true };
@@ -47,18 +47,18 @@ function ler<T>(chave: string, storage: StorageLike | null): { lista: T[]; integ
   }
 }
 
-function alterar<T>(chave: string, storage: StorageLike | null, mudanca: (lista: T[]) => T[]) {
+export function alterarLista<T>(chave: string, storage: StorageLike | null, mudanca: (lista: T[]) => T[]) {
   if (!storage) throw new Error("Armazenamento do navegador indisponível.");
-  const { lista, integro } = ler<T>(chave, storage);
+  const { lista, integro } = lerLista<T>(chave, storage);
   if (!integro) throw new Error("Os registros salvos neste navegador não puderam ser lidos. Nada foi alterado, para não apagá-los.");
   storage.setItem(chave, JSON.stringify(mudanca(lista)));
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_REGISTROS_VEICULO));
 }
 
 export const lerAbastecimentos = (storage: StorageLike | null = storagePadrao()): Abastecimento[] =>
-  ler<Abastecimento>(CHAVE_ABASTECIMENTOS, storage).lista;
+  lerLista<Abastecimento>(CHAVE_ABASTECIMENTOS, storage).lista;
 export const lerManutencoes = (storage: StorageLike | null = storagePadrao()): ManutencaoVeiculo[] =>
-  ler<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage).lista;
+  lerLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage).lista;
 
 // Número inteiro, com ponto só como separador de milhar ("50.000").
 function inteiro(valor: string | number | undefined): number | null {
@@ -79,7 +79,7 @@ function decimalPositivo(valor: string | number | undefined): number | null {
 }
 
 // Valor em reais, com vírgula decimal e ponto de milhar ("R$ 1.234,56"), maior que zero.
-function dinheiroPositivo(valor: string | number | undefined): number | null {
+export function dinheiroPositivo(valor: string | number | undefined): number | null {
   if (typeof valor === "number") return valor > 0 && valor <= 999_999.99 ? Math.round(valor * 100) / 100 : null;
   const texto = String(valor ?? "").replace(/R\$/gi, "").replace(/\s/g, "");
   const normal = texto.includes(",") ? texto.replace(/\./g, "").replace(",", ".") : texto;
@@ -88,7 +88,7 @@ function dinheiroPositivo(valor: string | number | undefined): number | null {
   return n > 0 && n <= 999_999.99 ? n : null;
 }
 
-function validarHora(hora: string | undefined): string {
+export function validarHora(hora: string | undefined): string {
   const h = String(hora ?? "").trim();
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(h)) throw new Error("Informe a hora do abastecimento (HH:MM).");
   return h;
@@ -96,7 +96,7 @@ function validarHora(hora: string | undefined): string {
 
 const chaveMomento = (r: { data: string; hora?: string }) => `${r.data}T${r.hora ?? "00:00"}`;
 
-function validarData(data: string | undefined, hoje: Date): string {
+export function validarData(data: string | undefined, hoje: Date): string {
   const d = String(data ?? "").trim();
   const [a, m, dia] = d.split("-").map(Number);
   const real = new Date(a ?? 0, (m ?? 1) - 1, dia ?? 1);
@@ -166,12 +166,12 @@ export function registrarAbastecimento(entrada: EntradaAbastecimento, storage = 
     throw new Error("Já existe um abastecimento deste veículo nesta data e hora.");
   }
   const registro: Abastecimento = { id: novoId(), veiculoId: entrada.veiculoId, data, hora, km, litros, valor, criadoEm: agora.toISOString() };
-  alterar<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => [...lista, registro]);
+  alterarLista<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => [...lista, registro]);
   return registro;
 }
 
 export const removerAbastecimento = (id: string, storage = storagePadrao()): void =>
-  alterar<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => lista.filter((a) => a.id !== id));
+  alterarLista<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => lista.filter((a) => a.id !== id));
 
 export type EntradaManutencao = {
   veiculoId: string;
@@ -206,9 +206,9 @@ export function registrarManutencao(
   const registro: ManutencaoVeiculo = {
     id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId, descricao, criadoEm: agora.toISOString(),
   };
-  alterar<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => [...lista, registro]);
+  alterarLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => [...lista, registro]);
   return registro;
 }
 
 export const removerManutencao = (id: string, storage = storagePadrao()): void =>
-  alterar<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => lista.filter((m) => m.id !== id));
+  alterarLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => lista.filter((m) => m.id !== id));
