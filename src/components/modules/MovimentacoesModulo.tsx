@@ -290,7 +290,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
                   className="text-center text-muted-foreground"
                 >
-                  Nenhuma movimentação registrada.
+                  {ehVeiculo && busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
                 </TableCell>
               </TableRow>
             ) : (

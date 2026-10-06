@@ -111,7 +111,7 @@ export function ManutencaoVeiculoModulo() {
           </TableHeader>
           <TableBody>
             {lista.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhuma manutenção registrada.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma manutenção registrada."}</TableCell></TableRow>
             )}
             {lista.map((m) => {
               const v = veiculos.find((x) => x.id === m.veiculoId);

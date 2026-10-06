@@ -56,18 +56,19 @@ export function AbastecimentoVeiculoModulo() {
         .flatMap((v) => historicoAbastecimentos(daEmpresa.filter((a) => a.veiculoId === v.id)))
         .filter((a) => {
           const v = veiculos.find((x) => x.id === a.veiculoId);
-          return combinaBusca(busca, v ? rotuloDoVeiculo(parametros, v) : "", formatarData(a.data), a.hora, String(a.km), String(a.litros), a.valor ? String(a.valor) : "");
+          return combinaBusca(busca, v ? rotuloDoVeiculo(parametros, v) : "", formatarData(a.data), a.hora, String(a.km), numero(a.km), String(a.litros), a.litros.toLocaleString("pt-BR"), a.valor ? `${a.valor} ${reais(a.valor)}` : "");
         })
         .sort((a, b) => `${b.data}T${b.hora ?? "00:00"}`.localeCompare(`${a.data}T${a.hora ?? "00:00"}`) || b.km - a.km),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [veiculos, todos, filtroValido, busca],
+    [veiculos, todos, filtroValido, busca, parametros],
   );
   const doFiltro = filtroValido === TODOS ? null : veiculo(filtroValido);
   const resumo = doFiltro
     ? {
         litros: linhas.reduce((s, a) => s + a.litros, 0),
         gasto: linhas.reduce((s, a) => s + (a.valor ?? 0), 0),
-        media: mediaKmPorLitro(linhas),
+        // A média usa o histórico inteiro do veículo; litros e gasto seguem a busca.
+        media: mediaKmPorLitro(daEmpresa.filter((a) => a.veiculoId === doFiltro.id)),
       }
     : null;
   const ultimo = veiculoId ? ultimoAbastecimentoDoVeiculo(daEmpresa, veiculoId) : null;
@@ -167,7 +168,7 @@ export function AbastecimentoVeiculoModulo() {
           </TableHeader>
           <TableBody>
             {linhas.length === 0 && (
-              <TableRow><TableCell colSpan={doFiltro ? 8 : 9} className="py-6 text-center text-muted-foreground">Nenhum abastecimento registrado.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={doFiltro ? 8 : 9} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhum abastecimento registrado."}</TableCell></TableRow>
             )}
             {linhas.map((a) => {
               const v = veiculo(a.veiculoId);
