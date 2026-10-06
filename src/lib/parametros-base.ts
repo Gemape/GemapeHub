@@ -81,6 +81,9 @@ export const CATEGORIAS_BASE: Record<string, string> = {
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
 const CHAVE = "gemape-demo-parametros-base";
+// Decisão 69: quem já tinha cadastros salvos recebe a subcategoria Empilhadeira uma vez; depois de qualquer
+// gravação o marcador impede que ela volte se o responsável a excluir.
+const CHAVE_EMPILHADEIRA = "gemape-demo-subcategoria-empilhadeira";
 // Avisa as telas abertas quando algo muda.
 export const EVENTO_PARAMETROS = "gemape-parametros-base";
 
@@ -211,6 +214,10 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
       itens: Array.isArray(g.itens) ? g.itens : [],
       tiposVeiculo: Array.isArray(g.tiposVeiculo) ? g.tiposVeiculo : [TODOS_OS_TIPOS],
     }));
+    if (storage.getItem(CHAVE_EMPILHADEIRA) === null &&
+      !base.subcategorias.some((s) => s.categoriaId === "cat-veiculos" && /empilh/i.test(s.nome))) {
+      base.subcategorias.push({ id: "sub-veiculos-empilhadeira", categoriaId: "cat-veiculos", nome: "Empilhadeira" });
+    }
     // Regras salvas antes da definição de 4 dígitos (ex.: 001) passam para 0001.
     base.regrasCodigo = base.regrasCodigo.map((r) => ({
       ...r,
@@ -235,6 +242,7 @@ function alterar<T>(storage: StorageLike | null, mudanca: (dados: ParametrosBase
   }
   const resultado = mudanca(dados);
   storage.setItem(CHAVE, JSON.stringify(dados));
+  storage.setItem(CHAVE_EMPILHADEIRA, "1");
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_PARAMETROS));
   return resultado;
 }
