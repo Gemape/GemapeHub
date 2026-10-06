@@ -76,7 +76,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
         return { chave: m.id, data: m.data_movimentacao.slice(0, 10), km: null, tipo: "Movimentação", servico: `${x.acao_manutencao}${subs}` };
       }),
   ].sort((a, b) => b.data.localeCompare(a.data));
-  const ocorrenciasDoVeiculo = ocorrencias.filter((o) => o.veiculo_id === veiculo.id);
+  const ocorrenciasDoVeiculo = ocorrencias.filter((o) => o.veiculo_id === veiculo.id).sort((a, b) => b.data.localeCompare(a.data));
 
   return (
     <Dialog open onOpenChange={(v) => !v && onFechar()}>

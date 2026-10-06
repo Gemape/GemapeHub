@@ -34,9 +34,14 @@ test("abastecimento não aceita km fora da ordem das datas do mesmo veículo", (
   registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", km: "1500", litros: "30" }, s, hoje);
   assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-15", km: "900", litros: "30" }, s, hoje), /km/i);
   assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-15", km: "1600", litros: "30" }, s, hoje), /km/i);
+  // manutenção também entra na conta do km
+  registrarManutencao({ veiculoId: "v1", data: "2026-09-20", km: "1200", tipo: "Corretiva", descricao: "Bateria" }, s, hoje);
+  assert.throws(() => registrarManutencao({ veiculoId: "v1", data: "2026-09-25", km: "1100", tipo: "Corretiva", descricao: "x" }, s, hoje), /km/i);
+  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-25", km: "1100", litros: "30" }, s, hoje), /km/i);
   // outro veículo não é afetado
   registrarAbastecimento({ veiculoId: "v2", data: "2026-09-15", km: "10", litros: "30" }, s, hoje);
   assert.equal(lerAbastecimentos(s).length, 3);
+  assert.throws(() => registrarAbastecimento({ veiculoId: "v2", data: "2026-02-31", km: "10", litros: "30" }, s, hoje), /data/i);
 });
 
 test("remover abastecimento e manutenção", () => {

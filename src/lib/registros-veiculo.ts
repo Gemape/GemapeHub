@@ -70,12 +70,23 @@ function decimalPositivo(valor: string | number | undefined): number | null {
 
 function validarData(data: string | undefined, hoje: Date): string {
   const d = String(data ?? "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(`${d}T12:00:00`))) throw new Error("Informe a data.");
+  const [a, m, dia] = d.split("-").map(Number);
+  const real = new Date(a ?? 0, (m ?? 1) - 1, dia ?? 1);
+  // Reconstrói a data para recusar dias que não existem (31/02).
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || real.getFullYear() !== a || real.getMonth() !== (m ?? 1) - 1 || real.getDate() !== dia) {
+    throw new Error("Informe a data.");
+  }
   if (d > hojeLocal(hoje)) throw new Error("A data não pode ser futura.");
   return d;
 }
 
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now() + Math.random()));
+
+// O km cresce com a data, somando abastecimentos e manutenções do mesmo veículo.
+function kmCoerente(veiculoId: string, data: string, km: number, storage: StorageLike | null): boolean {
+  const outros = [...lerAbastecimentos(storage), ...lerManutencoes(storage)].filter((r) => r.veiculoId === veiculoId);
+  return !outros.some((r) => (r.data < data && r.km > km) || (r.data > data && r.km < km));
+}
 
 export type EntradaAbastecimento = { veiculoId: string; data: string; km: string | number; litros: string | number };
 
@@ -86,15 +97,11 @@ export function registrarAbastecimento(entrada: EntradaAbastecimento, storage = 
   if (km === null) throw new Error("Informe o km do veículo (número inteiro, 0 ou mais).");
   const litros = decimalPositivo(entrada.litros);
   if (litros === null) throw new Error("Informe os litros (número maior que zero, ex.: 40,5).");
+  if (!kmCoerente(entrada.veiculoId, data, km, storage)) {
+    throw new Error("O km não confere com os outros registros deste veículo: ele cresce com a data.");
+  }
   const registro: Abastecimento = { id: novoId(), veiculoId: entrada.veiculoId, data, km, litros, criadoEm: agora.toISOString() };
-  alterar<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => {
-    const doVeiculo = lista.filter((a) => a.veiculoId === registro.veiculoId);
-    // O km acompanha a data: não pode ser menor que o de um abastecimento anterior nem maior que o de um posterior.
-    if (doVeiculo.some((a) => (a.data < data && a.km > km) || (a.data > data && a.km < km))) {
-      throw new Error("O km não confere com os outros abastecimentos deste veículo: ele cresce com a data.");
-    }
-    return [...lista, registro];
-  });
+  alterar<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => [...lista, registro]);
   return registro;
 }
 
@@ -128,6 +135,9 @@ export function registrarManutencao(
     if (!acaoId || (acoesValidas && !acoesValidas.includes(acaoId))) throw new Error("Selecione a ação de manutenção preventiva.");
   } else if (!descricao) {
     throw new Error("Informe a descrição do serviço da manutenção corretiva.");
+  }
+  if (!kmCoerente(entrada.veiculoId, data, km, storage)) {
+    throw new Error("O km não confere com os outros registros deste veículo: ele cresce com a data.");
   }
   const registro: ManutencaoVeiculo = {
     id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId, descricao, criadoEm: agora.toISOString(),
