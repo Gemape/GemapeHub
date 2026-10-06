@@ -1,15 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Car, Wrench, CircleSlash } from "lucide-react";
-import { useState } from "react";
-
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
-import { VeiculosCadastroModulo } from "@/components/modules/VeiculosCadastroModulo";
-import { StatCard } from "@/components/StatCard";
+import { AbastecimentoVeiculoModulo } from "@/components/modules/AbastecimentoVeiculoModulo";
+import { FrotaModulo } from "@/components/modules/FrotaModulo";
+import { ManutencaoVeiculoModulo } from "@/components/modules/ManutencaoVeiculoModulo";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { abaDoModulo } from "@/lib/menu-parametros";
-import { useEmpresa } from "@/lib/empresa-context";
-import { useVeiculos } from "@/lib/hooks-gemape";
 
 export const Route = createFileRoute("/_authenticated/veiculos")({
   validateSearch: (search: Record<string, unknown>): { aba?: string } =>
@@ -32,8 +28,6 @@ export const Route = createFileRoute("/_authenticated/veiculos")({
 });
 
 function PaginaVeiculos() {
-  const { empresaId } = useEmpresa();
-  const { data: veiculos = [] } = useVeiculos(empresaId);
   const { aba } = Route.useSearch();
   const abaValida = abaDoModulo("veiculo", aba);
 
@@ -43,33 +37,21 @@ function PaginaVeiculos() {
         <p className="text-eyebrow">Módulo</p>
         <h1 className="text-2xl font-bold">Veículos</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Frota do grupo com placa, RENAVAM, quilometragem, responsável e registro de ocorrências.
+          Frota da empresa com extrato por veículo, abastecimentos, manutenções e ocorrências. O cadastro fica em Parâmetros &gt; Veículos.
         </p>
       </header>
 
       {/* As abas viraram submenus no menu lateral (decisão 43). */}
       <Tabs value={abaValida}>
 
-        <TabsContent value="frota" className="mt-5 space-y-5">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard
-              titulo="Ativos"
-              valor={veiculos.filter((v) => v.status === "Ativo").length}
-              icone={Car}
-            />
-            <StatCard
-              titulo="Em manutenção"
-              valor={veiculos.filter((v) => v.status === "Manutencao").length}
-              icone={Wrench}
-            />
-            <StatCard
-              titulo="Inativos"
-              valor={veiculos.filter((v) => v.status === "Inativo").length}
-              icone={CircleSlash}
-            />
-          </div>
-
-          <VeiculosCadastroModulo />
+        <TabsContent value="frota" className="mt-5">
+          <FrotaModulo />
+        </TabsContent>
+        <TabsContent value="abastecimento" className="mt-5">
+          <AbastecimentoVeiculoModulo />
+        </TabsContent>
+        <TabsContent value="manutencao" className="mt-5">
+          <ManutencaoVeiculoModulo />
         </TabsContent>
 
         <TabsContent value="movimentacoes" className="mt-5">
