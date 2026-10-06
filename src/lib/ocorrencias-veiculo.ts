@@ -223,3 +223,55 @@ export function removerFotoOcorrencia(id: string, indice: number, opcoes: { isAd
     return { ...o, fotos: o.fotos.filter((_, i) => i !== indice) };
   });
 }
+
+// Tipo fixo das ocorrências geradas por item NOK do check list (decisão 63); não depende de Parâmetros.
+export const TIPO_OCORRENCIA_CHECKLIST = { id: "checklist", nome: "Item reprovado no check list" } as const;
+
+export type EntradaOcorrenciaChecklist = { veiculoId: string; condutorId: string; descricao: string };
+
+// Cria de uma vez as ocorrências dos itens NOK de um check list: Abertas, no tipo fixo, com o responsável
+// do check list como condutor, dano no veículo da empresa e data e hora do momento. Tudo ou nada.
+export function registrarOcorrenciasDoChecklist(
+  entradas: EntradaOcorrenciaChecklist[],
+  storage = storagePadrao(),
+  agora = new Date(),
+): OcorrenciaVeiculo[] {
+  if (entradas.length === 0) return [];
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  const ocorridoEm = `${hojeLocal(agora)}T${p2(agora.getHours())}:${p2(agora.getMinutes())}`;
+  const criadas: OcorrenciaVeiculo[] = [];
+  gravar(() =>
+    alterarLista<OcorrenciaVeiculo>(CHAVE, storage, (lista) => {
+      let maior = lista.reduce((m, o) => Math.max(m, Number(o.codigo.replace(/\D/g, "")) || 0), 0);
+      for (const e of entradas) {
+        maior += 1;
+        criadas.push({
+          id: novoId(),
+          codigo: `OCO-${String(maior).padStart(4, "0")}`,
+          cadastradaEm: agora.toISOString(),
+          veiculoId: e.veiculoId,
+          tipoId: TIPO_OCORRENCIA_CHECKLIST.id,
+          tipoNome: TIPO_OCORRENCIA_CHECKLIST.nome,
+          ocorridoEm,
+          local: "Check list do veículo",
+          condutorId: e.condutorId,
+          danoEmpresa: true,
+          danoTerceiros: false,
+          descricao: e.descricao.trim().replace(/\s+/g, " ").slice(0, 2000),
+          fotos: [],
+          status: "Aberta",
+          tratativa: null,
+          encerradaEm: null,
+        });
+      }
+      return [...lista, ...criadas];
+    }),
+  );
+  return criadas;
+}
+
+// Desfaz o cadastro de ocorrências (usado só se o check list não puder ser gravado depois delas).
+export function removerOcorrenciasPorId(ids: string[], storage = storagePadrao()): void {
+  if (ids.length === 0) return;
+  alterarLista<OcorrenciaVeiculo>(CHAVE, storage, (lista) => lista.filter((o) => !ids.includes(o.id)));
+}

@@ -1,0 +1,306 @@
+// Check list de veículos (decisão 63). Fase 1: fica só no navegador, em modo demonstração; as tabelas
+// no banco real são pendência da Fase 2.
+import type { GrupoChecklistVeiculo } from "./parametros-base.ts";
+import { TODOS_OS_TIPOS } from "./parametros-base.ts";
+import { registrarOcorrenciasDoChecklist, removerOcorrenciasPorId } from "./ocorrencias-veiculo.ts";
+import { alterarLista, lerLista, type StorageLike } from "./registros-veiculo.ts";
+
+const CHAVE = "gemape-demo-checklists-veiculo";
+export const MAX_FOTOS_ITEM = 3;
+const LIMITE_FOTO = 600_000; // caracteres do data URL; a foto comprimida fica bem abaixo disso
+
+export const PERIODICIDADES = ["Diário", "Semanal"] as const;
+export type Periodicidade = (typeof PERIODICIDADES)[number];
+export const AVALIACOES = ["OK", "NOK", "N.A."] as const;
+export type Avaliacao = (typeof AVALIACOES)[number];
+export type StatusChecklist = "Em andamento" | "Concluído";
+
+export type ItemChecklist = {
+  id: string;
+  grupo: string;
+  nome: string;
+  avaliacao: Avaliacao | null;
+  observacao: string;
+  fotos: string[];
+  ocorrenciaId: string | null;
+  ocorrenciaCodigo: string | null;
+  resolucao: { descricao: string; resolvidaEm: string } | null;
+};
+
+export type ChecklistVeiculo = {
+  id: string;
+  codigo: string;
+  veiculoId: string;
+  veiculoRotulo: string;
+  tipoVeiculo: string;
+  periodicidade: Periodicidade;
+  responsavelId: string;
+  responsavelNome: string;
+  criadoEm: string;
+  data: string; // AAAA-MM-DD, horário local
+  status: StatusChecklist;
+  concluidoEm: string | null;
+  itens: ItemChecklist[];
+};
+
+const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
+const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now() + Math.random()));
+const limpar = (t: string, max: number) => t.trim().replace(/\s+/g, " ").slice(0, max);
+
+export const lerChecklists = (storage: StorageLike | null = storagePadrao()): ChecklistVeiculo[] =>
+  lerLista<ChecklistVeiculo>(CHAVE, storage).lista;
+
+export const ehPeriodicidade = (v: unknown): v is Periodicidade => PERIODICIDADES.includes(v as Periodicidade);
+
+// Grupos do check list que valem para o tipo (subcategoria) do veículo: os ligados a ele e os de todos os tipos.
+export function gruposAplicaveis(grupos: GrupoChecklistVeiculo[], subcategoriaId: string | null): GrupoChecklistVeiculo[] {
+  return grupos.filter(
+    (g) => g.itens.length > 0 && (g.tiposVeiculo.includes(TODOS_OS_TIPOS) || (!!subcategoriaId && g.tiposVeiculo.includes(subcategoriaId))),
+  );
+}
+
+// ---------- Periodicidade ----------
+
+const doDia = (data: string) => new Date(`${data}T12:00:00`);
+const texto = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+// Diário: o dia de hoje. Semanal: de segunda a domingo da semana de hoje.
+export function periodoAtual(periodicidade: Periodicidade, hoje: string): { inicio: string; fim: string } {
+  if (periodicidade === "Diário") return { inicio: hoje, fim: hoje };
+  const d = doDia(hoje);
+  const desdeSegunda = (d.getDay() + 6) % 7;
+  const inicio = new Date(d);
+  inicio.setDate(d.getDate() - desdeSegunda);
+  const fim = new Date(inicio);
+  fim.setDate(inicio.getDate() + 6);
+  return { inicio: texto(inicio), fim: texto(fim) };
+}
+
+// Dia de hoje em Brasília (AAAA-MM-DD), qualquer que seja o fuso do navegador.
+export const hojeBrasilia = (agora = new Date()) => agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+
+export type SituacaoPeriodica = "em_dia" | "em_andamento" | "pendente";
+
+// Em dia: há check list concluído no período atual; em andamento: há um aberto; senão pendente.
+export function situacaoPeriodica(
+  periodicidade: Periodicidade,
+  checklistsDoVeiculo: { data: string; status: StatusChecklist; concluidoEm?: string | null }[],
+  hoje: string,
+): SituacaoPeriodica {
+  const { inicio, fim } = periodoAtual(periodicidade, hoje);
+  // Vale o dia da conclusão (Brasília); sem ele, o dia em que foi iniciado.
+  const diaDe = (c: { data: string; concluidoEm?: string | null }) =>
+    c.concluidoEm ? hojeBrasilia(new Date(c.concluidoEm)) : c.data;
+  if (checklistsDoVeiculo.some((c) => c.status === "Concluído" && diaDe(c) >= inicio && diaDe(c) <= fim)) return "em_dia";
+  if (checklistsDoVeiculo.some((c) => c.status === "Em andamento")) return "em_andamento";
+  return "pendente";
+}
+
+// ---------- Resumo e pendências ----------
+
+export const pendenciaAberta = (i: ItemChecklist) => i.avaliacao === "NOK" && !i.resolucao;
+
+export function resumoChecklist(c: Pick<ChecklistVeiculo, "itens">) {
+  const n = (a: Avaliacao) => c.itens.filter((i) => i.avaliacao === a).length;
+  return {
+    total: c.itens.length,
+    avaliados: c.itens.filter((i) => i.avaliacao !== null).length,
+    ok: n("OK"),
+    nok: n("NOK"),
+    na: n("N.A."),
+    pendenciasAbertas: c.itens.filter(pendenciaAberta).length,
+  };
+}
+
+// ---------- Gravação ----------
+
+function gravar<T>(acao: () => T): T {
+  try {
+    return acao();
+  } catch (erro) {
+    if (erro instanceof Error && /quota|exceeded/i.test(`${erro.name} ${erro.message}`)) {
+      throw new Error("O navegador ficou sem espaço para guardar o check list. Remova fotos ou conclua e arquive check lists antigos.");
+    }
+    throw erro;
+  }
+}
+
+export type EntradaChecklist = {
+  veiculoId: string;
+  veiculoRotulo: string;
+  tipoVeiculo: string;
+  periodicidade: string | null | undefined;
+  responsavelId: string;
+  responsavelNome: string;
+  grupos: GrupoChecklistVeiculo[]; // já filtrados por gruposAplicaveis
+};
+
+export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
+  if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
+  if (!ehPeriodicidade(entrada.periodicidade)) {
+    throw new Error("Defina a periodicidade do check list (Diário ou Semanal) no cadastro do veículo.");
+  }
+  if (!entrada.responsavelId) throw new Error("Selecione o responsável pelo check list.");
+  const itens: ItemChecklist[] = entrada.grupos.flatMap((g) =>
+    g.itens.map((i) => ({
+      id: `${g.id}:${i.id}`, grupo: g.nome, nome: i.nome, avaliacao: null, observacao: "", fotos: [],
+      ocorrenciaId: null, ocorrenciaCodigo: null, resolucao: null,
+    })),
+  );
+  if (itens.length === 0) throw new Error("Não há itens de check list para o tipo deste veículo. Cadastre ou ligue os grupos em Parâmetros > Veículos > Itens check list.");
+  const periodicidade = entrada.periodicidade;
+  let criado!: ChecklistVeiculo;
+  gravar(() =>
+    alterarLista<ChecklistVeiculo>(CHAVE, storage, (lista) => {
+      if (lista.some((c) => c.veiculoId === entrada.veiculoId && c.status === "Em andamento")) {
+        throw new Error("Este veículo já tem um check list em andamento. Conclua-o antes de iniciar outro.");
+      }
+      const maior = lista.reduce((m, c) => Math.max(m, Number(c.codigo.replace(/\D/g, "")) || 0), 0);
+      criado = {
+        id: novoId(),
+        codigo: `CHK-${String(maior + 1).padStart(4, "0")}`,
+        veiculoId: entrada.veiculoId,
+        veiculoRotulo: limpar(entrada.veiculoRotulo, 200),
+        tipoVeiculo: limpar(entrada.tipoVeiculo, 80),
+        periodicidade,
+        responsavelId: entrada.responsavelId,
+        responsavelNome: limpar(entrada.responsavelNome, 120),
+        criadoEm: agora.toISOString(),
+        data: hojeBrasilia(agora),
+        status: "Em andamento",
+        concluidoEm: null,
+        itens,
+      };
+      return [...lista, criado];
+    }),
+  );
+  return criado;
+}
+
+function alterarAberto(id: string, storage: StorageLike | null, mudar: (c: ChecklistVeiculo) => void): void {
+  gravar(() =>
+    alterarLista<ChecklistVeiculo>(CHAVE, storage, (lista) => {
+      const c = lista.find((x) => x.id === id);
+      if (!c) throw new Error("Check list não encontrado.");
+      if (c.status !== "Em andamento") throw new Error("Este check list já foi concluído e não pode mais ser alterado.");
+      mudar(c);
+      return lista;
+    }),
+  );
+}
+
+const acharItem = (c: ChecklistVeiculo, itemId: string) => {
+  const i = c.itens.find((x) => x.id === itemId);
+  if (!i) throw new Error("Item não encontrado neste check list.");
+  return i;
+};
+
+// Avalia o item (OK, NOK ou N.A.) e guarda a observação; avaliacao nula limpa a avaliação.
+export function avaliarItem(
+  id: string,
+  itemId: string,
+  dados: { avaliacao: string | null; observacao: string },
+  storage = storagePadrao(),
+): void {
+  if (dados.avaliacao !== null && !AVALIACOES.includes(dados.avaliacao as Avaliacao)) throw new Error("Escolha OK, NOK ou N.A.");
+  alterarAberto(id, storage, (c) => {
+    const i = acharItem(c, itemId);
+    i.avaliacao = dados.avaliacao as Avaliacao | null;
+    i.observacao = limpar(dados.observacao, 500);
+  });
+}
+
+export function adicionarFotosItem(id: string, itemId: string, fotos: string[], storage = storagePadrao()): void {
+  alterarAberto(id, storage, (c) => {
+    const i = acharItem(c, itemId);
+    if (i.fotos.length + fotos.length > MAX_FOTOS_ITEM) throw new Error(`No máximo ${MAX_FOTOS_ITEM} fotos por item.`);
+    if (fotos.some((f) => typeof f !== "string" || !f.startsWith("data:image/") || f.length > LIMITE_FOTO)) {
+      throw new Error("Uma das fotos não é uma imagem válida ou ficou grande demais.");
+    }
+    i.fotos = [...i.fotos, ...fotos];
+  });
+}
+
+export function removerFotoItem(id: string, itemId: string, indice: number, storage = storagePadrao()): void {
+  alterarAberto(id, storage, (c) => {
+    const i = acharItem(c, itemId);
+    if (!Number.isInteger(indice) || indice < 0 || indice >= i.fotos.length) throw new Error("Foto não encontrada.");
+    i.fotos = i.fotos.filter((_, n) => n !== indice);
+  });
+}
+
+// Conclui o check list: todos os itens precisam estar avaliados e cada NOK precisa de observação. Cada
+// item NOK gera uma ocorrência Aberta e fica como pendência aberta no check list. N.A. não gera nada.
+export function concluirChecklist(id: string, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
+  const atual = lerChecklists(storage).find((c) => c.id === id);
+  if (!atual) throw new Error("Check list não encontrado.");
+  if (atual.status !== "Em andamento") throw new Error("Este check list já foi concluído.");
+  const faltam = atual.itens.filter((i) => i.avaliacao === null).length;
+  if (faltam > 0) throw new Error(`Avalie todos os itens antes de concluir: faltam ${faltam}.`);
+  const semObs = atual.itens.find((i) => i.avaliacao === "NOK" && !i.observacao);
+  if (semObs) throw new Error(`Descreva o problema do item reprovado: ${semObs.nome}.`);
+  const nok = atual.itens.filter((i) => i.avaliacao === "NOK");
+  const criadas = registrarOcorrenciasDoChecklist(
+    nok.map((i) => ({
+      veiculoId: atual.veiculoId,
+      condutorId: atual.responsavelId,
+      descricao: `Item reprovado no check list ${atual.codigo} (${i.grupo}): ${i.nome}. ${i.observacao}`,
+    })),
+    storage,
+    agora,
+  );
+  try {
+    let concluido!: ChecklistVeiculo;
+    alterarAberto(id, storage, (c) => {
+      nok.forEach((n, k) => {
+        const item = acharItem(c, n.id);
+        item.ocorrenciaId = criadas[k]!.id;
+        item.ocorrenciaCodigo = criadas[k]!.codigo;
+      });
+      c.status = "Concluído";
+      c.concluidoEm = agora.toISOString();
+      concluido = c;
+    });
+    return { ...concluido };
+  } catch (erro) {
+    // O check list não pôde ser gravado: as ocorrências recém-criadas são desfeitas, para não duplicar no próximo envio.
+    try { removerOcorrenciasPorId(criadas.map((o) => o.id), storage); } catch { /* sem o que fazer */ }
+    throw erro;
+  }
+}
+
+// Resolve uma pendência NOK de um check list concluído, registrando o que foi feito.
+export function resolverPendencia(id: string, itemId: string, descricao: string, storage = storagePadrao(), agora = new Date()): void {
+  const texto = limpar(descricao, 500);
+  if (!texto) throw new Error("Descreva como a pendência foi resolvida.");
+  gravar(() =>
+    alterarLista<ChecklistVeiculo>(CHAVE, storage, (lista) => {
+      const c = lista.find((x) => x.id === id);
+      if (!c) throw new Error("Check list não encontrado.");
+      if (c.status !== "Concluído") throw new Error("Conclua o check list antes de resolver as pendências.");
+      const i = acharItem(c, itemId);
+      if (i.avaliacao !== "NOK") throw new Error("Só itens reprovados (NOK) têm pendência.");
+      if (i.resolucao) throw new Error("Esta pendência já foi resolvida.");
+      i.resolucao = { descricao: texto, resolvidaEm: agora.toISOString() };
+      return lista;
+    }),
+  );
+}
+
+// Pendências NOK ainda abertas, de todos os check lists concluídos (ou só de um veículo).
+export function pendenciasAbertas(checklists: ChecklistVeiculo[], veiculoId?: string) {
+  return checklists
+    .filter((c) => c.status === "Concluído" && (!veiculoId || c.veiculoId === veiculoId))
+    .flatMap((c) => c.itens.filter(pendenciaAberta).map((item) => ({ checklist: c, item })));
+}
+
+export function excluirChecklistEmAndamento(id: string, storage = storagePadrao()): void {
+  gravar(() =>
+    alterarLista<ChecklistVeiculo>(CHAVE, storage, (lista) => {
+      const c = lista.find((x) => x.id === id);
+      if (!c) throw new Error("Check list não encontrado.");
+      if (c.status !== "Em andamento") throw new Error("Só é possível descartar um check list em andamento.");
+      return lista.filter((x) => x.id !== id);
+    }),
+  );
+}

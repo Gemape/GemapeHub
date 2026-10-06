@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { lerChecklists, type ChecklistVeiculo } from "./checklist-veiculo";
 import { lerOcorrenciasVeiculo, type OcorrenciaVeiculo } from "./ocorrencias-veiculo";
 import { EVENTO_PLANOS, lerPlanos, type PlanoManutencao } from "./plano-manutencao";
 import {
@@ -30,3 +31,6 @@ export const usePlanosVeiculo = (): PlanoManutencao[] => useLeitura(() => lerPla
 
 export const useOcorrenciasVeiculo = (): OcorrenciaVeiculo[] =>
   useLeitura(() => lerOcorrenciasVeiculo(), [EVENTO_REGISTROS_VEICULO]);
+
+export const useChecklistsVeiculo = (): ChecklistVeiculo[] =>
+  useLeitura(() => lerChecklists(), [EVENTO_REGISTROS_VEICULO]);
