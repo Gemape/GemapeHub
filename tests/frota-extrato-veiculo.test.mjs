@@ -5,6 +5,7 @@ import {
   lerAbastecimentos, registrarAbastecimento, removerAbastecimento,
   lerManutencoes, registrarManutencao, removerManutencao,
 } from "../src/lib/registros-veiculo.ts";
+import { resumoManutencao, custoNaoNegativo } from "../src/lib/registros-veiculo.ts";
 import { mediaKmPorLitro, kmAtualDoVeiculo, sugestoesPreventivas, somarMeses } from "../src/lib/extrato-veiculo.ts";
 
 const memoria = () => {
@@ -12,6 +13,9 @@ const memoria = () => {
   return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v) };
 };
 const hoje = new Date(2026, 9, 5, 12);
+// Manutenção (decisão 61): grupo (pai), ações (filhos), local e custos são sempre informados.
+const ACOES = [{ id: "a1", subitens: [{ id: "s1", nome: "Troca de óleo" }, { id: "s2", nome: "Filtro" }] }, { id: "a2", subitens: [] }];
+const EX = { acaoId: "a1", itens: [{ subitemId: "s1" }], local: "empresa", custoPecas: "0", custoMaoDeObra: "0" };
 
 test("abastecimento valida veículo, data, km e litros e aceita vírgula decimal", () => {
   const ok = { veiculoId: "v1", data: "2026-10-01", hora: "08:30", km: "50.000", litros: "40,5", valor: "R$ 1.234,56" };
@@ -37,8 +41,8 @@ test("abastecimento não aceita km fora da ordem das datas do mesmo veículo", (
   assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-15", km: "900", hora: "08:00", valor: "200", litros: "30" }, s, hoje), /km/i);
   assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-15", km: "1600", hora: "08:00", valor: "200", litros: "30" }, s, hoje), /km/i);
   // manutenção também entra na conta do km
-  registrarManutencao({ veiculoId: "v1", data: "2026-09-20", km: "1200", tipo: "Corretiva", descricao: "Bateria" }, s, hoje);
-  assert.throws(() => registrarManutencao({ veiculoId: "v1", data: "2026-09-25", km: "1100", tipo: "Corretiva", descricao: "x" }, s, hoje), /km/i);
+  registrarManutencao({ ...EX, veiculoId: "v1", data: "2026-09-20", km: "1200", tipo: "Corretiva", descricao: "Bateria" }, s, hoje, ACOES);
+  assert.throws(() => registrarManutencao({ ...EX, veiculoId: "v1", data: "2026-09-25", km: "1100", tipo: "Corretiva", descricao: "x" }, s, hoje, ACOES), /km/i);
   assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-25", km: "1100", hora: "08:00", valor: "200", litros: "30" }, s, hoje), /km/i);
   // outro veículo não é afetado
   registrarAbastecimento({ veiculoId: "v2", data: "2026-09-15", km: "10", hora: "08:00", valor: "200", litros: "30" }, s, hoje);
@@ -51,22 +55,74 @@ test("remover abastecimento e manutenção", () => {
   const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", km: "1000", hora: "08:00", valor: "200", litros: "30" }, s, hoje);
   removerAbastecimento(a.id, s);
   assert.equal(lerAbastecimentos(s).length, 0);
-  const m = registrarManutencao({ veiculoId: "v1", data: "2026-10-01", km: "1000", tipo: "Corretiva", descricao: "Troca de pastilha" }, s, hoje);
+  const m = registrarManutencao({ ...EX, veiculoId: "v1", data: "2026-10-01", km: "1000", tipo: "Corretiva", descricao: "Troca de pastilha" }, s, hoje, ACOES);
   removerManutencao(m.id, s);
   assert.equal(lerManutencoes(s).length, 0);
 });
 
-test("manutenção preventiva pede a ação; corretiva pede a descrição", () => {
+test("manutenção: tipo, grupo (pai), ações (filhos), local e custos", () => {
   const s = memoria();
-  const base = { veiculoId: "v1", data: "2026-10-01", km: "1000" };
-  assert.throws(() => registrarManutencao({ ...base, tipo: "Preventiva" }, s, hoje, ["a1"]), /ação/i);
-  assert.throws(() => registrarManutencao({ ...base, tipo: "Preventiva", acaoId: "zz" }, s, hoje, ["a1"]), /ação/i);
-  assert.throws(() => registrarManutencao({ ...base, tipo: "Corretiva", descricao: " " }, s, hoje), /descri/i);
-  assert.throws(() => registrarManutencao({ ...base, tipo: "Outra" }, s, hoje), /tipo/i);
-  const p = registrarManutencao({ ...base, tipo: "Preventiva", acaoId: "a1" }, s, hoje, ["a1"]);
-  assert.equal(p.tipo, "Preventiva");
-  assert.equal(p.acaoId, "a1");
-  assert.equal(lerManutencoes(s).length, 1);
+  const base = { ...EX, veiculoId: "v1", data: "2026-10-01", km: "1000", tipo: "Preventiva" };
+  assert.throws(() => registrarManutencao({ ...base, tipo: "Outra" }, s, hoje, ACOES), /tipo/i);
+  assert.throws(() => registrarManutencao({ ...base, acaoId: "" }, s, hoje, ACOES), /grupo/i);
+  assert.throws(() => registrarManutencao({ ...base, acaoId: "zz" }, s, hoje, ACOES), /grupo/i);
+  assert.throws(() => registrarManutencao({ ...base, itens: [] }, s, hoje, ACOES), /ação/i);
+  assert.throws(() => registrarManutencao({ ...base, itens: [{ subitemId: "x" }] }, s, hoje, ACOES), /ação/i);
+  assert.throws(() => registrarManutencao({ ...base, itens: [{ subitemId: "s1" }, { subitemId: "s1" }] }, s, hoje, ACOES), /repetida/i);
+  assert.throws(() => registrarManutencao({ ...base, local: "" }, s, hoje, ACOES), /local/i);
+  assert.throws(() => registrarManutencao({ ...base, local: "terceiro", localNome: " " }, s, hoje, ACOES), /local/i);
+  assert.throws(() => registrarManutencao({ ...base, custoPecas: "" }, s, hoje, ACOES), /peças/i);
+  assert.throws(() => registrarManutencao({ ...base, custoMaoDeObra: "abc" }, s, hoje, ACOES), /mão de obra/i);
+  assert.throws(() => registrarManutencao({ ...base, custoPecas: "-5" }, s, hoje, ACOES), /peças/i);
+  assert.equal(lerManutencoes(s).length, 0);
+});
+
+test("manutenção corretiva pede a descrição; preventiva não guarda descrição", () => {
+  const s = memoria();
+  const base = { ...EX, veiculoId: "v1", data: "2026-10-01", km: "1000" };
+  assert.throws(() => registrarManutencao({ ...base, tipo: "Corretiva", descricao: " " }, s, hoje, ACOES), /descri/i);
+  const c = registrarManutencao({ ...base, tipo: "Corretiva", descricao: "Barulho   no freio" }, s, hoje, ACOES);
+  assert.equal(c.descricao, "Barulho no freio");
+  const p = registrarManutencao({ ...base, km: "1100", tipo: "Preventiva", descricao: "ignorada" }, s, hoje, ACOES);
+  assert.equal(p.descricao, "");
+  assert.equal(lerManutencoes(s).length, 2);
+});
+
+test("manutenção guarda grupo, ações com observação livre, local e custos com total", () => {
+  const s = memoria();
+  const m = registrarManutencao({
+    veiculoId: "v1", data: "2026-10-01", km: "1000", tipo: "Preventiva", acaoId: "a1",
+    itens: [{ subitemId: "s1", observacao: "  óleo 5W30  " }, { subitemId: "s2" }],
+    local: "terceiro", localNome: "Oficina do Zé", custoPecas: "R$ 1.234,50", custoMaoDeObra: "200",
+  }, s, hoje, ACOES);
+  assert.deepEqual(m.itens, [
+    { subitemId: "s1", nome: "Troca de óleo", observacao: "óleo 5W30" },
+    { subitemId: "s2", nome: "Filtro", observacao: "" },
+  ]);
+  assert.equal(m.local, "terceiro");
+  assert.equal(m.localNome, "Oficina do Zé");
+  assert.equal(m.custoPecas, 1234.5);
+  assert.equal(m.custoMaoDeObra, 200);
+  assert.equal(m.custoTotal, 1434.5);
+  const e = registrarManutencao({ ...EX, veiculoId: "v1", data: "2026-10-02", km: "1010", tipo: "Corretiva", descricao: "x", local: "empresa", localNome: "ignorado" }, s, hoje, ACOES);
+  assert.equal(e.localNome, "");
+  assert.equal(e.custoTotal, 0);
+});
+
+test("grupo sem ações cadastradas não exige ação", () => {
+  const s = memoria();
+  const m = registrarManutencao({ ...EX, veiculoId: "v1", data: "2026-10-01", km: "1000", tipo: "Preventiva", acaoId: "a2", itens: [] }, s, hoje, ACOES);
+  assert.deepEqual(m.itens, []);
+});
+
+test("a tela de manutenção tem o fluxo da decisão 61 e continua sem Supabase", () => {
+  const tela = readFileSync("src/components/modules/ManutencaoVeiculoModulo.tsx", "utf8");
+  assert.match(tela, /Cadastrar nova manutenção/);
+  assert.match(tela, /Observação/);
+  assert.match(tela, /das peças/i);
+  assert.match(tela, /mão de obra/i);
+  assert.match(tela, /Terceiro/);
+  assert.doesNotMatch(tela, /supabase\.(from|rpc)/);
 });
 
 test("média km/L usa a distância entre o primeiro e o último abastecimento e os litros dos seguintes", () => {
@@ -191,9 +247,33 @@ test("histórico calcula km rodados, km/L do trecho e R$/L, do mais recente ao m
 test("manutenção no mesmo dia de um abastecimento aceita qualquer km; mesmo veículo, data e hora repetidos são recusados", () => {
   const s = memoria();
   registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "08:00", km: "1300", litros: "10", valor: "100" }, s, hoje);
-  registrarManutencao({ veiculoId: "v1", data: "2026-10-01", km: "1400", tipo: "Corretiva", descricao: "Bateria" }, s, hoje);
+  registrarManutencao({ ...EX, veiculoId: "v1", data: "2026-10-01", km: "1400", tipo: "Corretiva", descricao: "Bateria" }, s, hoje, ACOES);
   registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "06:00", km: "1000", litros: "10", valor: "100" }, s, hoje);
   // dias diferentes continuam conferidos, e a mensagem diz qual registro impede
-  assert.throws(() => registrarManutencao({ veiculoId: "v1", data: "2026-10-02", km: "1200", tipo: "Corretiva", descricao: "x" }, s, hoje), /há um de [\d.]+ km em 01\/10\/2026/);
+  assert.throws(() => registrarManutencao({ ...EX, veiculoId: "v1", data: "2026-10-02", km: "1200", tipo: "Corretiva", descricao: "x" }, s, hoje, ACOES), /há um de [\d.]+ km em 01\/10\/2026/);
   assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "08:00", km: "1300", litros: "10", valor: "100" }, s, hoje), /mesma data e hora|nesta data e hora/i);
+});
+
+test("custos: ponto sem vírgula é decimal, 0 vale, teto de 999.999,99; resumo de registro antigo", () => {
+  assert.equal(custoNaoNegativo("12.5"), 12.5);
+  assert.equal(custoNaoNegativo("1.234,56"), 1234.56);
+  assert.equal(custoNaoNegativo("1.500"), null);
+  assert.equal(custoNaoNegativo("0"), 0);
+  assert.equal(custoNaoNegativo("999.999,99"), 999999.99);
+  assert.equal(custoNaoNegativo("1.000.000,00"), null);
+  assert.equal(custoNaoNegativo(""), null);
+  const antigo = { id: "x", veiculoId: "v1", data: "2026-01-01", km: 1, tipo: "Corretiva", acaoId: null, descricao: "Bateria", criadoEm: "" };
+  assert.equal(resumoManutencao(antigo, undefined), "Bateria");
+  assert.equal(resumoManutencao({ ...antigo, tipo: "Preventiva", acaoId: "a1", descricao: "" }, "Freios"), "Freios");
+  assert.equal(resumoManutencao({ ...antigo, acaoId: "a1", itens: [{ subitemId: "s1", nome: "Pastilha", observacao: "" }] }, "Freios"), "Freios: Pastilha · Bateria");
+});
+
+test("corretiva com grupo não zera o prazo da preventiva do plano", () => {
+  const plano = { veiculoId: "v1", itens: [{ acaoId: "a1", km: 10000, meses: 6 }] };
+  const acoes = [{ id: "a1", nome: "Óleo", subitens: [] }];
+  const base = { plano, acoes, kmAtual: 20000, hoje: "2026-10-05" };
+  const prev = { acaoId: "a1", data: "2026-01-01", km: 5000, tipo: "Preventiva" };
+  const so = sugestoesPreventivas({ ...base, manutencoes: [prev] });
+  const com = sugestoesPreventivas({ ...base, manutencoes: [prev, { acaoId: "a1", data: "2026-10-01", km: 19000, tipo: "Corretiva" }] });
+  assert.deepEqual(com, so);
 });

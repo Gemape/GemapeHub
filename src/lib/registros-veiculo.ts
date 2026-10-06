@@ -20,6 +20,10 @@ export type Abastecimento = {
   criadoEm: string;
 };
 export type TipoManutencao = "Preventiva" | "Corretiva";
+export type LocalManutencao = "empresa" | "terceiro";
+// Ação (filho) do grupo, com o nome guardado para o registro não mudar se Parâmetros mudar.
+export type ItemManutencao = { subitemId: string; nome: string; observacao: string };
+// Campos de itens, local e custos vieram na decisão 61: registros antigos podem não ter.
 export type ManutencaoVeiculo = {
   id: string;
   veiculoId: string;
@@ -28,6 +32,12 @@ export type ManutencaoVeiculo = {
   tipo: TipoManutencao;
   acaoId: string | null;
   descricao: string;
+  itens?: ItemManutencao[];
+  local?: LocalManutencao;
+  localNome?: string;
+  custoPecas?: number;
+  custoMaoDeObra?: number;
+  custoTotal?: number;
   criadoEm: string;
 };
 
@@ -179,32 +189,63 @@ export type EntradaManutencao = {
   km: string | number;
   tipo: string;
   acaoId?: string | null;
+  itens?: { subitemId: string; observacao?: string | undefined }[];
+  local?: string;
+  localNome?: string;
+  custoPecas?: string | number;
+  custoMaoDeObra?: string | number;
   descricao?: string;
 };
 
+// Custo em reais, com vírgula decimal; 0 é aceito (manutenção só de mão de obra, ou só de peças).
+export function custoNaoNegativo(valor: string | number | undefined): number | null {
+  if (valor === undefined || String(valor).trim() === "") return null;
+  if (typeof valor === "number") return valor >= 0 && valor <= 999_999.99 ? Math.round(valor * 100) / 100 : null;
+  const texto = String(valor).replace(/R\$/gi, "").replace(/\s/g, "");
+  const normal = texto.includes(",") ? texto.replace(/\./g, "").replace(",", ".") : texto;
+  if (!/^\d+(\.\d{1,2})?$/.test(normal)) return null;
+  const n = Number(normal);
+  return n <= 999_999.99 ? n : null;
+}
+
+// `acoes` são os grupos de Parâmetros > Veículos > Ações de manutenção, cada um com suas ações.
 export function registrarManutencao(
   entrada: EntradaManutencao,
   storage = storagePadrao(),
   agora = new Date(),
-  acoesValidas?: string[],
+  acoes: { id: string; subitens: { id: string; nome: string }[] }[] = [],
 ): ManutencaoVeiculo {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
   if (entrada.tipo !== "Preventiva" && entrada.tipo !== "Corretiva") throw new Error("Escolha o tipo: preventiva ou corretiva.");
   const data = validarData(entrada.data, agora);
   const km = inteiro(entrada.km);
   if (km === null) throw new Error("Informe o km do veículo (número inteiro, 0 ou mais).");
-  const descricao = String(entrada.descricao ?? "").trim().replace(/\s+/g, " ").slice(0, 300);
-  let acaoId: string | null = null;
-  if (entrada.tipo === "Preventiva") {
-    acaoId = entrada.acaoId ?? null;
-    if (!acaoId || (acoesValidas && !acoesValidas.includes(acaoId))) throw new Error("Selecione a ação de manutenção preventiva.");
-  } else if (!descricao) {
-    throw new Error("Informe a descrição do serviço da manutenção corretiva.");
+  // Só a corretiva descreve o que está acontecendo com o veículo.
+  const descricao = entrada.tipo === "Corretiva" ? String(entrada.descricao ?? "").trim().replace(/\s+/g, " ").slice(0, 300) : "";
+  if (entrada.tipo === "Corretiva" && !descricao) throw new Error("Informe a descrição do que está acontecendo com o veículo.");
+  const grupo = acoes.find((a) => a.id === entrada.acaoId);
+  if (!entrada.acaoId || !grupo) throw new Error("Selecione o grupo de ações da manutenção.");
+  const itens: ItemManutencao[] = [];
+  for (const i of entrada.itens ?? []) {
+    const filho = grupo.subitens.find((x) => x.id === i.subitemId);
+    if (!filho) throw new Error("Há uma ação que não pertence ao grupo escolhido.");
+    if (itens.some((x) => x.subitemId === filho.id)) throw new Error(`Ação repetida: ${filho.nome}.`);
+    itens.push({ subitemId: filho.id, nome: filho.nome, observacao: String(i.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300) });
   }
+  if (grupo.subitens.length > 0 && itens.length === 0) throw new Error("Marque ao menos uma ação do grupo.");
+  if (entrada.local !== "empresa" && entrada.local !== "terceiro") throw new Error("Informe o local da manutenção: na empresa ou em terceiro.");
+  const localNome = entrada.local === "terceiro" ? String(entrada.localNome ?? "").trim().replace(/\s+/g, " ").slice(0, 120) : "";
+  if (entrada.local === "terceiro" && !localNome) throw new Error("Informe o local de terceiro onde foi feita a manutenção.");
+  const custoPecas = custoNaoNegativo(entrada.custoPecas);
+  if (custoPecas === null) throw new Error("Informe o custo das peças em reais (0 se não houve).");
+  const custoMaoDeObra = custoNaoNegativo(entrada.custoMaoDeObra);
+  if (custoMaoDeObra === null) throw new Error("Informe o custo da mão de obra em reais (0 se não houve).");
   const conflito = conflitoDeKm(entrada.veiculoId, { data }, km, storage);
   if (conflito) throw new Error(mensagemKm(conflito));
   const registro: ManutencaoVeiculo = {
-    id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId, descricao, criadoEm: agora.toISOString(),
+    id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId: entrada.acaoId, descricao,
+    itens, local: entrada.local, localNome, custoPecas, custoMaoDeObra,
+    custoTotal: Math.round((custoPecas + custoMaoDeObra) * 100) / 100, criadoEm: agora.toISOString(),
   };
   alterarLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => [...lista, registro]);
   return registro;
@@ -212,3 +253,12 @@ export function registrarManutencao(
 
 export const removerManutencao = (id: string, storage = storagePadrao()): void =>
   alterarLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => lista.filter((m) => m.id !== id));
+
+// Texto da manutenção para listas: grupo e ações (e a descrição, na corretiva). Registros antigos
+// só têm a ação ou só a descrição.
+export function resumoManutencao(m: ManutencaoVeiculo, nomeGrupo: string | undefined): string {
+  const grupo = m.acaoId ? (nomeGrupo ?? "Ação removida de Parâmetros") : "";
+  const filhos = (m.itens ?? []).map((i) => i.nome).join(", ");
+  const acoes = grupo && filhos ? `${grupo}: ${filhos}` : grupo;
+  return [acoes, m.tipo === "Corretiva" ? m.descricao : ""].filter(Boolean).join(" · ") || "—";
+}
