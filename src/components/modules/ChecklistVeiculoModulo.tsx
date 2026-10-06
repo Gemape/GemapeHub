@@ -255,16 +255,16 @@ export function ChecklistVeiculoModulo() {
       </section>
 
       <Dialog open={tela?.tipo === "novo"} onOpenChange={(a) => !a && setTela(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Novo check list</DialogTitle>
             <DialogDescription>Escolha o tipo: os itens vêm dos grupos ligados a ele, em Parâmetros &gt; Veículos &gt; Itens check list.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={iniciar} className="space-y-3">
-            <div className="space-y-1.5">
+          <form onSubmit={iniciar} className="min-w-0 space-y-4 [&_p]:break-words">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_tipo">Tipo de veículo</Label>
               <Select value={tipoCheck} onValueChange={(t) => { setTipoCheck(t); setVeiculoId(""); }}>
-                <SelectTrigger id="ck_tipo"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                <SelectTrigger id="ck_tipo" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
                 <SelectContent>{TIPOS_CHECKLIST.map((t) => <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>)}</SelectContent>
               </Select>
               {tipoCheck && (
@@ -275,10 +275,10 @@ export function ChecklistVeiculoModulo() {
                 </p>
               )}
             </div>
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_veiculo">Veículo</Label>
               <Select value={veiculoId} onValueChange={setVeiculoId} disabled={!tipoCheck}>
-                <SelectTrigger id="ck_veiculo"><SelectValue placeholder={tipoCheck ? "Selecione o veículo" : "Escolha o tipo primeiro"} /></SelectTrigger>
+                <SelectTrigger id="ck_veiculo" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder={tipoCheck ? "Selecione o veículo" : "Escolha o tipo primeiro"} /></SelectTrigger>
                 <SelectContent>{veiculosDoTipo.map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDe(v)}</SelectItem>)}</SelectContent>
               </Select>
               {tipoCheck && veiculosDoTipo.length === 0 && (
@@ -291,10 +291,10 @@ export function ChecklistVeiculoModulo() {
                 </p>
               )}
             </div>
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_resp">Responsável pelo check list</Label>
               <Select value={responsavelId} onValueChange={setResponsavelId}>
-                <SelectTrigger id="ck_resp"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>
+                <SelectTrigger id="ck_resp" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>
                 <SelectContent>{empregadosAtivos.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
               </Select>
             </div>
