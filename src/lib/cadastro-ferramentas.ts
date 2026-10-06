@@ -17,6 +17,8 @@ export type EntradaCadastroFerramenta = {
   parametros: ParametrosBase;
   codigosExistentes: string[];
   categoriaFerramenta: string;
+  // Categoria já gravada na ferramenta em edição: continua aceita mesmo fora das subcategorias de Gerais.
+  categoriaAtual?: string;
   grupoFerramenta: string;
   modelo: string;
   estoqueMinimo: string | number;
@@ -77,7 +79,10 @@ export function reservarCodigoFerramenta(
 }
 
 export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
-  const categoriaFerramenta = subcategoriasDa(entrada.parametros, "cat-ferramentas").find((c) => c.nome === entrada.categoriaFerramenta.trim());
+  const categoriaInformada = entrada.categoriaFerramenta.trim();
+  const categoriaFerramenta =
+    subcategoriasDa(entrada.parametros, "cat-ferramentas").find((c) => c.nome === categoriaInformada) ??
+    (entrada.categoriaAtual && categoriaInformada === entrada.categoriaAtual.trim() ? { nome: categoriaInformada } : undefined);
   if (!categoriaFerramenta) throw new Error("Categoria de ferramenta inválida.");
   const grupoFerramenta = entrada.parametros.gruposFerramenta.find((g) => g.nome === entrada.grupoFerramenta.trim());
   if (!grupoFerramenta) throw new Error("Grupo de ferramenta inválido.");

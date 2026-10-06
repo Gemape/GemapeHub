@@ -118,7 +118,7 @@ function Categorias() {
   }
 
   // Subcategoria em uso por um produto ou veículo não sai: confere o módulo da categoria dela.
-  async function subcategoriaEmUso(item: Opcao): Promise<boolean> {
+  async function subcategoriaEmUso(item: Opcao, acao?: Acao): Promise<boolean> {
     const sub = dados.subcategorias.find((s) => s.id === item.id);
     if (!sub) return false;
     const tabelas = (
@@ -145,7 +145,7 @@ function Categorias() {
       }
       usos.push(...usoPorNome((data ?? []) as Record<string, unknown>[], "categoria_ferramenta", sub.nome, "Ferramenta"));
     }
-    return avisarUso(sub.nome, usos, acaoExcluir(sub));
+    return avisarUso(sub.nome, usos, acao ?? acaoExcluir(sub));
   }
 
   // Quem já está desativado não recebe a sugestão de desativar.
@@ -261,7 +261,12 @@ function Categorias() {
             onAdicionar={(nome) =>
               executar(() => adicionarSubcategoria(categoria.id, nome), "Subcategoria incluída.")
             }
-            onRenomear={(id, nome) => executar(() => renomearSubcategoria(id, nome))}
+            onRenomear={async (id, nome) => {
+              // A ferramenta guarda o nome da categoria, não o id: renomear em uso deixaria o vínculo solto.
+              const atual = subcategorias.find((s) => s.id === id);
+              if (categoria.id === "cat-ferramentas" && atual && atual.nome !== nome.trim() && (await subcategoriaEmUso(atual, "renomear"))) return false;
+              return executar(() => renomearSubcategoria(id, nome));
+            }}
             onRemover={(s) =>
               semRepetir(async () => {
                 if (await subcategoriaEmUso(s)) return;

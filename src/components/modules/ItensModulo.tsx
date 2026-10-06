@@ -146,6 +146,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
         parametros: parametrosSelecao,
         codigosExistentes: editando ? [] : await codigosFerramenta(),
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
+        categoriaAtual: base?.categoria_ferramenta ?? "",
         grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
         marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, base?.marca ?? null),
         marcaAtual: base?.marca ?? "",
@@ -329,6 +330,9 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   <SelectTrigger id="categoria_ferramenta"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
                   <SelectContent>
                     {parametrosSelecao.categoriasFerramenta.map((c) => <SelectItem key={c.id} value={c.nome}>{rotulo(c)}</SelectItem>)}
+                    {base?.categoria_ferramenta && !parametrosSelecao.categoriasFerramenta.some((c) => c.nome === base.categoria_ferramenta) && (
+                      <SelectItem value={base.categoria_ferramenta}>{base.categoria_ferramenta} (fora de Gerais)</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
