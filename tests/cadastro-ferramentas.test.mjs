@@ -2,25 +2,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { adicionarListaFerramenta, lerParametros, salvarRegraCodigo } from '../src/lib/parametros-base.ts';
 import * as cadastroFerramentas from '../src/lib/cadastro-ferramentas.ts';
-const { opcaoFerramentaEmUso, prepararCadastroFerramenta } = cadastroFerramentas;
+const { opcaoFerramentaEmUso, prepararCadastroFerramenta, descricaoFerramenta } = cadastroFerramentas;
 
 const storage = () => {
   const dados = new Map();
   return { getItem: (chave) => dados.get(chave) ?? null, setItem: (chave, valor) => dados.set(chave, valor) };
 };
-const campos = { categoriaFerramenta: 'Elétrica', grupoFerramenta: 'Chave de fenda', numeroSerie: 'SN-123', precoCusto: '240.50' };
+const campos = { categoriaFerramenta: 'Elétrica', grupoFerramenta: 'Chave de fenda', modelo: 'Boca 12', estoqueMinimo: '2' };
 
 test('ferramenta nova não tem subcategoria (decisão 25) e usa o próximo código global', () => {
   const local = storage();
   const resultado = prepararCadastroFerramenta({
     parametros: lerParametros(local),
     codigosExistentes: ['FER-0001', 'FER-0002', 'EPI-9999'],
-    descricao: '  Chave de boca  ', ...campos,
+    ...campos,
   });
   // A coluna categoria (obrigatória no banco) recebe a categoria de ferramenta.
   assert.deepEqual(resultado, {
-    codigo_sku: 'FER-0003', categoria: 'Elétrica', nome: 'Chave de boca',
-    categoria_ferramenta: 'Elétrica', grupo_ferramenta: 'Chave de fenda', numero_serie: 'SN-123', preco_unitario: 240.5,
+    codigo_sku: 'FER-0003', categoria: 'Elétrica', nome: 'Chave de fenda · Boca 12',
+    modelo: 'Boca 12', estoque_minimo: 2,
+    categoria_ferramenta: 'Elétrica', grupo_ferramenta: 'Chave de fenda',
     marca: null,
   });
 });
@@ -29,31 +30,36 @@ test('ferramenta respeita regra alterada e preserva código ao editar', () => {
   const local = storage();
   salvarRegraCodigo('cat-ferramentas', 'FERR', '0042', local);
   const parametros = lerParametros(local);
-  const entrada = { parametros, codigosExistentes: ['FER-0009'], descricao: 'Alicate', estoqueMinimo: '0', ...campos };
+  const entrada = { parametros, codigosExistentes: ['FER-0009'], ...campos };
   assert.equal(prepararCadastroFerramenta(entrada).codigo_sku, 'FERR-0042');
   assert.equal(prepararCadastroFerramenta({ ...entrada, codigoAtual: 'FER-0009' }).codigo_sku, 'FER-0009');
 });
 
-test('ferramenta recusa descrição inválida', () => {
-  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], descricao: 'Furadeira', ...campos };
-  assert.throws(() => prepararCadastroFerramenta({ ...entrada, descricao: ' ' }), /descrição/);
+test('ferramenta exige o modelo e o estoque mínimo inteiro (decisão 54)', () => {
+  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], ...campos };
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, modelo: ' ' }), /modelo/);
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, estoqueMinimo: '' }), /estoque mínimo/);
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, estoqueMinimo: '-1' }), /estoque mínimo/);
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, estoqueMinimo: '1.5' }), /estoque mínimo/);
+  assert.equal(prepararCadastroFerramenta({ ...entrada, estoqueMinimo: '0' }).estoque_minimo, 0);
+});
+
+test('descrição da ferramenta é grupo, modelo e marca em sequência (decisão 54)', () => {
+  assert.equal(descricaoFerramenta({ grupo: 'Furadeira', modelo: ' GSB  13 ', marca: 'Bosch' }), 'Furadeira · GSB 13 · Bosch');
+  assert.equal(descricaoFerramenta({ grupo: 'Furadeira', modelo: 'GSB 13', marca: null }), 'Furadeira · GSB 13');
 });
 
 test('editar ferramenta antiga preserva a subcategoria gravada (decisão 25)', () => {
-  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], descricao: 'Serra', estoqueMinimo: '1', codigoAtual: 'FER-0001', ...campos };
+  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], estoqueMinimo: '1', codigoAtual: 'FER-0001', ...campos };
   const resultado = prepararCadastroFerramenta(entrada);
   assert.equal('categoria' in resultado, false, 'a edição não reescreve a coluna categoria');
   assert.equal('subcategoria_id' in resultado, false);
 });
 
-test('ferramenta exige categoria e grupo de Gerais, série real e custo válido em centavos', () => {
-  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], descricao: 'Alicate', estoqueMinimo: '1', ...campos };
+test('ferramenta exige categoria e grupo de Gerais', () => {
+  const entrada = { parametros: lerParametros(storage()), codigosExistentes: [], ...campos };
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, categoriaFerramenta: 'Pneumática' }), /Categoria de ferramenta/);
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, grupoFerramenta: 'Grupo avulso' }), /Grupo de ferramenta/);
-  assert.throws(() => prepararCadastroFerramenta({ ...entrada, numeroSerie: ' ' }), /Número de série/);
-  assert.throws(() => prepararCadastroFerramenta({ ...entrada, precoCusto: '' }), /Preço de custo/);
-  assert.throws(() => prepararCadastroFerramenta({ ...entrada, precoCusto: '-1' }), /Preço de custo/);
-  assert.throws(() => prepararCadastroFerramenta({ ...entrada, precoCusto: '1.234' }), /Preço de custo/);
 });
 
 test('marca nova precisa vir de Gerais; marca legada continua ao editar sem trocá-la', () => {
@@ -61,7 +67,7 @@ test('marca nova precisa vir de Gerais; marca legada continua ao editar sem troc
   adicionarListaFerramenta('marcasFerramenta', 'Bosch', local);
   const entrada = {
     parametros: lerParametros(local), codigosExistentes: [],
-    descricao: 'Alicate', estoqueMinimo: '0', ...campos,
+    ...campos,
   };
   assert.equal(prepararCadastroFerramenta({ ...entrada, marca: 'Bosch' }).marca, 'Bosch');
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, marca: 'Marca avulsa' }), /Marca de ferramenta/);

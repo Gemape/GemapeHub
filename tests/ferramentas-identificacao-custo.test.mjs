@@ -6,12 +6,15 @@ import { lerParametros } from '../src/lib/parametros-base.ts';
 import { valorTotalEmEstoque } from '../src/lib/gemape.ts';
 
 test('série, patrimônio, aquisição e custo persistem ao salvar e reabrir', async () => {
-  const cadastro = prepararCadastroFerramenta({
-    parametros: lerParametros(null), codigosExistentes: ['FER-0001'],
-    categoriaFerramenta: 'Elétrica',
-    grupoFerramenta: 'Diversos', descricao: 'Furadeira', estoqueMinimo: '1',
-    numeroSerie: '  SERIE-42  ', precoCusto: '240.50',
-  });
+  // Decisão 54: o cadastro não pede mais série nem custo; eles entram por outra via e persistem igual.
+  const cadastro = {
+    ...prepararCadastroFerramenta({
+      parametros: lerParametros(null), codigosExistentes: ['FER-0001'],
+      categoriaFerramenta: 'Elétrica',
+      grupoFerramenta: 'Diversos', modelo: 'Furadeira', estoqueMinimo: '1',
+    }),
+    numero_serie: 'SERIE-42', preco_unitario: 240.5,
+  };
   const id = crypto.randomUUID();
   await demoSupabase.from('ferramentas').insert({
     id, empresa_id: 'empresa-demo', ...cadastro,

@@ -4,7 +4,7 @@ import { ItensModulo } from "@/components/modules/ItensModulo";
 export const Route = createFileRoute("/_authenticated/cadastros/ferramentas")({
   head: () => ({
     meta: [
-      { title: "Cadastro de Ferramentas | Patrimônio GEMAPE" },
+      { title: "Cadastrar Ferramenta | Patrimônio GEMAPE" },
       {
         name: "description",
         content: "Gestão e cadastro de Ferramentas.",
@@ -14,10 +14,10 @@ export const Route = createFileRoute("/_authenticated/cadastros/ferramentas")({
   component: () => (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Cadastros</p>
-        <h1 className="text-2xl font-bold">Cadastro de Ferramentas</h1>
+        <p className="text-eyebrow">Parâmetros · Ferramentas</p>
+        <h1 className="text-2xl font-bold">Cadastrar Ferramenta</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gerenciamento de ferramentas com marca, modelo e número de série.
+          Cadastro das ferramentas por grupo, modelo e marca, com estoque mínimo.
         </p>
       </header>
       <ItensModulo modulo="ferramenta" />

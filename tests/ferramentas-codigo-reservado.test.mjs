@@ -11,7 +11,7 @@ test('código excluído fica reservado sem afetar a regra de outros módulos', (
   assert.equal(prepararCadastroFerramenta({
     parametros: lerParametros(null), codigosExistentes: ['FER-0001', ...codigosReservadosFerramenta(storage)],
     categoriaFerramenta: 'Elétrica', grupoFerramenta: 'Diversos',
-    descricao: 'Nova furadeira', estoqueMinimo: '0', numeroSerie: 'SN-NEW', precoCusto: '10.00',
+    modelo: 'Nova furadeira', estoqueMinimo: '0',
   }).codigo_sku, 'FER-0003');
   assert.equal(proximoCodigo({ sigla: 'EPI', inicial: '0001' }, ['EPI-0001', ...codigosReservadosFerramenta(storage)]), 'EPI-0002');
 });
