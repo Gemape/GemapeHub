@@ -51,7 +51,7 @@ export function SeletorFornecedorCompra({
       </Select>
       {fornecedores.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          Nenhum fornecedor cadastrado para {nomeCategoria}. Cadastre em Cadastros &gt; Fornecedores (sem categoria, o fornecedor atende todas).
+          Nenhum fornecedor cadastrado. Cadastre em Cadastros &gt; Fornecedores.
         </p>
       )}
     </div>

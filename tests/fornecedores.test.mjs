@@ -136,3 +136,10 @@ test('o formulário de fornecedor não exige nome fantasia nem categoria', async
   assert.doesNotMatch(src, /id="nome_fantasia" name="nome_fantasia" required/);
   assert.match(src, /id="razao_social" name="razao_social" required/);
 });
+
+test('a tela de fornecedores não tem mais o campo nem a coluna de categorias (decisão 55)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../src/routes/_authenticated/cadastros/fornecedores.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /name="categorias"|<TableHead>Categorias<\/TableHead>|<legend/);
+  assert.match(src, /categorias: editando\?\.categorias \?\? \[\]/);
+});

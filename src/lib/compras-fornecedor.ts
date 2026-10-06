@@ -15,9 +15,8 @@ export const nomeDoFornecedor = (f: Pick<FornecedorDaCompra, "nome_fantasia" | "
 
 export const rotuloDoFornecedor = (f: FornecedorDaCompra): string => `${f.codigo} · ${nomeDoFornecedor(f)}`;
 
-/** Sem categoria cadastrada (decisão 55), o fornecedor atende todas as categorias. */
-export const atendeCategoria = (f: Pick<FornecedorDaCompra, "categorias">, categoriaId: string): boolean =>
-  !Array.isArray(f.categorias) || f.categorias.length === 0 || f.categorias.includes(categoriaId);
+/** O cadastro de fornecedor não tem mais categoria (decisão 55): todo fornecedor atende todas as compras. */
+export const atendeCategoria = (_f: Pick<FornecedorDaCompra, "categorias">, _categoriaId: string): boolean => true;
 
 export function fornecedoresDaCategoria(lista: FornecedorDaCompra[], categoriaId: string): FornecedorDaCompra[] {
   return lista
