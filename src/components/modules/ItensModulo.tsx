@@ -126,16 +126,18 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       empresa_id: editando?.empresa_id ?? (empresaPadraoParaEscolha(empresas, empresaId) || null),
       codigo_sku: String(f.get("codigo_sku") ?? "").trim(),
       marca: texto("marca"),
-      ca: texto("ca"),
-      tamanho: texto("tamanho"),
-      cor: capitalizarCadastro(texto("cor") ?? "") || null,
       unidade_medida: texto("unidade_medida"),
-      fornecedor: texto("fornecedor"),
-      data_validade: texto("data_validade"),
       status: String(f.get("status") ?? "Ativo"),
       observacoes: texto("observacoes"),
     };
+    if (!editando && !valores["empresa_id"]) {
+      salvando.current = false;
+      toast.error("Cadastre ou ative uma empresa antes de cadastrar a ferramenta.");
+      return;
+    }
     if (!editando) {
+      // A série não é mais pedida (decisão 54), mas a coluna é obrigatória e única no banco: valor gerado.
+      valores['numero_serie'] = `SN-${crypto.randomUUID()}`;
       valores['estoque_atual'] = 0;
     }
     try {

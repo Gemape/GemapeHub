@@ -26,4 +26,12 @@ test("a edição não apaga série, patrimônio, aquisição, custo e nota fisca
   const fonte = ler("components/modules/ItensModulo.tsx");
   const valores = fonte.slice(fonte.indexOf("let valores"), fonte.indexOf("if (!editando)"));
   assert.doesNotMatch(valores, /numero_serie|patrimonio|data_aquisicao|preco_unitario|nota_fiscal/);
+  // Campos sem input na tela também não podem ser zerados na edição.
+  assert.doesNotMatch(valores, /texto\("(ca|tamanho|cor|fornecedor|data_validade)"\)/);
+});
+
+test("ferramenta nova recebe série gerada (coluna obrigatória) e exige empresa ativa", () => {
+  const fonte = ler("components/modules/ItensModulo.tsx");
+  assert.match(fonte, /valores\['numero_serie'\] = `SN-\$\{crypto\.randomUUID\(\)\}`/);
+  assert.match(fonte, /!editando && !valores\["empresa_id"\]/);
 });
