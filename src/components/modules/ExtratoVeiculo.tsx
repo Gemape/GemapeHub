@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hojeLocal } from "@/lib/empregados";
-import { kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
+import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useMovimentacoes, useOcorrencias, type Veiculo } from "@/lib/hooks-gemape";
 import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
@@ -47,7 +47,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
   if (!veiculo) return <Dialog open={false} onOpenChange={onFechar}><DialogContent aria-describedby={undefined} /></Dialog>;
 
   const dele = <T extends { veiculoId: string }>(l: T[]) => l.filter((x) => x.veiculoId === veiculo.id);
-  const abast = dele(abastecimentos).sort((a, b) => b.data.localeCompare(a.data) || b.km - a.km);
+  const abast = historicoAbastecimentos(dele(abastecimentos));
   const manut = dele(manutencoes);
   const media = mediaKmPorLitro(abast);
   const kmAtual = kmAtualDoVeiculo(veiculo.quilometragem_atual, abast, manut);
@@ -145,14 +145,17 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
         <Secao titulo="Histórico de abastecimentos">
           <div className="overflow-x-auto rounded-lg border">
             <Table>
-              <TableHeader><TableRow><TableHead>Data</TableHead><TableHead className="text-right">Km</TableHead><TableHead className="text-right">Litros</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Data e hora</TableHead><TableHead className="text-right">Km</TableHead><TableHead className="text-right">Km rodados</TableHead><TableHead className="text-right">Litros</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="text-right">Km/L</TableHead></TableRow></TableHeader>
               <TableBody>
-                {abast.length === 0 && <Vazio colunas={3} texto="Nenhum abastecimento registrado." />}
+                {abast.length === 0 && <Vazio colunas={6} texto="Nenhum abastecimento registrado." />}
                 {abast.map((a) => (
                   <TableRow key={a.id}>
-                    <TableCell>{formatarData(a.data)}</TableCell>
+                    <TableCell>{formatarData(a.data)}{a.hora ? ` ${a.hora}` : ""}</TableCell>
                     <TableCell className="text-right">{numero(a.km)}</TableCell>
+                    <TableCell className="text-right">{a.kmRodados === null ? "—" : numero(a.kmRodados)}</TableCell>
                     <TableCell className="text-right">{a.litros.toLocaleString("pt-BR")}</TableCell>
+                    <TableCell className="text-right">{a.valor ? a.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}</TableCell>
+                    <TableCell className="text-right">{a.kmPorLitro === null ? "—" : a.kmPorLitro.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

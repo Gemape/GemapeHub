@@ -14,39 +14,41 @@ const memoria = () => {
 const hoje = new Date(2026, 9, 5, 12);
 
 test("abastecimento valida veículo, data, km e litros e aceita vírgula decimal", () => {
+  const ok = { veiculoId: "v1", data: "2026-10-01", hora: "08:30", km: "50.000", litros: "40,5", valor: "R$ 1.234,56" };
   const s = memoria();
-  const ok = { veiculoId: "v1", data: "2026-10-01", km: "50.000", litros: "40,5" };
   const r = registrarAbastecimento(ok, s, hoje);
   assert.equal(r.km, 50000);
   assert.equal(r.litros, 40.5);
+  assert.equal(r.valor, 1234.56);
+  assert.equal(r.hora, "08:30");
   assert.equal(lerAbastecimentos(s).length, 1);
   assert.throws(() => registrarAbastecimento({ ...ok, veiculoId: "" }, s, hoje), /veículo/i);
   assert.throws(() => registrarAbastecimento({ ...ok, data: "" }, s, hoje), /data/i);
   assert.throws(() => registrarAbastecimento({ ...ok, data: "2026-12-01" }, s, hoje), /futura/i);
   assert.throws(() => registrarAbastecimento({ ...ok, km: "abc" }, s, hoje), /km/i);
-  assert.throws(() => registrarAbastecimento({ ...ok, litros: "0" }, s, hoje), /litros/i);
+  assert.throws(() => registrarAbastecimento({ ...ok, hora: "08:00", valor: "200", litros: "0" }, s, hoje), /litros/i);
   assert.equal(lerAbastecimentos(s).length, 1);
 });
 
 test("abastecimento não aceita km fora da ordem das datas do mesmo veículo", () => {
   const s = memoria();
-  registrarAbastecimento({ veiculoId: "v1", data: "2026-09-01", km: "1000", litros: "30" }, s, hoje);
-  registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", km: "1500", litros: "30" }, s, hoje);
-  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-15", km: "900", litros: "30" }, s, hoje), /km/i);
-  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-15", km: "1600", litros: "30" }, s, hoje), /km/i);
+  registrarAbastecimento({ veiculoId: "v1", data: "2026-09-01", km: "1000", hora: "08:00", valor: "200", litros: "30" }, s, hoje);
+  registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", km: "1500", hora: "08:00", valor: "200", litros: "30" }, s, hoje);
+  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-15", km: "900", hora: "08:00", valor: "200", litros: "30" }, s, hoje), /km/i);
+  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-15", km: "1600", hora: "08:00", valor: "200", litros: "30" }, s, hoje), /km/i);
   // manutenção também entra na conta do km
   registrarManutencao({ veiculoId: "v1", data: "2026-09-20", km: "1200", tipo: "Corretiva", descricao: "Bateria" }, s, hoje);
   assert.throws(() => registrarManutencao({ veiculoId: "v1", data: "2026-09-25", km: "1100", tipo: "Corretiva", descricao: "x" }, s, hoje), /km/i);
-  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-25", km: "1100", litros: "30" }, s, hoje), /km/i);
+  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-09-25", km: "1100", hora: "08:00", valor: "200", litros: "30" }, s, hoje), /km/i);
   // outro veículo não é afetado
-  registrarAbastecimento({ veiculoId: "v2", data: "2026-09-15", km: "10", litros: "30" }, s, hoje);
+  registrarAbastecimento({ veiculoId: "v2", data: "2026-09-15", km: "10", hora: "08:00", valor: "200", litros: "30" }, s, hoje);
   assert.equal(lerAbastecimentos(s).length, 3);
-  assert.throws(() => registrarAbastecimento({ veiculoId: "v2", data: "2026-02-31", km: "10", litros: "30" }, s, hoje), /data/i);
+  assert.throws(() => registrarAbastecimento({ veiculoId: "v2", data: "2026-02-31", km: "10", hora: "08:00", valor: "200", litros: "30" }, s, hoje), /data/i);
 });
 
 test("remover abastecimento e manutenção", () => {
   const s = memoria();
-  const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", km: "1000", litros: "30" }, s, hoje);
+  const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", km: "1000", hora: "08:00", valor: "200", litros: "30" }, s, hoje);
   removerAbastecimento(a.id, s);
   assert.equal(lerAbastecimentos(s).length, 0);
   const m = registrarManutencao({ veiculoId: "v1", data: "2026-10-01", km: "1000", tipo: "Corretiva", descricao: "Troca de pastilha" }, s, hoje);
@@ -140,4 +142,58 @@ test("Veículos tem Frota com extrato, Abastecimento e Manutenção, e o cadastr
 
 test("excluir abastecimento e manutenção só aparece para o Administrador", () => {
   for (const c of ["AbastecimentoVeiculoModulo", "ManutencaoVeiculoModulo"]) assert.match(fonte(`components/modules/${c}.tsx`), /isAdmin &&/);
+});
+
+
+import { ultimoAbastecimentoDoVeiculo, historicoAbastecimentos } from "../src/lib/extrato-veiculo.ts";
+
+test("mesmo dia: o km acompanha a hora, e km igual ao anterior é aceito", () => {
+  const s = memoria();
+  const base = { veiculoId: "v1", data: "2026-10-01", valor: "100", litros: "10" };
+  registrarAbastecimento({ ...base, hora: "08:00", km: "1000" }, s, hoje);
+  registrarAbastecimento({ ...base, hora: "18:00", km: "1300" }, s, hoje);
+  assert.throws(() => registrarAbastecimento({ ...base, hora: "12:00", km: "900" }, s, hoje), /km/i);
+  assert.throws(() => registrarAbastecimento({ ...base, hora: "12:00", km: "1400" }, s, hoje), /km/i);
+  registrarAbastecimento({ ...base, hora: "12:00", km: "1000" }, s, hoje);
+  assert.equal(lerAbastecimentos(s).length, 3);
+});
+
+test("último abastecimento do veículo traz o km mais recente por data e hora", () => {
+  const lista = [
+    { veiculoId: "v1", data: "2026-10-01", hora: "08:00", km: 1000 },
+    { veiculoId: "v1", data: "2026-10-01", hora: "18:00", km: 1300 },
+    { veiculoId: "v1", data: "2026-09-30", hora: "23:00", km: 900 },
+    { veiculoId: "v2", data: "2026-10-04", hora: "10:00", km: 50 },
+    { veiculoId: "v1", data: "2026-08-01", km: 400 }, // registro antigo, sem hora
+  ];
+  assert.equal(ultimoAbastecimentoDoVeiculo(lista, "v1").km, 1300);
+  assert.equal(ultimoAbastecimentoDoVeiculo(lista, "v3"), null);
+});
+
+test("histórico calcula km rodados, km/L do trecho e R$/L, do mais recente ao mais antigo", () => {
+  const lista = [
+    { id: "a", veiculoId: "v1", data: "2026-09-01", hora: "08:00", km: 1000, litros: 40, valor: 240 },
+    { id: "b", veiculoId: "v1", data: "2026-10-01", hora: "08:00", km: 1400, litros: 20, valor: 130 },
+    { id: "c", veiculoId: "v1", data: "2026-09-15", km: 1200, litros: 25 }, // sem hora e sem valor (registro antigo)
+  ];
+  const h = historicoAbastecimentos(lista);
+  assert.deepEqual(h.map((x) => x.id), ["b", "c", "a"]);
+  assert.equal(h[0].kmRodados, 200);
+  assert.equal(h[0].kmPorLitro, 10);
+  assert.equal(h[0].precoLitro, 6.5);
+  assert.equal(h[1].kmRodados, 200);
+  assert.equal(h[1].precoLitro, null);
+  assert.equal(h[2].kmRodados, null);
+  assert.equal(h[2].kmPorLitro, null);
+  assert.equal(h[2].precoLitro, 6);
+});
+
+test("manutenção no mesmo dia de um abastecimento aceita qualquer km; mesmo veículo, data e hora repetidos são recusados", () => {
+  const s = memoria();
+  registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "08:00", km: "1300", litros: "10", valor: "100" }, s, hoje);
+  registrarManutencao({ veiculoId: "v1", data: "2026-10-01", km: "1400", tipo: "Corretiva", descricao: "Bateria" }, s, hoje);
+  registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "06:00", km: "1000", litros: "10", valor: "100" }, s, hoje);
+  // dias diferentes continuam conferidos, e a mensagem diz qual registro impede
+  assert.throws(() => registrarManutencao({ veiculoId: "v1", data: "2026-10-02", km: "1200", tipo: "Corretiva", descricao: "x" }, s, hoje), /há um de [\d.]+ km em 01\/10\/2026/);
+  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "08:00", km: "1300", litros: "10", valor: "100" }, s, hoje), /mesma data e hora|nesta data e hora/i);
 });

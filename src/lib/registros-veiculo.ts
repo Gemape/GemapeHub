@@ -8,7 +8,17 @@ const CHAVE_ABASTECIMENTOS = "gemape-demo-abastecimentos";
 const CHAVE_MANUTENCOES = "gemape-demo-manutencoes-veiculo";
 export const EVENTO_REGISTROS_VEICULO = "gemape-registros-veiculo";
 
-export type Abastecimento = { id: string; veiculoId: string; data: string; km: number; litros: number; criadoEm: string };
+// Hora e valor vieram depois (decisão 58): registros antigos podem não ter.
+export type Abastecimento = {
+  id: string;
+  veiculoId: string;
+  data: string;
+  hora?: string;
+  km: number;
+  litros: number;
+  valor?: number | null;
+  criadoEm: string;
+};
 export type TipoManutencao = "Preventiva" | "Corretiva";
 export type ManutencaoVeiculo = {
   id: string;
@@ -68,6 +78,24 @@ function decimalPositivo(valor: string | number | undefined): number | null {
   return n > 0 && n <= 9999 ? n : null;
 }
 
+// Valor em reais, com vírgula decimal e ponto de milhar ("R$ 1.234,56"), maior que zero.
+function dinheiroPositivo(valor: string | number | undefined): number | null {
+  if (typeof valor === "number") return valor > 0 && valor <= 999_999.99 ? Math.round(valor * 100) / 100 : null;
+  const texto = String(valor ?? "").replace(/R\$/gi, "").replace(/\s/g, "");
+  const normal = texto.includes(",") ? texto.replace(/\./g, "").replace(",", ".") : texto;
+  if (!/^\d+(\.\d{1,2})?$/.test(normal)) return null;
+  const n = Number(normal);
+  return n > 0 && n <= 999_999.99 ? n : null;
+}
+
+function validarHora(hora: string | undefined): string {
+  const h = String(hora ?? "").trim();
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(h)) throw new Error("Informe a hora do abastecimento (HH:MM).");
+  return h;
+}
+
+const chaveMomento = (r: { data: string; hora?: string }) => `${r.data}T${r.hora ?? "00:00"}`;
+
 function validarData(data: string | undefined, hoje: Date): string {
   const d = String(data ?? "").trim();
   const [a, m, dia] = d.split("-").map(Number);
@@ -82,25 +110,62 @@ function validarData(data: string | undefined, hoje: Date): string {
 
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now() + Math.random()));
 
-// O km cresce com a data, somando abastecimentos e manutenções do mesmo veículo.
-function kmCoerente(veiculoId: string, data: string, km: number, storage: StorageLike | null): boolean {
+// O km cresce com a data e a hora, somando abastecimentos e manutenções do mesmo veículo.
+// Manutenção não tem hora: ao comparar com ela vale só a data (no mesmo dia, qualquer km passa).
+// Km igual ao anterior é aceito. Devolve o registro que impede, para a mensagem dizer qual é.
+function conflitoDeKm(
+  veiculoId: string,
+  novo: { data: string; hora?: string },
+  km: number,
+  storage: StorageLike | null,
+): { data: string; hora?: string; km: number } | null {
   const outros = [...lerAbastecimentos(storage), ...lerManutencoes(storage)].filter((r) => r.veiculoId === veiculoId);
-  return !outros.some((r) => (r.data < data && r.km > km) || (r.data > data && r.km < km));
+  return (
+    outros.find((r) => {
+      const hora = (r as { hora?: string }).hora;
+      const semHora = !novo.hora || !hora;
+      const antes = semHora ? r.data < novo.data : chaveMomento({ data: r.data, hora }) < chaveMomento(novo);
+      const depois = semHora ? r.data > novo.data : chaveMomento({ data: r.data, hora }) > chaveMomento(novo);
+      return (antes && r.km > km) || (depois && r.km < km);
+    }) ?? null
+  );
 }
 
-export type EntradaAbastecimento = { veiculoId: string; data: string; km: string | number; litros: string | number };
+function mensagemKm(c: { data: string; hora?: string; km: number }): string {
+  const [ano, mes, dia] = c.data.split("-");
+  return `O km não confere com os outros registros deste veículo: há um de ${c.km.toLocaleString("pt-BR")} km em ${dia}/${mes}/${ano}${c.hora ? ` às ${c.hora}` : ""}. O km não pode ser menor que o anterior.`;
+}
+
+export type EntradaAbastecimento = {
+  veiculoId: string;
+  data: string;
+  hora: string;
+  km: string | number;
+  litros: string | number;
+  valor: string | number;
+};
 
 export function registrarAbastecimento(entrada: EntradaAbastecimento, storage = storagePadrao(), agora = new Date()): Abastecimento {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
   const data = validarData(entrada.data, agora);
+  const hora = validarHora(entrada.hora);
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  if (data === hojeLocal(agora) && hora > `${p2(agora.getHours())}:${p2(agora.getMinutes())}`) {
+    throw new Error("A hora não pode ser futura.");
+  }
   const km = inteiro(entrada.km);
   if (km === null) throw new Error("Informe o km do veículo (número inteiro, 0 ou mais).");
   const litros = decimalPositivo(entrada.litros);
   if (litros === null) throw new Error("Informe os litros (número maior que zero, ex.: 40,5).");
-  if (!kmCoerente(entrada.veiculoId, data, km, storage)) {
-    throw new Error("O km não confere com os outros registros deste veículo: ele cresce com a data.");
+  const valor = dinheiroPositivo(entrada.valor);
+  if (valor === null) throw new Error("Informe o valor em reais (maior que zero, ex.: 250,00).");
+  const conflito = conflitoDeKm(entrada.veiculoId, { data, hora }, km, storage);
+  if (conflito) throw new Error(mensagemKm(conflito));
+  // Mesmo veículo, data e hora: é o mesmo abastecimento enviado duas vezes.
+  if (lerAbastecimentos(storage).some((a) => a.veiculoId === entrada.veiculoId && a.data === data && a.hora === hora)) {
+    throw new Error("Já existe um abastecimento deste veículo nesta data e hora.");
   }
-  const registro: Abastecimento = { id: novoId(), veiculoId: entrada.veiculoId, data, km, litros, criadoEm: agora.toISOString() };
+  const registro: Abastecimento = { id: novoId(), veiculoId: entrada.veiculoId, data, hora, km, litros, valor, criadoEm: agora.toISOString() };
   alterar<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => [...lista, registro]);
   return registro;
 }
@@ -136,9 +201,8 @@ export function registrarManutencao(
   } else if (!descricao) {
     throw new Error("Informe a descrição do serviço da manutenção corretiva.");
   }
-  if (!kmCoerente(entrada.veiculoId, data, km, storage)) {
-    throw new Error("O km não confere com os outros registros deste veículo: ele cresce com a data.");
-  }
+  const conflito = conflitoDeKm(entrada.veiculoId, { data }, km, storage);
+  if (conflito) throw new Error(mensagemKm(conflito));
   const registro: ManutencaoVeiculo = {
     id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId, descricao, criadoEm: agora.toISOString(),
   };
