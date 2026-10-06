@@ -31,11 +31,12 @@ import {
 import {
   nomeTamanho,
   tamanhosAssociadosParaCadastro,
+  tamanhosGeraisParaCadastro,
   unidadesAutorizadasDoProduto,
 } from "@/lib/estoque-tamanho";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { avisoExclusaoDoProduto } from "@/lib/codigo-fabrica-vinculos";
-import { estaAtivo, lerParametros, paraSelecao, proximoCodigo, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
+import { autorizar, estaAtivo, lerParametros, paraSelecao, proximoCodigo, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
 import { subcategoriasParaSelecao } from "@/lib/subcategoria-referencia";
 import { DialogTamanhoSubcategoria } from "@/components/parametros/DialogTamanhoSubcategoria";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -118,6 +119,8 @@ function CatalogoUniforme() {
     ? paraSelecao(parametros, unidadesAutorizadasDoProduto(parametros, "uniforme", produtoForm))
     : [];
   const associados = subEscolhida ? tamanhosAssociadosParaCadastro(parametros, "uniforme", produtoForm) : [];
+  // Novo cadastro: todos os tamanhos de Gerais; o que ainda não era associado à subcategoria é associado ao salvar.
+  const tamanhosGerais = subEscolhida ? tamanhosGeraisParaCadastro(parametros, "uniforme", produtoForm) : [];
   const pedeUnidade = unidades.some((u) => estaAtivo(parametros, u.id));
 
   // Tamanhos que o Clonar ainda pode cadastrar para a descrição de origem.
@@ -236,11 +239,21 @@ function CatalogoUniforme() {
           minimo: String(f.get("minimo") ?? ""),
           catalogo: atual,
           codigo,
-          pedeTamanho: associados.length > 0,
-          tamanhosPermitidos: associados.map((t) => t.id),
+          pedeTamanho: tamanhosGerais.length > 0,
+          tamanhosPermitidos: tamanhosGerais.map((t) => t.id),
           nomeProduto: "uniforme",
         }),
-      () => setNovoAberto(false),
+      () => {
+        // Associa à subcategoria o tamanho de Gerais que ainda não estava associado a ela.
+        if (tamanhoSel && !associados.some((t) => t.id === tamanhoSel)) {
+          try {
+            autorizar(subEscolhida.id, "tamanhos", [tamanhoSel]);
+          } catch {
+            toast.error("O item foi salvo, mas o tamanho não pôde ser associado à subcategoria em Gerais.");
+          }
+        }
+        setNovoAberto(false);
+      },
     );
   }
 
@@ -372,18 +385,18 @@ function CatalogoUniforme() {
             {subEscolhida && (
               <div className="space-y-1.5">
                 <Label htmlFor="tamanho">Tamanho</Label>
-                {associados.length > 0 ? (
+                {tamanhosGerais.length > 0 ? (
                   <Select value={tamanhoSel} onValueChange={setTamanhoSel}>
                     <SelectTrigger id="tamanho"><SelectValue placeholder="Selecione o tamanho" /></SelectTrigger>
                     <SelectContent>
-                      {associados.map((t) => (
+                      {tamanhosGerais.map((t) => (
                         <SelectItem key={t.id} value={t.id}>{t.rotulo}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Nenhum tamanho associado a esta subcategoria.{" "}
+                    Nenhum tamanho cadastrado em Gerais.{" "}
                     <button
                       type="button"
                       className="font-medium text-primary underline underline-offset-2"
