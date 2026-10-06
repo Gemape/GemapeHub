@@ -6,6 +6,7 @@ import { registrarOcorrenciasDoChecklist, removerOcorrenciasPorId } from "./ocor
 import { alterarLista, lerLista, type StorageLike } from "./registros-veiculo.ts";
 
 const CHAVE = "gemape-demo-checklists-veiculo";
+const CHAVE_PERIODICIDADE = "gemape-demo-periodicidade-checklist";
 export const MAX_FOTOS_ITEM = 3;
 const LIMITE_FOTO = 600_000; // caracteres do data URL; a foto comprimida fica bem abaixo disso
 
@@ -49,6 +50,28 @@ const limpar = (t: string, max: number) => t.trim().replace(/\s+/g, " ").slice(0
 
 export const lerChecklists = (storage: StorageLike | null = storagePadrao()): ChecklistVeiculo[] =>
   lerLista<ChecklistVeiculo>(CHAVE, storage).lista;
+
+// Periodicidade definida no próprio módulo Check list, uma por veículo (todos os itens dele seguem a frequência).
+type PeriodicidadeDoVeiculo = { veiculoId: string; periodicidade: Periodicidade };
+
+export function lerPeriodicidades(storage: StorageLike | null = storagePadrao()): Record<string, Periodicidade> {
+  const mapa: Record<string, Periodicidade> = {};
+  for (const p of lerLista<PeriodicidadeDoVeiculo>(CHAVE_PERIODICIDADE, storage).lista) {
+    if (typeof p.veiculoId === "string" && ehPeriodicidade(p.periodicidade)) mapa[p.veiculoId] = p.periodicidade;
+  }
+  return mapa;
+}
+
+export function definirPeriodicidade(veiculoId: string, periodicidade: string, storage = storagePadrao()): void {
+  if (!veiculoId) throw new Error("Selecione o veículo.");
+  if (!ehPeriodicidade(periodicidade)) throw new Error("A periodicidade do check list é Diário ou Semanal.");
+  gravar(() =>
+    alterarLista<PeriodicidadeDoVeiculo>(CHAVE_PERIODICIDADE, storage, (lista) => [
+      ...lista.filter((p) => p.veiculoId !== veiculoId),
+      { veiculoId, periodicidade },
+    ]),
+  );
+}
 
 export const ehPeriodicidade = (v: unknown): v is Periodicidade => PERIODICIDADES.includes(v as Periodicidade);
 
@@ -138,7 +161,7 @@ export type EntradaChecklist = {
 export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
   if (!ehPeriodicidade(entrada.periodicidade)) {
-    throw new Error("Defina a periodicidade do check list (Diário ou Semanal) no cadastro do veículo.");
+    throw new Error("Defina a periodicidade do check list (Diário ou Semanal) neste módulo.");
   }
   if (!entrada.responsavelId) throw new Error("Selecione o responsável pelo check list.");
   const itens: ItemChecklist[] = entrada.grupos.flatMap((g) =>

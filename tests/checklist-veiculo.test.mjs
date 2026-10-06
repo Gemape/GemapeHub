@@ -205,7 +205,7 @@ test("relatório em PDF: traz todos os itens e escapa todo texto informado", asy
   assert.match(html, /OCO-0001/);
 });
 
-test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir e periodicidade no cadastro do veículo", () => {
+test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir e periodicidade escolhida no próprio módulo", () => {
   const menu = readFileSync("src/lib/menu-parametros.ts", "utf8");
   assert.match(menu, /aba: "checklist", titulo: "Check list"/);
   assert.match(readFileSync("src/routes/_authenticated/veiculos.tsx", "utf8"), /MODO_DEMO \? <ChecklistVeiculoModulo/);
@@ -216,8 +216,20 @@ test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir 
   assert.match(tela, /Resolver pendência/);
   assert.doesNotMatch(tela, /supabase\.(from|rpc)/);
   const cadastro = readFileSync("src/components/modules/VeiculosCadastroModulo.tsx", "utf8");
-  assert.match(cadastro, /Periodicidade do check list/);
-  assert.match(cadastro, /periodicidade_checklist/);
+  assert.doesNotMatch(cadastro, /periodicidade/i);
+  assert.match(tela, /definirPeriodicidade/);
+});
+
+test("periodicidade é definida no módulo (só Diário ou Semanal) e fica por veículo", async () => {
+  const { definirPeriodicidade, lerPeriodicidades } = await import("../src/lib/checklist-veiculo.ts");
+  const s = memoria();
+  assert.deepEqual(lerPeriodicidades(s), {});
+  definirPeriodicidade("v1", "Diário", s);
+  definirPeriodicidade("v2", "Semanal", s);
+  definirPeriodicidade("v1", "Semanal", s);
+  assert.deepEqual(lerPeriodicidades(s), { v1: "Semanal", v2: "Semanal" });
+  assert.throws(() => definirPeriodicidade("v1", "Mensal", s), /Diário ou Semanal/);
+  assert.throws(() => definirPeriodicidade("", "Diário", s), /veículo/i);
 });
 
 test("situação periódica vale pelo dia da conclusão e tipos soltos são reconhecidos", () => {
