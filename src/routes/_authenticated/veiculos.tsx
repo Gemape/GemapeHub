@@ -4,7 +4,9 @@ import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { AbastecimentoVeiculoModulo } from "@/components/modules/AbastecimentoVeiculoModulo";
 import { FrotaModulo } from "@/components/modules/FrotaModulo";
 import { ManutencaoVeiculoModulo } from "@/components/modules/ManutencaoVeiculoModulo";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { OcorrenciasVeiculoModulo } from "@/components/modules/OcorrenciasVeiculoModulo";
+import { MODO_DEMO } from "@/lib/modo-demo";
+import { Tabs,TabsContent } from "@/components/ui/tabs";
 import { abaDoModulo } from "@/lib/menu-parametros";
 
 export const Route = createFileRoute("/_authenticated/veiculos")({
@@ -58,7 +60,7 @@ function PaginaVeiculos() {
           <MovimentacoesModulo modulo="veiculo" />
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
-          <OcorrenciasModulo modulo="veiculo" />
+          {MODO_DEMO ? <OcorrenciasVeiculoModulo /> : <OcorrenciasModulo modulo="veiculo" />}
         </TabsContent>
       </Tabs>
     </div>

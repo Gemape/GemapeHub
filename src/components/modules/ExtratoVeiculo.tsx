@@ -6,9 +6,10 @@ import { hojeLocal } from "@/lib/empregados";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useMovimentacoes, useOcorrencias, type Veiculo } from "@/lib/hooks-gemape";
-import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
+import { useAbastecimentos, useManutencoesVeiculo, useOcorrenciasVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresa } from "@/lib/empresa-context";
+import { MODO_DEMO } from "@/lib/modo-demo";
 
 const ESTADO: Record<StatusSugestao, { rotulo: string; classe: string }> = {
   vencida: { rotulo: "🔴 Vencida", classe: "text-destructive font-medium" },
@@ -43,6 +44,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
   const planos = usePlanosVeiculo();
   const { data: movimentacoes = [] } = useMovimentacoes("veiculo", empresaId);
   const { data: ocorrencias = [] } = useOcorrencias("", "veiculo");
+  const ocorrenciasNovas = useOcorrenciasVeiculo();
 
   if (!veiculo) return <Dialog open={false} onOpenChange={onFechar}><DialogContent aria-describedby={undefined} /></Dialog>;
 
@@ -76,7 +78,15 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
         return { chave: m.id, data: m.data_movimentacao.slice(0, 10), km: null, tipo: "Movimentação", servico: `${x.acao_manutencao}${subs}` };
       }),
   ].sort((a, b) => b.data.localeCompare(a.data));
-  const ocorrenciasDoVeiculo = ocorrencias.filter((o) => o.veiculo_id === veiculo.id).sort((a, b) => b.data.localeCompare(a.data));
+  // Em demonstração valem as ocorrências da tela nova (decisão 60); fora dela, as da tabela antiga.
+  const ocorrenciasDoVeiculo = (MODO_DEMO
+    ? ocorrenciasNovas.filter((o) => o.veiculoId === veiculo.id).map((o) => ({
+        chave: o.id, data: o.ocorridoEm.slice(0, 10), descricao: `${o.codigo} · ${o.tipoNome}: ${o.descricao}`, situacao: o.status,
+      }))
+    : ocorrencias.filter((o) => o.veiculo_id === veiculo.id).map((o) => ({
+        chave: o.id, data: o.data, descricao: o.descricao_ocorrencia, situacao: o.responsavel_registro,
+      }))
+  ).sort((a, b) => b.data.localeCompare(a.data));
 
   return (
     <Dialog open onOpenChange={(v) => !v && onFechar()}>
@@ -166,14 +176,14 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
         <Secao titulo="Ocorrências">
           <div className="overflow-x-auto rounded-lg border">
             <Table>
-              <TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Descrição</TableHead><TableHead>Responsável</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Descrição</TableHead><TableHead>{MODO_DEMO ? "Status" : "Responsável"}</TableHead></TableRow></TableHeader>
               <TableBody>
                 {ocorrenciasDoVeiculo.length === 0 && <Vazio colunas={3} texto="Nenhuma ocorrência registrada." />}
                 {ocorrenciasDoVeiculo.map((o) => (
-                  <TableRow key={o.id}>
+                  <TableRow key={o.chave}>
                     <TableCell>{formatarData(o.data)}</TableCell>
-                    <TableCell>{o.descricao_ocorrencia}</TableCell>
-                    <TableCell>{o.responsavel_registro}</TableCell>
+                    <TableCell>{o.descricao}</TableCell>
+                    <TableCell>{o.situacao}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
