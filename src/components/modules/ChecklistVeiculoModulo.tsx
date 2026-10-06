@@ -7,6 +7,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -17,14 +18,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
-  gruposAplicaveis, hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  definirPeriodicidade, PERIODICIDADES, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
+  hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
+  definirPeriodicidade, gruposDoTipoChecklist, PERIODICIDADES, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
-import { combinaBusca } from "@/lib/parametros-base";
+import { combinaBusca, subcategoriasDa } from "@/lib/parametros-base";
 import { resolverSubcategoria } from "@/lib/subcategoria-referencia";
 import { useChecklistsVeiculo, usePeriodicidadesChecklist } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
@@ -62,6 +63,7 @@ export function ChecklistVeiculoModulo() {
   const [tela, setTela] = useState<Tela>(null);
   const [busca, setBusca] = useState("");
   const [soPendencias, setSoPendencias] = useState(false);
+  const [tipoCheck, setTipoCheck] = useState("");
   const [veiculoId, setVeiculoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
@@ -76,11 +78,16 @@ export function ChecklistVeiculoModulo() {
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const rotuloDe = (v: VeiculoChecklist) => rotuloDoVeiculo(parametros, v);
   const tipoDe = (v: VeiculoChecklist) => resolverSubcategoria(parametros, "cat-veiculos", v);
-  const gruposDe = (v: VeiculoChecklist) => gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(v)?.id ?? null);
+  const subcategoriasVeiculo = subcategoriasDa(parametros, "cat-veiculos");
+  const tipoCheckDe = (v: VeiculoChecklist) => tipoChecklistDaSubcategoria(tipoDe(v)?.nome);
+  const gruposDoTipo = gruposDoTipoChecklist(parametros.itensChecklistVeiculo, subcategoriasVeiculo, tipoCheck);
+  const itensDoTipo = gruposDoTipo.reduce((t, g) => t + g.itens.length, 0);
+  const veiculosDoTipo = veiculos.filter((v) => v.status === "Ativo" && ehTipoChecklist(tipoCheck) && tipoCheckDe(v) === tipoCheck);
+  const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === tipoCheck)?.nome ?? "";
   const checklists = todos.filter((c) => idsDaEmpresa.has(c.veiculoId));
   const pendencias = pendenciasAbertas(checklists);
   const atual = tela?.tipo === "check" ? (todos.find((c) => c.id === tela.id) ?? null) : null;
-  const veiculoEscolhido = veiculos.find((v) => v.id === veiculoId && v.status === "Ativo");
+  const veiculoEscolhido = veiculosDoTipo.find((v) => v.id === veiculoId);
 
   const lista = checklists
     .filter((c) => !soPendencias || pendenciaDoChecklist(c) > 0)
@@ -92,7 +99,9 @@ export function ChecklistVeiculoModulo() {
   }
 
   function abrirNovo(v?: VeiculoChecklist) {
-    setVeiculoId(v?.id ?? "");
+    const tipo = v ? tipoCheckDe(v) : null;
+    setTipoCheck(tipo ?? "");
+    setVeiculoId(tipo ? (v?.id ?? "") : "");
     setResponsavelId(v?.empregado_responsavel_id ?? "");
     setTela({ tipo: "novo" });
   }
@@ -100,7 +109,8 @@ export function ChecklistVeiculoModulo() {
   function iniciar(e: React.FormEvent) {
     e.preventDefault();
     if (trava.current || !veiculoEscolhido) {
-      if (!veiculoEscolhido) executar(() => iniciarChecklist({ veiculoId: "", veiculoRotulo: "", tipoVeiculo: "", periodicidade: null, responsavelId, responsavelNome: "", grupos: [] }));
+      if (!tipoCheck) toast.error("Selecione o tipo de veículo.");
+      else if (!veiculoEscolhido) executar(() => iniciarChecklist({ veiculoId: "", veiculoRotulo: "", tipoVeiculo: "", periodicidade: null, responsavelId, responsavelNome: "", grupos: [] }));
       return;
     }
     trava.current = true;
@@ -109,11 +119,11 @@ export function ChecklistVeiculoModulo() {
       criado = iniciarChecklist({
         veiculoId: veiculoEscolhido.id,
         veiculoRotulo: rotuloDe(veiculoEscolhido),
-        tipoVeiculo: tipoDe(veiculoEscolhido)?.nome ?? "",
+        tipoVeiculo: tipoCheckNome,
         periodicidade: periodicidadeDe(veiculoEscolhido),
         responsavelId,
         responsavelNome: empregadosAtivos.find((x) => x.id === responsavelId)?.nome ?? "",
-        grupos: gruposDe(veiculoEscolhido),
+        grupos: gruposDoTipo,
       });
     }, "Check list iniciado");
     if (ok && criado) setTela({ tipo: "check", id: criado.id });
@@ -194,7 +204,7 @@ export function ChecklistVeiculoModulo() {
                       {aberto ? (
                         <Button requiresWrite="operar" variant="ghost" size="sm" onClick={() => setTela({ tipo: "check", id: aberto.id })}>Continuar</Button>
                       ) : (
-                        <Button requiresWrite="operar" variant="ghost" size="sm" disabled={!ehPeriodicidade(per) || v.status !== "Ativo"} onClick={() => abrirNovo(v)}>Iniciar</Button>
+                        <Button requiresWrite="operar" variant="ghost" size="sm" disabled={!ehPeriodicidade(per) || v.status !== "Ativo" || !tipoCheckDe(v)} onClick={() => abrirNovo(v)}>Iniciar</Button>
                       )}
                     </TableCell>
                   </TableRow>
@@ -248,19 +258,35 @@ export function ChecklistVeiculoModulo() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Novo check list</DialogTitle>
-            <DialogDescription>Os itens vêm do tipo do veículo, em Parâmetros &gt; Veículos &gt; Itens check list.</DialogDescription>
+            <DialogDescription>Escolha o tipo: os itens vêm dos grupos ligados a ele, em Parâmetros &gt; Veículos &gt; Itens check list.</DialogDescription>
           </DialogHeader>
           <form onSubmit={iniciar} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="ck_veiculo">Veículo</Label>
-              <Select value={veiculoId} onValueChange={setVeiculoId}>
-                <SelectTrigger id="ck_veiculo"><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
-                <SelectContent>{veiculos.filter((v) => v.status === "Ativo").map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDe(v)}</SelectItem>)}</SelectContent>
+              <Label htmlFor="ck_tipo">Tipo de veículo</Label>
+              <Select value={tipoCheck} onValueChange={(t) => { setTipoCheck(t); setVeiculoId(""); }}>
+                <SelectTrigger id="ck_tipo"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                <SelectContent>{TIPOS_CHECKLIST.map((t) => <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>)}</SelectContent>
               </Select>
+              {tipoCheck && (
+                <p className="text-xs text-muted-foreground">
+                  {gruposDoTipo.length === 0
+                    ? "Não há itens ligados a este tipo em Parâmetros > Veículos > Itens check list."
+                    : `${itensDoTipo} ${itensDoTipo === 1 ? "item" : "itens"} em ${gruposDoTipo.length} ${gruposDoTipo.length === 1 ? "grupo" : "grupos"}: ${gruposDoTipo.map((g) => g.nome).join(", ")}.`}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ck_veiculo">Veículo</Label>
+              <Select value={veiculoId} onValueChange={setVeiculoId} disabled={!tipoCheck}>
+                <SelectTrigger id="ck_veiculo"><SelectValue placeholder={tipoCheck ? "Selecione o veículo" : "Escolha o tipo primeiro"} /></SelectTrigger>
+                <SelectContent>{veiculosDoTipo.map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDe(v)}</SelectItem>)}</SelectContent>
+              </Select>
+              {tipoCheck && veiculosDoTipo.length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhum veículo ativo deste tipo. A subcategoria do veículo é definida em Parâmetros &gt; Veículos &gt; Cadastro de Veículos.</p>
+              )}
               {veiculoEscolhido && (
                 <p className="text-xs text-muted-foreground">
-                  Tipo: {tipoDe(veiculoEscolhido)?.nome ?? "sem tipo"} · periodicidade: {periodicidadeDe(veiculoEscolhido) ?? "não definida (escolha na tabela da situação por veículo)"} ·{" "}
-                  {gruposDe(veiculoEscolhido).reduce((t, g) => t + g.itens.length, 0)} itens
+                  Periodicidade: {periodicidadeDe(veiculoEscolhido) ?? "não definida (escolha na tabela da situação por veículo)"}
                   {pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
                 </p>
               )}
@@ -274,7 +300,7 @@ export function ChecklistVeiculoModulo() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setTela(null)}>Cancelar</Button>
-              <Button type="submit">Iniciar</Button>
+              <Button type="submit" disabled={!!tipoCheck && gruposDoTipo.length === 0}>Iniciar</Button>
             </DialogFooter>
           </form>
         </DialogContent>

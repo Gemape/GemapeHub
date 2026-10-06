@@ -246,3 +246,33 @@ test("hojeBrasilia independe do fuso do navegador", async () => {
   const { hojeBrasilia } = await import("../src/lib/checklist-veiculo.ts");
   assert.equal(hojeBrasilia(new Date("2026-10-07T01:30:00.000Z")), "2026-10-06");
 });
+
+test("tipo do check list: leves, pesados e empilhadeira puxam os grupos ligados em Parâmetros", async () => {
+  const { gruposDoTipoChecklist, tipoChecklistDaSubcategoria, TIPOS_CHECKLIST } = await import("../src/lib/checklist-veiculo.ts");
+  assert.deepEqual(TIPOS_CHECKLIST.map((t) => t.nome), ["Veículos leves", "Veículos pesados", "Empilhadeira"]);
+  const subs = [
+    { id: "s-carro", nome: "Carro" }, { id: "s-van", nome: "Van" }, { id: "s-cam", nome: "Caminhão" },
+    { id: "s-emp", nome: "Empilhadeira" }, { id: "s-moto", nome: "Moto" },
+  ];
+  const item = [{ id: "i", nome: "Freio" }];
+  const grupos = [
+    { id: "g1", nome: "Leves", itens: item, tiposVeiculo: ["s-carro", "s-van"] },
+    { id: "g2", nome: "Pesados", itens: item, tiposVeiculo: ["s-cam"] },
+    { id: "g3", nome: "Emp", itens: item, tiposVeiculo: ["s-emp"] },
+    { id: "g4", nome: "Todos", itens: item, tiposVeiculo: ["*"] },
+    { id: "g5", nome: "Moto", itens: item, tiposVeiculo: ["s-moto"] },
+    { id: "g6", nome: "Vazio", itens: [], tiposVeiculo: ["s-carro"] },
+  ];
+  const nomes = (t) => gruposDoTipoChecklist(grupos, subs, t).map((g) => g.nome);
+  assert.deepEqual(nomes("leves"), ["Leves", "Todos"]);
+  assert.deepEqual(nomes("pesados"), ["Pesados", "Todos"]);
+  assert.deepEqual(nomes("empilhadeira"), ["Emp", "Todos"]);
+  assert.deepEqual(nomes("outro"), []);
+  assert.equal(tipoChecklistDaSubcategoria("Utilitário"), "leves");
+  assert.equal(tipoChecklistDaSubcategoria("Caminhão"), "pesados");
+  assert.equal(tipoChecklistDaSubcategoria("Empilhadeira"), "empilhadeira");
+  assert.equal(tipoChecklistDaSubcategoria("Moto"), null);
+  const tela = readFileSync("src/components/modules/ChecklistVeiculoModulo.tsx", "utf8");
+  assert.match(tela, /Tipo de veículo/);
+  assert.match(tela, /gruposDoTipoChecklist/);
+});

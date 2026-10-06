@@ -2,6 +2,7 @@
 // no banco real são pendência da Fase 2.
 import type { GrupoChecklistVeiculo } from "./parametros-base.ts";
 import { TODOS_OS_TIPOS } from "./parametros-base.ts";
+import { chaveDoTipoVeiculo, type ChaveTipoVeiculo } from "./checklist-veiculos-padrao.ts";
 import { registrarOcorrenciasDoChecklist, removerOcorrenciasPorId } from "./ocorrencias-veiculo.ts";
 import { alterarLista, lerLista, type StorageLike } from "./registros-veiculo.ts";
 
@@ -74,6 +75,34 @@ export function definirPeriodicidade(veiculoId: string, periodicidade: string, s
 }
 
 export const ehPeriodicidade = (v: unknown): v is Periodicidade => PERIODICIDADES.includes(v as Periodicidade);
+
+// Tipo do check list escolhido no formulário (decisão 65). Cada tipo reúne as subcategorias de Veículos de
+// Gerais (pelo nome) a que os grupos de Parâmetros > Itens check list estão ligados.
+export const TIPOS_CHECKLIST = [
+  { id: "leves", nome: "Veículos leves", chaves: ["passeio", "suv", "van"] },
+  { id: "pesados", nome: "Veículos pesados", chaves: ["pesado", "onibus"] },
+  { id: "empilhadeira", nome: "Empilhadeira", chaves: ["empilhadeira"] },
+] as const satisfies readonly { id: string; nome: string; chaves: readonly ChaveTipoVeiculo[] }[];
+export type TipoChecklistId = (typeof TIPOS_CHECKLIST)[number]["id"];
+
+export const ehTipoChecklist = (v: unknown): v is TipoChecklistId => TIPOS_CHECKLIST.some((t) => t.id === v);
+
+// Tipo do check list a que a subcategoria de Veículos (pelo nome) pertence; null quando não há lista para ela.
+export function tipoChecklistDaSubcategoria(nomeSubcategoria: string | null | undefined): TipoChecklistId | null {
+  const chave = nomeSubcategoria ? chaveDoTipoVeiculo(nomeSubcategoria) : null;
+  return TIPOS_CHECKLIST.find((t) => chave !== null && (t.chaves as readonly string[]).includes(chave))?.id ?? null;
+}
+
+// Grupos de Parâmetros que valem para o tipo escolhido: os ligados a alguma subcategoria desse tipo e os de todos os tipos.
+export function gruposDoTipoChecklist(
+  grupos: GrupoChecklistVeiculo[],
+  subcategorias: { id: string; nome: string }[],
+  tipo: string,
+): GrupoChecklistVeiculo[] {
+  if (!ehTipoChecklist(tipo)) return [];
+  const ids = subcategorias.filter((s) => tipoChecklistDaSubcategoria(s.nome) === tipo).map((s) => s.id);
+  return grupos.filter((g) => g.itens.length > 0 && (g.tiposVeiculo.includes(TODOS_OS_TIPOS) || g.tiposVeiculo.some((t) => ids.includes(t))));
+}
 
 // Grupos do check list que valem para o tipo (subcategoria) do veículo: os ligados a ele e os de todos os tipos.
 export function gruposAplicaveis(grupos: GrupoChecklistVeiculo[], subcategoriaId: string | null): GrupoChecklistVeiculo[] {
