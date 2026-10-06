@@ -134,7 +134,17 @@ function Categorias() {
       }
       cadastros[tabela] = (data ?? []) as Record<string, unknown>[];
     }
-    return avisarUso(sub.nome, usoDaSubcategoria(sub, dados, cadastros), acaoExcluir(sub));
+    const usos = usoDaSubcategoria(sub, dados, cadastros);
+    // A categoria da ferramenta é uma subcategoria de Ferramentas (decisão 68), só no demo.
+    if (sub.categoriaId === "cat-ferramentas") {
+      const { data, error } = await demoSupabase.from("ferramentas").select("codigo_sku,nome,categoria_ferramenta");
+      if (error) {
+        toast.error("Não foi possível conferir os modelos de ferramentas.");
+        return true;
+      }
+      usos.push(...usoPorNome((data ?? []) as Record<string, unknown>[], "categoria_ferramenta", sub.nome, "Ferramenta"));
+    }
+    return avisarUso(sub.nome, usos, acaoExcluir(sub));
   }
 
   // Quem já está desativado não recebe a sugestão de desativar.
@@ -301,45 +311,6 @@ function Categorias() {
         />
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
-        <ListaEditavel
-          titulo="Categorias de ferramentas"
-          novo="Nova categoria de ferramenta"
-          itens={dados.categoriasFerramenta}
-          inativos={dados.inativos}
-          onAlternarAtivo={alternarAtivo}
-          onAdicionar={(nome) =>
-            executar(
-              () => adicionarListaFerramenta("categoriasFerramenta", nome),
-              "Categoria incluída.",
-            )
-          }
-          onRenomear={async (id, nome) => {
-            const atual = dados.categoriasFerramenta.find((item) => item.id === id);
-            if (
-              !atual ||
-              (atual.nome !== nome.trim() &&
-                (await vinculoImpedeAlteracao("categoriasFerramenta", atual.nome)))
-            )
-              return false;
-            return executar(() => renomearListaFerramenta("categoriasFerramenta", id, nome));
-          }}
-          onRemover={(item) =>
-            semRepetir(async () => {
-              if (
-                !(await vinculoImpedeAlteracao(
-                  "categoriasFerramenta",
-                  item.nome,
-                  acaoExcluir(item),
-                )) &&
-                confirm(`Excluir a categoria de ferramenta ${item.nome}?`)
-              )
-                executar(
-                  () => removerListaFerramenta("categoriasFerramenta", item.id),
-                  "Categoria excluída.",
-                );
-            })
-          }
-        />
         <ListaEditavel
           titulo="Grupos de ferramentas"
           novo="Novo grupo de ferramenta"

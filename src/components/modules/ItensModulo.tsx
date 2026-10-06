@@ -48,6 +48,7 @@ import {
   lerParametros,
   paraSelecao,
   proximoCodigo,
+  subcategoriasDa,
   removerCodigosFabricaPorIds,
   type CodigoFabrica,
 } from "@/lib/parametros-base";
@@ -73,7 +74,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   // Parâmetro desativado em Gerais sai da escolha; o que a ferramenta já usa continua na edição.
   const parametrosSelecao = {
     ...parametros,
-    categoriasFerramenta: paraSelecao(parametros, parametros.categoriasFerramenta, (c) => c.nome === categoriaFerramentaInicial),
+    categoriasFerramenta: paraSelecao(parametros, subcategoriasDa(parametros, "cat-ferramentas"), (c) => c.nome === categoriaFerramentaInicial),
     gruposFerramenta: paraSelecao(parametros, parametros.gruposFerramenta, (g) => g.nome === base?.grupo_ferramenta),
     marcasFerramenta: paraSelecao(parametros, parametros.marcasFerramenta, (m) => m.nome === base?.marca),
   };
