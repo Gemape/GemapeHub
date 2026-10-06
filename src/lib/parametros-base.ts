@@ -6,7 +6,7 @@ import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
 import { CHECKLIST_VEICULOS_PADRAO, NOMES_PADRAO_ANTIGO, chaveDoTipoVeiculo, tiposDoGrupoPadrao } from "./checklist-veiculos-padrao.ts";
-import { ACOES_MANUTENCAO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
+import { ACOES_MANUTENCAO_PADRAO, MARCAS_VEICULO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
 
 export type Categoria = { id: string; nome: string };
 export type TipoEnderecamento = "nao_usa" | "opcional" | "obrigatorio";
@@ -133,7 +133,7 @@ function padrao(): ParametrosBase {
       .map((nome) => ({ id: `grupo-fer-${slug(nome)}`, nome })),
     marcasFerramenta: [],
     marcasUniforme: [],
-    marcasVeiculo: [],
+    marcasVeiculo: MARCAS_VEICULO_PADRAO.map((nome) => ({ id: `marca-vei-${slug(nome)}`, nome })),
     acoesManutencaoVeiculo: [],
     tiposOcorrenciaVeiculo: [],
     itensChecklistVeiculo: [],
@@ -583,6 +583,20 @@ export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { g
       itens += padrao.itens.length;
     }
     return { grupos, itens, semTipo, substituidos, ligados };
+  });
+}
+
+// Inclui as marcas de veículos padrão que ainda não existem (mesmo nome, sem diferenciar
+// maiúsculas ou acentos). O que já está cadastrado não é repetido nem alterado.
+export function cadastrarMarcasPadraoVeiculos(storage = storagePadrao()): { marcas: number } {
+  return alterar(storage, (d) => {
+    let marcas = 0;
+    for (const nome of MARCAS_VEICULO_PADRAO) {
+      if (d.marcasVeiculo.some((m) => mesmoNome(m.nome, nome))) continue;
+      d.marcasVeiculo.push({ id: novoId(), nome });
+      marcas += 1;
+    }
+    return { marcas };
   });
 }
 
