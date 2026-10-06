@@ -1,0 +1,429 @@
+import { useRef, useState } from "react";
+
+import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
+import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { useAccess } from "@/lib/access-context";
+import {
+  adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
+  gruposAplicaveis, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
+  resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
+} from "@/lib/checklist-veiculo";
+import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
+import { hojeLocal } from "@/lib/empregados";
+import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { formatarData } from "@/lib/gemape";
+import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
+import { combinaBusca } from "@/lib/parametros-base";
+import { resolverSubcategoria } from "@/lib/subcategoria-referencia";
+import { useChecklistsVeiculo } from "@/lib/use-registros-veiculo";
+import { executar, useParametrosBase } from "@/lib/use-parametros-base";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
+
+type VeiculoChecklist = Veiculo & { periodicidade_checklist?: string | null };
+
+const dataHoraBrasilia = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+
+const SITUACAO: Record<SituacaoPeriodica, { rotulo: string; classe: string }> = {
+  em_dia: { rotulo: "Em dia", classe: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
+  em_andamento: { rotulo: "Em andamento", classe: "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200" },
+  pendente: { rotulo: "Pendente", classe: "border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" },
+};
+const COR_AVALIACAO: Record<string, string> = {
+  OK: "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-600",
+  NOK: "border-red-500 bg-red-600 text-white hover:bg-red-600",
+  "N.A.": "border-slate-500 bg-slate-600 text-white hover:bg-slate-600",
+};
+
+type Tela = { tipo: "novo" } | { tipo: "check"; id: string } | null;
+
+// Módulos > Veículos > Check list (decisão 63): por veículo, os itens do tipo dele (Parâmetros >
+// Veículos > Itens check list) são avaliados como OK, NOK ou N.A., com observação e fotos. Item NOK
+// gera uma ocorrência e uma pendência no próprio check list, que fica aberta até ser resolvida. A
+// periodicidade (diária ou semanal) é do veículo. Só modo demonstração; nada no Supabase.
+export function ChecklistVeiculoModulo() {
+  const { empresaId, empresas } = useEmpresa();
+  const { canWrite } = useAccess();
+  const parametros = useParametrosBase();
+  const { data: veiculosLista = [] } = useVeiculos(empresaId);
+  const veiculos = veiculosLista as VeiculoChecklist[];
+  const { data: empregadosAtivos = [] } = useEmpregados(TODAS, true);
+  const todos = useChecklistsVeiculo();
+  const [tela, setTela] = useState<Tela>(null);
+  const [busca, setBusca] = useState("");
+  const [soPendencias, setSoPendencias] = useState(false);
+  const [veiculoId, setVeiculoId] = useState("");
+  const [responsavelId, setResponsavelId] = useState("");
+  const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
+  const [confirmando, setConfirmando] = useState<"concluir" | "descartar" | null>(null);
+  const [resolvendo, setResolvendo] = useState<string | null>(null);
+  const [textoResolucao, setTextoResolucao] = useState("");
+  const trava = useRef(false);
+  const hoje = hojeLocal();
+
+  const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
+  const rotuloDe = (v: VeiculoChecklist) => rotuloDoVeiculo(parametros, v);
+  const tipoDe = (v: VeiculoChecklist) => resolverSubcategoria(parametros, "cat-veiculos", v);
+  const gruposDe = (v: VeiculoChecklist) => gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(v)?.id ?? null);
+  const checklists = todos.filter((c) => idsDaEmpresa.has(c.veiculoId));
+  const pendencias = pendenciasAbertas(checklists);
+  const atual = tela?.tipo === "check" ? (todos.find((c) => c.id === tela.id) ?? null) : null;
+  const veiculoEscolhido = veiculos.find((v) => v.id === veiculoId);
+
+  const lista = checklists
+    .filter((c) => !soPendencias || pendenciaDoChecklist(c) > 0)
+    .filter((c) => combinaBusca(busca, c.codigo, c.veiculoRotulo, c.responsavelNome, c.tipoVeiculo, c.status, formatarData(c.data)))
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+
+  function pendenciaDoChecklist(c: ChecklistVeiculo) {
+    return c.itens.filter(pendenciaAberta).length;
+  }
+
+  function abrirNovo(v?: VeiculoChecklist) {
+    setVeiculoId(v?.id ?? "");
+    setResponsavelId(v?.empregado_responsavel_id ?? "");
+    setTela({ tipo: "novo" });
+  }
+
+  function iniciar(e: React.FormEvent) {
+    e.preventDefault();
+    if (trava.current || !veiculoEscolhido) {
+      if (!veiculoEscolhido) executar(() => iniciarChecklist({ veiculoId: "", veiculoRotulo: "", tipoVeiculo: "", periodicidade: null, responsavelId, responsavelNome: "", grupos: [] }));
+      return;
+    }
+    trava.current = true;
+    let criado: ChecklistVeiculo | undefined;
+    const ok = executar(() => {
+      criado = iniciarChecklist({
+        veiculoId: veiculoEscolhido.id,
+        veiculoRotulo: rotuloDe(veiculoEscolhido),
+        tipoVeiculo: tipoDe(veiculoEscolhido)?.nome ?? "",
+        periodicidade: veiculoEscolhido.periodicidade_checklist,
+        responsavelId,
+        responsavelNome: empregadosAtivos.find((x) => x.id === responsavelId)?.nome ?? "",
+        grupos: gruposDe(veiculoEscolhido),
+      });
+    }, "Check list iniciado");
+    if (ok && criado) setTela({ tipo: "check", id: criado.id });
+    window.setTimeout(() => { trava.current = false; }, 600);
+  }
+
+  function avaliar(c: ChecklistVeiculo, i: ItemChecklist, avaliacao: string | null, observacao = i.observacao) {
+    executar(() => avaliarItem(c.id, i.id, { avaliacao, observacao }));
+  }
+
+  function concluir(c: ChecklistVeiculo) {
+    setConfirmando(null);
+    if (trava.current) return;
+    trava.current = true;
+    const nok = c.itens.filter((i) => i.avaliacao === "NOK").length;
+    executar(() => concluirChecklist(c.id), nok > 0 ? `Check list concluído: ${nok} ocorrência(s) aberta(s)` : "Check list concluído");
+    window.setTimeout(() => { trava.current = false; }, 800);
+  }
+
+  function gerarPdf(c: ChecklistVeiculo) {
+    const v = veiculos.find((x) => x.id === c.veiculoId);
+    const empresa = empresas.find((e) => e.id === v?.empresa_id)?.razao_social ?? "GEMAPE";
+    abrirDocumento({
+      titulo: `Check list ${c.codigo}`,
+      html: montarChecklistHtml(c, empresa),
+      arquivo: nomeArquivoDocumento("Check list", c.codigo, c.veiculoRotulo, c.data),
+    });
+  }
+
+  function resolver(c: ChecklistVeiculo) {
+    if (!resolvendo) return;
+    const ok = executar(() => resolverPendencia(c.id, resolvendo, textoResolucao), "Pendência resolvida");
+    if (ok) { setResolvendo(null); setTextoResolucao(""); }
+  }
+
+  const andamento = atual?.status === "Em andamento";
+  const resumo = atual ? resumoChecklist(atual) : null;
+  const grupos = atual ? [...new Set(atual.itens.map((i) => i.grupo))] : [];
+
+  return (
+    <div className="space-y-5">
+      <section className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-semibold">Situação por veículo</h2>
+          <p className="text-xs text-muted-foreground">{pendencias.length} pendência(s) NOK aberta(s).</p>
+          <Button requiresWrite="operar" className="ml-auto" onClick={() => abrirNovo()}>Novo check list</Button>
+        </div>
+        <div className="overflow-x-auto rounded-xl border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Veículo</TableHead><TableHead>Tipo</TableHead><TableHead>Periodicidade</TableHead>
+                <TableHead>Situação</TableHead><TableHead className="text-right">Pendências</TableHead><TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {veiculos.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum veículo cadastrado.</TableCell></TableRow>}
+              {veiculos.map((v) => {
+                const per = v.periodicidade_checklist;
+                const doVeiculo = checklists.filter((c) => c.veiculoId === v.id);
+                const sit = ehPeriodicidade(per) ? situacaoPeriodica(per, doVeiculo, hoje) : null;
+                const aberto = doVeiculo.find((c) => c.status === "Em andamento");
+                return (
+                  <TableRow key={v.id}>
+                    <TableCell>{rotuloDe(v)}</TableCell>
+                    <TableCell>{tipoDe(v)?.nome ?? "—"}</TableCell>
+                    <TableCell>{ehPeriodicidade(per) ? per : <span className="text-xs text-muted-foreground">Defina no cadastro do veículo</span>}</TableCell>
+                    <TableCell>{sit ? <Badge variant="outline" className={SITUACAO[sit].classe}>{SITUACAO[sit].rotulo}</Badge> : "—"}</TableCell>
+                    <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).length}</TableCell>
+                    <TableCell className="text-right">
+                      {aberto ? (
+                        <Button variant="ghost" size="sm" onClick={() => setTela({ tipo: "check", id: aberto.id })}>Continuar</Button>
+                      ) : (
+                        <Button requiresWrite="operar" variant="ghost" size="sm" disabled={!ehPeriodicidade(per)} onClick={() => abrirNovo(v)}>Iniciar</Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-semibold">Check lists</h2>
+          <Input aria-label="Buscar check list" placeholder="Buscar por código, veículo ou responsável" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Button variant={soPendencias ? "default" : "outline"} size="sm" onClick={() => setSoPendencias((v) => !v)}>
+            Com pendências abertas ({checklists.filter((c) => pendenciaDoChecklist(c) > 0).length})
+          </Button>
+        </div>
+        <div className="overflow-x-auto rounded-xl border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead><TableHead>Data</TableHead><TableHead>Veículo</TableHead><TableHead>Responsável</TableHead>
+                <TableHead>Avaliação</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Pendências</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {lista.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">{busca.trim() || soPendencias ? "Nenhum resultado para o filtro." : "Nenhum check list feito ainda."}</TableCell></TableRow>
+              )}
+              {lista.map((c) => {
+                const r = resumoChecklist(c);
+                return (
+                  <TableRow key={c.id} className="cursor-pointer" onClick={() => setTela({ tipo: "check", id: c.id })}>
+                    <TableCell className="font-mono text-xs">{c.codigo}</TableCell>
+                    <TableCell>{formatarData(c.data)}</TableCell>
+                    <TableCell>{c.veiculoRotulo}</TableCell>
+                    <TableCell>{c.responsavelNome}</TableCell>
+                    <TableCell className="text-xs">{r.avaliados}/{r.total} · {r.ok} OK · {r.nok} NOK · {r.na} N.A.</TableCell>
+                    <TableCell><Badge variant={c.status === "Concluído" ? "secondary" : "outline"}>{c.status}</Badge></TableCell>
+                    <TableCell className="text-right">{r.pendenciasAbertas > 0 ? <span className="font-semibold text-red-700 dark:text-red-300">{r.pendenciasAbertas}</span> : 0}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </section>
+
+      <Dialog open={tela?.tipo === "novo"} onOpenChange={(a) => !a && setTela(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo check list</DialogTitle>
+            <DialogDescription>Os itens vêm do tipo do veículo, em Parâmetros &gt; Veículos &gt; Itens check list.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={iniciar} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="ck_veiculo">Veículo</Label>
+              <Select value={veiculoId} onValueChange={setVeiculoId}>
+                <SelectTrigger id="ck_veiculo"><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
+                <SelectContent>{veiculos.filter((v) => v.status === "Ativo").map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDe(v)}</SelectItem>)}</SelectContent>
+              </Select>
+              {veiculoEscolhido && (
+                <p className="text-xs text-muted-foreground">
+                  Tipo: {tipoDe(veiculoEscolhido)?.nome ?? "sem tipo"} · periodicidade: {ehPeriodicidade(veiculoEscolhido.periodicidade_checklist) ? veiculoEscolhido.periodicidade_checklist : "não definida (cadastro do veículo)"} ·{" "}
+                  {gruposDe(veiculoEscolhido).reduce((t, g) => t + g.itens.length, 0)} itens
+                  {pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ck_resp">Responsável pelo check list</Label>
+              <Select value={responsavelId} onValueChange={setResponsavelId}>
+                <SelectTrigger id="ck_resp"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>
+                <SelectContent>{empregadosAtivos.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setTela(null)}>Cancelar</Button>
+              <Button type="submit">Iniciar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!atual}
+        onOpenChange={(a) => {
+          // Tira o foco antes de fechar para gravar a observação que estava sendo digitada.
+          if (!a) { (document.activeElement as HTMLElement | null)?.blur(); setTela(null); }
+        }}
+      >
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">
+          {atual && resumo && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex flex-wrap items-center gap-2">
+                  {atual.codigo} <Badge variant={andamento ? "outline" : "secondary"}>{atual.status}</Badge>
+                </DialogTitle>
+                <DialogDescription>
+                  {atual.veiculoRotulo} · {atual.tipoVeiculo || "sem tipo"} · {atual.periodicidade} · {formatarData(atual.data)} · responsável: {atual.responsavelNome}
+                  {atual.concluidoEm && ` · concluído em ${dataHoraBrasilia(atual.concluidoEm)}`}
+                </DialogDescription>
+              </DialogHeader>
+              <p className="text-sm">
+                {resumo.avaliados}/{resumo.total} avaliados · {resumo.ok} OK · <span className="text-red-700 dark:text-red-300">{resumo.nok} NOK</span> · {resumo.na} N.A.
+                {resumo.pendenciasAbertas > 0 && ` · ${resumo.pendenciasAbertas} pendência(s) aberta(s)`}
+              </p>
+              {grupos.map((g) => (
+                <section key={g} className="space-y-2">
+                  <h3 className="text-sm font-semibold">{g}</h3>
+                  {atual.itens.filter((i) => i.grupo === g).map((i) => (
+                    <div key={i.id} className="space-y-2 rounded-lg border p-2.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="min-w-0 flex-1 text-sm">{i.nome}</span>
+                        <div className="flex gap-1" role="group" aria-label={`Avaliação de ${i.nome}`}>
+                          {AVALIACOES.map((a) => (
+                            <Button
+                              key={a} type="button" size="sm" disabled={!andamento}
+                              variant={i.avaliacao === a ? "default" : "outline"}
+                              className={i.avaliacao === a ? COR_AVALIACAO[a] : ""}
+                              aria-pressed={i.avaliacao === a}
+                              onClick={() => avaliar(atual, i, i.avaliacao === a ? null : a)}
+                            >
+                              {a}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      {andamento ? (
+                        <Input
+                          aria-label={`Observação de ${i.nome}`}
+                          placeholder={i.avaliacao === "NOK" ? "Descreva o problema (obrigatório)" : "Observação (opcional)"}
+                          maxLength={500}
+                          defaultValue={i.observacao}
+                          onBlur={(e) => { if (e.target.value.trim() !== i.observacao) avaliar(atual, i, i.avaliacao, e.target.value); }}
+                        />
+                      ) : (
+                        i.observacao && <p className="text-xs text-muted-foreground">Observação: {i.observacao}</p>
+                      )}
+                      {(andamento || i.fotos.length > 0) && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          {andamento && (
+                            <BotaoAnexarFotos
+                              quantidadeAtual={i.fotos.length} maximo={MAX_FOTOS_ITEM} oQue="item"
+                              onFotos={(f) => executar(() => adicionarFotosItem(atual.id, i.id, f), "Fotos anexadas")}
+                            />
+                          )}
+                          <GaleriaFotos
+                            fotos={i.fotos}
+                            onAmpliar={(n) => setVisor({ foto: i.fotos[n] ?? "", titulo: `${i.nome} (${atual.codigo})` })}
+                            onRemover={andamento ? (n) => { executar(() => removerFotoItem(atual.id, i.id, n), "Foto removida"); } : undefined}
+                          />
+                        </div>
+                      )}
+                      {i.avaliacao === "NOK" && !andamento && (
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          {i.ocorrenciaCodigo && <Badge variant="outline">Ocorrência {i.ocorrenciaCodigo}</Badge>}
+                          {i.resolucao ? (
+                            <span className="text-emerald-700 dark:text-emerald-300">Pendência resolvida em {dataHoraBrasilia(i.resolucao.resolvidaEm)}: {i.resolucao.descricao}</span>
+                          ) : (
+                            <>
+                              <span className="font-medium text-red-700 dark:text-red-300">Pendência aberta</span>
+                              {canWrite && <Button type="button" size="sm" variant="outline" onClick={() => { setTextoResolucao(""); setResolvendo(i.id); }}>Resolver pendência</Button>}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </section>
+              ))}
+              <DialogFooter className="gap-2">
+                {andamento ? (
+                  <>
+                    <Button type="button" variant="outline" className="text-destructive" onClick={() => setConfirmando("descartar")}>Descartar</Button>
+                    <Button type="button" variant="outline" onClick={() => setTela(null)}>Continuar depois</Button>
+                    <Button type="button" onClick={() => setConfirmando("concluir")}>Concluir check list</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button type="button" variant="outline" onClick={() => setTela(null)}>Fechar</Button>
+                    <Button type="button" onClick={() => gerarPdf(atual)}>Gerar PDF</Button>
+                  </>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmando === "concluir"} onOpenChange={(a) => !a && setConfirmando(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Concluir o check list?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {atual && resumo && (resumo.nok > 0
+                ? `Os ${resumo.nok} item(ns) NOK vão gerar ${resumo.nok} ocorrência(s) aberta(s) e ficar como pendência. Depois de concluído, as avaliações não podem mais ser alteradas.`
+                : "Depois de concluído, as avaliações não podem mais ser alteradas.")}
+              {atual && resumo && resumo.avaliados < resumo.total && ` Faltam ${resumo.total - resumo.avaliados} item(ns) para avaliar.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => atual && concluir(atual)}>Sim, concluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmando === "descartar"} onOpenChange={(a) => !a && setConfirmando(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar o check list em andamento?</AlertDialogTitle>
+            <AlertDialogDescription>Todas as avaliações e fotos deste check list serão perdidas.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { const id = atual?.id; setConfirmando(null); if (id && executar(() => excluirChecklistEmAndamento(id), "Check list descartado")) setTela(null); }}>Descartar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={resolvendo !== null} onOpenChange={(a) => !a && setResolvendo(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resolver pendência</DialogTitle>
+            <DialogDescription>Registre o que foi feito. A ocorrência ligada segue a sua própria tratativa.</DialogDescription>
+          </DialogHeader>
+          <Textarea aria-label="Como foi resolvida" rows={4} maxLength={500} value={textoResolucao} onChange={(e) => setTextoResolucao(e.target.value)} />
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setResolvendo(null)}>Cancelar</Button>
+            <Button type="button" onClick={() => atual && resolver(atual)}>Resolver</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <VisorFoto foto={visor?.foto ?? null} titulo={visor?.titulo ?? ""} onFechar={() => setVisor(null)} />
+    </div>
+  );
+}

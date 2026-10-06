@@ -5,7 +5,7 @@ import { posicaoEmSequencia, TAMANHOS_PADRAO } from "./tamanhos-padrao.ts";
 import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
-import { CHECKLIST_VEICULOS_PADRAO } from "./checklist-veiculos-padrao.ts";
+import { CHECKLIST_VEICULOS_PADRAO, chaveDoTipoVeiculo, tiposDoGrupoPadrao } from "./checklist-veiculos-padrao.ts";
 import { ACOES_MANUTENCAO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
 
 export type Categoria = { id: string; nome: string };
@@ -20,7 +20,9 @@ export type ListaFerramenta =
   | "marcasVeiculo";
 export type AcaoManutencaoVeiculo = { id: string; nome: string; subitens: Opcao[] };
 // Grupo do check list de veículos (decisão 62): "tipo de veículo · seção" com os itens a conferir.
-export type GrupoChecklistVeiculo = { id: string; nome: string; itens: Opcao[] };
+// `tiposVeiculo`: ids de subcategorias de Veículos a que o grupo se aplica, ou TODOS_OS_TIPOS (decisão 63).
+export const TODOS_OS_TIPOS = "*";
+export type GrupoChecklistVeiculo = { id: string; nome: string; itens: Opcao[]; tiposVeiculo: string[] };
 export type TipoOcorrenciaVeiculo = { id: string; nome: string; descricao: string };
 export type TipoOpcao = "tamanhos" | "unidades";
 // Tamanhos e unidades autorizados para uma subcategoria (guarda os ids).
@@ -203,7 +205,12 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
     }
     // Ações de manutenção salvas sem subitens (versão anterior) passam a ter a lista vazia.
     base.acoesManutencaoVeiculo = base.acoesManutencaoVeiculo.map((a) => ({ ...a, subitens: Array.isArray(a.subitens) ? a.subitens : [] }));
-    base.itensChecklistVeiculo = base.itensChecklistVeiculo.map((g) => ({ ...g, itens: Array.isArray(g.itens) ? g.itens : [] }));
+    // Grupos salvos antes do vínculo com o tipo de veículo (decisão 62) continuam valendo para todos.
+    base.itensChecklistVeiculo = base.itensChecklistVeiculo.map((g) => ({
+      ...g,
+      itens: Array.isArray(g.itens) ? g.itens : [],
+      tiposVeiculo: Array.isArray(g.tiposVeiculo) ? g.tiposVeiculo : [TODOS_OS_TIPOS],
+    }));
     // Regras salvas antes da definição de 4 dígitos (ex.: 001) passam para 0001.
     base.regrasCodigo = base.regrasCodigo.map((r) => ({
       ...r,
@@ -484,19 +491,46 @@ function nomeGrupoChecklist(lista: GrupoChecklistVeiculo[], nome: string, ignora
   return limpo;
 }
 
-export function adicionarGrupoChecklistVeiculo(nome: string, itens: string[], storage = storagePadrao()): GrupoChecklistVeiculo {
+// Tipos de veículo do grupo: "todos" ou subcategorias de Veículos que existem em Gerais.
+function tiposDoGrupo(d: ParametrosBase, tipos: string[]): string[] {
+  if (tipos.includes(TODOS_OS_TIPOS)) return [TODOS_OS_TIPOS];
+  if (tipos.length === 0) throw new Error("Escolha o tipo de veículo do grupo, ou todos os tipos.");
+  const validos = subcategoriasDa(d, "cat-veiculos").map((s) => s.id);
+  const ruim = tipos.find((t) => !validos.includes(t));
+  if (ruim) throw new Error("Tipo de veículo não encontrado em Cadastros > Gerais.");
+  return [...new Set(tipos)];
+}
+
+export function adicionarGrupoChecklistVeiculo(
+  nome: string,
+  itens: string[],
+  tiposVeiculo: string[],
+  storage = storagePadrao(),
+): GrupoChecklistVeiculo {
   return alterar(storage, (d) => {
-    const grupo = { id: novoId(), nome: nomeGrupoChecklist(d.itensChecklistVeiculo, nome), itens: montarItensChecklist([], itens) };
+    const grupo = {
+      id: novoId(),
+      nome: nomeGrupoChecklist(d.itensChecklistVeiculo, nome),
+      itens: montarItensChecklist([], itens),
+      tiposVeiculo: tiposDoGrupo(d, tiposVeiculo),
+    };
     d.itensChecklistVeiculo.push(grupo);
     return grupo;
   });
 }
 
-export function editarGrupoChecklistVeiculo(id: string, nome: string, itens: string[], storage = storagePadrao()): void {
+export function editarGrupoChecklistVeiculo(
+  id: string,
+  nome: string,
+  itens: string[],
+  tiposVeiculo: string[],
+  storage = storagePadrao(),
+): void {
   alterar(storage, (d) => {
     const grupo = achar(d.itensChecklistVeiculo, id, "Grupo do check list");
     grupo.nome = nomeGrupoChecklist(d.itensChecklistVeiculo, nome, id);
     grupo.itens = montarItensChecklist(grupo.itens, itens);
+    grupo.tiposVeiculo = tiposDoGrupo(d, tiposVeiculo);
   });
 }
 
@@ -508,17 +542,30 @@ export function removerGrupoChecklistVeiculo(id: string, storage = storagePadrao
 }
 
 // Cadastra os grupos padrão que ainda não existem (mesmo nome); o que já está cadastrado não é alterado.
-export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { grupos: number; itens: number } {
+// O tipo de veículo é ligado pelo nome das subcategorias de Veículos que existem em Gerais; grupo sem
+// subcategoria correspondente fica sem tipo (não aparece em nenhum check list) até ser ligado ao editar.
+export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { grupos: number; itens: number; semTipo: number } {
   return alterar(storage, (d) => {
     let grupos = 0;
     let itens = 0;
+    let semTipo = 0;
+    const veiculos = subcategoriasDa(d, "cat-veiculos");
     for (const padrao of CHECKLIST_VEICULOS_PADRAO) {
       if (d.itensChecklistVeiculo.some((g) => mesmoNome(g.nome, padrao.nome))) continue;
-      d.itensChecklistVeiculo.push({ id: novoId(), nome: padrao.nome, itens: montarItensChecklist([], [...padrao.itens]) });
+      const alvo = tiposDoGrupoPadrao(padrao.nome);
+      const tiposVeiculo =
+        alvo === "todos"
+          ? [TODOS_OS_TIPOS]
+          : veiculos.filter((s) => {
+              const chave = chaveDoTipoVeiculo(s.nome);
+              return chave !== null && alvo.includes(chave);
+            }).map((s) => s.id);
+      if (tiposVeiculo.length === 0) semTipo += 1;
+      d.itensChecklistVeiculo.push({ id: novoId(), nome: padrao.nome, itens: montarItensChecklist([], [...padrao.itens]), tiposVeiculo });
       grupos += 1;
       itens += padrao.itens.length;
     }
-    return { grupos, itens };
+    return { grupos, itens, semTipo };
   });
 }
 

@@ -12,21 +12,25 @@ export function BotaoAnexarFotos({
   quantidadeAtual,
   onFotos,
   desabilitado = false,
+  maximo = MAX_FOTOS,
+  oQue = "ocorrência",
 }: {
   quantidadeAtual: number;
   onFotos: (fotos: string[]) => void;
   desabilitado?: boolean;
+  maximo?: number;
+  oQue?: string;
 }) {
   const entrada = useRef<HTMLInputElement>(null);
   const [processando, setProcessando] = useState(false);
-  const restante = MAX_FOTOS - quantidadeAtual;
+  const restante = maximo - quantidadeAtual;
 
   async function escolher(e: React.ChangeEvent<HTMLInputElement>) {
     const arquivos = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (arquivos.length === 0) return;
     if (arquivos.length > restante) {
-      toast.error(`Cabem mais ${restante} foto(s) (máximo ${MAX_FOTOS} por ocorrência).`);
+      toast.error(`Cabem mais ${restante} foto(s) (máximo ${maximo} por ${oQue}).`);
       return;
     }
     setProcessando(true);
@@ -51,7 +55,7 @@ export function BotaoAnexarFotos({
       >
         {processando ? "Reduzindo as fotos..." : "Anexar fotos"}
       </Button>
-      <span className="text-xs text-muted-foreground">{quantidadeAtual}/{MAX_FOTOS} fotos, reduzidas ao anexar</span>
+      <span className="text-xs text-muted-foreground">{quantidadeAtual}/{maximo} fotos, reduzidas ao anexar</span>
     </>
   );
 }

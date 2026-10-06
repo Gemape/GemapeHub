@@ -2,11 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { AbastecimentoVeiculoModulo } from "@/components/modules/AbastecimentoVeiculoModulo";
+import { ChecklistVeiculoModulo } from "@/components/modules/ChecklistVeiculoModulo";
 import { FrotaModulo } from "@/components/modules/FrotaModulo";
 import { ManutencaoVeiculoModulo } from "@/components/modules/ManutencaoVeiculoModulo";
 import { OcorrenciasVeiculoModulo } from "@/components/modules/OcorrenciasVeiculoModulo";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { Tabs,TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { abaDoModulo } from "@/lib/menu-parametros";
 
 export const Route = createFileRoute("/_authenticated/veiculos")({
@@ -61,6 +62,9 @@ function PaginaVeiculos() {
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           {MODO_DEMO ? <OcorrenciasVeiculoModulo /> : <OcorrenciasModulo modulo="veiculo" />}
+        </TabsContent>
+        <TabsContent value="checklist" className="mt-5">
+          {MODO_DEMO ? <ChecklistVeiculoModulo /> : <p className="text-sm text-muted-foreground">O check list de veículos estará disponível após a Fase 2 (banco real).</p>}
         </TabsContent>
       </Tabs>
     </div>

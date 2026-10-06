@@ -67,6 +67,7 @@ import {
   valorSelecaoSubcategoria,
 } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { ehPeriodicidade, PERIODICIDADES } from "@/lib/checklist-veiculo";
 import {
   anoValido,
   formatarPlaca,
@@ -90,6 +91,7 @@ type VeiculoCadastro = Veiculo & {
   data_aquisicao?: string | null;
   custo?: number | null;
   numero_nota_fiscal?: string | null;
+  periodicidade_checklist?: string | null;
 };
 
 // Todos os veículos (de todas as empresas): códigos para a sequência e placas repetidas.
@@ -293,6 +295,8 @@ export function VeiculosCadastroModulo() {
       valores["numero_nota_fiscal"] = aquisicao.notaFiscal;
       // A referência só existe no modo demonstração; no banco real a coluna entra na Fase 2.
       valores["subcategoria_id"] = subcategoria?.id ?? null;
+      // Periodicidade do check list do veículo (decisão 63); só no modo demonstração.
+      valores["periodicidade_checklist"] = ehPeriodicidade(texto("periodicidade_checklist")) ? texto("periodicidade_checklist") : null;
     }
     try {
       const todos = await todosVeiculos();
@@ -668,6 +672,24 @@ export function VeiculosCadastroModulo() {
                 defaultValue={editando?.quilometragem_atual ?? 0}
               />
             </div>
+            {MODO_DEMO && (
+              <div className="space-y-1.5">
+                <Label htmlFor="periodicidade_checklist">Periodicidade do check list</Label>
+                <Select name="periodicidade_checklist" defaultValue={base?.periodicidade_checklist ?? NENHUM}>
+                  <SelectTrigger id="periodicidade_checklist">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NENHUM}>Não definida</SelectItem>
+                    {PERIODICIDADES.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="status">Situação</Label>
               <Select name="status" defaultValue={base?.status ?? "Ativo"}>

@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +21,8 @@ import {
   cadastrarPadraoChecklistVeiculos,
   editarGrupoChecklistVeiculo,
   removerGrupoChecklistVeiculo,
+  subcategoriasDa,
+  TODOS_OS_TIPOS,
   adicionarTipoOcorrenciaVeiculo,
   cadastrarPadraoVeiculos,
   editarAcaoManutencaoVeiculo,
@@ -30,7 +33,7 @@ import {
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 // `extra` é a descrição (tipos de ocorrência) ou os subitens, um por linha (ações de manutenção).
-type Linha = { id: string; nome: string; extra?: string };
+type Linha = { id: string; nome: string; extra?: string; tipos?: string[] };
 type CampoExtra = "descricao" | "subitens" | "itens" | null;
 
 // Tela de lista de Parâmetros > Veículos (decisão 46): ações de manutenção (pai e subitens) e tipos de
@@ -44,21 +47,25 @@ function ListaVeiculos({
   onSalvar,
   onExcluir,
   onPadrao,
+  opcoesTipos,
 }: {
   titulo: string;
   subtitulo: string;
   singular: string;
   linhas: Linha[];
   campoExtra: CampoExtra;
-  onSalvar: (id: string | null, nome: string, descricao: string) => boolean;
+  onSalvar: (id: string | null, nome: string, descricao: string, tipos: string[]) => boolean;
   onExcluir: (linha: Linha) => void;
   onPadrao: () => void;
+  // Check list (decisão 63): tipos de veículo (subcategorias de Veículos) a que o grupo se aplica.
+  opcoesTipos?: { id: string; nome: string }[];
 }) {
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Linha | null>(null);
   const [modelo, setModelo] = useState<Linha | null>(null);
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [tipos, setTipos] = useState<string[]>([]);
   const salvando = useRef(false);
   const [travado, setTravado] = useState(false);
 
@@ -68,6 +75,7 @@ function ListaVeiculos({
     // Clonar: o nome é único e fica em branco; a descrição vem copiada.
     setNome(clonar ? "" : (linha?.nome ?? ""));
     setDescricao(linha?.extra ?? "");
+    setTipos((linha?.tipos ?? []).filter((t) => t === TODOS_OS_TIPOS || (opcoesTipos ?? []).some((o) => o.id === t)));
     setAberto(true);
   }
 
@@ -77,7 +85,7 @@ function ListaVeiculos({
     salvando.current = true;
     setTravado(true);
     // Só solta a trava depois de o diálogo fechar ou de o erro aparecer, para o segundo clique não repetir.
-    const ok = onSalvar(editando?.id ?? null, nome, descricao);
+    const ok = onSalvar(editando?.id ?? null, nome, descricao, tipos);
     if (ok) setAberto(false);
     setTimeout(() => {
       salvando.current = false;
@@ -109,13 +117,14 @@ function ListaVeiculos({
             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
               <th className="px-3 py-2">Nome</th>
               {campoExtra && <th className="px-3 py-2">{campoExtra === "subitens" ? "Subitens" : campoExtra === "itens" ? "Itens" : "Descrição"}</th>}
+              {opcoesTipos && <th className="px-3 py-2">Tipo de veículo</th>}
               <th className="px-3 py-2 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={campoExtra ? 3 : 2} className="px-3 py-4 text-muted-foreground">
+                <td colSpan={(campoExtra ? 3 : 2) + (opcoesTipos ? 1 : 0)} className="px-3 py-4 text-muted-foreground">
                   Nada cadastrado ainda. Use “Cadastrar padrão” ou “Cadastrar {singular}”.
                 </td>
               </tr>
@@ -126,6 +135,13 @@ function ListaVeiculos({
                 {campoExtra && (
                   <td className="px-3 py-2 text-muted-foreground">
                     {campoExtra === "subitens" || campoExtra === "itens" ? (l.extra ?? "").split("\n").filter(Boolean).join(" · ") : l.extra}
+                  </td>
+                )}
+                {opcoesTipos && (
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {l.tipos?.includes(TODOS_OS_TIPOS)
+                      ? "Todos os tipos"
+                      : (l.tipos ?? []).map((t) => opcoesTipos.find((o) => o.id === t)?.nome).filter(Boolean).join(", ") || "Nenhum (não aparece em check list)"}
                   </td>
                 )}
                 <td className="px-3 py-2">
@@ -172,6 +188,32 @@ function ListaVeiculos({
                   onChange={(e) => setDescricao(e.target.value)}
                 />
               </div>
+            )}
+            {opcoesTipos && (
+              <fieldset className="space-y-1.5">
+                <legend className="text-sm font-medium">Tipo de veículo</legend>
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={tipos.includes(TODOS_OS_TIPOS)}
+                    onCheckedChange={(v) => setTipos(v === true ? [TODOS_OS_TIPOS] : [])}
+                  />
+                  Todos os tipos de veículo
+                </label>
+                {!tipos.includes(TODOS_OS_TIPOS) && (
+                  <div className="grid gap-1.5 sm:grid-cols-2">
+                    {opcoesTipos.map((o) => (
+                      <label key={o.id} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={tipos.includes(o.id)}
+                          onCheckedChange={(v) => setTipos((t) => (v === true ? [...t, o.id] : t.filter((x) => x !== o.id)))}
+                        />
+                        {o.nome}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">O check list do veículo traz os grupos do tipo dele (subcategoria de Veículos) e os de todos os tipos.</p>
+              </fieldset>
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>
@@ -237,18 +279,21 @@ export function TiposOcorrenciaVeiculoLista() {
 }
 
 export function ChecklistVeiculoLista() {
-  const { itensChecklistVeiculo } = useParametrosBase();
+  const parametros = useParametrosBase();
+  const { itensChecklistVeiculo } = parametros;
   const itensDe = (texto: string) => texto.split("\n");
+  const tiposDeVeiculo = subcategoriasDa(parametros, "cat-veiculos").map((s) => ({ id: s.id, nome: s.nome }));
   return (
     <ListaVeiculos
       titulo="Itens check list"
-      subtitulo="Cada grupo é um tipo de veículo e uma seção (ex.: Carros de passeio · Exterior), com os itens a conferir. Os tipos SUVs, vans, pesados e ônibus somam aos grupos do tipo-base."
+      subtitulo="Cada grupo é um tipo de veículo e uma seção (ex.: Carros de passeio · Exterior), com os itens a conferir. O check list do veículo traz os grupos ligados ao tipo dele (subcategoria de Veículos) e os de todos os tipos."
       singular="grupo do check list"
-      linhas={itensChecklistVeiculo.map((g) => ({ id: g.id, nome: g.nome, extra: g.itens.map((i) => i.nome).join("\n") }))}
+      linhas={itensChecklistVeiculo.map((g) => ({ id: g.id, nome: g.nome, extra: g.itens.map((i) => i.nome).join("\n"), tipos: g.tiposVeiculo }))}
       campoExtra="itens"
-      onSalvar={(id, nome, extra) =>
+      opcoesTipos={tiposDeVeiculo}
+      onSalvar={(id, nome, extra, tipos) =>
         executar(
-          () => (id ? editarGrupoChecklistVeiculo(id, nome, itensDe(extra)) : adicionarGrupoChecklistVeiculo(nome, itensDe(extra))),
+          () => (id ? editarGrupoChecklistVeiculo(id, nome, itensDe(extra), tipos) : adicionarGrupoChecklistVeiculo(nome, itensDe(extra), tipos)),
           "Grupo do check list salvo.",
         )
       }
@@ -256,7 +301,11 @@ export function ChecklistVeiculoLista() {
       onPadrao={() =>
         executar(() => {
           const r = cadastrarPadraoChecklistVeiculos();
-          toast.success(r.grupos === 0 ? "Os itens padrão já estão cadastrados." : `${r.grupos} grupos e ${r.itens} itens padrão cadastrados.`);
+          toast.success(
+            r.grupos === 0
+              ? "Os itens padrão já estão cadastrados."
+              : `${r.grupos} grupos e ${r.itens} itens padrão cadastrados.${r.semTipo ? ` ${r.semTipo} grupos ficaram sem tipo de veículo: escolha o tipo em Editar.` : ""}`,
+          );
         })
       }
     />

@@ -270,3 +270,36 @@ export const CHECKLIST_VEICULOS_PADRAO: readonly { nome: string; itens: readonly
     ],
   },
 ];
+
+// Tipo de veículo a que cada grupo padrão se destina (decisão 63). SUVs e vans somam ao carro de passeio,
+// pesados ao caminhão leve e médio, ônibus ao passeio e aos pesados.
+export type ChaveTipoVeiculo = "passeio" | "suv" | "van" | "leve" | "pesado" | "onibus" | "moto" | "empilhadeira";
+const POR_PREFIXO: readonly (readonly [string, readonly ChaveTipoVeiculo[]])[] = [
+  ["Carros de passeio", ["passeio", "suv", "van", "onibus"]],
+  ["SUVs, utilitários e picapes", ["suv"]],
+  ["Vans e furgões", ["van"]],
+  ["Caminhões leves e médios", ["leve", "pesado", "onibus"]],
+  ["Caminhões pesados e cavalo mecânico", ["pesado", "onibus"]],
+  ["Ônibus e micro-ônibus", ["onibus"]],
+  ["Motos", ["moto"]],
+  ["Empilhadeiras e veículos de movimentação", ["empilhadeira"]],
+];
+
+// Chaves dos tipos a que o grupo padrão se aplica; "todos" quando vale para qualquer veículo.
+export function tiposDoGrupoPadrao(nome: string): readonly ChaveTipoVeiculo[] | "todos" {
+  return POR_PREFIXO.find(([prefixo]) => nome.startsWith(prefixo))?.[1] ?? "todos";
+}
+
+// Chave do tipo a partir do nome de uma subcategoria de Veículos de Cadastros > Gerais.
+export function chaveDoTipoVeiculo(nomeSubcategoria: string): ChaveTipoVeiculo | null {
+  const n = nomeSubcategoria.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/empilh/.test(n)) return "empilhadeira";
+  if (/onibus/.test(n)) return "onibus";
+  if (/moto/.test(n)) return "moto";
+  if (/caminhonete|utilit|suv|picape|pickup/.test(n)) return "suv";
+  if (/pesad|carreta|cavalo|bitrem/.test(n)) return "pesado";
+  if (/caminh/.test(n)) return "leve";
+  if (/\bvan|furg/.test(n)) return "van";
+  if (/carro|passeio|automovel/.test(n)) return "passeio";
+  return null;
+}
