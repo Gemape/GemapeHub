@@ -15,9 +15,13 @@ export const nomeDoFornecedor = (f: Pick<FornecedorDaCompra, "nome_fantasia" | "
 
 export const rotuloDoFornecedor = (f: FornecedorDaCompra): string => `${f.codigo} · ${nomeDoFornecedor(f)}`;
 
+/** Sem categoria cadastrada (decisão 55), o fornecedor atende todas as categorias. */
+export const atendeCategoria = (f: Pick<FornecedorDaCompra, "categorias">, categoriaId: string): boolean =>
+  !Array.isArray(f.categorias) || f.categorias.length === 0 || f.categorias.includes(categoriaId);
+
 export function fornecedoresDaCategoria(lista: FornecedorDaCompra[], categoriaId: string): FornecedorDaCompra[] {
   return lista
-    .filter((f) => Array.isArray(f.categorias) && f.categorias.includes(categoriaId))
+    .filter((f) => atendeCategoria(f, categoriaId))
     .sort((a, b) => nomeDoFornecedor(a).localeCompare(nomeDoFornecedor(b), "pt-BR"));
 }
 
@@ -30,7 +34,7 @@ export function escolherFornecedorDaCompra(
   if (!id) return { erro: "Selecione o fornecedor." };
   const f = lista.find((x) => x.id === id);
   if (!f) return { erro: "O fornecedor escolhido não está mais cadastrado. Selecione outro." };
-  if (!f.categorias?.includes(categoriaId)) return { erro: "O fornecedor escolhido não atende esta categoria. Selecione outro." };
+  if (!atendeCategoria(f, categoriaId)) return { erro: "O fornecedor escolhido não atende esta categoria. Selecione outro." };
   const nome = nomeDoFornecedor(f);
   if (!nome) return { erro: "O fornecedor escolhido está sem nome no cadastro. Corrija em Cadastros > Fornecedores." };
   return { id: f.id, nome };

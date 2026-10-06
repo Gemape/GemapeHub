@@ -502,3 +502,7 @@ Ordem do responsável em 05/10 (escolha: periodicidade por veículo). Em Parâme
 ## 53. CPF DO EMPREGADO COM MÁSCARA xxx.xxx.xxx-xx
 
 Ordem do responsável em 05/10. No cadastro de empregado (Novo, Editar e Clonar) o campo CPF mostra o padrão `xxx.xxx.xxx-xx` como dica e formata os números enquanto se digita (`mascararCpf` em `src/lib/empregados.ts`): só aceita dígitos, até 11, com os pontos e o traço entrando sozinhos. A validação do CPF e a conferência de duplicidade continuam as mesmas (comparam só os dígitos). Ao editar, o CPF já salvo aparece formatado. Clonar continua deixando o CPF em branco. Nada no Supabase.
+
+## 55. FORNECEDORES: NOME FANTASIA E CATEGORIA OPCIONAIS
+
+Ordem do responsável em 06/10. Em Cadastros > Fornecedores só a razão social e o CNPJ continuam obrigatórios: o nome fantasia deixa de ser exigido e a categoria deixa de ser necessária (as categorias seguem vindo de Cadastros > Gerais > Categorias, e o campo continua na tela, como opção). Onde o sistema mostra o nome do fornecedor (lista, confirmação de exclusão, compras, importação de NF-e, código de fábrica, aviso de uso da categoria), usa-se o nome fantasia e, se estiver vazio, a razão social. Fornecedor sem nenhuma categoria atende todas: aparece e é aceito nas compras de EPI e de Uniforme (ajusta as decisões 13 e 41); com categorias marcadas, vale só para elas, como antes. Só modo demonstração; nada no Supabase.

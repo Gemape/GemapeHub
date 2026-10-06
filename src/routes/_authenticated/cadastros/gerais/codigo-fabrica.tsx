@@ -75,7 +75,7 @@ function CodigoFabricaPagina() {
     }));
   const opcoesFornecedor: OpcaoBusca[] = fornecedores.map((f) => ({
     valor: f.id,
-    rotulo: f.nome_fantasia,
+    rotulo: f.nome_fantasia || f.razao_social,
     detalhe: `${f.razao_social} · ${formatarCnpj(f.cnpj)}`,
   }));
   const produto: ProdutoGemape | undefined = produtos.find((p) => chaveProduto(p) === produtoSel);
@@ -137,7 +137,7 @@ function CodigoFabricaPagina() {
             fornecedor_id:
               fornecedor?.id ??
               (fornecedorSel === base?.fornecedor_id ? base.fornecedor_id : ""),
-            fornecedor_nome: fornecedor?.nome_fantasia ?? base?.fornecedor_nome ?? "",
+            fornecedor_nome: (fornecedor ? fornecedor.nome_fantasia || fornecedor.razao_social : undefined) ?? base?.fornecedor_nome ?? "",
             codigo_fornecedor: codigoNota,
             ca,
           },

@@ -91,17 +91,16 @@ export function salvarFornecedor(
   const id = "id" in valores ? valores.id : crypto.randomUUID();
   const indice = fornecedores.findIndex((item) => item.id === id);
   const existente = fornecedores[indice];
-  if (!valores.razao_social.trim() || !valores.nome_fantasia.trim()) {
-    throw new Error("Informe razão social e nome fantasia.");
+  // Só a razão social é obrigatória; o nome fantasia é opcional (decisão 55).
+  if (!valores.razao_social.trim()) {
+    throw new Error("Informe a razão social.");
   }
   if (!validarCnpj(valores.cnpj) && valores.cnpj !== existente?.cnpj) {
     throw new Error("Informe um CNPJ com 14 dígitos.");
   }
   if (valores.cep && !validarCep(valores.cep) && valores.cep !== existente?.cep) throw new Error("Informe um CEP com 8 dígitos.");
   if (valores.telefone && !validarTelefone(valores.telefone) && valores.telefone !== existente?.telefone) throw new Error("Informe um telefone com 10 ou 11 dígitos.");
-  if (valores.categorias.length === 0) {
-    throw new Error("Selecione pelo menos uma categoria.");
-  }
+  // Categoria é opcional (decisão 55): fornecedor sem categoria atende todas.
 
   if (fornecedores.some((item) => item.id !== id && somenteDigitos(item.cnpj) === somenteDigitos(valores.cnpj))) {
     throw new Error("CNPJ já cadastrado.");

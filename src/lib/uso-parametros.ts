@@ -63,11 +63,11 @@ export function usoPorNome(
 
 export function usoDaCategoria(
   categoriaId: string,
-  fornecedores: { nome_fantasia: string; categorias: string[] }[],
+  fornecedores: { nome_fantasia: string; razao_social?: string; categorias: string[] }[],
 ): UsoParametro[] {
   const nomes = fornecedores
     .filter((f) => f.categorias.includes(categoriaId))
-    .map((f) => f.nome_fantasia);
+    .map((f) => f.nome_fantasia?.trim() || f.razao_social?.trim() || "");
   return nomes.length > 0 ? [{ modulo: "Fornecedor", codigos: nomes }] : [];
 }
 

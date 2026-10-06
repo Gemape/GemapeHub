@@ -119,5 +119,20 @@ test('naturezas antigas passam para as categorias de Cadastros > Gerais', () => 
   const [lido] = listarFornecedores(local);
   assert.deepEqual(lido.categorias, ['cat-epi', 'cat-veiculos']);
   assert.equal('naturezas' in lido, false);
-  assert.throws(() => salvarFornecedor({ ...fornecedor, categorias: [] }, local), /pelo menos uma categoria/);
+  // Decisão 55: categoria é opcional.
+  assert.deepEqual(salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81', categorias: [] }, local).categorias, []);
+});
+
+test('nome fantasia é opcional; só a razão social é obrigatória (decisão 55)', () => {
+  const local = storage();
+  const salvo = salvarFornecedor({ ...fornecedor, nome_fantasia: '' }, local);
+  assert.equal(salvo.nome_fantasia, '');
+  assert.throws(() => salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81', razao_social: ' ' }, local), /razão social/);
+});
+
+test('o formulário de fornecedor não exige nome fantasia nem categoria', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../src/routes/_authenticated/cadastros/fornecedores.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /id="nome_fantasia" name="nome_fantasia" required/);
+  assert.match(src, /id="razao_social" name="razao_social" required/);
 });
