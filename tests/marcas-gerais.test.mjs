@@ -4,10 +4,12 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   adicionarListaFerramenta,
+  cadastrarMarcasPadraoVeiculos,
   lerParametros,
   removerListaFerramenta,
   renomearListaFerramenta,
 } from '../src/lib/parametros-base.ts';
+import { MARCAS_VEICULO_PADRAO } from '../src/lib/veiculos-padrao.ts';
 import * as marcas from '../src/lib/marcas-gerais.ts';
 
 const storage = () => {
@@ -20,18 +22,20 @@ const ler = (relativo) => readFileSync(join(raiz, relativo), 'utf8');
 test('Gerais tem marcas de uniformes e de veículos, começando vazias e sem duplicar', () => {
   const local = storage();
   for (const lista of ['marcasUniforme', 'marcasVeiculo']) {
-    assert.deepEqual(lerParametros(local)[lista], [], lista);
+    // Veículos já vêm com as marcas padrão (decisão 67); uniformes começam vazios.
+    const base = lerParametros(local)[lista].length;
+    assert.equal(base, lista === 'marcasVeiculo' ? MARCAS_VEICULO_PADRAO.length : 0, lista);
     const marca = adicionarListaFerramenta(lista, ' Hering ', local);
-    assert.equal(lerParametros(local)[lista][0].nome, 'Hering');
+    assert.equal(lerParametros(local)[lista].at(-1).nome, 'Hering');
     assert.throws(() => adicionarListaFerramenta(lista, 'HERING', local), /Já existe/);
     renomearListaFerramenta(lista, marca.id, 'Malwee', local);
-    assert.equal(lerParametros(local)[lista][0].nome, 'Malwee');
+    assert.equal(lerParametros(local)[lista].at(-1).nome, 'Malwee');
     removerListaFerramenta(lista, marca.id, local);
-    assert.deepEqual(lerParametros(local)[lista], [], lista);
+    assert.equal(lerParametros(local)[lista].length, base, lista);
   }
   // Cada módulo tem a sua lista: a marca de uniforme não aparece nas outras.
   adicionarListaFerramenta('marcasUniforme', 'Hering', local);
-  assert.deepEqual(lerParametros(local).marcasVeiculo, []);
+  assert.equal(lerParametros(local).marcasVeiculo.length, MARCAS_VEICULO_PADRAO.length);
   assert.deepEqual(lerParametros(local).marcasFerramenta, []);
 });
 
@@ -40,7 +44,7 @@ test('parâmetros salvos antes das marcas novas continuam válidos', () => {
   local.setItem('gemape-demo-parametros-base', JSON.stringify({ marcasFerramenta: [{ id: 'm1', nome: 'Bosch' }] }));
   const dados = lerParametros(local);
   assert.deepEqual(dados.marcasUniforme, []);
-  assert.deepEqual(dados.marcasVeiculo, []);
+  assert.equal(dados.marcasVeiculo.length, MARCAS_VEICULO_PADRAO.length);
   assert.equal(dados.marcasFerramenta[0].nome, 'Bosch');
 });
 
@@ -110,4 +114,29 @@ test('a lista fixa CATEGORIAS_FERRAMENTA não existe mais', () => {
   });
   const usos = arquivos(raiz).filter((c) => /\.(ts|tsx)$/.test(c) && /\bCATEGORIAS_FERRAMENTA\b/.test(readFileSync(c, 'utf8')));
   assert.deepEqual(usos, []);
+});
+
+test('marcas padrão de veículos: sem repetir, com as marcas pedidas e botão que só completa o que falta', () => {
+  const nomes = MARCAS_VEICULO_PADRAO;
+  assert.equal(new Set(nomes.map((n) => n.toLowerCase())).size, nomes.length);
+  for (const n of ['Fiat', 'Citroën', 'BYD', 'Mercedes-Benz', 'Volkswagen Caminhões', 'Harley-Davidson', 'Royal Enfield', 'Caterpillar (CAT)', 'Total']) assert.ok(nomes.includes(n), n);
+  // Honda, Suzuki e Toyota servem a mais de um tipo e aparecem uma vez só.
+  for (const n of ['Honda', 'Suzuki', 'Toyota']) assert.equal(nomes.filter((x) => x === n).length, 1, n);
+  const local = storage();
+  local.setItem('gemape-demo-parametros-base', JSON.stringify({ marcasVeiculo: [{ id: 'm1', nome: 'FIAT' }] }));
+  assert.equal(cadastrarMarcasPadraoVeiculos(local).marcas, nomes.length - 1);
+  const marcasSalvas = lerParametros(local).marcasVeiculo;
+  assert.equal(marcasSalvas[0].nome, 'FIAT');
+  assert.equal(marcasSalvas.length, nomes.length);
+  assert.equal(cadastrarMarcasPadraoVeiculos(local).marcas, 0);
+});
+
+test('marcas padrão de veículos somam 43 marcas', () => {
+  assert.equal(MARCAS_VEICULO_PADRAO.length, 43);
+});
+
+test('lista de marcas de veículos salva vazia de propósito não é ressemeada', () => {
+  const local = storage();
+  local.setItem('gemape-demo-parametros-base', JSON.stringify({ marcasVeiculo: [] }));
+  assert.deepEqual(lerParametros(local).marcasVeiculo, []);
 });
