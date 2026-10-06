@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 import {
   lerParametros,
+  adicionarSubcategoria,
   adicionarGrupoChecklistVeiculo,
   editarGrupoChecklistVeiculo,
   removerGrupoChecklistVeiculo,
@@ -42,34 +43,48 @@ test("editar mantém o id dos itens de mesmo nome; excluir remove o grupo", () =
   assert.throws(() => removerGrupoChecklistVeiculo(g.id, s), /não encontrad/i);
 });
 
-test("o padrão traz os 8 tipos de veículo e os itens comuns, sem nome ou item repetido", () => {
+test("o padrão traz as listas de leves, pesados e empilhadeiras, sem nome ou item repetido", () => {
   const nomes = CHECKLIST_VEICULOS_PADRAO.map((g) => g.nome);
   assert.equal(new Set(nomes.map((n) => n.toLowerCase())).size, nomes.length);
-  for (const tipo of ["Carros de passeio", "SUVs, utilitários e picapes", "Vans e furgões", "Caminhões leves e médios",
-    "Caminhões pesados e cavalo mecânico", "Ônibus e micro-ônibus", "Motos", "Empilhadeiras e veículos de movimentação", "Todos os veículos"]) {
-    assert.ok(nomes.some((n) => n.startsWith(tipo)), tipo);
-  }
+  assert.equal(nomes.length, 19);
+  assert.equal(nomes.filter((n) => n.startsWith("Veículos leves")).length, 4);
+  assert.equal(nomes.filter((n) => n.startsWith("Veículos pesados")).length, 6);
+  assert.equal(nomes.filter((n) => n.startsWith("Empilhadeiras")).length, 9);
   for (const g of CHECKLIST_VEICULOS_PADRAO) {
     assert.ok(g.itens.length > 0, g.nome);
     assert.equal(new Set(g.itens.map((i) => i.toLowerCase())).size, g.itens.length, g.nome);
   }
   const total = CHECKLIST_VEICULOS_PADRAO.reduce((t, g) => t + g.itens.length, 0);
-  assert.equal(total, 146);
+  assert.equal(total, 117);
 });
 
-test("cadastrar padrão inclui o que falta, não repete nem altera o que já existe e mantém siglas como estão", () => {
+test("cadastrar padrão inclui o que falta, não repete nem altera o que já existe", () => {
   const s = storage();
-  adicionarGrupoChecklistVeiculo("motos", ["Meu item"], ["*"], s);
+  adicionarGrupoChecklistVeiculo("Meu grupo", ["Meu item"], ["*"], s);
   const r = cadastrarPadraoChecklistVeiculos(s);
-  assert.equal(r.grupos, CHECKLIST_VEICULOS_PADRAO.length - 1);
+  assert.equal(r.grupos, CHECKLIST_VEICULOS_PADRAO.length);
+  assert.equal(r.substituidos, 0);
   const d = lerParametros(s);
-  assert.equal(d.itensChecklistVeiculo.length, CHECKLIST_VEICULOS_PADRAO.length);
-  assert.deepEqual(d.itensChecklistVeiculo.find((g) => g.nome === "motos").itens.map((i) => i.nome), ["Meu item"]);
-  const doc = d.itensChecklistVeiculo.find((g) => g.nome.startsWith("Carros de passeio · Documentação"));
+  assert.equal(d.itensChecklistVeiculo.length, CHECKLIST_VEICULOS_PADRAO.length + 1);
+  assert.deepEqual(d.itensChecklistVeiculo.find((g) => g.nome === "Meu grupo").itens.map((i) => i.nome), ["Meu item"]);
+  const doc = d.itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Segurança e documentos");
   assert.ok(doc.itens.some((i) => i.nome === "CRLV/licenciamento em dia"));
   const repetido = cadastrarPadraoChecklistVeiculos(s);
-  assert.deepEqual(repetido, { grupos: 0, itens: 0, semTipo: 0 });
-  assert.equal(lerParametros(s).itensChecklistVeiculo.length, CHECKLIST_VEICULOS_PADRAO.length);
+  assert.deepEqual(repetido, { grupos: 0, itens: 0, semTipo: 9, substituidos: 0, ligados: 0 });
+  assert.equal(lerParametros(s).itensChecklistVeiculo.length, CHECKLIST_VEICULOS_PADRAO.length + 1);
+});
+
+test("o novo padrão substitui os grupos do padrão antigo e preserva os do responsável", () => {
+  const s = storage();
+  adicionarGrupoChecklistVeiculo("Carros de passeio · Exterior", ["Lataria"], ["*"], s);
+  adicionarGrupoChecklistVeiculo("Motos", ["Freio"], ["*"], s);
+  adicionarGrupoChecklistVeiculo("Meu grupo", ["Meu item"], ["*"], s);
+  const r = cadastrarPadraoChecklistVeiculos(s);
+  assert.equal(r.substituidos, 2);
+  const nomes = lerParametros(s).itensChecklistVeiculo.map((g) => g.nome);
+  assert.ok(!nomes.includes("Motos") && !nomes.includes("Carros de passeio · Exterior"));
+  assert.ok(nomes.includes("Meu grupo"));
+  assert.equal(nomes.length, CHECKLIST_VEICULOS_PADRAO.length + 1);
 });
 
 test("dados antigos sem a lista continuam abrindo", () => {
@@ -110,34 +125,46 @@ test("dados da decisão 62, sem tipo de veículo, passam a valer para todos", ()
 
 test("cadastrar padrão liga cada grupo ao tipo de veículo pelo nome da subcategoria de Gerais", () => {
   const s = storage();
-  cadastrarPadraoChecklistVeiculos(s);
+  const r = cadastrarPadraoChecklistVeiculos(s);
   const d = lerParametros(s);
   const id = (nome) => d.subcategorias.find((x) => x.categoriaId === "cat-veiculos" && x.nome === nome).id;
   const grupo = (prefixo) => d.itensChecklistVeiculo.find((g) => g.nome.startsWith(prefixo));
-  assert.deepEqual(grupo("Carros de passeio · Exterior").tiposVeiculo.sort(), [id("Carro"), id("Van"), id("Utilitário")].sort());
-  assert.deepEqual(grupo("Motos").tiposVeiculo, [id("Moto")]);
-  assert.deepEqual(grupo("SUVs, utilitários e picapes · Caçamba").tiposVeiculo, [id("Utilitário")]);
-  assert.deepEqual(grupo("Vans e furgões").tiposVeiculo, [id("Van")]);
-  assert.deepEqual(grupo("Caminhões leves e médios · Freios").tiposVeiculo, [id("Caminhão")]);
-  assert.deepEqual(grupo("Todos os veículos").tiposVeiculo, ["*"]);
-  // sem subcategoria de ônibus, empilhadeira ou caminhão pesado em Gerais: ficam sem tipo
-  assert.deepEqual(grupo("Ônibus e micro-ônibus · Acessibilidade").tiposVeiculo, []);
-  assert.deepEqual(grupo("Caminhões pesados e cavalo mecânico · Sistema pneumático").tiposVeiculo, []);
+  assert.deepEqual(grupo("Veículos leves · Mecânica").tiposVeiculo.sort(), [id("Carro"), id("Van"), id("Utilitário")].sort());
+  assert.deepEqual(grupo("Veículos pesados · Mecânica").tiposVeiculo, [id("Caminhão")]);
+  // sem subcategoria de empilhadeira em Gerais: os 9 grupos ficam sem tipo, com aviso
+  assert.deepEqual(grupo("Empilhadeiras · Elevação").tiposVeiculo, []);
+  assert.equal(r.semTipo, 9);
+  // clicar de novo antes de criar o tipo mantém o aviso e não repete nada
+  assert.deepEqual(cadastrarPadraoChecklistVeiculos(s), { grupos: 0, itens: 0, semTipo: 9, substituidos: 0, ligados: 0 });
+  // depois de criar o tipo "Empilhadeira" em Gerais, cadastrar o padrão de novo liga os 9 grupos
+  const nova = adicionarSubcategoria("cat-veiculos", "Empilhadeira", s);
+  const r2 = cadastrarPadraoChecklistVeiculos(s);
+  assert.equal(r2.ligados, 9);
+  assert.deepEqual(lerParametros(s).itensChecklistVeiculo.find((g) => g.nome.startsWith("Empilhadeiras · Elevação")).tiposVeiculo, [nova.id]);
 });
 
 test("chave do tipo pelo nome da subcategoria", () => {
   assert.equal(chaveDoTipoVeiculo("Caminhão pesado"), "pesado");
-  assert.equal(chaveDoTipoVeiculo("Caminhão"), "leve");
+  assert.equal(chaveDoTipoVeiculo("Caminhão"), "pesado");
+  assert.equal(chaveDoTipoVeiculo("Empilhadeira"), "empilhadeira");
+  assert.equal(chaveDoTipoVeiculo("Moto"), null);
   assert.equal(chaveDoTipoVeiculo("Ônibus"), "onibus");
   assert.equal(chaveDoTipoVeiculo("Utilitário"), "suv");
   assert.equal(chaveDoTipoVeiculo("Outros"), null);
 });
 
 test("apagar o tipo em Gerais tira o vínculo dos grupos do check list", async () => {
-  const { adicionarSubcategoria, removerSubcategoria } = await import("../src/lib/parametros-base.ts");
+  const { removerSubcategoria } = await import("../src/lib/parametros-base.ts");
   const s = storage();
   const t = adicionarSubcategoria("cat-veiculos", "Triciclo", s);
   const g = adicionarGrupoChecklistVeiculo("Triciclos", ["Freio"], [t.id], s);
   removerSubcategoria(t.id, s);
   assert.deepEqual(lerParametros(s).itensChecklistVeiculo.find((x) => x.id === g.id).tiposVeiculo, []);
+});
+
+test("nenhum nome do padrão novo coincide com o do padrão antigo", async () => {
+  const { NOMES_PADRAO_ANTIGO } = await import("../src/lib/checklist-veiculos-padrao.ts");
+  assert.equal(NOMES_PADRAO_ANTIGO.length, 26);
+  const novos = CHECKLIST_VEICULOS_PADRAO.map((g) => g.nome.toLowerCase());
+  assert.ok(NOMES_PADRAO_ANTIGO.every((n) => !novos.includes(n.toLowerCase())));
 });

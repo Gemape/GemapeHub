@@ -286,7 +286,7 @@ export function ChecklistVeiculoLista() {
   return (
     <ListaVeiculos
       titulo="Itens check list"
-      subtitulo="Cada grupo é um tipo de veículo e uma seção (ex.: Carros de passeio · Exterior), com os itens a conferir. O check list do veículo traz os grupos ligados ao tipo dele (subcategoria de Veículos) e os de todos os tipos."
+      subtitulo="Cada grupo é um tipo de veículo e uma seção (ex.: Veículos leves · Mecânica), com os itens a conferir. O check list do veículo traz os grupos ligados ao tipo dele (subcategoria de Veículos) e os de todos os tipos."
       singular="grupo do check list"
       linhas={itensChecklistVeiculo.map((g) => ({ id: g.id, nome: g.nome, extra: g.itens.map((i) => i.nome).join("\n"), tipos: g.tiposVeiculo }))}
       campoExtra="itens"
@@ -302,9 +302,9 @@ export function ChecklistVeiculoLista() {
         executar(() => {
           const r = cadastrarPadraoChecklistVeiculos();
           toast.success(
-            r.grupos === 0
+            r.grupos === 0 && r.ligados === 0 && r.semTipo === 0
               ? "Os itens padrão já estão cadastrados."
-              : `${r.grupos} grupos e ${r.itens} itens padrão cadastrados.${r.semTipo ? ` ${r.semTipo} grupos ficaram sem tipo de veículo: escolha o tipo em Editar.` : ""}`,
+              : `${r.grupos > 0 ? `${r.grupos} grupos e ${r.itens} itens padrão cadastrados.` : "Nenhum grupo novo."}${r.ligados ? ` ${r.ligados} grupos existentes foram ligados ao tipo de veículo.` : ""}${r.substituidos ? ` ${r.substituidos} grupos do padrão antigo foram substituídos.` : ""}${r.semTipo ? ` ${r.semTipo} grupos ficaram sem tipo de veículo: escolha o tipo em Editar.` : ""}`,
           );
         })
       }
