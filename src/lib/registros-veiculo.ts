@@ -110,14 +110,30 @@ function validarData(data: string | undefined, hoje: Date): string {
 
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now() + Math.random()));
 
-// O km cresce com a data e a hora, somando abastecimentos e manutenções do mesmo veículo
-// (manutenção não tem hora: vale o começo do dia). Km igual ao anterior é aceito.
-function kmCoerente(veiculoId: string, momento: string, km: number, storage: StorageLike | null): boolean {
+// O km cresce com a data e a hora, somando abastecimentos e manutenções do mesmo veículo.
+// Manutenção não tem hora: ao comparar com ela vale só a data (no mesmo dia, qualquer km passa).
+// Km igual ao anterior é aceito. Devolve o registro que impede, para a mensagem dizer qual é.
+function conflitoDeKm(
+  veiculoId: string,
+  novo: { data: string; hora?: string },
+  km: number,
+  storage: StorageLike | null,
+): { data: string; hora?: string; km: number } | null {
   const outros = [...lerAbastecimentos(storage), ...lerManutencoes(storage)].filter((r) => r.veiculoId === veiculoId);
-  return !outros.some((r) => {
-    const quando = chaveMomento(r as { data: string; hora?: string });
-    return (quando < momento && r.km > km) || (quando > momento && r.km < km);
-  });
+  return (
+    outros.find((r) => {
+      const hora = (r as { hora?: string }).hora;
+      const semHora = !novo.hora || !hora;
+      const antes = semHora ? r.data < novo.data : chaveMomento({ data: r.data, hora }) < chaveMomento(novo);
+      const depois = semHora ? r.data > novo.data : chaveMomento({ data: r.data, hora }) > chaveMomento(novo);
+      return (antes && r.km > km) || (depois && r.km < km);
+    }) ?? null
+  );
+}
+
+function mensagemKm(c: { data: string; hora?: string; km: number }): string {
+  const [ano, mes, dia] = c.data.split("-");
+  return `O km não confere com os outros registros deste veículo: há um de ${c.km.toLocaleString("pt-BR")} km em ${dia}/${mes}/${ano}${c.hora ? ` às ${c.hora}` : ""}. O km não pode ser menor que o anterior.`;
 }
 
 export type EntradaAbastecimento = {
@@ -143,8 +159,11 @@ export function registrarAbastecimento(entrada: EntradaAbastecimento, storage = 
   if (litros === null) throw new Error("Informe os litros (número maior que zero, ex.: 40,5).");
   const valor = dinheiroPositivo(entrada.valor);
   if (valor === null) throw new Error("Informe o valor em reais (maior que zero, ex.: 250,00).");
-  if (!kmCoerente(entrada.veiculoId, chaveMomento({ data, hora }), km, storage)) {
-    throw new Error("O km não confere com os outros registros deste veículo: ele não pode ser menor que o do abastecimento anterior.");
+  const conflito = conflitoDeKm(entrada.veiculoId, { data, hora }, km, storage);
+  if (conflito) throw new Error(mensagemKm(conflito));
+  // Mesmo veículo, data e hora: é o mesmo abastecimento enviado duas vezes.
+  if (lerAbastecimentos(storage).some((a) => a.veiculoId === entrada.veiculoId && a.data === data && a.hora === hora)) {
+    throw new Error("Já existe um abastecimento deste veículo nesta data e hora.");
   }
   const registro: Abastecimento = { id: novoId(), veiculoId: entrada.veiculoId, data, hora, km, litros, valor, criadoEm: agora.toISOString() };
   alterar<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => [...lista, registro]);
@@ -182,9 +201,8 @@ export function registrarManutencao(
   } else if (!descricao) {
     throw new Error("Informe a descrição do serviço da manutenção corretiva.");
   }
-  if (!kmCoerente(entrada.veiculoId, chaveMomento({ data }), km, storage)) {
-    throw new Error("O km não confere com os outros registros deste veículo: ele cresce com a data.");
-  }
+  const conflito = conflitoDeKm(entrada.veiculoId, { data }, km, storage);
+  if (conflito) throw new Error(mensagemKm(conflito));
   const registro: ManutencaoVeiculo = {
     id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId, descricao, criadoEm: agora.toISOString(),
   };

@@ -187,3 +187,13 @@ test("histórico calcula km rodados, km/L do trecho e R$/L, do mais recente ao m
   assert.equal(h[2].kmPorLitro, null);
   assert.equal(h[2].precoLitro, 6);
 });
+
+test("manutenção no mesmo dia de um abastecimento aceita qualquer km; mesmo veículo, data e hora repetidos são recusados", () => {
+  const s = memoria();
+  registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "08:00", km: "1300", litros: "10", valor: "100" }, s, hoje);
+  registrarManutencao({ veiculoId: "v1", data: "2026-10-01", km: "1400", tipo: "Corretiva", descricao: "Bateria" }, s, hoje);
+  registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "06:00", km: "1000", litros: "10", valor: "100" }, s, hoje);
+  // dias diferentes continuam conferidos, e a mensagem diz qual registro impede
+  assert.throws(() => registrarManutencao({ veiculoId: "v1", data: "2026-10-02", km: "1200", tipo: "Corretiva", descricao: "x" }, s, hoje), /há um de [\d.]+ km em 01\/10\/2026/);
+  assert.throws(() => registrarAbastecimento({ veiculoId: "v1", data: "2026-10-01", hora: "08:00", km: "1300", litros: "10", valor: "100" }, s, hoje), /mesma data e hora|nesta data e hora/i);
+});
