@@ -105,22 +105,6 @@ export function tamanhosAssociadosParaCadastro(
 }
 
 /**
- * Tamanhos que o Novo EPI e o Novo Uniforme oferecem: todos os ativos do cadastro geral, na ordem
- * de Gerais, mais os já associados à subcategoria (o desativado marcado). O que ainda não estava
- * associado passa a ser associado ao salvar.
- */
-export function tamanhosGeraisParaCadastro(
-  p: ParametrosBase,
-  modulo: ModuloTamanho,
-  produto: ProdutoTamanho,
-): { id: string; rotulo: string }[] {
-  const associados = new Set(tamanhosDisponiveisDoProduto(p, modulo, produto).map((t) => t.id));
-  return p.tamanhos
-    .filter((t) => estaAtivo(p, t.id) || associados.has(t.id))
-    .map((t) => ({ id: t.id, rotulo: estaAtivo(p, t.id) ? t.nome : `${t.nome} (desativado)` }));
-}
-
-/**
  * Tamanhos e numerações que a lista do cadastro mostra para o produto: os escolhidos no cadastro
  * (ou todos os associados à subcategoria, se nada foi escolhido ainda), na ordem de Gerais e com
  * o desativado marcado.
