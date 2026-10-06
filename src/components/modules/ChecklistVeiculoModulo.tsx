@@ -18,7 +18,7 @@ import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
   gruposAplicaveis, hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
+  definirPeriodicidade, PERIODICIDADES, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
@@ -26,11 +26,11 @@ import { formatarData } from "@/lib/gemape";
 import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
 import { combinaBusca } from "@/lib/parametros-base";
 import { resolverSubcategoria } from "@/lib/subcategoria-referencia";
-import { useChecklistsVeiculo } from "@/lib/use-registros-veiculo";
+import { useChecklistsVeiculo, usePeriodicidadesChecklist } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
-type VeiculoChecklist = Veiculo & { periodicidade_checklist?: string | null };
+type VeiculoChecklist = Veiculo;
 
 const dataHoraBrasilia = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
@@ -50,10 +50,10 @@ type Tela = { tipo: "novo" } | { tipo: "check"; id: string } | null;
 // Módulos > Veículos > Check list (decisão 63): por veículo, os itens do tipo dele (Parâmetros >
 // Veículos > Itens check list) são avaliados como OK, NOK ou N.A., com observação e fotos. Item NOK
 // gera uma ocorrência e uma pendência no próprio check list, que fica aberta até ser resolvida. A
-// periodicidade (diária ou semanal) é do veículo. Só modo demonstração; nada no Supabase.
+// periodicidade (Diário ou Semanal) é definida aqui, por veículo. Só modo demonstração; nada no Supabase.
 export function ChecklistVeiculoModulo() {
   const { empresaId, empresas } = useEmpresa();
-  const { canWrite } = useAccess();
+  const { canWrite, canOperate } = useAccess();
   const parametros = useParametrosBase();
   const { data: veiculosLista = [] } = useVeiculos(empresaId);
   const veiculos = veiculosLista as VeiculoChecklist[];
@@ -70,6 +70,8 @@ export function ChecklistVeiculoModulo() {
   const [textoResolucao, setTextoResolucao] = useState("");
   const trava = useRef(false);
   const hoje = hojeBrasilia();
+  const periodicidades = usePeriodicidadesChecklist();
+  const periodicidadeDe = (v: VeiculoChecklist) => periodicidades[v.id] ?? null;
 
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const rotuloDe = (v: VeiculoChecklist) => rotuloDoVeiculo(parametros, v);
@@ -108,7 +110,7 @@ export function ChecklistVeiculoModulo() {
         veiculoId: veiculoEscolhido.id,
         veiculoRotulo: rotuloDe(veiculoEscolhido),
         tipoVeiculo: tipoDe(veiculoEscolhido)?.nome ?? "",
-        periodicidade: veiculoEscolhido.periodicidade_checklist,
+        periodicidade: periodicidadeDe(veiculoEscolhido),
         responsavelId,
         responsavelNome: empregadosAtivos.find((x) => x.id === responsavelId)?.nome ?? "",
         grupos: gruposDe(veiculoEscolhido),
@@ -172,7 +174,7 @@ export function ChecklistVeiculoModulo() {
             <TableBody>
               {veiculos.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum veículo cadastrado.</TableCell></TableRow>}
               {veiculos.map((v) => {
-                const per = v.periodicidade_checklist;
+                const per = periodicidadeDe(v);
                 const doVeiculo = checklists.filter((c) => c.veiculoId === v.id);
                 const sit = ehPeriodicidade(per) ? situacaoPeriodica(per, doVeiculo, hoje) : null;
                 const aberto = doVeiculo.find((c) => c.status === "Em andamento");
@@ -180,7 +182,12 @@ export function ChecklistVeiculoModulo() {
                   <TableRow key={v.id}>
                     <TableCell>{rotuloDe(v)}</TableCell>
                     <TableCell>{tipoDe(v)?.nome ?? "—"}</TableCell>
-                    <TableCell>{ehPeriodicidade(per) ? per : <span className="text-xs text-muted-foreground">Defina no cadastro do veículo</span>}</TableCell>
+                    <TableCell>
+                      <Select value={per ?? ""} onValueChange={(p) => { executar(() => definirPeriodicidade(v.id, p), "Periodicidade salva"); }} disabled={!canOperate}>
+                        <SelectTrigger aria-label={`Periodicidade de ${rotuloDe(v)}`} className="h-8 w-32"><SelectValue placeholder="Definir" /></SelectTrigger>
+                        <SelectContent>{PERIODICIDADES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </TableCell>
                     <TableCell>{sit ? <Badge variant="outline" className={SITUACAO[sit].classe}>{SITUACAO[sit].rotulo}</Badge> : "—"}</TableCell>
                     <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).length}</TableCell>
                     <TableCell className="text-right">
@@ -252,7 +259,7 @@ export function ChecklistVeiculoModulo() {
               </Select>
               {veiculoEscolhido && (
                 <p className="text-xs text-muted-foreground">
-                  Tipo: {tipoDe(veiculoEscolhido)?.nome ?? "sem tipo"} · periodicidade: {ehPeriodicidade(veiculoEscolhido.periodicidade_checklist) ? veiculoEscolhido.periodicidade_checklist : "não definida (cadastro do veículo)"} ·{" "}
+                  Tipo: {tipoDe(veiculoEscolhido)?.nome ?? "sem tipo"} · periodicidade: {periodicidadeDe(veiculoEscolhido) ?? "não definida (escolha na tabela da situação por veículo)"} ·{" "}
                   {gruposDe(veiculoEscolhido).reduce((t, g) => t + g.itens.length, 0)} itens
                   {pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
                 </p>
