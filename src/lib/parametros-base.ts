@@ -5,7 +5,7 @@ import { posicaoEmSequencia, TAMANHOS_PADRAO } from "./tamanhos-padrao.ts";
 import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
-import { CHECKLIST_VEICULOS_PADRAO, chaveDoTipoVeiculo, tiposDoGrupoPadrao } from "./checklist-veiculos-padrao.ts";
+import { CHECKLIST_VEICULOS_PADRAO, NOMES_PADRAO_ANTIGO, chaveDoTipoVeiculo, tiposDoGrupoPadrao } from "./checklist-veiculos-padrao.ts";
 import { ACOES_MANUTENCAO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
 
 export type Categoria = { id: string; nome: string };
@@ -546,14 +546,19 @@ export function removerGrupoChecklistVeiculo(id: string, storage = storagePadrao
 // Cadastra os grupos padrão que ainda não existem (mesmo nome); o que já está cadastrado não é alterado.
 // O tipo de veículo é ligado pelo nome das subcategorias de Veículos que existem em Gerais; grupo sem
 // subcategoria correspondente fica sem tipo (não aparece em nenhum check list) até ser ligado ao editar.
-export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { grupos: number; itens: number; semTipo: number } {
+export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { grupos: number; itens: number; semTipo: number; substituidos: number; ligados: number } {
   return alterar(storage, (d) => {
+    // Decisão 64: o padrão antigo (decisão 62) é substituído; os grupos do responsável não são tocados.
+    const antes = d.itensChecklistVeiculo.length;
+    d.itensChecklistVeiculo = d.itensChecklistVeiculo.filter((g) => !NOMES_PADRAO_ANTIGO.some((n) => mesmoNome(g.nome, n)));
+    const substituidos = antes - d.itensChecklistVeiculo.length;
     let grupos = 0;
     let itens = 0;
     let semTipo = 0;
+    let ligados = 0;
     const veiculos = subcategoriasDa(d, "cat-veiculos");
     for (const padrao of CHECKLIST_VEICULOS_PADRAO) {
-      if (d.itensChecklistVeiculo.some((g) => mesmoNome(g.nome, padrao.nome))) continue;
+      const existente = d.itensChecklistVeiculo.find((g) => mesmoNome(g.nome, padrao.nome));
       const alvo = tiposDoGrupoPadrao(padrao.nome);
       const tiposVeiculo =
         alvo === "todos"
@@ -562,12 +567,22 @@ export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { g
               const chave = chaveDoTipoVeiculo(s.nome);
               return chave !== null && alvo.includes(chave);
             }).map((s) => s.id);
+      if (existente) {
+        // Grupo do padrão que ficou sem tipo (o tipo ainda não existia em Gerais): liga agora, sem mexer nos itens.
+        if (existente.tiposVeiculo.length === 0 && tiposVeiculo.length > 0) {
+          existente.tiposVeiculo = tiposVeiculo;
+          ligados += 1;
+        } else if (existente.tiposVeiculo.length === 0) {
+          semTipo += 1;
+        }
+        continue;
+      }
       if (tiposVeiculo.length === 0) semTipo += 1;
       d.itensChecklistVeiculo.push({ id: novoId(), nome: padrao.nome, itens: montarItensChecklist([], [...padrao.itens]), tiposVeiculo });
       grupos += 1;
       itens += padrao.itens.length;
     }
-    return { grupos, itens, semTipo };
+    return { grupos, itens, semTipo, substituidos, ligados };
   });
 }
 

@@ -1,288 +1,233 @@
-// Itens de check list de veículos (decisão 62), carregados pelo botão "Cadastrar padrão".
-// Cada grupo é "tipo de veículo · seção", com os itens a conferir. SUVs e vans somam ao carro de
-// passeio, pesados ao caminhão leve e médio, ônibus ao passeio e aos pesados; essa repetição não é
-// copiada: o responsável escolhe os grupos que valem para cada veículo.
+// Itens de check list de veículos (decisões 62 e 64), carregados pelo botão "Cadastrar padrão".
+// Três listas por tipo de veículo: leves (carros, SUVs, picapes, vans), pesados (caminhões, cavalo
+// mecânico, carreta, ônibus) e empilhadeiras. Cada grupo é "tipo · seção".
 export const CHECKLIST_VEICULOS_PADRAO: readonly { nome: string; itens: readonly string[] }[] = [
   {
-    nome: "Carros de passeio · Exterior",
+    nome: "Veículos leves · Mecânica",
     itens: [
-      "Lataria e pintura (amassados, riscos, ferrugem)",
-      "Para-choques, para-lamas e grade",
-      "Faróis, lanternas, setas e luzes de freio (funcionamento e lentes)",
-      "Retrovisores (estado e regulagem)",
-      "Para-brisa e vidros (trincas, lascas)",
-      "Limpadores de para-brisa e nível do reservatório",
-      "Pneus (sulco, desgaste irregular, calibragem) e estepe",
-      "Rodas, calotas e parafusos",
-      "Portas, capô e porta-malas (fechamento e dobradiças)",
-    ],
-  },
-  {
-    nome: "Carros de passeio · Interior",
-    itens: [
-      "Bancos (estado, regulagem, fixação)",
-      "Cintos de segurança (funcionamento e retração)",
-      "Painel de instrumentos e luzes de advertência",
-      "Ar-condicionado e aquecimento",
-      "Vidros elétricos, travas e alarme",
-      "Espelho interno e quebra-sol",
-      "Carpete, forro e revestimentos",
-    ],
-  },
-  {
-    nome: "Carros de passeio · Mecânica",
-    itens: [
-      "Motor (ruídos, vazamentos, fumaça)",
       "Nível de óleo do motor",
-      "Fluido de arrefecimento (radiador)",
-      "Fluido de freio e embreagem",
-      "Bateria, bornes e cabos",
+      "Nível de arrefecimento (radiador)",
+      "Nível de fluido de freio",
+      "Nível de óleo da direção hidráulica",
+      "Nível do reservatório do limpador",
+      "Bateria e bornes",
       "Correias e mangueiras",
-      "Freios (pastilhas, discos, resposta do pedal, freio de mão)",
-      "Suspensão (amortecedores, buchas, molas)",
-      "Direção (folga, fluido, alinhamento)",
+      "Freios (pedal, pastilhas, freio de mão)",
+      "Suspensão e amortecedores",
+      "Direção (folga e alinhamento)",
       "Câmbio e embreagem",
-      "Escapamento e catalisador",
+      "Vazamentos (óleo, combustível, fluidos)",
+      "Ruídos anormais no motor",
     ],
   },
   {
-    nome: "Carros de passeio · Segurança e equipamentos",
+    nome: "Veículos leves · Exterior e pneus",
     itens: [
-      "Triângulo de segurança",
-      "Macaco e chave de roda",
-      "Estepe em condições",
+      "Pneus (sulco, desgaste, calibragem) + estepe",
+      "Rodas e parafusos",
+      "Faróis e lanternas",
+      "Setas e luz de freio",
+      "Luz de ré e neblina",
+      "Para-brisa e vidros (trincas, lascas)",
+      "Limpadores e palhetas",
+      "Retrovisores",
+      "Lataria e pintura (amassados, riscos, ferrugem)",
+      "Portas, capô e porta-malas (fechamento)",
+      "Para-choques e grade",
+    ],
+  },
+  {
+    nome: "Veículos leves · Interior",
+    itens: [
+      "Painel e luzes de advertência",
+      "Ar-condicionado",
+      "Bancos e cintos de segurança",
+      "Vidros elétricos e travas",
+      "Espelhos internos",
+      "Carpete e forro (estado e limpeza)",
+    ],
+  },
+  {
+    nome: "Veículos leves · Segurança e documentos",
+    itens: [
+      "Triângulo, macaco e chave de roda",
       "Extintor (quando aplicável)",
-      "Chave de emergência / kit de ferramentas básico",
+      "Estepe em condições",
+      "CRLV/licenciamento em dia",
+      "Multas pendentes",
+      "Limpeza e conservação geral",
     ],
   },
   {
-    nome: "Carros de passeio · Documentação",
-    itens: ["CRLV/licenciamento em dia", "IPVA pago", "Seguro do veículo", "Multas pendentes"],
-  },
-  {
-    nome: "SUVs, utilitários e picapes · Caçamba / carga",
+    nome: "Veículos pesados · Mecânica e sistema de ar",
     itens: [
-      "Estado do assoalho e laterais",
-      "Tampa traseira (funcionamento e travas)",
-      "Lonas e amarrações",
-      "Protetor de caçamba (quando houver)",
-    ],
-  },
-  {
-    nome: "SUVs, utilitários e picapes · Tração e uso off-road",
-    itens: [
-      "Teste de engate da tração 4x4",
-      "Reduzida e bloqueio de diferencial",
-      "Pneus de uso misto/off-road (sulco e desgaste)",
-      "Estepe compatível",
-    ],
-  },
-  {
-    nome: "SUVs, utilitários e picapes · Reboque e acessórios",
-    itens: [
-      "Engate de reboque (estado e fixação)",
-      "Conector elétrico do reboque",
-      "Rack de teto e suportes (quando houver)",
-      "Suspensão reforçada (molas e amortecedores)",
-    ],
-  },
-  {
-    nome: "Vans e furgões",
-    itens: [
-      "Portas laterais deslizantes e traseiras (funcionamento, travas, trilhos)",
-      "Compartimento de carga: piso, revestimento e iluminação",
-      "Bancos rebatíveis (quando houver)",
-      "Capacidade de carga e distribuição de peso",
-      "Degraus e alças de acesso",
-      "Ventilação interna do compartimento",
-    ],
-  },
-  {
-    nome: "Caminhões leves e médios · Carroceria",
-    itens: [
-      "Estado do baú, grade ou carroceria aberta",
-      "Portas e travas do baú",
-      "Piso, laterais e cantoneiras",
-      "Lonas, cintas e pontos de amarração",
-      "Iluminação interna do baú",
-    ],
-  },
-  {
-    nome: "Caminhões leves e médios · Freios",
-    itens: [
-      "Sistema hidráulico ou pneumático (conforme modelo)",
-      "Teste de vazamento do sistema de ar (quando pneumático)",
+      "Nível de óleo do motor",
+      "Nível de arrefecimento",
+      "Teste de vazamento do sistema pneumático",
+      "Pressão dos reservatórios de ar",
+      "Compressor e secador de ar",
+      "Freios (lonas, discos, câmaras)",
       "Freio de estacionamento",
-      "Freio-motor e retarder (quando houver)",
+      "Freio-motor / retarder (quando houver)",
+      "Bateria e alternador",
+      "Correias e mangueiras",
+      "Vazamentos de óleo, ar e combustível",
+      "Ruídos anormais",
     ],
   },
   {
-    nome: "Caminhões leves e médios · Pneus e rodas",
+    nome: "Veículos pesados · Pneus, rodas e eixos",
     itens: [
-      "Pneus dianteiros e traseiros (sulco, desgaste, calibragem)",
-      "Estepe",
+      "Pneus dianteiros (sulco, desgaste, calibragem)",
+      "Pneus traseiros e estepe",
       "Parafusos e porcas das rodas",
-      "Alinhamento e balanceamento",
-    ],
-  },
-  {
-    nome: "Caminhões leves e médios · Suspensão e eixos",
-    itens: [
       "Molas, feixes e amortecedores",
       "Eixos, rolamentos e buchas",
-      "Pino-rei e quinta roda (quando aplicável)",
-      "Nível de fluido dos eixos",
+      "Nível de fluido dos eixos (quando aplicável)",
     ],
   },
   {
-    nome: "Caminhões leves e médios · Mecânica e elétrica",
+    nome: "Veículos pesados · Iluminação e sinalização",
     itens: [
-      "Motor, óleo e filtros",
-      "Sistema de arrefecimento",
-      "Bateria e alternador",
-      "Embreagem e câmbio",
-      "Faróis, lanternas, setas, luzes de freio e ré",
+      "Faróis, lanternas e setas",
+      "Luzes de freio e ré",
       "Luzes de contorno e laterais",
-      "Tacógrafo (quando aplicável)",
+      "Luzes de identificação do reboque (quando houver)",
+      "Conector elétrico do reboque",
     ],
   },
   {
-    nome: "Caminhões leves e médios · Equipamentos obrigatórios",
-    itens: ["Triângulo, macaco e chave de roda", "Extintor", "Calços de roda", "Kit de ferramentas"],
+    nome: "Veículos pesados · Acoplamento e carroceria",
+    itens: [
+      "Quinta roda e pino-rei (cavalo mecânico)",
+      "Travamento e folga do acoplamento",
+      "Suspensão a ar (bolsas e altura)",
+      "Conexões de freio do reboque",
+      "Estado da carroceria/baú (portas, travas, piso)",
+      "Lonas, cintas e pontos de amarração",
+      "Para-choque traseiro e proteções laterais",
+    ],
   },
   {
-    nome: "Caminhões leves e médios · Documentação e regulamentação",
+    nome: "Veículos pesados · Cabine e segurança",
+    itens: [
+      "Cintos de segurança e bancos",
+      "Retrovisores ampliados e espelhos de aproximação",
+      "Tacógrafo (funcionamento e calibração)",
+      "Extintores (quantidade e validade)",
+      "Triângulo, macaco, chave de roda e calços",
+      "Kit de ferramentas",
+      "Limpeza e conservação",
+    ],
+  },
+  {
+    nome: "Veículos pesados · Documentação e regulamentação",
     itens: [
       "CRLV/licenciamento",
-      "RNTRC (ANTT) — para transporte rodoviário de cargas",
+      "RNTRC/ANTT (transporte de cargas)",
       "Seguro do veículo e da carga",
-      "Tacógrafo calibrado",
       "Multas e pendências",
     ],
   },
   {
-    nome: "Caminhões pesados e cavalo mecânico · Sistema pneumático",
+    nome: "Empilhadeiras · Elevação e mastro",
     itens: [
-      "Compressor e secador de ar",
-      "Reservatórios e válvulas",
-      "Teste completo de vazamento do circuito de ar",
-      "Freios: lonas, discos, câmaras e ajuste",
+      "Mastro: rolamentos, guias e deslizamento suave",
+      "Correntes de elevação (tensão, desgaste, lubrificação)",
+      "Cilindros de elevação e inclinação (vazamentos)",
+      "Travamento e folga do mastro",
+      "Movimento de elevação/abaixamento sem trancos ou ruídos",
     ],
   },
   {
-    nome: "Caminhões pesados e cavalo mecânico · Acoplamento e carroceria",
+    nome: "Empilhadeiras · Garfo e estrutura de carga",
     itens: [
-      "Quinta roda: estado, travamento e pino-rei",
-      "Suspensão a ar: bolsas, altura e válvulas",
-      "Eixos e balanças (alinhamento)",
-      "Para-choque traseiro e proteções laterais",
-      "Conexões de freio e elétrica do reboque",
+      "Garfos: deformações, trincas e desgaste",
+      "Suporte do garfo e pinos de travamento",
+      "Extensões do garfo (quando houver)",
+      "Apoios e proteção traseira da carga",
+      "Inclinador do garfo funcionando",
     ],
   },
   {
-    nome: "Caminhões pesados e cavalo mecânico · Segurança e regulamentação",
+    nome: "Empilhadeiras · Pneus e rodas",
     itens: [
-      "Limitador de velocidade",
-      "Tacógrafo (obrigatório)",
-      "Retrovisores ampliados e espelhos de aproximação",
-      "Extintores em quantidade adequada",
-      "Documentação: RNTRC, AETC, licença de operação",
-      "Inspeção de segurança veicular (quando exigida)",
+      "Pneus maciços/pneumáticos (desgaste, trincas)",
+      "Rodas e parafusos",
+      "Roda traseira (direção) alinhada",
     ],
   },
   {
-    nome: "Ônibus e micro-ônibus · Área de passageiros",
+    nome: "Empilhadeiras · Freios e direção",
     itens: [
-      "Assentos (estado e fixação)",
-      "Cintos de segurança",
-      "Corrimãos e alças",
-      "Iluminação interna",
-      "Sistema de som/aviso",
+      "Freio de serviço (teste de frenagem)",
+      "Freio de estacionamento",
+      "Direção hidráulica (folga e esforço)",
+      "Vazamentos no sistema hidráulico",
     ],
   },
   {
-    nome: "Ônibus e micro-ônibus · Portas e emergência",
+    nome: "Empilhadeiras · Bateria (empilhadeira elétrica)",
     itens: [
-      "Portas (funcionamento, travas, sensor de fechamento)",
-      "Saídas de emergência",
-      "Martelo quebra-vidro",
-      "Extintores (quantidade e validade)",
+      "Nível da bateria (carga)",
+      "Nível de eletrólito e água destilada",
+      "Cabos, bornes e conectores",
+      "Carregador em boas condições",
     ],
   },
   {
-    nome: "Ônibus e micro-ônibus · Acessibilidade",
+    nome: "Empilhadeiras · Motor e combustível (empilhadeira a combustão)",
     itens: [
-      "Elevador ou rampa (quando houver)",
-      "Espaço reservado para cadeirante",
-      "Sinalização de acessibilidade",
-    ],
-  },
-  {
-    nome: "Ônibus e micro-ônibus · Documentação e higiene",
-    itens: [
-      "Licença de operação",
-      "Seguro de passageiros",
-      "Condições sanitárias e limpeza",
-      "Higienização periódica",
-    ],
-  },
-  {
-    nome: "Motos",
-    itens: [
-      "Freios dianteiro e traseiro (discos, pastilhas, fluido)",
-      "Pneus (sulco, desgaste, calibragem)",
-      "Corrente e relação (tensão e lubrificação)",
-      "Farol, setas, lanterna e luz de freio",
-      "Buzina",
-      "Retrovisores",
-      "Escapamento (estado e ruído)",
-      "Suspensão (garfo dianteiro e amortecedor traseiro)",
       "Nível de óleo do motor",
-      "Bateria e partida",
-      "Documentação: CRLV, seguro e multas",
+      "Nível de arrefecimento",
+      "Filtro de ar e combustível",
+      "Nível de GPL/diesel e vazamentos",
+      "Ruídos e fumaça anormais",
     ],
   },
   {
-    nome: "Empilhadeiras e veículos de movimentação",
+    nome: "Empilhadeiras · Elétrica e iluminação",
     itens: [
-      "Garfo e suporte de carga (deformações, desgaste)",
-      "Correntes e cilindro de elevação",
-      "Mastro e rolamentos",
-      "Freios e direção",
+      "Faróis, lanternas e pisca-alerta",
       "Buzina e alarme de ré",
-      "Nível de fluidos (hidráulico, óleo, arrefecimento)",
-      "Bateria (carga e nível) — quando elétrica",
-      "Pneus maciços ou pneumáticos",
-      "Luzes de trabalho",
-      "Inspeção diária de segurança do operador",
+      "Sinal de marcha à ré",
+      "Luzes de trabalho (quando houver)",
+      "Cinto/sensor de presença do operador",
     ],
   },
   {
-    nome: "Todos os veículos · Itens comuns",
+    nome: "Empilhadeiras · Segurança do operador",
     itens: [
-      "Estado geral de limpeza e conservação",
-      "Vazamentos visíveis (óleo, combustível, fluidos)",
-      "Ruídos anormais em funcionamento",
-      "Odores estranhos (queimado, combustível)",
-      "Quilometragem registrada",
-      "Data da última manutenção preventiva",
-      "Observações e pendências para correção",
+      "Estrutura de proteção (FOP) — capô e teto",
+      "Espelho retrovisor (quando houver)",
+      "Retrovisor e visibilidade geral",
+      "Placa de capacidade de carga legível",
+      "Extintor (quando aplicável)",
+    ],
+  },
+  {
+    nome: "Empilhadeiras · Documentação e inspeção",
+    itens: [
+      "Inspeção diária do operador registrada",
+      "Checklist anterior assinado/resolvido",
+      "Manutenção preventiva em dia",
+      "Registro de pendências abertas",
     ],
   },
 ];
 
-// Tipo de veículo a que cada grupo padrão se destina (decisão 63). SUVs e vans somam ao carro de passeio,
-// pesados ao caminhão leve e médio, ônibus ao passeio e aos pesados.
-export type ChaveTipoVeiculo = "passeio" | "suv" | "van" | "leve" | "pesado" | "onibus" | "moto" | "empilhadeira";
+// Nomes dos grupos do padrão antigo (decisão 62: 26 grupos por tipo de veículo). A decisão 64 substitui
+// esse padrão: ao cadastrar o novo, os grupos com estes nomes são retirados.
+export const NOMES_PADRAO_ANTIGO: readonly string[] = [
+  "Carros de passeio · Exterior", "Carros de passeio · Interior", "Carros de passeio · Mecânica", "Carros de passeio · Segurança e equipamentos", "Carros de passeio · Documentação", "SUVs, utilitários e picapes · Caçamba / carga", "SUVs, utilitários e picapes · Tração e uso off-road", "SUVs, utilitários e picapes · Reboque e acessórios", "Vans e furgões", "Caminhões leves e médios · Carroceria", "Caminhões leves e médios · Freios", "Caminhões leves e médios · Pneus e rodas", "Caminhões leves e médios · Suspensão e eixos", "Caminhões leves e médios · Mecânica e elétrica", "Caminhões leves e médios · Equipamentos obrigatórios", "Caminhões leves e médios · Documentação e regulamentação", "Caminhões pesados e cavalo mecânico · Sistema pneumático", "Caminhões pesados e cavalo mecânico · Acoplamento e carroceria", "Caminhões pesados e cavalo mecânico · Segurança e regulamentação", "Ônibus e micro-ônibus · Área de passageiros", "Ônibus e micro-ônibus · Portas e emergência", "Ônibus e micro-ônibus · Acessibilidade", "Ônibus e micro-ônibus · Documentação e higiene", "Motos", "Empilhadeiras e veículos de movimentação", "Todos os veículos · Itens comuns",
+];
+
+// Tipo de veículo a que cada grupo padrão se destina (decisões 63 e 64).
+export type ChaveTipoVeiculo = "passeio" | "suv" | "van" | "pesado" | "onibus" | "empilhadeira";
 const POR_PREFIXO: readonly (readonly [string, readonly ChaveTipoVeiculo[]])[] = [
-  ["Carros de passeio", ["passeio", "suv", "van", "onibus"]],
-  ["SUVs, utilitários e picapes", ["suv"]],
-  ["Vans e furgões", ["van"]],
-  ["Caminhões leves e médios", ["leve", "pesado", "onibus"]],
-  ["Caminhões pesados e cavalo mecânico", ["pesado", "onibus"]],
-  ["Ônibus e micro-ônibus", ["onibus"]],
-  ["Motos", ["moto"]],
-  ["Empilhadeiras e veículos de movimentação", ["empilhadeira"]],
+  ["Veículos leves", ["passeio", "suv", "van"]],
+  ["Veículos pesados", ["pesado", "onibus"]],
+  ["Empilhadeiras", ["empilhadeira"]],
 ];
 
 // Chaves dos tipos a que o grupo padrão se aplica; "todos" quando vale para qualquer veículo.
@@ -290,15 +235,14 @@ export function tiposDoGrupoPadrao(nome: string): readonly ChaveTipoVeiculo[] | 
   return POR_PREFIXO.find(([prefixo]) => nome.startsWith(prefixo))?.[1] ?? "todos";
 }
 
-// Chave do tipo a partir do nome de uma subcategoria de Veículos de Cadastros > Gerais.
+// Chave do tipo a partir do nome de uma subcategoria de Veículos de Cadastros > Gerais. Caminhão, cavalo
+// mecânico e carreta são pesados; moto e outros tipos não têm lista padrão.
 export function chaveDoTipoVeiculo(nomeSubcategoria: string): ChaveTipoVeiculo | null {
   const n = nomeSubcategoria.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (/empilh/.test(n)) return "empilhadeira";
   if (/onibus/.test(n)) return "onibus";
-  if (/moto/.test(n)) return "moto";
-  if (/caminhonete|utilit|suv|picape|pickup/.test(n)) return "suv";
-  if (/pesad|carreta|cavalo|bitrem/.test(n)) return "pesado";
-  if (/caminh/.test(n)) return "leve";
+  if (/caminhonete|utilit|suv|picape|pick-?up/.test(n)) return "suv";
+  if (/caminh|pesad|carreta|cavalo|bitrem/.test(n)) return "pesado";
   if (/\bvan|furg/.test(n)) return "van";
   if (/carro|passeio|automovel/.test(n)) return "passeio";
   return null;

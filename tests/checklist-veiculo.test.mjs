@@ -239,7 +239,7 @@ test("situação periódica vale pelo dia da conclusão e tipos soltos são reco
   assert.equal(chaveDoTipoVeiculo("Cavalo mecânico"), "pesado");
   assert.equal(chaveDoTipoVeiculo("Carreta"), "pesado");
   assert.equal(chaveDoTipoVeiculo("Caminhonete"), "suv");
-  assert.equal(chaveDoTipoVeiculo("Caminhão"), "leve");
+  assert.equal(chaveDoTipoVeiculo("Caminhão"), "pesado");
 });
 
 test("hojeBrasilia independe do fuso do navegador", async () => {
