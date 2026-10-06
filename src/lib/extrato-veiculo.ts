@@ -84,3 +84,38 @@ export function sugestoesPreventivas(entrada: {
   });
   return lista.sort((a, b) => ORDEM[a.status] - ORDEM[b.status] || a.nome.localeCompare(b.nome, "pt-BR"));
 }
+
+type Momento = { data: string; hora?: string };
+const momento = (r: Momento) => `${r.data}T${r.hora ?? "00:00"}`;
+
+// Abastecimento mais recente do veículo (por data e hora): é o km que a tela já traz.
+export function ultimoAbastecimentoDoVeiculo<T extends Momento & { veiculoId: string }>(lista: T[], veiculoId: string): T | null {
+  const dele = lista.filter((a) => a.veiculoId === veiculoId).sort((a, b) => momento(b).localeCompare(momento(a)));
+  return dele[0] ?? null;
+}
+
+export type LinhaAbastecimento<T> = T & {
+  kmRodados: number | null;
+  kmPorLitro: number | null;
+  precoLitro: number | null;
+};
+
+// Histórico de um veículo, do mais recente ao mais antigo. Km rodados e km/L são do trecho desde o
+// abastecimento anterior (o primeiro não tem trecho); R$/L precisa do valor, que registros
+// antigos podem não ter.
+export function historicoAbastecimentos<T extends Momento & { km: number; litros: number; valor?: number | null }>(
+  lista: T[],
+): LinhaAbastecimento<T>[] {
+  const crescente = [...lista].sort((a, b) => momento(a).localeCompare(momento(b)) || a.km - b.km);
+  const linhas = crescente.map((a, i): LinhaAbastecimento<T> => {
+    const anterior = crescente[i - 1];
+    const kmRodados = anterior ? a.km - anterior.km : null;
+    return {
+      ...a,
+      kmRodados,
+      kmPorLitro: kmRodados !== null && kmRodados > 0 && a.litros > 0 ? kmRodados / a.litros : null,
+      precoLitro: a.valor && a.litros > 0 ? a.valor / a.litros : null,
+    };
+  });
+  return linhas.reverse();
+}
