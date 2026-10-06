@@ -93,6 +93,16 @@ export function tipoChecklistDaSubcategoria(nomeSubcategoria: string | null | un
   return TIPOS_CHECKLIST.find((t) => chave !== null && (t.chaves as readonly string[]).includes(chave))?.id ?? null;
 }
 
+// Veículos ativos que podem receber o check list do tipo escolhido (pela subcategoria de Veículos do cadastro).
+export function veiculosDoTipoChecklist<V extends { status?: string | null }>(
+  veiculos: V[],
+  tipo: string,
+  nomeDaSubcategoriaDe: (veiculo: V) => string | null | undefined,
+): V[] {
+  if (!ehTipoChecklist(tipo)) return [];
+  return veiculos.filter((v) => v.status === "Ativo" && tipoChecklistDaSubcategoria(nomeDaSubcategoriaDe(v)) === tipo);
+}
+
 // Grupos de Parâmetros que valem para o tipo escolhido: os ligados a alguma subcategoria desse tipo e os de todos os tipos.
 export function gruposDoTipoChecklist(
   grupos: GrupoChecklistVeiculo[],

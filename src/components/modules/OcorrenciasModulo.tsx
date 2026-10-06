@@ -69,7 +69,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
     : undefined;
 
   const descricaoAlvo = (o: Ocorrencia) => {
-    if (o.veiculo_id) return veiculos.find((v) => v.id === o.veiculo_id)?.placa ?? "—";
+    if (o.veiculo_id) return veiculos.find((v) => v.id === o.veiculo_id)?.placa || "—";
     if (o.item_id) return itens.find((i) => i.id === o.item_id)?.nome ?? "—";
     return "—";
   };
@@ -127,7 +127,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
                   Descricao: o.descricao_ocorrencia,
                   Modulo: o.tipo_ocorrencia,
                   Alvo: o.veiculo_id
-                    ? veiculos.find((v) => v.id === o.veiculo_id)?.placa
+                    ? veiculos.find((v) => v.id === o.veiculo_id)?.placa || "—"
                     : itens.find((i) => i.id === o.item_id)?.nome,
                   Empregado: nomeEmpregado(o.empregado_id),
                 })),
@@ -279,7 +279,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
                   {(modulo === "veiculo" ? veiculos : itens).map((o) => (
                     <SelectItem key={o.id} value={o.id}>
                       {"placa" in o
-                        ? `${o.placa} — ${o.modelo ?? ""}`
+                        ? [o.placa, o.modelo].filter(Boolean).join(" — ") || "—"
                         : `${o.codigo_sku} — ${o.nome}`}
                     </SelectItem>
                   ))}

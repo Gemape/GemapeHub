@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
@@ -7,7 +8,6 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  definirPeriodicidade, gruposDoTipoChecklist, PERIODICIDADES, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
+  definirPeriodicidade, gruposDoTipoChecklist, veiculosDoTipoChecklist, PERIODICIDADES, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
@@ -82,7 +82,7 @@ export function ChecklistVeiculoModulo() {
   const tipoCheckDe = (v: VeiculoChecklist) => tipoChecklistDaSubcategoria(tipoDe(v)?.nome);
   const gruposDoTipo = gruposDoTipoChecklist(parametros.itensChecklistVeiculo, subcategoriasVeiculo, tipoCheck);
   const itensDoTipo = gruposDoTipo.reduce((t, g) => t + g.itens.length, 0);
-  const veiculosDoTipo = veiculos.filter((v) => v.status === "Ativo" && ehTipoChecklist(tipoCheck) && tipoCheckDe(v) === tipoCheck);
+  const veiculosDoTipo = veiculosDoTipoChecklist(veiculos, tipoCheck, (v) => tipoDe(v)?.nome);
   const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === tipoCheck)?.nome ?? "";
   const checklists = todos.filter((c) => idsDaEmpresa.has(c.veiculoId));
   const pendencias = pendenciasAbertas(checklists);
@@ -109,8 +109,7 @@ export function ChecklistVeiculoModulo() {
   function iniciar(e: React.FormEvent) {
     e.preventDefault();
     if (trava.current || !veiculoEscolhido) {
-      if (!tipoCheck) toast.error("Selecione o tipo de veículo.");
-      else if (!veiculoEscolhido) executar(() => iniciarChecklist({ veiculoId: "", veiculoRotulo: "", tipoVeiculo: "", periodicidade: null, responsavelId, responsavelNome: "", grupos: [] }));
+      if (!veiculoEscolhido) toast.error(tipoCheck ? "Selecione o veículo." : "Selecione o tipo de veículo.");
       return;
     }
     trava.current = true;
@@ -264,11 +263,11 @@ export function ChecklistVeiculoModulo() {
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_tipo">Tipo de veículo</Label>
               <Select value={tipoCheck} onValueChange={(t) => { setTipoCheck(t); setVeiculoId(""); }}>
-                <SelectTrigger id="ck_tipo" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                <SelectTrigger id="ck_tipo" aria-describedby="ck_tipo_ajuda" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
                 <SelectContent>{TIPOS_CHECKLIST.map((t) => <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>)}</SelectContent>
               </Select>
               {tipoCheck && (
-                <p className="text-xs text-muted-foreground">
+                <p id="ck_tipo_ajuda" className="text-xs text-muted-foreground">
                   {gruposDoTipo.length === 0
                     ? "Não há itens ligados a este tipo em Parâmetros > Veículos > Itens check list."
                     : `${itensDoTipo} ${itensDoTipo === 1 ? "item" : "itens"} em ${gruposDoTipo.length} ${gruposDoTipo.length === 1 ? "grupo" : "grupos"}: ${gruposDoTipo.map((g) => g.nome).join(", ")}.`}
@@ -278,11 +277,11 @@ export function ChecklistVeiculoModulo() {
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_veiculo">Veículo</Label>
               <Select value={veiculoId} onValueChange={setVeiculoId} disabled={!tipoCheck}>
-                <SelectTrigger id="ck_veiculo" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder={tipoCheck ? "Selecione o veículo" : "Escolha o tipo primeiro"} /></SelectTrigger>
+                <SelectTrigger id="ck_veiculo" aria-describedby="ck_veiculo_ajuda" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder={tipoCheck ? "Selecione o veículo" : "Escolha o tipo primeiro"} /></SelectTrigger>
                 <SelectContent>{veiculosDoTipo.map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDe(v)}</SelectItem>)}</SelectContent>
               </Select>
               {tipoCheck && veiculosDoTipo.length === 0 && (
-                <p className="text-xs text-muted-foreground">Nenhum veículo ativo deste tipo. A subcategoria do veículo é definida em Parâmetros &gt; Veículos &gt; Cadastro de Veículos.</p>
+                <p id="ck_veiculo_ajuda" className="text-xs text-muted-foreground">Nenhum veículo ativo deste tipo. A subcategoria do veículo é definida em Parâmetros &gt; Veículos &gt; Cadastro de Veículos.</p>
               )}
               {veiculoEscolhido && (
                 <p className="text-xs text-muted-foreground">

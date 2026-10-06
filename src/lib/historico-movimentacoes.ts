@@ -43,7 +43,7 @@ export function alvoHistorico(
     const item = itens.find((i) => i.id === m.item_id);
     return { codigo: item?.codigo_sku || "—", descricao: item?.nome ?? "—" };
   }
-  return { codigo: "—", descricao: veiculos.find((v) => v.id === m.veiculo_id)?.placa ?? "—" };
+  return { codigo: "—", descricao: veiculos.find((v) => v.id === m.veiculo_id)?.placa || "—" };
 }
 
 export function linhaCsvHistorico(
