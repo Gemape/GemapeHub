@@ -115,7 +115,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
                     <TableCell>{numero(s.intervaloKm)} km ou {s.intervaloMeses} meses</TableCell>
                     <TableCell>{s.ultima ? `${numero(s.ultima.km)} km (${formatarData(s.ultima.data)})` : "—"}</TableCell>
                     <TableCell>{s.proximoKm !== null && s.proximaData ? `${numero(s.proximoKm)} km ou ${formatarData(s.proximaData)}` : "—"}</TableCell>
-                    <TableCell className={ESTADO[s.status].classe}>{ESTADO[s.status].rotulo} · {s.motivo}</TableCell>
+                    <TableCell className={ESTADO[s.status].classe}>{ESTADO[s.status].rotulo}{s.status !== "em_dia" && s.status !== "sem_registro" ? ` · ${s.motivo}` : ""}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
