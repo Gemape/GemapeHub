@@ -100,7 +100,7 @@ export function salvarFornecedor(
   }
   if (valores.cep && !validarCep(valores.cep) && valores.cep !== existente?.cep) throw new Error("Informe um CEP com 8 dígitos.");
   if (valores.telefone && !validarTelefone(valores.telefone) && valores.telefone !== existente?.telefone) throw new Error("Informe um telefone com 10 ou 11 dígitos.");
-  // Categoria é opcional (decisão 55): fornecedor sem categoria atende todas.
+  // Categoria não é mais pedida na tela (decisão 55); a já gravada é mantida.
 
   if (fornecedores.some((item) => item.id !== id && somenteDigitos(item.cnpj) === somenteDigitos(valores.cnpj))) {
     throw new Error("CNPJ já cadastrado.");

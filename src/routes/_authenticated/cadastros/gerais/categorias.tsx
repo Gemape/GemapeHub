@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { demoSupabase } from "@/integrations/supabase/demo-client";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
-import { listarFornecedores } from "@/lib/fornecedores-demo";
 import {
   adicionarCategoria,
   adicionarListaFerramenta,
@@ -30,7 +29,6 @@ import {
 import { SUBCATEGORIA_DAS_TABELAS } from "@/lib/subcategoria-referencia";
 import {
   descreverUso,
-  usoDaCategoria,
   usoDaSubcategoria,
   usoPorNome,
   type UsoParametro,
@@ -218,10 +216,6 @@ function Categorias() {
           onAdicionar={(nome) => executar(() => adicionarCategoria(nome), "Categoria incluída.")}
           onRenomear={(id, nome) => executar(() => renomearCategoria(id, nome))}
           onRemover={(c) => {
-            if (
-              avisarUso(c.nome, usoDaCategoria(c.id, listarFornecedores()), "excluirSemDesativar")
-            )
-              return;
             if (confirm(`Excluir a categoria ${c.nome}?`))
               executar(() => removerCategoria(c.id), "Categoria excluída.");
           }}

@@ -304,7 +304,7 @@ export function UniformesComprasModulo() {
                 />
               </div>
             )}
-            <SeletorFornecedorCompra categoriaId="cat-uniformes" nomeCategoria="Uniforme" valor={fornecedorId} onChange={setFornecedorId} />
+            <SeletorFornecedorCompra categoriaId="cat-uniformes" valor={fornecedorId} onChange={setFornecedorId} />
             <div className="space-y-1.5">
               <Label htmlFor="nota_fiscal">Nota Fiscal</Label>
               <Input id="nota_fiscal" name="nota_fiscal" placeholder="Número da NF" />

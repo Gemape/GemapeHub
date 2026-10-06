@@ -61,16 +61,6 @@ export function usoPorNome(
   return codigos.length > 0 ? [{ modulo, codigos }] : [];
 }
 
-export function usoDaCategoria(
-  categoriaId: string,
-  fornecedores: { nome_fantasia: string; razao_social?: string; categorias: string[] }[],
-): UsoParametro[] {
-  const nomes = fornecedores
-    .filter((f) => f.categorias.includes(categoriaId))
-    .map((f) => f.nome_fantasia?.trim() || f.razao_social?.trim() || "");
-  return nomes.length > 0 ? [{ modulo: "Fornecedor", codigos: nomes }] : [];
-}
-
 export const descreverUso = (usos: UsoParametro[]) =>
   usos
     .map(({ modulo, codigos }) => {
