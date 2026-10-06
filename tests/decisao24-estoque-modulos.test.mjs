@@ -27,7 +27,8 @@ test('cadastro de Ferramentas não exibe nem exporta saldo ou alerta', () => {
   const lista = fonte.slice(fonte.indexOf('<div className="panel overflow-x-auto">'), fonte.indexOf('Novo item', fonte.indexOf('<div className="panel overflow-x-auto">')));
   assert.doesNotMatch(csv, /Estoque:|Mínimo:/);
   assert.doesNotMatch(lista, /<TableHead[^>]*>Estoque<\/TableHead>|item\.estoque_atual|font-bold text-destructive/);
-  assert.doesNotMatch(fonte, /name="estoque_minimo"|name="estoque_atual"|Estoque Mínimo|Estoque Atual/, 'mínimo e estoque inicial ficam no módulo');
+  // Decisão 54: o cadastro de ferramenta passou a ter o campo estoque mínimo; o estoque inicial continua no módulo.
+  assert.doesNotMatch(fonte, /name="estoque_atual"|Estoque Atual/, 'estoque inicial fica no módulo');
 });
 
 test('módulos EPI, Uniformes e Ferramentas têm aba de estoque própria', () => {
