@@ -66,6 +66,7 @@ import {
 } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { MODO_DEMO } from "@/lib/modo-demo";
+import { combinaBusca } from "@/lib/parametros-base";
 import { SeletorAcaoManutencao } from "@/components/modules/SeletorAcaoManutencao";
 
 // Ação de manutenção gravada na movimentação (modo demonstração): "Pai: filho, filho".
@@ -100,8 +101,27 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   const registrarLote = useRegistrarMovimentacoesLote(CHAVES);
 
   const ehVeiculo = modulo === "veiculo";
+  const [busca, setBusca] = useState("");
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
+
+  // Busca (só Veículos): veículo, empregado, tipo, manutenção, motivo, ônus e data.
+  const visiveis =
+    ehVeiculo && busca.trim()
+      ? movimentacoes.filter((m) =>
+          combinaBusca(
+            busca,
+            alvoHistorico(m, itens, veiculos).descricao,
+            naturezaMovimentacao(m),
+            nomeEmpregado(m.empregado_id),
+            textoManutencao(m),
+            m.motivo_baixa,
+            m.onus_baixa,
+            m.observacao,
+            formatarData(m.data_movimentacao),
+          ),
+        )
+      : movimentacoes;
 
   function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -187,8 +207,19 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
+        {ehVeiculo && (
+          <Input
+            aria-label="Buscar movimentação"
+            placeholder="Buscar por veículo, empregado ou manutenção"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        )}
         <p className="text-sm text-muted-foreground">
-          Últimas {movimentacoes.length} movimentações registradas.
+          {visiveis.length === movimentacoes.length
+            ? `Últimas ${movimentacoes.length} movimentações registradas.`
+            : `${visiveis.length} de ${movimentacoes.length} movimentações.`}
         </p>
         <div className="ml-auto flex gap-2">
           <Button
@@ -253,7 +284,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   Carregando…
                 </TableCell>
               </TableRow>
-            ) : movimentacoes.length === 0 ? (
+            ) : visiveis.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
@@ -263,7 +294,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </TableCell>
               </TableRow>
             ) : (
-              movimentacoes.map((m) => (
+              visiveis.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
                   <TableCell>

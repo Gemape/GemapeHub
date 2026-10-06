@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hojeLocal } from "@/lib/empregados";
-import { useEmpresa } from "@/lib/empresa-context";
+import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { kmAtualDoVeiculo, sugestoesPreventivas } from "@/lib/extrato-veiculo";
-import { useVeiculos } from "@/lib/hooks-gemape";
+import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
 import { combinaBusca } from "@/lib/parametros-base";
 import { normalizarPlaca } from "@/lib/veiculos";
 import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
@@ -25,6 +25,8 @@ export function FrotaModulo() {
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const { data: veiculos = [], isLoading } = useVeiculos(empresaId);
+  const { data: empregados = [] } = useEmpregados(TODAS);
+  const nomeResponsavel = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "";
   const abastecimentos = useAbastecimentos();
   const manutencoes = useManutencoesVeiculo();
   const planos = usePlanosVeiculo();
@@ -33,7 +35,7 @@ export function FrotaModulo() {
   const hoje = hojeLocal();
 
   const lista = veiculos.filter((v) =>
-    combinaBusca(busca.replace(/-/g, ""), rotuloDoVeiculo(parametros, v), normalizarPlaca(v.placa ?? ""), v.marca, v.modelo),
+    combinaBusca(busca.replace(/-/g, ""), rotuloDoVeiculo(parametros, v), normalizarPlaca(v.placa ?? ""), v.marca, v.modelo, nomeResponsavel(v.empregado_responsavel_id), STATUS[v.status] ?? v.status),
   );
   const vencidasDo = (id: string) => {
     const abast = abastecimentos.filter((a) => a.veiculoId === id);
@@ -56,8 +58,8 @@ export function FrotaModulo() {
         <StatCard titulo="Inativos" valor={veiculos.filter((v) => v.status === "Inativo").length} icone={CircleSlash} />
       </div>
       <Input
-        aria-label="Buscar veículo por placa, marca ou modelo"
-        placeholder="Buscar por placa, marca ou modelo"
+        aria-label="Buscar veículo por descrição ou responsável"
+        placeholder="Buscar por descrição ou responsável"
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
         className="max-w-md"
@@ -67,6 +69,7 @@ export function FrotaModulo() {
           <TableHeader>
             <TableRow>
               <TableHead>Veículo</TableHead>
+              <TableHead>Responsável</TableHead>
               <TableHead>Situação</TableHead>
               <TableHead className="text-right">Km atual</TableHead>
               <TableHead>Preventivas</TableHead>
@@ -74,9 +77,9 @@ export function FrotaModulo() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">Carregando...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Carregando...</TableCell></TableRow>}
             {!isLoading && lista.length === 0 && (
-              <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">Nenhum veículo encontrado.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum veículo encontrado.</TableCell></TableRow>
             )}
             {lista.map((v) => {
               const vencidas = vencidasDo(v.id);
@@ -88,6 +91,7 @@ export function FrotaModulo() {
               return (
                 <TableRow key={v.id} className="cursor-pointer" onClick={() => setAberto(v.id)}>
                   <TableCell className="font-medium">{rotuloDoVeiculo(parametros, v)}</TableCell>
+                  <TableCell>{nomeResponsavel(v.empregado_responsavel_id) || "—"}</TableCell>
                   <TableCell><Badge variant="outline">{STATUS[v.status] ?? v.status}</Badge></TableCell>
                   <TableCell className="text-right">{km.toLocaleString("pt-BR")}</TableCell>
                   <TableCell className={vencidas > 0 ? "font-medium text-destructive" : "text-muted-foreground"}>
