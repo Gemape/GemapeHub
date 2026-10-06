@@ -103,7 +103,7 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   const raiz = new URL("../src/", import.meta.url).pathname;
   const comAbas = achar(raiz).filter((f) => f.endsWith(".tsx") && !f.includes("/components/ui/") && /<TabsTrigger|<TabsList/.test(readFileSync(f, "utf8")));
   assert.deepEqual(comAbas, []);
-  assert.deepEqual(ABAS_VEICULO.map((a) => a.aba), ["frota", "movimentacoes", "ocorrencias"]);
+  assert.deepEqual(ABAS_VEICULO.map((a) => a.aba), ["frota", "abastecimento", "manutencao", "movimentacoes", "ocorrencias"]);
   assert.deepEqual(ABAS_TAMANHOS.map((a) => a.aba), ["cadastro", "associar"]);
   assert.equal(ABAS_EPI[0].aba, "dashboard");
   assert.equal(ABAS_UNIFORME.length, 9);

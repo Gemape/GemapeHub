@@ -42,7 +42,9 @@ export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
 
 export const ABAS_VEICULO: readonly AbaMenu[] = [
   { aba: "frota", titulo: "Frota" },
-  { aba: "movimentacoes", titulo: "Movimentações e manutenções" },
+  { aba: "abastecimento", titulo: "Abastecimento" },
+  { aba: "manutencao", titulo: "Manutenção" },
+  { aba: "movimentacoes", titulo: "Movimentações" },
   { aba: "ocorrencias", titulo: "Ocorrências" },
 ];
 
