@@ -97,7 +97,8 @@ export function registrarOcorrenciaVeiculo(
   const tipo = tiposValidos.find((t) => t.id === entrada.tipoId);
   if (!entrada.tipoId || !tipo) throw new Error("Selecione o tipo de ocorrência (cadastrados em Parâmetros > Veículos).");
   const data = validarData(entrada.data, agora);
-  const hora = validarHora(entrada.hora);
+  let hora: string;
+  try { hora = validarHora(entrada.hora); } catch { throw new Error("Informe a hora do ocorrido (HH:MM)."); }
   const p2 = (n: number) => String(n).padStart(2, "0");
   if (data === hojeLocal(agora) && hora > `${p2(agora.getHours())}:${p2(agora.getMinutes())}`) {
     throw new Error("A hora do ocorrido não pode ser futura.");

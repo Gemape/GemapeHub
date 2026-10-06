@@ -4,7 +4,7 @@ export function dimensoesReduzidas(largura: number, altura: number, maximo = 102
   const maior = Math.max(largura, altura);
   if (maior <= maximo) return { largura, altura };
   const fator = maximo / maior;
-  return { largura: Math.round(largura * fator), altura: Math.round(altura * fator) };
+  return { largura: Math.max(1, Math.round(largura * fator)), altura: Math.max(1, Math.round(altura * fator)) };
 }
 
 const LIMITE_CARACTERES = 200_000;
@@ -13,7 +13,9 @@ const LIMITE_CARACTERES = 200_000;
 // reduz o tamanho e a qualidade até caber. Só roda no navegador.
 export async function comprimirImagem(arquivo: File): Promise<string> {
   if (!arquivo.type.startsWith("image/")) throw new Error(`"${arquivo.name}" não é uma imagem.`);
-  const bitmap = await createImageBitmap(arquivo);
+  const bitmap = await createImageBitmap(arquivo).catch(() => {
+    throw new Error(`Não foi possível abrir a foto "${arquivo.name}". Use JPG ou PNG.`);
+  });
   try {
     let lado = 1024;
     let qualidade = 0.6;

@@ -101,6 +101,13 @@ export function OcorrenciasVeiculoModulo() {
     setTela({ tipo: "tratativa", id: o.id });
   }
 
+  // Depois de gravar, a trava fica um instante: o diálogo ainda está na tela durante a animação
+  // de saída e um segundo clique não pode gravar de novo.
+  function soltarTrava(gravou: boolean) {
+    if (gravou) window.setTimeout(() => { trava.current = false; }, 800);
+    else trava.current = false;
+  }
+
   function salvarNova(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (trava.current) return;
@@ -117,7 +124,7 @@ export function OcorrenciasVeiculoModulo() {
       ),
       "Ocorrência registrada como Aberta",
     );
-    trava.current = false;
+    soltarTrava(ok);
     if (ok) setTela(null);
   }
 
@@ -137,7 +144,7 @@ export function OcorrenciasVeiculoModulo() {
       ),
       encerrar ? "Tratativa encerrada" : "Tratativa salva",
     );
-    trava.current = false;
+    soltarTrava(ok);
     setConfirmandoEncerrar(false);
     if (ok) setTela(null);
   }
@@ -148,7 +155,7 @@ export function OcorrenciasVeiculoModulo() {
   }
 
   const tipoAtual = atual?.tratativa;
-  const bloqueadoParaEditar = !!atual && atual.status === "Encerrada" && !isAdmin;
+  const bloqueadoParaEditar = !canWrite || (!!atual && atual.status === "Encerrada" && !isAdmin);
 
   return (
     <div className="space-y-4">
