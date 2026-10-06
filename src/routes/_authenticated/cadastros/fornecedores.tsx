@@ -20,7 +20,6 @@ import {
 import { avisoExclusaoDoFornecedor, vinculosDoFornecedor } from "@/lib/codigo-fabrica-vinculos";
 import { nomeDoFornecedor } from "@/lib/compras-fornecedor";
 import { lerParametros, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
-import { useParametrosBase } from "@/lib/use-parametros-base";
 import { formatarCep, formatarCnpj, formatarTelefone } from "@/lib/formatacao-cadastral";
 import { aoDigitarMascarado } from "@/lib/mascaras";
 
@@ -46,9 +45,6 @@ const camposContato = [
 
 function PaginaFornecedores() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>(listarFornecedores);
-  // Categorias de Cadastros > Gerais (decisão especial 13: uma ou mais por fornecedor).
-  const { categorias } = useParametrosBase();
-  const nomeCategoria = (id: string) => categorias.find((c) => c.id === id)?.nome;
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Fornecedor | null>(null);
   // Clonar: dados do fornecedor de origem num cadastro NOVO (CNPJ em branco, código novo).
@@ -83,7 +79,8 @@ function PaginaFornecedores() {
       telefone: texto("telefone"),
       contato: texto("contato"),
       observacoes: texto("observacoes"),
-      categorias: formulario.getAll("categorias").map(String),
+      // O campo categoria saiu da tela (decisão 55); o que já estava gravado fica como está.
+      categorias: editando?.categorias ?? [],
     };
     try {
       salvarFornecedor(editando ? { ...valores, id: editando.id } : valores);
@@ -128,7 +125,7 @@ function PaginaFornecedores() {
       <div>
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Fornecedores</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Dados cadastrais e categorias de produtos fornecidos.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Dados cadastrais dos fornecedores.</p>
       </div>
       <Button requiresWrite onClick={() => abrir(null)}>Novo fornecedor</Button>
     </header>
@@ -138,17 +135,16 @@ function PaginaFornecedores() {
         <TableHeader><TableRow>
           <TableHead>Código</TableHead><TableHead>Nome fantasia</TableHead><TableHead>Razão social</TableHead>
           <TableHead>CNPJ</TableHead><TableHead>Cidade/Estado</TableHead>
-          <TableHead>Categorias</TableHead><TableHead>Contato</TableHead><TableHead />
+          <TableHead>Contato</TableHead><TableHead />
         </TableRow></TableHeader>
         <TableBody>
-          {fornecedores.length === 0 ? <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Nenhum fornecedor cadastrado.</TableCell></TableRow> :
+          {fornecedores.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Nenhum fornecedor cadastrado.</TableCell></TableRow> :
             fornecedores.map((fornecedor) => <TableRow key={fornecedor.id}>
               <TableCell className="font-mono text-xs">{fornecedor.codigo}</TableCell>
               <TableCell className="font-medium">{fornecedor.nome_fantasia || "—"}</TableCell>
               <TableCell>{fornecedor.razao_social}</TableCell>
               <TableCell>{formatarCnpj(fornecedor.cnpj)}</TableCell>
               <TableCell>{[fornecedor.cidade, fornecedor.estado].filter(Boolean).join("/") || "—"}</TableCell>
-              <TableCell>{fornecedor.categorias.map((id) => nomeCategoria(id) ?? "(categoria excluída)").join(", ") || "—"}</TableCell>
               <TableCell>{fornecedor.contato || formatarTelefone(fornecedor.telefone) || "—"}</TableCell>
               <TableCell className="whitespace-nowrap text-right">
                 <AcoesLinha rotulo={nomeDoFornecedor(fornecedor)} onClonar={() => abrir(fornecedor, true)} onEditar={() => abrir(fornecedor)} onExcluir={() => excluir(fornecedor)} />
@@ -170,19 +166,6 @@ function PaginaFornecedores() {
           <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" required defaultValue={base?.razao_social ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" defaultValue={base?.nome_fantasia ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={formatarCnpj(editando?.cnpj ?? "")} /></div>
-          <fieldset className="space-y-2 sm:col-span-2">
-            <legend className="text-sm font-medium">Categorias</legend>
-            <p className="text-xs text-muted-foreground">Opcional. Uma ou mais, de Cadastros &gt; Gerais &gt; Categorias; sem nenhuma, o fornecedor atende todas as categorias.</p>
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
-              {categorias.map((categoria) => <label key={categoria.id} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="categorias" value={categoria.id} defaultChecked={base?.categorias.includes(categoria.id) ?? false} />{categoria.nome}
-              </label>)}
-              {/* Categoria já excluída de Cadastros > Gerais continua marcada até ser desmarcada. */}
-              {base?.categorias.filter((id) => !nomeCategoria(id)).map((id) => <label key={id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input type="checkbox" name="categorias" value={id} defaultChecked />(categoria excluída)
-              </label>)}
-            </div>
-          </fieldset>
           <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Endereço</h2>
           {camposEndereco.map((campo) => <div key={campo.nome} className="space-y-1.5">
             <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
