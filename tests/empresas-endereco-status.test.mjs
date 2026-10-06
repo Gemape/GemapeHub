@@ -130,7 +130,7 @@ test("a empresa que já vem escolhida é a do cabeçalho se estiver ativa, senã
 test("os formulários e termos escolhem empresa só entre as ativas; relatórios e cabeçalho seguem com todas", () => {
   const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
   const comEscolha = [
-    "components/modules/CadastroProduto.tsx", "components/modules/ItensModulo.tsx", "components/modules/MovimentacoesModulo.tsx",
+    "components/modules/CadastroProduto.tsx", "components/modules/MovimentacoesModulo.tsx",
     "components/modules/EpiComprasModulo.tsx", "components/modules/UniformesComprasModulo.tsx", "components/modules/EpiTermoEntrega.tsx",
     "components/modules/UniformesTermoEntrega.tsx", "components/modules/UniformesTermoBaixa.tsx", "components/modules/EpiFichaEpiAvulsa.tsx",
     "components/modules/FerramentasTermoVistoria.tsx", "components/modules/FerramentasTermoResponsabilidade.tsx",

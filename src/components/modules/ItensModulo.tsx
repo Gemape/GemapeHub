@@ -32,13 +32,11 @@ import {
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { avisoExclusaoDoProduto, vinculosDoProduto } from "@/lib/codigo-fabrica-vinculos";
-import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
+import { empresaPadraoParaEscolha } from "@/lib/empresas";
 import {
   ESTADOS_ITEM,
   STATUS_FERRAMENTA,
   exportarCsv,
-  formatarData,
-  formatarMoeda,
 } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
@@ -123,40 +121,33 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       return v === "" ? null : v;
     };
     let valores: Record<string, unknown> = {
-      empresa_id: texto("empresa_id"),
+      // A empresa não aparece no cadastro (decisão 54): a ferramenta nova usa a do cabeçalho e a
+      // edição mantém a que já tinha.
+      empresa_id: editando?.empresa_id ?? (empresaPadraoParaEscolha(empresas, empresaId) || null),
       codigo_sku: String(f.get("codigo_sku") ?? "").trim(),
-      nome: capitalizarCadastro(String(f.get("nome") ?? "")),
       marca: texto("marca"),
-      modelo: capitalizarCadastro(texto("modelo") ?? "") || null,
-      numero_serie: texto("numero_serie"),
       ca: texto("ca"),
       tamanho: texto("tamanho"),
       cor: capitalizarCadastro(texto("cor") ?? "") || null,
       unidade_medida: texto("unidade_medida"),
       fornecedor: texto("fornecedor"),
       data_validade: texto("data_validade"),
-      data_aquisicao: texto("data_aquisicao"),
-      patrimonio: texto("patrimonio"),
-      preco_unitario: f.get("preco_unitario") ? Number(f.get("preco_unitario")) : null,
-      nota_fiscal: texto("nota_fiscal"),
       status: String(f.get("status") ?? "Ativo"),
       observacoes: texto("observacoes"),
     };
     if (!editando) {
-      valores['estoque_minimo'] = 0;
       valores['estoque_atual'] = 0;
     }
     try {
       const cadastro = prepararCadastroFerramenta({
         parametros: parametrosSelecao,
         codigosExistentes: editando ? [] : await codigosFerramenta(),
-        descricao: capitalizarCadastro(String(f.get("nome") ?? "")),
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
         grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
         marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, base?.marca ?? null),
         marcaAtual: base?.marca ?? "",
-        numeroSerie: String(f.get("numero_serie") ?? ""),
-        precoCusto: String(f.get("preco_unitario") ?? ""),
+        modelo: capitalizarCadastro(String(f.get("modelo") ?? "")),
+        estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
         ...(editando ? { codigoAtual: editando.codigo_sku } : {}),
       });
       Object.assign(valores, cadastro);
@@ -192,14 +183,12 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                 modulo,
                 itens.map((i) => ({
                   "Código/SKU": i.codigo_sku,
-                  Nome: i.nome,
+                  Descrição: i.nome,
                   "Categoria de ferramenta": i.categoria_ferramenta,
                   "Grupo de ferramenta": i.grupo_ferramenta,
                   Marca: i.marca,
-                  "Número de série": i.numero_serie,
-                  Patrimônio: i.patrimonio,
-                  "Data de aquisição": i.data_aquisicao,
-                  "Preço de custo (R$)": i.preco_unitario,
+                  Modelo: i.modelo,
+                  "Estoque mínimo": i.estoque_minimo,
                   Status: i.status,
                 })),
               )
@@ -216,14 +205,12 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           <TableHeader>
             <TableRow>
               <TableHead>Código/SKU</TableHead>
-              <TableHead>Nome</TableHead>
+              <TableHead>Descrição</TableHead>
               <TableHead>Categoria de ferramenta</TableHead>
               <TableHead>Grupo de ferramenta</TableHead>
               <TableHead>Marca</TableHead>
-              <TableHead>Número de série</TableHead>
-              <TableHead>Patrimônio</TableHead>
-              <TableHead>Aquisição</TableHead>
-              <TableHead className="text-right">Custo</TableHead>
+              <TableHead>Modelo</TableHead>
+              <TableHead className="text-right">Estoque mínimo</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Cadastro</TableHead>
               <TableHead />
@@ -232,13 +219,13 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center text-muted-foreground">
+                <TableCell colSpan={10} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center text-muted-foreground">
+                <TableCell colSpan={10} className="text-center text-muted-foreground">
                   Nenhum item cadastrado.
                 </TableCell>
               </TableRow>
@@ -250,10 +237,8 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   <TableCell>{item.categoria_ferramenta ?? "—"}</TableCell>
                   <TableCell>{item.grupo_ferramenta ?? "—"}</TableCell>
                   <TableCell>{item.marca ?? "—"}</TableCell>
-                  <TableCell>{item.numero_serie ?? "—"}</TableCell>
-                  <TableCell>{item.patrimonio ?? "—"}</TableCell>
-                  <TableCell>{formatarData(item.data_aquisicao)}</TableCell>
-                  <TableCell className="text-right">{item.preco_unitario == null ? "—" : formatarMoeda(item.preco_unitario)}</TableCell>
+                  <TableCell>{item.modelo ?? "—"}</TableCell>
+                  <TableCell className="text-right">{item.estoque_minimo ?? 0}</TableCell>
                   <TableCell>
                     <Badge variant={item.status === "Ativo" ? "secondary" : "outline"}>
                       {item.status}
@@ -317,13 +302,13 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           <DialogHeader>
             <DialogTitle>
               {editando
-                ? `Editar ${modulo.toUpperCase()}`
+                ? "Editar ferramenta"
                 : modelo
-                  ? `Clonar ${modulo.toUpperCase()}`
-                  : `Cadastrar Novo ${modulo.toUpperCase()}`}
+                  ? "Clonar ferramenta"
+                  : "Cadastrar ferramenta"}
             </DialogTitle>
             <DialogDescription>
-              Preencha os dados do cadastro.
+              {modelo && !editando ? "Informe só o modelo novo; categoria, grupo, marca e estoque mínimo vêm da ferramenta copiada." : "Preencha os dados do cadastro."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
@@ -331,16 +316,9 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               <Label htmlFor="codigo_sku">Código/SKU</Label>
               <Input id="codigo_sku" readOnly value={editando?.codigo_sku ?? previaCodigo} placeholder="Gerado ao salvar" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nome">Descrição do item</Label>
-              <Input
-                id="nome"
-                name="nome"
-                required
-                defaultValue={base?.nome ?? ""}
-                placeholder="Descrição clara do item"
-              />
-            </div>
+            <p className="text-xs text-muted-foreground sm:pt-6">
+              A descrição é montada sozinha: grupo, modelo e marca.
+            </p>
 
               <div className="space-y-1.5">
                 <Label htmlFor="categoria_ferramenta">Categoria de ferramenta</Label>
@@ -375,57 +353,20 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="modelo">Modelo</Label>
-                <Input id="modelo" name="modelo" defaultValue={base?.modelo ?? ""} />
+                <Input id="modelo" name="modelo" required defaultValue={editando?.modelo ?? ""} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="numero_serie">Número de Série</Label>
+                <Label htmlFor="estoque_minimo">Estoque mínimo</Label>
                 <Input
-                  id="numero_serie"
-                  name="numero_serie"
+                  id="estoque_minimo"
+                  name="estoque_minimo"
+                  type="number"
+                  min={0}
+                  step={1}
                   required
-                  defaultValue={editando?.numero_serie ?? ""}
+                  defaultValue={base?.estoque_minimo ?? 0}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="patrimonio">Patrimônio</Label>
-                <Input
-                  id="patrimonio"
-                  name="patrimonio"
-                  defaultValue={editando?.patrimonio ?? ""}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="data_aquisicao">Data de Aquisição</Label>
-                <Input
-                  id="data_aquisicao"
-                  name="data_aquisicao"
-                  type="date"
-                  defaultValue={base?.data_aquisicao?.slice(0, 10) ?? ""}
-                />
-              </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="empresa_id">Empresa</Label>
-              <Select
-                name="empresa_id"
-                required
-                defaultValue={
-                  base?.empresa_id ??
-                  empresaPadraoParaEscolha(empresas, empresaId)
-                }
-              >
-                <SelectTrigger id="empresa_id">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {empresasParaEscolha(empresas, [base?.empresa_id]).map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.nome_fantasia}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="unidade_medida">Unidade de Medida</Label>
@@ -460,20 +401,6 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </Select>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="preco_unitario">Preço de custo (R$)</Label>
-              <Input
-                id="preco_unitario"
-                name="preco_unitario"
-                type="number"
-                step="0.01"
-                min={0}
-                required
-                defaultValue={base?.preco_unitario ?? ""}
-              />
-            </div>
-
-            <div className="space-y-1.5"><Label htmlFor="nota_fiscal">Nota fiscal</Label><Input id="nota_fiscal" name="nota_fiscal" defaultValue={base?.nota_fiscal ?? ""} /></div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="observacoes">Observações</Label>
               <Textarea

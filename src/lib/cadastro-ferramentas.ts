@@ -16,15 +16,22 @@ export function marcaDaSelecao(selecao: string, marcas: Opcao[], marcaAtual: str
 export type EntradaCadastroFerramenta = {
   parametros: ParametrosBase;
   codigosExistentes: string[];
-  descricao: string;
   categoriaFerramenta: string;
   grupoFerramenta: string;
-  numeroSerie: string;
-  precoCusto: string;
+  modelo: string;
+  estoqueMinimo: string | number;
   marca?: string;
   marcaAtual?: string;
   codigoAtual?: string;
 };
+
+/** Descrição da ferramenta (decisão 54): grupo, modelo e marca, nesta ordem, separados por " · ". */
+export function descricaoFerramenta(d: { grupo?: string | null; modelo?: string | null; marca?: string | null }): string {
+  return [d.grupo, d.modelo, d.marca]
+    .map((parte) => String(parte ?? "").trim().replace(/\s+/g, " "))
+    .filter(Boolean)
+    .join(" · ");
+}
 
 export function protegerEstoqueNaEdicao<T extends Record<string, unknown>>(valores: T): Omit<T, "estoque_atual"> {
   const { estoque_atual: _estoqueAtual, ...editaveis } = valores;
@@ -70,8 +77,6 @@ export function reservarCodigoFerramenta(
 }
 
 export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
-  const nome = entrada.descricao.trim();
-  if (!nome) throw new Error("Informe a descrição da ferramenta.");
   const categoriaFerramenta = entrada.parametros.categoriasFerramenta.find((c) => c.nome === entrada.categoriaFerramenta.trim());
   if (!categoriaFerramenta) throw new Error("Categoria de ferramenta inválida.");
   const grupoFerramenta = entrada.parametros.gruposFerramenta.find((g) => g.nome === entrada.grupoFerramenta.trim());
@@ -85,13 +90,10 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
     ? (entrada.marcaAtual && marcaInformada === entrada.marcaAtual.trim()
       ? entrada.marcaAtual : marcaCadastrada?.nome ?? entrada.marcaAtual!.trim())
     : null;
-  const numeroSerie = entrada.numeroSerie.trim();
-  if (!numeroSerie) throw new Error("Número de série obrigatório.");
-  const precoTexto = entrada.precoCusto.trim();
-  const preco = Number(precoTexto);
-  if (!/^\d+(?:\.\d{1,2})?$/.test(precoTexto) || !Number.isSafeInteger(Math.round(preco * 100))) {
-    throw new Error("Preço de custo deve ser não negativo e ter até duas casas decimais.");
-  }
+  const modelo = entrada.modelo.trim().replace(/\s+/g, " ");
+  if (!modelo) throw new Error("Informe o modelo da ferramenta.");
+  const minimoTexto = String(entrada.estoqueMinimo ?? "").trim();
+  if (!/^\d{1,9}$/.test(minimoTexto)) throw new Error("Informe o estoque mínimo (número inteiro, 0 ou mais).");
   const regra = entrada.parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
   if (!entrada.codigoAtual && !regra) throw new Error("Cadastre a regra do código de ferramentas em Cadastros > Gerais.");
   return {
@@ -100,11 +102,11 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
     // banco, recebe a categoria de ferramenta no cadastro novo; a edição não a reescreve,
     // para a ferramenta antiga manter a subcategoria gravada.
     ...(entrada.codigoAtual ? {} : { categoria: categoriaFerramenta.nome }),
-    nome,
+    nome: descricaoFerramenta({ grupo: grupoFerramenta.nome, modelo, marca }),
+    modelo,
+    estoque_minimo: Number(minimoTexto),
     categoria_ferramenta: categoriaFerramenta.nome,
     grupo_ferramenta: grupoFerramenta.nome,
     marca,
-    numero_serie: numeroSerie,
-    preco_unitario: preco,
   };
 }

@@ -127,7 +127,7 @@ function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
   return (
     <SidebarMenuSubItem>
       <SidebarMenuSubButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)} className="h-auto min-h-7 py-1">
-        <Link to={item.url}>
+        <Link to={item.url} {...(item.search ? { search: item.search as never } : {})}>
           <Icone />
           {/* Nome inteiro, quebrando linha se precisar. */}
           <span className="!whitespace-normal leading-tight">{item.titulo}</span>
@@ -226,8 +226,9 @@ function MenuEpi({ pathname }: { pathname: string }) {
   );
 }
 
-// Parâmetros > Ferramentas: o cadastro e a tela Caixas de Ferramentas.
+// Parâmetros > Ferramentas: Cadastrar Caixa (habilitar caixas) e Cadastrar Ferramenta (decisão 54).
 function MenuFerramentas({ pathname }: { pathname: string }) {
+  const { isAdmin } = useAccess();
   return (
     <GrupoRecolhivel
       titulo="Ferramentas"
@@ -235,7 +236,7 @@ function MenuFerramentas({ pathname }: { pathname: string }) {
       prefixos={MENU_FERRAMENTAS.map((i) => i.url)}
       pathname={pathname}
     >
-      {MENU_FERRAMENTAS.map((item) => (
+      {MENU_FERRAMENTAS.filter((item) => !item.soAdmin || isAdmin).map((item) => (
         <SubLink key={item.url} item={item} pathname={pathname} />
       ))}
     </GrupoRecolhivel>

@@ -2,7 +2,7 @@
 export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench" | "HardHat" | "ClipboardList" | "Archive" | "Car";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
 export type AbaMenu = { aba: string; titulo: string; soAdmin?: boolean };
-export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[] };
+export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[]; search?: { aba: string } };
 export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
 export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
 
@@ -46,13 +46,6 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
   { aba: "ocorrencias", titulo: "Ocorrências" },
 ];
 
-export const ABAS_CAIXAS: readonly AbaMenu[] = [
-  { aba: "caixas", titulo: "Caixas e itens" },
-  { aba: "cadastro", titulo: "Cadastro" },
-  { aba: "portadores", titulo: "Portadores" },
-  { aba: "habilitar", titulo: "Habilitar caixas", soAdmin: true },
-];
-
 export const ABAS_TAMANHOS: readonly AbaMenu[] = [
   { aba: "cadastro", titulo: "Cadastro" },
   { aba: "associar", titulo: "Associar ao produto" },
@@ -66,11 +59,11 @@ export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
   { titulo: "Endereçamento", url: "/cadastros/gerais/enderecamento", icone: "MapPin" },
 ];
 
-// Parâmetros > Ferramentas (decisão 36): o cadastro e a tela Caixas de Ferramentas, que reúne a
-// habilitação das caixas. Nada disso fica em Módulos.
+// Parâmetros > Ferramentas (decisões 36 e 54): Cadastrar Caixa, que abre direto em Habilitar caixas
+// (só Administrador), e Cadastrar Ferramenta. Nada disso fica em Módulos.
 export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
-  { titulo: "Cadastro de Ferramentas", url: "/cadastros/ferramentas", icone: "Wrench" },
-  { titulo: "Caixas", url: "/caixas-ferramentas", icone: "Archive", abas: ABAS_CAIXAS },
+  { titulo: "Cadastrar Caixa", url: "/caixas-ferramentas", icone: "Archive", soAdmin: true, search: { aba: "habilitar" } },
+  { titulo: "Cadastrar Ferramenta", url: "/cadastros/ferramentas", icone: "Wrench" },
 ];
 
 // Parâmetros > Uniformes (decisão 48): Cadastrar Uniforme, no mesmo desenho do Cadastrar EPI.
