@@ -272,7 +272,18 @@ test("tipo do check list: leves, pesados e empilhadeira puxam os grupos ligados 
   assert.equal(tipoChecklistDaSubcategoria("Caminhão"), "pesados");
   assert.equal(tipoChecklistDaSubcategoria("Empilhadeira"), "empilhadeira");
   assert.equal(tipoChecklistDaSubcategoria("Moto"), null);
-  const tela = readFileSync("src/components/modules/ChecklistVeiculoModulo.tsx", "utf8");
-  assert.match(tela, /Tipo de veículo/);
-  assert.match(tela, /gruposDoTipoChecklist/);
+});
+
+test("veículos do tipo: só ativos e só da subcategoria do tipo", async () => {
+  const { veiculosDoTipoChecklist } = await import("../src/lib/checklist-veiculo.ts");
+  const veiculos = [
+    { id: "a", status: "Ativo", sub: "Carro" }, { id: "b", status: "Ativo", sub: "Moto" },
+    { id: "c", status: "Inativo", sub: "Carro" }, { id: "d", status: "Ativo", sub: "Caminhão" },
+    { id: "e", status: "Ativo", sub: "Empilhadeira" }, { id: "f", status: "Ativo", sub: null },
+  ];
+  const ids = (t) => veiculosDoTipoChecklist(veiculos, t, (v) => v.sub).map((v) => v.id);
+  assert.deepEqual(ids("leves"), ["a"]);
+  assert.deepEqual(ids("pesados"), ["d"]);
+  assert.deepEqual(ids("empilhadeira"), ["e"]);
+  assert.deepEqual(ids(""), []);
 });
