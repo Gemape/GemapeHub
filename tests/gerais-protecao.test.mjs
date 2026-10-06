@@ -108,16 +108,14 @@ test('uso por campo de nome (marca, categoria e grupo de ferramenta) devolve os 
   assert.deepEqual(uso.usoPorNome([{ placa: 'ABC-1234', marca: 'Fiat' }], 'marca', 'Fiat', 'Veículo'), [{ modulo: 'Veículo', codigos: ['ABC-1234'] }]);
 });
 
-test('categoria usada por fornecedor não sai e o aviso cita os fornecedores', () => {
-  const fornecedores = [{ codigo: 'FOR-00001', nome_fantasia: 'ACME', categorias: ['cat-x'] }, { codigo: 'FOR-00002', nome_fantasia: 'Beta', categorias: ['cat-y'] }];
-  assert.deepEqual(uso.usoDaCategoria('cat-x', fornecedores), [{ modulo: 'Fornecedor', codigos: ['ACME'] }]);
-  assert.deepEqual(uso.usoDaCategoria('cat-z', fornecedores), []);
+test('fornecedor não tem mais categoria e não bloqueia a exclusão de categoria (decisão 55)', () => {
+  assert.equal('usoDaCategoria' in uso, false);
 });
 
 test('as telas de Gerais conferem o uso antes de excluir e oferecem desativar', () => {
   const categorias = ler('routes/_authenticated/cadastros/gerais/categorias.tsx');
   assert.match(categorias, /usoDaSubcategoria\(/);
-  assert.match(categorias, /usoDaCategoria\(/);
+  assert.doesNotMatch(categorias, /usoDaCategoria\(/);
   assert.match(categorias, /descreverUso\(/);
   assert.match(categorias, /onAlternarAtivo=/);
   const lista = ler('components/parametros/ListaEditavel.tsx');

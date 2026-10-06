@@ -13,7 +13,7 @@ test("listas de nome (categorias, subcategorias, marcas, tamanhos, unidades) usa
   // Clonar só leva o nome ao campo de inclusão: nada é gravado nem herdado.
   assert.match(lista, /function clonar\(item: Item\)[\s\S]*setNome\(item\.nome\)/);
   // As proteções de exclusão continuam nas telas que usam a lista.
-  assert.match(ler("routes/_authenticated/cadastros/gerais/categorias.tsx"), /ListaEditavel[\s\S]*usoDaCategoria/);
+  assert.match(ler("routes/_authenticated/cadastros/gerais/categorias.tsx"), /ListaEditavel/);
   const tamanhos = ler("components/parametros/TamanhosMedidasPainel.tsx");
   assert.match(tamanhos, /usoDoTamanho/);
   assert.match(tamanhos, /ocupado\.current/);

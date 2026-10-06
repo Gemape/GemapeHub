@@ -1,6 +1,6 @@
 // Fornecedor da compra vindo de Cadastros > Fornecedores (módulos não têm lista própria).
 // A compra guarda o nome do fornecedor (busca, relatórios e CSV seguem iguais) e, no modo
-// demonstração, também o id dele. Só entram os fornecedores da categoria do módulo.
+// demonstração, também o id dele. Fornecedor não tem categoria (decisão 55): todos entram em toda compra.
 
 export type FornecedorDaCompra = {
   id: string;
@@ -15,25 +15,21 @@ export const nomeDoFornecedor = (f: Pick<FornecedorDaCompra, "nome_fantasia" | "
 
 export const rotuloDoFornecedor = (f: FornecedorDaCompra): string => `${f.codigo} · ${nomeDoFornecedor(f)}`;
 
-/** O cadastro de fornecedor não tem mais categoria (decisão 55): todo fornecedor atende todas as compras. */
-export const atendeCategoria = (_f: Pick<FornecedorDaCompra, "categorias">, _categoriaId: string): boolean => true;
-
-export function fornecedoresDaCategoria(lista: FornecedorDaCompra[], categoriaId: string): FornecedorDaCompra[] {
-  return lista
-    .filter((f) => atendeCategoria(f, categoriaId))
+/** A categoria da compra é ignorada (decisão 55): devolve todos os fornecedores, em ordem de nome. */
+export function fornecedoresDaCategoria(lista: FornecedorDaCompra[], _categoriaId: string): FornecedorDaCompra[] {
+  return [...lista]
     .sort((a, b) => nomeDoFornecedor(a).localeCompare(nomeDoFornecedor(b), "pt-BR"));
 }
 
 /** Confere o fornecedor escolhido contra a lista atual, na hora de gravar. */
 export function escolherFornecedorDaCompra(
   lista: FornecedorDaCompra[],
-  categoriaId: string,
+  _categoriaId: string,
   id: string,
 ): { id: string; nome: string } | { erro: string } {
   if (!id) return { erro: "Selecione o fornecedor." };
   const f = lista.find((x) => x.id === id);
   if (!f) return { erro: "O fornecedor escolhido não está mais cadastrado. Selecione outro." };
-  if (!atendeCategoria(f, categoriaId)) return { erro: "O fornecedor escolhido não atende esta categoria. Selecione outro." };
   const nome = nomeDoFornecedor(f);
   if (!nome) return { erro: "O fornecedor escolhido está sem nome no cadastro. Corrija em Cadastros > Fornecedores." };
   return { id: f.id, nome };

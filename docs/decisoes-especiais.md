@@ -83,7 +83,7 @@ Decidido em 30/09/2026: MANTER o nome fantasia. MD atualizado.
 Decidido em 30/09/2026: SEGUIR O MD. E-mail no cadastro, sem cargo,
 sem botão "ativo"; a inativação é automática pela data de demissão.
 
-## 13. FORNECEDORES — CATEGORIAS
+## 13. FORNECEDORES — CATEGORIAS (substituída pela decisão 55: fornecedor não tem mais categoria)
 Decidido em 30/09/2026: VÁRIAS categorias por fornecedor, vindas de
 Cadastros > Gerais > Categorias (não de lista fixa). MD atualizado.
 
@@ -432,7 +432,7 @@ Ordem do responsável em 02/10, com a opção "Manter histórico" escolhida por 
 Ordem do responsável em 02/10 (pendente da decisão 29). Empresa com status Inativa deixa de aparecer nas listas em que se escolhe a empresa de um registro novo: cadastro de produtos (EPI, Uniforme, Ferramenta), empregados, veículos, caixas de ferramentas, endereçamento, compras, movimentações e os termos (entrega, baixa, vistoria, responsabilidade, encerramento, ficha avulsa). A empresa que já vem escolhida é a do cabeçalho, se estiver ativa; senão a primeira ativa. Ao editar um registro que já pertence a uma empresa inativa, ela continua aparecendo nele, para o registro não perder a empresa. Ficam como estão, mostrando todas: o seletor do cabeçalho, os relatórios, os filtros, o painel e os nomes mostrados nas tabelas, porque o histórico e as consultas não podem sumir. Empresa sem status conta como ativa. Se o cabeçalho estiver numa empresa inativa, as telas de termos e compras pedem para escolher a empresa. Não apaga nem altera nenhum registro; reativar a empresa a devolve às listas. Só modo demonstração (o status ainda não existe no banco real); nada no Supabase.
 
 
-## 41. COMPRAS: FORNECEDOR VEM DO CADASTRO DE FORNECEDORES
+## 41. COMPRAS: FORNECEDOR VEM DO CADASTRO DE FORNECEDORES (a lista não filtra mais por categoria, decisão 55)
 
 Ordem do responsável em 02/10. Em Registrar Compra de EPI e de Uniforme, o campo Fornecedor deixa de ser texto livre e passa a ser uma lista de Cadastros > Fornecedores, mostrando só os fornecedores da categoria do módulo (EPI ou Uniforme), com o código e o nome (fantasia, ou razão social se não houver). Sem fornecedor da categoria, a tela avisa para cadastrar em Cadastros > Fornecedores marcando a categoria, e a compra não é gravada. A compra guarda o nome do fornecedor, como antes, para a busca, os relatórios e o CSV não mudarem, e também o id dele; o fornecedor é conferido de novo na hora de gravar (excluído ou de outra categoria é recusado). As compras já registradas com o fornecedor em texto continuam como estão. A importação de NF-e já escolhe o fornecedor pelo CNPJ no cadastro e não muda. Compras continuam sem edição (só incluir e excluir), como antes; excluir a compra segue sem reverter o estoque. Só modo demonstração: o cadastro de fornecedores ainda não existe no banco real (Fase 2), onde o campo segue como texto. Nada no Supabase.
 
@@ -509,4 +509,4 @@ Ordem do responsável em 06/10 (escolha: tirar do menu as outras telas de caixa)
 
 ## 55. FORNECEDORES: NOME FANTASIA OPCIONAL E SEM CATEGORIA
 
-Ordem do responsável em 06/10 (primeiro "eliminar a necessidade de categoria", depois "retirar os campos de categoria"). Em Cadastros > Fornecedores só a razão social e o CNPJ continuam obrigatórios: o nome fantasia deixa de ser exigido e o campo Categorias sai do formulário e da lista. Onde o sistema mostra o nome do fornecedor (lista, confirmação de exclusão, compras, importação de NF-e, código de fábrica, aviso de uso da categoria), usa-se o nome fantasia e, se estiver vazio, a razão social. Sem categoria no cadastro, todo fornecedor aparece e é aceito nas compras de EPI e de Uniforme (ajusta as decisões 13 e 41); a categoria que algum fornecedor já tinha gravada não é apagada nem restringe mais nada. Só modo demonstração; nada no Supabase.
+Ordem do responsável em 06/10 (primeiro "eliminar a necessidade de categoria", depois "retirar os campos de categoria"). Em Cadastros > Fornecedores só a razão social e o CNPJ continuam obrigatórios: o nome fantasia deixa de ser exigido e o campo Categorias sai do formulário e da lista. Onde o sistema mostra o nome do fornecedor (lista, confirmação de exclusão, compras, importação de NF-e, código de fábrica, aviso de uso da categoria), usa-se o nome fantasia e, se estiver vazio, a razão social. Sem categoria no cadastro, todo fornecedor aparece e é aceito nas compras de EPI e de Uniforme (ajusta as decisões 13 e 41); a categoria que algum fornecedor já tinha gravada não é apagada, mas não restringe mais nada: nem as compras nem a exclusão de categorias em Cadastros > Gerais, que deixou de avisar por uso em fornecedor. Só modo demonstração; nada no Supabase.

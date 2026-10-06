@@ -7,16 +7,14 @@ import { fornecedoresDaCategoria, rotuloDoFornecedor } from "@/lib/compras-forne
 import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { MODO_DEMO } from "@/lib/modo-demo";
 
-// Fornecedor da compra: no demonstrativo vem de Cadastros > Fornecedores, da categoria do módulo.
+// Fornecedor da compra: no demonstrativo vem de Cadastros > Fornecedores (todos, sem categoria).
 // No banco real o cadastro de fornecedores ainda não existe (Fase 2): lá continua o campo de texto.
 export function SeletorFornecedorCompra({
   categoriaId,
-  nomeCategoria,
   valor,
   onChange,
 }: {
   categoriaId: string;
-  nomeCategoria: string;
   valor: string;
   onChange: (id: string) => void;
 }) {

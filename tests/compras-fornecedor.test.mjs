@@ -23,9 +23,10 @@ test("o nome do fornecedor é o fantasia, ou a razão social quando não há fan
 });
 
 test("a compra lista todos os fornecedores, em ordem de nome, sem filtrar por categoria (decisão 55)", () => {
-  const ids = ["f1", "f4", "f3", "f2"].sort();
-  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-uniformes").map((f) => f.id).sort(), ids);
+  // Ordem pelo nome: Ferro Forte, Segura Mais, Sem Cat, Tecidos SA; a categoria pedida não muda o resultado.
+  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-uniformes").map((f) => f.id), ["f3", "f1", "f4", "f2"]);
   assert.deepEqual(fornecedoresDaCategoria(lista, "cat-epi").map((f) => f.id), ["f3", "f1", "f4", "f2"]);
+  assert.deepEqual(fornecedoresDaCategoria(lista, "cat-veiculos").map((f) => f.id), ["f3", "f1", "f4", "f2"]);
 });
 
 test("escolher o fornecedor devolve id e nome para gravar", () => {
