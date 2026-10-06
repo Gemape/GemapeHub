@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
+import { combinaBusca } from "@/lib/parametros-base";
 import { hojeLocal } from "@/lib/empregados";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
@@ -33,12 +34,19 @@ export function ManutencaoVeiculoModulo() {
   const [veiculoId, setVeiculoId] = useState("");
   const [tipo, setTipo] = useState("Preventiva");
   const [acaoId, setAcaoId] = useState("");
+  const [busca, setBusca] = useState("");
   const trava = useRef(false);
 
   const acoes = parametros.acoesManutencaoVeiculo;
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
+  const servicoDe = (m: (typeof todas)[number]) =>
+    m.acaoId ? (acoes.find((a) => a.id === m.acaoId)?.nome ?? "Ação removida de Parâmetros") : m.descricao;
   const lista = todas
     .filter((m) => idsDaEmpresa.has(m.veiculoId))
+    .filter((m) => {
+      const v = veiculos.find((x) => x.id === m.veiculoId);
+      return combinaBusca(busca, v ? rotuloDoVeiculo(parametros, v) : "", m.tipo, servicoDe(m), formatarData(m.data), String(m.km));
+    })
     .sort((a, b) => b.data.localeCompare(a.data) || b.km - a.km);
 
   if (!MODO_DEMO) {
@@ -79,7 +87,14 @@ export function ManutencaoVeiculoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões) registrada(s).</p>
+        <Input
+          aria-label="Buscar manutenção"
+          placeholder="Buscar por veículo, serviço ou tipo"
+          className="max-w-xs"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+        <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
         <Button requiresWrite className="ml-auto" onClick={abrir}>Nova manutenção</Button>
       </div>
       <div className="overflow-x-auto rounded-xl border">
@@ -96,11 +111,11 @@ export function ManutencaoVeiculoModulo() {
           </TableHeader>
           <TableBody>
             {lista.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhuma manutenção registrada.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma manutenção registrada."}</TableCell></TableRow>
             )}
             {lista.map((m) => {
               const v = veiculos.find((x) => x.id === m.veiculoId);
-              const servico = m.acaoId ? (acoes.find((a) => a.id === m.acaoId)?.nome ?? "Ação removida de Parâmetros") : m.descricao;
+              const servico = servicoDe(m);
               return (
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data)}</TableCell>

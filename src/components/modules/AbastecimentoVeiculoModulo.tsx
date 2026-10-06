@@ -13,6 +13,7 @@ import { useEmpresa } from "@/lib/empresa-context";
 import { historicoAbastecimentos, mediaKmPorLitro, ultimoAbastecimentoDoVeiculo } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
+import { combinaBusca } from "@/lib/parametros-base";
 import { registrarAbastecimento, removerAbastecimento } from "@/lib/registros-veiculo";
 import { useAbastecimentos } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
@@ -39,6 +40,7 @@ export function AbastecimentoVeiculoModulo() {
   const [veiculoId, setVeiculoId] = useState("");
   const [km, setKm] = useState("");
   const [filtro, setFiltro] = useState(TODOS);
+  const [busca, setBusca] = useState("");
   const trava = useRef(false);
 
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
@@ -52,16 +54,21 @@ export function AbastecimentoVeiculoModulo() {
       veiculos
         .filter((v) => filtroValido === TODOS || v.id === filtroValido)
         .flatMap((v) => historicoAbastecimentos(daEmpresa.filter((a) => a.veiculoId === v.id)))
+        .filter((a) => {
+          const v = veiculos.find((x) => x.id === a.veiculoId);
+          return combinaBusca(busca, v ? rotuloDoVeiculo(parametros, v) : "", formatarData(a.data), a.hora, String(a.km), numero(a.km), String(a.litros), a.litros.toLocaleString("pt-BR"), a.valor ? `${a.valor} ${reais(a.valor)}` : "");
+        })
         .sort((a, b) => `${b.data}T${b.hora ?? "00:00"}`.localeCompare(`${a.data}T${a.hora ?? "00:00"}`) || b.km - a.km),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [veiculos, todos, filtroValido],
+    [veiculos, todos, filtroValido, busca, parametros],
   );
   const doFiltro = filtroValido === TODOS ? null : veiculo(filtroValido);
   const resumo = doFiltro
     ? {
         litros: linhas.reduce((s, a) => s + a.litros, 0),
         gasto: linhas.reduce((s, a) => s + (a.valor ?? 0), 0),
-        media: mediaKmPorLitro(linhas),
+        // A média usa o histórico inteiro do veículo; litros e gasto seguem a busca.
+        media: mediaKmPorLitro(daEmpresa.filter((a) => a.veiculoId === doFiltro.id)),
       }
     : null;
   const ultimo = veiculoId ? ultimoAbastecimentoDoVeiculo(daEmpresa, veiculoId) : null;
@@ -125,6 +132,13 @@ export function AbastecimentoVeiculoModulo() {
             </SelectContent>
           </Select>
         </div>
+        <Input
+          aria-label="Buscar abastecimento"
+          placeholder="Buscar por veículo, data ou km"
+          className="max-w-xs"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
         <Button requiresWrite className="ml-auto" onClick={abrir}>Novo abastecimento</Button>
       </div>
 
@@ -154,7 +168,7 @@ export function AbastecimentoVeiculoModulo() {
           </TableHeader>
           <TableBody>
             {linhas.length === 0 && (
-              <TableRow><TableCell colSpan={doFiltro ? 8 : 9} className="py-6 text-center text-muted-foreground">Nenhum abastecimento registrado.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={doFiltro ? 8 : 9} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhum abastecimento registrado."}</TableCell></TableRow>
             )}
             {linhas.map((a) => {
               const v = veiculo(a.veiculoId);
