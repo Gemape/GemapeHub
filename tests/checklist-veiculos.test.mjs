@@ -70,7 +70,7 @@ test("cadastrar padrão inclui o que falta, não repete nem altera o que já exi
   const doc = d.itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Segurança e documentos");
   assert.ok(doc.itens.some((i) => i.nome === "CRLV/licenciamento em dia"));
   const repetido = cadastrarPadraoChecklistVeiculos(s);
-  assert.deepEqual(repetido, { grupos: 0, itens: 0, semTipo: 9, substituidos: 0, ligados: 0 });
+  assert.deepEqual(repetido, { grupos: 0, itens: 0, semTipo: 0, substituidos: 0, ligados: 0 });
   assert.equal(lerParametros(s).itensChecklistVeiculo.length, CHECKLIST_VEICULOS_PADRAO.length + 1);
 });
 
@@ -123,8 +123,11 @@ test("dados da decisão 62, sem tipo de veículo, passam a valer para todos", ()
   assert.deepEqual(lerParametros(s).itensChecklistVeiculo[0].tiposVeiculo, ["*"]);
 });
 
-test("cadastrar padrão liga cada grupo ao tipo de veículo pelo nome da subcategoria de Gerais", () => {
+test("cadastrar padrão liga cada grupo ao tipo de veículo pelo nome da subcategoria de Gerais", async () => {
   const s = storage();
+  // Empilhadeira vem de fábrica em Gerais (decisão 69); aqui ela sai para testar o caso sem o tipo.
+  const { removerSubcategoria } = await import("../src/lib/parametros-base.ts");
+  removerSubcategoria(lerParametros(s).subcategorias.find((x) => x.categoriaId === "cat-veiculos" && x.nome === "Empilhadeira").id, s);
   const r = cadastrarPadraoChecklistVeiculos(s);
   const d = lerParametros(s);
   const id = (nome) => d.subcategorias.find((x) => x.categoriaId === "cat-veiculos" && x.nome === nome).id;
