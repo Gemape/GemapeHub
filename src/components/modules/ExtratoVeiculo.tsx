@@ -6,6 +6,7 @@ import { hojeLocal } from "@/lib/empregados";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useMovimentacoes, useOcorrencias, type Veiculo } from "@/lib/hooks-gemape";
+import { resumoManutencao } from "@/lib/registros-veiculo";
 import { useAbastecimentos, useManutencoesVeiculo, useOcorrenciasVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresa } from "@/lib/empresa-context";
@@ -68,7 +69,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
   const linhasManutencao = [
     ...manut.map((m) => ({
       chave: m.id, data: m.data, km: m.km as number | null, tipo: m.tipo as string,
-      servico: m.acaoId ? (nomeAcao(m.acaoId) ?? "Ação removida de Parâmetros") : m.descricao,
+      servico: resumoManutencao(m, nomeAcao(m.acaoId)),
     })),
     ...movimentacoes
       .filter((m) => m.veiculo_id === veiculo.id && (m as { acao_manutencao?: string }).acao_manutencao)

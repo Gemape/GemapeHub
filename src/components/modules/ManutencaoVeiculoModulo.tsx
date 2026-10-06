@@ -3,9 +3,11 @@ import { useRef, useState } from "react";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,15 +17,25 @@ import { hojeLocal } from "@/lib/empregados";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
-import { registrarManutencao, removerManutencao } from "@/lib/registros-veiculo";
+import { custoNaoNegativo, registrarManutencao, removerManutencao, resumoManutencao, type LocalManutencao } from "@/lib/registros-veiculo";
 import { useManutencoesVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 
-// Módulos > Veículos > Manutenção (decisão 57): preventiva (uma ação de Parâmetros > Veículos >
-// Ações de manutenção) ou corretiva (descrição do serviço), sempre com data e km. A última
-// preventiva de cada ação alimenta as sugestões do extrato. Só modo demonstração.
+// Módulos > Veículos > Manutenção (decisões 57 e 61): veículo, preventiva ou corretiva (só a
+// corretiva descreve o que acontece), grupo de ações (pai), ações do grupo (filhos) com observação
+// livre cada uma, local (empresa ou terceiro) e custo de peças e de mão de obra. A última
+// preventiva de cada grupo alimenta as sugestões do extrato. Só modo demonstração.
+const moeda = (n: number | undefined) => (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Total mostrado na tela, com a mesma leitura de valores que vale ao salvar; "—" se algum não for válido.
+function totalDigitado(pecas: string, mao: string): string {
+  const a = custoNaoNegativo(pecas);
+  const b = custoNaoNegativo(mao);
+  return a === null || b === null ? "—" : moeda(a + b);
+}
+const LOCAL: Record<LocalManutencao, string> = { empresa: "Na empresa", terceiro: "Terceiro" };
+
 export function ManutencaoVeiculoModulo() {
   const { empresaId } = useEmpresa();
   const { isAdmin } = useAccess();
@@ -34,13 +46,17 @@ export function ManutencaoVeiculoModulo() {
   const [veiculoId, setVeiculoId] = useState("");
   const [tipo, setTipo] = useState("Preventiva");
   const [acaoId, setAcaoId] = useState("");
+  const [marcados, setMarcados] = useState<Record<string, string>>({});
+  const [local, setLocal] = useState<LocalManutencao | "">("");
+  const [custoPecas, setCustoPecas] = useState("");
+  const [custoMao, setCustoMao] = useState("");
   const [busca, setBusca] = useState("");
   const trava = useRef(false);
 
   const acoes = parametros.acoesManutencaoVeiculo;
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
-  const servicoDe = (m: (typeof todas)[number]) =>
-    m.acaoId ? (acoes.find((a) => a.id === m.acaoId)?.nome ?? "Ação removida de Parâmetros") : m.descricao;
+  const servicoDe = (m: (typeof todas)[number]) => resumoManutencao(m, acoes.find((a) => a.id === m.acaoId)?.nome);
+  const grupo = acoes.find((a) => a.id === acaoId);
   const lista = todas
     .filter((m) => idsDaEmpresa.has(m.veiculoId))
     .filter((m) => {
@@ -57,6 +73,10 @@ export function ManutencaoVeiculoModulo() {
     setVeiculoId("");
     setTipo("Preventiva");
     setAcaoId("");
+    setMarcados({});
+    setLocal("");
+    setCustoPecas("");
+    setCustoMao("");
     setAberto(true);
   }
 
@@ -68,14 +88,21 @@ export function ManutencaoVeiculoModulo() {
     const ok = executar(
       () =>
         registrarManutencao(
-          { veiculoId, tipo, acaoId, data: String(f.get("data") ?? ""), km: String(f.get("km") ?? ""), descricao: String(f.get("descricao") ?? "") },
+          {
+            veiculoId, tipo, acaoId, data: String(f.get("data") ?? ""), km: String(f.get("km") ?? ""),
+            descricao: String(f.get("descricao") ?? ""),
+            itens: (grupo?.subitens ?? []).filter((x) => x.id in marcados).map((x) => ({ subitemId: x.id, observacao: marcados[x.id] ?? "" })),
+            local, localNome: String(f.get("localNome") ?? ""), custoPecas, custoMaoDeObra: custoMao,
+          },
           undefined,
           new Date(),
-          acoes.map((a) => a.id),
+          acoes,
         ),
       "Manutenção registrada",
     );
-    trava.current = false;
+    // Depois de gravar, a trava fica um instante: o diálogo ainda está na tela na animação de saída.
+    if (ok) window.setTimeout(() => { trava.current = false; }, 800);
+    else trava.current = false;
     if (ok) setAberto(false);
   }
 
@@ -95,7 +122,7 @@ export function ManutencaoVeiculoModulo() {
           onChange={(e) => setBusca(e.target.value)}
         />
         <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
-        <Button requiresWrite className="ml-auto" onClick={abrir}>Nova manutenção</Button>
+        <Button requiresWrite className="ml-auto" onClick={abrir}>Cadastrar nova manutenção</Button>
       </div>
       <div className="overflow-x-auto rounded-xl border">
         <Table>
@@ -105,13 +132,15 @@ export function ManutencaoVeiculoModulo() {
               <TableHead>Veículo</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Serviço</TableHead>
+              <TableHead>Local</TableHead>
+              <TableHead className="text-right">Custo total</TableHead>
               <TableHead className="text-right">Km</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {lista.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma manutenção registrada."}</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma manutenção registrada."}</TableCell></TableRow>
             )}
             {lista.map((m) => {
               const v = veiculos.find((x) => x.id === m.veiculoId);
@@ -121,7 +150,16 @@ export function ManutencaoVeiculoModulo() {
                   <TableCell>{formatarData(m.data)}</TableCell>
                   <TableCell>{v ? rotuloDoVeiculo(parametros, v) : "—"}</TableCell>
                   <TableCell><Badge variant={m.tipo === "Preventiva" ? "secondary" : "outline"}>{m.tipo}</Badge></TableCell>
-                  <TableCell>{servico}</TableCell>
+                  <TableCell>
+                    {servico}
+                    {(m.itens ?? []).filter((i) => i.observacao).map((i) => (
+                      <p key={i.subitemId} className="text-xs text-muted-foreground">{i.nome}: {i.observacao}</p>
+                    ))}
+                  </TableCell>
+                  <TableCell>{m.local ? (m.local === "terceiro" && m.localNome ? `${LOCAL.terceiro}: ${m.localNome}` : LOCAL[m.local]) : "—"}</TableCell>
+                  <TableCell className="text-right" title={m.custoTotal === undefined ? undefined : `Peças ${moeda(m.custoPecas)} + mão de obra ${moeda(m.custoMaoDeObra)}`}>
+                    {m.custoTotal === undefined ? "—" : moeda(m.custoTotal)}
+                  </TableCell>
                   <TableCell className="text-right">{m.km.toLocaleString("pt-BR")}</TableCell>
                   <TableCell className="text-right">
                     {isAdmin && (
@@ -140,8 +178,8 @@ export function ManutencaoVeiculoModulo() {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nova manutenção</DialogTitle>
-            <DialogDescription>Preventiva escolhe a ação de Parâmetros; corretiva descreve o serviço.</DialogDescription>
+            <DialogTitle>Cadastrar nova manutenção</DialogTitle>
+            <DialogDescription>Escolha o grupo de ações e marque o que foi feito; só a corretiva descreve o problema.</DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
@@ -171,25 +209,77 @@ export function ManutencaoVeiculoModulo() {
               <Label htmlFor="km">Km do veículo</Label>
               <Input id="km" name="km" inputMode="numeric" placeholder="Ex.: 50.000" />
             </div>
-            {tipo === "Preventiva" ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="acao">Ação de manutenção</Label>
-                <Select value={acaoId} onValueChange={setAcaoId}>
-                  <SelectTrigger id="acao"><SelectValue placeholder="Selecione a ação" /></SelectTrigger>
-                  <SelectContent>
-                    {acoes.map((a) => <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                {acoes.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Cadastre as ações em Parâmetros &gt; Veículos &gt; Ações de manutenção.</p>
-                )}
-              </div>
-            ) : (
+            {tipo === "Corretiva" && (
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="descricao">Descrição do serviço</Label>
-                <Textarea id="descricao" name="descricao" rows={2} maxLength={300} placeholder="Ex.: troca das pastilhas de freio dianteiras" />
+                <Label htmlFor="descricao">O que está acontecendo com o veículo</Label>
+                <Textarea id="descricao" name="descricao" rows={2} maxLength={300} placeholder="Ex.: barulho no freio dianteiro ao frear" />
               </div>
             )}
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="acao">Grupo de ações</Label>
+              <Select value={acaoId} onValueChange={(v) => { setAcaoId(v); setMarcados({}); }}>
+                <SelectTrigger id="acao"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
+                <SelectContent>
+                  {acoes.map((a) => <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {acoes.length === 0 && (
+                <p className="text-xs text-muted-foreground">Cadastre os grupos em Parâmetros &gt; Veículos &gt; Ações de manutenção.</p>
+              )}
+            </div>
+            {grupo && (
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Ações do grupo</Label>
+                {grupo.subitens.length === 0 && <p className="text-xs text-muted-foreground">Este grupo não tem ações cadastradas.</p>}
+                {grupo.subitens.map((sub) => {
+                  const marcado = sub.id in marcados;
+                  return (
+                    <div key={sub.id} className="space-y-1.5 rounded-lg border p-2">
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={marcado}
+                          onCheckedChange={(v) =>
+                            setMarcados((m) => {
+                              const { [sub.id]: _, ...resto } = m;
+                              return v === true ? { ...resto, [sub.id]: m[sub.id] ?? "" } : resto;
+                            })}
+                        />
+                        {sub.nome}
+                      </label>
+                      {marcado && (
+                        <Textarea
+                          aria-label={`Observação de ${sub.nome}`}
+                          placeholder="Observação (opcional)"
+                          rows={2}
+                          maxLength={300}
+                          value={marcados[sub.id] ?? ""}
+                          onChange={(e) => setMarcados((m) => ({ ...m, [sub.id]: e.target.value }))}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Local da manutenção</Label>
+              <RadioGroup value={local} onValueChange={(v) => setLocal(v as LocalManutencao)} className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="empresa" id="local_empresa" />Na própria empresa</label>
+                <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="terceiro" id="local_terceiro" />Local de terceiro</label>
+              </RadioGroup>
+              {local === "terceiro" && <Input name="localNome" aria-label="Local de terceiro" maxLength={120} placeholder="Nome do local (oficina, concessionária…)" />}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="custo_pecas">Custo das peças (R$)</Label>
+              <Input id="custo_pecas" inputMode="decimal" placeholder="Ex.: 1.200,00 (0 se não houve)" value={custoPecas} onChange={(e) => setCustoPecas(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="custo_mao">Custo da mão de obra (R$)</Label>
+              <Input id="custo_mao" inputMode="decimal" placeholder="Ex.: 300,00 (0 se não houve)" value={custoMao} onChange={(e) => setCustoMao(e.target.value)} />
+            </div>
+            <p className="text-sm sm:col-span-2">
+              Custo total: <strong>{totalDigitado(custoPecas, custoMao)}</strong>
+            </p>
             <DialogFooter className="sm:col-span-2">
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>
               <Button type="submit">Salvar</Button>
