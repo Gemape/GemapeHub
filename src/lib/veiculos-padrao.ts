@@ -60,3 +60,16 @@ export const TIPOS_OCORRENCIA_VEICULO_PADRAO: readonly { nome: string; descricao
     descricao: "Batidas, capotamentos ou colisões contra outros veículos ou obstáculos enquanto o veículo estava em movimento em vias públicas.",
   },
 ];
+
+// Marcas de veículos pré-cadastradas em Gerais (decisão 67): carros, caminhões, motos e
+// empilhadeiras numa lista só, sem repetir a marca que serve a mais de um tipo.
+const MARCAS_CARROS = ["Fiat", "Volkswagen", "Chevrolet", "Toyota", "Hyundai", "Renault", "Nissan", "Honda", "Jeep", "Ford", "Peugeot", "Citroën", "Mitsubishi", "BYD", "GWM", "Suzuki"];
+const MARCAS_EQUIPAMENTOS = ["Mercedes-Benz", "Volvo", "Scania", "MAN", "Volkswagen Caminhões", "Iveco", "Ford Caminhões", "DAF", "Foton", "Sinotruk"];
+const MARCAS_MOTOS = ["Honda", "Yamaha", "Suzuki", "Kawasaki", "Harley-Davidson", "Royal Enfield", "BMW Motorrad", "Dafra", "Shineray", "Haojue"];
+const MARCAS_EMPILHADEIRAS = ["Toyota", "Caterpillar (CAT)", "Hyster", "Yale", "Clark", "Still", "Jungheinrich", "Crown", "Paletrans", "Total"];
+
+export const MARCAS_VEICULO_PADRAO: readonly string[] = [
+  ...new Map(
+    [...MARCAS_CARROS, ...MARCAS_EQUIPAMENTOS, ...MARCAS_MOTOS, ...MARCAS_EMPILHADEIRAS].map((n) => [n.toLowerCase(), n]),
+  ).values(),
+];

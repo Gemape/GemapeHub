@@ -11,6 +11,7 @@ import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
   adicionarCategoria,
   adicionarListaFerramenta,
+  cadastrarMarcasPadraoVeiculos,
   adicionarSubcategoria,
   alterarAtivo,
   enderecamentoDaCategoria,
@@ -375,7 +376,22 @@ function Categorias() {
       </div>
           </>}
           {categoria.id === "cat-uniformes" && <div className="max-w-3xl">{listaMarcas("marcasUniforme", "Marcas de uniformes", "Nova marca de uniforme", "uniforme")}</div>}
-          {categoria.id === "cat-veiculos" && <div className="max-w-3xl">{listaMarcas("marcasVeiculo", "Marcas de veículos", "Nova marca de veículo", "veículo")}</div>}
+          {categoria.id === "cat-veiculos" && <div className="max-w-3xl space-y-2">
+            {listaMarcas("marcasVeiculo", "Marcas de veículos", "Nova marca de veículo", "veículo")}
+            <Button
+              type="button"
+              variant="outline"
+              requiresWrite
+              onClick={() =>
+                executar(() => {
+                  const { marcas } = cadastrarMarcasPadraoVeiculos();
+                  toast.success(marcas ? `${marcas} ${marcas === 1 ? "marca padrão incluída" : "marcas padrão incluídas"}.` : "As marcas padrão já estão cadastradas.");
+                })
+              }
+            >
+              Cadastrar marcas padrão
+            </Button>
+          </div>}
         </>
       ) : null}
     </div>
