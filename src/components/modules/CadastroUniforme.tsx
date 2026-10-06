@@ -386,7 +386,7 @@ function CatalogoUniforme() {
               <div className="space-y-1.5">
                 <Label htmlFor="tamanho">Tamanho</Label>
                 {tamanhosGerais.length > 0 && (
-                  <Select value={tamanhoSel} onValueChange={setTamanhoSel}>
+                  <Select key={tamanhosGerais.length} value={tamanhoSel} onValueChange={setTamanhoSel}>
                     <SelectTrigger id="tamanho"><SelectValue placeholder="Selecione o tamanho" /></SelectTrigger>
                     <SelectContent>
                       {tamanhosGerais.map((t) => (

@@ -57,10 +57,9 @@ test("Novo EPI e Novo Uniforme usam o cadastro geral e mostram sempre o link Cad
     );
     assert.match(tela, /tamanhosGeraisParaCadastro/);
     assert.match(tela, /Nenhum tamanho cadastrado em Gerais/);
-    assert.match(tela, /Não achou o tamanho\?/);
-    // O link não fica mais preso ao caso de lista vazia.
-    assert.doesNotMatch(tela, /tamanhosGerais\.length > 0 \? \(\s*<Select/);
-    assert.match(tela, /Cadastrar tamanho/);
+    // O link fica no mesmo parágrafo para lista cheia e vazia, e o Select reinicia quando entra tamanho novo.
+    assert.match(tela, /tamanhosGerais\.length > 0 \? "Não achou o tamanho\?" : "Nenhum tamanho cadastrado em Gerais\."/);
+    assert.match(tela, /<Select key=\{tamanhosGerais\.length\} value=\{tamanhoSel\}/);
     assert.match(tela, /autorizar\(/);
   }
 });
