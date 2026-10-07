@@ -50,7 +50,7 @@ const ORDEM: Record<StatusSugestao, number> = { vencida: 0, atencao: 1, sem_regi
 export function sugestoesPreventivas(entrada: {
   plano: PlanoManutencao | null;
   acoes: { id: string; nome: string }[];
-  manutencoes: { acaoId: string | null; data: string; km: number; tipo: string }[];
+  manutencoes: { acaoId: string | null; grupos?: { acaoId: string }[] | undefined; data: string; km: number; tipo: string }[];
   kmAtual: number;
   hoje: string;
 }): Sugestao[] {
@@ -60,7 +60,7 @@ export function sugestoesPreventivas(entrada: {
     const acao = acoes.find((a) => a.id === item.acaoId);
     if (!acao) return [];
     const feitas = manutencoes
-      .filter((m) => m.tipo === "Preventiva" && m.acaoId === item.acaoId)
+      .filter((m) => m.tipo === "Preventiva" && (m.grupos ? m.grupos.some((g) => g.acaoId === item.acaoId) : m.acaoId === item.acaoId))
       .sort((a, b) => (a.data === b.data ? b.km - a.km : b.data.localeCompare(a.data)));
     const ultima = feitas[0] ? { data: feitas[0].data, km: feitas[0].km } : null;
     const base = { acaoId: item.acaoId, nome: acao.nome, intervaloKm: item.km, intervaloMeses: item.meses };
