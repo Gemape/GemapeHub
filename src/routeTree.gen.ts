@@ -38,6 +38,7 @@ import { Route as AuthenticatedCadastrosUniformesRouteImport } from './routes/_a
 import { Route as AuthenticatedCadastrosVeiculosRouteImport } from './routes/_authenticated/cadastros/veiculos'
 import { Route as AuthenticatedCadastrosVeiculosAcoesManutencaoRouteImport } from './routes/_authenticated/cadastros/veiculos-acoes-manutencao'
 import { Route as AuthenticatedCadastrosVeiculosChecklistRouteImport } from './routes/_authenticated/cadastros/veiculos-checklist'
+import { Route as AuthenticatedCadastrosVeiculosChecklistAssociarRouteImport } from './routes/_authenticated/cadastros/veiculos-checklist-associar'
 import { Route as AuthenticatedCadastrosVeiculosPlanoManutencaoRouteImport } from './routes/_authenticated/cadastros/veiculos-plano-manutencao'
 import { Route as AuthenticatedCadastrosVeiculosTiposOcorrenciaRouteImport } from './routes/_authenticated/cadastros/veiculos-tipos-ocorrencia'
 import { Route as AuthenticatedCadastrosGeraisIndexRouteImport } from './routes/_authenticated/cadastros/gerais/index'
@@ -210,6 +211,12 @@ const AuthenticatedCadastrosVeiculosChecklistRoute =
     path: '/cadastros/veiculos-checklist',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCadastrosVeiculosChecklistAssociarRoute =
+  AuthenticatedCadastrosVeiculosChecklistAssociarRouteImport.update({
+    id: '/cadastros/veiculos-checklist-associar',
+    path: '/cadastros/veiculos-checklist-associar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCadastrosVeiculosPlanoManutencaoRoute =
   AuthenticatedCadastrosVeiculosPlanoManutencaoRouteImport.update({
     id: '/cadastros/veiculos-plano-manutencao',
@@ -300,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
   '/cadastros/veiculos-acoes-manutencao': typeof AuthenticatedCadastrosVeiculosAcoesManutencaoRoute
   '/cadastros/veiculos-checklist': typeof AuthenticatedCadastrosVeiculosChecklistRoute
+  '/cadastros/veiculos-checklist-associar': typeof AuthenticatedCadastrosVeiculosChecklistAssociarRoute
   '/cadastros/veiculos-plano-manutencao': typeof AuthenticatedCadastrosVeiculosPlanoManutencaoRoute
   '/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
   '/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
@@ -339,6 +347,7 @@ export interface FileRoutesByTo {
   '/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
   '/cadastros/veiculos-acoes-manutencao': typeof AuthenticatedCadastrosVeiculosAcoesManutencaoRoute
   '/cadastros/veiculos-checklist': typeof AuthenticatedCadastrosVeiculosChecklistRoute
+  '/cadastros/veiculos-checklist-associar': typeof AuthenticatedCadastrosVeiculosChecklistAssociarRoute
   '/cadastros/veiculos-plano-manutencao': typeof AuthenticatedCadastrosVeiculosPlanoManutencaoRoute
   '/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
   '/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
@@ -381,6 +390,7 @@ export interface FileRoutesById {
   '/_authenticated/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
   '/_authenticated/cadastros/veiculos-acoes-manutencao': typeof AuthenticatedCadastrosVeiculosAcoesManutencaoRoute
   '/_authenticated/cadastros/veiculos-checklist': typeof AuthenticatedCadastrosVeiculosChecklistRoute
+  '/_authenticated/cadastros/veiculos-checklist-associar': typeof AuthenticatedCadastrosVeiculosChecklistAssociarRoute
   '/_authenticated/cadastros/veiculos-plano-manutencao': typeof AuthenticatedCadastrosVeiculosPlanoManutencaoRoute
   '/_authenticated/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
   '/_authenticated/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/cadastros/veiculos'
     | '/cadastros/veiculos-acoes-manutencao'
     | '/cadastros/veiculos-checklist'
+    | '/cadastros/veiculos-checklist-associar'
     | '/cadastros/veiculos-plano-manutencao'
     | '/cadastros/veiculos-tipos-ocorrencia'
     | '/cadastros/gerais/associar-tamanhos'
@@ -462,6 +473,7 @@ export interface FileRouteTypes {
     | '/cadastros/veiculos'
     | '/cadastros/veiculos-acoes-manutencao'
     | '/cadastros/veiculos-checklist'
+    | '/cadastros/veiculos-checklist-associar'
     | '/cadastros/veiculos-plano-manutencao'
     | '/cadastros/veiculos-tipos-ocorrencia'
     | '/cadastros/gerais/associar-tamanhos'
@@ -503,6 +515,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cadastros/veiculos'
     | '/_authenticated/cadastros/veiculos-acoes-manutencao'
     | '/_authenticated/cadastros/veiculos-checklist'
+    | '/_authenticated/cadastros/veiculos-checklist-associar'
     | '/_authenticated/cadastros/veiculos-plano-manutencao'
     | '/_authenticated/cadastros/veiculos-tipos-ocorrencia'
     | '/_authenticated/cadastros/gerais/associar-tamanhos'
@@ -726,6 +739,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosVeiculosChecklistRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cadastros/veiculos-checklist-associar': {
+      id: '/_authenticated/cadastros/veiculos-checklist-associar'
+      path: '/cadastros/veiculos-checklist-associar'
+      fullPath: '/cadastros/veiculos-checklist-associar'
+      preLoaderRoute: typeof AuthenticatedCadastrosVeiculosChecklistAssociarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cadastros/veiculos-plano-manutencao': {
       id: '/_authenticated/cadastros/veiculos-plano-manutencao'
       path: '/cadastros/veiculos-plano-manutencao'
@@ -862,6 +882,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCadastrosVeiculosRoute: typeof AuthenticatedCadastrosVeiculosRoute
   AuthenticatedCadastrosVeiculosAcoesManutencaoRoute: typeof AuthenticatedCadastrosVeiculosAcoesManutencaoRoute
   AuthenticatedCadastrosVeiculosChecklistRoute: typeof AuthenticatedCadastrosVeiculosChecklistRoute
+  AuthenticatedCadastrosVeiculosChecklistAssociarRoute: typeof AuthenticatedCadastrosVeiculosChecklistAssociarRoute
   AuthenticatedCadastrosVeiculosPlanoManutencaoRoute: typeof AuthenticatedCadastrosVeiculosPlanoManutencaoRoute
   AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute: typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
 }
@@ -900,6 +921,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCadastrosVeiculosAcoesManutencaoRoute,
   AuthenticatedCadastrosVeiculosChecklistRoute:
     AuthenticatedCadastrosVeiculosChecklistRoute,
+  AuthenticatedCadastrosVeiculosChecklistAssociarRoute:
+    AuthenticatedCadastrosVeiculosChecklistAssociarRoute,
   AuthenticatedCadastrosVeiculosPlanoManutencaoRoute:
     AuthenticatedCadastrosVeiculosPlanoManutencaoRoute,
   AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute:

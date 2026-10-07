@@ -321,3 +321,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Tamanho do Novo EPI/Uniforme só dos autorizados (decisão 71, revoga 56): `tamanhosGeraisParaCadastro` removida; `CadastroEpi`/`CadastroUniforme` usam `tamanhosAssociadosParaCadastro` e não associam mais ao salvar.
 - Título de Tamanho e Medidas de Produto na barra lateral com ícone e texto iguais aos demais menus (decisão 72): ajuste em `SubLink` de `AppSidebar.tsx`.
 - Ícones em todos os submenus de Módulos e de Tamanho e Medidas (decisão 73): `icone` obrigatório em `AbaMenu` (`menu-parametros.ts`), desenhado por `SubAbas`.
+- Associar itens de check list a um veículo (decisão 74): `checklist-associacao-veiculo.ts` + `AssociarChecklistVeiculo.tsx`, rota `/cadastros/veiculos-checklist-associar`; Itens check list com ícone de chave de boca. O módulo Check list ainda não lê a associação (pergunta aberta ao responsável).

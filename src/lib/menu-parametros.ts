@@ -108,7 +108,8 @@ export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Ações de manutenção", url: "/cadastros/veiculos-acoes-manutencao", icone: "Wrench" },
   { titulo: "Plano de manutenções", url: "/cadastros/veiculos-plano-manutencao", icone: "ListChecks" },
   { titulo: "Tipos de ocorrência", url: "/cadastros/veiculos-tipos-ocorrencia", icone: "ClipboardList" },
-  { titulo: "Itens check list", url: "/cadastros/veiculos-checklist", icone: "ListChecks" },
+  { titulo: "Itens check list", url: "/cadastros/veiculos-checklist", icone: "Wrench" },
+  { titulo: "Associar itens de check list a um veículo", url: "/cadastros/veiculos-checklist-associar", icone: "ListChecks" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.
