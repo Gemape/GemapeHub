@@ -23,6 +23,8 @@ export type TipoManutencao = "Preventiva" | "Corretiva";
 export type LocalManutencao = "empresa" | "terceiro";
 // Ação (filho) do grupo, com o nome guardado para o registro não mudar se Parâmetros mudar.
 export type ItemManutencao = { subitemId: string; nome: string; observacao: string };
+// Uma manutenção pode abranger vários grupos de ações; cada grupo guarda o nome e as ações feitas.
+export type GrupoManutencao = { acaoId: string; nome: string; itens: ItemManutencao[] };
 // Campos de itens, local e custos vieram na decisão 61: registros antigos podem não ter.
 export type ManutencaoVeiculo = {
   id: string;
@@ -30,9 +32,12 @@ export type ManutencaoVeiculo = {
   data: string;
   km: number;
   tipo: TipoManutencao;
+  // Primeiro grupo e todas as ações (leitura de quem só conhece um grupo); a fonte é `grupos`.
   acaoId: string | null;
   descricao: string;
   itens?: ItemManutencao[];
+  // Registros anteriores à decisão 79 não têm: valem acaoId e itens como um grupo só.
+  grupos?: GrupoManutencao[];
   local?: LocalManutencao;
   localNome?: string;
   custoPecas?: number;
@@ -190,6 +195,8 @@ export type EntradaManutencao = {
   tipo: string;
   acaoId?: string | null;
   itens?: { subitemId: string; observacao?: string | undefined }[];
+  // Vários grupos numa manutenção; sem `grupos`, acaoId e itens valem como um grupo só.
+  grupos?: { acaoId: string; itens?: { subitemId: string; observacao?: string | undefined }[] }[];
   local?: string;
   localNome?: string;
   custoPecas?: string | number;
@@ -213,7 +220,7 @@ export function registrarManutencao(
   entrada: EntradaManutencao,
   storage = storagePadrao(),
   agora = new Date(),
-  acoes: { id: string; subitens: { id: string; nome: string }[] }[] = [],
+  acoes: { id: string; nome?: string; subitens: { id: string; nome: string }[] }[] = [],
 ): ManutencaoVeiculo {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
   if (entrada.tipo !== "Preventiva" && entrada.tipo !== "Corretiva") throw new Error("Escolha o tipo: preventiva ou corretiva.");
@@ -223,16 +230,25 @@ export function registrarManutencao(
   // Só a corretiva descreve o que está acontecendo com o veículo.
   const descricao = entrada.tipo === "Corretiva" ? String(entrada.descricao ?? "").trim().replace(/\s+/g, " ").slice(0, 300) : "";
   if (entrada.tipo === "Corretiva" && !descricao) throw new Error("Informe a descrição do que está acontecendo com o veículo.");
-  const grupo = acoes.find((a) => a.id === entrada.acaoId);
-  if (!entrada.acaoId || !grupo) throw new Error("Selecione o grupo de ações da manutenção.");
-  const itens: ItemManutencao[] = [];
-  for (const i of entrada.itens ?? []) {
-    const filho = grupo.subitens.find((x) => x.id === i.subitemId);
-    if (!filho) throw new Error("Há uma ação que não pertence ao grupo escolhido.");
-    if (itens.some((x) => x.subitemId === filho.id)) throw new Error(`Ação repetida: ${filho.nome}.`);
-    itens.push({ subitemId: filho.id, nome: filho.nome, observacao: String(i.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300) });
+  const pedidos = entrada.grupos ?? [{ acaoId: entrada.acaoId ?? "", itens: entrada.itens ?? [] }];
+  if (pedidos.length === 0) throw new Error("Selecione ao menos um grupo de ações da manutenção.");
+  const grupos: GrupoManutencao[] = [];
+  for (const pedido of pedidos) {
+    const grupo = acoes.find((a) => a.id === pedido.acaoId);
+    if (!pedido.acaoId || !grupo) throw new Error("Selecione o grupo de ações da manutenção.");
+    if (grupos.some((g) => g.acaoId === grupo.id)) throw new Error(`Grupo repetido: ${grupo.nome ?? "grupo"}.`);
+    const itens: ItemManutencao[] = [];
+    for (const i of pedido.itens ?? []) {
+      const filho = grupo.subitens.find((x) => x.id === i.subitemId);
+      if (!filho) throw new Error("Há uma ação que não pertence ao grupo escolhido.");
+      if (itens.some((x) => x.subitemId === filho.id)) throw new Error(`Ação repetida: ${filho.nome}.`);
+      itens.push({ subitemId: filho.id, nome: filho.nome, observacao: String(i.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300) });
+    }
+    if (grupo.subitens.length > 0 && itens.length === 0) {
+      throw new Error(grupo.nome ? `Marque ao menos uma ação do grupo ${grupo.nome}.` : "Marque ao menos uma ação do grupo.");
+    }
+    grupos.push({ acaoId: grupo.id, nome: grupo.nome ?? "", itens });
   }
-  if (grupo.subitens.length > 0 && itens.length === 0) throw new Error("Marque ao menos uma ação do grupo.");
   if (entrada.local !== "empresa" && entrada.local !== "terceiro") throw new Error("Informe o local da manutenção: na empresa ou em terceiro.");
   const localNome = entrada.local === "terceiro" ? String(entrada.localNome ?? "").trim().replace(/\s+/g, " ").slice(0, 120) : "";
   if (entrada.local === "terceiro" && !localNome) throw new Error("Informe o local de terceiro onde foi feita a manutenção.");
@@ -243,8 +259,8 @@ export function registrarManutencao(
   const conflito = conflitoDeKm(entrada.veiculoId, { data }, km, storage);
   if (conflito) throw new Error(mensagemKm(conflito));
   const registro: ManutencaoVeiculo = {
-    id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId: entrada.acaoId, descricao,
-    itens, local: entrada.local, localNome, custoPecas, custoMaoDeObra,
+    id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId: grupos[0]!.acaoId, descricao,
+    itens: grupos.flatMap((g) => g.itens), grupos, local: entrada.local, localNome, custoPecas, custoMaoDeObra,
     custoTotal: Math.round((custoPecas + custoMaoDeObra) * 100) / 100, criadoEm: agora.toISOString(),
   };
   alterarLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => [...lista, registro]);
@@ -254,11 +270,26 @@ export function registrarManutencao(
 export const removerManutencao = (id: string, storage = storagePadrao()): void =>
   alterarLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => lista.filter((m) => m.id !== id));
 
-// Texto da manutenção para listas: grupo e ações (e a descrição, na corretiva). Registros antigos
-// só têm a ação ou só a descrição.
-export function resumoManutencao(m: ManutencaoVeiculo, nomeGrupo: string | undefined): string {
-  const grupo = m.acaoId ? (nomeGrupo ?? "Ação removida de Parâmetros") : "";
-  const filhos = (m.itens ?? []).map((i) => i.nome).join(", ");
-  const acoes = grupo && filhos ? `${grupo}: ${filhos}` : grupo;
+// Grupos da manutenção; o registro antigo (um grupo só, ou só a descrição) vira uma lista de zero ou um.
+export function gruposDaManutencao(m: Pick<ManutencaoVeiculo, "acaoId" | "itens" | "grupos">): GrupoManutencao[] {
+  if (m.grupos) return m.grupos;
+  return m.acaoId ? [{ acaoId: m.acaoId, nome: "", itens: m.itens ?? [] }] : [];
+}
+
+// Texto da manutenção para listas: cada grupo com as suas ações (e a descrição, na corretiva). Registros
+// antigos só têm a ação ou só a descrição. `nomeGrupo` busca o nome atual em Parâmetros; se o grupo
+// foi apagado, vale o nome guardado no registro.
+export function resumoManutencao(
+  m: ManutencaoVeiculo,
+  nomeGrupo: string | undefined | ((acaoId: string) => string | undefined),
+): string {
+  const acoes = gruposDaManutencao(m)
+    .map((g) => {
+      const atual = typeof nomeGrupo === "function" ? nomeGrupo(g.acaoId) : nomeGrupo;
+      const nome = atual ?? (g.nome || "Ação removida de Parâmetros");
+      const filhos = g.itens.map((i) => i.nome).join(", ");
+      return filhos ? `${nome}: ${filhos}` : nome;
+    })
+    .join("; ");
   return [acoes, m.tipo === "Corretiva" ? m.descricao : ""].filter(Boolean).join(" · ") || "—";
 }

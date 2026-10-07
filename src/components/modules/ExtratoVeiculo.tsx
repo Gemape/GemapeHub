@@ -65,11 +65,11 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
   const vencidas = sugestoes.filter((s) => s.status === "vencida").length;
 
   // Manutenções do extrato: as registradas na tela Manutenção e as marcadas em Movimentações.
-  const nomeAcao = (id: string | null) => parametros.acoesManutencaoVeiculo.find((a) => a.id === id)?.nome;
+  const nomeAcao = (id: string) => parametros.acoesManutencaoVeiculo.find((a) => a.id === id)?.nome;
   const linhasManutencao = [
     ...manut.map((m) => ({
       chave: m.id, data: m.data, km: m.km as number | null, tipo: m.tipo as string,
-      servico: resumoManutencao(m, nomeAcao(m.acaoId)),
+      servico: resumoManutencao(m, nomeAcao),
     })),
     ...movimentacoes
       .filter((m) => m.veiculo_id === veiculo.id && (m as { acao_manutencao?: string }).acao_manutencao)
