@@ -586,3 +586,7 @@ Ordem do responsável em 06/10, com a tela Associar tamanho e medida ao produto 
 ## 72. TÍTULO DE TAMANHO E MEDIDAS DE PRODUTO COM A FORMATAÇÃO DOS DEMAIS MENUS
 
 Ordem do responsável em 07/10, com print da barra lateral de Parâmetros. Em Gerais, o item "Tamanho e Medidas de Produto" aparecia como um subtítulo pequeno e cinza, sem ícone, diferente de Tabelas de Apoio, Código do Produto, Código de Fábrica e Endereçamento. Agora ele usa o mesmo ícone (régua), o mesmo tamanho e a mesma cor de texto dos outros menus, com as abas Cadastro e Associar ao produto logo abaixo, recuadas. Só visual; nada muda nas telas, nas rotas nem no Supabase.
+
+## 73. TODOS OS SUBMENUS DA BARRA LATERAL COM ÍCONE
+
+Ordem do responsável em 07/10: todo menu da barra lateral deve ter ícone, padronizado por assunto. Em Parâmetros > Gerais > Tamanho e Medidas de Produto, Cadastro ganhou o ícone de lista com mais (ListPlus) e Associar ao produto o de ligação (Link2). Nos submenus de Módulos (EPIs, Uniformes, Ferramentas, Veículos), cada aba ganhou um ícone do seu assunto: Dashboard (painel), Estoque (caixas empilhadas), Compras (carrinho), Histórico (relógio), Baixas (pacote com menos), Termos (documento assinado; encerramento com X; vistoria com prancheta marcada), Ocorrências (alerta), Movimentações (setas de ida e volta), Número da caixa (caixa), Frota (carro), Abastecimento (bomba), Manutenção (chave), Check list (lista marcada). **Escolha do Claude:** a mesma aba usa o mesmo ícone em todos os módulos. Só visual; nada muda nas telas, rotas nem no Supabase.
