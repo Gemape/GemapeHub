@@ -64,7 +64,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
   });
   const vencidas = sugestoes.filter((s) => s.status === "vencida").length;
 
-  // Manutenções do extrato: as registradas na tela Manutenção e as marcadas em Movimentações.
+  // Manutenções do extrato: as registradas na tela Manutenção e as marcadas em Movimentações (registros antigos; a aba saiu do módulo na decisão 77).
   const nomeAcao = (id: string) => parametros.acoesManutencaoVeiculo.find((a) => a.id === id)?.nome;
   const linhasManutencao = [
     ...manut.map((m) => ({

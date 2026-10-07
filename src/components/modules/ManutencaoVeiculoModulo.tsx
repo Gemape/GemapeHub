@@ -17,7 +17,7 @@ import { hojeLocal } from "@/lib/empregados";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
-import { custoNaoNegativo, registrarManutencao, removerManutencao, resumoManutencao, type LocalManutencao } from "@/lib/registros-veiculo";
+import { custoNaoNegativo, gruposDaManutencao, registrarManutencao, removerManutencao, resumoManutencao, type LocalManutencao } from "@/lib/registros-veiculo";
 import { useManutencoesVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -52,6 +52,8 @@ export function ManutencaoVeiculoModulo() {
   const [custoMao, setCustoMao] = useState("");
   const [busca, setBusca] = useState("");
   const trava = useRef(false);
+  // Ações e observações de um grupo desmarcado: voltam se o grupo for marcado de novo (clique errado não perde o texto).
+  const guardados = useRef<Record<string, Record<string, string>>>({});
 
   const acoes = parametros.acoesManutencaoVeiculo;
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
@@ -69,6 +71,7 @@ export function ManutencaoVeiculoModulo() {
   }
 
   function abrir() {
+    guardados.current = {};
     setVeiculoId("");
     setTipo("Preventiva");
     setMarcados({});
@@ -155,9 +158,13 @@ export function ManutencaoVeiculoModulo() {
                   <TableCell><Badge variant={m.tipo === "Preventiva" ? "secondary" : "outline"}>{m.tipo}</Badge></TableCell>
                   <TableCell>
                     {servico}
-                    {(m.itens ?? []).filter((i) => i.observacao).map((i) => (
-                      <p key={i.subitemId} className="text-xs text-muted-foreground">{i.nome}: {i.observacao}</p>
-                    ))}
+                    {gruposDaManutencao(m).flatMap((g) =>
+                      g.itens.filter((i) => i.observacao).map((i) => (
+                        <p key={`${g.acaoId}-${i.subitemId}`} className="text-xs text-muted-foreground">
+                          {g.nome ? `${g.nome}: ` : ""}{i.nome}: {i.observacao}
+                        </p>
+                      )),
+                    )}
                   </TableCell>
                   <TableCell>{m.local ? (m.local === "terceiro" && m.localNome ? `${LOCAL.terceiro}: ${m.localNome}` : LOCAL[m.local]) : "—"}</TableCell>
                   <TableCell className="text-right" title={m.custoTotal === undefined ? undefined : `Peças ${moeda(m.custoPecas)} + mão de obra ${moeda(m.custoMaoDeObra)}`}>
@@ -235,8 +242,12 @@ export function ManutencaoVeiculoModulo() {
                         checked={grupoMarcado}
                         onCheckedChange={(v) =>
                           setMarcados((m) => {
-                            const { [grupo.id]: _, ...resto } = m;
-                            return v === true ? { ...resto, [grupo.id]: m[grupo.id] ?? {} } : resto;
+                            const { [grupo.id]: atuais, ...resto } = m;
+                            if (v !== true) {
+                              if (atuais) guardados.current[grupo.id] = atuais;
+                              return resto;
+                            }
+                            return { ...resto, [grupo.id]: atuais ?? guardados.current[grupo.id] ?? {} };
                           })}
                       />
                       {grupo.nome}

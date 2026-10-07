@@ -18,7 +18,8 @@ export type Previsao = {
   responsavelNome: string;
 };
 
-export type VeiculoPrevisto = Pick<Previsao, "veiculoId" | "veiculoRotulo" | "periodicidade" | "responsavelNome">;
+// `desde`: dia (Brasília) em que a associação passou a valer; sem ele, vale hoje (não volta no tempo).
+export type VeiculoPrevisto = Pick<Previsao, "veiculoId" | "veiculoRotulo" | "periodicidade" | "responsavelNome"> & { desde?: string };
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
 const lerBruto = (storage: StorageLike | null) => lerLista<Previsao>(CHAVE, storage);
@@ -63,9 +64,10 @@ export function mesesDisponiveis(hoje: string, quantidade = 12): string[] {
 
 const idDa = (v: VeiculoPrevisto, p: { inicio: string; fim: string }) => `${v.veiculoId}|${v.periodicidade}|${p.inicio}|${p.fim}`;
 
-// Mantém as previsões em vigor: o período de hoje e os que faltam no mês, sem voltar no tempo (o que passou antes
-// de a associação existir não é cobrado). Previsão que ainda não venceu e não vale mais (associação trocada ou
-// removida, veículo inativo) sai; as de prazo vencido ficam como estão. Só grava quando algo muda.
+// Mantém as previsões em vigor: do dia em que a associação passou a valer (`desde`) até o fim do mês de hoje, mesmo
+// que o módulo só seja aberto depois; o que passou antes de a associação existir não é cobrado. Previsão que ainda
+// não venceu acompanha a associação (responsável, rótulo) e sai se não vale mais (associação trocada ou removida,
+// veículo inativo); as de prazo vencido ficam como estão. Só grava quando algo muda.
 export function sincronizarPrevisoes(
   entrada: { veiculos: VeiculoPrevisto[]; hoje: string },
   storage: StorageLike | null = storagePadrao(),
@@ -76,18 +78,25 @@ export function sincronizarPrevisoes(
   const { hoje } = entrada;
   const desejadas = new Map<string, Previsao>();
   for (const v of entrada.veiculos) {
-    const periodos = [...periodosDoMes(v.periodicidade, mesDe(hoje)), periodoAtual(v.periodicidade, hoje)];
+    const desde = v.desde && v.desde < hoje ? v.desde : hoje;
+    const meses: string[] = [];
+    for (let m = mesDe(desde); m <= mesDe(hoje) && meses.length < 24; m = mesDe(somarDias(`${m}-28`, 4))) meses.push(m);
+    const periodos = [...meses.flatMap((m) => periodosDoMes(v.periodicidade, m)), periodoAtual(v.periodicidade, hoje)];
     for (const p of periodos) {
-      if (p.fim < hoje) continue;
+      if (p.fim < desde) continue;
       const id = idDa(v, p);
       desejadas.set(id, { id, veiculoId: v.veiculoId, veiculoRotulo: v.veiculoRotulo, periodicidade: v.periodicidade, inicio: p.inicio, fim: p.fim, responsavelNome: v.responsavelNome });
     }
   }
-  const mantidas = lista.filter((p) => p.fim < hoje || desejadas.has(p.id));
-  const existentes = new Set(mantidas.map((p) => p.id));
+  const existentes = new Set(lista.map((p) => p.id));
+  // Prazo vencido não muda; o que ainda não venceu e não vale mais sai; o que vale é atualizado.
+  const mantidas = lista
+    .filter((p) => p.fim < hoje || desejadas.has(p.id))
+    .map((p) => (p.fim >= hoje ? (desejadas.get(p.id) ?? p) : p));
   const novas = [...desejadas.values()].filter((p) => !existentes.has(p.id));
-  if (mantidas.length === lista.length && novas.length === 0) return;
-  storage.setItem(CHAVE, JSON.stringify([...mantidas, ...novas]));
+  const resultado = [...mantidas, ...novas];
+  if (JSON.stringify(resultado) === JSON.stringify(lista)) return;
+  storage.setItem(CHAVE, JSON.stringify(resultado));
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_PREVISOES_CHECKLIST));
 }
 
@@ -121,7 +130,7 @@ export function painelDoMes(
   previsoes: Previsao[],
   checklists: ChecklistDoPainel[],
   hoje: string,
-): { linhas: (LinhaPainel & { responsavelNome: string })[]; resumo: ResumoPainel } {
+): { linhas: LinhaPainel[]; resumo: ResumoPainel } {
   const linhas = previsoes
     .filter((p) => mesDe(p.fim) === mes)
     .sort((a, b) => a.fim.localeCompare(b.fim) || a.veiculoRotulo.localeCompare(b.veiculoRotulo))
@@ -143,9 +152,14 @@ export function painelDoMes(
   const realizados = conta("realizado");
   const naoRealizados = conta("nao_realizado");
   const base = realizados + naoRealizados;
-  const pct = (n: number) => (base === 0 ? null : Math.round((n / base) * 1000) / 10);
+  // Em décimos de ponto; o não realizado é o que falta para 100%, assim os dois somam sempre 100%.
+  const decimosNoPrazo = base === 0 ? null : Math.round((realizados / base) * 1000);
   return {
     linhas,
-    resumo: { previstos: linhas.length, realizados, naoRealizados, aVencer: conta("a_vencer"), pctNoPrazo: pct(realizados), pctNaoNoPrazo: pct(naoRealizados) },
+    resumo: {
+      previstos: linhas.length, realizados, naoRealizados, aVencer: conta("a_vencer"),
+      pctNoPrazo: decimosNoPrazo === null ? null : decimosNoPrazo / 10,
+      pctNaoNoPrazo: decimosNoPrazo === null ? null : (1000 - decimosNoPrazo) / 10,
+    },
   };
 }

@@ -110,3 +110,45 @@ test("dados ilegíveis não são sobrescritos ao sincronizar", () => {
   assert.throws(() => sincronizarPrevisoes({ veiculos: [v("a", "Mensal")], hoje: "2026-10-05" }, s), /lid/i);
   assert.equal(dados.get("gemape-demo-checklist-previsoes"), "{quebrado");
 });
+
+test("antes do prazo a previsão acompanha a associação: responsável e rótulo novos substituem os antigos", () => {
+  const s = memoria();
+  sincronizarPrevisoes({ veiculos: [v("a", "Mensal")], hoje: "2026-10-05" }, s);
+  sincronizarPrevisoes({ veiculos: [v("a", "Mensal", { responsavelNome: "Novo", veiculoRotulo: "Placa nova" })], hoje: "2026-10-06" }, s);
+  const p = lerPrevisoes(s);
+  assert.equal(p.length, 1);
+  assert.equal(p[0].responsavelNome, "Novo");
+  assert.equal(p[0].veiculoRotulo, "Placa nova");
+  // Depois do prazo, congela com o que valia.
+  sincronizarPrevisoes({ veiculos: [v("a", "Mensal", { responsavelNome: "Outro" })], hoje: "2026-11-02" }, s);
+  assert.equal(lerPrevisoes(s).find((x) => x.fim === "2026-10-31").responsavelNome, "Novo");
+});
+
+test("a previsão vale desde o dia da associação, mesmo que o módulo só abra depois", () => {
+  const s = memoria();
+  // Associação diária de 01/10, módulo aberto só em 20/10: os dias 01 a 19 entram e ficam como não realizados.
+  sincronizarPrevisoes({ veiculos: [v("a", "Diário", { desde: "2026-10-01" })], hoje: "2026-10-20" }, s);
+  const p = lerPrevisoes(s);
+  assert.equal(p.filter((x) => x.fim <= "2026-10-31").length, 31);
+  const painel = painelDoMes("2026-10", p, [], "2026-10-20");
+  assert.equal(painel.resumo.naoRealizados, 19);
+  assert.equal(painel.resumo.aVencer, 12);
+  // Mês inteiro sem abrir o módulo: setembro também é preenchido, desde a associação.
+  const t = memoria();
+  sincronizarPrevisoes({ veiculos: [v("a", "Mensal", { desde: "2026-09-10" })], hoje: "2026-10-05" }, t);
+  assert.deepEqual(lerPrevisoes(t).map((x) => x.fim), ["2026-09-30", "2026-10-31"]);
+  // Sem `desde`, vale hoje (não volta no tempo).
+  const u = memoria();
+  sincronizarPrevisoes({ veiculos: [v("a", "Diário")], hoje: "2026-10-20" }, u);
+  assert.equal(lerPrevisoes(u).length, 12);
+});
+
+test("os percentuais somam sempre 100%, mesmo com arredondamento", () => {
+  const s = memoria();
+  sincronizarPrevisoes({ veiculos: [v("a", "Diário", { desde: "2026-10-01" })], hoje: "2026-10-17" }, s);
+  // 16 dias vencidos (01 a 16): 1 realizado e 15 não.
+  const chk = [{ id: "c", codigo: "CHK-1", veiculoId: "a", status: "Concluído", data: "2026-10-01", concluidoEm: "2026-10-01T15:00:00Z", responsavelNome: "B" }];
+  const r = painelDoMes("2026-10", lerPrevisoes(s), chk, "2026-10-17").resumo;
+  assert.equal(r.realizados + r.naoRealizados, 16);
+  assert.equal(Math.round((r.pctNoPrazo + r.pctNaoNoPrazo) * 10), 1000);
+});
