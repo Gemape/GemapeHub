@@ -1,57 +1,85 @@
 // Hierarquia do menu Parâmetros (decisões 34 e 38). Só dados: o AppSidebar desenha.
-export type NomeIcone = "Tags" | "Ruler" | "ListChecks" | "Barcode" | "Factory" | "MapPin" | "Hash" | "Wrench" | "HardHat" | "ClipboardList" | "Archive" | "Car";
+export type NomeIcone =
+  | "Tags"
+  | "Ruler"
+  | "ListChecks"
+  | "Barcode"
+  | "Factory"
+  | "MapPin"
+  | "Hash"
+  | "Wrench"
+  | "HardHat"
+  | "ClipboardList"
+  | "Archive"
+  | "Car"
+  | "LayoutDashboard"
+  | "Boxes"
+  | "ShoppingCart"
+  | "History"
+  | "PackageMinus"
+  | "FileSignature"
+  | "FileMinus"
+  | "FileCheck"
+  | "FileX"
+  | "ClipboardCheck"
+  | "ArrowLeftRight"
+  | "TriangleAlert"
+  | "Fuel"
+  | "Box"
+  | "ListPlus"
+  | "Link2";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
-export type AbaMenu = { aba: string; titulo: string; soAdmin?: boolean };
+export type AbaMenu = { aba: string; titulo: string; icone: NomeIcone; soAdmin?: boolean };
 export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[]; search?: { aba: string } };
 export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
 export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
 
 export const ABAS_EPI: readonly AbaMenu[] = [
-  { aba: "dashboard", titulo: "Dashboard" },
-  { aba: "estoque", titulo: "Estoque" },
-  { aba: "compras", titulo: "Compras" },
-  { aba: "historico", titulo: "Histórico do empregado" },
-  { aba: "baixas", titulo: "Baixar Definitivas" },
-  { aba: "termo-entrega", titulo: "Termo de Entrega" },
-  { aba: "ficha-avulsa", titulo: "Ficha de EPI Avulsa" },
-  { aba: "ocorrencias", titulo: "Ocorrências" },
+  { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
+  { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
+  { aba: "compras", titulo: "Compras", icone: "ShoppingCart" },
+  { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
+  { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
+  { aba: "termo-entrega", titulo: "Termo de Entrega", icone: "FileSignature" },
+  { aba: "ficha-avulsa", titulo: "Ficha de EPI Avulsa", icone: "ClipboardList" },
+  { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
 export const ABAS_UNIFORME: readonly AbaMenu[] = [
-  { aba: "dashboard", titulo: "Dashboard" },
-  { aba: "estoque", titulo: "Estoque" },
-  { aba: "movimentacoes", titulo: "Movimentações" },
-  { aba: "compras", titulo: "Compras" },
-  { aba: "historico", titulo: "Histórico Empregado" },
-  { aba: "baixas", titulo: "Baixas Definitivas" },
-  { aba: "termo-entrega", titulo: "Termo de Entrega" },
-  { aba: "termo-baixa", titulo: "Termo de Baixa" },
-  { aba: "ocorrencias", titulo: "Ocorrências" },
+  { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
+  { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
+  { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
+  { aba: "compras", titulo: "Compras", icone: "ShoppingCart" },
+  { aba: "historico", titulo: "Histórico Empregado", icone: "History" },
+  { aba: "baixas", titulo: "Baixas Definitivas", icone: "PackageMinus" },
+  { aba: "termo-entrega", titulo: "Termo de Entrega", icone: "FileSignature" },
+  { aba: "termo-baixa", titulo: "Termo de Baixa", icone: "FileMinus" },
+  { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
 export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
-  { aba: "dashboard", titulo: "Dashboard" },
-  { aba: "estoque", titulo: "Estoque" },
-  { aba: "caixas", titulo: "Número da caixa" },
-  { aba: "termo-responsabilidade", titulo: "Termo de responsabilidade individual" },
-  { aba: "termo-encerramento", titulo: "Termo de encerramento responsabilidade" },
-  { aba: "termo-vistoria", titulo: "Termo de vistoria periódica" },
-  { aba: "movimentacoes", titulo: "Movimentações" },
-  { aba: "ocorrencias", titulo: "Ocorrências" },
+  { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
+  { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
+  { aba: "caixas", titulo: "Número da caixa", icone: "Box" },
+  { aba: "termo-responsabilidade", titulo: "Termo de responsabilidade individual", icone: "FileSignature" },
+  { aba: "termo-encerramento", titulo: "Termo de encerramento responsabilidade", icone: "FileX" },
+  { aba: "termo-vistoria", titulo: "Termo de vistoria periódica", icone: "ClipboardCheck" },
+  { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
+  { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
 export const ABAS_VEICULO: readonly AbaMenu[] = [
-  { aba: "frota", titulo: "Frota" },
-  { aba: "abastecimento", titulo: "Abastecimento" },
-  { aba: "manutencao", titulo: "Manutenção" },
-  { aba: "movimentacoes", titulo: "Movimentações" },
-  { aba: "ocorrencias", titulo: "Ocorrências" },
-  { aba: "checklist", titulo: "Check list" },
+  { aba: "frota", titulo: "Frota", icone: "Car" },
+  { aba: "abastecimento", titulo: "Abastecimento", icone: "Fuel" },
+  { aba: "manutencao", titulo: "Manutenção", icone: "Wrench" },
+  { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
+  { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
+  { aba: "checklist", titulo: "Check list", icone: "ListChecks" },
 ];
 
 export const ABAS_TAMANHOS: readonly AbaMenu[] = [
-  { aba: "cadastro", titulo: "Cadastro" },
-  { aba: "associar", titulo: "Associar ao produto" },
+  { aba: "cadastro", titulo: "Cadastro", icone: "ListPlus" },
+  { aba: "associar", titulo: "Associar ao produto", icone: "Link2" },
 ];
 
 export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [

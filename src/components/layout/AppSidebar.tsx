@@ -39,6 +39,19 @@ import {
   Factory,
   ChevronDown,
   FolderCog,
+  Boxes,
+  PackageMinus,
+  FileSignature,
+  FileMinus,
+  FileCheck,
+  FileX,
+  ClipboardCheck,
+  ArrowLeftRight,
+  TriangleAlert,
+  Fuel,
+  Box,
+  ListPlus,
+  Link2,
 } from "lucide-react";
 
 import {
@@ -82,7 +95,11 @@ const grupos = [
 
 type ItemGrupo = { titulo: string; url: string; icone: typeof LayoutDashboard; abas?: readonly AbaMenu[] };
 
-const ICONES = { Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive, Car } as const;
+const ICONES = {
+  Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive, Car,
+  LayoutDashboard, Boxes, ShoppingCart, History, PackageMinus, FileSignature, FileMinus, FileCheck, FileX,
+  ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus, Link2,
+} as const;
 
 function useAbaAtual(): string | undefined {
   const aba = useRouterState({ select: (s) => (s.location.search as Record<string, unknown>)["aba"] });
@@ -95,15 +112,19 @@ function SubAbas({ url, abas, pathname, abaAtual, isAdmin }: { url: string; abas
   const ativa = visiveis.some((a) => a.aba === abaAtual) ? abaAtual : visiveis[0]?.aba;
   return (
     <>
-      {visiveis.map((a) => (
+      {visiveis.map((a) => {
+        const Icone = ICONES[a.icone];
+        return (
         <SidebarMenuSubItem key={a.aba}>
           <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba} className="h-auto min-h-7 py-1">
             <Link to={url} search={{ aba: a.aba } as never}>
+              <Icone />
               <span className="!whitespace-normal leading-tight">{a.titulo}</span>
             </Link>
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>
-      ))}
+        );
+      })}
     </>
   );
 }

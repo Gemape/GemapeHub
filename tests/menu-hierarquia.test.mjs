@@ -131,3 +131,21 @@ test("Gerais, com seus submenus, é o primeiro item de Parâmetros, antes de EPI
 test("o título de Tamanho e Medidas de Produto usa ícone e texto iguais aos dos outros menus (decisão 72)", () => {
   assert.doesNotMatch(sidebar, /text-sidebar-foreground\/70 hover:text-sidebar-foreground/);
 });
+
+test("todo submenu de Módulos e de Tamanho e Medidas tem ícone, e a barra lateral conhece cada um (decisão 73)", async () => {
+  const m = await import("../src/lib/menu-parametros.ts");
+  const abas = [...m.ABAS_EPI, ...m.ABAS_UNIFORME, ...m.ABAS_FERRAMENTA, ...m.ABAS_VEICULO, ...m.ABAS_TAMANHOS];
+  assert.ok(abas.length > 0);
+  for (const a of abas) {
+    assert.ok(a.icone, `${a.titulo} sem ícone`);
+    assert.match(sidebar, new RegExp(`\\b${a.icone}\\b[^\\n]*,|\\b${a.icone},`), `${a.icone} não está em ICONES`);
+  }
+  // A mesma aba usa o mesmo ícone em todos os módulos (Dashboard, Estoque, Ocorrências...).
+  const porAba = new Map();
+  for (const a of abas) {
+    const antes = porAba.get(a.aba);
+    if (antes && ["dashboard", "estoque", "compras", "ocorrencias", "movimentacoes", "baixas"].includes(a.aba))
+      assert.equal(a.icone, antes, `ícone de ${a.aba} difere entre módulos`);
+    porAba.set(a.aba, a.icone);
+  }
+});
