@@ -1,0 +1,151 @@
+// Painel mensal do Check list de veículos (decisão 80). Fase 1: fica só no navegador, em modo demonstração.
+// A "previsão" é o check list esperado de um veículo num período (dia, semana, quinzena ou mês, conforme a
+// periodicidade da associação, decisão 75). Cada previsão é gravada ao entrar em vigor e, depois que o
+// prazo passa, nunca mais muda: o resultado dos meses anteriores é imutável, mesmo que a associação mude.
+import { hojeBrasilia, periodoAtual, type ChecklistVeiculo, type Periodicidade } from "./checklist-veiculo.ts";
+import { lerLista, type StorageLike } from "./registros-veiculo.ts";
+
+const CHAVE = "gemape-demo-checklist-previsoes";
+export const EVENTO_PREVISOES_CHECKLIST = "gemape-previsoes-checklist-veiculo";
+
+export type Previsao = {
+  id: string;
+  veiculoId: string;
+  veiculoRotulo: string;
+  periodicidade: Periodicidade;
+  inicio: string; // AAAA-MM-DD
+  fim: string; // AAAA-MM-DD, o prazo
+  responsavelNome: string;
+};
+
+export type VeiculoPrevisto = Pick<Previsao, "veiculoId" | "veiculoRotulo" | "periodicidade" | "responsavelNome">;
+
+const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
+const lerBruto = (storage: StorageLike | null) => lerLista<Previsao>(CHAVE, storage);
+
+export const lerPrevisoes = (storage: StorageLike | null = storagePadrao()): Previsao[] => lerBruto(storage).lista;
+
+// ---------- Datas (aritmética em UTC: independe do fuso do navegador) ----------
+
+const dia = (d: Date) => d.toISOString().slice(0, 10);
+const partes = (data: string) => ({ a: Number(data.slice(0, 4)), m: Number(data.slice(5, 7)), d: Number(data.slice(8, 10)) });
+const somarDias = (data: string, n: number) => {
+  const { a, m, d } = partes(data);
+  return dia(new Date(Date.UTC(a, m - 1, d + n)));
+};
+export const mesDe = (data: string) => data.slice(0, 7);
+const ultimoDiaDoMes = (mes: string) => dia(new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)));
+
+// Períodos cujo prazo (fim) cai no mês: assim cada período pertence a um único mês. Semana vai de segunda a domingo.
+export function periodosDoMes(periodicidade: Periodicidade, mes: string): { inicio: string; fim: string }[] {
+  const primeiro = `${mes}-01`;
+  const ultimo = ultimoDiaDoMes(mes);
+  const dias: string[] = [];
+  for (let d = primeiro; d <= ultimo; d = somarDias(d, 1)) dias.push(d);
+  if (periodicidade === "Diário") return dias.map((d) => ({ inicio: d, fim: d }));
+  if (periodicidade === "Mensal") return [{ inicio: primeiro, fim: ultimo }];
+  if (periodicidade === "Quinzenal") return [{ inicio: primeiro, fim: `${mes}-15` }, { inicio: `${mes}-16`, fim: ultimo }];
+  return dias
+    .filter((d) => new Date(`${d}T12:00:00Z`).getUTCDay() === 0)
+    .map((fim) => ({ inicio: somarDias(fim, -6), fim }));
+}
+
+// Do mês de hoje para trás (mais recente primeiro), sem meses futuros.
+export function mesesDisponiveis(hoje: string, quantidade = 12): string[] {
+  const { a, m } = partes(hoje);
+  return Array.from({ length: quantidade }, (_, i) => {
+    const d = new Date(Date.UTC(a, m - 1 - i, 1));
+    return dia(d).slice(0, 7);
+  });
+}
+
+// ---------- Gravação das previsões ----------
+
+const idDa = (v: VeiculoPrevisto, p: { inicio: string; fim: string }) => `${v.veiculoId}|${v.periodicidade}|${p.inicio}|${p.fim}`;
+
+// Mantém as previsões em vigor: o período de hoje e os que faltam no mês, sem voltar no tempo (o que passou antes
+// de a associação existir não é cobrado). Previsão que ainda não venceu e não vale mais (associação trocada ou
+// removida, veículo inativo) sai; as de prazo vencido ficam como estão. Só grava quando algo muda.
+export function sincronizarPrevisoes(
+  entrada: { veiculos: VeiculoPrevisto[]; hoje: string },
+  storage: StorageLike | null = storagePadrao(),
+): void {
+  if (!storage) throw new Error("Armazenamento do navegador indisponível.");
+  const { lista, integro } = lerBruto(storage);
+  if (!integro) throw new Error("Os registros salvos neste navegador não puderam ser lidos. Nada foi alterado, para não apagá-los.");
+  const { hoje } = entrada;
+  const desejadas = new Map<string, Previsao>();
+  for (const v of entrada.veiculos) {
+    const periodos = [...periodosDoMes(v.periodicidade, mesDe(hoje)), periodoAtual(v.periodicidade, hoje)];
+    for (const p of periodos) {
+      if (p.fim < hoje) continue;
+      const id = idDa(v, p);
+      desejadas.set(id, { id, veiculoId: v.veiculoId, veiculoRotulo: v.veiculoRotulo, periodicidade: v.periodicidade, inicio: p.inicio, fim: p.fim, responsavelNome: v.responsavelNome });
+    }
+  }
+  const mantidas = lista.filter((p) => p.fim < hoje || desejadas.has(p.id));
+  const existentes = new Set(mantidas.map((p) => p.id));
+  const novas = [...desejadas.values()].filter((p) => !existentes.has(p.id));
+  if (mantidas.length === lista.length && novas.length === 0) return;
+  storage.setItem(CHAVE, JSON.stringify([...mantidas, ...novas]));
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_PREVISOES_CHECKLIST));
+}
+
+// ---------- Painel ----------
+
+export type SituacaoPrevisao = "realizado" | "nao_realizado" | "a_vencer";
+export type LinhaPainel = Previsao & {
+  situacao: SituacaoPrevisao;
+  checklistId: string | null;
+  checklistCodigo: string | null;
+  concluidoEm: string | null;
+};
+export type ResumoPainel = {
+  previstos: number;
+  realizados: number;
+  naoRealizados: number;
+  aVencer: number;
+  pctNoPrazo: number | null;
+  pctNaoNoPrazo: number | null;
+};
+
+type ChecklistDoPainel = Pick<ChecklistVeiculo, "id" | "codigo" | "veiculoId" | "status" | "data" | "concluidoEm" | "responsavelNome">;
+
+const diaDaConclusao = (c: ChecklistDoPainel) => (c.concluidoEm ? hojeBrasilia(new Date(c.concluidoEm)) : c.data);
+
+// Realizado no prazo: há check list concluído do veículo dentro do período. Não realizado no prazo: o prazo passou
+// sem isso. A vencer: o prazo ainda não passou. Os percentuais só contam o que já tem desfecho (realizado ou vencido),
+// por isso os dois somam 100%; sem nenhum desfecho ainda, ficam nulos.
+export function painelDoMes(
+  mes: string,
+  previsoes: Previsao[],
+  checklists: ChecklistDoPainel[],
+  hoje: string,
+): { linhas: (LinhaPainel & { responsavelNome: string })[]; resumo: ResumoPainel } {
+  const linhas = previsoes
+    .filter((p) => mesDe(p.fim) === mes)
+    .sort((a, b) => a.fim.localeCompare(b.fim) || a.veiculoRotulo.localeCompare(b.veiculoRotulo))
+    .map((p) => {
+      const feito = checklists
+        .filter((c) => c.veiculoId === p.veiculoId && c.status === "Concluído" && diaDaConclusao(c) >= p.inicio && diaDaConclusao(c) <= p.fim)
+        .sort((a, b) => (a.concluidoEm ?? "").localeCompare(b.concluidoEm ?? ""))[0];
+      const situacao: SituacaoPrevisao = feito ? "realizado" : p.fim < hoje ? "nao_realizado" : "a_vencer";
+      return {
+        ...p,
+        responsavelNome: feito?.responsavelNome ?? p.responsavelNome,
+        situacao,
+        checklistId: feito?.id ?? null,
+        checklistCodigo: feito?.codigo ?? null,
+        concluidoEm: feito?.concluidoEm ?? null,
+      };
+    });
+  const conta = (s: SituacaoPrevisao) => linhas.filter((l) => l.situacao === s).length;
+  const realizados = conta("realizado");
+  const naoRealizados = conta("nao_realizado");
+  const base = realizados + naoRealizados;
+  const pct = (n: number) => (base === 0 ? null : Math.round((n / base) * 1000) / 10);
+  return {
+    linhas,
+    resumo: { previstos: linhas.length, realizados, naoRealizados, aVencer: conta("a_vencer"), pctNoPrazo: pct(realizados), pctNaoNoPrazo: pct(naoRealizados) },
+  };
+}

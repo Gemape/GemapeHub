@@ -324,3 +324,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Associar itens de check list a um veículo (decisão 74): `checklist-associacao-veiculo.ts` + `AssociarChecklistVeiculo.tsx`, rota `/cadastros/veiculos-checklist-associar`; Itens check list com ícone de chave de boca. A associação é só cadastro: o módulo Check list não a lê (confirmado pelo responsável).
 - Periodicidade do módulo Check list vem da associação (decisão 75, revoga 63(c)): `periodicidadeDaAssociacao` em `checklist-veiculo.ts`; coluna Periodicidade removida da tabela; Quinzenal e Mensal em `periodoAtual`.
 - O formulário Novo check list traz só os grupos da associação do veículo (decisão 76, substitui a origem dos itens da 65): `gruposAssociadosDoVeiculo` em `checklist-veiculo.ts`.
+- Painel do mês do Check list (decisão 80): `checklist-painel.ts` (previsões congeladas após o prazo, `painelDoMes`) + `ChecklistPainelMensal.tsx` no topo do módulo.
