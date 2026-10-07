@@ -104,7 +104,7 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   const comAbas = achar(raiz).filter((f) => f.endsWith(".tsx") && !f.includes("/components/ui/") && /<TabsTrigger|<TabsList/.test(readFileSync(f, "utf8")));
   assert.deepEqual(comAbas, []);
   assert.deepEqual(ABAS_VEICULO.map((a) => a.aba), ["frota", "abastecimento", "manutencao", "ocorrencias", "checklist"]);
-  assert.deepEqual(ABAS_TAMANHOS.map((a) => a.aba), ["cadastro", "associar"]);
+  assert.deepEqual(ABAS_TAMANHOS.map((a) => a.aba), ["associar"]); // o cadastro é o próprio menu pai (decisão 85)
   assert.equal(ABAS_EPI[0].aba, "dashboard");
   assert.equal(ABAS_UNIFORME.length, 9);
   assert.equal(ABAS_FERRAMENTA.length, 8);
@@ -148,4 +148,15 @@ test("todo submenu de Módulos e de Tamanho e Medidas tem ícone, e a barra late
       assert.equal(a.icone, antes, `ícone de ${a.aba} difere entre módulos`);
     porAba.set(a.aba, a.icone);
   }
+});
+
+test("Tamanho e Medidas de Produto não repete o submenu Cadastro: o próprio menu abre o cadastro (decisão 85)", async () => {
+  const m = await import("../src/lib/menu-parametros.ts");
+  const item = m.MENU_GERAIS.find((i) => i.titulo === "Tamanho e Medidas de Produto");
+  assert.deepEqual(item.abas.map((a) => a.titulo), ["Associar ao produto"]);
+  assert.equal(item.abaPadrao, "cadastro");
+  assert.match(sidebar, /abaPadrao \?\? visiveis\[0\]\?\.aba/);
+  assert.match(sidebar, /isActive=\{!!item\.abaPadrao && pathname === item\.url/);
+  const pagina = readFileSync(new URL("../src/routes/_authenticated/cadastros/gerais/tamanhos-unidades.tsx", import.meta.url), "utf8");
+  assert.match(pagina, /pedida \?\? "cadastro"/);
 });

@@ -30,7 +30,7 @@ export type NomeIcone =
   | "Link2";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
 export type AbaMenu = { aba: string; titulo: string; icone: NomeIcone; soAdmin?: boolean };
-export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[]; search?: { aba: string } };
+export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[]; abaPadrao?: string; search?: { aba: string } };
 export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
 export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
 
@@ -76,14 +76,14 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
   { aba: "checklist", titulo: "Check list", icone: "ListChecks" },
 ];
 
+// O cadastro é a própria tela do menu pai (abre sem ?aba=); só a associação é submenu (decisão 85).
 export const ABAS_TAMANHOS: readonly AbaMenu[] = [
-  { aba: "cadastro", titulo: "Cadastro", icone: "ListPlus" },
   { aba: "associar", titulo: "Associar ao produto", icone: "Link2" },
 ];
 
 export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
   { titulo: "Tabelas de Apoio", url: "/cadastros/gerais/categorias", icone: "Tags" },
-  { titulo: "Tamanho e Medidas de Produto", url: "/cadastros/gerais/tamanhos-unidades", icone: "Ruler", abas: ABAS_TAMANHOS },
+  { titulo: "Tamanho e Medidas de Produto", url: "/cadastros/gerais/tamanhos-unidades", icone: "Ruler", abas: ABAS_TAMANHOS, abaPadrao: "cadastro" },
   { titulo: "Código do Produto", url: "/cadastros/gerais/codigo-produto", icone: "Barcode" },
   { titulo: "Código de Fábrica", url: "/cadastros/gerais/codigo-fabrica", icone: "Factory" },
   { titulo: "Endereçamento", url: "/cadastros/gerais/enderecamento", icone: "MapPin" },

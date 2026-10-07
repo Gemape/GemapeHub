@@ -107,9 +107,10 @@ function useAbaAtual(): string | undefined {
 }
 
 // Submenus que antes eram abas (decisão 43). Sem ?aba=, vale a primeira aba que a pessoa pode ver.
-function SubAbas({ url, abas, pathname, abaAtual, isAdmin }: { url: string; abas: readonly AbaMenu[]; pathname: string; abaAtual: string | undefined; isAdmin: boolean }) {
+function SubAbas({ url, abas, abaPadrao, pathname, abaAtual, isAdmin }: { url: string; abas: readonly AbaMenu[]; abaPadrao?: string | undefined; pathname: string; abaAtual: string | undefined; isAdmin: boolean }) {
   const visiveis = abas.filter((a) => !a.soAdmin || isAdmin);
-  const ativa = visiveis.some((a) => a.aba === abaAtual) ? abaAtual : visiveis[0]?.aba;
+  // Com abaPadrao, a tela sem ?aba= é a do próprio menu pai e nenhum submenu fica marcado.
+  const ativa = visiveis.some((a) => a.aba === abaAtual) ? abaAtual : (abaPadrao ?? visiveis[0]?.aba);
   return (
     <>
       {visiveis.map((a) => {
@@ -137,14 +138,14 @@ function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
     return (
       <SidebarMenuSubItem>
         {/* Título com ícone e texto iguais aos dos outros menus; as abas ficam logo abaixo. */}
-        <SidebarMenuSubButton asChild className="h-auto min-h-7 py-1">
+        <SidebarMenuSubButton asChild isActive={!!item.abaPadrao && pathname === item.url && !item.abas.some((a) => a.aba === abaAtual)} className="h-auto min-h-7 py-1">
           <Link to={item.url}>
             <Icone />
             <span className="!whitespace-normal leading-tight">{item.titulo}</span>
           </Link>
         </SidebarMenuSubButton>
         <SidebarMenuSub className="mx-0 ml-2 px-1.5">
-          <SubAbas url={item.url} abas={item.abas} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
+          <SubAbas url={item.url} abas={item.abas} abaPadrao={item.abaPadrao} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
         </SidebarMenuSub>
       </SidebarMenuSubItem>
     );
