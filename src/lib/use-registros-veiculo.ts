@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-import { lerChecklists, lerPeriodicidades, type ChecklistVeiculo, type Periodicidade } from "./checklist-veiculo";
+import { EVENTO_ASSOCIACOES_CHECKLIST, lerAssociacoes, type AssociacaoChecklist } from "./checklist-associacao-veiculo";
+import { lerChecklists, type ChecklistVeiculo } from "./checklist-veiculo";
 import { lerOcorrenciasVeiculo, type OcorrenciaVeiculo } from "./ocorrencias-veiculo";
 import { EVENTO_PLANOS, lerPlanos, type PlanoManutencao } from "./plano-manutencao";
 import {
@@ -35,5 +36,5 @@ export const useOcorrenciasVeiculo = (): OcorrenciaVeiculo[] =>
 export const useChecklistsVeiculo = (): ChecklistVeiculo[] =>
   useLeitura(() => lerChecklists(), [EVENTO_REGISTROS_VEICULO]);
 
-export const usePeriodicidadesChecklist = (): Record<string, Periodicidade> =>
-  useLeitura(() => lerPeriodicidades(), [EVENTO_REGISTROS_VEICULO]);
+export const useAssociacoesChecklist = (): AssociacaoChecklist[] =>
+  useLeitura(() => lerAssociacoes(), [EVENTO_ASSOCIACOES_CHECKLIST]);

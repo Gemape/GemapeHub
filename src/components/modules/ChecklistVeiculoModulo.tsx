@@ -19,7 +19,7 @@ import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  definirPeriodicidade, gruposDoTipoChecklist, veiculosDoTipoChecklist, PERIODICIDADES, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
+  periodicidadeDaAssociacao, gruposDoTipoChecklist, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
@@ -27,7 +27,7 @@ import { formatarData } from "@/lib/gemape";
 import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
 import { combinaBusca, subcategoriasDa } from "@/lib/parametros-base";
 import { resolverSubcategoria } from "@/lib/subcategoria-referencia";
-import { useChecklistsVeiculo, usePeriodicidadesChecklist } from "@/lib/use-registros-veiculo";
+import { useAssociacoesChecklist, useChecklistsVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
@@ -51,10 +51,10 @@ type Tela = { tipo: "novo" } | { tipo: "check"; id: string } | null;
 // Módulos > Veículos > Check list (decisão 63): por veículo, os itens do tipo dele (Parâmetros >
 // Veículos > Itens check list) são avaliados como OK, NOK ou N.A., com observação e fotos. Item NOK
 // gera uma ocorrência e uma pendência no próprio check list, que fica aberta até ser resolvida. A
-// periodicidade (Diário ou Semanal) é definida aqui, por veículo. Só modo demonstração; nada no Supabase.
+// periodicidade vem da associação do veículo em Parâmetros (decisão 75). Só modo demonstração; nada no Supabase.
 export function ChecklistVeiculoModulo() {
   const { empresaId, empresas } = useEmpresa();
-  const { canWrite, canOperate } = useAccess();
+  const { canWrite } = useAccess();
   const parametros = useParametrosBase();
   const { data: veiculosLista = [] } = useVeiculos(empresaId);
   const veiculos = veiculosLista as VeiculoChecklist[];
@@ -72,8 +72,9 @@ export function ChecklistVeiculoModulo() {
   const [textoResolucao, setTextoResolucao] = useState("");
   const trava = useRef(false);
   const hoje = hojeBrasilia();
-  const periodicidades = usePeriodicidadesChecklist();
-  const periodicidadeDe = (v: VeiculoChecklist) => periodicidades[v.id] ?? null;
+  const associacoes = useAssociacoesChecklist();
+  // A periodicidade não é escolhida aqui: vem de Parâmetros > Veículos > Associar itens de check list a um veículo.
+  const periodicidadeDe = (v: VeiculoChecklist) => periodicidadeDaAssociacao(associacoes.find((a) => a.veiculoId === v.id));
 
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const rotuloDe = (v: VeiculoChecklist) => rotuloDoVeiculo(parametros, v);
@@ -176,12 +177,12 @@ export function ChecklistVeiculoModulo() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Veículo</TableHead><TableHead>Tipo</TableHead><TableHead>Periodicidade</TableHead>
+                <TableHead>Veículo</TableHead><TableHead>Tipo</TableHead>
                 <TableHead>Situação</TableHead><TableHead className="text-right">Pendências</TableHead><TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {veiculos.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum veículo cadastrado.</TableCell></TableRow>}
+              {veiculos.length === 0 && <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">Nenhum veículo cadastrado.</TableCell></TableRow>}
               {veiculos.map((v) => {
                 const per = periodicidadeDe(v);
                 const doVeiculo = checklists.filter((c) => c.veiculoId === v.id);
@@ -191,13 +192,7 @@ export function ChecklistVeiculoModulo() {
                   <TableRow key={v.id}>
                     <TableCell>{rotuloDe(v)}</TableCell>
                     <TableCell>{tipoDe(v)?.nome ?? "—"}</TableCell>
-                    <TableCell>
-                      <Select value={per ?? ""} onValueChange={(p) => { executar(() => definirPeriodicidade(v.id, p), "Periodicidade salva"); }} disabled={!canOperate}>
-                        <SelectTrigger aria-label={`Periodicidade de ${rotuloDe(v)}`} className="h-8 w-32"><SelectValue placeholder="Definir" /></SelectTrigger>
-                        <SelectContent>{PERIODICIDADES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>{sit ? <Badge variant="outline" className={SITUACAO[sit].classe}>{SITUACAO[sit].rotulo}</Badge> : "—"}</TableCell>
+                    <TableCell>{sit ? <Badge variant="outline" className={SITUACAO[sit].classe}>{SITUACAO[sit].rotulo}</Badge> : <span className="text-xs text-muted-foreground">Sem associação</span>}</TableCell>
                     <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).length}</TableCell>
                     <TableCell className="text-right">
                       {aberto ? (
@@ -285,7 +280,7 @@ export function ChecklistVeiculoModulo() {
               )}
               {veiculoEscolhido && (
                 <p className="text-xs text-muted-foreground">
-                  Periodicidade: {periodicidadeDe(veiculoEscolhido) ?? "não definida (escolha na tabela da situação por veículo)"}
+                  Periodicidade (da associação do veículo): {periodicidadeDe(veiculoEscolhido) ?? "não definida (associe itens de check list ao veículo em Parâmetros)"}
                   {pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
                 </p>
               )}

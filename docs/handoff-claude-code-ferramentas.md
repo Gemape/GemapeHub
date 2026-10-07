@@ -322,3 +322,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Título de Tamanho e Medidas de Produto na barra lateral com ícone e texto iguais aos demais menus (decisão 72): ajuste em `SubLink` de `AppSidebar.tsx`.
 - Ícones em todos os submenus de Módulos e de Tamanho e Medidas (decisão 73): `icone` obrigatório em `AbaMenu` (`menu-parametros.ts`), desenhado por `SubAbas`.
 - Associar itens de check list a um veículo (decisão 74): `checklist-associacao-veiculo.ts` + `AssociarChecklistVeiculo.tsx`, rota `/cadastros/veiculos-checklist-associar`; Itens check list com ícone de chave de boca. A associação é só cadastro: o módulo Check list não a lê (confirmado pelo responsável).
+- Periodicidade do módulo Check list vem da associação (decisão 75, revoga 63(c)): `periodicidadeDaAssociacao` em `checklist-veiculo.ts`; coluna Periodicidade removida da tabela; Quinzenal e Mensal em `periodoAtual`.

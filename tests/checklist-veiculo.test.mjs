@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import {
   lerChecklists, iniciarChecklist, avaliarItem, concluirChecklist, resolverPendencia, adicionarFotosItem, removerFotoItem,
-  gruposAplicaveis, periodoAtual, situacaoPeriodica, resumoChecklist, pendenciasAbertas, excluirChecklistEmAndamento,
+  gruposAplicaveis, periodoAtual, situacaoPeriodica, periodicidadeDaAssociacao, resumoChecklist, pendenciasAbertas, excluirChecklistEmAndamento,
 } from "../src/lib/checklist-veiculo.ts";
 import { chaveDoTipoVeiculo } from "../src/lib/checklist-veiculos-padrao.ts";
 import { lerOcorrenciasVeiculo } from "../src/lib/ocorrencias-veiculo.ts";
@@ -36,7 +36,7 @@ test("iniciar: código sequencial, itens do tipo do veículo, periodicidade e re
   const s = memoria();
   assert.throws(() => iniciarChecklist(base({ veiculoId: "" }), s, agora), /veículo/i);
   assert.throws(() => iniciarChecklist(base({ periodicidade: null }), s, agora), /periodicidade/i);
-  assert.throws(() => iniciarChecklist(base({ periodicidade: "Mensal" }), s, agora), /periodicidade/i);
+  assert.throws(() => iniciarChecklist(base({ periodicidade: "Anual" }), s, agora), /periodicidade/i);
   assert.throws(() => iniciarChecklist(base({ responsavelId: "" }), s, agora), /responsável/i);
   assert.throws(() => iniciarChecklist(base({ grupos: [] }), s, agora), /itens de check list/i);
   const c = iniciarChecklist(base(), s, agora);
@@ -205,7 +205,7 @@ test("relatório em PDF: traz todos os itens e escapa todo texto informado", asy
   assert.match(html, /OCO-0001/);
 });
 
-test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir e periodicidade escolhida no próprio módulo", () => {
+test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir e periodicidade vinda da associação (decisão 75)", () => {
   const menu = readFileSync("src/lib/menu-parametros.ts", "utf8");
   assert.match(menu, /aba: "checklist", titulo: "Check list"/);
   assert.match(readFileSync("src/routes/_authenticated/veiculos.tsx", "utf8"), /MODO_DEMO \? <ChecklistVeiculoModulo/);
@@ -217,19 +217,33 @@ test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir 
   assert.doesNotMatch(tela, /supabase\.(from|rpc)/);
   const cadastro = readFileSync("src/components/modules/VeiculosCadastroModulo.tsx", "utf8");
   assert.doesNotMatch(cadastro, /periodicidade/i);
-  assert.match(tela, /definirPeriodicidade/);
+  assert.doesNotMatch(tela, /definirPeriodicidade/);
+  assert.doesNotMatch(tela, /aria-label=\{`Periodicidade de/);
+  assert.match(tela, /periodicidadeDaAssociacao/);
 });
 
-test("periodicidade é definida no módulo (só Diário ou Semanal) e fica por veículo", async () => {
-  const { definirPeriodicidade, lerPeriodicidades } = await import("../src/lib/checklist-veiculo.ts");
-  const s = memoria();
-  assert.deepEqual(lerPeriodicidades(s), {});
-  definirPeriodicidade("v1", "Diário", s);
-  definirPeriodicidade("v2", "Semanal", s);
-  definirPeriodicidade("v1", "Semanal", s);
-  assert.deepEqual(lerPeriodicidades(s), { v1: "Semanal", v2: "Semanal" });
-  assert.throws(() => definirPeriodicidade("v1", "Mensal", s), /Diário ou Semanal/);
-  assert.throws(() => definirPeriodicidade("", "Diário", s), /veículo/i);
+test("a periodicidade do veículo vem da associação: a mais frequente entre os grupos habilitados (decisão 75)", () => {
+  const assoc = (...ps) => ({ veiculoId: "v1", responsavel: { id: "e", nome: "N" }, atualizadoEm: "", itens: ps.map((p, n) => ({ grupoId: `g${n}`, periodicidade: p })) });
+  assert.equal(periodicidadeDaAssociacao(assoc("Mensal", "Semanal")), "Semanal");
+  assert.equal(periodicidadeDaAssociacao(assoc("Mensal", "Quinzenal")), "Quinzenal");
+  assert.equal(periodicidadeDaAssociacao(assoc("Diária", "Mensal")), "Diário");
+  assert.equal(periodicidadeDaAssociacao(assoc("Mensal")), "Mensal");
+  assert.equal(periodicidadeDaAssociacao(undefined), null);
+  assert.equal(periodicidadeDaAssociacao(assoc()), null);
+});
+
+test("quinzenal vai de 1 a 15 e de 16 ao fim do mês; mensal é o mês inteiro", () => {
+  assert.deepEqual(periodoAtual("Quinzenal", "2026-10-01"), { inicio: "2026-10-01", fim: "2026-10-15" });
+  assert.deepEqual(periodoAtual("Quinzenal", "2026-10-15"), { inicio: "2026-10-01", fim: "2026-10-15" });
+  assert.deepEqual(periodoAtual("Quinzenal", "2026-10-16"), { inicio: "2026-10-16", fim: "2026-10-31" });
+  assert.deepEqual(periodoAtual("Quinzenal", "2026-02-20"), { inicio: "2026-02-16", fim: "2026-02-28" });
+  assert.deepEqual(periodoAtual("Mensal", "2026-10-17"), { inicio: "2026-10-01", fim: "2026-10-31" });
+  assert.deepEqual(periodoAtual("Mensal", "2024-02-10"), { inicio: "2024-02-01", fim: "2024-02-29" });
+  const feito = (data) => ({ data, status: "Concluído" });
+  assert.equal(situacaoPeriodica("Quinzenal", [feito("2026-10-02")], "2026-10-14"), "em_dia");
+  assert.equal(situacaoPeriodica("Quinzenal", [feito("2026-10-02")], "2026-10-16"), "pendente");
+  assert.equal(situacaoPeriodica("Mensal", [feito("2026-10-02")], "2026-10-30"), "em_dia");
+  assert.equal(situacaoPeriodica("Mensal", [feito("2026-09-30")], "2026-10-01"), "pendente");
 });
 
 test("situação periódica vale pelo dia da conclusão e tipos soltos são reconhecidos", () => {
