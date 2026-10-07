@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
+import { ChecklistPainelMensal } from "@/components/modules/ChecklistPainelMensal";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -21,13 +22,14 @@ import {
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
   periodicidadeDaAssociacao, gruposAssociadosDoVeiculo, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
+import { sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
 import { combinaBusca } from "@/lib/parametros-base";
 import { resolverSubcategoria } from "@/lib/subcategoria-referencia";
-import { useAssociacoesChecklist, useChecklistsVeiculo } from "@/lib/use-registros-veiculo";
+import { useAssociacoesChecklist, useChecklistsVeiculo, usePrevisoesChecklist } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
@@ -58,6 +60,8 @@ export function ChecklistVeiculoModulo() {
   const parametros = useParametrosBase();
   const { data: veiculosLista = [] } = useVeiculos(empresaId);
   const veiculos = veiculosLista as VeiculoChecklist[];
+  // O painel mensal prevê os check lists de todas as empresas, para não perder previsões ao trocar de empresa.
+  const { data: veiculosTodasLista = [] } = useVeiculos(TODAS);
   const { data: empregadosAtivos = [] } = useEmpregados(TODAS, true);
   const todos = useChecklistsVeiculo();
   const [tela, setTela] = useState<Tela>(null);
@@ -73,9 +77,28 @@ export function ChecklistVeiculoModulo() {
   const trava = useRef(false);
   const hoje = hojeBrasilia();
   const associacoes = useAssociacoesChecklist();
+  const previsoes = usePrevisoesChecklist();
   // A periodicidade não é escolhida aqui: vem de Parâmetros > Veículos > Associar itens de check list a um veículo.
   const associacaoDe = (v: VeiculoChecklist) => associacoes.find((a) => a.veiculoId === v.id);
   const periodicidadeDe = (v: VeiculoChecklist) => periodicidadeDaAssociacao(associacaoDe(v));
+
+  // Mantém em vigor as previsões do painel mensal (decisão 80): veículos ativos com associação.
+  const chaveVeiculos = (veiculosTodasLista as VeiculoChecklist[]).map((v) => `${v.id}:${v.status}`).join(",");
+  useEffect(() => {
+    const previstos: VeiculoPrevisto[] = (veiculosTodasLista as VeiculoChecklist[]).flatMap((v) => {
+      const associacao = associacoes.find((a) => a.veiculoId === v.id);
+      const periodicidade = periodicidadeDaAssociacao(associacao);
+      return v.status === "Ativo" && associacao && periodicidade
+        ? [{ veiculoId: v.id, veiculoRotulo: rotuloDoVeiculo(parametros, v), periodicidade, responsavelNome: associacao.responsavel.nome }]
+        : [];
+    });
+    try {
+      sincronizarPrevisoes({ veiculos: previstos, hoje });
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível atualizar o painel do mês.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [associacoes, chaveVeiculos, hoje, parametros]);
 
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const rotuloDe = (v: VeiculoChecklist) => rotuloDoVeiculo(parametros, v);
@@ -168,6 +191,14 @@ export function ChecklistVeiculoModulo() {
 
   return (
     <div className="space-y-5">
+      <ChecklistPainelMensal
+        previsoes={previsoes}
+        checklists={todos}
+        idsDosVeiculos={idsDaEmpresa}
+        hoje={hoje}
+        onAbrirChecklist={(id) => setTela({ tipo: "check", id })}
+      />
+
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold">Situação por veículo</h2>
