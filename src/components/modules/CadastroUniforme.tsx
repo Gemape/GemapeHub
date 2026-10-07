@@ -330,7 +330,7 @@ function CatalogoUniforme() {
         </section>
       )}
 
-      <DialogAssociarTamanhos aberto={associarAberto} onAbrirMudou={setAssociarAberto} />
+      <DialogAssociarTamanhos aberto={associarAberto} onAbrirMudou={setAssociarAberto} de="uniformes" />
 
       {subEscolhida && (
         <DialogTamanhoSubcategoria

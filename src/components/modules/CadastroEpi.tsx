@@ -413,7 +413,7 @@ function CatalogoEpi() {
         </DialogContent>
       </Dialog>
 
-      <DialogAssociarTamanhos aberto={associarAberto} onAbrirMudou={setAssociarAberto} />
+      <DialogAssociarTamanhos aberto={associarAberto} onAbrirMudou={setAssociarAberto} de="epi" />
 
       {subEscolhida && (
         <DialogTamanhoSubcategoria

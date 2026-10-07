@@ -6,15 +6,21 @@ import { MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES, URLS_GERAIS, i
 
 const sidebar = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
 
-test("Tamanho e Medidas de Produto é um menu só, com Associar como aba (decisões 38 e 86)", () => {
+test("Tamanho e Medidas de Produto é um menu só, sem submenu: cadastro e associação numa tela (decisões 38 e 89)", () => {
   const item = itensApoio("epi").find((i) => i.titulo === "Tamanho e Medidas de Produto");
   assert.equal(item?.url, "/cadastros/gerais/tamanhos-unidades");
   assert.ok(item && !("filhos" in item));
   assert.ok(!MENU_GERAIS.some((i) => i.titulo.startsWith("Associar")));
   const raiz = new URL("../src/routes/_authenticated/cadastros/gerais/", import.meta.url);
   const pagina = readFileSync(new URL("tamanhos-unidades.tsx", raiz), "utf8");
-  assert.match(pagina, /ABAS = \["cadastro", "associar"\]/);
-  assert.match(pagina, /<TabsContent value="associar" forceMount[^>]*><AssociarTamanhosPainel/);
+  assert.equal(item.abas, undefined);
+  assert.match(pagina, /<TamanhosMedidasUnificado de=\{de\} irParaAssociar=\{aba === "associar"\} \/>/);
+  assert.doesNotMatch(pagina, /Tabs/);
+  const unificado = readFileSync(new URL("../../../../components/parametros/TamanhosMedidasUnificado.tsx", raiz), "utf8");
+  assert.match(unificado, /<TamanhosMedidasPainel aninhado \/>/);
+  assert.match(unificado, /<AssociarTamanhosPainel key=\{de \?\? "todas"\} aninhado/); // trocar de menu começa a associação limpa
+  assert.match(unificado, /id="associar-ao-produto"/); // o ?aba=associar antigo rola até aqui
+  assert.match(unificado, /\{!emJanela && \(/); // na janela do cadastro o título é o da janela
   const antigo = readFileSync(new URL("associar-tamanhos.tsx", raiz), "utf8");
   assert.match(antigo, /redirect\(\{ to: "\/cadastros\/gerais\/tamanhos-unidades", search: \{ aba: "associar" \} \}\)/);
 });
@@ -29,7 +35,7 @@ test("Tabelas de Apoio e Tamanho e Medidas saem de Gerais e ficam em EPI, Unifor
       ["Tabelas de Apoio", "/cadastros/gerais/categorias"],
       ["Tamanho e Medidas de Produto", "/cadastros/gerais/tamanhos-unidades"],
     ]);
-    assert.deepEqual(apoio[1].abas.map((a) => a.aba), ["associar"]);
+    assert.equal(apoio[1].abas, undefined);
   }
   assert.match(sidebar, /prefixosDoGrupo\("epi"/);
   assert.match(sidebar, /prefixosDoGrupo\("uniformes"/);
@@ -110,7 +116,7 @@ test("os endereços antigos de Cadastrar EPI e da Ficha redirecionam para as tel
 });
 
 test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu lateral (decisão 43)", async () => {
-  const { ABAS_EPI, ABAS_UNIFORME, ABAS_FERRAMENTA, ABAS_VEICULO, ABAS_TAMANHOS, abaDoModulo } = await import("../src/lib/menu-parametros.ts");
+  const { ABAS_EPI, ABAS_UNIFORME, ABAS_FERRAMENTA, ABAS_VEICULO, abaDoModulo } = await import("../src/lib/menu-parametros.ts");
   const { readdirSync, statSync } = await import("node:fs");
   const achar = (dir) =>
     readdirSync(dir).flatMap((n) => {
@@ -121,7 +127,6 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   const comAbas = achar(raiz).filter((f) => f.endsWith(".tsx") && !f.includes("/components/ui/") && /<TabsTrigger|<TabsList/.test(readFileSync(f, "utf8")));
   assert.deepEqual(comAbas, []);
   assert.deepEqual(ABAS_VEICULO.map((a) => a.aba), ["frota", "abastecimento", "manutencao", "ocorrencias", "checklist"]);
-  assert.deepEqual(ABAS_TAMANHOS.map((a) => a.aba), ["associar"]); // o cadastro é o próprio menu pai (decisão 85)
   assert.equal(ABAS_EPI[0].aba, "dashboard");
   assert.equal(ABAS_UNIFORME.length, 9);
   assert.equal(ABAS_FERRAMENTA.length, 8);
@@ -132,7 +137,7 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   assert.equal(abaDoModulo("uniforme", "termo-baixa"), "termo-baixa");
   assert.equal(abaDoModulo("veiculo", undefined), "frota");
   assert.match(sidebar, /<ModuloComAbas /);
-  assert.match(sidebar, /search=\{\{ aba: a\.aba, \.\.\.\(de \? \{ de \} : \{\}\) \} as never\}/);
+  assert.match(sidebar, /search=\{\{ aba: a\.aba \} as never\}/);
 });
 
 test("Gerais, com seus submenus, é o primeiro item de Parâmetros, antes de EPI e Ferramentas (decisão 44)", () => {
@@ -151,7 +156,7 @@ test("o título de Tamanho e Medidas de Produto usa ícone e texto iguais aos do
 
 test("todo submenu de Módulos e de Tamanho e Medidas tem ícone, e a barra lateral conhece cada um (decisão 73)", async () => {
   const m = await import("../src/lib/menu-parametros.ts");
-  const abas = [...m.ABAS_EPI, ...m.ABAS_UNIFORME, ...m.ABAS_FERRAMENTA, ...m.ABAS_VEICULO, ...m.ABAS_TAMANHOS];
+  const abas = [...m.ABAS_EPI, ...m.ABAS_UNIFORME, ...m.ABAS_FERRAMENTA, ...m.ABAS_VEICULO];
   assert.ok(abas.length > 0);
   for (const a of abas) {
     assert.ok(a.icone, `${a.titulo} sem ícone`);
@@ -167,13 +172,11 @@ test("todo submenu de Módulos e de Tamanho e Medidas tem ícone, e a barra late
   }
 });
 
-test("Tamanho e Medidas de Produto não repete o submenu Cadastro: o próprio menu abre o cadastro (decisão 85)", async () => {
-  const m = await import("../src/lib/menu-parametros.ts");
-  const item = m.itensApoio("epi").find((i) => i.titulo === "Tamanho e Medidas de Produto");
-  assert.deepEqual(item.abas.map((a) => a.titulo), ["Associar ao produto"]);
-  assert.equal(item.abaPadrao, "cadastro");
-  assert.match(sidebar, /abaPadrao \?\? visiveis\[0\]\?\.aba/);
-  assert.match(sidebar, /isActive=\{doMenu && !!item\.abaPadrao && pathname === item\.url/);
-  const pagina = readFileSync(new URL("../src/routes/_authenticated/cadastros/gerais/tamanhos-unidades.tsx", import.meta.url), "utf8");
-  assert.match(pagina, /pedida \?\? "cadastro"/);
+test("Tamanho e Medidas de Produto abre as duas rotinas juntas, com a categoria vinda do menu (decisão 89)", async () => {
+  const unificado = readFileSync(new URL("../src/components/parametros/TamanhosMedidasUnificado.tsx", import.meta.url), "utf8");
+  assert.match(unificado, /epi: "cat-epi", uniformes: "cat-uniformes", ferramentas: "cat-ferramentas"/);
+  assert.match(unificado, /categoriaFixa: CATEGORIA_DO_MENU\[de\]/);
+  const associar = readFileSync(new URL("../src/components/parametros/AssociarTamanhosPainel.tsx", import.meta.url), "utf8");
+  assert.match(associar, /const categoriaId = categoriaFixa \?\? categoriaEscolhida/);
+  assert.match(associar, /\{!categoriaFixa && \(/);
 });

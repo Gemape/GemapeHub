@@ -52,7 +52,6 @@ import {
   Fuel,
   Box,
   ListPlus,
-  Link2,
 } from "lucide-react";
 
 import {
@@ -99,7 +98,7 @@ type ItemGrupo = { titulo: string; url: string; icone: typeof LayoutDashboard; a
 const ICONES = {
   Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive, Car,
   LayoutDashboard, Boxes, ShoppingCart, History, PackageMinus, FileSignature, FileMinus, FileCheck, FileX,
-  ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus, Link2,
+  ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus,
 } as const;
 
 function useDeAtual(): string | undefined {
@@ -119,19 +118,17 @@ function useAbaAtual(): string | undefined {
 }
 
 // Submenus que antes eram abas (decisão 43). Sem ?aba=, vale a primeira aba que a pessoa pode ver.
-function SubAbas({ url, abas, abaPadrao, de, pathname, abaAtual, isAdmin }: { url: string; abas: readonly AbaMenu[]; abaPadrao?: string | undefined; de?: string | undefined; pathname: string; abaAtual: string | undefined; isAdmin: boolean }) {
+function SubAbas({ url, abas, pathname, abaAtual, isAdmin }: { url: string; abas: readonly AbaMenu[]; pathname: string; abaAtual: string | undefined; isAdmin: boolean }) {
   const visiveis = abas.filter((a) => !a.soAdmin || isAdmin);
-  const deAtual = useDeAtual();
-  // Com abaPadrao, a tela sem ?aba= é a do próprio menu pai e nenhum submenu fica marcado.
-  const ativa = visiveis.some((a) => a.aba === abaAtual) ? abaAtual : (abaPadrao ?? visiveis[0]?.aba);
+  const ativa = visiveis.some((a) => a.aba === abaAtual) ? abaAtual : visiveis[0]?.aba;
   return (
     <>
       {visiveis.map((a) => {
         const Icone = ICONES[a.icone];
         return (
         <SidebarMenuSubItem key={a.aba}>
-          <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba && (!de || de === deAtual)} className="h-auto min-h-7 py-1">
-            <Link to={url} search={{ aba: a.aba, ...(de ? { de } : {}) } as never}>
+          <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba} className="h-auto min-h-7 py-1">
+            <Link to={url} search={{ aba: a.aba } as never}>
               <Icone />
               <span className="!whitespace-normal leading-tight">{a.titulo}</span>
             </Link>
@@ -144,28 +141,9 @@ function SubAbas({ url, abas, abaPadrao, de, pathname, abaAtual, isAdmin }: { ur
 }
 
 function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
-  const { isAdmin } = useAccess();
-  const abaAtual = useAbaAtual();
   const deAtual = useDeAtual();
   const doMenu = doMenuAtual(item, deAtual);
   const searchDe = item.de ? { de: item.de } : {};
-  if (item.abas) {
-    const Icone = ICONES[item.icone];
-    return (
-      <SidebarMenuSubItem>
-        {/* Título com ícone e texto iguais aos dos outros menus; as abas ficam logo abaixo. */}
-        <SidebarMenuSubButton asChild isActive={doMenu && !!item.abaPadrao && pathname === item.url && !item.abas.some((a) => a.aba === abaAtual)} className="h-auto min-h-7 py-1">
-          <Link to={item.url} {...(item.de ? { search: searchDe as never } : {})}>
-            <Icone />
-            <span className="!whitespace-normal leading-tight">{item.titulo}</span>
-          </Link>
-        </SidebarMenuSubButton>
-        <SidebarMenuSub className="mx-0 ml-2 px-1.5">
-          <SubAbas url={item.url} abas={item.abas} abaPadrao={item.abaPadrao} de={item.de} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
-        </SidebarMenuSub>
-      </SidebarMenuSubItem>
-    );
-  }
   const Icone = ICONES[item.icone];
   return (
     <SidebarMenuSubItem>
