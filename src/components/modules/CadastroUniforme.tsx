@@ -362,7 +362,7 @@ function CatalogoUniforme() {
                 </SelectContent>
               </Select>
               {subcategorias.length === 0 && (
-                <p className="text-xs text-muted-foreground">Nenhuma subcategoria de Uniformes em Cadastros &gt; Gerais &gt; Tabelas de Apoio.</p>
+                <p className="text-xs text-muted-foreground">Nenhuma subcategoria de Uniformes em Parâmetros &gt; Parâmetros Específicos.</p>
               )}
             </div>
             <div className="space-y-1.5 sm:col-span-2">

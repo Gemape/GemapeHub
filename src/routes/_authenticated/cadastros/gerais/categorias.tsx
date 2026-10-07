@@ -37,19 +37,24 @@ import {
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { toast } from "sonner";
 
-const DE = ["epi", "uniformes", "ferramentas"] as const; // menu de onde a pessoa veio (decisão 86)
+const DE = ["epi", "uniformes", "ferramentas", "veiculos"] as const; // menu de onde a pessoa veio (decisões 86 e 90)
 type De = (typeof DE)[number];
+// Parâmetros Específicos abre direto na categoria do menu de origem; sem menu (endereço antigo), mostra a escolha de categoria.
+const CATEGORIA_DO_MENU: Record<De, string> = { epi: "cat-epi", uniformes: "cat-uniformes", ferramentas: "cat-ferramentas", veiculos: "cat-veiculos" };
+const NOME_DO_MENU: Record<De, string> = { epi: "EPI", uniformes: "Uniformes", ferramentas: "Ferramentas", veiculos: "Veículos" };
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
   validateSearch: (search: Record<string, unknown>): { de?: De } =>
     DE.includes(search["de"] as De) ? { de: search["de"] as De } : {},
-  head: () => ({ meta: [{ title: "Tabelas de Apoio | Patrimônio GEMAPE" }] }),
+  head: () => ({ meta: [{ title: "Parâmetros Específicos | Patrimônio GEMAPE" }] }),
   component: Categorias,
 });
 
 function Categorias() {
   const dados = useParametrosBase();
-  const [escolhida, setEscolhida] = useState("");
+  const { de } = Route.useSearch();
+  const [escolhidaLivre, setEscolhida] = useState("");
+  const escolhida = de ? CATEGORIA_DO_MENU[de] : escolhidaLivre;
   const categoria = dados.categorias.find((c) => c.id === escolhida);
   const subcategorias = categoria ? subcategoriasDa(dados, categoria.id) : [];
 
@@ -218,8 +223,9 @@ function Categorias() {
   return (
     <div className="space-y-5">
       <Cabecalho
-        titulo="Tabelas de Apoio"
-        descricao="Escolha uma categoria para configurar o endereçamento e abrir as tabelas relacionadas."
+        titulo="Parâmetros Específicos"
+        topo={de ? `Parâmetros · ${NOME_DO_MENU[de]}` : "Cadastros · Gerais"}
+        descricao={de ? "Configure o endereçamento e as tabelas relacionadas a esta categoria." : "Escolha uma categoria para configurar o endereçamento e abrir as tabelas relacionadas."}
       />
       {!escolhida && <div className="max-w-3xl">
         <ListaEditavel
@@ -239,7 +245,7 @@ function Categorias() {
       </div>}
       {escolhida && categoria ? (
         <>
-          <Button variant="outline" onClick={() => setEscolhida("")}><ArrowLeft className="mr-2 size-4" />Voltar às categorias</Button>
+          {!de && <Button variant="outline" onClick={() => setEscolhida("")}><ArrowLeft className="mr-2 size-4" />Voltar às categorias</Button>}
           <section className="panel max-w-3xl space-y-3 p-5">
             <h2 className="text-lg font-semibold">{categoria.nome}</h2>
             <label htmlFor="enderecamento-categoria" className="block text-sm font-medium">Endereçamento de estoque</label>

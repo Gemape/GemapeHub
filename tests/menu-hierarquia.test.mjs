@@ -32,7 +32,7 @@ test("Tabelas de Apoio e Tamanho e Medidas saem de Gerais e ficam em EPI, Unifor
   for (const [de, menu] of [["epi", MENU_EPI], ["uniformes", MENU_UNIFORMES], ["ferramentas", MENU_FERRAMENTAS]]) {
     const apoio = menu.filter((i) => i.de === de);
     assert.deepEqual(apoio.map((i) => [i.titulo, i.url]), [
-      ["Tabelas de Apoio", "/cadastros/gerais/categorias"],
+      ["Parâmetros Específicos", "/cadastros/gerais/categorias"],
       ["Tamanho e Medidas de Produto", "/cadastros/gerais/tamanhos-unidades"],
     ]);
     assert.equal(apoio[1].abas, undefined);

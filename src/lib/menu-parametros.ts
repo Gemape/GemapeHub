@@ -29,7 +29,7 @@ export type NomeIcone =
   | "ListPlus";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
 export type AbaMenu = { aba: string; titulo: string; icone: NomeIcone; soAdmin?: boolean };
-export type DeMenu = "epi" | "uniformes" | "ferramentas";
+export type DeMenu = "epi" | "uniformes" | "ferramentas" | "veiculos";
 // `de`: em que menu o item aparece quando a mesma tela está em mais de um (decisão 86); vai na URL como ?de=.
 export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; search?: { aba: string }; de?: DeMenu };
 export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
@@ -80,8 +80,10 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
 // Tabelas de Apoio e Tamanho e Medidas de Produto ficam dentro de EPI, Uniformes e Ferramentas (decisão 86): é a mesma
 // tela nos três menus (cadastro e associação juntos, decisão 89), e ?de= diz de qual deles a pessoa veio, para marcar só aquele no menu lateral.
 export const URLS_APOIO: readonly string[] = ["/cadastros/gerais/categorias", "/cadastros/gerais/tamanhos-unidades"];
+// "Parâmetros Específicos" (decisão 91, antes Tabelas de Apoio): abre direto na categoria do menu de origem.
+export const itemEspecificos = (de: DeMenu): ItemMenu => ({ titulo: "Parâmetros Específicos", url: URLS_APOIO[0]!, icone: "Tags", de });
 export const itensApoio = (de: DeMenu): readonly ItemMenu[] => [
-  { titulo: "Tabelas de Apoio", url: URLS_APOIO[0]!, icone: "Tags", de },
+  itemEspecificos(de),
   { titulo: "Tamanho e Medidas de Produto", url: URLS_APOIO[1]!, icone: "Ruler", de },
 ];
 
@@ -113,6 +115,7 @@ export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Tipos de ocorrência", url: "/cadastros/veiculos-tipos-ocorrencia", icone: "ClipboardList" },
   { titulo: "Itens check list", url: "/cadastros/veiculos-checklist", icone: "Wrench" },
   { titulo: "Associar itens de check list a um veículo", url: "/cadastros/veiculos-checklist-associar", icone: "ListChecks" },
+  itemEspecificos("veiculos"),
 ];
 
 // URLs de Gerais, para o destaque do grupo.
