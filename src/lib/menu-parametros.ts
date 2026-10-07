@@ -30,7 +30,9 @@ export type NomeIcone =
   | "Link2";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
 export type AbaMenu = { aba: string; titulo: string; icone: NomeIcone; soAdmin?: boolean };
-export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[]; abaPadrao?: string; search?: { aba: string } };
+export type DeMenu = "epi" | "uniformes" | "ferramentas";
+// `de`: em que menu o item aparece quando a mesma tela está em mais de um (decisão 86); vai na URL como ?de=.
+export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[]; abaPadrao?: string; search?: { aba: string }; de?: DeMenu };
 export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
 export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
 
@@ -81,9 +83,15 @@ export const ABAS_TAMANHOS: readonly AbaMenu[] = [
   { aba: "associar", titulo: "Associar ao produto", icone: "Link2" },
 ];
 
+// Tabelas de Apoio e Tamanho e Medidas de Produto ficam dentro de EPI, Uniformes e Ferramentas (decisão 86): é a mesma
+// tela nos três menus, e ?de= diz de qual deles a pessoa veio, para marcar só aquele no menu lateral.
+export const URLS_APOIO: readonly string[] = ["/cadastros/gerais/categorias", "/cadastros/gerais/tamanhos-unidades"];
+export const itensApoio = (de: DeMenu): readonly ItemMenu[] => [
+  { titulo: "Tabelas de Apoio", url: URLS_APOIO[0]!, icone: "Tags", de },
+  { titulo: "Tamanho e Medidas de Produto", url: URLS_APOIO[1]!, icone: "Ruler", abas: ABAS_TAMANHOS, abaPadrao: "cadastro", de },
+];
+
 export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
-  { titulo: "Tabelas de Apoio", url: "/cadastros/gerais/categorias", icone: "Tags" },
-  { titulo: "Tamanho e Medidas de Produto", url: "/cadastros/gerais/tamanhos-unidades", icone: "Ruler", abas: ABAS_TAMANHOS, abaPadrao: "cadastro" },
   { titulo: "Código do Produto", url: "/cadastros/gerais/codigo-produto", icone: "Barcode" },
   { titulo: "Código de Fábrica", url: "/cadastros/gerais/codigo-fabrica", icone: "Factory" },
   { titulo: "Endereçamento", url: "/cadastros/gerais/enderecamento", icone: "MapPin" },
@@ -94,11 +102,13 @@ export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
 export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
   { titulo: "Cadastrar Caixa", url: "/caixas-ferramentas", icone: "Archive", soAdmin: true, search: { aba: "habilitar" } },
   { titulo: "Cadastrar Ferramenta", url: "/cadastros/ferramentas", icone: "Wrench" },
+  ...itensApoio("ferramentas"),
 ];
 
 // Parâmetros > Uniformes (decisão 48): Cadastrar Uniforme, no mesmo desenho do Cadastrar EPI.
 export const MENU_UNIFORMES: readonly ItemMenu[] = [
   { titulo: "Cadastrar Uniforme", url: "/uniformes-cadastrar", icone: "Tags" },
+  ...itensApoio("uniformes"),
 ];
 
 // Parâmetros > Veículos (decisões 46, 52 e 62): o cadastro da frota, as listas de apoio (ações de manutenção, tipos de ocorrência e itens de check list) e o plano de manutenções.
@@ -122,6 +132,7 @@ export const MENU_EPI: readonly ItemComFilhos[] = [
     icone: "Tags",
     filhos: [{ titulo: "Cadastrar Ficha de EPI", url: "/epi-ficha", icone: "ClipboardList" }],
   },
+  ...itensApoio("epi"),
 ];
 
 // Aba aberta de um módulo: a pedida em ?aba= se existir nele, senão a primeira.

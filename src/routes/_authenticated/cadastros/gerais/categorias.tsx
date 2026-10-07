@@ -37,7 +37,12 @@ import {
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { toast } from "sonner";
 
+const DE = ["epi", "uniformes", "ferramentas"] as const; // menu de onde a pessoa veio (decisão 86)
+type De = (typeof DE)[number];
+
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
+  validateSearch: (search: Record<string, unknown>): { de?: De } =>
+    DE.includes(search["de"] as De) ? { de: search["de"] as De } : {},
   head: () => ({ meta: [{ title: "Tabelas de Apoio | Patrimônio GEMAPE" }] }),
   component: Categorias,
 });
