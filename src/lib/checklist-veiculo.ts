@@ -4,14 +4,15 @@ import type { GrupoChecklistVeiculo } from "./parametros-base.ts";
 import { TODOS_OS_TIPOS } from "./parametros-base.ts";
 import { chaveDoTipoVeiculo, type ChaveTipoVeiculo } from "./checklist-veiculos-padrao.ts";
 import { registrarOcorrenciasDoChecklist, removerOcorrenciasPorId } from "./ocorrencias-veiculo.ts";
+import type { AssociacaoChecklist } from "./checklist-associacao-veiculo.ts";
 import { alterarLista, lerLista, type StorageLike } from "./registros-veiculo.ts";
 
 const CHAVE = "gemape-demo-checklists-veiculo";
-const CHAVE_PERIODICIDADE = "gemape-demo-periodicidade-checklist";
 export const MAX_FOTOS_ITEM = 3;
 const LIMITE_FOTO = 600_000; // caracteres do data URL; a foto comprimida fica bem abaixo disso
 
-export const PERIODICIDADES = ["Diário", "Semanal"] as const;
+// Da mais para a menos frequente; a periodicidade vem da associação do veículo (decisão 75).
+export const PERIODICIDADES = ["Diário", "Semanal", "Quinzenal", "Mensal"] as const;
 export type Periodicidade = (typeof PERIODICIDADES)[number];
 export const AVALIACOES = ["OK", "NOK", "N.A."] as const;
 export type Avaliacao = (typeof AVALIACOES)[number];
@@ -52,26 +53,12 @@ const limpar = (t: string, max: number) => t.trim().replace(/\s+/g, " ").slice(0
 export const lerChecklists = (storage: StorageLike | null = storagePadrao()): ChecklistVeiculo[] =>
   lerLista<ChecklistVeiculo>(CHAVE, storage).lista;
 
-// Periodicidade definida no próprio módulo Check list, uma por veículo (todos os itens dele seguem a frequência).
-type PeriodicidadeDoVeiculo = { veiculoId: string; periodicidade: Periodicidade };
-
-export function lerPeriodicidades(storage: StorageLike | null = storagePadrao()): Record<string, Periodicidade> {
-  const mapa: Record<string, Periodicidade> = {};
-  for (const p of lerLista<PeriodicidadeDoVeiculo>(CHAVE_PERIODICIDADE, storage).lista) {
-    if (typeof p.veiculoId === "string" && ehPeriodicidade(p.periodicidade)) mapa[p.veiculoId] = p.periodicidade;
-  }
-  return mapa;
-}
-
-export function definirPeriodicidade(veiculoId: string, periodicidade: string, storage = storagePadrao()): void {
-  if (!veiculoId) throw new Error("Selecione o veículo.");
-  if (!ehPeriodicidade(periodicidade)) throw new Error("A periodicidade do check list é Diário ou Semanal.");
-  gravar(() =>
-    alterarLista<PeriodicidadeDoVeiculo>(CHAVE_PERIODICIDADE, storage, (lista) => [
-      ...lista.filter((p) => p.veiculoId !== veiculoId),
-      { veiculoId, periodicidade },
-    ]),
-  );
+// Periodicidade do veículo: a mais frequente entre os grupos habilitados em Parâmetros > Veículos > Associar
+// itens de check list a um veículo (a associação escreve "Diária"; aqui vale "Diário"). Sem associação, nula.
+export function periodicidadeDaAssociacao(associacao: Pick<AssociacaoChecklist, "itens"> | null | undefined): Periodicidade | null {
+  const doGrupo = (p: string): Periodicidade | null => (p === "Diária" ? "Diário" : ehPeriodicidade(p) ? p : null);
+  const validas = (associacao?.itens ?? []).map((i) => doGrupo(i.periodicidade)).filter((p): p is Periodicidade => p !== null);
+  return PERIODICIDADES.find((p) => validas.includes(p)) ?? null;
 }
 
 export const ehPeriodicidade = (v: unknown): v is Periodicidade => PERIODICIDADES.includes(v as Periodicidade);
@@ -126,10 +113,18 @@ export function gruposAplicaveis(grupos: GrupoChecklistVeiculo[], subcategoriaId
 const doDia = (data: string) => new Date(`${data}T12:00:00`);
 const texto = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-// Diário: o dia de hoje. Semanal: de segunda a domingo da semana de hoje.
+// Diário: o dia de hoje. Semanal: de segunda a domingo da semana de hoje. Quinzenal: de 1 a 15 ou de 16 ao
+// fim do mês. Mensal: o mês de hoje.
 export function periodoAtual(periodicidade: Periodicidade, hoje: string): { inicio: string; fim: string } {
   if (periodicidade === "Diário") return { inicio: hoje, fim: hoje };
   const d = doDia(hoje);
+  if (periodicidade === "Quinzenal" || periodicidade === "Mensal") {
+    const ultimo = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const primeiraMetade = periodicidade === "Quinzenal" && d.getDate() > 15;
+    const inicio = new Date(d.getFullYear(), d.getMonth(), primeiraMetade ? 16 : 1);
+    const fim = periodicidade === "Quinzenal" && d.getDate() <= 15 ? new Date(d.getFullYear(), d.getMonth(), 15) : ultimo;
+    return { inicio: texto(inicio), fim: texto(fim) };
+  }
   const desdeSegunda = (d.getDay() + 6) % 7;
   const inicio = new Date(d);
   inicio.setDate(d.getDate() - desdeSegunda);
@@ -200,7 +195,7 @@ export type EntradaChecklist = {
 export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
   if (!ehPeriodicidade(entrada.periodicidade)) {
-    throw new Error("Defina a periodicidade do check list (Diário ou Semanal) neste módulo.");
+    throw new Error("Este veículo não tem periodicidade: associe itens de check list a ele em Parâmetros > Veículos > Associar itens de check list a um veículo.");
   }
   if (!entrada.responsavelId) throw new Error("Selecione o responsável pelo check list.");
   const itens: ItemChecklist[] = entrada.grupos.flatMap((g) =>
