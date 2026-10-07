@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { AbastecimentoVeiculoModulo } from "@/components/modules/AbastecimentoVeiculoModulo";
 import { ChecklistVeiculoModulo } from "@/components/modules/ChecklistVeiculoModulo";
@@ -57,9 +56,6 @@ function PaginaVeiculos() {
           <ManutencaoVeiculoModulo />
         </TabsContent>
 
-        <TabsContent value="movimentacoes" className="mt-5">
-          <MovimentacoesModulo modulo="veiculo" />
-        </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           {MODO_DEMO ? <OcorrenciasVeiculoModulo /> : <OcorrenciasModulo modulo="veiculo" />}
         </TabsContent>

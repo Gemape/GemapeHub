@@ -72,7 +72,6 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
   { aba: "frota", titulo: "Frota", icone: "Car" },
   { aba: "abastecimento", titulo: "Abastecimento", icone: "Fuel" },
   { aba: "manutencao", titulo: "Manutenção", icone: "Wrench" },
-  { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
   { aba: "checklist", titulo: "Check list", icone: "ListChecks" },
 ];
