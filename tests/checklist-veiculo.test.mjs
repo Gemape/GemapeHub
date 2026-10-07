@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import {
   lerChecklists, iniciarChecklist, avaliarItem, concluirChecklist, resolverPendencia, adicionarFotosItem, removerFotoItem,
-  gruposAplicaveis, periodoAtual, situacaoPeriodica, periodicidadeDaAssociacao, resumoChecklist, pendenciasAbertas, excluirChecklistEmAndamento,
+  gruposAplicaveis, periodoAtual, situacaoPeriodica, periodicidadeDaAssociacao, gruposAssociadosDoVeiculo, resumoChecklist, pendenciasAbertas, excluirChecklistEmAndamento,
 } from "../src/lib/checklist-veiculo.ts";
 import { chaveDoTipoVeiculo } from "../src/lib/checklist-veiculos-padrao.ts";
 import { lerOcorrenciasVeiculo } from "../src/lib/ocorrencias-veiculo.ts";
@@ -220,6 +220,9 @@ test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir 
   assert.doesNotMatch(tela, /definirPeriodicidade/);
   assert.doesNotMatch(tela, /aria-label=\{`Periodicidade de/);
   assert.match(tela, /periodicidadeDaAssociacao/);
+  assert.match(tela, /gruposAssociadosDoVeiculo/);
+  assert.match(tela, /associacaoDe\(v\)\?\.responsavel\.id/);
+  assert.doesNotMatch(tela, /grupos: gruposDoTipo,/);
 });
 
 test("a periodicidade do veículo vem da associação: a mais frequente entre os grupos habilitados (decisão 75)", () => {
@@ -230,6 +233,21 @@ test("a periodicidade do veículo vem da associação: a mais frequente entre os
   assert.equal(periodicidadeDaAssociacao(assoc("Mensal")), "Mensal");
   assert.equal(periodicidadeDaAssociacao(undefined), null);
   assert.equal(periodicidadeDaAssociacao(assoc()), null);
+});
+
+test("o check list do veículo traz só os grupos habilitados na associação dele (decisão 76)", () => {
+  const todos = [
+    { id: "g1", nome: "Leves · Mecânica", itens: [{ id: "i1", nome: "Óleo" }], tiposVeiculo: ["*"] },
+    { id: "g2", nome: "Leves · Pneus", itens: [{ id: "i2", nome: "Calibragem" }, { id: "i3", nome: "Estepe" }], tiposVeiculo: ["*"] },
+    { id: "g3", nome: "Vazio", itens: [], tiposVeiculo: ["*"] },
+  ];
+  const assoc = { veiculoId: "v1", responsavel: { id: "e", nome: "N" }, atualizadoEm: "",
+    itens: [{ grupoId: "g2", periodicidade: "Mensal" }, { grupoId: "g3", periodicidade: "Mensal" }, { grupoId: "removido", periodicidade: "Diária" }] };
+  assert.deepEqual(gruposAssociadosDoVeiculo(assoc, todos).map((g) => g.id), ["g2"]);
+  assert.deepEqual(gruposAssociadosDoVeiculo(undefined, todos), []);
+  // iniciar com esses grupos cria só os itens deles
+  const c = iniciarChecklist(base({ grupos: gruposAssociadosDoVeiculo(assoc, todos) }), memoria(), agora);
+  assert.deepEqual(c.itens.map((i) => i.id), ["g2:i2", "g2:i3"]);
 });
 
 test("quinzenal vai de 1 a 15 e de 16 ao fim do mês; mensal é o mês inteiro", () => {
