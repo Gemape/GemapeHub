@@ -112,11 +112,16 @@ function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
   const { isAdmin } = useAccess();
   const abaAtual = useAbaAtual();
   if (item.abas) {
+    const Icone = ICONES[item.icone];
     return (
       <SidebarMenuSubItem>
-        <Link to={item.url} className="block px-2 pt-1 text-xs font-medium text-sidebar-foreground/70 hover:text-sidebar-foreground">
-          {item.titulo}
-        </Link>
+        {/* Título com ícone e texto iguais aos dos outros menus; as abas ficam logo abaixo. */}
+        <SidebarMenuSubButton asChild className="h-auto min-h-7 py-1">
+          <Link to={item.url}>
+            <Icone />
+            <span className="!whitespace-normal leading-tight">{item.titulo}</span>
+          </Link>
+        </SidebarMenuSubButton>
         <SidebarMenuSub className="mx-0 ml-2 px-1.5">
           <SubAbas url={item.url} abas={item.abas} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
         </SidebarMenuSub>

@@ -127,3 +127,7 @@ test("Gerais, com seus submenus, é o primeiro item de Parâmetros, antes de EPI
   const abertura = sidebar.indexOf('{grupo.titulo === "Parâmetros" && isAdmin');
   assert.ok(abertura > 0 && sidebar.slice(sidebar.indexOf("<SidebarMenu>\n                {/*"), abertura).indexOf("<MenuEpi") === -1);
 });
+
+test("o título de Tamanho e Medidas de Produto usa ícone e texto iguais aos dos outros menus (decisão 72)", () => {
+  assert.doesNotMatch(sidebar, /text-sidebar-foreground\/70 hover:text-sidebar-foreground/);
+});
