@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Search, Check, ChevronsUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import {
@@ -186,9 +187,9 @@ export function CaixasFerramentasModulo() {
       codigo: codigoCaixa(numero),
       codigo_num: numero,
       empresa_id: texto("empresa_id"),
-      nome: String(f.get("nome") ?? "").trim(),
-      descricao: texto("descricao"),
-      localizacao: texto("localizacao"),
+      nome: capitalizarTexto(String(f.get("nome") ?? "").trim()),
+      descricao: texto("descricao") ? capitalizarTexto(texto("descricao")) : null,
+      localizacao: texto("localizacao") ? capitalizarTexto(texto("localizacao")) : null,
       status: String(f.get("status") ?? "Ativa"),
     };
 
@@ -370,6 +371,7 @@ export function CaixasFerramentasModulo() {
                 <Input
                   id="nome"
                   name="nome"
+                  capitalizar="texto"
                   required
                   defaultValue={base?.nome ?? ""}
                   placeholder="Ex: Kit Elétrica"
@@ -410,6 +412,7 @@ export function CaixasFerramentasModulo() {
                 <Input
                   id="localizacao"
                   name="localizacao"
+                  capitalizar="texto"
                   defaultValue={base?.localizacao ?? ""}
                   placeholder="Ex: Almoxarifado"
                 />
@@ -436,6 +439,7 @@ export function CaixasFerramentasModulo() {
                 <Textarea
                   id="descricao"
                   name="descricao"
+                  capitalizar="texto"
                   defaultValue={base?.descricao ?? ""}
                   placeholder="Detalhes adicionais sobre a caixa..."
                 />
@@ -536,6 +540,7 @@ export function CaixasFerramentasModulo() {
                           </TableCell>
                           <TableCell>
                             <Input
+                              capitalizar="texto"
                               value={item.observacao}
                               onChange={(e) =>
                                 atualizarItem(item.ferramenta_id, "observacao", e.target.value)

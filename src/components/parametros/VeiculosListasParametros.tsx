@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
@@ -85,7 +86,7 @@ function ListaVeiculos({
     salvando.current = true;
     setTravado(true);
     // Só solta a trava depois de o diálogo fechar ou de o erro aparecer, para o segundo clique não repetir.
-    const ok = onSalvar(editando?.id ?? null, nome, descricao, tipos);
+    const ok = onSalvar(editando?.id ?? null, capitalizarTexto(nome), campoExtra === "descricao" ? capitalizarTexto(descricao) : descricao, tipos);
     if (ok) setAberto(false);
     setTimeout(() => {
       salvando.current = false;
@@ -173,7 +174,7 @@ function ListaVeiculos({
           <form onSubmit={salvar} className="space-y-3">
             <div className="space-y-1">
               <Label htmlFor="veiculo-lista-nome">Nome</Label>
-              <Input id="veiculo-lista-nome" value={nome} maxLength={80} onChange={(e) => setNome(e.target.value)} />
+              <Input id="veiculo-lista-nome" capitalizar="texto" value={nome} maxLength={80} onChange={(e) => setNome(e.target.value)} />
             </div>
             {campoExtra && (
               <div className="space-y-1">
@@ -182,6 +183,7 @@ function ListaVeiculos({
                 </Label>
                 <Textarea
                   id="veiculo-lista-descricao"
+                  {...(campoExtra === "descricao" ? { capitalizar: "texto" as const } : {})}
                   rows={campoExtra === "descricao" ? 4 : 8}
                   maxLength={campoExtra === "descricao" ? 500 : 5000}
                   value={descricao}

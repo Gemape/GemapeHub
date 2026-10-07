@@ -154,6 +154,7 @@ function PaginaEmpresas() {
               <Input
                 id="nome_fantasia"
                 name="nome_fantasia"
+                capitalizar="texto"
                 required
                 defaultValue={base?.nome_fantasia ?? ""}
               />
@@ -163,6 +164,7 @@ function PaginaEmpresas() {
               <Input
                 id="razao_social"
                 name="razao_social"
+                capitalizar="texto"
                 required
                 defaultValue={base?.razao_social ?? ""}
               />
@@ -180,6 +182,7 @@ function PaginaEmpresas() {
                       <Input
                         id={campo.nome}
                         name={campo.nome}
+                        {...(["rua", "bairro", "cidade"].includes(campo.nome) ? { capitalizar: "texto" as const } : {})}
                         inputMode={campo.nome === "cep" ? "numeric" : undefined}
                         onInput={aoDigitarMascarado(campo.nome)}
                         defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""}

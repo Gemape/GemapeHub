@@ -1,5 +1,5 @@
 // Regras do cadastro de empregados (especificação rev1 + decisão especial 12).
-import { capitalizarCadastro } from "./formatacao-cadastral.ts";
+import { capitalizarNomePessoa } from "./formatacao-cadastral.ts";
 
 const digitos = (v: string) => v.replace(/\D/g, "");
 
@@ -74,7 +74,7 @@ export function prepararEmpregado(
   anterior?: Existente,
   hoje = hojeLocal(),
 ): Record<string, string | boolean | null> {
-  const nome = capitalizarCadastro(dados.nome.trim().replace(/\s+/g, " "));
+  const nome = capitalizarNomePessoa(dados.nome);
   let cpf = formatarCpf(dados.cpf.trim());
   let matricula = normalizarMatricula(dados.matricula);
   const email = dados.email.trim().toLowerCase();

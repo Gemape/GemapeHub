@@ -1,9 +1,10 @@
 import * as React from "react";
 
+import { aplicarNoCampo, type ModoCapitalizacao } from "@/lib/campo-capitalizado";
 import { cn } from "@/lib/utils";
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input"> & { capitalizar?: ModoCapitalizacao }>(
+  ({ className, type, capitalizar, onBlur, onKeyDown, ...props }, ref) => {
     return (
       <input
         type={type}
@@ -12,6 +13,15 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className,
         )}
         ref={ref}
+        onBlur={(e) => {
+          if (capitalizar) aplicarNoCampo(e.currentTarget, capitalizar);
+          onBlur?.(e);
+        }}
+        onKeyDown={(e) => {
+          // Enter envia o formulário sem sair do campo: corrige antes.
+          if (capitalizar && e.key === "Enter") aplicarNoCampo(e.currentTarget, capitalizar);
+          onKeyDown?.(e);
+        }}
         {...props}
       />
     );

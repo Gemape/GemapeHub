@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
@@ -118,7 +119,7 @@ export function OcorrenciasVeiculoModulo() {
         {
           veiculoId, tipoId, condutorId, danoEmpresa, danoTerceiros, fotos: fotosNovas,
           data: String(f.get("data") ?? ""), hora: String(f.get("hora") ?? ""),
-          local: String(f.get("local") ?? ""), descricao: String(f.get("descricao") ?? ""),
+          local: capitalizarTexto(String(f.get("local") ?? "")), descricao: capitalizarTexto(String(f.get("descricao") ?? "")),
         },
         undefined, new Date(), parametros.tiposOcorrenciaVeiculo,
       ),
@@ -137,8 +138,8 @@ export function OcorrenciasVeiculoModulo() {
         atual.id,
         {
           responsavelId, seguradora,
-          descricaoEmpresa: String(f.get("descricaoEmpresa") ?? ""), descricaoTerceiros: String(f.get("descricaoTerceiros") ?? ""),
-          custoEmpresa: String(f.get("custoEmpresa") ?? ""), pagamentoTerceiros: String(f.get("pagamentoTerceiros") ?? ""),
+          descricaoEmpresa: capitalizarTexto(String(f.get("descricaoEmpresa") ?? "")), descricaoTerceiros: capitalizarTexto(String(f.get("descricaoTerceiros") ?? "")),
+          custoEmpresa: String(f.get("custoEmpresa") ?? ""), pagamentoTerceiros: capitalizarTexto(String(f.get("pagamentoTerceiros") ?? "")),
         },
         { encerrar, isAdmin },
       ),
@@ -261,7 +262,7 @@ export function OcorrenciasVeiculoModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="oc_local">Local da ocorrência</Label>
-              <Input id="oc_local" name="local" maxLength={200} placeholder="Ex.: BR-116, km 40" />
+              <Input id="oc_local" capitalizar="texto" name="local" maxLength={200} placeholder="Ex.: BR-116, km 40" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="oc_condutor">Condutor</Label>
@@ -285,7 +286,7 @@ export function OcorrenciasVeiculoModulo() {
             </fieldset>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="oc_descricao">Descrição</Label>
-              <Textarea id="oc_descricao" name="descricao" rows={3} maxLength={2000} />
+              <Textarea id="oc_descricao" capitalizar="texto" name="descricao" rows={3} maxLength={2000} />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -392,13 +393,13 @@ export function OcorrenciasVeiculoModulo() {
                 {atual.danoEmpresa && (
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label htmlFor="tr_emp">Tratativa do veículo da empresa</Label>
-                    <Textarea id="tr_emp" name="descricaoEmpresa" rows={3} maxLength={2000} defaultValue={atual.tratativa?.descricaoEmpresa ?? ""} />
+                    <Textarea id="tr_emp" capitalizar="texto" name="descricaoEmpresa" rows={3} maxLength={2000} defaultValue={atual.tratativa?.descricaoEmpresa ?? ""} />
                   </div>
                 )}
                 {atual.danoTerceiros && (
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label htmlFor="tr_ter">Tratativa do veículo de terceiros</Label>
-                    <Textarea id="tr_ter" name="descricaoTerceiros" rows={3} maxLength={2000} defaultValue={atual.tratativa?.descricaoTerceiros ?? ""} />
+                    <Textarea id="tr_ter" capitalizar="texto" name="descricaoTerceiros" rows={3} maxLength={2000} defaultValue={atual.tratativa?.descricaoTerceiros ?? ""} />
                   </div>
                 )}
                 <div className="space-y-1.5">
@@ -414,7 +415,7 @@ export function OcorrenciasVeiculoModulo() {
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="tr_pag">Pagamento feito por terceiros</Label>
-                  <Textarea id="tr_pag" name="pagamentoTerceiros" rows={2} maxLength={1000} placeholder="Descreva quem pagou e o quê (se houver)" defaultValue={atual.tratativa?.pagamentoTerceiros ?? ""} />
+                  <Textarea id="tr_pag" capitalizar="texto" name="pagamentoTerceiros" rows={2} maxLength={1000} placeholder="Descreva quem pagou e o quê (se houver)" defaultValue={atual.tratativa?.pagamentoTerceiros ?? ""} />
                 </div>
                 <DialogFooter className="sm:col-span-2">
                   <Button type="button" variant="outline" onClick={() => setTela(null)}>Cancelar</Button>

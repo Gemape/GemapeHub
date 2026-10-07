@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -94,7 +95,7 @@ export function EdicaoCatalogoForm({ item, modulo, categoriaId, nomeProduto, sal
     const unidade = unidades.find((u) => u.id === uni);
     // Só manda o que a pessoa mudou, para uma edição simples não esbarrar nas travas.
     onSalvar({
-      nome: String(f.get("nome") ?? ""),
+      nome: capitalizarTexto(String(f.get("nome") ?? "")),
       estoque_minimo: String(f.get("minimo") ?? ""),
       ...(trocouSub && subEscolhida ? { subcategoria: { id: subEscolhida.id, nome: subEscolhida.nome } } : {}),
       ...(trocouUni ? { unidade: unidade && uni !== SEM_UNIDADE ? { id: unidade.id, nome: unidade.nome } : null } : {}),
@@ -117,7 +118,7 @@ export function EdicaoCatalogoForm({ item, modulo, categoriaId, nomeProduto, sal
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="edit-nome">Descrição do item</Label>
-        <Input id="edit-nome" name="nome" defaultValue={item.nome} required />
+        <Input id="edit-nome" capitalizar="texto" name="nome" defaultValue={item.nome} required />
       </div>
       {unidades.length > 0 && (
         <div className="space-y-1.5">

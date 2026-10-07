@@ -129,7 +129,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       marca: texto("marca"),
       unidade_medida: texto("unidade_medida"),
       status: String(f.get("status") ?? "Ativo"),
-      observacoes: texto("observacoes"),
+      observacoes: texto("observacoes") ? capitalizarCadastro(texto("observacoes")) : null,
     };
     if (!editando && !valores["empresa_id"]) {
       salvando.current = false;
@@ -360,7 +360,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="modelo">Modelo</Label>
-                <Input id="modelo" name="modelo" required defaultValue={editando?.modelo ?? ""} />
+                <Input id="modelo" name="modelo" capitalizar="texto" required defaultValue={editando?.modelo ?? ""} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="estoque_minimo">Estoque mínimo</Label>
@@ -413,6 +413,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               <Textarea
                 id="observacoes"
                 name="observacoes"
+                capitalizar="texto"
                 defaultValue={base?.observacoes ?? ""}
                 placeholder="Detalhes adicionais..."
               />
