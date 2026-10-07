@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { hojeBrasilia } from "@/lib/checklist-veiculo";
 import { hojeLocal } from "@/lib/empregados";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { kmAtualDoVeiculo, sugestoesPreventivas } from "@/lib/extrato-veiculo";
@@ -76,7 +77,7 @@ export function FrotaModulo() {
           vencidas: vencidasDo(v.id),
         })),
       }),
-      arquivo: nomeArquivoDocumento("Relatorio da frota", empresa, hojeLocal()),
+      arquivo: nomeArquivoDocumento("Relatorio da frota", empresa, hojeBrasilia()),
     });
   }
 

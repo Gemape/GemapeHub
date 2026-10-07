@@ -61,7 +61,7 @@ export function ChecklistVeiculoModulo() {
   const { data: veiculosLista = [] } = useVeiculos(empresaId);
   const veiculos = veiculosLista as VeiculoChecklist[];
   // O painel mensal prevê os check lists de todas as empresas, para não perder previsões ao trocar de empresa.
-  const { data: veiculosTodasLista = [] } = useVeiculos(TODAS);
+  const { data: veiculosTodasLista = [], isSuccess: veiculosCarregados } = useVeiculos(TODAS);
   const { data: empregadosAtivos = [] } = useEmpregados(TODAS, true);
   const todos = useChecklistsVeiculo();
   const [tela, setTela] = useState<Tela>(null);
@@ -82,23 +82,27 @@ export function ChecklistVeiculoModulo() {
   const associacaoDe = (v: VeiculoChecklist) => associacoes.find((a) => a.veiculoId === v.id);
   const periodicidadeDe = (v: VeiculoChecklist) => periodicidadeDaAssociacao(associacaoDe(v));
 
-  // Mantém em vigor as previsões do painel mensal (decisão 80): veículos ativos com associação.
-  const chaveVeiculos = (veiculosTodasLista as VeiculoChecklist[]).map((v) => `${v.id}:${v.status}`).join(",");
+  // Mantém em vigor as previsões do painel mensal (decisão 80): veículos ativos com associação, desde o dia da
+  // associação. Só roda com a lista de veículos carregada: sem ela, as previsões em vigor seriam apagadas.
+  const previstos: VeiculoPrevisto[] = (veiculosTodasLista as VeiculoChecklist[]).flatMap((v) => {
+    const associacao = associacoes.find((a) => a.veiculoId === v.id);
+    const periodicidade = periodicidadeDaAssociacao(associacao);
+    return v.status === "Ativo" && associacao && periodicidade
+      ? [{
+          veiculoId: v.id, veiculoRotulo: rotuloDoVeiculo(parametros, v), periodicidade,
+          responsavelNome: associacao.responsavel.nome, desde: Number.isNaN(Date.parse(associacao.atualizadoEm)) ? hoje : hojeBrasilia(new Date(associacao.atualizadoEm)),
+        }]
+      : [];
+  });
+  const chavePrevistos = JSON.stringify(previstos);
   useEffect(() => {
-    const previstos: VeiculoPrevisto[] = (veiculosTodasLista as VeiculoChecklist[]).flatMap((v) => {
-      const associacao = associacoes.find((a) => a.veiculoId === v.id);
-      const periodicidade = periodicidadeDaAssociacao(associacao);
-      return v.status === "Ativo" && associacao && periodicidade
-        ? [{ veiculoId: v.id, veiculoRotulo: rotuloDoVeiculo(parametros, v), periodicidade, responsavelNome: associacao.responsavel.nome }]
-        : [];
-    });
+    if (!veiculosCarregados) return;
     try {
-      sincronizarPrevisoes({ veiculos: previstos, hoje });
+      sincronizarPrevisoes({ veiculos: JSON.parse(chavePrevistos) as VeiculoPrevisto[], hoje });
     } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível atualizar o painel do mês.");
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível atualizar o painel do mês.", { id: "painel-checklist-sync" });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [associacoes, chaveVeiculos, hoje, parametros]);
+  }, [veiculosCarregados, chavePrevistos, hoje]);
 
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const rotuloDe = (v: VeiculoChecklist) => rotuloDoVeiculo(parametros, v);
