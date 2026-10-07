@@ -1,9 +1,10 @@
 import * as React from "react";
 
+import { aplicarNoCampo, type ModoCapitalizacao } from "@/lib/campo-capitalizado";
 import { cn } from "@/lib/utils";
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<"textarea">>(
-  ({ className, ...props }, ref) => {
+const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<"textarea"> & { capitalizar?: ModoCapitalizacao }>(
+  ({ className, capitalizar, onBlur, ...props }, ref) => {
     return (
       <textarea
         className={cn(
@@ -11,6 +12,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<"tex
           className,
         )}
         ref={ref}
+        onBlur={(e) => {
+          if (capitalizar) aplicarNoCampo(e.currentTarget, capitalizar);
+          onBlur?.(e);
+        }}
         {...props}
       />
     );

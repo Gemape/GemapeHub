@@ -28,7 +28,7 @@ export function SeletorFornecedorCompra({
     return (
       <div className="space-y-1.5">
         <Label htmlFor="fornecedor">Fornecedor</Label>
-        <Input id="fornecedor" name="fornecedor" required placeholder="Nome do fornecedor" />
+        <Input id="fornecedor" name="fornecedor" capitalizar="texto" required placeholder="Nome do fornecedor" />
       </div>
     );
   }

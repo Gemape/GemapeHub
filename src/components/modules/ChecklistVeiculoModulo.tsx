@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
@@ -195,7 +196,7 @@ export function ChecklistVeiculoModulo() {
     if (!resolvendo || trava.current) return;
     trava.current = true;
     window.setTimeout(() => { trava.current = false; }, 600);
-    const ok = executar(() => resolverPendencia(c.id, resolvendo, textoResolucao), "Pendência resolvida");
+    const ok = executar(() => resolverPendencia(c.id, resolvendo, capitalizarTexto(textoResolucao)), "Pendência resolvida");
     if (ok) { setResolvendo(null); setTextoResolucao(""); }
   }
 
@@ -401,11 +402,12 @@ export function ChecklistVeiculoModulo() {
                       </div>
                       {andamento ? (
                         <Input
+                          capitalizar="texto"
                           aria-label={`Observação de ${i.nome}`}
                           placeholder={i.avaliacao === "NOK" ? "Descreva o problema (obrigatório)" : "Observação (opcional)"}
                           maxLength={500}
                           defaultValue={i.observacao}
-                          onBlur={(e) => { if (e.target.value.trim() !== i.observacao) avaliar(atual, i, i.avaliacao, e.target.value); }}
+                          onBlur={(e) => { if (e.target.value.trim() !== i.observacao) avaliar(atual, i, i.avaliacao, capitalizarTexto(e.target.value)); }}
                         />
                       ) : (
                         i.observacao && <p className="text-xs text-muted-foreground">Observação: {i.observacao}</p>
@@ -498,7 +500,7 @@ export function ChecklistVeiculoModulo() {
             <DialogTitle>Resolver pendência</DialogTitle>
             <DialogDescription>Registre o que foi feito. A ocorrência ligada segue a sua própria tratativa.</DialogDescription>
           </DialogHeader>
-          <Textarea aria-label="Como foi resolvida" rows={4} maxLength={500} value={textoResolucao} onChange={(e) => setTextoResolucao(e.target.value)} />
+          <Textarea capitalizar="texto" aria-label="Como foi resolvida" rows={4} maxLength={500} value={textoResolucao} onChange={(e) => setTextoResolucao(e.target.value)} />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setResolvendo(null)}>Cancelar</Button>
             <Button type="button" onClick={() => atual && resolver(atual)}>Resolver</Button>

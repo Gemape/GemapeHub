@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { escaparHtml } from "@/lib/gemape";
-import { formatarCnpj } from "@/lib/formatacao-cadastral";
+import { capitalizarTexto, formatarCnpj } from "@/lib/formatacao-cadastral";
 import {
   useEmpresas,
   useItens,
@@ -180,7 +180,7 @@ export function FerramentasTermoEncerramento() {
           empresa_id: empresaSel,
           empregado_id: empregadoId,
           tipo_vistoria: "Final (Desligamento)",
-          observacao: `Devolução de ferramenta - Termo de Encerramento de Responsabilidade. Obs: ${item.observacao}`,
+          observacao: `Devolução de ferramenta - Termo de Encerramento de Responsabilidade. Obs: ${capitalizarTexto(item.observacao)}`,
         })),
       );
     } catch {
@@ -419,6 +419,7 @@ export function FerramentasTermoEncerramento() {
                       </TableCell>
                       <TableCell>
                         <Input
+                          capitalizar="texto"
                           value={it.observacao}
                           onChange={(e) => atualizarItem(it.id, "observacao", e.target.value)}
                           placeholder="Ex: Riscos leves"

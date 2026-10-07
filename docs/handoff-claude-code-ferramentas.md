@@ -332,3 +332,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Relatório da manutenção por grupo de serviço (decisão 82): `manutencao-relatorio-html.ts`, abre ao cadastrar e pelo botão Relatório.
 - Cadastrar Ferramenta: grupo Outros/Diversos abre o campo "Qual ferramenta?" (decisão 83); o nome digitado entra na descrição, sem coluna nova.
 - Painel mensal do Check list: o dia de hoje (Brasília) se renova a cada minuto, então a tela aberta na virada do dia atualiza previsões e situações sem recarregar.
+- Capitalização (decisão 84): `capitalizarTexto` (primeira letra) e `capitalizarNomePessoa` (por palavra) em `formatacao-cadastral.ts`; `Input`/`Textarea` aceitam `capitalizar="texto"|"nome"` e corrigem no blur e no Enter; mapa de campos em `docs/capitalizacao-campos.md`.

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,14 +114,14 @@ export function ManutencaoVeiculoModulo() {
     trava.current = true;
     const entrada = {
       veiculoId, tipo, data: String(f.get("data") ?? ""), km: String(f.get("km") ?? ""),
-      descricao: String(f.get("descricao") ?? ""),
+      descricao: capitalizarTexto(String(f.get("descricao") ?? "")),
       grupos: acoes
         .filter((g) => g.id in marcados)
         .map((g) => ({
           acaoId: g.id,
-          itens: g.subitens.filter((x) => x.id in (marcados[g.id] ?? {})).map((x) => ({ subitemId: x.id, observacao: marcados[g.id]?.[x.id] ?? "" })),
+          itens: g.subitens.filter((x) => x.id in (marcados[g.id] ?? {})).map((x) => ({ subitemId: x.id, observacao: capitalizarTexto(marcados[g.id]?.[x.id] ?? "") })),
         })),
-      local, localNome: String(f.get("localNome") ?? ""), custoPecas, custoMaoDeObra: custoMao,
+      local, localNome: capitalizarTexto(String(f.get("localNome") ?? "")), custoPecas, custoMaoDeObra: custoMao,
     };
     let gravada: ManutencaoVeiculo | undefined;
     const ok = executar(
@@ -259,7 +260,7 @@ export function ManutencaoVeiculoModulo() {
             {tipo === "Corretiva" && (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="descricao">O que está acontecendo com o veículo</Label>
-                <Textarea id="descricao" name="descricao" rows={2} maxLength={300} defaultValue={editando?.descricao} placeholder="Ex.: barulho no freio dianteiro ao frear" />
+                <Textarea id="descricao" capitalizar="texto" name="descricao" rows={2} maxLength={300} defaultValue={editando?.descricao} placeholder="Ex.: barulho no freio dianteiro ao frear" />
               </div>
             )}
             <div className="space-y-2 sm:col-span-2">
@@ -309,6 +310,7 @@ export function ManutencaoVeiculoModulo() {
                           </label>
                           {marcado && (
                             <Textarea
+                              capitalizar="texto"
                               aria-label={`Observação de ${sub.nome}`}
                               placeholder="Observação (opcional)"
                               rows={2}
@@ -330,7 +332,7 @@ export function ManutencaoVeiculoModulo() {
                 <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="empresa" id="local_empresa" />Na própria empresa</label>
                 <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="terceiro" id="local_terceiro" />Local de terceiro</label>
               </RadioGroup>
-              {local === "terceiro" && <Input name="localNome" aria-label="Local de terceiro" maxLength={120} defaultValue={editando?.localNome} placeholder="Nome do local (oficina, concessionária…)" />}
+              {local === "terceiro" && <Input capitalizar="texto" name="localNome" aria-label="Local de terceiro" maxLength={120} defaultValue={editando?.localNome} placeholder="Nome do local (oficina, concessionária…)" />}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="custo_pecas">Custo das peças (R$)</Label>

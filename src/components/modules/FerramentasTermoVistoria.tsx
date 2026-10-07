@@ -35,6 +35,7 @@ import {
 } from "@/lib/hooks-gemape";
 import { empregadoDoTermo, validarTermoVistoria } from "@/lib/termos-atomicos";
 import { montarTermoVistoriaHtml } from "@/lib/termo-vistoria-html";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 
 interface ItemVistoria {
   id: string;
@@ -144,7 +145,7 @@ export function FerramentasTermoVistoria() {
           empresa_id: empresaSel,
           empregado_id: empregadoDoTermo(empregadoId),
           tipo_vistoria: "Periódica",
-          observacao: `Vistoria Periódica - Caixa: ${caixa?.codigo || "N/A"} - Status: ${item.conformidade}. Obs: ${item.observacao}`,
+          observacao: `Vistoria Periódica - Caixa: ${caixa?.codigo || "N/A"} - Status: ${item.conformidade}. Obs: ${capitalizarTexto(item.observacao)}`,
         })),
       );
     } catch {
@@ -169,7 +170,7 @@ export function FerramentasTermoVistoria() {
           nome: itemInfo?.nome,
           conformidade: it.conformidade,
           estado: it.estado,
-          observacao: it.observacao,
+          observacao: capitalizarTexto(it.observacao),
         };
       }),
     });
@@ -326,6 +327,7 @@ export function FerramentasTermoVistoria() {
                       </TableCell>
                       <TableCell>
                         <Input
+                          capitalizar="texto"
                           value={it.observacao}
                           onChange={(e) => atualizarItem(it.id, "observacao", e.target.value)}
                           placeholder="Ex: Necessita limpeza"

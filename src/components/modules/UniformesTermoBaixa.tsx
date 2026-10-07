@@ -1,3 +1,4 @@
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useRef, useState } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
@@ -129,7 +130,7 @@ export function UniformesTermoBaixa() {
           quantidade: item.quantidade,
           ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
           data_movimentacao: dataBaixa,
-          observacao: `Baixa de uniforme via termo - Motivo: ${motivoBaixa} - Obs: ${item.observacao}`,
+          observacao: `Baixa de uniforme via termo - Motivo: ${motivoBaixa} - Obs: ${capitalizarTexto(item.observacao)}`,
         })),
       );
     } catch {
@@ -301,6 +302,7 @@ export function UniformesTermoBaixa() {
                     </TableCell>
                     <TableCell>
                       <Input
+                        capitalizar="texto"
                         placeholder="Justificativa item"
                         value={item.observacao}
                         onChange={(e) => atualizarItem(index, "observacao", e.target.value)}

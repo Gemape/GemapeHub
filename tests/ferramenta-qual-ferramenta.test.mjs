@@ -48,5 +48,5 @@ test("na edição o nome digitado volta ao campo; sem ele o campo fica vazio", (
 test("o formulário abre o campo só quando o grupo pede e exige o preenchimento", () => {
   const fonte = readFileSync(new URL("../src/components/modules/ItensModulo.tsx", import.meta.url), "utf8");
   assert.match(fonte, /grupoPedeQualFerramenta\(grupoEscolhido\) && \(/);
-  assert.match(fonte, /id="qual_ferramenta" name="qual_ferramenta" required/);
+  assert.match(fonte, /id="qual_ferramenta" name="qual_ferramenta" capitalizar="texto" required/);
 });

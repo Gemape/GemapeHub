@@ -11,7 +11,7 @@ test("Cadastrar Ferramenta não tem descrição, série, patrimônio, aquisiçã
     assert.doesNotMatch(form, new RegExp(`name="${campo}"`), campo);
   }
   assert.match(form, /name="estoque_minimo"/);
-  assert.match(form, /id="modelo" name="modelo" required/);
+  assert.match(form, /id="modelo" name="modelo" capitalizar="texto" required/);
   const lista = fonte.slice(fonte.indexOf('<div className="panel overflow-x-auto">'), fonte.indexOf("<Dialog open"));
   assert.doesNotMatch(lista, /numero_serie|patrimonio|data_aquisicao|preco_unitario/);
   assert.match(lista, /item\.estoque_minimo/);

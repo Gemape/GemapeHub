@@ -132,7 +132,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       marca: texto("marca"),
       unidade_medida: texto("unidade_medida"),
       status: String(f.get("status") ?? "Ativo"),
-      observacoes: texto("observacoes"),
+      observacoes: texto("observacoes") ? capitalizarCadastro(texto("observacoes")) : null,
     };
     if (!editando && !valores["empresa_id"]) {
       salvando.current = false;
@@ -352,7 +352,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               {grupoPedeQualFerramenta(grupoEscolhido) && (
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="qual_ferramenta">Qual ferramenta?</Label>
-                  <Input id="qual_ferramenta" name="qual_ferramenta" required maxLength={60} defaultValue={qualFerramentaDe(base)} placeholder="Digite o nome da ferramenta" />
+                  <Input id="qual_ferramenta" name="qual_ferramenta" capitalizar="texto" required maxLength={60} defaultValue={qualFerramentaDe(base)} placeholder="Digite o nome da ferramenta" />
                   <p className="text-xs text-muted-foreground">O nome digitado entra na descrição no lugar do grupo.</p>
                 </div>
               )}
@@ -371,7 +371,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="modelo">Modelo</Label>
-                <Input id="modelo" name="modelo" required defaultValue={editando?.modelo ?? ""} />
+                <Input id="modelo" name="modelo" capitalizar="texto" required defaultValue={editando?.modelo ?? ""} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="estoque_minimo">Estoque mínimo</Label>
@@ -424,6 +424,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               <Textarea
                 id="observacoes"
                 name="observacoes"
+                capitalizar="texto"
                 defaultValue={base?.observacoes ?? ""}
                 placeholder="Detalhes adicionais..."
               />

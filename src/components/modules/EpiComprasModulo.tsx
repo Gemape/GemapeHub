@@ -1,3 +1,4 @@
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useState } from "react";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
@@ -98,7 +99,7 @@ export function EpiComprasModulo() {
     }
 
     // No demonstrativo o fornecedor vem do cadastro e é conferido de novo na hora de gravar.
-    let fornecedor = String(f.get("fornecedor") ?? "");
+    let fornecedor = capitalizarTexto(String(f.get("fornecedor") ?? ""));
     let fornecedorGravado: { id: string } | null = null;
     if (MODO_DEMO) {
       const escolha = escolherFornecedorDaCompra(listarFornecedores(), "cat-epi", fornecedorId);
@@ -118,7 +119,7 @@ export function EpiComprasModulo() {
       data_compra: String(f.get("data_compra")),
       quantidade: quantidadeCompra,
       valor_unitario: Number(f.get("valor_unitario")),
-      observacao: String(f.get("observacao") || ""),
+      observacao: capitalizarTexto(String(f.get("observacao") || "")),
     };
     if (fornecedorGravado) valores["fornecedor_id"] = fornecedorGravado.id;
     if (TAMANHO_DISPONIVEL) valores["tamanho_id"] = tamanhoParaGravar(tamanho);
@@ -352,7 +353,7 @@ export function EpiComprasModulo() {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="observacao">Observação</Label>
-              <Textarea id="observacao" name="observacao" rows={3} />
+              <Textarea id="observacao" name="observacao" capitalizar="texto" rows={3} />
             </div>
             <DialogFooter className="sm:col-span-2">
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>

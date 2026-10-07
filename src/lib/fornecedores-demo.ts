@@ -1,4 +1,4 @@
-import { capitalizarCadastro, formatarCep, formatarCnpj, formatarTelefone, somenteDigitos, validarCep, validarCnpj, validarTelefone } from "./formatacao-cadastral.ts";
+import { capitalizarCadastro, capitalizarNomePessoa, formatarCep, formatarCnpj, formatarTelefone, somenteDigitos, validarCep, validarCnpj, validarTelefone } from "./formatacao-cadastral.ts";
 
 // Naturezas fixas usadas antes das categorias de Cadastros > Gerais (decisão especial 13),
 // convertidas para as categorias equivalentes ao ler os fornecedores já salvos.
@@ -116,7 +116,7 @@ export function salvarFornecedor(
     cidade: capitalizarCadastro(valores.cidade),
     pais: capitalizarCadastro(valores.pais),
     estado: valores.estado.toLocaleUpperCase("pt-BR"),
-    contato: capitalizarCadastro(valores.contato),
+    contato: capitalizarNomePessoa(valores.contato),
     cnpj: formatarCnpj(valores.cnpj),
     cep: formatarCep(valores.cep),
     telefone: formatarTelefone(valores.telefone),

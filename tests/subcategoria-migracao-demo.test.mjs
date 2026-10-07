@@ -39,5 +39,5 @@ test('ao mudar Gerais, nome gravado que passa a existir lá é ligado e salvo', 
   for (const [nome, funcao] of ouvintes) if (nome === EVENTO_PARAMETROS) funcao();
   const salvo = JSON.parse(guardado.get('gemape-demo-dados')).epis.find((e) => e.id === 'e9');
   assert.equal(salvo.subcategoria_id, sub.id);
-  assert.equal(salvo.categoria, 'Avental de Raspa');
+  assert.equal(salvo.categoria, 'Avental de raspa');
 });

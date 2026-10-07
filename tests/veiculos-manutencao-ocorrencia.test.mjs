@@ -39,7 +39,7 @@ test("ações de manutenção: pai com subitens, editar mantém o id de quem já
   const s = storage();
   assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo, []);
   const a = adicionarAcaoManutencaoVeiculo("Manutenção de pneus", ["Calibragem", " ", "Rodízio de pneus"], s);
-  assert.deepEqual(a.subitens.map((i) => i.nome), ["Calibragem", "Rodízio de Pneus"]);
+  assert.deepEqual(a.subitens.map((i) => i.nome), ["Calibragem", "Rodízio de pneus"]);
   assert.throws(() => adicionarAcaoManutencaoVeiculo("manutenção de PNEUS", [], s), /já existe/i);
   assert.throws(() => adicionarAcaoManutencaoVeiculo("Outra", ["Molas", "molas"], s), /subitem repetido/i);
   const idCalibragem = a.subitens[0].id;
@@ -61,7 +61,7 @@ test("tipos de ocorrência: nome obrigatório e único, descrição editável, e
   assert.throws(() => adicionarTipoOcorrenciaVeiculo("furto", "outra", s), /já existe/i);
   editarTipoOcorrenciaVeiculo(t.id, "Furto de veículo", "Subtração sem violência", s);
   const lido = lerParametros(s).tiposOcorrenciaVeiculo[0];
-  assert.equal(lido.nome, "Furto de Veículo");
+  assert.equal(lido.nome, "Furto de veículo");
   assert.equal(lido.descricao, "Subtração sem violência");
   assert.throws(() => editarTipoOcorrenciaVeiculo("nao-existe", "x", "y", s), /não encontrad/i);
   removerTipoOcorrenciaVeiculo(t.id, s);
@@ -76,7 +76,7 @@ test("cadastrar padrão inclui o que falta e não repete nem altera o que já ex
   assert.deepEqual(r, { acoes: ACOES_MANUTENCAO_PADRAO.length - 1, tipos: TIPOS_OCORRENCIA_VEICULO_PADRAO.length - 1 });
   const d = lerParametros(s);
   assert.equal(d.acoesManutencaoVeiculo.length, ACOES_MANUTENCAO_PADRAO.length);
-  assert.deepEqual(d.acoesManutencaoVeiculo.find((a) => /Freios/.test(a.nome)).subitens.map((i) => i.nome), ["Meu Subitem"]);
+  assert.deepEqual(d.acoesManutencaoVeiculo.find((a) => /freios/i.test(a.nome)).subitens.map((i) => i.nome), ["Meu subitem"]);
   assert.equal(d.tiposOcorrenciaVeiculo.find((t) => t.nome === "Furto").descricao, "Minha descrição");
   assert.deepEqual(cadastrarPadraoVeiculos(s), { acoes: 0, tipos: 0 });
 });
