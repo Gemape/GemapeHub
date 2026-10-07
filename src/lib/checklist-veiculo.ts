@@ -36,7 +36,7 @@ export type ChecklistVeiculo = {
   veiculoId: string;
   veiculoRotulo: string;
   tipoVeiculo: string;
-  periodicidade: Periodicidade;
+  periodicidade: Periodicidade | ""; // vazio no check list avulso (decisão 90)
   responsavelId: string;
   responsavelNome: string;
   criadoEm: string;
@@ -45,6 +45,17 @@ export type ChecklistVeiculo = {
   concluidoEm: string | null;
   itens: ItemChecklist[];
 };
+
+// Nome do check list (decisão 90): Placa >> Periodicidade >> Responsável. Sem placa (empilhadeira), entra a descrição do veículo.
+export function nomeDoChecklist(c: { placa: string; fallbackVeiculo?: string; periodicidade: string; responsavelNome: string }): string {
+  const veiculo = c.placa.trim().toUpperCase() || (c.fallbackVeiculo ?? "").trim();
+  return [veiculo, c.periodicidade, c.responsavelNome].map((t) => t.trim().replace(/\s+/g, " ")).join(" >> ");
+}
+
+// Só aparece na lista do módulo o check list que tem periodicidade e responsável, ou seja, o que pode receber o nome acima.
+export function checklistVisivelNaLista(c: { periodicidade?: string | null | undefined; responsavelNome?: string | null | undefined }): boolean {
+  return ehPeriodicidade(c.periodicidade) && (c.responsavelNome ?? "").trim() !== "";
+}
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now() + Math.random()));
@@ -210,6 +221,19 @@ export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePad
     throw new Error("Este veículo não tem periodicidade: associe itens de check list a ele em Parâmetros > Veículos > Associar itens de check list a um veículo.");
   }
   if (!entrada.responsavelId) throw new Error("Selecione o responsável pelo check list.");
+  return gravarNovoChecklist({ ...entrada, periodicidade: entrada.periodicidade }, false, storage, agora);
+}
+
+// Check list avulso (decisão 90): sem periodicidade e sem responsável, com todos os grupos do tipo do veículo. Fica fora
+// da lista principal, do painel do mês e da situação por veículo; gera ocorrência dos itens NOK como qualquer outro.
+export type EntradaChecklistAvulso = Pick<EntradaChecklist, "veiculoId" | "veiculoRotulo" | "tipoVeiculo" | "grupos">;
+
+export function iniciarChecklistAvulso(entrada: EntradaChecklistAvulso, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
+  if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
+  return gravarNovoChecklist({ ...entrada, periodicidade: "", responsavelId: "", responsavelNome: "" }, true, storage, agora);
+}
+
+function gravarNovoChecklist(entrada: Omit<EntradaChecklist, "periodicidade"> & { periodicidade: Periodicidade | "" }, avulso: boolean, storage: StorageLike | null, agora: Date): ChecklistVeiculo {
   const itens: ItemChecklist[] = entrada.grupos.flatMap((g) =>
     g.itens.map((i) => ({
       id: `${g.id}:${i.id}`, grupo: g.nome, nome: i.nome, avaliacao: null, observacao: "", fotos: [],
@@ -217,12 +241,12 @@ export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePad
     })),
   );
   if (itens.length === 0) throw new Error("Não há itens de check list para o tipo deste veículo. Cadastre ou ligue os grupos em Parâmetros > Veículos > Itens check list.");
-  const periodicidade = entrada.periodicidade;
   let criado!: ChecklistVeiculo;
   gravar(() =>
     alterarLista<ChecklistVeiculo>(CHAVE, storage, (lista) => {
-      if (lista.some((c) => c.veiculoId === entrada.veiculoId && c.status === "Em andamento")) {
-        throw new Error("Este veículo já tem um check list em andamento. Conclua-o antes de iniciar outro.");
+      // O avulso e o periódico não se bloqueiam: cada tipo tem o seu em andamento por veículo.
+      if (lista.some((c) => c.veiculoId === entrada.veiculoId && c.status === "Em andamento" && checklistVisivelNaLista(c) === !avulso)) {
+        throw new Error(avulso ? "Este veículo já tem um check list avulso em andamento. Conclua-o antes de iniciar outro." : "Este veículo já tem um check list em andamento. Conclua-o antes de iniciar outro.");
       }
       const maior = lista.reduce((m, c) => Math.max(m, Number(c.codigo.replace(/\D/g, "")) || 0), 0);
       criado = {
@@ -231,7 +255,7 @@ export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePad
         veiculoId: entrada.veiculoId,
         veiculoRotulo: limpar(entrada.veiculoRotulo, 200),
         tipoVeiculo: limpar(entrada.tipoVeiculo, 80),
-        periodicidade,
+        periodicidade: entrada.periodicidade,
         responsavelId: entrada.responsavelId,
         responsavelNome: limpar(entrada.responsavelNome, 120),
         criadoEm: agora.toISOString(),

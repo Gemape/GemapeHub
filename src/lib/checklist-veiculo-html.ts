@@ -65,9 +65,9 @@ export function montarChecklistHtml(c: ChecklistVeiculo, empresa: string): strin
         <p>
           <strong>Veículo:</strong> ${escaparHtml(c.veiculoRotulo)}<br>
           <strong>Tipo de veículo:</strong> ${escaparHtml(c.tipoVeiculo || "—")}<br>
-          <strong>Periodicidade:</strong> ${escaparHtml(c.periodicidade)}<br>
+          <strong>Periodicidade:</strong> ${escaparHtml(c.periodicidade || "Avulso (sem periodicidade)")}<br>
           <strong>Data:</strong> ${escaparHtml(dia(c.data))}<br>
-          <strong>Responsável pelo check list:</strong> ${escaparHtml(c.responsavelNome)}<br>
+          <strong>Responsável pelo check list:</strong> ${escaparHtml(c.responsavelNome || "—")}<br>
           <strong>Situação:</strong> ${escaparHtml(c.status)}${c.concluidoEm ? ` em ${escaparHtml(dataHora(c.concluidoEm))}` : ""}
         </p>
         <p>
