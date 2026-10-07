@@ -78,17 +78,12 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
   { aba: "checklist", titulo: "Check list", icone: "ListChecks" },
 ];
 
-// O cadastro é a própria tela do menu pai (abre sem ?aba=); só a associação é submenu (decisão 85).
-export const ABAS_TAMANHOS: readonly AbaMenu[] = [
-  { aba: "associar", titulo: "Associar ao produto", icone: "Link2" },
-];
-
 // Tabelas de Apoio e Tamanho e Medidas de Produto ficam dentro de EPI, Uniformes e Ferramentas (decisão 86): é a mesma
-// tela nos três menus, e ?de= diz de qual deles a pessoa veio, para marcar só aquele no menu lateral.
+// tela nos três menus (cadastro e associação juntos, decisão 89), e ?de= diz de qual deles a pessoa veio, para marcar só aquele no menu lateral.
 export const URLS_APOIO: readonly string[] = ["/cadastros/gerais/categorias", "/cadastros/gerais/tamanhos-unidades"];
 export const itensApoio = (de: DeMenu): readonly ItemMenu[] => [
   { titulo: "Tabelas de Apoio", url: URLS_APOIO[0]!, icone: "Tags", de },
-  { titulo: "Tamanho e Medidas de Produto", url: URLS_APOIO[1]!, icone: "Ruler", abas: ABAS_TAMANHOS, abaPadrao: "cadastro", de },
+  { titulo: "Tamanho e Medidas de Produto", url: URLS_APOIO[1]!, icone: "Ruler", de },
 ];
 
 export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
