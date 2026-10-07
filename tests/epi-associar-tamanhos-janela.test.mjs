@@ -22,3 +22,11 @@ test("no Novo EPI, o link abre a janela ao lado do diálogo do cadastro, que con
 test("tamanho escolhido que deixou de ser autorizado volta vazio", () => {
   assert.match(epi, /tamanhoSel && !associados\.some\(\(t\) => t\.id === tamanhoSel\)\) setTamanhoSel\(""\)/);
 });
+
+test("o Novo Uniforme tem a mesma janela de associação, com a mesma proteção do tamanho (decisão 88)", () => {
+  const uni = readFileSync(new URL("components/modules/CadastroUniforme.tsx", raiz), "utf8");
+  assert.match(uni, /onClick=\{\(\) => setAssociarAberto\(true\)\}/);
+  assert.match(uni, /Associar tamanhos/);
+  assert.ok(uni.indexOf("<DialogAssociarTamanhos") < uni.indexOf("<Dialog open={novoAberto}"));
+  assert.match(uni, /tamanhoSel && !associados\.some\(\(t\) => t\.id === tamanhoSel\)\) setTamanhoSel\(""\)/);
+});
