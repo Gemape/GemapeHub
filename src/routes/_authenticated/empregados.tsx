@@ -206,7 +206,7 @@ function PaginaEmpregados() {
           <form onSubmit={(e) => void enviar(e)} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Nome completo</Label>
-              <Input id="nome" name="nome" aria-required defaultValue={base?.nome ?? ""} />
+              <Input id="nome" name="nome" capitalizar="nome" aria-required defaultValue={base?.nome ?? ""} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cpf">CPF</Label>

@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useCaixasFerramentas, type Empregado } from "@/lib/hooks-gemape";
 import { empregadoElegivelPortador, portadorAtivo, registrarPortador } from "@/lib/portadores-caixa";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -66,7 +67,7 @@ export function PortadoresCaixaModulo() {
     try {
       if (!caixa) throw new Error("Selecione uma caixa habilitada.");
       const empregado = status === "Ativa" ? empregados.find((pessoa) => pessoa.id === empregadoId) ?? null : null;
-      registrarPortador({ caixa, empregado, habilitadas, status, observacao });
+      registrarPortador({ caixa, empregado, habilitadas, status, observacao: capitalizarTexto(observacao) });
       setCaixaId("");
       setEmpregadoId("");
       setBuscaEmpregado("");
@@ -124,7 +125,7 @@ export function PortadoresCaixaModulo() {
           {atual && status === "Ativa" && <p className="text-sm text-muted-foreground sm:col-span-2">Portador atual: {atual.empregado_nome}. A troca o encerrará no histórico.</p>}
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="portador-observacao">Observação</Label>
-            <Textarea id="portador-observacao" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+            <Textarea id="portador-observacao" capitalizar="texto" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
           </div>
         </div>
         <Button requiresWrite type="submit" disabled={pendente}>{status === "Ativa" ? "Salvar portador" : "Inativar portador"}</Button>

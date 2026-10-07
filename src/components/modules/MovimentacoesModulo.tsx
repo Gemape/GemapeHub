@@ -68,6 +68,7 @@ import { useParametrosBase } from "@/lib/use-parametros-base";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { combinaBusca } from "@/lib/parametros-base";
 import { SeletorAcaoManutencao } from "@/components/modules/SeletorAcaoManutencao";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 
 // Ação de manutenção gravada na movimentação (modo demonstração): "Pai: filho, filho".
 function textoManutencao(m: unknown): string {
@@ -188,9 +189,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       tipo_ocorrencia: comOcorrencia ? texto("tipo_ocorrencia") : null,
       conducao_ocorrencia: comOcorrencia ? texto("conducao_ocorrencia") : null,
       data_movimentacao: String(f.get("data_movimentacao") ?? ""),
-      origem_local: texto("origem_local"),
-      destino_local: texto("destino_local"),
-      observacao: texto("observacao")?.slice(0, 500) ?? null,
+      origem_local: capitalizarTexto(texto("origem_local")) || null,
+      destino_local: capitalizarTexto(texto("destino_local")) || null,
+      observacao: capitalizarTexto(texto("observacao"))?.slice(0, 500) || null,
       // A manutenção ainda não existe no banco real (Fase 2): só vai no modo demonstração.
       ...(acaoManut
         ? {
@@ -610,10 +611,10 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               </>
             )}
 
-            {tipoMovimentacao === "Transferencia" && <><div><Label htmlFor="origem_local">Origem (setor/obra/custódia)</Label><Input name="origem_local" id="origem_local" required maxLength={200} /></div><div><Label htmlFor="destino_local">Destino (setor/obra/custódia)</Label><Input name="destino_local" id="destino_local" required maxLength={200} /></div></>}
+            {tipoMovimentacao === "Transferencia" && <><div><Label htmlFor="origem_local">Origem (setor/obra/custódia)</Label><Input name="origem_local" id="origem_local" capitalizar="texto" required maxLength={200} /></div><div><Label htmlFor="destino_local">Destino (setor/obra/custódia)</Label><Input name="destino_local" id="destino_local" capitalizar="texto" required maxLength={200} /></div></>}
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="observacao">Observação</Label>
-              <Textarea id="observacao" name="observacao" maxLength={500} rows={3} />
+              <Textarea id="observacao" name="observacao" capitalizar="texto" maxLength={500} rows={3} />
             </div>
 
             <DialogFooter className="sm:col-span-2">

@@ -64,7 +64,7 @@ import {
   valorSelecaoSubcategoria,
 } from "@/lib/subcategoria-referencia";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
+import { capitalizarCadastro, capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import {
@@ -335,7 +335,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
           toast.error(erro instanceof Error ? erro.message : "Marca inválida.");
           return;
         }
-        valores["modelo"] = String(f.get("modelo") ?? "").trim() || null;
+        valores["modelo"] = capitalizarTexto(String(f.get("modelo") ?? "").trim()) || null;
       }
     }
     if (!editando) {
@@ -590,6 +590,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
               <Label htmlFor="nome">Descrição do item</Label>
               <Textarea
                 id="nome"
+                capitalizar="texto"
                 aria-required
                 name="nome"
                 rows={2}
@@ -702,7 +703,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="modelo">Modelo</Label>
-                      <Input id="modelo" name="modelo" defaultValue={base?.modelo ?? ""} />
+                      <Input id="modelo" name="modelo" capitalizar="texto" defaultValue={base?.modelo ?? ""} />
                     </div>
                   </>
                 )}

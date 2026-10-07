@@ -1,3 +1,4 @@
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -258,7 +259,7 @@ function CatalogoEpi() {
     void gravar(
       (codigo, atual) =>
         montarNovoEpi({
-          nome: String(f.get("nome") ?? ""),
+          nome: capitalizarTexto(String(f.get("nome") ?? "")),
           subcategoria: { id: subEscolhida.id, nome: subEscolhida.nome },
           unidade: unidade ? { id: unidade.id, nome: unidade.nome } : null,
           tamanhoId: tamanhoSel || null,
@@ -438,7 +439,7 @@ function CatalogoEpi() {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Descrição do item</Label>
-              <Textarea id="nome" name="nome" rows={2} placeholder="Ex.: capacete de segurança em ABS de alto impacto" />
+              <Textarea id="nome" name="nome" capitalizar="texto" rows={2} placeholder="Ex.: capacete de segurança em ABS de alto impacto" />
             </div>
             {unidades.length > 0 && (
               <div className="space-y-1.5">

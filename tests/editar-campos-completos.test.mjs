@@ -112,7 +112,7 @@ test("o Editar de EPI e uniforme usa o formulário completo, sem o texto antigo 
 
 test("a ficha troca o EPI ao editar", () => {
   const ficha = readFileSync("src/routes/_authenticated/epi-ficha.tsx", "utf8");
-  assert.match(ficha, /moverFicha\(editandoId, epiSel, conteudo\)/);
+  assert.match(ficha, /moverFicha\(editandoId, epiSel, formatado\)/);
 });
 
 test("o formulário só envia o que mudou e mantém tamanho e unidade válidos ao trocar a subcategoria", () => {

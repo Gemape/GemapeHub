@@ -33,8 +33,8 @@ test("o endereço resumido junta só o que foi preenchido", () => {
 
 test("em demonstração, salva endereço e status junto com os dados da empresa", () => {
   const v = valoresDaEmpresa(form({ ...BASE, ...ENDERECO, status: "Inativa" }), true);
-  assert.equal(v.nome_fantasia, "GEMAPE");
-  assert.equal(v.rua, "Rua A");
+  assert.equal(v.nome_fantasia, "Gemape");
+  assert.equal(v.rua, "Rua a");
   assert.equal(v.estado, "SP");
   assert.equal(v.status, "Inativa");
 });
@@ -86,10 +86,10 @@ test("empresa nova normaliza texto e CNPJ sem afetar sigla", () => {
     cidade: "SÃO PAULO",
     estado: "SP",
   }), true);
-  assert.equal(valores.nome_fantasia, "GEMAPE");
-  assert.equal(valores.razao_social, "Proteção GEMAPE Ltda");
+  assert.equal(valores.nome_fantasia, "Gemape");
+  assert.equal(valores.razao_social, "Proteção gemape ltda");
   assert.equal(valores.cnpj, "12.345.678/0001-90");
-  assert.equal(valores.rua, "Rua São José");
+  assert.equal(valores.rua, "Rua são josé");
   assert.equal(valores.cep, "12.345-678");
   assert.equal(valores.estado, "SP");
 });
@@ -99,7 +99,7 @@ test("edição de empresa antiga preserva CNPJ e CEP incompletos não alterados"
   const valores = valoresDaEmpresa(form({ ...BASE, ...antigo, nome_fantasia: "NOVA EMPRESA" }), true, antigo);
   assert.equal(valores.cnpj, "123");
   assert.equal(valores.cep, "123");
-  assert.equal(valores.nome_fantasia, "Nova Empresa");
+  assert.equal(valores.nome_fantasia, "Nova empresa");
   assert.throws(() => valoresDaEmpresa(form({ ...BASE, cnpj: "456" }), true, antigo), /CNPJ/);
 });
 

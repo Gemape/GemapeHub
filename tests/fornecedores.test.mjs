@@ -21,7 +21,7 @@ const fornecedor = {
 test('fornecedor mantém vários tipos e todos os dados após salvar e editar', () => {
   const local = storage();
   const criado = salvarFornecedor(fornecedor, local);
-  assert.deepEqual(listarFornecedores(local), [{ ...fornecedor, rua: 'Rua das Flores', cep: '01.001-000', telefone: '(11)9.9999.9999', id: criado.id, codigo: '00001' }]);
+  assert.deepEqual(listarFornecedores(local), [{ ...fornecedor, razao_social: 'Proteção brasil ltda', nome_fantasia: 'Proteção brasil', rua: 'Rua das flores', cidade: 'São paulo', cep: '01.001-000', telefone: '(11)9.9999.9999', id: criado.id, codigo: '00001' }]);
   salvarFornecedor({ ...criado, cidade: 'Campinas', categorias: ['cat-ferramentas', 'cat-veiculos'] }, local);
   assert.equal(listarFornecedores(local)[0].cidade, 'Campinas');
   assert.deepEqual(listarFornecedores(local)[0].categorias, ['cat-ferramentas', 'cat-veiculos']);
@@ -43,7 +43,7 @@ test('fornecedor novo formata contatos e textos cadastrais', () => {
     telefone: '11987654321',
     cep: '12345678',
   }, local);
-  assert.equal(criado.razao_social, 'Proteção Brasil Ltda');
+  assert.equal(criado.razao_social, 'Proteção brasil ltda');
   assert.equal(criado.cnpj, '12.345.678/0001-90');
   assert.equal(criado.telefone, '(11)9.8765.4321');
   assert.equal(criado.cep, '12.345-678');
@@ -60,7 +60,7 @@ test('fornecedor antigo aceita editar nome sem alterar CEP e telefone incompleto
   antigos[0].telefone = '456';
   local.setItem('gemape-demo-fornecedores', JSON.stringify(antigos));
   const editado = salvarFornecedor({ ...antigos[0], nome_fantasia: 'NOVA MARCA' }, local);
-  assert.equal(editado.nome_fantasia, 'Nova Marca');
+  assert.equal(editado.nome_fantasia, 'Nova marca');
   assert.equal(editado.cep, '123');
   assert.equal(editado.telefone, '456');
   assert.equal(editado.id, criado.id);
@@ -134,7 +134,7 @@ test('o formulário de fornecedor não exige nome fantasia nem categoria', async
   const { readFileSync } = await import('node:fs');
   const src = readFileSync(new URL('../src/routes/_authenticated/cadastros/fornecedores.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /id="nome_fantasia" name="nome_fantasia" required/);
-  assert.match(src, /id="razao_social" name="razao_social" required/);
+  assert.match(src, /id="razao_social" name="razao_social" capitalizar="texto" required/);
 });
 
 test('a tela de fornecedores não tem mais o campo nem a coluna de categorias (decisão 55)', async () => {

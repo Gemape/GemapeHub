@@ -24,7 +24,7 @@ test('o cadastro guarda a referência: renomear em Gerais muda o nome mostrado n
   assert.deepEqual(ref.resolverSubcategoria(lerParametros(local), 'cat-epi', registro),
     { id: 'sub-epi-capacete', nome: 'Capacete', foraDeGerais: false });
   renomearSubcategoria('sub-epi-capacete', 'Capacete de segurança', local);
-  assert.equal(ref.nomeSubcategoria(lerParametros(local), 'cat-epi', registro), 'Capacete de Segurança');
+  assert.equal(ref.nomeSubcategoria(lerParametros(local), 'cat-epi', registro), 'Capacete de segurança');
 });
 
 test('nome antigo sem referência é ligado à subcategoria de Gerais de mesmo nome', () => {
@@ -65,12 +65,12 @@ test('com a referência ligada, o nome gravado acompanha o nome atual de Gerais'
   renomearSubcategoria('sub-epi-capacete', 'Capacete X', local);
   const dados = { epis: [{ id: 'e1', subcategoria_id: 'sub-epi-capacete', categoria: 'Capacete' }], veiculos: [{ id: 'v1', subcategoria_id: 'sub-veiculos-moto', tipo: 'Moto' }] };
   assert.equal(ref.vincularSubcategorias(dados, lerParametros(local)), 1);
-  assert.equal(dados.epis[0].categoria, 'Capacete X');
+  assert.equal(dados.epis[0].categoria, 'Capacete x');
   assert.equal(dados.veiculos[0].tipo, 'Moto');
   // Excluída depois: aparece com o último nome que o usuário viu.
   removerSubcategoria('sub-epi-capacete', local);
   assert.deepEqual(ref.resolverSubcategoria(lerParametros(local), 'cat-epi', dados.epis[0]),
-    { id: null, nome: 'Capacete X', foraDeGerais: true });
+    { id: null, nome: 'Capacete x', foraDeGerais: true });
 });
 
 test('a escolha no formulário vira referência e nome atual; a antiga é mantida', () => {

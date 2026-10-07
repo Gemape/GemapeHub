@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { descricaoVeiculo, validarAquisicao } from "@/lib/descricao-veiculo";
 import { dataBrasilia } from "@/lib/portadores-caixa";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
@@ -237,10 +237,10 @@ export function VeiculosCadastroModulo() {
     } catch (falha) {
       erroMarca = falha instanceof Error ? falha.message : "Marca inválida.";
     }
-    const modelo = capitalizarCadastro(texto("modelo"));
+    const modelo = capitalizarTexto(texto("modelo"));
     const anoTexto = texto("ano");
     const ano = anoTexto ? Number(anoTexto) : null;
-    const cor = capitalizarCadastro(texto("cor"));
+    const cor = capitalizarTexto(texto("cor"));
     const kmTexto = texto("quilometragem_atual");
     const km = kmTexto ? Number(kmTexto) : 0;
     const status = texto("status") || "Ativo";
@@ -295,7 +295,7 @@ export function VeiculosCadastroModulo() {
       quilometragem_atual: km,
       status,
       empregado_responsavel_id: responsavel && responsavel !== NENHUM ? responsavel : null,
-      observacoes: texto("observacoes") || null,
+      observacoes: capitalizarTexto(texto("observacoes")) || null,
     };
     if (MODO_DEMO) {
       // A descrição é montada sozinha: placa, subcategoria, marca, modelo, ano, cor e combustível.
@@ -574,7 +574,7 @@ export function VeiculosCadastroModulo() {
             <div className="space-y-1.5">
               <Label htmlFor="modelo">Modelo</Label>
               <Input
-                id="modelo"
+                id="modelo" capitalizar="texto"
                 name="modelo"
                 aria-required
                 defaultValue={base?.modelo ?? ""}
@@ -594,7 +594,7 @@ export function VeiculosCadastroModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cor">Cor</Label>
-              <Input id="cor" name="cor" defaultValue={base?.cor ?? ""} />
+              <Input id="cor" capitalizar="texto" name="cor" defaultValue={base?.cor ?? ""} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="combustivel">Combustível</Label>
@@ -731,7 +731,7 @@ export function VeiculosCadastroModulo() {
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="observacoes">Observações</Label>
               <Textarea
-                id="observacoes"
+                id="observacoes" capitalizar="texto"
                 name="observacoes"
                 defaultValue={base?.observacoes ?? ""}
                 placeholder="Histórico ou detalhes do veículo..."

@@ -20,7 +20,7 @@ import {
 import { avisoExclusaoDoFornecedor, vinculosDoFornecedor } from "@/lib/codigo-fabrica-vinculos";
 import { nomeDoFornecedor } from "@/lib/compras-fornecedor";
 import { lerParametros, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
-import { formatarCep, formatarCnpj, formatarTelefone } from "@/lib/formatacao-cadastral";
+import { capitalizarNomePessoa, capitalizarTexto, formatarCep, formatarCnpj, formatarTelefone } from "@/lib/formatacao-cadastral";
 import { aoDigitarMascarado } from "@/lib/mascaras";
 
 export const Route = createFileRoute("/_authenticated/cadastros/fornecedores")({
@@ -65,20 +65,20 @@ function PaginaFornecedores() {
     const formulario = new FormData(evento.currentTarget);
     const texto = (nome: string) => String(formulario.get(nome) ?? "").trim();
     const valores: FornecedorDados = {
-      razao_social: texto("razao_social"),
-      nome_fantasia: texto("nome_fantasia"),
+      razao_social: capitalizarTexto(texto("razao_social")),
+      nome_fantasia: capitalizarTexto(texto("nome_fantasia")),
       cnpj: texto("cnpj"),
-      rua: texto("rua"),
+      rua: capitalizarTexto(texto("rua")),
       numero: texto("numero"),
-      bairro: texto("bairro"),
+      bairro: capitalizarTexto(texto("bairro")),
       cep: texto("cep"),
-      cidade: texto("cidade"),
+      cidade: capitalizarTexto(texto("cidade")),
       estado: texto("estado"),
-      pais: texto("pais"),
+      pais: capitalizarTexto(texto("pais")),
       inscricao_estadual: texto("inscricao_estadual"),
       telefone: texto("telefone"),
-      contato: texto("contato"),
-      observacoes: texto("observacoes"),
+      contato: capitalizarNomePessoa(texto("contato")),
+      observacoes: capitalizarTexto(texto("observacoes")),
       // O campo categoria saiu da tela (decisão 55); o que já estava gravado fica como está.
       categorias: editando?.categorias ?? [],
     };
@@ -163,20 +163,20 @@ function PaginaFornecedores() {
         <form key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "novo")} onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5"><Label htmlFor="codigo">Código do fornecedor</Label><Input id="codigo" readOnly tabIndex={-1} className="bg-muted font-mono" value={codigoPrevisto} /><p className="text-xs text-muted-foreground">Gerado automaticamente.</p></div>
           <div className="hidden sm:block" />
-          <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" required defaultValue={base?.razao_social ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" defaultValue={base?.nome_fantasia ?? ""} /></div>
+          <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" capitalizar="texto" required defaultValue={base?.razao_social ?? ""} /></div>
+          <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" capitalizar="texto" defaultValue={base?.nome_fantasia ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={formatarCnpj(editando?.cnpj ?? "")} /></div>
           <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Endereço</h2>
           {camposEndereco.map((campo) => <div key={campo.nome} className="space-y-1.5">
             <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
-            <Input id={campo.nome} name={campo.nome} inputMode={campo.nome === "cep" ? "numeric" : undefined} onInput={aoDigitarMascarado(campo.nome)} defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""} />
+            <Input id={campo.nome} name={campo.nome} {...(["rua", "bairro", "cidade", "pais"].includes(campo.nome) ? { capitalizar: "texto" as const } : {})} inputMode={campo.nome === "cep" ? "numeric" : undefined} onInput={aoDigitarMascarado(campo.nome)} defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""} />
           </div>)}
           <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Contato e informações adicionais</h2>
           {camposContato.map((campo) => <div key={campo.nome} className="space-y-1.5">
             <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
-            <Input id={campo.nome} name={campo.nome} inputMode={campo.nome === "telefone" ? "tel" : undefined} onInput={aoDigitarMascarado(campo.nome)} defaultValue={campo.nome === "telefone" ? formatarTelefone(base?.telefone ?? "") : base?.[campo.nome] ?? ""} />
+            <Input id={campo.nome} name={campo.nome} {...(campo.nome === "contato" ? { capitalizar: "nome" as const } : {})} inputMode={campo.nome === "telefone" ? "tel" : undefined} onInput={aoDigitarMascarado(campo.nome)} defaultValue={campo.nome === "telefone" ? formatarTelefone(base?.telefone ?? "") : base?.[campo.nome] ?? ""} />
           </div>)}
-          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="observacoes">Observações</Label><Textarea id="observacoes" name="observacoes" defaultValue={base?.observacoes ?? ""} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="observacoes">Observações</Label><Textarea id="observacoes" name="observacoes" capitalizar="texto" defaultValue={base?.observacoes ?? ""} /></div>
           <DialogFooter className="sm:col-span-2">
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>
             <Button requiresWrite type="submit">Salvar</Button>

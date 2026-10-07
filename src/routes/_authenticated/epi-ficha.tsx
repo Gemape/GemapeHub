@@ -43,6 +43,7 @@ import { combinaBusca } from "@/lib/parametros-base";
 import { useFichasEpi } from "@/lib/use-fichas-epi";
 import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 
 type EpiResumo = {
   id: string;
@@ -148,8 +149,10 @@ function FichaEpiPagina() {
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
+    const formatado = { ...conteudo };
+    for (const campo of CAMPOS_FICHA) formatado[campo.chave] = capitalizarTexto(conteudo[campo.chave] ?? "");
     const salvou = executar(
-      () => (editandoId ? moverFicha(editandoId, epiSel, conteudo) : salvarFicha(epiSel, conteudo)),
+      () => (editandoId ? moverFicha(editandoId, epiSel, formatado) : salvarFicha(epiSel, formatado)),
       "Ficha de EPI salva",
     );
     if (salvou) setAberto(false);
@@ -278,6 +281,7 @@ function FichaEpiPagina() {
                 <Label htmlFor={`ficha-${campo.chave}`}>{campo.rotulo}</Label>
                 <Textarea
                   id={`ficha-${campo.chave}`}
+                  capitalizar="texto"
                   rows={campo.chave === "setores" ? 2 : 3}
                   aria-required
                   value={conteudo[campo.chave]}

@@ -29,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData, type Modulo } from "@/lib/gemape";
+import { capitalizarNomePessoa, capitalizarTexto } from "@/lib/formatacao-cadastral";
 import {
   useEmpregados,
   useExcluir,
@@ -91,8 +92,8 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
     const valores = {
       data: String(f.get("data") ?? new Date().toISOString().slice(0, 10)),
       hora: String(f.get("hora") ?? new Date().toLocaleTimeString("pt-BR", { hour12: false })),
-      responsavel_registro: String(f.get("responsavel_registro") ?? "").trim(),
-      descricao_ocorrencia: String(f.get("descricao_ocorrencia") ?? "").trim(),
+      responsavel_registro: capitalizarNomePessoa(String(f.get("responsavel_registro") ?? "").trim()),
+      descricao_ocorrencia: capitalizarTexto(String(f.get("descricao_ocorrencia") ?? "").trim()),
       tipo_ocorrencia: tipoOcorrencia,
       empregado_id: texto("empregado_id"),
       item_id: modulo !== "veiculo" ? texto("alvo_id") : null,
@@ -291,6 +292,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
               <Input
                 id="responsavel_registro"
                 name="responsavel_registro"
+                capitalizar="nome"
                 required
                 defaultValue={editando?.responsavel_registro ?? ""}
                 placeholder="Nome de quem está registrando"
@@ -301,6 +303,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
               <Textarea
                 id="descricao_ocorrencia"
                 name="descricao_ocorrencia"
+                capitalizar="texto"
                 required
                 rows={4}
                 defaultValue={editando?.descricao_ocorrencia ?? ""}
