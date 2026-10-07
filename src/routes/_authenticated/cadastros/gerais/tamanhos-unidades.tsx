@@ -6,10 +6,14 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 
 const ABAS = ["cadastro", "associar"] as const;
 type Aba = (typeof ABAS)[number];
+const DE = ["epi", "uniformes", "ferramentas"] as const; // menu de onde a pessoa veio (decisão 86)
+type De = (typeof DE)[number];
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/tamanhos-unidades")({
-  validateSearch: (search: Record<string, unknown>): { aba?: Aba } =>
-    ABAS.includes(search["aba"] as Aba) ? { aba: search["aba"] as Aba } : {},
+  validateSearch: (search: Record<string, unknown>): { aba?: Aba; de?: De } => ({
+    ...(ABAS.includes(search["aba"] as Aba) ? { aba: search["aba"] as Aba } : {}),
+    ...(DE.includes(search["de"] as De) ? { de: search["de"] as De } : {}),
+  }),
   head: () => ({ meta: [{ title: "Tamanho e medidas de produto | Patrimônio GEMAPE" }] }),
   component: TamanhoEMedidas,
 });

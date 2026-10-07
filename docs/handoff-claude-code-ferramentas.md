@@ -334,3 +334,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Painel mensal do Check list: o dia de hoje (Brasília) se renova a cada minuto, então a tela aberta na virada do dia atualiza previsões e situações sem recarregar.
 - Capitalização (decisão 84): `capitalizarTexto` (primeira letra) e `capitalizarNomePessoa` (por palavra) em `formatacao-cadastral.ts`; `Input`/`Textarea` aceitam `capitalizar="texto"|"nome"` e corrigem no blur e no Enter; mapa de campos em `docs/capitalizacao-campos.md`.
 - Parâmetros > Tamanho e Medidas de Produto: o submenu Cadastro saiu (decisão 85); o menu pai abre o cadastro (`abaPadrao`) e só "Associar ao produto" fica como submenu.
+- Parâmetros: Tabelas de Apoio e Tamanho e Medidas de Produto saíram de Gerais e aparecem dentro de EPI, Uniformes e Ferramentas (decisão 86): `itensApoio(de)` em `menu-parametros.ts`, mesma tela, `?de=` só marca o menu de origem.

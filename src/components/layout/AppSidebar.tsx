@@ -11,6 +11,7 @@ import {
   MENU_GERAIS,
   MENU_UNIFORMES,
   MENU_VEICULOS,
+  URLS_APOIO,
   URLS_GERAIS,
   type AbaMenu,
   type ItemMenu,
@@ -101,14 +102,26 @@ const ICONES = {
   ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus, Link2,
 } as const;
 
+function useDeAtual(): string | undefined {
+  const de = useRouterState({ select: (s) => (s.location.search as Record<string, unknown>)["de"] });
+  return typeof de === "string" ? de : undefined;
+}
+
+// Item de tela repetida em vários menus (decisão 86): só conta como aberto no menu de onde a pessoa veio (?de=).
+const doMenuAtual = (item: ItemMenu, deAtual: string | undefined) => !item.de || item.de === deAtual;
+// Grupo do menu: os endereços próprios e, se a pessoa veio dele, também os das telas repetidas.
+const prefixosDoGrupo = (de: string, proprios: readonly string[], deAtual: string | undefined) =>
+  deAtual === de ? [...proprios, ...URLS_APOIO] : proprios;
+
 function useAbaAtual(): string | undefined {
   const aba = useRouterState({ select: (s) => (s.location.search as Record<string, unknown>)["aba"] });
   return typeof aba === "string" ? aba : undefined;
 }
 
 // Submenus que antes eram abas (decisão 43). Sem ?aba=, vale a primeira aba que a pessoa pode ver.
-function SubAbas({ url, abas, abaPadrao, pathname, abaAtual, isAdmin }: { url: string; abas: readonly AbaMenu[]; abaPadrao?: string | undefined; pathname: string; abaAtual: string | undefined; isAdmin: boolean }) {
+function SubAbas({ url, abas, abaPadrao, de, pathname, abaAtual, isAdmin }: { url: string; abas: readonly AbaMenu[]; abaPadrao?: string | undefined; de?: string | undefined; pathname: string; abaAtual: string | undefined; isAdmin: boolean }) {
   const visiveis = abas.filter((a) => !a.soAdmin || isAdmin);
+  const deAtual = useDeAtual();
   // Com abaPadrao, a tela sem ?aba= é a do próprio menu pai e nenhum submenu fica marcado.
   const ativa = visiveis.some((a) => a.aba === abaAtual) ? abaAtual : (abaPadrao ?? visiveis[0]?.aba);
   return (
@@ -117,8 +130,8 @@ function SubAbas({ url, abas, abaPadrao, pathname, abaAtual, isAdmin }: { url: s
         const Icone = ICONES[a.icone];
         return (
         <SidebarMenuSubItem key={a.aba}>
-          <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba} className="h-auto min-h-7 py-1">
-            <Link to={url} search={{ aba: a.aba } as never}>
+          <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba && (!de || de === deAtual)} className="h-auto min-h-7 py-1">
+            <Link to={url} search={{ aba: a.aba, ...(de ? { de } : {}) } as never}>
               <Icone />
               <span className="!whitespace-normal leading-tight">{a.titulo}</span>
             </Link>
@@ -133,19 +146,22 @@ function SubAbas({ url, abas, abaPadrao, pathname, abaAtual, isAdmin }: { url: s
 function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
   const { isAdmin } = useAccess();
   const abaAtual = useAbaAtual();
+  const deAtual = useDeAtual();
+  const doMenu = doMenuAtual(item, deAtual);
+  const searchDe = item.de ? { de: item.de } : {};
   if (item.abas) {
     const Icone = ICONES[item.icone];
     return (
       <SidebarMenuSubItem>
         {/* Título com ícone e texto iguais aos dos outros menus; as abas ficam logo abaixo. */}
-        <SidebarMenuSubButton asChild isActive={!!item.abaPadrao && pathname === item.url && !item.abas.some((a) => a.aba === abaAtual)} className="h-auto min-h-7 py-1">
-          <Link to={item.url}>
+        <SidebarMenuSubButton asChild isActive={doMenu && !!item.abaPadrao && pathname === item.url && !item.abas.some((a) => a.aba === abaAtual)} className="h-auto min-h-7 py-1">
+          <Link to={item.url} {...(item.de ? { search: searchDe as never } : {})}>
             <Icone />
             <span className="!whitespace-normal leading-tight">{item.titulo}</span>
           </Link>
         </SidebarMenuSubButton>
         <SidebarMenuSub className="mx-0 ml-2 px-1.5">
-          <SubAbas url={item.url} abas={item.abas} abaPadrao={item.abaPadrao} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
+          <SubAbas url={item.url} abas={item.abas} abaPadrao={item.abaPadrao} de={item.de} pathname={pathname} abaAtual={abaAtual} isAdmin={isAdmin} />
         </SidebarMenuSub>
       </SidebarMenuSubItem>
     );
@@ -153,8 +169,8 @@ function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
   const Icone = ICONES[item.icone];
   return (
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)} className="h-auto min-h-7 py-1">
-        <Link to={item.url} {...(item.search ? { search: item.search as never } : {})}>
+      <SidebarMenuSubButton asChild isActive={doMenu && (pathname === item.url || pathname.startsWith(`${item.url}/`))} className="h-auto min-h-7 py-1">
+        <Link to={item.url} {...(item.search ? { search: item.search as never } : item.de ? { search: searchDe as never } : {})}>
           <Icone />
           {/* Nome inteiro, quebrando linha se precisar. */}
           <span className="!whitespace-normal leading-tight">{item.titulo}</span>
@@ -226,11 +242,12 @@ function MenuGerais({ pathname }: { pathname: string }) {
 
 // Parâmetros > EPI: Cadastrar EPI e, dentro dele, Cadastrar Ficha de EPI.
 function MenuEpi({ pathname }: { pathname: string }) {
+  const deAtual = useDeAtual();
   return (
     <GrupoRecolhivel
       titulo="EPI"
       icone={<HardHat />}
-      prefixos={MENU_EPI.flatMap((i) => [i.url, ...(i.filhos ?? []).map((f) => f.url)])}
+      prefixos={prefixosDoGrupo("epi", MENU_EPI.filter((i) => !i.de).flatMap((i) => [i.url, ...(i.filhos ?? []).map((f) => f.url)]), deAtual)}
       pathname={pathname}
     >
       {MENU_EPI.map((item) =>
@@ -256,11 +273,12 @@ function MenuEpi({ pathname }: { pathname: string }) {
 // Parâmetros > Ferramentas: Cadastrar Caixa (habilitar caixas) e Cadastrar Ferramenta (decisão 54).
 function MenuFerramentas({ pathname }: { pathname: string }) {
   const { isAdmin } = useAccess();
+  const deAtual = useDeAtual();
   return (
     <GrupoRecolhivel
       titulo="Ferramentas"
       icone={<Wrench />}
-      prefixos={MENU_FERRAMENTAS.map((i) => i.url)}
+      prefixos={prefixosDoGrupo("ferramentas", MENU_FERRAMENTAS.filter((i) => !i.de).map((i) => i.url), deAtual)}
       pathname={pathname}
     >
       {MENU_FERRAMENTAS.filter((item) => !item.soAdmin || isAdmin).map((item) => (
@@ -272,11 +290,12 @@ function MenuFerramentas({ pathname }: { pathname: string }) {
 
 // Parâmetros > Uniformes: Cadastrar Uniforme (decisão 48).
 function MenuUniformes({ pathname }: { pathname: string }) {
+  const deAtual = useDeAtual();
   return (
     <GrupoRecolhivel
       titulo="Uniformes"
       icone={<Shirt />}
-      prefixos={MENU_UNIFORMES.map((i) => i.url)}
+      prefixos={prefixosDoGrupo("uniformes", MENU_UNIFORMES.filter((i) => !i.de).map((i) => i.url), deAtual)}
       pathname={pathname}
     >
       {MENU_UNIFORMES.map((item) => (

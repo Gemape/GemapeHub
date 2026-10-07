@@ -2,12 +2,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { MENU_FERRAMENTAS, MENU_GERAIS, URLS_GERAIS } from "../src/lib/menu-parametros.ts";
+import { MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES, URLS_GERAIS, itensApoio } from "../src/lib/menu-parametros.ts";
 
 const sidebar = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
 
-test("Tamanho e Medidas de Produto é um menu só em Gerais, com Associar como aba (decisão 38)", () => {
-  const item = MENU_GERAIS.find((i) => i.titulo === "Tamanho e Medidas de Produto");
+test("Tamanho e Medidas de Produto é um menu só, com Associar como aba (decisões 38 e 86)", () => {
+  const item = itensApoio("epi").find((i) => i.titulo === "Tamanho e Medidas de Produto");
   assert.equal(item?.url, "/cadastros/gerais/tamanhos-unidades");
   assert.ok(item && !("filhos" in item));
   assert.ok(!MENU_GERAIS.some((i) => i.titulo.startsWith("Associar")));
@@ -19,6 +19,23 @@ test("Tamanho e Medidas de Produto é um menu só em Gerais, com Associar como a
   assert.match(antigo, /redirect\(\{ to: "\/cadastros\/gerais\/tamanhos-unidades", search: \{ aba: "associar" \} \}\)/);
 });
 
+test("Tabelas de Apoio e Tamanho e Medidas saem de Gerais e ficam em EPI, Uniformes e Ferramentas (decisão 86)", () => {
+  assert.deepEqual(MENU_GERAIS.map((i) => i.titulo), ["Código do Produto", "Código de Fábrica", "Endereçamento"]);
+  assert.ok(!URLS_GERAIS.includes("/cadastros/gerais/categorias"));
+  assert.ok(!URLS_GERAIS.includes("/cadastros/gerais/tamanhos-unidades"));
+  for (const [de, menu] of [["epi", MENU_EPI], ["uniformes", MENU_UNIFORMES], ["ferramentas", MENU_FERRAMENTAS]]) {
+    const apoio = menu.filter((i) => i.de === de);
+    assert.deepEqual(apoio.map((i) => [i.titulo, i.url]), [
+      ["Tabelas de Apoio", "/cadastros/gerais/categorias"],
+      ["Tamanho e Medidas de Produto", "/cadastros/gerais/tamanhos-unidades"],
+    ]);
+    assert.deepEqual(apoio[1].abas.map((a) => a.aba), ["associar"]);
+  }
+  assert.match(sidebar, /prefixosDoGrupo\("epi"/);
+  assert.match(sidebar, /prefixosDoGrupo\("uniformes"/);
+  assert.match(sidebar, /prefixosDoGrupo\("ferramentas"/);
+});
+
 test("Código do Produto continua em Gerais, no mesmo endereço", () => {
   const item = MENU_GERAIS.find((i) => i.titulo === "Código do Produto");
   assert.equal(item?.url, "/cadastros/gerais/codigo-produto");
@@ -27,7 +44,7 @@ test("Código do Produto continua em Gerais, no mesmo endereço", () => {
 test("Caixas saiu de Gerais e fica em Parâmetros > Ferramentas, fora de Módulos", () => {
   assert.ok(!MENU_GERAIS.some((i) => i.titulo === "Caixas" || i.url === "/cadastros/gerais/caixas"));
   assert.deepEqual(
-    MENU_FERRAMENTAS.map((f) => [f.titulo, f.url]),
+    MENU_FERRAMENTAS.filter((f) => !f.de).map((f) => [f.titulo, f.url]),
     [
       ["Cadastrar Caixa", "/caixas-ferramentas"],
       ["Cadastrar Ferramenta", "/cadastros/ferramentas"],
@@ -48,7 +65,7 @@ test("o menu lateral usa os dados de menu-parametros e não lista mais Associar 
 
 test("o destaque de Gerais não inclui Caixas", () => {
   assert.ok(!URLS_GERAIS.includes("/cadastros/gerais/caixas"));
-  assert.ok(URLS_GERAIS.includes("/cadastros/gerais/tamanhos-unidades"));
+  assert.ok(URLS_GERAIS.includes("/cadastros/gerais/codigo-produto"));
 });
 
 test("Cadastrar Caixa é o primeiro de Ferramentas, abre direto em Habilitar caixas e é só do Administrador (decisão 54)", () => {
@@ -68,7 +85,7 @@ test("Cadastrar Caixa é o primeiro de Ferramentas, abre direto em Habilitar cai
 
 test("o menu EPI é de Parâmetros: Cadastrar Ficha de EPI fica dentro de Cadastrar EPI", async () => {
   const { MENU_EPI } = await import("../src/lib/menu-parametros.ts");
-  assert.deepEqual(MENU_EPI.map((i) => i.titulo), ["Cadastrar EPI"]);
+  assert.deepEqual(MENU_EPI.filter((i) => !i.de).map((i) => i.titulo), ["Cadastrar EPI"]);
   const cadastrar = MENU_EPI[0];
   assert.equal(cadastrar.url, "/epi-cadastrar");
   assert.deepEqual(cadastrar.filhos?.map((f) => [f.titulo, f.url]), [["Cadastrar Ficha de EPI", "/epi-ficha"]]);
@@ -115,7 +132,7 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   assert.equal(abaDoModulo("uniforme", "termo-baixa"), "termo-baixa");
   assert.equal(abaDoModulo("veiculo", undefined), "frota");
   assert.match(sidebar, /<ModuloComAbas /);
-  assert.match(sidebar, /search=\{\{ aba: a\.aba \} as never\}/);
+  assert.match(sidebar, /search=\{\{ aba: a\.aba, \.\.\.\(de \? \{ de \} : \{\}\) \} as never\}/);
 });
 
 test("Gerais, com seus submenus, é o primeiro item de Parâmetros, antes de EPI e Ferramentas (decisão 44)", () => {
@@ -152,11 +169,11 @@ test("todo submenu de Módulos e de Tamanho e Medidas tem ícone, e a barra late
 
 test("Tamanho e Medidas de Produto não repete o submenu Cadastro: o próprio menu abre o cadastro (decisão 85)", async () => {
   const m = await import("../src/lib/menu-parametros.ts");
-  const item = m.MENU_GERAIS.find((i) => i.titulo === "Tamanho e Medidas de Produto");
+  const item = m.itensApoio("epi").find((i) => i.titulo === "Tamanho e Medidas de Produto");
   assert.deepEqual(item.abas.map((a) => a.titulo), ["Associar ao produto"]);
   assert.equal(item.abaPadrao, "cadastro");
   assert.match(sidebar, /abaPadrao \?\? visiveis\[0\]\?\.aba/);
-  assert.match(sidebar, /isActive=\{!!item\.abaPadrao && pathname === item\.url/);
+  assert.match(sidebar, /isActive=\{doMenu && !!item\.abaPadrao && pathname === item\.url/);
   const pagina = readFileSync(new URL("../src/routes/_authenticated/cadastros/gerais/tamanhos-unidades.tsx", import.meta.url), "utf8");
   assert.match(pagina, /pedida \?\? "cadastro"/);
 });
