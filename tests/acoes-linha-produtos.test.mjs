@@ -28,5 +28,6 @@ test("Clonar ferramenta copia categoria, grupo, marca e mínimo e deixa o modelo
   const fonte = ler("components/modules/ItensModulo.tsx");
   assert.match(fonte, /defaultValue=\{editando\?\.modelo \?\? ""\}/);
   assert.match(fonte, /defaultValue=\{base\?\.estoque_minimo \?\? 0\}/);
-  assert.match(fonte, /defaultValue=\{base\?\.grupo_ferramenta \?\? ""\}/);
+  assert.match(fonte, /setGrupoEscolhido\(base\?\.grupo_ferramenta \?\? ""\)/);
+  assert.match(fonte, /value=\{grupoEscolhido\} onValueChange=\{setGrupoEscolhido\}/);
 });

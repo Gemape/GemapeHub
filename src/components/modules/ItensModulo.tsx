@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 
@@ -42,7 +42,7 @@ import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { codigosReservadosFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, selecaoMarcaCadastrada } from "@/lib/cadastro-ferramentas";
+import { codigosReservadosFerramenta, grupoPedeQualFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, qualFerramentaDe, selecaoMarcaCadastrada } from "@/lib/cadastro-ferramentas";
 import {
   estaAtivo,
   lerParametros,
@@ -65,6 +65,9 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   // leem dele (base); `editando` continua sendo a flag de edição.
   const [modelo, setModelo] = useState<Item | null>(null);
   const base = editando ?? modelo;
+  // Grupo escolhido no formulário: "Outros" e "Diversos" abrem o campo para digitar qual ferramenta é (decisão 83).
+  const [grupoEscolhido, setGrupoEscolhido] = useState("");
+  useEffect(() => { if (aberto) setGrupoEscolhido(base?.grupo_ferramenta ?? ""); }, [aberto, base]);
   const [previaCodigo, setPreviaCodigo] = useState("");
   const salvando = useRef(false);
   const parametros = useParametrosBase();
@@ -147,7 +150,8 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
         codigosExistentes: editando ? [] : await codigosFerramenta(),
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
         categoriaAtual: base?.categoria_ferramenta ?? "",
-        grupoFerramenta: String(f.get("grupo_ferramenta") ?? ""),
+        grupoFerramenta: grupoEscolhido,
+        qualFerramenta: String(f.get("qual_ferramenta") ?? ""),
         marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, base?.marca ?? null),
         marcaAtual: base?.marca ?? "",
         modelo: capitalizarCadastro(String(f.get("modelo") ?? "")),
@@ -338,13 +342,20 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grupo_ferramenta">Grupo de ferramenta</Label>
-                <Select name="grupo_ferramenta" required defaultValue={base?.grupo_ferramenta ?? ""}>
+                <Select name="grupo_ferramenta" required value={grupoEscolhido} onValueChange={setGrupoEscolhido}>
                   <SelectTrigger id="grupo_ferramenta"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
                   <SelectContent>
                     {parametrosSelecao.gruposFerramenta.map((g) => <SelectItem key={g.id} value={g.nome}>{rotulo(g)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+              {grupoPedeQualFerramenta(grupoEscolhido) && (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="qual_ferramenta">Qual ferramenta?</Label>
+                  <Input id="qual_ferramenta" name="qual_ferramenta" required maxLength={60} defaultValue={qualFerramentaDe(base)} placeholder="Digite o nome da ferramenta" />
+                  <p className="text-xs text-muted-foreground">O nome digitado entra na descrição no lugar do grupo.</p>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="marca">Marca</Label>

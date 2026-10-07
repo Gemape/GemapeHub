@@ -11,7 +11,7 @@ test('série, patrimônio, aquisição e custo persistem ao salvar e reabrir', a
     ...prepararCadastroFerramenta({
       parametros: lerParametros(null), codigosExistentes: ['FER-0001'],
       categoriaFerramenta: 'Elétrica',
-      grupoFerramenta: 'Diversos', modelo: 'Furadeira', estoqueMinimo: '1',
+      grupoFerramenta: 'Alicates', modelo: 'Furadeira', estoqueMinimo: '1',
     }),
     numero_serie: 'SERIE-42', preco_unitario: 240.5,
   };

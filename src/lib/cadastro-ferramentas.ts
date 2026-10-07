@@ -20,6 +20,8 @@ export type EntradaCadastroFerramenta = {
   // Categoria já gravada na ferramenta em edição: continua aceita mesmo fora das subcategorias de Gerais.
   categoriaAtual?: string;
   grupoFerramenta: string;
+  // Qual ferramenta é, quando o grupo escolhido é "Outros" ou "Diversos" (decisão 83).
+  qualFerramenta?: string;
   modelo: string;
   estoqueMinimo: string | number;
   marca?: string;
@@ -33,6 +35,19 @@ export function descricaoFerramenta(d: { grupo?: string | null; modelo?: string 
     .map((parte) => String(parte ?? "").trim().replace(/\s+/g, " "))
     .filter(Boolean)
     .join(" · ");
+}
+
+/** Decisão 83: nos grupos "Outros" (e "Outro", "Outras", "Outra") e "Diversos" o cadastro pede que se digite qual ferramenta é. */
+export const grupoPedeQualFerramenta = (grupo: string | null | undefined): boolean =>
+  !!grupo && ["outro", "outra", "outros", "outras", "diversos"].includes(grupo.trim().toLowerCase());
+
+const limparQual = (texto: string) => texto.trim().replace(/\s+/g, " ").replace(/ · /g, " ").slice(0, 60);
+
+/** Texto digitado de uma ferramenta já cadastrada: é a parte do grupo na descrição, quando ela difere do nome do grupo. */
+export function qualFerramentaDe(item: { grupo_ferramenta?: string | null; nome?: string | null } | null | undefined): string {
+  if (!item || !grupoPedeQualFerramenta(item.grupo_ferramenta)) return "";
+  const primeira = String(item.nome ?? "").split(" · ")[0]?.trim() ?? "";
+  return primeira && primeira.toLowerCase() !== item.grupo_ferramenta!.trim().toLowerCase() ? primeira : "";
 }
 
 export function protegerEstoqueNaEdicao<T extends Record<string, unknown>>(valores: T): Omit<T, "estoque_atual"> {
@@ -86,6 +101,8 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
   if (!categoriaFerramenta) throw new Error("Categoria de ferramenta inválida.");
   const grupoFerramenta = entrada.parametros.gruposFerramenta.find((g) => g.nome === entrada.grupoFerramenta.trim());
   if (!grupoFerramenta) throw new Error("Grupo de ferramenta inválido.");
+  const qual = grupoPedeQualFerramenta(grupoFerramenta.nome) ? limparQual(entrada.qualFerramenta ?? "") : "";
+  if (grupoPedeQualFerramenta(grupoFerramenta.nome) && !qual) throw new Error("Informe qual é a ferramenta.");
   const marcaInformada = entrada.marca?.trim() ?? "";
   const marcaCadastrada = entrada.parametros.marcasFerramenta.find((m) => mesmoNome(m.nome, marcaInformada));
   if (marcaInformada && !marcaCadastrada && (!entrada.marcaAtual || !mesmoNome(marcaInformada, entrada.marcaAtual))) {
@@ -107,7 +124,7 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
     // banco, recebe a categoria de ferramenta no cadastro novo; a edição não a reescreve,
     // para a ferramenta antiga manter a subcategoria gravada.
     ...(entrada.codigoAtual ? {} : { categoria: categoriaFerramenta.nome }),
-    nome: descricaoFerramenta({ grupo: grupoFerramenta.nome, modelo, marca }),
+    nome: descricaoFerramenta({ grupo: qual || grupoFerramenta.nome, modelo, marca }),
     modelo,
     estoque_minimo: Number(minimoTexto),
     categoria_ferramenta: categoriaFerramenta.nome,
