@@ -133,8 +133,9 @@ function conflitoDeKm(
   novo: { data: string; hora?: string },
   km: number,
   storage: StorageLike | null,
+  ignorarId?: string,
 ): { data: string; hora?: string; km: number } | null {
-  const outros = [...lerAbastecimentos(storage), ...lerManutencoes(storage)].filter((r) => r.veiculoId === veiculoId);
+  const outros = [...lerAbastecimentos(storage), ...lerManutencoes(storage)].filter((r) => r.veiculoId === veiculoId && r.id !== ignorarId);
   return (
     outros.find((r) => {
       const hora = (r as { hora?: string }).hora;
@@ -216,12 +217,16 @@ export function custoNaoNegativo(valor: string | number | undefined): number | n
 }
 
 // `acoes` são os grupos de Parâmetros > Veículos > Ações de manutenção, cada um com suas ações.
-export function registrarManutencao(
+type AcoesParametros = { id: string; nome?: string; subitens: { id: string; nome: string }[] }[];
+
+// Valida a entrada e monta o registro (sem id nem data de criação); `ignorarId` é a manutenção que está sendo editada.
+function montarManutencao(
   entrada: EntradaManutencao,
-  storage = storagePadrao(),
-  agora = new Date(),
-  acoes: { id: string; nome?: string; subitens: { id: string; nome: string }[] }[] = [],
-): ManutencaoVeiculo {
+  storage: StorageLike | null,
+  agora: Date,
+  acoes: AcoesParametros,
+  ignorarId?: string,
+): Omit<ManutencaoVeiculo, "id" | "criadoEm"> {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
   if (entrada.tipo !== "Preventiva" && entrada.tipo !== "Corretiva") throw new Error("Escolha o tipo: preventiva ou corretiva.");
   const data = validarData(entrada.data, agora);
@@ -256,15 +261,41 @@ export function registrarManutencao(
   if (custoPecas === null) throw new Error("Informe o custo das peças em reais (0 se não houve).");
   const custoMaoDeObra = custoNaoNegativo(entrada.custoMaoDeObra);
   if (custoMaoDeObra === null) throw new Error("Informe o custo da mão de obra em reais (0 se não houve).");
-  const conflito = conflitoDeKm(entrada.veiculoId, { data }, km, storage);
+  const conflito = conflitoDeKm(entrada.veiculoId, { data }, km, storage, ignorarId);
   if (conflito) throw new Error(mensagemKm(conflito));
-  const registro: ManutencaoVeiculo = {
-    id: novoId(), veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId: grupos[0]!.acaoId, descricao,
+  return {
+    veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId: grupos[0]!.acaoId, descricao,
     itens: grupos.flatMap((g) => g.itens), grupos, local: entrada.local, localNome, custoPecas, custoMaoDeObra,
-    custoTotal: Math.round((custoPecas + custoMaoDeObra) * 100) / 100, criadoEm: agora.toISOString(),
+    custoTotal: Math.round((custoPecas + custoMaoDeObra) * 100) / 100,
   };
+}
+
+export function registrarManutencao(
+  entrada: EntradaManutencao,
+  storage = storagePadrao(),
+  agora = new Date(),
+  acoes: AcoesParametros = [],
+): ManutencaoVeiculo {
+  const registro: ManutencaoVeiculo = { id: novoId(), ...montarManutencao(entrada, storage, agora, acoes), criadoEm: agora.toISOString() };
   alterarLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) => [...lista, registro]);
   return registro;
+}
+
+// Edita uma manutenção já registrada: valida como no cadastro e troca tudo, menos o id e a data de criação.
+export function editarManutencao(
+  id: string,
+  entrada: EntradaManutencao,
+  storage = storagePadrao(),
+  agora = new Date(),
+  acoes: AcoesParametros = [],
+): ManutencaoVeiculo {
+  if (!lerManutencoes(storage).some((m) => m.id === id)) throw new Error("Manutenção não encontrada.");
+  const novos = montarManutencao(entrada, storage, agora, acoes, id);
+  let editado!: ManutencaoVeiculo;
+  alterarLista<ManutencaoVeiculo>(CHAVE_MANUTENCOES, storage, (lista) =>
+    lista.map((m) => (m.id === id ? (editado = { id, ...novos, criadoEm: m.criadoEm }) : m)),
+  );
+  return editado;
 }
 
 export const removerManutencao = (id: string, storage = storagePadrao()): void =>
