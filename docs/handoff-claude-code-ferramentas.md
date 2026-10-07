@@ -336,3 +336,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Parâmetros > Tamanho e Medidas de Produto: o submenu Cadastro saiu (decisão 85); o menu pai abre o cadastro (`abaPadrao`) e só "Associar ao produto" fica como submenu.
 - Parâmetros: Tabelas de Apoio e Tamanho e Medidas de Produto saíram de Gerais e aparecem dentro de EPI, Uniformes e Ferramentas (decisão 86): `itensApoio(de)` em `menu-parametros.ts`, mesma tela, `?de=` só marca o menu de origem.
 - Cadastrar EPI (Novo EPI): link 'Associar tamanhos' abre a tela de Associar ao produto numa janela sem perder o cadastro (decisão 87): `DialogAssociarTamanhos`.
+- Cadastrar Uniforme (Novo Uniforme): mesmo link 'Associar tamanhos' do EPI (decisão 88); Ferramentas e Veículos não têm tamanho no cadastro e ficaram de fora por escolha do dono.

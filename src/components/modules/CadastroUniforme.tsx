@@ -1,6 +1,6 @@
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { EdicaoCatalogoForm } from "@/components/modules/EdicaoCatalogoForm";
@@ -38,6 +38,7 @@ import { MODO_DEMO } from "@/lib/modo-demo";
 import { avisoExclusaoDoProduto } from "@/lib/codigo-fabrica-vinculos";
 import { estaAtivo, lerParametros, paraSelecao, proximoCodigo, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
 import { subcategoriasParaSelecao } from "@/lib/subcategoria-referencia";
+import { DialogAssociarTamanhos } from "@/components/parametros/DialogAssociarTamanhos";
 import { DialogTamanhoSubcategoria } from "@/components/parametros/DialogTamanhoSubcategoria";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -85,6 +86,7 @@ function CatalogoUniforme() {
   const [subSel, setSubSel] = useState("");
   const [tamanhoSel, setTamanhoSel] = useState("");
   const [tamanhoNovoAberto, setTamanhoNovoAberto] = useState(false);
+  const [associarAberto, setAssociarAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   // O ref bloqueia o clique repetido na hora; o estado só desabilita o botão.
   const trava = useRef(false);
@@ -119,6 +121,13 @@ function CatalogoUniforme() {
     ? paraSelecao(parametros, unidadesAutorizadasDoProduto(parametros, "uniforme", produtoForm))
     : [];
   const associados = subEscolhida ? tamanhosAssociadosParaCadastro(parametros, "uniforme", produtoForm) : [];
+  // Se a associação feita na janela tirou o tamanho já escolhido, o campo volta vazio (nunca grava tamanho não autorizado).
+  useEffect(() => {
+    if (novoAberto && tamanhoSel && !associados.some((t) => t.id === tamanhoSel)) {
+      setTamanhoSel("");
+      toast.info("O tamanho escolhido deixou de ser autorizado para esta subcategoria. Escolha outro.");
+    }
+  }, [novoAberto, tamanhoSel, associados]);
   const pedeUnidade = unidades.some((u) => estaAtivo(parametros, u.id));
 
   // Tamanhos que o Clonar ainda pode cadastrar para a descrição de origem.
@@ -321,6 +330,8 @@ function CatalogoUniforme() {
         </section>
       )}
 
+      <DialogAssociarTamanhos aberto={associarAberto} onAbrirMudou={setAssociarAberto} />
+
       {subEscolhida && (
         <DialogTamanhoSubcategoria
           aberto={tamanhoNovoAberto}
@@ -393,6 +404,14 @@ function CatalogoUniforme() {
                     onClick={() => setTamanhoNovoAberto(true)}
                   >
                     Cadastrar tamanho
+                  </button>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="font-medium text-primary underline underline-offset-2"
+                    onClick={() => setAssociarAberto(true)}
+                  >
+                    Associar tamanhos
                   </button>
                 </p>
               </div>
