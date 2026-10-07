@@ -328,3 +328,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Relatório da Frota em PDF (decisão 78): `frota-relatorio-html.ts` + botão em `FrotaModulo.tsx`.
 - Manutenção com vários grupos de ações (decisão 79, altera a 61): `grupos` em `registros-veiculo.ts` (`gruposDaManutencao`), `ManutencaoVeiculoModulo.tsx`, sugestões em `extrato-veiculo.ts`.
 - Painel do mês do Check list (decisão 80): `checklist-painel.ts` (previsões desde a associação, congeladas após o prazo, `painelDoMes`) + `ChecklistPainelMensal.tsx` no topo do módulo.
+- Editar manutenção (decisão 81): `editarManutencao` em `registros-veiculo.ts` + botão em `ManutencaoVeiculoModulo.tsx`.
+- Relatório da manutenção por grupo de serviço (decisão 82): `manutencao-relatorio-html.ts`, abre ao cadastrar e pelo botão Relatório.

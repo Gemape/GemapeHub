@@ -16,10 +16,12 @@ import { combinaBusca } from "@/lib/parametros-base";
 import { hojeLocal } from "@/lib/empregados";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
+import { montarManutencaoHtml } from "@/lib/manutencao-relatorio-html";
 import { useVeiculos } from "@/lib/hooks-gemape";
-import { custoNaoNegativo, gruposDaManutencao, registrarManutencao, removerManutencao, resumoManutencao, type LocalManutencao } from "@/lib/registros-veiculo";
+import { custoNaoNegativo, editarManutencao, gruposDaManutencao, registrarManutencao, removerManutencao, resumoManutencao, type LocalManutencao, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
 import { useManutencoesVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 
@@ -37,12 +39,14 @@ function totalDigitado(pecas: string, mao: string): string {
 const LOCAL: Record<LocalManutencao, string> = { empresa: "Na empresa", terceiro: "Terceiro" };
 
 export function ManutencaoVeiculoModulo() {
-  const { empresaId } = useEmpresa();
+  const { empresaId, empresas } = useEmpresa();
   const { isAdmin } = useAccess();
   const parametros = useParametrosBase();
   const { data: veiculos = [] } = useVeiculos(empresaId);
   const todas = useManutencoesVeiculo();
   const [aberto, setAberto] = useState(false);
+  // Manutenção em edição; null é o cadastro de uma nova.
+  const [editando, setEditando] = useState<ManutencaoVeiculo | null>(null);
   const [veiculoId, setVeiculoId] = useState("");
   const [tipo, setTipo] = useState("Preventiva");
   // Grupos marcados (pai) e, em cada um, as ações marcadas (filhos) com a observação livre.
@@ -70,15 +74,36 @@ export function ManutencaoVeiculoModulo() {
     return <p className="text-sm text-muted-foreground">A manutenção de veículos estará disponível após a Fase 2 (banco real).</p>;
   }
 
-  function abrir() {
+  const numeroParaCampo = (n: number | undefined) => (n === undefined ? "" : String(n).replace(".", ","));
+
+  function abrir(m?: ManutencaoVeiculo) {
     guardados.current = {};
-    setVeiculoId("");
-    setTipo("Preventiva");
-    setMarcados({});
-    setLocal("");
-    setCustoPecas("");
-    setCustoMao("");
+    setEditando(m ?? null);
+    setVeiculoId(m?.veiculoId ?? "");
+    setTipo(m?.tipo ?? "Preventiva");
+    setMarcados(
+      Object.fromEntries(
+        gruposDaManutencao(m ?? { acaoId: null, itens: [], grupos: [] }).map((g) => [
+          g.acaoId, Object.fromEntries(g.itens.map((i) => [i.subitemId, i.observacao])),
+        ]),
+      ),
+    );
+    setLocal(m?.local ?? "");
+    setCustoPecas(numeroParaCampo(m?.custoPecas));
+    setCustoMao(numeroParaCampo(m?.custoMaoDeObra));
     setAberto(true);
+  }
+
+  // Relatório da manutenção, separado por grupo de serviço, no visualizador do sistema (imprimir ou salvar em PDF).
+  function gerarRelatorio(m: ManutencaoVeiculo) {
+    const v = veiculos.find((x) => x.id === m.veiculoId);
+    const veiculo = v ? rotuloDoVeiculo(parametros, v) : "Veículo";
+    const empresa = empresas.find((e) => e.id === v?.empresa_id)?.razao_social ?? "GEMAPE";
+    abrirDocumento({
+      titulo: "Relatório de manutenção",
+      html: montarManutencaoHtml(m, { empresa, veiculo, nomeGrupo: (id) => acoes.find((a) => a.id === id)?.nome }),
+      arquivo: nomeArquivoDocumento("Manutencao", veiculo, m.data),
+    });
   }
 
   function salvar(e: React.FormEvent<HTMLFormElement>) {
@@ -86,30 +111,34 @@ export function ManutencaoVeiculoModulo() {
     if (trava.current) return;
     const f = new FormData(e.currentTarget);
     trava.current = true;
+    const entrada = {
+      veiculoId, tipo, data: String(f.get("data") ?? ""), km: String(f.get("km") ?? ""),
+      descricao: String(f.get("descricao") ?? ""),
+      grupos: acoes
+        .filter((g) => g.id in marcados)
+        .map((g) => ({
+          acaoId: g.id,
+          itens: g.subitens.filter((x) => x.id in (marcados[g.id] ?? {})).map((x) => ({ subitemId: x.id, observacao: marcados[g.id]?.[x.id] ?? "" })),
+        })),
+      local, localNome: String(f.get("localNome") ?? ""), custoPecas, custoMaoDeObra: custoMao,
+    };
+    let gravada: ManutencaoVeiculo | undefined;
     const ok = executar(
-      () =>
-        registrarManutencao(
-          {
-            veiculoId, tipo, data: String(f.get("data") ?? ""), km: String(f.get("km") ?? ""),
-            descricao: String(f.get("descricao") ?? ""),
-            grupos: acoes
-              .filter((g) => g.id in marcados)
-              .map((g) => ({
-                acaoId: g.id,
-                itens: g.subitens.filter((x) => x.id in (marcados[g.id] ?? {})).map((x) => ({ subitemId: x.id, observacao: marcados[g.id]?.[x.id] ?? "" })),
-              })),
-            local, localNome: String(f.get("localNome") ?? ""), custoPecas, custoMaoDeObra: custoMao,
-          },
-          undefined,
-          new Date(),
-          acoes,
-        ),
-      "Manutenção registrada",
+      () => {
+        gravada = editando
+          ? editarManutencao(editando.id, entrada, undefined, new Date(), acoes)
+          : registrarManutencao(entrada, undefined, new Date(), acoes);
+      },
+      editando ? "Manutenção alterada" : "Manutenção registrada",
     );
     // Depois de gravar, a trava fica um instante: o diálogo ainda está na tela na animação de saída.
     if (ok) window.setTimeout(() => { trava.current = false; }, 800);
     else trava.current = false;
-    if (ok) setAberto(false);
+    if (ok) {
+      setAberto(false);
+      // Ao cadastrar, o relatório da manutenção abre na hora, separado por grupo de serviço.
+      if (gravada && !editando) gerarRelatorio(gravada);
+    }
   }
 
   function excluir(id: string) {
@@ -128,7 +157,7 @@ export function ManutencaoVeiculoModulo() {
           onChange={(e) => setBusca(e.target.value)}
         />
         <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
-        <Button requiresWrite className="ml-auto" onClick={abrir}>Cadastrar nova manutenção</Button>
+        <Button requiresWrite className="ml-auto" onClick={() => abrir()}>Cadastrar nova manutenção</Button>
       </div>
       <div className="overflow-x-auto rounded-xl border">
         <Table>
@@ -157,13 +186,19 @@ export function ManutencaoVeiculoModulo() {
                   <TableCell>{v ? rotuloDoVeiculo(parametros, v) : "—"}</TableCell>
                   <TableCell><Badge variant={m.tipo === "Preventiva" ? "secondary" : "outline"}>{m.tipo}</Badge></TableCell>
                   <TableCell>
-                    {servico}
-                    {gruposDaManutencao(m).flatMap((g) =>
-                      g.itens.filter((i) => i.observacao).map((i) => (
-                        <p key={`${g.acaoId}-${i.subitemId}`} className="text-xs text-muted-foreground">
-                          {g.nome ? `${g.nome}: ` : ""}{i.nome}: {i.observacao}
-                        </p>
-                      )),
+                    {gruposDaManutencao(m).length === 0 ? servico : (
+                      <div className="space-y-1">
+                        {gruposDaManutencao(m).map((g) => (
+                          <p key={g.acaoId} className="leading-snug">
+                            <span className="font-medium">{acoes.find((a) => a.id === g.acaoId)?.nome ?? (g.nome || "Ação removida de Parâmetros")}</span>
+                            {g.itens.length > 0 && <span className="text-muted-foreground">: {g.itens.map((i) => i.nome).join(", ")}</span>}
+                            {g.itens.filter((i) => i.observacao).map((i) => (
+                              <span key={i.subitemId} className="block text-xs text-muted-foreground">{i.nome}: {i.observacao}</span>
+                            ))}
+                          </p>
+                        ))}
+                        {m.tipo === "Corretiva" && m.descricao && <p className="text-xs text-muted-foreground">{m.descricao}</p>}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>{m.local ? (m.local === "terceiro" && m.localNome ? `${LOCAL.terceiro}: ${m.localNome}` : LOCAL[m.local]) : "—"}</TableCell>
@@ -171,7 +206,9 @@ export function ManutencaoVeiculoModulo() {
                     {m.custoTotal === undefined ? "—" : moeda(m.custoTotal)}
                   </TableCell>
                   <TableCell className="text-right">{m.km.toLocaleString("pt-BR")}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="whitespace-nowrap text-right">
+                    <Button variant="ghost" size="sm" aria-label="Relatório da manutenção" onClick={() => gerarRelatorio(m)}>Relatório</Button>
+                    <Button requiresWrite variant="ghost" size="sm" aria-label="Editar manutenção" onClick={() => abrir(m)}>Editar</Button>
                     {isAdmin && (
                       <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir manutenção" className="text-destructive hover:text-destructive" onClick={() => excluir(m.id)}>
                         Excluir
@@ -188,10 +225,10 @@ export function ManutencaoVeiculoModulo() {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Cadastrar nova manutenção</DialogTitle>
+            <DialogTitle>{editando ? "Editar manutenção" : "Cadastrar nova manutenção"}</DialogTitle>
             <DialogDescription>Marque os grupos de ações abrangidos e o que foi feito em cada um; só a corretiva descreve o problema.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={salvar} className="grid gap-3 sm:grid-cols-2">
+          <form key={editando?.id ?? "nova"} onSubmit={salvar} className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="veiculo">Veículo</Label>
               <Select value={veiculoId} onValueChange={setVeiculoId}>
@@ -213,16 +250,16 @@ export function ManutencaoVeiculoModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="data">Data</Label>
-              <Input id="data" name="data" type="date" defaultValue={hojeLocal()} max={hojeLocal()} />
+              <Input id="data" name="data" type="date" defaultValue={editando?.data ?? hojeLocal()} max={hojeLocal()} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="km">Km do veículo</Label>
-              <Input id="km" name="km" inputMode="numeric" placeholder="Ex.: 50.000" />
+              <Input id="km" name="km" inputMode="numeric" placeholder="Ex.: 50.000" defaultValue={editando ? String(editando.km) : undefined} />
             </div>
             {tipo === "Corretiva" && (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="descricao">O que está acontecendo com o veículo</Label>
-                <Textarea id="descricao" name="descricao" rows={2} maxLength={300} placeholder="Ex.: barulho no freio dianteiro ao frear" />
+                <Textarea id="descricao" name="descricao" rows={2} maxLength={300} defaultValue={editando?.descricao} placeholder="Ex.: barulho no freio dianteiro ao frear" />
               </div>
             )}
             <div className="space-y-2 sm:col-span-2">
@@ -293,7 +330,7 @@ export function ManutencaoVeiculoModulo() {
                 <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="empresa" id="local_empresa" />Na própria empresa</label>
                 <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="terceiro" id="local_terceiro" />Local de terceiro</label>
               </RadioGroup>
-              {local === "terceiro" && <Input name="localNome" aria-label="Local de terceiro" maxLength={120} placeholder="Nome do local (oficina, concessionária…)" />}
+              {local === "terceiro" && <Input name="localNome" aria-label="Local de terceiro" maxLength={120} defaultValue={editando?.localNome} placeholder="Nome do local (oficina, concessionária…)" />}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="custo_pecas">Custo das peças (R$)</Label>
