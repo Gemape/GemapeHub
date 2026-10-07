@@ -24,8 +24,8 @@ import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 
 // Módulos > Veículos > Manutenção (decisões 57 e 61): veículo, preventiva ou corretiva (só a
-// corretiva descreve o que acontece), grupo de ações (pai), ações do grupo (filhos) com observação
-// livre cada uma, local (empresa ou terceiro) e custo de peças e de mão de obra. A última
+// corretiva descreve o que acontece), grupos de ações (pai, quantos a manutenção abranger), ações de
+// cada grupo (filhos) com observação livre cada uma, local (empresa ou terceiro) e custo de peças e de mão de obra. A última
 // preventiva de cada grupo alimenta as sugestões do extrato. Só modo demonstração.
 const moeda = (n: number | undefined) => (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 // Total mostrado na tela, com a mesma leitura de valores que vale ao salvar; "—" se algum não for válido.
@@ -45,8 +45,8 @@ export function ManutencaoVeiculoModulo() {
   const [aberto, setAberto] = useState(false);
   const [veiculoId, setVeiculoId] = useState("");
   const [tipo, setTipo] = useState("Preventiva");
-  const [acaoId, setAcaoId] = useState("");
-  const [marcados, setMarcados] = useState<Record<string, string>>({});
+  // Grupos marcados (pai) e, em cada um, as ações marcadas (filhos) com a observação livre.
+  const [marcados, setMarcados] = useState<Record<string, Record<string, string>>>({});
   const [local, setLocal] = useState<LocalManutencao | "">("");
   const [custoPecas, setCustoPecas] = useState("");
   const [custoMao, setCustoMao] = useState("");
@@ -55,8 +55,7 @@ export function ManutencaoVeiculoModulo() {
 
   const acoes = parametros.acoesManutencaoVeiculo;
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
-  const servicoDe = (m: (typeof todas)[number]) => resumoManutencao(m, acoes.find((a) => a.id === m.acaoId)?.nome);
-  const grupo = acoes.find((a) => a.id === acaoId);
+  const servicoDe = (m: (typeof todas)[number]) => resumoManutencao(m, (id) => acoes.find((a) => a.id === id)?.nome);
   const lista = todas
     .filter((m) => idsDaEmpresa.has(m.veiculoId))
     .filter((m) => {
@@ -72,7 +71,6 @@ export function ManutencaoVeiculoModulo() {
   function abrir() {
     setVeiculoId("");
     setTipo("Preventiva");
-    setAcaoId("");
     setMarcados({});
     setLocal("");
     setCustoPecas("");
@@ -89,9 +87,14 @@ export function ManutencaoVeiculoModulo() {
       () =>
         registrarManutencao(
           {
-            veiculoId, tipo, acaoId, data: String(f.get("data") ?? ""), km: String(f.get("km") ?? ""),
+            veiculoId, tipo, data: String(f.get("data") ?? ""), km: String(f.get("km") ?? ""),
             descricao: String(f.get("descricao") ?? ""),
-            itens: (grupo?.subitens ?? []).filter((x) => x.id in marcados).map((x) => ({ subitemId: x.id, observacao: marcados[x.id] ?? "" })),
+            grupos: acoes
+              .filter((g) => g.id in marcados)
+              .map((g) => ({
+                acaoId: g.id,
+                itens: g.subitens.filter((x) => x.id in (marcados[g.id] ?? {})).map((x) => ({ subitemId: x.id, observacao: marcados[g.id]?.[x.id] ?? "" })),
+              })),
             local, localNome: String(f.get("localNome") ?? ""), custoPecas, custoMaoDeObra: custoMao,
           },
           undefined,
@@ -179,7 +182,7 @@ export function ManutencaoVeiculoModulo() {
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Cadastrar nova manutenção</DialogTitle>
-            <DialogDescription>Escolha o grupo de ações e marque o que foi feito; só a corretiva descreve o problema.</DialogDescription>
+            <DialogDescription>Marque os grupos de ações abrangidos e o que foi feito em cada um; só a corretiva descreve o problema.</DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
@@ -215,52 +218,64 @@ export function ManutencaoVeiculoModulo() {
                 <Textarea id="descricao" name="descricao" rows={2} maxLength={300} placeholder="Ex.: barulho no freio dianteiro ao frear" />
               </div>
             )}
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="acao">Grupo de ações</Label>
-              <Select value={acaoId} onValueChange={(v) => { setAcaoId(v); setMarcados({}); }}>
-                <SelectTrigger id="acao"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
-                <SelectContent>
-                  {acoes.map((a) => <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Grupos de ações</Label>
+              <p className="text-xs text-muted-foreground">Marque todos os grupos que a manutenção abrangeu e, em cada um, as ações feitas.</p>
               {acoes.length === 0 && (
                 <p className="text-xs text-muted-foreground">Cadastre os grupos em Parâmetros &gt; Veículos &gt; Ações de manutenção.</p>
               )}
+              {acoes.map((grupo) => {
+                const grupoMarcado = grupo.id in marcados;
+                const filhosMarcados = marcados[grupo.id] ?? {};
+                return (
+                  <div key={grupo.id} className="space-y-2 rounded-lg border p-2">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <Checkbox
+                        aria-label={`Grupo ${grupo.nome}`}
+                        checked={grupoMarcado}
+                        onCheckedChange={(v) =>
+                          setMarcados((m) => {
+                            const { [grupo.id]: _, ...resto } = m;
+                            return v === true ? { ...resto, [grupo.id]: m[grupo.id] ?? {} } : resto;
+                          })}
+                      />
+                      {grupo.nome}
+                    </label>
+                    {grupoMarcado && grupo.subitens.length === 0 && <p className="text-xs text-muted-foreground">Este grupo não tem ações cadastradas.</p>}
+                    {grupoMarcado && grupo.subitens.map((sub) => {
+                      const marcado = sub.id in filhosMarcados;
+                      return (
+                        <div key={sub.id} className="ml-6 space-y-1.5 rounded-lg border p-2">
+                          <label className="flex items-center gap-2 text-sm">
+                            <Checkbox
+                              aria-label={`${grupo.nome}: ${sub.nome}`}
+                              checked={marcado}
+                              onCheckedChange={(v) =>
+                                setMarcados((m) => {
+                                  const atuais = m[grupo.id] ?? {};
+                                  const { [sub.id]: _, ...resto } = atuais;
+                                  return { ...m, [grupo.id]: v === true ? { ...resto, [sub.id]: atuais[sub.id] ?? "" } : resto };
+                                })}
+                            />
+                            {sub.nome}
+                          </label>
+                          {marcado && (
+                            <Textarea
+                              aria-label={`Observação de ${sub.nome}`}
+                              placeholder="Observação (opcional)"
+                              rows={2}
+                              maxLength={300}
+                              value={filhosMarcados[sub.id] ?? ""}
+                              onChange={(e) => setMarcados((m) => ({ ...m, [grupo.id]: { ...(m[grupo.id] ?? {}), [sub.id]: e.target.value } }))}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
-            {grupo && (
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Ações do grupo</Label>
-                {grupo.subitens.length === 0 && <p className="text-xs text-muted-foreground">Este grupo não tem ações cadastradas.</p>}
-                {grupo.subitens.map((sub) => {
-                  const marcado = sub.id in marcados;
-                  return (
-                    <div key={sub.id} className="space-y-1.5 rounded-lg border p-2">
-                      <label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          checked={marcado}
-                          onCheckedChange={(v) =>
-                            setMarcados((m) => {
-                              const { [sub.id]: _, ...resto } = m;
-                              return v === true ? { ...resto, [sub.id]: m[sub.id] ?? "" } : resto;
-                            })}
-                        />
-                        {sub.nome}
-                      </label>
-                      {marcado && (
-                        <Textarea
-                          aria-label={`Observação de ${sub.nome}`}
-                          placeholder="Observação (opcional)"
-                          rows={2}
-                          maxLength={300}
-                          value={marcados[sub.id] ?? ""}
-                          onChange={(e) => setMarcados((m) => ({ ...m, [sub.id]: e.target.value }))}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Local da manutenção</Label>
               <RadioGroup value={local} onValueChange={(v) => setLocal(v as LocalManutencao)} className="flex gap-4">

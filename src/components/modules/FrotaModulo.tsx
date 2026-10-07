@@ -1,4 +1,4 @@
-import { Car, CircleSlash, Wrench } from "lucide-react";
+import { Car, CircleSlash, Printer, Wrench } from "lucide-react";
 import { useState } from "react";
 
 import { ExtratoVeiculo } from "@/components/modules/ExtratoVeiculo";
@@ -12,17 +12,19 @@ import { hojeLocal } from "@/lib/empregados";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { kmAtualDoVeiculo, sugestoesPreventivas } from "@/lib/extrato-veiculo";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
+import { montarFrotaHtml } from "@/lib/frota-relatorio-html";
 import { combinaBusca } from "@/lib/parametros-base";
 import { normalizarPlaca } from "@/lib/veiculos";
 import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
 const STATUS: Record<string, string> = { Ativo: "Ativo", Manutencao: "Em manutenção", Inativo: "Inativo" };
 
 // Módulos > Veículos > Frota (decisão 57): página inicial com a lista de veículos da empresa.
 // Clicar num veículo abre o extrato. O cadastro continua em Parâmetros > Veículos.
 export function FrotaModulo() {
-  const { empresaId } = useEmpresa();
+  const { empresaId, empresas } = useEmpresa();
   const parametros = useParametrosBase();
   const { data: veiculos = [], isLoading } = useVeiculos(empresaId);
   const { data: empregados = [] } = useEmpregados(TODAS);
@@ -50,6 +52,34 @@ export function FrotaModulo() {
     }).filter((s) => s.status === "vencida").length;
   };
 
+  const kmDo = (v: (typeof veiculos)[number]) =>
+    kmAtualDoVeiculo(
+      v.quilometragem_atual,
+      abastecimentos.filter((a) => a.veiculoId === v.id),
+      manutencoes.filter((m) => m.veiculoId === v.id),
+    );
+
+  // Relatório em PDF (visualizador do sistema): sai a lista como está na tela, com a busca aplicada.
+  function imprimir() {
+    const empresa = empresaId === TODAS ? "Todas as empresas" : (empresas.find((e) => e.id === empresaId)?.razao_social ?? "GEMAPE");
+    abrirDocumento({
+      titulo: "Relatório da frota",
+      html: montarFrotaHtml({
+        empresa,
+        geradoEm: new Date().toISOString(),
+        busca: busca.trim(),
+        linhas: lista.map((v) => ({
+          veiculo: rotuloDoVeiculo(parametros, v),
+          responsavel: nomeResponsavel(v.empregado_responsavel_id),
+          situacao: STATUS[v.status] ?? v.status,
+          km: kmDo(v),
+          vencidas: vencidasDo(v.id),
+        })),
+      }),
+      arquivo: nomeArquivoDocumento("Relatorio da frota", empresa, hojeLocal()),
+    });
+  }
+
   return (
     <div className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-3">
@@ -57,13 +87,18 @@ export function FrotaModulo() {
         <StatCard titulo="Em manutenção" valor={veiculos.filter((v) => v.status === "Manutencao").length} icone={Wrench} />
         <StatCard titulo="Inativos" valor={veiculos.filter((v) => v.status === "Inativo").length} icone={CircleSlash} />
       </div>
-      <Input
-        aria-label="Buscar veículo por descrição ou responsável"
-        placeholder="Buscar por descrição ou responsável"
-        value={busca}
-        onChange={(e) => setBusca(e.target.value)}
-        className="max-w-md"
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          aria-label="Buscar veículo por descrição ou responsável"
+          placeholder="Buscar por descrição ou responsável"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="max-w-md"
+        />
+        <Button type="button" variant="outline" onClick={imprimir} disabled={isLoading}>
+          <Printer className="h-4 w-4" /> Imprimir relatório (PDF)
+        </Button>
+      </div>
       <div className="overflow-x-auto rounded-xl border">
         <Table>
           <TableHeader>
@@ -83,11 +118,7 @@ export function FrotaModulo() {
             )}
             {lista.map((v) => {
               const vencidas = vencidasDo(v.id);
-              const km = kmAtualDoVeiculo(
-                v.quilometragem_atual,
-                abastecimentos.filter((a) => a.veiculoId === v.id),
-                manutencoes.filter((m) => m.veiculoId === v.id),
-              );
+              const km = kmDo(v);
               return (
                 <TableRow key={v.id} className="cursor-pointer" onClick={() => setAberto(v.id)}>
                   <TableCell className="font-medium">{rotuloDoVeiculo(parametros, v)}</TableCell>
