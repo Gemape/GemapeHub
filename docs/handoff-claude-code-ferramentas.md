@@ -330,3 +330,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Painel do mês do Check list (decisão 80): `checklist-painel.ts` (previsões desde a associação, congeladas após o prazo, `painelDoMes`) + `ChecklistPainelMensal.tsx` no topo do módulo.
 - Editar manutenção (decisão 81): `editarManutencao` em `registros-veiculo.ts` + botão em `ManutencaoVeiculoModulo.tsx`.
 - Relatório da manutenção por grupo de serviço (decisão 82): `manutencao-relatorio-html.ts`, abre ao cadastrar e pelo botão Relatório.
+- Painel mensal do Check list: o dia de hoje (Brasília) se renova a cada minuto, então a tela aberta na virada do dia atualiza previsões e situações sem recarregar.
