@@ -20,7 +20,7 @@ test("no Novo EPI, o link abre a janela ao lado do diálogo do cadastro, que con
 });
 
 test("tamanho escolhido que deixou de ser autorizado volta vazio", () => {
-  assert.match(epi, /tamanhoSel && !associados\.some\(\(t\) => t\.id === tamanhoSel\)\) setTamanhoSel\(""\)/);
+  assert.match(epi, /tamanhoSel && !associados\.some\(\(t\) => t\.id === tamanhoSel\)\) \{\s*setTamanhoSel\(""\);\s*toast\.info/);
 });
 
 test("o Novo Uniforme tem a mesma janela de associação, com a mesma proteção do tamanho (decisão 88)", () => {
@@ -28,5 +28,5 @@ test("o Novo Uniforme tem a mesma janela de associação, com a mesma proteção
   assert.match(uni, /onClick=\{\(\) => setAssociarAberto\(true\)\}/);
   assert.match(uni, /Associar tamanhos/);
   assert.ok(uni.indexOf("<DialogAssociarTamanhos") < uni.indexOf("<Dialog open={novoAberto}"));
-  assert.match(uni, /tamanhoSel && !associados\.some\(\(t\) => t\.id === tamanhoSel\)\) setTamanhoSel\(""\)/);
+  assert.match(uni, /tamanhoSel && !associados\.some\(\(t\) => t\.id === tamanhoSel\)\) \{\s*setTamanhoSel\(""\);\s*toast\.info/);
 });

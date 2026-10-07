@@ -153,7 +153,10 @@ function CatalogoEpi() {
   const pedeUnidade = unidades.some((u) => estaAtivo(parametros, u.id));
   // Se a associação feita na janela tirou o tamanho já escolhido, o campo volta vazio (nunca grava tamanho não autorizado).
   useEffect(() => {
-    if (novoAberto && tamanhoSel && !associados.some((t) => t.id === tamanhoSel)) setTamanhoSel("");
+    if (novoAberto && tamanhoSel && !associados.some((t) => t.id === tamanhoSel)) {
+      setTamanhoSel("");
+      toast.info("O tamanho escolhido deixou de ser autorizado para esta subcategoria. Escolha outro.");
+    }
   }, [novoAberto, tamanhoSel, associados]);
 
   // Tamanhos que o Clonar ainda pode cadastrar para a descrição de origem.
