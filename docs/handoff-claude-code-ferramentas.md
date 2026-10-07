@@ -319,3 +319,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Subcategoria Empilhadeira de fábrica (decisão 69): `TIPOS_VEICULO` em `gemape.ts` ganhou "Empilhadeira"; `lerComEstado` em `parametros-base.ts` a inclui uma vez para quem já tinha cadastros salvos (marcador `gemape-demo-subcategoria-empilhadeira`, gravado em `alterar`).
 - Link "Cadastrar tamanho" sempre visível em `CadastroEpi` e `CadastroUniforme` (decisão 70), mesmo com tamanhos na lista; mesma janela `DialogTamanhoSubcategoria`.
 - Tamanho do Novo EPI/Uniforme só dos autorizados (decisão 71, revoga 56): `tamanhosGeraisParaCadastro` removida; `CadastroEpi`/`CadastroUniforme` usam `tamanhosAssociadosParaCadastro` e não associam mais ao salvar.
+- Título de Tamanho e Medidas de Produto na barra lateral com ícone e texto iguais aos demais menus (decisão 72): ajuste em `SubLink` de `AppSidebar.tsx`.
