@@ -54,6 +54,16 @@ type Tela = { tipo: "novo" } | { tipo: "check"; id: string } | null;
 // Veículos > Itens check list) são avaliados como OK, NOK ou N.A., com observação e fotos. Item NOK
 // gera uma ocorrência e uma pendência no próprio check list, que fica aberta até ser resolvida. A
 // periodicidade vem da associação do veículo em Parâmetros (decisão 75). Só modo demonstração; nada no Supabase.
+// Dia de hoje em Brasília que se renova sozinho: com a tela aberta na virada do dia, o painel e as previsões acompanham.
+function useHojeBrasilia(): string {
+  const [hoje, setHoje] = useState(() => hojeBrasilia());
+  useEffect(() => {
+    const id = window.setInterval(() => setHoje(hojeBrasilia()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return hoje;
+}
+
 export function ChecklistVeiculoModulo() {
   const { empresaId, empresas } = useEmpresa();
   const { canWrite } = useAccess();
@@ -75,7 +85,7 @@ export function ChecklistVeiculoModulo() {
   const [resolvendo, setResolvendo] = useState<string | null>(null);
   const [textoResolucao, setTextoResolucao] = useState("");
   const trava = useRef(false);
-  const hoje = hojeBrasilia();
+  const hoje = useHojeBrasilia();
   const associacoes = useAssociacoesChecklist();
   const previsoes = usePrevisoesChecklist();
   // A periodicidade não é escolhida aqui: vem de Parâmetros > Veículos > Associar itens de check list a um veículo.
