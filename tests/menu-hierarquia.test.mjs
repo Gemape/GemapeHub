@@ -14,11 +14,13 @@ test("Tamanho e Medidas de Produto é um menu só, sem submenu: cadastro e assoc
   const raiz = new URL("../src/routes/_authenticated/cadastros/gerais/", import.meta.url);
   const pagina = readFileSync(new URL("tamanhos-unidades.tsx", raiz), "utf8");
   assert.equal(item.abas, undefined);
-  assert.match(pagina, /<TamanhosMedidasUnificado de=\{de\} \/>/);
+  assert.match(pagina, /<TamanhosMedidasUnificado de=\{de\} irParaAssociar=\{aba === "associar"\} \/>/);
   assert.doesNotMatch(pagina, /Tabs/);
   const unificado = readFileSync(new URL("../../../../components/parametros/TamanhosMedidasUnificado.tsx", raiz), "utf8");
   assert.match(unificado, /<TamanhosMedidasPainel aninhado \/>/);
-  assert.match(unificado, /<AssociarTamanhosPainel aninhado/);
+  assert.match(unificado, /<AssociarTamanhosPainel key=\{de \?\? "todas"\} aninhado/); // trocar de menu começa a associação limpa
+  assert.match(unificado, /id="associar-ao-produto"/); // o ?aba=associar antigo rola até aqui
+  assert.match(unificado, /\{!emJanela && \(/); // na janela do cadastro o título é o da janela
   const antigo = readFileSync(new URL("associar-tamanhos.tsx", raiz), "utf8");
   assert.match(antigo, /redirect\(\{ to: "\/cadastros\/gerais\/tamanhos-unidades", search: \{ aba: "associar" \} \}\)/);
 });
@@ -135,7 +137,7 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   assert.equal(abaDoModulo("uniforme", "termo-baixa"), "termo-baixa");
   assert.equal(abaDoModulo("veiculo", undefined), "frota");
   assert.match(sidebar, /<ModuloComAbas /);
-  assert.match(sidebar, /search=\{\{ aba: a\.aba, \.\.\.\(de \? \{ de \} : \{\}\) \} as never\}/);
+  assert.match(sidebar, /search=\{\{ aba: a\.aba \} as never\}/);
 });
 
 test("Gerais, com seus submenus, é o primeiro item de Parâmetros, antes de EPI e Ferramentas (decisão 44)", () => {

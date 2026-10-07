@@ -16,6 +16,6 @@ export const Route = createFileRoute("/_authenticated/cadastros/gerais/tamanhos-
 });
 
 function TamanhoEMedidas() {
-  const { de } = Route.useSearch();
-  return <TamanhosMedidasUnificado de={de} />;
+  const { de, aba } = Route.useSearch();
+  return <TamanhosMedidasUnificado de={de} irParaAssociar={aba === "associar"} />;
 }

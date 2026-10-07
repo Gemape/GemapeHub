@@ -7,7 +7,7 @@ const epi = readFileSync(new URL("components/modules/CadastroEpi.tsx", raiz), "u
 const janela = readFileSync(new URL("components/parametros/DialogAssociarTamanhos.tsx", raiz), "utf8");
 
 test("a janela abre exatamente a tela de Tamanho e Medidas do menu (decisões 87 e 89)", () => {
-  assert.match(janela, /<TamanhosMedidasUnificado de=\{de\} \/>/); // a mesma tela do menu, sem versão reduzida
+  assert.match(janela, /<TamanhosMedidasUnificado de=\{de\} emJanela \/>/); // a mesma tela do menu, sem versão reduzida
 });
 
 test("no Novo EPI, o link abre a janela ao lado do diálogo do cadastro, que continua montado", () => {

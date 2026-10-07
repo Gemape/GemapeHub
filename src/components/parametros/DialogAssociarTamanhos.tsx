@@ -14,7 +14,7 @@ export function DialogAssociarTamanhos({ aberto, onAbrirMudou, de }: { aberto: b
           <DialogTitle>Tamanho e Medidas de Produto</DialogTitle>
           <DialogDescription>Associa tamanhos e medidas à subcategoria. Ao fechar, o cadastro continua de onde parou.</DialogDescription>
         </DialogHeader>
-        <TamanhosMedidasUnificado de={de} />
+        <TamanhosMedidasUnificado de={de} emJanela />
       </DialogContent>
     </Dialog>
   );

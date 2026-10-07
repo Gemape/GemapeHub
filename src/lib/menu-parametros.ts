@@ -26,13 +26,12 @@ export type NomeIcone =
   | "TriangleAlert"
   | "Fuel"
   | "Box"
-  | "ListPlus"
-  | "Link2";
+  | "ListPlus";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
 export type AbaMenu = { aba: string; titulo: string; icone: NomeIcone; soAdmin?: boolean };
 export type DeMenu = "epi" | "uniformes" | "ferramentas";
 // `de`: em que menu o item aparece quando a mesma tela está em mais de um (decisão 86); vai na URL como ?de=.
-export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; abas?: readonly AbaMenu[]; abaPadrao?: string; search?: { aba: string }; de?: DeMenu };
+export type ItemMenu = { titulo: string; url: string; icone: NomeIcone; soAdmin?: boolean; search?: { aba: string }; de?: DeMenu };
 export type ItemComFilhos = ItemMenu & { filhos?: readonly ItemMenu[] };
 export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
 

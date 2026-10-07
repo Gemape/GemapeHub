@@ -119,24 +119,24 @@ export function AssociarTamanhosPainel({ categoriaFixa, aninhado = false }: { ca
       />
       <div className={`panel grid gap-4 p-4 ${categoriaFixa ? "" : "sm:grid-cols-2"}`}>
         {!categoriaFixa && (
-        <div className="space-y-1.5">
-          <Label htmlFor="categoria">Categoria</Label>
-          <select
-            id="categoria"
-            className={selectClasse}
-            value={categoriaId}
-            onChange={(e) => {
-              setCategoriaId(e.target.value);
-              setSubcategoriaId("");
-            }}
-          >
-            {dados.categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="categoria">Categoria</Label>
+            <select
+              id="categoria"
+              className={selectClasse}
+              value={categoriaId}
+              onChange={(e) => {
+                setCategoriaId(e.target.value);
+                setSubcategoriaId("");
+              }}
+            >
+              {dados.categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
         <div className="space-y-1.5">
           <Label htmlFor="subcategoria">Subcategoria</Label>
