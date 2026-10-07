@@ -101,6 +101,18 @@ export function gruposDoTipoChecklist(
   return grupos.filter((g) => g.itens.length > 0 && (g.tiposVeiculo.includes(TODOS_OS_TIPOS) || g.tiposVeiculo.some((t) => ids.includes(t))));
 }
 
+// Grupos do check list de um veículo: só os habilitados na associação dele (Parâmetros > Veículos > Associar
+// itens de check list a um veículo), na ordem da associação; grupo apagado ou sem itens fica de fora.
+export function gruposAssociadosDoVeiculo(
+  associacao: Pick<AssociacaoChecklist, "itens"> | null | undefined,
+  grupos: GrupoChecklistVeiculo[],
+): GrupoChecklistVeiculo[] {
+  return (associacao?.itens ?? []).flatMap((i) => {
+    const grupo = grupos.find((g) => g.id === i.grupoId);
+    return grupo && grupo.itens.length > 0 ? [grupo] : [];
+  });
+}
+
 // Grupos do check list que valem para o tipo (subcategoria) do veículo: os ligados a ele e os de todos os tipos.
 export function gruposAplicaveis(grupos: GrupoChecklistVeiculo[], subcategoriaId: string | null): GrupoChecklistVeiculo[] {
   return grupos.filter(
