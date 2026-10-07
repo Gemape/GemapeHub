@@ -24,9 +24,11 @@ import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 const selectClasse = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm";
 
-export function AssociarTamanhosPainel() {
+// `categoriaFixa`: a categoria já vem do menu (EPI, Uniformes ou Ferramentas) e a escolha some da tela (decisão 89).
+export function AssociarTamanhosPainel({ categoriaFixa, aninhado = false }: { categoriaFixa?: string; aninhado?: boolean }) {
   const dados = useParametrosBase();
-  const [categoriaId, setCategoriaId] = useState(dados.categorias[0]?.id ?? "");
+  const [categoriaEscolhida, setCategoriaId] = useState(dados.categorias[0]?.id ?? "");
+  const categoriaId = categoriaFixa ?? categoriaEscolhida;
   const [subcategoriaId, setSubcategoriaId] = useState("");
   const subcategorias = subcategoriasDa(dados, categoriaId);
   const sub = subcategorias.find((s) => s.id === subcategoriaId);
@@ -111,28 +113,31 @@ export function AssociarTamanhosPainel() {
   return (
     <div className="space-y-5">
       <Cabecalho
+        nivel={aninhado ? "secao" : "pagina"}
         titulo="Associar tamanho e medida ao produto"
-        descricao="Escolha a categoria e a subcategoria. Marque na lista Existentes as opções desejadas e transfira para Autorizados. Para desautorizar, marque em Autorizados e transfira de volta."
+        descricao={`${categoriaFixa ? "Escolha a subcategoria." : "Escolha a categoria e a subcategoria."} Marque na lista Existentes as opções desejadas e transfira para Autorizados. Para desautorizar, marque em Autorizados e transfira de volta.`}
       />
-      <div className="panel grid gap-4 p-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="categoria">Categoria</Label>
-          <select
-            id="categoria"
-            className={selectClasse}
-            value={categoriaId}
-            onChange={(e) => {
-              setCategoriaId(e.target.value);
-              setSubcategoriaId("");
-            }}
-          >
-            {dados.categorias.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className={`panel grid gap-4 p-4 ${categoriaFixa ? "" : "sm:grid-cols-2"}`}>
+        {!categoriaFixa && (
+          <div className="space-y-1.5">
+            <Label htmlFor="categoria">Categoria</Label>
+            <select
+              id="categoria"
+              className={selectClasse}
+              value={categoriaId}
+              onChange={(e) => {
+                setCategoriaId(e.target.value);
+                setSubcategoriaId("");
+              }}
+            >
+              {dados.categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="space-y-1.5">
           <Label htmlFor="subcategoria">Subcategoria</Label>
           <select

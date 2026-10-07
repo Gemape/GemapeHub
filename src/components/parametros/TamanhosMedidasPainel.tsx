@@ -35,7 +35,7 @@ const TABELAS: (keyof CadastrosComTamanho)[] = [
   "compras_uniformes",
 ];
 
-export function TamanhosMedidasPainel() {
+export function TamanhosMedidasPainel({ aninhado = false }: { aninhado?: boolean }) {
   const dados = useParametrosBase();
   // Evita duas confirmações quando o botão de excluir recebe dois cliques rápidos.
   const ocupado = useRef(false);
@@ -106,6 +106,7 @@ export function TamanhosMedidasPainel() {
   return (
     <div className="space-y-5">
       <Cabecalho
+        nivel={aninhado ? "secao" : "pagina"}
         titulo="Cadastro de tamanhos e medidas"
         descricao="Cadastro base de todas as possibilidades de tamanho e numeração, na ordem em que devem aparecer, e das unidades de medida. Desativar tira a opção das listas de seleção; o que já usa continua com ela."
       >

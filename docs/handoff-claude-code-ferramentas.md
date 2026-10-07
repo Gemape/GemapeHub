@@ -337,4 +337,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Parâmetros: Tabelas de Apoio e Tamanho e Medidas de Produto saíram de Gerais e aparecem dentro de EPI, Uniformes e Ferramentas (decisão 86): `itensApoio(de)` em `menu-parametros.ts`, mesma tela, `?de=` só marca o menu de origem.
 - Cadastrar EPI (Novo EPI): link 'Associar tamanhos' abre a tela de Associar ao produto numa janela sem perder o cadastro (decisão 87): `DialogAssociarTamanhos`.
 - Cadastrar Uniforme (Novo Uniforme): mesmo link 'Associar tamanhos' do EPI (decisão 88); Ferramentas e Veículos não têm tamanho no cadastro e ficaram de fora por escolha do dono.
-- Veículos > Check list: nome Placa >> Periodicidade >> Responsável, lista Periódicos/Avulsos e Novo check list avulso (decisão 90): `nomeDoChecklist`, `checklistVisivelNaLista`, `iniciarChecklistAvulso` em `checklist-veiculo.ts`.
+- Parâmetros: Tamanho e Medidas de Produto é uma tela só por menu (EPI, Uniformes, Ferramentas), cadastro em cima e associação embaixo, categoria vinda do menu (decisão 89): `TamanhosMedidasUnificado`; a janela do Novo EPI/Uniforme abre a mesma tela.

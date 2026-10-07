@@ -6,9 +6,8 @@ const raiz = new URL("../src/", import.meta.url);
 const epi = readFileSync(new URL("components/modules/CadastroEpi.tsx", raiz), "utf8");
 const janela = readFileSync(new URL("components/parametros/DialogAssociarTamanhos.tsx", raiz), "utf8");
 
-test("a janela abre exatamente a tela de Associar ao produto (decisão 87)", () => {
-  assert.match(janela, /<AssociarTamanhosPainel \/>/);
-  assert.doesNotMatch(janela, /Painel [a-z]+=/); // sem versão reduzida: nenhuma propriedade muda a tela
+test("a janela abre exatamente a tela de Tamanho e Medidas do menu (decisões 87 e 89)", () => {
+  assert.match(janela, /<TamanhosMedidasUnificado de=\{de\} emJanela \/>/); // a mesma tela do menu, sem versão reduzida
 });
 
 test("no Novo EPI, o link abre a janela ao lado do diálogo do cadastro, que continua montado", () => {

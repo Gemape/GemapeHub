@@ -1,20 +1,20 @@
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { AssociarTamanhosPainel } from "@/components/parametros/AssociarTamanhosPainel";
+import { TamanhosMedidasUnificado } from "@/components/parametros/TamanhosMedidasUnificado";
 
-// A rotina de Tamanho e Medidas de Produto > Associar ao produto, a mesma tela do menu, numa janela aberta de dentro
+// A tela de Tamanho e Medidas de Produto, a mesma do menu (cadastro e associação juntos, decisão 89), numa janela aberta de dentro
 // do cadastro de EPI (decisão 87). Deve ficar ao lado (nunca dentro) do diálogo do cadastro: assim o formulário
 // continua montado, com tudo o que foi preenchido, enquanto a associação é feita e salva.
-export function DialogAssociarTamanhos({ aberto, onAbrirMudou }: { aberto: boolean; onAbrirMudou: (aberto: boolean) => void }) {
+export function DialogAssociarTamanhos({ aberto, onAbrirMudou, de }: { aberto: boolean; onAbrirMudou: (aberto: boolean) => void; de: "epi" | "uniformes" }) {
   return (
     <Dialog open={aberto} onOpenChange={onAbrirMudou}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader className="sr-only">
-          <DialogTitle>Tamanho e Medidas de Produto: associar ao produto</DialogTitle>
+          <DialogTitle>Tamanho e Medidas de Produto</DialogTitle>
           <DialogDescription>Associa tamanhos e medidas à subcategoria. Ao fechar, o cadastro continua de onde parou.</DialogDescription>
         </DialogHeader>
-        <AssociarTamanhosPainel />
+        <TamanhosMedidasUnificado de={de} emJanela />
       </DialogContent>
     </Dialog>
   );
