@@ -285,11 +285,12 @@ function MenuUniformes({ pathname }: { pathname: string }) {
 
 // Parâmetros > Veículos: o cadastro da frota e as listas de apoio (decisão 46).
 function MenuVeiculos({ pathname }: { pathname: string }) {
+  const deAtual = useDeAtual();
   return (
     <GrupoRecolhivel
       titulo="Veículos"
       icone={<Car />}
-      prefixos={MENU_VEICULOS.map((i) => i.url)}
+      prefixos={prefixosDoGrupo("veiculos", MENU_VEICULOS.filter((i) => !i.de).map((i) => i.url), deAtual)}
       pathname={pathname}
     >
       {MENU_VEICULOS.map((item) => (

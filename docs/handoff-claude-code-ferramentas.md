@@ -338,3 +338,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Cadastrar EPI (Novo EPI): link 'Associar tamanhos' abre a tela de Associar ao produto numa janela sem perder o cadastro (decisão 87): `DialogAssociarTamanhos`.
 - Cadastrar Uniforme (Novo Uniforme): mesmo link 'Associar tamanhos' do EPI (decisão 88); Ferramentas e Veículos não têm tamanho no cadastro e ficaram de fora por escolha do dono.
 - Parâmetros: Tamanho e Medidas de Produto é uma tela só por menu (EPI, Uniformes, Ferramentas), cadastro em cima e associação embaixo, categoria vinda do menu (decisão 89): `TamanhosMedidasUnificado`; a janela do Novo EPI/Uniforme abre a mesma tela.
+- Parâmetros: Tabelas de Apoio virou Parâmetros Específicos e abre direto na categoria do menu de origem, inclusive em Veículos (decisão 91): `categorias.tsx` com `?de=`.

@@ -8,9 +8,11 @@ const menuDados = readFileSync(new URL("lib/menu-parametros.ts", raiz), "utf8");
 const estilos = readFileSync(new URL("styles.css", raiz), "utf8");
 const telaCategorias = readFileSync(new URL("routes/_authenticated/cadastros/gerais/categorias.tsx", raiz), "utf8");
 
-test("Tabelas de Apoio abre em categorias e revela detalhes após seleção", () => {
-  assert.match(menuDados, /titulo: "Tabelas de Apoio", url: URLS_APOIO\[0\]!/);
-  assert.match(telaCategorias, /titulo="Tabelas de Apoio"/);
+test("Parâmetros Específicos abre na categoria do menu de origem (decisão 91)", () => {
+  assert.match(menuDados, /titulo: "Parâmetros Específicos", url: URLS_APOIO\[0\]!/);
+  assert.match(telaCategorias, /titulo="Parâmetros Específicos"/);
+  assert.match(telaCategorias, /de \? CATEGORIA_DO_MENU\[de\] : escolhidaLivre/);
+  assert.match(menuDados, /itemEspecificos\("veiculos"\)/);
   assert.match(telaCategorias, /!escolhida && <div/);
   assert.match(telaCategorias, /escolhida && categoria \? \(/);
   assert.match(telaCategorias, /Voltar às categorias/);
