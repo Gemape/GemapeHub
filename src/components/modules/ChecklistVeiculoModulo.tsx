@@ -354,12 +354,12 @@ export function ChecklistVeiculoModulo() {
                 <SelectTrigger id="ck_veiculo" aria-describedby="ck_veiculo_ajuda" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder={tipoCheck ? "Selecione o veículo" : "Escolha o tipo primeiro"} /></SelectTrigger>
                 <SelectContent>{veiculosDoTipo.map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDe(v)}</SelectItem>)}</SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
+              {canWrite && <p className="text-xs text-muted-foreground">
                 Veículo não está na lista?{" "}
                 <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setVeiculosAberto(true)}>
                   Cadastrar veículo
                 </button>
-              </p>
+              </p>}
               {tipoCheck && veiculosDoTipo.length === 0 && (
                 <p id="ck_veiculo_ajuda" className="text-xs text-muted-foreground">Nenhum veículo ativo deste tipo. A subcategoria do veículo é definida em Parâmetros &gt; Veículos &gt; Cadastro de Veículos.</p>
               )}
@@ -392,7 +392,17 @@ export function ChecklistVeiculoModulo() {
         </DialogContent>
       </Dialog>
 
-      <DialogCadastroVeiculos aberto={veiculosAberto} onAbrirMudou={setVeiculosAberto} />
+      <DialogCadastroVeiculos
+        aberto={veiculosAberto}
+        onAbrirMudou={(aberto) => {
+          setVeiculosAberto(aberto);
+          // O veículo escolhido pode ter sido excluído ou mudado de tipo na janela: sem ele na lista, a escolha é limpa e o usuário é avisado.
+          if (!aberto && veiculoId && !veiculoEscolhido) {
+            setVeiculoId("");
+            toast.info("O veículo escolhido não está mais disponível para este tipo. Escolha outro.");
+          }
+        }}
+      />
 
       <Dialog
         open={!!atual}
