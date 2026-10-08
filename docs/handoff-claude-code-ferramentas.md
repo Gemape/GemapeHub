@@ -343,3 +343,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Check list: no Novo check list, os avisos de veículo sem itens associados e de periodicidade não definida têm o link que abre a associação de itens numa janela sem perder o preenchido (decisão 93): `DialogAssociarChecklist`.
 - Veículos: combustível GLP incluído na lista do cadastro (decisão 94): `COMBUSTIVEIS_VEICULO` em `src/lib/gemape.ts`.
 - Check list: no Novo check list avulso, o aviso de tipo sem itens tem o link que abre Itens check list numa janela sem perder o preenchido (decisão 95): `DialogItensChecklist`.
+- Cadastrar EPI: a lista de EPIs cadastrados tem a coluna Descrição (nome em destaque + etiquetas de categoria e unidade), sem a linha de cabeçalho do grupo (decisão 96): `DescricaoEpi` em `CadastroEpi.tsx`.

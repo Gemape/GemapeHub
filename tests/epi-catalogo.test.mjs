@@ -128,3 +128,14 @@ test("o tamanho escolhido precisa estar entre os associados à subcategoria", ()
   assert.throws(() => montarClonagemEpi({ origem: catalogo[0], tamanhoId: "t-xx", minimo: "1", catalogo, codigo: "EPI-0004", tamanhosPermitidos: ["t-g"] }), /não associado/);
   assert.equal(montarClonagemEpi({ origem: catalogo[0], tamanhoId: "t-g", minimo: "1", catalogo, codigo: "EPI-0004", tamanhosPermitidos: ["t-g"] }).tamanho_id, "t-g");
 });
+
+test("a busca também acha pela categoria e unidade de cada tamanho, que aparecem em cada linha (decisão 96)", () => {
+  const mistos = [
+    { ...catalogo[0], id: "m1", codigo_sku: "EPI-0010", nome: "Luva mista", categoria: "Luvas", unidade_medida: "Par" },
+    { ...catalogo[0], id: "m2", codigo_sku: "EPI-0011", nome: "Luva mista", categoria: "Proteção das mãos", unidade_medida: "Unidade", tamanho_id: "t-m" },
+  ];
+  const grupos = agruparEpis(mistos);
+  const rotulo = () => "";
+  assert.equal(filtrarGrupos(grupos, "proteção mãos", rotulo).length, 1);
+  assert.equal(filtrarGrupos(grupos, "unidade", rotulo).length, 1);
+});
