@@ -4,7 +4,6 @@ import assert from "node:assert/strict";
 import {
   agruparEpis,
   duplicadoNoCatalogo,
-  descreverEpi,
   filtrarGrupos,
   montarClonagemEpi,
   montarNovoEpi,
@@ -139,19 +138,4 @@ test("a busca também acha pela categoria e unidade de cada tamanho, que aparece
   const rotulo = () => "";
   assert.equal(filtrarGrupos(grupos, "proteção mãos", rotulo).length, 1);
   assert.equal(filtrarGrupos(grupos, "unidade", rotulo).length, 1);
-});
-
-test("a descrição do EPI é um texto corrido: unidade, categoria e nome (decisão 97)", () => {
-  assert.equal(descreverEpi({ nome: "Látex", categoria: "Luva", unidade_medida: "Par" }), "Par de luva de látex");
-  assert.equal(descreverEpi({ nome: "  Látex   nitrílico ", categoria: "Luva", unidade_medida: "Par" }), "Par de luva de látex nitrílico");
-  // Siglas ficam como estão.
-  assert.equal(descreverEpi({ nome: "PVC", categoria: "Luva", unidade_medida: "Par" }), "Par de luva de PVC");
-  // Sem unidade, começa pela categoria.
-  assert.equal(descreverEpi({ nome: "Branco", categoria: "Capacete", unidade_medida: null }), "Capacete de branco");
-  // Nome que já começa pela categoria não a repete.
-  assert.equal(descreverEpi({ nome: "Capacete de segurança", categoria: "Capacete", unidade_medida: null }), "Capacete de segurança");
-  assert.equal(descreverEpi({ nome: "Luvas de raspa", categoria: "Luva", unidade_medida: "Par" }), "Par de luvas de raspa");
-  // Sem categoria, usa unidade e nome; só com o nome, devolve o nome com a primeira letra maiúscula.
-  assert.equal(descreverEpi({ nome: "óculos", categoria: null, unidade_medida: "Unidade" }), "Unidade de óculos");
-  assert.equal(descreverEpi({ nome: "óculos", categoria: null, unidade_medida: null }), "Óculos");
 });

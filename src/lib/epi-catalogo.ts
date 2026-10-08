@@ -364,17 +364,3 @@ export function excluirEpiCatalogo(dados: DadosCatalogo, catalogoId: string, t: 
   dados.enderecamentos = (dados.enderecamentos ?? []).filter((e) => String(e["codigo_produto"] ?? "").trim().toUpperCase() !== sku);
   return {};
 }
-
-// Descrição corrida do EPI na lista (decisão 97): unidade, categoria e nome, ex.: "Par de luva de látex". Sem unidade começa
-// pela categoria; o nome que já começa pela categoria não a repete. As siglas (palavras todas em maiúsculas) ficam como estão.
-export function descreverEpi(epi: { nome: string; categoria: string | null; unidade_medida: string | null }): string {
-  const minuscula = (palavra: string) => (palavra.length > 1 && palavra === palavra.toUpperCase() ? palavra : palavra.charAt(0).toLowerCase() + palavra.slice(1));
-  const emMinuscula = (texto: string) => texto.split(" ").map(minuscula).join(" ");
-  const nome = epi.nome.trim().replace(/\s+/g, " ");
-  const categoria = epi.categoria?.trim() ?? "";
-  const unidade = epi.unidade_medida?.trim() ?? "";
-  const repeteCategoria = !categoria || normalizarDescricao(nome).startsWith(normalizarDescricao(categoria));
-  const partes = [unidade, repeteCategoria ? "" : categoria, nome].filter(Boolean).map((parte, i) => (i === 0 ? parte : emMinuscula(parte)));
-  const texto = partes.join(" de ");
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
-}

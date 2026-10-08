@@ -23,7 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
   agruparEpis,
-  descreverEpi,
   filtrarGrupos,
   montarClonagemEpi,
   montarNovoEpi,
@@ -320,6 +319,7 @@ function CatalogoEpi() {
               <TableHead>Código</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Tamanho</TableHead>
+              <TableHead>Unidade</TableHead>
               <TableHead className="text-right">Estoque mínimo</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -327,12 +327,12 @@ function CatalogoEpi() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">Carregando…</TableCell>
+                <TableCell colSpan={6} className="text-center text-muted-foreground">Carregando…</TableCell>
               </TableRow>
             )}
             {!isLoading && grupos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   {busca.trim() ? "Nenhum EPI encontrado." : "Nenhum EPI cadastrado. Use Novo EPI."}
                 </TableCell>
               </TableRow>
@@ -601,8 +601,9 @@ function GrupoLinhas({
       {grupo.itens.map((item, indice) => (
         <TableRow key={item.id} className={indice === 0 ? "border-t-2 border-border" : undefined}>
           <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
-          <TableCell>{descreverEpi({ nome: grupo.nome, categoria: item.categoria, unidade_medida: item.unidade_medida })}</TableCell>
+          <TableCell>{grupo.nome}</TableCell>
           <TableCell>{rotuloTamanho(item.tamanho_id) || "Sem tamanho"}</TableCell>
+          <TableCell>{item.unidade_medida || "Sem unidade"}</TableCell>
           <TableCell className="text-right">{item.estoque_minimo}</TableCell>
           <TableCell className="text-right">
             <AcoesLinha
