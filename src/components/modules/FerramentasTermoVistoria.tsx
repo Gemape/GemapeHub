@@ -229,7 +229,7 @@ export function FerramentasTermoVistoria() {
                 <SelectContent>
                   {caixas.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.codigo} - {c.nome}
+                      {c.codigo}
                     </SelectItem>
                   ))}
                 </SelectContent>

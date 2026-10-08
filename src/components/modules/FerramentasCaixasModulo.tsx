@@ -2,7 +2,14 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
-import { controleDaFerramenta, disponivelNaCaixa, linhaCsvCaixa, movimentacoesDaCaixa } from "@/lib/controle-caixa";
+import {
+  controleDaFerramenta,
+  disponivelNaCaixa,
+  linhaCsvCaixa,
+  movimentacoesDaCaixa,
+  ocorrenciasDaCaixa,
+} from "@/lib/controle-caixa";
+import { DialogBaixaCaixa, DialogFerramentasDaCaixa, DialogOcorrenciaCaixa, type LinhaCaixa } from "./CaixaGestaoDialogs";
 import { naturezaMovimentacao } from "@/lib/historico-movimentacoes";
 import { ChevronDown, Download } from "lucide-react";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
@@ -26,6 +33,7 @@ import {
   useEmpregados,
   useCaixasFerramentas,
   useCaixaItens,
+  useOcorrencias,
   type CaixaFerramenta,
   type Movimentacao,
 } from "@/lib/hooks-gemape";
@@ -54,7 +62,7 @@ export function FerramentasCaixasModulo() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
         <Input
-          placeholder="Filtrar por nome ou código da caixa..."
+          placeholder="Filtrar por número da caixa..."
           className="max-w-xs"
           value={buscaCaixa}
           onChange={(e) => setBuscaCaixa(e.target.value)}
@@ -100,15 +108,25 @@ function CaixaItem({
 }) {
   const { data: itens = [], isLoading } = useCaixaItens(caixa.id);
   const [historicoAberto, setHistoricoAberto] = useState(false);
+  const [ocorrenciasAberto, setOcorrenciasAberto] = useState(false);
+  const [dialogo, setDialogo] = useState<"ferramentas" | "baixa" | "ocorrencia" | null>(null);
+  const { data: todasOcorrencias = [] } = useOcorrencias("", "ferramenta");
   const ferramentas = itens.flatMap((ci) => (ci.ferramenta ? [ci.ferramenta] : []));
   const historico = movimentacoesDaCaixa(movimentacoes, caixa.id, ferramentas.map((f) => f.id));
+  const ocorrencias = ocorrenciasDaCaixa(todasOcorrencias, caixa.id, ferramentas.map((f) => f.id));
+  const linhas: LinhaCaixa[] = itens.flatMap((ci) => {
+    if (!ci.ferramenta) return [];
+    const c = controleDaFerramenta(historico, ci.ferramenta_id);
+    return [{ ferramenta: ci.ferramenta, quantidade: ci.quantidade, comEmpregado: c.comEmpregado, disponivel: disponivelNaCaixa(ci.quantidade, c.comEmpregado, c.baixadoDaCaixa) }];
+  });
+  const comEmpregadoDe = (id: string) => controleDaFerramenta(historico, id).comEmpregado;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <div className="h-8 w-1 bg-primary rounded-full" />
         <h3 className="text-lg font-black uppercase tracking-tight">
-          {caixa.codigo}: {caixa.nome}
+          {caixa.codigo}
         </h3>
         <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
           {itens.length} {itens.length === 1 ? "item" : "itens"}
@@ -130,6 +148,7 @@ function CaixaItem({
               <TableHead>Empresa</TableHead>
               <TableHead>Qtd na caixa</TableHead>
               <TableHead>Com empregado</TableHead>
+              <TableHead>Baixado</TableHead>
               <TableHead>Disponível</TableHead>
               <TableHead>Estado</TableHead>
             </TableRow>
@@ -137,19 +156,20 @@ function CaixaItem({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={9} className="text-center">
                   Carregando itens...
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
+                <TableCell colSpan={9} className="text-center text-muted-foreground">
                   Caixa vazia.
                 </TableCell>
               </TableRow>
             ) : (
               itens.map((ci) => {
-                const comEmpregado = controleDaFerramenta(historico, ci.ferramenta_id).comEmpregado;
+                const controle = controleDaFerramenta(historico, ci.ferramenta_id);
+                const comEmpregado = controle.comEmpregado;
                 return (
                 <TableRow key={ci.id}>
                   <TableCell className="font-mono font-bold">{ci.ferramenta?.codigo_sku}</TableCell>
@@ -162,7 +182,8 @@ function CaixaItem({
                   </TableCell>
                   <TableCell>{ci.quantidade}</TableCell>
                   <TableCell>{comEmpregado}</TableCell>
-                  <TableCell className="font-semibold">{disponivelNaCaixa(ci.quantidade, comEmpregado)}</TableCell>
+                  <TableCell>{controle.baixado + controle.baixadoDaCaixa}</TableCell>
+                  <TableCell className="font-semibold">{disponivelNaCaixa(ci.quantidade, comEmpregado, controle.baixadoDaCaixa)}</TableCell>
                   <TableCell>
                     <span
                       className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
@@ -183,6 +204,15 @@ function CaixaItem({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <Button requiresWrite="operar" size="sm" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
+          Ferramentas da caixa
+        </Button>
+        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
+          Dar baixa
+        </Button>
+        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
+          Registrar ocorrência
+        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -250,6 +280,61 @@ function CaixaItem({
           </Table>
         </div>
       )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" aria-expanded={ocorrenciasAberto} onClick={() => setOcorrenciasAberto(!ocorrenciasAberto)}>
+          <ChevronDown className={`mr-1 size-4 transition-transform ${ocorrenciasAberto ? "" : "-rotate-90"}`} />
+          Ocorrências da caixa ({ocorrencias.length})
+        </Button>
+      </div>
+
+      {ocorrenciasAberto && (
+        <div className="panel overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Hora</TableHead>
+                <TableHead>Ferramenta</TableHead>
+                <TableHead>Empregado</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Descrição</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ocorrencias.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    Nenhuma ocorrência desta caixa.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                ocorrencias.map((o) => {
+                  const ferramenta = ferramentas.find((f) => f.id === o.item_id);
+                  return (
+                    <TableRow key={o.id}>
+                      <TableCell>{formatarData(o.data)}</TableCell>
+                      <TableCell>{o.hora.slice(0, 5)}</TableCell>
+                      <TableCell>
+                        <span className="font-mono text-xs">{ferramenta?.codigo_sku}</span> {ferramenta?.nome}
+                      </TableCell>
+                      <TableCell>{nomeEmpregado(o.empregado_id)}</TableCell>
+                      <TableCell>{o.responsavel_registro}</TableCell>
+                      <TableCell className="max-w-xs">{o.descricao_ocorrencia}</TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {dialogo === "ferramentas" && (
+        <DialogFerramentasDaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} itensAtuais={itens} comEmpregado={comEmpregadoDe} />
+      )}
+      {dialogo === "baixa" && <DialogBaixaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
+      {dialogo === "ocorrencia" && <DialogOcorrenciaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
     </div>
   );
 }

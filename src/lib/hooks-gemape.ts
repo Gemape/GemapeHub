@@ -122,6 +122,8 @@ export interface Ocorrencia {
   item_id: string | null;
   veiculo_id: string | null;
   created_at: string;
+  // Caixa da ferramenta, quando a ocorrência é registrada pela tela Número da caixa (decisão 104), só no modo demonstração.
+  caixa_id?: string | null;
 }
 
 export interface CompraUniforme {
@@ -338,7 +340,7 @@ export function useCaixasFerramentas(empresaId: string, busca = "") {
       let q = supabase.from("caixas_ferramentas").select("*");
       if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
       if (busca.trim()) {
-        q = q.or(`nome.ilike.%${buscaSegura(busca)}%,codigo.ilike.%${buscaSegura(busca)}%`);
+        q = q.ilike("codigo", `%${buscaSegura(busca)}%`);
       }
       // No máximo 100 caixas (CX-0001 a CX-0100): a lista vem inteira, sem cortar em PAGINA.
       const { data, error } = await q.order("codigo", { ascending: false }).limit(TOTAL_CAIXAS);
