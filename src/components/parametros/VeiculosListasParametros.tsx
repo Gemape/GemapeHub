@@ -320,8 +320,8 @@ export function ChecklistVeiculoLista() {
           const r = restaurarGrupoChecklistVeiculo(l.id);
           toast.success(
             r.tiposRestaurados
-              ? `${l.nome} voltou à configuração inicial.`
-              : `${l.nome} voltou à configuração inicial; o tipo de veículo não existe em Gerais e foi mantido como estava.`,
+              ? `${r.nome} voltou à configuração inicial.`
+              : `${r.nome} voltou à configuração inicial; o tipo de veículo não existe em Gerais e foi mantido como estava.`,
           );
         })
       }
