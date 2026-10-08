@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChecklistVeiculoLista } from "@/components/parametros/VeiculosListasParametros";
+import { ChecklistParametros } from "@/components/parametros/ChecklistParametros";
 
 export const Route = createFileRoute("/_authenticated/cadastros/veiculos-checklist")({
-  head: () => ({ meta: [{ title: "Itens check list | Patrimônio GEMAPE" }] }),
-  component: ChecklistVeiculoLista,
+  head: () => ({ meta: [{ title: "Check list | Patrimônio GEMAPE" }] }),
+  component: ChecklistParametros,
 });

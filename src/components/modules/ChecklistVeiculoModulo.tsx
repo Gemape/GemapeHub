@@ -96,7 +96,7 @@ export function ChecklistVeiculoModulo() {
   const hoje = useHojeBrasilia();
   const associacoes = useAssociacoesChecklist();
   const previsoes = usePrevisoesChecklist();
-  // A periodicidade não é escolhida aqui: vem de Parâmetros > Veículos > Associar itens de check list a um veículo.
+  // A periodicidade não é escolhida aqui: vem de Parâmetros > Veículos > Check list.
   const associacaoDe = (v: VeiculoChecklist) => associacoes.find((a) => a.veiculoId === v.id);
   const periodicidadeDe = (v: VeiculoChecklist) => periodicidadeDaAssociacao(associacaoDe(v));
 
@@ -145,13 +145,13 @@ export function ChecklistVeiculoModulo() {
     <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setAssociarAberto(true)}>
       Associar itens de check list a um veículo
     </button>
-  ) : "Associe em Parâmetros > Veículos > Associar itens de check list a um veículo.";
-  // Atalho para o cadastro dos itens padrão (Parâmetros > Veículos > Itens check list), aberto numa janela ao lado do Novo check list avulso.
+  ) : "Associe em Parâmetros > Veículos > Check list.";
+  // Atalho para o cadastro dos itens padrão (Parâmetros > Veículos > Check list), aberto numa janela ao lado do Novo check list avulso.
   const linkItens = canWrite ? (
     <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setItensAberto(true)}>
       Cadastrar itens de check list
     </button>
-  ) : "Cadastre em Parâmetros > Veículos > Itens check list.";
+  ) : "Cadastre em Parâmetros > Veículos > Check list.";
   // Só os grupos habilitados na associação do veículo escolhido (decisão 76).
   const gruposDoVeiculo = !veiculoEscolhido
     ? []
@@ -344,7 +344,7 @@ export function ChecklistVeiculoModulo() {
             <DialogDescription>
               {avulsoNovo
                 ? "Escolha o tipo e o veículo: o check list avulso não tem periodicidade nem responsável e traz todos os grupos de itens do tipo do veículo."
-                : "Escolha o tipo e o veículo: os itens vêm dos grupos habilitados para o veículo em Parâmetros > Veículos > Associar itens de check list a um veículo."}
+                : "Escolha o tipo e o veículo: os itens vêm dos grupos habilitados para o veículo em Parâmetros > Veículos > Check list."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={iniciar} className="min-w-0 space-y-4 [&_p]:break-words">

@@ -112,8 +112,7 @@ export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Cadastro de Veículos", url: "/cadastros/veiculos", icone: "Car" },
   { titulo: "Manutenção", url: "/cadastros/veiculos-manutencao", icone: "Wrench" },
   { titulo: "Tipos de ocorrência", url: "/cadastros/veiculos-tipos-ocorrencia", icone: "ClipboardList" },
-  { titulo: "Itens check list", url: "/cadastros/veiculos-checklist", icone: "Wrench" },
-  { titulo: "Associar itens de check list a um veículo", url: "/cadastros/veiculos-checklist-associar", icone: "ListChecks" },
+  { titulo: "Check list", url: "/cadastros/veiculos-checklist", icone: "ListChecks" },
   itemEspecificos("veiculos"),
 ];
 
