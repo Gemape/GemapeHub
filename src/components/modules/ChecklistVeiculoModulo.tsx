@@ -105,10 +105,8 @@ export function ChecklistVeiculoModulo() {
   const associacaoDe = (v: VeiculoChecklist) => associacoes.find((a) => a.veiculoId === v.id);
   // Periodicidade do check list periódico: a escolhida (se o veículo tem mais de uma) ou a mais frequente (decisão 119).
   const periodicidadesDe = (v: VeiculoChecklist) => periodicidadesDaAssociacao(associacaoDe(v));
-  const periodicidadeDe = (v: VeiculoChecklist) => {
-    const todas = periodicidadesDe(v);
-    return todas.find((p) => p === periodicidadeEscolhida) ?? todas[0] ?? null;
-  };
+  const periodicidadeDe = (v: VeiculoChecklist) => periodicidadesDe(v)[0] ?? null; // a mais frequente: situação por veículo e painel
+  const periodicidadeDoDialogo = (v: VeiculoChecklist) => periodicidadesDe(v).find((p) => p === periodicidadeEscolhida) ?? periodicidadeDe(v);
 
   // Mantém em vigor as previsões do painel mensal (decisão 80): veículos ativos com associação, desde o dia da
   // associação. Só roda com a lista de veículos carregada: sem ela, as previsões em vigor seriam apagadas.
@@ -175,7 +173,7 @@ export function ChecklistVeiculoModulo() {
       ? (!associacaoEscolhida
         ? gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(veiculoEscolhido)?.id ?? null)
         : comoAssociacao(modoAvulso === "periodico" ? gruposDaPeriodicidade(associacaoEscolhida, periodicidadeAvulso) : gruposAvulsosDaAssociacao(associacaoEscolhida)))
-      : comoAssociacao(gruposDaPeriodicidade(associacaoEscolhida, periodicidadeDe(veiculoEscolhido) ?? ""));
+      : comoAssociacao(gruposDaPeriodicidade(associacaoEscolhida, periodicidadeDoDialogo(veiculoEscolhido) ?? ""));
   const itensDoVeiculo = gruposDoVeiculo.reduce((t, g) => t + g.itens.length, 0);
 
   const lista = (visao === "avulsos" ? avulsos : naLista)
@@ -222,7 +220,7 @@ export function ChecklistVeiculoModulo() {
         ? iniciarChecklistAvulso({ ...base, periodicidade: modoAvulso === "periodico" ? periodicidadeAvulso : null })
         : iniciarChecklist({
           ...base,
-          periodicidade: periodicidadeDe(veiculoEscolhido),
+          periodicidade: periodicidadeDoDialogo(veiculoEscolhido),
           responsavelId,
           responsavelNome: empregadosAtivos.find((x) => x.id === responsavelId)?.nome ?? "",
         });
@@ -412,11 +410,11 @@ export function ChecklistVeiculoModulo() {
               )}
               {veiculoEscolhido && !avulsoNovo && (
                 <p className="text-xs text-muted-foreground">
-                  Periodicidade (da associação do veículo): {periodicidadeDe(veiculoEscolhido) ?? <>não definida. {linkAssociar}</>}
+                  Periodicidade (da associação do veículo): {periodicidadeDoDialogo(veiculoEscolhido) ?? <>não definida. {linkAssociar}</>}
                   {periodicidadesDe(veiculoEscolhido).length > 1 && <>
                     {" "}· trocar:{" "}
                     {periodicidadesDe(veiculoEscolhido).map((p) => (
-                      <button key={p} type="button" aria-pressed={periodicidadeDe(veiculoEscolhido) === p} className={`mr-1.5 underline underline-offset-2 ${periodicidadeDe(veiculoEscolhido) === p ? "font-semibold text-foreground" : "text-primary"}`} onClick={() => setPeriodicidadeEscolhida(p)}>{p}</button>
+                      <button key={p} type="button" aria-pressed={periodicidadeDoDialogo(veiculoEscolhido) === p} className={`mr-1.5 underline underline-offset-2 ${periodicidadeDoDialogo(veiculoEscolhido) === p ? "font-semibold text-foreground" : "text-primary"}`} onClick={() => setPeriodicidadeEscolhida(p)}>{p}</button>
                     ))}
                   </>}
                   {pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
