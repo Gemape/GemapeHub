@@ -48,3 +48,5 @@ Nada abaixo deve ser feito antes da ordem do responsável.
 - Cadastrar as URLs de redirecionamento da auth no Supabase.
 - `ocorrencias.caixa_id` e `movimentacoes.caixa_id` (decisão 104): hoje só no modo demonstração; no banco real entram colunas opcionais ligadas a `caixas_ferramentas`. A coluna `caixas_ferramentas.nome` passa a repetir o código; pode virar opcional.
 - `caixa_ferramenta_itens`: restrição única por `ferramenta_id` (uma ferramenta em uma caixa só, decisão 106); migrar antes os dados repetidos, se houver.
+
+- Check list de veículo (decisão 116): a associação precisará de `obrigatorio` por grupo, periodicidade "não definida" (nula) e responsável nulo. Sem tabela criada agora.

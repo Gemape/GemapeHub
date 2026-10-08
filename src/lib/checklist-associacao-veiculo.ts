@@ -7,18 +7,21 @@ type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-associacoes-checklist-veiculo";
 export const EVENTO_ASSOCIACOES_CHECKLIST = "gemape-associacoes-checklist-veiculo";
 
-export const PERIODICIDADES_ASSOCIACAO = ["Diária", "Semanal", "Quinzenal", "Mensal"] as const;
+// "Não definida" (decisão 116): o grupo não tem periodicidade; com responsável também não definido, o check list é livre.
+export const NAO_DEFINIDA = "Não definida";
+export const NAO_DEFINIDO = "Não definido";
+export const PERIODICIDADES_ASSOCIACAO = ["Diária", "Semanal", "Quinzenal", "Mensal", NAO_DEFINIDA] as const;
 export type PeriodicidadeAssociacao = (typeof PERIODICIDADES_ASSOCIACAO)[number];
 
-export type ItemAssociacao = { grupoId: string; periodicidade: PeriodicidadeAssociacao };
+export type ItemAssociacao = { grupoId: string; periodicidade: PeriodicidadeAssociacao; obrigatorio: boolean };
 export type ResponsavelAssociacao = { id: string; nome: string };
 export type AssociacaoChecklist = {
   veiculoId: string;
-  responsavel: ResponsavelAssociacao;
+  responsavel: ResponsavelAssociacao | null; // null = responsável não definido (decisão 116)
   itens: ItemAssociacao[];
   atualizadoEm: string;
 };
-export type EntradaItemAssociacao = { grupoId: string; periodicidade: string };
+export type EntradaItemAssociacao = { grupoId: string; periodicidade: string; obrigatorio?: boolean };
 
 const storagePadrao = (): StorageLike | null =>
   typeof localStorage === "undefined" ? null : localStorage;
@@ -39,10 +42,10 @@ function lerComEstado(storage: StorageLike | null): { lista: AssociacaoChecklist
       .map((a) => ({
         veiculoId: String(a.veiculoId),
         atualizadoEm: String(a.atualizadoEm ?? ""),
-        responsavel: { id: String(a.responsavel?.id ?? ""), nome: String(a.responsavel?.nome ?? "") },
+        responsavel: a.responsavel?.id ? { id: String(a.responsavel.id), nome: String(a.responsavel.nome ?? "") } : null,
         itens: (Array.isArray(a.itens) ? a.itens : [])
           .filter((i) => !!i && typeof i === "object" && ehPeriodicidade(i.periodicidade))
-          .map((i) => ({ grupoId: String(i.grupoId), periodicidade: i.periodicidade })),
+          .map((i) => ({ grupoId: String(i.grupoId), periodicidade: i.periodicidade, obrigatorio: i.obrigatorio === true })),
       }));
     return { lista, integro: true };
   } catch {
@@ -68,9 +71,9 @@ function validar(
   responsavel: ResponsavelAssociacao | null,
   itens: EntradaItemAssociacao[],
   gruposValidos?: string[],
-): { responsavel: ResponsavelAssociacao; itens: ItemAssociacao[] } {
+): { responsavel: ResponsavelAssociacao | null; itens: ItemAssociacao[] } {
   if (!veiculoId) throw new Error("Selecione o veículo.");
-  if (!responsavel || !responsavel.id || !responsavel.nome.trim()) throw new Error("Defina o responsável.");
+  if (responsavel && (!responsavel.id || !responsavel.nome.trim())) throw new Error("Responsável inválido: escolha um empregado ou deixe Não definido.");
   if (gruposValidos && itens.some((i) => !gruposValidos.includes(i.grupoId))) {
     throw new Error("Um grupo de itens não existe mais em Itens check list. Remova-o e salve de novo.");
   }
@@ -80,11 +83,11 @@ function validar(
     if (vistos.has(i.grupoId)) throw new Error("Grupo de itens repetido na associação.");
     vistos.add(i.grupoId);
     if (!ehPeriodicidade(i.periodicidade)) {
-      throw new Error("Escolha a periodicidade (Diária, Semanal, Quinzenal ou Mensal) de cada grupo.");
+      throw new Error("Escolha a periodicidade (Diária, Semanal, Quinzenal, Mensal ou Não definida) de cada grupo.");
     }
-    return { grupoId: i.grupoId, periodicidade: i.periodicidade };
+    return { grupoId: i.grupoId, periodicidade: i.periodicidade, obrigatorio: i.obrigatorio === true };
   });
-  return { responsavel: { id: responsavel.id, nome: responsavel.nome.trim() }, itens: validos };
+  return { responsavel: responsavel ? { id: responsavel.id, nome: responsavel.nome.trim() } : null, itens: validos };
 }
 
 export function criarAssociacao(
@@ -137,5 +140,44 @@ export function gruposDaAssociacao(
   return associacao.itens.flatMap((i) => {
     const grupo = grupos.find((g) => g.id === i.grupoId);
     return grupo ? [{ ...i, nome: grupo.nome }] : [];
+  });
+}
+
+// ---------- Check lists do veículo (decisão 116) ----------
+// Os grupos habilitados se juntam por periodicidade: cada periodicidade é um check list do veículo, com o nome
+// PLACA >> PERIODICIDADE >> RESPONSÁVEL. Periódico quando a periodicidade está definida; senão é avulso, e livre
+// (qualquer hora, qualquer pessoa) quando o responsável também não está definido.
+export type TipoChecklistAssociado = "Periódico" | "Avulso" | "Livre";
+export type ChecklistAssociado = {
+  nome: string;
+  periodicidade: PeriodicidadeAssociacao;
+  responsavelNome: string | null;
+  tipo: TipoChecklistAssociado;
+  obrigatorio: "Sim" | "Não" | "Parcial";
+  grupos: { grupoId: string; nome: string; obrigatorio: boolean }[];
+};
+
+export const textoDoNome = (t: string) => t.trim().replace(/\s+/g, " ");
+
+export function checklistsDaAssociacao(
+  rotuloVeiculo: string,
+  associacao: AssociacaoChecklist,
+  grupos: { id: string; nome: string }[],
+): ChecklistAssociado[] {
+  const doVeiculo = gruposDaAssociacao(associacao, grupos);
+  return PERIODICIDADES_ASSOCIACAO.flatMap((periodicidade) => {
+    const deste = doVeiculo.filter((i) => i.periodicidade === periodicidade);
+    if (deste.length === 0) return [];
+    const definida = periodicidade !== NAO_DEFINIDA;
+    const responsavelNome = associacao.responsavel?.nome ?? null;
+    const sims = deste.filter((i) => i.obrigatorio).length;
+    return [{
+      nome: [rotuloVeiculo, periodicidade, responsavelNome ?? NAO_DEFINIDO].map(textoDoNome).join(" >> "),
+      periodicidade,
+      responsavelNome,
+      tipo: definida ? "Periódico" : responsavelNome ? "Avulso" : "Livre",
+      obrigatorio: sims === 0 ? "Não" : sims === deste.length ? "Sim" : "Parcial",
+      grupos: deste.map((i) => ({ grupoId: i.grupoId, nome: i.nome, obrigatorio: i.obrigatorio })),
+    } satisfies ChecklistAssociado];
   });
 }

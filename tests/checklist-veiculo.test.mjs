@@ -221,7 +221,7 @@ test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir 
   assert.doesNotMatch(tela, /aria-label=\{`Periodicidade de/);
   assert.match(tela, /periodicidadeDaAssociacao/);
   assert.match(tela, /gruposAssociadosDoVeiculo/);
-  assert.match(tela, /associacaoDe\(v\)\?\.responsavel\.id/);
+  assert.match(tela, /associacaoDe\(v\)\?\.responsavel\?\.id/);
   assert.doesNotMatch(tela, /grupos: gruposDoTipo,/);
 });
 
@@ -233,6 +233,8 @@ test("a periodicidade do veículo vem da associação: a mais frequente entre os
   assert.equal(periodicidadeDaAssociacao(assoc("Mensal")), "Mensal");
   assert.equal(periodicidadeDaAssociacao(undefined), null);
   assert.equal(periodicidadeDaAssociacao(assoc()), null);
+  assert.equal(periodicidadeDaAssociacao(assoc("Não definida")), null);
+  assert.equal(periodicidadeDaAssociacao(assoc("Não definida", "Mensal")), "Mensal");
 });
 
 test("o check list do veículo traz só os grupos habilitados na associação dele (decisão 76)", () => {

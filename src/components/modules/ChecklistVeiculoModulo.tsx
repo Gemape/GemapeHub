@@ -108,7 +108,7 @@ export function ChecklistVeiculoModulo() {
     return v.status === "Ativo" && associacao && periodicidade
       ? [{
           veiculoId: v.id, veiculoRotulo: rotuloDoVeiculo(parametros, v), periodicidade,
-          responsavelNome: associacao.responsavel.nome, desde: Number.isNaN(Date.parse(associacao.atualizadoEm)) ? hoje : hojeBrasilia(new Date(associacao.atualizadoEm)),
+          responsavelNome: associacao.responsavel?.nome ?? "Não definido", desde: Number.isNaN(Date.parse(associacao.atualizadoEm)) ? hoje : hojeBrasilia(new Date(associacao.atualizadoEm)),
         }]
       : [];
   });
@@ -132,8 +132,8 @@ export function ChecklistVeiculoModulo() {
   const pendencias = pendenciasAbertas(checklists);
   // Nome do check list (decisão 90): Placa >> Periodicidade >> Responsável.
   const nomeDe = (c: ChecklistVeiculo) =>
-    !checklistVisivelNaLista(c) ? `${veiculos.find((v) => v.id === c.veiculoId)?.placa?.trim().toUpperCase() || c.veiculoRotulo} >> Avulso` : nomeDoChecklist({ placa: veiculos.find((v) => v.id === c.veiculoId)?.placa ?? "", fallbackVeiculo: c.veiculoRotulo, periodicidade: c.periodicidade, responsavelNome: c.responsavelNome });
-  // A lista do módulo só traz o que tem periodicidade e responsável.
+    nomeDoChecklist({ placa: veiculos.find((v) => v.id === c.veiculoId)?.placa ?? "", fallbackVeiculo: c.veiculoRotulo, periodicidade: c.periodicidade, responsavelNome: c.responsavelNome });
+  // A lista do módulo só traz o que tem periodicidade ou responsável; o livre (sem os dois) não aparece (decisão 116).
   const naLista = checklists.filter(checklistVisivelNaLista);
   // O avulso (decisão 90) não tem periodicidade nem responsável: fica numa lista à parte e não entra no painel do mês nem na situação por veículo.
   const avulsos = checklists.filter((c) => !checklistVisivelNaLista(c));
@@ -180,7 +180,7 @@ export function ChecklistVeiculoModulo() {
     const tipo = v ? tipoCheckDe(v) : null;
     setTipoCheck(tipo ?? "");
     setVeiculoId(tipo ? (v?.id ?? "") : "");
-    setResponsavelId((v && associacaoDe(v)?.responsavel.id) || v?.empregado_responsavel_id || "");
+    setResponsavelId((v && associacaoDe(v)?.responsavel?.id) || v?.empregado_responsavel_id || "");
     setTela({ tipo: "novo" });
   }
 
@@ -362,7 +362,7 @@ export function ChecklistVeiculoModulo() {
                 onValueChange={(id) => {
                   setVeiculoId(id);
                   // O responsável definido na associação já vem preenchido; dá para trocar.
-                  const doVeiculo = associacoes.find((a) => a.veiculoId === id)?.responsavel.id;
+                  const doVeiculo = associacoes.find((a) => a.veiculoId === id)?.responsavel?.id;
                   if (doVeiculo) setResponsavelId(doVeiculo);
                 }}
                 disabled={!tipoCheck}
