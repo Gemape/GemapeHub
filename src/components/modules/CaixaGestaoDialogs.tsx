@@ -20,6 +20,7 @@ import { capitalizarNomePessoa, capitalizarTexto } from "@/lib/formatacao-cadast
 import { hojeLocal } from "@/lib/empregados";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import {
+  controleDaFerramenta,
   ferramentasComEmpregadoRemovidas,
   validarBaixaDaCaixa,
   validarFerramentasDaCaixa,
@@ -33,6 +34,7 @@ import {
   type CaixaFerramenta,
   type CaixaFerramentaItem,
   type Item,
+  type Movimentacao,
 } from "@/lib/hooks-gemape";
 
 const SEM_EMPREGADO = "sem-empregado";
@@ -192,7 +194,13 @@ export function DialogFerramentasDaCaixa({
 }
 
 /** Baixa de uma ferramenta da caixa (perda, quebra, desgaste...); grava a caixa na movimentação. */
-export function DialogBaixaCaixa({ caixa, aberto, aoFechar, linhas }: Comum & { linhas: LinhaCaixa[] }) {
+export function DialogBaixaCaixa({
+  caixa,
+  aberto,
+  aoFechar,
+  linhas,
+  historico,
+}: Comum & { linhas: LinhaCaixa[]; historico: Movimentacao[] }) {
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
   const [ferramentaId, setFerramentaId] = useState(linhas[0]?.ferramenta.id ?? "");
@@ -212,7 +220,10 @@ export function DialogBaixaCaixa({ caixa, aberto, aoFechar, linhas }: Comum & { 
       motivo,
       data,
       disponivel: linha?.disponivel ?? 0,
-      comEmpregado: linha?.comEmpregado ?? 0,
+      // Com empregado, o limite é o que está com ele, não o total da caixa.
+      comEmpregado: empregado
+        ? controleDaFerramenta(historico.filter((m) => m.empregado_id === empregado), ferramentaId).comEmpregado
+        : (linha?.comEmpregado ?? 0),
       empregadoId: empregado,
     });
     if (erro || !linha) {

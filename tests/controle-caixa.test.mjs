@@ -133,7 +133,8 @@ test("Número da caixa tem gestão: ferramentas, baixa, ocorrência, só pelo n�
   for (const c of ["Vincular ferramentas", "Dar baixa", "Registrar ocorrência", "Ocorrências da caixa", "Baixado"]) assert.ok(f.includes(c), c);
   assert.match(f, /ocorrenciasDaCaixa\(todasOcorrencias, caixa\.id,/);
   assert.doesNotMatch(f, /caixa\.nome/);
-  assert.match(f, /numerosDisponiveis\(habilitadas, todasAsCaixas\)/);
+  assert.match(f, /numerosDisponiveis\(habilitadas, caixasDeTodas\)/);
+  assert.match(ler("CaixaGestaoDialogs"), /historico\.filter\(\(m\) => m\.empregado_id === empregado\)/);
   assert.match(f, /function CaixaSemCadastro/);
   const d = ler("CaixaGestaoDialogs");
   assert.match(d, /\.\.\.\(MODO_DEMO \? \{ caixa_id: caixa\.id \} : \{\}\)/);

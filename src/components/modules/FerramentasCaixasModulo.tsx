@@ -49,7 +49,9 @@ export function FerramentasCaixasModulo() {
   const habilitadas = useParametrosBase().caixasHabilitadas;
   const caixas = caixasHabilitadas(todasAsCaixas, habilitadas);
   // Caixas habilitadas que ainda não têm cadastro: o botão Vincular ferramentas cria a caixa.
-  const semCadastro = numerosDisponiveis(habilitadas, todasAsCaixas).filter((n) =>
+  // Os números são uma sequência só para as três empresas: o que já existe em qualquer empresa não fica livre.
+  const { data: caixasDeTodas = [] } = useCaixasFerramentas(TODAS, "");
+  const semCadastro = numerosDisponiveis(habilitadas, caixasDeTodas).filter((n) =>
     codigoCaixa(n).toLowerCase().includes(buscaCaixa.trim().toLowerCase()),
   );
   const portadores = usePortadoresCaixa();
@@ -371,7 +373,7 @@ function CaixaItem({
       {dialogo === "ferramentas" && (
         <DialogFerramentasDaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} itensAtuais={itens} comEmpregado={comEmpregadoDe} />
       )}
-      {dialogo === "baixa" && <DialogBaixaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
+      {dialogo === "baixa" && <DialogBaixaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} historico={historico} />}
       {dialogo === "ocorrencia" && <DialogOcorrenciaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
     </div>
   );
