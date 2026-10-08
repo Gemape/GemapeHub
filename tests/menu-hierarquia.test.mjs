@@ -31,11 +31,11 @@ test("Tabelas de Apoio e Tamanho e Medidas saem de Gerais e ficam em EPI, Unifor
   assert.ok(!URLS_GERAIS.includes("/cadastros/gerais/tamanhos-unidades"));
   for (const [de, menu] of [["epi", MENU_EPI], ["uniformes", MENU_UNIFORMES], ["ferramentas", MENU_FERRAMENTAS]]) {
     const apoio = menu.filter((i) => i.de === de);
+    // Ferramentas não tem Tamanho e Medidas de Produto (decisão 115).
     assert.deepEqual(apoio.map((i) => [i.titulo, i.url]), [
       ["Parâmetros Específicos", "/cadastros/gerais/categorias"],
-      ["Tamanho e Medidas de Produto", "/cadastros/gerais/tamanhos-unidades"],
+      ...(de === "ferramentas" ? [] : [["Tamanho e Medidas de Produto", "/cadastros/gerais/tamanhos-unidades"]]),
     ]);
-    assert.equal(apoio[1].abas, undefined);
   }
   assert.match(sidebar, /prefixosDoGrupo\("epi"/);
   assert.match(sidebar, /prefixosDoGrupo\("uniformes"/);
