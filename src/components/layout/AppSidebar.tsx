@@ -338,7 +338,7 @@ export function AppSidebar() {
       <SidebarHeader className="px-4 py-8">
         <div className="flex items-center gap-4">
           <div className="logo-engrenagem" aria-hidden="true">
-            <Cog className="engrenagem-girando size-11" strokeWidth={1.5} />
+            <Cog className="engrenagem-girando size-10" strokeWidth={1.5} />
             <Cog className="engrenagem-inversa size-6" strokeWidth={1.75} />
           </div>
           <div className="leading-tight">

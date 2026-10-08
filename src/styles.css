@@ -312,14 +312,36 @@
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   animation: logo-brilho 3.5s ease-in-out infinite;
+  /* Duas engrenagens de 12 dentes encaixadas na diagonal: mesma velocidade, sentidos opostos,
+     e a pequena começa 15° adiantada para os dentes de uma caírem nos vãos da outra. */
+  & > .engrenagem-girando {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    animation-duration: 8s;
+    filter: drop-shadow(0 2px 4px oklch(0.15 0.2 266 / 0.45));
+  }
   & > .engrenagem-inversa {
     position: absolute;
-    right: 0.3rem;
-    bottom: 0.3rem;
-    opacity: 0.85;
+    left: 34px;
+    top: 34px;
+    animation: engrenagem-encaixada 8s linear infinite;
+    filter: drop-shadow(0 2px 4px oklch(0.15 0.2 266 / 0.45));
   }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
+    & > .engrenagem-inversa {
+      animation: none;
+      transform: rotate(15deg);
+    }
+  }
+}
+@keyframes engrenagem-encaixada {
+  from {
+    transform: rotate(15deg);
+  }
+  to {
+    transform: rotate(-345deg);
   }
 }
 
