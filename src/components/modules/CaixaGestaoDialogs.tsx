@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ItensModulo } from "./ItensModulo";
 import {
   Dialog,
   DialogContent,
@@ -76,13 +77,18 @@ export function DialogFerramentasDaCaixa({
     itensAtuais.map((i) => ({ ferramenta_id: i.ferramenta_id, quantidade: i.quantidade, observacao: i.observacao ?? "" })),
   );
   const [escolhida, setEscolhida] = useState("");
+  const [cadastrando, setCadastrando] = useState(false);
   const ferramenta = (id: string) => todas.find((t) => t.id === id) ?? itensAtuais.find((i) => i.ferramenta_id === id)?.ferramenta;
   const nome = (id: string) => ferramenta(id)?.nome ?? "Ferramenta";
   // Uma ferramenta só fica em uma caixa: as que já estão em outra só voltam por baixa ou transferência.
   const outrasCaixas = itensDeTodas.filter((o) => o.caixa_id !== caixa.id);
-  const disponiveis = todas.filter(
-    (t) => t.status === "Ativo" && !linhas.some((l) => l.ferramenta_id === t.id) && !outrasCaixas.some((o) => o.ferramenta_id === t.id),
-  );
+  const caixaDe = (ferramentaId: string) => {
+    const outra = outrasCaixas.find((o) => o.ferramenta_id === ferramentaId);
+    return outra ? (caixasDeTodas.find((c) => c.id === outra.caixa_id)?.codigo ?? "outra caixa") : null;
+  };
+  // A lista vem de Parâmetros > Ferramentas > Cadastrar Ferramenta; as que já estão em outra caixa aparecem travadas.
+  const candidatas = todas.filter((t) => t.status === "Ativo" && !linhas.some((l) => l.ferramenta_id === t.id));
+  const livres = candidatas.filter((t) => !caixaDe(t.id));
 
   function adicionar(id: string) {
     setLinhas((atual) => [...atual, { ferramenta_id: id, quantidade: 1, observacao: "" }]);
@@ -123,6 +129,7 @@ export function DialogFerramentasDaCaixa({
   }
 
   return (
+    <>
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
@@ -132,17 +139,26 @@ export function DialogFerramentasDaCaixa({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
-          <Label htmlFor="incluir-ferramenta">Incluir ferramenta</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="incluir-ferramenta">Incluir ferramenta</Label>
+            <Button type="button" variant="link" size="sm" className="h-auto p-0" onClick={() => setCadastrando(true)}>
+              Cadastrar ferramenta
+            </Button>
+          </div>
           <Select value={escolhida} onValueChange={adicionar}>
             <SelectTrigger id="incluir-ferramenta">
-              <SelectValue placeholder={disponiveis.length ? "Escolha a ferramenta" : "Nenhuma ferramenta ativa para incluir"} />
+              <SelectValue placeholder={livres.length ? "Escolha a ferramenta" : "Nenhuma ferramenta livre: cadastre uma nova"} />
             </SelectTrigger>
             <SelectContent>
-              {disponiveis.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.codigo_sku} — {t.nome}
-                </SelectItem>
-              ))}
+              {candidatas.map((t) => {
+                const emOutra = caixaDe(t.id);
+                return (
+                  <SelectItem key={t.id} value={t.id} disabled={!!emOutra}>
+                    {t.codigo_sku} — {t.nome}
+                    {emOutra ? ` (já na caixa ${emOutra})` : ""}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -209,6 +225,24 @@ export function DialogFerramentasDaCaixa({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {/* O cadastro abre por cima: o vínculo em andamento fica guardado e a nova ferramenta já aparece na lista ao voltar. */}
+    <Dialog open={cadastrando} onOpenChange={setCadastrando}>
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>Cadastrar ferramenta</DialogTitle>
+          <DialogDescription>
+            Parâmetros · Ferramentas · Cadastrar Ferramenta. Salve a ferramenta e volte: o vínculo da caixa {caixa.codigo} continua como estava.
+          </DialogDescription>
+        </DialogHeader>
+        <ItensModulo modulo="ferramenta" />
+        <DialogFooter>
+          <Button type="button" onClick={() => setCadastrando(false)}>
+            Voltar ao vínculo
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
