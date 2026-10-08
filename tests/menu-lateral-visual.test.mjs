@@ -60,3 +60,9 @@ test("os ícones do menu ficam em quadrinhos de vidro animados, sem afetar a set
   assert.match(css, /@keyframes icone-pulso/);
   assert.match(css, /prefers-reduced-motion: reduce\) \{\s*& > svg:not\(\.icone-seta\)/);
 });
+
+test("nos submenus o ícone fica alinhado com a primeira linha do texto (dec 122)", () => {
+  const fonte = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
+  assert.match(fonte, /const BOTAO_SUBMENU =\s+"menu-vidro-sub icone-menu !items-start /);
+  assert.equal((fonte.match(/!whitespace-normal pt-\[5px\] leading-snug/g) ?? []).length, 2);
+});

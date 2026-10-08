@@ -73,7 +73,7 @@ import {
 const BOTAO_MENU =
   "menu-vidro icone-menu h-12 gap-3 rounded-xl px-2.5 text-[15px] font-medium tracking-wide text-sidebar-foreground/90 hover:text-white [&>svg:not(.icone-seta)]:size-8 [&>svg]:stroke-[1.75] data-[active=true]:font-semibold data-[active=true]:text-white";
 const BOTAO_SUBMENU =
-  "menu-vidro-sub icone-menu h-auto min-h-9 gap-2.5 rounded-lg py-1 text-[14px] [&>svg:not(.icone-seta)]:size-7 [&>svg]:stroke-[1.75] data-[active=true]:font-semibold";
+  "menu-vidro-sub icone-menu !items-start h-auto min-h-9 gap-2.5 rounded-lg py-1 text-[14px] [&>svg:not(.icone-seta)]:size-7 [&>svg]:stroke-[1.75] data-[active=true]:font-semibold";
 // Títulos de grupo em faixa de vidro, para separar Visão geral, Módulos e Parâmetros.
 const TITULO_GRUPO =
   "mb-2 h-9 rounded-xl border border-white/15 bg-white/10 px-3 text-[13px] font-bold uppercase tracking-[0.16em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md";
@@ -140,7 +140,7 @@ function SubAbas({ url, abas, pathname, abaAtual, isAdmin }: { url: string; abas
           <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba} className={BOTAO_SUBMENU}>
             <Link to={url} search={{ aba: a.aba } as never}>
               <Icone />
-              <span className="!whitespace-normal leading-snug">{a.titulo}</span>
+              <span className="!whitespace-normal pt-[5px] leading-snug">{a.titulo}</span>
             </Link>
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>
@@ -161,7 +161,7 @@ function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
         <Link to={item.url} {...(item.search ? { search: item.search as never } : item.de ? { search: searchDe as never } : {})}>
           <Icone />
           {/* Nome inteiro, quebrando linha se precisar. */}
-          <span className="!whitespace-normal leading-snug">{item.titulo}</span>
+          <span className="!whitespace-normal pt-[5px] leading-snug">{item.titulo}</span>
         </Link>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
