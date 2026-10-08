@@ -686,3 +686,7 @@ Ordem do responsável em 08/10: a "Descrição" volta a mostrar somente o texto 
 ## 98. MENU LATERAL: FONTES E ÍCONES MAIORES E VISUAL MAIS REFINADO
 
 Ordem do responsável em 08/10: aumentar as fontes e os ícones do menu lateral e deixar ícones e textos mais bonitos. **Escolhas do Claude:** (a) itens principais: fonte de 14 para 15 px, altura de 32 para 44 px, ícones de 16 para 20 px com traço mais fino e mais espaço entre ícone e texto; (b) submenus: fonte de 14 px, ícones de 18 px e altura mínima maior; (c) títulos dos grupos (Visão geral, Módulos, Parâmetros) em caixa alta, com espaçamento entre letras; (d) item ativo com fundo claro translúcido, texto em negrito branco e uma barra branca na borda esquerda; (e) a setinha de abrir/fechar fica menor e mais discreta. Cores, ordem e nomes do menu não mudam. Só visual, no `AppSidebar.tsx`; nada no Supabase.
+
+## 99. MENU LATERAL: TÍTULOS DOS GRUPOS COM MAIS DESTAQUE
+
+Ordem do responsável em 08/10: Visão geral, Módulos e Parâmetros com mais destaque, para mostrar que são partes separadas do sistema. **Escolhas do Claude:** (a) cada título fica numa faixa própria, com fundo claro translúcido, texto branco em negrito, caixa alta e barra branca na borda esquerda; (b) entre um grupo e o seguinte há uma linha divisória e mais espaço; (c) itens, ícones, cores de fundo e ordem do menu não mudam. Só visual, no `AppSidebar.tsx`; nada no Supabase.

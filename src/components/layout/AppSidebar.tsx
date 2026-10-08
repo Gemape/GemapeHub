@@ -74,7 +74,10 @@ const BOTAO_MENU =
   "h-11 gap-3 rounded-lg px-3 text-[15px] font-medium tracking-wide text-sidebar-foreground/90 transition-colors hover:text-white [&>svg]:size-5 [&>svg]:stroke-[1.75] data-[active=true]:bg-white/10 data-[active=true]:font-semibold data-[active=true]:text-white data-[active=true]:shadow-[inset_3px_0_0_0_#fff]";
 const BOTAO_SUBMENU =
   "h-auto min-h-9 gap-2.5 rounded-md py-1.5 text-[14px] [&>svg]:size-[18px] [&>svg]:stroke-[1.75] data-[active=true]:font-semibold";
-const TITULO_GRUPO = "h-9 px-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60";
+// Títulos de grupo em faixa própria e branca, para separar Visão geral, Módulos e Parâmetros (decisão 99).
+const TITULO_GRUPO =
+  "mb-2 h-9 rounded-md bg-white/10 px-3 text-[13px] font-bold uppercase tracking-[0.16em] text-white shadow-[inset_3px_0_0_0_rgba(255,255,255,0.7)]";
+const SEPARADOR_GRUPO = "mt-3 border-t border-white/20 pt-5";
 
 const grupos = [
   {
@@ -360,8 +363,8 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroup>
         )}
-        {grupos.map((grupo) => (
-          <SidebarGroup key={grupo.titulo}>
+        {grupos.map((grupo, indice) => (
+          <SidebarGroup key={grupo.titulo} className={indice > 0 ? SEPARADOR_GRUPO : undefined}>
             <SidebarGroupLabel className={TITULO_GRUPO}>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
