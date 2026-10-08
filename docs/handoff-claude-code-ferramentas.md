@@ -367,4 +367,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 118: Novo check list sem Tipo de veículo e com Tipo de check list (Periódico ou Avulso), uma janela só (`modoAvulso` em ChecklistVeiculoModulo).
 - Decisão 119: cada grupo associado tem `tipo` (periodico/avulso); a janela Associar itens tem o campo Tipo de check list (`tipoAtual`); `gruposDaPeriodicidade` e `gruposAvulsosDaAssociacao`; `periodicidadesDaAssociacao` em checklist-veiculo.ts; Associar itens vem antes de Itens check list em `ChecklistParametros`.
 - Decisão 120: janela Associar itens abre Cadastrar veículo, Cadastrar itens de check list e Cadastrar empregado por cima (`DialogCadastroVeiculos`, `DialogItensChecklist`, `DialogCadastroEmpregados`, irmãs do diálogo da associação; tela de Empregados extraída para `EmpregadosCadastroModulo`).
+- Decisão 121: código do check list único, nunca reaproveitado (`proximoCodigo` em checklist-veiculo.ts, sequência local).
 - Decisão 122: ícones do menu lateral em quadrinhos de vidro animados (`icone-menu` em styles.css; `icone-seta` exclui a seta).
