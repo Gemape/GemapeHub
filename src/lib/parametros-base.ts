@@ -563,26 +563,65 @@ function tiposVeiculoDoPadrao(d: ParametrosBase, nomeGrupo: string): string[] {
     .map((s) => s.id);
 }
 
-/** O grupo faz parte do padrão de fábrica (mesmo nome), então tem configuração inicial para restaurar. */
-export const ehGrupoChecklistPadrao = (nome: string): boolean => CHECKLIST_VEICULOS_PADRAO.some((p) => mesmoNome(p.nome, nome));
+export type SituacaoPadraoChecklist = "igual" | "alterado" | "ausente";
+
+const mesmoConjunto = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((x) => b.includes(x));
 
 /**
- * Volta um grupo do padrão à configuração inicial: nome, itens e tipos de veículo (decisão 108). O id
- * fica, e os itens que já existiam mantêm o id. Se o tipo ainda não existe em Gerais, os tipos
- * atuais ficam como estão e o retorno avisa.
+ * Todos os grupos do padrão inicial do check list de veículos e a situação de cada um no cadastro atual
+ * (decisão 110): "igual" (nome, itens na ordem e tipos de veículo como no padrão), "alterado" ou "ausente"
+ * (não existe mais no cadastro).
  */
-export function restaurarGrupoChecklistVeiculo(id: string, storage = storagePadrao()): { nome: string; tiposRestaurados: boolean } {
-  return alterar(storage, (d) => {
-    const grupo = achar(d.itensChecklistVeiculo, id, "Grupo do check list");
-    const padrao = CHECKLIST_VEICULOS_PADRAO.find((p) => mesmoNome(p.nome, grupo.nome));
-    if (!padrao) throw new Error("Este grupo não faz parte do padrão: não há configuração inicial para restaurar.");
-    grupo.nome = padrao.nome;
-    grupo.itens = montarItensChecklist(grupo.itens, [...padrao.itens]);
+export function situacaoPadraoChecklistVeiculos(storage = storagePadrao()): { nome: string; itens: readonly string[]; situacao: SituacaoPadraoChecklist }[] {
+  const d = lerParametros(storage);
+  return CHECKLIST_VEICULOS_PADRAO.map((padrao) => {
+    const grupo = d.itensChecklistVeiculo.find((g) => mesmoNome(g.nome, padrao.nome));
+    if (!grupo) return { nome: padrao.nome, itens: padrao.itens, situacao: "ausente" as const };
     const tipos = tiposVeiculoDoPadrao(d, padrao.nome);
-    if (tipos.length > 0) grupo.tiposVeiculo = tipos;
-    return { nome: padrao.nome, tiposRestaurados: tipos.length > 0 };
+    const igual =
+      grupo.nome === padrao.nome &&
+      grupo.itens.length === padrao.itens.length &&
+      grupo.itens.every((i, n) => i.nome === padrao.itens[n]) &&
+      (tipos.length === 0 || mesmoConjunto(grupo.tiposVeiculo, tipos));
+    return { nome: padrao.nome, itens: padrao.itens, situacao: igual ? ("igual" as const) : ("alterado" as const) };
   });
 }
+
+/**
+ * Restaura de uma vez os grupos do padrão inicial escolhidos (decisão 110), tudo ou nada. Grupo que existe
+ * volta ao nome, itens e tipos de veículo iniciais (o id fica, e os itens que já existiam mantêm o id);
+ * grupo que foi excluído é cadastrado de novo. Se o tipo de veículo ainda não existe em Gerais, os tipos
+ * atuais ficam como estão (grupo novo fica sem tipo) e o retorno conta.
+ */
+export function restaurarPadroesChecklistVeiculos(nomes: string[], storage = storagePadrao()): { restaurados: number; criados: number; semTipo: number } {
+  if (nomes.length === 0) throw new Error("Marque ao menos um padrão para restaurar.");
+  if (nomes.some((n) => !ehGrupoChecklistPadrao(n))) throw new Error("Há um grupo que não faz parte do padrão inicial.");
+  const escolhidos = CHECKLIST_VEICULOS_PADRAO.filter((p) => nomes.some((n) => mesmoNome(p.nome, n)));
+  return alterar(storage, (d) => {
+    let restaurados = 0;
+    let criados = 0;
+    let semTipo = 0;
+    for (const padrao of escolhidos) {
+      const tipos = tiposVeiculoDoPadrao(d, padrao.nome);
+      const grupo = d.itensChecklistVeiculo.find((g) => mesmoNome(g.nome, padrao.nome));
+      if (grupo) {
+        grupo.nome = padrao.nome;
+        grupo.itens = montarItensChecklist(grupo.itens, [...padrao.itens]);
+        if (tipos.length > 0) grupo.tiposVeiculo = tipos;
+        else semTipo += 1;
+        restaurados += 1;
+      } else {
+        d.itensChecklistVeiculo.push({ id: novoId(), nome: padrao.nome, itens: montarItensChecklist([], [...padrao.itens]), tiposVeiculo: tipos });
+        if (tipos.length === 0) semTipo += 1;
+        criados += 1;
+      }
+    }
+    return { restaurados, criados, semTipo };
+  });
+}
+
+/** O nome é de um grupo do padrão de fábrica. */
+export const ehGrupoChecklistPadrao = (nome: string): boolean => CHECKLIST_VEICULOS_PADRAO.some((p) => mesmoNome(p.nome, nome));
 
 // Cadastra os grupos padrão que ainda não existem (mesmo nome); o que já está cadastrado não é alterado.
 // O tipo de veículo é ligado pelo nome das subcategorias de Veículos que existem em Gerais; grupo sem

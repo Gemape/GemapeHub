@@ -7,15 +7,12 @@ export function AcoesLinha({
   rotulo,
   onClonar,
   onEditar,
-  onRestaurar,
   onExcluir,
   editarLivre = false,
 }: {
   rotulo: string;
   onClonar?: () => void;
   onEditar?: () => void;
-  // Volta a linha à configuração inicial (só nas listas que têm padrão de fábrica).
-  onRestaurar?: () => void;
   onExcluir?: () => void;
   // Quem só lê também pode abrir o registro (a gravação continua exigindo permissão no formulário).
   editarLivre?: boolean;
@@ -31,11 +28,6 @@ export function AcoesLinha({
       {onEditar && (
         <Button requiresWrite={!editarLivre} variant="ghost" size="sm" aria-label={`Editar ${rotulo}`} onClick={onEditar}>
           Editar
-        </Button>
-      )}
-      {onRestaurar && (
-        <Button requiresWrite variant="ghost" size="sm" aria-label={`Restaurar padrão de ${rotulo}`} onClick={onRestaurar}>
-          Restaurar padrão
         </Button>
       )}
       {onExcluir && isAdmin && (
