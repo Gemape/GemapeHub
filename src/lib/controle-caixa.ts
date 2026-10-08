@@ -21,14 +21,19 @@ type MovimentoCaixa = {
  * Movimentações de ferramenta da caixa, na ordem recebida: as gravadas com a caixa e, entre as sem
  * caixa (compras, baixas, registros antigos), as de ferramentas que estão cadastradas nela.
  */
-export function movimentacoesDaCaixa<T extends { modulo: string; item_id: string | null; caixa_id?: string | null | undefined }>(
+export function movimentacoesDaCaixa<
+  T extends { modulo: string; item_id: string | null; caixa_id?: string | null | undefined; tipo_movimentacao?: string; origem_local?: string | null | undefined },
+>(
   movimentacoes: T[],
   caixaId: string,
   ferramentaIds: Iterable<string>,
+  codigoCaixa?: string,
 ): T[] {
   const ids = new Set(ferramentaIds);
   return movimentacoes.filter((m) => {
     if (m.modulo !== "ferramenta" || !m.item_id) return false;
+    // A transferência fica gravada com a caixa de destino e também aparece na caixa de origem.
+    if (codigoCaixa && m.tipo_movimentacao === "Transferencia" && m.origem_local === codigoCaixa) return true;
     if (m.caixa_id) return m.caixa_id === caixaId;
     return ids.has(m.item_id);
   });
@@ -106,6 +111,22 @@ export function validarFerramentasDaCaixa(
   return null;
 }
 
+/** Uma ferramenta só pode estar em uma caixa: confere as que estão sendo incluídas agora. */
+export function ferramentasEmOutraCaixa(
+  incluidas: { ferramenta_id: string }[],
+  outrasCaixas: { caixa_id: string; ferramenta_id: string }[],
+  caixaId: string | undefined,
+  nomeFerramenta: (ferramentaId: string) => string,
+  codigoCaixa: (caixaId: string) => string,
+): string | null {
+  for (const i of incluidas) {
+    const outra = outrasCaixas.find((o) => o.ferramenta_id === i.ferramenta_id && o.caixa_id !== caixaId);
+    if (outra)
+      return `${nomeFerramenta(i.ferramenta_id)} já está na caixa ${codigoCaixa(outra.caixa_id)}. Dê baixa ou transfira a ferramenta para usá-la em outra caixa.`;
+  }
+  return null;
+}
+
 /** Quem estava com empregado precisa voltar à caixa antes de a ferramenta sair dela. */
 export function ferramentasComEmpregadoRemovidas(
   antes: { ferramenta_id: string }[],
@@ -176,4 +197,20 @@ export function linhaCsvCaixa(
     MotivoBaixa: m.motivo_baixa,
     Observacao: m.observacao,
   };
+}
+
+/** Confere a transferência de uma ferramenta de uma caixa para outra; devolve a mensagem de erro ou null. */
+export function validarTransferenciaDeCaixa(dados: {
+  ferramentaId: string;
+  destinoId: string;
+  origemId: string;
+  comEmpregado: number;
+  jaNoDestino: boolean;
+}): string | null {
+  if (!dados.ferramentaId) return "Escolha a ferramenta.";
+  if (!dados.destinoId) return "Escolha a caixa de destino.";
+  if (dados.destinoId === dados.origemId) return "A caixa de destino deve ser outra.";
+  if (dados.jaNoDestino) return "A ferramenta já está na caixa de destino.";
+  if (dados.comEmpregado > 0) return `${dados.comEmpregado} está com empregado; registre a devolução antes de transferir.`;
+  return null;
 }

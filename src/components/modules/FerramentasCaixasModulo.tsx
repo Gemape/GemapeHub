@@ -9,7 +9,14 @@ import {
   movimentacoesDaCaixa,
   ocorrenciasDaCaixa,
 } from "@/lib/controle-caixa";
-import { DialogBaixaCaixa, DialogFerramentasDaCaixa, DialogOcorrenciaCaixa, type CaixaNova, type LinhaCaixa } from "./CaixaGestaoDialogs";
+import {
+  DialogBaixaCaixa,
+  DialogFerramentasDaCaixa,
+  DialogOcorrenciaCaixa,
+  DialogTransferirCaixa,
+  type CaixaNova,
+  type LinhaCaixa,
+} from "./CaixaGestaoDialogs";
 import { naturezaMovimentacao } from "@/lib/historico-movimentacoes";
 import { ChevronDown, Download } from "lucide-react";
 import { caixasHabilitadas, codigoCaixa, numerosDisponiveis } from "@/lib/caixas-habilitadas";
@@ -89,6 +96,7 @@ export function FerramentasCaixasModulo() {
             <CaixaItem
               key={caixa.id}
               caixa={caixa}
+              destinos={caixas}
               empresas={empresas}
               portador={portadorAtivo(portadores, caixa.id)?.empregado_nome}
               movimentacoes={movimentacoes}
@@ -135,12 +143,14 @@ function CaixaSemCadastro({ numero, empresaId }: { numero: number; empresaId: st
 
 function CaixaItem({
   caixa,
+  destinos,
   empresas,
   portador,
   movimentacoes,
   nomeEmpregado,
 }: {
   caixa: CaixaFerramenta;
+  destinos: CaixaFerramenta[];
   empresas: { id: string; nome_fantasia: string }[];
   portador: string | undefined;
   movimentacoes: Movimentacao[];
@@ -149,10 +159,12 @@ function CaixaItem({
   const { data: itens = [], isLoading } = useCaixaItens(caixa.id);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [ocorrenciasAberto, setOcorrenciasAberto] = useState(false);
-  const [dialogo, setDialogo] = useState<"ferramentas" | "baixa" | "ocorrencia" | null>(null);
+  const [dialogo, setDialogo] = useState<"ferramentas" | "baixa" | "transferencia" | "ocorrencia" | null>(null);
   const { data: todasOcorrencias = [] } = useOcorrencias("", "ferramenta");
   const ferramentas = itens.flatMap((ci) => (ci.ferramenta ? [ci.ferramenta] : []));
-  const historico = movimentacoesDaCaixa(movimentacoes, caixa.id, ferramentas.map((f) => f.id));
+  // O histórico também mostra ferramentas que já saíram da caixa (transferidas ou retiradas).
+  const { data: cadastroFerramentas = [] } = useItens("ferramenta", TODAS);
+  const historico = movimentacoesDaCaixa(movimentacoes, caixa.id, ferramentas.map((f) => f.id), caixa.codigo);
   const ocorrencias = ocorrenciasDaCaixa(todasOcorrencias, caixa.id, ferramentas.map((f) => f.id));
   const linhas: LinhaCaixa[] = itens.flatMap((ci) => {
     if (!ci.ferramenta) return [];
@@ -250,6 +262,9 @@ function CaixaItem({
         <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
           Dar baixa
         </Button>
+        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0 || destinos.length < 2} onClick={() => setDialogo("transferencia")}>
+          Transferir
+        </Button>
         <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
           Registrar ocorrência
         </Button>
@@ -269,7 +284,7 @@ function CaixaItem({
             onClick={() =>
               exportarCsv(
                 `historico-${caixa.codigo}`,
-                historico.map((m) => linhaCsvCaixa(m, { caixa: caixa.codigo, ferramentas, nomeEmpregado })),
+                historico.map((m) => linhaCsvCaixa(m, { caixa: caixa.codigo, ferramentas: cadastroFerramentas, nomeEmpregado })),
               )
             }
           >
@@ -301,7 +316,7 @@ function CaixaItem({
                 </TableRow>
               ) : (
                 historico.map((m) => {
-                  const ferramenta = ferramentas.find((f) => f.id === m.item_id);
+                  const ferramenta = cadastroFerramentas.find((f) => f.id === m.item_id);
                   return (
                     <TableRow key={m.id}>
                       <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
@@ -350,7 +365,7 @@ function CaixaItem({
                 </TableRow>
               ) : (
                 ocorrencias.map((o) => {
-                  const ferramenta = ferramentas.find((f) => f.id === o.item_id);
+                  const ferramenta = cadastroFerramentas.find((f) => f.id === o.item_id);
                   return (
                     <TableRow key={o.id}>
                       <TableCell>{formatarData(o.data)}</TableCell>
@@ -374,6 +389,9 @@ function CaixaItem({
         <DialogFerramentasDaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} itensAtuais={itens} comEmpregado={comEmpregadoDe} />
       )}
       {dialogo === "baixa" && <DialogBaixaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} historico={historico} />}
+      {dialogo === "transferencia" && (
+        <DialogTransferirCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} destinos={destinos} />
+      )}
       {dialogo === "ocorrencia" && <DialogOcorrenciaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
     </div>
   );

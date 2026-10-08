@@ -11,6 +11,8 @@ import {
   ferramentasComEmpregadoRemovidas,
   validarBaixaDaCaixa,
   ocorrenciasDaCaixa,
+  ferramentasEmOutraCaixa,
+  validarTransferenciaDeCaixa,
 } from "../src/lib/controle-caixa.ts";
 
 const mov = (o) => ({ modulo: "ferramenta", tipo_movimentacao: "Saida", item_id: "f1", empregado_id: "e1", motivo_baixa: "Fornecimento ao Empregado", quantidade: 1, data_movimentacao: "2026-10-01", observacao: null, ...o });
@@ -143,4 +145,37 @@ test("Número da caixa tem gestão: ferramentas, baixa, ocorrência, só pelo n�
   const cad = ler("CaixasFerramentasModulo");
   assert.doesNotMatch(cad, /name="nome"/);
   assert.match(cad, /nome: codigoCaixa\(numero\)/);
+});
+
+test("uma ferramenta só pode estar em uma caixa (decisão 106)", () => {
+  const outras = [{ caixa_id: "cx2", ferramenta_id: "f1" }];
+  const codigo = (id) => id.toUpperCase();
+  assert.match(ferramentasEmOutraCaixa([{ ferramenta_id: "f1" }], outras, "cx1", nome, codigo), /já está na caixa CX2.*baixa ou transfira/);
+  assert.equal(ferramentasEmOutraCaixa([{ ferramenta_id: "f9" }], outras, "cx1", nome, codigo), null);
+  assert.equal(ferramentasEmOutraCaixa([{ ferramenta_id: "f1" }], outras, "cx2", nome, codigo), null);
+});
+
+test("validarTransferenciaDeCaixa exige destino diferente, ferramenta guardada e fora do destino", () => {
+  const ok = { ferramentaId: "f1", destinoId: "cx2", origemId: "cx1", comEmpregado: 0, jaNoDestino: false };
+  assert.equal(validarTransferenciaDeCaixa(ok), null);
+  assert.match(validarTransferenciaDeCaixa({ ...ok, destinoId: "" }), /destino/);
+  assert.match(validarTransferenciaDeCaixa({ ...ok, destinoId: "cx1" }), /outra/);
+  assert.match(validarTransferenciaDeCaixa({ ...ok, comEmpregado: 1 }), /devolução/);
+  assert.match(validarTransferenciaDeCaixa({ ...ok, jaNoDestino: true }), /já está/);
+});
+
+test("a transferência aparece no histórico da caixa de origem e da de destino", () => {
+  const t = mov({ id: "t", tipo_movimentacao: "Transferencia", motivo_baixa: null, empregado_id: null, caixa_id: "cx2", origem_local: "CX-0001", destino_local: "CX-0002" });
+  assert.deepEqual(movimentacoesDaCaixa([t], "cx1", [], "CX-0001").map((m) => m.id), ["t"]);
+  assert.deepEqual(movimentacoesDaCaixa([t], "cx2", ["f1"], "CX-0002").map((m) => m.id), ["t"]);
+  assert.deepEqual(movimentacoesDaCaixa([t], "cx3", ["f1"], "CX-0003").map((m) => m.id), []);
+});
+
+test("Vincular bloqueia ferramenta de outra caixa e Transferir existe na tela (decisão 106)", () => {
+  const ler = (n) => readFileSync(new URL(`../src/components/modules/${n}.tsx`, import.meta.url), "utf8");
+  const d = ler("CaixaGestaoDialogs");
+  assert.match(d, /!outrasCaixas\.some\(\(o\) => o\.ferramenta_id === t\.id\)/);
+  assert.match(d, /ferramentasEmOutraCaixa\(/);
+  assert.match(d, /tipo_movimentacao: "Transferencia"/);
+  assert.match(ler("FerramentasCaixasModulo"), /DialogTransferirCaixa/);
 });
