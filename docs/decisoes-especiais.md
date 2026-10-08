@@ -670,3 +670,7 @@ Ordem do responsável em 08/10: no Novo check list, os avisos "Este veículo nã
 ## 94. COMBUSTÍVEL GLP NO CADASTRO DE VEÍCULOS
 
 Ordem do responsável em 08/10: incluir a opção "GLP" na lista de combustível do cadastro de veículos. **Escolhas do Claude:** a opção entra no fim da lista (depois de Híbrido), sem mudar a ordem das demais; veículos já cadastrados não mudam. A coluna `combustivel` é texto livre, então não há alteração no Supabase. Só visual.
+
+## 95. NOVO CHECK LIST AVULSO: JANELA DE ITENS CHECK LIST NO AVISO DE TIPO SEM ITENS
+
+Ordem do responsável em 08/10: no Novo check list avulso, o aviso "Não há itens de check list para o tipo deste veículo em Parâmetros > Veículos > Itens check list" deve abrir a tela sem perder o cadastro em andamento, salvar e voltar. **Escolhas do Claude:** (a) o texto "em Parâmetros > Veículos > Itens check list" vira o link "Cadastrar itens de check list", que abre a tela Itens check list (a mesma do menu) numa janela; (b) a janela fica ao lado do diálogo do check list avulso: tipo e veículo escolhidos continuam preenchidos, e o aviso some sozinho quando o tipo passa a ter itens; (c) o link só aparece para quem tem permissão de escrita; sem ela, o aviso mantém a orientação de cadastrar em Parâmetros; (d) completa o mesmo padrão das decisões 92 e 93 no Novo check list. Só visual; nada no Supabase.
