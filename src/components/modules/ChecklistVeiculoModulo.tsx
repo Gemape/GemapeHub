@@ -3,6 +3,7 @@ import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
+import { DialogAssociarChecklist } from "@/components/modules/DialogAssociarChecklist";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
 import { ChecklistPainelMensal } from "@/components/modules/ChecklistPainelMensal";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
@@ -83,6 +84,7 @@ export function ChecklistVeiculoModulo() {
   const [tipoCheck, setTipoCheck] = useState("");
   const [veiculoId, setVeiculoId] = useState("");
   const [veiculosAberto, setVeiculosAberto] = useState(false);
+  const [associarAberto, setAssociarAberto] = useState(false);
   const [responsavelId, setResponsavelId] = useState("");
   const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
   const [confirmando, setConfirmando] = useState<"concluir" | "descartar" | null>(null);
@@ -136,6 +138,12 @@ export function ChecklistVeiculoModulo() {
   const avulsoNovo = tela?.tipo === "novo" && !!tela.avulso;
   const atual = tela?.tipo === "check" ? (todos.find((c) => c.id === tela.id) ?? null) : null;
   const veiculoEscolhido = veiculosDoTipo.find((v) => v.id === veiculoId);
+  // Atalho para a associação de itens (grupos, periodicidade e responsável), aberta numa janela ao lado do Novo check list.
+  const linkAssociar = canWrite ? (
+    <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setAssociarAberto(true)}>
+      Associar itens de check list a um veículo
+    </button>
+  ) : "Associe em Parâmetros > Veículos > Associar itens de check list a um veículo.";
   // Só os grupos habilitados na associação do veículo escolhido (decisão 76).
   const gruposDoVeiculo = !veiculoEscolhido
     ? []
@@ -366,13 +374,13 @@ export function ChecklistVeiculoModulo() {
               {veiculoEscolhido && (
                 <p className="text-xs text-muted-foreground">
                   {gruposDoVeiculo.length === 0
-                    ? (avulsoNovo ? "Não há itens de check list para o tipo deste veículo em Parâmetros > Veículos > Itens check list." : "Este veículo não tem itens associados: associe em Parâmetros > Veículos > Associar itens de check list a um veículo.")
+                    ? (avulsoNovo ? "Não há itens de check list para o tipo deste veículo em Parâmetros > Veículos > Itens check list." : <>Este veículo não tem itens associados. {linkAssociar}</>)
                     : `${itensDoVeiculo} ${itensDoVeiculo === 1 ? "item" : "itens"} em ${gruposDoVeiculo.length} ${gruposDoVeiculo.length === 1 ? "grupo" : "grupos"}: ${gruposDoVeiculo.map((g) => g.nome).join(", ")}.`}
                 </p>
               )}
               {veiculoEscolhido && !avulsoNovo && (
                 <p className="text-xs text-muted-foreground">
-                  Periodicidade (da associação do veículo): {periodicidadeDe(veiculoEscolhido) ?? "não definida (associe itens de check list ao veículo em Parâmetros)"}
+                  Periodicidade (da associação do veículo): {periodicidadeDe(veiculoEscolhido) ?? <>não definida. {linkAssociar}</>}
                   {pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
                 </p>
               )}
@@ -391,6 +399,8 @@ export function ChecklistVeiculoModulo() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <DialogAssociarChecklist aberto={associarAberto} onAbrirMudou={setAssociarAberto} />
 
       <DialogCadastroVeiculos
         aberto={veiculosAberto}

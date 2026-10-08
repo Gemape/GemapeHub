@@ -340,3 +340,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Parâmetros: Tamanho e Medidas de Produto é uma tela só por menu (EPI, Uniformes, Ferramentas), cadastro em cima e associação embaixo, categoria vinda do menu (decisão 89): `TamanhosMedidasUnificado`; a janela do Novo EPI/Uniforme abre a mesma tela.
 - Parâmetros: Tabelas de Apoio virou Parâmetros Específicos e abre direto na categoria do menu de origem, inclusive em Veículos (decisão 91): `categorias.tsx` com `?de=`.
 - Check list: Novo check list tem o link 'Cadastrar veículo' que abre o Cadastro de Veículos numa janela sem perder o preenchido (decisão 92): `DialogCadastroVeiculos`.
+- Check list: no Novo check list, os avisos de veículo sem itens associados e de periodicidade não definida têm o link que abre a associação de itens numa janela sem perder o preenchido (decisão 93): `DialogAssociarChecklist`.
