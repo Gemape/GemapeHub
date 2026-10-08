@@ -354,3 +354,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 105: botão Vincular ferramentas em Número da caixa (inclusive caixa habilitada sem cadastro, que é criada ao salvar o vínculo).
 - Decisão 106: uma ferramenta em uma caixa só (Vincular bloqueia a que está em outra); botão Transferir entre caixas com histórico nas duas (`DialogTransferirCaixa`).
 - Decisão 107: Vincular ferramentas com lista de Parâmetros > Ferramentas, ferramentas de outra caixa travadas e link Cadastrar ferramenta (janela por cima, Voltar ao vínculo).
+- Decisão 108: botão Restaurar padrão por linha em Parâmetros > Veículos > Itens check list (`restaurarGrupoChecklistVeiculo`, `AcoesLinha`).

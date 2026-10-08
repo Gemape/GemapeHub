@@ -20,6 +20,8 @@ import {
   adicionarAcaoManutencaoVeiculo,
   adicionarGrupoChecklistVeiculo,
   cadastrarPadraoChecklistVeiculos,
+  ehGrupoChecklistPadrao,
+  restaurarGrupoChecklistVeiculo,
   editarGrupoChecklistVeiculo,
   removerGrupoChecklistVeiculo,
   subcategoriasDa,
@@ -49,6 +51,8 @@ function ListaVeiculos({
   onExcluir,
   onPadrao,
   opcoesTipos,
+  onRestaurar,
+  restauravel,
 }: {
   titulo: string;
   subtitulo: string;
@@ -60,6 +64,9 @@ function ListaVeiculos({
   onPadrao: () => void;
   // Check list (decisão 63): tipos de veículo (subcategorias de Veículos) a que o grupo se aplica.
   opcoesTipos?: { id: string; nome: string }[];
+  // Restaurar padrão por linha (decisão 108): só nas linhas que têm configuração inicial.
+  onRestaurar?: (linha: Linha) => void;
+  restauravel?: (linha: Linha) => boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Linha | null>(null);
@@ -150,6 +157,13 @@ function ListaVeiculos({
                     rotulo={l.nome}
                     onClonar={() => abrir(l, true)}
                     onEditar={() => abrir(l, false)}
+                    {...(onRestaurar && restauravel?.(l)
+                      ? {
+                          onRestaurar: () => {
+                            if (confirm(`Restaurar ${l.nome} ao padrão? Os itens e os tipos de veículo voltam à configuração inicial e as alterações feitas nesta linha se perdem.`)) onRestaurar(l);
+                          },
+                        }
+                      : {})}
                     onExcluir={() => {
                       if (confirm(`Excluir ${l.nome}?`)) onExcluir(l);
                     }}
@@ -300,6 +314,17 @@ export function ChecklistVeiculoLista() {
         )
       }
       onExcluir={(l) => executar(() => removerGrupoChecklistVeiculo(l.id), "Grupo do check list excluído.")}
+      restauravel={(l) => ehGrupoChecklistPadrao(l.nome)}
+      onRestaurar={(l) =>
+        executar(() => {
+          const r = restaurarGrupoChecklistVeiculo(l.id);
+          toast.success(
+            r.tiposRestaurados
+              ? `${l.nome} voltou à configuração inicial.`
+              : `${l.nome} voltou à configuração inicial; o tipo de veículo não existe em Gerais e foi mantido como estava.`,
+          );
+        })
+      }
       onPadrao={() =>
         executar(() => {
           const r = cadastrarPadraoChecklistVeiculos();

@@ -9,6 +9,8 @@ import {
   editarGrupoChecklistVeiculo,
   removerGrupoChecklistVeiculo,
   cadastrarPadraoChecklistVeiculos,
+  restaurarGrupoChecklistVeiculo,
+  ehGrupoChecklistPadrao,
 } from "../src/lib/parametros-base.ts";
 import { CHECKLIST_VEICULOS_PADRAO, chaveDoTipoVeiculo } from "../src/lib/checklist-veiculos-padrao.ts";
 
@@ -170,4 +172,42 @@ test("nenhum nome do padrão novo coincide com o do padrão antigo", async () =>
   assert.equal(NOMES_PADRAO_ANTIGO.length, 26);
   const novos = CHECKLIST_VEICULOS_PADRAO.map((g) => g.nome.toLowerCase());
   assert.ok(NOMES_PADRAO_ANTIGO.every((n) => !novos.includes(n.toLowerCase())));
+});
+
+test("restaurar padrão volta itens e tipos do grupo, mantém o id e os itens que já existiam (decisão 108)", () => {
+  const s = storage();
+  cadastrarPadraoChecklistVeiculos(s);
+  const antes = lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Mecânica");
+  const padrao = CHECKLIST_VEICULOS_PADRAO.find((p) => p.nome === "Veículos leves · Mecânica");
+  editarGrupoChecklistVeiculo(antes.id, "veículos leves · mecânica", ["Só um item", padrao.itens[0]], ["*"], s);
+  assert.equal(lerParametros(s).itensChecklistVeiculo.find((g) => g.id === antes.id).itens.length, 2);
+  const r = restaurarGrupoChecklistVeiculo(antes.id, s);
+  assert.equal(r.tiposRestaurados, true);
+  const depois = lerParametros(s).itensChecklistVeiculo.find((g) => g.id === antes.id);
+  assert.equal(depois.nome, "Veículos leves · Mecânica");
+  assert.deepEqual(depois.itens.map((i) => i.nome), padrao.itens);
+  assert.equal(depois.itens[0].id, antes.itens[0].id);
+  assert.deepEqual(depois.tiposVeiculo, antes.tiposVeiculo);
+});
+
+test("restaurar padrão não vale para grupo que não é do padrão e não mexe nos outros grupos", () => {
+  const s = storage();
+  cadastrarPadraoChecklistVeiculos(s);
+  const meu = adicionarGrupoChecklistVeiculo("Motos", ["Freio"], ["*"], s);
+  assert.equal(ehGrupoChecklistPadrao("Motos"), false);
+  assert.equal(ehGrupoChecklistPadrao("veículos leves · mecânica"), true);
+  assert.throws(() => restaurarGrupoChecklistVeiculo(meu.id, s), /não faz parte do padrão/i);
+  const outro = lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Interior");
+  const itensOutro = outro.itens.length;
+  const mecanica = lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Mecânica");
+  restaurarGrupoChecklistVeiculo(mecanica.id, s);
+  assert.equal(lerParametros(s).itensChecklistVeiculo.find((g) => g.id === outro.id).itens.length, itensOutro);
+});
+
+test("a lista Itens check list mostra Restaurar padrão por linha só para grupos do padrão", () => {
+  const lista = readFileSync(new URL("../src/components/parametros/VeiculosListasParametros.tsx", import.meta.url), "utf8");
+  assert.match(lista, /restauravel=\{\(l\) => ehGrupoChecklistPadrao\(l\.nome\)\}/);
+  assert.match(lista, /restaurarGrupoChecklistVeiculo\(l\.id\)/);
+  const acoes = readFileSync(new URL("../src/components/parametros/AcoesLinha.tsx", import.meta.url), "utf8");
+  assert.match(acoes, /Restaurar padrão/);
 });
