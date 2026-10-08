@@ -342,3 +342,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Check list: Novo check list tem o link 'Cadastrar veículo' que abre o Cadastro de Veículos numa janela sem perder o preenchido (decisão 92): `DialogCadastroVeiculos`.
 - Check list: no Novo check list, os avisos de veículo sem itens associados e de periodicidade não definida têm o link que abre a associação de itens numa janela sem perder o preenchido (decisão 93): `DialogAssociarChecklist`.
 - Veículos: combustível GLP incluído na lista do cadastro (decisão 94): `COMBUSTIVEIS_VEICULO` em `src/lib/gemape.ts`.
+- Check list: no Novo check list avulso, o aviso de tipo sem itens tem o link que abre Itens check list numa janela sem perder o preenchido (decisão 95): `DialogItensChecklist`.
