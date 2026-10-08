@@ -351,3 +351,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Ferramentas > Número da caixa: colunas Qtd na caixa, Com empregado e Disponível, e histórico de movimentações por caixa com exportação (decisão 101): `controle-caixa.ts` e `FerramentasCaixasModulo.tsx`.
 - Caixa gravada em entrega, vistoria e devolução só no modo demonstração (`caixa_id`, decisão 103, substitui a 101d): `caixaDaUltimaEntrega` em `controle-caixa.ts`; a coluna entra na Fase 2.
 - Decisão 104: Número da caixa com Ferramentas da caixa, Dar baixa, Registrar ocorrência e lista de ocorrências por caixa (`CaixaGestaoDialogs.tsx`, `controle-caixa.ts`); caixa identificada só pelo número (campo Nome removido).
+- Decisão 105: botão Vincular ferramentas em Número da caixa (inclusive caixa habilitada sem cadastro, que é criada ao salvar o vínculo).
+- Decisão 106: uma ferramenta em uma caixa só (Vincular bloqueia a que está em outra); botão Transferir entre caixas com histórico nas duas (`DialogTransferirCaixa`).

@@ -366,6 +366,19 @@ export function useCaixaItens(caixaId: string | null) {
   });
 }
 
+/** Itens de todas as caixas: uma ferramenta só pode estar em uma delas. */
+export function useTodosCaixaItens() {
+  return useQuery({
+    ...opcoesBase,
+    queryKey: ["caixa_ferramenta_itens", "todos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("caixa_ferramenta_itens").select("*");
+      if (error) throw error;
+      return (data ?? []) as CaixaFerramentaItem[];
+    },
+  });
+}
+
 export function useSalvarCaixa() {
   const queryClient = useQueryClient();
   return useMutation({

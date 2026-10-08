@@ -9,10 +9,18 @@ import {
   movimentacoesDaCaixa,
   ocorrenciasDaCaixa,
 } from "@/lib/controle-caixa";
-import { DialogBaixaCaixa, DialogFerramentasDaCaixa, DialogOcorrenciaCaixa, type LinhaCaixa } from "./CaixaGestaoDialogs";
+import {
+  DialogBaixaCaixa,
+  DialogFerramentasDaCaixa,
+  DialogOcorrenciaCaixa,
+  DialogTransferirCaixa,
+  type CaixaNova,
+  type LinhaCaixa,
+} from "./CaixaGestaoDialogs";
 import { naturezaMovimentacao } from "@/lib/historico-movimentacoes";
 import { ChevronDown, Download } from "lucide-react";
-import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
+import { caixasHabilitadas, codigoCaixa, numerosDisponiveis } from "@/lib/caixas-habilitadas";
+import { empresaPadraoParaEscolha } from "@/lib/empresas";
 import { portadorAtivo } from "@/lib/portadores-caixa";
 import { usePortadoresCaixa } from "@/lib/use-portadores-caixa";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -45,7 +53,14 @@ export function FerramentasCaixasModulo() {
 
   const { data: todasAsCaixas = [], isLoading } = useCaixasFerramentas(empresaId, buscaCaixa);
   // Só caixas habilitadas em Caixas de Ferramentas > Habilitar caixas.
-  const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
+  const habilitadas = useParametrosBase().caixasHabilitadas;
+  const caixas = caixasHabilitadas(todasAsCaixas, habilitadas);
+  // Caixas habilitadas que ainda não têm cadastro: o botão Vincular ferramentas cria a caixa.
+  // Os números são uma sequência só para as três empresas: o que já existe em qualquer empresa não fica livre.
+  const { data: caixasDeTodas = [] } = useCaixasFerramentas(TODAS, "");
+  const semCadastro = numerosDisponiveis(habilitadas, caixasDeTodas).filter((n) =>
+    codigoCaixa(n).toLowerCase().includes(buscaCaixa.trim().toLowerCase()),
+  );
   const portadores = usePortadoresCaixa();
   const { data: empresas = [] } = useEmpresas();
   // Histórico inteiro das ferramentas da empresa, lido uma vez e repartido entre as caixas.
@@ -72,7 +87,7 @@ export function FerramentasCaixasModulo() {
       <div className="space-y-8">
         {isLoading ? (
           <div className="text-center py-8">Carregando...</div>
-        ) : caixas.length === 0 ? (
+        ) : caixas.length === 0 && semCadastro.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             Nenhuma caixa encontrada com os filtros aplicados.
           </div>
@@ -81,6 +96,7 @@ export function FerramentasCaixasModulo() {
             <CaixaItem
               key={caixa.id}
               caixa={caixa}
+              destinos={caixas}
               empresas={empresas}
               portador={portadorAtivo(portadores, caixa.id)?.empregado_nome}
               movimentacoes={movimentacoes}
@@ -88,19 +104,53 @@ export function FerramentasCaixasModulo() {
             />
           ))
         )}
+        {!isLoading &&
+          semCadastro.map((numero) => (
+            <CaixaSemCadastro key={numero} numero={numero} empresaId={empresaPadraoParaEscolha(empresas, empresaId)} />
+          ))}
       </div>
+    </div>
+  );
+}
+
+function CaixaSemCadastro({ numero, empresaId }: { numero: number; empresaId: string }) {
+  const [aberto, setAberto] = useState(false);
+  const codigo = codigoCaixa(numero);
+  const caixa: CaixaNova = {
+    codigo,
+    codigo_num: numero,
+    empresa_id: empresaId || null,
+    // A caixa só tem o número como identificação; o nome do banco repete o código.
+    nome: codigo,
+    descricao: null,
+    localizacao: null,
+    status: "Ativa",
+  };
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="h-8 w-1 bg-muted-foreground/40 rounded-full" />
+        <h3 className="text-lg font-black uppercase tracking-tight">{codigo}</h3>
+        <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">sem ferramentas vinculadas</span>
+        <Button requiresWrite="operar" size="sm" disabled={!empresaId} onClick={() => setAberto(true)}>
+          Vincular ferramentas
+        </Button>
+      </div>
+      {aberto && <DialogFerramentasDaCaixa caixa={caixa} aberto aoFechar={() => setAberto(false)} itensAtuais={[]} comEmpregado={() => 0} />}
     </div>
   );
 }
 
 function CaixaItem({
   caixa,
+  destinos,
   empresas,
   portador,
   movimentacoes,
   nomeEmpregado,
 }: {
   caixa: CaixaFerramenta;
+  destinos: CaixaFerramenta[];
   empresas: { id: string; nome_fantasia: string }[];
   portador: string | undefined;
   movimentacoes: Movimentacao[];
@@ -109,10 +159,12 @@ function CaixaItem({
   const { data: itens = [], isLoading } = useCaixaItens(caixa.id);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [ocorrenciasAberto, setOcorrenciasAberto] = useState(false);
-  const [dialogo, setDialogo] = useState<"ferramentas" | "baixa" | "ocorrencia" | null>(null);
+  const [dialogo, setDialogo] = useState<"ferramentas" | "baixa" | "transferencia" | "ocorrencia" | null>(null);
   const { data: todasOcorrencias = [] } = useOcorrencias("", "ferramenta");
   const ferramentas = itens.flatMap((ci) => (ci.ferramenta ? [ci.ferramenta] : []));
-  const historico = movimentacoesDaCaixa(movimentacoes, caixa.id, ferramentas.map((f) => f.id));
+  // O histórico também mostra ferramentas que já saíram da caixa (transferidas ou retiradas).
+  const { data: cadastroFerramentas = [] } = useItens("ferramenta", TODAS);
+  const historico = movimentacoesDaCaixa(movimentacoes, caixa.id, ferramentas.map((f) => f.id), caixa.codigo);
   const ocorrencias = ocorrenciasDaCaixa(todasOcorrencias, caixa.id, ferramentas.map((f) => f.id));
   const linhas: LinhaCaixa[] = itens.flatMap((ci) => {
     if (!ci.ferramenta) return [];
@@ -205,10 +257,13 @@ function CaixaItem({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button requiresWrite="operar" size="sm" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
-          Ferramentas da caixa
+          Vincular ferramentas
         </Button>
         <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
           Dar baixa
+        </Button>
+        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0 || destinos.length < 2} onClick={() => setDialogo("transferencia")}>
+          Transferir
         </Button>
         <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
           Registrar ocorrência
@@ -229,7 +284,7 @@ function CaixaItem({
             onClick={() =>
               exportarCsv(
                 `historico-${caixa.codigo}`,
-                historico.map((m) => linhaCsvCaixa(m, { caixa: caixa.codigo, ferramentas, nomeEmpregado })),
+                historico.map((m) => linhaCsvCaixa(m, { caixa: caixa.codigo, ferramentas: cadastroFerramentas, nomeEmpregado })),
               )
             }
           >
@@ -261,7 +316,7 @@ function CaixaItem({
                 </TableRow>
               ) : (
                 historico.map((m) => {
-                  const ferramenta = ferramentas.find((f) => f.id === m.item_id);
+                  const ferramenta = cadastroFerramentas.find((f) => f.id === m.item_id);
                   return (
                     <TableRow key={m.id}>
                       <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
@@ -310,7 +365,7 @@ function CaixaItem({
                 </TableRow>
               ) : (
                 ocorrencias.map((o) => {
-                  const ferramenta = ferramentas.find((f) => f.id === o.item_id);
+                  const ferramenta = cadastroFerramentas.find((f) => f.id === o.item_id);
                   return (
                     <TableRow key={o.id}>
                       <TableCell>{formatarData(o.data)}</TableCell>
@@ -333,7 +388,10 @@ function CaixaItem({
       {dialogo === "ferramentas" && (
         <DialogFerramentasDaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} itensAtuais={itens} comEmpregado={comEmpregadoDe} />
       )}
-      {dialogo === "baixa" && <DialogBaixaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
+      {dialogo === "baixa" && <DialogBaixaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} historico={historico} />}
+      {dialogo === "transferencia" && (
+        <DialogTransferirCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} destinos={destinos} />
+      )}
       {dialogo === "ocorrencia" && <DialogOcorrenciaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
     </div>
   );

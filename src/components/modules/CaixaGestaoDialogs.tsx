@@ -20,7 +20,10 @@ import { capitalizarNomePessoa, capitalizarTexto } from "@/lib/formatacao-cadast
 import { hojeLocal } from "@/lib/empregados";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import {
+  controleDaFerramenta,
   ferramentasComEmpregadoRemovidas,
+  ferramentasEmOutraCaixa,
+  validarTransferenciaDeCaixa,
   validarBaixaDaCaixa,
   validarFerramentasDaCaixa,
 } from "@/lib/controle-caixa";
@@ -30,9 +33,12 @@ import {
   useRegistrarMovimentacoesLote,
   useSalvar,
   useSalvarCaixa,
+  useCaixasFerramentas,
+  useTodosCaixaItens,
   type CaixaFerramenta,
   type CaixaFerramentaItem,
   type Item,
+  type Movimentacao,
 } from "@/lib/hooks-gemape";
 
 const SEM_EMPREGADO = "sem-empregado";
@@ -47,6 +53,8 @@ export interface LinhaCaixa {
 }
 
 type Comum = { caixa: CaixaFerramenta; aberto: boolean; aoFechar: () => void };
+// Caixa habilitada ainda sem cadastro: o primeiro vínculo de ferramentas é que cria a caixa.
+export type CaixaNova = Pick<CaixaFerramenta, "codigo" | "codigo_num" | "empresa_id" | "nome" | "descricao" | "localizacao" | "status"> & { id?: undefined };
 
 /** Inclui, tira e muda a quantidade das ferramentas da caixa (grava o conjunto inteiro de uma vez). */
 export function DialogFerramentasDaCaixa({
@@ -55,8 +63,14 @@ export function DialogFerramentasDaCaixa({
   aoFechar,
   itensAtuais,
   comEmpregado,
-}: Comum & { itensAtuais: CaixaFerramentaItem[]; comEmpregado: (ferramentaId: string) => number }) {
+}: Omit<Comum, "caixa"> & {
+  caixa: CaixaFerramenta | CaixaNova;
+  itensAtuais: CaixaFerramentaItem[];
+  comEmpregado: (ferramentaId: string) => number;
+}) {
   const { data: todas = [] } = useItens("ferramenta", TODAS);
+  const { data: itensDeTodas = [] } = useTodosCaixaItens();
+  const { data: caixasDeTodas = [] } = useCaixasFerramentas(TODAS, "");
   const salvar = useSalvarCaixa();
   const [linhas, setLinhas] = useState(() =>
     itensAtuais.map((i) => ({ ferramenta_id: i.ferramenta_id, quantidade: i.quantidade, observacao: i.observacao ?? "" })),
@@ -64,7 +78,11 @@ export function DialogFerramentasDaCaixa({
   const [escolhida, setEscolhida] = useState("");
   const ferramenta = (id: string) => todas.find((t) => t.id === id) ?? itensAtuais.find((i) => i.ferramenta_id === id)?.ferramenta;
   const nome = (id: string) => ferramenta(id)?.nome ?? "Ferramenta";
-  const disponiveis = todas.filter((t) => t.status === "Ativo" && !linhas.some((l) => l.ferramenta_id === t.id));
+  // Uma ferramenta só fica em uma caixa: as que já estão em outra só voltam por baixa ou transferência.
+  const outrasCaixas = itensDeTodas.filter((o) => o.caixa_id !== caixa.id);
+  const disponiveis = todas.filter(
+    (t) => t.status === "Ativo" && !linhas.some((l) => l.ferramenta_id === t.id) && !outrasCaixas.some((o) => o.ferramenta_id === t.id),
+  );
 
   function adicionar(id: string) {
     setLinhas((atual) => [...atual, { ferramenta_id: id, quantidade: 1, observacao: "" }]);
@@ -74,14 +92,21 @@ export function DialogFerramentasDaCaixa({
   function gravar() {
     const erro =
       validarFerramentasDaCaixa(linhas, comEmpregado, nome) ??
-      ferramentasComEmpregadoRemovidas(itensAtuais, linhas, comEmpregado, nome);
+      ferramentasComEmpregadoRemovidas(itensAtuais, linhas, comEmpregado, nome) ??
+      ferramentasEmOutraCaixa(
+        linhas,
+        outrasCaixas,
+        caixa.id,
+        nome,
+        (id) => caixasDeTodas.find((c) => c.id === id)?.codigo ?? "outra caixa",
+      );
     if (erro) {
       alert(erro);
       return;
     }
     salvar.mutate(
       {
-        id: caixa.id,
+        ...(caixa.id ? { id: caixa.id } : {}),
         valores: {
           codigo: caixa.codigo,
           codigo_num: caixa.codigo_num,
@@ -101,8 +126,10 @@ export function DialogFerramentasDaCaixa({
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Ferramentas da caixa {caixa.codigo}</DialogTitle>
-          <DialogDescription>Inclua ou tire ferramentas e ajuste as quantidades. Tudo é salvo de uma vez.</DialogDescription>
+          <DialogTitle>Vincular ferramentas à caixa {caixa.codigo}</DialogTitle>
+          <DialogDescription>
+            Escolha as ferramentas que ficam nesta caixa e a quantidade de cada uma. Cada ferramenta só pode estar em uma caixa; a que já está em outra só entra aqui depois de baixa ou transferência.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
           <Label htmlFor="incluir-ferramenta">Incluir ferramenta</Label>
@@ -177,7 +204,7 @@ export function DialogFerramentasDaCaixa({
             Cancelar
           </Button>
           <Button requiresWrite="operar" type="button" disabled={salvar.isPending} onClick={gravar}>
-            Salvar ferramentas
+            Salvar vínculo
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -186,7 +213,13 @@ export function DialogFerramentasDaCaixa({
 }
 
 /** Baixa de uma ferramenta da caixa (perda, quebra, desgaste...); grava a caixa na movimentação. */
-export function DialogBaixaCaixa({ caixa, aberto, aoFechar, linhas }: Comum & { linhas: LinhaCaixa[] }) {
+export function DialogBaixaCaixa({
+  caixa,
+  aberto,
+  aoFechar,
+  linhas,
+  historico,
+}: Comum & { linhas: LinhaCaixa[]; historico: Movimentacao[] }) {
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
   const [ferramentaId, setFerramentaId] = useState(linhas[0]?.ferramenta.id ?? "");
@@ -206,7 +239,10 @@ export function DialogBaixaCaixa({ caixa, aberto, aoFechar, linhas }: Comum & { 
       motivo,
       data,
       disponivel: linha?.disponivel ?? 0,
-      comEmpregado: linha?.comEmpregado ?? 0,
+      // Com empregado, o limite é o que está com ele, não o total da caixa.
+      comEmpregado: empregado
+        ? controleDaFerramenta(historico.filter((m) => m.empregado_id === empregado), ferramentaId).comEmpregado
+        : (linha?.comEmpregado ?? 0),
       empregadoId: empregado,
     });
     if (erro || !linha) {
@@ -440,6 +476,151 @@ export function DialogOcorrenciaCaixa({ caixa, aberto, aoFechar, linhas }: Comum
           </Button>
           <Button requiresWrite="operar" type="button" disabled={salvar.isPending} onClick={gravar}>
             Registrar ocorrência
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Transfere uma ferramenta (com a quantidade cadastrada) para outra caixa; grava a transferência no histórico. */
+export function DialogTransferirCaixa({
+  caixa,
+  aberto,
+  aoFechar,
+  linhas,
+  destinos,
+}: Comum & { linhas: LinhaCaixa[]; destinos: CaixaFerramenta[] }) {
+  const { data: itensDeTodas = [] } = useTodosCaixaItens();
+  const salvar = useSalvarCaixa();
+  const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
+  const [ferramentaId, setFerramentaId] = useState(linhas[0]?.ferramenta.id ?? "");
+  const [destinoId, setDestinoId] = useState("");
+  const [executando, setExecutando] = useState(false);
+  const linha = linhas.find((l) => l.ferramenta.id === ferramentaId);
+  const destino = destinos.find((d) => d.id === destinoId);
+  const valoresDe = (c: CaixaFerramenta) => ({
+    codigo: c.codigo,
+    codigo_num: c.codigo_num,
+    empresa_id: c.empresa_id,
+    nome: c.nome,
+    descricao: c.descricao,
+    localizacao: c.localizacao,
+    status: c.status,
+  });
+  const itensDa = (id: string) =>
+    itensDeTodas.filter((i) => i.caixa_id === id).map((i) => ({ ferramenta_id: i.ferramenta_id, quantidade: i.quantidade, observacao: i.observacao ?? "" }));
+
+  async function gravar() {
+    if (executando) return;
+    const erro = validarTransferenciaDeCaixa({
+      ferramentaId,
+      destinoId,
+      origemId: caixa.id,
+      comEmpregado: linha?.comEmpregado ?? 0,
+      jaNoDestino: itensDeTodas.some((i) => i.caixa_id === destinoId && i.ferramenta_id === ferramentaId),
+    });
+    if (erro || !linha || !destino) {
+      alert(erro ?? "Confira a ferramenta e a caixa de destino.");
+      return;
+    }
+    const naOrigem = itensDeTodas.find((i) => i.caixa_id === caixa.id && i.ferramenta_id === ferramentaId);
+    if (!naOrigem) {
+      alert("A ferramenta não está mais nesta caixa.");
+      return;
+    }
+    setExecutando(true);
+    try {
+      // Primeiro entra no destino; só depois sai da origem, para a ferramenta nunca ficar sem caixa por falha.
+      await salvar.mutateAsync({
+        id: destino.id,
+        valores: valoresDe(destino),
+        itens: [...itensDa(destino.id), { ferramenta_id: ferramentaId, quantidade: naOrigem.quantidade, observacao: naOrigem.observacao ?? "" }],
+      });
+      await salvar.mutateAsync({
+        id: caixa.id,
+        valores: valoresDe(caixa),
+        itens: itensDa(caixa.id).filter((i) => i.ferramenta_id !== ferramentaId),
+      });
+      await registrar.mutateAsync([
+        {
+          modulo: "ferramenta",
+          item_id: ferramentaId,
+          veiculo_id: null,
+          empresa_id: linha.ferramenta.empresa_id,
+          empregado_id: null,
+          tipo_movimentacao: "Transferencia",
+          motivo_baixa: null,
+          quantidade: naOrigem.quantidade,
+          onus_baixa: null,
+          tipo_vistoria: null,
+          sinalizar_ocorrencia: false,
+          tipo_ocorrencia: null,
+          conducao_ocorrencia: null,
+          data_movimentacao: hojeLocal(),
+          origem_local: caixa.codigo,
+          destino_local: destino.codigo,
+          observacao: `Transferida da caixa ${caixa.codigo} para a caixa ${destino.codigo}.`,
+          ...(MODO_DEMO ? { caixa_id: destino.id } : {}),
+        },
+      ]);
+      aoFechar();
+    } catch {
+      // Os erros já aparecem como aviso nas próprias operações.
+    } finally {
+      setExecutando(false);
+    }
+  }
+
+  return (
+    <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Transferir ferramenta da caixa {caixa.codigo}</DialogTitle>
+          <DialogDescription>
+            A ferramenta sai desta caixa e entra na outra, com a mesma quantidade. Precisa estar guardada, sem empregado com ela.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="transf-ferramenta">Ferramenta</Label>
+            <Select value={ferramentaId} onValueChange={setFerramentaId}>
+              <SelectTrigger id="transf-ferramenta">
+                <SelectValue placeholder="Escolha a ferramenta" />
+              </SelectTrigger>
+              <SelectContent>
+                {linhas.map((l) => (
+                  <SelectItem key={l.ferramenta.id} value={l.ferramenta.id}>
+                    {l.ferramenta.codigo_sku} — {l.ferramenta.nome} (quantidade {l.quantidade}, com empregado {l.comEmpregado})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="transf-destino">Caixa de destino</Label>
+            <Select value={destinoId} onValueChange={setDestinoId}>
+              <SelectTrigger id="transf-destino">
+                <SelectValue placeholder="Escolha a caixa" />
+              </SelectTrigger>
+              <SelectContent>
+                {destinos
+                  .filter((d) => d.id !== caixa.id)
+                  .map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.codigo}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={aoFechar}>
+            Cancelar
+          </Button>
+          <Button requiresWrite="operar" type="button" disabled={executando} onClick={gravar}>
+            Transferir
           </Button>
         </DialogFooter>
       </DialogContent>
