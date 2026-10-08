@@ -13,15 +13,23 @@ export const NAO_DEFINIDO = "Não definido";
 export const PERIODICIDADES_ASSOCIACAO = ["Diária", "Semanal", "Quinzenal", "Mensal", NAO_DEFINIDA] as const;
 export type PeriodicidadeAssociacao = (typeof PERIODICIDADES_ASSOCIACAO)[number];
 
-export type ItemAssociacao = { grupoId: string; periodicidade: PeriodicidadeAssociacao; obrigatorio: boolean };
+export type ItemAssociacao = { grupoId: string; tipo: TipoAssociacao; periodicidade: PeriodicidadeAssociacao; obrigatorio: boolean };
 export type ResponsavelAssociacao = { id: string; nome: string };
+// Cada grupo habilitado é de um dos dois check lists do veículo (decisão 119): o periódico, mais apurado, com periodicidade
+// definida, ou o avulso, só para registrar itens mais simples, sem periodicidade (guardada como "Não definida").
+export type TipoAssociacao = "periodico" | "avulso";
+export const TIPOS_ASSOCIACAO: readonly { id: TipoAssociacao; nome: string }[] = [
+  { id: "periodico", nome: "Periódico" },
+  { id: "avulso", nome: "Avulso" },
+];
+export const ehTipoAssociacao = (v: unknown): v is TipoAssociacao => v === "periodico" || v === "avulso";
 export type AssociacaoChecklist = {
   veiculoId: string;
   responsavel: ResponsavelAssociacao | null; // null = responsável não definido (decisão 116)
   itens: ItemAssociacao[];
   atualizadoEm: string;
 };
-export type EntradaItemAssociacao = { grupoId: string; periodicidade: string; obrigatorio?: boolean };
+export type EntradaItemAssociacao = { grupoId: string; tipo?: TipoAssociacao; periodicidade: string; obrigatorio?: boolean };
 
 const storagePadrao = (): StorageLike | null =>
   typeof localStorage === "undefined" ? null : localStorage;
@@ -45,7 +53,13 @@ function lerComEstado(storage: StorageLike | null): { lista: AssociacaoChecklist
         responsavel: a.responsavel?.id ? { id: String(a.responsavel.id), nome: String(a.responsavel.nome ?? "") } : null,
         itens: (Array.isArray(a.itens) ? a.itens : [])
           .filter((i) => !!i && typeof i === "object" && ehPeriodicidade(i.periodicidade))
-          .map((i) => ({ grupoId: String(i.grupoId), periodicidade: i.periodicidade, obrigatorio: i.obrigatorio === true })),
+          .map((i) => ({
+            grupoId: String(i.grupoId),
+            // Sem tipo gravado (antes da decisão 119): periódico se tem periodicidade definida, senão avulso.
+            tipo: ehTipoAssociacao(i.tipo) ? i.tipo : i.periodicidade === NAO_DEFINIDA ? ("avulso" as TipoAssociacao) : ("periodico" as TipoAssociacao),
+            periodicidade: i.periodicidade,
+            obrigatorio: i.obrigatorio === true,
+          })),
       }));
     return { lista, integro: true };
   } catch {
@@ -82,10 +96,13 @@ function validar(
   const validos = itens.map((i) => {
     if (vistos.has(i.grupoId)) throw new Error("Grupo de itens repetido na associação.");
     vistos.add(i.grupoId);
-    if (!ehPeriodicidade(i.periodicidade)) {
-      throw new Error("Escolha a periodicidade (Diária, Semanal, Quinzenal, Mensal ou Não definida) de cada grupo.");
+    // O avulso não tem periodicidade (fica "Não definida"); o periódico precisa de uma periodicidade definida.
+    const tipo: TipoAssociacao = i.tipo === "avulso" ? "avulso" : "periodico";
+    if (tipo === "avulso") return { grupoId: i.grupoId, tipo, periodicidade: NAO_DEFINIDA as PeriodicidadeAssociacao, obrigatorio: i.obrigatorio === true };
+    if (!ehPeriodicidade(i.periodicidade) || i.periodicidade === NAO_DEFINIDA) {
+      throw new Error("Escolha a periodicidade (Diária, Semanal, Quinzenal ou Mensal) de cada grupo periódico, ou marque o grupo como Avulso.");
     }
-    return { grupoId: i.grupoId, periodicidade: i.periodicidade, obrigatorio: i.obrigatorio === true };
+    return { grupoId: i.grupoId, tipo, periodicidade: i.periodicidade, obrigatorio: i.obrigatorio === true };
   });
   return { responsavel: responsavel ? { id: responsavel.id, nome: responsavel.nome.trim() } : null, itens: validos };
 }
@@ -180,4 +197,20 @@ export function checklistsDaAssociacao(
       grupos: deste.map((i) => ({ grupoId: i.grupoId, nome: i.nome, obrigatorio: i.obrigatorio })),
     } satisfies ChecklistAssociado];
   });
+}
+
+// Grupos de cada check list do veículo (decisão 119), para o módulo: o periódico traz só os grupos periódicos da sua
+// periodicidade; o avulso traz só os grupos marcados como avulsos. Sem associação, quem chama decide o que traz.
+export function gruposDaPeriodicidade<T extends { grupoId: string; tipo: TipoAssociacao; periodicidade: string }>(
+  associacao: { itens: T[] } | null | undefined,
+  periodicidade: string,
+): T[] {
+  const nome = periodicidade === "Diário" ? "Diária" : periodicidade;
+  return (associacao?.itens ?? []).filter((i) => i.tipo === "periodico" && i.periodicidade === nome);
+}
+
+export function gruposAvulsosDaAssociacao<T extends { grupoId: string; tipo: TipoAssociacao }>(
+  associacao: { itens: T[] } | null | undefined,
+): T[] {
+  return (associacao?.itens ?? []).filter((i) => i.tipo === "avulso");
 }

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
-  PERIODICIDADES_ASSOCIACAO, checklistsDaAssociacao, lerAssociacoes, criarAssociacao, editarAssociacao, removerAssociacao, gruposDaAssociacao,
+  PERIODICIDADES_ASSOCIACAO, checklistsDaAssociacao, gruposAvulsosDaAssociacao, gruposDaPeriodicidade, lerAssociacoes, criarAssociacao, editarAssociacao, removerAssociacao, gruposDaAssociacao,
 } from "../src/lib/checklist-associacao-veiculo.ts";
 import { MENU_VEICULOS } from "../src/lib/menu-parametros.ts";
 
@@ -13,7 +13,7 @@ const memoria = () => {
 };
 const resp = { id: "e1", nome: "Maria Souza" };
 const grupos = [{ grupoId: "g1", periodicidade: "Diária" }, { grupoId: "g2", periodicidade: "Mensal" }];
-const gravados = grupos.map((g) => ({ ...g, obrigatorio: false }));
+const gravados = grupos.map((g) => ({ ...g, tipo: "periodico", obrigatorio: false }));
 
 test("as periodicidades são Diária, Semanal, Quinzenal, Mensal e Não definida (dec 116)", () => {
   assert.deepEqual([...PERIODICIDADES_ASSOCIACAO], ["Diária", "Semanal", "Quinzenal", "Mensal", "Não definida"]);
@@ -44,8 +44,8 @@ test("responsável não definido e grupo Não definida: check list livre, nome c
   const s = memoria();
   const a = criarAssociacao("v1", null, [
     { grupoId: "g1", periodicidade: "Mensal", obrigatorio: true },
-    { grupoId: "g2", periodicidade: "Não definida" },
-    { grupoId: "g3", periodicidade: "Não definida", obrigatorio: true },
+    { grupoId: "g2", tipo: "avulso", periodicidade: "" },
+    { grupoId: "g3", tipo: "avulso", periodicidade: "", obrigatorio: true },
   ], s);
   assert.equal(a.responsavel, null);
   assert.equal(lerAssociacoes(s)[0].responsavel, null);
@@ -121,4 +121,38 @@ test("a tela de Parâmetros lista por veículo e check list, com tipo, obrigató
   assert.match(tela, /SEM_RESPONSAVEL/);
   assert.match(tela, /<th className="px-3 py-2">Tipo<\/th>/);
   assert.match(tela, /<th className="px-3 py-2">Obrigatório<\/th>/);
+});
+
+test("cada grupo é do check list periódico ou do avulso; avulso fica sem periodicidade e periódico exige uma (dec 119)", () => {
+  const s = memoria();
+  assert.throws(() => criarAssociacao("v1", null, [{ grupoId: "g1", tipo: "periodico", periodicidade: "Não definida" }], s), /periodicidade/i);
+  assert.throws(() => criarAssociacao("v1", null, [{ grupoId: "g1", periodicidade: "" }], s), /periodicidade/i); // sem tipo = periódico
+  const a = criarAssociacao("v1", resp, [
+    { grupoId: "g1", tipo: "periodico", periodicidade: "Diária", obrigatorio: true },
+    { grupoId: "g2", tipo: "periodico", periodicidade: "Mensal" },
+    { grupoId: "g3", tipo: "avulso", periodicidade: "Mensal" }, // a periodicidade enviada é ignorada no avulso
+  ], s);
+  assert.deepEqual(a.itens.map((i) => [i.grupoId, i.tipo, i.periodicidade]), [
+    ["g1", "periodico", "Diária"], ["g2", "periodico", "Mensal"], ["g3", "avulso", "Não definida"],
+  ]);
+  assert.deepEqual(gruposDaPeriodicidade(a, "Diário").map((i) => i.grupoId), ["g1"]);
+  assert.deepEqual(gruposDaPeriodicidade(a, "Mensal").map((i) => i.grupoId), ["g2"]);
+  assert.deepEqual(gruposAvulsosDaAssociacao(a).map((i) => i.grupoId), ["g3"]);
+  assert.deepEqual(gruposDaPeriodicidade(null, "Mensal"), []);
+});
+
+test("associações sem tipo gravado: periódico se tinha periodicidade definida, senão avulso (dec 119)", () => {
+  const s = memoria();
+  s.setItem("gemape-demo-associacoes-checklist-veiculo", JSON.stringify([{ veiculoId: "v1", responsavel: resp, atualizadoEm: "", itens: [
+    { grupoId: "g1", periodicidade: "Semanal" }, { grupoId: "g2", periodicidade: "Não definida" },
+  ] }]));
+  assert.deepEqual(lerAssociacoes(s)[0].itens.map((i) => i.tipo), ["periodico", "avulso"]);
+});
+
+test("Parâmetros > Veículos > Check list mostra primeiro Associar itens e depois os itens; o diálogo marca periódico ou avulso (dec 119)", () => {
+  const pagina = readFileSync(new URL("../src/components/parametros/ChecklistParametros.tsx", import.meta.url), "utf8");
+  assert.ok(pagina.indexOf("<AssociarChecklistVeiculo secao />") < pagina.indexOf("<ChecklistVeiculoLista secao />"));
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /Tipo do check list/);
+  assert.match(tela, /mudarTipo\(/);
 });

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { gruposAvulsosDaAssociacao, gruposDaPeriodicidade } from "@/lib/checklist-associacao-veiculo";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
@@ -24,7 +25,7 @@ import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  periodicidadeDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
+  PERIODICIDADES, periodicidadeDaAssociacao, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
@@ -83,6 +84,10 @@ export function ChecklistVeiculoModulo() {
   const [busca, setBusca] = useState("");
   const [soPendencias, setSoPendencias] = useState(false);
   const [tipoCheck, setTipoCheck] = useState("");
+  // Novo check list avulso (decisão 118): avulso ou periódico, e a periodicidade quando periódico.
+  const [modoAvulso, setModoAvulso] = useState<"avulso" | "periodico">("avulso");
+  const [periodicidadeAvulso, setPeriodicidadeAvulso] = useState("");
+  const [periodicidadeEscolhida, setPeriodicidadeEscolhida] = useState("");
   const [veiculoId, setVeiculoId] = useState("");
   const [veiculosAberto, setVeiculosAberto] = useState(false);
   const [associarAberto, setAssociarAberto] = useState(false);
@@ -98,7 +103,12 @@ export function ChecklistVeiculoModulo() {
   const previsoes = usePrevisoesChecklist();
   // A periodicidade não é escolhida aqui: vem de Parâmetros > Veículos > Check list.
   const associacaoDe = (v: VeiculoChecklist) => associacoes.find((a) => a.veiculoId === v.id);
-  const periodicidadeDe = (v: VeiculoChecklist) => periodicidadeDaAssociacao(associacaoDe(v));
+  // Periodicidade do check list periódico: a escolhida (se o veículo tem mais de uma) ou a mais frequente (decisão 119).
+  const periodicidadesDe = (v: VeiculoChecklist) => periodicidadesDaAssociacao(associacaoDe(v));
+  const periodicidadeDe = (v: VeiculoChecklist) => {
+    const todas = periodicidadesDe(v);
+    return todas.find((p) => p === periodicidadeEscolhida) ?? todas[0] ?? null;
+  };
 
   // Mantém em vigor as previsões do painel mensal (decisão 80): veículos ativos com associação, desde o dia da
   // associação. Só roda com a lista de veículos carregada: sem ela, as previsões em vigor seriam apagadas.
@@ -127,7 +137,6 @@ export function ChecklistVeiculoModulo() {
   const tipoDe = (v: VeiculoChecklist) => resolverSubcategoria(parametros, "cat-veiculos", v);
   const tipoCheckDe = (v: VeiculoChecklist) => tipoChecklistDaSubcategoria(tipoDe(v)?.nome);
   const veiculosDoTipo = veiculosDoTipoChecklist(veiculos, tipoCheck, (v) => tipoDe(v)?.nome);
-  const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === tipoCheck)?.nome ?? "";
   const checklists = todos.filter((c) => idsDaEmpresa.has(c.veiculoId));
   const pendencias = pendenciasAbertas(checklists);
   // Nome do check list (decisão 90): Placa >> Periodicidade >> Responsável.
@@ -139,7 +148,10 @@ export function ChecklistVeiculoModulo() {
   const avulsos = checklists.filter((c) => !checklistVisivelNaLista(c));
   const avulsoNovo = tela?.tipo === "novo" && !!tela.avulso;
   const atual = tela?.tipo === "check" ? (todos.find((c) => c.id === tela.id) ?? null) : null;
-  const veiculoEscolhido = veiculosDoTipo.find((v) => v.id === veiculoId);
+  // No avulso não há campo de tipo de veículo (decisão 118): entram todos os veículos ativos que têm tipo de check list, e o tipo vem do veículo.
+  const veiculosDoDialogo = avulsoNovo ? veiculos.filter((v) => v.status === "Ativo" && tipoCheckDe(v) !== null) : veiculosDoTipo;
+  const veiculoEscolhido = veiculosDoDialogo.find((v) => v.id === veiculoId);
+  const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === (avulsoNovo && veiculoEscolhido ? tipoCheckDe(veiculoEscolhido) : tipoCheck))?.nome ?? "";
   // Atalho para a associação de itens (grupos, periodicidade e responsável), aberta numa janela ao lado do Novo check list.
   const linkAssociar = canWrite ? (
     <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setAssociarAberto(true)}>
@@ -152,12 +164,18 @@ export function ChecklistVeiculoModulo() {
       Cadastrar itens de check list
     </button>
   ) : "Cadastre em Parâmetros > Veículos > Check list.";
-  // Só os grupos habilitados na associação do veículo escolhido (decisão 76).
+  // Só os grupos habilitados na associação do veículo escolhido (decisão 76), e só os da periodicidade do check list (decisão 119):
+  // o periódico traz os grupos da sua periodicidade; o avulso traz os "Não definida" (ou todos, se o veículo é de check list avulso).
+  // Veículo sem associação: o avulso traz os grupos do tipo do veículo.
+  const associacaoEscolhida = veiculoEscolhido ? associacaoDe(veiculoEscolhido) : undefined;
+  const comoAssociacao = (itens: { grupoId: string }[]) => gruposAssociadosDoVeiculo({ itens } as never, parametros.itensChecklistVeiculo);
   const gruposDoVeiculo = !veiculoEscolhido
     ? []
     : avulsoNovo
-      ? gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(veiculoEscolhido)?.id ?? null)
-      : gruposAssociadosDoVeiculo(associacaoDe(veiculoEscolhido), parametros.itensChecklistVeiculo);
+      ? (!associacaoEscolhida
+        ? gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(veiculoEscolhido)?.id ?? null)
+        : comoAssociacao(modoAvulso === "periodico" ? gruposDaPeriodicidade(associacaoEscolhida, periodicidadeAvulso) : gruposAvulsosDaAssociacao(associacaoEscolhida)))
+      : comoAssociacao(gruposDaPeriodicidade(associacaoEscolhida, periodicidadeDe(veiculoEscolhido) ?? ""));
   const itensDoVeiculo = gruposDoVeiculo.reduce((t, g) => t + g.itens.length, 0);
 
   const lista = (visao === "avulsos" ? avulsos : naLista)
@@ -170,6 +188,8 @@ export function ChecklistVeiculoModulo() {
   }
 
   function abrirNovoAvulso() {
+    setModoAvulso("avulso");
+    setPeriodicidadeAvulso("");
     setTipoCheck("");
     setVeiculoId("");
     setResponsavelId("");
@@ -187,7 +207,11 @@ export function ChecklistVeiculoModulo() {
   function iniciar(e: React.FormEvent) {
     e.preventDefault();
     if (trava.current || !veiculoEscolhido) {
-      if (!veiculoEscolhido) toast.error(tipoCheck ? "Selecione o veículo." : "Selecione o tipo de veículo.");
+      if (!veiculoEscolhido) toast.error(tipoCheck || avulsoNovo ? "Selecione o veículo." : "Selecione o tipo de veículo.");
+      return;
+    }
+    if (avulsoNovo && modoAvulso === "periodico" && !periodicidadeAvulso) {
+      toast.error("Escolha a periodicidade do check list periódico.");
       return;
     }
     trava.current = true;
@@ -195,14 +219,14 @@ export function ChecklistVeiculoModulo() {
     const ok = executar(() => {
       const base = { veiculoId: veiculoEscolhido.id, veiculoRotulo: rotuloDe(veiculoEscolhido), tipoVeiculo: tipoCheckNome, grupos: gruposDoVeiculo };
       criado = avulsoNovo
-        ? iniciarChecklistAvulso(base)
+        ? iniciarChecklistAvulso({ ...base, periodicidade: modoAvulso === "periodico" ? periodicidadeAvulso : null })
         : iniciarChecklist({
           ...base,
           periodicidade: periodicidadeDe(veiculoEscolhido),
           responsavelId,
           responsavelNome: empregadosAtivos.find((x) => x.id === responsavelId)?.nome ?? "",
         });
-    }, avulsoNovo ? "Check list avulso iniciado" : "Check list iniciado");
+    }, avulsoNovo ? (modoAvulso === "periodico" ? "Check list periódico iniciado" : "Check list avulso iniciado") : "Check list iniciado");
     if (ok && criado) setTela({ tipo: "check", id: criado.id });
     window.setTimeout(() => { trava.current = false; }, 600);
   }
@@ -343,18 +367,18 @@ export function ChecklistVeiculoModulo() {
             <DialogTitle>{avulsoNovo ? "Novo check list avulso" : "Novo check list"}</DialogTitle>
             <DialogDescription>
               {avulsoNovo
-                ? "Escolha o tipo e o veículo: o check list avulso não tem periodicidade nem responsável e traz todos os grupos de itens do tipo do veículo."
+                ? "Escolha o veículo e se o check list é avulso ou periódico (com a periodicidade): ele traz todos os grupos de itens do tipo do veículo."
                 : "Escolha o tipo e o veículo: os itens vêm dos grupos habilitados para o veículo em Parâmetros > Veículos > Check list."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={iniciar} className="min-w-0 space-y-4 [&_p]:break-words">
-            <div className="min-w-0 space-y-1.5">
+            {!avulsoNovo && <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_tipo">Tipo de veículo</Label>
               <Select value={tipoCheck} onValueChange={(t) => { setTipoCheck(t); setVeiculoId(""); }}>
                 <SelectTrigger id="ck_tipo" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
                 <SelectContent>{TIPOS_CHECKLIST.map((t) => <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>)}</SelectContent>
               </Select>
-            </div>
+            </div>}
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_veiculo">Veículo</Label>
               <Select
@@ -365,10 +389,10 @@ export function ChecklistVeiculoModulo() {
                   const doVeiculo = associacoes.find((a) => a.veiculoId === id)?.responsavel?.id;
                   if (doVeiculo) setResponsavelId(doVeiculo);
                 }}
-                disabled={!tipoCheck}
+                disabled={!avulsoNovo && !tipoCheck}
               >
-                <SelectTrigger id="ck_veiculo" aria-describedby="ck_veiculo_ajuda" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder={tipoCheck ? "Selecione o veículo" : "Escolha o tipo primeiro"} /></SelectTrigger>
-                <SelectContent>{veiculosDoTipo.map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDe(v)}</SelectItem>)}</SelectContent>
+                <SelectTrigger id="ck_veiculo" aria-describedby="ck_veiculo_ajuda" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder={tipoCheck || avulsoNovo ? "Selecione o veículo" : "Escolha o tipo primeiro"} /></SelectTrigger>
+                <SelectContent>{veiculosDoDialogo.map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDe(v)}</SelectItem>)}</SelectContent>
               </Select>
               {canWrite && <p className="text-xs text-muted-foreground">
                 Veículo não está na lista?{" "}
@@ -376,23 +400,48 @@ export function ChecklistVeiculoModulo() {
                   Cadastrar veículo
                 </button>
               </p>}
-              {tipoCheck && veiculosDoTipo.length === 0 && (
-                <p id="ck_veiculo_ajuda" className="text-xs text-muted-foreground">Nenhum veículo ativo deste tipo. A subcategoria do veículo é definida em Parâmetros &gt; Veículos &gt; Cadastro de Veículos.</p>
+              {(tipoCheck || avulsoNovo) && veiculosDoDialogo.length === 0 && (
+                <p id="ck_veiculo_ajuda" className="text-xs text-muted-foreground">{avulsoNovo ? "Nenhum veículo ativo com tipo de check list." : "Nenhum veículo ativo deste tipo."} A subcategoria do veículo é definida em Parâmetros &gt; Veículos &gt; Cadastro de Veículos.</p>
               )}
               {veiculoEscolhido && (
                 <p className="text-xs text-muted-foreground">
                   {gruposDoVeiculo.length === 0
-                    ? (avulsoNovo ? <>Não há itens de check list para o tipo deste veículo. {linkItens}</> : <>Este veículo não tem itens associados. {linkAssociar}</>)
+                    ? (avulsoNovo ? (associacaoEscolhida ? <>Este veículo não tem grupos {modoAvulso === "periodico" ? "nesta periodicidade" : "sem periodicidade (Não definida)"} na associação. {linkAssociar}</> : <>Não há itens de check list para o tipo deste veículo. {linkItens}</>) : <>Este veículo não tem itens associados. {linkAssociar}</>)
                     : `${itensDoVeiculo} ${itensDoVeiculo === 1 ? "item" : "itens"} em ${gruposDoVeiculo.length} ${gruposDoVeiculo.length === 1 ? "grupo" : "grupos"}: ${gruposDoVeiculo.map((g) => g.nome).join(", ")}.`}
                 </p>
               )}
               {veiculoEscolhido && !avulsoNovo && (
                 <p className="text-xs text-muted-foreground">
                   Periodicidade (da associação do veículo): {periodicidadeDe(veiculoEscolhido) ?? <>não definida. {linkAssociar}</>}
+                  {periodicidadesDe(veiculoEscolhido).length > 1 && <>
+                    {" "}· trocar:{" "}
+                    {periodicidadesDe(veiculoEscolhido).map((p) => (
+                      <button key={p} type="button" aria-pressed={periodicidadeDe(veiculoEscolhido) === p} className={`mr-1.5 underline underline-offset-2 ${periodicidadeDe(veiculoEscolhido) === p ? "font-semibold text-foreground" : "text-primary"}`} onClick={() => setPeriodicidadeEscolhida(p)}>{p}</button>
+                    ))}
+                  </>}
                   {pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
                 </p>
               )}
             </div>
+            {avulsoNovo && <>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="ck_modo">Tipo do check list</Label>
+                <Select value={modoAvulso} onValueChange={(m) => { setModoAvulso(m as "avulso" | "periodico"); if (m === "avulso") setPeriodicidadeAvulso(""); }}>
+                  <SelectTrigger id="ck_modo"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="avulso">Avulso</SelectItem>
+                    <SelectItem value="periodico">Periódico</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {modoAvulso === "periodico" && <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="ck_per_avulso">Periodicidade</Label>
+                <Select value={periodicidadeAvulso} onValueChange={setPeriodicidadeAvulso}>
+                  <SelectTrigger id="ck_per_avulso"><SelectValue placeholder="Selecione a periodicidade" /></SelectTrigger>
+                  <SelectContent>{PERIODICIDADES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>}
+            </>}
             {!avulsoNovo && <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_resp">Responsável pelo check list</Label>
               <Select value={responsavelId} onValueChange={setResponsavelId}>
