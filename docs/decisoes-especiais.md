@@ -746,3 +746,7 @@ Ordem do responsável em 08/10: os Itens check list devem ser separados por tipo
 ### Decisão 114: Logo GEMAPE 40 anos animada no menu lateral, no lugar das engrenagens
 
 Ordem do responsável em 08/10: trocar o logotipo das engrenagens pela logo enviada (GEMAPE 40 anos, máquinas e peças) e deixá-la animada e bonita. **Escolhas do Claude:** (a) a imagem enviada (branca sobre fundo azul) virou um PNG com fundo transparente, recortado nas bordas (`src/assets/logo-gemape-40-anos.png`), para valer sobre o azul do menu; (b) a logo ocupa o lugar das engrenagens **e** do texto GEMAPE, porque a própria logo já traz o nome; abaixo ficam a linha e o subtítulo "Gestão de Patrimônio" da decisão 109; (c) animação: a logo entra com um leve zoom, um brilho azul-claro percorre as letras, e um halo pulsa devagar; para quem pede menos movimento tudo fica parado; (d) as engrenagens saem do menu; a engrenagem pequena das telas de acesso (login) não foi pedida e fica como está; (e) a imagem original do favicon e da página inicial (`public/logo.png`) não mudou. Nada no Supabase.
+
+### Decisão 115: Parâmetros > Ferramentas sem o menu Tamanho e Medidas de Produto
+
+Ordem do responsável em 08/10: eliminar o menu "Tamanho e Medidas de Produto" de Parâmetros > Ferramentas. **Escolhas do Claude:** (a) sai só do menu de Ferramentas; EPI e Uniformes mantêm o menu e a tela (decisões 86 e 89); (b) o endereço da tela não mudou, só o item saiu do menu; (c) Parâmetros Específicos continua em Ferramentas. Só visual; nada no Supabase.

@@ -98,7 +98,8 @@ export const MENU_GERAIS: readonly (ItemMenu | GrupoMenu)[] = [
 export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
   { titulo: "Cadastrar Caixa", url: "/caixas-ferramentas", icone: "Archive", soAdmin: true, search: { aba: "habilitar" } },
   { titulo: "Cadastrar Ferramenta", url: "/cadastros/ferramentas", icone: "Wrench" },
-  ...itensApoio("ferramentas"),
+  // Sem Tamanho e Medidas de Produto: ferramenta não tem tamanho (decisão 115).
+  itemEspecificos("ferramentas"),
 ];
 
 // Parâmetros > Uniformes (decisão 48): Cadastrar Uniforme, no mesmo desenho do Cadastrar EPI.
