@@ -20,7 +20,9 @@ import {
   adicionarAcaoManutencaoVeiculo,
   adicionarGrupoChecklistVeiculo,
   cadastrarPadraoChecklistVeiculos,
+  restaurarPadroesAcoesManutencaoVeiculo,
   restaurarPadroesChecklistVeiculos,
+  situacaoPadraoAcoesManutencaoVeiculo,
   situacaoPadraoChecklistVeiculos,
   type SituacaoPadraoChecklist,
   editarGrupoChecklistVeiculo,
@@ -261,6 +263,7 @@ export function AcoesManutencaoVeiculoLista() {
         )
       }
       onExcluir={(l) => executar(() => removerAcaoManutencaoVeiculo(l.id), "Ação de manutenção excluída.")}
+      acaoExtra={<RestaurarPadraoAcoes />}
       onPadrao={() => executar(() => mensagemPadraoToast(cadastrarPadraoVeiculos()))}
     />
   );
@@ -293,15 +296,29 @@ const ROTULO_SITUACAO: Record<SituacaoPadraoChecklist, string> = {
   ausente: "Não cadastrado",
 };
 
-// Restaurar padrão inicial do check list (decisão 110): mostra todos os grupos do padrão inicial, o
+// Restaurar padrão inicial (decisões 110 e 111): mostra todos os itens do padrão inicial da lista, o
 // responsável marca os que quer restaurar e, depois de confirmar, tudo é gravado de uma vez.
-function RestaurarPadraoChecklist() {
+function RestaurarPadraoInicial({
+  singular,
+  plural,
+  situacoes,
+  restaurar,
+  perdas,
+  feminino = false,
+}: {
+  singular: string;
+  plural: string;
+  situacoes: () => { nome: string; itens: readonly string[]; situacao: SituacaoPadraoChecklist }[];
+  restaurar: (nomes: string[]) => { restaurados: number; criados: number; semTipo?: number };
+  perdas?: string;
+  feminino?: boolean;
+}) {
   useParametrosBase(); // atualiza a lista quando o cadastro muda
   const [aberto, setAberto] = useState(false);
   const [marcados, setMarcados] = useState<string[]>([]);
   const salvando = useRef(false);
   const [travado, setTravado] = useState(false);
-  const padroes = aberto ? situacaoPadraoChecklistVeiculos() : [];
+  const padroes = aberto ? situacoes() : [];
 
   function abrir() {
     setMarcados([]);
@@ -315,17 +332,17 @@ function RestaurarPadraoChecklist() {
     const alterados = padroes.filter((p) => marcados.includes(p.nome) && p.situacao === "alterado").length;
     const novos = padroes.filter((p) => marcados.includes(p.nome) && p.situacao === "ausente").length;
     const aviso =
-      `Restaurar ${marcados.length} ${marcados.length === 1 ? "grupo" : "grupos"} ao padrão inicial?` +
-      (alterados > 0 ? ` As alterações feitas em ${alterados} ${alterados === 1 ? "grupo" : "grupos"} (nome, itens e tipos de veículo) se perdem.` : "") +
-      (novos > 0 ? ` ${novos} ${novos === 1 ? "grupo excluído será cadastrado" : "grupos excluídos serão cadastrados"} de novo.` : "");
+      `Restaurar ${marcados.length} ${marcados.length === 1 ? singular : plural} ao padrão inicial?` +
+      (alterados > 0 ? ` As alterações feitas em ${alterados} ${alterados === 1 ? singular : plural} ${perdas ?? ""}se perdem.` : "") +
+      (novos > 0 ? ` ${novos} ${novos === 1 ? singular : plural} ${feminino ? (novos === 1 ? "excluída será cadastrada" : "excluídas serão cadastradas") : novos === 1 ? "excluído será cadastrado" : "excluídos serão cadastrados"} de novo.` : "");
     if (!confirm(aviso)) return;
     salvando.current = true;
     setTravado(true);
     const ok = executar(() => {
-      const r = restaurarPadroesChecklistVeiculos(marcados);
+      const r = restaurar(marcados);
       const partes = [r.restaurados > 0 ? `${r.restaurados} ${r.restaurados === 1 ? "restaurado" : "restaurados"}` : "", r.criados > 0 ? `${r.criados} ${r.criados === 1 ? "cadastrado" : "cadastrados"} de novo` : ""].filter(Boolean);
       toast.success(
-        `Padrão inicial: ${partes.join(" e ")}.` + (r.semTipo > 0 ? ` ${r.semTipo} sem o tipo de veículo em Gerais: o tipo foi mantido como estava, escolha em Editar.` : ""),
+        `Padrão inicial: ${partes.join(" e ")}.` + ((r.semTipo ?? 0) > 0 ? ` ${r.semTipo} sem o tipo de veículo em Gerais: o tipo foi mantido como estava, escolha em Editar.` : ""),
       );
     });
     if (ok) setAberto(false);
@@ -345,7 +362,7 @@ function RestaurarPadraoChecklist() {
           <DialogHeader>
             <DialogTitle>Restaurar padrão inicial</DialogTitle>
             <DialogDescription>
-              Estes são todos os grupos do padrão inicial do check list. Marque os que quer restaurar: nome, itens e tipos de veículo voltam ao padrão, e o grupo excluído é cadastrado de novo.
+              Estes são todos os itens do padrão inicial desta lista. Marque os que quer restaurar: voltam ao padrão, e o que foi excluído é cadastrado de novo.
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-between text-sm">
@@ -384,6 +401,31 @@ function RestaurarPadraoChecklist() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function RestaurarPadraoChecklist() {
+  return (
+    <RestaurarPadraoInicial
+      singular="grupo"
+      plural="grupos"
+      perdas="(nome, itens e tipos de veículo) "
+      situacoes={situacaoPadraoChecklistVeiculos}
+      restaurar={restaurarPadroesChecklistVeiculos}
+    />
+  );
+}
+
+function RestaurarPadraoAcoes() {
+  return (
+    <RestaurarPadraoInicial
+      singular="ação"
+      feminino
+      plural="ações"
+      perdas="(nome e subitens) "
+      situacoes={situacaoPadraoAcoesManutencaoVeiculo}
+      restaurar={restaurarPadroesAcoesManutencaoVeiculo}
+    />
   );
 }
 

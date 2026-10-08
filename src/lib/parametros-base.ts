@@ -696,6 +696,52 @@ export function cadastrarPadraoVeiculos(storage = storagePadrao()): { acoes: num
   });
 }
 
+const ehAcaoManutencaoPadrao = (nome: string): boolean => ACOES_MANUTENCAO_PADRAO.some((p) => mesmoNome(p.nome, nome));
+
+/**
+ * Todas as ações de manutenção do padrão inicial e a situação de cada uma no cadastro atual (decisão 111):
+ * "igual" (nome e subitens, na ordem, como no padrão), "alterado" ou "ausente" (não existe mais).
+ */
+export function situacaoPadraoAcoesManutencaoVeiculo(storage = storagePadrao()): { nome: string; itens: readonly string[]; situacao: SituacaoPadraoChecklist }[] {
+  const d = lerParametros(storage);
+  return ACOES_MANUTENCAO_PADRAO.map((padrao) => {
+    const nome = capitalizarCadastro(padrao.nome);
+    const subitens = padrao.subitens.map((i) => capitalizarCadastro(i));
+    const acao = d.acoesManutencaoVeiculo.find((a) => mesmoNome(a.nome, padrao.nome));
+    if (!acao) return { nome, itens: subitens, situacao: "ausente" as const };
+    const igual = acao.nome === nome && acao.subitens.length === subitens.length && acao.subitens.every((i, n) => i.nome === subitens[n]);
+    return { nome, itens: subitens, situacao: igual ? ("igual" as const) : ("alterado" as const) };
+  });
+}
+
+/**
+ * Restaura de uma vez as ações de manutenção do padrão inicial escolhidas (decisão 111), tudo ou nada.
+ * Ação que existe volta ao nome e aos subitens iniciais (o id fica, e os subitens que já existiam mantêm
+ * o id); ação que foi excluída é cadastrada de novo. O que não foi marcado não muda.
+ */
+export function restaurarPadroesAcoesManutencaoVeiculo(nomes: string[], storage = storagePadrao()): { restaurados: number; criados: number } {
+  if (nomes.length === 0) throw new Error("Marque ao menos um padrão para restaurar.");
+  if (nomes.some((n) => !ehAcaoManutencaoPadrao(n))) throw new Error("Há uma ação que não faz parte do padrão inicial.");
+  const escolhidas = ACOES_MANUTENCAO_PADRAO.filter((p) => nomes.some((n) => mesmoNome(p.nome, n)));
+  return alterar(storage, (d) => {
+    let restaurados = 0;
+    let criados = 0;
+    for (const padrao of escolhidas) {
+      const nome = capitalizarCadastro(padrao.nome);
+      const acao = d.acoesManutencaoVeiculo.find((a) => mesmoNome(a.nome, padrao.nome));
+      if (acao) {
+        acao.nome = nome;
+        acao.subitens = montarSubitens(acao.subitens, [...padrao.subitens]);
+        restaurados += 1;
+      } else {
+        d.acoesManutencaoVeiculo.push({ id: novoId(), nome, subitens: montarSubitens([], [...padrao.subitens]) });
+        criados += 1;
+      }
+    }
+    return { restaurados, criados };
+  });
+}
+
 // ---------- Desativar e reativar ----------
 
 export const estaAtivo = (d: ParametrosBase, id: string) => !d.inativos.includes(id);

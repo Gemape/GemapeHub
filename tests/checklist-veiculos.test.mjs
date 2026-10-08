@@ -231,7 +231,8 @@ test("a lista Itens check list tem um único botão Restaurar padrão inicial, s
   const lista = readFileSync(new URL("../src/components/parametros/VeiculosListasParametros.tsx", import.meta.url), "utf8");
   assert.match(lista, /acaoExtra=\{<RestaurarPadraoChecklist \/>\}/);
   assert.match(lista, /Restaurar padrão inicial/);
-  assert.match(lista, /restaurarPadroesChecklistVeiculos\(marcados\)/);
+  assert.match(lista, /restaurar=\{restaurarPadroesChecklistVeiculos\}/);
+  assert.match(lista, /restaurar\(marcados\)/);
   assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
   assert.doesNotMatch(lista, /onRestaurar|restauravel/);
   const acoes = readFileSync(new URL("../src/components/parametros/AcoesLinha.tsx", import.meta.url), "utf8");
