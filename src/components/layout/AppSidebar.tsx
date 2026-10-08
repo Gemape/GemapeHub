@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
+import logoMarca from "@/assets/logo-gemape-40-anos.png";
 import { useAccess } from "@/lib/access-context";
 import {
   ABAS_EPI,
@@ -24,7 +25,6 @@ import {
   Shirt,
   Users,
   Wrench,
-  Cog,
   ClipboardList,
   History,
   ShoppingCart,
@@ -336,18 +336,17 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="px-4 py-8">
-        <div className="flex items-center gap-4">
-          <div className="logo-engrenagem" aria-hidden="true">
-            <Cog className="engrenagem-girando size-10" strokeWidth={1.5} />
-            <Cog className="engrenagem-inversa size-6" strokeWidth={1.75} />
-          </div>
-          <div className="flex-1 text-center leading-tight">
-            <h2 className="marca-titulo font-display text-3xl font-black tracking-tighter">GEMAPE</h2>
-            <div className="marca-linha mt-1.5" aria-hidden="true" />
-            <p className="marca-subtitulo mt-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/80">
-              Gestão de Patrimônio
-            </p>
-          </div>
+        <div className="text-center leading-tight">
+          <div
+            className="logo-marca"
+            role="img"
+            aria-label="GEMAPE, 40 anos, máquinas e peças"
+            style={{ maskImage: `url(${logoMarca})`, WebkitMaskImage: `url(${logoMarca})` }}
+          />
+          <div className="marca-linha mt-3" aria-hidden="true" />
+          <p className="marca-subtitulo mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/80">
+            Gestão de Patrimônio
+          </p>
         </div>
       </SidebarHeader>
       <SidebarContent>

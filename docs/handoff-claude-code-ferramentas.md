@@ -358,3 +358,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 109: marca do menu (GEMAPE / Gestão de Patrimônio) centralizada e animada (`marca-titulo`, `marca-linha`, `marca-subtitulo` em styles.css); parada com reduzir movimento.
 - Decisão 110: botão único Restaurar padrão inicial ao lado de Cadastrar grupo, com janela de checkboxes e confirmação (`RestaurarPadraoChecklist`, `situacaoPadraoChecklistVeiculos`, `restaurarPadroesChecklistVeiculos`); botões por linha removidos.
 - Decisão 111: botão Restaurar padrão inicial em Ações de manutenção, mesmo componente do check list (`RestaurarPadraoInicial`, `situacaoPadraoAcoesManutencaoVeiculo`, `restaurarPadroesAcoesManutencaoVeiculo`).
+- Decisão 114: logo GEMAPE 40 anos animada no menu lateral (`logo-marca` em styles.css, imagem em src/assets), no lugar das engrenagens e do texto GEMAPE; engrenagem das telas de acesso mantida.
