@@ -149,10 +149,11 @@ test("associações sem tipo gravado: periódico se tinha periodicidade definida
   assert.deepEqual(lerAssociacoes(s)[0].itens.map((i) => i.tipo), ["periodico", "avulso"]);
 });
 
-test("Parâmetros > Veículos > Check list mostra primeiro Associar itens e depois os itens; o diálogo marca periódico ou avulso (dec 119)", () => {
+test("Parâmetros > Veículos > Check list mostra primeiro Associar itens e depois os itens; o diálogo tem o campo Tipo de check list, Periódico ou Avulso (dec 119)", () => {
   const pagina = readFileSync(new URL("../src/components/parametros/ChecklistParametros.tsx", import.meta.url), "utf8");
   assert.ok(pagina.indexOf("<AssociarChecklistVeiculo secao />") < pagina.indexOf("<ChecklistVeiculoLista secao />"));
   const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
-  assert.match(tela, /Tipo do check list/);
-  assert.match(tela, /mudarTipo\(/);
+  assert.match(tela, /htmlFor="assoc-tipo">Tipo de check list/);
+  assert.match(tela, /tipo: tipoAtual/);
+  assert.match(tela, /i\.tipo === tipoAtual/);
 });

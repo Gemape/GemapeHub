@@ -86,25 +86,14 @@ test("avulso concluído com item NOK gera ocorrência, mesmo sem responsável", 
   assert.equal(concluido.itens.filter((i) => i.ocorrenciaCodigo).length, 1);
 });
 
-test("Novo check list avulso com periodicidade cria um periódico sem responsável, que entra na lista (dec 118)", () => {
-  const s = memoria();
-  assert.throws(() => iniciarChecklistAvulso(avulso({ periodicidade: "Anual" }), s, agora), /periodicidade/i);
-  const c = iniciarChecklistAvulso(avulso({ periodicidade: "Mensal" }), s, agora);
-  assert.equal(c.periodicidade, "Mensal");
-  assert.equal(c.responsavelNome, "");
-  assert.equal(checklistVisivelNaLista(c), true);
-  assert.equal(nomeDoChecklist({ placa: "GEM-2026", periodicidade: c.periodicidade, responsavelNome: c.responsavelNome }), "GEM-2026 >> Mensal >> Não definido");
-  // O periódico criado aqui bloqueia outro periódico em andamento, mas não o avulso puro.
-  assert.throws(() => iniciarChecklistAvulso(avulso({ periodicidade: "Diário" }), s, agora), /em andamento/i);
-  assert.equal(iniciarChecklistAvulso(avulso(), s, agora).periodicidade, "");
-});
-
-test("a janela do Novo check list avulso não tem o campo Tipo de veículo e pede avulso ou periódico e a periodicidade (dec 118)", () => {
+test("a janela Novo check list não tem o campo Tipo de veículo e pede o Tipo de check list, Periódico ou Avulso (dec 120)", () => {
   const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
-  assert.match(tela, /\{!avulsoNovo && <div className="min-w-0 space-y-1\.5">\s*<Label htmlFor="ck_tipo">Tipo de veículo/);
-  assert.match(tela, /htmlFor="ck_modo">Tipo do check list/);
-  assert.match(tela, /htmlFor="ck_per_avulso">Periodicidade/);
-  assert.match(tela, /Escolha a periodicidade do check list periódico/);
+  assert.doesNotMatch(tela, /Label htmlFor="ck_tipo"/);
+  assert.doesNotMatch(tela, />Tipo de veículo</);
+  assert.match(tela, /htmlFor="ck_modo">Tipo de check list/);
+  assert.match(tela, /<SelectItem value="periodico">Periódico<\/SelectItem>/);
+  assert.match(tela, /<SelectItem value="avulso">Avulso<\/SelectItem>/);
+  assert.doesNotMatch(tela, /periodicidadeAvulso/);
 });
 
 test("o módulo traz os grupos pela periodicidade e pelo tipo avulso da associação (dec 119)", () => {

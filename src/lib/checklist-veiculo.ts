@@ -230,21 +230,13 @@ export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePad
   return gravarNovoChecklist({ ...entrada, periodicidade: entrada.periodicidade }, false, storage, agora);
 }
 
-// Check list avulso (decisão 90): sem periodicidade e sem responsável, com todos os grupos do tipo do veículo. Fica fora
+// Check list avulso (decisão 90): sem periodicidade e sem responsável, com os grupos que a janela mandar. Fica fora
 // da lista principal, do painel do mês e da situação por veículo; gera ocorrência dos itens NOK como qualquer outro.
-// Com `periodicidade` (decisão 118) o mesmo formulário cria um check list periódico, sem responsável, que vai para a lista principal.
-export type EntradaChecklistAvulso = Pick<EntradaChecklist, "veiculoId" | "veiculoRotulo" | "tipoVeiculo" | "grupos"> & {
-  periodicidade?: string | null | undefined;
-};
+export type EntradaChecklistAvulso = Pick<EntradaChecklist, "veiculoId" | "veiculoRotulo" | "tipoVeiculo" | "grupos">;
 
 export function iniciarChecklistAvulso(entrada: EntradaChecklistAvulso, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
-  const { periodicidade, ...base } = entrada;
-  if (periodicidade === undefined || periodicidade === null || periodicidade === "") {
-    return gravarNovoChecklist({ ...base, periodicidade: "", responsavelId: "", responsavelNome: "" }, true, storage, agora);
-  }
-  if (!ehPeriodicidade(periodicidade)) throw new Error("Escolha a periodicidade (Diário, Semanal, Quinzenal ou Mensal).");
-  return gravarNovoChecklist({ ...base, periodicidade, responsavelId: "", responsavelNome: "" }, false, storage, agora);
+  return gravarNovoChecklist({ ...entrada, periodicidade: "", responsavelId: "", responsavelNome: "" }, true, storage, agora);
 }
 
 function gravarNovoChecklist(entrada: Omit<EntradaChecklist, "periodicidade"> & { periodicidade: Periodicidade | "" }, avulso: boolean, storage: StorageLike | null, agora: Date): ChecklistVeiculo {
