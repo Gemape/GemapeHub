@@ -8,6 +8,8 @@ import type { AssociacaoChecklist } from "./checklist-associacao-veiculo.ts";
 import { alterarLista, lerLista, type StorageLike } from "./registros-veiculo.ts";
 
 const CHAVE = "gemape-demo-checklists-veiculo";
+// Último número de código já entregue: nunca diminui, para que o código de um check list descartado não volte a ser usado.
+const CHAVE_SEQUENCIA = "gemape-demo-checklists-veiculo-sequencia";
 export const MAX_FOTOS_ITEM = 3;
 const LIMITE_FOTO = 600_000; // caracteres do data URL; a foto comprimida fica bem abaixo disso
 
@@ -239,6 +241,16 @@ export function iniciarChecklistAvulso(entrada: EntradaChecklistAvulso, storage 
   return gravarNovoChecklist({ ...entrada, periodicidade: "", responsavelId: "", responsavelNome: "" }, true, storage, agora);
 }
 
+// Cada check list tem um código único (CHK-0001, CHK-0002...): o próximo é maior que o maior código existente e que o último já entregue.
+function proximoCodigo(lista: ChecklistVeiculo[], storage: StorageLike | null): string {
+  const numero = (texto: string | null | undefined) => Number(String(texto ?? "").replace(/\D/g, "")) || 0;
+  let entregue = 0;
+  try { entregue = numero(storage?.getItem(CHAVE_SEQUENCIA)); } catch { /* sem armazenamento: vale só a lista */ }
+  const proximo = Math.max(entregue, ...lista.map((c) => numero(c.codigo))) + 1;
+  try { storage?.setItem(CHAVE_SEQUENCIA, String(proximo)); } catch { /* sem o que fazer */ }
+  return `CHK-${String(proximo).padStart(4, "0")}`;
+}
+
 function gravarNovoChecklist(entrada: Omit<EntradaChecklist, "periodicidade"> & { periodicidade: Periodicidade | "" }, avulso: boolean, storage: StorageLike | null, agora: Date): ChecklistVeiculo {
   const itens: ItemChecklist[] = entrada.grupos.flatMap((g) =>
     g.itens.map((i) => ({
@@ -254,10 +266,9 @@ function gravarNovoChecklist(entrada: Omit<EntradaChecklist, "periodicidade"> & 
       if (lista.some((c) => c.veiculoId === entrada.veiculoId && c.status === "Em andamento" && checklistVisivelNaLista(c) === !avulso)) {
         throw new Error(avulso ? "Este veículo já tem um check list avulso em andamento. Conclua-o antes de iniciar outro." : "Este veículo já tem um check list em andamento. Conclua-o antes de iniciar outro.");
       }
-      const maior = lista.reduce((m, c) => Math.max(m, Number(c.codigo.replace(/\D/g, "")) || 0), 0);
       criado = {
         id: novoId(),
-        codigo: `CHK-${String(maior + 1).padStart(4, "0")}`,
+        codigo: proximoCodigo(lista, storage),
         veiculoId: entrada.veiculoId,
         veiculoRotulo: limpar(entrada.veiculoRotulo, 200),
         tipoVeiculo: limpar(entrada.tipoVeiculo, 80),

@@ -109,3 +109,20 @@ test("trocar a periodicidade na janela Novo check list não muda a situação po
   assert.match(tela, /const per = periodicidadeDe\(v\);/);
   assert.match(tela, /periodicidade: periodicidadeDoDialogo\(veiculoEscolhido\)/);
 });
+
+test("o código do check list nunca se repete, nem depois de descartar o último (dec 121)", async () => {
+  const { excluirChecklistEmAndamento } = await import("../src/lib/checklist-veiculo.ts");
+  const s = memoria();
+  const a = iniciarChecklistAvulso(avulso(), s, agora);
+  const b = iniciarChecklist(periodico(), s, agora);
+  assert.deepEqual([a.codigo, b.codigo], ["CHK-0001", "CHK-0002"]);
+  excluirChecklistEmAndamento(b.id, s);
+  const c = iniciarChecklist(periodico(), s, agora);
+  assert.equal(c.codigo, "CHK-0003");
+  const todos = lerChecklists(s).map((x) => x.codigo);
+  assert.equal(new Set(todos).size, todos.length);
+  // sem armazenamento da sequência (dados antigos), parte do maior código da lista
+  const antigo = memoria();
+  antigo.setItem("gemape-demo-checklists-veiculo", JSON.stringify([{ ...c, id: "x", codigo: "CHK-0007", status: "Concluído" }]));
+  assert.equal(iniciarChecklist(periodico(), antigo, agora).codigo, "CHK-0008");
+});

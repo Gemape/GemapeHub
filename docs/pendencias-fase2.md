@@ -52,3 +52,5 @@ Nada abaixo deve ser feito antes da ordem do responsável.
 - Tamanhos por grupo de ferramenta (decisão 117): precisará de tabela grupo -> tamanhos no banco real. Sem tabela criada agora.
 - Check list de veículo (decisão 116): a associação precisará de `obrigatorio` por grupo, periodicidade nula e responsável nulo. Sem tabela criada agora.
 - Check list de veículo (decisão 119): cada grupo associado precisará de `tipo` (periódico ou avulso); avulso grava periodicidade nula.
+
+- Check list (dec 121): o código do check list (CHK-NNNN) deve vir de sequência do banco com restrição única; hoje a sequência é local (`gemape-demo-checklists-veiculo-sequencia`).
