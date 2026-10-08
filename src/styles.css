@@ -249,7 +249,7 @@
   }
 }
 
-/* Engrenagem do logo: gira devagar e para para quem pede menos movimento. */
+/* Engrenagem pequena das telas de acesso: gira devagar e para para quem pede menos movimento. */
 @keyframes engrenagem-girando {
   from {
     transform: rotate(0deg);
@@ -266,82 +266,62 @@
   }
 }
 
-/* Logo do menu: engrenagem grande em vidro, com uma menor girando ao contrário e um brilho que pulsa. */
-@keyframes engrenagem-inversa {
+/* Logo GEMAPE 40 anos do menu (decisão 114): entra com um leve zoom, um brilho percorre as letras e um halo
+   pulsa devagar. Para quem pede menos movimento fica parado. A imagem é a máscara; o gradiente vai por trás. */
+@keyframes logo-entrada {
   from {
-    transform: rotate(360deg);
+    opacity: 0;
+    transform: scale(0.88);
   }
   to {
-    transform: rotate(0deg);
+    opacity: 1;
+    transform: scale(1);
   }
 }
-@keyframes logo-brilho {
+@keyframes logo-varredura {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+@keyframes logo-halo {
   0%,
   100% {
-    box-shadow:
-      0 0 0 0 oklch(1 0 0 / 0.22),
-      0 8px 24px oklch(0.15 0.2 266 / 0.45),
-      inset 0 1px 0 oklch(1 0 0 / 0.5);
+    filter: drop-shadow(0 2px 6px oklch(0.15 0.2 266 / 0.45)) drop-shadow(0 0 4px oklch(1 0 0 / 0.15));
   }
   50% {
-    box-shadow:
-      0 0 0 8px oklch(1 0 0 / 0),
-      0 8px 28px oklch(0.15 0.2 266 / 0.55),
-      inset 0 1px 0 oklch(1 0 0 / 0.5);
+    filter: drop-shadow(0 3px 8px oklch(0.15 0.2 266 / 0.5)) drop-shadow(0 0 14px oklch(0.85 0.12 250 / 0.55));
   }
 }
-@utility engrenagem-inversa {
-  animation: engrenagem-inversa 4s linear infinite;
-  transform-origin: 50% 50%;
+@utility logo-marca {
+  display: block;
+  width: 100%;
+  aspect-ratio: 640 / 211;
+  background-image: linear-gradient(
+    105deg,
+    oklch(1 0 0) 0%,
+    oklch(1 0 0) 38%,
+    oklch(0.8 0.14 250) 46%,
+    oklch(1 0 0) 54%,
+    oklch(1 0 0) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  animation:
+    logo-entrada 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    logo-varredura 4.5s ease-in-out 1s infinite,
+    logo-halo 4s ease-in-out infinite;
   @media (prefers-reduced-motion: reduce) {
     animation: none;
-  }
-}
-@utility logo-engrenagem {
-  position: relative;
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 4.25rem;
-  height: 4.25rem;
-  border-radius: 1.25rem;
-  color: #fff;
-  background: linear-gradient(145deg, oklch(1 0 0 / 0.34), oklch(1 0 0 / 0.1));
-  border: 1px solid oklch(1 0 0 / 0.4);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  animation: logo-brilho 3.5s ease-in-out infinite;
-  /* Duas engrenagens de 12 dentes encaixadas na diagonal: mesma velocidade, sentidos opostos,
-     e a pequena começa 15° adiantada para os dentes de uma caírem nos vãos da outra. */
-  & > .engrenagem-girando {
-    position: absolute;
-    left: 8px;
-    top: 8px;
-    animation-duration: 8s;
-    filter: drop-shadow(0 2px 4px oklch(0.15 0.2 266 / 0.45));
-  }
-  & > .engrenagem-inversa {
-    position: absolute;
-    left: 34px;
-    top: 34px;
-    animation: engrenagem-encaixada 8s linear infinite;
-    filter: drop-shadow(0 2px 4px oklch(0.15 0.2 266 / 0.45));
-  }
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-    & > .engrenagem-inversa {
-      animation: none;
-      transform: rotate(15deg);
-    }
-  }
-}
-@keyframes engrenagem-encaixada {
-  from {
-    transform: rotate(15deg);
-  }
-  to {
-    transform: rotate(-345deg);
+    background-position: 0 0;
   }
 }
 
@@ -444,15 +424,7 @@
   }
 }
 
-/* Marca do menu (decisão 109): GEMAPE com brilho que percorre as letras e subtítulo que respira. */
-@keyframes marca-brilho {
-  0% {
-    background-position: 200% 50%;
-  }
-  100% {
-    background-position: -100% 50%;
-  }
-}
+/* Subtítulo e linha da marca do menu (decisões 109 e 114): a linha respira e o subtítulo entra de baixo. */
 @keyframes marca-entrada {
   from {
     opacity: 0;
@@ -474,26 +446,6 @@
   50% {
     transform: scaleX(1);
     opacity: 1;
-  }
-}
-@utility marca-titulo {
-  background-image: linear-gradient(
-    100deg,
-    oklch(1 0 0) 0%,
-    oklch(0.86 0.1 250) 30%,
-    oklch(1 0 0) 50%,
-    oklch(0.86 0.1 250) 70%,
-    oklch(1 0 0) 100%
-  );
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 2px 10px oklch(1 0 0 / 0.3));
-  animation: marca-brilho 5s linear infinite;
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-    background-position: 0 50%;
   }
 }
 @utility marca-subtitulo {
