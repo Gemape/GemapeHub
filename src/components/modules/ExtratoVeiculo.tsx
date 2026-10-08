@@ -119,7 +119,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sugestoes.length === 0 && <Vazio colunas={5} texto="Este veículo não tem plano de manutenções (Parâmetros > Veículos > Plano de manutenções)." />}
+                {sugestoes.length === 0 && <Vazio colunas={5} texto="Este veículo não tem plano de manutenções (Parâmetros > Veículos > Manutenção)." />}
                 {sugestoes.map((s) => (
                   <TableRow key={s.acaoId}>
                     <TableCell>{s.nome}</TableCell>

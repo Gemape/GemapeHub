@@ -47,7 +47,7 @@ export function SeletorAcaoManutencao({
         </Select>
         {acoes.length === 0 && (
           <p className="text-xs text-muted-foreground">
-            Nenhuma ação cadastrada. Cadastre em Parâmetros &gt; Veículos &gt; Ações de manutenção.
+            Nenhuma ação cadastrada. Cadastre em Parâmetros &gt; Veículos &gt; Manutenção.
           </p>
         )}
       </div>

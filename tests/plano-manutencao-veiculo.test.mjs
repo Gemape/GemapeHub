@@ -61,7 +61,7 @@ test("dados ilegíveis não são sobrescritos", () => {
 
 test("a tela fica em Parâmetros > Veículos, com duas caixas, Clonar/Editar/Excluir e sem Supabase", () => {
   const menu = readFileSync("src/lib/menu-parametros.ts", "utf8");
-  assert.match(menu, /url: "\/cadastros\/veiculos-plano-manutencao"/);
+  assert.match(menu, /url: "\/cadastros\/veiculos-manutencao"/);
   const tela = readFileSync("src/components/parametros/PlanoManutencaoVeiculo.tsx", "utf8");
   assert.match(tela, /Grupos de ação/);
   assert.match(tela, /Ações habilitadas/);

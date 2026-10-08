@@ -267,7 +267,7 @@ export function ManutencaoVeiculoModulo() {
               <Label>Grupos de ações</Label>
               <p className="text-xs text-muted-foreground">Marque todos os grupos que a manutenção abrangeu e, em cada um, as ações feitas.</p>
               {acoes.length === 0 && (
-                <p className="text-xs text-muted-foreground">Cadastre os grupos em Parâmetros &gt; Veículos &gt; Ações de manutenção.</p>
+                <p className="text-xs text-muted-foreground">Cadastre os grupos em Parâmetros &gt; Veículos &gt; Manutenção.</p>
               )}
               {acoes.map((grupo) => {
                 const grupoMarcado = grupo.id in marcados;

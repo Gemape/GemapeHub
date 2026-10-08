@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
@@ -36,6 +36,7 @@ import {
   removerAcaoManutencaoVeiculo,
   removerTipoOcorrenciaVeiculo,
 } from "@/lib/parametros-base";
+import { separarPorTipoVeiculo } from "@/lib/checklist-por-tipo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 // `extra` é a descrição (tipos de ocorrência) ou os subitens, um por linha (ações de manutenção).
@@ -55,6 +56,8 @@ function ListaVeiculos({
   onPadrao,
   opcoesTipos,
   acaoExtra,
+  secao = false,
+  secoes,
 }: {
   titulo: string;
   subtitulo: string;
@@ -68,6 +71,10 @@ function ListaVeiculos({
   opcoesTipos?: { id: string; nome: string }[];
   // Botão a mais ao lado de "Cadastrar" (Restaurar padrão inicial do check list, decisão 110).
   acaoExtra?: React.ReactNode;
+  // Dentro de uma página com mais de uma lista (decisão 112): sem o caminho no alto e com título de seção.
+  secao?: boolean;
+  // Linhas separadas em seções, com uma faixa de título por seção (decisão 113: Itens check list por tipo de veículo).
+  secoes?: { chave: string; titulo: string; linhas: Linha[] }[];
 }) {
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Linha | null>(null);
@@ -106,8 +113,8 @@ function ListaVeiculos({
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">Parâmetros &gt; Veículos</p>
-          <h1 className="text-2xl font-bold">{titulo}</h1>
+          {!secao && <p className="text-eyebrow">Parâmetros &gt; Veículos</p>}
+          {secao ? <h2 className="text-xl font-bold">{titulo}</h2> : <h1 className="text-2xl font-bold">{titulo}</h1>}
           <p className="mt-1 text-sm text-muted-foreground">{subtitulo}</p>
         </div>
         <div className="flex gap-2">
@@ -139,32 +146,46 @@ function ListaVeiculos({
                 </td>
               </tr>
             )}
-            {linhas.map((l) => (
-              <tr key={l.id}>
-                <td className="px-3 py-2 font-medium">{l.nome}</td>
-                {campoExtra && (
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {campoExtra === "subitens" || campoExtra === "itens" ? (l.extra ?? "").split("\n").filter(Boolean).join(" · ") : l.extra}
-                  </td>
+            {(secoes ?? [{ chave: "todas", titulo: "", linhas }]).map((grupo) => (
+              <Fragment key={grupo.chave}>
+                {secoes && (
+                  <tr className="bg-muted/50">
+                    <th colSpan={(campoExtra ? 3 : 2) + (opcoesTipos ? 1 : 0)} className="px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wide">
+                      {grupo.titulo} <span className="font-normal text-muted-foreground">({grupo.linhas.length})</span>
+                    </th>
+                  </tr>
                 )}
-                {opcoesTipos && (
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {l.tipos?.includes(TODOS_OS_TIPOS)
-                      ? "Todos os tipos"
-                      : (l.tipos ?? []).map((t) => opcoesTipos.find((o) => o.id === t)?.nome).filter(Boolean).join(", ") || "Nenhum (não aparece em check list)"}
-                  </td>
-                )}
-                <td className="px-3 py-2">
-                  <AcoesLinha
-                    rotulo={l.nome}
-                    onClonar={() => abrir(l, true)}
-                    onEditar={() => abrir(l, false)}
-                    onExcluir={() => {
-                      if (confirm(`Excluir ${l.nome}?`)) onExcluir(l);
-                    }}
-                  />
-                </td>
-              </tr>
+                {grupo.linhas.map((l) => {
+                  const chave = grupo.chave;
+                  return (
+                    <tr key={`${chave}-${l.id}`}>
+                      <td className="px-3 py-2 font-medium">{l.nome}</td>
+                      {campoExtra && (
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {campoExtra === "subitens" || campoExtra === "itens" ? (l.extra ?? "").split("\n").filter(Boolean).join(" · ") : l.extra}
+                        </td>
+                      )}
+                      {opcoesTipos && (
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {l.tipos?.includes(TODOS_OS_TIPOS)
+                            ? "Todos os tipos"
+                            : (l.tipos ?? []).map((t) => opcoesTipos.find((o) => o.id === t)?.nome).filter(Boolean).join(", ") || "Nenhum (não aparece em check list)"}
+                        </td>
+                      )}
+                      <td className="px-3 py-2">
+                        <AcoesLinha
+                          rotulo={l.nome}
+                          onClonar={() => abrir(l, true)}
+                          onEditar={() => abrir(l, false)}
+                          onExcluir={() => {
+                            if (confirm(`Excluir ${l.nome}?`)) onExcluir(l);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -246,7 +267,7 @@ function mensagemPadraoToast(r: { acoes: number; tipos: number }): void {
   toast.success(total === 0 ? "Os itens padrão já estão cadastrados." : `${total} itens padrão cadastrados.`);
 }
 
-export function AcoesManutencaoVeiculoLista() {
+export function AcoesManutencaoVeiculoLista({ secao = false }: { secao?: boolean } = {}) {
   const { acoesManutencaoVeiculo } = useParametrosBase();
   const subitensDe = (texto: string) => texto.split("\n");
   return (
@@ -254,6 +275,7 @@ export function AcoesManutencaoVeiculoLista() {
       titulo="Ações de manutenção"
       subtitulo="Cada ação é um grupo (pai) com seus subitens (filhos). Ao registrar uma manutenção, escolhe-se o pai e marcam-se os filhos."
       singular="ação de manutenção"
+      secao={secao}
       linhas={acoesManutencaoVeiculo.map((a) => ({ id: a.id, nome: a.nome, extra: a.subitens.map((i) => i.nome).join("\n") }))}
       campoExtra="subitens"
       onSalvar={(id, nome, extra) =>
@@ -429,13 +451,16 @@ function RestaurarPadraoAcoes() {
   );
 }
 
-export function ChecklistVeiculoLista() {
+export function ChecklistVeiculoLista({ secao = false }: { secao?: boolean } = {}) {
   const parametros = useParametrosBase();
   const { itensChecklistVeiculo } = parametros;
   const itensDe = (texto: string) => texto.split("\n");
   const tiposDeVeiculo = subcategoriasDa(parametros, "cat-veiculos").map((s) => ({ id: s.id, nome: s.nome }));
+  const linhaDe = (g: (typeof itensChecklistVeiculo)[number]) => ({ id: g.id, nome: g.nome, extra: g.itens.map((i) => i.nome).join("\n"), tipos: g.tiposVeiculo });
   return (
     <ListaVeiculos
+      secao={secao}
+      secoes={separarPorTipoVeiculo(itensChecklistVeiculo, tiposDeVeiculo).map((x) => ({ chave: x.chave, titulo: x.titulo, linhas: x.itens.map(linhaDe) }))}
       titulo="Itens check list"
       subtitulo="Cada grupo é um tipo de veículo e uma seção (ex.: Veículos leves · Mecânica), com os itens a conferir. O check list do veículo traz os grupos ligados ao tipo dele (subcategoria de Veículos) e os de todos os tipos."
       singular="grupo do check list"

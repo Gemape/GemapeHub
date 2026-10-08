@@ -98,9 +98,9 @@ test("dados antigos sem a lista continuam abrindo", () => {
 
 test("a tela fica em Parâmetros > Veículos, com Clonar/Editar/Excluir, e não toca o Supabase", () => {
   const menu = readFileSync("src/lib/menu-parametros.ts", "utf8");
-  assert.match(menu, /titulo: "Itens check list"[^}]*url: "\/cadastros\/veiculos-checklist"/);
+  assert.match(menu, /titulo: "Check list"[^}]*url: "\/cadastros\/veiculos-checklist"/);
   const rota = readFileSync("src/routes/_authenticated/cadastros/veiculos-checklist.tsx", "utf8");
-  assert.match(rota, /ChecklistVeiculoLista/);
+  assert.match(rota, /ChecklistParametros/);
   const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
   assert.match(tela, /export function ChecklistVeiculoLista/);
   assert.match(tela, /onClonar=/);
@@ -237,4 +237,36 @@ test("a lista Itens check list tem um único botão Restaurar padrão inicial, s
   assert.doesNotMatch(lista, /onRestaurar|restauravel/);
   const acoes = readFileSync(new URL("../src/components/parametros/AcoesLinha.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(acoes, /Restaurar/);
+});
+
+import { separarPorTipoVeiculo } from "../src/lib/checklist-por-tipo.ts";
+
+test("Itens check list separados por tipo de veículo: seções na ordem de Gerais, todos os tipos e sem tipo (decisão 113)", () => {
+  const tipos = [{ id: "t-carro", nome: "Carro" }, { id: "t-van", nome: "Van" }, { id: "t-cam", nome: "Caminhão" }, { id: "t-vazio", nome: "Moto" }];
+  const g = (id, tiposVeiculo) => ({ id, tiposVeiculo });
+  const itens = [g("a", ["t-van", "t-carro"]), g("b", ["t-cam"]), g("c", ["*"]), g("d", []), g("e", ["t-apagado"])];
+  const secoes = separarPorTipoVeiculo(itens, tipos);
+  assert.deepEqual(secoes.map((x) => [x.titulo, x.itens.map((i) => i.id)]), [
+    ["Carro", ["a"]],
+    ["Van", ["a"]],
+    ["Caminhão", ["b"]],
+    ["Todos os tipos de veículo", ["c"]],
+    ["Sem tipo de veículo (não aparece em check list)", ["d", "e"]],
+  ]);
+  assert.deepEqual(separarPorTipoVeiculo([], tipos), []);
+});
+
+test("a página Check list junta Itens check list e Associar itens, com redirecionamento do endereço antigo (decisão 113)", () => {
+  const menu = readFileSync("src/lib/menu-parametros.ts", "utf8");
+  assert.doesNotMatch(menu, /veiculos-checklist-associar/);
+  const pagina = readFileSync("src/components/parametros/ChecklistParametros.tsx", "utf8");
+  assert.match(pagina, /<h1 className="text-2xl font-bold">Check list<\/h1>/);
+  assert.match(pagina, /<ChecklistVeiculoLista secao \/>/);
+  assert.match(pagina, /<AssociarChecklistVeiculo secao \/>/);
+  const antiga = readFileSync("src/routes/_authenticated/cadastros/veiculos-checklist-associar.tsx", "utf8");
+  assert.match(antiga, /redirect\(\{ to: "\/cadastros\/veiculos-checklist" \}\)/);
+  const lista = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
+  assert.match(lista, /secoes=\{separarPorTipoVeiculo\(itensChecklistVeiculo, tiposDeVeiculo\)/);
+  const assoc = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
+  assert.match(assoc, /\{!secao && <p className="text-eyebrow">/);
 });

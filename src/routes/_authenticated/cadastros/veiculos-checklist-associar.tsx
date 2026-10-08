@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AssociarChecklistVeiculo } from "@/components/parametros/AssociarChecklistVeiculo";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+// Decisão 113: Itens check list e Associar itens ficam numa só página, Check list.
 export const Route = createFileRoute("/_authenticated/cadastros/veiculos-checklist-associar")({
-  head: () => ({ meta: [{ title: "Associar itens de check list a um veículo | Patrimônio GEMAPE" }] }),
-  component: AssociarChecklistVeiculo,
+  beforeLoad: () => {
+    throw redirect({ to: "/cadastros/veiculos-checklist" });
+  },
 });
