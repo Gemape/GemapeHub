@@ -53,6 +53,7 @@ export const COMBUSTIVEIS_VEICULO = [
   "Flex",
   "Elétrico",
   "Híbrido",
+  "GLP",
 ] as const;
 
 export const ONUS_BAIXA = ["Da Empresa", "Do Empregado"] as const;
