@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -317,6 +318,7 @@ function CatalogoEpi() {
           <TableHeader>
             <TableRow>
               <TableHead>Código</TableHead>
+              <TableHead>Descrição</TableHead>
               <TableHead>Tamanho</TableHead>
               <TableHead className="text-right">Estoque mínimo</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -325,12 +327,12 @@ function CatalogoEpi() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">Carregando…</TableCell>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">Carregando…</TableCell>
               </TableRow>
             )}
             {!isLoading && grupos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
                   {busca.trim() ? "Nenhum EPI encontrado." : "Nenhum EPI cadastrado. Use Novo EPI."}
                 </TableCell>
               </TableRow>
@@ -596,18 +598,10 @@ function GrupoLinhas({
 }) {
   return (
     <>
-      <TableRow className="bg-muted/40">
-        <TableCell colSpan={4} className="font-medium">
-          {grupo.nome}
-          <span className="ml-2 text-xs font-normal text-muted-foreground">
-            {grupo.categoria}
-            {grupo.unidade_medida ? ` · ${grupo.unidade_medida}` : ""}
-          </span>
-        </TableCell>
-      </TableRow>
-      {grupo.itens.map((item) => (
-        <TableRow key={item.id}>
+      {grupo.itens.map((item, indice) => (
+        <TableRow key={item.id} className={indice === 0 ? "border-t-2 border-border/70" : undefined}>
           <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
+          <TableCell><DescricaoEpi nome={grupo.nome} categoria={item.categoria} unidade={item.unidade_medida} /></TableCell>
           <TableCell>{rotuloTamanho(item.tamanho_id) || "Sem tamanho"}</TableCell>
           <TableCell className="text-right">{item.estoque_minimo}</TableCell>
           <TableCell className="text-right">
@@ -621,5 +615,16 @@ function GrupoLinhas({
         </TableRow>
       ))}
     </>
+  );
+}
+
+// Descrição do EPI na lista (decisão 96): o nome em destaque e, ao lado, a categoria e a unidade em etiquetas.
+function DescricaoEpi({ nome, categoria, unidade }: { nome: string; categoria: string | null; unidade: string | null }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span className="font-medium">{nome}</span>
+      {categoria ? <Badge variant="secondary" className="font-normal">{categoria}</Badge> : null}
+      {unidade ? <Badge variant="outline" className="font-normal text-muted-foreground">{unidade}</Badge> : null}
+    </div>
   );
 }
