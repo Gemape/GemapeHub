@@ -107,6 +107,8 @@ export interface Movimentacao {
   created_at: string;
   // Tamanho de EPI ou uniforme (decisão 23), só no modo demonstração.
   tamanho_id?: string | null;
+  // Caixa da ferramenta em entregas, vistorias e devoluções (decisão 103), só no modo demonstração.
+  caixa_id?: string | null;
 }
 
 export interface Ocorrencia {

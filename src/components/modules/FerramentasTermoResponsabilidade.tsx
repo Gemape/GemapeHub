@@ -32,6 +32,7 @@ import {
   useCaixaItens,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { MODO_DEMO } from "@/lib/modo-demo";
 import { validarTermoResponsabilidade } from "@/lib/encerramento-ferramentas";
 import { montarTermoResponsabilidadeHtml } from "@/lib/termo-responsabilidade-html";
 
@@ -143,6 +144,8 @@ export function FerramentasTermoResponsabilidade() {
           empresa_id: empresaSel,
           empregado_id: empregadoId,
           tipo_vistoria: "Inicial (Entrega da caixa)",
+          // A caixa fica gravada na entrega (decisão 103); entrega avulsa não tem caixa.
+          ...(MODO_DEMO ? { caixa_id: caixaSel || null } : {}),
           observacao: `Entrega de ferramentas/caixa ${caixa?.codigo || "AVULSA"} - Termo de Responsabilidade Individual`,
         })),
       );

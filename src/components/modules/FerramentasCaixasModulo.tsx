@@ -101,7 +101,7 @@ function CaixaItem({
   const { data: itens = [], isLoading } = useCaixaItens(caixa.id);
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const ferramentas = itens.flatMap((ci) => (ci.ferramenta ? [ci.ferramenta] : []));
-  const historico = movimentacoesDaCaixa(movimentacoes, ferramentas.map((f) => f.id));
+  const historico = movimentacoesDaCaixa(movimentacoes, caixa.id, ferramentas.map((f) => f.id));
 
   return (
     <div className="space-y-3">
@@ -149,7 +149,7 @@ function CaixaItem({
               </TableRow>
             ) : (
               itens.map((ci) => {
-                const comEmpregado = controleDaFerramenta(movimentacoes, ci.ferramenta_id).comEmpregado;
+                const comEmpregado = controleDaFerramenta(historico, ci.ferramenta_id).comEmpregado;
                 return (
                 <TableRow key={ci.id}>
                   <TableCell className="font-mono font-bold">{ci.ferramenta?.codigo_sku}</TableCell>
