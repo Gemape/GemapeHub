@@ -47,6 +47,8 @@ export interface LinhaCaixa {
 }
 
 type Comum = { caixa: CaixaFerramenta; aberto: boolean; aoFechar: () => void };
+// Caixa habilitada ainda sem cadastro: o primeiro vínculo de ferramentas é que cria a caixa.
+export type CaixaNova = Pick<CaixaFerramenta, "codigo" | "codigo_num" | "empresa_id" | "nome" | "descricao" | "localizacao" | "status"> & { id?: undefined };
 
 /** Inclui, tira e muda a quantidade das ferramentas da caixa (grava o conjunto inteiro de uma vez). */
 export function DialogFerramentasDaCaixa({
@@ -55,7 +57,11 @@ export function DialogFerramentasDaCaixa({
   aoFechar,
   itensAtuais,
   comEmpregado,
-}: Comum & { itensAtuais: CaixaFerramentaItem[]; comEmpregado: (ferramentaId: string) => number }) {
+}: Omit<Comum, "caixa"> & {
+  caixa: CaixaFerramenta | CaixaNova;
+  itensAtuais: CaixaFerramentaItem[];
+  comEmpregado: (ferramentaId: string) => number;
+}) {
   const { data: todas = [] } = useItens("ferramenta", TODAS);
   const salvar = useSalvarCaixa();
   const [linhas, setLinhas] = useState(() =>
@@ -81,7 +87,7 @@ export function DialogFerramentasDaCaixa({
     }
     salvar.mutate(
       {
-        id: caixa.id,
+        ...(caixa.id ? { id: caixa.id } : {}),
         valores: {
           codigo: caixa.codigo,
           codigo_num: caixa.codigo_num,
@@ -101,8 +107,8 @@ export function DialogFerramentasDaCaixa({
     <Dialog open={aberto} onOpenChange={(v) => !v && aoFechar()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Ferramentas da caixa {caixa.codigo}</DialogTitle>
-          <DialogDescription>Inclua ou tire ferramentas e ajuste as quantidades. Tudo é salvo de uma vez.</DialogDescription>
+          <DialogTitle>Vincular ferramentas à caixa {caixa.codigo}</DialogTitle>
+          <DialogDescription>Escolha as ferramentas que ficam nesta caixa e a quantidade de cada uma. Tudo é salvo de uma vez.</DialogDescription>
         </DialogHeader>
         <div className="space-y-1.5">
           <Label htmlFor="incluir-ferramenta">Incluir ferramenta</Label>
@@ -177,7 +183,7 @@ export function DialogFerramentasDaCaixa({
             Cancelar
           </Button>
           <Button requiresWrite="operar" type="button" disabled={salvar.isPending} onClick={gravar}>
-            Salvar ferramentas
+            Salvar vínculo
           </Button>
         </DialogFooter>
       </DialogContent>
