@@ -71,9 +71,9 @@ import {
 
 // Visual do menu lateral (decisões 98, 99 e 100): vidro fosco, botões com animação e item ativo em destaque.
 const BOTAO_MENU =
-  "menu-vidro h-11 gap-3 rounded-xl px-3 text-[15px] font-medium tracking-wide text-sidebar-foreground/90 hover:text-white [&>svg]:size-5 [&>svg]:stroke-[1.75] [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:scale-110 data-[active=true]:font-semibold data-[active=true]:text-white";
+  "menu-vidro icone-menu h-12 gap-3 rounded-xl px-2.5 text-[15px] font-medium tracking-wide text-sidebar-foreground/90 hover:text-white [&>svg:not(.icone-seta)]:size-8 [&>svg]:stroke-[1.75] data-[active=true]:font-semibold data-[active=true]:text-white";
 const BOTAO_SUBMENU =
-  "menu-vidro-sub h-auto min-h-9 gap-2.5 rounded-lg py-1.5 text-[14px] [&>svg]:size-[18px] [&>svg]:stroke-[1.75] [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:scale-110 data-[active=true]:font-semibold";
+  "menu-vidro-sub icone-menu h-auto min-h-9 gap-2.5 rounded-lg py-1 text-[14px] [&>svg:not(.icone-seta)]:size-7 [&>svg]:stroke-[1.75] data-[active=true]:font-semibold";
 // Títulos de grupo em faixa de vidro, para separar Visão geral, Módulos e Parâmetros.
 const TITULO_GRUPO =
   "mb-2 h-9 rounded-xl border border-white/15 bg-white/10 px-3 text-[13px] font-bold uppercase tracking-[0.16em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md";
@@ -200,7 +200,7 @@ function GrupoRecolhivel({
       >
         {Icone}
         <span>{titulo}</span>
-        <ChevronDown className={`ml-auto !size-4 opacity-70 transition-transform ${aberto ? "" : "-rotate-90"}`} />
+        <ChevronDown className={`icone-seta ml-auto !size-4 opacity-70 transition-transform ${aberto ? "" : "-rotate-90"}`} />
       </SidebarMenuButton>
       {aberto && <SidebarMenuSub>{children}</SidebarMenuSub>}
     </SidebarMenuItem>

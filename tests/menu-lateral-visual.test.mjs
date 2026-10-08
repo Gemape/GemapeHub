@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 const fonte = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
 
 test("menu lateral: itens, submenus e títulos de grupo usam o visual maior da decisão 98", () => {
-  assert.match(fonte, /const BOTAO_MENU =[\s\S]*text-\[15px\][\s\S]*\[&>svg\]:size-5/);
-  assert.match(fonte, /const BOTAO_SUBMENU =[\s\S]*text-\[14px\][\s\S]*\[&>svg\]:size-\[18px\]/);
+  assert.match(fonte, /const BOTAO_MENU =[\s\S]*text-\[15px\][\s\S]*\[&>svg:not\(\.icone-seta\)\]:size-8/);
+  assert.match(fonte, /const BOTAO_SUBMENU =[\s\S]*text-\[14px\][\s\S]*\[&>svg:not\(\.icone-seta\)\]:size-7/);
   assert.match(fonte, /const TITULO_GRUPO =[\s\S]*uppercase/);
   assert.match(fonte, /<SidebarGroupLabel className=\{TITULO_GRUPO\}>/);
   assert.equal((fonte.match(/className=\{BOTAO_SUBMENU\}/g) ?? []).length, 2);
@@ -47,4 +47,16 @@ test("marca do menu: logo GEMAPE 40 anos animada no lugar das engrenagens, com v
   }
   for (const k of ["logo-entrada", "logo-varredura", "logo-halo", "marca-entrada", "marca-linha"]) assert.match(css, new RegExp(`@keyframes ${k} \\{`));
   assert.doesNotMatch(css, /engrenagem-inversa|logo-engrenagem|marca-titulo/);
+});
+
+test("os ícones do menu ficam em quadrinhos de vidro animados, sem afetar a seta (dec 122)", () => {
+  const fonte = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(fonte, /const BOTAO_MENU =\s+"menu-vidro icone-menu /);
+  assert.match(fonte, /const BOTAO_SUBMENU =\s+"menu-vidro-sub icone-menu /);
+  assert.match(fonte, /icone-seta ml-auto/);
+  assert.match(css, /@utility icone-menu/);
+  assert.match(css, /@keyframes icone-balanco/);
+  assert.match(css, /@keyframes icone-pulso/);
+  assert.match(css, /prefers-reduced-motion: reduce\) \{\s*& > svg:not\(\.icone-seta\)/);
 });
