@@ -65,7 +65,7 @@ const dataBr = (iso: string) => (iso ? new Date(iso).toLocaleDateString("pt-BR",
 // Parâmetros > Veículos > Associar itens de check list a um veículo (decisão 74): escolhe o veículo,
 // habilita grupos de Itens check list com a periodicidade de cada um e define o responsável. Só modo
 // demonstração; nada no Supabase.
-export function AssociarChecklistVeiculo() {
+export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } = {}) {
   const parametros = useParametrosBase();
   const associacoes = useAssociacoes();
   const { data: veiculos = [], isLoading: carregandoVeiculos } = useQuery({ queryKey: ["veiculos-checklist-assoc"], queryFn: lerVeiculos });
@@ -155,8 +155,8 @@ export function AssociarChecklistVeiculo() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">Parâmetros &gt; Veículos</p>
-          <h1 className="text-2xl font-bold">Associar itens de check list a um veículo</h1>
+          {!secao && <p className="text-eyebrow">Parâmetros &gt; Veículos</p>}
+          {secao ? <h2 className="text-xl font-bold">Associar itens de check list a um veículo</h2> : <h1 className="text-2xl font-bold">Associar itens de check list a um veículo</h1>}
           <p className="mt-1 text-sm text-muted-foreground">
             Para cada veículo, os grupos de itens de check list habilitados, a periodicidade de cada um e o responsável.
           </p>
@@ -245,7 +245,7 @@ export function AssociarChecklistVeiculo() {
                 <div className="space-y-2 rounded-md border p-3">
                   <h3 className="text-sm font-semibold">Grupos de itens</h3>
                   {grupos.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Nenhum grupo cadastrado. Cadastre em Parâmetros &gt; Veículos &gt; Itens check list.</p>
+                    <p className="text-xs text-muted-foreground">Nenhum grupo cadastrado. Cadastre em Parâmetros &gt; Veículos &gt; Check list.</p>
                   )}
                   {grupos.length > 0 && disponiveis.length === 0 && (
                     <p className="text-xs text-muted-foreground">Todos os grupos já estão habilitados.</p>

@@ -69,12 +69,11 @@ test("gruposDaAssociacao ignora grupo que já não existe em Itens check list", 
   );
 });
 
-test("menu: Itens check list com chave de boca e novo item Associar itens de check list a um veículo com lista com check", () => {
-  const itensCheck = MENU_VEICULOS.find((i) => i.url === "/cadastros/veiculos-checklist");
-  assert.equal(itensCheck.icone, "Wrench");
-  const assoc = MENU_VEICULOS.find((i) => i.url === "/cadastros/veiculos-checklist-associar");
-  assert.equal(assoc.titulo, "Associar itens de check list a um veículo");
-  assert.equal(assoc.icone, "ListChecks");
+test("menu: um item Check list reúne Itens check list e Associar itens (decisão 113)", () => {
+  const checklist = MENU_VEICULOS.find((i) => i.url === "/cadastros/veiculos-checklist");
+  assert.equal(checklist.titulo, "Check list");
+  assert.equal(checklist.icone, "ListChecks");
+  assert.equal(MENU_VEICULOS.find((i) => i.url === "/cadastros/veiculos-checklist-associar"), undefined);
 });
 
 test("a tela existe e usa os grupos de Itens check list, periodicidade e responsável", () => {
@@ -84,4 +83,5 @@ test("a tela existe e usa os grupos de Itens check list, periodicidade e respons
   assert.match(tela, /Responsável/);
   const rota = readFileSync(new URL("../src/routes/_authenticated/cadastros/veiculos-checklist-associar.tsx", import.meta.url), "utf8");
   assert.match(rota, /cadastros\/veiculos-checklist-associar/);
+  assert.match(rota, /redirect/);
 });

@@ -129,7 +129,7 @@ export function removerAssociacao(veiculoId: string, storage = storagePadrao()):
   alterar(storage, (lista) => lista.filter((a) => a.veiculoId !== veiculoId));
 }
 
-// Grupos da associação que ainda existem em Parâmetros > Veículos > Itens check list.
+// Grupos da associação que ainda existem em Parâmetros > Veículos > Check list.
 export function gruposDaAssociacao(
   associacao: AssociacaoChecklist,
   grupos: { id: string; nome: string }[],

@@ -56,7 +56,7 @@ const dataBr = (iso: string) => (iso ? new Date(iso).toLocaleDateString("pt-BR",
 // Parâmetros > Veículos > Cadastrar Plano de Manutenções (decisão 52): escolhe o veículo, habilita
 // grupos de ação (os de Ações de manutenção) e informa km e meses de cada um; vale o que vier
 // primeiro. Só modo demonstração; nada no Supabase.
-export function PlanoManutencaoVeiculo() {
+export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = {}) {
   const parametros = useParametrosBase();
   const planos = usePlanos();
   const { data: veiculos = [], isLoading: carregandoVeiculos } = useQuery({ queryKey: ["veiculos-plano"], queryFn: lerVeiculos });
@@ -125,8 +125,8 @@ export function PlanoManutencaoVeiculo() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">Parâmetros &gt; Veículos</p>
-          <h1 className="text-2xl font-bold">Cadastrar Plano de Manutenções</h1>
+          {!secao && <p className="text-eyebrow">Parâmetros &gt; Veículos</p>}
+          {secao ? <h2 className="text-xl font-bold">Cadastrar Plano de Manutenções</h2> : <h1 className="text-2xl font-bold">Cadastrar Plano de Manutenções</h1>}
           <p className="mt-1 text-sm text-muted-foreground">
             Para cada veículo, os grupos de ação habilitados e o limite de km e de tempo de cada um; vale o que vier primeiro.
           </p>
@@ -197,7 +197,7 @@ export function PlanoManutencaoVeiculo() {
                 <div className="space-y-2 rounded-md border p-3">
                   <h3 className="text-sm font-semibold">Grupos de ação</h3>
                   {acoes.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Nenhum grupo cadastrado. Cadastre em Parâmetros &gt; Veículos &gt; Ações de manutenção.</p>
+                    <p className="text-xs text-muted-foreground">Nenhum grupo cadastrado. Cadastre em Parâmetros &gt; Veículos &gt; Manutenção.</p>
                   )}
                   {acoes.length > 0 && disponiveis.length === 0 && (
                     <p className="text-xs text-muted-foreground">Todos os grupos já estão habilitados.</p>

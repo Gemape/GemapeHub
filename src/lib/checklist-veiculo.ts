@@ -218,7 +218,7 @@ export type EntradaChecklist = {
 export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
   if (!ehPeriodicidade(entrada.periodicidade)) {
-    throw new Error("Este veículo não tem periodicidade: associe itens de check list a ele em Parâmetros > Veículos > Associar itens de check list a um veículo.");
+    throw new Error("Este veículo não tem periodicidade: associe itens de check list a ele em Parâmetros > Veículos > Check list.");
   }
   if (!entrada.responsavelId) throw new Error("Selecione o responsável pelo check list.");
   return gravarNovoChecklist({ ...entrada, periodicidade: entrada.periodicidade }, false, storage, agora);
@@ -240,7 +240,7 @@ function gravarNovoChecklist(entrada: Omit<EntradaChecklist, "periodicidade"> & 
       ocorrenciaId: null, ocorrenciaCodigo: null, resolucao: null,
     })),
   );
-  if (itens.length === 0) throw new Error("Não há itens de check list para o tipo deste veículo. Cadastre ou ligue os grupos em Parâmetros > Veículos > Itens check list.");
+  if (itens.length === 0) throw new Error("Não há itens de check list para o tipo deste veículo. Cadastre ou ligue os grupos em Parâmetros > Veículos > Check list.");
   let criado!: ChecklistVeiculo;
   gravar(() =>
     alterarLista<ChecklistVeiculo>(CHAVE, storage, (lista) => {
