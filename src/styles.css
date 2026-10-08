@@ -266,6 +266,126 @@
   }
 }
 
+/* Logo do menu: engrenagem grande em vidro, com uma menor girando ao contrário e um brilho que pulsa. */
+@keyframes engrenagem-inversa {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+@keyframes logo-brilho {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 oklch(1 0 0 / 0.22),
+      0 8px 24px oklch(0.15 0.2 266 / 0.45),
+      inset 0 1px 0 oklch(1 0 0 / 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px oklch(1 0 0 / 0),
+      0 8px 28px oklch(0.15 0.2 266 / 0.55),
+      inset 0 1px 0 oklch(1 0 0 / 0.5);
+  }
+}
+@utility engrenagem-inversa {
+  animation: engrenagem-inversa 4s linear infinite;
+  transform-origin: 50% 50%;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+@utility logo-engrenagem {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 1.25rem;
+  color: #fff;
+  background: linear-gradient(145deg, oklch(1 0 0 / 0.34), oklch(1 0 0 / 0.1));
+  border: 1px solid oklch(1 0 0 / 0.4);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  animation: logo-brilho 3.5s ease-in-out infinite;
+  & > .engrenagem-inversa {
+    position: absolute;
+    right: 0.3rem;
+    bottom: 0.3rem;
+    opacity: 0.85;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* Botões do menu em vidro fosco: sobem de leve ao passar o mouse e afundam ao clicar. */
+@utility menu-vidro {
+  background: oklch(1 0 0 / 0.05);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+  &:hover {
+    background: oklch(1 0 0 / 0.16);
+    border-color: oklch(1 0 0 / 0.28);
+    transform: translateX(4px);
+    box-shadow: 0 6px 18px oklch(0.15 0.2 266 / 0.35);
+  }
+  &:active {
+    transform: translateX(2px) scale(0.98);
+  }
+  &[data-active="true"] {
+    background: linear-gradient(135deg, oklch(1 0 0 / 0.28), oklch(1 0 0 / 0.1));
+    border-color: oklch(1 0 0 / 0.45);
+    box-shadow:
+      0 6px 20px oklch(0.15 0.2 266 / 0.4),
+      inset 0 1px 0 oklch(1 0 0 / 0.45);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover,
+    &:active {
+      transform: none;
+    }
+  }
+}
+@utility menu-vidro-sub {
+  border: 1px solid transparent;
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease,
+    border-color 0.25s ease;
+  &:hover {
+    background: oklch(1 0 0 / 0.14);
+    border-color: oklch(1 0 0 / 0.22);
+    transform: translateX(3px);
+  }
+  &:active {
+    transform: scale(0.98);
+  }
+  &[data-active="true"] {
+    background: oklch(1 0 0 / 0.2);
+    border-color: oklch(1 0 0 / 0.35);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.35);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover,
+    &:active {
+      transform: none;
+    }
+  }
+}
+
 /* Barra lateral: o mesmo azul, em vidro sobre um gradiente. */
 [data-sidebar="sidebar"] {
   background-image: linear-gradient(
