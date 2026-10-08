@@ -353,3 +353,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 104: Número da caixa com Ferramentas da caixa, Dar baixa, Registrar ocorrência e lista de ocorrências por caixa (`CaixaGestaoDialogs.tsx`, `controle-caixa.ts`); caixa identificada só pelo número (campo Nome removido).
 - Decisão 105: botão Vincular ferramentas em Número da caixa (inclusive caixa habilitada sem cadastro, que é criada ao salvar o vínculo).
 - Decisão 106: uma ferramenta em uma caixa só (Vincular bloqueia a que está em outra); botão Transferir entre caixas com histórico nas duas (`DialogTransferirCaixa`).
+- Decisão 107: Vincular ferramentas com lista de Parâmetros > Ferramentas, ferramentas de outra caixa travadas e link Cadastrar ferramenta (janela por cima, Voltar ao vínculo).

@@ -174,7 +174,9 @@ test("a transferência aparece no histórico da caixa de origem e da de destino"
 test("Vincular bloqueia ferramenta de outra caixa e Transferir existe na tela (decisão 106)", () => {
   const ler = (n) => readFileSync(new URL(`../src/components/modules/${n}.tsx`, import.meta.url), "utf8");
   const d = ler("CaixaGestaoDialogs");
-  assert.match(d, /!outrasCaixas\.some\(\(o\) => o\.ferramenta_id === t\.id\)/);
+  assert.match(d, /disabled=\{!!emOutra\}/);
+  assert.match(d, /<ItensModulo modulo="ferramenta" \/>/);
+  assert.match(d, /Voltar ao vínculo/);
   assert.match(d, /ferramentasEmOutraCaixa\(/);
   assert.match(d, /tipo_movimentacao: "Transferencia"/);
   assert.match(ler("FerramentasCaixasModulo"), /DialogTransferirCaixa/);
