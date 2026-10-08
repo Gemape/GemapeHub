@@ -1,5 +1,6 @@
 // Controle das ferramentas por caixa (decisão 101): a caixa lista as ferramentas
 // cadastradas nela, quanto está com empregados e o histórico de movimentações dessas ferramentas.
+// A caixa é gravada em entregas, vistorias e devoluções; compras e baixas ficam sem caixa.
 import { ehBaixa, naturezaMovimentacao } from "./historico-movimentacoes.ts";
 import { formatarData } from "./gemape.ts";
 
@@ -12,15 +13,44 @@ type MovimentoCaixa = {
   quantidade: number;
   data_movimentacao: string;
   observacao: string | null;
+  // Caixa gravada na movimentação (só no modo demonstração); vazia em compras, baixas e registros antigos.
+  caixa_id?: string | null | undefined;
 };
 
-/** Só as movimentações de ferramenta cujo item está na caixa; a ordem recebida é mantida. */
-export function movimentacoesDaCaixa<T extends { modulo: string; item_id: string | null }>(
+/**
+ * Movimentações de ferramenta da caixa, na ordem recebida: as gravadas com a caixa e, entre as sem
+ * caixa (compras, baixas, registros antigos), as de ferramentas que estão cadastradas nela.
+ */
+export function movimentacoesDaCaixa<T extends { modulo: string; item_id: string | null; caixa_id?: string | null | undefined }>(
   movimentacoes: T[],
+  caixaId: string,
   ferramentaIds: Iterable<string>,
 ): T[] {
   const ids = new Set(ferramentaIds);
-  return movimentacoes.filter((m) => m.modulo === "ferramenta" && !!m.item_id && ids.has(m.item_id));
+  return movimentacoes.filter((m) => {
+    if (m.modulo !== "ferramenta" || !m.item_id) return false;
+    if (m.caixa_id) return m.caixa_id === caixaId;
+    return ids.has(m.item_id);
+  });
+}
+
+/** Caixa da entrega mais recente da ferramenta ao empregado, para a devolução voltar à mesma caixa. */
+export function caixaDaUltimaEntrega(
+  movimentacoes: (Pick<MovimentoCaixa, "modulo" | "tipo_movimentacao" | "item_id" | "empregado_id" | "motivo_baixa" | "data_movimentacao"> & {
+    caixa_id?: string | null | undefined;
+    created_at?: string | undefined;
+  })[],
+  empregadoId: string,
+  itemId: string,
+): string | null {
+  let melhor: (typeof movimentacoes)[number] | null = null;
+  for (const m of movimentacoes) {
+    if (m.modulo !== "ferramenta" || m.item_id !== itemId || m.empregado_id !== empregadoId) continue;
+    if (m.tipo_movimentacao !== "Saida" || ehBaixa(m) || !m.caixa_id) continue;
+    const chave = `${m.data_movimentacao}|${m.created_at ?? ""}`;
+    if (!melhor || chave > `${melhor.data_movimentacao}|${melhor.created_at ?? ""}`) melhor = m;
+  }
+  return melhor?.caixa_id ?? null;
 }
 
 /** Entregue, devolvido e baixado de uma ferramenta, e quanto segue com empregados (nunca negativo). */

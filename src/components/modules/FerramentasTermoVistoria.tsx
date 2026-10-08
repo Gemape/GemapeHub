@@ -36,6 +36,7 @@ import {
 import { empregadoDoTermo, validarTermoVistoria } from "@/lib/termos-atomicos";
 import { montarTermoVistoriaHtml } from "@/lib/termo-vistoria-html";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
+import { MODO_DEMO } from "@/lib/modo-demo";
 
 interface ItemVistoria {
   id: string;
@@ -145,6 +146,7 @@ export function FerramentasTermoVistoria() {
           empresa_id: empresaSel,
           empregado_id: empregadoDoTermo(empregadoId),
           tipo_vistoria: "Periódica",
+          ...(MODO_DEMO ? { caixa_id: caixaSel || null } : {}),
           observacao: `Vistoria Periódica - Caixa: ${caixa?.codigo || "N/A"} - Status: ${item.conformidade}. Obs: ${capitalizarTexto(item.observacao)}`,
         })),
       );

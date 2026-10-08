@@ -31,6 +31,9 @@ import {
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { lerSaldosSobResponsabilidade, validarEncerramento } from "@/lib/encerramento-ferramentas";
+import { caixaDaUltimaEntrega } from "@/lib/controle-caixa";
+import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
+import { MODO_DEMO } from "@/lib/modo-demo";
 
 interface ItemEncerramento {
   id: string;
@@ -170,6 +173,16 @@ export function FerramentasTermoEncerramento() {
         alert(erro);
         return;
       }
+      // A devolução volta para a caixa da última entrega da ferramenta a este empregado (decisão 103).
+      let entregas: Awaited<ReturnType<typeof lerMovimentacoesRelatorio>> = [];
+      if (MODO_DEMO) {
+        try {
+          entregas = await lerMovimentacoesRelatorio(supabase, { modulo: "ferramenta", empresaId: empresaSel, empregadoId });
+        } catch (erroLeitura) {
+          alert(`Não foi possível conferir as entregas: ${(erroLeitura as Error).message}`);
+          return;
+        }
+      }
       await registrarDevolucoes.mutateAsync(
         itensEncerramento.map((item) => ({
           modulo: "ferramenta",
@@ -180,6 +193,7 @@ export function FerramentasTermoEncerramento() {
           empresa_id: empresaSel,
           empregado_id: empregadoId,
           tipo_vistoria: "Final (Desligamento)",
+          ...(MODO_DEMO ? { caixa_id: caixaDaUltimaEntrega(entregas, empregadoId, item.item_id) } : {}),
           observacao: `Devolução de ferramenta - Termo de Encerramento de Responsabilidade. Obs: ${capitalizarTexto(item.observacao)}`,
         })),
       );
