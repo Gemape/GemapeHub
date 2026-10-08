@@ -69,14 +69,14 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
-// Visual do menu lateral (decisão 98): fontes e ícones maiores, ícone com traço mais fino e item ativo em destaque.
+// Visual do menu lateral (decisões 98, 99 e 100): vidro fosco, botões com animação e item ativo em destaque.
 const BOTAO_MENU =
-  "h-11 gap-3 rounded-lg px-3 text-[15px] font-medium tracking-wide text-sidebar-foreground/90 transition-colors hover:text-white [&>svg]:size-5 [&>svg]:stroke-[1.75] data-[active=true]:bg-white/10 data-[active=true]:font-semibold data-[active=true]:text-white data-[active=true]:shadow-[inset_3px_0_0_0_#fff]";
+  "menu-vidro h-11 gap-3 rounded-xl px-3 text-[15px] font-medium tracking-wide text-sidebar-foreground/90 hover:text-white [&>svg]:size-5 [&>svg]:stroke-[1.75] [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:scale-110 data-[active=true]:font-semibold data-[active=true]:text-white";
 const BOTAO_SUBMENU =
-  "h-auto min-h-9 gap-2.5 rounded-md py-1.5 text-[14px] [&>svg]:size-[18px] [&>svg]:stroke-[1.75] data-[active=true]:font-semibold";
-// Títulos de grupo em faixa própria e branca, para separar Visão geral, Módulos e Parâmetros (decisão 99).
+  "menu-vidro-sub h-auto min-h-9 gap-2.5 rounded-lg py-1.5 text-[14px] [&>svg]:size-[18px] [&>svg]:stroke-[1.75] [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:scale-110 data-[active=true]:font-semibold";
+// Títulos de grupo em faixa de vidro, para separar Visão geral, Módulos e Parâmetros.
 const TITULO_GRUPO =
-  "mb-2 h-9 rounded-md bg-white/10 px-3 text-[13px] font-bold uppercase tracking-[0.16em] text-white shadow-[inset_3px_0_0_0_rgba(255,255,255,0.7)]";
+  "mb-2 h-9 rounded-xl border border-white/15 bg-white/10 px-3 text-[13px] font-bold uppercase tracking-[0.16em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md";
 const SEPARADOR_GRUPO = "mt-3 border-t border-white/20 pt-5";
 
 const grupos = [
@@ -336,13 +336,14 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="px-4 py-8">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-full bg-white/90 text-primary shadow-lg ring-1 ring-white/40">
-            <Cog className="engrenagem-girando size-6" aria-hidden="true" />
+        <div className="flex items-center gap-4">
+          <div className="logo-engrenagem" aria-hidden="true">
+            <Cog className="engrenagem-girando size-11" strokeWidth={1.5} />
+            <Cog className="engrenagem-inversa size-6" strokeWidth={1.75} />
           </div>
           <div className="leading-tight">
-            <h2 className="font-display text-lg font-black tracking-tighter text-white">GEMAPE</h2>
-            <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-sidebar-foreground/60">
+            <h2 className="font-display text-3xl font-black tracking-tighter text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.35)]">GEMAPE</h2>
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/75">
               Gestão de Patrimônio
             </p>
           </div>

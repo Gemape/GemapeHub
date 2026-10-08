@@ -18,3 +18,18 @@ test("menu lateral: títulos de grupo em faixa destacada e grupos separados por 
   assert.match(fonte, /const SEPARADOR_GRUPO = "[^"]*border-t/);
   assert.match(fonte, /indice > 0 \? SEPARADOR_GRUPO : undefined/);
 });
+
+test("menu lateral: vidro, animação nos botões e logo com duas engrenagens (decisão 100)", () => {
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(fonte, /const BOTAO_MENU =\s+"menu-vidro /);
+  assert.match(fonte, /const BOTAO_SUBMENU =\s+"menu-vidro-sub /);
+  assert.match(fonte, /className="logo-engrenagem"/);
+  assert.match(fonte, /engrenagem-girando size-11/);
+  assert.match(fonte, /engrenagem-inversa size-6/);
+  assert.match(fonte, /text-3xl font-black[^"]*">GEMAPE/);
+  for (const u of ["menu-vidro", "menu-vidro-sub", "logo-engrenagem", "engrenagem-inversa"]) {
+    assert.match(css, new RegExp(`@utility ${u} \\{`));
+  }
+  assert.match(css, /backdrop-filter: blur/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+});

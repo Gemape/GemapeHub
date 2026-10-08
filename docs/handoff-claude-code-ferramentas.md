@@ -347,3 +347,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Cadastrar EPI: a lista tem as colunas Código, Descrição (só o nome do item), Tamanho, Unidade (ao lado de Tamanho), Estoque mínimo e Ações (decisão 97, substitui a 96b): coluna Unidade em `CadastroEpi.tsx`.
 - Menu lateral: fontes e ícones maiores, títulos de grupo em caixa alta e item ativo com barra lateral (decisão 98): constantes `BOTAO_MENU`, `BOTAO_SUBMENU` e `TITULO_GRUPO` em `AppSidebar.tsx`.
 - Menu lateral: títulos de grupo (Visão geral, Módulos, Parâmetros) em faixa branca com linha divisória entre os grupos (decisão 99): `TITULO_GRUPO` e `SEPARADOR_GRUPO` em `AppSidebar.tsx`.
+- Menu lateral em vidro: botões com animação, GEMAPE maior e logo com duas engrenagens (decisão 100): utilitários `menu-vidro`, `menu-vidro-sub`, `logo-engrenagem` em `styles.css`.
