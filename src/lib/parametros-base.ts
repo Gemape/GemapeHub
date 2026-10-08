@@ -551,6 +551,39 @@ export function removerGrupoChecklistVeiculo(id: string, storage = storagePadrao
   });
 }
 
+// Tipos de veículo (ids das subcategorias de Veículos de Gerais) a que o grupo padrão se destina.
+function tiposVeiculoDoPadrao(d: ParametrosBase, nomeGrupo: string): string[] {
+  const alvo = tiposDoGrupoPadrao(nomeGrupo);
+  if (alvo === "todos") return [TODOS_OS_TIPOS];
+  return subcategoriasDa(d, "cat-veiculos")
+    .filter((s) => {
+      const chave = chaveDoTipoVeiculo(s.nome);
+      return chave !== null && alvo.includes(chave);
+    })
+    .map((s) => s.id);
+}
+
+/** O grupo faz parte do padrão de fábrica (mesmo nome), então tem configuração inicial para restaurar. */
+export const ehGrupoChecklistPadrao = (nome: string): boolean => CHECKLIST_VEICULOS_PADRAO.some((p) => mesmoNome(p.nome, nome));
+
+/**
+ * Volta um grupo do padrão à configuração inicial: nome, itens e tipos de veículo (decisão 108). O id
+ * fica, e os itens que já existiam mantêm o id. Se o tipo ainda não existe em Gerais, os tipos
+ * atuais ficam como estão e o retorno avisa.
+ */
+export function restaurarGrupoChecklistVeiculo(id: string, storage = storagePadrao()): { tiposRestaurados: boolean } {
+  return alterar(storage, (d) => {
+    const grupo = achar(d.itensChecklistVeiculo, id, "Grupo do check list");
+    const padrao = CHECKLIST_VEICULOS_PADRAO.find((p) => mesmoNome(p.nome, grupo.nome));
+    if (!padrao) throw new Error("Este grupo não faz parte do padrão: não há configuração inicial para restaurar.");
+    grupo.nome = padrao.nome;
+    grupo.itens = montarItensChecklist(grupo.itens, [...padrao.itens]);
+    const tipos = tiposVeiculoDoPadrao(d, padrao.nome);
+    if (tipos.length > 0) grupo.tiposVeiculo = tipos;
+    return { tiposRestaurados: tipos.length > 0 };
+  });
+}
+
 // Cadastra os grupos padrão que ainda não existem (mesmo nome); o que já está cadastrado não é alterado.
 // O tipo de veículo é ligado pelo nome das subcategorias de Veículos que existem em Gerais; grupo sem
 // subcategoria correspondente fica sem tipo (não aparece em nenhum check list) até ser ligado ao editar.
@@ -564,17 +597,9 @@ export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { g
     let itens = 0;
     let semTipo = 0;
     let ligados = 0;
-    const veiculos = subcategoriasDa(d, "cat-veiculos");
     for (const padrao of CHECKLIST_VEICULOS_PADRAO) {
       const existente = d.itensChecklistVeiculo.find((g) => mesmoNome(g.nome, padrao.nome));
-      const alvo = tiposDoGrupoPadrao(padrao.nome);
-      const tiposVeiculo =
-        alvo === "todos"
-          ? [TODOS_OS_TIPOS]
-          : veiculos.filter((s) => {
-              const chave = chaveDoTipoVeiculo(s.nome);
-              return chave !== null && alvo.includes(chave);
-            }).map((s) => s.id);
+      const tiposVeiculo = tiposVeiculoDoPadrao(d, padrao.nome);
       if (existente) {
         // Grupo do padrão que ficou sem tipo (o tipo ainda não existia em Gerais): liga agora, sem mexer nos itens.
         if (existente.tiposVeiculo.length === 0 && tiposVeiculo.length > 0) {
