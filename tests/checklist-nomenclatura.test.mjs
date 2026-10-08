@@ -85,3 +85,27 @@ test("avulso concluído com item NOK gera ocorrência, mesmo sem responsável", 
   assert.equal(concluido.status, "Concluído");
   assert.equal(concluido.itens.filter((i) => i.ocorrenciaCodigo).length, 1);
 });
+
+test("a janela Novo check list não tem o campo Tipo de veículo e pede o Tipo de check list, Periódico ou Avulso (dec 118)", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(tela, /Label htmlFor="ck_tipo"/);
+  assert.doesNotMatch(tela, />Tipo de veículo</);
+  assert.match(tela, /htmlFor="ck_modo">Tipo de check list/);
+  assert.match(tela, /<SelectItem value="periodico">Periódico<\/SelectItem>/);
+  assert.match(tela, /<SelectItem value="avulso">Avulso<\/SelectItem>/);
+  assert.doesNotMatch(tela, /periodicidadeAvulso/);
+});
+
+test("o módulo traz os grupos pela periodicidade e pelo tipo avulso da associação (dec 119)", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /gruposDaPeriodicidade\(associacaoEscolhida/);
+  assert.match(tela, /gruposAvulsosDaAssociacao\(associacaoEscolhida\)/);
+  assert.match(tela, /periodicidadesDaAssociacao/);
+});
+
+test("trocar a periodicidade na janela Novo check list não muda a situação por veículo nem o painel (dec 119)", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /const periodicidadeDoDialogo = /);
+  assert.match(tela, /const per = periodicidadeDe\(v\);/);
+  assert.match(tela, /periodicidade: periodicidadeDoDialogo\(veiculoEscolhido\)/);
+});

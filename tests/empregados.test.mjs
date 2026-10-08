@@ -122,7 +122,7 @@ test('máscara do CPF formata ao digitar no padrão xxx.xxx.xxx-xx', () => {
 
 test('campo CPF do empregado usa a máscara e o placeholder xxx.xxx.xxx-xx', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync(new URL('../src/routes/_authenticated/empregados.tsx', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../src/components/modules/EmpregadosCadastroModulo.tsx', import.meta.url), 'utf8');
   assert.match(src, /placeholder="xxx\.xxx\.xxx-xx"/);
   assert.match(src, /mascararCpf\(/);
   assert.doesNotMatch(src, /maxLength=\{14\}/);

@@ -68,9 +68,14 @@ export const lerChecklists = (storage: StorageLike | null = storagePadrao()): Ch
 // Periodicidade do veículo: a mais frequente entre os grupos habilitados em Parâmetros > Veículos > Associar
 // itens de check list a um veículo (a associação escreve "Diária"; aqui vale "Diário"). Sem associação, nula.
 export function periodicidadeDaAssociacao(associacao: Pick<AssociacaoChecklist, "itens"> | null | undefined): Periodicidade | null {
+  return periodicidadesDaAssociacao(associacao)[0] ?? null;
+}
+
+// Todas as periodicidades definidas nos grupos habilitados, da mais para a menos frequente (decisão 119).
+export function periodicidadesDaAssociacao(associacao: Pick<AssociacaoChecklist, "itens"> | null | undefined): Periodicidade[] {
   const doGrupo = (p: string): Periodicidade | null => (p === "Diária" ? "Diário" : ehPeriodicidade(p) ? p : null);
   const validas = (associacao?.itens ?? []).map((i) => doGrupo(i.periodicidade)).filter((p): p is Periodicidade => p !== null);
-  return PERIODICIDADES.find((p) => validas.includes(p)) ?? null;
+  return PERIODICIDADES.filter((p) => validas.includes(p));
 }
 
 export const ehPeriodicidade = (v: unknown): v is Periodicidade => PERIODICIDADES.includes(v as Periodicidade);
@@ -225,7 +230,7 @@ export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePad
   return gravarNovoChecklist({ ...entrada, periodicidade: entrada.periodicidade }, false, storage, agora);
 }
 
-// Check list avulso (decisão 90): sem periodicidade e sem responsável, com todos os grupos do tipo do veículo. Fica fora
+// Check list avulso (decisão 90): sem periodicidade e sem responsável, com os grupos que a janela mandar. Fica fora
 // da lista principal, do painel do mês e da situação por veículo; gera ocorrência dos itens NOK como qualquer outro.
 export type EntradaChecklistAvulso = Pick<EntradaChecklist, "veiculoId" | "veiculoRotulo" | "tipoVeiculo" | "grupos">;
 

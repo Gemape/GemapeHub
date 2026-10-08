@@ -50,3 +50,5 @@ Nada abaixo deve ser feito antes da ordem do responsável.
 - `caixa_ferramenta_itens`: restrição única por `ferramenta_id` (uma ferramenta em uma caixa só, decisão 106); migrar antes os dados repetidos, se houver.
 
 - Tamanhos por grupo de ferramenta (decisão 117): precisará de tabela grupo -> tamanhos no banco real. Sem tabela criada agora.
+- Check list de veículo (decisão 116): a associação precisará de `obrigatorio` por grupo, periodicidade nula e responsável nulo. Sem tabela criada agora.
+- Check list de veículo (decisão 119): cada grupo associado precisará de `tipo` (periódico ou avulso); avulso grava periodicidade nula.

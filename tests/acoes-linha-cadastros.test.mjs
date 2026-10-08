@@ -14,7 +14,7 @@ test("Empresas usa AcoesLinha; Clonar abre cadastro novo sem CNPJ", () => {
 });
 
 test("Empregados usa AcoesLinha; Clonar limpa CPF, matrícula e e-mail", () => {
-  const src = ler("empregados.tsx");
+  const src = ler("../../components/modules/EmpregadosCadastroModulo.tsx");
   assert.match(src, /<AcoesLinha rotulo=\{e\.nome\} onClonar=.*onEditar=.*onExcluir=/);
   assert.match(src, /setEditando\(clonar \? null : empregado\)/);
   assert.match(src, /defaultValue=\{editando\?\.cpf \? \(.*mascararCpf\(editando\.cpf\)\) : ""\}/);
@@ -38,7 +38,7 @@ test("Ficha de EPI usa AcoesLinha; Clonar copia só o texto e deixa o EPI em bra
 test("Clonar empregado não copia a demissão e a ficha e os códigos deixam quem só lê abrir o registro (revisão)", async () => {
   const { readFileSync } = await import("node:fs");
   const ler = (a) => readFileSync(new URL(`../src/${a}`, import.meta.url), "utf8");
-  assert.match(ler("routes/_authenticated/empregados.tsx"), /defaultValue=\{editando\?\.data_demissao/);
+  assert.match(ler("components/modules/EmpregadosCadastroModulo.tsx"), /defaultValue=\{editando\?\.data_demissao/);
   for (const a of ["routes/_authenticated/epi-ficha.tsx", "routes/_authenticated/cadastros/gerais/codigo-fabrica.tsx", "routes/_authenticated/cadastros/gerais/codigo-produto.tsx"]) {
     assert.match(ler(a), /<AcoesLinha[\s\S]*?editarLivre/);
   }
