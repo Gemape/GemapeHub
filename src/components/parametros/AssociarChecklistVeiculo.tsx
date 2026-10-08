@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { descricaoVeiculo } from "@/lib/descricao-veiculo";
 import {
-  criarAssociacao, editarAssociacao, EVENTO_ASSOCIACOES_CHECKLIST, gruposDaAssociacao, lerAssociacoes,
-  PERIODICIDADES_ASSOCIACAO, removerAssociacao,
+  checklistsDaAssociacao, criarAssociacao, editarAssociacao, EVENTO_ASSOCIACOES_CHECKLIST, gruposDaAssociacao, lerAssociacoes,
+  NAO_DEFINIDO, PERIODICIDADES_ASSOCIACAO, removerAssociacao,
   type AssociacaoChecklist, type EntradaItemAssociacao,
 } from "@/lib/checklist-associacao-veiculo";
 import { empregadoElegivelPortador } from "@/lib/portadores-caixa";
@@ -22,6 +23,7 @@ import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 type VeiculoLinha = Record<string, unknown> & { id: string };
 const PAGINA = 50;
+const SEM_RESPONSAVEL = "__nao-definido__"; // valor do campo Responsável quando é "Não definido"
 const CATEGORIA_VEICULO = "cat-veiculos";
 
 // Lê todos os veículos, de página em página, sem o corte do seletor de cadastro.
@@ -102,16 +104,18 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   function abrir(a: AssociacaoChecklist | null, clonar: boolean) {
     setEditando(a && !clonar ? a.veiculoId : null);
     setVeiculoId(a && !clonar ? a.veiculoId : "");
-    setResponsavelId(a && !clonar ? a.responsavel.id : "");
+    setResponsavelId(a && !clonar ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
     // Clonar copia os grupos e periodicidades para outro veículo; o responsável é escolhido de novo.
-    setItens(a ? gruposDaAssociacao(a, grupos).map((i) => ({ grupoId: i.grupoId, periodicidade: i.periodicidade })) : []);
+    setItens(a ? gruposDaAssociacao(a, grupos).map((i) => ({ grupoId: i.grupoId, periodicidade: i.periodicidade, obrigatorio: i.obrigatorio })) : []);
     setAberto(true);
   }
 
-  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, periodicidade: "" }]));
+  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, periodicidade: "", obrigatorio: false }]));
   const desabilitar = (grupoId: string) => setItens((atual) => atual.filter((i) => i.grupoId !== grupoId));
   const mudar = (grupoId: string, periodicidade: string) =>
     setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, periodicidade } : i)));
+  const mudarObrigatorio = (grupoId: string, obrigatorio: boolean) =>
+    setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, obrigatorio } : i)));
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -120,9 +124,18 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     setTravado(true);
     // O responsável salvo que deixou de ser elegível continua valendo enquanto estiver escolhido.
     const salvo = editando ? associacoes.find((a) => a.veiculoId === editando)?.responsavel : null;
-    const escolhido = responsavel
-      ? { id: responsavel.id, nome: responsavel.nome }
-      : salvo && salvo.id === responsavelId ? salvo : null;
+    // "Não definido" (decisão 116) grava sem responsável; só um campo vazio é erro.
+    if (!responsavelId) {
+      salvando.current = false;
+      setTravado(false);
+      toast.error("Escolha o responsável ou marque Não definido.");
+      return;
+    }
+    const escolhido = responsavelId === SEM_RESPONSAVEL
+      ? null
+      : responsavel
+        ? { id: responsavel.id, nome: responsavel.nome }
+        : salvo && salvo.id === responsavelId ? salvo : null;
     const ok = executar(
       () => (editando
         ? editarAssociacao(editando, { veiculoId, responsavel: escolhido, itens }, undefined, undefined, grupos.map((g) => g.id))
@@ -168,32 +181,47 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
-              <th className="px-3 py-2">Veículo</th>
-              <th className="px-3 py-2">Responsável</th>
-              <th className="px-3 py-2">Grupos habilitados (periodicidade)</th>
+              <th className="px-3 py-2">Check list (Placa &gt;&gt; Periodicidade &gt;&gt; Responsável)</th>
+              <th className="px-3 py-2">Tipo</th>
+              <th className="px-3 py-2">Obrigatório</th>
+              <th className="px-3 py-2">Grupos</th>
               <th className="px-3 py-2">Atualizado em</th>
               <th className="px-3 py-2 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {associacoes.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-4 text-muted-foreground">Nenhum veículo com itens de check list associados ainda.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-4 text-muted-foreground">Nenhum veículo com itens de check list associados ainda.</td></tr>
             )}
             {associacoes.map((a) => {
               const v = veiculoPorId(a.veiculoId);
               const rotulo = v ? rotuloVeiculo(v) : carregandoVeiculos ? "Carregando…" : "Veículo removido";
+              const placa = String(v?.["placa"] ?? "").trim().toUpperCase() || rotulo;
+              const listas = checklistsDaAssociacao(placa, a, grupos);
               return (
-                <tr key={a.veiculoId}>
-                  <td className="px-3 py-2 font-medium">{rotulo}</td>
-                  <td className="px-3 py-2">{a.responsavel.nome || "—"}</td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {gruposDaAssociacao(a, grupos).map((i) => `${i.nome} (${i.periodicidade})`).join("; ") || "—"}
-                  </td>
-                  <td className="px-3 py-2 text-xs text-muted-foreground">{dataBr(a.atualizadoEm)}</td>
-                  <td className="px-3 py-2">
-                    <AcoesLinha rotulo={rotulo} onClonar={() => abrir(a, true)} onEditar={() => abrir(a, false)} onExcluir={() => excluir(a)} />
-                  </td>
-                </tr>
+                <Fragment key={a.veiculoId}>
+                  <tr className="bg-muted/50">
+                    <td colSpan={4} className="px-3 py-2 font-semibold">{rotulo} <span className="font-normal text-muted-foreground">· responsável: {a.responsavel?.nome ?? NAO_DEFINIDO}</span></td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{dataBr(a.atualizadoEm)}</td>
+                    <td className="px-3 py-2">
+                      <AcoesLinha rotulo={rotulo} onClonar={() => abrir(a, true)} onEditar={() => abrir(a, false)} onExcluir={() => excluir(a)} />
+                    </td>
+                  </tr>
+                  {listas.length === 0 && (
+                    <tr><td colSpan={6} className="px-3 py-2 text-muted-foreground">Nenhum grupo habilitado existente.</td></tr>
+                  )}
+                  {listas.map((c) => (
+                    <tr key={c.periodicidade}>
+                      <td className="px-3 py-2 pl-6 font-medium">{c.nome}</td>
+                      <td className="px-3 py-2">
+                        {c.tipo}
+                        {c.tipo === "Livre" && <span className="block text-xs text-muted-foreground">qualquer hora, qualquer pessoa; fora da lista do menu</span>}
+                      </td>
+                      <td className="px-3 py-2">{c.obrigatorio}</td>
+                      <td className="px-3 py-2 text-muted-foreground" colSpan={3}>{c.grupos.map((g) => g.nome).join("; ")}</td>
+                    </tr>
+                  ))}
+                </Fragment>
               );
             })}
           </tbody>
@@ -227,8 +255,9 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-responsavel">Responsável</Label>
                 <Select key={`${veiculoId}-${opcoesResponsavel.length}`} value={responsavelId} onValueChange={setResponsavelId}>
-                  <SelectTrigger id="assoc-responsavel"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>
+                  <SelectTrigger id="assoc-responsavel"><SelectValue placeholder="Selecione o responsável ou Não definido" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={SEM_RESPONSAVEL}>{NAO_DEFINIDO}</SelectItem>
                     {opcoesResponsavel.map((o) => (
                       <SelectItem key={o.id} value={o.id}>{o.rotulo}</SelectItem>
                     ))}
@@ -287,6 +316,10 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                               </SelectContent>
                             </Select>
                           </div>
+                          <label className="flex items-center gap-2 text-xs" htmlFor={`obrigatorio-${i.grupoId}`}>
+                            <Checkbox id={`obrigatorio-${i.grupoId}`} checked={i.obrigatorio === true} onCheckedChange={(v) => mudarObrigatorio(i.grupoId, v === true)} />
+                            Check list obrigatório
+                          </label>
                         </li>
                       );
                     })}

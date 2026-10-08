@@ -22,14 +22,15 @@ test("sem placa (empilhadeira), o nome usa a descrição do veículo no lugar da
   );
 });
 
-test("check list sem periodicidade ou sem responsável não aparece na lista", () => {
+test("só o check list sem periodicidade E sem responsável fica fora da lista (dec 116)", () => {
   const ok = { periodicidade: "Semanal", responsavelNome: "Luana" };
   assert.equal(checklistVisivelNaLista(ok), true);
-  assert.equal(checklistVisivelNaLista({ periodicidade: "", responsavelNome: "Luana" }), false);
-  assert.equal(checklistVisivelNaLista({ periodicidade: "Semanal", responsavelNome: "  " }), false);
+  assert.equal(checklistVisivelNaLista({ periodicidade: "", responsavelNome: "Luana" }), true);
+  assert.equal(checklistVisivelNaLista({ periodicidade: "Semanal", responsavelNome: "  " }), true);
   assert.equal(checklistVisivelNaLista({ periodicidade: "", responsavelNome: "" }), false);
   assert.equal(checklistVisivelNaLista({ periodicidade: undefined, responsavelNome: undefined }), false);
-  assert.equal(checklistVisivelNaLista({ periodicidade: "Anual", responsavelNome: "Luana" }), false); // valor que não existe
+  assert.equal(checklistVisivelNaLista({ periodicidade: "Anual", responsavelNome: "" }), false); // valor que não existe
+  assert.equal(nomeDoChecklist({ placa: "abc1d23", periodicidade: "", responsavelNome: "" }), "ABC1D23 >> Não definida >> Não definido");
 });
 
 test("o módulo mostra o nome na lista e filtra os que não podem ser nomeados", () => {

@@ -49,12 +49,13 @@ export type ChecklistVeiculo = {
 // Nome do check list (decisão 90): Placa >> Periodicidade >> Responsável. Sem placa (empilhadeira), entra a descrição do veículo.
 export function nomeDoChecklist(c: { placa: string; fallbackVeiculo?: string; periodicidade: string; responsavelNome: string }): string {
   const veiculo = c.placa.trim().toUpperCase() || (c.fallbackVeiculo ?? "").trim();
-  return [veiculo, c.periodicidade, c.responsavelNome].map((t) => t.trim().replace(/\s+/g, " ")).join(" >> ");
+  // Sem periodicidade ou sem responsável, o nome diz "Não definida" / "Não definido" (decisão 116).
+  return [veiculo, c.periodicidade.trim() || "Não definida", c.responsavelNome.trim() || "Não definido"].map((t) => t.trim().replace(/\s+/g, " ")).join(" >> ");
 }
 
-// Só aparece na lista do módulo o check list que tem periodicidade e responsável, ou seja, o que pode receber o nome acima.
+// Só fica fora da lista do menu o check list sem periodicidade E sem responsável (o livre, decisão 116).
 export function checklistVisivelNaLista(c: { periodicidade?: string | null | undefined; responsavelNome?: string | null | undefined }): boolean {
-  return ehPeriodicidade(c.periodicidade) && (c.responsavelNome ?? "").trim() !== "";
+  return ehPeriodicidade(c.periodicidade) || (c.responsavelNome ?? "").trim() !== "";
 }
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);

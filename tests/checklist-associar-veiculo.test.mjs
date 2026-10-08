@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
-  PERIODICIDADES_ASSOCIACAO, lerAssociacoes, criarAssociacao, editarAssociacao, removerAssociacao, gruposDaAssociacao,
+  PERIODICIDADES_ASSOCIACAO, checklistsDaAssociacao, lerAssociacoes, criarAssociacao, editarAssociacao, removerAssociacao, gruposDaAssociacao,
 } from "../src/lib/checklist-associacao-veiculo.ts";
 import { MENU_VEICULOS } from "../src/lib/menu-parametros.ts";
 
@@ -13,15 +13,16 @@ const memoria = () => {
 };
 const resp = { id: "e1", nome: "Maria Souza" };
 const grupos = [{ grupoId: "g1", periodicidade: "Diária" }, { grupoId: "g2", periodicidade: "Mensal" }];
+const gravados = grupos.map((g) => ({ ...g, obrigatorio: false }));
 
-test("as periodicidades são Diária, Semanal, Quinzenal e Mensal", () => {
-  assert.deepEqual([...PERIODICIDADES_ASSOCIACAO], ["Diária", "Semanal", "Quinzenal", "Mensal"]);
+test("as periodicidades são Diária, Semanal, Quinzenal, Mensal e Não definida (dec 116)", () => {
+  assert.deepEqual([...PERIODICIDADES_ASSOCIACAO], ["Diária", "Semanal", "Quinzenal", "Mensal", "Não definida"]);
 });
 
 test("criar associação guarda grupos com periodicidade e o responsável, uma por veículo", () => {
   const s = memoria();
   const a = criarAssociacao("v1", resp, grupos, s, new Date("2026-10-07T12:00:00Z"));
-  assert.deepEqual(a.itens, grupos);
+  assert.deepEqual(a.itens, gravados);
   assert.deepEqual(a.responsavel, resp);
   assert.equal(lerAssociacoes(s).length, 1);
   assert.throws(() => criarAssociacao("v1", resp, grupos, s), /já tem/i);
@@ -30,7 +31,6 @@ test("criar associação guarda grupos com periodicidade e o responsável, uma p
 test("validações: veículo, responsável, ao menos um grupo, periodicidade válida, sem grupo repetido ou removido", () => {
   const s = memoria();
   assert.throws(() => criarAssociacao("", resp, grupos, s), /veículo/i);
-  assert.throws(() => criarAssociacao("v1", null, grupos, s), /respons/i);
   assert.throws(() => criarAssociacao("v1", { id: "", nome: "" }, grupos, s), /respons/i);
   assert.throws(() => criarAssociacao("v1", resp, [], s), /ao menos um/i);
   assert.throws(() => criarAssociacao("v1", resp, [{ grupoId: "g1", periodicidade: "" }], s), /periodicidade/i);
@@ -40,12 +40,40 @@ test("validações: veículo, responsável, ao menos um grupo, periodicidade vá
   assert.equal(lerAssociacoes(s).length, 0);
 });
 
+test("responsável não definido e grupo Não definida: check list livre, nome com Não definida/Não definido (dec 116)", () => {
+  const s = memoria();
+  const a = criarAssociacao("v1", null, [
+    { grupoId: "g1", periodicidade: "Mensal", obrigatorio: true },
+    { grupoId: "g2", periodicidade: "Não definida" },
+    { grupoId: "g3", periodicidade: "Não definida", obrigatorio: true },
+  ], s);
+  assert.equal(a.responsavel, null);
+  assert.equal(lerAssociacoes(s)[0].responsavel, null);
+  const grupos3 = [{ id: "g1", nome: "Freios" }, { id: "g2", nome: "Luzes" }, { id: "g3", nome: "Pneus" }];
+  const listas = checklistsDaAssociacao("ABC1D23", a, grupos3);
+  assert.deepEqual(listas.map((l) => [l.nome, l.tipo, l.obrigatorio]), [
+    ["ABC1D23 >> Mensal >> Não definido", "Periódico", "Sim"],
+    ["ABC1D23 >> Não definida >> Não definido", "Livre", "Parcial"],
+  ]);
+  const comResp = checklistsDaAssociacao("ABC1D23", { ...a, responsavel: resp }, grupos3);
+  assert.deepEqual(comResp.map((l) => [l.nome, l.tipo]), [
+    ["ABC1D23 >> Mensal >> Maria Souza", "Periódico"],
+    ["ABC1D23 >> Não definida >> Maria Souza", "Avulso"],
+  ]);
+});
+
+test("associações antigas, sem obrigatório, são lidas como não obrigatórias", () => {
+  const s = memoria();
+  s.setItem("gemape-demo-associacoes-checklist-veiculo", JSON.stringify([{ veiculoId: "v1", responsavel: resp, atualizadoEm: "", itens: [{ grupoId: "g1", periodicidade: "Diária" }] }]));
+  assert.equal(lerAssociacoes(s)[0].itens[0].obrigatorio, false);
+});
+
 test("editar troca grupos, periodicidade, responsável e veículo (tudo ou nada); excluir remove", () => {
   const s = memoria();
   criarAssociacao("v1", resp, grupos, s);
   criarAssociacao("v2", resp, [grupos[0]], s);
   assert.throws(() => editarAssociacao("v1", { veiculoId: "v2", responsavel: resp, itens: grupos }, s), /já tem/i);
-  assert.deepEqual(lerAssociacoes(s).find((a) => a.veiculoId === "v1").itens, grupos);
+  assert.deepEqual(lerAssociacoes(s).find((a) => a.veiculoId === "v1").itens, gravados);
   const nova = editarAssociacao("v1", { veiculoId: "v3", responsavel: { id: "e2", nome: "João" }, itens: [{ grupoId: "g2", periodicidade: "Quinzenal" }] }, s);
   assert.equal(nova.veiculoId, "v3");
   assert.equal(lerAssociacoes(s).some((a) => a.veiculoId === "v1"), false);
@@ -84,4 +112,13 @@ test("a tela existe e usa os grupos de Itens check list, periodicidade e respons
   const rota = readFileSync(new URL("../src/routes/_authenticated/cadastros/veiculos-checklist-associar.tsx", import.meta.url), "utf8");
   assert.match(rota, /cadastros\/veiculos-checklist-associar/);
   assert.match(rota, /redirect/);
+});
+
+test("a tela de Parâmetros lista por veículo e check list, com tipo, obrigatório e responsável Não definido (dec 116)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /checklistsDaAssociacao\(/);
+  assert.match(tela, /Check list obrigatório/);
+  assert.match(tela, /SEM_RESPONSAVEL/);
+  assert.match(tela, /<th className="px-3 py-2">Tipo<\/th>/);
+  assert.match(tela, /<th className="px-3 py-2">Obrigatório<\/th>/);
 });
