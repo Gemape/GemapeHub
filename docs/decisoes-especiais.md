@@ -658,3 +658,7 @@ Ordem do responsável em 07/10: hoje há duas rotinas, "Tamanho e Medidas" (cada
 ## 91. PARÂMETROS ESPECÍFICOS ABRE DIRETO NA CATEGORIA DO MENU
 
 Ordem do responsável em 07/10: a rotina "Tabelas de Apoio" passa a se chamar "Parâmetros Específicos" e, em vez de cair na tela que pede para escolher entre Veículo, Ferramenta, EPI e Uniforme, abre direto no menu de interesse. **Escolhas do Claude:** (a) o item de EPI, Uniformes e Ferramentas abre na categoria do próprio menu (`?de=`); a lista de categorias e o botão "Voltar às categorias" não aparecem nesses casos; (b) o menu Veículos também ganhou o item "Parâmetros Específicos", para a categoria de veículos continuar acessível; (c) endereço antigo sem `?de=` (favorito) continua mostrando a escolha de categoria; (d) textos do Novo EPI/Uniforme passam a citar "Parâmetros > Parâmetros Específicos". Só visual; nada no Supabase.
+
+## 92. NOVO CHECK LIST: JANELA DE CADASTRO DE VEÍCULOS SEM PERDER O QUE FOI ESCOLHIDO
+
+Ordem do responsável em 07/10: no Novo check list, abrir a tela de veículos sem perder o cadastro em andamento, salvar e voltar. **Escolhas do Claude:** (a) abaixo do campo Veículo há o link "Cadastrar veículo", que abre a tela de Cadastro de Veículos (a mesma do menu) numa janela; (b) a janela fica ao lado do diálogo do check list, não dentro: tipo, veículo e responsável já escolhidos continuam preenchidos ao fechar; (c) o veículo salvo aparece na lista do tipo correspondente, sem selecionar sozinho; (d) vale para o check list periódico e para o avulso. Só visual; nada no Supabase.
