@@ -86,7 +86,7 @@ export function filtrarGrupos(
       g.nome,
       g.categoria,
       g.unidade_medida,
-      ...g.itens.flatMap((i) => [i.codigo_sku, rotuloTamanho(i.tamanho_id)]),
+      ...g.itens.flatMap((i) => [i.codigo_sku, rotuloTamanho(i.tamanho_id), i.categoria, i.unidade_medida]),
     ),
   );
 }

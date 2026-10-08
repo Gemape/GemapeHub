@@ -599,7 +599,7 @@ function GrupoLinhas({
   return (
     <>
       {grupo.itens.map((item, indice) => (
-        <TableRow key={item.id} className={indice === 0 ? "border-t-2 border-border/70" : undefined}>
+        <TableRow key={item.id} className={indice === 0 ? "border-t-2 border-border" : undefined}>
           <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
           <TableCell><DescricaoEpi nome={grupo.nome} categoria={item.categoria} unidade={item.unidade_medida} /></TableCell>
           <TableCell>{rotuloTamanho(item.tamanho_id) || "Sem tamanho"}</TableCell>
