@@ -9,7 +9,8 @@ import {
   editarGrupoChecklistVeiculo,
   removerGrupoChecklistVeiculo,
   cadastrarPadraoChecklistVeiculos,
-  restaurarGrupoChecklistVeiculo,
+  restaurarPadroesChecklistVeiculos,
+  situacaoPadraoChecklistVeiculos,
   ehGrupoChecklistPadrao,
 } from "../src/lib/parametros-base.ts";
 import { CHECKLIST_VEICULOS_PADRAO, chaveDoTipoVeiculo } from "../src/lib/checklist-veiculos-padrao.ts";
@@ -174,41 +175,65 @@ test("nenhum nome do padrão novo coincide com o do padrão antigo", async () =>
   assert.ok(NOMES_PADRAO_ANTIGO.every((n) => !novos.includes(n.toLowerCase())));
 });
 
-test("restaurar padrão volta itens e tipos do grupo, mantém o id e os itens que já existiam (decisão 108)", () => {
+test("restaurar padrão inicial: situação de cada grupo (igual, alterado, não cadastrado)", () => {
+  const s = storage();
+  assert.equal(situacaoPadraoChecklistVeiculos(s).length, CHECKLIST_VEICULOS_PADRAO.length);
+  assert.ok(situacaoPadraoChecklistVeiculos(s).every((p) => p.situacao === "ausente"));
+  cadastrarPadraoChecklistVeiculos(s);
+  assert.ok(situacaoPadraoChecklistVeiculos(s).every((p) => p.situacao === "igual"));
+  const g = lerParametros(s).itensChecklistVeiculo.find((x) => x.nome === "Veículos leves · Mecânica");
+  editarGrupoChecklistVeiculo(g.id, g.nome, ["Só um item"], g.tiposVeiculo, s);
+  removerGrupoChecklistVeiculo(lerParametros(s).itensChecklistVeiculo.find((x) => x.nome === "Veículos leves · Interior").id, s);
+  const sit = Object.fromEntries(situacaoPadraoChecklistVeiculos(s).map((p) => [p.nome, p.situacao]));
+  assert.equal(sit["Veículos leves · Mecânica"], "alterado");
+  assert.equal(sit["Veículos leves · Interior"], "ausente");
+  assert.equal(sit["Veículos leves · Exterior e pneus"], "igual");
+});
+
+test("restaurar padrão inicial volta só os marcados, mantém id e itens, recadastra o excluído (decisão 110)", () => {
   const s = storage();
   cadastrarPadraoChecklistVeiculos(s);
   const antes = lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Mecânica");
   const padrao = CHECKLIST_VEICULOS_PADRAO.find((p) => p.nome === "Veículos leves · Mecânica");
   editarGrupoChecklistVeiculo(antes.id, "veículos leves · mecânica", ["Só um item", padrao.itens[0]], ["*"], s);
-  assert.equal(lerParametros(s).itensChecklistVeiculo.find((g) => g.id === antes.id).itens.length, 2);
-  const r = restaurarGrupoChecklistVeiculo(antes.id, s);
-  assert.equal(r.tiposRestaurados, true);
-  assert.equal(r.nome, "Veículos leves · Mecânica");
-  const depois = lerParametros(s).itensChecklistVeiculo.find((g) => g.id === antes.id);
+  removerGrupoChecklistVeiculo(lerParametros(s).itensChecklistVeiculo.find((x) => x.nome === "Veículos leves · Interior").id, s);
+  const exterior = lerParametros(s).itensChecklistVeiculo.find((x) => x.nome === "Veículos leves · Exterior e pneus");
+  editarGrupoChecklistVeiculo(exterior.id, exterior.nome, ["Alterado"], exterior.tiposVeiculo, s);
+  const r = restaurarPadroesChecklistVeiculos(["Veículos leves · Mecânica", "veículos leves · interior"], s);
+  assert.deepEqual(r, { restaurados: 1, criados: 1, semTipo: 0 });
+  const lido = lerParametros(s).itensChecklistVeiculo;
+  const depois = lido.find((g) => g.id === antes.id);
   assert.equal(depois.nome, "Veículos leves · Mecânica");
   assert.deepEqual(depois.itens.map((i) => i.nome), padrao.itens);
   assert.equal(depois.itens[0].id, antes.itens[0].id);
   assert.deepEqual(depois.tiposVeiculo, antes.tiposVeiculo);
+  assert.ok(lido.some((g) => g.nome === "Veículos leves · Interior"));
+  // O que não foi marcado fica como estava.
+  assert.deepEqual(lido.find((g) => g.id === exterior.id).itens.map((i) => i.nome), ["Alterado"]);
 });
 
-test("restaurar padrão não vale para grupo que não é do padrão e não mexe nos outros grupos", () => {
+test("restaurar padrão inicial é tudo ou nada: nada marcado ou grupo fora do padrão não grava", () => {
   const s = storage();
   cadastrarPadraoChecklistVeiculos(s);
   const meu = adicionarGrupoChecklistVeiculo("Motos", ["Freio"], ["*"], s);
+  const mec = lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Mecânica");
+  editarGrupoChecklistVeiculo(mec.id, mec.nome, ["Só um item"], mec.tiposVeiculo, s);
   assert.equal(ehGrupoChecklistPadrao("Motos"), false);
   assert.equal(ehGrupoChecklistPadrao("veículos leves · mecânica"), true);
-  assert.throws(() => restaurarGrupoChecklistVeiculo(meu.id, s), /não faz parte do padrão/i);
-  const outro = lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Interior");
-  const itensOutro = outro.itens.length;
-  const mecanica = lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Veículos leves · Mecânica");
-  restaurarGrupoChecklistVeiculo(mecanica.id, s);
-  assert.equal(lerParametros(s).itensChecklistVeiculo.find((g) => g.id === outro.id).itens.length, itensOutro);
+  assert.throws(() => restaurarPadroesChecklistVeiculos([], s), /ao menos um/i);
+  assert.throws(() => restaurarPadroesChecklistVeiculos(["Veículos leves · Mecânica", "Motos"], s), /não faz parte do padrão/i);
+  const lido = lerParametros(s).itensChecklistVeiculo;
+  assert.deepEqual(lido.find((g) => g.id === mec.id).itens.map((i) => i.nome), ["Só um item"]);
+  assert.deepEqual(lido.find((g) => g.id === meu.id).itens.map((i) => i.nome), ["Freio"]);
 });
 
-test("a lista Itens check list mostra Restaurar padrão por linha só para grupos do padrão", () => {
+test("a lista Itens check list tem um único botão Restaurar padrão inicial, sem botão por linha (decisão 110)", () => {
   const lista = readFileSync(new URL("../src/components/parametros/VeiculosListasParametros.tsx", import.meta.url), "utf8");
-  assert.match(lista, /restauravel=\{\(l\) => ehGrupoChecklistPadrao\(l\.nome\)\}/);
-  assert.match(lista, /restaurarGrupoChecklistVeiculo\(l\.id\)/);
+  assert.match(lista, /acaoExtra=\{<RestaurarPadraoChecklist \/>\}/);
+  assert.match(lista, /Restaurar padrão inicial/);
+  assert.match(lista, /restaurarPadroesChecklistVeiculos\(marcados\)/);
+  assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
+  assert.doesNotMatch(lista, /onRestaurar|restauravel/);
   const acoes = readFileSync(new URL("../src/components/parametros/AcoesLinha.tsx", import.meta.url), "utf8");
-  assert.match(acoes, /Restaurar padrão/);
+  assert.doesNotMatch(acoes, /Restaurar/);
 });

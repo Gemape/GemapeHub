@@ -20,8 +20,9 @@ import {
   adicionarAcaoManutencaoVeiculo,
   adicionarGrupoChecklistVeiculo,
   cadastrarPadraoChecklistVeiculos,
-  ehGrupoChecklistPadrao,
-  restaurarGrupoChecklistVeiculo,
+  restaurarPadroesChecklistVeiculos,
+  situacaoPadraoChecklistVeiculos,
+  type SituacaoPadraoChecklist,
   editarGrupoChecklistVeiculo,
   removerGrupoChecklistVeiculo,
   subcategoriasDa,
@@ -51,8 +52,7 @@ function ListaVeiculos({
   onExcluir,
   onPadrao,
   opcoesTipos,
-  onRestaurar,
-  restauravel,
+  acaoExtra,
 }: {
   titulo: string;
   subtitulo: string;
@@ -64,9 +64,8 @@ function ListaVeiculos({
   onPadrao: () => void;
   // Check list (decisão 63): tipos de veículo (subcategorias de Veículos) a que o grupo se aplica.
   opcoesTipos?: { id: string; nome: string }[];
-  // Restaurar padrão por linha (decisão 108): só nas linhas que têm configuração inicial.
-  onRestaurar?: (linha: Linha) => void;
-  restauravel?: (linha: Linha) => boolean;
+  // Botão a mais ao lado de "Cadastrar" (Restaurar padrão inicial do check list, decisão 110).
+  acaoExtra?: React.ReactNode;
 }) {
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Linha | null>(null);
@@ -113,6 +112,7 @@ function ListaVeiculos({
           <Button requiresWrite variant="outline" onClick={onPadrao}>
             Cadastrar padrão
           </Button>
+          {acaoExtra}
           <Button requiresWrite onClick={() => abrir(null, false)}>
             Cadastrar {singular}
           </Button>
@@ -157,13 +157,6 @@ function ListaVeiculos({
                     rotulo={l.nome}
                     onClonar={() => abrir(l, true)}
                     onEditar={() => abrir(l, false)}
-                    {...(onRestaurar && restauravel?.(l)
-                      ? {
-                          onRestaurar: () => {
-                            if (confirm(`Restaurar ${l.nome} ao padrão? Os itens e os tipos de veículo voltam à configuração inicial e as alterações feitas nesta linha se perdem.`)) onRestaurar(l);
-                          },
-                        }
-                      : {})}
                     onExcluir={() => {
                       if (confirm(`Excluir ${l.nome}?`)) onExcluir(l);
                     }}
@@ -294,6 +287,106 @@ export function TiposOcorrenciaVeiculoLista() {
   );
 }
 
+const ROTULO_SITUACAO: Record<SituacaoPadraoChecklist, string> = {
+  igual: "Igual ao padrão",
+  alterado: "Alterado",
+  ausente: "Não cadastrado",
+};
+
+// Restaurar padrão inicial do check list (decisão 110): mostra todos os grupos do padrão inicial, o
+// responsável marca os que quer restaurar e, depois de confirmar, tudo é gravado de uma vez.
+function RestaurarPadraoChecklist() {
+  useParametrosBase(); // atualiza a lista quando o cadastro muda
+  const [aberto, setAberto] = useState(false);
+  const [marcados, setMarcados] = useState<string[]>([]);
+  const salvando = useRef(false);
+  const [travado, setTravado] = useState(false);
+  const padroes = aberto ? situacaoPadraoChecklistVeiculos() : [];
+
+  function abrir() {
+    setMarcados([]);
+    setAberto(true);
+  }
+
+  const alternar = (nome: string, marcar: boolean) => setMarcados((atual) => (marcar ? [...atual, nome] : atual.filter((n) => n !== nome)));
+
+  function salvar() {
+    if (salvando.current || marcados.length === 0) return;
+    const alterados = padroes.filter((p) => marcados.includes(p.nome) && p.situacao === "alterado").length;
+    const novos = padroes.filter((p) => marcados.includes(p.nome) && p.situacao === "ausente").length;
+    const aviso =
+      `Restaurar ${marcados.length} ${marcados.length === 1 ? "grupo" : "grupos"} ao padrão inicial?` +
+      (alterados > 0 ? ` As alterações feitas em ${alterados} ${alterados === 1 ? "grupo" : "grupos"} (nome, itens e tipos de veículo) se perdem.` : "") +
+      (novos > 0 ? ` ${novos} ${novos === 1 ? "grupo excluído será cadastrado" : "grupos excluídos serão cadastrados"} de novo.` : "");
+    if (!confirm(aviso)) return;
+    salvando.current = true;
+    setTravado(true);
+    const ok = executar(() => {
+      const r = restaurarPadroesChecklistVeiculos(marcados);
+      const partes = [r.restaurados > 0 ? `${r.restaurados} ${r.restaurados === 1 ? "restaurado" : "restaurados"}` : "", r.criados > 0 ? `${r.criados} ${r.criados === 1 ? "cadastrado" : "cadastrados"} de novo` : ""].filter(Boolean);
+      toast.success(
+        `Padrão inicial: ${partes.join(" e ")}.` + (r.semTipo > 0 ? ` ${r.semTipo} sem o tipo de veículo em Gerais: o tipo foi mantido como estava, escolha em Editar.` : ""),
+      );
+    });
+    if (ok) setAberto(false);
+    setTimeout(() => {
+      salvando.current = false;
+      setTravado(false);
+    }, 400);
+  }
+
+  return (
+    <>
+      <Button requiresWrite variant="outline" onClick={abrir}>
+        Restaurar padrão inicial
+      </Button>
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Restaurar padrão inicial</DialogTitle>
+            <DialogDescription>
+              Estes são todos os grupos do padrão inicial do check list. Marque os que quer restaurar: nome, itens e tipos de veículo voltam ao padrão, e o grupo excluído é cadastrado de novo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">{marcados.length} de {padroes.length} marcados</span>
+            <div className="flex gap-1">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setMarcados(padroes.map((p) => p.nome))}>
+                Marcar todos
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setMarcados([])}>
+                Desmarcar todos
+              </Button>
+            </div>
+          </div>
+          <div className="max-h-[50vh] space-y-1 overflow-y-auto rounded-md border p-2">
+            {padroes.map((p, n) => (
+              <label key={p.nome} htmlFor={`restaurar-padrao-${n}`} className="flex cursor-pointer items-start gap-3 rounded px-2 py-1.5 hover:bg-muted/60">
+                <Checkbox id={`restaurar-padrao-${n}`} className="mt-0.5" checked={marcados.includes(p.nome)} onCheckedChange={(v) => alternar(p.nome, v === true)} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-medium">{p.nome}</span>
+                    <span className={p.situacao === "igual" ? "text-xs text-muted-foreground" : "text-xs font-semibold"}>{ROTULO_SITUACAO[p.situacao]}</span>
+                  </span>
+                  <span className="block text-xs text-muted-foreground">{p.itens.join(" · ")}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setAberto(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={salvar} disabled={marcados.length === 0 || travado}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function ChecklistVeiculoLista() {
   const parametros = useParametrosBase();
   const { itensChecklistVeiculo } = parametros;
@@ -314,17 +407,7 @@ export function ChecklistVeiculoLista() {
         )
       }
       onExcluir={(l) => executar(() => removerGrupoChecklistVeiculo(l.id), "Grupo do check list excluído.")}
-      restauravel={(l) => ehGrupoChecklistPadrao(l.nome)}
-      onRestaurar={(l) =>
-        executar(() => {
-          const r = restaurarGrupoChecklistVeiculo(l.id);
-          toast.success(
-            r.tiposRestaurados
-              ? `${r.nome} voltou à configuração inicial.`
-              : `${r.nome} voltou à configuração inicial; o tipo de veículo não existe em Gerais e foi mantido como estava.`,
-          );
-        })
-      }
+      acaoExtra={<RestaurarPadraoChecklist />}
       onPadrao={() =>
         executar(() => {
           const r = cadastrarPadraoChecklistVeiculos();

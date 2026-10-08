@@ -354,5 +354,6 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 105: botão Vincular ferramentas em Número da caixa (inclusive caixa habilitada sem cadastro, que é criada ao salvar o vínculo).
 - Decisão 106: uma ferramenta em uma caixa só (Vincular bloqueia a que está em outra); botão Transferir entre caixas com histórico nas duas (`DialogTransferirCaixa`).
 - Decisão 107: Vincular ferramentas com lista de Parâmetros > Ferramentas, ferramentas de outra caixa travadas e link Cadastrar ferramenta (janela por cima, Voltar ao vínculo).
-- Decisão 108: botão Restaurar padrão por linha em Parâmetros > Veículos > Itens check list (`restaurarGrupoChecklistVeiculo`, `AcoesLinha`).
+- Decisão 108 (substituída pela 110): botão Restaurar padrão por linha em Itens check list.
 - Decisão 109: marca do menu (GEMAPE / Gestão de Patrimônio) centralizada e animada (`marca-titulo`, `marca-linha`, `marca-subtitulo` em styles.css); parada com reduzir movimento.
+- Decisão 110: botão único Restaurar padrão inicial ao lado de Cadastrar grupo, com janela de checkboxes e confirmação (`RestaurarPadraoChecklist`, `situacaoPadraoChecklistVeiculos`, `restaurarPadroesChecklistVeiculos`); botões por linha removidos.
