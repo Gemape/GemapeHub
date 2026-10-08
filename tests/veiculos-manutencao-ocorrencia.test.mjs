@@ -103,7 +103,7 @@ import { readFileSync } from "node:fs";
 test("Parâmetros > Veículos é um grupo com cadastro, ações de manutenção e tipos de ocorrência", () => {
   const menu = readFileSync("src/lib/menu-parametros.ts", "utf8");
   const sidebar = readFileSync("src/components/layout/AppSidebar.tsx", "utf8");
-  for (const url of ["/cadastros/veiculos", "/cadastros/veiculos-acoes-manutencao", "/cadastros/veiculos-tipos-ocorrencia"]) {
+  for (const url of ["/cadastros/veiculos", "/cadastros/veiculos-manutencao", "/cadastros/veiculos-tipos-ocorrencia"]) {
     assert.ok(menu.includes(`url: "${url}"`), url);
   }
   assert.match(sidebar, /<MenuVeiculos pathname=\{pathname\} \/>/);
@@ -171,4 +171,25 @@ test("a lista Ações de manutenção tem o botão Restaurar padrão inicial (de
   assert.match(lista, /acaoExtra=\{<RestaurarPadraoAcoes \/>\}/);
   assert.match(lista, /restaurar=\{restaurarPadroesAcoesManutencaoVeiculo\}/);
   assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
+});
+
+test("Ações de manutenção e Plano de manutenções ficam numa só página, Manutenção (decisão 112)", () => {
+  const menu = readFileSync("src/lib/menu-parametros.ts", "utf8");
+  assert.match(menu, /titulo: "Manutenção", url: "\/cadastros\/veiculos-manutencao"/);
+  assert.doesNotMatch(menu, /url: "\/cadastros\/veiculos-(acoes|plano)-manutencao"/);
+  const pagina = readFileSync("src/components/parametros/ManutencaoParametros.tsx", "utf8");
+  assert.match(pagina, /<h1 className="text-2xl font-bold">Manutenção<\/h1>/);
+  assert.match(pagina, /<AcoesManutencaoVeiculoLista secao \/>/);
+  assert.match(pagina, /<PlanoManutencaoVeiculo secao \/>/);
+  for (const antiga of ["veiculos-acoes-manutencao", "veiculos-plano-manutencao"]) {
+    const rota = readFileSync(`src/routes/_authenticated/cadastros/${antiga}.tsx`, "utf8");
+    assert.match(rota, /redirect\(\{ to: "\/cadastros\/veiculos-manutencao" \}\)/);
+  }
+  const nova = readFileSync("src/routes/_authenticated/cadastros/veiculos-manutencao.tsx", "utf8");
+  assert.match(nova, /component: ManutencaoParametros/);
+  // Em seção, as duas listas trocam o h1 por h2 e o caminho fica só no cabeçalho da página.
+  const lista = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
+  assert.match(lista, /\{!secao && <p className="text-eyebrow">/);
+  const plano = readFileSync("src/components/parametros/PlanoManutencaoVeiculo.tsx", "utf8");
+  assert.match(plano, /\{!secao && <p className="text-eyebrow">/);
 });

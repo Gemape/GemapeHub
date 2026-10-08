@@ -55,6 +55,7 @@ function ListaVeiculos({
   onPadrao,
   opcoesTipos,
   acaoExtra,
+  secao = false,
 }: {
   titulo: string;
   subtitulo: string;
@@ -68,6 +69,8 @@ function ListaVeiculos({
   opcoesTipos?: { id: string; nome: string }[];
   // Botão a mais ao lado de "Cadastrar" (Restaurar padrão inicial do check list, decisão 110).
   acaoExtra?: React.ReactNode;
+  // Dentro de uma página com mais de uma lista (decisão 112): sem o caminho no alto e com título de seção.
+  secao?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Linha | null>(null);
@@ -106,8 +109,8 @@ function ListaVeiculos({
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">Parâmetros &gt; Veículos</p>
-          <h1 className="text-2xl font-bold">{titulo}</h1>
+          {!secao && <p className="text-eyebrow">Parâmetros &gt; Veículos</p>}
+          {secao ? <h2 className="text-xl font-bold">{titulo}</h2> : <h1 className="text-2xl font-bold">{titulo}</h1>}
           <p className="mt-1 text-sm text-muted-foreground">{subtitulo}</p>
         </div>
         <div className="flex gap-2">
@@ -246,7 +249,7 @@ function mensagemPadraoToast(r: { acoes: number; tipos: number }): void {
   toast.success(total === 0 ? "Os itens padrão já estão cadastrados." : `${total} itens padrão cadastrados.`);
 }
 
-export function AcoesManutencaoVeiculoLista() {
+export function AcoesManutencaoVeiculoLista({ secao = false }: { secao?: boolean } = {}) {
   const { acoesManutencaoVeiculo } = useParametrosBase();
   const subitensDe = (texto: string) => texto.split("\n");
   return (
@@ -254,6 +257,7 @@ export function AcoesManutencaoVeiculoLista() {
       titulo="Ações de manutenção"
       subtitulo="Cada ação é um grupo (pai) com seus subitens (filhos). Ao registrar uma manutenção, escolhe-se o pai e marcam-se os filhos."
       singular="ação de manutenção"
+      secao={secao}
       linhas={acoesManutencaoVeiculo.map((a) => ({ id: a.id, nome: a.nome, extra: a.subitens.map((i) => i.nome).join("\n") }))}
       campoExtra="subitens"
       onSalvar={(id, nome, extra) =>

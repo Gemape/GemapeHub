@@ -107,11 +107,10 @@ export const MENU_UNIFORMES: readonly ItemMenu[] = [
   ...itensApoio("uniformes"),
 ];
 
-// Parâmetros > Veículos (decisões 46, 52 e 62): o cadastro da frota, as listas de apoio (ações de manutenção, tipos de ocorrência e itens de check list) e o plano de manutenções.
+// Parâmetros > Veículos (decisões 46, 52 e 62): o cadastro da frota, a página Manutenção (ações de manutenção e plano de manutenções, decisão 112), os tipos de ocorrência e os itens de check list.
 export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Cadastro de Veículos", url: "/cadastros/veiculos", icone: "Car" },
-  { titulo: "Ações de manutenção", url: "/cadastros/veiculos-acoes-manutencao", icone: "Wrench" },
-  { titulo: "Plano de manutenções", url: "/cadastros/veiculos-plano-manutencao", icone: "ListChecks" },
+  { titulo: "Manutenção", url: "/cadastros/veiculos-manutencao", icone: "Wrench" },
   { titulo: "Tipos de ocorrência", url: "/cadastros/veiculos-tipos-ocorrencia", icone: "ClipboardList" },
   { titulo: "Itens check list", url: "/cadastros/veiculos-checklist", icone: "Wrench" },
   { titulo: "Associar itens de check list a um veículo", url: "/cadastros/veiculos-checklist-associar", icone: "ListChecks" },

@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { PlanoManutencaoVeiculo } from "@/components/parametros/PlanoManutencaoVeiculo";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+// Decisão 112: Ações de manutenção e Plano de manutenções ficam numa só página, Manutenção.
 export const Route = createFileRoute("/_authenticated/cadastros/veiculos-plano-manutencao")({
-  head: () => ({ meta: [{ title: "Plano de manutenções | Patrimônio GEMAPE" }] }),
-  component: PlanoManutencaoVeiculo,
+  beforeLoad: () => {
+    throw redirect({ to: "/cadastros/veiculos-manutencao" });
+  },
 });
