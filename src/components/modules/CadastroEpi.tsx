@@ -18,12 +18,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
   agruparEpis,
+  descreverEpi,
   filtrarGrupos,
   montarClonagemEpi,
   montarNovoEpi,
@@ -601,7 +601,7 @@ function GrupoLinhas({
       {grupo.itens.map((item, indice) => (
         <TableRow key={item.id} className={indice === 0 ? "border-t-2 border-border" : undefined}>
           <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
-          <TableCell><DescricaoEpi nome={grupo.nome} categoria={item.categoria} unidade={item.unidade_medida} /></TableCell>
+          <TableCell>{descreverEpi({ nome: grupo.nome, categoria: item.categoria, unidade_medida: item.unidade_medida })}</TableCell>
           <TableCell>{rotuloTamanho(item.tamanho_id) || "Sem tamanho"}</TableCell>
           <TableCell className="text-right">{item.estoque_minimo}</TableCell>
           <TableCell className="text-right">
@@ -615,16 +615,5 @@ function GrupoLinhas({
         </TableRow>
       ))}
     </>
-  );
-}
-
-// Descrição do EPI na lista (decisão 96): o nome em destaque e, ao lado, a categoria e a unidade em etiquetas.
-function DescricaoEpi({ nome, categoria, unidade }: { nome: string; categoria: string | null; unidade: string | null }) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-      <span className="font-medium">{nome}</span>
-      {categoria ? <Badge variant="secondary" className="font-normal">{categoria}</Badge> : null}
-      {unidade ? <Badge variant="outline" className="font-normal text-muted-foreground">{unidade}</Badge> : null}
-    </div>
   );
 }

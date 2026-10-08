@@ -344,3 +344,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Veículos: combustível GLP incluído na lista do cadastro (decisão 94): `COMBUSTIVEIS_VEICULO` em `src/lib/gemape.ts`.
 - Check list: no Novo check list avulso, o aviso de tipo sem itens tem o link que abre Itens check list numa janela sem perder o preenchido (decisão 95): `DialogItensChecklist`.
 - Cadastrar EPI: a lista de EPIs cadastrados tem a coluna Descrição (nome em destaque + etiquetas de categoria e unidade), sem a linha de cabeçalho do grupo (decisão 96): `DescricaoEpi` em `CadastroEpi.tsx`.
+- Cadastrar EPI: a descrição da lista é um texto corrido 'unidade de categoria de nome' na fonte padrão, sem etiquetas (decisão 97, corrige a 96b): `descreverEpi` em `src/lib/epi-catalogo.ts`.
