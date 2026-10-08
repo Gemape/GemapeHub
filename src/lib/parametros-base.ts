@@ -6,6 +6,7 @@ import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
 import { CHECKLIST_VEICULOS_PADRAO, NOMES_PADRAO_ANTIGO, chaveDoTipoVeiculo, tiposDoGrupoPadrao } from "./checklist-veiculos-padrao.ts";
+import { TAMANHOS_FERRAMENTAS_PADRAO } from "./tamanhos-ferramentas-padrao.ts";
 import { ACOES_MANUTENCAO_PADRAO, MARCAS_VEICULO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
 
 export type Categoria = { id: string; nome: string };
@@ -49,6 +50,8 @@ export type ParametrosBase = {
   categoriasFerramenta: Opcao[];
   gruposFerramenta: Opcao[];
   marcasFerramenta: Opcao[];
+  // Tamanhos de cada grupo de ferramenta (decisão 117), por id do grupo.
+  tamanhosGrupoFerramenta: Record<string, string[]>;
   // Marcas escolhidas nos cadastros de uniforme e de veículo (decisão 22).
   marcasUniforme: Opcao[];
   marcasVeiculo: Opcao[];
@@ -135,6 +138,7 @@ function padrao(): ParametrosBase {
     gruposFerramenta: ["Chave de fenda", "Chave estria", "Chave boca", "Meia lua", "Combinada", "Canhão", "Alicates", "Lima", "Chave Philips", "Chave L", "Chave Allen", "Cachimbo", "Diversos"]
       .map((nome) => ({ id: `grupo-fer-${slug(nome)}`, nome })),
     marcasFerramenta: [],
+    tamanhosGrupoFerramenta: {},
     marcasUniforme: [],
     marcasVeiculo: MARCAS_VEICULO_PADRAO.map((nome) => ({ id: `marca-vei-${slug(nome)}`, nome })),
     acoesManutencaoVeiculo: [],
@@ -204,6 +208,12 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
           (tipo === "nao_usa" || tipo === "opcional" || tipo === "obrigatorio")) {
           base.enderecamentoCategorias[id] = tipo;
         }
+      }
+    }
+    base.tamanhosGrupoFerramenta = {};
+    if (salvos.tamanhosGrupoFerramenta && typeof salvos.tamanhosGrupoFerramenta === "object" && !Array.isArray(salvos.tamanhosGrupoFerramenta)) {
+      for (const [id, lista] of Object.entries(salvos.tamanhosGrupoFerramenta)) {
+        if (Array.isArray(lista)) base.tamanhosGrupoFerramenta[id] = lista.filter((t): t is string => typeof t === "string");
       }
     }
     // Ações de manutenção salvas sem subitens (versão anterior) passam a ter a lista vazia.
@@ -385,6 +395,54 @@ export function removerListaFerramenta(tipo: ListaFerramenta, id: string, storag
     achar(d[tipo], id, "Opção");
     d[tipo] = d[tipo].filter((item) => item.id !== id);
     d.inativos = d.inativos.filter((item) => item !== id);
+    if (tipo === "gruposFerramenta") delete d.tamanhosGrupoFerramenta[id];
+  });
+}
+
+// ---------- Tamanhos por grupo de ferramenta (decisão 117) ----------
+
+const limparTamanhoFerramenta = (texto: string) => texto.trim().replace(/\s+/g, " ").slice(0, 40);
+
+export function adicionarTamanhoGrupoFerramenta(grupoId: string, texto: string, storage = storagePadrao()): string {
+  return alterar(storage, (d) => {
+    achar(d.gruposFerramenta, grupoId, "Grupo de ferramenta");
+    const tamanho = limparTamanhoFerramenta(texto);
+    if (!tamanho) throw new Error("Informe o tamanho.");
+    const lista = d.tamanhosGrupoFerramenta[grupoId] ?? [];
+    if (lista.some((t) => mesmoNome(t, tamanho))) throw new Error(`O tamanho "${tamanho}" já existe neste grupo.`);
+    d.tamanhosGrupoFerramenta[grupoId] = [...lista, tamanho];
+    return tamanho;
+  });
+}
+
+export function removerTamanhoGrupoFerramenta(grupoId: string, tamanho: string, storage = storagePadrao()): void {
+  alterar(storage, (d) => {
+    achar(d.gruposFerramenta, grupoId, "Grupo de ferramenta");
+    d.tamanhosGrupoFerramenta[grupoId] = (d.tamanhosGrupoFerramenta[grupoId] ?? []).filter((t) => t !== tamanho);
+  });
+}
+
+// Cadastra os grupos e tamanhos da planilha que ainda não existem; nada que já foi cadastrado é mudado nem apagado.
+export function cadastrarTamanhosPadraoFerramentas(storage = storagePadrao()): { grupos: number; tamanhos: number } {
+  return alterar(storage, (d) => {
+    let grupos = 0;
+    let tamanhos = 0;
+    for (const padrao of TAMANHOS_FERRAMENTAS_PADRAO) {
+      let grupo = d.gruposFerramenta.find((g) => mesmoNome(g.nome, padrao.grupo));
+      if (!grupo) {
+        grupo = { id: novoId(), nome: capitalizarCadastro(limparNome(padrao.grupo)) };
+        d.gruposFerramenta.push(grupo);
+        grupos += 1;
+      }
+      const lista = d.tamanhosGrupoFerramenta[grupo.id] ?? [];
+      for (const t of padrao.tamanhos) {
+        if (lista.some((x) => mesmoNome(x, t))) continue;
+        lista.push(t);
+        tamanhos += 1;
+      }
+      if (lista.length > 0) d.tamanhosGrupoFerramenta[grupo.id] = lista;
+    }
+    return { grupos, tamanhos };
   });
 }
 
