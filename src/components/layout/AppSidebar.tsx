@@ -69,6 +69,13 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
+// Visual do menu lateral (decisão 98): fontes e ícones maiores, ícone com traço mais fino e item ativo em destaque.
+const BOTAO_MENU =
+  "h-11 gap-3 rounded-lg px-3 text-[15px] font-medium tracking-wide text-sidebar-foreground/90 transition-colors hover:text-white [&>svg]:size-5 [&>svg]:stroke-[1.75] data-[active=true]:bg-white/10 data-[active=true]:font-semibold data-[active=true]:text-white data-[active=true]:shadow-[inset_3px_0_0_0_#fff]";
+const BOTAO_SUBMENU =
+  "h-auto min-h-9 gap-2.5 rounded-md py-1.5 text-[14px] [&>svg]:size-[18px] [&>svg]:stroke-[1.75] data-[active=true]:font-semibold";
+const TITULO_GRUPO = "h-9 px-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/60";
+
 const grupos = [
   {
     titulo: "Visão geral",
@@ -127,10 +134,10 @@ function SubAbas({ url, abas, pathname, abaAtual, isAdmin }: { url: string; abas
         const Icone = ICONES[a.icone];
         return (
         <SidebarMenuSubItem key={a.aba}>
-          <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba} className="h-auto min-h-7 py-1">
+          <SidebarMenuSubButton asChild isActive={pathname === url && ativa === a.aba} className={BOTAO_SUBMENU}>
             <Link to={url} search={{ aba: a.aba } as never}>
               <Icone />
-              <span className="!whitespace-normal leading-tight">{a.titulo}</span>
+              <span className="!whitespace-normal leading-snug">{a.titulo}</span>
             </Link>
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>
@@ -147,11 +154,11 @@ function SubLink({ item, pathname }: { item: ItemMenu; pathname: string }) {
   const Icone = ICONES[item.icone];
   return (
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton asChild isActive={doMenu && (pathname === item.url || pathname.startsWith(`${item.url}/`))} className="h-auto min-h-7 py-1">
+      <SidebarMenuSubButton asChild isActive={doMenu && (pathname === item.url || pathname.startsWith(`${item.url}/`))} className={BOTAO_SUBMENU}>
         <Link to={item.url} {...(item.search ? { search: item.search as never } : item.de ? { search: searchDe as never } : {})}>
           <Icone />
           {/* Nome inteiro, quebrando linha se precisar. */}
-          <span className="!whitespace-normal leading-tight">{item.titulo}</span>
+          <span className="!whitespace-normal leading-snug">{item.titulo}</span>
         </Link>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
@@ -184,12 +191,13 @@ function GrupoRecolhivel({
     <SidebarMenuItem>
       <SidebarMenuButton
         aria-expanded={aberto}
+        className={BOTAO_MENU}
         isActive={!aberto && casa}
         onClick={() => setAberto(!aberto)}
       >
         {Icone}
         <span>{titulo}</span>
-        <ChevronDown className={`ml-auto transition-transform ${aberto ? "" : "-rotate-90"}`} />
+        <ChevronDown className={`ml-auto !size-4 opacity-70 transition-transform ${aberto ? "" : "-rotate-90"}`} />
       </SidebarMenuButton>
       {aberto && <SidebarMenuSub>{children}</SidebarMenuSub>}
     </SidebarMenuItem>
@@ -203,7 +211,7 @@ function MenuGerais({ pathname }: { pathname: string }) {
       {MENU_GERAIS.map((item) =>
         "filhos" in item ? (
           <SidebarMenuSubItem key={item.titulo}>
-            <p className="px-2 pt-1 text-xs font-medium text-sidebar-foreground/70">{item.titulo}</p>
+            <p className="px-2 pt-1.5 text-[13px] font-semibold text-sidebar-foreground/70">{item.titulo}</p>
             <SidebarMenuSub className="mx-0 ml-2 px-1.5">
               {item.filhos.map((filho) => (
                 <SubLink key={filho.url} item={filho} pathname={pathname} />
@@ -342,7 +350,7 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild className={BOTAO_MENU}>
                   <Link to="/usuarios">
                     <Users />
                     <span>Usuários e permissões</span>
@@ -354,7 +362,7 @@ export function AppSidebar() {
         )}
         {grupos.map((grupo) => (
           <SidebarGroup key={grupo.titulo}>
-            <SidebarGroupLabel>{grupo.titulo}</SidebarGroupLabel>
+            <SidebarGroupLabel className={TITULO_GRUPO}>{grupo.titulo}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {/* Gerais, com seus submenus, é o primeiro item de Parâmetros (decisão 44). */}
@@ -372,7 +380,7 @@ export function AppSidebar() {
                     <ModuloComAbas key={item.url} item={item} pathname={pathname} />
                   ) : (
                   <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}>
+                    <SidebarMenuButton asChild className={BOTAO_MENU} isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}>
                       <Link to={item.url}>
                         <item.icone />
                         <span>{item.titulo}</span>
