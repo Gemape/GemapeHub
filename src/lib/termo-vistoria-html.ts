@@ -66,7 +66,7 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
 
           <div class="info">
             <p><strong>DATA DA VISTORIA:</strong> ${dataFormatada}<br>
-            <strong>CAIXA Nº:</strong> ${escaparHtml(caixa?.codigo || "N/A")}${caixa?.nome ? ` - ${escaparHtml(caixa.nome)}` : ""}<br>
+            <strong>CAIXA Nº:</strong> ${escaparHtml(caixa?.codigo || "N/A")}<br>
             <strong>RESPONSÁVEL PELA CAIXA (EMPREGADO):</strong> ${escaparHtml(dados.responsavel || "NÃO ATRIBUÍDO")}</p>
           </div>
 

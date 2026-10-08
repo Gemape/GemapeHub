@@ -52,7 +52,7 @@ test("não desabilita uma caixa já cadastrada", () => {
   assert.equal(validarHabilitacao([5, 6], cadastradas), null);
   assert.equal(
     validarHabilitacao([6], cadastradas),
-    "A caixa CX-0005 (Kit Elétrica) está cadastrada e não pode ser desabilitada. Exclua a caixa antes.",
+    "A caixa CX-0005 está cadastrada e não pode ser desabilitada. Exclua a caixa antes.",
   );
 });
 

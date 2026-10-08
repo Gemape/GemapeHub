@@ -33,7 +33,7 @@ export function validarHabilitacao(numeros: number[], cadastradas: CaixaNumerada
   for (const caixa of cadastradas) {
     const numero = numeroDaCaixa(caixa);
     if (numero !== null && !habilitadas.has(numero)) {
-      return `A caixa ${codigoCaixa(numero)} (${caixa.nome ?? "sem nome"}) está cadastrada e não pode ser desabilitada. Exclua a caixa antes.`;
+      return `A caixa ${codigoCaixa(numero)} está cadastrada e não pode ser desabilitada. Exclua a caixa antes.`;
     }
   }
   return null;

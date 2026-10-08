@@ -7,6 +7,10 @@ import {
   controleDaFerramenta,
   disponivelNaCaixa,
   linhaCsvCaixa,
+  validarFerramentasDaCaixa,
+  ferramentasComEmpregadoRemovidas,
+  validarBaixaDaCaixa,
+  ocorrenciasDaCaixa,
 } from "../src/lib/controle-caixa.ts";
 
 const mov = (o) => ({ modulo: "ferramenta", tipo_movimentacao: "Saida", item_id: "f1", empregado_id: "e1", motivo_baixa: "Fornecimento ao Empregado", quantidade: 1, data_movimentacao: "2026-10-01", observacao: null, ...o });
@@ -41,15 +45,55 @@ test("controleDaFerramenta soma entregas, devoluções e baixas e não fica nega
     mov({ quantidade: 3 }),
     mov({ tipo_movimentacao: "Devolucao", motivo_baixa: null, quantidade: 1 }),
     mov({ motivo_baixa: "Quebra", quantidade: 1 }),
+    mov({ motivo_baixa: "Perda", quantidade: 2, empregado_id: null }),
     mov({ item_id: "outra", quantidade: 9 }),
   ];
-  assert.deepEqual(controleDaFerramenta(lista, "f1"), { entregue: 3, devolvido: 1, baixado: 1, comEmpregado: 1 });
+  assert.deepEqual(controleDaFerramenta(lista, "f1"), { entregue: 3, devolvido: 1, baixado: 1, baixadoDaCaixa: 2, comEmpregado: 1 });
   assert.equal(controleDaFerramenta([mov({ tipo_movimentacao: "Devolucao", quantidade: 5 })], "f1").comEmpregado, 0);
 });
 
 test("disponivelNaCaixa desconta o que está com empregados, sem ficar negativo", () => {
   assert.equal(disponivelNaCaixa(5, 2), 3);
   assert.equal(disponivelNaCaixa(1, 4), 0);
+  assert.equal(disponivelNaCaixa(5, 2, 2), 1);
+});
+
+const nome = (id) => id.toUpperCase();
+
+test("validarFerramentasDaCaixa exige ferramenta, quantidade inteira e não deixa baixar abaixo do que está com empregado", () => {
+  const fora = (id) => (id === "f1" ? 2 : 0);
+  assert.match(validarFerramentasDaCaixa([], fora, nome), /pelo menos uma/);
+  assert.match(validarFerramentasDaCaixa([{ ferramenta_id: "f2", quantidade: 1 }, { ferramenta_id: "f2", quantidade: 1 }], fora, nome), /repetida/);
+  assert.match(validarFerramentasDaCaixa([{ ferramenta_id: "f2", quantidade: 0 }], fora, nome), /quantidade/);
+  assert.match(validarFerramentasDaCaixa([{ ferramenta_id: "f1", quantidade: 1 }], fora, nome), /com empregado/);
+  assert.equal(validarFerramentasDaCaixa([{ ferramenta_id: "f1", quantidade: 2 }, { ferramenta_id: "f2", quantidade: 1 }], fora, nome), null);
+});
+
+test("ferramentasComEmpregadoRemovidas barra tirar da caixa o que está com empregado", () => {
+  const fora = (id) => (id === "f1" ? 1 : 0);
+  assert.match(ferramentasComEmpregadoRemovidas([{ ferramenta_id: "f1" }], [], fora, nome), /devolução/);
+  assert.equal(ferramentasComEmpregadoRemovidas([{ ferramenta_id: "f2" }], [], fora, nome), null);
+  assert.equal(ferramentasComEmpregadoRemovidas([{ ferramenta_id: "f1" }], [{ ferramenta_id: "f1" }], fora, nome), null);
+});
+
+test("validarBaixaDaCaixa limita a baixa ao guardado na caixa ou ao que está com o empregado", () => {
+  const ok = { ferramentaId: "f1", quantidade: 1, motivo: "Quebra", data: "2026-10-08", disponivel: 2, comEmpregado: 1, empregadoId: null };
+  assert.equal(validarBaixaDaCaixa(ok), null);
+  assert.match(validarBaixaDaCaixa({ ...ok, quantidade: 3 }), /guardada na caixa/);
+  assert.match(validarBaixaDaCaixa({ ...ok, quantidade: 2, empregadoId: "e1" }), /com empregado/);
+  assert.match(validarBaixaDaCaixa({ ...ok, motivo: "" }), /motivo/);
+  assert.match(validarBaixaDaCaixa({ ...ok, quantidade: 1.5 }), /inteiro/);
+});
+
+test("ocorrenciasDaCaixa usa a caixa gravada e, sem caixa, as ferramentas cadastradas nela", () => {
+  const lista = [
+    { id: "a", item_id: "f1" },
+    { id: "b", item_id: "f9" },
+    { id: "c", item_id: "f1", caixa_id: "cx2" },
+    { id: "d", item_id: "f9", caixa_id: "cx1" },
+    { id: "e", item_id: null },
+  ];
+  assert.deepEqual(ocorrenciasDaCaixa(lista, "cx1", ["f1"]).map((o) => o.id), ["a", "d"]);
 });
 
 test("linhaCsvCaixa traz caixa, código, ferramenta e empregado", () => {
@@ -81,4 +125,19 @@ test("a tela Número da caixa mostra controle por ferramenta e histórico de mov
   assert.match(f, /controleDaFerramenta\(historico,/);
   assert.match(f, /controleDaFerramenta\(/);
   for (const c of ["Com empregado", "Disponível", "Histórico de movimentações"]) assert.ok(f.includes(c), c);
+});
+
+test("Número da caixa tem gestão: ferramentas, baixa, ocorrência, só pelo número (decisão 104)", () => {
+  const ler = (n) => readFileSync(new URL(`../src/components/modules/${n}.tsx`, import.meta.url), "utf8");
+  const f = ler("FerramentasCaixasModulo");
+  for (const c of ["Ferramentas da caixa", "Dar baixa", "Registrar ocorrência", "Ocorrências da caixa", "Baixado"]) assert.ok(f.includes(c), c);
+  assert.match(f, /ocorrenciasDaCaixa\(todasOcorrencias, caixa\.id,/);
+  assert.doesNotMatch(f, /caixa\.nome/);
+  const d = ler("CaixaGestaoDialogs");
+  assert.match(d, /\.\.\.\(MODO_DEMO \? \{ caixa_id: caixa\.id \} : \{\}\)/);
+  assert.match(d, /tipo_ocorrencia: "Ferramenta"/);
+  assert.match(d, /useSalvarCaixa\(\)/);
+  const cad = ler("CaixasFerramentasModulo");
+  assert.doesNotMatch(cad, /name="nome"/);
+  assert.match(cad, /nome: codigoCaixa\(numero\)/);
 });

@@ -187,7 +187,8 @@ export function CaixasFerramentasModulo() {
       codigo: codigoCaixa(numero),
       codigo_num: numero,
       empresa_id: texto("empresa_id"),
-      nome: capitalizarTexto(String(f.get("nome") ?? "").trim()),
+      // A caixa só tem o número como identificação; o nome do banco repete o código.
+      nome: codigoCaixa(numero),
       descricao: texto("descricao") ? capitalizarTexto(texto("descricao")) : null,
       localizacao: texto("localizacao") ? capitalizarTexto(texto("localizacao")) : null,
       status: String(f.get("status") ?? "Ativa"),
@@ -225,7 +226,7 @@ export function CaixasFerramentasModulo() {
         <div className="relative max-w-xs flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por código ou nome"
+            placeholder="Buscar por número da caixa"
             className="pl-9"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
@@ -239,7 +240,6 @@ export function CaixasFerramentasModulo() {
                 "caixas-ferramentas",
                 caixas.map((c) => ({
                   Codigo: c.codigo,
-                  Nome: c.nome,
                   PortadorAtivo: nomePortador(c.id),
                   Localizacao: c.localizacao ?? "—",
                   Status: c.status,
@@ -259,7 +259,6 @@ export function CaixasFerramentasModulo() {
           <TableHeader>
             <TableRow>
               <TableHead className="font-mono">Código</TableHead>
-              <TableHead>Nome</TableHead>
               <TableHead>Portador ativo</TableHead>
               <TableHead>Localização</TableHead>
               <TableHead>Status</TableHead>
@@ -284,7 +283,6 @@ export function CaixasFerramentasModulo() {
               caixas.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-mono font-medium">{c.codigo}</TableCell>
-                  <TableCell>{c.nome}</TableCell>
                   <TableCell>{nomePortador(c.id)}</TableCell>
                   <TableCell>{c.localizacao ?? "—"}</TableCell>
                   <TableCell>
@@ -366,17 +364,6 @@ export function CaixasFerramentasModulo() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="nome">Nome/Identificação da Caixa</Label>
-                <Input
-                  id="nome"
-                  name="nome"
-                  capitalizar="texto"
-                  required
-                  defaultValue={base?.nome ?? ""}
-                  placeholder="Ex: Kit Elétrica"
-                />
-              </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="empresa_id">Empresa</Label>

@@ -95,7 +95,7 @@ export function PortadoresCaixaModulo() {
             <Select value={caixaId} onValueChange={(valor) => { setCaixaId(valor); setEmpregadoId(""); }}>
               <SelectTrigger id="portador-caixa"><SelectValue placeholder="Selecione a caixa" /></SelectTrigger>
               <SelectContent>
-                {caixas.map((item) => <SelectItem key={item.id} value={item.id}>{item.codigo} · {item.nome}</SelectItem>)}
+                {caixas.map((item) => <SelectItem key={item.id} value={item.id}>{item.codigo}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
