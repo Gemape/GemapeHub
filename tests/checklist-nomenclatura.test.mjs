@@ -113,3 +113,10 @@ test("o módulo traz os grupos pela periodicidade e pelo tipo avulso da associa�
   assert.match(tela, /gruposAvulsosDaAssociacao\(associacaoEscolhida\)/);
   assert.match(tela, /periodicidadesDaAssociacao/);
 });
+
+test("trocar a periodicidade na janela Novo check list não muda a situação por veículo nem o painel (dec 119)", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /const periodicidadeDoDialogo = /);
+  assert.match(tela, /const per = periodicidadeDe\(v\);/);
+  assert.match(tela, /periodicidade: periodicidadeDoDialogo\(veiculoEscolhido\)/);
+});
