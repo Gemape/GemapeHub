@@ -345,3 +345,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Check list: no Novo check list avulso, o aviso de tipo sem itens tem o link que abre Itens check list numa janela sem perder o preenchido (decisão 95): `DialogItensChecklist`.
 - Cadastrar EPI: a lista de EPIs cadastrados ganhou a coluna Descrição e perdeu a linha de cabeçalho do grupo (decisão 96); as etiquetas de categoria e unidade da 96 foram substituídas pela decisão 97 abaixo.
 - Cadastrar EPI: a lista tem as colunas Código, Descrição (só o nome do item), Tamanho, Unidade (ao lado de Tamanho), Estoque mínimo e Ações (decisão 97, substitui a 96b): coluna Unidade em `CadastroEpi.tsx`.
+- Menu lateral: fontes e ícones maiores, títulos de grupo em caixa alta e item ativo com barra lateral (decisão 98): constantes `BOTAO_MENU`, `BOTAO_SUBMENU` e `TITULO_GRUPO` em `AppSidebar.tsx`.
