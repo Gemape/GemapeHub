@@ -571,7 +571,7 @@ export const ehGrupoChecklistPadrao = (nome: string): boolean => CHECKLIST_VEICU
  * fica, e os itens que já existiam mantêm o id. Se o tipo ainda não existe em Gerais, os tipos
  * atuais ficam como estão e o retorno avisa.
  */
-export function restaurarGrupoChecklistVeiculo(id: string, storage = storagePadrao()): { tiposRestaurados: boolean } {
+export function restaurarGrupoChecklistVeiculo(id: string, storage = storagePadrao()): { nome: string; tiposRestaurados: boolean } {
   return alterar(storage, (d) => {
     const grupo = achar(d.itensChecklistVeiculo, id, "Grupo do check list");
     const padrao = CHECKLIST_VEICULOS_PADRAO.find((p) => mesmoNome(p.nome, grupo.nome));
@@ -580,7 +580,7 @@ export function restaurarGrupoChecklistVeiculo(id: string, storage = storagePadr
     grupo.itens = montarItensChecklist(grupo.itens, [...padrao.itens]);
     const tipos = tiposVeiculoDoPadrao(d, padrao.nome);
     if (tipos.length > 0) grupo.tiposVeiculo = tipos;
-    return { tiposRestaurados: tipos.length > 0 };
+    return { nome: padrao.nome, tiposRestaurados: tipos.length > 0 };
   });
 }
 

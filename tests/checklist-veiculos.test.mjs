@@ -183,6 +183,7 @@ test("restaurar padrão volta itens e tipos do grupo, mantém o id e os itens qu
   assert.equal(lerParametros(s).itensChecklistVeiculo.find((g) => g.id === antes.id).itens.length, 2);
   const r = restaurarGrupoChecklistVeiculo(antes.id, s);
   assert.equal(r.tiposRestaurados, true);
+  assert.equal(r.nome, "Veículos leves · Mecânica");
   const depois = lerParametros(s).itensChecklistVeiculo.find((g) => g.id === antes.id);
   assert.equal(depois.nome, "Veículos leves · Mecânica");
   assert.deepEqual(depois.itens.map((i) => i.nome), padrao.itens);
