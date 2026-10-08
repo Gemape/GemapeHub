@@ -341,9 +341,10 @@ export function AppSidebar() {
             <Cog className="engrenagem-girando size-10" strokeWidth={1.5} />
             <Cog className="engrenagem-inversa size-6" strokeWidth={1.75} />
           </div>
-          <div className="leading-tight">
-            <h2 className="font-display text-3xl font-black tracking-tighter text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.35)]">GEMAPE</h2>
-            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/75">
+          <div className="flex-1 text-center leading-tight">
+            <h2 className="marca-titulo font-display text-3xl font-black tracking-tighter">GEMAPE</h2>
+            <div className="marca-linha mt-1.5" aria-hidden="true" />
+            <p className="marca-subtitulo mt-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/80">
               Gestão de Patrimônio
             </p>
           </div>

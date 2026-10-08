@@ -26,7 +26,7 @@ test("menu lateral: vidro, animação nos botões e logo com duas engrenagens (d
   assert.match(fonte, /className="logo-engrenagem"/);
   assert.match(fonte, /engrenagem-girando size-10/);
   assert.match(fonte, /engrenagem-inversa size-6/);
-  assert.match(fonte, /text-3xl font-black[^"]*">GEMAPE/);
+  assert.match(fonte, /marca-titulo font-display text-3xl font-black[^"]*">GEMAPE/);
   for (const u of ["menu-vidro", "menu-vidro-sub", "logo-engrenagem", "engrenagem-inversa"]) {
     assert.match(css, new RegExp(`@utility ${u} \\{`));
   }
@@ -39,4 +39,17 @@ test("logo: engrenagens encaixadas, mesma velocidade e sentidos opostos (correç
   assert.match(css, /@keyframes engrenagem-encaixada \{[\s\S]*rotate\(15deg\)[\s\S]*rotate\(-345deg\)/);
   assert.match(css, /& > \.engrenagem-girando \{[\s\S]*left: 8px;[\s\S]*animation-duration: 8s/);
   assert.match(css, /& > \.engrenagem-inversa \{[\s\S]*left: 34px;[\s\S]*engrenagem-encaixada 8s linear infinite/);
+});
+
+test("marca do menu centralizada e animada, com versão parada para quem reduz movimento (decisão 109)", () => {
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(fonte, /className="flex-1 text-center leading-tight"/);
+  assert.match(fonte, /className="marca-linha mt-1\.5"/);
+  assert.match(fonte, /marca-subtitulo/);
+  for (const u of ["marca-titulo", "marca-subtitulo", "marca-linha"]) {
+    const bloco = css.slice(css.indexOf(`@utility ${u} {`));
+    assert.ok(bloco.length > 0, u);
+    assert.match(bloco.slice(0, bloco.indexOf("\n}\n")), /prefers-reduced-motion: reduce[\s\S]*animation: none/);
+  }
+  for (const k of ["marca-brilho", "marca-entrada", "marca-linha"]) assert.match(css, new RegExp(`@keyframes ${k} \\{`));
 });
