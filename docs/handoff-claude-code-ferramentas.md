@@ -361,3 +361,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 112: Parâmetros > Veículos > Manutenção reúne Ações de manutenção e Plano de manutenções (`ManutencaoParametros`, rota `/cadastros/veiculos-manutencao`; rotas antigas redirecionam; listas ganharam a prop `secao`).
 - Decisão 113: Parâmetros > Veículos > Check list reúne Itens check list (separados por tipo de veículo, `separarPorTipoVeiculo` em checklist-por-tipo.ts) e Associar itens (`ChecklistParametros`; rota antiga de associar redireciona).
 - Decisão 114: logo GEMAPE 40 anos animada no menu lateral (`logo-marca` em styles.css, imagem em src/assets), no lugar das engrenagens e do texto GEMAPE; engrenagem das telas de acesso mantida.
+- Decisão 115: Parâmetros > Ferramentas sem o item Tamanho e Medidas de Produto (`MENU_FERRAMENTAS` usa `itemEspecificos`); EPI e Uniformes não mudam.
