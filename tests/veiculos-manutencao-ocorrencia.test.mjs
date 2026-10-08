@@ -10,6 +10,8 @@ import {
   editarTipoOcorrenciaVeiculo,
   removerTipoOcorrenciaVeiculo,
   cadastrarPadraoVeiculos,
+  situacaoPadraoAcoesManutencaoVeiculo,
+  restaurarPadroesAcoesManutencaoVeiculo,
 } from "../src/lib/parametros-base.ts";
 import { ACOES_MANUTENCAO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "../src/lib/veiculos-padrao.ts";
 
@@ -126,4 +128,47 @@ test("registrar manutenção do veículo: escolhe o pai, marca os filhos, só no
   assert.match(tela, /subitens_manutencao/);
   assert.match(seletor, /<Checkbox/);
   assert.match(seletor, /acao\.subitens\.map/);
+});
+
+test("restaurar padrão inicial das ações: situação, só os marcados, id mantido, excluída recadastrada (decisão 111)", () => {
+  const s = storage();
+  assert.equal(situacaoPadraoAcoesManutencaoVeiculo(s).length, ACOES_MANUTENCAO_PADRAO.length);
+  assert.ok(situacaoPadraoAcoesManutencaoVeiculo(s).every((a) => a.situacao === "ausente"));
+  cadastrarPadraoVeiculos(s);
+  assert.ok(situacaoPadraoAcoesManutencaoVeiculo(s).every((a) => a.situacao === "igual"));
+  const [a, b, c] = lerParametros(s).acoesManutencaoVeiculo;
+  editarAcaoManutencaoVeiculo(a.id, a.nome, ["Só um subitem", a.subitens[0].nome], s);
+  editarAcaoManutencaoVeiculo(c.id, c.nome, ["Outro"], s);
+  removerAcaoManutencaoVeiculo(b.id, s);
+  const sit = Object.fromEntries(situacaoPadraoAcoesManutencaoVeiculo(s).map((x) => [x.nome, x.situacao]));
+  assert.equal(sit[a.nome], "alterado");
+  assert.equal(sit[b.nome], "ausente");
+  const r = restaurarPadroesAcoesManutencaoVeiculo([a.nome.toLowerCase(), b.nome], s);
+  assert.deepEqual(r, { restaurados: 1, criados: 1 });
+  const lido = lerParametros(s).acoesManutencaoVeiculo;
+  const depoisA = lido.find((x) => x.id === a.id);
+  assert.deepEqual(depoisA.subitens.map((i) => i.nome), a.subitens.map((i) => i.nome));
+  assert.equal(depoisA.subitens[0].id, a.subitens[0].id);
+  assert.ok(lido.some((x) => x.nome === b.nome));
+  assert.deepEqual(lido.find((x) => x.id === c.id).subitens.map((i) => i.nome), ["Outro"]);
+});
+
+test("restaurar padrão inicial das ações é tudo ou nada e só aceita ações do padrão", () => {
+  const s = storage();
+  cadastrarPadraoVeiculos(s);
+  const meu = adicionarAcaoManutencaoVeiculo("Minha ação", ["Item"], s);
+  const [a] = lerParametros(s).acoesManutencaoVeiculo;
+  editarAcaoManutencaoVeiculo(a.id, a.nome, ["Só um"], s);
+  assert.throws(() => restaurarPadroesAcoesManutencaoVeiculo([], s), /ao menos um/i);
+  assert.throws(() => restaurarPadroesAcoesManutencaoVeiculo([a.nome, "Minha ação"], s), /não faz parte do padrão/i);
+  const lido = lerParametros(s).acoesManutencaoVeiculo;
+  assert.deepEqual(lido.find((x) => x.id === a.id).subitens.map((i) => i.nome), ["Só um"]);
+  assert.ok(lido.some((x) => x.id === meu.id));
+});
+
+test("a lista Ações de manutenção tem o botão Restaurar padrão inicial (decisão 111)", () => {
+  const lista = readFileSync(new URL("../src/components/parametros/VeiculosListasParametros.tsx", import.meta.url), "utf8");
+  assert.match(lista, /acaoExtra=\{<RestaurarPadraoAcoes \/>\}/);
+  assert.match(lista, /restaurar=\{restaurarPadroesAcoesManutencaoVeiculo\}/);
+  assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
 });
