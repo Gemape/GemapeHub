@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
+import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
+import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
+import { useAccess } from "@/lib/access-context";
 import { descricaoVeiculo } from "@/lib/descricao-veiculo";
 import {
   checklistsDaAssociacao, criarAssociacao, editarAssociacao, EVENTO_ASSOCIACOES_CHECKLIST, gruposDaAssociacao, lerAssociacoes,
@@ -73,6 +77,12 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const { data: veiculos = [], isLoading: carregandoVeiculos } = useQuery({ queryKey: ["veiculos-checklist-assoc"], queryFn: lerVeiculos });
   const { data: empregados = [] } = useQuery({ queryKey: ["empregados-checklist-assoc"], queryFn: lerEmpregados });
   const grupos = parametros.itensChecklistVeiculo;
+  const queryClient = useQueryClient();
+  const { canWrite } = useAccess();
+  // Telas de cadastro abertas por cima da janela (decisão 120): ficam ao lado dela, nunca dentro, para não perder o que já foi escolhido.
+  const [itensAberto, setItensAberto] = useState(false);
+  const [veiculosAberto, setVeiculosAberto] = useState(false);
+  const [empregadosAberto, setEmpregadosAberto] = useState(false);
 
   const [aberto, setAberto] = useState(false);
   // veículo da associação que está sendo editada (null = nova ou clone)
@@ -102,6 +112,13 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     (!veiculoEscolhido?.["empresa_id"] || e.empresa_id === veiculoEscolhido["empresa_id"]),
   );
   const responsavel = empregados.find((e) => e.id === responsavelId) ?? null;
+
+  // Ao fechar a tela de cadastro, a lista de veículos ou de empregados da janela é lida de novo e o que foi escolhido continua.
+  const aoFecharVeiculos = (a: boolean) => { setVeiculosAberto(a); if (!a) void queryClient.invalidateQueries({ queryKey: ["veiculos-checklist-assoc"] }); };
+  const aoFecharEmpregados = (a: boolean) => { setEmpregadosAberto(a); if (!a) void queryClient.invalidateQueries({ queryKey: ["empregados-checklist-assoc"] }); };
+  const linkCadastro = (rotulo: string, abrirTela: () => void) => (canWrite ? (
+    <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={abrirTela}>{rotulo}</button>
+  ) : null);
 
   function abrir(a: AssociacaoChecklist | null, clonar: boolean) {
     setEditando(a && !clonar ? a.veiculoId : null);
@@ -254,6 +271,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                 {veiculosLivres.length === 0 && (
                   <p className="text-xs text-muted-foreground">Todos os veículos já têm itens associados, ou nenhum veículo está cadastrado.</p>
                 )}
+                <p className="text-xs">{linkCadastro("Cadastrar veículo", () => setVeiculosAberto(true))}</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-tipo">Tipo de check list</Label>
@@ -281,6 +299,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                 {opcoesResponsavel.length === 0 && (
                   <p className="text-xs text-muted-foreground">Nenhum empregado ativo encontrado para este veículo. Cadastre em Parâmetros &gt; Empregados.</p>
                 )}
+                <p className="text-xs">{linkCadastro("Cadastrar empregado", () => setEmpregadosAberto(true))}</p>
               </div>
             </div>
 
@@ -291,6 +310,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                   {grupos.length === 0 && (
                     <p className="text-xs text-muted-foreground">Nenhum grupo cadastrado. Cadastre em Parâmetros &gt; Veículos &gt; Check list.</p>
                   )}
+                  <p className="text-xs">{linkCadastro("Cadastrar itens de check list", () => setItensAberto(true))}</p>
                   {grupos.length > 0 && disponiveis.length === 0 && (
                     <p className="text-xs text-muted-foreground">Todos os grupos já estão habilitados.</p>
                   )}
@@ -355,6 +375,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Ao lado do diálogo da associação, nunca dentro dele (decisão 120). */}
+      <DialogItensChecklist aberto={itensAberto} onAbrirMudou={setItensAberto} />
+      <DialogCadastroVeiculos aberto={veiculosAberto} onAbrirMudou={aoFecharVeiculos} />
+      <DialogCadastroEmpregados aberto={empregadosAberto} onAbrirMudou={aoFecharEmpregados} />
     </div>
   );
 }

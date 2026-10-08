@@ -135,7 +135,7 @@ test("os formulários e termos escolhem empresa só entre as ativas; relatórios
     "components/modules/UniformesTermoEntrega.tsx", "components/modules/UniformesTermoBaixa.tsx", "components/modules/EpiFichaEpiAvulsa.tsx",
     "components/modules/FerramentasTermoVistoria.tsx", "components/modules/FerramentasTermoResponsabilidade.tsx",
     "components/modules/FerramentasTermoEncerramento.tsx", "components/modules/VeiculosCadastroModulo.tsx",
-    "components/modules/CaixasFerramentasModulo.tsx", "components/modules/EnderecamentoModulo.tsx", "routes/_authenticated/empregados.tsx",
+    "components/modules/CaixasFerramentasModulo.tsx", "components/modules/EnderecamentoModulo.tsx", "components/modules/EmpregadosCadastroModulo.tsx",
   ];
   for (const arq of comEscolha) assert.match(ler(arq), /empresasParaEscolha\(empresas/, arq);
   // Edição mantém a empresa do registro.

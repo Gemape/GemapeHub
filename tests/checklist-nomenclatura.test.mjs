@@ -86,7 +86,7 @@ test("avulso concluído com item NOK gera ocorrência, mesmo sem responsável", 
   assert.equal(concluido.itens.filter((i) => i.ocorrenciaCodigo).length, 1);
 });
 
-test("a janela Novo check list não tem o campo Tipo de veículo e pede o Tipo de check list, Periódico ou Avulso (dec 120)", () => {
+test("a janela Novo check list não tem o campo Tipo de veículo e pede o Tipo de check list, Periódico ou Avulso (dec 118)", () => {
   const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(tela, /Label htmlFor="ck_tipo"/);
   assert.doesNotMatch(tela, />Tipo de veículo</);

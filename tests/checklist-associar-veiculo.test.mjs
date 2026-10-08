@@ -157,3 +157,22 @@ test("Parâmetros > Veículos > Check list mostra primeiro Associar itens e depo
   assert.match(tela, /tipo: tipoAtual/);
   assert.match(tela, /i\.tipo === tipoAtual/);
 });
+
+// ---------- Telas de cadastro por cima da janela Associar (decisão 120) ----------
+test("a janela Associar abre itens, veículos e empregados por cima, ao lado do diálogo e sem perder o preenchimento (dec 120)", () => {
+  const lerSrc = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  const tela = lerSrc("components/parametros/AssociarChecklistVeiculo.tsx");
+  assert.match(tela, /<DialogItensChecklist aberto=\{itensAberto\}/);
+  assert.match(tela, /<DialogCadastroVeiculos aberto=\{veiculosAberto\}/);
+  assert.match(tela, /<DialogCadastroEmpregados aberto=\{empregadosAberto\}/);
+  // os três ficam depois do fechamento do diálogo da associação: nunca dentro dele
+  const fimDialogo = tela.indexOf("</Dialog>");
+  assert.ok(fimDialogo > 0 && tela.indexOf("<DialogItensChecklist") > fimDialogo);
+  assert.ok(tela.indexOf("<DialogCadastroEmpregados") > fimDialogo);
+  for (const rotulo of ["Cadastrar veículo", "Cadastrar empregado", "Cadastrar itens de check list"]) assert.match(tela, new RegExp(rotulo));
+  assert.match(tela, /canWrite/);
+  assert.match(tela, /invalidateQueries\(\{ queryKey: \["veiculos-checklist-assoc"\]/);
+  assert.match(tela, /invalidateQueries\(\{ queryKey: \["empregados-checklist-assoc"\]/);
+  assert.match(lerSrc("components/modules/DialogCadastroEmpregados.tsx"), /<EmpregadosCadastroModulo \/>/);
+  assert.match(lerSrc("routes/_authenticated/empregados.tsx"), /component: EmpregadosCadastroModulo/);
+});
