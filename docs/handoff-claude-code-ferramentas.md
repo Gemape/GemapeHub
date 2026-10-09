@@ -378,3 +378,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Dec 129 (09/10): removido o checkbox de obrigatório por grupo; só a lista suspensa Check list (PR #173).
 - Dec 130 (09/10): 5 grupos padrão 'Avulso · ...' (itens simples); Associar e Novo avulso separam avulso e periódico pelo prefixo (branch feat/checklist-avulso-itens-simples, parte da #173).
 - Dec 131 (09/10): avulso reduzido a 16 itens + grupo 'Avulso · Outros' (item aberto, descrição na observação) (PR #174).
+- Dec 132 (09/10): ajuste automático (uma vez) dos grupos 'Avulso · ...' já cadastrados para os 16 itens + Outros (branch fix/avulso-itens-removidos).

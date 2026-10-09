@@ -290,3 +290,21 @@ test("o padrão do avulso tem os grupos do responsável (5 + Outros), para todos
   assert.deepEqual(avulsos.map((g) => g.itens.length), [5, 4, 2, 1, 3, 1]);
   assert.equal(tiposDoGrupoPadrao("Avulso · Segurança"), "todos");
 });
+
+test("grupos Avulso cadastrados antes da dec 131 perdem os 13 itens retirados e ganham o grupo Outros, uma vez só", () => {
+  const s = storage();
+  adicionarGrupoChecklistVeiculo("Avulso · Segurança", ["Cinto de segurança (todos os assentos)", "Extintor de incêndio (validade e pressão)", "Kit de primeiros socorros", "Meu item"], ["*"], s);
+  adicionarGrupoChecklistVeiculo("Avulso · Iluminação e sinalização", ["Faróis dianteiros (alto e baixo)", "Luz de ré"], ["*"], s);
+  s.setItem("gemape-demo-checklist-avulso-itens-131", null); // como no navegador de quem cadastrou antes do ajuste
+  const d = lerParametros(s);
+  const nomes = (n) => d.itensChecklistVeiculo.find((g) => g.nome === n).itens.map((i) => i.nome);
+  assert.deepEqual(nomes("Avulso · Segurança"), ["Cinto de segurança (todos os assentos)", "Meu item"]);
+  assert.deepEqual(nomes("Avulso · Iluminação e sinalização"), ["Faróis dianteiros (alto e baixo)"]);
+  const outros = d.itensChecklistVeiculo.find((g) => g.nome === "Avulso · Outros");
+  assert.deepEqual(outros.itens.map((i) => i.nome), ["Outros (descreva na observação)"]);
+  assert.equal(lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Avulso · Outros").id, outros.id); // id estável
+  // depois de salvar qualquer coisa, o ajuste não roda de novo: item recolocado pelo responsável fica
+  const seguranca = d.itensChecklistVeiculo.find((g) => g.nome === "Avulso · Segurança");
+  editarGrupoChecklistVeiculo(seguranca.id, seguranca.nome, ["Cinto de segurança (todos os assentos)", "Triângulo de sinalização"], ["*"], s);
+  assert.ok(lerParametros(s).itensChecklistVeiculo.find((g) => g.nome === "Avulso · Segurança").itens.some((i) => i.nome === "Triângulo de sinalização"));
+});
