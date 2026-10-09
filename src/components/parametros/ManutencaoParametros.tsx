@@ -10,7 +10,7 @@ export function ManutencaoParametros() {
         <p className="text-eyebrow">Parâmetros &gt; Veículos</p>
         <h1 className="text-2xl font-bold">Manutenção</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Permite revisar o painel de nome da rotina de manutenção ao qual está diretamente relacionado, e redefinir seus itens e organização. As modificações selecionadas não poderão ser desfeitas.
+          Permite revisar o painel de manutenções, redefinir seus itens e a organização deles. O que for salvo não poderá ser desfeito.
         </p>
       </header>
       <AcoesManutencaoVeiculoLista secao />
