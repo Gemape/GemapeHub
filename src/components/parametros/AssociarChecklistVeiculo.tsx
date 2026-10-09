@@ -12,21 +12,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
-import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
 import { useAccess } from "@/lib/access-context";
 import { descricaoVeiculo } from "@/lib/descricao-veiculo";
 import {
   checklistsDaAssociacao, criarAssociacao, editarAssociacao, EVENTO_ASSOCIACOES_CHECKLIST, gruposDaAssociacao, lerAssociacoes,
-  NAO_DEFINIDA, NAO_DEFINIDO, PERIODICIDADES_ASSOCIACAO, removerAssociacao, TIPOS_ASSOCIACAO,
-  type AssociacaoChecklist, type EntradaItemAssociacao,
+  NAO_DEFINIDO, removerAssociacao,
+  type AssociacaoChecklist, type EntradaItemAssociacao, type PeriodicidadeAssociacao,
 } from "@/lib/checklist-associacao-veiculo";
 import { empregadoElegivelPortador } from "@/lib/portadores-caixa";
-import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
-import { ehGrupoAvulso } from "@/lib/checklist-veiculos-padrao";
+import { gruposAplicaveis } from "@/lib/checklist-veiculo";
+import { nomeSubcategoria, resolverSubcategoria } from "@/lib/subcategoria-referencia";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 type VeiculoLinha = Record<string, unknown> & { id: string };
 const PAGINA = 50;
+// Decisão 137: um campo só define o check list do veículo; periódico (obrigatório, entra no KPI) ou Avulso (não obrigatório).
+const AVULSO = "Avulso";
+const PERIODICIDADES_CAMPO = ["Diária", "Semanal", "Quinzenal", "Mensal", AVULSO] as const;
 const SEM_RESPONSAVEL = "__nao-definido__"; // valor do campo Responsável quando é "Não definido"
 const CATEGORIA_VEICULO = "cat-veiculos";
 
@@ -80,7 +82,6 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const queryClient = useQueryClient();
   const { canWrite } = useAccess();
   // Telas de cadastro abertas por cima da janela (decisão 120): ficam ao lado dela, nunca dentro, para não perder o que já foi escolhido.
-  const [itensAberto, setItensAberto] = useState(false);
   const [veiculosAberto, setVeiculosAberto] = useState(false);
   const [empregadosAberto, setEmpregadosAberto] = useState(false);
 
@@ -89,11 +90,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const [editando, setEditando] = useState<string | null>(null);
   const [veiculoId, setVeiculoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
-  const [itens, setItens] = useState<EntradaItemAssociacao[]>([]);
-  // Qual dos dois check lists do veículo a janela está mostrando (decisão 119); os grupos habilitados dos dois são salvos juntos.
-  const [tipoAtual, setTipoAtual] = useState<"periodico" | "avulso">("periodico");
-  // Campo "Check list: Obrigatório ou Não obrigatório" (decisão 126): vale para os grupos do tipo na tela e para os que forem habilitados depois.
-  const [padraoObrigatorio, setPadraoObrigatorio] = useState(false);
+  const [periodicidade, setPeriodicidade] = useState("");
   const [travado, setTravado] = useState(false);
   const salvando = useRef(false);
 
@@ -127,35 +124,9 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     setVeiculoId(a && !clonar ? a.veiculoId : "");
     setResponsavelId(a && !clonar ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
     // Clonar copia os grupos e periodicidades para outro veículo; o responsável é escolhido de novo.
-    setTipoAtual("periodico");
-    setPadraoObrigatorio(false);
-    setItens(a ? gruposDaAssociacao(a, grupos).map((i) => ({ grupoId: i.grupoId, tipo: i.tipo, periodicidade: i.periodicidade === NAO_DEFINIDA ? "" : i.periodicidade, obrigatorio: i.obrigatorio })) : []);
+    setPeriodicidade(a ? (gruposDaAssociacao(a, grupos).find((i) => i.tipo === "periodico")?.periodicidade ?? AVULSO) : "");
     setAberto(true);
   }
-
-    const doTipo = itens.filter((i) => i.tipo === tipoAtual);
-  // Tudo obrigatório, tudo não obrigatório ou misto (grupos marcados um a um); sem grupos, vale o padrão do campo.
-  const obrigatoriedade: "obrigatorio" | "nao_obrigatorio" | "" =
-    doTipo.length === 0 ? (padraoObrigatorio ? "obrigatorio" : "nao_obrigatorio")
-      : doTipo.every((i) => i.obrigatorio === true) ? "obrigatorio"
-        : doTipo.every((i) => i.obrigatorio !== true) ? "nao_obrigatorio" : "";
-  // O grupo habilitado herda o que o campo mostra; no misto entra como não obrigatório.
-  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, tipo: tipoAtual, periodicidade: "", obrigatorio: obrigatoriedade === "obrigatorio" }]));
-  const desabilitar = (grupoId: string) => setItens((atual) => atual.filter((i) => i.grupoId !== grupoId));
-  // "Não definida" (decisão 127) faz do grupo um check list livre: ele passa para o check list avulso, feito a qualquer tempo.
-  const mudar = (grupoId: string, periodicidade: string) => {
-    if (periodicidade === NAO_DEFINIDA) {
-      setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, tipo: "avulso", periodicidade: "" } : i)));
-      toast.info("Periodicidade não definida: o grupo passou para o check list avulso (livre).");
-      return;
-    }
-    setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, periodicidade } : i)));
-  };
-  const mudarObrigatoriedade = (valor: string) => {
-    const obrigatorio = valor === "obrigatorio";
-    setPadraoObrigatorio(obrigatorio);
-    setItens((atual) => atual.map((i) => (i.tipo === tipoAtual ? { ...i, obrigatorio } : i)));
-  };
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -176,6 +147,18 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       : responsavel
         ? { id: responsavel.id, nome: responsavel.nome }
         : salvo && salvo.id === responsavelId ? salvo : null;
+    if (!periodicidade) {
+      salvando.current = false;
+      setTravado(false);
+      toast.error("Escolha a periodicidade do check list ou Avulso.");
+      return;
+    }
+    // Os itens são os grupos que valem para o tipo do veículo: periódico (todos os grupos do periódico, obrigatórios) ou avulso (grupos Avulso, não obrigatórios).
+    const subcategoriaId = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never)?.id ?? null : null;
+    const avulso = periodicidade === AVULSO;
+    const itens: EntradaItemAssociacao[] = gruposAplicaveis(grupos, subcategoriaId, avulso).map((g) => (
+      avulso ? { grupoId: g.id, tipo: "avulso", periodicidade: "", obrigatorio: false } : { grupoId: g.id, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true }
+    ));
     const ok = executar(
       () => (editando
         ? editarAssociacao(editando, { veiculoId, responsavel: escolhido, itens }, undefined, undefined, grupos.map((g) => g.id))
@@ -196,9 +179,6 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     executar(() => removerAssociacao(a.veiculoId), "Associação excluída.");
   }
 
-  const habilitados = new Set(itens.map((i) => i.grupoId));
-  // Cada check list tem os seus grupos (decisão 130): o avulso usa os "Avulso · ..." e o periódico, os demais.
-  const disponiveis = grupos.filter((g) => !habilitados.has(g.id) && ehGrupoAvulso(g.nome) === (tipoAtual === "avulso"));
   // O responsável salvo pode ser de alguém que deixou de ser elegível; continua aparecendo para não sumir do campo.
   const salvoNaEdicao = editando ? associacoes.find((a) => a.veiculoId === editando)?.responsavel : null;
   const opcoesResponsavel = salvoNaEdicao && !elegiveis.some((e) => e.id === salvoNaEdicao.id)
@@ -212,7 +192,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
           {!secao && <p className="text-eyebrow">Parâmetros &gt; Veículos</p>}
           {secao ? <h2 className="text-xl font-bold">Associar itens de check list a um veículo</h2> : <h1 className="text-2xl font-bold">Associar itens de check list a um veículo</h1>}
           <p className="mt-1 text-sm text-muted-foreground">
-            Cada veículo tem dois check lists: o periódico, mais apurado, e o avulso, só para registrar itens mais simples. Para cada veículo, escolha o tipo de check list, habilite os grupos de itens de cada um, defina a periodicidade dos periódicos e o responsável.
+            Para cada veículo, escolha o responsável e a periodicidade do check list. Periódico é obrigatório e entra nos KPI; avulso não é obrigatório e não entra nos KPI.
           </p>
         </div>
         <Button requiresWrite onClick={() => abrir(null, false)}>Associar itens</Button>
@@ -274,11 +254,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
           <DialogHeader>
             <DialogTitle>{editando ? "Editar itens de check list do veículo" : "Associar itens de check list a um veículo"}</DialogTitle>
             <DialogDescription>
-              Escolha o veículo e o tipo de check list (periódico ou avulso), habilite os grupos de itens de cada um, escolha a periodicidade dos periódicos e defina o responsável.
+              Escolha o veículo, o responsável e a periodicidade do check list (ou Avulso).
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-veiculo">Veículo</Label>
                 <Select value={veiculoId} onValueChange={setVeiculoId}>
@@ -293,29 +273,6 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                   <p className="text-xs text-muted-foreground">Todos os veículos já têm itens associados, ou nenhum veículo está cadastrado.</p>
                 )}
                 <p className="text-xs">{linkCadastro("Cadastrar veículo", () => setVeiculosAberto(true))}</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="assoc-tipo">Tipo de check list</Label>
-                <Select value={tipoAtual} onValueChange={(t) => setTipoAtual(t as "periodico" | "avulso")}>
-                  <SelectTrigger id="assoc-tipo"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {TIPOS_ASSOCIACAO.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">Cada veículo tem um check list periódico e um avulso; troque aqui para escolher os grupos de cada um.</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="assoc-obrigatoriedade">Check list</Label>
-                <Select value={obrigatoriedade} onValueChange={mudarObrigatoriedade}>
-                  <SelectTrigger id="assoc-obrigatoriedade"><SelectValue placeholder="Misto (por grupo)" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="obrigatorio">Obrigatório</SelectItem>
-                    <SelectItem value="nao_obrigatorio">Não obrigatório</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">Vale para os grupos deste tipo de check list; o obrigatório conta nos percentuais do painel do mês.</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-responsavel">Responsável</Label>
@@ -333,80 +290,19 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                 )}
                 <p className="text-xs">{linkCadastro("Cadastrar empregado", () => setEmpregadosAberto(true))}</p>
               </div>
-            </div>
-
-            {(veiculoId || itens.length > 0) && (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 rounded-md border p-3">
-                  <h3 className="text-sm font-semibold">Grupos de itens</h3>
-                  {grupos.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Nenhum grupo cadastrado. Cadastre em Parâmetros &gt; Veículos &gt; Check list.</p>
-                  )}
-                  <p className="text-xs">{linkCadastro("Cadastrar itens de check list", () => setItensAberto(true))}</p>
-                  {grupos.length > 0 && disponiveis.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Todos os grupos já estão habilitados.</p>
-                  )}
-                  <ul className="space-y-1">
-                    {disponiveis.map((g) => (
-                      <li key={g.id} className="flex items-center justify-between gap-2 rounded bg-muted/40 px-2 py-1.5 text-sm">
-                        <span>{g.nome}</span>
-                        <Button type="button" size="sm" variant="outline" aria-label={`Habilitar ${g.nome}`} onClick={() => habilitar(g.id)}>
-                          Habilitar →
-                        </Button>
-                      </li>
+              <div className="space-y-1.5">
+                <Label htmlFor="assoc-periodicidade">Periodicidade</Label>
+                <Select value={periodicidade} onValueChange={setPeriodicidade}>
+                  <SelectTrigger id="assoc-periodicidade"><SelectValue placeholder="Selecione a periodicidade" /></SelectTrigger>
+                  <SelectContent>
+                    {PERIODICIDADES_CAMPO.map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
                     ))}
-                  </ul>
-                </div>
-
-                <div className="space-y-2 rounded-md border p-3">
-                  <h3 className="text-sm font-semibold">Grupos habilitados no check list {tipoAtual === "avulso" ? "avulso" : "periódico"}</h3>
-                  {itens.filter((i) => i.tipo === tipoAtual).length === 0 && <p className="text-xs text-muted-foreground">Nenhum grupo habilitado ainda.</p>}
-                  {itens.length > 0 && (
-                    <div className="space-y-1 rounded border border-dashed p-2" data-testid="resumo-habilitados">
-                      <p className="text-xs font-semibold">Resumo dos grupos habilitados (periódico e avulso)</p>
-                      <ul className="space-y-0.5 text-xs text-muted-foreground">
-                        {itens.map((i) => (
-                          <li key={i.grupoId}>
-                            <span className="font-medium text-foreground">{grupos.find((g) => g.id === i.grupoId)?.nome ?? "Grupo removido"}</span>
-                            {" "}— {i.tipo === "avulso" ? "avulso" : "periódico"} · {i.tipo === "avulso" || !i.periodicidade ? (i.tipo === "avulso" ? NAO_DEFINIDA : "periodicidade a escolher") : i.periodicidade}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  <ul className="space-y-2">
-                    {itens.filter((i) => i.tipo === tipoAtual).map((i) => {
-                      const grupo = grupos.find((g) => g.id === i.grupoId);
-                      return (
-                        <li key={i.grupoId} className="space-y-1.5 rounded bg-muted/40 p-2 text-sm">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-medium">{grupo?.nome ?? "Grupo removido"}</span>
-                            <Button type="button" size="sm" variant="ghost" aria-label={`Desabilitar ${grupo?.nome ?? ""}`} onClick={() => desabilitar(i.grupoId)}>
-                              ← Remover
-                            </Button>
-                          </div>
-                          {i.tipo === "avulso" ? (
-                            <p className="text-xs text-muted-foreground">Check list avulso: sem periodicidade (Não definida), para registrar itens mais simples a qualquer tempo.</p>
-                          ) : (
-                            <div className="space-y-1">
-                              <Label htmlFor={`periodicidade-${i.grupoId}`} className="text-xs">Periodicidade</Label>
-                              <Select value={i.periodicidade} onValueChange={(valor) => mudar(i.grupoId, valor)}>
-                                <SelectTrigger id={`periodicidade-${i.grupoId}`}><SelectValue placeholder="Selecione" /></SelectTrigger>
-                                <SelectContent>
-                                  {PERIODICIDADES_ASSOCIACAO.map((p) => (
-                                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Diária, semanal, quinzenal ou mensal: check list periódico, obrigatório (entra nos KPI). Avulso: não obrigatório (não entra nos KPI).</p>
               </div>
-            )}
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>
@@ -417,7 +313,6 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       </Dialog>
 
       {/* Ao lado do diálogo da associação, nunca dentro dele (decisão 120). */}
-      <DialogItensChecklist aberto={itensAberto} onAbrirMudou={setItensAberto} />
       <DialogCadastroVeiculos aberto={veiculosAberto} onAbrirMudou={aoFecharVeiculos} />
       <DialogCadastroEmpregados aberto={empregadosAberto} onAbrirMudou={aoFecharEmpregados} />
     </div>

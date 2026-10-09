@@ -53,13 +53,12 @@ function lerComEstado(storage: StorageLike | null): { lista: AssociacaoChecklist
         responsavel: a.responsavel?.id ? { id: String(a.responsavel.id), nome: String(a.responsavel.nome ?? "") } : null,
         itens: (Array.isArray(a.itens) ? a.itens : [])
           .filter((i) => !!i && typeof i === "object" && ehPeriodicidade(i.periodicidade))
-          .map((i) => ({
-            grupoId: String(i.grupoId),
+          .map((i) => {
             // Sem tipo gravado (antes da decisão 119): periódico se tem periodicidade definida, senão avulso.
-            tipo: ehTipoAssociacao(i.tipo) ? i.tipo : i.periodicidade === NAO_DEFINIDA ? ("avulso" as TipoAssociacao) : ("periodico" as TipoAssociacao),
-            periodicidade: i.periodicidade,
-            obrigatorio: i.obrigatorio === true,
-          })),
+            const tipo: TipoAssociacao = ehTipoAssociacao(i.tipo) ? i.tipo : i.periodicidade === NAO_DEFINIDA ? "avulso" : "periodico";
+            // Decisão 136: o tipo define a obrigatoriedade (periódico é obrigatório e entra no KPI; avulso não), mesmo em dados gravados antes.
+            return { grupoId: String(i.grupoId), tipo, periodicidade: i.periodicidade, obrigatorio: tipo === "periodico" };
+          }),
       }));
     return { lista, integro: true };
   } catch {
@@ -98,11 +97,11 @@ function validar(
     vistos.add(i.grupoId);
     // O avulso não tem periodicidade (fica "Não definida"); o periódico precisa de uma periodicidade definida.
     const tipo: TipoAssociacao = i.tipo === "avulso" ? "avulso" : "periodico";
-    if (tipo === "avulso") return { grupoId: i.grupoId, tipo, periodicidade: NAO_DEFINIDA as PeriodicidadeAssociacao, obrigatorio: i.obrigatorio === true };
+    if (tipo === "avulso") return { grupoId: i.grupoId, tipo, periodicidade: NAO_DEFINIDA as PeriodicidadeAssociacao, obrigatorio: false };
     if (!ehPeriodicidade(i.periodicidade) || i.periodicidade === NAO_DEFINIDA) {
       throw new Error("Escolha a periodicidade (Diária, Semanal, Quinzenal ou Mensal) de cada grupo periódico, ou marque o grupo como Avulso.");
     }
-    return { grupoId: i.grupoId, tipo, periodicidade: i.periodicidade, obrigatorio: i.obrigatorio === true };
+    return { grupoId: i.grupoId, tipo, periodicidade: i.periodicidade, obrigatorio: true };
   });
   return { responsavel: responsavel ? { id: responsavel.id, nome: responsavel.nome.trim() } : null, itens: validos };
 }

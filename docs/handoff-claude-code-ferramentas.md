@@ -382,3 +382,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Dec 133 (09/10): campo Tamanho no Cadastrar ferramenta (opções do grupo em Parâmetros Específicos), coluna na lista/CSV (branch feat/ferramenta-campo-tamanho).
 - Dec 134 (09/10): sem cartões Diversos e Luva em Tamanhos por ferramenta; seed sem Luva; Tamanho do cadastro sem opções p/ eles (branch fix/tamanhos-sem-diversos-luva, parte da #176).
 - Dec 135 (09/10): 6 tamanhos da Chave de fenda no padrão + inclusão automática única (branch feat/tamanhos-chave-de-fenda, parte das #176/#177).
+- 2026-10-09 17:25 dec 136: Associar: ordem Veículo, Responsável, Tipo; periódico=obrigatório (KPI), avulso=não; sem campo obrigatório (feat/associar-tipo-define-obrigatorio).
+- 2026-10-09 dec 137: janela Associar = Veículo, Responsável, Periodicidade (inclui Avulso); itens vêm dos grupos do tipo do veículo.
