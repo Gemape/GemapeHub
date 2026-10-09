@@ -5,6 +5,7 @@ import {
   lerParametros,
   adicionarAcaoManutencaoVeiculo,
   itensCriadosAcoesManutencao,
+  excluirItensCriadosAcoesManutencao,
   editarAcaoManutencaoVeiculo,
   removerAcaoManutencaoVeiculo,
   adicionarTipoOcorrenciaVeiculo,
@@ -259,7 +260,7 @@ test("a janela de restaurar das ações tem checkbox por pai e por filho, marcar
   assert.match(trecho, /restaurar-filho-\$\{n\}-\$\{m\}/);
   assert.match(trecho, /situacaoPadraoAcoesComFilhos\(\)/);
   assert.match(trecho, /Marcar um filho marca também o pai/);
-  assert.match(trecho, /disabled=\{totalPais === 0 \|\| travado\}/);
+  assert.match(trecho, /disabled=\{\(totalPais === 0 && totalCriados === 0\) \|\| travado\}/);
 });
 
 test("a lista de restaurar mostra o que o responsável criou: ações novas e subitens extras do padrão (dec 144)", () => {
@@ -304,4 +305,27 @@ test("o texto de apoio da página Manutenção permite revisar o painel e avisa 
   const pagina = readFileSync("src/components/parametros/ManutencaoParametros.tsx", "utf8");
   assert.match(pagina, /Permite revisar o painel de manutenções, redefinir seus itens e a organização deles\. O que for salvo não poderá ser desfeito\./);
   assert.doesNotMatch(pagina, /primeiro as ações, depois o plano/);
+});
+
+test("excluir itens criados marcados na janela de restaurar (dec 151)", () => {
+  const s = storage();
+  cadastrarPadraoVeiculos(s);
+  const [a] = lerParametros(s).acoesManutencaoVeiculo;
+  editarAcaoManutencaoVeiculo(a.id, a.nome, [...a.subitens.map((i) => i.nome), "Filho meu", "Outro meu"], s);
+  adicionarAcaoManutencaoVeiculo("Minha ação", ["Sub 1", "Sub 2"], s);
+  const [doPadrao, minha] = itensCriadosAcoesManutencao(s);
+  assert.throws(() => excluirItensCriadosAcoesManutencao([], s), /Marque ao menos um/);
+  // filho extra de ação do padrão: some só ele
+  assert.deepEqual(excluirItensCriadosAcoesManutencao([doPadrao.filhos[0].id], s), { acoes: 0, subitens: 1 });
+  // pai criado marcado: a ação inteira some
+  assert.deepEqual(excluirItensCriadosAcoesManutencao([minha.id], s), { acoes: 1, subitens: 2 });
+  // pai do padrão marcado: somem os extras, a ação e o padrão ficam
+  assert.deepEqual(excluirItensCriadosAcoesManutencao([doPadrao.id], s), { acoes: 0, subitens: 1 });
+  assert.deepEqual(itensCriadosAcoesManutencao(s), []);
+  assert.ok(lerParametros(s).acoesManutencaoVeiculo.some((x) => x.id === a.id));
+  // ids do padrão não são apagados por aqui
+  assert.throws(() => excluirItensCriadosAcoesManutencao([a.id, a.subitens[0].id], s), /Marque ao menos um/);
+  const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
+  assert.match(tela, /excluirItensCriadosAcoesManutencao\(conferidos\)/);
+  assert.match(tela, /isAdmin && <Checkbox id=\{`criado-pai-/);
 });

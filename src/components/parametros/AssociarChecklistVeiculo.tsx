@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -91,6 +92,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const [veiculoId, setVeiculoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [periodicidade, setPeriodicidade] = useState("");
+  // Itens (grupos) escolhidos para compor o check list (decisão 148); null = ainda não mexeu, vale todos os que se aplicam.
+  const [escolhidos, setEscolhidos] = useState<string[] | null>(null);
   const [travado, setTravado] = useState(false);
   const salvando = useRef(false);
 
@@ -111,6 +114,12 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     (!veiculoEscolhido?.["empresa_id"] || e.empresa_id === veiculoEscolhido["empresa_id"]),
   );
   const responsavel = empregados.find((e) => e.id === responsavelId) ?? null;
+  // Itens que se aplicam ao tipo do veículo e à periodicidade escolhida (Avulso traz só os grupos avulsos).
+  const subcategoriaIdEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never)?.id ?? null : null;
+  const aplicaveis = veiculoEscolhido && periodicidade ? gruposAplicaveis(grupos, subcategoriaIdEscolhida, periodicidade === AVULSO) : [];
+  const marcados = escolhidos === null ? aplicaveis.map((g) => g.id) : escolhidos.filter((id) => aplicaveis.some((g) => g.id === id));
+  const alternarItem = (id: string, marcar: boolean) =>
+    setEscolhidos(marcar ? [...marcados.filter((m) => m !== id), id] : marcados.filter((m) => m !== id));
 
   // Ao fechar a tela de cadastro, a lista de veículos ou de empregados da janela é lida de novo e o que foi escolhido continua.
   const aoFecharVeiculos = (a: boolean) => { setVeiculosAberto(a); if (!a) void queryClient.invalidateQueries({ queryKey: ["veiculos-checklist-assoc"] }); };
@@ -125,6 +134,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
     // Clonar copia a periodicidade e o responsável para outro veículo (decisão 138); tudo pode ser editado.
     setPeriodicidade(a ? (gruposDaAssociacao(a, grupos).find((i) => i.tipo === "periodico")?.periodicidade ?? AVULSO) : "");
+    setEscolhidos(a ? a.itens.map((i) => i.grupoId) : null);
     setAberto(true);
   }
 
@@ -153,10 +163,9 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       toast.error("Escolha a periodicidade do check list ou Avulso.");
       return;
     }
-    // Os itens são os grupos que valem para o tipo do veículo: periódico (todos os grupos do periódico, obrigatórios) ou avulso (grupos Avulso, não obrigatórios).
-    const subcategoriaId = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never)?.id ?? null : null;
+    // Os itens são os grupos escolhidos entre os que valem para o tipo do veículo: periódico (obrigatórios) ou avulso (grupos Avulso, não obrigatórios); a periodicidade é uma só para todos.
     const avulso = periodicidade === AVULSO;
-    const itens: EntradaItemAssociacao[] = gruposAplicaveis(grupos, subcategoriaId, avulso).map((g) => (
+    const itens: EntradaItemAssociacao[] = aplicaveis.filter((g) => marcados.includes(g.id)).map((g) => (
       avulso ? { grupoId: g.id, tipo: "avulso", periodicidade: "", obrigatorio: false } : { grupoId: g.id, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true }
     ));
     const ok = executar(
@@ -254,14 +263,14 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
           <DialogHeader>
             <DialogTitle>{editando ? "Editar itens de check list do veículo" : "Associar itens de check list a um veículo"}</DialogTitle>
             <DialogDescription>
-              Escolha o veículo, o responsável e a periodicidade do check list (ou Avulso).
+              Escolha o veículo, o responsável e a periodicidade do check list (ou Avulso) e marque os itens que o compõem.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-veiculo">Veículo</Label>
-                <Select value={veiculoId} onValueChange={setVeiculoId}>
+                <Select value={veiculoId} onValueChange={(v) => { setVeiculoId(v); setEscolhidos(null); }}>
                   <SelectTrigger id="assoc-veiculo"><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                   <SelectContent>
                     {veiculosLivres.map((v) => (
@@ -292,7 +301,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-periodicidade">Periodicidade</Label>
-                <Select value={periodicidade} onValueChange={setPeriodicidade}>
+                <Select value={periodicidade} onValueChange={(v) => { setPeriodicidade(v); setEscolhidos(null); }}>
                   <SelectTrigger id="assoc-periodicidade"><SelectValue placeholder="Selecione a periodicidade" /></SelectTrigger>
                   <SelectContent>
                     {PERIODICIDADES_CAMPO.map((p) => (
@@ -303,6 +312,41 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                 <p className="text-xs text-muted-foreground">Diária, semanal, quinzenal ou mensal: check list periódico, obrigatório (entra nos KPI). Avulso: não obrigatório (não entra nos KPI).</p>
               </div>
             </div>
+
+            <fieldset className="space-y-2" data-testid="associar-itens">
+              <legend className="text-sm font-medium">Itens que compõem o check list</legend>
+              <p className="text-xs text-muted-foreground">
+                A periodicidade vale para todos os itens marcados; ela não é escolhida item a item.
+              </p>
+              {!veiculoEscolhido || !periodicidade ? (
+                <p className="text-sm text-muted-foreground">Escolha o veículo e a periodicidade para ver os itens.</p>
+              ) : aplicaveis.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum item de check list serve a este veículo. Cadastre em Itens check list.</p>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{marcados.length} de {aplicaveis.length} itens marcados</span>
+                    <div className="flex gap-1">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEscolhidos(aplicaveis.map((g) => g.id))}>Marcar todos</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEscolhidos([])}>Desmarcar todos</Button>
+                    </div>
+                  </div>
+                  <ul className="grid max-h-64 gap-2 overflow-y-auto md:grid-cols-2">
+                    {aplicaveis.map((g) => (
+                      <li key={g.id} className="rounded-md border p-2">
+                        <label htmlFor={`assoc-item-${g.id}`} className="flex cursor-pointer items-start gap-2 text-sm">
+                          <Checkbox id={`assoc-item-${g.id}`} className="mt-0.5" checked={marcados.includes(g.id)} onCheckedChange={(v) => alternarItem(g.id, v === true)} />
+                          <span>
+                            <span className="font-medium">{g.nome}</span>
+                            <span className="block text-xs text-muted-foreground">{g.itens.map((i) => i.nome).join(" · ")}</span>
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </fieldset>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>
