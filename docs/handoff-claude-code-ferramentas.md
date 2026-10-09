@@ -373,3 +373,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 124: painel do mês prevê por periodicidade (`previstos` em ChecklistVeiculoModulo) e `painelDoMes` casa check list e previsão pela periodicidade.
 - Decisão 125: `obrigatorio` na Previsao (periodicidadeObrigatoria em checklist-veiculo.ts); painelDoMes só conta obrigatórias; situação "opcional".
 - Decisão 126: campo "Check list: Obrigatório / Não obrigatório" na janela Associar (`obrigatoriedade`, `padraoObrigatorio` em AssociarChecklistVeiculo).
+- Dec 127 (09/10): opção Não definida na periodicidade dos grupos habilitados; escolher passa o grupo para o check list avulso (PR #173).

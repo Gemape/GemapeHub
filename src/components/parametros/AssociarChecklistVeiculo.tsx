@@ -142,8 +142,15 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   // O grupo habilitado herda o que o campo mostra; no misto entra como não obrigatório.
   const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, tipo: tipoAtual, periodicidade: "", obrigatorio: obrigatoriedade === "obrigatorio" }]));
   const desabilitar = (grupoId: string) => setItens((atual) => atual.filter((i) => i.grupoId !== grupoId));
-  const mudar = (grupoId: string, periodicidade: string) =>
+  // "Não definida" (decisão 127) faz do grupo um check list livre: ele passa para o check list avulso, feito a qualquer tempo.
+  const mudar = (grupoId: string, periodicidade: string) => {
+    if (periodicidade === NAO_DEFINIDA) {
+      setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, tipo: "avulso", periodicidade: "" } : i)));
+      toast.info("Periodicidade não definida: o grupo passou para o check list avulso (livre).");
+      return;
+    }
     setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, periodicidade } : i)));
+  };
   const mudarObrigatoriedade = (valor: string) => {
     const obrigatorio = valor === "obrigatorio";
     setPadraoObrigatorio(obrigatorio);
@@ -375,7 +382,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                               <Select value={i.periodicidade} onValueChange={(valor) => mudar(i.grupoId, valor)}>
                                 <SelectTrigger id={`periodicidade-${i.grupoId}`}><SelectValue placeholder="Selecione" /></SelectTrigger>
                                 <SelectContent>
-                                  {PERIODICIDADES_ASSOCIACAO.filter((p) => p !== NAO_DEFINIDA).map((p) => (
+                                  {PERIODICIDADES_ASSOCIACAO.map((p) => (
                                     <SelectItem key={p} value={p}>{p}</SelectItem>
                                   ))}
                                 </SelectContent>

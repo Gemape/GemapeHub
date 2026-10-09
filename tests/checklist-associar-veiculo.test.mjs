@@ -186,3 +186,11 @@ test("a janela Associar tem o campo Check list: Obrigatório ou Não obrigatóri
   assert.match(tela, /i\.tipo === tipoAtual \? \{ \.\.\.i, obrigatorio \} : i/); // trocar o campo vale para os grupos do tipo
   assert.match(tela, /placeholder="Misto \(por grupo\)"/);
 });
+
+test("a periodicidade do grupo habilitado oferece Não definida, que passa o grupo para o avulso (dec 127)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /PERIODICIDADES_ASSOCIACAO\.map\(\(p\) =>/);
+  assert.doesNotMatch(tela, /PERIODICIDADES_ASSOCIACAO\.filter/);
+  assert.match(tela, /periodicidade === NAO_DEFINIDA/);
+  assert.match(tela, /tipo: "avulso", periodicidade: ""/);
+});
