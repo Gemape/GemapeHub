@@ -10,7 +10,7 @@ export function ManutencaoParametros() {
         <p className="text-eyebrow">Parâmetros &gt; Veículos</p>
         <h1 className="text-2xl font-bold">Manutenção</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          As ações de manutenção e o plano de manutenções de cada veículo, na mesma página: primeiro as ações, depois o plano que as usa.
+          Permite revisar o painel de manutenções e o nome da rotina de parâmetros relacionado ao menu de manutenção, e redefine seus itens e organização. As modificações selecionadas não poderão ser desfeitas.
         </p>
       </header>
       <AcoesManutencaoVeiculoLista secao />

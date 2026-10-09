@@ -299,3 +299,9 @@ test("o Plano de manutenções também pergunta Sim ou Não antes de gravar, com
   assert.match(salvar, /setConfirmando\(true\)/);
   assert.doesNotMatch(salvar, /executar\(/);
 });
+
+test("o texto de apoio da página Manutenção permite revisar o painel e avisa que não desfaz (dec 147)", () => {
+  const pagina = readFileSync("src/components/parametros/ManutencaoParametros.tsx", "utf8");
+  assert.match(pagina, /Permite revisar o painel de manutenções e o nome da rotina de parâmetros relacionado ao menu de manutenção, e redefine seus itens e organização\. As modificações selecionadas não poderão ser desfeitas\./);
+  assert.doesNotMatch(pagina, /primeiro as ações, depois o plano/);
+});
