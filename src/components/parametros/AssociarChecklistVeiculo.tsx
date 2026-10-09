@@ -362,7 +362,19 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                 <div className="space-y-2 rounded-md border p-3">
                   <h3 className="text-sm font-semibold">Grupos habilitados no check list {tipoAtual === "avulso" ? "avulso" : "periódico"}</h3>
                   {itens.filter((i) => i.tipo === tipoAtual).length === 0 && <p className="text-xs text-muted-foreground">Nenhum grupo habilitado ainda.</p>}
-                  {itens.some((i) => i.tipo !== tipoAtual) && <p className="text-xs text-muted-foreground">{itens.filter((i) => i.tipo !== tipoAtual).length} grupo(s) no check list {tipoAtual === "avulso" ? "periódico" : "avulso"}.</p>}
+                  {itens.length > 0 && (
+                    <div className="space-y-1 rounded border border-dashed p-2" data-testid="resumo-habilitados">
+                      <p className="text-xs font-semibold">Resumo dos grupos habilitados (periódico e avulso)</p>
+                      <ul className="space-y-0.5 text-xs text-muted-foreground">
+                        {itens.map((i) => (
+                          <li key={i.grupoId}>
+                            <span className="font-medium text-foreground">{grupos.find((g) => g.id === i.grupoId)?.nome ?? "Grupo removido"}</span>
+                            {" "}— {i.tipo === "avulso" ? "avulso" : "periódico"} · {i.tipo === "avulso" || !i.periodicidade ? (i.tipo === "avulso" ? NAO_DEFINIDA : "periodicidade a escolher") : i.periodicidade}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <ul className="space-y-2">
                     {itens.filter((i) => i.tipo === tipoAtual).map((i) => {
                       const grupo = grupos.find((g) => g.id === i.grupoId);

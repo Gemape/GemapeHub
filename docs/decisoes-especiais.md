@@ -800,3 +800,7 @@ Ordem do responsável em 09/10 (11:30), em Parâmetros > Veículos > Check list,
 ### Decisão 127: Opção "Não definida" na periodicidade dos grupos habilitados
 
 Ordem do responsável em 09/10 (11:40), com o print de Itens check list: nos grupos habilitados tem que ter a opção "Não definida". **Antes:** a lista de periodicidade do grupo periódico só tinha Diária, Semanal, Quinzenal e Mensal; "Não definida" só existia implícita no avulso. **Agora:** a lista também tem "Não definida". Ao escolhê-la, o grupo passa para o check list avulso (livre, feito a qualquer tempo), com aviso na tela, mantendo a regra da decisão 116 (periodicidade não definida = check list livre). Nenhuma mudança de dados: o avulso já guardava "Não definida". Sem necessidade nova de banco.
+
+### Decisão 128: Resumo dos grupos habilitados com a periodicidade, na janela Associar itens
+
+Ordem do responsável em 09/10 (11:47), com o print do quadro "Grupos habilitados no check list periódico" mostrando só "3 grupo(s) no check list avulso": mostrar na tela quais grupos foram habilitados e a periodicidade de cada um. **Antes:** o quadro dizia só a quantidade de grupos do outro tipo. **Agora:** abaixo da lista do tipo escolhido há o resumo com todos os grupos habilitados (periódicos e avulsos), cada um com tipo e periodicidade (avulso = Não definida; periódico sem escolha = "periodicidade a escolher"). Só exibição, sem mudança de dados nem de banco.

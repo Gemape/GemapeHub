@@ -194,3 +194,10 @@ test("a periodicidade do grupo habilitado oferece Não definida, que passa o gru
   assert.match(tela, /periodicidade === NAO_DEFINIDA/);
   assert.match(tela, /tipo: "avulso", periodicidade: ""/);
 });
+
+test("a janela Associar mostra o resumo dos grupos habilitados com a periodicidade de cada um (dec 128)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /data-testid="resumo-habilitados"/);
+  assert.match(tela, /Resumo dos grupos habilitados/);
+  assert.match(tela, /periodicidade a escolher/);
+});
