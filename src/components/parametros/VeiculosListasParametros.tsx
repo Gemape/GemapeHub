@@ -3,6 +3,7 @@ import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { AlertaPainelManutencao } from "@/components/parametros/AlertaPainelManutencao";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,6 +60,7 @@ function ListaVeiculos({
   acaoExtra,
   secao = false,
   secoes,
+  alertaPainel = false,
 }: {
   titulo: string;
   subtitulo: string;
@@ -77,8 +79,11 @@ function ListaVeiculos({
   secao?: boolean;
   // Linhas separadas em seções, com uma faixa de título por seção (decisão 113: Itens check list por tipo de veículo).
   secoes?: { chave: string; titulo: string; linhas: Linha[] }[];
+  // Pergunta Sim ou Não antes de gravar (Ações de manutenção, decisão 145): a alteração muda o painel de manutenção.
+  alertaPainel?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
   const [editando, setEditando] = useState<Linha | null>(null);
   const [modelo, setModelo] = useState<Linha | null>(null);
   const [nome, setNome] = useState("");
@@ -99,6 +104,12 @@ function ListaVeiculos({
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
+    if (salvando.current) return;
+    if (alertaPainel) setConfirmando(true);
+    else gravar();
+  }
+
+  function gravar() {
     if (salvando.current) return;
     salvando.current = true;
     setTravado(true);
@@ -262,6 +273,14 @@ function ListaVeiculos({
           </form>
         </DialogContent>
       </Dialog>
+      <AlertaPainelManutencao
+        aberto={confirmando}
+        onSim={() => {
+          setConfirmando(false);
+          gravar();
+        }}
+        onNao={() => setConfirmando(false)}
+      />
     </div>
   );
 }
@@ -290,6 +309,7 @@ export function AcoesManutencaoVeiculoLista({ secao = false }: { secao?: boolean
       }
       onExcluir={(l) => executar(() => removerAcaoManutencaoVeiculo(l.id), "Ação de manutenção excluída.")}
       acaoExtra={<RestaurarPadraoAcoes />}
+      alertaPainel
     />
   );
 }
@@ -453,6 +473,7 @@ function RestaurarPadraoAcoes() {
   const [marcados, setMarcados] = useState<Record<string, string[]>>({});
   const salvando = useRef(false);
   const [travado, setTravado] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null); // texto do que será feito, enquanto o alerta Sim/Não está aberto
   const padroes = aberto ? situacaoPadraoAcoesComFilhos() : [];
   const itensCriados = aberto ? itensCriadosAcoesManutencao() : [];
   // Só para conferir (decisão 143): marcar um item criado por você não altera nada ao salvar.
@@ -482,11 +503,16 @@ function RestaurarPadraoAcoes() {
     if (salvando.current || totalPais === 0) return;
     const alterados = padroes.filter((p) => p.nome in marcados && p.situacao === "alterado").length;
     const novos = padroes.filter((p) => p.nome in marcados && p.situacao === "ausente").length;
-    const aviso =
+    const texto =
       `Restaurar ${totalPais} ${totalPais === 1 ? "ação" : "ações"} e ${totalFilhos} ${totalFilhos === 1 ? "subitem" : "subitens"} ao padrão inicial?` +
       (alterados > 0 ? ` O nome de ${alterados} ${alterados === 1 ? "ação volta" : "ações voltam"} ao inicial e os subitens marcados são restaurados; os não marcados ficam como estão.` : "") +
       (novos > 0 ? ` ${novos} ${novos === 1 ? "excluída será cadastrada" : "excluídas serão cadastradas"} de novo.` : "");
-    if (!confirm(aviso)) return;
+    setAviso(texto);
+  }
+
+  function gravar() {
+    if (salvando.current) return;
+    setAviso(null);
     salvando.current = true;
     setTravado(true);
     const ok = executar(() => {
@@ -597,6 +623,7 @@ function RestaurarPadraoAcoes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <AlertaPainelManutencao aberto={aviso !== null} detalhe={aviso ?? undefined} onSim={gravar} onNao={() => setAviso(null)} />
     </>
   );
 }
