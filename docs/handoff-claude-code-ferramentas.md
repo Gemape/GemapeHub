@@ -380,3 +380,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Dec 131 (09/10): avulso reduzido a 16 itens + grupo 'Avulso · Outros' (item aberto, descrição na observação) (PR #174).
 - Dec 132 (09/10): ajuste automático (uma vez) dos grupos 'Avulso · ...' já cadastrados para os 16 itens + Outros (branch fix/avulso-itens-removidos).
 - Dec 133 (09/10): campo Tamanho no Cadastrar ferramenta (opções do grupo em Parâmetros Específicos), coluna na lista/CSV (branch feat/ferramenta-campo-tamanho).
+- Dec 134 (09/10): sem cartões Diversos e Luva em Tamanhos por ferramenta; seed sem Luva; Tamanho do cadastro sem opções p/ eles (branch fix/tamanhos-sem-diversos-luva, parte da #176).
+- Dec 135 (09/10): 6 tamanhos da Chave de fenda no padrão + inclusão automática única (branch feat/tamanhos-chave-de-fenda, parte das #176/#177).
