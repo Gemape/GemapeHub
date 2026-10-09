@@ -92,6 +92,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const [itens, setItens] = useState<EntradaItemAssociacao[]>([]);
   // Qual dos dois check lists do veículo a janela está mostrando (decisão 119); os grupos habilitados dos dois são salvos juntos.
   const [tipoAtual, setTipoAtual] = useState<"periodico" | "avulso">("periodico");
+  // Campo "Check list: Obrigatório ou Não obrigatório" (decisão 126): vale para os grupos do tipo na tela e para os que forem habilitados depois.
+  const [padraoObrigatorio, setPadraoObrigatorio] = useState(false);
   const [travado, setTravado] = useState(false);
   const salvando = useRef(false);
 
@@ -126,14 +128,26 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     setResponsavelId(a && !clonar ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
     // Clonar copia os grupos e periodicidades para outro veículo; o responsável é escolhido de novo.
     setTipoAtual("periodico");
+    setPadraoObrigatorio(false);
     setItens(a ? gruposDaAssociacao(a, grupos).map((i) => ({ grupoId: i.grupoId, tipo: i.tipo, periodicidade: i.periodicidade === NAO_DEFINIDA ? "" : i.periodicidade, obrigatorio: i.obrigatorio })) : []);
     setAberto(true);
   }
 
-  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, tipo: tipoAtual, periodicidade: "", obrigatorio: false }]));
+  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, tipo: tipoAtual, periodicidade: "", obrigatorio: padraoObrigatorio }]));
   const desabilitar = (grupoId: string) => setItens((atual) => atual.filter((i) => i.grupoId !== grupoId));
   const mudar = (grupoId: string, periodicidade: string) =>
     setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, periodicidade } : i)));
+  const doTipo = itens.filter((i) => i.tipo === tipoAtual);
+  // Tudo obrigatório, tudo não obrigatório ou misto (grupos marcados um a um); sem grupos, vale o padrão do campo.
+  const obrigatoriedade: "obrigatorio" | "nao_obrigatorio" | "" =
+    doTipo.length === 0 ? (padraoObrigatorio ? "obrigatorio" : "nao_obrigatorio")
+      : doTipo.every((i) => i.obrigatorio === true) ? "obrigatorio"
+        : doTipo.every((i) => i.obrigatorio !== true) ? "nao_obrigatorio" : "";
+  const mudarObrigatoriedade = (valor: string) => {
+    const obrigatorio = valor === "obrigatorio";
+    setPadraoObrigatorio(obrigatorio);
+    setItens((atual) => atual.map((i) => (i.tipo === tipoAtual ? { ...i, obrigatorio } : i)));
+  };
   const mudarObrigatorio = (grupoId: string, obrigatorio: boolean) =>
     setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, obrigatorio } : i)));
 
@@ -257,7 +271,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-veiculo">Veículo</Label>
                 <Select value={veiculoId} onValueChange={setVeiculoId}>
@@ -284,6 +298,17 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">Cada veículo tem um check list periódico e um avulso; troque aqui para escolher os grupos de cada um.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="assoc-obrigatoriedade">Check list</Label>
+                <Select value={obrigatoriedade} onValueChange={mudarObrigatoriedade}>
+                  <SelectTrigger id="assoc-obrigatoriedade"><SelectValue placeholder="Misto (por grupo)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="obrigatorio">Obrigatório</SelectItem>
+                    <SelectItem value="nao_obrigatorio">Não obrigatório</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Vale para os grupos deste tipo de check list; o obrigatório conta nos percentuais do painel do mês.</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-responsavel">Responsável</Label>

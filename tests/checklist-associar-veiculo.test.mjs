@@ -176,3 +176,13 @@ test("a janela Associar abre itens, veículos e empregados por cima, ao lado do 
   assert.match(lerSrc("components/modules/DialogCadastroEmpregados.tsx"), /<EmpregadosCadastroModulo \/>/);
   assert.match(lerSrc("routes/_authenticated/empregados.tsx"), /component: EmpregadosCadastroModulo/);
 });
+
+test("a janela Associar tem o campo Check list: Obrigatório ou Não obrigatório, que vale para os grupos do tipo (dec 126)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /htmlFor="assoc-obrigatoriedade">Check list</);
+  assert.match(tela, /<SelectItem value="obrigatorio">Obrigatório<\/SelectItem>/);
+  assert.match(tela, /<SelectItem value="nao_obrigatorio">Não obrigatório<\/SelectItem>/);
+  assert.match(tela, /obrigatorio: padraoObrigatorio \}/); // grupo habilitado depois herda o campo
+  assert.match(tela, /i\.tipo === tipoAtual \? \{ \.\.\.i, obrigatorio \} : i/); // trocar o campo vale para os grupos do tipo
+  assert.match(tela, /placeholder="Misto \(por grupo\)"/);
+});
