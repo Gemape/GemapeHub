@@ -395,4 +395,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-09 dec 146: texto novo do alerta de salvar (painel de manutenções, rotina de parâmetros, definitivamente) e alerta também no Plano de manutenções.
 - 2026-10-09 dec 147: texto de apoio da página Manutenção trocado (redação final de 19:30; modificações não poderão ser desfeitas).
 - 2026-10-09 dec 149: Salvar valida o formulário antes de abrir o alerta Sim ou Não (Ações de manutenção e Plano de manutenções).
+
 - 2026-10-09 dec 150: texto de apoio da página Manutenção simplificado.
