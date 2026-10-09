@@ -104,7 +104,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   }
 
   // Sem origem: cadastro novo em branco. Com origem (Clonar): mesmo formulário, preenchido com
-  // os dados dela, mas número de série e patrimônio (únicos) em branco. O código sai da
+  // todos os dados dela (decisão 138), que podem ser editados. O código sai da
   // mesma geração do cadastro novo; estoque começa em zero.
   async function abrirNovo(origem?: Item) {
     if (!regraFerramenta) {
@@ -383,7 +383,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="modelo">Modelo</Label>
-                <Input id="modelo" name="modelo" capitalizar="texto" required defaultValue={editando?.modelo ?? ""} />
+                <Input id="modelo" name="modelo" capitalizar="texto" required defaultValue={base?.modelo ?? ""} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="tamanho_ferramenta">Tamanho</Label>
@@ -431,7 +431,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
 
             <div className="space-y-1.5">
               <Label htmlFor="status">Status</Label>
-              <Select name="status" required defaultValue={editando?.status ?? "Ativo"}>
+              <Select name="status" required defaultValue={base?.status ?? "Ativo"}>
                 <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>

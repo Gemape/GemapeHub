@@ -59,7 +59,7 @@ function PaginaEmpresas() {
   const { empresas } = useEmpresa();
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Empresa | null>(null);
-  // Clonar: dados da empresa de origem num cadastro NOVO (CNPJ sempre em branco).
+  // Clonar: dados da empresa de origem num cadastro NOVO (todos os campos copiados, decisão 138).
   const [modelo, setModelo] = useState<Empresa | null>(null);
   const base = editando ?? modelo;
   const salvar = useSalvar("empresas", ["empresas"]);
@@ -171,7 +171,7 @@ function PaginaEmpresas() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={editando?.cnpj ? formatarCnpj(editando.cnpj) : ""} />
+              <Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={base?.cnpj ? formatarCnpj(base.cnpj) : ""} />
             </div>
             {MODO_DEMO && (
               <>

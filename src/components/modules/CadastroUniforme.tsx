@@ -24,9 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   agruparEpis,
   filtrarGrupos,
-  montarClonagemEpi,
   montarNovoEpi,
-  tamanhosLivres,
   type EpiCatalogo,
 } from "@/lib/epi-catalogo";
 import {
@@ -130,13 +128,6 @@ function CatalogoUniforme() {
   }, [novoAberto, tamanhoSel, associados]);
   const pedeUnidade = unidades.some((u) => estaAtivo(parametros, u.id));
 
-  // Tamanhos que o Clonar ainda pode cadastrar para a descrição de origem.
-  const origemProduto = clonando
-    ? { categoria: clonando.categoria, subcategoria_id: clonando.subcategoria_id }
-    : null;
-  const associadosOrigem = origemProduto ? tamanhosAssociadosParaCadastro(parametros, "uniforme", origemProduto) : [];
-  const livres = clonando ? tamanhosLivres(catalogo, clonando.nome, associadosOrigem) : [];
-
   async function codigoNovo(): Promise<string> {
     if (!regra) throw new Error("Cadastre antes a regra do código de Uniforme em Cadastros > Gerais > Código do Produto.");
     // Lê de novo na hora de gravar, para não repetir um código já usado.
@@ -167,8 +158,10 @@ function CatalogoUniforme() {
   }
 
   function abrirClone(item: EpiCatalogo) {
+    setSubSel(item.subcategoria_id ?? subcategorias.find((s) => s.nome === item.categoria)?.id ?? "");
     setTamanhoSel("");
     setClonando(item);
+    setNovoAberto(true);
   }
 
   // Editar e excluir passam pela operação do catálogo, que confere tudo antes de gravar (decisão 45).
@@ -224,6 +217,7 @@ function CatalogoUniforme() {
   }
 
   function abrirNovo() {
+    setClonando(null);
     setSubSel("");
     setTamanhoSel("");
     setNovoAberto(true);
@@ -248,24 +242,12 @@ function CatalogoUniforme() {
           codigo,
           pedeTamanho: associados.length > 0,
           tamanhosPermitidos: associados.map((t) => t.id),
+          clonando: !!clonando,
           nomeProduto: "uniforme",
         }),
       () => {
         setNovoAberto(false);
       },
-    );
-  }
-
-  function enviarClone(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!clonando) return;
-    const origem = clonando;
-    const f = new FormData(e.currentTarget);
-    void gravar(
-      (codigo, atual) =>
-        montarClonagemEpi({ origem, tamanhoId: tamanhoSel, minimo: String(f.get("minimo") ?? ""), catalogo: atual, codigo,
-          tamanhosPermitidos: associadosOrigem.map((t) => t.id), nomeProduto: "uniforme" }),
-      () => setClonando(null),
     );
   }
 
@@ -345,12 +327,12 @@ function CatalogoUniforme() {
       <Dialog open={novoAberto} onOpenChange={setNovoAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Novo uniforme</DialogTitle>
+            <DialogTitle>{clonando ? "Clonar uniforme" : "Novo uniforme"}</DialogTitle>
             <DialogDescription>
-              Cadastra uma descrição ainda não existente. O código é gerado ao salvar; outros tamanhos entram pelo Clonar.
+              {clonando ? "Copia todos os dados do cadastro de origem, que podem ser editados. O código é gerado ao salvar; não herda estoque nem movimentações." : "Cadastra uma descrição ainda não existente. O código é gerado ao salvar; outros tamanhos entram pelo Clonar."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={enviarNovo} className="grid gap-3 sm:grid-cols-2">
+          <form key={clonando?.id ?? "novo"} onSubmit={enviarNovo} className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Subcategoria</Label>
               <Select value={subSel} onValueChange={(v) => { setSubSel(v); setTamanhoSel(""); }}>
@@ -367,12 +349,12 @@ function CatalogoUniforme() {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Descrição do item</Label>
-              <Textarea id="nome" name="nome" capitalizar="texto" rows={2} placeholder="Ex.: camisa operacional de algodão, manga longa" />
+              <Textarea id="nome" name="nome" capitalizar="texto" rows={2} defaultValue={clonando?.nome ?? ""} placeholder="Ex.: camisa operacional de algodão, manga longa" />
             </div>
             {unidades.length > 0 && (
               <div className="space-y-1.5">
                 <Label htmlFor="unidade_id">Unidade</Label>
-                <Select name="unidade_id" key={subSel} {...(pedeUnidade ? {} : { defaultValue: SEM_UNIDADE })}>
+                <Select name="unidade_id" key={subSel} {...(clonando?.unidade_id && unidades.some((u) => u.id === clonando.unidade_id) ? { defaultValue: clonando.unidade_id } : pedeUnidade ? {} : { defaultValue: SEM_UNIDADE })}>
                   <SelectTrigger id="unidade_id"><SelectValue placeholder="Selecione a unidade" /></SelectTrigger>
                   <SelectContent>
                     {!pedeUnidade && <SelectItem value={SEM_UNIDADE}>Sem unidade</SelectItem>}
@@ -418,7 +400,7 @@ function CatalogoUniforme() {
             )}
             <div className="space-y-1.5">
               <Label htmlFor="minimo">Estoque mínimo</Label>
-              <Input id="minimo" name="minimo" type="number" inputMode="numeric" min={0} step={1} />
+              <Input id="minimo" name="minimo" type="number" inputMode="numeric" min={0} step={1} defaultValue={clonando?.estoque_minimo ?? ""} />
             </div>
             <DialogFooter className="sm:col-span-2">
               <Button type="button" variant="outline" onClick={() => setNovoAberto(false)}>Cancelar</Button>
@@ -447,50 +429,6 @@ function CatalogoUniforme() {
               onSalvar={enviarEdicao}
               onCancelar={() => setEditando(null)}
             />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!clonando} onOpenChange={(aberto) => !aberto && setClonando(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Clonar uniforme</DialogTitle>
-            <DialogDescription>
-              Copia a descrição e a unidade, gera outro código e cadastra o uniforme em um tamanho ainda não cadastrado. Não herda estoque nem movimentações.
-            </DialogDescription>
-          </DialogHeader>
-          {clonando && (
-            <form onSubmit={enviarClone} className="grid gap-3">
-              <div className="rounded-md bg-muted/50 p-2 text-sm">
-                <p className="font-medium">{clonando.nome}</p>
-                <p className="text-xs text-muted-foreground">
-                  {clonando.categoria}
-                  {clonando.unidade_medida ? ` · ${clonando.unidade_medida}` : ""}
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="tamanho_clone">Tamanho</Label>
-                <Select value={tamanhoSel} onValueChange={setTamanhoSel} disabled={livres.length === 0}>
-                  <SelectTrigger id="tamanho_clone"><SelectValue placeholder="Selecione o tamanho" /></SelectTrigger>
-                  <SelectContent>
-                    {livres.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.rotulo}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {livres.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Todos os tamanhos associados a esta subcategoria já estão cadastrados.</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="minimo_clone">Estoque mínimo</Label>
-                <Input id="minimo_clone" name="minimo" type="number" inputMode="numeric" min={0} step={1} />
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setClonando(null)}>Cancelar</Button>
-                <Button requiresWrite type="submit" disabled={salvando || livres.length === 0}>Clonar</Button>
-              </DialogFooter>
-            </form>
           )}
         </DialogContent>
       </Dialog>

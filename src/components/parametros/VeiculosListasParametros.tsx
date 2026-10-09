@@ -88,8 +88,8 @@ function ListaVeiculos({
   function abrir(linha: Linha | null, clonar: boolean) {
     setEditando(clonar ? null : linha);
     setModelo(clonar ? linha : null);
-    // Clonar: o nome é único e fica em branco; a descrição vem copiada.
-    setNome(clonar ? "" : (linha?.nome ?? ""));
+    // Clonar copia nome e descrição, que podem ser editados (decisão 138).
+    setNome(linha?.nome ?? "");
     setDescricao(linha?.extra ?? "");
     setTipos((linha?.tipos ?? []).filter((t) => t === TODOS_OS_TIPOS || (opcoesTipos ?? []).some((o) => o.id === t)));
     setAberto(true);

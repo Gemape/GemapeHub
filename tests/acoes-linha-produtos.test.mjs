@@ -24,9 +24,9 @@ for (const [nome, arquivo] of [
   });
 }
 
-test("Clonar ferramenta copia categoria, grupo, marca e mínimo e deixa o modelo em branco (decisão 54)", () => {
+test("Clonar ferramenta copia todos os dados, inclusive o modelo (decisão 138)", () => {
   const fonte = ler("components/modules/ItensModulo.tsx");
-  assert.match(fonte, /defaultValue=\{editando\?\.modelo \?\? ""\}/);
+  assert.match(fonte, /defaultValue=\{base\?\.modelo \?\? ""\}/);
   assert.match(fonte, /defaultValue=\{base\?\.estoque_minimo \?\? 0\}/);
   assert.match(fonte, /setGrupoEscolhido\(base\?\.grupo_ferramenta \?\? ""\)/);
   assert.match(fonte, /value=\{grupoEscolhido\} onValueChange=\{\(g\) => \{ setGrupoEscolhido\(g\); setTamanhoEscolhido\(SEM_TAMANHO\); \}\}/);
