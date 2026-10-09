@@ -55,7 +55,7 @@ function CodigoProduto() {
   }
 
   // Clonar: abre o formulário de nova regra com a numeração inicial copiada, numa categoria
-  // que ainda não tem regra. A sigla (o código) fica em branco para ser informada.
+  // que ainda não tem regra. A sigla também é copiada (decisão 138) e pode ser editada.
   function clonar(origemId: string) {
     const origem = dados.regrasCodigo.find((r) => r.categoriaId === origemId);
     const destino = dados.categorias.find(
@@ -66,7 +66,7 @@ function CodigoProduto() {
       return;
     }
     setCategoriaId(destino.id);
-    setSigla("");
+    setSigla(origem.sigla);
     setInicial(origem.inicial);
   }
 

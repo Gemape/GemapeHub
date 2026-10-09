@@ -139,3 +139,12 @@ test("a busca também acha pela categoria e unidade de cada tamanho, que aparece
   assert.equal(filtrarGrupos(grupos, "proteção mãos", rotulo).length, 1);
   assert.equal(filtrarGrupos(grupos, "unidade", rotulo).length, 1);
 });
+
+test("Clonar pelo formulário de novo aceita a mesma descrição em outro tamanho e uma descrição nova (dec 138)", () => {
+  const luva = { nome: "Luva de raspa", subcategoria: { id: "sub-luva", nome: "Luvas" }, unidade: { id: "u-par", nome: "Par" }, minimo: "5", catalogo, codigo: "EPI-0004", pedeTamanho: true, clonando: true };
+  assert.equal(montarNovoEpi({ ...luva, tamanhoId: "t-g" }).tamanho_id, "t-g"); // mesma descrição, outro tamanho
+  assert.throws(() => montarNovoEpi({ ...luva, tamanhoId: "t-p" }), /já está cadastrado neste tamanho/);
+  assert.throws(() => montarNovoEpi({ ...luva, tamanhoId: "t-g", unidade: { id: "u-un", nome: "Unidade" } }), /outra subcategoria ou unidade/);
+  assert.equal(montarNovoEpi({ ...luva, nome: "Luva de vaqueta", tamanhoId: "t-p" }).nome, "Luva de vaqueta"); // descrição editada = item novo
+  assert.throws(() => montarNovoEpi({ ...luva, tamanhoId: "t-g", clonando: false }), /Clonar/); // Novo comum continua recusando
+});

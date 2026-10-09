@@ -116,6 +116,8 @@ export function montarNovoEpi(entrada: {
   catalogo: EpiCatalogo[];
   codigo: string;
   pedeTamanho: boolean;
+  // Clonar (decisão 138): abre o formulário de novo cadastro já preenchido; a mesma descrição é aceita em outro tamanho.
+  clonando?: boolean;
   // Tamanhos que o chamador aceita: os autorizados à subcategoria em Gerais (Novo, Clonar e Editar).
   tamanhosPermitidos?: string[];
   nomeProduto?: string;
@@ -127,9 +129,19 @@ export function montarNovoEpi(entrada: {
     throw new Error("Tamanho não associado a esta subcategoria em Cadastros > Gerais.");
   }
   const minimo = validarMinimo(entrada.minimo);
-  const jaExiste = entrada.catalogo.some((c) => normalizarDescricao(c.nome) === normalizarDescricao(nome));
-  if (jaExiste) {
-    throw new Error(`Já existe um ${entrada.nomeProduto ?? "EPI"} com esta descrição. Use Clonar para cadastrar outro tamanho.`);
+  const mesmaDescricao = entrada.catalogo.filter((c) => normalizarDescricao(c.nome) === normalizarDescricao(nome));
+  if (mesmaDescricao.length > 0) {
+    if (!entrada.clonando) {
+      throw new Error(`Já existe um ${entrada.nomeProduto ?? "EPI"} com esta descrição. Use Clonar para cadastrar outro tamanho.`);
+    }
+    // Clonando com a descrição igual: só vale em outro tamanho e com a mesma subcategoria e unidade (decisão 35: a descrição vale para todos os tamanhos).
+    const ex = mesmaDescricao[0]!;
+    if (ex.subcategoria_id !== entrada.subcategoria.id || (ex.unidade_id ?? null) !== (entrada.unidade?.id ?? null)) {
+      throw new Error(`Já existe um ${entrada.nomeProduto ?? "EPI"} com esta descrição em outra subcategoria ou unidade. Mude a descrição para cadastrar um item novo.`);
+    }
+    if (duplicadoNoCatalogo(entrada.catalogo, nome, entrada.tamanhoId || null)) {
+      throw new Error(`Este ${entrada.nomeProduto ?? "EPI"} já está cadastrado neste tamanho.`);
+    }
   }
   return {
     codigo_sku: entrada.codigo,

@@ -47,7 +47,7 @@ function PaginaFornecedores() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>(listarFornecedores);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Fornecedor | null>(null);
-  // Clonar: dados do fornecedor de origem num cadastro NOVO (CNPJ em branco, código novo).
+  // Clonar: dados do fornecedor de origem num cadastro NOVO (todos os campos copiados, código novo, decisão 138).
   const [modelo, setModelo] = useState<Fornecedor | null>(null);
   const base = editando ?? modelo;
   // Calculado ao abrir, para não trocar enquanto o diálogo fecha depois de salvar.
@@ -165,7 +165,7 @@ function PaginaFornecedores() {
           <div className="hidden sm:block" />
           <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" capitalizar="texto" required defaultValue={base?.razao_social ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" capitalizar="texto" defaultValue={base?.nome_fantasia ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={formatarCnpj(editando?.cnpj ?? "")} /></div>
+          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={formatarCnpj(base?.cnpj ?? "")} /></div>
           <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Endereço</h2>
           {camposEndereco.map((campo) => <div key={campo.nome} className="space-y-1.5">
             <Label htmlFor={campo.nome}>{campo.rotulo}</Label>

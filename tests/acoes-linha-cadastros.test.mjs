@@ -5,28 +5,28 @@ import { readFileSync } from "node:fs";
 const ler = (c) => readFileSync(new URL(`../src/routes/_authenticated/${c}`, import.meta.url), "utf8");
 const completo = /<AcoesLinha[\s\S]*?onClonar=[\s\S]*?onEditar=[\s\S]*?onExcluir=/;
 
-test("Empresas usa AcoesLinha; Clonar abre cadastro novo sem CNPJ", () => {
+test("Empresas usa AcoesLinha; Clonar abre cadastro novo com o CNPJ copiado (dec 138)", () => {
   const src = ler("empresas.tsx");
   assert.match(src, completo);
   assert.match(src, /setEditando\(null\);\s*setModelo\(empresa\)/);
-  assert.match(src, /defaultValue=\{editando\?\.cnpj \? formatarCnpj\(editando\.cnpj\) : ""\}/);
+  assert.match(src, /defaultValue=\{base\?\.cnpj \? formatarCnpj\(base\.cnpj\) : ""\}/);
   assert.doesNotMatch(src, /<Button requiresWrite\s+variant="ghost"/);
 });
 
-test("Empregados usa AcoesLinha; Clonar limpa CPF, matrícula e e-mail", () => {
+test("Empregados usa AcoesLinha; Clonar copia CPF, matrícula e e-mail (dec 138)", () => {
   const src = ler("../../components/modules/EmpregadosCadastroModulo.tsx");
   assert.match(src, /<AcoesLinha rotulo=\{e\.nome\} onClonar=.*onEditar=.*onExcluir=/);
   assert.match(src, /setEditando\(clonar \? null : empregado\)/);
-  assert.match(src, /defaultValue=\{editando\?\.cpf \? \(.*mascararCpf\(editando\.cpf\)\) : ""\}/);
-  assert.match(src, /defaultValue=\{editando\?\.matricula \?\? ""\}/);
-  assert.match(src, /defaultValue=\{editando\?\.email \?\? ""\}/);
+  assert.match(src, /defaultValue=\{base\?\.cpf \? \(.*mascararCpf\(base\.cpf\)\) : ""\}/);
+  assert.match(src, /defaultValue=\{base\?\.matricula \?\? ""\}/);
+  assert.match(src, /defaultValue=\{base\?\.email \?\? ""\}/);
 });
 
-test("Fornecedores usa AcoesLinha; Clonar gera código novo e deixa CNPJ em branco", () => {
+test("Fornecedores usa AcoesLinha; Clonar gera código novo e copia o CNPJ (dec 138)", () => {
   const src = ler("cadastros/fornecedores.tsx");
   assert.match(src, /<AcoesLinha rotulo=\{nomeDoFornecedor\(fornecedor\)\} onClonar=.*onEditar=.*onExcluir=/);
   assert.match(src, /!clonar && fornecedor \? fornecedor\.codigo : proximoCodigoFornecedor\(\)/);
-  assert.match(src, /formatarCnpj\(editando\?\.cnpj \?\? ""\)/);
+  assert.match(src, /formatarCnpj\(base\?\.cnpj \?\? ""\)/);
 });
 
 test("Ficha de EPI usa AcoesLinha; Clonar copia só o texto e deixa o EPI em branco", () => {
