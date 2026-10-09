@@ -13,7 +13,7 @@ const memoria = () => {
 };
 const resp = { id: "e1", nome: "Maria Souza" };
 const grupos = [{ grupoId: "g1", periodicidade: "Diária" }, { grupoId: "g2", periodicidade: "Mensal" }];
-const gravados = grupos.map((g) => ({ ...g, tipo: "periodico", obrigatorio: false }));
+const gravados = grupos.map((g) => ({ ...g, tipo: "periodico", obrigatorio: true })); // periódico é sempre obrigatório (dec 136)
 
 test("as periodicidades são Diária, Semanal, Quinzenal, Mensal e Não definida (dec 116)", () => {
   assert.deepEqual([...PERIODICIDADES_ASSOCIACAO], ["Diária", "Semanal", "Quinzenal", "Mensal", "Não definida"]);
@@ -53,7 +53,7 @@ test("responsável não definido e grupo Não definida: check list livre, nome c
   const listas = checklistsDaAssociacao("ABC1D23", a, grupos3);
   assert.deepEqual(listas.map((l) => [l.nome, l.tipo, l.obrigatorio]), [
     ["ABC1D23 >> Mensal >> Não definido", "Periódico", "Sim"],
-    ["ABC1D23 >> Não definida >> Não definido", "Livre", "Parcial"],
+    ["ABC1D23 >> Não definida >> Não definido", "Livre", "Não"],
   ]);
   const comResp = checklistsDaAssociacao("ABC1D23", { ...a, responsavel: resp }, grupos3);
   assert.deepEqual(comResp.map((l) => [l.nome, l.tipo]), [
@@ -62,10 +62,10 @@ test("responsável não definido e grupo Não definida: check list livre, nome c
   ]);
 });
 
-test("associações antigas, sem obrigatório, são lidas como não obrigatórias", () => {
+test("o tipo define a obrigatoriedade, também nas associações antigas: periódico obrigatório, avulso não (dec 136)", () => {
   const s = memoria();
-  s.setItem("gemape-demo-associacoes-checklist-veiculo", JSON.stringify([{ veiculoId: "v1", responsavel: resp, atualizadoEm: "", itens: [{ grupoId: "g1", periodicidade: "Diária" }] }]));
-  assert.equal(lerAssociacoes(s)[0].itens[0].obrigatorio, false);
+  s.setItem("gemape-demo-associacoes-checklist-veiculo", JSON.stringify([{ veiculoId: "v1", responsavel: resp, atualizadoEm: "", itens: [{ grupoId: "g1", periodicidade: "Diária", obrigatorio: false }, { grupoId: "g2", tipo: "avulso", periodicidade: "Não definida", obrigatorio: true }] }]));
+  assert.deepEqual(lerAssociacoes(s)[0].itens.map((i) => i.obrigatorio), [true, false]);
 });
 
 test("editar troca grupos, periodicidade, responsável e veículo (tudo ou nada); excluir remove", () => {
@@ -107,7 +107,7 @@ test("menu: um item Check list reúne Itens check list e Associar itens (decisã
 test("a tela existe e usa os grupos de Itens check list, periodicidade e responsável", () => {
   const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
   assert.match(tela, /itensChecklistVeiculo/);
-  assert.match(tela, /PERIODICIDADES_ASSOCIACAO/);
+  assert.match(tela, /PERIODICIDADES_CAMPO/);
   assert.match(tela, /Responsável/);
   const rota = readFileSync(new URL("../src/routes/_authenticated/cadastros/veiculos-checklist-associar.tsx", import.meta.url), "utf8");
   assert.match(rota, /cadastros\/veiculos-checklist-associar/);
@@ -117,7 +117,7 @@ test("a tela existe e usa os grupos de Itens check list, periodicidade e respons
 test("a tela de Parâmetros lista por veículo e check list, com tipo, obrigatório e responsável Não definido (dec 116)", () => {
   const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
   assert.match(tela, /checklistsDaAssociacao\(/);
-  assert.doesNotMatch(tela, /obrigatorio-\$\{i\.grupoId\}/); // sem checkbox por grupo (dec 129): só a lista suspensa Check list
+  assert.doesNotMatch(tela, /obrigatorio-\$\{i\.grupoId\}/); // sem checkbox por grupo (dec 129)
   assert.match(tela, /SEM_RESPONSAVEL/);
   assert.match(tela, /<th className="px-3 py-2">Tipo<\/th>/);
   assert.match(tela, /<th className="px-3 py-2">Obrigatório<\/th>/);
@@ -153,23 +153,21 @@ test("Parâmetros > Veículos > Check list mostra primeiro Associar itens e depo
   const pagina = readFileSync(new URL("../src/components/parametros/ChecklistParametros.tsx", import.meta.url), "utf8");
   assert.ok(pagina.indexOf("<AssociarChecklistVeiculo secao />") < pagina.indexOf("<ChecklistVeiculoLista secao />"));
   const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
-  assert.match(tela, /htmlFor="assoc-tipo">Tipo de check list/);
-  assert.match(tela, /tipo: tipoAtual/);
-  assert.match(tela, /i\.tipo === tipoAtual/);
+  assert.match(tela, /htmlFor="assoc-periodicidade">Periodicidade/); // dec 137: o campo Tipo virou Periodicidade, com Avulso
+  assert.match(tela, /const AVULSO = "Avulso"/);
 });
 
 // ---------- Telas de cadastro por cima da janela Associar (decisão 120) ----------
 test("a janela Associar abre itens, veículos e empregados por cima, ao lado do diálogo e sem perder o preenchimento (dec 120)", () => {
   const lerSrc = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
   const tela = lerSrc("components/parametros/AssociarChecklistVeiculo.tsx");
-  assert.match(tela, /<DialogItensChecklist aberto=\{itensAberto\}/);
   assert.match(tela, /<DialogCadastroVeiculos aberto=\{veiculosAberto\}/);
   assert.match(tela, /<DialogCadastroEmpregados aberto=\{empregadosAberto\}/);
   // os três ficam depois do fechamento do diálogo da associação: nunca dentro dele
   const fimDialogo = tela.indexOf("</Dialog>");
-  assert.ok(fimDialogo > 0 && tela.indexOf("<DialogItensChecklist") > fimDialogo);
+  assert.ok(fimDialogo > 0 && tela.indexOf("<DialogCadastroVeiculos") > fimDialogo);
   assert.ok(tela.indexOf("<DialogCadastroEmpregados") > fimDialogo);
-  for (const rotulo of ["Cadastrar veículo", "Cadastrar empregado", "Cadastrar itens de check list"]) assert.match(tela, new RegExp(rotulo));
+  for (const rotulo of ["Cadastrar veículo", "Cadastrar empregado"]) assert.match(tela, new RegExp(rotulo));
   assert.match(tela, /canWrite/);
   assert.match(tela, /invalidateQueries\(\{ queryKey: \["veiculos-checklist-assoc"\]/);
   assert.match(tela, /invalidateQueries\(\{ queryKey: \["empregados-checklist-assoc"\]/);
@@ -177,41 +175,15 @@ test("a janela Associar abre itens, veículos e empregados por cima, ao lado do 
   assert.match(lerSrc("routes/_authenticated/empregados.tsx"), /component: EmpregadosCadastroModulo/);
 });
 
-test("a janela Associar tem o campo Check list: Obrigatório ou Não obrigatório, que vale para os grupos do tipo (dec 126)", () => {
+test("a janela Associar tem só Veículo, Responsável e Periodicidade (com Avulso); periódico é obrigatório e avulso não (dec 136 e 137)", () => {
   const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
-  assert.match(tela, /htmlFor="assoc-obrigatoriedade">Check list</);
-  assert.match(tela, /<SelectItem value="obrigatorio">Obrigatório<\/SelectItem>/);
-  assert.match(tela, /<SelectItem value="nao_obrigatorio">Não obrigatório<\/SelectItem>/);
-  assert.match(tela, /obrigatorio: obrigatoriedade === "obrigatorio" \}/); // grupo habilitado depois herda o campo
-  assert.match(tela, /i\.tipo === tipoAtual \? \{ \.\.\.i, obrigatorio \} : i/); // trocar o campo vale para os grupos do tipo
-  assert.match(tela, /placeholder="Misto \(por grupo\)"/);
-});
-
-test("a periodicidade do grupo habilitado oferece Não definida, que passa o grupo para o avulso (dec 127)", () => {
-  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
-  assert.match(tela, /PERIODICIDADES_ASSOCIACAO\.map\(\(p\) =>/);
-  assert.doesNotMatch(tela, /PERIODICIDADES_ASSOCIACAO\.filter/);
-  assert.match(tela, /periodicidade === NAO_DEFINIDA/);
-  assert.match(tela, /tipo: "avulso", periodicidade: ""/);
-});
-
-test("a janela Associar mostra o resumo dos grupos habilitados com a periodicidade de cada um (dec 128)", () => {
-  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
-  assert.match(tela, /data-testid="resumo-habilitados"/);
-  assert.match(tela, /Resumo dos grupos habilitados/);
-  assert.match(tela, /periodicidade a escolher/);
-});
-
-test("a janela Associar não tem checkbox de obrigatório por grupo, só a lista suspensa Check list (dec 129)", () => {
-  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(tela, /Checkbox/);
-  assert.doesNotMatch(tela, /mudarObrigatorio\(/);
-  assert.match(tela, /id="assoc-obrigatoriedade"/);
-});
-
-test("a janela Associar oferece só os grupos Avulso no avulso e os demais no periódico (dec 130)", () => {
-  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
-  assert.match(tela, /ehGrupoAvulso\(g\.nome\) === \(tipoAtual === "avulso"\)/);
-  const modulo = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
-  assert.match(modulo, /gruposAplicaveis\(parametros\.itensChecklistVeiculo, tipoDe\(veiculoEscolhido\)\?\.id \?\? null, true\)/);
+  assert.doesNotMatch(tela, /assoc-obrigatoriedade/);
+  assert.doesNotMatch(tela, /Misto \(por grupo\)/);
+  const ordem = ["assoc-veiculo", "assoc-responsavel", "assoc-periodicidade"].map((id) => tela.indexOf(`htmlFor="${id}"`));
+  assert.ok(ordem.every((n) => n > 0) && ordem[0] < ordem[1] && ordem[1] < ordem[2]);
+  assert.match(tela, /\["Diária", "Semanal", "Quinzenal", "Mensal", AVULSO\]/);
+  assert.match(tela, /tipo: "avulso", periodicidade: "", obrigatorio: false/);
+  assert.match(tela, /tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true/);
+  assert.match(tela, /gruposAplicaveis\(grupos, subcategoriaId, avulso\)/); // itens = grupos do tipo do veículo
+  for (const fora of ["Grupos de itens", "Habilitar", "resumo-habilitados", "Grupos habilitados"]) assert.doesNotMatch(tela, new RegExp(fora));
 });
