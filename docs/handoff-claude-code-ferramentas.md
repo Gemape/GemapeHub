@@ -369,3 +369,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 120: janela Associar itens abre Cadastrar veículo, Cadastrar itens de check list e Cadastrar empregado por cima (`DialogCadastroVeiculos`, `DialogItensChecklist`, `DialogCadastroEmpregados`, irmãs do diálogo da associação; tela de Empregados extraída para `EmpregadosCadastroModulo`).
 - Decisão 121: código do check list único, nunca reaproveitado (`proximoCodigo` em checklist-veiculo.ts, sequência local).
 - Decisão 122: ícones do menu lateral em quadrinhos de vidro animados (`icone-menu` em styles.css; `icone-seta` exclui a seta).
+- Decisão 123: um check list periódico em andamento por periodicidade por veículo; Situação por veículo com uma linha por periodicidade (`periodicidadesDe(v)` em ChecklistVeiculoModulo; bloqueio em `gravarNovoChecklist`).

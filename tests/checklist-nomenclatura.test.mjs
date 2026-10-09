@@ -106,7 +106,8 @@ test("o módulo traz os grupos pela periodicidade e pelo tipo avulso da associa�
 test("trocar a periodicidade na janela Novo check list não muda a situação por veículo nem o painel (dec 119)", () => {
   const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
   assert.match(tela, /const periodicidadeDoDialogo = /);
-  assert.match(tela, /const per = periodicidadeDe\(v\);/);
+  assert.doesNotMatch(tela, /situacaoPeriodica\(periodicidadeDoDialogo/);
+  assert.match(tela, /periodicidades\.map\(\(per\) => \{/);
   assert.match(tela, /periodicidade: periodicidadeDoDialogo\(veiculoEscolhido\)/);
 });
 
@@ -125,4 +126,23 @@ test("o código do check list nunca se repete, nem depois de descartar o último
   const antigo = memoria();
   antigo.setItem("gemape-demo-checklists-veiculo", JSON.stringify([{ ...c, id: "x", codigo: "CHK-0007", status: "Concluído" }]));
   assert.equal(iniciarChecklist(periodico(), antigo, agora).codigo, "CHK-0008");
+});
+
+test("cada periodicidade tem o seu check list periódico em andamento por veículo (dec 123)", () => {
+  const s = memoria();
+  const diario = iniciarChecklist(periodico({ periodicidade: "Diário" }), s, agora);
+  const mensal = iniciarChecklist(periodico({ periodicidade: "Mensal" }), s, agora); // outra periodicidade, não bloqueia
+  assert.notEqual(diario.codigo, mensal.codigo);
+  assert.throws(() => iniciarChecklist(periodico({ periodicidade: "Mensal" }), s, agora), /mensal em andamento/i);
+  assert.throws(() => iniciarChecklist(periodico({ periodicidade: "Diário" }), s, agora), /diário em andamento/i);
+  iniciarChecklistAvulso(avulso(), s, agora); // o avulso continua independente dos dois
+  assert.equal(lerChecklists(s).length, 3);
+});
+
+test("a situação por veículo tem uma linha por periodicidade, com Iniciar e Continuar de cada uma (dec 123)", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /periodicidadesDe\(v\)\.length > 0 \? periodicidadesDe\(v\) : \[null\]/);
+  assert.match(tela, /c\.periodicidade === per/);
+  assert.match(tela, /abrirNovo\(v, per \?\? undefined\)/);
+  assert.match(tela, /<TableHead>Periodicidade<\/TableHead>/);
 });

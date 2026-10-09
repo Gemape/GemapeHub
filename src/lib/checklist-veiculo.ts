@@ -262,9 +262,11 @@ function gravarNovoChecklist(entrada: Omit<EntradaChecklist, "periodicidade"> & 
   let criado!: ChecklistVeiculo;
   gravar(() =>
     alterarLista<ChecklistVeiculo>(CHAVE, storage, (lista) => {
-      // O avulso e o periódico não se bloqueiam: cada tipo tem o seu em andamento por veículo.
-      if (lista.some((c) => c.veiculoId === entrada.veiculoId && c.status === "Em andamento" && checklistVisivelNaLista(c) === !avulso)) {
-        throw new Error(avulso ? "Este veículo já tem um check list avulso em andamento. Conclua-o antes de iniciar outro." : "Este veículo já tem um check list em andamento. Conclua-o antes de iniciar outro.");
+      // O avulso e o periódico não se bloqueiam, e cada periodicidade tem o seu periódico em andamento por veículo (decisão 123).
+      if (lista.some((c) => c.veiculoId === entrada.veiculoId && c.status === "Em andamento" && checklistVisivelNaLista(c) === !avulso && (avulso || c.periodicidade === entrada.periodicidade))) {
+        throw new Error(avulso
+          ? "Este veículo já tem um check list avulso em andamento. Conclua-o antes de iniciar outro."
+          : `Este veículo já tem um check list ${String(entrada.periodicidade).toLowerCase()} em andamento. Conclua-o antes de iniciar outro.`);
       }
       criado = {
         id: novoId(),
