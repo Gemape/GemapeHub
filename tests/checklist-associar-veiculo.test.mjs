@@ -149,9 +149,9 @@ test("associações sem tipo gravado: periódico se tinha periodicidade definida
   assert.deepEqual(lerAssociacoes(s)[0].itens.map((i) => i.tipo), ["periodico", "avulso"]);
 });
 
-test("Parâmetros > Veículos > Check list mostra primeiro Associar itens e depois os itens; o diálogo tem o campo Tipo de check list, Periódico ou Avulso (dec 119)", () => {
+test("Parâmetros > Veículos > Check list mostra primeiro os itens e depois Associar itens a um veículo (dec 148); o diálogo tem o campo Tipo de check list, Periódico ou Avulso (dec 119)", () => {
   const pagina = readFileSync(new URL("../src/components/parametros/ChecklistParametros.tsx", import.meta.url), "utf8");
-  assert.ok(pagina.indexOf("<AssociarChecklistVeiculo secao />") < pagina.indexOf("<ChecklistVeiculoLista secao />"));
+  assert.ok(pagina.indexOf("<ChecklistVeiculoLista secao />") < pagina.indexOf("<AssociarChecklistVeiculo secao />"));
   const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
   assert.match(tela, /htmlFor="assoc-periodicidade">Periodicidade/); // dec 137: o campo Tipo virou Periodicidade, com Avulso
   assert.match(tela, /const AVULSO = "Avulso"/);
@@ -184,6 +184,18 @@ test("a janela Associar tem só Veículo, Responsável e Periodicidade (com Avul
   assert.match(tela, /\["Diária", "Semanal", "Quinzenal", "Mensal", AVULSO\]/);
   assert.match(tela, /tipo: "avulso", periodicidade: "", obrigatorio: false/);
   assert.match(tela, /tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true/);
-  assert.match(tela, /gruposAplicaveis\(grupos, subcategoriaId, avulso\)/); // itens = grupos do tipo do veículo
-  for (const fora of ["Grupos de itens", "Habilitar", "resumo-habilitados", "Grupos habilitados"]) assert.doesNotMatch(tela, new RegExp(fora));
+  assert.match(tela, /gruposAplicaveis\(grupos, subcategoriaIdEscolhida, periodicidade === AVULSO\)/); // itens = grupos do tipo do veículo, escolhidos por checkbox (dec 148)
+  for (const fora of ["Grupos de itens", "Habilitar", "resumo-habilitados", "Grupos habilitados", "Periodicidade do item"]) assert.doesNotMatch(tela, new RegExp(fora));
+});
+
+test("na janela Associar a periodicidade vem antes e vale para todos; os itens do check list são escolhidos por checkbox (dec 148)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  const ordem = ["assoc-periodicidade", "Itens que compõem o check list"].map((t) => tela.indexOf(t));
+  assert.ok(ordem[0] > 0 && ordem[0] < ordem[1]); // periodicidade antes da escolha dos itens
+  assert.match(tela, /data-testid="associar-itens"/);
+  assert.match(tela, /id=\{`assoc-item-\$\{g\.id\}`\}/); // um checkbox por item
+  assert.match(tela, /A periodicidade vale para todos os itens marcados/);
+  assert.match(tela, /aplicaveis\.filter\(\(g\) => marcados\.includes\(g\.id\)\)/); // só os marcados viram a associação
+  // a periodicidade não é por item: cada item marcado recebe a mesma
+  assert.match(tela, /periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true/);
 });

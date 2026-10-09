@@ -394,3 +394,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-09 dec 145: alerta Sim/Não ao salvar em Ações de manutenção (cadastrar/editar e restaurar configurações iniciais).
 - 2026-10-09 dec 146: texto novo do alerta de salvar (painel de manutenções, rotina de parâmetros, definitivamente) e alerta também no Plano de manutenções.
 - 2026-10-09 dec 147: texto de apoio da página Manutenção trocado (redação final de 19:30; modificações não poderão ser desfeitas).
+- 2026-10-09 dec 148: Check list com Itens check list no topo; janela Associar escolhe os itens por checkbox (periodicidade única para todos).
