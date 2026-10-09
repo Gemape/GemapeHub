@@ -54,3 +54,4 @@ Nada abaixo deve ser feito antes da ordem do responsável.
 - Check list de veículo (decisão 119): cada grupo associado precisará de `tipo` (periódico ou avulso); avulso grava periodicidade nula.
 
 - Check list (dec 121): o código do check list (CHK-NNNN) deve vir de sequência do banco com restrição única; hoje a sequência é local (`gemape-demo-checklists-veiculo-sequencia`).
+- Ferramentas, campo Tamanho (decisão 133): hoje só no modo demonstração (a ferramenta guarda `tamanho` como texto). No banco real, criar a coluna `tamanho` (texto, opcional) em `ferramentas` ou ligá-la à futura tabela grupo -> tamanhos (decisão 117). Sem tabela nem coluna criada agora.

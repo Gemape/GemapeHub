@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adicionarListaFerramenta, adicionarSubcategoria, lerParametros, salvarRegraCodigo } from '../src/lib/parametros-base.ts';
+import { adicionarListaFerramenta, adicionarSubcategoria, adicionarTamanhoGrupoFerramenta, lerParametros, salvarRegraCodigo } from '../src/lib/parametros-base.ts';
 import * as cadastroFerramentas from '../src/lib/cadastro-ferramentas.ts';
 const { opcaoFerramentaEmUso, prepararCadastroFerramenta, descricaoFerramenta } = cadastroFerramentas;
 
@@ -112,4 +112,31 @@ test('ferramenta antiga com categoria fora de Gerais continua editável com a ca
   assert.throws(() => prepararCadastroFerramenta(entrada), /Categoria de ferramenta inválida/);
   assert.equal(prepararCadastroFerramenta({ ...entrada, categoriaAtual: 'Antiga', codigoAtual: 'FER-0003' }).categoria_ferramenta, 'Antiga');
   assert.throws(() => prepararCadastroFerramenta({ ...entrada, categoriaAtual: 'Outra', codigoAtual: 'FER-0003' }), /Categoria de ferramenta inválida/);
+});
+
+test('tamanho da ferramenta vem dos tamanhos do grupo em Parâmetros Específicos (dec 133)', () => {
+  const local = storage();
+  const parametros0 = lerParametros(local);
+  const grupo = parametros0.gruposFerramenta.find((g) => g.nome === 'Chave de fenda');
+  adicionarTamanhoGrupoFerramenta(grupo.id, '6 mm', local);
+  adicionarTamanhoGrupoFerramenta(grupo.id, '8 mm', local);
+  const parametros = lerParametros(local);
+  assert.deepEqual(cadastroFerramentas.tamanhosDoGrupoFerramenta(parametros, 'Chave de fenda'), ['6 mm', '8 mm']);
+  assert.deepEqual(cadastroFerramentas.tamanhosDoGrupoFerramenta(parametros, 'Grupo que não existe'), []);
+  const entrada = { parametros, codigosExistentes: [], ...campos };
+  assert.equal(prepararCadastroFerramenta({ ...entrada, tamanho: '8 mm' }).tamanho, '8 mm');
+  assert.equal(prepararCadastroFerramenta({ ...entrada, tamanho: '' }).tamanho, null); // sem tamanho limpa o campo
+  assert.equal('tamanho' in prepararCadastroFerramenta(entrada), false); // sem o campo na entrada, nada é enviado
+  assert.throws(() => prepararCadastroFerramenta({ ...entrada, tamanho: '99 mm' }), /Tamanho inválido/);
+  // tamanho já gravado que saiu da lista do grupo continua aceito na edição
+  assert.equal(prepararCadastroFerramenta({ ...entrada, tamanho: '99 mm', tamanhoAtual: '99 mm' }).tamanho, '99 mm');
+});
+
+test('o cadastro de ferramenta tem o campo Tamanho, depende do grupo e aparece na lista (dec 133)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const tela = readFileSync(new URL('../src/components/modules/ItensModulo.tsx', import.meta.url), 'utf8');
+  assert.match(tela, /htmlFor="tamanho_ferramenta">Tamanho</);
+  assert.match(tela, /tamanhosDoGrupoFerramenta\(parametros, grupoEscolhido\)/);
+  assert.match(tela, /<TableHead>Tamanho<\/TableHead>/);
+  assert.match(tela, /Sem tamanho/);
 });
