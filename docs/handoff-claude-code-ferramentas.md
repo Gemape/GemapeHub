@@ -398,3 +398,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-09 dec 149: Salvar valida o formulário antes de abrir o alerta Sim ou Não (Ações de manutenção e Plano de manutenções).
 - 2026-10-09 dec 150: texto de apoio da página Manutenção simplificado.
 - 2026-10-09 dec 151: seção Criados por você passa a excluir os itens marcados (só Administrador), com alerta Sim/Não; editar fica na lista.
+- 2026-10-09 dec 152: Itens check list sem Cadastrar padrão; botão passa a Restaurar configurações iniciais.

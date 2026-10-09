@@ -21,7 +21,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   adicionarAcaoManutencaoVeiculo,
   adicionarGrupoChecklistVeiculo,
-  cadastrarPadraoChecklistVeiculos,
   itensCriadosAcoesManutencao,
   restaurarAcoesManutencaoEscolhidas,
   excluirItensCriadosAcoesManutencao,
@@ -361,7 +360,7 @@ function RestaurarPadraoInicial({
   restaurar,
   perdas,
   feminino = false,
-  rotulo = "Restaurar padrão inicial",
+  rotulo = "Restaurar configurações iniciais",
 }: {
   singular: string;
   plural: string;
@@ -671,16 +670,6 @@ export function ChecklistVeiculoLista({ secao = false }: { secao?: boolean } = {
       }
       onExcluir={(l) => executar(() => removerGrupoChecklistVeiculo(l.id), "Grupo do check list excluído.")}
       acaoExtra={<RestaurarPadraoChecklist />}
-      onPadrao={() =>
-        executar(() => {
-          const r = cadastrarPadraoChecklistVeiculos();
-          toast.success(
-            r.grupos === 0 && r.ligados === 0 && r.semTipo === 0
-              ? "Os itens padrão já estão cadastrados."
-              : `${r.grupos > 0 ? `${r.grupos} grupos e ${r.itens} itens padrão cadastrados.` : "Nenhum grupo novo."}${r.ligados ? ` ${r.ligados} grupos existentes foram ligados ao tipo de veículo.` : ""}${r.substituidos ? ` ${r.substituidos} grupos do padrão antigo foram substituídos.` : ""}${r.semTipo ? ` ${r.semTipo} grupos ficaram sem tipo de veículo: escolha o tipo em Editar.` : ""}`,
-          );
-        })
-      }
     />
   );
 }
