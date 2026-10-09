@@ -117,7 +117,7 @@ test("a tela existe e usa os grupos de Itens check list, periodicidade e respons
 test("a tela de Parâmetros lista por veículo e check list, com tipo, obrigatório e responsável Não definido (dec 116)", () => {
   const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
   assert.match(tela, /checklistsDaAssociacao\(/);
-  assert.match(tela, /Check list obrigatório/);
+  assert.doesNotMatch(tela, /obrigatorio-\$\{i\.grupoId\}/); // sem checkbox por grupo (dec 129): só a lista suspensa Check list
   assert.match(tela, /SEM_RESPONSAVEL/);
   assert.match(tela, /<th className="px-3 py-2">Tipo<\/th>/);
   assert.match(tela, /<th className="px-3 py-2">Obrigatório<\/th>/);
@@ -200,4 +200,11 @@ test("a janela Associar mostra o resumo dos grupos habilitados com a periodicida
   assert.match(tela, /data-testid="resumo-habilitados"/);
   assert.match(tela, /Resumo dos grupos habilitados/);
   assert.match(tela, /periodicidade a escolher/);
+});
+
+test("a janela Associar não tem checkbox de obrigatório por grupo, só a lista suspensa Check list (dec 129)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(tela, /Checkbox/);
+  assert.doesNotMatch(tela, /mudarObrigatorio\(/);
+  assert.match(tela, /id="assoc-obrigatoriedade"/);
 });

@@ -375,3 +375,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 126: campo "Check list: Obrigatório / Não obrigatório" na janela Associar (`obrigatoriedade`, `padraoObrigatorio` em AssociarChecklistVeiculo).
 - Dec 127 (09/10): opção Não definida na periodicidade dos grupos habilitados; escolher passa o grupo para o check list avulso (PR #173).
 - Dec 128 (09/10): resumo dos grupos habilitados com periodicidade na janela Associar (PR #173).
+- Dec 129 (09/10): removido o checkbox de obrigatório por grupo; só a lista suspensa Check list (PR #173).

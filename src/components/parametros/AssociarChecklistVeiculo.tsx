@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -156,8 +155,6 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     setPadraoObrigatorio(obrigatorio);
     setItens((atual) => atual.map((i) => (i.tipo === tipoAtual ? { ...i, obrigatorio } : i)));
   };
-  const mudarObrigatorio = (grupoId: string, obrigatorio: boolean) =>
-    setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, obrigatorio } : i)));
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -401,10 +398,6 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                               </Select>
                             </div>
                           )}
-                          <label className="flex items-center gap-2 text-xs" htmlFor={`obrigatorio-${i.grupoId}`}>
-                            <Checkbox id={`obrigatorio-${i.grupoId}`} checked={i.obrigatorio === true} onCheckedChange={(v) => mudarObrigatorio(i.grupoId, v === true)} />
-                            Check list obrigatório <span className="text-muted-foreground">(conta nos percentuais do painel do mês)</span>
-                          </label>
                         </li>
                       );
                     })}

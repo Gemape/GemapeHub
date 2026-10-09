@@ -804,3 +804,7 @@ Ordem do responsável em 09/10 (11:40), com o print de Itens check list: nos gru
 ### Decisão 128: Resumo dos grupos habilitados com a periodicidade, na janela Associar itens
 
 Ordem do responsável em 09/10 (11:47), com o print do quadro "Grupos habilitados no check list periódico" mostrando só "3 grupo(s) no check list avulso": mostrar na tela quais grupos foram habilitados e a periodicidade de cada um. **Antes:** o quadro dizia só a quantidade de grupos do outro tipo. **Agora:** abaixo da lista do tipo escolhido há o resumo com todos os grupos habilitados (periódicos e avulsos), cada um com tipo e periodicidade (avulso = Não definida; periódico sem escolha = "periodicidade a escolher"). Só exibição, sem mudança de dados nem de banco.
+
+### Decisão 129: Sem checkbox de obrigatório por grupo; só a lista suspensa "Check list"
+
+Ordem do responsável em 09/10 (11:53), com o print do checkbox "Check list obrigatório" em cada grupo habilitado: retirar o checkbox e deixar somente o campo já existente da lista suspensa. **Antes:** cada grupo habilitado tinha um checkbox de obrigatório, além da lista suspensa Check list (decisão 126). **Agora:** só a lista suspensa Check list (Obrigatório / Não obrigatório) define a obrigatoriedade dos grupos do tipo na tela. Os dados guardados não mudam. Sem necessidade nova de banco.
