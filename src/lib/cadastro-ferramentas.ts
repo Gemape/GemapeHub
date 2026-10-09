@@ -1,3 +1,4 @@
+import { grupoTemTamanhos } from "./tamanhos-ferramentas-padrao.ts";
 import { mesmoNome, proximoCodigo, subcategoriasDa, type ListaFerramenta, type Opcao, type ParametrosBase } from "./parametros-base.ts";
 
 export const SELECAO_SEM_MARCA = "sem-marca";
@@ -35,7 +36,7 @@ export type EntradaCadastroFerramenta = {
 
 /** Tamanhos cadastrados para o grupo de ferramenta em Parâmetros Específicos (decisão 117), na ordem do cadastro. */
 export function tamanhosDoGrupoFerramenta(parametros: ParametrosBase, nomeGrupo: string): string[] {
-  const grupo = parametros.gruposFerramenta.find((g) => mesmoNome(g.nome, nomeGrupo));
+  const grupo = grupoTemTamanhos(nomeGrupo) ? parametros.gruposFerramenta.find((g) => mesmoNome(g.nome, nomeGrupo)) : undefined;
   return grupo ? [...(parametros.tamanhosGrupoFerramenta[grupo.id] ?? [])] : [];
 }
 
