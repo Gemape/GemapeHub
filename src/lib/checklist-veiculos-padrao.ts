@@ -221,9 +221,7 @@ export const CHECKLIST_VEICULOS_PADRAO: readonly { nome: string; itens: readonly
       "Nível do fluido de freio",
       "Nível da água do radiador",
       "Nível do fluido da direção hidráulica",
-      "Nível do óleo da transmissão (se aplicável)",
       "Vazamentos (óleo, água, etc.)",
-      "Bateria (estado e fixação)",
     ],
   },
   {
@@ -240,31 +238,26 @@ export const CHECKLIST_VEICULOS_PADRAO: readonly { nome: string; itens: readonly
     itens: [
       "Faróis dianteiros (alto e baixo)",
       "Lanternas traseiras",
-      "Luz de freio",
-      "Luz de ré",
-      "Pisca-alerta",
-      "Setas (dianteira e traseira)",
-      "Iluminação do painel",
     ],
   },
   {
     nome: "Avulso · Segurança",
     itens: [
       "Cinto de segurança (todos os assentos)",
-      "Extintor de incêndio (validade e pressão)",
-      "Triângulo de sinalização",
-      "Kit de primeiros socorros",
-      "Limpador e lavador do para-brisa",
-      "Palhetas em bom estado",
     ],
   },
   {
     nome: "Avulso · Conforto e limpeza",
     itens: [
       "Ar-condicionado e ventilação",
-      "Bancos e cintos limpos",
       "Interior limpo e organizado",
       "Vidros limpos",
+    ],
+  },
+  {
+    nome: "Avulso · Outros",
+    itens: [
+      "Outros (descreva na observação)",
     ],
   },
 ];

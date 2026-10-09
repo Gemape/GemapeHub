@@ -49,8 +49,8 @@ test("editar mantém o id dos itens de mesmo nome; excluir remove o grupo", () =
 test("o padrão traz as listas de leves, pesados e empilhadeiras, sem nome ou item repetido", () => {
   const nomes = CHECKLIST_VEICULOS_PADRAO.map((g) => g.nome);
   assert.equal(new Set(nomes.map((n) => n.toLowerCase())).size, nomes.length);
-  assert.equal(nomes.length, 24);
-  assert.equal(nomes.filter((n) => n.startsWith("Avulso ·")).length, 5);
+  assert.equal(nomes.length, 25);
+  assert.equal(nomes.filter((n) => n.startsWith("Avulso ·")).length, 6);
   assert.equal(nomes.filter((n) => n.startsWith("Veículos leves")).length, 4);
   assert.equal(nomes.filter((n) => n.startsWith("Veículos pesados")).length, 6);
   assert.equal(nomes.filter((n) => n.startsWith("Empilhadeiras")).length, 9);
@@ -59,7 +59,7 @@ test("o padrão traz as listas de leves, pesados e empilhadeiras, sem nome ou it
     assert.equal(new Set(g.itens.map((i) => i.toLowerCase())).size, g.itens.length, g.nome);
   }
   const total = CHECKLIST_VEICULOS_PADRAO.reduce((t, g) => t + g.itens.length, 0);
-  assert.equal(total, 145);
+  assert.equal(total, 133);
 });
 
 test("cadastrar padrão inclui o que falta, não repete nem altera o que já existe", () => {
@@ -284,9 +284,9 @@ test("grupos Avulso · ...: ehGrupoAvulso e gruposAplicaveis separam o avulso do
   assert.equal(gruposAplicaveis(grupos, null).length, 2);
 });
 
-test("o padrão do avulso tem os 5 grupos do responsável, para todos os tipos de veículo (dec 130)", () => {
+test("o padrão do avulso tem os grupos do responsável (5 + Outros), para todos os tipos de veículo (dec 130)", () => {
   const avulsos = CHECKLIST_VEICULOS_PADRAO.filter((g) => g.nome.startsWith("Avulso ·"));
-  assert.deepEqual(avulsos.map((g) => g.nome), ["Avulso · Mecânicos e funcionamento", "Avulso · Pneus e rodas", "Avulso · Iluminação e sinalização", "Avulso · Segurança", "Avulso · Conforto e limpeza"]);
-  assert.deepEqual(avulsos.map((g) => g.itens.length), [7, 4, 7, 6, 4]);
+  assert.deepEqual(avulsos.map((g) => g.nome), ["Avulso · Mecânicos e funcionamento", "Avulso · Pneus e rodas", "Avulso · Iluminação e sinalização", "Avulso · Segurança", "Avulso · Conforto e limpeza", "Avulso · Outros"]);
+  assert.deepEqual(avulsos.map((g) => g.itens.length), [5, 4, 2, 1, 3, 1]);
   assert.equal(tiposDoGrupoPadrao("Avulso · Segurança"), "todos");
 });
