@@ -371,3 +371,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 122: ícones do menu lateral em quadrinhos de vidro animados (`icone-menu` em styles.css; `icone-seta` exclui a seta).
 - Decisão 123: um check list periódico em andamento por periodicidade por veículo; Situação por veículo com uma linha por periodicidade (`periodicidadesDe(v)` em ChecklistVeiculoModulo; bloqueio em `gravarNovoChecklist`).
 - Decisão 124: painel do mês prevê por periodicidade (`previstos` em ChecklistVeiculoModulo) e `painelDoMes` casa check list e previsão pela periodicidade.
+- Decisão 125: `obrigatorio` na Previsao (periodicidadeObrigatoria em checklist-veiculo.ts); painelDoMes só conta obrigatórias; situação "opcional".

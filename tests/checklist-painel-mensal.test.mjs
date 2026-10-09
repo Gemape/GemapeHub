@@ -77,7 +77,7 @@ test("painel do mês: realizado no prazo, não realizado no prazo e a vencer, co
   assert.equal(painel.linhas[0].responsavelNome, "Beto");
   assert.equal(painel.linhas[1].checklistId, null);
   assert.equal(painel.linhas[1].responsavelNome, "Ana");
-  assert.deepEqual(painel.resumo, { previstos: 3, realizados: 1, naoRealizados: 1, aVencer: 1, pctNoPrazo: 50, pctNaoNoPrazo: 50 });
+  assert.deepEqual(painel.resumo, { previstos: 3, opcionais: 0, realizados: 1, naoRealizados: 1, aVencer: 1, pctNoPrazo: 50, pctNaoNoPrazo: 50 });
 });
 
 test("a conclusão vale pelo dia de Brasília e check list fora do prazo não cobre o período", () => {
@@ -98,7 +98,7 @@ test("mês sem previsão: tudo zerado e percentuais nulos; outro mês não apare
   sincronizarPrevisoes({ veiculos: [v("a", "Mensal")], hoje: "2026-10-05" }, s);
   const p = painelDoMes("2026-09", lerPrevisoes(s), [], "2026-10-05");
   assert.deepEqual(p.linhas, []);
-  assert.deepEqual(p.resumo, { previstos: 0, realizados: 0, naoRealizados: 0, aVencer: 0, pctNoPrazo: null, pctNaoNoPrazo: null });
+  assert.deepEqual(p.resumo, { previstos: 0, opcionais: 0, realizados: 0, naoRealizados: 0, aVencer: 0, pctNoPrazo: null, pctNaoNoPrazo: null });
   // Só a vencer: ainda não há base para percentual.
   const q = painelDoMes("2026-10", lerPrevisoes(s), [], "2026-10-05");
   assert.equal(q.resumo.aVencer, 1);
@@ -171,4 +171,48 @@ test("com duas periodicidades no veículo, cada previsão só é cumprida por ch
 test("o módulo prevê uma vez por periodicidade do veículo (dec 124)", () => {
   const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
   assert.match(tela, /periodicidadesDaAssociacao\(associacao\)\.map\(\(periodicidade\) => \(\{/);
+});
+
+test("só o obrigatório entra nos percentuais; o opcional aparece como Opcional (dec 125)", () => {
+  const s = memoria();
+  sincronizarPrevisoes({ veiculos: [v("a", "Semanal", { obrigatorio: true }), v("a", "Mensal", { obrigatorio: false })], hoje: "2026-10-05" }, s);
+  const semanal = { id: "c1", codigo: "CHK-0001", veiculoId: "a", periodicidade: "Semanal", status: "Concluído", data: "2026-10-07", concluidoEm: "2026-10-07T15:00:00Z", responsavelNome: "Beto" };
+  const painel = painelDoMes("2026-10", lerPrevisoes(s), [semanal], "2026-11-02");
+  const mensal = painel.linhas.find((l) => l.periodicidade === "Mensal");
+  assert.equal(mensal.situacao, "opcional"); // prazo vencido e não feito, mas é opcional: não é "não realizado"
+  assert.equal(painel.resumo.opcionais, 1);
+  assert.equal(painel.resumo.previstos, 3); // só os 3 semanais
+  assert.equal(painel.resumo.realizados, 1);
+  assert.equal(painel.resumo.naoRealizados, 2);
+  assert.equal(painel.resumo.pctNoPrazo, 33.3);
+  // o opcional feito aparece como Realizado, mas continua fora dos percentuais
+  const mensalFeito = { ...semanal, id: "c2", codigo: "CHK-0002", periodicidade: "Mensal" };
+  const depois = painelDoMes("2026-10", lerPrevisoes(s), [semanal, mensalFeito], "2026-11-02");
+  assert.equal(depois.linhas.find((l) => l.periodicidade === "Mensal").situacao, "realizado");
+  assert.equal(depois.resumo.realizados, 1);
+});
+
+test("previsão antiga, sem o campo obrigatório, continua valendo como obrigatória (dec 125)", () => {
+  const s = memoria();
+  sincronizarPrevisoes({ veiculos: [v("a", "Semanal")], hoje: "2026-10-05" }, s);
+  assert.ok(lerPrevisoes(s).every((p) => p.obrigatorio === true));
+  const antigas = lerPrevisoes(s).map(({ obrigatorio, ...resto }) => resto);
+  const painel = painelDoMes("2026-10", antigas, [], "2026-11-02");
+  assert.equal(painel.resumo.naoRealizados, painel.resumo.previstos);
+  assert.equal(painel.resumo.opcionais, 0);
+});
+
+test("a periodicidade é obrigatória se algum grupo periódico dela está marcado (dec 125)", async () => {
+  const { periodicidadeObrigatoria } = await import("../src/lib/checklist-veiculo.ts");
+  const assoc = { itens: [
+    { grupoId: "g1", tipo: "periodico", periodicidade: "Semanal", obrigatorio: true },
+    { grupoId: "g2", tipo: "periodico", periodicidade: "Mensal", obrigatorio: false },
+    { grupoId: "g3", tipo: "periodico", periodicidade: "Diária", obrigatorio: true },
+  ] };
+  assert.equal(periodicidadeObrigatoria(assoc, "Semanal"), true);
+  assert.equal(periodicidadeObrigatoria(assoc, "Mensal"), false);
+  assert.equal(periodicidadeObrigatoria(assoc, "Diário"), true);
+  assert.equal(periodicidadeObrigatoria(undefined, "Semanal"), false);
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /obrigatorio: periodicidadeObrigatoria\(associacao, periodicidade\)/);
 });

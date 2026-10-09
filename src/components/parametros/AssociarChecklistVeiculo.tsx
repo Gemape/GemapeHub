@@ -358,7 +358,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                           )}
                           <label className="flex items-center gap-2 text-xs" htmlFor={`obrigatorio-${i.grupoId}`}>
                             <Checkbox id={`obrigatorio-${i.grupoId}`} checked={i.obrigatorio === true} onCheckedChange={(v) => mudarObrigatorio(i.grupoId, v === true)} />
-                            Check list obrigatório
+                            Check list obrigatório <span className="text-muted-foreground">(conta nos percentuais do painel do mês)</span>
                           </label>
                         </li>
                       );
