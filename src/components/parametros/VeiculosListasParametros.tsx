@@ -526,6 +526,12 @@ function RestaurarPadraoAcoes() {
   function gravar() {
     if (salvando.current) return;
     setAviso(null);
+    // Excluir e restaurar valem juntos: ensaia os dois numa cópia, para um erro na restauração não deixar só a exclusão gravada.
+    const escolhas = Object.entries(marcados).map(([nome, filhos]) => ({ nome, filhos }));
+    if (totalCriados > 0 && totalPais > 0 && !validarAntes((storage) => {
+      excluirItensCriadosAcoesManutencao(conferidos, storage);
+      restaurarAcoesManutencaoEscolhidas(escolhas, storage);
+    })) return;
     salvando.current = true;
     setTravado(true);
     const ok = executar(() => {
