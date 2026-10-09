@@ -388,4 +388,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-09 dec 138: Clonar copia todas as informações (campos únicos incluídos), editáveis, código novo; EPI/Uniforme abrem o formulário Novo preenchido.
 - 2026-10-09 dec 140: Parâmetros > Veículos > Manutenção sem o botão Cadastrar padrão (Tipos de ocorrência e Itens check list mantêm).
 - 2026-10-09 dec 141: Manutenção: botão renomeado para Restaurar configurações iniciais (Itens check list mantém o nome antigo).
-- 2026-10-09 dec 143: tela de entrada com o logo 40 anos animado (componente LogoEntrada), igual ao menu.
+- 2026-10-09 dec 142: Restaurar configurações iniciais (Manutenção) lista pais e filhos com checkbox; só os marcados voltam.

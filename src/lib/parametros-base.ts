@@ -835,6 +835,75 @@ export function restaurarPadroesAcoesManutencaoVeiculo(nomes: string[], storage 
   });
 }
 
+export type SituacaoFilhoPadraoAcao = { nome: string; existe: boolean };
+
+/** Padrão inicial das ações de manutenção com os filhos (decisão 142): cada pai com a situação dele e a de cada subitem. */
+export function situacaoPadraoAcoesComFilhos(storage = storagePadrao()): { nome: string; situacao: SituacaoPadraoChecklist; filhos: SituacaoFilhoPadraoAcao[] }[] {
+  const d = lerParametros(storage);
+  const pais = situacaoPadraoAcoesManutencaoVeiculo(storage);
+  return ACOES_MANUTENCAO_PADRAO.map((padrao, n) => {
+    const acao = d.acoesManutencaoVeiculo.find((a) => mesmoNome(a.nome, padrao.nome));
+    return {
+      nome: pais[n]!.nome,
+      situacao: pais[n]!.situacao,
+      filhos: padrao.subitens.map((i) => ({ nome: capitalizarCadastro(i), existe: !!acao?.subitens.some((s) => mesmoNome(s.nome, i)) })),
+    };
+  });
+}
+
+/**
+ * Restaura as ações de manutenção do padrão inicial escolhendo pais e filhos (decisão 142), tudo ou nada.
+ * Pai marcado volta ao nome inicial (ou é cadastrado de novo se foi excluído); só os filhos marcados são
+ * restaurados ou incluídos. Os filhos não marcados e os que o responsável criou ficam como estão.
+ */
+export function restaurarAcoesManutencaoEscolhidas(
+  escolhas: { nome: string; filhos: string[] }[],
+  storage = storagePadrao(),
+): { restaurados: number; criados: number; filhos: number } {
+  if (escolhas.length === 0) throw new Error("Marque ao menos uma ação para restaurar.");
+  const planos = escolhas.map((e) => {
+    const padrao = ACOES_MANUTENCAO_PADRAO.find((p) => mesmoNome(p.nome, e.nome));
+    if (!padrao) throw new Error("Há uma ação que não faz parte do padrão inicial.");
+    for (const f of e.filhos) {
+      if (!padrao.subitens.some((i) => mesmoNome(i, f))) throw new Error(`O subitem ${f} não faz parte do padrão inicial de ${padrao.nome}.`);
+    }
+    return { padrao, filhos: padrao.subitens.filter((i) => e.filhos.some((f) => mesmoNome(i, f))) };
+  });
+  return alterar(storage, (d) => {
+    let restaurados = 0;
+    let criados = 0;
+    let filhos = 0;
+    for (const { padrao, filhos: marcados } of planos) {
+      const nome = capitalizarCadastro(padrao.nome);
+      const acao = d.acoesManutencaoVeiculo.find((a) => mesmoNome(a.nome, padrao.nome));
+      if (!acao) {
+        d.acoesManutencaoVeiculo.push({ id: novoId(), nome, subitens: montarSubitens([], [...marcados]) });
+        criados += 1;
+        filhos += marcados.length;
+        continue;
+      }
+      // Na ordem do padrão: o que já existe fica (o marcado volta ao nome inicial), o marcado que falta entra; os criados pelo responsável vão ao fim.
+      const resultado: Opcao[] = [];
+      for (const i of padrao.subitens) {
+        const atual = acao.subitens.find((s) => mesmoNome(s.nome, i));
+        const marcado = marcados.some((m) => mesmoNome(m, i));
+        if (atual) {
+          resultado.push(marcado ? { ...atual, nome: capitalizarCadastro(i) } : atual);
+          if (marcado) filhos += 1;
+        } else if (marcado) {
+          resultado.push(...montarSubitens([], [i]));
+          filhos += 1;
+        }
+      }
+      for (const s of acao.subitens) if (!padrao.subitens.some((i) => mesmoNome(i, s.nome))) resultado.push(s);
+      acao.nome = nome;
+      acao.subitens = resultado;
+      restaurados += 1;
+    }
+    return { restaurados, criados, filhos };
+  });
+}
+
 // ---------- Desativar e reativar ----------
 
 export const estaAtivo = (d: ParametrosBase, id: string) => !d.inativos.includes(id);
