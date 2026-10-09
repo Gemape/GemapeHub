@@ -199,3 +199,15 @@ test("na janela Associar a periodicidade vem antes e vale para todos; os itens d
   // a periodicidade não é por item: cada item marcado recebe a mesma
   assert.match(tela, /periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true/);
 });
+
+test("o check list avulso só vale para veículos leves (dec 153)", async () => {
+  const { tipoPermiteAvulso } = await import("../src/lib/checklist-veiculos-padrao.ts");
+  for (const leve of ["Carro de passeio", "SUV", "Picape", "Van", "Furgão"]) assert.equal(tipoPermiteAvulso(leve), true, leve);
+  for (const outro of ["Caminhão", "Ônibus", "Empilhadeira", "Moto", "", null, undefined]) assert.equal(tipoPermiteAvulso(outro), false, String(outro));
+  const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
+  assert.match(tela, /tipoPermiteAvulso\(subcategoriaEscolhida\?\.nome\)/);
+  assert.match(tela, /disabled=\{p === AVULSO && !avulsoLiberado\}/);
+  assert.match(tela, /O check list avulso só vale para veículos leves\./);
+  const modulo = readFileSync("src/components/modules/ChecklistVeiculoModulo.tsx", "utf8");
+  assert.match(modulo, /tipoPermiteAvulso\(tipoDe\(veiculoEscolhido\)\?\.nome\)/);
+});
