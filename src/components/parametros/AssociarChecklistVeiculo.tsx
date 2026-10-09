@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -17,7 +16,7 @@ import { useAccess } from "@/lib/access-context";
 import { descricaoVeiculo } from "@/lib/descricao-veiculo";
 import {
   checklistsDaAssociacao, criarAssociacao, editarAssociacao, EVENTO_ASSOCIACOES_CHECKLIST, gruposDaAssociacao, lerAssociacoes,
-  NAO_DEFINIDO, removerAssociacao,
+  NAO_DEFINIDO,
   type AssociacaoChecklist, type EntradaItemAssociacao, type PeriodicidadeAssociacao,
 } from "@/lib/checklist-associacao-veiculo";
 import { empregadoElegivelPortador } from "@/lib/portadores-caixa";
@@ -184,12 +183,6 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     }, 400);
   }
 
-  function excluir(a: AssociacaoChecklist) {
-    const v = veiculoPorId(a.veiculoId);
-    if (!confirm(`Excluir os itens de check list associados a ${v ? rotuloVeiculo(v) : "veículo removido"}?`)) return;
-    executar(() => removerAssociacao(a.veiculoId), "Associação excluída.");
-  }
-
   // O responsável salvo pode ser de alguém que deixou de ser elegível; continua aparecendo para não sumir do campo.
   const salvoNaEdicao = editando ? associacoes.find((a) => a.veiculoId === editando)?.responsavel : null;
   const opcoesResponsavel = salvoNaEdicao && !elegiveis.some((e) => e.id === salvoNaEdicao.id)
@@ -218,12 +211,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               <th className="px-3 py-2">Obrigatório</th>
               <th className="px-3 py-2">Grupos</th>
               <th className="px-3 py-2">Atualizado em</th>
-              <th className="px-3 py-2 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {associacoes.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-4 text-muted-foreground">Nenhum veículo com itens de check list associados ainda.</td></tr>
+              <tr><td colSpan={5} className="px-3 py-4 text-muted-foreground">Nenhum veículo com itens de check list associados ainda.</td></tr>
             )}
             {associacoes.map((a) => {
               const v = veiculoPorId(a.veiculoId);
@@ -235,12 +227,9 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                   <tr className="bg-muted/50">
                     <td colSpan={4} className="px-3 py-2 font-semibold">{rotulo} <span className="font-normal text-muted-foreground">· responsável: {a.responsavel?.nome ?? NAO_DEFINIDO}</span></td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{dataBr(a.atualizadoEm)}</td>
-                    <td className="px-3 py-2">
-                      <AcoesLinha rotulo={rotulo} onClonar={() => abrir(a, true)} onEditar={() => abrir(a, false)} onExcluir={() => excluir(a)} />
-                    </td>
                   </tr>
                   {listas.length === 0 && (
-                    <tr><td colSpan={6} className="px-3 py-2 text-muted-foreground">Nenhum grupo habilitado existente.</td></tr>
+                    <tr><td colSpan={5} className="px-3 py-2 text-muted-foreground">Nenhum grupo habilitado existente.</td></tr>
                   )}
                   {listas.map((c) => (
                     <tr key={c.periodicidade}>
@@ -250,7 +239,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                         {c.tipo === "Livre" && <span className="block text-xs text-muted-foreground">livre: qualquer hora, qualquer pessoa; fora da lista do menu</span>}
                       </td>
                       <td className="px-3 py-2">{c.obrigatorio}</td>
-                      <td className="px-3 py-2 text-muted-foreground" colSpan={3}>{c.grupos.map((g) => g.nome).join("; ")}</td>
+                      <td className="px-3 py-2 text-muted-foreground" colSpan={2}>{c.grupos.map((g) => g.nome).join("; ")}</td>
                     </tr>
                   ))}
                 </Fragment>
