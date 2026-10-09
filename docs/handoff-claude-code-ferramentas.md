@@ -391,3 +391,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-09 dec 142: Restaurar configurações iniciais (Manutenção) lista pais e filhos com checkbox; só os marcados voltam.
 - 2026-10-09 dec 143: tela de entrada com o logo 40 anos animado (componente LogoEntrada), igual ao menu.
 - 2026-10-09 dec 144: janela Restaurar configurações iniciais lista também o que o responsável criou (só conferência).
+- 2026-10-09 dec 145: alerta Sim/Não ao salvar em Ações de manutenção (cadastrar/editar e restaurar configurações iniciais).
