@@ -117,7 +117,7 @@ test("a tela existe e usa os grupos de Itens check list, periodicidade e respons
 test("a tela de Parâmetros lista por veículo e check list, com tipo, obrigatório e responsável Não definido (dec 116)", () => {
   const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
   assert.match(tela, /checklistsDaAssociacao\(/);
-  assert.match(tela, /Check list obrigatório/);
+  assert.doesNotMatch(tela, /obrigatorio-\$\{i\.grupoId\}/); // sem checkbox por grupo (dec 129): só a lista suspensa Check list
   assert.match(tela, /SEM_RESPONSAVEL/);
   assert.match(tela, /<th className="px-3 py-2">Tipo<\/th>/);
   assert.match(tela, /<th className="px-3 py-2">Obrigatório<\/th>/);
@@ -175,4 +175,36 @@ test("a janela Associar abre itens, veículos e empregados por cima, ao lado do 
   assert.match(tela, /invalidateQueries\(\{ queryKey: \["empregados-checklist-assoc"\]/);
   assert.match(lerSrc("components/modules/DialogCadastroEmpregados.tsx"), /<EmpregadosCadastroModulo \/>/);
   assert.match(lerSrc("routes/_authenticated/empregados.tsx"), /component: EmpregadosCadastroModulo/);
+});
+
+test("a janela Associar tem o campo Check list: Obrigatório ou Não obrigatório, que vale para os grupos do tipo (dec 126)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /htmlFor="assoc-obrigatoriedade">Check list</);
+  assert.match(tela, /<SelectItem value="obrigatorio">Obrigatório<\/SelectItem>/);
+  assert.match(tela, /<SelectItem value="nao_obrigatorio">Não obrigatório<\/SelectItem>/);
+  assert.match(tela, /obrigatorio: obrigatoriedade === "obrigatorio" \}/); // grupo habilitado depois herda o campo
+  assert.match(tela, /i\.tipo === tipoAtual \? \{ \.\.\.i, obrigatorio \} : i/); // trocar o campo vale para os grupos do tipo
+  assert.match(tela, /placeholder="Misto \(por grupo\)"/);
+});
+
+test("a periodicidade do grupo habilitado oferece Não definida, que passa o grupo para o avulso (dec 127)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /PERIODICIDADES_ASSOCIACAO\.map\(\(p\) =>/);
+  assert.doesNotMatch(tela, /PERIODICIDADES_ASSOCIACAO\.filter/);
+  assert.match(tela, /periodicidade === NAO_DEFINIDA/);
+  assert.match(tela, /tipo: "avulso", periodicidade: ""/);
+});
+
+test("a janela Associar mostra o resumo dos grupos habilitados com a periodicidade de cada um (dec 128)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /data-testid="resumo-habilitados"/);
+  assert.match(tela, /Resumo dos grupos habilitados/);
+  assert.match(tela, /periodicidade a escolher/);
+});
+
+test("a janela Associar não tem checkbox de obrigatório por grupo, só a lista suspensa Check list (dec 129)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(tela, /Checkbox/);
+  assert.doesNotMatch(tela, /mudarObrigatorio\(/);
+  assert.match(tela, /id="assoc-obrigatoriedade"/);
 });

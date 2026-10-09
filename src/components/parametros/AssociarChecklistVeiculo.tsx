@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,6 +91,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const [itens, setItens] = useState<EntradaItemAssociacao[]>([]);
   // Qual dos dois check lists do veículo a janela está mostrando (decisão 119); os grupos habilitados dos dois são salvos juntos.
   const [tipoAtual, setTipoAtual] = useState<"periodico" | "avulso">("periodico");
+  // Campo "Check list: Obrigatório ou Não obrigatório" (decisão 126): vale para os grupos do tipo na tela e para os que forem habilitados depois.
+  const [padraoObrigatorio, setPadraoObrigatorio] = useState(false);
   const [travado, setTravado] = useState(false);
   const salvando = useRef(false);
 
@@ -126,16 +127,34 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     setResponsavelId(a && !clonar ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
     // Clonar copia os grupos e periodicidades para outro veículo; o responsável é escolhido de novo.
     setTipoAtual("periodico");
+    setPadraoObrigatorio(false);
     setItens(a ? gruposDaAssociacao(a, grupos).map((i) => ({ grupoId: i.grupoId, tipo: i.tipo, periodicidade: i.periodicidade === NAO_DEFINIDA ? "" : i.periodicidade, obrigatorio: i.obrigatorio })) : []);
     setAberto(true);
   }
 
-  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, tipo: tipoAtual, periodicidade: "", obrigatorio: false }]));
+    const doTipo = itens.filter((i) => i.tipo === tipoAtual);
+  // Tudo obrigatório, tudo não obrigatório ou misto (grupos marcados um a um); sem grupos, vale o padrão do campo.
+  const obrigatoriedade: "obrigatorio" | "nao_obrigatorio" | "" =
+    doTipo.length === 0 ? (padraoObrigatorio ? "obrigatorio" : "nao_obrigatorio")
+      : doTipo.every((i) => i.obrigatorio === true) ? "obrigatorio"
+        : doTipo.every((i) => i.obrigatorio !== true) ? "nao_obrigatorio" : "";
+  // O grupo habilitado herda o que o campo mostra; no misto entra como não obrigatório.
+  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, tipo: tipoAtual, periodicidade: "", obrigatorio: obrigatoriedade === "obrigatorio" }]));
   const desabilitar = (grupoId: string) => setItens((atual) => atual.filter((i) => i.grupoId !== grupoId));
-  const mudar = (grupoId: string, periodicidade: string) =>
+  // "Não definida" (decisão 127) faz do grupo um check list livre: ele passa para o check list avulso, feito a qualquer tempo.
+  const mudar = (grupoId: string, periodicidade: string) => {
+    if (periodicidade === NAO_DEFINIDA) {
+      setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, tipo: "avulso", periodicidade: "" } : i)));
+      toast.info("Periodicidade não definida: o grupo passou para o check list avulso (livre).");
+      return;
+    }
     setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, periodicidade } : i)));
-  const mudarObrigatorio = (grupoId: string, obrigatorio: boolean) =>
-    setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, obrigatorio } : i)));
+  };
+  const mudarObrigatoriedade = (valor: string) => {
+    const obrigatorio = valor === "obrigatorio";
+    setPadraoObrigatorio(obrigatorio);
+    setItens((atual) => atual.map((i) => (i.tipo === tipoAtual ? { ...i, obrigatorio } : i)));
+  };
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -257,7 +276,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-veiculo">Veículo</Label>
                 <Select value={veiculoId} onValueChange={setVeiculoId}>
@@ -284,6 +303,17 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">Cada veículo tem um check list periódico e um avulso; troque aqui para escolher os grupos de cada um.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="assoc-obrigatoriedade">Check list</Label>
+                <Select value={obrigatoriedade} onValueChange={mudarObrigatoriedade}>
+                  <SelectTrigger id="assoc-obrigatoriedade"><SelectValue placeholder="Misto (por grupo)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="obrigatorio">Obrigatório</SelectItem>
+                    <SelectItem value="nao_obrigatorio">Não obrigatório</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Vale para os grupos deste tipo de check list; o obrigatório conta nos percentuais do painel do mês.</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-responsavel">Responsável</Label>
@@ -329,7 +359,19 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                 <div className="space-y-2 rounded-md border p-3">
                   <h3 className="text-sm font-semibold">Grupos habilitados no check list {tipoAtual === "avulso" ? "avulso" : "periódico"}</h3>
                   {itens.filter((i) => i.tipo === tipoAtual).length === 0 && <p className="text-xs text-muted-foreground">Nenhum grupo habilitado ainda.</p>}
-                  {itens.some((i) => i.tipo !== tipoAtual) && <p className="text-xs text-muted-foreground">{itens.filter((i) => i.tipo !== tipoAtual).length} grupo(s) no check list {tipoAtual === "avulso" ? "periódico" : "avulso"}.</p>}
+                  {itens.length > 0 && (
+                    <div className="space-y-1 rounded border border-dashed p-2" data-testid="resumo-habilitados">
+                      <p className="text-xs font-semibold">Resumo dos grupos habilitados (periódico e avulso)</p>
+                      <ul className="space-y-0.5 text-xs text-muted-foreground">
+                        {itens.map((i) => (
+                          <li key={i.grupoId}>
+                            <span className="font-medium text-foreground">{grupos.find((g) => g.id === i.grupoId)?.nome ?? "Grupo removido"}</span>
+                            {" "}— {i.tipo === "avulso" ? "avulso" : "periódico"} · {i.tipo === "avulso" || !i.periodicidade ? (i.tipo === "avulso" ? NAO_DEFINIDA : "periodicidade a escolher") : i.periodicidade}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <ul className="space-y-2">
                     {itens.filter((i) => i.tipo === tipoAtual).map((i) => {
                       const grupo = grupos.find((g) => g.id === i.grupoId);
@@ -349,17 +391,13 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                               <Select value={i.periodicidade} onValueChange={(valor) => mudar(i.grupoId, valor)}>
                                 <SelectTrigger id={`periodicidade-${i.grupoId}`}><SelectValue placeholder="Selecione" /></SelectTrigger>
                                 <SelectContent>
-                                  {PERIODICIDADES_ASSOCIACAO.filter((p) => p !== NAO_DEFINIDA).map((p) => (
+                                  {PERIODICIDADES_ASSOCIACAO.map((p) => (
                                     <SelectItem key={p} value={p}>{p}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </div>
                           )}
-                          <label className="flex items-center gap-2 text-xs" htmlFor={`obrigatorio-${i.grupoId}`}>
-                            <Checkbox id={`obrigatorio-${i.grupoId}`} checked={i.obrigatorio === true} onCheckedChange={(v) => mudarObrigatorio(i.grupoId, v === true)} />
-                            Check list obrigatório <span className="text-muted-foreground">(conta nos percentuais do painel do mês)</span>
-                          </label>
                         </li>
                       );
                     })}

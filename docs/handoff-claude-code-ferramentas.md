@@ -372,3 +372,7 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Decisão 123: um check list periódico em andamento por periodicidade por veículo; Situação por veículo com uma linha por periodicidade (`periodicidadesDe(v)` em ChecklistVeiculoModulo; bloqueio em `gravarNovoChecklist`).
 - Decisão 124: painel do mês prevê por periodicidade (`previstos` em ChecklistVeiculoModulo) e `painelDoMes` casa check list e previsão pela periodicidade.
 - Decisão 125: `obrigatorio` na Previsao (periodicidadeObrigatoria em checklist-veiculo.ts); painelDoMes só conta obrigatórias; situação "opcional".
+- Decisão 126: campo "Check list: Obrigatório / Não obrigatório" na janela Associar (`obrigatoriedade`, `padraoObrigatorio` em AssociarChecklistVeiculo).
+- Dec 127 (09/10): opção Não definida na periodicidade dos grupos habilitados; escolher passa o grupo para o check list avulso (PR #173).
+- Dec 128 (09/10): resumo dos grupos habilitados com periodicidade na janela Associar (PR #173).
+- Dec 129 (09/10): removido o checkbox de obrigatório por grupo; só a lista suspensa Check list (PR #173).
