@@ -386,3 +386,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-09 dec 137: janela Associar = Veículo, Responsável, Periodicidade (inclui Avulso); itens vêm dos grupos do tipo do veículo.
 - 2026-10-09 dec 139: menu Parâmetros > EPI com ícones alinhados na mesma coluna (sem recuo da Ficha).
 - 2026-10-09 dec 138: Clonar copia todas as informações (campos únicos incluídos), editáveis, código novo; EPI/Uniforme abrem o formulário Novo preenchido.
+- 2026-10-09 dec 140: Parâmetros > Veículos > Manutenção sem o botão Cadastrar padrão (Tipos de ocorrência e Itens check list mantêm).
+- 2026-10-09 dec 141: Manutenção: botão renomeado para Restaurar configurações iniciais (Itens check list mantém o nome antigo).
