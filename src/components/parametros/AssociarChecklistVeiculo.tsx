@@ -133,16 +133,17 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     setAberto(true);
   }
 
-  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, tipo: tipoAtual, periodicidade: "", obrigatorio: padraoObrigatorio }]));
-  const desabilitar = (grupoId: string) => setItens((atual) => atual.filter((i) => i.grupoId !== grupoId));
-  const mudar = (grupoId: string, periodicidade: string) =>
-    setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, periodicidade } : i)));
-  const doTipo = itens.filter((i) => i.tipo === tipoAtual);
+    const doTipo = itens.filter((i) => i.tipo === tipoAtual);
   // Tudo obrigatório, tudo não obrigatório ou misto (grupos marcados um a um); sem grupos, vale o padrão do campo.
   const obrigatoriedade: "obrigatorio" | "nao_obrigatorio" | "" =
     doTipo.length === 0 ? (padraoObrigatorio ? "obrigatorio" : "nao_obrigatorio")
       : doTipo.every((i) => i.obrigatorio === true) ? "obrigatorio"
         : doTipo.every((i) => i.obrigatorio !== true) ? "nao_obrigatorio" : "";
+  // O grupo habilitado herda o que o campo mostra; no misto entra como não obrigatório.
+  const habilitar = (grupoId: string) => setItens((atual) => (atual.some((i) => i.grupoId === grupoId) ? atual : [...atual, { grupoId, tipo: tipoAtual, periodicidade: "", obrigatorio: obrigatoriedade === "obrigatorio" }]));
+  const desabilitar = (grupoId: string) => setItens((atual) => atual.filter((i) => i.grupoId !== grupoId));
+  const mudar = (grupoId: string, periodicidade: string) =>
+    setItens((atual) => atual.map((i) => (i.grupoId === grupoId ? { ...i, periodicidade } : i)));
   const mudarObrigatoriedade = (valor: string) => {
     const obrigatorio = valor === "obrigatorio";
     setPadraoObrigatorio(obrigatorio);
