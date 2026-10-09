@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   lerParametros,
   adicionarAcaoManutencaoVeiculo,
+  itensCriadosAcoesManutencao,
   editarAcaoManutencaoVeiculo,
   removerAcaoManutencaoVeiculo,
   adicionarTipoOcorrenciaVeiculo,
@@ -261,14 +262,20 @@ test("a janela de restaurar das ações tem checkbox por pai e por filho, marcar
   assert.match(trecho, /disabled=\{totalPais === 0 \|\| travado\}/);
 });
 
-test("salvar em Ações de manutenção pergunta Sim ou Não antes de gravar (dec 145)", () => {
-  const alerta = readFileSync("src/components/parametros/AlertaPainelManutencao.tsx", "utf8");
-  assert.match(alerta, /As alterações feitas modificarão o painel com os itens de manutenção\. Tem certeza que deseja fazer isso\?/);
-  assert.match(alerta, /<AlertDialogCancel>Não<\/AlertDialogCancel>/);
-  assert.match(alerta, /<AlertDialogAction onClick=\{onSim\}>Sim<\/AlertDialogAction>/);
+test("a lista de restaurar mostra o que o responsável criou: ações novas e subitens extras do padrão (dec 144)", () => {
+  const s = storage();
+  cadastrarPadraoVeiculos(s);
+  assert.deepEqual(itensCriadosAcoesManutencao(s), []); // só o padrão: nada criado
+  const [a] = lerParametros(s).acoesManutencaoVeiculo;
+  editarAcaoManutencaoVeiculo(a.id, a.nome, [...a.subitens.map((i) => i.nome), "Filho meu"], s);
+  adicionarAcaoManutencaoVeiculo("Minha ação", ["Sub 1", "Sub 2"], s);
+  const criados = itensCriadosAcoesManutencao(s);
+  assert.equal(criados.length, 2);
+  assert.deepEqual([criados[0].doPadrao, criados[0].filhos.map((f) => f.nome)], [true, ["Filho meu"]]);
+  assert.deepEqual([criados[1].nome, criados[1].doPadrao, criados[1].filhos.map((f) => f.nome)], ["Minha ação", false, ["Sub 1", "Sub 2"]]);
+  const antes = JSON.stringify(lerParametros(s));
+  assert.equal(JSON.stringify(lerParametros(s)), antes); // só lista, não altera
   const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
-  assert.match(tela, /acaoExtra=\{<RestaurarPadraoAcoes \/>\}\s*alertaPainel/); // cadastrar/editar ação
-  const restaurar = tela.slice(tela.indexOf("function RestaurarPadraoAcoes"));
-  assert.match(restaurar, /<AlertaPainelManutencao aberto=\{aviso !== null\}/); // restaurar configurações iniciais
-  assert.doesNotMatch(restaurar.slice(restaurar.indexOf("function salvar"), restaurar.indexOf("function gravar")), /confirm\(/);
+  assert.match(tela, /Criados por você/);
+  assert.match(tela, /itensCriadosAcoesManutencao\(\)/);
 });
