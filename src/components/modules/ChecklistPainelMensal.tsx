@@ -15,6 +15,7 @@ const SITUACAO: Record<SituacaoPrevisao, { rotulo: string; classe: string }> = {
   realizado: { rotulo: "Realizado no prazo", classe: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
   nao_realizado: { rotulo: "Não realizado no prazo", classe: "border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" },
   a_vencer: { rotulo: "A vencer", classe: "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200" },
+  opcional: { rotulo: "Opcional", classe: "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300" },
 };
 
 const rotuloDoMes = (mes: string) => {
@@ -79,7 +80,7 @@ export function ChecklistPainelMensal({
           detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"}
           icone={CircleX}
         />
-        <StatCard titulo="Previstos no mês" valor={resumo.previstos} icone={CalendarCheck} />
+        <StatCard titulo="Previstos no mês" valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} />
         <StatCard titulo="A vencer" valor={resumo.aVencer} icone={CalendarClock} />
       </div>
 

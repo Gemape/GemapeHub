@@ -16,10 +16,12 @@ export type Previsao = {
   inicio: string; // AAAA-MM-DD
   fim: string; // AAAA-MM-DD, o prazo
   responsavelNome: string;
+  // Obrigatório entra nos percentuais; opcional (false) só aparece na lista (decisão 125). Sem o campo (previsões antigas), vale obrigatório.
+  obrigatorio?: boolean;
 };
 
 // `desde`: dia (Brasília) em que a associação passou a valer; sem ele, vale hoje (não volta no tempo).
-export type VeiculoPrevisto = Pick<Previsao, "veiculoId" | "veiculoRotulo" | "periodicidade" | "responsavelNome"> & { desde?: string };
+export type VeiculoPrevisto = Pick<Previsao, "veiculoId" | "veiculoRotulo" | "periodicidade" | "responsavelNome" | "obrigatorio"> & { desde?: string };
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
 const lerBruto = (storage: StorageLike | null) => lerLista<Previsao>(CHAVE, storage);
@@ -85,7 +87,7 @@ export function sincronizarPrevisoes(
     for (const p of periodos) {
       if (p.fim < desde) continue;
       const id = idDa(v, p);
-      desejadas.set(id, { id, veiculoId: v.veiculoId, veiculoRotulo: v.veiculoRotulo, periodicidade: v.periodicidade, inicio: p.inicio, fim: p.fim, responsavelNome: v.responsavelNome });
+      desejadas.set(id, { id, veiculoId: v.veiculoId, veiculoRotulo: v.veiculoRotulo, periodicidade: v.periodicidade, inicio: p.inicio, fim: p.fim, responsavelNome: v.responsavelNome, obrigatorio: v.obrigatorio ?? true });
     }
   }
   const existentes = new Set(lista.map((p) => p.id));
@@ -102,7 +104,7 @@ export function sincronizarPrevisoes(
 
 // ---------- Painel ----------
 
-export type SituacaoPrevisao = "realizado" | "nao_realizado" | "a_vencer";
+export type SituacaoPrevisao = "realizado" | "nao_realizado" | "a_vencer" | "opcional";
 export type LinhaPainel = Previsao & {
   situacao: SituacaoPrevisao;
   checklistId: string | null;
@@ -110,7 +112,8 @@ export type LinhaPainel = Previsao & {
   concluidoEm: string | null;
 };
 export type ResumoPainel = {
-  previstos: number;
+  previstos: number; // só os obrigatórios (decisão 125)
+  opcionais: number; // previsões de check list opcional, fora dos percentuais
   realizados: number;
   naoRealizados: number;
   aVencer: number;
@@ -138,7 +141,7 @@ export function painelDoMes(
       const feito = checklists
         .filter((c) => c.veiculoId === p.veiculoId && c.periodicidade === p.periodicidade && c.status === "Concluído" && diaDaConclusao(c) >= p.inicio && diaDaConclusao(c) <= p.fim)
         .sort((a, b) => (a.concluidoEm ?? "").localeCompare(b.concluidoEm ?? ""))[0];
-      const situacao: SituacaoPrevisao = feito ? "realizado" : p.fim < hoje ? "nao_realizado" : "a_vencer";
+      const situacao: SituacaoPrevisao = feito ? "realizado" : p.obrigatorio === false ? "opcional" : p.fim < hoje ? "nao_realizado" : "a_vencer";
       return {
         ...p,
         responsavelNome: feito?.responsavelNome ?? p.responsavelNome,
@@ -148,7 +151,9 @@ export function painelDoMes(
         concluidoEm: feito?.concluidoEm ?? null,
       };
     });
-  const conta = (s: SituacaoPrevisao) => linhas.filter((l) => l.situacao === s).length;
+  // Só os obrigatórios entram na contagem e nos percentuais; o opcional aparece na lista (decisão 125).
+  const obrigatorias = linhas.filter((l) => l.obrigatorio !== false);
+  const conta = (s: SituacaoPrevisao) => obrigatorias.filter((l) => l.situacao === s).length;
   const realizados = conta("realizado");
   const naoRealizados = conta("nao_realizado");
   const base = realizados + naoRealizados;
@@ -157,7 +162,7 @@ export function painelDoMes(
   return {
     linhas,
     resumo: {
-      previstos: linhas.length, realizados, naoRealizados, aVencer: conta("a_vencer"),
+      previstos: obrigatorias.length, opcionais: linhas.length - obrigatorias.length, realizados, naoRealizados, aVencer: conta("a_vencer"),
       pctNoPrazo: decimosNoPrazo === null ? null : decimosNoPrazo / 10,
       pctNaoNoPrazo: decimosNoPrazo === null ? null : (1000 - decimosNoPrazo) / 10,
     },

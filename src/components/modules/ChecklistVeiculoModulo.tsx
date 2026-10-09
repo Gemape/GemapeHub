@@ -25,7 +25,7 @@ import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  PERIODICIDADES, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type Periodicidade, type SituacaoPeriodica,
+  PERIODICIDADES, periodicidadeObrigatoria, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type Periodicidade, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
@@ -114,7 +114,7 @@ export function ChecklistVeiculoModulo() {
     return v.status === "Ativo" && associacao
       ? periodicidadesDaAssociacao(associacao).map((periodicidade) => ({
           veiculoId: v.id, veiculoRotulo: rotuloDoVeiculo(parametros, v), periodicidade,
-          responsavelNome: associacao.responsavel?.nome ?? "Não definido", desde: Number.isNaN(Date.parse(associacao.atualizadoEm)) ? hoje : hojeBrasilia(new Date(associacao.atualizadoEm)),
+          responsavelNome: associacao.responsavel?.nome ?? "Não definido", obrigatorio: periodicidadeObrigatoria(associacao, periodicidade), desde: Number.isNaN(Date.parse(associacao.atualizadoEm)) ? hoje : hojeBrasilia(new Date(associacao.atualizadoEm)),
         }))
       : [];
   });

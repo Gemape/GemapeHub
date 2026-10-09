@@ -73,6 +73,12 @@ export function periodicidadeDaAssociacao(associacao: Pick<AssociacaoChecklist, 
   return periodicidadesDaAssociacao(associacao)[0] ?? null;
 }
 
+// A periodicidade é obrigatória se algum grupo periódico dela estiver marcado como obrigatório (decisão 125).
+export function periodicidadeObrigatoria(associacao: Pick<AssociacaoChecklist, "itens"> | null | undefined, periodicidade: Periodicidade): boolean {
+  const doGrupo = (p: string) => (p === "Diária" ? "Diário" : p);
+  return (associacao?.itens ?? []).some((i) => i.obrigatorio === true && doGrupo(i.periodicidade) === periodicidade);
+}
+
 // Todas as periodicidades definidas nos grupos habilitados, da mais para a menos frequente (decisão 119).
 export function periodicidadesDaAssociacao(associacao: Pick<AssociacaoChecklist, "itens"> | null | undefined): Periodicidade[] {
   const doGrupo = (p: string): Periodicidade | null => (p === "Diária" ? "Diário" : ehPeriodicidade(p) ? p : null);
