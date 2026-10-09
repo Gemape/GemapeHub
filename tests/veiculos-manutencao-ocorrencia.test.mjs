@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   lerParametros,
   adicionarAcaoManutencaoVeiculo,
+  itensCriadosAcoesManutencao,
   editarAcaoManutencaoVeiculo,
   removerAcaoManutencaoVeiculo,
   adicionarTipoOcorrenciaVeiculo,
@@ -259,4 +260,22 @@ test("a janela de restaurar das ações tem checkbox por pai e por filho, marcar
   assert.match(trecho, /situacaoPadraoAcoesComFilhos\(\)/);
   assert.match(trecho, /Marcar um filho marca também o pai/);
   assert.match(trecho, /disabled=\{totalPais === 0 \|\| travado\}/);
+});
+
+test("a lista de restaurar mostra o que o responsável criou: ações novas e subitens extras do padrão (dec 144)", () => {
+  const s = storage();
+  cadastrarPadraoVeiculos(s);
+  assert.deepEqual(itensCriadosAcoesManutencao(s), []); // só o padrão: nada criado
+  const [a] = lerParametros(s).acoesManutencaoVeiculo;
+  editarAcaoManutencaoVeiculo(a.id, a.nome, [...a.subitens.map((i) => i.nome), "Filho meu"], s);
+  adicionarAcaoManutencaoVeiculo("Minha ação", ["Sub 1", "Sub 2"], s);
+  const criados = itensCriadosAcoesManutencao(s);
+  assert.equal(criados.length, 2);
+  assert.deepEqual([criados[0].doPadrao, criados[0].filhos.map((f) => f.nome)], [true, ["Filho meu"]]);
+  assert.deepEqual([criados[1].nome, criados[1].doPadrao, criados[1].filhos.map((f) => f.nome)], ["Minha ação", false, ["Sub 1", "Sub 2"]]);
+  const antes = JSON.stringify(lerParametros(s));
+  assert.equal(JSON.stringify(lerParametros(s)), antes); // só lista, não altera
+  const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
+  assert.match(tela, /Criados por você/);
+  assert.match(tela, /itensCriadosAcoesManutencao\(\)/);
 });
