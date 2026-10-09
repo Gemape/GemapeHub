@@ -239,22 +239,10 @@ function MenuEpi({ pathname }: { pathname: string }) {
       prefixos={prefixosDoGrupo("epi", MENU_EPI.filter((i) => !i.de).flatMap((i) => [i.url, ...(i.filhos ?? []).map((f) => f.url)]), deAtual)}
       pathname={pathname}
     >
-      {MENU_EPI.map((item) =>
-        item.filhos ? (
-          <SidebarMenuSubItem key={item.url}>
-            <SidebarMenuSub className="mx-0 border-l-0 px-0">
-              <SubLink item={item} pathname={pathname} />
-              <SidebarMenuSub className="mx-0 ml-2 px-1.5">
-                {item.filhos.map((filho) => (
-                  <SubLink key={filho.url} item={filho} pathname={pathname} />
-                ))}
-              </SidebarMenuSub>
-            </SidebarMenuSub>
-          </SidebarMenuSubItem>
-        ) : (
-          <SubLink key={item.url} item={item} pathname={pathname} />
-        ),
-      )}
+      {/* Todos os ícones na mesma coluna (decisão 139): a Ficha vem logo abaixo de Cadastrar EPI, sem recuo. */}
+      {MENU_EPI.flatMap((item) => [item, ...(item.filhos ?? [])]).map((item) => (
+        <SubLink key={item.url} item={item} pathname={pathname} />
+      ))}
     </GrupoRecolhivel>
   );
 }
