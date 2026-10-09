@@ -384,3 +384,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Dec 135 (09/10): 6 tamanhos da Chave de fenda no padrão + inclusão automática única (branch feat/tamanhos-chave-de-fenda, parte das #176/#177).
 - 2026-10-09 17:25 dec 136: Associar: ordem Veículo, Responsável, Tipo; periódico=obrigatório (KPI), avulso=não; sem campo obrigatório (feat/associar-tipo-define-obrigatorio).
 - 2026-10-09 dec 137: janela Associar = Veículo, Responsável, Periodicidade (inclui Avulso); itens vêm dos grupos do tipo do veículo.
+- 2026-10-09 dec 139: menu Parâmetros > EPI com ícones alinhados na mesma coluna (sem recuo da Ficha).

@@ -32,3 +32,11 @@ test("a cor solicitada é exclusiva do token de sidebar", () => {
   assert.doesNotMatch(estilos, /--primary: #0A007C;/);
   assert.doesNotMatch(estilos, /--glass-[\w-]+: #0A007C;/);
 });
+
+test("Parâmetros > EPI põe todos os submenus na mesma coluna de ícones, sem recuo extra (dec 139)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const fonte = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
+  const trecho = fonte.slice(fonte.indexOf("function MenuEpi"), fonte.indexOf("function MenuFerramentas"));
+  assert.match(trecho, /MENU_EPI\.flatMap\(\(item\) => \[item, \.\.\.\(item\.filhos \?\? \[\]\)\]\)/);
+  assert.doesNotMatch(trecho, /mx-0 border-l-0 px-0|mx-0 ml-2 px-1\.5/);
+});
