@@ -904,6 +904,27 @@ export function restaurarAcoesManutencaoEscolhidas(
   });
 }
 
+export type ItemCriadoAcao = { id: string; nome: string; doPadrao: boolean; filhos: Opcao[] };
+
+/**
+ * Pais e filhos que o responsável criou nas ações de manutenção (decisão 143): as ações fora do padrão inicial,
+ * com todos os subitens, e, nas ações do padrão, só os subitens extras. Ação do padrão sem extras não aparece.
+ */
+export function itensCriadosAcoesManutencao(storage = storagePadrao()): ItemCriadoAcao[] {
+  const d = lerParametros(storage);
+  const lista: ItemCriadoAcao[] = [];
+  for (const a of d.acoesManutencaoVeiculo) {
+    const padrao = ACOES_MANUTENCAO_PADRAO.find((p) => mesmoNome(p.nome, a.nome));
+    if (!padrao) {
+      lista.push({ id: a.id, nome: a.nome, doPadrao: false, filhos: a.subitens });
+      continue;
+    }
+    const extras = a.subitens.filter((s) => !padrao.subitens.some((i) => mesmoNome(i, s.nome)));
+    if (extras.length > 0) lista.push({ id: a.id, nome: a.nome, doPadrao: true, filhos: extras });
+  }
+  return lista;
+}
+
 // ---------- Desativar e reativar ----------
 
 export const estaAtivo = (d: ParametrosBase, id: string) => !d.inativos.includes(id);
