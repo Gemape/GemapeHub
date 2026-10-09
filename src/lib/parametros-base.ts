@@ -5,7 +5,7 @@ import { posicaoEmSequencia, TAMANHOS_PADRAO } from "./tamanhos-padrao.ts";
 import { validarHabilitacao } from "./caixas-habilitadas.ts";
 import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts";
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
-import { CHECKLIST_VEICULOS_PADRAO, NOMES_PADRAO_ANTIGO, chaveDoTipoVeiculo, tiposDoGrupoPadrao } from "./checklist-veiculos-padrao.ts";
+import { CHECKLIST_VEICULOS_PADRAO, NOMES_PADRAO_ANTIGO, chaveDoTipoVeiculo, ehGrupoAvulso, tiposDoGrupoPadrao } from "./checklist-veiculos-padrao.ts";
 import { TAMANHOS_FERRAMENTAS_PADRAO } from "./tamanhos-ferramentas-padrao.ts";
 import { ACOES_MANUTENCAO_PADRAO, MARCAS_VEICULO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
 
@@ -87,6 +87,13 @@ const CHAVE = "gemape-demo-parametros-base";
 // Decisão 69: quem já tinha cadastros salvos recebe a subcategoria Empilhadeira uma vez; depois de qualquer
 // gravação o marcador impede que ela volte se o responsável a excluir.
 const CHAVE_EMPILHADEIRA = "gemape-demo-subcategoria-empilhadeira";
+// Marca que os grupos "Avulso · ..." já foram ajustados aos 16 itens da decisão 131 (só roda uma vez por navegador).
+const CHAVE_AVULSO_131 = "gemape-demo-checklist-avulso-itens-131";
+const ITENS_AVULSO_RETIRADOS_131 = [
+  "Kit de primeiros socorros", "Nível do óleo da transmissão (se aplicável)", "Bateria (estado e fixação)", "Luz de freio", "Luz de ré", "Pisca-alerta",
+  "Setas (dianteira e traseira)", "Iluminação do painel", "Extintor de incêndio (validade e pressão)", "Triângulo de sinalização",
+  "Limpador e lavador do para-brisa", "Palhetas em bom estado", "Bancos e cintos limpos",
+];
 // Avisa as telas abertas quando algo muda.
 export const EVENTO_PARAMETROS = "gemape-parametros-base";
 
@@ -224,6 +231,20 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
       itens: Array.isArray(g.itens) ? g.itens : [],
       tiposVeiculo: Array.isArray(g.tiposVeiculo) ? g.tiposVeiculo : [TODOS_OS_TIPOS],
     }));
+    // Decisão 131: quem cadastrou os grupos "Avulso · ..." antes do ajuste tem os 13 itens retirados tirados de lá e o grupo Outros incluído.
+    if (storage.getItem(CHAVE_AVULSO_131) === null) {
+      let ajustou = false;
+      for (const g of base.itensChecklistVeiculo) {
+        if (!ehGrupoAvulso(g.nome) || !CHECKLIST_VEICULOS_PADRAO.some((p) => mesmoNome(p.nome, g.nome))) continue;
+        const antes = g.itens.length;
+        g.itens = g.itens.filter((i) => !ITENS_AVULSO_RETIRADOS_131.some((n) => mesmoNome(n, i.nome)));
+        if (g.itens.length !== antes) ajustou = true;
+      }
+      const outros = CHECKLIST_VEICULOS_PADRAO.find((p) => p.nome === "Avulso · Outros");
+      if (ajustou && outros && !base.itensChecklistVeiculo.some((g) => mesmoNome(g.nome, outros.nome))) {
+        base.itensChecklistVeiculo.push({ id: "grupo-avulso-outros-131", nome: outros.nome, itens: montarItensChecklist([], [...outros.itens]), tiposVeiculo: [TODOS_OS_TIPOS] });
+      }
+    }
     if (storage.getItem(CHAVE_EMPILHADEIRA) === null &&
       !base.subcategorias.some((s) => s.categoriaId === "cat-veiculos" && /empilh/i.test(s.nome))) {
       base.subcategorias.push({ id: "sub-veiculos-empilhadeira", categoriaId: "cat-veiculos", nome: "Empilhadeira" });
@@ -253,6 +274,7 @@ function alterar<T>(storage: StorageLike | null, mudanca: (dados: ParametrosBase
   const resultado = mudanca(dados);
   storage.setItem(CHAVE, JSON.stringify(dados));
   storage.setItem(CHAVE_EMPILHADEIRA, "1");
+  storage.setItem(CHAVE_AVULSO_131, "1");
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_PARAMETROS));
   return resultado;
 }
