@@ -122,8 +122,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   function abrir(a: AssociacaoChecklist | null, clonar: boolean) {
     setEditando(a && !clonar ? a.veiculoId : null);
     setVeiculoId(a && !clonar ? a.veiculoId : "");
-    setResponsavelId(a && !clonar ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
-    // Clonar copia os grupos e periodicidades para outro veículo; o responsável é escolhido de novo.
+    setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
+    // Clonar copia a periodicidade e o responsável para outro veículo (decisão 138); tudo pode ser editado.
     setPeriodicidade(a ? (gruposDaAssociacao(a, grupos).find((i) => i.tipo === "periodico")?.periodicidade ?? AVULSO) : "");
     setAberto(true);
   }

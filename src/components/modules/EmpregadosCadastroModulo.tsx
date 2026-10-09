@@ -47,7 +47,7 @@ export function EmpregadosCadastroModulo() {
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<EmpregadoCadastro | null>(null);
-  // Clonar: dados do empregado de origem num cadastro NOVO (CPF, matrícula e e-mail em branco).
+  // Clonar: dados do empregado de origem num cadastro NOVO (todos os campos copiados, decisão 138).
   const [modelo, setModelo] = useState<EmpregadoCadastro | null>(null);
   const base = editando ?? modelo;
   const [empresaSel, setEmpresaSel] = useState("");
@@ -201,7 +201,7 @@ export function EmpregadosCadastroModulo() {
                 onChange={(ev) => {
                   ev.target.value = mascararCpf(ev.target.value);
                 }}
-                defaultValue={editando?.cpf ? (editando.cpf.replace(/\D/g, "").length > 11 ? editando.cpf : mascararCpf(editando.cpf)) : ""}
+                defaultValue={base?.cpf ? (base.cpf.replace(/\D/g, "").length > 11 ? base.cpf : mascararCpf(base.cpf)) : ""}
               />
             </div>
             <div className="space-y-1.5">
@@ -225,13 +225,13 @@ export function EmpregadosCadastroModulo() {
                 id="matricula"
                 name="matricula"
                 placeholder="Livro e página, ex.: L3P25"
-                defaultValue={editando?.matricula ?? ""}
+                defaultValue={base?.matricula ?? ""}
               />
             </div>
             {MODO_DEMO && (
               <div className="space-y-1.5">
                 <Label htmlFor="email">E-mail</Label>
-                <Input id="email" name="email" type="email" defaultValue={editando?.email ?? ""} />
+                <Input id="email" name="email" type="email" defaultValue={base?.email ?? ""} />
               </div>
             )}
             <div className="space-y-1.5">

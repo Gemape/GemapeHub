@@ -12,13 +12,13 @@ test("Caixas > Cadastro usa AcoesLinha com Clonar, Editar e Excluir; clone limpa
   assert.match(fonte, /nomePortador\(editando\.id\)/);
 });
 
-test("Parâmetros > Veículos usa AcoesLinha com Clonar, Editar e Excluir; clone gera código e deixa placa e RENAVAM em branco", () => {
+test("Parâmetros > Veículos usa AcoesLinha com Clonar, Editar e Excluir; clone gera código e copia placa, RENAVAM e quilometragem (dec 138)", () => {
   const fonte = ler("VeiculosCadastroModulo");
   assert.match(fonte, /<AcoesLinha[\s\S]*?onClonar=[\s\S]*?onEditar=[\s\S]*?onExcluir=/);
   assert.match(fonte, /const base = editando \?\? origem/);
-  assert.match(fonte, /defaultValue=\{editando \? formatarPlaca\(editando\.placa\) : ""\}/);
-  assert.match(fonte, /id="renavam" name="renavam" defaultValue=\{editando\?\.renavam \?\? ""\}/);
-  assert.match(fonte, /defaultValue=\{editando\?\.quilometragem_atual \?\? 0\}/);
+  assert.match(fonte, /defaultValue=\{base \? formatarPlaca\(base\.placa\) : ""\}/);
+  assert.match(fonte, /id="renavam" name="renavam" defaultValue=\{base\?\.renavam \?\? ""\}/);
+  assert.match(fonte, /defaultValue=\{base\?\.quilometragem_atual \?\? 0\}/);
   assert.match(fonte, /!editando\?\.codigo_sku/);
 });
 

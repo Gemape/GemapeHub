@@ -19,10 +19,12 @@ test("Cadastrar EPI usa o botão padrão com os três botões", () => {
   assert.match(epi, /rpc\([\s\S]*p_id/);
 });
 
-test("o diálogo de editar EPI é irmão do de clonar, não está dentro dele", () => {
+test("Clonar EPI abre o formulário de novo preenchido com todos os dados da origem (dec 138)", () => {
   const epi = ler("components/modules/CadastroEpi.tsx");
-  const clonar = epi.indexOf("<Dialog open={!!clonando}");
+  assert.doesNotMatch(epi, /<Dialog open=\{!!clonando\}/); // sem a janela curta: é o próprio formulário Novo, preenchido
+  assert.match(epi, /defaultValue=\{clonando\?\.nome \?\? ""\}/);
+  assert.match(epi, /defaultValue=\{clonando\?\.estoque_minimo \?\? ""\}/);
+  assert.match(epi, /clonando: !!clonando/);
   const editar = epi.indexOf("<Dialog open={editando !== null}");
-  assert.ok(editar > 0 && clonar > 0 && editar < clonar);
-  assert.match(epi.slice(editar, clonar), /<\/Dialog>\s*$/);
+  assert.ok(editar > epi.indexOf("<Dialog open={novoAberto}"));
 });

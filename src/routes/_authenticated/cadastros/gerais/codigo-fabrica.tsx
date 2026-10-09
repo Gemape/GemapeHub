@@ -100,14 +100,14 @@ function CodigoFabricaPagina() {
     [dados.codigosFabrica, busca],
   );
 
-  // Ao clonar, o código na nota (a parte única da associação) fica em branco.
+  // Ao clonar, todos os dados da origem são copiados, inclusive o código na nota, e podem ser editados (decisão 138).
   function abrir(codigo: CodigoFabrica | null, clonar = false) {
     setFornecedores(listarFornecedores());
     setEditando(clonar ? null : codigo);
     setModelo(clonar ? codigo : null);
     setProdutoSel(codigo ? chaveProduto(codigo) : "");
     setFornecedorSel(codigo?.fornecedor_id ?? "");
-    setCodigoNota(clonar ? "" : (codigo?.codigo_fornecedor ?? ""));
+    setCodigoNota(codigo?.codigo_fornecedor ?? "");
     setCa((codigo?.ca ?? "").replace(/\D/g, ""));
     setAberto(true);
   }

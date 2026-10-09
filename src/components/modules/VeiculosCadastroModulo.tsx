@@ -180,7 +180,7 @@ export function VeiculosCadastroModulo() {
   }
 
   // Sem argumento abre o cadastro em branco; com um veículo, abre como novo já preenchido (Clonar):
-  // placa e RENAVAM ficam em branco, o código é gerado ao salvar e a quilometragem recomeça em 0.
+  // placa, RENAVAM e quilometragem são copiados (decisão 138) e podem ser editados; o código é gerado ao salvar.
   async function abrirNovo(clonar: VeiculoCadastro | null = null) {
     if (MODO_DEMO && !regra) {
       toast.error(
@@ -537,7 +537,7 @@ export function VeiculosCadastroModulo() {
                   id="placa"
                   name="placa"
                   aria-required
-                  defaultValue={editando ? formatarPlaca(editando.placa) : ""}
+                  defaultValue={base ? formatarPlaca(base.placa) : ""}
                   placeholder="ABC-1234 ou ABC1D23"
                   className="uppercase"
                 />
@@ -635,11 +635,11 @@ export function VeiculosCadastroModulo() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="renavam">RENAVAM</Label>
-              <Input id="renavam" name="renavam" defaultValue={editando?.renavam ?? ""} />
+              <Input id="renavam" name="renavam" defaultValue={base?.renavam ?? ""} />
             </div>
             {MODO_DEMO && (
               <>
-                {/* Aquisição é da compra deste veículo: o Clonar deixa os três em branco. */}
+                {/* Clonar copia também a aquisição (decisão 138); tudo pode ser editado. */}
                 <div className="space-y-1.5">
                   <Label htmlFor="data_aquisicao">Data de aquisição</Label>
                   <Input
@@ -647,7 +647,7 @@ export function VeiculosCadastroModulo() {
                     name="data_aquisicao"
                     type="date"
                     max={dataBrasilia()}
-                    defaultValue={editando?.data_aquisicao ?? ""}
+                    defaultValue={base?.data_aquisicao ?? ""}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -659,7 +659,7 @@ export function VeiculosCadastroModulo() {
                     inputMode="decimal"
                     min={0}
                     step="0.01"
-                    defaultValue={editando?.custo ?? ""}
+                    defaultValue={base?.custo ?? ""}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -668,7 +668,7 @@ export function VeiculosCadastroModulo() {
                     id="numero_nota_fiscal"
                     name="numero_nota_fiscal"
                     maxLength={30}
-                    defaultValue={editando?.numero_nota_fiscal ?? ""}
+                    defaultValue={base?.numero_nota_fiscal ?? ""}
                   />
                 </div>
               </>
@@ -680,7 +680,7 @@ export function VeiculosCadastroModulo() {
                 name="quilometragem_atual"
                 type="number"
                 min={0}
-                defaultValue={editando?.quilometragem_atual ?? 0}
+                defaultValue={base?.quilometragem_atual ?? 0}
               />
             </div>
             <div className="space-y-1.5">

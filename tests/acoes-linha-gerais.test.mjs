@@ -19,17 +19,17 @@ test("listas de nome (categorias, subcategorias, marcas, tamanhos, unidades) usa
   assert.match(tamanhos, /ocupado\.current/);
 });
 
-test("Código do produto usa AcoesLinha; Clonar copia só a numeração e deixa a sigla em branco", () => {
+test("Código do produto usa AcoesLinha; Clonar copia a numeração e a sigla (dec 138)", () => {
   const tela = ler("routes/_authenticated/cadastros/gerais/codigo-produto.tsx");
   assert.match(tela, /<AcoesLinha[\s\S]*onClonar[\s\S]*onEditar=[\s\S]*onExcluir/);
-  assert.match(tela, /function clonar[\s\S]*setSigla\(""\)[\s\S]*setInicial\(origem\.inicial\)/);
+  assert.match(tela, /function clonar[\s\S]*setSigla\(origem\.sigla\)[\s\S]*setInicial\(origem\.inicial\)/);
   assert.match(tela, /CATEGORIAS_BASE\[c\.id\]/);
 });
 
-test("Código de fábrica usa AcoesLinha; Clonar abre associação nova com o código na nota em branco", () => {
+test("Código de fábrica usa AcoesLinha; Clonar abre associação nova com o código na nota copiado (dec 138)", () => {
   const tela = ler("routes/_authenticated/cadastros/gerais/codigo-fabrica.tsx");
   assert.match(tela, /<AcoesLinha[\s\S]*onClonar=\{\(\) => abrir\(c, true\)\}[\s\S]*onEditar=\{\(\) => abrir\(c\)\}[\s\S]*onExcluir=/);
   assert.match(tela, /const base = editando \?\? modelo/);
-  assert.match(tela, /setCodigoNota\(clonar \? "" :/);
+  assert.match(tela, /setCodigoNota\(codigo\?\.codigo_fornecedor/);
   assert.match(tela, /editando\?\.id/);
 });
