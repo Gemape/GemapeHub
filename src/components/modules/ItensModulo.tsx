@@ -42,7 +42,7 @@ import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { codigosReservadosFerramenta, grupoPedeQualFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, qualFerramentaDe, selecaoMarcaCadastrada } from "@/lib/cadastro-ferramentas";
+import { codigosReservadosFerramenta, grupoPedeQualFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, qualFerramentaDe, selecaoMarcaCadastrada, tamanhosDoGrupoFerramenta } from "@/lib/cadastro-ferramentas";
 import {
   estaAtivo,
   lerParametros,
@@ -56,6 +56,8 @@ import { useParametrosBase } from "@/lib/use-parametros-base";
 
 // Cadastro de ferramentas. EPI e uniforme usam CadastroProduto, e todas as listas
 // vêm de Cadastros > Gerais. Ferramenta não tem subcategoria (decisão 25).
+const SEM_TAMANHO = "sem-tamanho";
+
 export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const { empresas, empresaId } = useEmpresa();
   const [busca, setBusca] = useState("");
@@ -68,6 +70,9 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   // Grupo escolhido no formulário: "Outros" e "Diversos" abrem o campo para digitar qual ferramenta é (decisão 83).
   const [grupoEscolhido, setGrupoEscolhido] = useState("");
   useEffect(() => { if (aberto) setGrupoEscolhido(base?.grupo_ferramenta ?? ""); }, [aberto, base]);
+  // Tamanho escolhido (decisão 133): vem dos tamanhos do grupo em Parâmetros Específicos; trocar o grupo limpa a escolha.
+  const [tamanhoEscolhido, setTamanhoEscolhido] = useState(SEM_TAMANHO);
+  useEffect(() => { if (aberto) setTamanhoEscolhido(base?.tamanho || SEM_TAMANHO); }, [aberto, base]);
   const [previaCodigo, setPreviaCodigo] = useState("");
   const salvando = useRef(false);
   const parametros = useParametrosBase();
@@ -84,6 +89,8 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const rotulo = (item: { id: string; nome: string }) => (estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`);
   const marcaCadastrada = parametros.marcasFerramenta.find((m) => m.nome === base?.marca);
   const marcaAntiga = base?.marca && !marcaCadastrada ? base.marca : null;
+  const tamanhosDoGrupo = tamanhosDoGrupoFerramenta(parametros, grupoEscolhido);
+  const tamanhoForaDaLista = base?.tamanho && !tamanhosDoGrupo.includes(base.tamanho) && grupoEscolhido === base.grupo_ferramenta ? base.tamanho : null;
   const tabela = "ferramentas";
   const { data: itens = [], isLoading } = useItens(modulo, empresaId, busca);
   const salvar = useSalvar(tabela, [tabela, "saidas-por-item"]);
@@ -155,6 +162,8 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
         marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, base?.marca ?? null),
         marcaAtual: base?.marca ?? "",
         modelo: capitalizarCadastro(String(f.get("modelo") ?? "")),
+        tamanho: tamanhoEscolhido === SEM_TAMANHO ? "" : tamanhoEscolhido,
+        tamanhoAtual: base?.tamanho ?? "",
         estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
         ...(editando ? { codigoAtual: editando.codigo_sku } : {}),
       });
@@ -196,6 +205,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   "Grupo de ferramenta": i.grupo_ferramenta,
                   Marca: i.marca,
                   Modelo: i.modelo,
+                  Tamanho: i.tamanho,
                   "Estoque mínimo": i.estoque_minimo,
                   Status: i.status,
                 })),
@@ -218,6 +228,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               <TableHead>Grupo de ferramenta</TableHead>
               <TableHead>Marca</TableHead>
               <TableHead>Modelo</TableHead>
+              <TableHead>Tamanho</TableHead>
               <TableHead className="text-right">Estoque mínimo</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Cadastro</TableHead>
@@ -227,13 +238,13 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground">
+                <TableCell colSpan={11} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : itens.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-muted-foreground">
+                <TableCell colSpan={11} className="text-center text-muted-foreground">
                   Nenhum item cadastrado.
                 </TableCell>
               </TableRow>
@@ -246,6 +257,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                   <TableCell>{item.grupo_ferramenta ?? "—"}</TableCell>
                   <TableCell>{item.marca ?? "—"}</TableCell>
                   <TableCell>{item.modelo ?? "—"}</TableCell>
+                  <TableCell>{item.tamanho || "—"}</TableCell>
                   <TableCell className="text-right">{item.estoque_minimo ?? 0}</TableCell>
                   <TableCell>
                     <Badge variant={item.status === "Ativo" ? "secondary" : "outline"}>
@@ -342,7 +354,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="grupo_ferramenta">Grupo de ferramenta</Label>
-                <Select name="grupo_ferramenta" required value={grupoEscolhido} onValueChange={setGrupoEscolhido}>
+                <Select name="grupo_ferramenta" required value={grupoEscolhido} onValueChange={(g) => { setGrupoEscolhido(g); setTamanhoEscolhido(SEM_TAMANHO); }}>
                   <SelectTrigger id="grupo_ferramenta"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
                   <SelectContent>
                     {parametrosSelecao.gruposFerramenta.map((g) => <SelectItem key={g.id} value={g.nome}>{rotulo(g)}</SelectItem>)}
@@ -372,6 +384,20 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               <div className="space-y-1.5">
                 <Label htmlFor="modelo">Modelo</Label>
                 <Input id="modelo" name="modelo" capitalizar="texto" required defaultValue={editando?.modelo ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tamanho_ferramenta">Tamanho</Label>
+                <Select value={tamanhoEscolhido} onValueChange={setTamanhoEscolhido} disabled={!grupoEscolhido}>
+                  <SelectTrigger id="tamanho_ferramenta"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SEM_TAMANHO}>Sem tamanho</SelectItem>
+                    {tamanhosDoGrupo.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {tamanhoForaDaLista && <SelectItem value={tamanhoForaDaLista}>{tamanhoForaDaLista} (fora de Parâmetros Específicos)</SelectItem>}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {!grupoEscolhido ? "Escolha o grupo de ferramenta para ver os tamanhos." : tamanhosDoGrupo.length === 0 ? "Este grupo ainda não tem tamanhos. Cadastre em Parâmetros > Ferramentas > Parâmetros Específicos." : "Tamanhos cadastrados em Parâmetros Específicos."}
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="estoque_minimo">Estoque mínimo</Label>

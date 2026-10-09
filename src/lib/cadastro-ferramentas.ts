@@ -26,8 +26,18 @@ export type EntradaCadastroFerramenta = {
   estoqueMinimo: string | number;
   marca?: string;
   marcaAtual?: string;
+  // Tamanho da ferramenta (decisão 133): um dos tamanhos do grupo em Parâmetros Específicos; vazio = sem tamanho.
+  tamanho?: string;
+  // Tamanho já gravado na ferramenta em edição: continua aceito mesmo que tenha saído da lista do grupo.
+  tamanhoAtual?: string;
   codigoAtual?: string;
 };
+
+/** Tamanhos cadastrados para o grupo de ferramenta em Parâmetros Específicos (decisão 117), na ordem do cadastro. */
+export function tamanhosDoGrupoFerramenta(parametros: ParametrosBase, nomeGrupo: string): string[] {
+  const grupo = parametros.gruposFerramenta.find((g) => mesmoNome(g.nome, nomeGrupo));
+  return grupo ? [...(parametros.tamanhosGrupoFerramenta[grupo.id] ?? [])] : [];
+}
 
 /** Descrição da ferramenta (decisão 54): grupo, modelo e marca, nesta ordem, separados por " · ". */
 export function descricaoFerramenta(d: { grupo?: string | null; modelo?: string | null; marca?: string | null }): string {
@@ -114,6 +124,10 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
     : null;
   const modelo = entrada.modelo.trim().replace(/\s+/g, " ");
   if (!modelo) throw new Error("Informe o modelo da ferramenta.");
+  const tamanho = (entrada.tamanho ?? "").trim();
+  if (tamanho && !tamanhosDoGrupoFerramenta(entrada.parametros, grupoFerramenta.nome).includes(tamanho) && tamanho !== (entrada.tamanhoAtual ?? "").trim()) {
+    throw new Error("Tamanho inválido para este grupo. Escolha um tamanho cadastrado em Parâmetros Específicos.");
+  }
   const minimoTexto = String(entrada.estoqueMinimo ?? "").trim();
   if (!/^\d{1,9}$/.test(minimoTexto)) throw new Error("Informe o estoque mínimo (número inteiro, 0 ou mais).");
   const regra = entrada.parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
@@ -130,5 +144,6 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
     categoria_ferramenta: categoriaFerramenta.nome,
     grupo_ferramenta: grupoFerramenta.nome,
     marca,
+    ...(entrada.tamanho !== undefined ? { tamanho: tamanho || null } : {}),
   };
 }

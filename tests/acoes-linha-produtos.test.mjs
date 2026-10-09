@@ -29,5 +29,5 @@ test("Clonar ferramenta copia categoria, grupo, marca e mínimo e deixa o modelo
   assert.match(fonte, /defaultValue=\{editando\?\.modelo \?\? ""\}/);
   assert.match(fonte, /defaultValue=\{base\?\.estoque_minimo \?\? 0\}/);
   assert.match(fonte, /setGrupoEscolhido\(base\?\.grupo_ferramenta \?\? ""\)/);
-  assert.match(fonte, /value=\{grupoEscolhido\} onValueChange=\{setGrupoEscolhido\}/);
+  assert.match(fonte, /value=\{grupoEscolhido\} onValueChange=\{\(g\) => \{ setGrupoEscolhido\(g\); setTamanhoEscolhido\(SEM_TAMANHO\); \}\}/);
 });

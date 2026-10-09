@@ -379,3 +379,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Dec 130 (09/10): 5 grupos padrão 'Avulso · ...' (itens simples); Associar e Novo avulso separam avulso e periódico pelo prefixo (branch feat/checklist-avulso-itens-simples, parte da #173).
 - Dec 131 (09/10): avulso reduzido a 16 itens + grupo 'Avulso · Outros' (item aberto, descrição na observação) (PR #174).
 - Dec 132 (09/10): ajuste automático (uma vez) dos grupos 'Avulso · ...' já cadastrados para os 16 itens + Outros (branch fix/avulso-itens-removidos).
+- Dec 133 (09/10): campo Tamanho no Cadastrar ferramenta (opções do grupo em Parâmetros Específicos), coluna na lista/CSV (branch feat/ferramenta-campo-tamanho).
