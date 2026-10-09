@@ -279,3 +279,15 @@ test("a lista de restaurar mostra o que o responsável criou: ações novas e su
   assert.match(tela, /Criados por você/);
   assert.match(tela, /itensCriadosAcoesManutencao\(\)/);
 });
+
+test("salvar em Ações de manutenção pergunta Sim ou Não antes de gravar (dec 145)", () => {
+  const alerta = readFileSync("src/components/parametros/AlertaPainelManutencao.tsx", "utf8");
+  assert.match(alerta, /As alterações feitas modificarão o painel com os itens de manutenção\. Tem certeza que deseja fazer isso\?/);
+  assert.match(alerta, /<AlertDialogCancel>Não<\/AlertDialogCancel>/);
+  assert.match(alerta, /<AlertDialogAction onClick=\{onSim\}>Sim<\/AlertDialogAction>/);
+  const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
+  assert.match(tela, /acaoExtra=\{<RestaurarPadraoAcoes \/>\}\s*alertaPainel/); // cadastrar/editar ação
+  const restaurar = tela.slice(tela.indexOf("function RestaurarPadraoAcoes"));
+  assert.match(restaurar, /<AlertaPainelManutencao aberto=\{aviso !== null\}/); // restaurar configurações iniciais
+  assert.doesNotMatch(restaurar.slice(restaurar.indexOf("function salvar"), restaurar.indexOf("function gravar")), /confirm\(/);
+});
