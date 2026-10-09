@@ -208,3 +208,10 @@ test("a janela Associar não tem checkbox de obrigatório por grupo, só a lista
   assert.doesNotMatch(tela, /mudarObrigatorio\(/);
   assert.match(tela, /id="assoc-obrigatoriedade"/);
 });
+
+test("a janela Associar oferece só os grupos Avulso no avulso e os demais no periódico (dec 130)", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/AssociarChecklistVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /ehGrupoAvulso\(g\.nome\) === \(tipoAtual === "avulso"\)/);
+  const modulo = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(modulo, /gruposAplicaveis\(parametros\.itensChecklistVeiculo, tipoDe\(veiculoEscolhido\)\?\.id \?\? null, true\)/);
+});

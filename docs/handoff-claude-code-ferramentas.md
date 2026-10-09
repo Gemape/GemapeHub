@@ -376,3 +376,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - Dec 127 (09/10): opção Não definida na periodicidade dos grupos habilitados; escolher passa o grupo para o check list avulso (PR #173).
 - Dec 128 (09/10): resumo dos grupos habilitados com periodicidade na janela Associar (PR #173).
 - Dec 129 (09/10): removido o checkbox de obrigatório por grupo; só a lista suspensa Check list (PR #173).
+- Dec 130 (09/10): 5 grupos padrão 'Avulso · ...' (itens simples); Associar e Novo avulso separam avulso e periódico pelo prefixo (branch feat/checklist-avulso-itens-simples, parte da #173).
+- Dec 131 (09/10): avulso reduzido a 16 itens + grupo 'Avulso · Outros' (item aberto, descrição na observação) (PR #174).

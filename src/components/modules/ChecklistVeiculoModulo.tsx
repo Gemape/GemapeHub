@@ -168,7 +168,7 @@ export function ChecklistVeiculoModulo() {
     ? []
     : avulsoNovo
       ? (!associacaoEscolhida
-        ? gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(veiculoEscolhido)?.id ?? null)
+        ? gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(veiculoEscolhido)?.id ?? null, true)
         : comoAssociacao(gruposAvulsosDaAssociacao(associacaoEscolhida)))
       : comoAssociacao(gruposDaPeriodicidade(associacaoEscolhida, periodicidadeDoDialogo(veiculoEscolhido) ?? ""));
   const itensDoVeiculo = gruposDoVeiculo.reduce((t, g) => t + g.itens.length, 0);

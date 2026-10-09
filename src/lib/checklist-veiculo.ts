@@ -2,7 +2,7 @@
 // no banco real são pendência da Fase 2.
 import type { GrupoChecklistVeiculo } from "./parametros-base.ts";
 import { TODOS_OS_TIPOS } from "./parametros-base.ts";
-import { chaveDoTipoVeiculo, type ChaveTipoVeiculo } from "./checklist-veiculos-padrao.ts";
+import { chaveDoTipoVeiculo, ehGrupoAvulso, type ChaveTipoVeiculo } from "./checklist-veiculos-padrao.ts";
 import { registrarOcorrenciasDoChecklist, removerOcorrenciasPorId } from "./ocorrencias-veiculo.ts";
 import type { AssociacaoChecklist } from "./checklist-associacao-veiculo.ts";
 import { alterarLista, lerLista, type StorageLike } from "./registros-veiculo.ts";
@@ -139,9 +139,12 @@ export function gruposAssociadosDoVeiculo(
 }
 
 // Grupos do check list que valem para o tipo (subcategoria) do veículo: os ligados a ele e os de todos os tipos.
-export function gruposAplicaveis(grupos: GrupoChecklistVeiculo[], subcategoriaId: string | null): GrupoChecklistVeiculo[] {
+// `avulso` (decisão 130): true traz só os grupos "Avulso · ..."; false traz os do periódico; sem o parâmetro, todos.
+export function gruposAplicaveis(grupos: GrupoChecklistVeiculo[], subcategoriaId: string | null, avulso?: boolean): GrupoChecklistVeiculo[] {
   return grupos.filter(
-    (g) => g.itens.length > 0 && (g.tiposVeiculo.includes(TODOS_OS_TIPOS) || (!!subcategoriaId && g.tiposVeiculo.includes(subcategoriaId))),
+    (g) => g.itens.length > 0
+      && (avulso === undefined || ehGrupoAvulso(g.nome) === avulso)
+      && (g.tiposVeiculo.includes(TODOS_OS_TIPOS) || (!!subcategoriaId && g.tiposVeiculo.includes(subcategoriaId))),
   );
 }
 
