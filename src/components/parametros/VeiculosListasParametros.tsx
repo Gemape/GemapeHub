@@ -20,9 +20,9 @@ import {
   adicionarAcaoManutencaoVeiculo,
   adicionarGrupoChecklistVeiculo,
   cadastrarPadraoChecklistVeiculos,
-  restaurarPadroesAcoesManutencaoVeiculo,
+  restaurarAcoesManutencaoEscolhidas,
   restaurarPadroesChecklistVeiculos,
-  situacaoPadraoAcoesManutencaoVeiculo,
+  situacaoPadraoAcoesComFilhos,
   situacaoPadraoChecklistVeiculos,
   type SituacaoPadraoChecklist,
   editarGrupoChecklistVeiculo,
@@ -443,17 +443,126 @@ function RestaurarPadraoChecklist() {
   );
 }
 
+// Restaurar configurações iniciais das Ações de manutenção (decisão 142): lista os pais e os filhos do padrão inicial,
+// cada um com o seu checkbox, e restaura só o que foi marcado, tudo de uma vez.
 function RestaurarPadraoAcoes() {
+  useParametrosBase(); // atualiza a lista quando o cadastro muda
+  const [aberto, setAberto] = useState(false);
+  // Pai marcado = chave presente; o valor são os filhos marcados dele.
+  const [marcados, setMarcados] = useState<Record<string, string[]>>({});
+  const salvando = useRef(false);
+  const [travado, setTravado] = useState(false);
+  const padroes = aberto ? situacaoPadraoAcoesComFilhos() : [];
+  const totalFilhos = Object.values(marcados).reduce((n, f) => n + f.length, 0);
+  const totalPais = Object.keys(marcados).length;
+
+  function abrir() {
+    setMarcados({});
+    setAberto(true);
+  }
+  const marcarPai = (nome: string, marcar: boolean) =>
+    setMarcados((atual) => {
+      const { [nome]: _tirado, ...resto } = atual;
+      return marcar ? { ...resto, [nome]: padroes.find((p) => p.nome === nome)?.filhos.map((f) => f.nome) ?? [] } : resto;
+    });
+  // Marcar um filho marca também o pai dele; desmarcar o último filho mantém o pai marcado.
+  const marcarFilho = (pai: string, filho: string, marcar: boolean) =>
+    setMarcados((atual) => {
+      const filhos = atual[pai] ?? [];
+      return { ...atual, [pai]: marcar ? [...filhos.filter((f) => f !== filho), filho] : filhos.filter((f) => f !== filho) };
+    });
+
+  function salvar() {
+    if (salvando.current || totalPais === 0) return;
+    const alterados = padroes.filter((p) => p.nome in marcados && p.situacao === "alterado").length;
+    const novos = padroes.filter((p) => p.nome in marcados && p.situacao === "ausente").length;
+    const aviso =
+      `Restaurar ${totalPais} ${totalPais === 1 ? "ação" : "ações"} e ${totalFilhos} ${totalFilhos === 1 ? "subitem" : "subitens"} ao padrão inicial?` +
+      (alterados > 0 ? ` O nome de ${alterados} ${alterados === 1 ? "ação volta" : "ações voltam"} ao inicial e os subitens marcados são restaurados; os não marcados ficam como estão.` : "") +
+      (novos > 0 ? ` ${novos} ${novos === 1 ? "excluída será cadastrada" : "excluídas serão cadastradas"} de novo.` : "");
+    if (!confirm(aviso)) return;
+    salvando.current = true;
+    setTravado(true);
+    const ok = executar(() => {
+      const r = restaurarAcoesManutencaoEscolhidas(Object.entries(marcados).map(([nome, filhos]) => ({ nome, filhos })));
+      const partes = [r.restaurados > 0 ? `${r.restaurados} ${r.restaurados === 1 ? "ação restaurada" : "ações restauradas"}` : "", r.criados > 0 ? `${r.criados} ${r.criados === 1 ? "cadastrada" : "cadastradas"} de novo` : ""].filter(Boolean);
+      toast.success(`Configurações iniciais: ${partes.join(" e ")}, com ${r.filhos} ${r.filhos === 1 ? "subitem" : "subitens"}.`);
+    });
+    if (ok) setAberto(false);
+    setTimeout(() => {
+      salvando.current = false;
+      setTravado(false);
+    }, 400);
+  }
+
   return (
-    <RestaurarPadraoInicial
-      singular="ação"
-      feminino
-      plural="ações"
-      perdas="(nome e subitens) "
-      rotulo="Restaurar configurações iniciais"
-      situacoes={situacaoPadraoAcoesManutencaoVeiculo}
-      restaurar={restaurarPadroesAcoesManutencaoVeiculo}
-    />
+    <>
+      <Button requiresWrite variant="outline" onClick={abrir}>
+        Restaurar configurações iniciais
+      </Button>
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Restaurar configurações iniciais</DialogTitle>
+            <DialogDescription>
+              Marque as ações (pais) e os subitens (filhos) do padrão inicial que quer restaurar. Não é preciso restaurar todos os filhos: os não marcados ficam como estão, e o que foi excluído é cadastrado de novo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground" data-testid="restaurar-contagem">
+              {totalPais} de {padroes.length} ações e {totalFilhos} subitens marcados
+            </span>
+            <div className="flex gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setMarcados(Object.fromEntries(padroes.map((p) => [p.nome, p.filhos.map((f) => f.nome)])))}
+              >
+                Marcar todos
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setMarcados({})}>
+                Desmarcar todos
+              </Button>
+            </div>
+          </div>
+          <ul className="grid max-h-[55vh] gap-3 overflow-y-auto md:grid-cols-2">
+            {padroes.map((p, n) => (
+              <li key={p.nome} className="space-y-2 rounded-md border p-3">
+                <label htmlFor={`restaurar-pai-${n}`} className="flex cursor-pointer items-start gap-2">
+                  <Checkbox id={`restaurar-pai-${n}`} className="mt-0.5" checked={p.nome in marcados} onCheckedChange={(v) => marcarPai(p.nome, v === true)} />
+                  <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-semibold">{p.nome}</span>
+                    <span className={p.situacao === "igual" ? "text-xs text-muted-foreground" : "text-xs font-semibold"}>{ROTULO_SITUACAO[p.situacao]}</span>
+                  </span>
+                </label>
+                <ul className="space-y-1 pl-6">
+                  {p.filhos.map((f, m) => (
+                    <li key={f.nome}>
+                      <label htmlFor={`restaurar-filho-${n}-${m}`} className="flex cursor-pointer items-start gap-2 text-xs">
+                        <Checkbox id={`restaurar-filho-${n}-${m}`} className="mt-0.5 size-3.5" checked={marcados[p.nome]?.includes(f.nome) ?? false} onCheckedChange={(v) => marcarFilho(p.nome, f.nome, v === true)} />
+                        <span>
+                          {f.nome}
+                          {!f.existe && <span className="ml-1 font-semibold">(não cadastrado)</span>}
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setAberto(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={salvar} disabled={totalPais === 0 || travado}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
