@@ -400,4 +400,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-09 dec 151: seção Criados por você passa a excluir os itens marcados (só Administrador), com alerta Sim/Não; editar fica na lista.
 - 2026-10-09 dec 152: Itens check list sem Cadastrar padrão; botão passa a Restaurar configurações iniciais.
 - 2026-10-09 dec 153: itens por tipo de veículo; Avulso só para veículos leves (janela Associar e check list avulso).
-- 2026-10-09 dec 154: lista de itens associados sem Clonar/Editar/Excluir por linha.
+- 2026-10-09 dec 155: Avulso para qualquer veículo (substitui dec 153); itens por tipo do veículo, já sem escolher a periodicidade.
