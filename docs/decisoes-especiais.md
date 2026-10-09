@@ -856,3 +856,7 @@ Ordem do responsável em 09/10 (18:11): em Parâmetros > Veículos > Manutençã
 ### Decisão 141: Restaurar configurações iniciais em Ações de manutenção
 
 Ordem do responsável em 09/10 (18:13): em Parâmetros > Veículos > Manutenção, o botão **Restaurar padrão inicial** passa a se chamar **Restaurar configurações iniciais**. O nome vale para o botão e para o título da janela que ele abre; o funcionamento não muda (marcar o que restaurar e confirmar, tudo de uma vez). **Escolha do Claude:** só a tela Manutenção muda; em Itens check list o botão continua com o nome antigo. Só visual; nada no Supabase.
+
+### Decisão 143: Logo 40 anos animado na tela de entrada
+
+Ordem do responsável em 09/10 (18:35), com o print do logo: na tela inicial de entrada do sistema, colocar o ícone com a mesma animação e o layout igual ao do anexo. **Antes:** a tela de entrada mostrava a engrenagem girando e o texto "GEMAPE" dentro do cartão. **Agora:** o logo GEMAPE 40 anos aparece acima do cartão, com a mesma animação do menu lateral (entrada com zoom, brilho percorrendo as letras e halo), a linha de brilho e o subtítulo "Gestão de Patrimônio", como no anexo. Vale para as três versões da tela (demonstração, login e conexão não configurada); quem pede menos movimento vê o logo parado. Só visual; nada no Supabase.
