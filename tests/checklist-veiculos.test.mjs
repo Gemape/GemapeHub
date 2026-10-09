@@ -228,10 +228,13 @@ test("restaurar padrão inicial é tudo ou nada: nada marcado ou grupo fora do p
   assert.deepEqual(lido.find((g) => g.id === meu.id).itens.map((i) => i.nome), ["Freio"]);
 });
 
-test("a lista Itens check list tem um único botão Restaurar padrão inicial, sem botão por linha (decisão 110)", () => {
+test("a lista Itens check list tem um único botão Restaurar configurações iniciais, sem Cadastrar padrão nem botão por linha (decisões 110 e 152)", () => {
   const lista = readFileSync(new URL("../src/components/parametros/VeiculosListasParametros.tsx", import.meta.url), "utf8");
   assert.match(lista, /acaoExtra=\{<RestaurarPadraoChecklist \/>\}/);
-  assert.match(lista, /Restaurar padrão inicial/);
+  assert.match(lista, /Restaurar configurações iniciais/);
+  assert.doesNotMatch(lista, /rotulo = "Restaurar padrão inicial"/);
+  const checklist = lista.slice(lista.indexOf("export function ChecklistVeiculoLista"));
+  assert.doesNotMatch(checklist, /onPadrao/); // sem Cadastrar padrão (dec 152)
   assert.match(lista, /restaurar=\{restaurarPadroesChecklistVeiculos\}/);
   assert.match(lista, /restaurar\(marcados\)/);
   assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
