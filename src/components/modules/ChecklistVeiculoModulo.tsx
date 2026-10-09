@@ -25,7 +25,7 @@ import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  PERIODICIDADES, periodicidadeDaAssociacao, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type Periodicidade, type SituacaoPeriodica,
+  PERIODICIDADES, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type Periodicidade, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
@@ -108,14 +108,14 @@ export function ChecklistVeiculoModulo() {
 
   // Mantém em vigor as previsões do painel mensal (decisão 80): veículos ativos com associação, desde o dia da
   // associação. Só roda com a lista de veículos carregada: sem ela, as previsões em vigor seriam apagadas.
+  // Uma previsão por periodicidade do veículo (decisão 124): Semanal e Mensal viram dois prazos no painel.
   const previstos: VeiculoPrevisto[] = (veiculosTodasLista as VeiculoChecklist[]).flatMap((v) => {
     const associacao = associacoes.find((a) => a.veiculoId === v.id);
-    const periodicidade = periodicidadeDaAssociacao(associacao);
-    return v.status === "Ativo" && associacao && periodicidade
-      ? [{
+    return v.status === "Ativo" && associacao
+      ? periodicidadesDaAssociacao(associacao).map((periodicidade) => ({
           veiculoId: v.id, veiculoRotulo: rotuloDoVeiculo(parametros, v), periodicidade,
           responsavelNome: associacao.responsavel?.nome ?? "Não definido", desde: Number.isNaN(Date.parse(associacao.atualizadoEm)) ? hoje : hojeBrasilia(new Date(associacao.atualizadoEm)),
-        }]
+        }))
       : [];
   });
   const chavePrevistos = JSON.stringify(previstos);
