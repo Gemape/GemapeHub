@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import {
   adicionarTamanhoGrupoFerramenta, cadastrarTamanhosPadraoFerramentas, removerTamanhoGrupoFerramenta, type ParametrosBase,
 } from "@/lib/parametros-base";
+import { grupoTemTamanhos } from "@/lib/tamanhos-ferramentas-padrao";
 import { executar } from "@/lib/use-parametros-base";
 
 function CartaoGrupo({ grupo, tamanhos }: { grupo: { id: string; nome: string }; tamanhos: string[] }) {
@@ -81,7 +82,7 @@ export function TamanhosPorFerramenta({ dados }: { dados: ParametrosBase }) {
       </header>
       {dados.gruposFerramenta.length === 0 && <p className="text-sm text-muted-foreground">Nenhum grupo de ferramenta cadastrado.</p>}
       <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {dados.gruposFerramenta.map((g) => (
+        {dados.gruposFerramenta.filter((g) => grupoTemTamanhos(g.nome)).map((g) => (
           <CartaoGrupo key={g.id} grupo={g} tamanhos={dados.tamanhosGrupoFerramenta[g.id] ?? []} />
         ))}
       </ul>

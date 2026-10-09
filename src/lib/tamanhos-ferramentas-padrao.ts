@@ -23,7 +23,10 @@ export const TAMANHOS_FERRAMENTAS_PADRAO: readonly { grupo: string; tamanhos: re
   { grupo: "Chave de fenda", tamanhos: [] },
   { grupo: "Torx", tamanhos: ["T10", "T15", "T20", "T27", "T30", "T40", "T45", "T50"] },
   { grupo: "Chave Allen", tamanhos: ["1,5", "2", "2,5", "3", "4", "5", "6", "8", "10"] },
-  { grupo: "Luva", tamanhos: ["Anticorte", "Antiimpacto", "Raspa", "Vaqueta"] },
   { grupo: "Canhão Torx", tamanhos: [] },
   { grupo: "Cachimbo", tamanhos: ["Alongador", "1/2", "13", "17", "19", "22", "24"] },
 ];
+
+// Grupos que não têm tamanho (decisão 134): não aparecem em Tamanhos por ferramenta e o campo Tamanho do cadastro não oferece opções para eles.
+export const GRUPOS_SEM_TAMANHO: readonly string[] = ["Diversos", "Luva"];
+export const grupoTemTamanhos = (nome: string): boolean => !GRUPOS_SEM_TAMANHO.some((g) => g.localeCompare(nome.trim(), "pt-BR", { sensitivity: "base" }) === 0);
