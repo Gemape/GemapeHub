@@ -88,6 +88,8 @@ const CHAVE = "gemape-demo-parametros-base";
 // gravação o marcador impede que ela volte se o responsável a excluir.
 const CHAVE_EMPILHADEIRA = "gemape-demo-subcategoria-empilhadeira";
 // Marca que os grupos "Avulso · ..." já foram ajustados aos 16 itens da decisão 131 (só roda uma vez por navegador).
+// Marca que os tamanhos da Chave de fenda (decisão 135) já foram incluídos neste navegador.
+const CHAVE_FENDA_135 = "gemape-demo-tamanhos-chave-de-fenda-135";
 const CHAVE_AVULSO_131 = "gemape-demo-checklist-avulso-itens-131";
 const ITENS_AVULSO_RETIRADOS_131 = [
   "Kit de primeiros socorros", "Nível do óleo da transmissão (se aplicável)", "Bateria (estado e fixação)", "Luz de freio", "Luz de ré", "Pisca-alerta",
@@ -245,6 +247,16 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
         base.itensChecklistVeiculo.push({ id: "grupo-avulso-outros-131", nome: outros.nome, itens: montarItensChecklist([], [...outros.itens]), tiposVeiculo: [TODOS_OS_TIPOS] });
       }
     }
+    // Decisão 135: quem já tem o grupo Chave de fenda recebe, uma vez, os tamanhos que faltam do padrão (sem apagar nem repetir).
+    if (storage.getItem(CHAVE_FENDA_135) === null) {
+      const fenda = base.gruposFerramenta.find((g) => mesmoNome(g.nome, "Chave de fenda"));
+      const padraoFenda = TAMANHOS_FERRAMENTAS_PADRAO.find((p) => mesmoNome(p.grupo, "Chave de fenda"));
+      if (fenda && padraoFenda) {
+        const lista = base.tamanhosGrupoFerramenta[fenda.id] ?? [];
+        for (const t of padraoFenda.tamanhos) if (!lista.some((x) => mesmoNome(x, t))) lista.push(t);
+        base.tamanhosGrupoFerramenta[fenda.id] = lista;
+      }
+    }
     if (storage.getItem(CHAVE_EMPILHADEIRA) === null &&
       !base.subcategorias.some((s) => s.categoriaId === "cat-veiculos" && /empilh/i.test(s.nome))) {
       base.subcategorias.push({ id: "sub-veiculos-empilhadeira", categoriaId: "cat-veiculos", nome: "Empilhadeira" });
@@ -275,6 +287,7 @@ function alterar<T>(storage: StorageLike | null, mudanca: (dados: ParametrosBase
   storage.setItem(CHAVE, JSON.stringify(dados));
   storage.setItem(CHAVE_EMPILHADEIRA, "1");
   storage.setItem(CHAVE_AVULSO_131, "1");
+  storage.setItem(CHAVE_FENDA_135, "1");
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_PARAMETROS));
   return resultado;
 }
