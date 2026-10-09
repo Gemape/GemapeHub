@@ -25,7 +25,7 @@ import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  PERIODICIDADES, periodicidadeDaAssociacao, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type SituacaoPeriodica,
+  PERIODICIDADES, periodicidadeDaAssociacao, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type Periodicidade, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
 import { sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
@@ -189,8 +189,9 @@ export function ChecklistVeiculoModulo() {
     setTela({ tipo: "novo", avulso: true });
   }
 
-  function abrirNovo(v?: VeiculoChecklist) {
+  function abrirNovo(v?: VeiculoChecklist, periodicidade?: string) {
     setModoAvulso("periodico");
+    setPeriodicidadeEscolhida(periodicidade ?? "");
     setVeiculoId(v && tipoCheckDe(v) ? v.id : "");
     setResponsavelId((v && associacaoDe(v)?.responsavel?.id) || v?.empregado_responsavel_id || "");
     setTela({ tipo: "novo" });
@@ -274,32 +275,36 @@ export function ChecklistVeiculoModulo() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Veículo</TableHead><TableHead>Tipo</TableHead>
+                <TableHead>Veículo</TableHead><TableHead>Tipo</TableHead><TableHead>Periodicidade</TableHead>
                 <TableHead>Situação</TableHead><TableHead className="text-right">Pendências</TableHead><TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {veiculos.length === 0 && <TableRow><TableCell colSpan={5} className="py-6 text-center text-muted-foreground">Nenhum veículo cadastrado.</TableCell></TableRow>}
-              {veiculos.map((v) => {
-                const per = periodicidadeDe(v);
-                const doVeiculo = naLista.filter((c) => c.veiculoId === v.id);
-                const sit = ehPeriodicidade(per) ? situacaoPeriodica(per, doVeiculo, hoje) : null;
-                const aberto = doVeiculo.find((c) => c.status === "Em andamento");
-                return (
-                  <TableRow key={v.id}>
-                    <TableCell>{rotuloDe(v)}</TableCell>
-                    <TableCell>{tipoDe(v)?.nome ?? "—"}</TableCell>
-                    <TableCell>{sit ? <Badge variant="outline" className={SITUACAO[sit].classe}>{SITUACAO[sit].rotulo}</Badge> : <span className="text-xs text-muted-foreground">Sem associação</span>}</TableCell>
-                    <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).length}</TableCell>
-                    <TableCell className="text-right">
-                      {aberto ? (
-                        <Button requiresWrite="operar" variant="ghost" size="sm" onClick={() => setTela({ tipo: "check", id: aberto.id })}>Continuar</Button>
-                      ) : (
-                        <Button requiresWrite="operar" variant="ghost" size="sm" disabled={!ehPeriodicidade(per) || v.status !== "Ativo" || !tipoCheckDe(v)} onClick={() => abrirNovo(v)}>Iniciar</Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
+              {veiculos.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum veículo cadastrado.</TableCell></TableRow>}
+              {veiculos.flatMap((v) => {
+                // Uma linha por periodicidade do veículo (decisão 123); sem associação, uma linha só.
+                const periodicidades: (Periodicidade | null)[] = periodicidadesDe(v).length > 0 ? periodicidadesDe(v) : [null];
+                return periodicidades.map((per) => {
+                  const doVeiculo = naLista.filter((c) => c.veiculoId === v.id && (per === null || c.periodicidade === per));
+                  const sit = per ? situacaoPeriodica(per, doVeiculo, hoje) : null;
+                  const aberto = doVeiculo.find((c) => c.status === "Em andamento");
+                  return (
+                    <TableRow key={`${v.id}-${per ?? "sem"}`}>
+                      <TableCell>{rotuloDe(v)}</TableCell>
+                      <TableCell>{tipoDe(v)?.nome ?? "—"}</TableCell>
+                      <TableCell>{per ?? "—"}</TableCell>
+                      <TableCell>{sit ? <Badge variant="outline" className={SITUACAO[sit].classe}>{SITUACAO[sit].rotulo}</Badge> : <span className="text-xs text-muted-foreground">Sem associação</span>}</TableCell>
+                      <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).length}</TableCell>
+                      <TableCell className="text-right">
+                        {aberto ? (
+                          <Button requiresWrite="operar" variant="ghost" size="sm" onClick={() => setTela({ tipo: "check", id: aberto.id })}>Continuar</Button>
+                        ) : (
+                          <Button requiresWrite="operar" variant="ghost" size="sm" disabled={!per || v.status !== "Ativo" || !tipoCheckDe(v)} onClick={() => abrirNovo(v, per ?? undefined)}>Iniciar</Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                });
               })}
             </TableBody>
           </Table>
