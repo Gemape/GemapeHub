@@ -18,7 +18,7 @@ import {
   type EntradaItem, type PlanoManutencao,
 } from "@/lib/plano-manutencao";
 import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
-import { executar, useParametrosBase } from "@/lib/use-parametros-base";
+import { executar, useParametrosBase, validarAntes } from "@/lib/use-parametros-base";
 
 type VeiculoLinha = Record<string, unknown> & { id: string };
 const PAGINA = 50;
@@ -98,7 +98,13 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (salvando.current) return;
-    setConfirmando(true); // alerta Sim ou Não antes de gravar (decisão 146)
+    // Valida antes de perguntar: formulário inválido mostra o erro, não o alerta (decisão 149).
+    const valido = validarAntes((storage) =>
+      editando
+        ? editarPlano(editando, { veiculoId, itens }, storage, undefined, acoes.map((a) => a.id))
+        : criarPlano(veiculoId, itens, storage, undefined, acoes.map((a) => a.id)),
+    );
+    if (valido) setConfirmando(true); // alerta Sim ou Não antes de gravar (decisão 146)
   }
 
   function gravar() {

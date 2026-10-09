@@ -30,3 +30,20 @@ export function executar(acao: () => unknown, sucesso?: string): boolean {
     return false;
   }
 }
+
+// Ensaia uma gravação numa cópia em memória do armazenamento, sem salvar nada de verdade.
+// Mostra o erro de validação, se houver, e devolve true quando o formulário está válido.
+export function validarAntes(ensaio: (storage: Pick<Storage, "getItem" | "setItem">) => unknown): boolean {
+  const copia = new Map<string, string>();
+  const memoria = {
+    getItem: (chave: string) => copia.get(chave) ?? window.localStorage.getItem(chave),
+    setItem: (chave: string, valor: string) => void copia.set(chave, valor),
+  };
+  try {
+    ensaio(memoria);
+    return true;
+  } catch (erro) {
+    toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar.");
+    return false;
+  }
+}

@@ -29,6 +29,7 @@ import {
   situacaoPadraoAcoesComFilhos,
   situacaoPadraoChecklistVeiculos,
   type SituacaoPadraoChecklist,
+  type StorageLike,
   editarGrupoChecklistVeiculo,
   removerGrupoChecklistVeiculo,
   subcategoriasDa,
@@ -41,7 +42,7 @@ import {
   removerTipoOcorrenciaVeiculo,
 } from "@/lib/parametros-base";
 import { separarPorTipoVeiculo } from "@/lib/checklist-por-tipo";
-import { executar, useParametrosBase } from "@/lib/use-parametros-base";
+import { executar, useParametrosBase, validarAntes } from "@/lib/use-parametros-base";
 
 // `extra` é a descrição (tipos de ocorrência) ou os subitens, um por linha (ações de manutenção).
 type Linha = { id: string; nome: string; extra?: string; tipos?: string[] };
@@ -63,6 +64,7 @@ function ListaVeiculos({
   secao = false,
   secoes,
   alertaPainel = false,
+  onValidar,
 }: {
   titulo: string;
   subtitulo: string;
@@ -83,6 +85,7 @@ function ListaVeiculos({
   secoes?: { chave: string; titulo: string; linhas: Linha[] }[];
   // Pergunta Sim ou Não antes de gravar (Ações de manutenção, decisão 145): a alteração muda o painel de manutenção.
   alertaPainel?: boolean;
+  onValidar?: (id: string | null, nome: string, extra: string, storage: StorageLike) => unknown;
 }) {
   const [aberto, setAberto] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
@@ -107,8 +110,11 @@ function ListaVeiculos({
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (salvando.current) return;
-    if (alertaPainel) setConfirmando(true);
-    else gravar();
+    if (alertaPainel) {
+      // Valida antes de perguntar: formulário inválido mostra o erro, não o alerta (decisão 149).
+      if (onValidar && !validarAntes((storage) => onValidar(editando?.id ?? null, capitalizarTexto(nome), descricao, storage))) return;
+      setConfirmando(true);
+    } else gravar();
   }
 
   function gravar() {
@@ -312,6 +318,9 @@ export function AcoesManutencaoVeiculoLista({ secao = false }: { secao?: boolean
       onExcluir={(l) => executar(() => removerAcaoManutencaoVeiculo(l.id), "Ação de manutenção excluída.")}
       acaoExtra={<RestaurarPadraoAcoes />}
       alertaPainel
+      onValidar={(id, nome, extra, storage) =>
+        id ? editarAcaoManutencaoVeiculo(id, nome, subitensDe(extra), storage) : adicionarAcaoManutencaoVeiculo(nome, subitensDe(extra), storage)
+      }
     />
   );
 }
