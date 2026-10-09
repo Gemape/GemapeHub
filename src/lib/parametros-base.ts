@@ -925,6 +925,35 @@ export function itensCriadosAcoesManutencao(storage = storagePadrao()): ItemCria
   return lista;
 }
 
+/**
+ * Exclui os itens criados pelo responsável que foram marcados (decisão 151). Pai marcado: some a ação criada por
+ * você ou, numa ação do padrão, os subitens extras dela. Filho marcado: some só esse subitem. Tudo de uma vez,
+ * e só vale para o que aparece em itensCriadosAcoesManutencao: o padrão inicial nunca é apagado por aqui.
+ */
+export function excluirItensCriadosAcoesManutencao(ids: string[], storage = storagePadrao()): { acoes: number; subitens: number } {
+  return alterar(storage, (d) => {
+    const criados = itensCriadosAcoesManutencao(storage);
+    const escolhidos = new Set(ids);
+    if (!criados.some((c) => escolhidos.has(c.id) || c.filhos.some((f) => escolhidos.has(f.id)))) throw new Error("Marque ao menos um item criado por você.");
+    let acoes = 0;
+    let subitens = 0;
+    for (const c of criados) {
+      const paiMarcado = escolhidos.has(c.id);
+      const sairam = new Set(c.filhos.filter((f) => paiMarcado || escolhidos.has(f.id)).map((f) => f.id));
+      if (sairam.size === 0) continue;
+      if (paiMarcado && !c.doPadrao) {
+        d.acoesManutencaoVeiculo = d.acoesManutencaoVeiculo.filter((a) => a.id !== c.id);
+        acoes += 1;
+      } else {
+        const acao = achar(d.acoesManutencaoVeiculo, c.id, "Ação de manutenção");
+        acao.subitens = acao.subitens.filter((i) => !sairam.has(i.id));
+      }
+      subitens += sairam.size;
+    }
+    return { acoes, subitens };
+  });
+}
+
 // ---------- Desativar e reativar ----------
 
 export const estaAtivo = (d: ParametrosBase, id: string) => !d.inativos.includes(id);
