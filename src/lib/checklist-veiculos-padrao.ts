@@ -285,12 +285,6 @@ export function tiposDoGrupoPadrao(nome: string): readonly ChaveTipoVeiculo[] | 
   return POR_PREFIXO.find(([prefixo]) => nome.startsWith(prefixo))?.[1] ?? "todos";
 }
 
-// O check list avulso só vale para veículos leves: carro de passeio, SUV/utilitário/picape e van (decisão 153).
-export const tipoPermiteAvulso = (nomeSubcategoria: string | null | undefined): boolean => {
-  const chave = chaveDoTipoVeiculo(nomeSubcategoria ?? "");
-  return chave === "passeio" || chave === "suv" || chave === "van";
-};
-
 // Chave do tipo a partir do nome de uma subcategoria de Veículos de Cadastros > Gerais. Caminhão, cavalo
 // mecânico e carreta são pesados; moto e outros tipos não têm lista padrão.
 export function chaveDoTipoVeiculo(nomeSubcategoria: string): ChaveTipoVeiculo | null {

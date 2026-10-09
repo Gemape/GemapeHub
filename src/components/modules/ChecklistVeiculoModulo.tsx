@@ -27,7 +27,6 @@ import {
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
   PERIODICIDADES, periodicidadeObrigatoria, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type Periodicidade, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
-import { tipoPermiteAvulso } from "@/lib/checklist-veiculos-padrao";
 import { sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
@@ -169,7 +168,7 @@ export function ChecklistVeiculoModulo() {
     ? []
     : avulsoNovo
       ? (!associacaoEscolhida
-        ? (tipoPermiteAvulso(tipoDe(veiculoEscolhido)?.nome) ? gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(veiculoEscolhido)?.id ?? null, true) : [])
+        ? gruposAplicaveis(parametros.itensChecklistVeiculo, tipoDe(veiculoEscolhido)?.id ?? null, true)
         : comoAssociacao(gruposAvulsosDaAssociacao(associacaoEscolhida)))
       : comoAssociacao(gruposDaPeriodicidade(associacaoEscolhida, periodicidadeDoDialogo(veiculoEscolhido) ?? ""));
   const itensDoVeiculo = gruposDoVeiculo.reduce((t, g) => t + g.itens.length, 0);
