@@ -56,7 +56,22 @@ test("excluir o grupo leva os tamanhos dele; dados antigos sem o campo abrem nor
   assert.equal(lerParametros(s).tamanhosGrupoFerramenta[lima], undefined);
   const antigo = memoria();
   antigo.setItem("gemape-demo-parametros-base", JSON.stringify({ categorias: [] }));
-  assert.deepEqual(lerParametros(antigo).tamanhosGrupoFerramenta, {});
+  const dadosAntigos = lerParametros(antigo);
+  // dados antigos abrem normalmente; só a Chave de fenda recebe os tamanhos da dec 135
+  assert.deepEqual(Object.keys(dadosAntigos.tamanhosGrupoFerramenta), [dadosAntigos.gruposFerramenta.find((g) => g.nome === "Chave de fenda").id]);
+});
+
+test("a Chave de fenda tem os 6 tamanhos da dec 135, incluídos uma vez e sem repetir", () => {
+  const fenda = TAMANHOS_FERRAMENTAS_PADRAO.find((g) => g.grupo === "Chave de fenda").tamanhos;
+  assert.deepEqual(fenda, ['1/8" x 3" (3x75 mm)', '3/16" x 4" (5x100 mm)', '1/4" x 4" (6,5x100 mm)', '1/4" x 6" (6,5x150 mm)', '5/16" x 6" (8x150 mm)', '3/8" x 8" (10x200 mm)']);
+  const s = memoria();
+  s.setItem("gemape-demo-parametros-base", JSON.stringify({ categorias: [] })); // navegador que já tinha cadastros salvos
+  const id = grupo(s, "Chave de fenda").id;
+  assert.deepEqual(lerParametros(s).tamanhosGrupoFerramenta[id], fenda);
+  removerTamanhoGrupoFerramenta(id, fenda[0], s);
+  assert.equal(lerParametros(s).tamanhosGrupoFerramenta[id].length, 5); // depois de salvar, o tamanho tirado não volta
+  assert.equal(cadastrarTamanhosPadraoFerramentas(s).tamanhos > 0, true);
+  assert.equal(lerParametros(s).tamanhosGrupoFerramenta[id].filter((t) => t === fenda[1]).length, 1); // sem repetir
 });
 
 test("a tela de Parâmetros Específicos de Ferramentas mostra os tamanhos por ferramenta", () => {
