@@ -22,6 +22,7 @@ import {
 } from "@/lib/checklist-associacao-veiculo";
 import { empregadoElegivelPortador } from "@/lib/portadores-caixa";
 import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
+import { ehGrupoAvulso } from "@/lib/checklist-veiculos-padrao";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 type VeiculoLinha = Record<string, unknown> & { id: string };
@@ -196,7 +197,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   }
 
   const habilitados = new Set(itens.map((i) => i.grupoId));
-  const disponiveis = grupos.filter((g) => !habilitados.has(g.id));
+  // Cada check list tem os seus grupos (decisão 130): o avulso usa os "Avulso · ..." e o periódico, os demais.
+  const disponiveis = grupos.filter((g) => !habilitados.has(g.id) && ehGrupoAvulso(g.nome) === (tipoAtual === "avulso"));
   // O responsável salvo pode ser de alguém que deixou de ser elegível; continua aparecendo para não sumir do campo.
   const salvoNaEdicao = editando ? associacoes.find((a) => a.veiculoId === editando)?.responsavel : null;
   const opcoesResponsavel = salvoNaEdicao && !elegiveis.some((e) => e.id === salvoNaEdicao.id)

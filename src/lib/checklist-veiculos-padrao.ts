@@ -214,7 +214,64 @@ export const CHECKLIST_VEICULOS_PADRAO: readonly { nome: string; itens: readonly
       "Registro de pendências abertas",
     ],
   },
+  {
+    nome: "Avulso · Mecânicos e funcionamento",
+    itens: [
+      "Nível do óleo do motor",
+      "Nível do fluido de freio",
+      "Nível da água do radiador",
+      "Nível do fluido da direção hidráulica",
+      "Nível do óleo da transmissão (se aplicável)",
+      "Vazamentos (óleo, água, etc.)",
+      "Bateria (estado e fixação)",
+    ],
+  },
+  {
+    nome: "Avulso · Pneus e rodas",
+    itens: [
+      "Calibragem dos pneus",
+      "Estado geral dos pneus (desgaste, bolhas, furos)",
+      "Estepe em boas condições",
+      "Chave de roda e macaco",
+    ],
+  },
+  {
+    nome: "Avulso · Iluminação e sinalização",
+    itens: [
+      "Faróis dianteiros (alto e baixo)",
+      "Lanternas traseiras",
+      "Luz de freio",
+      "Luz de ré",
+      "Pisca-alerta",
+      "Setas (dianteira e traseira)",
+      "Iluminação do painel",
+    ],
+  },
+  {
+    nome: "Avulso · Segurança",
+    itens: [
+      "Cinto de segurança (todos os assentos)",
+      "Extintor de incêndio (validade e pressão)",
+      "Triângulo de sinalização",
+      "Kit de primeiros socorros",
+      "Limpador e lavador do para-brisa",
+      "Palhetas em bom estado",
+    ],
+  },
+  {
+    nome: "Avulso · Conforto e limpeza",
+    itens: [
+      "Ar-condicionado e ventilação",
+      "Bancos e cintos limpos",
+      "Interior limpo e organizado",
+      "Vidros limpos",
+    ],
+  },
 ];
+
+// Grupos do check list avulso (decisão 130): os de nome "Avulso · ..." são os itens mais simples do avulso; os demais são do periódico.
+export const PREFIXO_GRUPO_AVULSO = "Avulso ·";
+export const ehGrupoAvulso = (nome: string): boolean => nome.trim().startsWith(PREFIXO_GRUPO_AVULSO);
 
 // Nomes dos grupos do padrão antigo (decisão 62: 26 grupos por tipo de veículo). A decisão 64 substitui
 // esse padrão: ao cadastrar o novo, os grupos com estes nomes são retirados.
