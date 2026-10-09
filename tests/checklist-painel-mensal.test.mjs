@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -62,9 +63,9 @@ test("painel do mês: realizado no prazo, não realizado no prazo e a vencer, co
   const s = memoria();
   sincronizarPrevisoes({ veiculos: [v("a", "Semanal")], hoje: "2026-10-05" }, s);
   const checklists = [
-    { id: "c1", codigo: "CHK-0001", veiculoId: "a", status: "Concluído", data: "2026-10-07", concluidoEm: "2026-10-07T15:00:00Z", responsavelNome: "Beto" },
+    { id: "c1", codigo: "CHK-0001", veiculoId: "a", periodicidade: "Semanal", status: "Concluído", data: "2026-10-07", concluidoEm: "2026-10-07T15:00:00Z", responsavelNome: "Beto" },
     // Em andamento não conta como realizado.
-    { id: "c2", codigo: "CHK-0002", veiculoId: "a", status: "Em andamento", data: "2026-10-13", concluidoEm: null, responsavelNome: "Beto" },
+    { id: "c2", codigo: "CHK-0002", veiculoId: "a", periodicidade: "Semanal", status: "Em andamento", data: "2026-10-13", concluidoEm: null, responsavelNome: "Beto" },
   ];
   const painel = painelDoMes("2026-10", lerPrevisoes(s), checklists, "2026-10-20");
   assert.deepEqual(painel.linhas.map((l) => [l.fim, l.situacao]), [
@@ -82,7 +83,7 @@ test("painel do mês: realizado no prazo, não realizado no prazo e a vencer, co
 test("a conclusão vale pelo dia de Brasília e check list fora do prazo não cobre o período", () => {
   const s = memoria();
   sincronizarPrevisoes({ veiculos: [v("a", "Diário")], hoje: "2026-10-30" }, s);
-  const chk = (concluidoEm) => [{ id: "c", codigo: "CHK-1", veiculoId: "a", status: "Concluído", data: "2026-10-30", concluidoEm, responsavelNome: "B" }];
+  const chk = (concluidoEm) => [{ id: "c", codigo: "CHK-1", veiculoId: "a", periodicidade: "Diário", status: "Concluído", data: "2026-10-30", concluidoEm, responsavelNome: "B" }];
   // 01:30Z de 31/10 ainda é 30/10 em Brasília.
   const a = painelDoMes("2026-10", lerPrevisoes(s), chk("2026-10-31T01:30:00Z"), "2026-10-31");
   assert.equal(a.linhas.find((l) => l.fim === "2026-10-30").situacao, "realizado");
@@ -147,8 +148,27 @@ test("os percentuais somam sempre 100%, mesmo com arredondamento", () => {
   const s = memoria();
   sincronizarPrevisoes({ veiculos: [v("a", "Diário", { desde: "2026-10-01" })], hoje: "2026-10-17" }, s);
   // 16 dias vencidos (01 a 16): 1 realizado e 15 não.
-  const chk = [{ id: "c", codigo: "CHK-1", veiculoId: "a", status: "Concluído", data: "2026-10-01", concluidoEm: "2026-10-01T15:00:00Z", responsavelNome: "B" }];
+  const chk = [{ id: "c", codigo: "CHK-1", veiculoId: "a", periodicidade: "Diário", status: "Concluído", data: "2026-10-01", concluidoEm: "2026-10-01T15:00:00Z", responsavelNome: "B" }];
   const r = painelDoMes("2026-10", lerPrevisoes(s), chk, "2026-10-17").resumo;
   assert.equal(r.realizados + r.naoRealizados, 16);
   assert.equal(Math.round((r.pctNoPrazo + r.pctNaoNoPrazo) * 10), 1000);
+});
+
+test("com duas periodicidades no veículo, cada previsão só é cumprida por check list da própria periodicidade (dec 124)", () => {
+  const s = memoria();
+  sincronizarPrevisoes({ veiculos: [v("a", "Semanal"), v("a", "Mensal")], hoje: "2026-10-05" }, s);
+  const semanal = { id: "c1", codigo: "CHK-0001", veiculoId: "a", periodicidade: "Semanal", status: "Concluído", data: "2026-10-07", concluidoEm: "2026-10-07T15:00:00Z", responsavelNome: "Beto" };
+  const painel = painelDoMes("2026-10", lerPrevisoes(s), [semanal], "2026-11-02");
+  const mensal = painel.linhas.filter((l) => l.periodicidade === "Mensal");
+  assert.equal(mensal.length, 1);
+  assert.equal(mensal[0].situacao, "nao_realizado"); // o semanal não cobre o mensal
+  assert.equal(painel.linhas.filter((l) => l.periodicidade === "Semanal" && l.situacao === "realizado").length, 1);
+  const mensalFeito = { ...semanal, id: "c2", codigo: "CHK-0002", periodicidade: "Mensal" };
+  const depois = painelDoMes("2026-10", lerPrevisoes(s), [semanal, mensalFeito], "2026-11-02");
+  assert.equal(depois.linhas.find((l) => l.periodicidade === "Mensal").situacao, "realizado");
+});
+
+test("o módulo prevê uma vez por periodicidade do veículo (dec 124)", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /periodicidadesDaAssociacao\(associacao\)\.map\(\(periodicidade\) => \(\{/);
 });

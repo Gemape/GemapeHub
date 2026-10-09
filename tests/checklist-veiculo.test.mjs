@@ -219,7 +219,7 @@ test("a tela fica em Veículos > Check list, com PDF, confirmação ao concluir 
   assert.doesNotMatch(cadastro, /periodicidade/i);
   assert.doesNotMatch(tela, /definirPeriodicidade/);
   assert.doesNotMatch(tela, /aria-label=\{`Periodicidade de/);
-  assert.match(tela, /periodicidadeDaAssociacao/);
+  assert.match(tela, /periodicidadesDaAssociacao/);
   assert.match(tela, /gruposAssociadosDoVeiculo/);
   assert.match(tela, /associacaoDe\(v\)\?\.responsavel\?\.id/);
   assert.doesNotMatch(tela, /grupos: gruposDoTipo,/);

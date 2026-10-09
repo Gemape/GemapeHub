@@ -118,11 +118,11 @@ export type ResumoPainel = {
   pctNaoNoPrazo: number | null;
 };
 
-type ChecklistDoPainel = Pick<ChecklistVeiculo, "id" | "codigo" | "veiculoId" | "status" | "data" | "concluidoEm" | "responsavelNome">;
+type ChecklistDoPainel = Pick<ChecklistVeiculo, "id" | "codigo" | "veiculoId" | "periodicidade" | "status" | "data" | "concluidoEm" | "responsavelNome">;
 
 const diaDaConclusao = (c: ChecklistDoPainel) => (c.concluidoEm ? hojeBrasilia(new Date(c.concluidoEm)) : c.data);
 
-// Realizado no prazo: há check list concluído do veículo dentro do período. Não realizado no prazo: o prazo passou
+// Realizado no prazo: há check list concluído do veículo, da mesma periodicidade (decisão 124), dentro do período. Não realizado no prazo: o prazo passou
 // sem isso. A vencer: o prazo ainda não passou. Os percentuais só contam o que já tem desfecho (realizado ou vencido),
 // por isso os dois somam 100%; sem nenhum desfecho ainda, ficam nulos.
 export function painelDoMes(
@@ -136,7 +136,7 @@ export function painelDoMes(
     .sort((a, b) => a.fim.localeCompare(b.fim) || a.veiculoRotulo.localeCompare(b.veiculoRotulo))
     .map((p) => {
       const feito = checklists
-        .filter((c) => c.veiculoId === p.veiculoId && c.status === "Concluído" && diaDaConclusao(c) >= p.inicio && diaDaConclusao(c) <= p.fim)
+        .filter((c) => c.veiculoId === p.veiculoId && c.periodicidade === p.periodicidade && c.status === "Concluído" && diaDaConclusao(c) >= p.inicio && diaDaConclusao(c) <= p.fim)
         .sort((a, b) => (a.concluidoEm ?? "").localeCompare(b.concluidoEm ?? ""))[0];
       const situacao: SituacaoPrevisao = feito ? "realizado" : p.fim < hoje ? "nao_realizado" : "a_vencer";
       return {
