@@ -166,9 +166,11 @@ test("restaurar padrão inicial das ações é tudo ou nada e só aceita ações
   assert.ok(lido.some((x) => x.id === meu.id));
 });
 
-test("a lista Ações de manutenção tem o botão Restaurar padrão inicial (decisão 111)", () => {
+test("a lista Ações de manutenção tem o botão Restaurar configurações iniciais (decisões 111 e 141)", () => {
   const lista = readFileSync(new URL("../src/components/parametros/VeiculosListasParametros.tsx", import.meta.url), "utf8");
   assert.match(lista, /acaoExtra=\{<RestaurarPadraoAcoes \/>\}/);
+  assert.match(lista, /rotulo="Restaurar configurações iniciais"/);
+  assert.match(lista, /\{rotulo\}\n\s*<\/Button>/);
   assert.match(lista, /restaurar=\{restaurarPadroesAcoesManutencaoVeiculo\}/);
   assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
 });
@@ -192,4 +194,14 @@ test("Ações de manutenção e Plano de manutenções ficam numa só página, M
   assert.match(lista, /\{!secao && <p className="text-eyebrow">/);
   const plano = readFileSync("src/components/parametros/PlanoManutencaoVeiculo.tsx", "utf8");
   assert.match(plano, /\{!secao && <p className="text-eyebrow">/);
+});
+
+test("Ações de manutenção não têm o botão Cadastrar padrão; as outras listas de Veículos mantêm (dec 140)", () => {
+  const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
+  const acoes = tela.slice(tela.indexOf("titulo=\"Ações de manutenção\""), tela.indexOf("export function TiposOcorrenciaVeiculoLista"));
+  assert.doesNotMatch(acoes, /onPadrao/);
+  assert.match(acoes, /RestaurarPadraoAcoes/);
+  assert.match(tela, /\{onPadrao && \(/); // o botão só aparece quando a lista pede
+  const tipos = tela.slice(tela.indexOf("export function TiposOcorrenciaVeiculoLista"), tela.indexOf("const ROTULO_SITUACAO"));
+  assert.match(tipos, /onPadrao=/);
 });

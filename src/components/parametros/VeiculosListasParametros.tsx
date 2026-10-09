@@ -66,7 +66,8 @@ function ListaVeiculos({
   campoExtra: CampoExtra;
   onSalvar: (id: string | null, nome: string, descricao: string, tipos: string[]) => boolean;
   onExcluir: (linha: Linha) => void;
-  onPadrao: () => void;
+  // Sem onPadrao, a lista não tem o botão Cadastrar padrão (Ações de manutenção, decisão 140).
+  onPadrao?: () => void;
   // Check list (decisão 63): tipos de veículo (subcategorias de Veículos) a que o grupo se aplica.
   opcoesTipos?: { id: string; nome: string }[];
   // Botão a mais ao lado de "Cadastrar" (Restaurar padrão inicial do check list, decisão 110).
@@ -118,9 +119,11 @@ function ListaVeiculos({
           <p className="mt-1 text-sm text-muted-foreground">{subtitulo}</p>
         </div>
         <div className="flex gap-2">
-          <Button requiresWrite variant="outline" onClick={onPadrao}>
-            Cadastrar padrão
-          </Button>
+          {onPadrao && (
+            <Button requiresWrite variant="outline" onClick={onPadrao}>
+              Cadastrar padrão
+            </Button>
+          )}
           {acaoExtra}
           <Button requiresWrite onClick={() => abrir(null, false)}>
             Cadastrar {singular}
@@ -142,7 +145,7 @@ function ListaVeiculos({
             {linhas.length === 0 && (
               <tr>
                 <td colSpan={(campoExtra ? 3 : 2) + (opcoesTipos ? 1 : 0)} className="px-3 py-4 text-muted-foreground">
-                  Nada cadastrado ainda. Use “Cadastrar padrão” ou “Cadastrar {singular}”.
+                  Nada cadastrado ainda. {onPadrao ? "Use “Cadastrar padrão” ou " : "Use "}“Cadastrar {singular}”.
                 </td>
               </tr>
             )}
@@ -286,7 +289,6 @@ export function AcoesManutencaoVeiculoLista({ secao = false }: { secao?: boolean
       }
       onExcluir={(l) => executar(() => removerAcaoManutencaoVeiculo(l.id), "Ação de manutenção excluída.")}
       acaoExtra={<RestaurarPadraoAcoes />}
-      onPadrao={() => executar(() => mensagemPadraoToast(cadastrarPadraoVeiculos()))}
     />
   );
 }
@@ -327,6 +329,7 @@ function RestaurarPadraoInicial({
   restaurar,
   perdas,
   feminino = false,
+  rotulo = "Restaurar padrão inicial",
 }: {
   singular: string;
   plural: string;
@@ -334,6 +337,8 @@ function RestaurarPadraoInicial({
   restaurar: (nomes: string[]) => { restaurados: number; criados: number; semTipo?: number };
   perdas?: string;
   feminino?: boolean;
+  // Nome do botão e da janela (Ações de manutenção usa "Restaurar configurações iniciais", decisão 141).
+  rotulo?: string;
 }) {
   useParametrosBase(); // atualiza a lista quando o cadastro muda
   const [aberto, setAberto] = useState(false);
@@ -377,12 +382,12 @@ function RestaurarPadraoInicial({
   return (
     <>
       <Button requiresWrite variant="outline" onClick={abrir}>
-        Restaurar padrão inicial
+        {rotulo}
       </Button>
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Restaurar padrão inicial</DialogTitle>
+            <DialogTitle>{rotulo}</DialogTitle>
             <DialogDescription>
               Estes são todos os itens do padrão inicial desta lista. Marque os que quer restaurar: voltam ao padrão, e o que foi excluído é cadastrado de novo.
             </DialogDescription>
@@ -445,6 +450,7 @@ function RestaurarPadraoAcoes() {
       feminino
       plural="ações"
       perdas="(nome e subitens) "
+      rotulo="Restaurar configurações iniciais"
       situacoes={situacaoPadraoAcoesManutencaoVeiculo}
       restaurar={restaurarPadroesAcoesManutencaoVeiculo}
     />

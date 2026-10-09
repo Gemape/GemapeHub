@@ -848,3 +848,11 @@ Ordem do responsável em 09/10 (17:48): em todos os botões Clonar do sistema, o
 ### Decisão 139: Ícones do menu Parâmetros > EPI alinhados
 
 Ordem do responsável em 09/10 (17:52), com o print do menu EPI: alinhar os ícones e, ao selecionar um item, o ícone fica colorido como em Empresas, Empregados e Fornecedores. **Antes:** Cadastrar EPI ficava 1 pixel à direita dos demais e Cadastrar Ficha de EPI recuado 16 pixels, então os ícones não formavam uma coluna. **Agora:** os quatro itens (Cadastrar EPI, Cadastrar Ficha de EPI, Parâmetros Específicos e Tamanho e Medidas de Produto) têm o ícone na mesma coluna, e a Ficha vem logo abaixo de Cadastrar EPI, sem recuo (muda só a decisão 37 no desenho do menu). O ícone colorido do item selecionado já funcionava nos quatro itens (conferido no ambiente local) e continua igual. Só visual; nada no Supabase.
+
+### Decisão 140: Sem o botão Cadastrar padrão em Ações de manutenção
+
+Ordem do responsável em 09/10 (18:11): em Parâmetros > Veículos > Manutenção, eliminar o botão **Cadastrar padrão**. **Antes:** a lista de Ações de manutenção tinha Cadastrar padrão, Restaurar padrão e Cadastrar ação de manutenção. **Agora:** o botão Cadastrar padrão sai dessa tela; ficam Restaurar padrão e Cadastrar ação de manutenção. **Escolha do Claude:** a ordem falou só da tela Manutenção, então Tipos de ocorrência e Itens check list continuam com o Cadastrar padrão deles. Nada é apagado: as ações já cadastradas e o padrão (função `cadastrarPadraoVeiculos`, que ainda alimenta Tipos de ocorrência) seguem iguais. Só visual; nada no Supabase.
+
+### Decisão 141: Restaurar configurações iniciais em Ações de manutenção
+
+Ordem do responsável em 09/10 (18:13): em Parâmetros > Veículos > Manutenção, o botão **Restaurar padrão inicial** passa a se chamar **Restaurar configurações iniciais**. O nome vale para o botão e para o título da janela que ele abre; o funcionamento não muda (marcar o que restaurar e confirmar, tudo de uma vez). **Escolha do Claude:** só a tela Manutenção muda; em Itens check list o botão continua com o nome antigo. Só visual; nada no Supabase.
