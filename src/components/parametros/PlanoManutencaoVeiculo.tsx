@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { AlertaPainelManutencao } from "@/components/parametros/AlertaPainelManutencao";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -69,6 +70,7 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
   const [itens, setItens] = useState<EntradaItem[]>([]);
   const [travado, setTravado] = useState(false);
   const salvando = useRef(false);
+  const [confirmando, setConfirmando] = useState(false);
 
   const rotuloVeiculo = (v: VeiculoLinha) =>
     descricaoVeiculo({
@@ -95,6 +97,11 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
+    if (salvando.current) return;
+    setConfirmando(true); // alerta Sim ou Não antes de gravar (decisão 146)
+  }
+
+  function gravar() {
     if (salvando.current) return;
     salvando.current = true;
     setTravado(true);
@@ -253,6 +260,14 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
           </form>
         </DialogContent>
       </Dialog>
+      <AlertaPainelManutencao
+        aberto={confirmando}
+        onSim={() => {
+          setConfirmando(false);
+          gravar();
+        }}
+        onNao={() => setConfirmando(false)}
+      />
     </div>
   );
 }

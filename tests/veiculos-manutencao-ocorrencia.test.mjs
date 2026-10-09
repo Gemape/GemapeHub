@@ -282,7 +282,7 @@ test("a lista de restaurar mostra o que o responsável criou: ações novas e su
 
 test("salvar em Ações de manutenção pergunta Sim ou Não antes de gravar (dec 145)", () => {
   const alerta = readFileSync("src/components/parametros/AlertaPainelManutencao.tsx", "utf8");
-  assert.match(alerta, /As alterações feitas modificarão o painel com os itens de manutenção\. Tem certeza que deseja fazer isso\?/);
+  assert.match(alerta, /As alterações feitas modificarão o painel de manutenções na rotina de parâmetros\. Definitivamente\. Tem certeza que deseja fazer isso\?/);
   assert.match(alerta, /<AlertDialogCancel>Não<\/AlertDialogCancel>/);
   assert.match(alerta, /<AlertDialogAction onClick=\{onSim\}>Sim<\/AlertDialogAction>/);
   const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
@@ -290,4 +290,12 @@ test("salvar em Ações de manutenção pergunta Sim ou Não antes de gravar (de
   const restaurar = tela.slice(tela.indexOf("function RestaurarPadraoAcoes"));
   assert.match(restaurar, /<AlertaPainelManutencao aberto=\{aviso !== null\}/); // restaurar configurações iniciais
   assert.doesNotMatch(restaurar.slice(restaurar.indexOf("function salvar"), restaurar.indexOf("function gravar")), /confirm\(/);
+});
+
+test("o Plano de manutenções também pergunta Sim ou Não antes de gravar, com o texto novo (dec 146)", () => {
+  const plano = readFileSync("src/components/parametros/PlanoManutencaoVeiculo.tsx", "utf8");
+  assert.match(plano, /<AlertaPainelManutencao/);
+  const salvar = plano.slice(plano.indexOf("function salvar"), plano.indexOf("function gravar"));
+  assert.match(salvar, /setConfirmando\(true\)/);
+  assert.doesNotMatch(salvar, /executar\(/);
 });
