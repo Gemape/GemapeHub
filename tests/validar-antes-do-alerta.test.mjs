@@ -19,3 +19,13 @@ test("dec 149: o ensaio usa cópia em memória e não grava no armazenamento rea
   const fonte = ler("src/lib/use-parametros-base.ts");
   assert.match(fonte, /setItem: \(chave: string, valor: string\) => void copia\.set/);
 });
+
+test("excluir criados + restaurar é ensaiado junto antes de gravar (atômico)", () => {
+  const fonte = ler("src/components/parametros/VeiculosListasParametros.tsx");
+  assert.match(fonte, /totalCriados > 0 && totalPais > 0 && !validarAntes\(/);
+  assert.ok(fonte.indexOf("totalCriados > 0 && totalPais > 0 && !validarAntes(") < fonte.indexOf("const ok = executar(() => {\n      if (totalCriados > 0)"));
+});
+
+test("a mensagem de veículo já associado não manda mais usar Editar", () => {
+  assert.doesNotMatch(ler("src/lib/checklist-associacao-veiculo.ts"), /associados\. Use Editar/);
+});

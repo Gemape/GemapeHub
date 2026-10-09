@@ -117,7 +117,7 @@ export function criarAssociacao(
   const v = validar(veiculoId, responsavel, itens, gruposValidos);
   const associacao: AssociacaoChecklist = { veiculoId, ...v, atualizadoEm: agora.toISOString() };
   alterar(storage, (lista) => {
-    if (lista.some((a) => a.veiculoId === veiculoId)) throw new Error("Este veículo já tem itens de check list associados. Use Editar.");
+    if (lista.some((a) => a.veiculoId === veiculoId)) throw new Error("Este veículo já tem itens de check list associados.");
     return [...lista, associacao];
   });
   return associacao;
@@ -137,7 +137,7 @@ export function editarAssociacao(
   alterar(storage, (lista) => {
     if (!lista.some((a) => a.veiculoId === veiculoIdAtual)) throw new Error("Associação não encontrada.");
     if (novo.veiculoId !== veiculoIdAtual && lista.some((a) => a.veiculoId === novo.veiculoId)) {
-      throw new Error("Este veículo já tem itens de check list associados. Use Editar.");
+      throw new Error("Este veículo já tem itens de check list associados.");
     }
     return lista.map((a) => (a.veiculoId === veiculoIdAtual ? associacao : a));
   });
