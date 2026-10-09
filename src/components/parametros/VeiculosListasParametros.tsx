@@ -1,4 +1,5 @@
 import { Fragment, useRef, useState } from "react";
+import { useAccess } from "@/lib/access-context";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ import {
   cadastrarPadraoChecklistVeiculos,
   itensCriadosAcoesManutencao,
   restaurarAcoesManutencaoEscolhidas,
+  excluirItensCriadosAcoesManutencao,
   restaurarPadroesChecklistVeiculos,
   situacaoPadraoAcoesComFilhos,
   situacaoPadraoChecklistVeiculos,
@@ -476,11 +478,13 @@ function RestaurarPadraoAcoes() {
   const [aviso, setAviso] = useState<string | null>(null); // texto do que será feito, enquanto o alerta Sim/Não está aberto
   const padroes = aberto ? situacaoPadraoAcoesComFilhos() : [];
   const itensCriados = aberto ? itensCriadosAcoesManutencao() : [];
-  // Só para conferir (decisão 143): marcar um item criado por você não altera nada ao salvar.
+  // Itens criados por você marcados para exclusão (decisão 151); só o Administrador exclui. Editar continua na lista.
+  const { isAdmin } = useAccess();
   const [conferidos, setConferidos] = useState<string[]>([]);
   const alternarConferido = (chave: string, marcar: boolean) => setConferidos((a) => (marcar ? [...a.filter((c) => c !== chave), chave] : a.filter((c) => c !== chave)));
   const totalFilhos = Object.values(marcados).reduce((n, f) => n + f.length, 0);
   const totalPais = Object.keys(marcados).length;
+  const totalCriados = conferidos.length;
 
   function abrir() {
     setMarcados({});
@@ -500,10 +504,11 @@ function RestaurarPadraoAcoes() {
     });
 
   function salvar() {
-    if (salvando.current || totalPais === 0) return;
+    if (salvando.current || (totalPais === 0 && totalCriados === 0)) return;
     const alterados = padroes.filter((p) => p.nome in marcados && p.situacao === "alterado").length;
     const novos = padroes.filter((p) => p.nome in marcados && p.situacao === "ausente").length;
-    const texto =
+    const exclusao = totalCriados > 0 ? `Excluir ${totalCriados} ${totalCriados === 1 ? "item criado por você" : "itens criados por você"}? Não dá para desfazer.` : "";
+    const texto = totalPais === 0 ? exclusao : (exclusao ? `${exclusao} ` : "") +
       `Restaurar ${totalPais} ${totalPais === 1 ? "ação" : "ações"} e ${totalFilhos} ${totalFilhos === 1 ? "subitem" : "subitens"} ao padrão inicial?` +
       (alterados > 0 ? ` O nome de ${alterados} ${alterados === 1 ? "ação volta" : "ações voltam"} ao inicial e os subitens marcados são restaurados; os não marcados ficam como estão.` : "") +
       (novos > 0 ? ` ${novos} ${novos === 1 ? "excluída será cadastrada" : "excluídas serão cadastradas"} de novo.` : "");
@@ -516,6 +521,11 @@ function RestaurarPadraoAcoes() {
     salvando.current = true;
     setTravado(true);
     const ok = executar(() => {
+      if (totalCriados > 0) {
+        const e = excluirItensCriadosAcoesManutencao(conferidos);
+        toast.success(`Excluídos: ${e.acoes} ${e.acoes === 1 ? "ação" : "ações"} e ${e.subitens} ${e.subitens === 1 ? "subitem" : "subitens"} criados por você.`);
+        if (totalPais === 0) return;
+      }
       const r = restaurarAcoesManutencaoEscolhidas(Object.entries(marcados).map(([nome, filhos]) => ({ nome, filhos })));
       const partes = [r.restaurados > 0 ? `${r.restaurados} ${r.restaurados === 1 ? "ação restaurada" : "ações restauradas"}` : "", r.criados > 0 ? `${r.criados} ${r.criados === 1 ? "cadastrada" : "cadastradas"} de novo` : ""].filter(Boolean);
       toast.success(`Configurações iniciais: ${partes.join(" e ")}, com ${r.filhos} ${r.filhos === 1 ? "subitem" : "subitens"}.`);
@@ -587,12 +597,12 @@ function RestaurarPadraoAcoes() {
           {itensCriados.length > 0 && (
             <section className="space-y-2" data-testid="restaurar-criados">
               <h3 className="text-sm font-semibold">Criados por você</h3>
-              <p className="text-xs text-muted-foreground">Ações e subitens que não vieram do padrão inicial. Aparecem para você revisar o padrão; marcar aqui é só conferência e não altera nada ao salvar.</p>
+              <p className="text-xs text-muted-foreground">{isAdmin ? "Ações e subitens que não vieram do padrão inicial. Marque os que quer excluir e clique em Salvar. Para editar, use Editar na lista de ações." : "Ações e subitens que não vieram do padrão inicial. Só o Administrador pode excluir; para editar, use Editar na lista de ações."}</p>
               <ul className="grid gap-3 md:grid-cols-2">
                 {itensCriados.map((item) => (
                   <li key={item.id} className="space-y-2 rounded-md border border-dashed p-3">
                     <label htmlFor={`criado-pai-${item.id}`} className="flex cursor-pointer items-start gap-2">
-                      <Checkbox id={`criado-pai-${item.id}`} className="mt-0.5" checked={conferidos.includes(item.id)} onCheckedChange={(v) => alternarConferido(item.id, v === true)} />
+                      {isAdmin && <Checkbox id={`criado-pai-${item.id}`} className="mt-0.5" checked={conferidos.includes(item.id)} onCheckedChange={(v) => alternarConferido(item.id, v === true)} />}
                       <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
                         <span className="text-sm font-semibold">{item.nome}</span>
                         <span className="text-xs text-muted-foreground">{item.doPadrao ? "Subitens criados em ação do padrão" : "Ação criada por você"}</span>
@@ -602,7 +612,7 @@ function RestaurarPadraoAcoes() {
                       {item.filhos.map((f) => (
                         <li key={f.id}>
                           <label htmlFor={`criado-filho-${f.id}`} className="flex cursor-pointer items-start gap-2 text-xs">
-                            <Checkbox id={`criado-filho-${f.id}`} className="mt-0.5 size-3.5" checked={conferidos.includes(f.id)} onCheckedChange={(v) => alternarConferido(f.id, v === true)} />
+                            {isAdmin && <Checkbox id={`criado-filho-${f.id}`} className="mt-0.5 size-3.5" checked={conferidos.includes(f.id)} onCheckedChange={(v) => alternarConferido(f.id, v === true)} />}
                             <span>{f.nome}</span>
                           </label>
                         </li>
@@ -617,7 +627,7 @@ function RestaurarPadraoAcoes() {
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
               Cancelar
             </Button>
-            <Button type="button" onClick={salvar} disabled={totalPais === 0 || travado}>
+            <Button type="button" onClick={salvar} disabled={(totalPais === 0 && totalCriados === 0) || travado}>
               Salvar
             </Button>
           </DialogFooter>
