@@ -9,9 +9,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export const TEXTO_ALERTA_PAINEL = "As alterações feitas modificarão o painel com os itens de manutenção. Tem certeza que deseja fazer isso?";
+export const TEXTO_ALERTA_PAINEL = "As alterações feitas modificarão o painel de manutenções na rotina de parâmetros. Definitivamente. Tem certeza que deseja fazer isso?";
 
-/** Alerta de salvamento das Ações de manutenção (decisão 145): Sim grava, Não volta para a janela sem gravar. */
+/** Alerta de salvamento das Ações de manutenção (decisões 145 e 146): Sim grava, Não volta para a janela sem gravar. */
 export function AlertaPainelManutencao({
   aberto,
   detalhe,
