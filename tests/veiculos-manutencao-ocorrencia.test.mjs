@@ -12,6 +12,8 @@ import {
   cadastrarPadraoVeiculos,
   situacaoPadraoAcoesManutencaoVeiculo,
   restaurarPadroesAcoesManutencaoVeiculo,
+  situacaoPadraoAcoesComFilhos,
+  restaurarAcoesManutencaoEscolhidas,
 } from "../src/lib/parametros-base.ts";
 import { ACOES_MANUTENCAO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "../src/lib/veiculos-padrao.ts";
 
@@ -169,9 +171,8 @@ test("restaurar padrão inicial das ações é tudo ou nada e só aceita ações
 test("a lista Ações de manutenção tem o botão Restaurar configurações iniciais (decisões 111 e 141)", () => {
   const lista = readFileSync(new URL("../src/components/parametros/VeiculosListasParametros.tsx", import.meta.url), "utf8");
   assert.match(lista, /acaoExtra=\{<RestaurarPadraoAcoes \/>\}/);
-  assert.match(lista, /rotulo="Restaurar configurações iniciais"/);
-  assert.match(lista, /\{rotulo\}\n\s*<\/Button>/);
-  assert.match(lista, /restaurar=\{restaurarPadroesAcoesManutencaoVeiculo\}/);
+  assert.match(lista, /Restaurar configurações iniciais\n\s*<\/Button>/);
+  assert.match(lista, /restaurarAcoesManutencaoEscolhidas\(/);
   assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
 });
 
@@ -204,4 +205,58 @@ test("Ações de manutenção não têm o botão Cadastrar padrão; as outras li
   assert.match(tela, /\{onPadrao && \(/); // o botão só aparece quando a lista pede
   const tipos = tela.slice(tela.indexOf("export function TiposOcorrenciaVeiculoLista"), tela.indexOf("const ROTULO_SITUACAO"));
   assert.match(tipos, /onPadrao=/);
+});
+
+test("restaurar configurações iniciais escolhendo pais e filhos: só os filhos marcados voltam, o resto fica (dec 142)", () => {
+  const s = storage();
+  cadastrarPadraoVeiculos(s);
+  const sit0 = situacaoPadraoAcoesComFilhos(s);
+  assert.equal(sit0.length, 7);
+  assert.ok(sit0.every((p) => p.situacao === "igual" && p.filhos.every((f) => f.existe)));
+  const [a, b, c] = lerParametros(s).acoesManutencaoVeiculo;
+  // A tem só 1 filho do padrão e um do responsável; B foi excluída; C ganhou um filho do responsável.
+  editarAcaoManutencaoVeiculo(a.id, a.nome, [a.subitens[0].nome, "Filho meu"], s);
+  removerAcaoManutencaoVeiculo(b.id, s);
+  editarAcaoManutencaoVeiculo(c.id, c.nome, [...c.subitens.map((i) => i.nome), "Extra do responsável"], s);
+  const sit = situacaoPadraoAcoesComFilhos(s);
+  assert.equal(sit[0].situacao, "alterado");
+  assert.deepEqual(sit[0].filhos.map((f) => f.existe), [true, false, false, false, false]);
+  assert.equal(sit[1].situacao, "ausente");
+  assert.ok(sit[1].filhos.every((f) => !f.existe));
+  const padraoA = ACOES_MANUTENCAO_PADRAO[0].subitens;
+  const padraoB = ACOES_MANUTENCAO_PADRAO[1].subitens;
+  const r = restaurarAcoesManutencaoEscolhidas([
+    { nome: sit[0].nome, filhos: [padraoA[2]] }, // só o 3º filho de A
+    { nome: sit[1].nome, filhos: [padraoB[0], padraoB[3]] }, // B de novo, só com 2 filhos
+  ], s);
+  assert.deepEqual(r, { restaurados: 1, criados: 1, filhos: 3 });
+  const lido = lerParametros(s).acoesManutencaoVeiculo;
+  const depoisA = lido.find((x) => x.id === a.id);
+  assert.equal(depoisA.nome, sit[0].nome); // pai volta ao nome inicial
+  assert.deepEqual(depoisA.subitens.map((i) => i.nome.toLowerCase()), [padraoA[0], padraoA[2], "Filho meu"].map((i) => i.toLowerCase())); // 1º (já existia), 3º (marcado) e o do responsável; 2º, 4º e 5º não foram marcados
+  assert.equal(depoisA.subitens[0].id, a.subitens[0].id);
+  const novoB = lido.find((x) => x.nome === sit[1].nome);
+  assert.equal(novoB.subitens.length, 2);
+  assert.ok(lido.find((x) => x.id === c.id).subitens.some((i) => i.nome === "Extra do responsável")); // pai não marcado não muda
+});
+
+test("restaurar com pais e filhos é tudo ou nada e só aceita itens do padrão (dec 142)", () => {
+  const s = storage();
+  cadastrarPadraoVeiculos(s);
+  const antes = JSON.stringify(lerParametros(s).acoesManutencaoVeiculo);
+  const pai = ACOES_MANUTENCAO_PADRAO[0].nome;
+  assert.throws(() => restaurarAcoesManutencaoEscolhidas([], s), /ao menos uma/i);
+  assert.throws(() => restaurarAcoesManutencaoEscolhidas([{ nome: "Minha ação", filhos: [] }], s), /não faz parte do padrão/i);
+  assert.throws(() => restaurarAcoesManutencaoEscolhidas([{ nome: pai, filhos: [ACOES_MANUTENCAO_PADRAO[0].subitens[0]] }, { nome: pai, filhos: ["Inventado"] }], s), /não faz parte do padrão/i);
+  assert.equal(JSON.stringify(lerParametros(s).acoesManutencaoVeiculo), antes);
+});
+
+test("a janela de restaurar das ações tem checkbox por pai e por filho, marcar filho marca o pai (dec 142)", () => {
+  const lista = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
+  const trecho = lista.slice(lista.indexOf("function RestaurarPadraoAcoes"), lista.indexOf("export function ChecklistVeiculoLista"));
+  assert.match(trecho, /restaurar-pai-\$\{n\}/);
+  assert.match(trecho, /restaurar-filho-\$\{n\}-\$\{m\}/);
+  assert.match(trecho, /situacaoPadraoAcoesComFilhos\(\)/);
+  assert.match(trecho, /Marcar um filho marca também o pai/);
+  assert.match(trecho, /disabled=\{totalPais === 0 \|\| travado\}/);
 });
