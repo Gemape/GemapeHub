@@ -22,6 +22,7 @@ import {
 } from "@/lib/checklist-associacao-veiculo";
 import { empregadoElegivelPortador } from "@/lib/portadores-caixa";
 import { gruposAplicaveis } from "@/lib/checklist-veiculo";
+import { tipoPermiteAvulso } from "@/lib/checklist-veiculos-padrao";
 import { nomeSubcategoria, resolverSubcategoria } from "@/lib/subcategoria-referencia";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -115,8 +116,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   );
   const responsavel = empregados.find((e) => e.id === responsavelId) ?? null;
   // Itens que se aplicam ao tipo do veículo e à periodicidade escolhida (Avulso traz só os grupos avulsos).
-  const subcategoriaIdEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never)?.id ?? null : null;
-  const aplicaveis = veiculoEscolhido && periodicidade ? gruposAplicaveis(grupos, subcategoriaIdEscolhida, periodicidade === AVULSO) : [];
+  const subcategoriaEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never) : null;
+  const subcategoriaIdEscolhida = subcategoriaEscolhida?.id ?? null;
+  // Avulso só vale para veículos leves (decisão 153); sem veículo escolhido a opção fica liberada até a escolha.
+  const avulsoLiberado = !veiculoEscolhido || tipoPermiteAvulso(subcategoriaEscolhida?.nome);
+  const aplicaveis = veiculoEscolhido && periodicidade && (avulsoLiberado || periodicidade !== AVULSO) ? gruposAplicaveis(grupos, subcategoriaIdEscolhida, periodicidade === AVULSO) : [];
   const marcados = escolhidos === null ? aplicaveis.map((g) => g.id) : escolhidos.filter((id) => aplicaveis.some((g) => g.id === id));
   const alternarItem = (id: string, marcar: boolean) =>
     setEscolhidos(marcar ? [...marcados.filter((m) => m !== id), id] : marcados.filter((m) => m !== id));
@@ -161,6 +165,12 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       salvando.current = false;
       setTravado(false);
       toast.error("Escolha a periodicidade do check list ou Avulso.");
+      return;
+    }
+    if (periodicidade === AVULSO && !avulsoLiberado) {
+      salvando.current = false;
+      setTravado(false);
+      toast.error("O check list avulso só vale para veículos leves.");
       return;
     }
     // Os itens são os grupos escolhidos entre os que valem para o tipo do veículo: periódico (obrigatórios) ou avulso (grupos Avulso, não obrigatórios); a periodicidade é uma só para todos.
@@ -270,7 +280,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-veiculo">Veículo</Label>
-                <Select value={veiculoId} onValueChange={(v) => { setVeiculoId(v); setEscolhidos(null); }}>
+                <Select value={veiculoId} onValueChange={(v) => { setVeiculoId(v); setEscolhidos(null); setPeriodicidade((p) => (p === AVULSO ? "" : p)); }}>
                   <SelectTrigger id="assoc-veiculo"><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                   <SelectContent>
                     {veiculosLivres.map((v) => (
@@ -305,11 +315,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                   <SelectTrigger id="assoc-periodicidade"><SelectValue placeholder="Selecione a periodicidade" /></SelectTrigger>
                   <SelectContent>
                     {PERIODICIDADES_CAMPO.map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                      <SelectItem key={p} value={p} disabled={p === AVULSO && !avulsoLiberado}>{p === AVULSO && !avulsoLiberado ? "Avulso (só veículos leves)" : p}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Diária, semanal, quinzenal ou mensal: check list periódico, obrigatório (entra nos KPI). Avulso: não obrigatório (não entra nos KPI).</p>
+                <p className="text-xs text-muted-foreground">Diária, semanal, quinzenal ou mensal: check list periódico, obrigatório (entra nos KPI). Avulso: não obrigatório (não entra nos KPI) e só para veículos leves.</p>
               </div>
             </div>
 
