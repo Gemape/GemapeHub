@@ -211,3 +211,11 @@ test("o check list avulso só vale para veículos leves (dec 153)", async () => 
   const modulo = readFileSync("src/components/modules/ChecklistVeiculoModulo.tsx", "utf8");
   assert.match(modulo, /tipoPermiteAvulso\(tipoDe\(veiculoEscolhido\)\?\.nome\)/);
 });
+
+test("a lista de itens associados não tem Clonar, Editar e Excluir em cada linha (dec 154)", () => {
+  const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
+  assert.doesNotMatch(tela, /AcoesLinha/);
+  assert.doesNotMatch(tela, /onClonar|onEditar|onExcluir/);
+  assert.doesNotMatch(tela, />Ações</);
+  assert.match(tela, /Associar itens<\/Button>/); // o botão de cima continua
+});
