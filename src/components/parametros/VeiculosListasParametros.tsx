@@ -20,6 +20,7 @@ import {
   adicionarAcaoManutencaoVeiculo,
   adicionarGrupoChecklistVeiculo,
   cadastrarPadraoChecklistVeiculos,
+  itensCriadosAcoesManutencao,
   restaurarAcoesManutencaoEscolhidas,
   restaurarPadroesChecklistVeiculos,
   situacaoPadraoAcoesComFilhos,
@@ -453,11 +454,16 @@ function RestaurarPadraoAcoes() {
   const salvando = useRef(false);
   const [travado, setTravado] = useState(false);
   const padroes = aberto ? situacaoPadraoAcoesComFilhos() : [];
+  const itensCriados = aberto ? itensCriadosAcoesManutencao() : [];
+  // Só para conferir (decisão 143): marcar um item criado por você não altera nada ao salvar.
+  const [conferidos, setConferidos] = useState<string[]>([]);
+  const alternarConferido = (chave: string, marcar: boolean) => setConferidos((a) => (marcar ? [...a.filter((c) => c !== chave), chave] : a.filter((c) => c !== chave)));
   const totalFilhos = Object.values(marcados).reduce((n, f) => n + f.length, 0);
   const totalPais = Object.keys(marcados).length;
 
   function abrir() {
     setMarcados({});
+    setConferidos([]);
     setAberto(true);
   }
   const marcarPai = (nome: string, marcar: boolean) =>
@@ -552,6 +558,35 @@ function RestaurarPadraoAcoes() {
               </li>
             ))}
           </ul>
+          {itensCriados.length > 0 && (
+            <section className="space-y-2" data-testid="restaurar-criados">
+              <h3 className="text-sm font-semibold">Criados por você</h3>
+              <p className="text-xs text-muted-foreground">Ações e subitens que não vieram do padrão inicial. Aparecem para você revisar o padrão; marcar aqui é só conferência e não altera nada ao salvar.</p>
+              <ul className="grid gap-3 md:grid-cols-2">
+                {itensCriados.map((item) => (
+                  <li key={item.id} className="space-y-2 rounded-md border border-dashed p-3">
+                    <label htmlFor={`criado-pai-${item.id}`} className="flex cursor-pointer items-start gap-2">
+                      <Checkbox id={`criado-pai-${item.id}`} className="mt-0.5" checked={conferidos.includes(item.id)} onCheckedChange={(v) => alternarConferido(item.id, v === true)} />
+                      <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-semibold">{item.nome}</span>
+                        <span className="text-xs text-muted-foreground">{item.doPadrao ? "Subitens criados em ação do padrão" : "Ação criada por você"}</span>
+                      </span>
+                    </label>
+                    <ul className="space-y-1 pl-6">
+                      {item.filhos.map((f) => (
+                        <li key={f.id}>
+                          <label htmlFor={`criado-filho-${f.id}`} className="flex cursor-pointer items-start gap-2 text-xs">
+                            <Checkbox id={`criado-filho-${f.id}`} className="mt-0.5 size-3.5" checked={conferidos.includes(f.id)} onCheckedChange={(v) => alternarConferido(f.id, v === true)} />
+                            <span>{f.nome}</span>
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
               Cancelar
