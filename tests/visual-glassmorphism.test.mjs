@@ -25,14 +25,14 @@ test("janelas, menus e listas suspensas usam o vidro firme", () => {
   }
 });
 
-test("o menu traz a logo GEMAPE 40 anos animada; a engrenagem pequena fica só nas telas de acesso e respeita quem pede menos movimento", () => {
+test("o menu traz a logo GEMAPE 40 anos animada; a tela de acesso usa o mesmo logo (dec 143) e tudo respeita quem pede menos movimento", () => {
   const barra = ler("components/layout/AppSidebar.tsx");
   assert.match(barra, /className="logo-marca"/);
   assert.doesNotMatch(barra, /Settings2|<Cog/);
   const css = ler("styles.css");
   assert.match(css, /@keyframes engrenagem-girando/);
   assert.match(css, /prefers-reduced-motion: reduce\) \{\s*animation: none/);
-  assert.match(ler("routes/auth.tsx"), /engrenagem-girando/);
+  assert.match(ler("routes/auth.tsx"), /<LogoEntrada \/>/);
 });
 
 test("telas estreitas: o conteúdo não estoura a largura (cartões e abas rolam por dentro)", () => {
