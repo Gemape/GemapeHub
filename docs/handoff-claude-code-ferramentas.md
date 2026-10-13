@@ -407,3 +407,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-13 dec 158: link Cadastrar itens de check list na janela Associar (janela ao lado, sem sair do formulário).
 - 2026-10-13 dec 159: Parâmetros Específicos de Ferramentas: tabela Nome|Subgrupos|Ações (pai/filho) no lugar dos cartões de tamanhos; grupos continuam na lista acima, mesma página; só Editar e Excluir.
 - 2026-10-13 dec 160: removida a seção EPIs antigos (e o botão Separar por tamanho) do Cadastro EPI; dados e rotina de separação ficam guardados, sem tela.
+- 2026-10-13 dec 161: Manutenção do módulo Veículos com vários locais (Gemape + terceiros), descrição, pagamento combinado e custos por local, relatório por local, observação do item não feito e seção no Extrato do veículo.

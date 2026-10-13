@@ -119,3 +119,29 @@ export function historicoAbastecimentos<T extends Momento & { km: number; litros
   });
   return linhas.reverse();
 }
+
+export type PontoDeAtencao = { chave: string; data: string; km: number; grupo: string; item: string; observacao: string };
+
+// Itens que uma manutenção deixou de fazer, com a observação do porquê (decisão 161). Somem da lista quando uma
+// manutenção posterior faz o item; `nomeGrupo` busca o nome atual em Parâmetros e, sem ele, vale o guardado.
+export function pontosDeAtencao(
+  manutencoes: {
+    id: string;
+    data: string;
+    km: number;
+    grupos?: { acaoId: string; nome: string; itens: { subitemId: string }[]; naoRealizados?: { subitemId: string; nome: string; observacao: string }[] }[];
+  }[],
+  nomeGrupo: (acaoId: string) => string | undefined,
+): PontoDeAtencao[] {
+  const feitoDepois = (m: { id: string; data: string }, acaoId: string, subitemId: string) =>
+    manutencoes.some((o) => o.id !== m.id && o.data > m.data && (o.grupos ?? []).some((g) => g.acaoId === acaoId && g.itens.some((i) => i.subitemId === subitemId)));
+  return manutencoes
+    .flatMap((m) =>
+      (m.grupos ?? []).flatMap((g) =>
+        (g.naoRealizados ?? [])
+          .filter((n) => !feitoDepois(m, g.acaoId, n.subitemId))
+          .map((n) => ({ chave: `${m.id}:${g.acaoId}:${n.subitemId}`, data: m.data, km: m.km, grupo: nomeGrupo(g.acaoId) ?? (g.nome || "Grupo removido de Parâmetros"), item: n.nome, observacao: n.observacao })),
+      ),
+    )
+    .sort((a, b) => b.data.localeCompare(a.data));
+}

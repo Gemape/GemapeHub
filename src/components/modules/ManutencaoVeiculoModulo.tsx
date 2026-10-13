@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +18,7 @@ import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { montarManutencaoHtml } from "@/lib/manutencao-relatorio-html";
 import { useVeiculos } from "@/lib/hooks-gemape";
-import { custoNaoNegativo, editarManutencao, gruposDaManutencao, registrarManutencao, removerManutencao, resumoManutencao, type LocalManutencao, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
+import { custoNaoNegativo, editarManutencao, gruposDaManutencao, locaisDaManutencao, registrarManutencao, removerManutencao, resumoManutencao, rotuloDoLocal, type LocalManutencao, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
 import { useManutencoesVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
@@ -37,7 +36,22 @@ function totalDigitado(pecas: string, mao: string): string {
   const b = custoNaoNegativo(mao);
   return a === null || b === null ? "—" : moeda(a + b);
 }
-const LOCAL: Record<LocalManutencao, string> = { empresa: "Na empresa", terceiro: "Terceiro" };
+// Local em edição (dec 161): a Gemape ou um terceiro, cada um com descrição, pagamento combinado e custos.
+type LocalForm = { chave: string; local: LocalManutencao; nome: string; descricao: string; condicaoPagamento: string; custoPecas: string; custoMao: string };
+let sequenciaLocal = 0;
+const novoLocal = (local: LocalManutencao): LocalForm => ({ chave: `local-${++sequenciaLocal}`, local, nome: "", descricao: "", condicaoPagamento: "", custoPecas: "", custoMao: "" });
+const campoParaNumero = (n: number | undefined) => (n === undefined ? "" : String(n).replace(".", ","));
+// Soma dos custos digitados de todos os locais; "—" se algum valor não for válido.
+function totalGeral(locais: LocalForm[]): string {
+  let soma = 0;
+  for (const l of locais) {
+    const a = custoNaoNegativo(l.custoPecas);
+    const b = custoNaoNegativo(l.custoMao);
+    if (a === null || b === null) return "—";
+    soma += a + b;
+  }
+  return moeda(soma);
+}
 
 export function ManutencaoVeiculoModulo() {
   const { empresaId, empresas } = useEmpresa();
@@ -52,9 +66,9 @@ export function ManutencaoVeiculoModulo() {
   const [tipo, setTipo] = useState("Preventiva");
   // Grupos marcados (pai) e, em cada um, as ações marcadas (filhos) com a observação livre.
   const [marcados, setMarcados] = useState<Record<string, Record<string, string>>>({});
-  const [local, setLocal] = useState<LocalManutencao | "">("");
-  const [custoPecas, setCustoPecas] = useState("");
-  const [custoMao, setCustoMao] = useState("");
+  const [locais, setLocais] = useState<LocalForm[]>([]);
+  // Ações não feitas de cada grupo, com a observação de por que merecem atenção antes do prazo do plano.
+  const [naoFeitos, setNaoFeitos] = useState<Record<string, Record<string, string>>>({});
   const [busca, setBusca] = useState("");
   const trava = useRef(false);
   // Ações e observações de um grupo desmarcado: voltam se o grupo for marcado de novo (clique errado não perde o texto).
@@ -75,8 +89,6 @@ export function ManutencaoVeiculoModulo() {
     return <p className="text-sm text-muted-foreground">A manutenção de veículos estará disponível após a Fase 2 (banco real).</p>;
   }
 
-  const numeroParaCampo = (n: number | undefined) => (n === undefined ? "" : String(n).replace(".", ","));
-
   function abrir(m?: ManutencaoVeiculo) {
     guardados.current = {};
     setEditando(m ?? null);
@@ -89,9 +101,21 @@ export function ManutencaoVeiculoModulo() {
         ]),
       ),
     );
-    setLocal(m?.local ?? "");
-    setCustoPecas(numeroParaCampo(m?.custoPecas));
-    setCustoMao(numeroParaCampo(m?.custoMaoDeObra));
+    setNaoFeitos(
+      Object.fromEntries(
+        gruposDaManutencao(m ?? { acaoId: null, itens: [], grupos: [] }).map((g) => [
+          g.acaoId, Object.fromEntries((g.naoRealizados ?? []).map((n) => [n.subitemId, n.observacao])),
+        ]),
+      ),
+    );
+    setLocais(
+      m
+        ? locaisDaManutencao(m).map((l) => ({
+            ...novoLocal(l.local), nome: l.nome, descricao: l.descricao, condicaoPagamento: l.condicaoPagamento,
+            custoPecas: campoParaNumero(l.custoPecas), custoMao: campoParaNumero(l.custoMaoDeObra),
+          }))
+        : [],
+    );
     setAberto(true);
   }
 
@@ -120,8 +144,14 @@ export function ManutencaoVeiculoModulo() {
         .map((g) => ({
           acaoId: g.id,
           itens: g.subitens.filter((x) => x.id in (marcados[g.id] ?? {})).map((x) => ({ subitemId: x.id, observacao: capitalizarTexto(marcados[g.id]?.[x.id] ?? "") })),
+          naoRealizados: g.subitens
+            .filter((x) => !(x.id in (marcados[g.id] ?? {})) && (naoFeitos[g.id]?.[x.id] ?? "").trim())
+            .map((x) => ({ subitemId: x.id, observacao: capitalizarTexto(naoFeitos[g.id]?.[x.id] ?? "") })),
         })),
-      local, localNome: capitalizarTexto(String(f.get("localNome") ?? "")), custoPecas, custoMaoDeObra: custoMao,
+      locais: locais.map((l) => ({
+        local: l.local, nome: capitalizarTexto(l.nome), descricao: capitalizarTexto(l.descricao),
+        condicaoPagamento: capitalizarTexto(l.condicaoPagamento), custoPecas: l.custoPecas, custoMaoDeObra: l.custoMao,
+      })),
     };
     let gravada: ManutencaoVeiculo | undefined;
     const ok = executar(
@@ -196,15 +226,29 @@ export function ManutencaoVeiculoModulo() {
                             {g.itens.filter((i) => i.observacao).map((i) => (
                               <span key={i.subitemId} className="block text-xs text-muted-foreground">{i.nome}: {i.observacao}</span>
                             ))}
+                            {(g.naoRealizados ?? []).map((n) => (
+                              <span key={n.subitemId} className="block text-xs text-amber-700">Não realizado, {n.nome}: {n.observacao}</span>
+                            ))}
                           </p>
                         ))}
                         {m.tipo === "Corretiva" && m.descricao && <p className="text-xs text-muted-foreground">{m.descricao}</p>}
                       </div>
                     )}
                   </TableCell>
-                  <TableCell>{m.local ? (m.local === "terceiro" && m.localNome ? `${LOCAL.terceiro}: ${m.localNome}` : LOCAL[m.local]) : "—"}</TableCell>
+                  <TableCell>
+                    {locaisDaManutencao(m).length === 0 ? "—" : (
+                      <div className="space-y-1">
+                        {locaisDaManutencao(m).map((l, i) => <p key={i} className="leading-snug">{rotuloDoLocal(l)}</p>)}
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right" title={m.custoTotal === undefined ? undefined : `Peças ${moeda(m.custoPecas)} + mão de obra ${moeda(m.custoMaoDeObra)}`}>
                     {m.custoTotal === undefined ? "—" : moeda(m.custoTotal)}
+                    {locaisDaManutencao(m).length > 1 && (
+                      <div className="mt-1 space-y-0.5 text-xs font-normal text-muted-foreground">
+                        {locaisDaManutencao(m).map((l, i) => <p key={i}>{moeda(l.custoTotal)}</p>)}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">{m.km.toLocaleString("pt-BR")}</TableCell>
                   <TableCell className="whitespace-nowrap text-right">
@@ -224,7 +268,7 @@ export function ManutencaoVeiculoModulo() {
       </div>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editando ? "Editar manutenção" : "Cadastrar nova manutenção"}</DialogTitle>
             <DialogDescription>Marque os grupos de ações abrangidos e o que foi feito em cada um; só a corretiva descreve o problema.</DialogDescription>
@@ -308,6 +352,16 @@ export function ManutencaoVeiculoModulo() {
                             />
                             {sub.nome}
                           </label>
+                          {!marcado && (
+                            <Input
+                              capitalizar="texto"
+                              aria-label={`Observação do item não feito ${sub.nome}`}
+                              placeholder="Não feito? Observação para voltar a olhar antes do prazo (opcional)"
+                              maxLength={300}
+                              value={naoFeitos[grupo.id]?.[sub.id] ?? ""}
+                              onChange={(e) => setNaoFeitos((n) => ({ ...n, [grupo.id]: { ...(n[grupo.id] ?? {}), [sub.id]: e.target.value } }))}
+                            />
+                          )}
                           {marcado && (
                             <Textarea
                               capitalizar="texto"
@@ -326,24 +380,45 @@ export function ManutencaoVeiculoModulo() {
                 );
               })}
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Local da manutenção</Label>
-              <RadioGroup value={local} onValueChange={(v) => setLocal(v as LocalManutencao)} className="flex gap-4">
-                <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="empresa" id="local_empresa" />Na própria empresa</label>
-                <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="terceiro" id="local_terceiro" />Local de terceiro</label>
-              </RadioGroup>
-              {local === "terceiro" && <Input capitalizar="texto" name="localNome" aria-label="Local de terceiro" maxLength={120} defaultValue={editando?.localNome} placeholder="Nome do local (oficina, concessionária…)" />}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="custo_pecas">Custo das peças (R$)</Label>
-              <Input id="custo_pecas" inputMode="decimal" placeholder="Ex.: 1.200,00 (0 se não houve)" value={custoPecas} onChange={(e) => setCustoPecas(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="custo_mao">Custo da mão de obra (R$)</Label>
-              <Input id="custo_mao" inputMode="decimal" placeholder="Ex.: 300,00 (0 se não houve)" value={custoMao} onChange={(e) => setCustoMao(e.target.value)} />
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Locais da manutenção</Label>
+              <p className="text-xs text-muted-foreground">Lance a parte feita na Gemape e cada terceiro, cada um com o serviço, o pagamento combinado e os custos. O relatório mostra o custo de cada local.</p>
+              {locais.length === 0 && <p className="text-xs text-muted-foreground">Nenhum local lançado ainda.</p>}
+              {locais.map((l, i) => {
+                const mudar = (parte: Partial<LocalForm>) => setLocais((ls) => ls.map((x) => (x.chave === l.chave ? { ...x, ...parte } : x)));
+                const titulo = l.local === "empresa" ? "Na própria empresa (Gemape)" : `Terceiro ${locais.filter((x, j) => x.local === "terceiro" && j <= i).length}`;
+                return (
+                  <div key={l.chave} className="space-y-2 rounded-lg border p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium">{titulo}</p>
+                      <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive" aria-label={`Remover ${titulo}`} onClick={() => setLocais((ls) => ls.filter((x) => x.chave !== l.chave))}>Remover</Button>
+                    </div>
+                    {l.local === "terceiro" && (
+                      <Input capitalizar="texto" aria-label={`Nome do ${titulo}`} maxLength={120} value={l.nome} onChange={(e) => mudar({ nome: e.target.value })} placeholder="Nome do local (oficina, concessionária…)" />
+                    )}
+                    <Textarea capitalizar="texto" aria-label={`Descrição do serviço, ${titulo}`} rows={2} maxLength={300} value={l.descricao} onChange={(e) => mudar({ descricao: e.target.value })} placeholder="Descrição do serviço feito neste local" />
+                    <Input capitalizar="texto" aria-label={`Condição de pagamento, ${titulo}`} maxLength={120} value={l.condicaoPagamento} onChange={(e) => mudar({ condicaoPagamento: e.target.value })} placeholder="Condição de pagamento combinada (ex.: 30 dias, à vista)" />
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label htmlFor={`pecas-${l.chave}`}>Custo das peças (R$)</Label>
+                        <Input id={`pecas-${l.chave}`} inputMode="decimal" placeholder="Ex.: 1.200,00 (0 se não houve)" value={l.custoPecas} onChange={(e) => mudar({ custoPecas: e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`mao-${l.chave}`}>Custo da mão de obra (R$)</Label>
+                        <Input id={`mao-${l.chave}`} inputMode="decimal" placeholder="Ex.: 300,00 (0 se não houve)" value={l.custoMao} onChange={(e) => mudar({ custoMao: e.target.value })} />
+                      </div>
+                    </div>
+                    <p className="text-sm">Custo deste local: <strong>{totalDigitado(l.custoPecas, l.custoMao)}</strong></p>
+                  </div>
+                );
+              })}
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={locais.some((l) => l.local === "empresa")} onClick={() => setLocais((ls) => [novoLocal("empresa"), ...ls])}>Adicionar local na Gemape</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setLocais((ls) => [...ls, novoLocal("terceiro")])}>Adicionar terceiro</Button>
+              </div>
             </div>
             <p className="text-sm sm:col-span-2">
-              Custo total: <strong>{totalDigitado(custoPecas, custoMao)}</strong>
+              Custo total da manutenção: <strong>{totalGeral(locais)}</strong>
             </p>
             <DialogFooter className="sm:col-span-2">
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>

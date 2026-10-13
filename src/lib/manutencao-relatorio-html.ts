@@ -2,7 +2,7 @@
 // salvar em PDF. Os serviços saem separados por grupo de ações, cada um num cartão. Todo texto informado passa por
 // escaparHtml; a data sai em horário de Brasília.
 import { escaparHtml } from "./gemape.ts";
-import { gruposDaManutencao, type ManutencaoVeiculo } from "./registros-veiculo.ts";
+import { gruposDaManutencao, locaisDaManutencao, rotuloDoLocal, type ManutencaoVeiculo } from "./registros-veiculo.ts";
 
 const TZ = "America/Sao_Paulo";
 const moeda = (n: number | undefined) => (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(/ /g, " ");
@@ -15,7 +15,8 @@ export function montarManutencaoHtml(
   const grupos = gruposDaManutencao(m);
   const emitido = new Date().toLocaleString("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(", ", " ");
   const corretiva = m.tipo === "Corretiva";
-  const local = m.local ? (m.local === "terceiro" ? `Terceiro${m.localNome ? `: ${m.localNome}` : ""}` : "Na própria empresa") : "—";
+  const locais = locaisDaManutencao(m);
+  const local = locais.length === 0 ? "—" : locais.map(rotuloDoLocal).join(" · ");
   const campo = (rotulo: string, valor: string) =>
     `<div class="campo"><span class="rotulo">${escaparHtml(rotulo)}</span><span class="valor">${escaparHtml(valor)}</span></div>`;
 
@@ -27,7 +28,10 @@ export function montarManutencaoHtml(
         : g.itens
             .map((i) => `<li><span class="marca">✔</span><div><strong>${escaparHtml(i.nome)}</strong>${i.observacao ? `<div class="obs">${escaparHtml(i.observacao)}</div>` : ""}</div></li>`)
             .join("");
-      return `<section class="cartao"><h3>${escaparHtml(nome)}</h3><ul>${acoes}</ul></section>`;
+      const naoFeitos = (g.naoRealizados ?? [])
+        .map((n) => `<li><span class="marca nao">✖</span><div><strong>${escaparHtml(n.nome)}</strong> <span class="obs">(não realizado)</span><div class="obs">${escaparHtml(n.observacao)}</div></div></li>`)
+        .join("");
+      return `<section class="cartao"><h3>${escaparHtml(nome)}</h3><ul>${acoes}${naoFeitos}</ul></section>`;
     })
     .join("");
   const resumoGrupos = `${grupos.length} ${grupos.length === 1 ? "grupo" : "grupos"} de serviço`;
@@ -56,6 +60,9 @@ export function montarManutencaoHtml(
           .cartao li { display: flex; gap: 10px; padding: 5px 0; border-bottom: 1px dashed #e2e8f0; }
           .cartao li:last-child { border-bottom: 0; }
           .marca { color: #15803d; font-weight: bold; }
+          .marca.nao { color: #b45309; }
+          .local-nome { font-size: 10.5pt; font-weight: bold; margin: 10px 0 4px; }
+          .local-info { color: #475569; font-size: 9pt; margin: 0 0 4px; }
           .obs { color: #475569; font-size: 9pt; margin-top: 1px; }
           .vazio { color: #64748b; font-style: italic; }
           .custos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
@@ -83,7 +90,17 @@ export function montarManutencaoHtml(
         <h2>Serviços realizados <small>${escaparHtml(resumoGrupos)}</small></h2>
         ${cartoes || `<p class="vazio">Nenhum serviço detalhado.</p>`}
         ${m.custoTotal === undefined ? "" : `
-        <h2>Custos</h2>
+        <h2>Custos por local <small>${escaparHtml(`${locais.length} ${locais.length === 1 ? "local" : "locais"}`)}</small></h2>
+        ${locais.map((l) => `
+        <div class="local-nome">${escaparHtml(rotuloDoLocal(l))}</div>
+        ${l.descricao ? `<p class="local-info"><strong>Serviço:</strong> ${escaparHtml(l.descricao)}</p>` : ""}
+        ${l.condicaoPagamento ? `<p class="local-info"><strong>Pagamento combinado:</strong> ${escaparHtml(l.condicaoPagamento)}</p>` : ""}
+        <div class="custos">
+          ${campo("Peças", moeda(l.custoPecas))}
+          ${campo("Mão de obra", moeda(l.custoMaoDeObra))}
+          ${campo("Total do local", moeda(l.custoTotal))}
+        </div>`).join("")}
+        <h2>Total da manutenção</h2>
         <div class="custos">
           ${campo("Peças", moeda(m.custoPecas))}
           ${campo("Mão de obra", moeda(m.custoMaoDeObra))}
