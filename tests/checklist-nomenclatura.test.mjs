@@ -146,11 +146,11 @@ test("a situação por veículo tem uma linha por periodicidade, com Iniciar e C
   assert.match(tela, /<TableHead>Periodicidade<\/TableHead>/);
 });
 
-test("Novo check list pergunta primeiro o veículo e depois o tipo, com as opções Placa >> Periodicidade >> Responsável do veículo (dec 157)", () => {
+test("Novo check list pergunta primeiro o veículo e depois o tipo, com as opções Placa >> Responsável >> Periodicidade do veículo (dec 157)", () => {
   const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
   assert.ok(tela.indexOf('htmlFor="ck_veiculo"') < tela.indexOf('htmlFor="ck_modo"'));
   assert.match(tela, /disabled=\{!veiculoEscolhido\}/); // o tipo só abre depois do veículo
-  assert.match(tela, /periodicidadesDe\(veiculoEscolhido\)\.map\(\(p\) => \(\s*<SelectItem key=\{p\} value=\{p\}>\s*\{nomeDoChecklist\(/);
+  assert.match(tela, /periodicidadesDe\(veiculoEscolhido\)\.map\(\(p\) => \(\s*<SelectItem key=\{p\} value=\{p\}>\s*\{opcaoDoChecklist\(/);
   assert.doesNotMatch(tela, /modoAvulso|periodicidadeEscolhida|<SelectItem value="periodico">/);
   // O responsável vem da associação; o campo só aparece quando a associação não tem responsável.
   assert.match(tela, /!associacaoEscolhida\?\.responsavel && <div/);

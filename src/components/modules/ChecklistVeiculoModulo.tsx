@@ -147,6 +147,9 @@ export function ChecklistVeiculoModulo() {
   const veiculosDoDialogo = veiculos.filter((v) => v.status === "Ativo" && tipoCheckDe(v) !== null);
   const veiculoEscolhido = veiculosDoDialogo.find((v) => v.id === veiculoId);
   const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === (veiculoEscolhido ? tipoCheckDe(veiculoEscolhido) : null))?.nome ?? "";
+  // Opção do tipo de check list, na ordem pedida pelo responsável (decisão 157): Placa >> Responsável >> Periodicidade.
+  const opcaoDoChecklist = (v: VeiculoChecklist, periodicidade: string, responsavelNome: string) =>
+    [(v.placa ?? "").trim().toUpperCase() || rotuloDe(v), responsavelNome.trim() || "Não definido", periodicidade].map((t) => t.trim().replace(/\s+/g, " ")).join(" >> ");
   // Atalho para a associação de itens (grupos, periodicidade e responsável), aberta numa janela ao lado do Novo check list.
   const linkAssociar = canWrite ? (
     <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setAssociarAberto(true)}>
@@ -401,7 +404,7 @@ export function ChecklistVeiculoModulo() {
                 <SelectContent>
                   {veiculoEscolhido && periodicidadesDe(veiculoEscolhido).map((p) => (
                     <SelectItem key={p} value={p}>
-                      {nomeDoChecklist({ placa: veiculoEscolhido.placa ?? "", fallbackVeiculo: rotuloDe(veiculoEscolhido), periodicidade: p, responsavelNome: associacaoEscolhida?.responsavel?.nome ?? "" })}
+                      {opcaoDoChecklist(veiculoEscolhido, p, associacaoEscolhida?.responsavel?.nome ?? "")}
                     </SelectItem>
                   ))}
                   {veiculoEscolhido && <SelectItem value="avulso">{`${(veiculoEscolhido.placa ?? "").trim().toUpperCase() || rotuloDe(veiculoEscolhido)} >> Avulso`}</SelectItem>}
