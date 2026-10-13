@@ -75,6 +75,9 @@ test("dec 161: o extrato lista os itens não realizados e tira da lista o que um
   const lista = pontosDeAtencao([m1, m2], (id) => (id === "a1" ? "Freios novo" : undefined));
   assert.deepEqual(lista.map((p) => [p.item, p.grupo, p.observacao, p.km]), [["Fluido", "Freios novo", "Escuro", 1000]]);
   assert.equal(pontosDeAtencao([m1], () => undefined)[0].grupo, "Freios");
+  // No mesmo dia vale o km: quem fez o item com km maior encerra o ponto de atenção.
+  const mesmoDia = { id: "m3", data: "2026-09-01", km: 1200, grupos: [grupo(["s2", "s3"])] };
+  assert.equal(pontosDeAtencao([m1, mesmoDia], () => undefined).length, 0);
   assert.equal(pontosDeAtencao([], () => undefined).length, 0);
 });
 

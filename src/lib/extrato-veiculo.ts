@@ -133,8 +133,8 @@ export function pontosDeAtencao(
   }[],
   nomeGrupo: (acaoId: string) => string | undefined,
 ): PontoDeAtencao[] {
-  const feitoDepois = (m: { id: string; data: string }, acaoId: string, subitemId: string) =>
-    manutencoes.some((o) => o.id !== m.id && o.data > m.data && (o.grupos ?? []).some((g) => g.acaoId === acaoId && g.itens.some((i) => i.subitemId === subitemId)));
+  const feitoDepois = (m: { id: string; data: string; km: number }, acaoId: string, subitemId: string) =>
+    manutencoes.some((o) => o.id !== m.id && (o.data > m.data || (o.data === m.data && o.km > m.km)) && (o.grupos ?? []).some((g) => g.acaoId === acaoId && g.itens.some((i) => i.subitemId === subitemId)));
   return manutencoes
     .flatMap((m) =>
       (m.grupos ?? []).flatMap((g) =>
