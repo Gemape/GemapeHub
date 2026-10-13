@@ -1,7 +1,11 @@
 // Cadastros padrão de Parâmetros > Veículos (decisão 46): ações de manutenção e tipos de
 // ocorrência, carregados pelo botão "Cadastrar padrão".
 // Cada ação de manutenção é um pai com seus subitens (filhos).
-export const ACOES_MANUTENCAO_PADRAO: readonly { nome: string; subitens: readonly string[] }[] = [
+// Todo grupo de ações de manutenção tem também o item Outros, com descrição aberta (decisão 163).
+export const NOME_OUTROS = "Outros";
+export const ehOutros = (nome: string): boolean => nome.trim().toLowerCase() === NOME_OUTROS.toLowerCase();
+
+const ACOES_MANUTENCAO_BASE: readonly { nome: string; subitens: readonly string[] }[] = [
   {
     nome: "Revisão do Sistema de Lubrificação e Filtros",
     subitens: ["Troca de óleo do motor", "Filtro de óleo", "Filtro de ar do motor", "Filtro de combustível", "Filtro de cabine (Ar-condicionado)"],
@@ -31,6 +35,9 @@ export const ACOES_MANUTENCAO_PADRAO: readonly { nome: string; subitens: readonl
     subitens: ["Correia dentada", "Correia de acessórios", "Palhetas do limpador", "Kit de embreagem", "Coxim do motor"],
   },
 ];
+
+export const ACOES_MANUTENCAO_PADRAO: readonly { nome: string; subitens: readonly string[] }[] =
+  ACOES_MANUTENCAO_BASE.map((a) => ({ nome: a.nome, subitens: [...a.subitens, NOME_OUTROS] }));
 
 export const TIPOS_OCORRENCIA_VEICULO_PADRAO: readonly { nome: string; descricao: string }[] = [
   { nome: "Furto", descricao: "Subtração do veículo sem violência." },

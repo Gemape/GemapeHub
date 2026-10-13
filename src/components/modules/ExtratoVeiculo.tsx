@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hojeLocal } from "@/lib/empregados";
-import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
+import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, pontosDeAtencao, sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useMovimentacoes, useOcorrencias, type Veiculo } from "@/lib/hooks-gemape";
 import { resumoManutencao } from "@/lib/registros-veiculo";
@@ -79,6 +79,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
         return { chave: m.id, data: m.data_movimentacao.slice(0, 10), km: null, tipo: "Movimentação", servico: `${x.acao_manutencao}${subs}` };
       }),
   ].sort((a, b) => b.data.localeCompare(a.data));
+  const atencao = pontosDeAtencao(manut, nomeAcao);
   // Em demonstração valem as ocorrências da tela nova (decisão 60); fora dela, as da tabela antiga.
   const ocorrenciasDoVeiculo = (MODO_DEMO
     ? ocorrenciasNovas.filter((o) => o.veiculoId === veiculo.id).map((o) => ({
@@ -151,6 +152,27 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
               </TableBody>
             </Table>
           </div>
+        </Secao>
+
+        <Secao titulo="Itens não realizados em atenção">
+          <div className="overflow-x-auto rounded-lg border">
+            <Table>
+              <TableHeader><TableRow><TableHead>Manutenção</TableHead><TableHead>Grupo</TableHead><TableHead>Item</TableHead><TableHead>Observação</TableHead><TableHead className="text-right">Km</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {atencao.length === 0 && <Vazio colunas={5} texto="Nenhum item ficou sem fazer com observação." />}
+                {atencao.map((a) => (
+                  <TableRow key={a.chave}>
+                    <TableCell>{formatarData(a.data)}</TableCell>
+                    <TableCell>{a.grupo}</TableCell>
+                    <TableCell>{a.item}</TableCell>
+                    <TableCell>{a.observacao}</TableCell>
+                    <TableCell className="text-right">{numero(a.km)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <p className="text-xs text-muted-foreground">O item sai desta lista quando uma manutenção posterior o realiza.</p>
         </Secao>
 
         <Secao titulo="Histórico de abastecimentos">

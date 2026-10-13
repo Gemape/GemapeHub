@@ -1,6 +1,7 @@
 // Abastecimentos e manutenções por veículo (decisão 57). Fase 1: ficam só no navegador, em
 // modo demonstração; as tabelas no banco real são pendência da Fase 2.
 import { hojeLocal } from "./empregados.ts";
+import { ehOutros } from "./veiculos-padrao.ts";
 
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
@@ -24,7 +25,19 @@ export type LocalManutencao = "empresa" | "terceiro";
 // Ação (filho) do grupo, com o nome guardado para o registro não mudar se Parâmetros mudar.
 export type ItemManutencao = { subitemId: string; nome: string; observacao: string };
 // Uma manutenção pode abranger vários grupos de ações; cada grupo guarda o nome e as ações feitas.
-export type GrupoManutencao = { acaoId: string; nome: string; itens: ItemManutencao[] };
+// Ação do grupo que ficou sem fazer, com a observação de por que merece atenção antes do prazo do plano (dec 161).
+export type NaoRealizadoManutencao = { subitemId: string; nome: string; observacao: string };
+export type GrupoManutencao = { acaoId: string; nome: string; itens: ItemManutencao[]; naoRealizados?: NaoRealizadoManutencao[] };
+// Local onde parte do serviço foi feito (dec 161): a Gemape ou cada terceiro, com descrição, pagamento combinado e custos próprios.
+export type LocalServicoManutencao = {
+  local: LocalManutencao;
+  nome: string;
+  descricao: string;
+  condicaoPagamento: string;
+  custoPecas: number;
+  custoMaoDeObra: number;
+  custoTotal: number;
+};
 // Campos de itens, local e custos vieram na decisão 61: registros antigos podem não ter.
 export type ManutencaoVeiculo = {
   id: string;
@@ -38,11 +51,14 @@ export type ManutencaoVeiculo = {
   itens?: ItemManutencao[];
   // Registros anteriores à decisão 79 não têm: valem acaoId e itens como um grupo só.
   grupos?: GrupoManutencao[];
+  // Primeiro local e soma dos custos de todos (leitura de quem só conhece um local); a fonte é `locais`.
   local?: LocalManutencao;
   localNome?: string;
   custoPecas?: number;
   custoMaoDeObra?: number;
   custoTotal?: number;
+  // Registros anteriores à decisão 161 não têm: valem local, localNome e custos como um local só.
+  locais?: LocalServicoManutencao[];
   criadoEm: string;
 };
 
@@ -189,6 +205,15 @@ export function registrarAbastecimento(entrada: EntradaAbastecimento, storage = 
 export const removerAbastecimento = (id: string, storage = storagePadrao()): void =>
   alterarLista<Abastecimento>(CHAVE_ABASTECIMENTOS, storage, (lista) => lista.filter((a) => a.id !== id));
 
+export type EntradaLocalManutencao = {
+  local?: string | undefined;
+  nome?: string | undefined;
+  descricao?: string | undefined;
+  condicaoPagamento?: string | undefined;
+  custoPecas?: string | number | undefined;
+  custoMaoDeObra?: string | number | undefined;
+};
+
 export type EntradaManutencao = {
   veiculoId: string;
   data: string;
@@ -197,7 +222,14 @@ export type EntradaManutencao = {
   acaoId?: string | null;
   itens?: { subitemId: string; observacao?: string | undefined }[];
   // Vários grupos numa manutenção; sem `grupos`, acaoId e itens valem como um grupo só.
-  grupos?: { acaoId: string; itens?: { subitemId: string; observacao?: string | undefined }[] }[];
+  grupos?: {
+    acaoId: string;
+    itens?: { subitemId: string; observacao?: string | undefined }[];
+    // Ações do grupo que não foram feitas, só as que têm observação.
+    naoRealizados?: { subitemId: string; observacao?: string | undefined }[];
+  }[];
+  // Vários locais (Gemape e terceiros); sem `locais`, local, localNome e custos valem como um local só.
+  locais?: EntradaLocalManutencao[];
   local?: string;
   localNome?: string;
   custoPecas?: string | number;
@@ -247,26 +279,53 @@ function montarManutencao(
       const filho = grupo.subitens.find((x) => x.id === i.subitemId);
       if (!filho) throw new Error("Há uma ação que não pertence ao grupo escolhido.");
       if (itens.some((x) => x.subitemId === filho.id)) throw new Error(`Ação repetida: ${filho.nome}.`);
-      itens.push({ subitemId: filho.id, nome: filho.nome, observacao: String(i.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300) });
+      const observacao = String(i.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300);
+      // Outros é o item de descrição aberta (decisão 163): marcado, exige dizer o que foi feito.
+      if (ehOutros(filho.nome) && !observacao) throw new Error(`Descreva o que foi feito em Outros${grupo.nome ? `, do grupo ${grupo.nome}` : ""}.`);
+      itens.push({ subitemId: filho.id, nome: filho.nome, observacao });
     }
     if (grupo.subitens.length > 0 && itens.length === 0) {
       throw new Error(grupo.nome ? `Marque ao menos uma ação do grupo ${grupo.nome}.` : "Marque ao menos uma ação do grupo.");
     }
-    grupos.push({ acaoId: grupo.id, nome: grupo.nome ?? "", itens });
+    const naoRealizados: NaoRealizadoManutencao[] = [];
+    for (const n of pedido.naoRealizados ?? []) {
+      const observacao = String(n.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300);
+      if (!observacao) continue;
+      const filho = grupo.subitens.find((x) => x.id === n.subitemId);
+      if (!filho) throw new Error("Há uma ação não realizada que não pertence ao grupo escolhido.");
+      if (itens.some((x) => x.subitemId === filho.id)) throw new Error(`A ação ${filho.nome} está marcada como feita e como não realizada.`);
+      if (naoRealizados.some((x) => x.subitemId === filho.id)) throw new Error(`Ação não realizada repetida: ${filho.nome}.`);
+      naoRealizados.push({ subitemId: filho.id, nome: filho.nome, observacao });
+    }
+    grupos.push({ acaoId: grupo.id, nome: grupo.nome ?? "", itens, ...(naoRealizados.length > 0 ? { naoRealizados } : {}) });
   }
-  if (entrada.local !== "empresa" && entrada.local !== "terceiro") throw new Error("Informe o local da manutenção: na empresa ou em terceiro.");
-  const localNome = entrada.local === "terceiro" ? String(entrada.localNome ?? "").trim().replace(/\s+/g, " ").slice(0, 120) : "";
-  if (entrada.local === "terceiro" && !localNome) throw new Error("Informe o local de terceiro onde foi feita a manutenção.");
-  const custoPecas = custoNaoNegativo(entrada.custoPecas);
-  if (custoPecas === null) throw new Error("Informe o custo das peças em reais (0 se não houve).");
-  const custoMaoDeObra = custoNaoNegativo(entrada.custoMaoDeObra);
-  if (custoMaoDeObra === null) throw new Error("Informe o custo da mão de obra em reais (0 se não houve).");
+  const pedidosLocais: EntradaLocalManutencao[] = entrada.locais ?? [{ local: entrada.local, nome: entrada.localNome, custoPecas: entrada.custoPecas, custoMaoDeObra: entrada.custoMaoDeObra }];
+  if (pedidosLocais.length === 0) throw new Error("Informe o local da manutenção: na empresa ou em terceiro.");
+  const locais: LocalServicoManutencao[] = [];
+  for (const pedido of pedidosLocais) {
+    if (pedido.local !== "empresa" && pedido.local !== "terceiro") throw new Error("Informe o local da manutenção: na empresa ou em terceiro.");
+    if (pedido.local === "empresa" && locais.some((l) => l.local === "empresa")) throw new Error("A manutenção só pode ter um local na própria empresa.");
+    const nome = pedido.local === "terceiro" ? String(pedido.nome ?? "").trim().replace(/\s+/g, " ").slice(0, 120) : "";
+    if (pedido.local === "terceiro" && !nome) throw new Error("Informe o local de terceiro onde foi feita a manutenção.");
+    const rotulo = pedido.local === "terceiro" ? ` de ${nome}` : " da empresa";
+    const custoPecas = custoNaoNegativo(pedido.custoPecas);
+    if (custoPecas === null) throw new Error(`Informe o custo das peças${pedidosLocais.length > 1 ? rotulo : ""} em reais (0 se não houve).`);
+    const custoMaoDeObra = custoNaoNegativo(pedido.custoMaoDeObra);
+    if (custoMaoDeObra === null) throw new Error(`Informe o custo da mão de obra${pedidosLocais.length > 1 ? rotulo : ""} em reais (0 se não houve).`);
+    locais.push({
+      local: pedido.local, nome,
+      descricao: String(pedido.descricao ?? "").trim().replace(/\s+/g, " ").slice(0, 300),
+      condicaoPagamento: String(pedido.condicaoPagamento ?? "").trim().replace(/\s+/g, " ").slice(0, 120),
+      custoPecas, custoMaoDeObra, custoTotal: Math.round((custoPecas + custoMaoDeObra) * 100) / 100,
+    });
+  }
+  const soma = (campo: "custoPecas" | "custoMaoDeObra" | "custoTotal") => Math.round(locais.reduce((s, l) => s + l[campo], 0) * 100) / 100;
   const conflito = conflitoDeKm(entrada.veiculoId, { data }, km, storage, ignorarId);
   if (conflito) throw new Error(mensagemKm(conflito));
   return {
     veiculoId: entrada.veiculoId, data, km, tipo: entrada.tipo, acaoId: grupos[0]!.acaoId, descricao,
-    itens: grupos.flatMap((g) => g.itens), grupos, local: entrada.local, localNome, custoPecas, custoMaoDeObra,
-    custoTotal: Math.round((custoPecas + custoMaoDeObra) * 100) / 100,
+    itens: grupos.flatMap((g) => g.itens), grupos, locais, local: locais[0]!.local, localNome: locais[0]!.nome,
+    custoPecas: soma("custoPecas"), custoMaoDeObra: soma("custoMaoDeObra"), custoTotal: soma("custoTotal"),
   };
 }
 
@@ -306,6 +365,18 @@ export function gruposDaManutencao(m: Pick<ManutencaoVeiculo, "acaoId" | "itens"
   if (m.grupos) return m.grupos;
   return m.acaoId ? [{ acaoId: m.acaoId, nome: "", itens: m.itens ?? [] }] : [];
 }
+
+// Locais da manutenção; o registro antigo (um local só, com os custos no próprio registro) vira uma lista de zero ou um.
+export function locaisDaManutencao(m: Pick<ManutencaoVeiculo, "locais" | "local" | "localNome" | "custoPecas" | "custoMaoDeObra" | "custoTotal">): LocalServicoManutencao[] {
+  if (m.locais) return m.locais;
+  if (!m.local) return [];
+  const pecas = m.custoPecas ?? 0;
+  const mao = m.custoMaoDeObra ?? 0;
+  return [{ local: m.local, nome: m.localNome ?? "", descricao: "", condicaoPagamento: "", custoPecas: pecas, custoMaoDeObra: mao, custoTotal: m.custoTotal ?? pecas + mao }];
+}
+
+export const rotuloDoLocal = (l: Pick<LocalServicoManutencao, "local" | "nome">): string =>
+  l.local === "terceiro" ? (l.nome ? `Terceiro: ${l.nome}` : "Terceiro") : "Na própria empresa";
 
 // Texto da manutenção para listas: cada grupo com as suas ações (e a descrição, na corretiva). Registros
 // antigos só têm a ação ou só a descrição. `nomeGrupo` busca o nome atual em Parâmetros; se o grupo
