@@ -38,6 +38,15 @@ const formatarCodigo = (n: number) => String(n).padStart(5, "0");
 // Aceita também o formato antigo do preview (FOR-0001).
 const numeroDoCodigo = (codigo: string | undefined) => Number(/^(?:FOR-)?(\d+)$/.exec(codigo ?? "")?.[1] ?? 0);
 
+// Dado salvo ilegível nunca é sobrescrito: a lista aparece vazia, mas gravar por cima apagaria o que sobrou.
+function conferirIntegridade(storage: StorageLike): void {
+  const bruto = storage.getItem(CHAVE);
+  if (bruto === null) return;
+  let ok = false;
+  try { ok = Array.isArray(JSON.parse(bruto)); } catch { ok = false; }
+  if (!ok) throw new Error("Os fornecedores salvos neste navegador estão ilegíveis; nada foi alterado.");
+}
+
 export function listarFornecedores(storage: StorageLike = localStorage): Fornecedor[] {
   let dados: Fornecedor[];
   try {
@@ -87,6 +96,7 @@ export function salvarFornecedor(
   valores: FornecedorDados | (FornecedorDados & { id: string }),
   storage: StorageLike = localStorage,
 ): Fornecedor {
+  conferirIntegridade(storage);
   const fornecedores = listarFornecedores(storage);
   const id = "id" in valores ? valores.id : crypto.randomUUID();
   const indice = fornecedores.findIndex((item) => item.id === id);
@@ -129,5 +139,6 @@ export function salvarFornecedor(
 }
 
 export function removerFornecedor(id: string, storage: StorageLike = localStorage): void {
+  conferirIntegridade(storage);
   storage.setItem(CHAVE, JSON.stringify(listarFornecedores(storage).filter((item) => item.id !== id)));
 }

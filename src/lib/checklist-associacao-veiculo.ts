@@ -45,8 +45,8 @@ function lerComEstado(storage: StorageLike | null): { lista: AssociacaoChecklist
   try {
     const salvos = JSON.parse(bruto) as unknown;
     if (!Array.isArray(salvos)) return { lista: [], integro: false };
-    const lista = salvos
-      .filter((a): a is Partial<AssociacaoChecklist> => !!a && typeof a === "object" && "veiculoId" in a)
+    const validos = salvos.filter((a): a is Partial<AssociacaoChecklist> => !!a && typeof a === "object" && "veiculoId" in a);
+    const lista = validos
       .map((a) => ({
         veiculoId: String(a.veiculoId),
         atualizadoEm: String(a.atualizadoEm ?? ""),
@@ -60,7 +60,8 @@ function lerComEstado(storage: StorageLike | null): { lista: AssociacaoChecklist
             return { grupoId: String(i.grupoId), tipo, periodicidade: i.periodicidade, obrigatorio: tipo === "periodico" };
           }),
       }));
-    return { lista, integro: true };
+    // Entrada que não deu para ler: a lista aparece sem ela, mas nenhuma gravação passa por cima.
+    return { lista, integro: validos.length === salvos.length };
   } catch {
     return { lista: [], integro: false };
   }

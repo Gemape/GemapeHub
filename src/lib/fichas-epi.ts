@@ -31,20 +31,21 @@ export const fichaVazia = (): ConteudoFicha =>
 // vazia, mas nenhuma alteração é gravada por cima deles.
 function lerComEstado(storage: StorageLike | null): { fichas: FichaEpi[]; integro: boolean } {
   if (!storage) return { fichas: [], integro: true };
-  const bruto = storage.getItem(CHAVE);
+  let bruto: string | null;
+  try { bruto = storage.getItem(CHAVE); } catch { return { fichas: [], integro: false }; }
   if (bruto === null) return { fichas: [], integro: true };
   try {
     const salvas = JSON.parse(bruto) as unknown;
     if (!Array.isArray(salvas)) return { fichas: [], integro: false };
-    const fichas = salvas
-      .filter((f): f is Partial<FichaEpi> => !!f && typeof f === "object" && "epiId" in f)
+    const validas = salvas.filter((f): f is Partial<FichaEpi> => !!f && typeof f === "object" && "epiId" in f);
+    const fichas = validas
       .map((f) => ({
         ...fichaVazia(),
         ...Object.fromEntries(CAMPOS_FICHA.map((c) => [c.chave, String(f[c.chave] ?? "")])),
         epiId: String(f.epiId),
         atualizadaEm: String(f.atualizadaEm ?? ""),
       }));
-    return { fichas, integro: true };
+    return { fichas, integro: validas.length === salvas.length };
   } catch {
     return { fichas: [], integro: false };
   }

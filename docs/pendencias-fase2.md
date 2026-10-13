@@ -57,3 +57,14 @@ Nada abaixo deve ser feito antes da ordem do responsável.
 - Ferramentas, campo Tamanho (decisão 133): hoje só no modo demonstração (a ferramenta guarda `tamanho` como texto). No banco real, criar a coluna `tamanho` (texto, opcional) em `ferramentas` ou ligá-la à futura tabela grupo -> tamanhos (decisão 117). Sem tabela nem coluna criada agora.
 - Ferramentas, subgrupos por grupo (decisão 159): hoje só no modo demonstração (`tamanhosGrupoFerramenta`, lista por grupo). No banco real, criar tabela (ou coluna JSON) de subgrupos ligada ao grupo de ferramenta, com unicidade por grupo.
 - Manutenção de veículo, locais (decisão 161): hoje só no modo demonstração (`locais` e `naoRealizados` dentro do registro). No banco real, criar tabelas de locais da manutenção (tipo, nome, descrição, condição de pagamento, custo de peças e de mão de obra) e de itens não realizados com observação, ligadas à manutenção.
+
+## Revisão do projeto inteiro (13/10/2026): achados que ficam para a Fase 2
+
+Nada abaixo foi alterado: dependem de papéis, RLS ou migrations no Supabase real (só com ordem do responsável).
+
+- Devolução e Termo de Encerramento hoje aparecem para quem pode operar; a regra é só Administrador. No banco, a política `empresa_registro` de `movimentacoes` e o gatilho `aplicar_movimentacao_estoque_v2` só conferem "pode operar".
+- Excluir compra de EPI e Descartar check list em andamento sem exigir Administrador.
+- Transferência de ferramenta entre caixas: no demo agora desfaz o destino se a saída da origem falhar; no banco real o ideal é uma única RPC atômica (como `salvar_caixa`) que também grave a movimentação.
+- Excluir ação de manutenção ou grupo de check list usado em plano/associação não é bloqueado, e a restauração do padrão cria outro id (o plano ou a associação perde o item). Precisa de decisão do responsável (bloquear ou manter o id).
+- Check list avulso concluído com item NOK cria ocorrência sem condutor.
+- Responsável do veículo pode ser de outra empresa (lista mostra todos).

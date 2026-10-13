@@ -37,7 +37,9 @@ export function ChecklistPainelMensal({
   onAbrirChecklist: (id: string) => void;
 }) {
   const meses = mesesDisponiveis(hoje);
-  const [mes, setMes] = useState(mesDe(hoje));
+  // Só guarda a escolha do usuário: sem escolha, o painel acompanha o mês de hoje (virada do mês com a tela aberta).
+  const [mesEscolhido, setMes] = useState<string | null>(null);
+  const mes = mesEscolhido ?? mesDe(hoje);
   const { linhas, resumo } = painelDoMes(
     mes,
     previsoes.filter((p) => idsDosVeiculos.has(p.veiculoId)),

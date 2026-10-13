@@ -1,6 +1,8 @@
 // Ficha de EPI Avulsa (pendência 8): o histórico vem inteiro do banco, filtrado pelo
 // empregado e pela empresa, e não das últimas movimentações carregadas na tela.
 
+import { lerTodas } from "./ler-todas.ts";
+
 export type MovimentacaoFicha = {
   item_id: string | null;
   tipo_movimentacao: string;
@@ -21,18 +23,23 @@ export async function lerHistoricoEpiEmpregado(
   cliente: { from: (tabela: "movimentacoes") => { select: (colunas: string) => unknown } },
   filtro: { empregadoId: string; empresaId: string; comTamanho?: boolean },
 ): Promise<MovimentacaoFicha[]> {
-  const consulta = cliente
-    .from("movimentacoes")
-    .select(
-      `item_id,tipo_movimentacao,quantidade,data_movimentacao,created_at${filtro.comTamanho ? ",tamanho_id" : ""}`,
-    ) as ConsultaMovimentacoes;
-  const { data, error } = await consulta
-    .eq("modulo", "epi")
-    .eq("empresa_id", filtro.empresaId)
-    .eq("empregado_id", filtro.empregadoId);
-  if (error) throw new Error(error.message);
+  const montar = () =>
+    (cliente
+      .from("movimentacoes")
+      .select(
+        `item_id,tipo_movimentacao,quantidade,data_movimentacao,created_at${filtro.comTamanho ? ",tamanho_id" : ""}`,
+      ) as ConsultaMovimentacoes)
+      .eq("modulo", "epi")
+      .eq("empresa_id", filtro.empresaId)
+      .eq("empregado_id", filtro.empregadoId);
+  let data: MovimentacaoFicha[];
+  try {
+    data = await lerTodas<MovimentacaoFicha>(montar, (q) => q.order("created_at").order("id"));
+  } catch (erro) {
+    throw new Error(erro instanceof Error ? erro.message : (erro as { message?: string })?.message ?? "Erro ao ler o histórico.");
+  }
   // Mesma ordem da lista de antes: data mais recente primeiro e, no mesmo dia, o último registro.
-  return [...(data ?? [])].sort(
+  return [...data].sort(
     (a, b) =>
       b.data_movimentacao.localeCompare(a.data_movimentacao) ||
       (b.created_at ?? "").localeCompare(a.created_at ?? ""),

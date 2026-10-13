@@ -1,4 +1,4 @@
-import { enderecamentoDaCategoria, type ParametrosBase } from "./parametros-base.ts";
+import { combinaBusca, enderecamentoDaCategoria, type ParametrosBase } from "./parametros-base.ts";
 
 export type ProdutoEnderecavel = {
   tabela: "epis" | "uniformes" | "ferramentas" | "veiculos";
@@ -32,7 +32,6 @@ export function montarLinhasEnderecamento(
   busca: string,
   somenteSem: boolean,
 ): { produto: ProdutoEnderecavel; endereco: EnderecoProduto | undefined }[] {
-  const termo = busca.trim().toLocaleLowerCase("pt-BR");
   return produtos.flatMap((produto) => {
     if (!produto.empresa_id || !produto.codigo_sku ||
       (empresaId !== "todas" && produto.empresa_id !== empresaId) ||
@@ -43,8 +42,7 @@ export function montarLinhasEnderecamento(
     const linhas = (encontrados.length ? encontrados : [undefined]).map((endereco) => ({ produto, endereco }));
     return linhas.filter(({ endereco }) =>
       (!somenteSem || !endereco) &&
-      (!termo || [produto.codigo_sku, produto.nome, endereco?.rua, endereco?.prateleira, endereco?.apartamento]
-        .some((valor) => (valor ?? "").toLocaleLowerCase("pt-BR").includes(termo))));
+      (!busca.trim() || combinaBusca(busca, produto.codigo_sku, produto.nome, endereco?.rua, endereco?.prateleira, endereco?.apartamento)));
   });
 }
 

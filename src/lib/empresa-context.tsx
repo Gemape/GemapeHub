@@ -51,15 +51,19 @@ export function useEmpresasQuery() {
 
 export function EmpresaProvider({ children }: { children: ReactNode }) {
   const [empresaId, setEmpresaId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("gemape:empresa-id") || TODAS;
+    try {
+      if (typeof window !== "undefined") return localStorage.getItem("gemape:empresa-id") || TODAS;
+    } catch {
+      // Armazenamento bloqueado (aba privada, política do navegador): segue com todas as empresas.
     }
     return TODAS;
   });
   
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("gemape:empresa-id", empresaId);
+    try {
+      if (typeof window !== "undefined") localStorage.setItem("gemape:empresa-id", empresaId);
+    } catch {
+      // Sem armazenamento: a escolha vale só até recarregar a página.
     }
   }, [empresaId]);
 

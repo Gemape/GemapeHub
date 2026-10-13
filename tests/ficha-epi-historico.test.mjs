@@ -73,6 +73,8 @@ test("a ficha avisa quando não consegue ler o histórico", async () => {
       select: () => {
         const consulta = {
           eq: () => consulta,
+          order: () => consulta,
+          range: () => consulta,
           then: (ok) => ok({ data: null, error: { message: "sem conexão" } }),
         };
         return consulta;

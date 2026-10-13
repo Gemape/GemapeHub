@@ -90,7 +90,7 @@ export function FerramentasTermoVistoria() {
         id: Math.random().toString(36).substr(2, 9),
         item_id: ci.ferramenta_id,
         quantidade: ci.quantidade,
-        estado: ci.ferramenta?.status || "Usado",
+        estado: "Usado",
         conformidade: "Conforme",
         observacao: ci.observacao || "",
       })),
@@ -190,7 +190,7 @@ export function FerramentasTermoVistoria() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end">
           <div className="space-y-1.5 lg:col-span-3">
             <Label>Empresa</Label>
-            <Select value={empresaSel} onValueChange={setEmpresaSel}>
+            <Select value={empresaSel} onValueChange={(v) => { setEmpresaSel(v); setEmpregadoId(""); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>

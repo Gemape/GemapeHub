@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { useExcluir, useSalvar, useVeiculos } from "@/lib/hooks-gemape";
+import { lerTodas } from "@/lib/ler-todas";
 import { ROTULO_TABELA, useProdutosGemape } from "@/lib/produtos-gemape";
 import {
   montarClonagemEndereco,
@@ -50,11 +51,12 @@ function useEnderecos(empresaId: string) {
   return useQuery({
     queryKey: ["enderecamentos", empresaId],
     queryFn: async () => {
-      let q = supabase.from("enderecamentos").select("*");
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      const { data, error } = await q.order("codigo_produto");
-      if (error) throw error;
-      return (data ?? []) as Endereco[];
+      const montar = () => {
+        let q = supabase.from("enderecamentos").select("*");
+        if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+        return q;
+      };
+      return lerTodas<Endereco>(montar, (q) => q.order("codigo_produto").order("id"));
     },
   });
 }
@@ -150,9 +152,20 @@ export function EnderecamentoModulo() {
     }
   }
 
+  const enviandoAgora = useRef(false);
   async function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    const f = new FormData(evento.currentTarget);
+    if (enviandoAgora.current) return;
+    enviandoAgora.current = true;
+    try {
+      await conferirESalvar(evento.currentTarget);
+    } finally {
+      enviandoAgora.current = false;
+    }
+  }
+
+  async function conferirESalvar(formulario: HTMLFormElement) {
+    const f = new FormData(formulario);
     const texto = (nome: string) => String(f.get(nome) ?? "").trim();
     const valores = {
       empresa_id: empresaForm,
@@ -163,12 +176,15 @@ export function EnderecamentoModulo() {
     };
     if (!valores.empresa_id) return void toast.error("Selecione a empresa.");
     if (!valores.codigo_produto) return void toast.error("Selecione o produto.");
+    if (!valores.rua || !valores.prateleira || !valores.apartamento) return void toast.error("Informe rua, número e apartamento.");
     // A lista na tela segue o filtro do cabeçalho; se o formulário aponta outra empresa, consulta a dela.
     let existentes = enderecos;
     if (empresaId !== TODAS && valores.empresa_id !== empresaId) {
-      const { data, error } = await supabase.from("enderecamentos").select("*").eq("empresa_id", valores.empresa_id);
-      if (error) return void toast.error("Não foi possível verificar o endereço", { description: error.message });
-      existentes = (data ?? []) as Endereco[];
+      try {
+        existentes = await lerTodas<Endereco>(() => supabase.from("enderecamentos").select("*").eq("empresa_id", valores.empresa_id), (q) => q.order("id"));
+      } catch (erro) {
+        return void toast.error("Não foi possível verificar o endereço", { description: erro instanceof Error ? erro.message : undefined });
+      }
     }
     const repetido = existentes.some((e) => e.id !== editando?.id && e.empresa_id === valores.empresa_id
       && chave(e.codigo_produto) === chave(valores.codigo_produto) && chave(e.rua) === chave(valores.rua)

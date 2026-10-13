@@ -5,9 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { TOTAL_CAIXAS } from "@/lib/caixas-habilitadas";
 import { TODAS } from "@/lib/empresa-context";
 import type { Modulo } from "@/lib/gemape";
-import { empregadoAtivo } from "@/lib/empregados";
-
-const PAGINA = 50;
+import { empregadoAtivo, hojeLocal } from "@/lib/empregados";
+import { lerTodas } from "@/lib/ler-todas";
 
 // Remove operadores da gramática PostgREST, preservando texto Unicode.
 export const buscaSegura = (value: string) => value.replace(/[,%*()."\\]/g, " ").trim().slice(0, 120);
@@ -197,15 +196,13 @@ export function useItens(modulo: Modulo, empresaId: string, busca = "") {
     ...opcoesBase,
     queryKey: [tabela, empresaId, busca],
     queryFn: async () => {
-      let q = supabase.from(tabela).select("*");
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      if (busca.trim()) q = q.or(`nome.ilike.%${buscaSegura(busca)}%,codigo_sku.ilike.%${buscaSegura(busca)}%`);
-
-      q = q.order("nome");
-
-      const { data, error } = await q.limit(PAGINA);
-      if (error) throw error;
-      return (data ?? []) as Item[];
+      const montar = () => {
+        let q = supabase.from(tabela).select("*");
+        if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+        if (busca.trim()) q = q.or(`nome.ilike.%${buscaSegura(busca)}%,codigo_sku.ilike.%${buscaSegura(busca)}%`);
+        return q;
+      };
+      return lerTodas<Item>(montar, (q) => q.order("nome").order("id"));
     },
   });
 }
@@ -230,12 +227,13 @@ export function useEmpregados(empresaId: string, apenasAtivos = false) {
     ...opcoesBase,
     queryKey: ["empregados", empresaId, apenasAtivos],
     queryFn: async () => {
-      let q = supabase.from("empregados").select("*");
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      if (apenasAtivos) q = q.eq("ativo", true);
-      const { data, error } = await q.order("nome").limit(PAGINA);
-      if (error) throw error;
-      const lista = (data ?? []) as Empregado[];
+      const montar = () => {
+        let q = supabase.from("empregados").select("*");
+        if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+        if (apenasAtivos) q = q.eq("ativo", true);
+        return q;
+      };
+      const lista = await lerTodas<Empregado>(montar, (q) => q.order("nome").order("id"));
       // Com demissão vencida o empregado também conta como inativo, mesmo em registros antigos.
       return apenasAtivos ? lista.filter((e) => empregadoAtivo(e)) : lista;
     },
@@ -247,28 +245,35 @@ export function useVeiculos(empresaId: string) {
     ...opcoesBase,
     queryKey: ["veiculos", empresaId],
     queryFn: async () => {
-      let q = supabase.from("veiculos").select("*");
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      const { data, error } = await q.order("placa").limit(PAGINA);
-      if (error) throw error;
-      return (data ?? []) as Veiculo[];
+      const montar = () => {
+        let q = supabase.from("veiculos").select("*");
+        if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+        return q;
+      };
+      return lerTodas<Veiculo>(montar, (q) => q.order("placa").order("id"));
     },
   });
 }
 
-export function useMovimentacoes(modulo: Modulo, empresaId: string, limite = PAGINA) {
+/** Sem limite, lê o histórico inteiro (decisão: nada de corte em 50 ou 1000 linhas). */
+export function useMovimentacoes(modulo: Modulo, empresaId: string, limite?: number) {
   return useQuery({
     ...opcoesBase,
     queryKey: ["movimentacoes", modulo, empresaId, limite],
     queryFn: async () => {
-      let q = supabase.from("movimentacoes").select("*").eq("modulo", modulo);
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      const { data, error } = await q
-        .order("data_movimentacao", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(limite);
-      if (error) throw error;
-      return (data ?? []) as Movimentacao[];
+      const montar = () => {
+        let q = supabase.from("movimentacoes").select("*").eq("modulo", modulo);
+        if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+        return q;
+      };
+      const ordenar = (q: ReturnType<typeof montar>) =>
+        q.order("data_movimentacao", { ascending: false }).order("created_at", { ascending: false }).order("id");
+      if (limite !== undefined) {
+        const { data, error } = await ordenar(montar()).limit(limite);
+        if (error) throw error;
+        return (data ?? []) as Movimentacao[];
+      }
+      return lerTodas<Movimentacao>(montar, ordenar);
     },
   });
 }
@@ -278,22 +283,19 @@ export function useOcorrencias(busca = "", modulo?: Modulo) {
     ...opcoesBase,
     queryKey: ["ocorrencias", modulo, busca],
     queryFn: async () => {
-      let q = supabase.from("ocorrencias").select("*");
-      if (modulo) {
-        const tipo = { epi: "EPI", uniforme: "Uniforme", ferramenta: "Ferramenta", veiculo: "Veículo" }[modulo];
-        q = q.eq("tipo_ocorrencia", tipo);
-      }
-      if (busca.trim()) {
-        // As searching for employee name requires a join, we'll search in descricao or responsavel for now
-        // A more advanced search would join with empregados
-        q = q.or(`descricao_ocorrencia.ilike.%${buscaSegura(busca)}%,responsavel_registro.ilike.%${buscaSegura(busca)}%`);
-      }
-      const { data, error } = await q
-        .order("data", { ascending: false })
-        .order("hora", { ascending: false })
-        .limit(PAGINA);
-      if (error) throw error;
-      return (data ?? []) as Ocorrencia[];
+      const montar = () => {
+        let q = supabase.from("ocorrencias").select("*");
+        if (modulo) {
+          const tipo = { epi: "EPI", uniforme: "Uniforme", ferramenta: "Ferramenta", veiculo: "Veículo" }[modulo];
+          q = q.eq("tipo_ocorrencia", tipo);
+        }
+        if (busca.trim()) {
+          // A busca por nome do empregado exigiria um join; por ora procura na descrição e no responsável.
+          q = q.or(`descricao_ocorrencia.ilike.%${buscaSegura(busca)}%,responsavel_registro.ilike.%${buscaSegura(busca)}%`);
+        }
+        return q;
+      };
+      return lerTodas<Ocorrencia>(montar, (q) => q.order("data", { ascending: false }).order("hora", { ascending: false }).order("id"));
     },
   });
 }
@@ -303,14 +305,15 @@ export function useComprasUniformes(empresaId: string, busca = "") {
     ...opcoesBase,
     queryKey: ["compras_uniformes", empresaId, busca],
     queryFn: async () => {
-      let q = supabase.from("compras_uniformes").select("*");
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      if (busca.trim()) {
-        q = q.or(`fornecedor.ilike.%${buscaSegura(busca)}%,nota_fiscal.ilike.%${buscaSegura(busca)}%`);
-      }
-      const { data, error } = await q.order("data_compra", { ascending: false }).limit(PAGINA);
-      if (error) throw error;
-      return (data ?? []) as CompraUniforme[];
+      const montar = () => {
+        let q = supabase.from("compras_uniformes").select("*");
+        if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+        if (busca.trim()) {
+          q = q.or(`fornecedor.ilike.%${buscaSegura(busca)}%,nota_fiscal.ilike.%${buscaSegura(busca)}%`);
+        }
+        return q;
+      };
+      return lerTodas<CompraUniforme>(montar, (q) => q.order("data_compra", { ascending: false }).order("id"));
     },
   });
 }
@@ -320,14 +323,15 @@ export function useComprasEpis(empresaId: string, busca = "") {
     ...opcoesBase,
     queryKey: ["compras_epis", empresaId, busca],
     queryFn: async () => {
-      let q = supabase.from("compras_epis").select("*");
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      if (busca.trim()) {
-        q = q.or(`fornecedor.ilike.%${buscaSegura(busca)}%,nota_fiscal.ilike.%${buscaSegura(busca)}%`);
-      }
-      const { data, error } = await q.order("data_compra", { ascending: false }).limit(PAGINA);
-      if (error) throw error;
-      return (data ?? []) as CompraEpi[];
+      const montar = () => {
+        let q = supabase.from("compras_epis").select("*");
+        if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+        if (busca.trim()) {
+          q = q.or(`fornecedor.ilike.%${buscaSegura(busca)}%,nota_fiscal.ilike.%${buscaSegura(busca)}%`);
+        }
+        return q;
+      };
+      return lerTodas<CompraEpi>(montar, (q) => q.order("data_compra", { ascending: false }).order("id"));
     },
   });
 }
@@ -372,9 +376,7 @@ export function useTodosCaixaItens() {
     ...opcoesBase,
     queryKey: ["caixa_ferramenta_itens", "todos"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("caixa_ferramenta_itens").select("*");
-      if (error) throw error;
-      return (data ?? []) as CaixaFerramentaItem[];
+      return lerTodas<CaixaFerramentaItem>(() => supabase.from("caixa_ferramenta_itens").select("*"), (q) => q.order("id"));
     },
   });
 }
@@ -413,18 +415,21 @@ export function useSaidasPorItem(modulo: Modulo, empresaId: string) {
     ...opcoesBase,
     queryKey: ["saidas-por-item", modulo, empresaId],
     queryFn: async () => {
-      const desde = new Date(Date.now() - 180 * 86_400_000).toISOString().slice(0, 10);
-      let q = supabase
-        .from("movimentacoes")
-        .select("item_id, quantidade")
-        .eq("modulo", modulo)
-        .eq("tipo_movimentacao", "Saida")
-        .gte("data_movimentacao", desde);
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      const { data, error } = await q.limit(1000);
-      if (error) throw error;
+      // Corte de 180 dias pela data de Brasília (a UTC adianta o dia à noite).
+      const desde = hojeLocal(new Date(Date.now() - 180 * 86_400_000));
+      const montar = () => {
+        let q = supabase
+          .from("movimentacoes")
+          .select("item_id, quantidade")
+          .eq("modulo", modulo)
+          .eq("tipo_movimentacao", "Saida")
+          .gte("data_movimentacao", desde);
+        if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+        return q;
+      };
+      const data = await lerTodas<{ item_id: string | null; quantidade: number | null }>(montar, (q) => q.order("id"));
       const mapa = new Map<string, number>();
-      for (const linha of data ?? []) {
+      for (const linha of data) {
         if (!linha.item_id) continue;
         mapa.set(linha.item_id, (mapa.get(linha.item_id) ?? 0) + (linha.quantidade ?? 0));
       }

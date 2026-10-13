@@ -56,7 +56,7 @@ export function UniformesRelatorioBaixa() {
 
   const totalQuantidade = baixas.reduce((acc, b) => acc + b.quantidade, 0);
   const totalValor = baixas.reduce((acc, b) => {
-    return acc + b.quantidade * 0;
+    return acc + b.quantidade * (b.preco_unitario_registrado ?? 0);
   }, 0);
 
   if (isError) return <div role="alert">Não foi possível carregar o histórico completo: {error.message}</div>;
@@ -162,7 +162,7 @@ export function UniformesRelatorioBaixa() {
             ) : (
               baixas.map((b) => {
                 const item = itens.find((i) => i.id === b.item_id);
-                const valorB = b.quantidade * 0;
+                const valorB = b.quantidade * (b.preco_unitario_registrado ?? 0);
                 return (
                   <TableRow key={b.id}>
                     <TableCell>{formatarData(b.data_movimentacao)}</TableCell>
