@@ -15,7 +15,7 @@ import {
 import { grupoTemTamanhos } from "@/lib/tamanhos-ferramentas-padrao";
 import { executar } from "@/lib/use-parametros-base";
 
-type Modo = "cadastrar" | "editar" | "clonar";
+type Modo = "cadastrar" | "editar";
 
 const linhasDe = (texto: string) => texto.split("\n");
 
@@ -34,13 +34,12 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
 
   const grupos = dados.gruposFerramenta.filter((g) => grupoTemTamanhos(g.nome));
   const subgruposDe = (id: string) => dados.tamanhosGrupoFerramenta[id] ?? [];
-  const destinos = modo === "clonar" ? grupos.filter((g) => g.id !== origem?.id) : grupos;
 
   function abrir(m: Modo, grupo: { id: string; nome: string } | null) {
     setModo(m);
     setOrigem(grupo);
     setGrupoId(m === "editar" && grupo ? grupo.id : "");
-    setTexto(m === "cadastrar" || !grupo ? "" : subgruposDe(grupo.id).join("\n"));
+    setTexto(m === "editar" && grupo ? subgruposDe(grupo.id).join("\n") : "");
     setAberto(true);
   }
 
@@ -48,7 +47,7 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
     e.preventDefault();
     if (salvando.current) return;
     if (!grupoId) {
-      toast.error(modo === "clonar" ? "Escolha o grupo que recebe a cópia." : "Escolha o grupo de ferramenta.");
+      toast.error("Escolha o grupo de ferramenta.");
       return;
     }
     salvando.current = true;
@@ -75,7 +74,7 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
     executar(() => definirSubgruposGrupoFerramenta(grupo.id, [], "substituir"), "Subgrupos excluídos.");
   }
 
-  const titulo = modo === "editar" ? `Editar subgrupos de ${origem?.nome ?? ""}` : modo === "clonar" ? `Clonar subgrupos de ${origem?.nome ?? ""}` : "Cadastrar subgrupos";
+  const titulo = modo === "editar" ? `Editar subgrupos de ${origem?.nome ?? ""}` : "Cadastrar subgrupos";
 
   return (
     <section className="space-y-5" data-testid="subgrupos-ferramenta">
@@ -139,7 +138,7 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
                 <td className="px-3 py-2 font-medium">{g.nome}</td>
                 <td className="px-3 py-2 text-muted-foreground">{subgruposDe(g.id).join(" · ") || "Nenhum subgrupo cadastrado."}</td>
                 <td className="px-3 py-2">
-                  <AcoesLinha rotulo={g.nome} onClonar={() => abrir("clonar", g)} onEditar={() => abrir("editar", g)} onExcluir={() => excluir(g)} />
+                  <AcoesLinha rotulo={g.nome} onEditar={() => abrir("editar", g)} onExcluir={() => excluir(g)} />
                 </td>
               </tr>
             ))}
@@ -154,21 +153,19 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
             <DialogDescription>
               {modo === "editar"
                 ? "Troque a lista de subgrupos do grupo. O nome do grupo é mudado na lista Grupos de ferramentas."
-                : modo === "clonar"
-                  ? "Escolha o grupo que recebe a cópia: os subgrupos abaixo são somados aos que ele já tem, e podem ser editados."
-                  : "Escolha o grupo e informe os subgrupos novos, um por linha. Eles são somados aos que o grupo já tem."}
+                : "Escolha o grupo e informe os subgrupos novos, um por linha. Eles são somados aos que o grupo já tem."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-3">
             <div className="space-y-1">
-              <Label htmlFor="subgrupo-grupo">{modo === "clonar" ? "Grupo que recebe a cópia" : "Grupo de ferramenta"}</Label>
+              <Label htmlFor="subgrupo-grupo">Grupo de ferramenta</Label>
               {modo === "editar" ? (
                 <p id="subgrupo-grupo" className="rounded-md border bg-muted px-3 py-2 text-sm">{origem?.nome}</p>
               ) : (
                 <Select value={grupoId} onValueChange={setGrupoId}>
                   <SelectTrigger id="subgrupo-grupo"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
                   <SelectContent>
-                    {destinos.map((g) => <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>)}
+                    {grupos.map((g) => <SelectItem key={g.id} value={g.id}>{g.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
               )}

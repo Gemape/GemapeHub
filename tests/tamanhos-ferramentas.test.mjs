@@ -82,7 +82,8 @@ test("a tela de Parâmetros Específicos de Ferramentas mostra os subgrupos de c
   assert.match(tela, /Cadastrar subgrupos/);
   assert.match(tela, /Cadastrar padrão/);
   assert.match(tela, /<RestaurarPadraoInicial/);
-  assert.match(tela, /<AcoesLinha rotulo=\{g\.nome\} onClonar=\{\(\) => abrir\("clonar", g\)\} onEditar=\{\(\) => abrir\("editar", g\)\} onExcluir=\{\(\) => excluir\(g\)\}/);
+  assert.match(tela, /<AcoesLinha rotulo=\{g\.nome\} onEditar=\{\(\) => abrir\("editar", g\)\} onExcluir=\{\(\) => excluir\(g\)\}/);
+  assert.doesNotMatch(tela, /onClonar|clonar/i); // só Editar e Excluir em cada linha
   assert.match(tela, /<th className="px-3 py-2">Subgrupos<\/th>/);
 });
 
