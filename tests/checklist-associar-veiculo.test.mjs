@@ -209,10 +209,20 @@ test("os itens vêm do tipo do veículo e o avulso vale para qualquer veículo (
   assert.doesNotMatch(modulo, /tipoPermiteAvulso/);
 });
 
-test("a lista de itens associados não tem Clonar, Editar e Excluir em cada linha (dec 154)", () => {
+test("Clonar, Editar e Excluir ficam só no cabeçalho de cada check list, não nas linhas dos itens (dec 156)", () => {
   const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
-  assert.doesNotMatch(tela, /AcoesLinha/);
-  assert.doesNotMatch(tela, /onClonar|onEditar|onExcluir/);
-  assert.doesNotMatch(tela, />Ações</);
-  assert.match(tela, /Associar itens<\/Button>/); // o botão de cima continua
+  assert.equal((tela.match(/<AcoesLinha/g) ?? []).length, 1); // um por check list (veículo)
+  const cabecalho = tela.indexOf("<AcoesLinha");
+  const linhaDoItem = tela.indexOf("listas.map((c) =>");
+  assert.ok(cabecalho < linhaDoItem); // os botões estão antes das linhas dos itens
+  assert.match(tela, /Associar itens<\/Button>/);
+});
+
+test("Clonar abre com veículo, responsável, periodicidade e itens do original, e exige trocar o veículo (dec 156)", () => {
+  const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
+  assert.match(tela, /setVeiculoId\(a \? a\.veiculoId : ""\)/);
+  assert.match(tela, /setEscolhidos\(a \? a\.itens\.map/);
+  assert.match(tela, /v\.id === clonandoDe/);
+  assert.match(tela, /veiculoId === clonandoDe/);
+  assert.match(tela, /Escolha outro veículo para o clone/);
 });
