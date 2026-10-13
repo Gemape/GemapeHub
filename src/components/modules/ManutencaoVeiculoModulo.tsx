@@ -5,6 +5,7 @@ import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DialogAcoesManutencao } from "@/components/modules/DialogAcoesManutencao";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,7 @@ function totalGeral(locais: LocalForm[]): string {
 
 export function ManutencaoVeiculoModulo() {
   const { empresaId, empresas } = useEmpresa();
-  const { isAdmin } = useAccess();
+  const { isAdmin, canWrite } = useAccess();
   const parametros = useParametrosBase();
   const { data: veiculos = [] } = useVeiculos(empresaId);
   const todas = useManutencoesVeiculo();
@@ -70,6 +71,7 @@ export function ManutencaoVeiculoModulo() {
   // Ações não feitas de cada grupo, com a observação de por que merecem atenção antes do prazo do plano.
   const [naoFeitos, setNaoFeitos] = useState<Record<string, Record<string, string>>>({});
   const [busca, setBusca] = useState("");
+  const [acoesAberto, setAcoesAberto] = useState(false);
   const trava = useRef(false);
   // Ações e observações de um grupo desmarcado: voltam se o grupo for marcado de novo (clique errado não perde o texto).
   const guardados = useRef<Record<string, Record<string, string>>>({});
@@ -311,7 +313,7 @@ export function ManutencaoVeiculoModulo() {
               <Label>Grupos de ações</Label>
               <p className="text-xs text-muted-foreground">Marque todos os grupos que a manutenção abrangeu e, em cada um, as ações feitas.</p>
               {acoes.length === 0 && (
-                <p className="text-xs text-muted-foreground">Cadastre os grupos em Parâmetros &gt; Veículos &gt; Manutenção.</p>
+                <p className="text-xs text-muted-foreground">Nenhum grupo de ações cadastrado ainda.</p>
               )}
               {acoes.map((grupo) => {
                 const grupoMarcado = grupo.id in marcados;
@@ -380,6 +382,14 @@ export function ManutencaoVeiculoModulo() {
                 );
               })}
             </div>
+            {canWrite && (
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Falta um grupo ou uma ação?{" "}
+                <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setAcoesAberto(true)}>
+                  Cadastrar em Parâmetros &gt; Veículos &gt; Manutenção
+                </button>
+              </p>
+            )}
             <div className="space-y-2 sm:col-span-2">
               <Label>Locais da manutenção</Label>
               <p className="text-xs text-muted-foreground">Lance a parte feita na Gemape e cada terceiro, cada um com o serviço, o pagamento combinado e os custos. O relatório mostra o custo de cada local.</p>
@@ -427,6 +437,7 @@ export function ManutencaoVeiculoModulo() {
           </form>
         </DialogContent>
       </Dialog>
+      <DialogAcoesManutencao aberto={acoesAberto} onAbrirMudou={setAcoesAberto} />
     </div>
   );
 }

@@ -109,3 +109,13 @@ test("dec 161: a tela tem vários locais, botões de adicionar e observação do
   const extrato = readFileSync(new URL("../src/components/modules/ExtratoVeiculo.tsx", import.meta.url), "utf8");
   assert.match(extrato, /Itens não realizados em atenção/);
 });
+
+test("dec 162: link abaixo dos grupos de ações abre as Ações de manutenção numa janela ao lado do formulário", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ManutencaoVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /Cadastrar em Parâmetros &gt; Veículos &gt; Manutenção/);
+  assert.match(tela, /setAcoesAberto\(true\)/);
+  // A janela fica depois do diálogo da manutenção (irmã, não filha), para o que foi preenchido continuar montado.
+  assert.ok(tela.indexOf("</Dialog>\n      <DialogAcoesManutencao") > tela.indexOf("<form key="));
+  const janela = readFileSync(new URL("../src/components/modules/DialogAcoesManutencao.tsx", import.meta.url), "utf8");
+  assert.match(janela, /AcoesManutencaoVeiculoLista/);
+});
