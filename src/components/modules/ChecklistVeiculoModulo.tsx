@@ -413,6 +413,9 @@ export function ChecklistVeiculoModulo() {
               {veiculoEscolhido && periodicidadesDe(veiculoEscolhido).length === 0 && (
                 <p className="text-xs text-muted-foreground">Este veículo não tem check list periódico associado. {linkAssociar}</p>
               )}
+              {veiculoEscolhido && !tipoEscolhido && (
+                <p className="text-xs text-muted-foreground">Escolha o tipo de check list para ver os itens e iniciar.</p>
+              )}
               {veiculoEscolhido && tipoEscolhido && (
                 <p className="text-xs text-muted-foreground">
                   {gruposDoVeiculo.length === 0

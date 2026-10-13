@@ -141,8 +141,15 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     setVeiculoId(a ? a.veiculoId : "");
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
     // Clonar copia veículo, responsável, periodicidade e itens (decisões 138 e 156); tudo pode ser editado, e o veículo tem de mudar.
-    setPeriodicidade(a ? (gruposDaAssociacao(a, grupos).find((i) => i.tipo === "periodico")?.periodicidade ?? AVULSO) : "");
-    setEscolhidos(a ? a.itens.map((i) => i.grupoId) : null);
+    const daAssociacao = a ? gruposDaAssociacao(a, grupos) : [];
+    const escolhida = a ? (daAssociacao.find((i) => i.tipo === "periodico")?.periodicidade ?? AVULSO) : "";
+    setPeriodicidade(escolhida);
+    // A janela guarda uma periodicidade só (decisão 148). Um check list antigo com mais de uma mostra só os itens da escolhida, e o aviso diz o que sai ao salvar.
+    const daEscolhida = daAssociacao.filter((i) => (escolhida === AVULSO ? i.tipo === "avulso" : i.tipo === "periodico" && i.periodicidade === escolhida));
+    if (a && daEscolhida.length < daAssociacao.length) {
+      toast.warning(`Este check list tinha mais de uma periodicidade. A janela mostra só ${escolhida}; ao salvar, os itens das outras periodicidades saem.`);
+    }
+    setEscolhidos(a ? daEscolhida.map((i) => i.grupoId) : null);
     setAberto(true);
   }
 

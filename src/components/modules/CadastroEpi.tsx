@@ -32,8 +32,6 @@ import {
   tamanhosAssociadosParaCadastro,
   unidadesAutorizadasDoProduto,
 } from "@/lib/estoque-tamanho";
-import { useAccess } from "@/lib/access-context";
-import { opcoesDaSeparacao, planejarSeparacao } from "@/lib/epi-separar-tamanhos";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { avisoExclusaoDoProduto } from "@/lib/codigo-fabrica-vinculos";
 import { estaAtivo, lerParametros, paraSelecao, proximoCodigo, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
@@ -95,48 +93,6 @@ function CatalogoEpi() {
     queryKey: ["epis-catalogo"],
     queryFn: () => lerTudo<EpiCatalogo>("epis_catalogo"),
   });
-  const { data: estoques = [] } = useQuery({
-    queryKey: ["epis-estoques-todos"],
-    queryFn: () => lerTudo<EpiAntigo>("epis"),
-  });
-  const { data: enderecos = [] } = useQuery({
-    queryKey: ["enderecamentos-todos"],
-    queryFn: () => lerTudo<Linha>("enderecamentos"),
-  });
-  const { data: empresas = [] } = useQuery({
-    queryKey: ["empresas-todas"],
-    queryFn: () => lerTudo<Linha>("empresas"),
-  });
-  const { isAdmin } = useAccess();
-  const [separarAberto, setSeparando] = useState(false);
-  const [separandoAgora, setSeparandoAgora] = useState(false);
-  const travaSeparar = useRef(false);
-  // Os já separados ficam só como histórico e saem da lista de pendentes.
-  const antigos = estoques.filter((e) => !e.catalogo_id && !e.separado_em);
-  const separados = estoques.filter((e) => !e.catalogo_id && e.separado_em);
-  const plano = planejarSeparacao(
-    { empresas, epis_catalogo: catalogo as unknown as Linha[], epis: estoques as unknown as Linha[], enderecamentos: enderecos },
-    opcoesDaSeparacao(parametros),
-  );
-
-  async function separar() {
-    if (travaSeparar.current) return;
-    travaSeparar.current = true;
-    setSeparandoAgora(true);
-    try {
-      const { data, error } = await (supabase as unknown as { rpc: (n: string) => Promise<{ data: { separados: number; criados: number } | null; error: Error | null }> }).rpc("separar_epis_por_tamanho");
-      if (error) throw error;
-      await queryClient.invalidateQueries();
-      toast.success(`${data?.separados ?? 0} EPI(s) separado(s) por tamanho; ${data?.criados ?? 0} cadastro(s) novo(s).`);
-      setSeparando(false);
-    } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível separar os EPIs.");
-    } finally {
-      travaSeparar.current = false;
-      setSeparandoAgora(false);
-    }
-  }
-
   const rotuloTamanho = (id: string | null) => (id ? nomeTamanho(parametros, id) : "");
   const grupos = filtrarGrupos(agruparEpis(catalogo), busca, rotuloTamanho);
 
@@ -325,77 +281,6 @@ function CatalogoEpi() {
           </TableBody>
         </Table>
       </div>
-
-      {antigos.length > 0 && (
-        <section className="panel space-y-2 p-4">
-          <h2 className="text-sm font-semibold">EPIs antigos</h2>
-          <p className="text-xs text-muted-foreground">
-            Cadastrados antes do catálogo por tamanho. Seguem funcionando como estavam.
-            {plano.grupos.length > 0 && " Os que têm mais de um tamanho podem ser separados em um cadastro por tamanho."}
-          </p>
-          {plano.grupos.length > 0 && isAdmin && (
-            <Button requiresWrite variant="outline" size="sm" onClick={() => setSeparando(true)}>
-              Separar por tamanho
-            </Button>
-          )}
-          <ul className="grid gap-1 text-sm sm:grid-cols-2">
-            {antigos.map((a) => (
-              <li key={a.id} className="truncate">
-                <span className="font-mono text-xs">{a.codigo_sku}</span> · {a.nome}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {separados.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {separados.length} registro(s) antigo(s) já separado(s) por tamanho ficam só como histórico: movimentações, fichas e termos continuam ligados a eles.
-        </p>
-      )}
-
-      <Dialog open={separarAberto} onOpenChange={setSeparando}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Separar EPIs antigos por tamanho</DialogTitle>
-            <DialogDescription>
-              Cada tamanho vira um EPI com código próprio. O saldo e o mínimo de cada empresa vão para o tamanho certo; o registro antigo fica zerado, como histórico, e nada do que já foi movimentado é alterado. Tudo é feito de uma vez.
-            </DialogDescription>
-          </DialogHeader>
-          <ul className="space-y-3 text-sm">
-            {plano.grupos.map((g) => (
-              <li key={g.chave} className="rounded-md border p-3">
-                <p className="font-medium">{g.nome}</p>
-                <p className="text-xs text-muted-foreground">
-                  Antigos: {g.antigos.map((a) => a.codigo_sku).filter((c, i, l) => l.indexOf(c) === i).join(", ")}
-                </p>
-                <p className="mt-1 text-xs">
-                  {g.tamanhos
-                    .map((t) => `${nomeTamanho(parametros, t.tamanhoId)} → ${t.codigo}${t.jaExiste ? " (já cadastrado)" : ""}`)
-                    .join(" · ")}
-                </p>
-                {g.enderecosACopiar > 0 && (
-                  <p className="text-xs text-muted-foreground">{g.enderecosACopiar} endereço(s) copiado(s) para os novos códigos.</p>
-                )}
-                {g.associacoesNfe > 0 && (
-                  <p className="text-xs text-amber-700">
-                    {g.associacoesNfe} associação(ões) de código de fábrica seguem no código antigo; reassocie em Cadastros &gt; Gerais &gt; Código de fábrica.
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-          {plano.semRegra && (
-            <p className="text-sm text-destructive">Cadastre antes a regra do código de EPI em Cadastros &gt; Gerais &gt; Código do Produto.</p>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSeparando(false)}>Cancelar</Button>
-            <Button requiresWrite disabled={separandoAgora || plano.semRegra} onClick={() => void separar()}>
-              {separandoAgora ? "Separando..." : "Separar agora"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <DialogAssociarTamanhos aberto={associarAberto} onAbrirMudou={setAssociarAberto} de="epi" />
 

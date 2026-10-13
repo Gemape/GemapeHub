@@ -120,13 +120,11 @@ test("sem regra de código, nada é gravado", () => {
 
 import { readFileSync } from "node:fs";
 
-test("a tela mostra a prévia, só o Administrador separa e o demo expõe a operação", () => {
+test("a tela de Cadastro EPI não tem mais a seção EPIs antigos nem o botão de separar (dec 160)", () => {
   const tela = readFileSync(new URL("../src/components/modules/CadastroEpi.tsx", import.meta.url), "utf8");
-  assert.match(tela, /plano\.grupos\.length > 0 && isAdmin/);
-  assert.match(tela, /rpc\("separar_epis_por_tamanho"\)/);
-  assert.match(tela, /travaSeparar\.current/);
+  assert.doesNotMatch(tela, /EPIs antigos|Separar por tamanho|separar_epis_por_tamanho|planejarSeparacao/);
   const demo = readFileSync(new URL("../src/integrations/supabase/demo-client.ts", import.meta.url), "utf8");
-  assert.match(demo, /nome === "separar_epis_por_tamanho"/);
+  assert.match(demo, /nome === "separar_epis_por_tamanho"/); // a operação do demo continua guardada, só não há mais tela para ela
 });
 
 test("o antigo separado não guarda mínimo, para não alertar em dobro", () => {
