@@ -83,9 +83,9 @@ export function ChecklistVeiculoModulo() {
   const [visao, setVisao] = useState<"periodicos" | "avulsos">("periodicos");
   const [busca, setBusca] = useState("");
   const [soPendencias, setSoPendencias] = useState(false);
-  // Novo check list (decisão 120): o tipo do check list, Periódico ou Avulso, no lugar do tipo de veículo.
-  const [modoAvulso, setModoAvulso] = useState<"avulso" | "periodico">("periodico");
-  const [periodicidadeEscolhida, setPeriodicidadeEscolhida] = useState("");
+  // Novo check list (decisão 157): primeiro o veículo, depois o tipo de check list, uma das opções "Placa >> Periodicidade >> Responsável"
+  // da associação do veículo ou Avulso. Guarda a periodicidade escolhida, "avulso" ou vazio (ainda sem escolha).
+  const [tipoEscolhido, setTipoEscolhido] = useState("");
   const [veiculoId, setVeiculoId] = useState("");
   const [veiculosAberto, setVeiculosAberto] = useState(false);
   const [associarAberto, setAssociarAberto] = useState(false);
@@ -104,7 +104,7 @@ export function ChecklistVeiculoModulo() {
   // Periodicidade do check list periódico: a escolhida (se o veículo tem mais de uma) ou a mais frequente (decisão 119).
   const periodicidadesDe = (v: VeiculoChecklist) => periodicidadesDaAssociacao(associacaoDe(v));
   const periodicidadeDe = (v: VeiculoChecklist) => periodicidadesDe(v)[0] ?? null; // a mais frequente: situação por veículo e painel
-  const periodicidadeDoDialogo = (v: VeiculoChecklist) => periodicidadesDe(v).find((p) => p === periodicidadeEscolhida) ?? periodicidadeDe(v);
+  const periodicidadeDoDialogo = (v: VeiculoChecklist) => periodicidadesDe(v).find((p) => p === tipoEscolhido) ?? null;
 
   // Mantém em vigor as previsões do painel mensal (decisão 80): veículos ativos com associação, desde o dia da
   // associação. Só roda com a lista de veículos carregada: sem ela, as previsões em vigor seriam apagadas.
@@ -141,12 +141,15 @@ export function ChecklistVeiculoModulo() {
   const naLista = checklists.filter(checklistVisivelNaLista);
   // O avulso (decisão 90) não tem periodicidade nem responsável: fica numa lista à parte e não entra no painel do mês nem na situação por veículo.
   const avulsos = checklists.filter((c) => !checklistVisivelNaLista(c));
-  const avulsoNovo = tela?.tipo === "novo" && modoAvulso === "avulso";
+  const avulsoNovo = tela?.tipo === "novo" && tipoEscolhido === "avulso";
   const atual = tela?.tipo === "check" ? (todos.find((c) => c.id === tela.id) ?? null) : null;
   // No avulso não há campo de tipo de veículo (decisão 118): entram todos os veículos ativos que têm tipo de check list, e o tipo vem do veículo.
   const veiculosDoDialogo = veiculos.filter((v) => v.status === "Ativo" && tipoCheckDe(v) !== null);
   const veiculoEscolhido = veiculosDoDialogo.find((v) => v.id === veiculoId);
   const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === (veiculoEscolhido ? tipoCheckDe(veiculoEscolhido) : null))?.nome ?? "";
+  // Opção do tipo de check list, na ordem pedida pelo responsável (decisão 157): Placa >> Responsável >> Periodicidade.
+  const opcaoDoChecklist = (v: VeiculoChecklist, periodicidade: string, responsavelNome: string) =>
+    [(v.placa ?? "").trim().toUpperCase() || rotuloDe(v), responsavelNome.trim() || "Não definido", periodicidade].map((t) => t.trim().replace(/\s+/g, " ")).join(" >> ");
   // Atalho para a associação de itens (grupos, periodicidade e responsável), aberta numa janela ao lado do Novo check list.
   const linkAssociar = canWrite ? (
     <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setAssociarAberto(true)}>
@@ -183,15 +186,14 @@ export function ChecklistVeiculoModulo() {
   }
 
   function abrirNovoAvulso() {
-    setModoAvulso("avulso");
+    setTipoEscolhido("avulso");
     setVeiculoId("");
     setResponsavelId("");
     setTela({ tipo: "novo", avulso: true });
   }
 
   function abrirNovo(v?: VeiculoChecklist, periodicidade?: string) {
-    setModoAvulso("periodico");
-    setPeriodicidadeEscolhida(periodicidade ?? "");
+    setTipoEscolhido(periodicidade ?? (v ? periodicidadeDe(v) ?? "" : ""));
     setVeiculoId(v && tipoCheckDe(v) ? v.id : "");
     setResponsavelId((v && associacaoDe(v)?.responsavel?.id) || v?.empregado_responsavel_id || "");
     setTela({ tipo: "novo" });
@@ -201,6 +203,10 @@ export function ChecklistVeiculoModulo() {
     e.preventDefault();
     if (trava.current || !veiculoEscolhido) {
       if (!veiculoEscolhido) toast.error("Selecione o veículo.");
+      return;
+    }
+    if (!tipoEscolhido) {
+      toast.error("Escolha o tipo de check list.");
       return;
     }
     trava.current = true;
@@ -360,30 +366,22 @@ export function ChecklistVeiculoModulo() {
             <DialogTitle>Novo check list</DialogTitle>
             <DialogDescription>
               {avulsoNovo
-                ? "Escolha o tipo de check list e o veículo: o avulso traz só os grupos marcados como Avulso na associação do veículo, para registrar itens mais simples."
-                : "Escolha o tipo de check list e o veículo: o periódico traz os grupos da periodicidade do veículo em Parâmetros > Veículos > Check list."}
+                ? "Escolha o veículo e o tipo de check list: o avulso traz só os grupos marcados como Avulso na associação do veículo, para registrar itens mais simples."
+                : "Escolha o veículo e o tipo de check list: as opções são os check lists associados ao veículo em Parâmetros > Veículos > Check list."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={iniciar} className="min-w-0 space-y-4 [&_p]:break-words">
-            <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="ck_modo">Tipo de check list</Label>
-              <Select value={modoAvulso} onValueChange={(m) => setModoAvulso(m as "avulso" | "periodico")}>
-                <SelectTrigger id="ck_modo"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="periodico">Periódico</SelectItem>
-                  <SelectItem value="avulso">Avulso</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_veiculo">Veículo</Label>
               <Select
                 value={veiculoId}
                 onValueChange={(id) => {
                   setVeiculoId(id);
-                  // O responsável definido na associação já vem preenchido; dá para trocar.
-                  const doVeiculo = associacoes.find((a) => a.veiculoId === id)?.responsavel?.id;
-                  if (doVeiculo) setResponsavelId(doVeiculo);
+                  const novoVeiculo = veiculosDoDialogo.find((v) => v.id === id);
+                  // O tipo de check list escolhido só vale se o novo veículo tem essa opção.
+                  setTipoEscolhido((t) => (t === "avulso" || (novoVeiculo && periodicidadesDe(novoVeiculo).includes(t as Periodicidade)) ? t : ""));
+                  // O responsável definido na associação já vem preenchido.
+                  setResponsavelId(associacoes.find((a) => a.veiculoId === id)?.responsavel?.id ?? novoVeiculo?.empregado_responsavel_id ?? "");
                 }}
               >
                 <SelectTrigger id="ck_veiculo" aria-describedby="ck_veiculo_ajuda" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
@@ -398,27 +396,33 @@ export function ChecklistVeiculoModulo() {
               {veiculosDoDialogo.length === 0 && (
                 <p id="ck_veiculo_ajuda" className="text-xs text-muted-foreground">Nenhum veículo ativo com tipo de check list. A subcategoria do veículo é definida em Parâmetros &gt; Veículos &gt; Cadastro de Veículos.</p>
               )}
-              {veiculoEscolhido && (
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="ck_modo">Tipo de check list</Label>
+              <Select value={tipoEscolhido} onValueChange={setTipoEscolhido} disabled={!veiculoEscolhido}>
+                <SelectTrigger id="ck_modo" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder={veiculoEscolhido ? "Selecione o tipo de check list" : "Escolha o veículo primeiro"} /></SelectTrigger>
+                <SelectContent>
+                  {veiculoEscolhido && periodicidadesDe(veiculoEscolhido).map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {opcaoDoChecklist(veiculoEscolhido, p, associacaoEscolhida?.responsavel?.nome ?? "")}
+                    </SelectItem>
+                  ))}
+                  {veiculoEscolhido && <SelectItem value="avulso">{`${(veiculoEscolhido.placa ?? "").trim().toUpperCase() || rotuloDe(veiculoEscolhido)} >> Avulso`}</SelectItem>}
+                </SelectContent>
+              </Select>
+              {veiculoEscolhido && periodicidadesDe(veiculoEscolhido).length === 0 && (
+                <p className="text-xs text-muted-foreground">Este veículo não tem check list periódico associado. {linkAssociar}</p>
+              )}
+              {veiculoEscolhido && tipoEscolhido && (
                 <p className="text-xs text-muted-foreground">
                   {gruposDoVeiculo.length === 0
                     ? (avulsoNovo ? (associacaoEscolhida ? <>Este veículo não tem grupos Avulso na associação. {linkAssociar}</> : <>Não há itens de check list para o tipo deste veículo. {linkItens}</>) : <>Este veículo não tem itens associados. {linkAssociar}</>)
                     : `${itensDoVeiculo} ${itensDoVeiculo === 1 ? "item" : "itens"} em ${gruposDoVeiculo.length} ${gruposDoVeiculo.length === 1 ? "grupo" : "grupos"}: ${gruposDoVeiculo.map((g) => g.nome).join(", ")}.`}
-                </p>
-              )}
-              {veiculoEscolhido && !avulsoNovo && (
-                <p className="text-xs text-muted-foreground">
-                  Periodicidade (da associação do veículo): {periodicidadeDoDialogo(veiculoEscolhido) ?? <>não definida. {linkAssociar}</>}
-                  {periodicidadesDe(veiculoEscolhido).length > 1 && <>
-                    {" "}· trocar:{" "}
-                    {periodicidadesDe(veiculoEscolhido).map((p) => (
-                      <button key={p} type="button" aria-pressed={periodicidadeDoDialogo(veiculoEscolhido) === p} className={`mr-1.5 underline underline-offset-2 ${periodicidadeDoDialogo(veiculoEscolhido) === p ? "font-semibold text-foreground" : "text-primary"}`} onClick={() => setPeriodicidadeEscolhida(p)}>{p}</button>
-                    ))}
-                  </>}
-                  {pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
+                  {!avulsoNovo && pendenciasAbertas(checklists, veiculoEscolhido.id).length > 0 && ` · ${pendenciasAbertas(checklists, veiculoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
                 </p>
               )}
             </div>
-            {!avulsoNovo && <div className="min-w-0 space-y-1.5">
+            {!avulsoNovo && tipoEscolhido && !associacaoEscolhida?.responsavel && <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_resp">Responsável pelo check list</Label>
               <Select value={responsavelId} onValueChange={setResponsavelId}>
                 <SelectTrigger id="ck_resp" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>
