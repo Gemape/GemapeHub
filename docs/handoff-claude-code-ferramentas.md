@@ -402,4 +402,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-09 dec 153: itens por tipo de veículo; Avulso só para veículos leves (janela Associar e check list avulso).
 - 2026-10-09 dec 154: lista de itens associados sem Clonar/Editar/Excluir por linha.
 - 2026-10-09 dec 155: Avulso para qualquer veículo (substitui dec 153); itens por tipo do veículo, já sem escolher a periodicidade.
-- 2026-10-13 dec 157: Novo check list do módulo Veículos pergunta Veículo e depois Tipo de check list (opções Placa >> Responsável >> Periodicidade da associação + Avulso).
+- 2026-10-13 dec 156: Clonar/Editar/Excluir só no cabeçalho do check list (por veículo); Clonar abre com tudo do original e exige trocar o veículo.
