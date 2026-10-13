@@ -130,3 +130,8 @@ test("dec 163: marcar Outros exige a descrição aberta, em qualquer grupo", () 
   assert.match(tela, /Descreva o que foi feito \(obrigatório\)/);
   assert.match(tela, /!marcado && !ehOutros\(sub\.nome\)/);
 });
+
+test("revisão: o extrato passa os registros antigos pelo gruposDaManutencao, para eles também encerrarem o ponto de atenção", () => {
+  const extrato = readFileSync(new URL("../src/components/modules/ExtratoVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(extrato, /pontosDeAtencao\(manut\.map\(\(m\) => \(\{ id: m\.id, data: m\.data, km: m\.km, grupos: gruposDaManutencao\(m\) \}\)\), nomeAcao\)/);
+});
