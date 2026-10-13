@@ -1019,8 +1019,9 @@ export function excluirItensCriadosAcoesManutencao(ids: string[], storage = stor
     for (const c of criados) {
       const paiMarcado = escolhidos.has(c.id);
       const sairam = new Set(c.filhos.filter((f) => paiMarcado || escolhidos.has(f.id)).map((f) => f.id));
-      if (sairam.size === 0) continue;
-      if (paiMarcado && !c.doPadrao) {
+      const removeAcaoInteira = paiMarcado && !c.doPadrao;
+      if (sairam.size === 0 && !removeAcaoInteira) continue;
+      if (removeAcaoInteira) {
         d.acoesManutencaoVeiculo = d.acoesManutencaoVeiculo.filter((a) => a.id !== c.id);
         acoes += 1;
       } else {

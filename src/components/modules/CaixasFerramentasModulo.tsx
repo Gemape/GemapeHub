@@ -299,6 +299,7 @@ export function CaixasFerramentasModulo() {
                       onClonar={() => abrirClone(c)}
                       onEditar={() => {
                         setAbertura((n) => n + 1);
+                        setItensVinculados([]);
                         setModelo(null);
                         setEditando(c);
                         setNumero(numeroDaCaixa(c));

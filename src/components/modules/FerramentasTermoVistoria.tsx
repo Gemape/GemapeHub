@@ -37,6 +37,7 @@ import { empregadoDoTermo, validarTermoVistoria } from "@/lib/termos-atomicos";
 import { montarTermoVistoriaHtml } from "@/lib/termo-vistoria-html";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { MODO_DEMO } from "@/lib/modo-demo";
+import { hojeLocal } from "@/lib/empregados";
 
 interface ItemVistoria {
   id: string;
@@ -52,7 +53,7 @@ export function FerramentasTermoVistoria() {
   const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
   const [empregadoId, setEmpregadoId] = useState("");
   const [caixaSel, setCaixaSel] = useState("");
-  const [dataVistoria, setDataVistoria] = useState(new Date().toISOString().slice(0, 10));
+  const [dataVistoria, setDataVistoria] = useState(hojeLocal());
   const [itensVistoria, setItensVistoria] = useState<ItemVistoria[]>([]);
 
   const { data: empresas = [] } = useEmpresas();

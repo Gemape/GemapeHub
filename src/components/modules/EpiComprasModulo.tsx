@@ -46,6 +46,7 @@ import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { hojeLocal } from "@/lib/empregados";
 
 const CHAVES = ["compras_epis", "itens", "movimentacoes"];
 
@@ -317,7 +318,7 @@ export function EpiComprasModulo() {
                 name="data_compra"
                 type="date"
                 required
-                defaultValue={new Date().toISOString().slice(0, 10)}
+                defaultValue={hojeLocal()}
               />
             </div>
             <div className="space-y-1.5">
