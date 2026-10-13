@@ -226,3 +226,11 @@ test("Clonar abre com veículo, responsável, periodicidade e itens do original,
   assert.match(tela, /veiculoId === clonandoDe/);
   assert.match(tela, /Escolha outro veículo para o clone/);
 });
+
+test("a janela Associar tem o link Cadastrar itens de check list, aberto ao lado do formulário (dec 158)", () => {
+  const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
+  assert.match(tela, /linkCadastro\("Cadastrar itens de check list", \(\) => setItensAberto\(true\)\)/);
+  assert.match(tela, /<DialogItensChecklist aberto=\{itensAberto\} onAbrirMudou=\{setItensAberto\} \/>/);
+  // Fica depois de fechar o diálogo da associação: o que foi preenchido continua montado.
+  assert.ok(tela.indexOf("</Dialog>\n\n      {/* Ao lado") < tela.indexOf("<DialogItensChecklist"));
+});
