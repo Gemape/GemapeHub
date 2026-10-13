@@ -405,3 +405,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-13 dec 156: Clonar/Editar/Excluir só no cabeçalho do check list (por veículo); Clonar abre com tudo do original e exige trocar o veículo.
 - 2026-10-13 dec 157: Novo check list do módulo Veículos pergunta Veículo e depois Tipo de check list (opções Placa >> Responsável >> Periodicidade da associação + Avulso).
 - 2026-10-13 dec 158: link Cadastrar itens de check list na janela Associar (janela ao lado, sem sair do formulário).
+- 2026-10-13 dec 160: removida a seção EPIs antigos (e o botão Separar por tamanho) do Cadastro EPI; dados e rotina de separação ficam guardados, sem tela.
