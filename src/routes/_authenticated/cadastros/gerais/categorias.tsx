@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { demoSupabase } from "@/integrations/supabase/demo-client";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
-import { TamanhosPorFerramenta } from "@/components/parametros/TamanhosPorFerramenta";
+import { SubgruposFerramenta } from "@/components/parametros/SubgruposFerramenta";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
   adicionarCategoria,
@@ -362,7 +362,7 @@ function Categorias() {
           }
         />
       </div>
-      <TamanhosPorFerramenta dados={dados} />
+      <SubgruposFerramenta dados={dados} />
           </>}
           {categoria.id === "cat-uniformes" && <div className="max-w-3xl">{listaMarcas("marcasUniforme", "Marcas de uniformes", "Nova marca de uniforme", "uniforme")}</div>}
           {categoria.id === "cat-veiculos" && <div className="max-w-3xl space-y-2">

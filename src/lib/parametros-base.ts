@@ -481,6 +481,75 @@ export function cadastrarTamanhosPadraoFerramentas(storage = storagePadrao()): {
   });
 }
 
+// Subgrupos (filhos) de um grupo de ferramenta (decisão 159): são os mesmos tamanhos, numerações e especificações
+// do grupo. "substituir" troca a lista inteira (editar); "somar" acrescenta (cadastrar e clonar). Tudo ou nada.
+export function definirSubgruposGrupoFerramenta(
+  grupoId: string,
+  nomes: string[],
+  modo: "substituir" | "somar",
+  storage = storagePadrao(),
+): { total: number } {
+  return alterar(storage, (d) => {
+    achar(d.gruposFerramenta, grupoId, "Grupo de ferramenta");
+    const novos: string[] = [];
+    for (const bruto of nomes) {
+      const nome = limparTamanhoFerramenta(bruto);
+      if (!nome) continue;
+      if (novos.some((n) => mesmoNome(n, nome))) throw new Error(`Subgrupo repetido: ${nome}.`);
+      novos.push(nome);
+    }
+    if (modo === "somar" && novos.length === 0) throw new Error("Informe ao menos um subgrupo.");
+    const atuais = d.tamanhosGrupoFerramenta[grupoId] ?? [];
+    if (modo === "somar") {
+      const repetido = novos.find((n) => atuais.some((a) => mesmoNome(a, n)));
+      if (repetido) throw new Error(`O subgrupo "${repetido}" já existe neste grupo.`);
+    }
+    const lista = modo === "somar" ? [...atuais, ...novos] : novos;
+    if (lista.length > 0) d.tamanhosGrupoFerramenta[grupoId] = lista;
+    else delete d.tamanhosGrupoFerramenta[grupoId];
+    return { total: lista.length };
+  });
+}
+
+export type SituacaoPadraoFerramenta = "igual" | "alterado" | "ausente";
+
+// Grupos do padrão inicial de tamanhos (decisão 117) com a situação de cada um no cadastro atual.
+export function situacoesPadraoFerramentas(
+  storage = storagePadrao(),
+): { nome: string; itens: readonly string[]; situacao: SituacaoPadraoFerramenta }[] {
+  const d = lerParametros(storage);
+  return TAMANHOS_FERRAMENTAS_PADRAO.filter((p) => p.tamanhos.length > 0).map((p) => {
+    const grupo = d.gruposFerramenta.find((g) => mesmoNome(g.nome, p.grupo));
+    if (!grupo) return { nome: p.grupo, itens: p.tamanhos, situacao: "ausente" as const };
+    const atuais = d.tamanhosGrupoFerramenta[grupo.id] ?? [];
+    const igual = atuais.length === p.tamanhos.length && p.tamanhos.every((t, i) => atuais[i] === t);
+    return { nome: p.grupo, itens: p.tamanhos, situacao: igual ? ("igual" as const) : ("alterado" as const) };
+  });
+}
+
+// Volta os grupos marcados ao padrão inicial: subgrupos do padrão, na ordem dele (o grupo excluído é cadastrado de novo).
+export function restaurarPadroesFerramentas(nomes: string[], storage = storagePadrao()): { restaurados: number; criados: number } {
+  if (nomes.length === 0) throw new Error("Marque ao menos um grupo para restaurar.");
+  return alterar(storage, (d) => {
+    let restaurados = 0;
+    let criados = 0;
+    for (const nome of nomes) {
+      const padrao = TAMANHOS_FERRAMENTAS_PADRAO.find((p) => mesmoNome(p.grupo, nome));
+      if (!padrao) throw new Error(`"${nome}" não faz parte do padrão inicial.`);
+      let grupo = d.gruposFerramenta.find((g) => mesmoNome(g.nome, padrao.grupo));
+      if (!grupo) {
+        grupo = { id: novoId(), nome: capitalizarCadastro(limparNome(padrao.grupo)) };
+        d.gruposFerramenta.push(grupo);
+        criados += 1;
+      } else {
+        restaurados += 1;
+      }
+      if (padrao.tamanhos.length > 0) d.tamanhosGrupoFerramenta[grupo.id] = [...padrao.tamanhos];
+    }
+    return { restaurados, criados };
+  });
+}
+
 // ---------- Parâmetros > Veículos: tipos de ocorrência (decisão 46) ----------
 
 const limparDescricao = (texto: string) => texto.trim().replace(/\s+/g, " ");
