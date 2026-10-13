@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
+import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
 import { useAccess } from "@/lib/access-context";
 import { descricaoVeiculo } from "@/lib/descricao-veiculo";
 import {
@@ -85,6 +86,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   // Telas de cadastro abertas por cima da janela (decisão 120): ficam ao lado dela, nunca dentro, para não perder o que já foi escolhido.
   const [veiculosAberto, setVeiculosAberto] = useState(false);
   const [empregadosAberto, setEmpregadosAberto] = useState(false);
+  const [itensAberto, setItensAberto] = useState(false);
 
   const [aberto, setAberto] = useState(false);
   // veículo da associação que está sendo editada (null = nova ou clone)
@@ -328,6 +330,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               <p className="text-xs text-muted-foreground">
                 A periodicidade vale para todos os itens marcados; ela não é escolhida item a item.
               </p>
+              <p className="text-xs">{linkCadastro("Cadastrar itens de check list", () => setItensAberto(true))}</p>
               {!veiculoEscolhido ? (
                 <p className="text-sm text-muted-foreground">Escolha o veículo para ver os itens.</p>
               ) : aplicaveis.length === 0 ? (
@@ -369,6 +372,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       {/* Ao lado do diálogo da associação, nunca dentro dele (decisão 120). */}
       <DialogCadastroVeiculos aberto={veiculosAberto} onAbrirMudou={aoFecharVeiculos} />
       <DialogCadastroEmpregados aberto={empregadosAberto} onAbrirMudou={aoFecharEmpregados} />
+      <DialogItensChecklist aberto={itensAberto} onAbrirMudou={setItensAberto} />
     </div>
   );
 }
