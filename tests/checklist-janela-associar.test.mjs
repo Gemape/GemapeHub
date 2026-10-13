@@ -13,7 +13,7 @@ test("Novo check list abre a associação de itens numa janela sem perder o que 
   assert.match(modulo, /canWrite \? \(\s*<button[^>]*onClick=\{\(\) => setAssociarAberto\(true\)\}/);
   assert.equal((modulo.match(/\{linkAssociar\}/g) ?? []).length, 3); // sem itens, periodicidade não definida e avulso sem grupos avulsos (dec 119)
   assert.match(modulo, /Este veículo não tem itens associados\./);
-  assert.match(modulo, /não definida\. \{linkAssociar\}/);
+  assert.match(modulo, /não tem check list periódico associado\. \{linkAssociar\}/);
   // A janela fica ao lado do diálogo do check list, nunca dentro.
   const ini = modulo.indexOf('<Dialog open={tela?.tipo === "novo"');
   const novo = modulo.slice(ini, modulo.indexOf("</Dialog>", ini));

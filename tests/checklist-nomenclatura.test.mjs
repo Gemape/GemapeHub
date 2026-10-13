@@ -91,8 +91,7 @@ test("a janela Novo check list não tem o campo Tipo de veículo e pede o Tipo d
   assert.doesNotMatch(tela, /Label htmlFor="ck_tipo"/);
   assert.doesNotMatch(tela, />Tipo de veículo</);
   assert.match(tela, /htmlFor="ck_modo">Tipo de check list/);
-  assert.match(tela, /<SelectItem value="periodico">Periódico<\/SelectItem>/);
-  assert.match(tela, /<SelectItem value="avulso">Avulso<\/SelectItem>/);
+  assert.match(tela, /<SelectItem value="avulso">/); // Avulso continua como opção (dec 157: as demais são os check lists do veículo)
   assert.doesNotMatch(tela, /periodicidadeAvulso/);
 });
 
@@ -145,4 +144,14 @@ test("a situação por veículo tem uma linha por periodicidade, com Iniciar e C
   assert.match(tela, /c\.periodicidade === per/);
   assert.match(tela, /abrirNovo\(v, per \?\? undefined\)/);
   assert.match(tela, /<TableHead>Periodicidade<\/TableHead>/);
+});
+
+test("Novo check list pergunta primeiro o veículo e depois o tipo, com as opções Placa >> Periodicidade >> Responsável do veículo (dec 157)", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.ok(tela.indexOf('htmlFor="ck_veiculo"') < tela.indexOf('htmlFor="ck_modo"'));
+  assert.match(tela, /disabled=\{!veiculoEscolhido\}/); // o tipo só abre depois do veículo
+  assert.match(tela, /periodicidadesDe\(veiculoEscolhido\)\.map\(\(p\) => \(\s*<SelectItem key=\{p\} value=\{p\}>\s*\{nomeDoChecklist\(/);
+  assert.doesNotMatch(tela, /modoAvulso|periodicidadeEscolhida|<SelectItem value="periodico">/);
+  // O responsável vem da associação; o campo só aparece quando a associação não tem responsável.
+  assert.match(tela, /!associacaoEscolhida\?\.responsavel && <div/);
 });
