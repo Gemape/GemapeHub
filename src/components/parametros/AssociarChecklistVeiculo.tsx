@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -16,7 +17,7 @@ import { useAccess } from "@/lib/access-context";
 import { descricaoVeiculo } from "@/lib/descricao-veiculo";
 import {
   checklistsDaAssociacao, criarAssociacao, editarAssociacao, EVENTO_ASSOCIACOES_CHECKLIST, gruposDaAssociacao, lerAssociacoes,
-  NAO_DEFINIDO,
+  NAO_DEFINIDO, removerAssociacao,
   type AssociacaoChecklist, type EntradaItemAssociacao, type PeriodicidadeAssociacao,
 } from "@/lib/checklist-associacao-veiculo";
 import { empregadoElegivelPortador } from "@/lib/portadores-caixa";
@@ -88,6 +89,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const [aberto, setAberto] = useState(false);
   // veículo da associação que está sendo editada (null = nova ou clone)
   const [editando, setEditando] = useState<string | null>(null);
+  // veículo do check list que está sendo clonado: aparece preenchido, mas o clone precisa de outro veículo (decisão 156).
+  const [clonandoDe, setClonandoDe] = useState<string | null>(null);
   const [veiculoId, setVeiculoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [periodicidade, setPeriodicidade] = useState("");
@@ -103,8 +106,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       cor: v["cor"] as string, combustivel: v["combustivel"] as string,
     }) || String(v["codigo_sku"] ?? v.id);
   const veiculoPorId = (id: string) => veiculos.find((v) => v.id === id);
-  // Cada veículo tem uma associação só: ao criar ou clonar, só os sem associação; ao editar, mais o próprio.
-  const veiculosLivres = veiculos.filter((v) => !associacoes.some((a) => a.veiculoId === v.id) || v.id === editando);
+  // Cada veículo tem uma associação só: ao criar, só os sem associação; ao editar ou clonar, mais o do original.
+  const veiculosLivres = veiculos.filter((v) => !associacoes.some((a) => a.veiculoId === v.id) || v.id === editando || v.id === clonandoDe);
 
   const veiculoEscolhido = veiculoPorId(veiculoId);
   // Responsável: empregado ativo, da empresa do veículo (sem empresa no veículo, de qualquer empresa).
@@ -131,9 +134,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
 
   function abrir(a: AssociacaoChecklist | null, clonar: boolean) {
     setEditando(a && !clonar ? a.veiculoId : null);
-    setVeiculoId(a && !clonar ? a.veiculoId : "");
+    setClonandoDe(a && clonar ? a.veiculoId : null);
+    // Editar e Clonar abrem com tudo do original, inclusive o veículo (decisão 156).
+    setVeiculoId(a ? a.veiculoId : "");
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
-    // Clonar copia a periodicidade e o responsável para outro veículo (decisão 138); tudo pode ser editado.
+    // Clonar copia veículo, responsável, periodicidade e itens (decisões 138 e 156); tudo pode ser editado, e o veículo tem de mudar.
     setPeriodicidade(a ? (gruposDaAssociacao(a, grupos).find((i) => i.tipo === "periodico")?.periodicidade ?? AVULSO) : "");
     setEscolhidos(a ? a.itens.map((i) => i.grupoId) : null);
     setAberto(true);
@@ -142,10 +147,14 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (salvando.current) return;
+    if (clonandoDe && veiculoId === clonandoDe) {
+      toast.error("Escolha outro veículo para o clone: este já tem o check list original.");
+      return;
+    }
     salvando.current = true;
     setTravado(true);
     // O responsável salvo que deixou de ser elegível continua valendo enquanto estiver escolhido.
-    const salvo = editando ? associacoes.find((a) => a.veiculoId === editando)?.responsavel : null;
+    const salvo = editando || clonandoDe ? associacoes.find((a) => a.veiculoId === (editando ?? clonandoDe))?.responsavel : null;
     // "Não definido" (decisão 116) grava sem responsável; só um campo vazio é erro.
     if (!responsavelId) {
       salvando.current = false;
@@ -183,8 +192,14 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     }, 400);
   }
 
+  function excluir(a: AssociacaoChecklist) {
+    const v = veiculoPorId(a.veiculoId);
+    if (!confirm(`Excluir os itens de check list associados a ${v ? rotuloVeiculo(v) : "veículo removido"}?`)) return;
+    executar(() => removerAssociacao(a.veiculoId), "Associação excluída.");
+  }
+
   // O responsável salvo pode ser de alguém que deixou de ser elegível; continua aparecendo para não sumir do campo.
-  const salvoNaEdicao = editando ? associacoes.find((a) => a.veiculoId === editando)?.responsavel : null;
+  const salvoNaEdicao = editando || clonandoDe ? associacoes.find((a) => a.veiculoId === (editando ?? clonandoDe))?.responsavel : null;
   const opcoesResponsavel = salvoNaEdicao && !elegiveis.some((e) => e.id === salvoNaEdicao.id)
     ? [...elegiveis.map((e) => ({ id: e.id, rotulo: e.nome })), { id: salvoNaEdicao.id, rotulo: `${salvoNaEdicao.nome} (atual)` }]
     : elegiveis.map((e) => ({ id: e.id, rotulo: e.matricula ? `${e.nome} · ${e.matricula}` : e.nome }));
@@ -211,11 +226,12 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               <th className="px-3 py-2">Obrigatório</th>
               <th className="px-3 py-2">Grupos</th>
               <th className="px-3 py-2">Atualizado em</th>
+              <th className="px-3 py-2 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {associacoes.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-4 text-muted-foreground">Nenhum veículo com itens de check list associados ainda.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-4 text-muted-foreground">Nenhum veículo com itens de check list associados ainda.</td></tr>
             )}
             {associacoes.map((a) => {
               const v = veiculoPorId(a.veiculoId);
@@ -227,9 +243,12 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                   <tr className="bg-muted/50">
                     <td colSpan={4} className="px-3 py-2 font-semibold">{rotulo} <span className="font-normal text-muted-foreground">· responsável: {a.responsavel?.nome ?? NAO_DEFINIDO}</span></td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{dataBr(a.atualizadoEm)}</td>
+                    <td className="px-3 py-2">
+                      <AcoesLinha rotulo={rotulo} onClonar={() => abrir(a, true)} onEditar={() => abrir(a, false)} onExcluir={() => excluir(a)} />
+                    </td>
                   </tr>
                   {listas.length === 0 && (
-                    <tr><td colSpan={5} className="px-3 py-2 text-muted-foreground">Nenhum grupo habilitado existente.</td></tr>
+                    <tr><td colSpan={6} className="px-3 py-2 text-muted-foreground">Nenhum grupo habilitado existente.</td></tr>
                   )}
                   {listas.map((c) => (
                     <tr key={c.periodicidade}>
@@ -239,7 +258,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                         {c.tipo === "Livre" && <span className="block text-xs text-muted-foreground">livre: qualquer hora, qualquer pessoa; fora da lista do menu</span>}
                       </td>
                       <td className="px-3 py-2">{c.obrigatorio}</td>
-                      <td className="px-3 py-2 text-muted-foreground" colSpan={2}>{c.grupos.map((g) => g.nome).join("; ")}</td>
+                      <td className="px-3 py-2 text-muted-foreground" colSpan={3}>{c.grupos.map((g) => g.nome).join("; ")}</td>
                     </tr>
                   ))}
                 </Fragment>
@@ -252,7 +271,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{editando ? "Editar itens de check list do veículo" : "Associar itens de check list a um veículo"}</DialogTitle>
+            <DialogTitle>{editando ? "Editar itens de check list do veículo" : clonandoDe ? "Clonar itens de check list do veículo" : "Associar itens de check list a um veículo"}</DialogTitle>
             <DialogDescription>
               Escolha o veículo, o responsável e a periodicidade do check list (ou Avulso) e marque os itens que o compõem.
             </DialogDescription>
