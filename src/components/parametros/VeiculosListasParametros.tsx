@@ -303,7 +303,7 @@ export function AcoesManutencaoVeiculoLista({ secao = false }: { secao?: boolean
   return (
     <ListaVeiculos
       titulo="Ações de manutenção"
-      subtitulo="Cada ação é um grupo (pai) com seus subitens (filhos). Ao registrar uma manutenção, escolhe-se o pai e marcam-se os filhos."
+      subtitulo="Cada ação é um grupo (pai) com seus subitens (filhos). Ao registrar uma manutenção, escolhe-se o pai e marcam-se os filhos. Todo grupo tem também o item Outros, de descrição aberta."
       singular="ação de manutenção"
       secao={secao}
       linhas={acoesManutencaoVeiculo.map((a) => ({ id: a.id, nome: a.nome, extra: a.subitens.map((i) => i.nome).join("\n") }))}

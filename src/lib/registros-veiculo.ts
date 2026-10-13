@@ -1,6 +1,7 @@
 // Abastecimentos e manutenções por veículo (decisão 57). Fase 1: ficam só no navegador, em
 // modo demonstração; as tabelas no banco real são pendência da Fase 2.
 import { hojeLocal } from "./empregados.ts";
+import { ehOutros } from "./veiculos-padrao.ts";
 
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
@@ -278,7 +279,10 @@ function montarManutencao(
       const filho = grupo.subitens.find((x) => x.id === i.subitemId);
       if (!filho) throw new Error("Há uma ação que não pertence ao grupo escolhido.");
       if (itens.some((x) => x.subitemId === filho.id)) throw new Error(`Ação repetida: ${filho.nome}.`);
-      itens.push({ subitemId: filho.id, nome: filho.nome, observacao: String(i.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300) });
+      const observacao = String(i.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300);
+      // Outros é o item de descrição aberta (decisão 163): marcado, exige dizer o que foi feito.
+      if (ehOutros(filho.nome) && !observacao) throw new Error(`Descreva o que foi feito em Outros${grupo.nome ? `, do grupo ${grupo.nome}` : ""}.`);
+      itens.push({ subitemId: filho.id, nome: filho.nome, observacao });
     }
     if (grupo.subitens.length > 0 && itens.length === 0) {
       throw new Error(grupo.nome ? `Marque ao menos uma ação do grupo ${grupo.nome}.` : "Marque ao menos uma ação do grupo.");

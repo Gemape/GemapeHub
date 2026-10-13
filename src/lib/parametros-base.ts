@@ -7,7 +7,7 @@ import { CATEGORIAS_EPI, CATEGORIAS_UNIFORME, TIPOS_VEICULO } from "./gemape.ts"
 import { capitalizarCadastro } from "./formatacao-cadastral.ts";
 import { CHECKLIST_VEICULOS_PADRAO, NOMES_PADRAO_ANTIGO, chaveDoTipoVeiculo, ehGrupoAvulso, tiposDoGrupoPadrao } from "./checklist-veiculos-padrao.ts";
 import { TAMANHOS_FERRAMENTAS_PADRAO } from "./tamanhos-ferramentas-padrao.ts";
-import { ACOES_MANUTENCAO_PADRAO, MARCAS_VEICULO_PADRAO, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
+import { ACOES_MANUTENCAO_PADRAO, ehOutros, MARCAS_VEICULO_PADRAO, NOME_OUTROS, TIPOS_OCORRENCIA_VEICULO_PADRAO } from "./veiculos-padrao.ts";
 
 export type Categoria = { id: string; nome: string };
 export type TipoEnderecamento = "nao_usa" | "opcional" | "obrigatorio";
@@ -226,7 +226,11 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
       }
     }
     // Ações de manutenção salvas sem subitens (versão anterior) passam a ter a lista vazia.
-    base.acoesManutencaoVeiculo = base.acoesManutencaoVeiculo.map((a) => ({ ...a, subitens: Array.isArray(a.subitens) ? a.subitens : [] }));
+    // Decisão 163: todo grupo tem o item Outros (descrição aberta); quem não tem ganha no fim, com id fixo para não mudar a cada leitura.
+    base.acoesManutencaoVeiculo = base.acoesManutencaoVeiculo.map((a) => {
+      const subitens = Array.isArray(a.subitens) ? a.subitens : [];
+      return { ...a, subitens: subitens.some((s) => ehOutros(s.nome)) ? subitens : [...subitens, { id: `outros-${a.id}`, nome: NOME_OUTROS }] };
+    });
     // Grupos salvos antes do vínculo com o tipo de veículo (decisão 62) continuam valendo para todos.
     base.itensChecklistVeiculo = base.itensChecklistVeiculo.map((g) => ({
       ...g,
@@ -568,6 +572,12 @@ function montarSubitens(atuais: Opcao[], nomes: string[]): Opcao[] {
   return resultado;
 }
 
+// Todo grupo de ações tem o item Outros (decisão 163): vai ao fim se a lista não o trouxe, mantendo o id do que já existia.
+function comOutros(subitens: Opcao[], atuais: Opcao[] = []): Opcao[] {
+  if (subitens.some((s) => ehOutros(s.nome))) return subitens;
+  return [...subitens, atuais.find((s) => ehOutros(s.nome)) ?? { id: novoId(), nome: NOME_OUTROS }];
+}
+
 export function adicionarAcaoManutencaoVeiculo(
   nome: string,
   subitens: string[],
@@ -577,7 +587,7 @@ export function adicionarAcaoManutencaoVeiculo(
     const acao = {
       id: novoId(),
       nome: nomeUnico(d.acoesManutencaoVeiculo, nome, "ação de manutenção"),
-      subitens: montarSubitens([], subitens),
+      subitens: comOutros(montarSubitens([], subitens)),
     };
     d.acoesManutencaoVeiculo.push(acao);
     return acao;
@@ -593,7 +603,7 @@ export function editarAcaoManutencaoVeiculo(
   alterar(storage, (d) => {
     const acao = achar(d.acoesManutencaoVeiculo, id, "Ação de manutenção");
     acao.nome = nomeUnico(d.acoesManutencaoVeiculo, nome, "ação de manutenção", id);
-    acao.subitens = montarSubitens(acao.subitens, subitens);
+    acao.subitens = comOutros(montarSubitens(acao.subitens, subitens), acao.subitens);
   });
 }
 
@@ -985,10 +995,10 @@ export function itensCriadosAcoesManutencao(storage = storagePadrao()): ItemCria
   for (const a of d.acoesManutencaoVeiculo) {
     const padrao = ACOES_MANUTENCAO_PADRAO.find((p) => mesmoNome(p.nome, a.nome));
     if (!padrao) {
-      lista.push({ id: a.id, nome: a.nome, doPadrao: false, filhos: a.subitens });
+      lista.push({ id: a.id, nome: a.nome, doPadrao: false, filhos: a.subitens.filter((s) => !ehOutros(s.nome)) });
       continue;
     }
-    const extras = a.subitens.filter((s) => !padrao.subitens.some((i) => mesmoNome(i, s.nome)));
+    const extras = a.subitens.filter((s) => !padrao.subitens.some((i) => mesmoNome(i, s.nome)) && !ehOutros(s.nome));
     if (extras.length > 0) lista.push({ id: a.id, nome: a.nome, doPadrao: true, filhos: extras });
   }
   return lista;

@@ -119,3 +119,14 @@ test("dec 162: link abaixo dos grupos de ações abre as Ações de manutenção
   const janela = readFileSync(new URL("../src/components/modules/DialogAcoesManutencao.tsx", import.meta.url), "utf8");
   assert.match(janela, /AcoesManutencaoVeiculoLista/);
 });
+
+test("dec 163: marcar Outros exige a descrição aberta, em qualquer grupo", () => {
+  const acoes = [{ id: "a1", nome: "Freios", subitens: [{ id: "s1", nome: "Pastilha" }, { id: "o1", nome: "Outros" }] }];
+  const entrada = (observacao) => ({ ...base, locais: [gemape], grupos: [{ acaoId: "a1", itens: [{ subitemId: "o1", observacao }] }] });
+  assert.throws(() => registrarManutencao(entrada("  "), memoria(), hoje, acoes), /Descreva o que foi feito em Outros, do grupo Freios/);
+  const m = registrarManutencao(entrada(" trocou a lâmpada do painel "), memoria(), hoje, acoes);
+  assert.deepEqual(m.grupos[0].itens, [{ subitemId: "o1", nome: "Outros", observacao: "trocou a lâmpada do painel" }]);
+  const tela = readFileSync(new URL("../src/components/modules/ManutencaoVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /Descreva o que foi feito \(obrigatório\)/);
+  assert.match(tela, /!marcado && !ehOutros\(sub\.nome\)/);
+});

@@ -34,7 +34,7 @@ test("os padrões trazem os 7 grupos de manutenção com subitens e os 8 tipos d
     "Revisão do Sistema Elétrico e Iluminação",
     "Inspeção de Segurança e Correias",
   ]);
-  assert.deepEqual(ACOES_MANUTENCAO_PADRAO.map((a) => a.subitens.length), [5, 4, 7, 6, 6, 5, 5]);
+  assert.deepEqual(ACOES_MANUTENCAO_PADRAO.map((a) => a.subitens.length), [6, 5, 8, 7, 7, 6, 6]);
   assert.deepEqual(TIPOS_OCORRENCIA_VEICULO_PADRAO.map((t) => t.nome), [
     "Furto", "Roubo", "Avaria em manobra", "Avaria por fator externo", "Avaria interna", "Infração de trânsito", "Sinistro com vítima", "Colisão em trânsito",
   ]);
@@ -45,14 +45,14 @@ test("ações de manutenção: pai com subitens, editar mantém o id de quem já
   const s = storage();
   assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo, []);
   const a = adicionarAcaoManutencaoVeiculo("Manutenção de pneus", ["Calibragem", " ", "Rodízio de pneus"], s);
-  assert.deepEqual(a.subitens.map((i) => i.nome), ["Calibragem", "Rodízio de pneus"]);
+  assert.deepEqual(a.subitens.map((i) => i.nome), ["Calibragem", "Rodízio de pneus", "Outros"]);
   assert.throws(() => adicionarAcaoManutencaoVeiculo("manutenção de PNEUS", [], s), /já existe/i);
   assert.throws(() => adicionarAcaoManutencaoVeiculo("Outra", ["Molas", "molas"], s), /subitem repetido/i);
   const idCalibragem = a.subitens[0].id;
   editarAcaoManutencaoVeiculo(a.id, "Pneus", ["Calibragem", "Alinhamento 3D"], s);
   const lido = lerParametros(s).acoesManutencaoVeiculo[0];
   assert.equal(lido.nome, "Pneus");
-  assert.deepEqual(lido.subitens.map((i) => i.nome), ["Calibragem", "Alinhamento 3D"]);
+  assert.deepEqual(lido.subitens.map((i) => i.nome), ["Calibragem", "Alinhamento 3D", "Outros"]);
   assert.equal(lido.subitens[0].id, idCalibragem);
   assert.throws(() => editarAcaoManutencaoVeiculo("nao-existe", "x", [], s), /não encontrad/i);
   removerAcaoManutencaoVeiculo(a.id, s);
@@ -82,15 +82,33 @@ test("cadastrar padrão inclui o que falta e não repete nem altera o que já ex
   assert.deepEqual(r, { acoes: ACOES_MANUTENCAO_PADRAO.length - 1, tipos: TIPOS_OCORRENCIA_VEICULO_PADRAO.length - 1 });
   const d = lerParametros(s);
   assert.equal(d.acoesManutencaoVeiculo.length, ACOES_MANUTENCAO_PADRAO.length);
-  assert.deepEqual(d.acoesManutencaoVeiculo.find((a) => /freios/i.test(a.nome)).subitens.map((i) => i.nome), ["Meu subitem"]);
+  assert.deepEqual(d.acoesManutencaoVeiculo.find((a) => /freios/i.test(a.nome)).subitens.map((i) => i.nome), ["Meu subitem", "Outros"]);
   assert.equal(d.tiposOcorrenciaVeiculo.find((t) => t.nome === "Furto").descricao, "Minha descrição");
   assert.deepEqual(cadastrarPadraoVeiculos(s), { acoes: 0, tipos: 0 });
 });
 
-test("ações salvas sem subitens (versão anterior) passam a ter lista vazia", () => {
+test("ações salvas sem subitens (versão anterior) passam a ter só o item Outros (dec 163)", () => {
   const s = storage();
   s.setItem("gemape-demo-parametros-base", JSON.stringify({ acoesManutencaoVeiculo: [{ id: "a1", nome: "Troca de pneu" }] }));
-  assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo[0].subitens, []);
+  assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo[0].subitens, [{ id: "outros-a1", nome: "Outros" }]);
+  // O id é fixo: a mesma leitura repetida devolve o mesmo item.
+  assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo[0].subitens, lerParametros(s).acoesManutencaoVeiculo[0].subitens);
+});
+
+test("dec 163: todo grupo de ações tem o item Outros, também os já cadastrados, sem duplicar nem sair ao editar", () => {
+  const s = storage();
+  s.setItem("gemape-demo-parametros-base", JSON.stringify({ acoesManutencaoVeiculo: [
+    { id: "a1", nome: "Freios", subitens: [{ id: "s1", nome: "Pastilha" }] },
+    { id: "a2", nome: "Motor", subitens: [{ id: "s2", nome: "Óleo" }, { id: "s3", nome: "outros" }] },
+  ] }));
+  const [freios, motor] = lerParametros(s).acoesManutencaoVeiculo;
+  assert.deepEqual(freios.subitens.map((i) => i.nome), ["Pastilha", "Outros"]);
+  assert.deepEqual(motor.subitens.map((i) => i.nome), ["Óleo", "outros"]);
+  // Editar sem listar o Outros não o tira: volta ao fim, com o mesmo id.
+  editarAcaoManutencaoVeiculo("a2", "Motor", ["Óleo"], s);
+  assert.deepEqual(lerParametros(s).acoesManutencaoVeiculo[1].subitens.map((i) => i.nome), ["Óleo", "outros"]);
+  // Os padrões iniciais já trazem o Outros no fim de cada grupo.
+  assert.ok(ACOES_MANUTENCAO_PADRAO.every((a) => a.subitens.at(-1) === "Outros"));
 });
 
 test("dados antigos sem as novas listas continuam legíveis", () => {
@@ -154,7 +172,7 @@ test("restaurar padrão inicial das ações: situação, só os marcados, id man
   assert.deepEqual(depoisA.subitens.map((i) => i.nome), a.subitens.map((i) => i.nome));
   assert.equal(depoisA.subitens[0].id, a.subitens[0].id);
   assert.ok(lido.some((x) => x.nome === b.nome));
-  assert.deepEqual(lido.find((x) => x.id === c.id).subitens.map((i) => i.nome), ["Outro"]);
+  assert.deepEqual(lido.find((x) => x.id === c.id).subitens.map((i) => i.nome), ["Outro", "Outros"]);
 });
 
 test("restaurar padrão inicial das ações é tudo ou nada e só aceita ações do padrão", () => {
@@ -166,7 +184,7 @@ test("restaurar padrão inicial das ações é tudo ou nada e só aceita ações
   assert.throws(() => restaurarPadroesAcoesManutencaoVeiculo([], s), /ao menos um/i);
   assert.throws(() => restaurarPadroesAcoesManutencaoVeiculo([a.nome, "Minha ação"], s), /não faz parte do padrão/i);
   const lido = lerParametros(s).acoesManutencaoVeiculo;
-  assert.deepEqual(lido.find((x) => x.id === a.id).subitens.map((i) => i.nome), ["Só um"]);
+  assert.deepEqual(lido.find((x) => x.id === a.id).subitens.map((i) => i.nome), ["Só um", "Outros"]);
   assert.ok(lido.some((x) => x.id === meu.id));
 });
 
@@ -222,7 +240,7 @@ test("restaurar configurações iniciais escolhendo pais e filhos: só os filhos
   editarAcaoManutencaoVeiculo(c.id, c.nome, [...c.subitens.map((i) => i.nome), "Extra do responsável"], s);
   const sit = situacaoPadraoAcoesComFilhos(s);
   assert.equal(sit[0].situacao, "alterado");
-  assert.deepEqual(sit[0].filhos.map((f) => f.existe), [true, false, false, false, false]);
+  assert.deepEqual(sit[0].filhos.map((f) => f.existe), [true, false, false, false, false, true]); // o Outros nunca sai do grupo (dec 163)
   assert.equal(sit[1].situacao, "ausente");
   assert.ok(sit[1].filhos.every((f) => !f.existe));
   const padraoA = ACOES_MANUTENCAO_PADRAO[0].subitens;
@@ -235,10 +253,10 @@ test("restaurar configurações iniciais escolhendo pais e filhos: só os filhos
   const lido = lerParametros(s).acoesManutencaoVeiculo;
   const depoisA = lido.find((x) => x.id === a.id);
   assert.equal(depoisA.nome, sit[0].nome); // pai volta ao nome inicial
-  assert.deepEqual(depoisA.subitens.map((i) => i.nome.toLowerCase()), [padraoA[0], padraoA[2], "Filho meu"].map((i) => i.toLowerCase())); // 1º (já existia), 3º (marcado) e o do responsável; 2º, 4º e 5º não foram marcados
+  assert.deepEqual(depoisA.subitens.map((i) => i.nome.toLowerCase()), [padraoA[0], padraoA[2], "Outros", "Filho meu"].map((i) => i.toLowerCase())); // 1º (já existia), 3º (marcado) e o do responsável; 2º, 4º e 5º não foram marcados
   assert.equal(depoisA.subitens[0].id, a.subitens[0].id);
   const novoB = lido.find((x) => x.nome === sit[1].nome);
-  assert.equal(novoB.subitens.length, 2);
+  assert.equal(novoB.subitens.length, 3); // 2 marcados e o Outros, que todo grupo tem (dec 163)
   assert.ok(lido.find((x) => x.id === c.id).subitens.some((i) => i.nome === "Extra do responsável")); // pai não marcado não muda
 });
 

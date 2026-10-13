@@ -19,6 +19,7 @@ import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { montarManutencaoHtml } from "@/lib/manutencao-relatorio-html";
 import { useVeiculos } from "@/lib/hooks-gemape";
+import { ehOutros } from "@/lib/veiculos-padrao";
 import { custoNaoNegativo, editarManutencao, gruposDaManutencao, locaisDaManutencao, registrarManutencao, removerManutencao, resumoManutencao, rotuloDoLocal, type LocalManutencao, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
 import { useManutencoesVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
@@ -354,7 +355,7 @@ export function ManutencaoVeiculoModulo() {
                             />
                             {sub.nome}
                           </label>
-                          {!marcado && (
+                          {!marcado && !ehOutros(sub.nome) && (
                             <Input
                               capitalizar="texto"
                               aria-label={`Observação do item não feito ${sub.nome}`}
@@ -367,8 +368,8 @@ export function ManutencaoVeiculoModulo() {
                           {marcado && (
                             <Textarea
                               capitalizar="texto"
-                              aria-label={`Observação de ${sub.nome}`}
-                              placeholder="Observação (opcional)"
+                              aria-label={ehOutros(sub.nome) ? `Descrição de ${sub.nome}` : `Observação de ${sub.nome}`}
+                              placeholder={ehOutros(sub.nome) ? "Descreva o que foi feito (obrigatório)" : "Observação (opcional)"}
                               rows={2}
                               maxLength={300}
                               value={filhosMarcados[sub.id] ?? ""}

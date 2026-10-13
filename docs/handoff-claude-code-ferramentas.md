@@ -409,3 +409,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-13 dec 160: removida a seção EPIs antigos (e o botão Separar por tamanho) do Cadastro EPI; dados e rotina de separação ficam guardados, sem tela.
 - 2026-10-13 dec 161: Manutenção do módulo Veículos com vários locais (Gemape + terceiros), descrição, pagamento combinado e custos por local, relatório por local, observação do item não feito e seção no Extrato do veículo.
 - 2026-10-13 dec 162: link Cadastrar em Parâmetros > Veículos > Manutenção abaixo dos grupos de ações do Cadastrar nova manutenção (janela ao lado, sem sair do formulário).
+- 2026-10-13 dec 163: item Outros (descrição aberta obrigatória) em todos os grupos de ações de manutenção, em Parâmetros e no Cadastrar nova manutenção.
