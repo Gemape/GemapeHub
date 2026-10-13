@@ -155,3 +155,9 @@ test("Novo check list pergunta primeiro o veículo e depois o tipo, com as opç�
   // O responsável vem da associação; o campo só aparece quando a associação não tem responsável.
   assert.match(tela, /!associacaoEscolhida\?\.responsavel && <div/);
 });
+
+test("Novo check list avisa para escolher o tipo quando o veículo já foi escolhido e o tipo não (revisão #205)", () => {
+  const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(tela, /veiculoEscolhido && !tipoEscolhido && \(/);
+  assert.match(tela, /Escolha o tipo de check list para ver os itens e iniciar\./);
+});

@@ -221,7 +221,7 @@ test("Clonar, Editar e Excluir ficam só no cabeçalho de cada check list, não 
 test("Clonar abre com veículo, responsável, periodicidade e itens do original, e exige trocar o veículo (dec 156)", () => {
   const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
   assert.match(tela, /setVeiculoId\(a \? a\.veiculoId : ""\)/);
-  assert.match(tela, /setEscolhidos\(a \? a\.itens\.map/);
+  assert.match(tela, /setEscolhidos\(a \? daEscolhida\.map/);
   assert.match(tela, /v\.id === clonandoDe/);
   assert.match(tela, /veiculoId === clonandoDe/);
   assert.match(tela, /Escolha outro veículo para o clone/);
@@ -233,4 +233,11 @@ test("a janela Associar tem o link Cadastrar itens de check list, aberto ao lado
   assert.match(tela, /<DialogItensChecklist aberto=\{itensAberto\} onAbrirMudou=\{setItensAberto\} \/>/);
   // Fica depois de fechar o diálogo da associação: o que foi preenchido continua montado.
   assert.ok(tela.indexOf("</Dialog>\n\n      {/* Ao lado") < tela.indexOf("<DialogItensChecklist"));
+});
+
+test("Editar ou Clonar um check list antigo com mais de uma periodicidade avisa e mostra só a escolhida (revisão #204)", () => {
+  const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
+  assert.match(tela, /daEscolhida\.length < daAssociacao\.length/);
+  assert.match(tela, /tinha mais de uma periodicidade/);
+  assert.match(tela, /setEscolhidos\(a \? daEscolhida\.map/);
 });
