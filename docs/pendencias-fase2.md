@@ -55,3 +55,4 @@ Nada abaixo deve ser feito antes da ordem do responsável.
 
 - Check list (dec 121): o código do check list (CHK-NNNN) deve vir de sequência do banco com restrição única; hoje a sequência é local (`gemape-demo-checklists-veiculo-sequencia`).
 - Ferramentas, campo Tamanho (decisão 133): hoje só no modo demonstração (a ferramenta guarda `tamanho` como texto). No banco real, criar a coluna `tamanho` (texto, opcional) em `ferramentas` ou ligá-la à futura tabela grupo -> tamanhos (decisão 117). Sem tabela nem coluna criada agora.
+- Ferramentas, subgrupos por grupo (decisão 159): hoje só no modo demonstração (`tamanhosGrupoFerramenta`, lista por grupo). No banco real, criar tabela (ou coluna JSON) de subgrupos ligada ao grupo de ferramenta, com unicidade por grupo.

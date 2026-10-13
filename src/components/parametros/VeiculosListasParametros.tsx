@@ -353,7 +353,7 @@ const ROTULO_SITUACAO: Record<SituacaoPadraoChecklist, string> = {
 
 // Restaurar padrão inicial (decisões 110 e 111): mostra todos os itens do padrão inicial da lista, o
 // responsável marca os que quer restaurar e, depois de confirmar, tudo é gravado de uma vez.
-function RestaurarPadraoInicial({
+export function RestaurarPadraoInicial({
   singular,
   plural,
   situacoes,
