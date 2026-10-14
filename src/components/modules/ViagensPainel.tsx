@@ -1,4 +1,4 @@
-import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Receipt, SquareParking, Hamburger, Wrench, type LucideIcon } from "lucide-react";
+import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Palette, Receipt, SquareParking, Hamburger, Wrench, type LucideIcon } from "lucide-react";
 import { ViagensExtrato } from "./ViagensExtrato";
 import { ViagensLista } from "./ViagensLista";
 import { Cancela, ParafusoEPorca } from "./icones-viagens";
@@ -15,6 +15,7 @@ import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { ID_TECNICO_RESPONSAVEL, habilitadosAtivos, habilitadosDaPergunta, lerEstado, tiposDeDespesa } from "@/lib/questionario-despesas";
+import { FAIXAS, faixaDoIndice, type Faixa } from "@/lib/faixas-desempenho";
 import { lerPrazos, type PrazosViagens } from "@/lib/prazo-viagens";
 import { listarRespostas } from "@/lib/respostas-despesas";
 import {
@@ -93,6 +94,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
       <section className="space-y-3" aria-labelledby="viagens-indicadores">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="viagens-indicadores" className="text-lg font-semibold">Indicadores globais de despesas</h2>
+          <div className="flex flex-wrap items-center gap-2">
+          <LegendaFaixas />
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm"><CalendarDays className="mr-1 h-4 w-4" />{rotuloPeriodo(periodo)}</Button>
@@ -115,6 +118,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
               </div>
             </PopoverContent>
           </Popover>
+          </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Indicador titulo="Despesas lançadas no mês" valor={String(globais.quantidade)} />
@@ -122,12 +126,14 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           <Indicador
             titulo="Índice de conformidade de lançamento"
             valor={formatarPercentual(globais.icl)}
+            faixa={faixaDoIndice(globais.icl)?.faixa}
             detalhe={globais.noIndice ? `${globais.noIndice - globais.naoConformes} de ${globais.noIndice} lançadas pelo próprio técnico` : "Sem lançamentos no índice neste mês"}
             explicacao={<ExplicacaoIcl />}
           />
           <Indicador
             titulo="Índice de lançamento no prazo"
             valor={formatarPercentual(globais.prazo)}
+            faixa={faixaDoIndice(globais.prazo)?.faixa}
             detalhe={globais.quantidade ? `${globais.noPrazo} de ${globais.quantidade} lançadas no prazo` : "Sem lançamentos neste mês"}
             explicacao={<ExplicacaoPrazo prazos={prazos} />}
             roxo
@@ -162,8 +168,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                   </TableCell>
                   <TableCell className="px-2 text-right sm:px-4">{r.lancamentos}</TableCell>
                   <TableCell className="whitespace-nowrap px-2 text-right sm:px-4">{formatarMoeda(r.valorTotal)}</TableCell>
-                  <TableCell className="px-2 text-right sm:px-4">{formatarPercentual(r.icl)}</TableCell>
-                  <TableCell className="px-2 text-right font-medium text-purple-700 dark:text-purple-300 sm:px-4">{formatarPercentual(r.prazo)}</TableCell>
+                  <TableCell className="px-2 text-right sm:px-4"><ValorComFaixa valor={r.icl} /></TableCell>
+                  <TableCell className="px-2 text-right font-medium sm:px-4"><ValorComFaixa valor={r.prazo} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -176,14 +182,15 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   );
 }
 
-function Indicador({ titulo, valor, detalhe, explicacao, roxo }: { titulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean }) {
+function Indicador({ titulo, valor, detalhe, explicacao, roxo, faixa }: { titulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean; faixa?: Faixa | undefined }) {
   return (
     <div className={`panel space-y-1 p-4 ${roxo ? "border-l-4 border-l-purple-600" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm text-muted-foreground">{titulo}</p>
         {explicacao}
       </div>
-      <p className={`text-2xl font-bold ${roxo ? "text-purple-700 dark:text-purple-300" : ""}`}>{valor}</p>
+      <p className={`text-2xl font-bold ${faixa ? COR_TEXTO[faixa] : ""}`}>{valor}</p>
+      {faixa && <ChipFaixa faixa={faixa} />}
       {detalhe && <p className="text-xs text-muted-foreground">{detalhe}</p>}
     </div>
   );
@@ -223,6 +230,57 @@ function ExplicacaoPrazo({ prazos }: { prazos: PrazosViagens }) {
         <p>Exemplo: 10 despesas no mês; 9 foram lançadas dentro do prazo, contado em dias depois da data da despesa. Índice = 9 ÷ 10 × 100 = 90%.</p>
         <p>Prazos de hoje: técnico mecânico, {dias(prazos.mecanico)}; PCM, {dias(prazos.pcm)}. Vale o prazo de quem lançou a despesa (o Administrativo segue o do PCM).</p>
         <p className="text-muted-foreground">Os prazos se configuram em Parâmetros &gt; Viagens. Conta a diferença entre a data da despesa e o dia em que o formulário foi enviado.</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const COR_PONTO: Record<Faixa, string> = { verde: "bg-green-600", amarelo: "bg-amber-500", vermelho: "bg-red-600" };
+const COR_TEXTO: Record<Faixa, string> = { verde: "text-green-700 dark:text-green-400", amarelo: "text-amber-700 dark:text-amber-400", vermelho: "text-red-700 dark:text-red-400" };
+
+// A cor nunca vai sozinha: o ponto vem com o nome da faixa por escrito.
+function ChipFaixa({ faixa }: { faixa: Faixa }) {
+  const f = FAIXAS.find((x) => x.faixa === faixa)!;
+  return (
+    <p className="flex items-center gap-1.5 text-xs font-medium">
+      <span className={`inline-block h-2.5 w-2.5 rounded-full ${COR_PONTO[faixa]}`} aria-hidden="true" />
+      <span>{f.cor}: {f.classificacao}</span>
+    </p>
+  );
+}
+
+function ValorComFaixa({ valor }: { valor: number | null }) {
+  const f = faixaDoIndice(valor);
+  if (!f) return <>{formatarPercentual(valor)}</>;
+  return (
+    <span className={`inline-flex items-center justify-end gap-1.5 ${COR_TEXTO[f.faixa]}`} title={`${f.cor}: ${f.classificacao}`}>
+      <span className={`inline-block h-2.5 w-2.5 rounded-full ${COR_PONTO[f.faixa]}`} aria-hidden="true" />
+      <span>{formatarPercentual(valor)}</span>
+      <span className="sr-only">{f.cor}, {f.classificacao}</span>
+    </span>
+  );
+}
+
+function LegendaFaixas() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm"><Palette className="mr-1 h-4 w-4" />Faixas de desempenho</Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[22rem] max-w-[90vw] space-y-3 text-sm">
+        <p className="font-semibold">Faixas de desempenho</p>
+        <p className="text-muted-foreground">Valem para o índice de conformidade de lançamento e para o índice de lançamento no prazo.</p>
+        <ul className="space-y-3">
+          {FAIXAS.map((f) => (
+            <li key={f.faixa} className="space-y-0.5">
+              <p className={`flex items-center gap-1.5 font-medium ${COR_TEXTO[f.faixa]}`}>
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${COR_PONTO[f.faixa]}`} aria-hidden="true" />
+                {f.cor}, {f.intervalo}: {f.classificacao}
+              </p>
+              <p className="text-xs text-muted-foreground">{f.significado}</p>
+            </li>
+          ))}
+        </ul>
       </PopoverContent>
     </Popover>
   );
