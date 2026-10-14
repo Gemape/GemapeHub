@@ -40,10 +40,21 @@ export function mascararTelefone(valor: string): string {
   return saida;
 }
 
+// CPF (até 11 dígitos) ou CNPJ (12 a 14), conforme a quantidade digitada.
+export function mascararCpfOuCnpj(valor: string): string {
+  const d = digitos(valor, 14);
+  if (d.length > 11) return mascararCnpj(d);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
 export function mascaraDoCampo(nome: string): ((valor: string) => string) | undefined {
   if (nome === "cnpj") return mascararCnpj;
+  if (nome === "documento") return mascararCpfOuCnpj;
   if (nome === "cep") return mascararCep;
-  if (nome === "telefone") return mascararTelefone;
+  if (nome === "telefone" || nome === "telefone2") return mascararTelefone;
   return undefined;
 }
 

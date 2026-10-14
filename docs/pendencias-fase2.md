@@ -68,3 +68,8 @@ Nada abaixo foi alterado: dependem de papéis, RLS ou migrations no Supabase rea
 - Excluir ação de manutenção ou grupo de check list usado em plano/associação não é bloqueado, e a restauração do padrão cria outro id (o plano ou a associação perde o item). Precisa de decisão do responsável (bloquear ou manter o id).
 - Check list avulso concluído com item NOK cria ocorrência sem condutor.
 - Responsável do veículo pode ser de outra empresa (lista mostra todos).
+
+## Clientes (decisão 164)
+
+- Tabela `clientes` com `empresa_id`: id, codigo (sequencial, único), nome, documento (CPF/CNPJ, único quando preenchido), endereco, contato, telefone, telefone2, email, observacao. Exclusão só pelo Administrador. Hoje o cadastro fica no navegador (`gemape-demo-clientes`).
+- Módulo Viagens (despesas por categoria, fotos de comprovantes, fechamento periódico e relatório de viagem): só depois de o sistema inteiro ser aprovado; vai usar Clientes, Empregados e Veículos.
