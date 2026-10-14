@@ -13,7 +13,7 @@ import { useEmpregados } from "@/lib/hooks-gemape";
 import { ID_TECNICO_RESPONSAVEL, habilitadosAtivos, habilitadosDaPergunta, lerEstado, tiposDeDespesa } from "@/lib/questionario-despesas";
 import { listarRespostas } from "@/lib/respostas-despesas";
 import {
-  MESES, dadosDoLancamento, formatarMoeda, formatarPercentual, indicadoresGlobais, lancamentosDoPeriodo, periodoAtual, resultadosTecnicos, rotuloPeriodo,
+  MESES, dadosDoLancamento, formatarMoeda, formatarPercentual, indicadoresGlobais, periodoAtual, resultadosTecnicos, rotuloPeriodo,
 } from "@/lib/viagens";
 
 // Ícone sugestivo de cada tipo de despesa; tipo novo (cadastrado depois) usa o recibo.
@@ -54,7 +54,7 @@ export function ViagensPainel() {
 
   const globais = indicadoresGlobais(lista, periodo);
   const resultados = resultadosTecnicos(lista, periodo, tecnicos);
-  const noPeriodo = lancamentosDoPeriodo(lista, periodo).length;
+  const noPeriodo = globais.quantidade;
 
   return (
     <div className="space-y-8">
