@@ -61,6 +61,14 @@ export function QuestionarioFormulario({ tipoInicial, onEditar }: { tipoInicial?
   const progresso = obrigatorias.length ? Math.round((respondidas / obrigatorias.length) * 100) : 0;
   const habilitadosVisiveis = (p: Pergunta): Habilitado[] => (p.habilitados ? (empregadosLidos ? habilitadosAtivos(p.habilitados, idsAtivos) : p.habilitados) : []);
 
+  // A pergunta que depende da anterior (Município x UF) fica no mesmo cartão dela.
+  const grupos = visiveis.reduce<Pergunta[][]>((lista, p) => {
+    const ultimo = lista[lista.length - 1];
+    if (p.dependeDe && ultimo?.[ultimo.length - 1]?.id === p.dependeDe) ultimo.push(p);
+    else lista.push([p]);
+    return lista;
+  }, []);
+
   const mudar = (id: string, valor: Resposta) => {
     setRespostas((r) => {
       const novo = { ...r, [id]: valor };
@@ -149,15 +157,19 @@ export function QuestionarioFormulario({ tipoInicial, onEditar }: { tipoInicial?
               <p className="text-xs text-muted-foreground">{respondidas} de {obrigatorias.length} perguntas obrigatórias respondidas</p>
             </div>
           )}
-          {visiveis.map((p) => (
-            <div key={p.id} id={`pergunta-${p.id}`} className={`${cartao} space-y-2 ${errosVisiveis[p.id] ? "border border-destructive" : ""}`}>
-              <p className="text-sm font-medium">{p.titulo}{p.obrigatoria && <span className="text-destructive"> *</span>}</p>
-              <Campo
-                pergunta={p} respostas={respostas} imagens={imagens[p.id] ?? []} habilitados={habilitadosVisiveis(p)}
-                onMudar={(v) => mudar(p.id, v)}
-                onImagens={(lista) => setImagens((x) => ({ ...x, [p.id]: lista }))}
-              />
-              {errosVisiveis[p.id] && <p role="alert" className="text-sm text-destructive">{errosVisiveis[p.id]}</p>}
+          {grupos.map((grupo) => (
+            <div key={grupo[0]?.id} className={`${cartao} space-y-4 ${grupo.some((p) => errosVisiveis[p.id]) ? "border border-destructive" : ""}`}>
+              {grupo.map((p) => (
+                <div key={p.id} id={`pergunta-${p.id}`} className="space-y-2">
+                  <p className="text-sm font-medium">{p.titulo}{p.obrigatoria && <span className="text-destructive"> *</span>}</p>
+                  <Campo
+                    pergunta={p} respostas={respostas} imagens={imagens[p.id] ?? []} habilitados={habilitadosVisiveis(p)}
+                    onMudar={(v) => mudar(p.id, v)}
+                    onImagens={(lista) => setImagens((x) => ({ ...x, [p.id]: lista }))}
+                  />
+                  {errosVisiveis[p.id] && <p role="alert" className="text-sm text-destructive">{errosVisiveis[p.id]}</p>}
+                </div>
+              ))}
             </div>
           ))}
           {Object.keys(errosVisiveis).length > 0 && <p role="alert" className="text-sm text-destructive">Corrija as perguntas marcadas antes de enviar.</p>}
