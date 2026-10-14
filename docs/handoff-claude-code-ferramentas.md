@@ -433,3 +433,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 183: card de Viagens abre o formulário sem a pergunta de tipos (prop semPerguntaTipo em QuestionarioFormulario.tsx, usada só por ViagensPainel.tsx).
 
 - 2026-10-14 dec 184: ícones: menu Viagens = Luggage (AppSidebar.tsx); cards Pedágio = Cancela e Compra de peças = ParafusoEPorca (src/components/modules/icones-viagens.ts).
+- 2026-10-14 dec 185: anexo de comprovante soma até 3 imagens, com Remover e bloqueio no limite (juntarImagens e mensagemDeLimite em src/lib/imagem-economica.ts; campo em QuestionarioFormulario.tsx).

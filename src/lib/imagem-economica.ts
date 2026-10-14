@@ -30,3 +30,15 @@ export async function reduzirImagem(arquivo: File): Promise<ImagemReduzida> {
   const dataUrl = await comoDataUrl(final).catch(() => { throw new Error(`${arquivo.name}: não foi possível reduzir a imagem.`); });
   return { nome: arquivo.name, bytesAntes: arquivo.size, bytesDepois: final.size, dataUrl };
 }
+
+// Anexar de novo soma às imagens já escolhidas (até o máximo). Passou do limite, nada muda e a mensagem diz quantas ainda cabem.
+export function mensagemDeLimite(atuais: number, novas: number, maximo: number): string {
+  if (atuais + novas <= maximo) return "";
+  const cabem = Math.max(maximo - atuais, 0);
+  return cabem === 0 ? `Já há ${maximo} imagens; remova uma para anexar outra.` : `Cabem mais ${cabem} ${cabem === 1 ? "imagem" : "imagens"} (máximo ${maximo}).`;
+}
+
+export function juntarImagens(atuais: readonly ImagemReduzida[], novas: readonly ImagemReduzida[], maximo: number): { lista: ImagemReduzida[]; erro: string } {
+  const erro = mensagemDeLimite(atuais.length, novas.length, maximo);
+  return { lista: erro ? [...atuais] : [...atuais, ...novas], erro };
+}
