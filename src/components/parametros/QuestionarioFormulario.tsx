@@ -91,7 +91,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar }: { tipoInicial?
     }
     enviando.current = true;
     try {
-      setEnviada(registrarResposta(estado, respostas));
+      setEnviada(registrarResposta(estado, respostas, localStorage, new Date(), Object.fromEntries(Object.entries(imagens).map(([id, l]) => [id, l.map((i) => ({ nome: i.nome, dataUrl: i.dataUrl }))]))));
       setRegistradas(listarRespostas());
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível registrar a resposta.");
@@ -193,7 +193,15 @@ function ListaRespostas({ lista, podeExcluir, onExcluir }: { lista: RespostaRegi
             <summary className="cursor-pointer break-words text-sm font-medium">{resumoDaResposta(r)}</summary>
             <dl className="mt-2 space-y-1 text-sm">
               {r.itens.map((i) => (
-                <div key={i.perguntaId}><dt className="text-xs text-muted-foreground">{i.titulo}</dt><dd className="break-words">{i.resposta}</dd></div>
+                <div key={i.perguntaId}><dt className="text-xs text-muted-foreground">{i.titulo}</dt><dd className="break-words">{i.resposta}</dd>
+                  {i.imagens && i.imagens.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {i.imagens.filter((f) => f.dataUrl.startsWith("data:image/")).map((f, n) => (
+                        <img key={`${n}-${f.nome}`} src={f.dataUrl} alt={f.nome} title={f.nome} className="max-h-64 max-w-full rounded-md border object-contain" />
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </dl>
             {podeExcluir && <Button variant="ghost" size="sm" className="mt-2 text-destructive" onClick={() => onExcluir(r)}>Excluir</Button>}
