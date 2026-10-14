@@ -1060,3 +1060,7 @@ Ordem do responsável em 14/10 (19:38), a partir do croqui "módulo viagens". **
 ### Decisão 187: Viagens, extrato do técnico
 
 Ordem do responsável em 14/10 (19:38), a partir do croqui "módulo viagens". **Antes:** o nome do técnico em "Resultados dos técnicos" era só texto. **Agora:** o nome é um botão que abre o **extrato do técnico** numa janela, com o mês do painel, setas para o mês anterior e o seguinte, no topo a **quantidade de despesas** e o **custo total** do mês e, abaixo, a lista com data, tipo, cliente, valor e os indicadores de cada despesa (lançada pelo técnico ou pelo gestor, como no ICL, e Em aberto ou Finalizado). Vale o técnico responsável da despesa, a mesma regra dos Resultados dos técnicos. A regra do croqui "um técnico não vê o extrato do outro" depende de login e fica para a Fase 2; em demonstração o extrato abre para qualquer pessoa. Nada no Supabase.
+
+### Decisão 188: Painel de Viagens sem o aviso sobre o envio dos comprovantes
+
+Ordem do responsável em 14/10 (19:54). **Antes:** abaixo do título "Questionários de despesas" o texto dizia "Escolha o tipo da despesa a lançar. O formulário termina sempre com o envio dos comprovantes." **Agora:** só "Escolha o tipo da despesa a lançar." A frase sobre os comprovantes foi retirada; o formulário continua pedindo a foto do comprovante como antes.
