@@ -112,3 +112,9 @@ test("a janela de cadastro de cliente é a mesma na tela de Clientes e no formul
   assert.match(formulario, /<ClienteDialog/);
   assert.doesNotMatch(formulario, /target="_blank"/);
 });
+
+test("formulário de despesas: Cadastrar cliente só para quem grava, e o cliente escolhido sempre aparece na lista", () => {
+  const formulario = readFileSync("src/components/parametros/QuestionarioFormulario.tsx", "utf8");
+  assert.match(formulario, /canWrite && <button type="button"[\s\S]*?>Cadastrar cliente<\/button>/);
+  assert.match(formulario, /mostradas\.push\(atual\)/);
+});
