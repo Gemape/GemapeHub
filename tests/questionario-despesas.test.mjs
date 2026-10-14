@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import {
   ID_TIPO_DESPESA, clonarPergunta, estadoPadrao, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId, novaPergunta,
   perguntasPadrao, proximoCodigoPergunta, questionarioDoTipo, regraArquivos, salvarPergunta, tiposDeDespesa, tiposRemovidos, validarPergunta,
-  dadosIlegiveis,
+  dadosIlegiveis, ID_LITROS,
 } from "../src/lib/questionario-despesas.ts";
 import { filtrarMunicipios, municipiosDaUf } from "../src/lib/municipios.ts";
 
@@ -35,7 +35,8 @@ test("os tipos de despesa vêm da pergunta 3 e todo questionário começa por el
   const e = estadoPadrao();
   assert.equal(tiposDeDespesa(e).length, 8);
   for (const tipo of tiposDeDespesa(e)) assert.equal(questionarioDoTipo(e, tipo)[0], ID_TIPO_DESPESA);
-  assert.equal(questionarioDoTipo(e, "Pedágio").length, 13);
+  assert.equal(questionarioDoTipo(e, "Abastecimento").length, 13);
+  assert.equal(questionarioDoTipo(e, "Pedágio").length, 12);
   // Mesmo gravada fora de ordem ou repetida, a pergunta 3 volta ao início uma vez só.
   const g = gravarQuestionario(e, "Pedágio", ["q-08", ID_TIPO_DESPESA, "q-01", "q-08"], memoria());
   assert.deepEqual(questionarioDoTipo(g, "Pedágio"), [ID_TIPO_DESPESA, "q-08", "q-01"]);
@@ -84,7 +85,7 @@ test("incluir um tipo de despesa cria o questionário dele; tirar o tipo apaga o
   const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const g = salvarPergunta(e, { ...q3, opcoes: [...q3.opcoes.filter((o) => o !== "Pedágio"), "Lavagem"] }, s);
   assert.ok(tiposDeDespesa(g).includes("Lavagem"));
-  assert.equal(questionarioDoTipo(g, "Lavagem").length, 13);
+  assert.equal(questionarioDoTipo(g, "Lavagem").length, 12);
   assert.ok(!("Pedágio" in g.questionarios));
 });
 
@@ -183,4 +184,23 @@ test("o submenu fica em Parâmetros > Veículos e a rota existe", () => {
   assert.match(menu, /Questionário de Despesas", url: "\/cadastros\/veiculos-questionario-despesas"/);
   const rota = readFileSync(new URL("../src/routes/_authenticated/cadastros/veiculos-questionario-despesas.tsx", import.meta.url), "utf8");
   assert.match(rota, /QuestionarioDespesasConstrutor/);
+});
+
+test("Litros abastecidos só vem no Abastecimento, também nos dados salvos antes (ajuste único)", () => {
+  const e = estadoPadrao();
+  for (const tipo of tiposDeDespesa(e)) {
+    assert.equal(questionarioDoTipo(e, tipo).includes(ID_LITROS), tipo === "Abastecimento", tipo);
+  }
+  // Dado salvo antes: todos os tipos traziam Litros e não havia a marca do ajuste.
+  const antigo = { ...estadoPadrao(), questionarios: Object.fromEntries(tiposDeDespesa(e).map((t) => [t, e.perguntas.map((p) => p.id)])) };
+  delete antigo.litrosAjustado;
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify(antigo));
+  const lido = lerEstado(s);
+  assert.ok(questionarioDoTipo(lido, "Abastecimento").includes(ID_LITROS));
+  assert.ok(!questionarioDoTipo(lido, "Hospedagem").includes(ID_LITROS));
+  // Depois do ajuste, quem põe Litros de volta num tipo (de propósito) não perde a escolha.
+  const volta = gravarQuestionario(lido, "Hospedagem", [...questionarioDoTipo(lido, "Hospedagem"), ID_LITROS], s);
+  assert.ok(questionarioDoTipo(lerEstado(s), "Hospedagem").includes(ID_LITROS));
+  assert.equal(volta.litrosAjustado, true);
 });

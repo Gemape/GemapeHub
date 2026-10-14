@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
-import { listarClientes } from "@/lib/clientes-demo";
+import { ClienteDialog } from "@/components/parametros/ClienteDialog";
+import { listarClientes, proximoCodigoCliente } from "@/lib/clientes-demo";
 import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
@@ -324,15 +325,10 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
     return () => { vivo = false; };
   }, [p.fonte, sigla]);
 
-  // Clientes cadastrados em outra aba (link abaixo) aparecem ao voltar para o formulário, sem recarregar.
+  // Cadastro de cliente em janela, sem sair do formulário; o cliente novo já fica escolhido ao salvar.
   const [, setAtualizacao] = useState(0);
-  useEffect(() => {
-    if (p.fonte !== "clientes") return;
-    const atualizar = () => setAtualizacao((n) => n + 1);
-    window.addEventListener("focus", atualizar);
-    window.addEventListener("storage", atualizar);
-    return () => { window.removeEventListener("focus", atualizar); window.removeEventListener("storage", atualizar); };
-  }, [p.fonte]);
+  const [novoCliente, setNovoCliente] = useState(false);
+  const [codigoNovo, setCodigoNovo] = useState("");
 
   const opcoes = p.fonte === "clientes" ? listarClientes().map((c) => `${c.codigo} - ${c.nome}`) : p.fonte === "municipios" ? filtrarMunicipios(municipios, busca) : p.opcoes;
   const mostradas = opcoes.slice(0, 200);
@@ -342,16 +338,23 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
       {p.fonte === "municipios" && (
         <Input name={`busca-${p.id}`} aria-label="Buscar município" placeholder="Buscar município" value={busca} disabled={semUf} onChange={(e) => setBusca(e.target.value)} />
       )}
-      <Select value={atual} onValueChange={onMudar} disabled={semUf}>
+      {/* O Select zera o valor sozinho quando a lista muda (cliente recém-cadastrado); vazio nunca é uma escolha do usuário. */}
+      <Select value={atual} onValueChange={(v) => { if (v) onMudar(v); }} disabled={semUf}>
         <SelectTrigger aria-label={p.titulo}><SelectValue placeholder={semUf ? "Escolha antes a Unidade da Federação" : "Selecione"} /></SelectTrigger>
         <SelectContent>{mostradas.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
       </Select>
       {opcoes.length > mostradas.length && <p className="text-xs text-muted-foreground">Mostrando {mostradas.length} de {opcoes.length}; refine a busca.</p>}
       {p.fonte === "clientes" && (
-        <p className="text-xs text-muted-foreground">
-          {opcoes.length === 0 ? "Nenhum cliente cadastrado em Parâmetros > Clientes. " : "Cliente não está na lista? "}
-          <Link to="/cadastros/clientes" target="_blank" rel="noopener" className="font-medium text-primary underline">Cadastrar cliente</Link> (abre em outra aba; a lista atualiza ao voltar).
-        </p>
+        <>
+          <p className="text-xs text-muted-foreground">
+            {opcoes.length === 0 ? "Nenhum cliente cadastrado em Parâmetros > Clientes. " : "Cliente não está na lista? "}
+            <button type="button" className="font-medium text-primary underline" onClick={() => { setCodigoNovo(proximoCodigoCliente()); setNovoCliente(true); }}>Cadastrar cliente</button>
+          </p>
+          <ClienteDialog
+            aberto={novoCliente} onAberto={setNovoCliente} editando={null} modelo={null} codigoPrevisto={codigoNovo}
+            onSalvo={(c) => { setAtualizacao((n) => n + 1); onMudar(`${c.codigo} - ${c.nome}`); }}
+          />
+        </>
       )}
     </div>
   );

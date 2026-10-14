@@ -11,7 +11,7 @@ const memoria = () => {
   const dados = new Map();
   return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v), dados };
 };
-const T = "Alimentação";
+const T = "Abastecimento";
 const cartao = (e, s) => gravarRegra(e, T, "q-02", { origem: "q-01", operador: "igual", valor: "Cartão de crédito" }, s);
 
 test("máscaras: duas casas entram sozinhas, moeda leva R$, inteiro só dígitos", () => {
@@ -89,7 +89,7 @@ test("validação: obrigatórias, formatos, horário, data, upload e uma só res
   assert.equal(Object.keys(vazios).length, 13);
   assert.match(vazios["q-12"], /ao menos uma imagem/);
   const ok = {
-    "q-01": ["Dinheiro"], "q-02": ["Cartão final 0129 – Roberto"], "q-03": ["Alimentação"], "q-04": ["Roberto (Oficina)"], "q-05": "Acre - AC", "q-06": "Rio Branco",
+    "q-01": ["Dinheiro"], "q-02": ["Cartão final 0129 – Roberto"], "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"], "q-05": "Acre - AC", "q-06": "Rio Branco",
     "q-07": "00001 - Cliente", "q-08": "2026-10-14", "q-09": "Almoço", "q-10": "10,50", "q-11": "1.234,56", "q-12": ["a.jpg"], "q-13": "Avulso – técnico não monitorado",
   };
   assert.deepEqual(validarRespostas(todas, ok), {});
@@ -109,7 +109,7 @@ test("revisão: opção fora da lista, data impossível, moeda ancorada e valor 
   const e = estadoPadrao();
   const todas = perguntasVisiveis(e, T, {});
   const base = {
-    "q-01": ["Dinheiro"], "q-02": ["Cartão final 0129 – Roberto"], "q-03": ["Alimentação"], "q-04": ["Roberto (Oficina)"], "q-05": "Acre - AC", "q-06": "Rio Branco",
+    "q-01": ["Dinheiro"], "q-02": ["Cartão final 0129 – Roberto"], "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"], "q-05": "Acre - AC", "q-06": "Rio Branco",
     "q-07": "00001 - Cliente", "q-08": "2026-10-14", "q-09": "Almoço", "q-10": "10,50", "q-11": "1.234,56", "q-12": ["a.jpg"], "q-13": "Avulso – técnico não monitorado",
   };
   assert.deepEqual(validarRespostas(todas, base), {});
