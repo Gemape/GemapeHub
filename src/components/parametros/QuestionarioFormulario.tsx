@@ -17,7 +17,7 @@ import { useEmpregados } from "@/lib/hooks-gemape";
 import { reduzirImagem, type ImagemReduzida } from "@/lib/imagem-economica";
 import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
 import {
-  ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, lerEstado, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
+  ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
 } from "@/lib/questionario-despesas";
 import { aplicarFormato, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
@@ -59,7 +59,10 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
   const obrigatorias = visiveis.filter((p) => p.obrigatoria);
   const respondidas = obrigatorias.filter((p) => !vazia(respostas[p.id])).length;
   const progresso = obrigatorias.length ? Math.round((respondidas / obrigatorias.length) * 100) : 0;
-  const habilitadosVisiveis = (p: Pergunta): Habilitado[] => (p.habilitados ? (empregadosLidos ? habilitadosAtivos(p.habilitados, idsAtivos) : p.habilitados) : []);
+  const habilitadosVisiveis = (p: Pergunta): Habilitado[] => {
+    const lista = habilitadosDaPergunta(estado, p);
+    return lista ? (empregadosLidos ? habilitadosAtivos(lista, idsAtivos) : lista) : [];
+  };
 
   // A pergunta que depende da anterior (Município x UF) fica no mesmo cartão dela.
   const grupos = visiveis.reduce<Pergunta[][]>((lista, p) => {

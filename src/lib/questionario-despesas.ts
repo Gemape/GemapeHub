@@ -68,6 +68,8 @@ export type Estado = {
   regras: Record<string, Record<string, Regra>>;
   // Marca que "Litros abastecidos" já foi tirado dos tipos que não são Abastecimento (ajuste único dos dados salvos antes).
   litrosAjustado?: true;
+  // Marca que a pergunta "Técnico responsável pela despesa" já foi incluída nos dados salvos antes dela existir (ajuste único).
+  tecnicoAjustado?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -75,6 +77,9 @@ export const ID_LITROS = "q-10";
 export const TIPO_ABASTECIMENTO = "Abastecimento";
 
 export const ID_TIPO_DESPESA = "q-03";
+// Módulo Viagens (dec 177): quem lança é a pergunta 04; a 14 só aparece quando quem lança é PCM ou Administrativo, para dizer de qual técnico é a despesa.
+export const ID_HABILITADOS = "q-04";
+export const ID_TECNICO_RESPONSAVEL = "q-14";
 export const ID_UF = "q-05";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -110,6 +115,7 @@ export function perguntasPadrao(): Pergunta[] {
     base(4, "caixas", "Habilitados ao questionário de viagem", {
       habilitados: [hab("Roberto", "Oficina"), hab("Wellington", "Oficina"), hab("Bionor", "Oficina"), hab("Levindo", "Oficina"), hab("Wagner", "Oficina"), hab("Eduardo", "PCM"), hab("Bruno", "PCM")],
     }),
+    base(14, "caixas", "Técnico responsável pela despesa", { sistema: true, habilitados: [] }),
     base(5, "lista", "Unidade da Federação", { opcoes: [...UFS] }),
     base(6, "lista", "Município", { fonte: "municipios", dependeDe: ID_UF }),
     base(7, "lista", "Clientes", { fonte: "clientes" }),
@@ -127,7 +133,7 @@ export function estadoPadrao(): Estado {
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, resto.filter((id) => id !== ID_LITROS || o === TIPO_ABASTECIMENTO)]));
-  return { versao: 1, perguntas, questionarios, regras: {}, litrosAjustado: true };
+  return { versao: 1, perguntas, questionarios, regras: {}, litrosAjustado: true, tecnicoAjustado: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -191,10 +197,27 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     const lido = JSON.parse(bruto);
     if (!lido || !Array.isArray(lido.perguntas) || typeof lido.questionarios !== "object" || lido.questionarios === null) return estadoPadrao();
     const regras = lido.regras && typeof lido.regras === "object" ? lido.regras : {};
-    if (lido.litrosAjustado === true) return { versao: 1, perguntas: lido.perguntas, questionarios: lido.questionarios, regras, litrosAjustado: true };
+    let perguntas = lido.perguntas as Pergunta[];
+    let questionarios = lido.questionarios as Record<string, string[]>;
     // Dado salvo antes do ajuste: Litros abastecidos sai dos tipos que não são Abastecimento (uma vez só).
-    const questionarios = Object.fromEntries(Object.entries(lido.questionarios as Record<string, unknown>).map(([tipo, ids]) => [tipo, Array.isArray(ids) && tipo !== TIPO_ABASTECIMENTO ? ids.filter((id) => id !== ID_LITROS) : ids]));
-    return { versao: 1, perguntas: lido.perguntas, questionarios: questionarios as Record<string, string[]>, regras, litrosAjustado: true };
+    if (lido.litrosAjustado !== true) {
+      questionarios = Object.fromEntries(Object.entries(questionarios as Record<string, unknown>).map(([tipo, ids]) => [tipo, Array.isArray(ids) && tipo !== TIPO_ABASTECIMENTO ? ids.filter((id) => id !== ID_LITROS) : ids])) as Record<string, string[]>;
+    }
+    // Dado salvo antes da pergunta do técnico responsável: ela entra no banco e em todos os questionários, logo depois de "quem lança" (uma vez só).
+    if (lido.tecnicoAjustado !== true && !perguntas.some((p) => p.id === ID_TECNICO_RESPONSAVEL)) {
+      const nova = perguntasPadrao().find((p) => p.id === ID_TECNICO_RESPONSAVEL);
+      if (nova) {
+        // O número 14 fica com ela se estiver livre; senão, o próximo da sequência.
+        const codigo = perguntas.some((p) => p.codigo === nova.codigo) ? formatarCodigo(Math.max(...perguntas.map((p) => Number(p.codigo) || 0)) + 1) : nova.codigo;
+        perguntas = [...perguntas, { ...nova, codigo }];
+        questionarios = Object.fromEntries(Object.entries(questionarios as Record<string, unknown>).map(([tipo, ids]) => {
+          if (!Array.isArray(ids)) return [tipo, ids];
+          const aposQuemLanca = ids.indexOf(ID_HABILITADOS);
+          return [tipo, aposQuemLanca >= 0 ? [...ids.slice(0, aposQuemLanca + 1), ID_TECNICO_RESPONSAVEL, ...ids.slice(aposQuemLanca + 1)] : [...ids, ID_TECNICO_RESPONSAVEL]];
+        })) as Record<string, string[]>;
+      }
+    }
+    return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true };
   } catch {
     return estadoPadrao();
   }
@@ -323,6 +346,12 @@ export function moverId(ids: string[], origem: string, destino: string): string[
 }
 
 // Habilitados que continuam valendo: quem tem vínculo com um empregado que está inativo (ou não existe mais) sai da lista.
+// Lista de empregados de uma pergunta de habilitados. A do técnico responsável não tem lista própria: são os habilitados da pergunta 04 com área Oficina.
+export function habilitadosDaPergunta(e: Estado, p: Pergunta): Habilitado[] | null {
+  if (p.id !== ID_TECNICO_RESPONSAVEL) return p.habilitados;
+  return (e.perguntas.find((x) => x.id === ID_HABILITADOS)?.habilitados ?? []).filter((h) => h.area === "Oficina");
+}
+
 export function habilitadosAtivos(lista: Habilitado[], idsAtivos: ReadonlySet<string>): Habilitado[] {
   return lista.filter((h) => h.empregadoId === null || idsAtivos.has(h.empregadoId));
 }

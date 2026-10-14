@@ -13,7 +13,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, lerEstado, moverId,
+  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
@@ -30,6 +30,11 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
   const [dialogo, setDialogo] = useState<{ modo: ModoPergunta; inicial: Pergunta | null } | null>(null);
   const { data: empregados = [], isSuccess: empregadosLidos } = useEmpregados(TODAS);
   const idsAtivos = useMemo(() => new Set(empregados.filter((e) => empregadoAtivo(e)).map((e) => e.id)), [empregados]);
+
+  const habilitadosPrevia = (p: Pergunta) => {
+    const lista = habilitadosDaPergunta(estado, p);
+    return lista && empregadosLidos ? habilitadosAtivos(lista, idsAtivos) : (lista ?? undefined);
+  };
 
   const ids = questionarioDoTipo(estado, tipoAtual);
   const porId = new Map(estado.perguntas.map((p) => [p.id, p]));
@@ -130,7 +135,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
                   <SelectContent>{tipos.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               ) : (
-                <PerguntaPrevia pergunta={p} habilitadosVisiveis={p.habilitados && empregadosLidos ? habilitadosAtivos(p.habilitados, idsAtivos) : undefined} />
+                <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
             </div>
             {aberto && canWrite && !fixa && (
