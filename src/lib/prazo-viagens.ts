@@ -7,16 +7,21 @@ export const PRAZO_MAXIMO_DIAS = 365;
 
 export const prazoValido = (n: number): boolean => Number.isInteger(n) && n >= 0 && n <= PRAZO_MAXIMO_DIAS;
 
-export function lerPrazoDias(storage: StorageLike = localStorage): number {
+// Só números inteiros em dígitos valem ("", "0x3" e "1e1" voltam ao padrão); armazenamento bloqueado também cai no padrão.
+export function lerPrazoDias(storage?: StorageLike): number {
   try {
-    const n = Number(storage.getItem(CHAVE));
-    return storage.getItem(CHAVE) !== null && prazoValido(n) ? n : PRAZO_PADRAO_DIAS;
+    const bruto = (storage ?? localStorage).getItem(CHAVE);
+    return bruto !== null && /^\d{1,3}$/.test(bruto) && prazoValido(Number(bruto)) ? Number(bruto) : PRAZO_PADRAO_DIAS;
   } catch {
     return PRAZO_PADRAO_DIAS;
   }
 }
 
-export function salvarPrazoDias(dias: number, storage: StorageLike = localStorage): void {
+export function salvarPrazoDias(dias: number, storage?: StorageLike): void {
   if (!prazoValido(dias)) throw new Error(`Informe um número inteiro de dias entre 0 e ${PRAZO_MAXIMO_DIAS}.`);
-  storage.setItem(CHAVE, String(dias));
+  try {
+    (storage ?? localStorage).setItem(CHAVE, String(dias));
+  } catch {
+    throw new Error("Não foi possível guardar o prazo neste navegador.");
+  }
 }

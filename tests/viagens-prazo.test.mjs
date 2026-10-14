@@ -62,8 +62,10 @@ test("prazo configurável: padrão 3, grava e recusa valor inválido sem alterar
   assert.equal(lerPrazoDias(s), 0);
   for (const ruim of [-1, 1.5, 366, Number.NaN]) assert.throws(() => salvarPrazoDias(ruim, s), /inteiro/);
   assert.equal(lerPrazoDias(s), 0);
-  const estragado = { getItem: () => "abc", setItem: () => {} };
-  assert.equal(lerPrazoDias(estragado), 3);
+  for (const ruim of ["abc", "", "  ", "0x3", "1e1", "-2", "1000"]) assert.equal(lerPrazoDias({ getItem: () => ruim, setItem: () => {} }), 3);
+  const bloqueado = { getItem: () => { throw new Error("bloqueado"); }, setItem: () => { throw new Error("bloqueado"); } };
+  assert.equal(lerPrazoDias(bloqueado), 3);
+  assert.throws(() => salvarPrazoDias(4, bloqueado), /Não foi possível guardar/);
 });
 
 test("a tela de Parâmetros > Viagens existe e o painel mostra o índice no prazo em roxo", () => {
