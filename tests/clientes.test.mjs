@@ -17,7 +17,8 @@ test("só o nome é obrigatório e o código é gerado em 5 dígitos", () => {
   assert.throws(() => salvarCliente(vazio, s), /nome do cliente/);
   const a = salvarCliente({ ...vazio, nome: "oficina do joão ltda" }, s);
   assert.equal(a.codigo, "00001");
-  assert.equal(a.nome, "Oficina do joão ltda");
+  assert.equal(a.nome, "Oficina do João Ltda");
+  assert.equal(salvarCliente({ ...vazio, nome: "GERADO MAGELA DA COSTA" }, memoria()).nome, "Gerado Magela da Costa");
   assert.equal(proximoCodigoCliente(s), "00002");
 });
 
@@ -90,4 +91,15 @@ test("Clientes aparece em Parâmetros, abaixo de Fornecedores", () => {
   assert.ok(menu.indexOf('url: "/cadastros/clientes"') > menu.indexOf('url: "/cadastros/fornecedores"'));
   const tela = readFileSync("src/routes/_authenticated/cadastros/clientes.tsx", "utf8");
   assert.match(tela, /AcoesLinha/);
+});
+
+test("nome com inicial maiúscula por palavra e e-mail em minúsculas, também ao digitar", async () => {
+  const { formatarPorModo } = await import("../src/lib/campo-capitalizado.ts");
+  assert.equal(formatarPorModo("gerado magela da costa", "nome"), "Gerado Magela da Costa");
+  assert.equal(formatarPorModo("FaleCom@GMAIL.com", "minusculas"), "falecom@gmail.com");
+  const s = memoria();
+  assert.equal(salvarCliente({ ...vazio, nome: "A", email: "FALECOM@GMAIL.COM" }, s).email, "falecom@gmail.com");
+  const tela = readFileSync("src/routes/_authenticated/cadastros/clientes.tsx", "utf8");
+  assert.match(tela, /id="nome" name="nome" capitalizar="nome"/);
+  assert.match(tela, /id="email" name="email" type="email" capitalizar="minusculas"/);
 });

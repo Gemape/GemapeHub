@@ -1,11 +1,11 @@
 // Capitalização na entrada dos formulários (decisão 84): o campo se corrige ao sair dele (blur) e ao Enter, sem mexer
-// no texto enquanto o usuário digita. Cada campo escolhe o modo: "texto" (primeira letra maiúscula) ou "nome" (nome de pessoa).
+// no texto enquanto o usuário digita. Cada campo escolhe o modo: "texto" (primeira letra maiúscula), "nome" (nome de pessoa) ou "minusculas" (e-mail).
 import { capitalizarNomePessoa, capitalizarTexto } from "./formatacao-cadastral.ts";
 
-export type ModoCapitalizacao = "texto" | "nome";
+export type ModoCapitalizacao = "texto" | "nome" | "minusculas";
 
 export const formatarPorModo = (valor: string, modo: ModoCapitalizacao): string =>
-  modo === "nome" ? capitalizarNomePessoa(valor) : capitalizarTexto(valor);
+  modo === "nome" ? capitalizarNomePessoa(valor) : modo === "minusculas" ? valor.toLocaleLowerCase("pt-BR") : capitalizarTexto(valor);
 
 /** Troca o valor do campo pelo formatado e avisa o React (campo controlado ou não) com um evento "input". */
 export function aplicarNoCampo(campo: HTMLInputElement | HTMLTextAreaElement, modo: ModoCapitalizacao): void {
