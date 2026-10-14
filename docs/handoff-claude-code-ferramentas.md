@@ -434,3 +434,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 
 - 2026-10-14 dec 184: ícones: menu Viagens = Luggage (AppSidebar.tsx); cards Pedágio = Cancela e Compra de peças = ParafusoEPorca (src/components/modules/icones-viagens.ts).
 - 2026-10-14 dec 185: anexo de comprovante soma até 3 imagens, com Remover e bloqueio no limite (juntarImagens e mensagemDeLimite em src/lib/imagem-economica.ts; campo em QuestionarioFormulario.tsx).
+- 2026-10-14 dec 186: lista das despesas do mês no painel de Viagens (ViagensLista.tsx, viagens-lista.ts), Gerar relatório das marcadas e status Finalizado (relatorios-viagens.ts, chave gemape-demo-relatorios-viagens). Faltam extrato do técnico e índice no prazo.

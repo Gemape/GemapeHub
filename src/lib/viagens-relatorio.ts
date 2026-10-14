@@ -32,6 +32,15 @@ export function linhasDoRelatorio(lista: readonly RespostaRegistrada[], f: Filtr
     }));
 }
 
+// Linhas do relatório de despesas escolhidas pelo id (relatório salvo), em ordem de ocorrência.
+export function linhasDasDespesas(lista: readonly RespostaRegistrada[], ids: readonly string[]): LinhaRelatorio[] {
+  const escolhidas = new Set(ids);
+  const itens = lista.filter((r) => escolhidas.has(r.id));
+  const datas = itens.map((r) => dadosDoLancamento(r).dataDespesa ?? r.data).sort();
+  if (itens.length === 0) return [];
+  return linhasDoRelatorio(itens, { empregado: null, de: datas[0]!, ate: datas[datas.length - 1]! });
+}
+
 // Clientes visitados no período, sem repetir e em ordem alfabética.
 export const clientesVisitados = (linhas: readonly LinhaRelatorio[]): string[] =>
   [...new Set(linhas.map((l) => l.cliente).filter((c): c is string => !!c))].sort((a, b) => a.localeCompare(b, "pt-BR"));
