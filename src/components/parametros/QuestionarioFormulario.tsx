@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { ArrowLeft, ClipboardList, Pencil } from "lucide-react";
 import { useId, useMemo, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -164,15 +164,15 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, somentePr
       <div className={`${cartao} border-t-8 border-t-primary`}>
         <h1 className="text-2xl font-semibold">{tituloDoQuestionario(tipo)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{somentePrevia ? "Pré-visualização da montagem: nada é enviado daqui. As despesas são lançadas em Módulos > Viagens." : ocultaTipo ? "Responda as perguntas." : "Escolha o tipo de despesa e responda as perguntas."} Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {onVoltar && <button type="button" className="text-primary underline" onClick={onVoltar.aoClicar}>{onVoltar.rotulo}</button>}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {onVoltar && <Button type="button" variant="outline" size="sm" onClick={onVoltar.aoClicar}><ArrowLeft className="mr-1 h-4 w-4" />{onVoltar.rotulo}</Button>}
           {canWrite && onEditar && (
-            <button type="button" className="inline-flex items-center gap-1 text-primary underline" onClick={() => onEditar(tipo)}><Pencil className="h-3 w-3" />Editar questionário</button>
+            <Button type="button" variant="outline" size="sm" onClick={() => onEditar(tipo)}><Pencil className="mr-1 h-4 w-4" />Editar questionário</Button>
           )}
           {!somentePrevia && (
-            <button type="button" className="text-primary underline" onClick={() => setVerLista((v) => !v)}>
-              {verLista ? "Ocultar respostas registradas" : `Respostas registradas (${registradas.length})`}
-            </button>
+            <Button type="button" variant="secondary" size="sm" aria-expanded={verLista} onClick={() => setVerLista((v) => !v)}>
+              <ClipboardList className="mr-1 h-4 w-4" />{verLista ? "Ocultar respostas registradas" : `Respostas registradas (${registradas.length})`}
+            </Button>
           )}
         </div>
       </div>
