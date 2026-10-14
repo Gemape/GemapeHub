@@ -25,13 +25,14 @@ import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
+import { hojeLocal } from "@/lib/empregados";
 
 export function EpiRelatorioBaixa() {
   const { empresaId } = useEmpresa();
   const [dataInicial, setDataInicial] = useState(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
+    hojeLocal().slice(0, 8) + "01",
   );
-  const [dataFinal, setDataFinal] = useState(new Date().toISOString().slice(0, 10));
+  const [dataFinal, setDataFinal] = useState(hojeLocal());
   const [motivoFiltro, setMotivoFiltro] = useState(TODAS);
   const parametros = useParametrosBase();
   const tamanhoDe = (m: { tamanho_id?: string | null }) =>

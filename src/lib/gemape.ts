@@ -168,7 +168,13 @@ export function valorTotalEmEstoque(
 
 export function formatarData(data: string | null | undefined): string {
   if (!data) return "—";
-  const [ano, mes, dia] = data.slice(0, 10).split("-");
+  // Data com hora (timestamp em UTC) sai no dia de Brasília; data pura (AAAA-MM-DD) não muda.
+  let texto = data.slice(0, 10);
+  if (data.length > 10 && /[T ]\d{2}:\d{2}/.test(data)) {
+    const t = new Date(data);
+    if (!Number.isNaN(t.getTime())) texto = t.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+  }
+  const [ano, mes, dia] = texto.split("-");
   if (!ano || !mes || !dia) return "—";
   return `${dia}/${mes}/${ano}`;
 }
