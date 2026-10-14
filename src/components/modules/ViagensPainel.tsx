@@ -16,7 +16,7 @@ import { useEmpregados } from "@/lib/hooks-gemape";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { ID_TECNICO_RESPONSAVEL, habilitadosAtivos, habilitadosDaPergunta, lerEstado, tiposDeDespesa } from "@/lib/questionario-despesas";
 import { FAIXAS, faixaDoIndice, type Faixa } from "@/lib/faixas-desempenho";
-import { lerPrazoDias } from "@/lib/prazo-viagens";
+import { lerPrazos, type PrazosViagens } from "@/lib/prazo-viagens";
 import { listarRespostas } from "@/lib/respostas-despesas";
 import {
   MESES, dadosDoLancamento, formatarMoeda, formatarPercentual, indicadoresGlobais, periodoAtual, resultadosTecnicos, rotuloPeriodo,
@@ -40,7 +40,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   const tipos = tiposDeDespesa(estado);
   const [tipo, setTipo] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState(periodoAtual);
-  const prazoDias = useMemo(() => lerPrazoDias(), []);
+  const prazos = useMemo(() => lerPrazos(), []);
   const [extratoDe, setExtratoDe] = useState<string | null>(null);
   // Relê os lançamentos sempre que volta do formulário, para o que acabou de ser enviado entrar na conta.
   const lista = useMemo(() => listarRespostas(), [tipo]);
@@ -60,8 +60,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
     return <QuestionarioFormulario key={tipo} tipoInicial={tipo} semPerguntaTipo onVoltar={{ rotulo: "Voltar ao painel", aoClicar: () => setTipo(null) }} />;
   }
 
-  const globais = indicadoresGlobais(lista, periodo, prazoDias);
-  const resultados = resultadosTecnicos(lista, periodo, tecnicos, prazoDias);
+  const globais = indicadoresGlobais(lista, periodo, prazos);
+  const resultados = resultadosTecnicos(lista, periodo, tecnicos, prazos);
   const noPeriodo = globais.quantidade;
 
   return (
@@ -134,8 +134,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             titulo="Índice de lançamento no prazo"
             valor={formatarPercentual(globais.prazo)}
             faixa={faixaDoIndice(globais.prazo)?.faixa}
-            detalhe={globais.quantidade ? `${globais.noPrazo} de ${globais.quantidade} lançadas até ${prazoDias} ${prazoDias === 1 ? "dia" : "dias"} após a despesa` : "Sem lançamentos neste mês"}
-            explicacao={<ExplicacaoPrazo prazoDias={prazoDias} />}
+            detalhe={globais.quantidade ? `${globais.noPrazo} de ${globais.quantidade} lançadas no prazo` : "Sem lançamentos neste mês"}
+            explicacao={<ExplicacaoPrazo prazos={prazos} />}
             roxo
           />
         </div>
@@ -214,7 +214,9 @@ function ExplicacaoIcl() {
   );
 }
 
-function ExplicacaoPrazo({ prazoDias }: { prazoDias: number }) {
+const dias = (n: number) => `${n} ${n === 1 ? "dia" : "dias"}`;
+
+function ExplicacaoPrazo({ prazos }: { prazos: PrazosViagens }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -225,8 +227,9 @@ function ExplicacaoPrazo({ prazoDias }: { prazoDias: number }) {
       <PopoverContent align="end" className="w-80 space-y-2 text-sm">
         <p className="font-semibold">Índice de lançamento no prazo</p>
         <p>Índice = (despesas lançadas dentro do prazo ÷ total de despesas lançadas no período) × 100.</p>
-        <p>Exemplo: 10 despesas no mês; 9 foram lançadas até {prazoDias} {prazoDias === 1 ? "dia" : "dias"} depois da data da despesa. Índice = 9 ÷ 10 × 100 = 90%.</p>
-        <p className="text-muted-foreground">O prazo ({prazoDias} {prazoDias === 1 ? "dia" : "dias"}) se configura em Parâmetros &gt; Viagens. Conta a diferença entre a data da despesa e o dia em que o formulário foi enviado.</p>
+        <p>Exemplo: 10 despesas no mês; 9 foram lançadas dentro do prazo, contado em dias depois da data da despesa. Índice = 9 ÷ 10 × 100 = 90%.</p>
+        <p>Prazos de hoje: técnico mecânico, {dias(prazos.mecanico)}; PCM, {dias(prazos.pcm)}. Vale o prazo de quem lançou a despesa (o Administrativo segue o do PCM).</p>
+        <p className="text-muted-foreground">Os prazos se configuram em Parâmetros &gt; Viagens. Conta a diferença entre a data da despesa e o dia em que o formulário foi enviado.</p>
       </PopoverContent>
     </Popover>
   );
