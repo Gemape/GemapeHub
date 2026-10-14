@@ -54,7 +54,7 @@ import {
   Fuel,
   Box,
   ListPlus,
-  Plane as IconeViagens,
+  Luggage as IconeViagens,
 } from "lucide-react";
 
 import {

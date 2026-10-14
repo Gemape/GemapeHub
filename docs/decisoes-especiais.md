@@ -1040,3 +1040,7 @@ Ordem do responsável em 14/10 (17:58). **Antes:** o formulário se chamava semp
 ### Decisão 182: Cartões de crédito só aparece quando a moeda for Cartão de crédito
 
 Ordem do responsável em 14/10 (18:03). **Antes:** a pergunta "Cartões de crédito" aparecia em todo questionário, qualquer que fosse a moeda. **Agora:** ela só aparece quando em "Moedas" estiver marcado **Cartão de crédito**; com Dinheiro ou Ticket de abastecimento o campo não aparece (e não é cobrado). Usa a condição se/então já existente (decisão 169), aplicada de fábrica em todos os questionários que têm Moedas antes de Cartões, e também aos dados salvos antes, uma única vez (o responsável pode tirar ou mudar a condição depois). Nada no Supabase.
+
+### Decisão 184: Ícones de Viagens (mala), Pedágio (cancela) e Compra de peças (parafuso e porca)
+
+Ordem do responsável em 14/10 (18:29 e 18:30). **Antes:** o menu Viagens usava um avião, o card Pedágio um cone e o card Compra de peças para cliente caixas empilhadas. **Agora:** o menu **Viagens** usa uma **mala**; o card **Pedágio** uma **cancela** (poste e braço listrado) e o card **Compra de peças para cliente** um **parafuso com porca**. Cancela e parafuso com porca não existem na biblioteca de ícones e foram desenhados no mesmo traço dos demais (src/components/modules/icones-viagens.ts). Nada no Supabase.

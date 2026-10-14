@@ -1,4 +1,5 @@
-import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Receipt, SquareParking, TrafficCone, Hamburger, Wrench, Boxes, type LucideIcon } from "lucide-react";
+import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Receipt, SquareParking, Hamburger, Wrench, type LucideIcon } from "lucide-react";
+import { Cancela, ParafusoEPorca } from "./icones-viagens";
 import { useMemo, useState } from "react";
 
 import { QuestionarioFormulario } from "@/components/parametros/QuestionarioFormulario";
@@ -22,10 +23,10 @@ const ICONE_TIPO: Record<string, LucideIcon> = {
   "Alimentação": Hamburger,
   "Hospedagem": BedDouble,
   "Abastecimento": Fuel,
-  "Pedágio": TrafficCone,
+  "Pedágio": Cancela,
   "Estacionamento": SquareParking,
   "Manutenção do veículo de trabalho": Wrench,
-  "Compra de peças para cliente": Boxes,
+  "Compra de peças para cliente": ParafusoEPorca,
   "Outro": Ellipsis,
 };
 
