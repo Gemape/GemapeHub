@@ -184,3 +184,9 @@ test("revisão dec 183: seção que começa logo depois da pergunta de tipos nã
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /paginasDoPreenchimento\(estado, tipo, visiveis\.filter/);
 });
+
+test("dec 188: o painel não repete o aviso sobre o envio dos comprovantes", () => {
+  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  assert.match(painel, /Escolha o tipo da despesa a lançar\./);
+  assert.doesNotMatch(painel, /termina sempre com o envio/);
+});
