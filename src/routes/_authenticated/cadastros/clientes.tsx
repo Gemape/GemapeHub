@@ -3,22 +3,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { ClienteDialog } from "@/components/parametros/ClienteDialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  listarClientes, proximoCodigoCliente, removerCliente, salvarCliente,
-  type Cliente, type ClienteDados,
-} from "@/lib/clientes-demo";
-import { capitalizarNomePessoa, capitalizarTexto, formatarTelefone } from "@/lib/formatacao-cadastral";
-import { aoDigitarMascarado } from "@/lib/mascaras";
+import { listarClientes, proximoCodigoCliente, removerCliente, type Cliente } from "@/lib/clientes-demo";
+import { formatarTelefone } from "@/lib/formatacao-cadastral";
 
 export const Route = createFileRoute("/_authenticated/cadastros/clientes")({
   head: () => ({ meta: [{ title: "Clientes | Patrimônio GEMAPE" }] }),
@@ -31,7 +22,6 @@ function PaginaClientes() {
   const [editando, setEditando] = useState<Cliente | null>(null);
   // Clonar: dados do cliente de origem num cadastro NOVO, com código novo (todos os campos copiados, decisão 138).
   const [modelo, setModelo] = useState<Cliente | null>(null);
-  const base = editando ?? modelo;
   // Calculado ao abrir, para não trocar enquanto o diálogo fecha depois de salvar.
   const [codigoPrevisto, setCodigoPrevisto] = useState("");
 
@@ -40,31 +30,6 @@ function PaginaClientes() {
     setModelo(clonar ? cliente : null);
     setCodigoPrevisto(!clonar && cliente ? cliente.codigo : proximoCodigoCliente());
     setAberto(true);
-  }
-
-  function enviar(evento: React.FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
-    const formulario = new FormData(evento.currentTarget);
-    const texto = (nome: string) => String(formulario.get(nome) ?? "").trim();
-    const valores: ClienteDados = {
-      nome: capitalizarNomePessoa(texto("nome")),
-      cpf: texto("cpf"),
-      cnpj: texto("cnpj"),
-      endereco: capitalizarTexto(texto("endereco")),
-      contato: capitalizarNomePessoa(texto("contato")),
-      telefone: texto("telefone"),
-      telefone2: texto("telefone2"),
-      email: texto("email"),
-      observacao: capitalizarTexto(texto("observacao")),
-    };
-    try {
-      salvarCliente(editando ? { ...valores, id: editando.id } : valores);
-      setClientes(listarClientes());
-      setAberto(false);
-      toast.success("Cliente salvo");
-    } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar o cliente.");
-    }
   }
 
   function excluir(cliente: Cliente) {
@@ -116,30 +81,6 @@ function PaginaClientes() {
       </Table>
     </div>
 
-    <Dialog open={aberto} onOpenChange={setAberto}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{editando ? "Editar cliente" : modelo ? "Clonar cliente" : "Novo cliente"}</DialogTitle>
-          <DialogDescription>Só o nome é obrigatório.</DialogDescription>
-        </DialogHeader>
-        <form key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "novo")} onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5"><Label htmlFor="codigo">Código do cliente</Label><Input id="codigo" readOnly tabIndex={-1} className="bg-muted font-mono" value={codigoPrevisto} /><p className="text-xs text-muted-foreground">Gerado automaticamente.</p></div>
-          <div className="hidden sm:block" />
-          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="nome">Nome do cliente</Label><Input id="nome" name="nome" capitalizar="nome" required defaultValue={base?.nome ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="cpf">CPF</Label><Input id="cpf" name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" onInput={aoDigitarMascarado("cpf")} defaultValue={base?.cpf ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" maxLength={18} placeholder="00.000.000/0000-00" onInput={aoDigitarMascarado("cnpj")} defaultValue={base?.cnpj ?? ""} /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="contato">Contato</Label><Input id="contato" name="contato" capitalizar="nome" defaultValue={base?.contato ?? ""} /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="endereco">Endereço</Label><Input id="endereco" name="endereco" capitalizar="texto" defaultValue={base?.endereco ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="telefone">Telefone</Label><Input id="telefone" name="telefone" inputMode="tel" onInput={aoDigitarMascarado("telefone")} defaultValue={formatarTelefone(base?.telefone ?? "")} /></div>
-          <div className="space-y-1.5"><Label htmlFor="telefone2">Telefone 2</Label><Input id="telefone2" name="telefone2" inputMode="tel" onInput={aoDigitarMascarado("telefone2")} defaultValue={formatarTelefone(base?.telefone2 ?? "")} /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="email">E-mail</Label><Input id="email" name="email" type="email" capitalizar="minusculas" defaultValue={base?.email ?? ""} /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="observacao">Observação</Label><Textarea id="observacao" name="observacao" capitalizar="texto" defaultValue={base?.observacao ?? ""} /></div>
-          <DialogFooter className="sm:col-span-2">
-            <Button type="button" variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>
-            <Button requiresWrite type="submit">Salvar</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <ClienteDialog aberto={aberto} onAberto={setAberto} editando={editando} modelo={modelo} codigoPrevisto={codigoPrevisto} onSalvo={() => setClientes(listarClientes())} />
   </div>;
 }
