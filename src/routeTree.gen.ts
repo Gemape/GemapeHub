@@ -22,6 +22,7 @@ import { Route as AuthenticatedEpiCadastrarRouteImport } from './routes/_authent
 import { Route as AuthenticatedEpiFichaRouteImport } from './routes/_authenticated/epi-ficha'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedOcorrenciasRouteImport } from './routes/_authenticated/ocorrencias'
+import { Route as AuthenticatedQuestionarioDespesasRouteImport } from './routes/_authenticated/questionario-despesas'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedUniformesRouteImport } from './routes/_authenticated/uniformes'
 import { Route as AuthenticatedUniformesCadastrarRouteImport } from './routes/_authenticated/uniformes-cadastrar'
@@ -120,6 +121,12 @@ const AuthenticatedOcorrenciasRoute =
   AuthenticatedOcorrenciasRouteImport.update({
     id: '/ocorrencias',
     path: '/ocorrencias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedQuestionarioDespesasRoute =
+  AuthenticatedQuestionarioDespesasRouteImport.update({
+    id: '/questionario-despesas',
+    path: '/questionario-despesas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
@@ -312,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
+  '/questionario-despesas': typeof AuthenticatedQuestionarioDespesasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/uniformes': typeof AuthenticatedUniformesRoute
   '/uniformes-cadastrar': typeof AuthenticatedUniformesCadastrarRoute
@@ -356,6 +364,7 @@ export interface FileRoutesByTo {
   '/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
+  '/questionario-despesas': typeof AuthenticatedQuestionarioDespesasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/uniformes': typeof AuthenticatedUniformesRoute
   '/uniformes-cadastrar': typeof AuthenticatedUniformesCadastrarRoute
@@ -401,6 +410,7 @@ export interface FileRoutesById {
   '/_authenticated/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRoute
   '/_authenticated/ocorrencias': typeof AuthenticatedOcorrenciasRoute
+  '/_authenticated/questionario-despesas': typeof AuthenticatedQuestionarioDespesasRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/uniformes': typeof AuthenticatedUniformesRoute
   '/_authenticated/uniformes-cadastrar': typeof AuthenticatedUniformesCadastrarRoute
@@ -447,6 +457,7 @@ export interface FileRouteTypes {
     | '/epi-ficha'
     | '/ferramentas'
     | '/ocorrencias'
+    | '/questionario-despesas'
     | '/relatorios'
     | '/uniformes'
     | '/uniformes-cadastrar'
@@ -491,6 +502,7 @@ export interface FileRouteTypes {
     | '/epi-ficha'
     | '/ferramentas'
     | '/ocorrencias'
+    | '/questionario-despesas'
     | '/relatorios'
     | '/uniformes'
     | '/uniformes-cadastrar'
@@ -535,6 +547,7 @@ export interface FileRouteTypes {
     | '/_authenticated/epi-ficha'
     | '/_authenticated/ferramentas'
     | '/_authenticated/ocorrencias'
+    | '/_authenticated/questionario-despesas'
     | '/_authenticated/relatorios'
     | '/_authenticated/uniformes'
     | '/_authenticated/uniformes-cadastrar'
@@ -664,6 +677,13 @@ declare module '@tanstack/react-router' {
       path: '/ocorrencias'
       fullPath: '/ocorrencias'
       preLoaderRoute: typeof AuthenticatedOcorrenciasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/questionario-despesas': {
+      id: '/_authenticated/questionario-despesas'
+      path: '/questionario-despesas'
+      fullPath: '/questionario-despesas'
+      preLoaderRoute: typeof AuthenticatedQuestionarioDespesasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/relatorios': {
@@ -926,6 +946,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEpiFichaRoute: typeof AuthenticatedEpiFichaRoute
   AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRoute
   AuthenticatedOcorrenciasRoute: typeof AuthenticatedOcorrenciasRoute
+  AuthenticatedQuestionarioDespesasRoute: typeof AuthenticatedQuestionarioDespesasRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedUniformesRoute: typeof AuthenticatedUniformesRoute
   AuthenticatedUniformesCadastrarRoute: typeof AuthenticatedUniformesCadastrarRoute
@@ -961,6 +982,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEpiFichaRoute: AuthenticatedEpiFichaRoute,
   AuthenticatedFerramentasRoute: AuthenticatedFerramentasRoute,
   AuthenticatedOcorrenciasRoute: AuthenticatedOcorrenciasRoute,
+  AuthenticatedQuestionarioDespesasRoute:
+    AuthenticatedQuestionarioDespesasRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedUniformesRoute: AuthenticatedUniformesRoute,
   AuthenticatedUniformesCadastrarRoute: AuthenticatedUniformesCadastrarRoute,

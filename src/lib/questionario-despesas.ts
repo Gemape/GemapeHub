@@ -56,11 +56,16 @@ export type Pergunta = {
   sistema: boolean;
 };
 
+// Se/então: a pergunta só aparece quando a resposta da pergunta de origem (anterior, com opções) for (ou não for) o valor.
+export type Regra = { origem: string; operador: "igual" | "diferente"; valor: string };
+
 export type Estado = {
   versao: 1;
   perguntas: Pergunta[];
   // Tipo de despesa (texto da opção) -> ids das perguntas depois da de tipos de despesa, na ordem.
   questionarios: Record<string, string[]>;
+  // Tipo de despesa -> id da pergunta -> condição para ela aparecer naquele questionário.
+  regras: Record<string, Record<string, Regra>>;
 };
 
 export const ID_TIPO_DESPESA = "q-03";
@@ -115,7 +120,7 @@ export function estadoPadrao(): Estado {
   const perguntas = perguntasPadrao();
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
-  return { versao: 1, perguntas, questionarios: Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, [...resto]])) };
+  return { versao: 1, perguntas, questionarios: Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, [...resto]])), regras: {} };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -163,7 +168,7 @@ function conferirIntegridade(storage: StorageLike): void {
   const bruto = storage.getItem(CHAVE);
   if (bruto === null) return;
   let ok = false;
-  try { const lido = JSON.parse(bruto); ok = !!lido && Array.isArray(lido.perguntas) && !!lido.questionarios && typeof lido.questionarios === "object"; } catch { ok = false; }
+  try { const lido = JSON.parse(bruto); ok = !!lido && Array.isArray(lido.perguntas) && !!lido.questionarios && typeof lido.questionarios === "object" && (lido.regras === undefined || (!!lido.regras && typeof lido.regras === "object")); } catch { ok = false; }
   if (!ok) throw new Error("As perguntas salvas neste navegador estão ilegíveis; nada foi alterado.");
 }
 
@@ -178,16 +183,38 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     if (bruto === null) return estadoPadrao();
     const lido = JSON.parse(bruto);
     if (!lido || !Array.isArray(lido.perguntas) || typeof lido.questionarios !== "object" || lido.questionarios === null) return estadoPadrao();
-    return { versao: 1, perguntas: lido.perguntas, questionarios: lido.questionarios };
+    return { versao: 1, perguntas: lido.perguntas, questionarios: lido.questionarios, regras: lido.regras && typeof lido.regras === "object" ? lido.regras : {} };
   } catch {
     return estadoPadrao();
   }
 }
 
-export function gravarEstado(e: Estado, storage: StorageLike = localStorage): Estado {
+// Só valem as regras cuja pergunta de origem vem antes e ainda tem a opção do valor (mexer na ordem, nas opções ou excluir limpa o resto).
+export function limparRegras(e: Estado): Estado {
+  const regras: Estado["regras"] = {};
+  const tipos = tiposDeDespesa(e);
+  for (const [tipo, porPergunta] of Object.entries(e.regras)) {
+    if (!tipos.includes(tipo)) continue;
+    const ids = questionarioDoTipo(e, tipo);
+    const validas = Object.entries(porPergunta).filter(([id, r]) => {
+      const origem = e.perguntas.find((p) => p.id === r.origem);
+      return ids.includes(id) && ids.indexOf(r.origem) >= 0 && ids.indexOf(r.origem) < ids.indexOf(id) && !!origem && aceitaCondicao(origem) && origem.opcoes.includes(r.valor);
+    });
+    if (validas.length) regras[tipo] = Object.fromEntries(validas);
+  }
+  return { ...e, regras };
+}
+
+// Só pergunta com opções escritas na própria pergunta (não clientes, municípios nem habilitados) serve de origem.
+export const aceitaCondicao = (p: Pergunta): boolean => p.id !== ID_TIPO_DESPESA && TIPOS_COM_OPCOES.includes(p.tipo) && p.fonte === "propria" && !p.habilitados;
+
+export function gravarEstado(inicial: Estado, storage: StorageLike = localStorage): Estado {
   conferirIntegridade(storage);
-  storage.setItem(CHAVE_SEQUENCIA, String(ultimoNumero(e, storage)));
+  const e = limparRegras(inicial);
+  const sequencia = String(ultimoNumero(e, storage));
+  // Primeiro o dado principal: se a gravação falhar (cota cheia), a sequência não anda sozinha.
   storage.setItem(CHAVE, JSON.stringify(e));
+  storage.setItem(CHAVE_SEQUENCIA, sequencia);
   return e;
 }
 
@@ -204,7 +231,10 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
   const gravar: Pergunta = atual
     ? { ...limpa, sistema: atual.sistema, codigo: atual.codigo }
     : { ...limpa, sistema: false, codigo: e.perguntas.some((p) => p.codigo === limpa.codigo) ? proximoCodigoPergunta(e, storage) : limpa.codigo };
+  // Tipo de despesa é uma escolha só: a pergunta 3 nunca aceita mais de uma opção.
+  if (gravar.id === ID_TIPO_DESPESA) gravar.multiplas = false;
   const perguntas = atual ? e.perguntas.map((p) => (p.id === gravar.id ? gravar : p)) : [...e.perguntas, gravar];
+  let regras = e.regras;
   let questionarios = e.questionarios;
   if (gravar.id === ID_TIPO_DESPESA) {
     const padrao = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
@@ -212,8 +242,13 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
     // Mesma quantidade de opções: o que mudou de nome é o mesmo tipo (ele leva o questionário junto).
     const renomeado = antigas.length === gravar.opcoes.length;
     questionarios = Object.fromEntries(gravar.opcoes.map((o, i) => [o, e.questionarios[o] ?? (renomeado ? e.questionarios[antigas[i] ?? ""] : undefined) ?? padrao]));
+    // As condições acompanham o tipo renomeado e somem com o tipo removido.
+    regras = Object.fromEntries(gravar.opcoes.flatMap((o, i) => {
+      const r = e.regras[o] ?? (renomeado ? e.regras[antigas[i] ?? ""] : undefined);
+      return r ? [[o, r] as const] : [];
+    }));
   }
-  return gravarEstado({ ...e, perguntas, questionarios }, storage);
+  return gravarEstado({ ...e, perguntas, questionarios, regras }, storage);
 }
 
 // Tipos de despesa que perdem o questionário se a pergunta 3 for salva com estas opções (removidos, não renomeados).
@@ -249,6 +284,20 @@ export function gravarQuestionario(e: Estado, tipo: string, ids: string[], stora
   if (!tiposDeDespesa(e).includes(tipo)) throw new Error("Tipo de despesa desconhecido.");
   const unicos = [...new Set(ids.filter((id) => id !== ID_TIPO_DESPESA && e.perguntas.some((p) => p.id === id)))];
   return gravarEstado({ ...e, questionarios: { ...e.questionarios, [tipo]: unicos } }, storage);
+}
+
+// Define (ou tira, com null) a condição de uma pergunta no questionário de um tipo de despesa.
+export function gravarRegra(e: Estado, tipo: string, id: string, regra: Regra | null, storage: StorageLike = localStorage): Estado {
+  if (!tiposDeDespesa(e).includes(tipo)) throw new Error("Tipo de despesa desconhecido.");
+  const ids = questionarioDoTipo(e, tipo);
+  const { [id]: _antiga, ...resto } = e.regras[tipo] ?? {};
+  if (regra === null) return gravarEstado({ ...e, regras: { ...e.regras, [tipo]: resto } }, storage);
+  const origem = e.perguntas.find((p) => p.id === regra.origem);
+  if (id === ID_TIPO_DESPESA) throw new Error("A pergunta inicial aparece sempre.");
+  if (!origem || !aceitaCondicao(origem)) throw new Error("Escolha uma pergunta com opções escritas.");
+  if (!(ids.indexOf(regra.origem) >= 0 && ids.indexOf(regra.origem) < ids.indexOf(id))) throw new Error("A pergunta de origem precisa vir antes.");
+  if (!origem.opcoes.includes(regra.valor)) throw new Error("Escolha uma opção da pergunta de origem.");
+  return gravarEstado({ ...e, regras: { ...e.regras, [tipo]: { ...resto, [id]: regra } } }, storage);
 }
 
 // Arrastar: a pergunta `origem` passa para a posição da `destino` (a primeira, de tipos de despesa, não se move).

@@ -1,9 +1,9 @@
 // Municípios por UF (lista oficial do IBGE), carregados só quando a tela precisa deles (são ~5,5 mil nomes).
-// Fonte: tabela de municípios do IBGE em https://github.com/kelvins/municipios-brasileiros (csv/municipios.csv), lida em 14/10/2026.
+// Fonte dos dados: ver src/lib/dados/municipios-ibge.ts.
 let cache: Promise<Record<string, string[]>> | null = null;
 
 export function carregarMunicipios(): Promise<Record<string, string[]>> {
-  cache ??= import("./dados/municipios-ibge.json", { with: { type: "json" } })
+  cache ??= import("./dados/municipios-ibge.ts")
     .then((m) => m.default as Record<string, string[]>)
     // Falha de carregamento não fica guardada: a próxima chamada tenta de novo.
     .catch((erro) => { cache = null; throw erro; });
