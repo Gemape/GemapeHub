@@ -35,7 +35,7 @@ function PaginaViagens() {
       {/* As abas viraram submenus no menu lateral (decisão 43). */}
       <Tabs value={abaValida}>
         <TabsContent value="painel" className="mt-5">
-          <ViagensPainel />
+          <ViagensPainel emitente={emitente} />
         </TabsContent>
         <TabsContent value="relatorio" className="mt-5">
           <ViagensRelatorio emitente={emitente} />

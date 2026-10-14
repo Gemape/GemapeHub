@@ -1,4 +1,5 @@
 import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Receipt, SquareParking, Hamburger, Wrench, type LucideIcon } from "lucide-react";
+import { ViagensLista } from "./ViagensLista";
 import { Cancela, ParafusoEPorca } from "./icones-viagens";
 import { useMemo, useState } from "react";
 
@@ -31,7 +32,7 @@ const ICONE_TIPO: Record<string, LucideIcon> = {
 };
 
 // Painel do módulo Viagens (decisões 176 e 177): botões dos questionários, indicadores globais e resultados dos técnicos do mês escolhido.
-export function ViagensPainel() {
+export function ViagensPainel({ emitente }: { emitente: string }) {
   const [estado] = useState(lerEstado);
   const tipos = tiposDeDespesa(estado);
   const [tipo, setTipo] = useState<string | null>(null);
@@ -122,6 +123,8 @@ export function ViagensPainel() {
           />
         </div>
       </section>
+
+      <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={tecnicos} emitente={emitente} />
 
       <section className="space-y-3" aria-labelledby="viagens-tecnicos">
         <h2 id="viagens-tecnicos" className="text-lg font-semibold">Resultados dos técnicos</h2>
