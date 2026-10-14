@@ -1,6 +1,6 @@
 // Preenchimento do Questionário de Despesas: máscaras, condição se/então e validação das respostas (dec 169).
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
-import { MAX_ARQUIVOS, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
+import { ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
 export type Resposta = string | string[];
@@ -51,6 +51,18 @@ export function textoDaResposta(p: Pergunta, respostas: Respostas): string {
   return (Array.isArray(r) ? r.map(rotulo).join(", ") : rotulo(r)).trim();
 }
 
+// Área de quem lança, lida do rótulo "Nome (Área)" da resposta à pergunta de habilitados.
+export function areaDeQuemLanca(respostas: Respostas): string | null {
+  const r = respostas[ID_HABILITADOS];
+  const texto = Array.isArray(r) ? r[0] : r;
+  return texto ? (/ \(([^()]*)\)\s*$/.exec(texto)?.[1]?.trim() ?? null) : null;
+}
+// "Técnico responsável pela despesa" só aparece quando quem lança é do PCM ou do Administrativo (dec 177).
+export const lancadoPorGestor = (respostas: Respostas): boolean => {
+  const area = areaDeQuemLanca(respostas);
+  return area === "PCM" || area === "Administrativo";
+};
+
 export function visivel(e: Estado, tipo: string, id: string, respostas: Respostas): boolean {
   const regra = e.regras[tipo]?.[id];
   if (!regra) return true;
@@ -70,6 +82,7 @@ export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas)
     if (regra && !mostradas.has(regra.origem)) continue;
     // Pergunta que depende de outra (município x UF) só aparece com a de origem visível.
     if (p.dependeDe && !mostradas.has(p.dependeDe)) continue;
+    if (id === ID_TECNICO_RESPONSAVEL && !lancadoPorGestor(respostas)) continue;
     if (!visivel(e, tipo, id, respostas)) continue;
     mostradas.add(id);
     lista.push(p);

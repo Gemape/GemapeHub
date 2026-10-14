@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { ID_TIPO_DESPESA, estadoPadrao, excluirPergunta, gravarQuestionario, gravarRegra, lerEstado, salvarPergunta, questionarioDoTipo } from "../src/lib/questionario-despesas.ts";
 import {
-  aplicarFormato, dimensoesReduzidas, mascaraDecimal2, mascaraInteiro, mascaraMoeda, perguntasVisiveis, validarRespostas, valorNumerico, visivel,
+  aplicarFormato, areaDeQuemLanca, lancadoPorGestor, dimensoesReduzidas, mascaraDecimal2, mascaraInteiro, mascaraMoeda, perguntasVisiveis, validarRespostas, valorNumerico, visivel,
 } from "../src/lib/questionario-respostas.ts";
 
 const memoria = () => {
@@ -151,4 +151,16 @@ test("a tela tem o botão Abrir formulário e a condição se/então", () => {
   const tela = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
   assert.match(tela, /Abrir formulário/);
   assert.match(tela, /Mostrar esta pergunta só se/);
+});
+
+test("técnico responsável pela despesa só aparece quando quem lança é PCM ou Administrativo", () => {
+  const e = estadoPadrao();
+  const ids = (r) => perguntasVisiveis(e, "Pedágio", r).map((p) => p.id);
+  assert.ok(!ids({}).includes("q-14"));
+  assert.ok(!ids({ "q-04": ["Roberto (Oficina)"] }).includes("q-14"));
+  assert.ok(ids({ "q-04": ["Eduardo (PCM)"] }).includes("q-14"));
+  assert.ok(ids({ "q-04": "Maria (Administrativo)" }).includes("q-14"));
+  assert.equal(lancadoPorGestor({ "q-04": ["Bruno (PCM)"] }), true);
+  assert.equal(lancadoPorGestor({ "q-04": ["Wagner (Oficina)"] }), false);
+  assert.equal(areaDeQuemLanca({}), null);
 });

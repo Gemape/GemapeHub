@@ -11,7 +11,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  AREAS_VIAGEM, FORMATOS_CURTA, ID_TIPO_DESPESA, TIPOS_PERGUNTA, habilitadosAtivos, novaPergunta, regraArquivos, validarPergunta,
+  AREAS_VIAGEM, FORMATOS_CURTA, ID_TECNICO_RESPONSAVEL, ID_TIPO_DESPESA, TIPOS_PERGUNTA, habilitadosAtivos, novaPergunta, regraArquivos, validarPergunta,
   type AreaViagem, type Estado, type FormatoCurta, type Pergunta, type TipoPergunta,
 } from "@/lib/questionario-despesas";
 
@@ -94,6 +94,9 @@ export function PerguntaDialog({
 }
 
 function CamposDoTipo({ pergunta, onMudar }: { pergunta: Pergunta; onMudar: (p: Pergunta) => void }) {
+  if (pergunta.id === ID_TECNICO_RESPONSAVEL) {
+    return <p className="rounded-md bg-muted/50 p-2 text-sm">A lista são os habilitados da pergunta 04 com área Oficina. Só aparece para quem lança como PCM ou Administrativo.</p>;
+  }
   if (pergunta.habilitados) return <Habilitados pergunta={pergunta} onMudar={onMudar} />;
   if (pergunta.fonte === "municipios") {
     return <p className="rounded-md bg-muted/50 p-2 text-sm">As opções são os municípios da UF escolhida na pergunta anterior, com busca por palavra-chave.</p>;
