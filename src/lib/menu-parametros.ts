@@ -114,6 +114,7 @@ export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Manutenção", url: "/cadastros/veiculos-manutencao", icone: "Wrench" },
   { titulo: "Tipos de ocorrência", url: "/cadastros/veiculos-tipos-ocorrencia", icone: "ClipboardList" },
   { titulo: "Check list", url: "/cadastros/veiculos-checklist", icone: "ListChecks" },
+  { titulo: "Questionário de Despesas", url: "/cadastros/veiculos-questionario-despesas", icone: "ListPlus" },
   itemEspecificos("veiculos"),
 ];
 

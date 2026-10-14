@@ -73,3 +73,12 @@ Nada abaixo foi alterado: dependem de papéis, RLS ou migrations no Supabase rea
 
 - Tabela `clientes` com `empresa_id`: id, codigo (sequencial, único), nome, cpf (11 dígitos) e cnpj (14 dígitos), campos separados e opcionais, cada um único quando preenchido (decisão 165), endereco, contato, telefone, telefone2, email, observacao. Exclusão só pelo Administrador. Hoje o cadastro fica no navegador (`gemape-demo-clientes`).
 - Módulo Viagens (despesas por categoria, fotos de comprovantes, fechamento periódico e relatório de viagem): só depois de o sistema inteiro ser aprovado; vai usar Clientes, Empregados e Veículos.
+
+## Questionário de Despesas (decisões 167 e 168)
+
+- Hoje tudo fica em `gemape-demo-questionario-despesas` (localStorage): banco de perguntas e um questionário por tipo de despesa. Na Fase 2: tabelas separadas para perguntas (JSON do esquema, com `empresa_id`), questionários (tipo de despesa e ordem das perguntas) e respostas (JSONB), com RLS por empresa e leitura para o Padrão.
+- O questionário é guardado pelo texto do tipo de despesa: renomear uma opção da pergunta 3 apaga o questionário do nome antigo e cria um padrão para o novo. No banco, usar um id estável por tipo.
+- Habilitados (pergunta 4): hoje os sete nomes iniciais não têm vínculo com o cadastro de empregados; na Fase 2, vincular pelo `empregado_id`. Quem fica inativo sai da lista sozinho.
+- Municípios: lista do IBGE (5.570 itens) gravada em `src/lib/dados/municipios-ibge.json`, copiada em 14/10/2026 de https://github.com/kelvins/municipios-brasileiros; conferir contra o IBGE antes da Fase 2.
+- Upload (pergunta 12): até 3 imagens, ao menos 1 obrigatória. Imagens reduzidas no navegador (WebP, 1280 px, qualidade 0,7) antes de ir ao armazenamento; guardar o caminho do arquivo, não a imagem, na tabela de respostas.
+- Falta (modo demonstração): lógica se/então, validação por regex, preenchimento com coleta de respostas, menu flutuante de ações globais e dependência Município x UF na resposta.
