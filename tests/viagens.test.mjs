@@ -137,3 +137,9 @@ test("o ícone do menu Viagens é um avião", () => {
   const menu = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
   assert.match(menu, /Plane as IconeViagens/);
 });
+
+test("nome com parênteses: a área é o último parêntese do rótulo e vale o primeiro habilitado", () => {
+  const r = { id: "p", tipo: "Pedágio", data: "2026-10-14", hora: "10:00", itens: [{ perguntaId: "q-04", titulo: "q", resposta: "João (Jr) (PCM), Ana (Oficina)" }, { perguntaId: "q-14", titulo: "q", resposta: "Roberto (Oficina)" }] };
+  const d = dadosDoLancamento(r);
+  assert.deepEqual([d.tecnico, d.tecnicoArea, d.responsavel, d.conforme], ["João (Jr)", "PCM", "Roberto", false]);
+});

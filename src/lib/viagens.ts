@@ -42,7 +42,8 @@ const dataIso = (br: string | null): string | null => {
 // "Nome (Área)", como o habilitado é guardado nas respostas; se mais de um foi marcado, vale o primeiro.
 const nomeEArea = (texto: string | null): { nome: string; area: string | null } | null => {
   if (!texto) return null;
-  const partes = /^(.+?) \(([^()]*)\)/.exec(texto);
+  // Vale o primeiro habilitado e a última área entre parênteses do rótulo ("João (Jr) (PCM)" é João, PCM).
+  const partes = /^(.+) \(([^()]*)\)\s*$/.exec(texto.split(/(?<=\)), /)[0] ?? texto);
   return partes ? { nome: partes[1]!.trim(), area: partes[2]!.trim() } : { nome: texto, area: null };
 };
 

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { ViagensRelatorio } from "@/components/modules/ViagensRelatorio";
 import { ViagensPainel } from "@/components/modules/ViagensPainel";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { abaDoModulo } from "@/lib/menu-parametros";
@@ -19,6 +20,9 @@ export const Route = createFileRoute("/_authenticated/viagens")({
 function PaginaViagens() {
   const { aba } = Route.useSearch();
   const abaValida = abaDoModulo("viagem", aba);
+  // Emitente do relatório: quem está logado (nome informado no cadastro de acesso ou, sem ele, o e-mail).
+  const { user } = Route.useRouteContext();
+  const emitente = String((user.user_metadata as { nome?: unknown } | undefined)?.nome ?? user.email ?? "Usuário");
 
   return (
     <div className="space-y-5">
@@ -32,6 +36,9 @@ function PaginaViagens() {
       <Tabs value={abaValida}>
         <TabsContent value="painel" className="mt-5">
           <ViagensPainel />
+        </TabsContent>
+        <TabsContent value="relatorio" className="mt-5">
+          <ViagensRelatorio emitente={emitente} />
         </TabsContent>
       </Tabs>
     </div>
