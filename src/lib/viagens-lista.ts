@@ -21,6 +21,8 @@ export type LinhaDespesa = {
   descricao: string | null;
   itens: RespostaRegistrada["itens"];
   registradoEm: string;
+  // Lançada pelo próprio técnico (verdadeiro), pelo gestor (falso) ou fora do índice (nulo), como no ICL.
+  conforme: boolean | null;
   status: StatusDespesa;
   relatorioId: string | null;
 };
@@ -48,6 +50,7 @@ export function linhaDaDespesa(r: RespostaRegistrada, relatorios: ReadonlyMap<st
     responsavel: d.responsavel, tipo: d.tipo, valor: d.valor,
     fotos: r.itens.flatMap((i) => i.imagens ?? []).filter((i) => i.dataUrl.startsWith("data:image/")),
     descricao: d.descricao, itens: r.itens, registradoEm: `${r.data} ${r.hora}`,
+    conforme: d.conforme,
     status: relatorioId ? STATUS_FINALIZADO : STATUS_EM_ABERTO, relatorioId,
   };
 }
@@ -61,3 +64,16 @@ export function listaDoPeriodo(lista: readonly RespostaRegistrada[], p: PeriodoM
 }
 
 export const periodoDeDatasValido = (f: FiltroLista): boolean => !f.de || !f.ate || f.de <= f.ate;
+
+// Extrato do técnico no mês (dec 187): despesas dele (técnico responsável), quantidade e custo total.
+export type Extrato = { quantidade: number; custoTotal: number; linhas: LinhaDespesa[] };
+export function extratoDoTecnico(lista: readonly RespostaRegistrada[], p: PeriodoMes, tecnico: string, relatorios: ReadonlyMap<string, string>): Extrato {
+  const linhas = listaDoPeriodo(lista, p, relatorios).filter((l) => l.responsavel === tecnico);
+  return { quantidade: linhas.length, custoTotal: linhas.reduce((soma, l) => soma + (l.valor ?? 0), 0), linhas };
+}
+
+// Mês anterior (-1) ou seguinte (+1), virando o ano quando preciso.
+export function deslocarMes(p: PeriodoMes, delta: number): PeriodoMes {
+  const indice = p.ano * 12 + (p.mes - 1) + delta;
+  return { ano: Math.floor(indice / 12), mes: (indice % 12) + 1 };
+}
