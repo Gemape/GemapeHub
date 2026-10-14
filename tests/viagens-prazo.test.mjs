@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 
 import { estadoPadrao } from "../src/lib/questionario-despesas.ts";
 import { registrarResposta } from "../src/lib/respostas-despesas.ts";
-import { PRAZO_PADRAO_DIAS, lerPrazoDias, salvarPrazoDias } from "../src/lib/prazo-viagens.ts";
+import { PRAZO_PADRAO_DIAS, PRAZOS_PADRAO, lerPrazos, salvarPrazos } from "../src/lib/prazo-viagens.ts";
 import { diasEntre, indicadoresGlobais, lancadaNoPrazo, resultadosTecnicos } from "../src/lib/viagens.ts";
 
 const memoria = () => {
@@ -52,20 +52,49 @@ test("índice global e por técnico: no prazo ÷ total lançadas no período × 
   assert.equal(indicadoresGlobais(lista, P, 30).prazo, 100);
 });
 
-test("prazo configurável: padrão 3, grava e recusa valor inválido sem alterar o que já estava salvo", () => {
+test("prazos configuráveis: padrão 3 e 3, grava os dois e recusa valor inválido sem alterar o que já estava salvo", () => {
   const s = memoria();
   assert.equal(PRAZO_PADRAO_DIAS, 3);
-  assert.equal(lerPrazoDias(s), 3);
-  salvarPrazoDias(5, s);
-  assert.equal(lerPrazoDias(s), 5);
-  salvarPrazoDias(0, s);
-  assert.equal(lerPrazoDias(s), 0);
-  for (const ruim of [-1, 1.5, 366, Number.NaN]) assert.throws(() => salvarPrazoDias(ruim, s), /inteiro/);
-  assert.equal(lerPrazoDias(s), 0);
-  for (const ruim of ["abc", "", "  ", "0x3", "1e1", "-2", "1000"]) assert.equal(lerPrazoDias({ getItem: () => ruim, setItem: () => {} }), 3);
+  assert.deepEqual(lerPrazos(s), { mecanico: 3, pcm: 3 });
+  salvarPrazos({ mecanico: 5, pcm: 0 }, s);
+  assert.deepEqual(lerPrazos(s), { mecanico: 5, pcm: 0 });
+  for (const ruim of [-1, 1.5, 366, Number.NaN]) {
+    assert.throws(() => salvarPrazos({ mecanico: 2, pcm: ruim }, s), /inteiros/);
+    assert.throws(() => salvarPrazos({ mecanico: ruim, pcm: 2 }, s), /inteiros/);
+  }
+  assert.deepEqual(lerPrazos(s), { mecanico: 5, pcm: 0 });
+  for (const ruim of ["abc", "", "{", "null", "[]", '{"mecanico":"0x3","pcm":1000}', '{"mecanico":1.5,"pcm":-2}']) assert.deepEqual(lerPrazos({ getItem: () => ruim, setItem: () => {} }), PRAZOS_PADRAO);
   const bloqueado = { getItem: () => { throw new Error("bloqueado"); }, setItem: () => { throw new Error("bloqueado"); } };
-  assert.equal(lerPrazoDias(bloqueado), 3);
-  assert.throws(() => salvarPrazoDias(4, bloqueado), /Não foi possível guardar/);
+  assert.deepEqual(lerPrazos(bloqueado), PRAZOS_PADRAO);
+  assert.throws(() => salvarPrazos({ mecanico: 4, pcm: 4 }, bloqueado), /Não foi possível guardar/);
+});
+
+test("o prazo único antigo vira o valor inicial dos dois; o salvo novo prevalece; campo faltando usa o antigo", () => {
+  const dados = new Map([["gemape-demo-viagens-prazo", "7"]]);
+  const s = { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v) };
+  assert.deepEqual(lerPrazos(s), { mecanico: 7, pcm: 7 });
+  dados.set("gemape-demo-viagens-prazos", '{"mecanico":2}');
+  assert.deepEqual(lerPrazos(s), { mecanico: 2, pcm: 7 });
+  salvarPrazos({ mecanico: 1, pcm: 4 }, s);
+  assert.deepEqual(lerPrazos(s), { mecanico: 1, pcm: 4 });
+});
+
+test("cada despesa usa o prazo de quem lançou: Oficina, o do mecânico; PCM e Administrativo, o do PCM", () => {
+  const s = memoria();
+  const prazos = { mecanico: 1, pcm: 5 };
+  const oficina = lancar(s, 10, 13);
+  const pcm = lancar(s, 10, 13, { "q-04": ["Ana (PCM)"], "q-14": ["Roberto (Oficina)"], "q-13": "Não conformidade – técnico monitorado não preencheu" });
+  const adm = lancar(s, 10, 13, { "q-04": ["Rui (Administrativo)"], "q-14": ["Roberto (Oficina)"], "q-13": "Não conformidade – técnico monitorado não preencheu" });
+  assert.equal(lancadaNoPrazo(oficina, prazos), false);
+  assert.equal(lancadaNoPrazo(pcm, prazos), true);
+  assert.equal(lancadaNoPrazo(adm, prazos), true);
+  assert.equal(lancadaNoPrazo(oficina, { mecanico: 3, pcm: 0 }), true);
+  assert.equal(lancadaNoPrazo(pcm, { mecanico: 3, pcm: 0 }), false);
+  // Um número só vale para os dois.
+  assert.equal(lancadaNoPrazo(pcm, 3), true);
+  const g = indicadoresGlobais([oficina, pcm, adm], P, prazos);
+  assert.equal(g.noPrazo, 2);
+  assert.equal(g.prazo, (2 / 3) * 100);
 });
 
 test("a tela de Parâmetros > Viagens existe e o painel mostra o índice no prazo em roxo", () => {
@@ -74,4 +103,13 @@ test("a tela de Parâmetros > Viagens existe e o painel mostra o índice no praz
   const painel = readFileSync("src/components/modules/ViagensPainel.tsx", "utf8");
   assert.match(painel, /Índice de lançamento no prazo/);
   assert.match(painel, /purple-/);
+});
+
+test("Parâmetros > Viagens tem os dois campos de prazo e o questionário continua em Veículos", () => {
+  const tela = readFileSync("src/routes/_authenticated/cadastros/viagens.tsx", "utf8");
+  assert.match(tela, /prazo-mecanico/);
+  assert.match(tela, /prazo-pcm/);
+  assert.match(tela, /Técnico mecânico/);
+  assert.match(tela, /PCM \(dias\)/);
+  assert.match(readFileSync("src/lib/menu-parametros.ts", "utf8"), /Questionário de Despesas/);
 });

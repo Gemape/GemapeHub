@@ -442,3 +442,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 190: índice de lançamento no prazo (viagens.ts: lancadaNoPrazo, indicePrazo; prazo-viagens.ts) e Parâmetros > Viagens (cadastros/viagens.tsx) com o prazo em dias, padrão 3. Fecha o croqui do módulo Viagens.
 - 2026-10-14 revisão #246/#247: leitura do prazo só aceita dígitos e tolera armazenamento bloqueado (detalhe em /mnt/project-files/revisoes/revisao-pr246-247.md).
 - 2026-10-14 dec 191: links do topo do formulário de despesas viram botões (QuestionarioFormulario.tsx).
+- 2026-10-14 dec 193: dois prazos em Parâmetros > Viagens (mecânico e PCM): prazo-viagens.ts (lerPrazos/salvarPrazos), viagens.ts (prazoDoLancamento), cadastros/viagens.tsx, ViagensPainel.tsx.
