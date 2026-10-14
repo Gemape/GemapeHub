@@ -81,14 +81,6 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
         </p>
       )}
 
-      <div className="space-y-2 rounded-lg border-t-8 border-primary bg-white p-4 shadow-sm dark:bg-card">
-        <Label htmlFor="tipo-despesa">Questionário do tipo de despesa</Label>
-        <Select value={tipoAtual} onValueChange={(v) => { setTipo(v); setAtivo(null); }}>
-          <SelectTrigger id="tipo-despesa" aria-label="Tipo de despesa"><SelectValue /></SelectTrigger>
-          <SelectContent>{tipos.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-
       {ids.map((id) => {
         const p = porId.get(id);
         if (!p) return null;
@@ -132,7 +124,14 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
                 {TIPOS_PERGUNTA.find((t) => t.valor === p.tipo)?.rotulo}{fixa ? " · pergunta inicial de todo questionário" : ""}
               </p>
               {estado.regras[tipoAtual]?.[id] && <p className="text-xs font-medium text-primary">{textoRegra(estado, estado.regras[tipoAtual][id] as Regra)}</p>}
-              <PerguntaPrevia pergunta={p} habilitadosVisiveis={p.habilitados && empregadosLidos ? habilitadosAtivos(p.habilitados, idsAtivos) : undefined} />
+              {fixa ? (
+                <Select value={tipoAtual} onValueChange={(v) => { if (v) { setTipo(v); setAtivo(null); } }}>
+                  <SelectTrigger aria-label="Tipo de despesa" onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
+                  <SelectContent>{tipos.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              ) : (
+                <PerguntaPrevia pergunta={p} habilitadosVisiveis={p.habilitados && empregadosLidos ? habilitadosAtivos(p.habilitados, idsAtivos) : undefined} />
+              )}
             </div>
             {aberto && canWrite && !fixa && (
               <CondicaoPergunta
