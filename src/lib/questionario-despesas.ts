@@ -59,6 +59,9 @@ export type Pergunta = {
 // Se/então: a pergunta só aparece quando a resposta da pergunta de origem (anterior, com opções) for (ou não for) o valor.
 export type Regra = { origem: string; operador: "igual" | "diferente"; valor: string };
 
+// Seção sem título fica oculta, mas continua separando a página.
+export type Secao = { id: string; titulo: string; subtitulo: string; inicio: string };
+
 export type Estado = {
   versao: 1;
   perguntas: Pergunta[];
@@ -68,6 +71,8 @@ export type Estado = {
   regras: Record<string, Record<string, Regra>>;
   // Ramificação (dec 178): tipo de despesa -> id da pergunta -> opção respondida -> destino ("encerrar" ou "pergunta:<id>"). Sem entrada, segue para a próxima.
   destinos?: Record<string, Record<string, Record<string, string>>>;
+  // Seções (dec 179): tipo de despesa -> seções, cada uma começando numa pergunta (`inicio`); cada seção é uma página no preenchimento.
+  secoes?: Record<string, Secao[]>;
   // Marca que "Litros abastecidos" já foi tirado dos tipos que não são Abastecimento (ajuste único dos dados salvos antes).
   litrosAjustado?: true;
   // Marca que a pergunta "Técnico responsável pela despesa" já foi incluída nos dados salvos antes dela existir (ajuste único).
@@ -205,6 +210,17 @@ function destinosLidos(bruto: unknown): Estado["destinos"] | undefined {
   ]));
 }
 
+// Seções salvas: só entram as que têm o formato certo (id, título, subtítulo e pergunta inicial em texto).
+function secoesLidas(bruto: unknown): Estado["secoes"] | undefined {
+  if (!bruto || typeof bruto !== "object" || Array.isArray(bruto)) return undefined;
+  return Object.fromEntries(Object.entries(bruto).filter(([, lista]) => Array.isArray(lista)).map(([tipo, lista]) => [
+    tipo,
+    // Uma seção por pergunta inicial e por id: repetida (dado editado à mão) é descartada.
+    (lista as unknown[]).filter((x): x is Secao => !!x && typeof x === "object" && ["id", "titulo", "subtitulo", "inicio"].every((k) => typeof (x as Record<string, unknown>)[k] === "string"))
+      .filter((x, i, todas) => todas.findIndex((y) => y.inicio === x.inicio || y.id === x.id) === i),
+  ]));
+}
+
 export function lerEstado(storage: StorageLike = localStorage): Estado {
   try {
     const bruto = storage.getItem(CHAVE);
@@ -233,7 +249,8 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
       }
     }
     const destinos = destinosLidos(lido.destinos);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), litrosAjustado: true, tecnicoAjustado: true };
+    const secoes = secoesLidas(lido.secoes);
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true };
   } catch {
     return estadoPadrao();
   }
@@ -252,7 +269,14 @@ export function limparRegras(e: Estado): Estado {
     });
     if (validas.length) regras[tipo] = Object.fromEntries(validas);
   }
-  return { ...e, regras };
+  // Seção cuja pergunta inicial saiu do questionário deixa de existir (as perguntas continuam, na seção anterior).
+  const secoes = e.secoes
+    ? Object.fromEntries(Object.entries(e.secoes).filter(([tipo]) => tipos.includes(tipo)).map(([tipo, lista]) => {
+      const ids = questionarioDoTipo(e, tipo);
+      return [tipo, lista.filter((x) => ids.includes(x.inicio))];
+    }))
+    : undefined;
+  return { ...e, regras, ...(secoes ? { secoes } : {}) };
 }
 
 // Só pergunta com opções escritas na própria pergunta (não clientes, municípios nem habilitados) serve de origem.
@@ -286,6 +310,7 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
   const perguntas = atual ? e.perguntas.map((p) => (p.id === gravar.id ? gravar : p)) : [...e.perguntas, gravar];
   let regras = e.regras;
   let destinos = e.destinos;
+  let secoes = e.secoes;
   let questionarios = e.questionarios;
   if (gravar.id === ID_TIPO_DESPESA) {
     const padrao = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
@@ -305,8 +330,15 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
         return d ? [[o, d] as const] : [];
       }));
     }
+    // As seções também acompanham o tipo renomeado.
+    if (e.secoes) {
+      secoes = Object.fromEntries(gravar.opcoes.flatMap((o, i) => {
+        const l = e.secoes?.[o] ?? (renomeado ? e.secoes?.[antigas[i] ?? ""] : undefined);
+        return l ? [[o, l] as const] : [];
+      }));
+    }
   }
-  return gravarEstado({ ...e, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}) }, storage);
+  return gravarEstado({ ...e, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}) }, storage);
 }
 
 // Tipos de despesa que perdem o questionário se a pergunta 3 for salva com estas opções (removidos, não renomeados).

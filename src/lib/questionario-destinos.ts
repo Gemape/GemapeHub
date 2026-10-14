@@ -1,5 +1,6 @@
 // Ramificação do Questionário de Despesas (dec 178): cada opção de resposta pode levar a outra pergunta ou encerrar o formulário.
 // Sem destino marcado, a opção segue para a próxima pergunta. Fase 1: tudo no navegador, em modo demonstração.
+import { inicioDaProximaSecao } from "./questionario-secoes.ts";
 import {
   ID_TIPO_DESPESA, aceitaCondicao, gravarEstado, questionarioDoTipo, tiposDeDespesa, type Estado, type Pergunta,
 } from "./questionario-despesas.ts";
@@ -7,6 +8,7 @@ import {
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
 export const DESTINO_ENCERRAR = "encerrar";
+export const DESTINO_PROXIMA_SECAO = "proxima-secao";
 export const prefixoPergunta = "pergunta:";
 export const destinoPergunta = (id: string): string => `${prefixoPergunta}${id}`;
 export const idDoDestino = (destino: string): string | null => (destino.startsWith(prefixoPergunta) ? destino.slice(prefixoPergunta.length) : null);
@@ -35,7 +37,8 @@ export function pendencias(e: Estado, tipo: string): Pendencia[] {
     }
     for (const [opcao, destino] of Object.entries(porOpcao)) {
       const alvo = idDoDestino(destino);
-      if (!origem.opcoes.includes(opcao)) lista.push({ perguntaId, opcao, motivo: "A opção não existe mais." });
+      if (destino === DESTINO_PROXIMA_SECAO && inicioDaProximaSecao(e, tipo, perguntaId) === null) lista.push({ perguntaId, opcao, motivo: "Não há seção depois desta pergunta." });
+      else if (!origem.opcoes.includes(opcao)) lista.push({ perguntaId, opcao, motivo: "A opção não existe mais." });
       else if (alvo !== null && !ids.includes(alvo)) lista.push({ perguntaId, opcao, motivo: "A pergunta de destino saiu do questionário." });
     }
   }
@@ -54,7 +57,7 @@ export function encontrarCiclo(e: Estado, tipo: string): string[] | null {
   const arestas = (id: string): string[] => {
     const i = ids.indexOf(id);
     const seguinte = i >= 0 && i + 1 < ids.length ? [ids[i + 1] as string] : [];
-    const saltos = Object.values(destinos[id] ?? {}).map(idDoDestino).filter((x): x is string => x !== null && ids.includes(x));
+    const saltos = Object.values(destinos[id] ?? {}).map((d) => (d === DESTINO_PROXIMA_SECAO ? inicioDaProximaSecao(e, tipo, id) : idDoDestino(d))).filter((x): x is string => x !== null && ids.includes(x));
     return [...seguinte, ...saltos];
   };
   const estado = new Map<string, 1 | 2>(); // 1 = no caminho atual, 2 = já concluída
@@ -92,7 +95,7 @@ export function gravarDestino(e: Estado, tipo: string, perguntaId: string, opcao
   if (perguntaId === ID_TIPO_DESPESA || !origem || !ids.includes(perguntaId) || !aceitaDestino(origem)) throw new Error("Esta pergunta não ramifica.");
   if (!origem.opcoes.includes(opcao)) throw new Error("Escolha uma opção da pergunta.");
   const { [opcao]: _antigo, ...resto } = e.destinos?.[tipo]?.[perguntaId] ?? {};
-  if (destino !== null && destino !== DESTINO_ENCERRAR) {
+  if (destino !== null && destino !== DESTINO_ENCERRAR && destino !== DESTINO_PROXIMA_SECAO) {
     const alvo = idDoDestino(destino);
     if (alvo === null || !ids.includes(alvo) || alvo === ID_TIPO_DESPESA) throw new Error("Escolha uma pergunta deste questionário.");
     if (alvo === perguntaId) throw new Error("A opção não pode voltar para a própria pergunta.");

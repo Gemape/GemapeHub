@@ -1,8 +1,9 @@
-import { ArrowDown, ArrowUp, Copy, GripHorizontal, MinusCircle, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, GripHorizontal, MinusCircle, Pencil, Play, Plus, Rows3, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { PerguntaDialog, type ModoPergunta } from "@/components/parametros/PerguntaDialog";
+import { SecaoDialog, type DadosSecao } from "@/components/parametros/SecaoDialog";
 import { PerguntaPrevia } from "@/components/parametros/PerguntaPrevia";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,8 +14,9 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  DESTINO_ENCERRAR, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, pendencias,
+  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, pendencias,
 } from "@/lib/questionario-destinos";
+import { criarQuestionario, gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
   ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
@@ -31,6 +33,8 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
   const [ativo, setAtivo] = useState<string | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [dialogo, setDialogo] = useState<{ modo: ModoPergunta; inicial: Pergunta | null } | null>(null);
+  // Janela de seção: `inicio` null = criar questionário novo (com nome); senão a seção que começa naquela pergunta.
+  const [dialogoSecao, setDialogoSecao] = useState<{ inicio: string | null; inicial: DadosSecao } | null>(null);
   const { data: empregados = [], isSuccess: empregadosLidos } = useEmpregados(TODAS);
   const idsAtivos = useMemo(() => new Set(empregados.filter((e) => empregadoAtivo(e)).map((e) => e.id)), [empregados]);
 
@@ -42,6 +46,21 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
   const ids = questionarioDoTipo(estado, tipoAtual);
   const porId = new Map(estado.perguntas.map((p) => [p.id, p]));
   const acoesRequeridas = pendencias(estado, tipoAtual);
+  const secoes = secoesDoTipo(estado, tipoAtual);
+  const abrirSecao = (inicio: string) => {
+    const atual = secoes.find((x) => x.inicio === inicio);
+    setDialogoSecao({ inicio, inicial: { titulo: atual?.titulo ?? "", subtitulo: atual?.subtitulo ?? "" } });
+  };
+  function salvarSecao(d: DadosSecao) {
+    if (!dialogoSecao) return;
+    if (dialogoSecao.inicio === null) {
+      const nome = d.nome ?? "";
+      if (executar(() => criarQuestionario(estado, nome, d), "Questionário criado.")) { setTipo(nome.trim()); setAtivo(null); setDialogoSecao(null); }
+      return;
+    }
+    const inicio = dialogoSecao.inicio;
+    if (executar(() => gravarSecao(estado, tipoAtual, inicio, d), "Seção salva.")) setDialogoSecao(null);
+  }
   const foraDoQuestionario = estado.perguntas.filter((p) => !ids.includes(p.id));
 
   function executar(acao: () => Estado, mensagem?: string): boolean {
@@ -79,6 +98,9 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => onAbrirFormulario(tipoAtual)}><Play className="mr-1 h-4 w-4" />Abrir formulário</Button>
           {canWrite && (
+            <Button variant="outline" onClick={() => setDialogoSecao({ inicio: null, inicial: { nome: "", titulo: "", subtitulo: "" } })}><Plus className="mr-1 h-4 w-4" />Criar novo questionário</Button>
+          )}
+          {canWrite && (
             <Button onClick={() => setDialogo({ modo: "novo", inicial: null })}><Plus className="mr-1 h-4 w-4" />Cadastrar pergunta</Button>
           )}
         </div>
@@ -104,9 +126,25 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
         if (!p) return null;
         const fixa = id === ID_TIPO_DESPESA;
         const aberto = ativo === id;
+        const secaoAqui = secoes.find((x) => x.inicio === id);
         return (
+          <div key={id} className="space-y-4">
+          {secaoAqui && (
+            <div className="flex items-start justify-between gap-2 rounded-lg border-l-8 border-l-primary bg-primary/5 p-4" data-secao>
+              <div>
+                <p className="text-xs font-medium uppercase text-muted-foreground">Seção {secoes.indexOf(secaoAqui) + 1} · nova página</p>
+                <p className={secaoAqui.titulo ? "text-lg font-semibold" : "text-sm italic text-muted-foreground"}>{secaoAqui.titulo || "Sem título (seção oculta)"}</p>
+                {secaoAqui.subtitulo && <p className="text-sm text-muted-foreground">{secaoAqui.subtitulo}</p>}
+              </div>
+              {canWrite && (
+                <div className="flex shrink-0 gap-1">
+                  <Button variant="ghost" size="icon" aria-label="Editar seção" onClick={() => abrirSecao(id)}><Pencil className="h-4 w-4" /></Button>
+                  {!fixa && <Button variant="ghost" size="icon" aria-label="Remover seção" title="Remover a seção (as perguntas ficam na seção anterior)" onClick={() => executar(() => gravarSecao(estado, tipoAtual, id, null), "Seção removida.")}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                </div>
+              )}
+            </div>
+          )}
           <div
-            key={id}
             data-cartao
             role="group"
             aria-label={`Pergunta ${p.codigo}: ${p.titulo}`}
@@ -176,6 +214,9 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
             )}
             {aberto && canWrite && (
               <div className="mt-4 flex flex-wrap items-center justify-end gap-1 border-t pt-3">
+                {!secoes.some((x) => x.inicio === id) && (
+                  <Button variant="ghost" size="icon" aria-label="Iniciar seção aqui" title="Iniciar uma seção (nova página) nesta pergunta" onClick={() => abrirSecao(id)}><Rows3 className="h-4 w-4" /></Button>
+                )}
                 <Button variant="ghost" size="icon" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" aria-label="Clonar pergunta" onClick={() => setDialogo({ modo: "clonar", inicial: clonarPergunta(estado, p.id) })}><Copy className="h-4 w-4" /></Button>
                 {!fixa && (
@@ -196,6 +237,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
               </div>
             )}
           </div>
+          </div>
         );
       })}
 
@@ -208,6 +250,15 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
           </Select>
         </div>
       )}
+
+      <SecaoDialog
+        aberto={dialogoSecao !== null}
+        titulo={dialogoSecao?.inicio === null ? "Criar novo questionário" : "Seção"}
+        comNome={dialogoSecao?.inicio === null}
+        inicial={dialogoSecao?.inicial ?? { titulo: "", subtitulo: "" }}
+        onSalvar={salvarSecao}
+        onFechar={() => setDialogoSecao(null)}
+      />
 
       <PerguntaDialog
         aberto={dialogo !== null}
@@ -228,6 +279,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
 
 const textoDestino = (e: Estado, destino: string): string => {
   if (destino === DESTINO_ENCERRAR) return "encerra o formulário";
+  if (destino === DESTINO_PROXIMA_SECAO) return "vai para a próxima seção";
   const alvo = idDoDestino(destino);
   const p = e.perguntas.find((x) => x.id === alvo);
   return p ? `vai para a pergunta ${p.codigo} (${p.titulo})` : "pergunta removida (ação requerida)";
@@ -258,6 +310,7 @@ function RamificacaoPergunta({
               <SelectTrigger aria-label={`Destino da opção ${opcao}`} className="w-64"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="proxima">Segue para a próxima pergunta</SelectItem>
+                <SelectItem value={DESTINO_PROXIMA_SECAO}>Ir para a próxima seção</SelectItem>
                 <SelectItem value={DESTINO_ENCERRAR}>Encerrar formulário</SelectItem>
                 {removida && <SelectItem value={atual}>Pergunta removida (ação requerida)</SelectItem>}
                 {alvos.map((p) => <SelectItem key={p.id} value={destinoPergunta(p.id)}>Ir para {p.codigo} · {p.titulo}</SelectItem>)}

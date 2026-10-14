@@ -20,6 +20,7 @@ import {
   ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
 } from "@/lib/questionario-despesas";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
+import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
 import { aplicarFormato, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   listarRespostas, registrarResposta, removerResposta, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
@@ -67,8 +68,18 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
     return lista ? (empregadosLidos ? habilitadosAtivos(lista, idsAtivos) : lista) : [];
   };
 
+  // Seções (dec 179): cada uma é uma página; sem seções o formulário é uma página só.
+  const paginas = useMemo(() => (tipo && tipos.includes(tipo) ? paginasDoPreenchimento(estado, tipo, visiveis) : [{ secao: null, perguntas: visiveis }]), [estado, tipo, tipos, visiveis]);
+  const [paginaPedida, setPaginaPedida] = useState(0);
+  // Trocar o tipo de despesa recomeça da primeira página.
+  useEffect(() => { setPaginaPedida(0); }, [tipo]);
+  const pagina = Math.min(paginaPedida, Math.max(paginas.length - 1, 0));
+  const paginaAtual = paginas[pagina];
+  const ultimaPagina = pagina >= paginas.length - 1;
+  const perguntasDaPagina = paginas.length > 1 && paginaAtual ? paginaAtual.perguntas : visiveis;
+
   // A pergunta que depende da anterior (Município x UF) fica no mesmo cartão dela.
-  const grupos = visiveis.reduce<Pergunta[][]>((lista, p) => {
+  const grupos = perguntasDaPagina.reduce<Pergunta[][]>((lista, p) => {
     const ultimo = lista[lista.length - 1];
     if (p.dependeDe && ultimo?.[ultimo.length - 1]?.id === p.dependeDe) ultimo.push(p);
     else lista.push([p]);
@@ -88,13 +99,31 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
     setErros((x) => { const { [id]: _tira, ...resto } = x; return resto; });
   };
 
+  function irParaPagina(i: number) {
+    setPaginaPedida(i);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function avancar() {
+    const achados = validarRespostas(perguntasDaPagina, respostas);
+    setErros((x) => ({ ...x, ...achados }));
+    if (Object.keys(achados).length > 0) {
+      const primeiro = perguntasDaPagina.find((p) => achados[p.id]);
+      if (primeiro) document.getElementById(`pergunta-${primeiro.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    irParaPagina(pagina + 1);
+  }
+
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
     if (enviando.current || ilegivel || acaoRequerida) return;
+    if (!ultimaPagina) { avancar(); return; }
     const achados = validarRespostas(visiveis, respostas);
     setErros(achados);
     const primeiro = visiveis.find((p) => achados[p.id]);
     if (primeiro) {
+      const paginaDoErro = paginas.findIndex((pg) => pg.perguntas.some((p) => p.id === primeiro.id));
+      if (paginaDoErro >= 0 && paginaDoErro !== pagina) { irParaPagina(paginaDoErro); return; }
       document.getElementById(`pergunta-${primeiro.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
@@ -114,6 +143,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
     setErros({});
     setImagens({});
     setEnviada(null);
+    setPaginaPedida(0);
     setChave((c) => c + 1);
   }
 
@@ -172,6 +202,15 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
               <p className="text-xs text-muted-foreground">{respondidas} de {obrigatorias.length} perguntas obrigatórias respondidas</p>
             </div>
           )}
+          {paginas.length > 1 && (
+            <p className="text-xs text-muted-foreground">Página {pagina + 1} de {paginas.length}</p>
+          )}
+          {paginas.length > 1 && paginaAtual?.secao && (paginaAtual.secao.titulo || paginaAtual.secao.subtitulo) && (
+            <div className={`${cartao} border-l-8 border-l-primary`}>
+              {paginaAtual.secao.titulo && <h2 className="text-lg font-semibold">{paginaAtual.secao.titulo}</h2>}
+              {paginaAtual.secao.subtitulo && <p className="text-sm text-muted-foreground">{paginaAtual.secao.subtitulo}</p>}
+            </div>
+          )}
           {grupos.map((grupo) => (
             <div key={grupo[0]?.id} className={`${cartao} space-y-4 ${grupo.some((p) => errosVisiveis[p.id]) ? "border border-destructive" : ""}`}>
               {grupo.map((p) => (
@@ -199,7 +238,9 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
           ))}
           {Object.keys(errosVisiveis).length > 0 && <p role="alert" className="text-sm text-destructive">Corrija as perguntas marcadas antes de enviar.</p>}
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={!tipo || ilegivel || acaoRequerida}>Enviar</Button>
+            {pagina > 0 && <Button type="button" variant="outline" onClick={() => irParaPagina(pagina - 1)}>Voltar</Button>}
+            {!ultimaPagina && <Button type="button" onClick={avancar} disabled={!tipo || ilegivel || acaoRequerida}>Próxima</Button>}
+            {ultimaPagina && <Button type="submit" disabled={!tipo || ilegivel || acaoRequerida}>Enviar</Button>}
             <Button type="button" variant="ghost" onClick={preencherDeNovo}>Limpar formulário</Button>
           </div>
         </form>
