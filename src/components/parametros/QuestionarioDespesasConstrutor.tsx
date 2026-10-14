@@ -13,6 +13,9 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
+  DESTINO_ENCERRAR, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, pendencias,
+} from "@/lib/questionario-destinos";
+import {
   ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
@@ -38,6 +41,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
 
   const ids = questionarioDoTipo(estado, tipoAtual);
   const porId = new Map(estado.perguntas.map((p) => [p.id, p]));
+  const acoesRequeridas = pendencias(estado, tipoAtual);
   const foraDoQuestionario = estado.perguntas.filter((p) => !ids.includes(p.id));
 
   function executar(acao: () => Estado, mensagem?: string): boolean {
@@ -50,7 +54,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
       return false;
     }
   }
-  const gravarIds = (novos: string[]) => executar(() => gravarQuestionario(estado, tipoAtual, novos));
+  const gravarIds = (novos: string[]) => executar(() => { conferirOrdem(estado, tipoAtual, novos); return gravarQuestionario(estado, tipoAtual, novos); });
 
   // Sobe ou desce uma pergunta (alternativa ao arrastar, para quem usa teclado); a de tipos de despesa fica de fora.
   const trocar = (lista: string[], id: string, passo: -1 | 1): string[] => {
@@ -84,6 +88,15 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
         <p role="alert" className="rounded-md border border-destructive p-3 text-sm text-destructive">
           As perguntas salvas neste navegador estão ilegíveis. A tela mostra o padrão e nada será gravado por cima; limpe os dados do site para recomeçar.
         </p>
+      )}
+
+      {acoesRequeridas.length > 0 && (
+        <div role="alert" className="space-y-1 rounded-md border border-destructive p-3 text-sm text-destructive">
+          <p className="font-medium">Ação requerida: o questionário "{tipoAtual}" não é publicado até corrigir as ramificações abaixo.</p>
+          <ul className="list-disc pl-5">
+            {acoesRequeridas.map((a) => <li key={`${a.perguntaId}-${a.opcao}`}>Pergunta {porId.get(a.perguntaId)?.codigo}, opção "{a.opcao}": {a.motivo}</li>)}
+          </ul>
+        </div>
       )}
 
       {ids.map((id) => {
@@ -129,6 +142,11 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
                 {TIPOS_PERGUNTA.find((t) => t.valor === p.tipo)?.rotulo}{fixa ? " · pergunta inicial de todo questionário" : ""}
               </p>
               {estado.regras[tipoAtual]?.[id] && <p className="text-xs font-medium text-primary">{textoRegra(estado, estado.regras[tipoAtual][id] as Regra)}</p>}
+              {!fixa && aceitaDestino(p) && Object.keys(destinosDoTipo(estado, tipoAtual)[id] ?? {}).length > 0 && (
+                <ul className="text-xs font-medium text-primary">
+                  {Object.entries(destinosDoTipo(estado, tipoAtual)[id] ?? {}).map(([opcao, d]) => <li key={opcao}>"{opcao}": {textoDestino(estado, d)}</li>)}
+                </ul>
+              )}
               {fixa ? (
                 <Select value={tipoAtual} onValueChange={(v) => { if (v) { setTipo(v); setAtivo(null); } }}>
                   <SelectTrigger aria-label="Tipo de despesa" onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
@@ -138,6 +156,15 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
             </div>
+            {aberto && canWrite && !fixa && aceitaDestino(p) && (
+              <RamificacaoPergunta
+                estado={estado}
+                ids={ids}
+                pergunta={p}
+                destinos={destinosDoTipo(estado, tipoAtual)[id] ?? {}}
+                onMudar={(opcao, d) => executar(() => gravarDestino(estado, tipoAtual, id, opcao, d))}
+              />
+            )}
             {aberto && canWrite && !fixa && (
               <CondicaoPergunta
                 estado={estado}
@@ -195,6 +222,50 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
           if (executar(() => salvarPergunta(estado, p), "Pergunta salva.")) setDialogo(null);
         }}
       />
+    </div>
+  );
+}
+
+const textoDestino = (e: Estado, destino: string): string => {
+  if (destino === DESTINO_ENCERRAR) return "encerra o formulário";
+  const alvo = idDoDestino(destino);
+  const p = e.perguntas.find((x) => x.id === alvo);
+  return p ? `vai para a pergunta ${p.codigo} (${p.titulo})` : "pergunta removida (ação requerida)";
+};
+
+// Ramificação: para cada opção, a próxima pergunta, encerrar o formulário ou ir direto a outra pergunta do questionário.
+function RamificacaoPergunta({
+  estado, ids, pergunta, destinos, onMudar,
+}: {
+  estado: Estado;
+  ids: string[];
+  pergunta: Pergunta;
+  destinos: Record<string, string>;
+  onMudar: (opcao: string, destino: string | null) => void;
+}) {
+  const alvos = ids.filter((x) => x !== ID_TIPO_DESPESA && x !== pergunta.id).map((x) => estado.perguntas.find((p) => p.id === x)).filter((p): p is Pergunta => !!p);
+  return (
+    <div className="mt-4 space-y-2 border-t pt-3" onClick={(e) => e.stopPropagation()}>
+      <p className="text-sm font-medium">Depois de responder, ir para...</p>
+      {pergunta.opcoes.map((opcao) => {
+        const atual = destinos[opcao] ?? "proxima";
+        const alvoAtual = idDoDestino(atual);
+        const removida = alvoAtual !== null && !alvos.some((p) => p.id === alvoAtual);
+        return (
+          <div key={opcao} className="flex flex-wrap items-center gap-2">
+            <span className="w-48 truncate text-sm" title={opcao}>{opcao}</span>
+            <Select value={atual} onValueChange={(v) => { if (v) onMudar(opcao, v === "proxima" ? null : v); }}>
+              <SelectTrigger aria-label={`Destino da opção ${opcao}`} className="w-64"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="proxima">Segue para a próxima pergunta</SelectItem>
+                <SelectItem value={DESTINO_ENCERRAR}>Encerrar formulário</SelectItem>
+                {removida && <SelectItem value={atual}>Pergunta removida (ação requerida)</SelectItem>}
+                {alvos.map((p) => <SelectItem key={p.id} value={destinoPergunta(p.id)}>Ir para {p.codigo} · {p.titulo}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      })}
     </div>
   );
 }

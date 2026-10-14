@@ -1,5 +1,6 @@
 // Preenchimento do Questionário de Despesas: máscaras, condição se/então e validação das respostas (dec 169).
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
+import { destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
 import { ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
@@ -75,7 +76,15 @@ export function visivel(e: Estado, tipo: string, id: string, respostas: Resposta
 export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas): Pergunta[] {
   const mostradas = new Set<string>();
   const lista: Pergunta[] = [];
-  for (const id of questionarioDoTipo(e, tipo)) {
+  const todos = questionarioDoTipo(e, tipo);
+  const destinos = destinosDoTipo(e, tipo);
+  // Ramificação (dec 178): salto = pergunta de destino ainda não alcançada; as do meio ficam de fora.
+  let salto: string | null = null;
+  for (const id of todos) {
+    if (salto !== null) {
+      if (todos.indexOf(id) < todos.indexOf(salto)) continue;
+      salto = null;
+    }
     const p = e.perguntas.find((x) => x.id === id);
     const regra = e.regras[tipo]?.[id];
     if (!p) continue;
@@ -86,6 +95,10 @@ export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas)
     if (!visivel(e, tipo, id, respostas)) continue;
     mostradas.add(id);
     lista.push(p);
+    const destino = destinos[id]?.[opcaoRespondida(respostas[id]) ?? ""];
+    if (destino === DESTINO_ENCERRAR) break;
+    const alvo = destino ? idDoDestino(destino) : null;
+    if (alvo !== null && todos.includes(alvo) && todos.indexOf(alvo) > todos.indexOf(id)) salto = alvo;
   }
   return lista;
 }

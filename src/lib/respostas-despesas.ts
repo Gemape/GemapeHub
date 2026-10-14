@@ -2,6 +2,7 @@
 // respostas (JSONB, com `empresa_id`) entra na Fase 2. Cada resposta guarda o título das perguntas da época.
 import { hojeLocal } from "./empregados.ts";
 import { ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
+import { questionarioPublicado } from "./questionario-destinos.ts";
 import { perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -48,6 +49,7 @@ export function registrarResposta(e: Estado, respostas: Respostas, storage: Stor
   const tipo = tipoEscolhido(respostas);
   if (!tipo) throw new Error("Escolha o tipo de despesa.");
   if (!tiposDeDespesa(e).includes(tipo)) throw new Error("Esse tipo de despesa não existe mais no cadastro; recarregue o formulário.");
+  if (!questionarioPublicado(e, tipo)) throw new Error("Este questionário tem ação requerida e ainda não foi publicado; corrija as ramificações em Parâmetros.");
   const visiveis = perguntasVisiveis(e, tipo, respostas);
   const erros = validarRespostas(visiveis, respostas);
   const primeiro = visiveis.find((p) => erros[p.id]);

@@ -66,6 +66,8 @@ export type Estado = {
   questionarios: Record<string, string[]>;
   // Tipo de despesa -> id da pergunta -> condição para ela aparecer naquele questionário.
   regras: Record<string, Record<string, Regra>>;
+  // Ramificação (dec 178): tipo de despesa -> id da pergunta -> opção respondida -> destino ("encerrar" ou "pergunta:<id>"). Sem entrada, segue para a próxima.
+  destinos?: Record<string, Record<string, Record<string, string>>>;
   // Marca que "Litros abastecidos" já foi tirado dos tipos que não são Abastecimento (ajuste único dos dados salvos antes).
   litrosAjustado?: true;
   // Marca que a pergunta "Técnico responsável pela despesa" já foi incluída nos dados salvos antes dela existir (ajuste único).
@@ -217,7 +219,8 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
         })) as Record<string, string[]>;
       }
     }
-    return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true };
+    const destinos = lido.destinos && typeof lido.destinos === "object" ? (lido.destinos as NonNullable<Estado["destinos"]>) : undefined;
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), litrosAjustado: true, tecnicoAjustado: true };
   } catch {
     return estadoPadrao();
   }
@@ -269,6 +272,7 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
   if (gravar.id === ID_TIPO_DESPESA) gravar.multiplas = false;
   const perguntas = atual ? e.perguntas.map((p) => (p.id === gravar.id ? gravar : p)) : [...e.perguntas, gravar];
   let regras = e.regras;
+  let destinos = e.destinos;
   let questionarios = e.questionarios;
   if (gravar.id === ID_TIPO_DESPESA) {
     const padrao = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
@@ -281,8 +285,15 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
       const r = e.regras[o] ?? (renomeado ? e.regras[antigas[i] ?? ""] : undefined);
       return r ? [[o, r] as const] : [];
     }));
+    // A ramificação também acompanha o tipo renomeado.
+    if (e.destinos) {
+      destinos = Object.fromEntries(gravar.opcoes.flatMap((o, i) => {
+        const d = e.destinos?.[o] ?? (renomeado ? e.destinos?.[antigas[i] ?? ""] : undefined);
+        return d ? [[o, d] as const] : [];
+      }));
+    }
   }
-  return gravarEstado({ ...e, perguntas, questionarios, regras }, storage);
+  return gravarEstado({ ...e, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}) }, storage);
 }
 
 // Tipos de despesa que perdem o questionário se a pergunta 3 for salva com estas opções (removidos, não renomeados).
