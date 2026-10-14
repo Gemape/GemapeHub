@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 import { useId, useMemo, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -30,8 +30,8 @@ const vazia = (r: Resposta | undefined) => r === undefined || (Array.isArray(r) 
 
 // Formulário do Questionário de Despesas, no estilo Google Forms (dec 169): cartão central, perguntas em cartões, obrigatórias
 // com asterisco, Enviar com confirmação e lista de respostas para conferência. Respostas só no navegador (modo demonstração).
-export function QuestionarioFormulario({ tipoInicial }: { tipoInicial?: string | undefined }) {
-  const { isAdmin } = useAccess();
+export function QuestionarioFormulario({ tipoInicial, onEditar }: { tipoInicial?: string | undefined; onEditar?: ((tipo: string) => void) | undefined }) {
+  const { isAdmin, canWrite } = useAccess();
   const [estado] = useState(lerEstado);
   const tipos = tiposDeDespesa(estado);
   const [respostas, setRespostas] = useState<Respostas>(() => (tipoInicial && tipos.includes(tipoInicial) ? { [ID_TIPO_DESPESA]: [tipoInicial] } : {}));
@@ -60,6 +60,14 @@ export function QuestionarioFormulario({ tipoInicial }: { tipoInicial?: string |
   const respondidas = obrigatorias.filter((p) => !vazia(respostas[p.id])).length;
   const progresso = obrigatorias.length ? Math.round((respondidas / obrigatorias.length) * 100) : 0;
   const habilitadosVisiveis = (p: Pergunta): Habilitado[] => (p.habilitados ? (empregadosLidos ? habilitadosAtivos(p.habilitados, idsAtivos) : p.habilitados) : []);
+
+  // A pergunta que depende da anterior (Município x UF) fica no mesmo cartão dela.
+  const grupos = visiveis.reduce<Pergunta[][]>((lista, p) => {
+    const ultimo = lista[lista.length - 1];
+    if (p.dependeDe && ultimo?.[ultimo.length - 1]?.id === p.dependeDe) ultimo.push(p);
+    else lista.push([p]);
+    return lista;
+  }, []);
 
   const mudar = (id: string, valor: Resposta) => {
     setRespostas((r) => {
@@ -108,10 +116,12 @@ export function QuestionarioFormulario({ tipoInicial }: { tipoInicial?: string |
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 p-3 sm:p-4">
       <div className={`${cartao} border-t-8 border-t-primary`}>
-        <h1 className="text-2xl font-semibold">Questionário de despesas</h1>
+        <h1 className="text-2xl font-semibold">Questionário de Despesas</h1>
         <p className="mt-1 text-sm text-muted-foreground">Escolha o tipo de despesa e responda as perguntas. Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <Link to="/cadastros/veiculos-questionario-despesas" className="text-primary underline">Voltar ao cadastro de perguntas</Link>
+          {canWrite && onEditar && (
+            <button type="button" className="inline-flex items-center gap-1 text-primary underline" onClick={() => onEditar(tipo)}><Pencil className="h-3 w-3" />Editar questionário</button>
+          )}
           <button type="button" className="text-primary underline" onClick={() => setVerLista((v) => !v)}>
             {verLista ? "Ocultar respostas registradas" : `Respostas registradas (${registradas.length})`}
           </button>
@@ -147,15 +157,19 @@ export function QuestionarioFormulario({ tipoInicial }: { tipoInicial?: string |
               <p className="text-xs text-muted-foreground">{respondidas} de {obrigatorias.length} perguntas obrigatórias respondidas</p>
             </div>
           )}
-          {visiveis.map((p) => (
-            <div key={p.id} id={`pergunta-${p.id}`} className={`${cartao} space-y-2 ${errosVisiveis[p.id] ? "border border-destructive" : ""}`}>
-              <p className="text-sm font-medium">{p.titulo}{p.obrigatoria && <span className="text-destructive"> *</span>}</p>
-              <Campo
-                pergunta={p} respostas={respostas} imagens={imagens[p.id] ?? []} habilitados={habilitadosVisiveis(p)}
-                onMudar={(v) => mudar(p.id, v)}
-                onImagens={(lista) => setImagens((x) => ({ ...x, [p.id]: lista }))}
-              />
-              {errosVisiveis[p.id] && <p role="alert" className="text-sm text-destructive">{errosVisiveis[p.id]}</p>}
+          {grupos.map((grupo) => (
+            <div key={grupo[0]?.id} className={`${cartao} space-y-4 ${grupo.some((p) => errosVisiveis[p.id]) ? "border border-destructive" : ""}`}>
+              {grupo.map((p) => (
+                <div key={p.id} id={`pergunta-${p.id}`} className="space-y-2">
+                  <p className="text-sm font-medium">{p.titulo}{p.obrigatoria && <span className="text-destructive"> *</span>}</p>
+                  <Campo
+                    pergunta={p} respostas={respostas} imagens={imagens[p.id] ?? []} habilitados={habilitadosVisiveis(p)}
+                    onMudar={(v) => mudar(p.id, v)}
+                    onImagens={(lista) => setImagens((x) => ({ ...x, [p.id]: lista }))}
+                  />
+                  {errosVisiveis[p.id] && <p role="alert" className="text-sm text-destructive">{errosVisiveis[p.id]}</p>}
+                </div>
+              ))}
             </div>
           ))}
           {Object.keys(errosVisiveis).length > 0 && <p role="alert" className="text-sm text-destructive">Corrija as perguntas marcadas antes de enviar.</p>}
