@@ -11,7 +11,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  AREAS_VIAGEM, FORMATOS_CURTA, TIPOS_PERGUNTA, habilitadosAtivos, novaPergunta, regraArquivos, validarPergunta,
+  AREAS_VIAGEM, FORMATOS_CURTA, ID_TIPO_DESPESA, TIPOS_PERGUNTA, habilitadosAtivos, novaPergunta, regraArquivos, validarPergunta,
   type AreaViagem, type Estado, type FormatoCurta, type Pergunta, type TipoPergunta,
 } from "@/lib/questionario-despesas";
 
@@ -113,7 +113,7 @@ function CamposDoTipo({ pergunta, onMudar }: { pergunta: Pergunta; onMudar: (p: 
     const regra = regraArquivos(pergunta);
     return (
       <p className="rounded-md bg-muted/50 p-2 text-sm">
-        Aceita até {regra.maximo} imagens{regra.minimo ? " e exige ao menos 1 (as outras são opcionais)" : ""}. As imagens são reduzidas antes de ir para o armazenamento do sistema.
+        Aceita até {regra.maximo} imagens{regra.minimo ? " e exige ao menos 1 (as outras são opcionais)" : ""}. As imagens são reduzidas no navegador (WebP, até 1280 px) antes de seguirem para o armazenamento do sistema.
       </p>
     );
   }
@@ -126,7 +126,7 @@ function Opcoes({ pergunta, onMudar }: { pergunta: Pergunta; onMudar: (p: Pergun
   const deClientes = pergunta.fonte === "clientes";
   return (
     <div className="space-y-3">
-      {pergunta.tipo === "caixas" && (
+      {pergunta.tipo === "caixas" && pergunta.id !== ID_TIPO_DESPESA && (
         <div className="flex items-center gap-2">
           <Switch id="multiplas-pergunta" checked={pergunta.multiplas} onCheckedChange={(v) => onMudar({ ...pergunta, multiplas: v })} />
           <Label htmlFor="multiplas-pergunta">Permitir marcar mais de uma opção</Label>

@@ -1,4 +1,5 @@
-import { ArrowDown, ArrowUp, Copy, GripHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, GripHorizontal, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,8 +16,8 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  ID_TIPO_DESPESA, TIPOS_PERGUNTA, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId,
-  proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta,
+  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, lerEstado, moverId,
+  proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
 // Parâmetros > Veículos > Questionário de Despesas: um questionário para cada tipo de despesa, montado com perguntas do banco.
@@ -68,9 +69,12 @@ export function QuestionarioDespesasConstrutor() {
     <div className="mx-auto max-w-3xl space-y-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Questionário de Despesas</h1>
-        {canWrite && (
-          <Button onClick={() => setDialogo({ modo: "novo", inicial: null })}><Plus className="mr-1 h-4 w-4" />Cadastrar pergunta</Button>
-        )}
+        <div className="flex gap-2">
+          <Button variant="outline" asChild><Link to="/questionario-despesas" search={{ tipo: tipoAtual }}><Play className="mr-1 h-4 w-4" />Abrir formulário</Link></Button>
+          {canWrite && (
+            <Button onClick={() => setDialogo({ modo: "novo", inicial: null })}><Plus className="mr-1 h-4 w-4" />Cadastrar pergunta</Button>
+          )}
+        </div>
       </div>
 
       {dadosIlegiveis() && (
@@ -101,7 +105,9 @@ export function QuestionarioDespesasConstrutor() {
             data-cartao
             role="group"
             aria-label={`Pergunta ${p.codigo}: ${p.titulo}`}
+            tabIndex={0}
             onClick={() => setAtivo(id)}
+            onFocus={() => setAtivo(id)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => { e.preventDefault(); if (arrastando) gravarIds(moverId(ids, arrastando, id).filter((x) => x !== ID_TIPO_DESPESA)); setArrastando(null); }}
             className={`rounded-lg border-l-8 bg-white p-4 transition-all duration-200 dark:bg-card ${aberto ? "border-l-primary shadow-lg" : "border-l-transparent shadow-sm"}`}
@@ -130,8 +136,18 @@ export function QuestionarioDespesasConstrutor() {
               <p className="text-xs text-muted-foreground">
                 {TIPOS_PERGUNTA.find((t) => t.valor === p.tipo)?.rotulo}{fixa ? " · pergunta inicial de todo questionário" : ""}
               </p>
+              {estado.regras[tipoAtual]?.[id] && <p className="text-xs font-medium text-primary">{textoRegra(estado, estado.regras[tipoAtual][id] as Regra)}</p>}
               <PerguntaPrevia pergunta={p} habilitadosVisiveis={p.habilitados && empregadosLidos ? habilitadosAtivos(p.habilitados, idsAtivos) : undefined} />
             </div>
+            {aberto && canWrite && !fixa && (
+              <CondicaoPergunta
+                estado={estado}
+                ids={ids}
+                id={id}
+                regra={estado.regras[tipoAtual]?.[id] ?? null}
+                onMudar={(r) => executar(() => gravarRegra(estado, tipoAtual, id, r))}
+              />
+            )}
             {aberto && canWrite && (
               <div className="mt-4 flex items-center justify-end gap-1 border-t pt-3">
                 <Button variant="ghost" size="icon" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="h-4 w-4" /></Button>
@@ -204,6 +220,57 @@ export function QuestionarioDespesasConstrutor() {
           if (executar(() => salvarPergunta(estado, p), "Pergunta salva.")) setDialogo(null);
         }}
       />
+    </div>
+  );
+}
+
+const textoRegra = (e: Estado, r: Regra): string => {
+  const origem = e.perguntas.find((p) => p.id === r.origem);
+  return `Aparece só se "${origem?.titulo ?? "?"}" ${r.operador === "igual" ? "for" : "não for"} "${r.valor}"`;
+};
+
+// Se/então: a pergunta só aparece quando a resposta de uma pergunta anterior (com opções escritas) for ou não for um valor.
+function CondicaoPergunta({
+  estado, ids, id, regra, onMudar,
+}: {
+  estado: Estado;
+  ids: string[];
+  id: string;
+  regra: Regra | null;
+  onMudar: (r: Regra | null) => void;
+}) {
+  const anteriores = ids.slice(0, ids.indexOf(id)).map((x) => estado.perguntas.find((p) => p.id === x)).filter((p): p is Pergunta => !!p && aceitaCondicao(p));
+  if (anteriores.length === 0 && !regra) return null;
+  const origem = anteriores.find((p) => p.id === regra?.origem);
+  return (
+    <div className="mt-4 space-y-2 border-t pt-3" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-2">
+        <Switch
+          id={`condicao-${id}`}
+          checked={regra !== null}
+          onCheckedChange={(v) => {
+            const primeira = anteriores[0];
+            onMudar(v && primeira ? { origem: primeira.id, operador: "igual", valor: primeira.opcoes[0] ?? "" } : null);
+          }}
+        />
+        <Label htmlFor={`condicao-${id}`} className="text-sm">Mostrar esta pergunta só se...</Label>
+      </div>
+      {regra && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={regra.origem} onValueChange={(v) => { const o = anteriores.find((p) => p.id === v); onMudar({ origem: v, operador: regra.operador, valor: o?.opcoes[0] ?? "" }); }}>
+            <SelectTrigger aria-label="Pergunta de origem" className="w-56"><SelectValue /></SelectTrigger>
+            <SelectContent>{anteriores.map((p) => <SelectItem key={p.id} value={p.id}>{p.codigo} · {p.titulo}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={regra.operador} onValueChange={(v) => onMudar({ ...regra, operador: v as Regra["operador"] })}>
+            <SelectTrigger aria-label="Operador" className="w-32"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="igual">for</SelectItem><SelectItem value="diferente">não for</SelectItem></SelectContent>
+          </Select>
+          <Select value={regra.valor} onValueChange={(v) => onMudar({ ...regra, valor: v })}>
+            <SelectTrigger aria-label="Valor" className="w-56"><SelectValue /></SelectTrigger>
+            <SelectContent>{(origem?.opcoes ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }
