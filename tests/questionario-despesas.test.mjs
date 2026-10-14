@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import {
   ID_TIPO_DESPESA, clonarPergunta, estadoPadrao, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId, novaPergunta,
@@ -183,7 +183,7 @@ test("o submenu fica em Parâmetros > Veículos e a rota existe", () => {
   const menu = readFileSync(new URL("../src/lib/menu-parametros.ts", import.meta.url), "utf8");
   assert.match(menu, /Questionário de Despesas", url: "\/cadastros\/veiculos-questionario-despesas"/);
   const rota = readFileSync(new URL("../src/routes/_authenticated/cadastros/veiculos-questionario-despesas.tsx", import.meta.url), "utf8");
-  assert.match(rota, /QuestionarioDespesasConstrutor/);
+  assert.match(rota, /QuestionarioDespesasTela/);
 });
 
 test("Litros abastecidos só vem no Abastecimento, também nos dados salvos antes (ajuste único)", () => {
@@ -203,4 +203,17 @@ test("Litros abastecidos só vem no Abastecimento, também nos dados salvos ante
   const volta = gravarQuestionario(lido, "Hospedagem", [...questionarioDoTipo(lido, "Hospedagem"), ID_LITROS], s);
   assert.ok(questionarioDoTipo(lerEstado(s), "Hospedagem").includes(ID_LITROS));
   assert.equal(volta.litrosAjustado, true);
+});
+
+test("tela única: abre no formulário, quem grava edita ali mesmo e não há banco de perguntas nem rota separada", () => {
+  const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  const tela = ler("components/parametros/QuestionarioDespesasTela.tsx");
+  assert.match(tela, /<QuestionarioFormulario/);
+  assert.match(tela, /<QuestionarioDespesasConstrutor/);
+  assert.match(tela, /montando && canWrite/);
+  const construtor = ler("components/parametros/QuestionarioDespesasConstrutor.tsx");
+  assert.doesNotMatch(construtor, /Banco de perguntas/);
+  assert.match(construtor, /aria-label="Excluir pergunta"/);
+  assert.match(ler("components/parametros/QuestionarioFormulario.tsx"), /Editar questionário/);
+  assert.equal(existsSync(new URL("../src/routes/_authenticated/questionario-despesas.tsx", import.meta.url)), false);
 });

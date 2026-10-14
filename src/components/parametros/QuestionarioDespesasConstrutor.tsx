@@ -1,16 +1,13 @@
-import { ArrowDown, ArrowUp, Copy, GripHorizontal, Pencil, Play, Plus, Trash2 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { ArrowDown, ArrowUp, Copy, GripHorizontal, MinusCircle, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { PerguntaDialog, type ModoPergunta } from "@/components/parametros/PerguntaDialog";
 import { PerguntaPrevia } from "@/components/parametros/PerguntaPrevia";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAccess } from "@/lib/access-context";
 import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
@@ -20,12 +17,13 @@ import {
   proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
-// Parâmetros > Veículos > Questionário de Despesas: um questionário para cada tipo de despesa, montado com perguntas do banco.
-export function QuestionarioDespesasConstrutor() {
+// Montagem do Questionário de Despesas, dentro da mesma tela do formulário (dec 173): um questionário para cada tipo de despesa,
+// montado com as perguntas cadastradas. O banco de perguntas não tem tela própria: o que sobra fora do questionário se adiciona pelo seletor.
+export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario }: { tipoInicial?: string | undefined; onAbrirFormulario: (tipo: string) => void }) {
   const { canWrite } = useAccess();
   const [estado, setEstado] = useState<Estado>(lerEstado);
   const tipos = tiposDeDespesa(estado);
-  const [tipo, setTipo] = useState(() => tipos[0] ?? "");
+  const [tipo, setTipo] = useState(() => (tipoInicial && tipos.includes(tipoInicial) ? tipoInicial : (tipos[0] ?? "")));
   const tipoAtual = tipos.includes(tipo) ? tipo : (tipos[0] ?? "");
   const [ativo, setAtivo] = useState<string | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
@@ -69,8 +67,8 @@ export function QuestionarioDespesasConstrutor() {
     <div className="mx-auto max-w-3xl space-y-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Questionário de Despesas</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild><Link to="/questionario-despesas" search={{ tipo: tipoAtual }}><Play className="mr-1 h-4 w-4" />Abrir formulário</Link></Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => onAbrirFormulario(tipoAtual)}><Play className="mr-1 h-4 w-4" />Abrir formulário</Button>
           {canWrite && (
             <Button onClick={() => setDialogo({ modo: "novo", inicial: null })}><Plus className="mr-1 h-4 w-4" />Cadastrar pergunta</Button>
           )}
@@ -89,9 +87,6 @@ export function QuestionarioDespesasConstrutor() {
           <SelectTrigger id="tipo-despesa" aria-label="Tipo de despesa"><SelectValue /></SelectTrigger>
           <SelectContent>{tipos.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
         </Select>
-        <p className="text-sm text-muted-foreground">
-          Todo questionário começa pela pergunta de tipos de despesa. Arraste pela alça ⋮⋮ para reordenar as demais.
-        </p>
       </div>
 
       {ids.map((id) => {
@@ -149,7 +144,7 @@ export function QuestionarioDespesasConstrutor() {
               />
             )}
             {aberto && canWrite && (
-              <div className="mt-4 flex items-center justify-end gap-1 border-t pt-3">
+              <div className="mt-4 flex flex-wrap items-center justify-end gap-1 border-t pt-3">
                 <Button variant="ghost" size="icon" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" aria-label="Clonar pergunta" onClick={() => setDialogo({ modo: "clonar", inicial: clonarPergunta(estado, p.id) })}><Copy className="h-4 w-4" /></Button>
                 {!fixa && (
@@ -159,7 +154,10 @@ export function QuestionarioDespesasConstrutor() {
                   </>
                 )}
                 {!fixa && (
-                  <Button variant="ghost" size="icon" aria-label="Remover do questionário" title="Remover deste questionário" onClick={() => gravarIds(ids.filter((x) => x !== id && x !== ID_TIPO_DESPESA))}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" aria-label="Remover do questionário" title="Remover deste questionário" onClick={() => gravarIds(ids.filter((x) => x !== id && x !== ID_TIPO_DESPESA))}><MinusCircle className="h-4 w-4" /></Button>
+                )}
+                {!p.sistema && (
+                  <Button variant="ghost" size="icon" aria-label="Excluir pergunta" title="Excluir a pergunta de todos os questionários" onClick={() => excluir(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 )}
                 <div className="mx-2 h-6 w-px bg-border" />
                 <Label htmlFor={`obrigatoria-${id}`} className="text-sm">Obrigatória</Label>
@@ -179,33 +177,6 @@ export function QuestionarioDespesasConstrutor() {
           </Select>
         </div>
       )}
-
-      <div className="space-y-2 pt-4">
-        <h2 className="text-lg font-semibold">Banco de perguntas</h2>
-        <Table>
-          <TableHeader>
-            <TableRow><TableHead>Nº</TableHead><TableHead>Título</TableHead><TableHead>Tipo</TableHead><TableHead>Obrigatória</TableHead><TableHead /></TableRow>
-          </TableHeader>
-          <TableBody>
-            {estado.perguntas.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>{p.codigo}</TableCell>
-                <TableCell>{p.titulo}</TableCell>
-                <TableCell>{TIPOS_PERGUNTA.find((t) => t.valor === p.tipo)?.rotulo}</TableCell>
-                <TableCell>{p.obrigatoria ? "Sim" : "Não"}</TableCell>
-                <TableCell>
-                  <AcoesLinha
-                    rotulo={`pergunta ${p.codigo}`}
-                    onClonar={() => setDialogo({ modo: "clonar", inicial: clonarPergunta(estado, p.id) })}
-                    onEditar={() => setDialogo({ modo: "editar", inicial: p })}
-                    {...(p.sistema ? {} : { onExcluir: () => excluir(p) })}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
 
       <PerguntaDialog
         aberto={dialogo !== null}
