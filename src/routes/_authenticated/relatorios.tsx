@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { lerEmpregadosRelatorio, lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { hojeLocal } from "@/lib/empregados";
 import {
   exportarCsv,
   formatarData,
@@ -59,8 +60,8 @@ const TODOS = "todos";
 function PaginaRelatorios() {
   const { empresas, empresaId } = useEmpresa();
   const { data: empregados = [] } = useQuery({ queryKey: ["empregados-relatorio", empresaId], queryFn: () => lerEmpregadosRelatorio(supabase, empresaId) });
-  const hoje = new Date().toISOString().slice(0, 10);
-  const trintaDias = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const hoje = hojeLocal();
+  const trintaDias = hojeLocal(new Date(Date.now() - 30 * 86_400_000));
 
   const [modulo, setModulo] = useState<string>(TODOS);
   const [empregadoId, setEmpregadoId] = useState<string>(TODOS);

@@ -6,7 +6,7 @@ import { hojeLocal } from "@/lib/empregados";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, pontosDeAtencao, sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useMovimentacoes, useOcorrencias, type Veiculo } from "@/lib/hooks-gemape";
-import { resumoManutencao } from "@/lib/registros-veiculo";
+import { gruposDaManutencao, resumoManutencao } from "@/lib/registros-veiculo";
 import { useAbastecimentos, useManutencoesVeiculo, useOcorrenciasVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresa } from "@/lib/empresa-context";
@@ -79,7 +79,8 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
         return { chave: m.id, data: m.data_movimentacao.slice(0, 10), km: null, tipo: "Movimentação", servico: `${x.acao_manutencao}${subs}` };
       }),
   ].sort((a, b) => b.data.localeCompare(a.data));
-  const atencao = pontosDeAtencao(manut, nomeAcao);
+  // Registros antigos (um grupo só, sem `grupos`) também contam como manutenção que fez o item.
+  const atencao = pontosDeAtencao(manut.map((m) => ({ id: m.id, data: m.data, km: m.km, grupos: gruposDaManutencao(m) })), nomeAcao);
   // Em demonstração valem as ocorrências da tela nova (decisão 60); fora dela, as da tabela antiga.
   const ocorrenciasDoVeiculo = (MODO_DEMO
     ? ocorrenciasNovas.filter((o) => o.veiculoId === veiculo.id).map((o) => ({
