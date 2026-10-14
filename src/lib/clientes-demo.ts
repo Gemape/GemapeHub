@@ -5,7 +5,8 @@ import { capitalizarCadastro, capitalizarNomePessoa, formatarCnpj, formatarTelef
 
 export type ClienteDados = {
   nome: string;
-  documento: string;
+  cpf: string;
+  cnpj: string;
   endereco: string;
   contato: string;
   telefone: string;
@@ -23,10 +24,6 @@ const CHAVE_SEQUENCIA = "gemape-demo-clientes-sequencia";
 const formatarCodigo = (n: number) => String(n).padStart(5, "0");
 const numeroDoCodigo = (codigo: string | undefined) => Number(/^(\d+)$/.exec(codigo ?? "")?.[1] ?? 0);
 
-export const formatarDocumento = (valor: string) => {
-  const d = somenteDigitos(valor);
-  return d.length === 11 ? formatarCpf(d) : d.length === 14 ? formatarCnpj(d) : valor;
-};
 
 // Dado salvo ilegível nunca é sobrescrito: a lista aparece vazia, mas gravar por cima apagaria o que sobrou.
 function conferirIntegridade(storage: StorageLike): void {
@@ -40,7 +37,12 @@ function conferirIntegridade(storage: StorageLike): void {
 export function listarClientes(storage: StorageLike = localStorage): Cliente[] {
   try {
     const lidos = JSON.parse(storage.getItem(CHAVE) ?? "[]");
-    return Array.isArray(lidos) ? (lidos as Cliente[]) : [];
+    if (!Array.isArray(lidos)) return [];
+    // Cadastros salvos com o campo único "documento" passam para CPF (11 dígitos) ou CNPJ (14 dígitos).
+    return (lidos as (Cliente & { documento?: string })[]).map(({ documento, ...resto }) => {
+      const d = somenteDigitos(documento ?? "");
+      return { ...resto, cpf: resto.cpf ?? (d.length === 11 ? formatarCpf(d) : ""), cnpj: resto.cnpj ?? (d.length === 14 ? formatarCnpj(d) : "") };
+    });
   } catch {
     return [];
   }
@@ -66,14 +68,17 @@ export function salvarCliente(
   const existente = clientes[indice];
   const nome = capitalizarCadastro(valores.nome.trim());
   if (!nome) throw new Error("Informe o nome do cliente.");
-  const documento = valores.documento.trim();
-  const digitosDoc = somenteDigitos(documento);
-  const documentoMantido = !!existente && digitosDoc === somenteDigitos(existente.documento);
-  if (documento && !documentoMantido && !(digitosDoc.length === 11 ? cpfValido(digitosDoc) : validarCnpj(digitosDoc))) {
-    throw new Error("Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.");
+  // CPF e CNPJ são campos separados, ambos opcionais; preenchido, vale só com 11 (CPF) ou 14 (CNPJ) dígitos.
+  const cpf = somenteDigitos(valores.cpf);
+  const cnpj = somenteDigitos(valores.cnpj);
+  if (cpf && cpf !== somenteDigitos(existente?.cpf ?? "")) {
+    if (cpf.length !== 11) throw new Error("O CPF deve ter 11 dígitos.");
+    if (!cpfValido(cpf)) throw new Error("CPF inválido.");
+    if (clientes.some((item) => item.id !== id && somenteDigitos(item.cpf) === cpf)) throw new Error("CPF já cadastrado.");
   }
-  if (documento && !documentoMantido && clientes.some((item) => item.id !== id && somenteDigitos(item.documento) === digitosDoc)) {
-    throw new Error("CPF/CNPJ já cadastrado.");
+  if (cnpj && cnpj !== somenteDigitos(existente?.cnpj ?? "")) {
+    if (cnpj.length !== 14) throw new Error("O CNPJ deve ter 14 dígitos.");
+    if (clientes.some((item) => item.id !== id && somenteDigitos(item.cnpj) === cnpj)) throw new Error("CNPJ já cadastrado.");
   }
   for (const [campo, rotulo] of [["telefone", "Telefone"], ["telefone2", "Telefone 2"]] as const) {
     const t = valores[campo].trim();
@@ -89,7 +94,8 @@ export function salvarCliente(
   const codigo = existente ? existente.codigo : formatarCodigo(Number(storage.getItem(CHAVE_SEQUENCIA)));
   const cliente: Cliente = {
     id, codigo, nome,
-    documento: formatarDocumento(documento),
+    cpf: cpf ? formatarCpf(cpf) : "",
+    cnpj: cnpj ? formatarCnpj(cnpj) : "",
     endereco: capitalizarCadastro(valores.endereco.trim()),
     contato: capitalizarNomePessoa(valores.contato.trim()),
     telefone: formatarTelefone(valores.telefone.trim()),

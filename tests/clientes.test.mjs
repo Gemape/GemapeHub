@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { listarClientes, proximoCodigoCliente, removerCliente, salvarCliente } from "../src/lib/clientes-demo.ts";
-import { mascararCpfOuCnpj } from "../src/lib/mascaras.ts";
+import { mascaraDoCampo } from "../src/lib/mascaras.ts";
 
 const memoria = () => {
   const dados = new Map();
   return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v), dados };
 };
-const vazio = { nome: "", documento: "", endereco: "", contato: "", telefone: "", telefone2: "", email: "", observacao: "" };
+const vazio = { nome: "", cpf: "", cnpj: "", endereco: "", contato: "", telefone: "", telefone2: "", email: "", observacao: "" };
 
 test("só o nome é obrigatório e o código é gerado em 5 dígitos", () => {
   const s = memoria();
@@ -32,15 +32,33 @@ test("código excluído não é reaproveitado e editar não muda o código", () 
   assert.equal(listarClientes(s).length, 1);
 });
 
-test("CPF ou CNPJ: valida quando preenchido, formata e não repete", () => {
+test("CPF (11 dígitos) e CNPJ (14 dígitos) são campos separados, opcionais, validados e sem repetição", () => {
   const s = memoria();
-  assert.throws(() => salvarCliente({ ...vazio, nome: "A", documento: "123.456.789-00" }, s), /CPF.*CNPJ/);
-  assert.throws(() => salvarCliente({ ...vazio, nome: "A", documento: "123" }, s), /CPF.*CNPJ/);
-  const a = salvarCliente({ ...vazio, nome: "A", documento: "52998224725" }, s);
-  assert.equal(a.documento, "529.982.247-25");
-  const b = salvarCliente({ ...vazio, nome: "B", documento: "11222333000181" }, s);
-  assert.equal(b.documento, "11.222.333/0001-81");
-  assert.throws(() => salvarCliente({ ...vazio, nome: "C", documento: "529.982.247-25" }, s), /já cadastrado/);
+  assert.throws(() => salvarCliente({ ...vazio, nome: "A", cpf: "123" }, s), /CPF deve ter 11/);
+  assert.throws(() => salvarCliente({ ...vazio, nome: "A", cpf: "123.456.789-00" }, s), /CPF inválido/);
+  assert.throws(() => salvarCliente({ ...vazio, nome: "A", cnpj: "1122233300018" }, s), /CNPJ deve ter 14/);
+  const a = salvarCliente({ ...vazio, nome: "A", cpf: "52998224725" }, s);
+  assert.equal(a.cpf, "529.982.247-25");
+  assert.equal(a.cnpj, "");
+  const b = salvarCliente({ ...vazio, nome: "B", cnpj: "11222333000181" }, s);
+  assert.equal(b.cnpj, "11.222.333/0001-81");
+  const c = salvarCliente({ ...vazio, nome: "C", cpf: "111.444.777-35", cnpj: "45.997.418/0001-53" }, s);
+  assert.equal(c.cpf, "111.444.777-35");
+  assert.throws(() => salvarCliente({ ...vazio, nome: "D", cpf: "529.982.247-25" }, s), /CPF já cadastrado/);
+  assert.throws(() => salvarCliente({ ...vazio, nome: "D", cnpj: "11222333000181" }, s), /CNPJ já cadastrado/);
+  // editar sem mexer nos documentos não os reconfere
+  assert.equal(salvarCliente({ ...vazio, nome: "A2", cpf: a.cpf, id: a.id }, s).cpf, a.cpf);
+});
+
+test("cadastro antigo com o campo documento passa para CPF ou CNPJ", () => {
+  const s = memoria();
+  s.dados.set("gemape-demo-clientes", JSON.stringify([
+    { id: "1", codigo: "00001", nome: "A", documento: "529.982.247-25" },
+    { id: "2", codigo: "00002", nome: "B", documento: "11.222.333/0001-81" },
+    { id: "3", codigo: "00003", nome: "C", documento: "" },
+  ]));
+  const [a, b, c] = listarClientes(s);
+  assert.deepEqual([a.cpf, a.cnpj, b.cpf, b.cnpj, c.cpf, c.cnpj], ["529.982.247-25", "", "", "11.222.333/0001-81", "", ""]);
 });
 
 test("telefones e e-mail são conferidos só quando preenchidos", () => {
@@ -62,10 +80,9 @@ test("dado ilegível não é sobrescrito", () => {
   assert.equal(s.dados.get("gemape-demo-clientes"), "{quebrado");
 });
 
-test("máscara de CPF/CNPJ muda conforme a digitação", () => {
-  assert.equal(mascararCpfOuCnpj("52998224725"), "529.982.247-25");
-  assert.equal(mascararCpfOuCnpj("11222333000181"), "11.222.333/0001-81");
-  assert.equal(mascararCpfOuCnpj("5299"), "529.9");
+test("máscaras: CPF com 11 dígitos e CNPJ com 14", () => {
+  assert.equal(mascaraDoCampo("cpf")("529982247259999"), "529.982.247-25");
+  assert.equal(mascaraDoCampo("cnpj")("112223330001819999"), "11.222.333/0001-81");
 });
 
 test("Clientes aparece em Parâmetros, abaixo de Fornecedores", () => {

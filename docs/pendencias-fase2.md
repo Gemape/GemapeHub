@@ -71,5 +71,5 @@ Nada abaixo foi alterado: dependem de papéis, RLS ou migrations no Supabase rea
 
 ## Clientes (decisão 164)
 
-- Tabela `clientes` com `empresa_id`: id, codigo (sequencial, único), nome, documento (CPF/CNPJ, único quando preenchido), endereco, contato, telefone, telefone2, email, observacao. Exclusão só pelo Administrador. Hoje o cadastro fica no navegador (`gemape-demo-clientes`).
+- Tabela `clientes` com `empresa_id`: id, codigo (sequencial, único), nome, cpf (11 dígitos) e cnpj (14 dígitos), campos separados e opcionais, cada um único quando preenchido (decisão 165), endereco, contato, telefone, telefone2, email, observacao. Exclusão só pelo Administrador. Hoje o cadastro fica no navegador (`gemape-demo-clientes`).
 - Módulo Viagens (despesas por categoria, fotos de comprovantes, fechamento periódico e relatório de viagem): só depois de o sistema inteiro ser aprovado; vai usar Clientes, Empregados e Veículos.
