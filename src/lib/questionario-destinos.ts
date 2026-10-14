@@ -29,6 +29,10 @@ export function pendencias(e: Estado, tipo: string): Pendencia[] {
   for (const [perguntaId, porOpcao] of Object.entries(destinosDoTipo(e, tipo))) {
     const origem = e.perguntas.find((p) => p.id === perguntaId);
     if (!origem || !ids.includes(perguntaId)) continue;
+    if (!aceitaDestino(origem)) {
+      lista.push({ perguntaId, opcao: Object.keys(porOpcao).join(", "), motivo: "A pergunta não aceita mais ramificação (mais de uma resposta ou sem opções escritas)." });
+      continue;
+    }
     for (const [opcao, destino] of Object.entries(porOpcao)) {
       const alvo = idDoDestino(destino);
       if (!origem.opcoes.includes(opcao)) lista.push({ perguntaId, opcao, motivo: "A opção não existe mais." });

@@ -192,6 +192,19 @@ export function dadosIlegiveis(storage: StorageLike = localStorage): boolean {
   try { conferirIntegridade(storage); return false; } catch { return true; }
 }
 
+// Só entra o que tem o formato tipo -> pergunta -> opção -> texto; dado fora disso é descartado em vez de quebrar a tela.
+function destinosLidos(bruto: unknown): Estado["destinos"] | undefined {
+  const objeto = (x: unknown): x is Record<string, unknown> => !!x && typeof x === "object" && !Array.isArray(x);
+  if (!objeto(bruto)) return undefined;
+  return Object.fromEntries(Object.entries(bruto).filter(([, porPergunta]) => objeto(porPergunta)).map(([tipo, porPergunta]) => [
+    tipo,
+    Object.fromEntries(Object.entries(porPergunta as Record<string, unknown>).filter(([, porOpcao]) => objeto(porOpcao)).map(([id, porOpcao]) => [
+      id,
+      Object.fromEntries(Object.entries(porOpcao as Record<string, unknown>).filter((par): par is [string, string] => typeof par[1] === "string")),
+    ])),
+  ]));
+}
+
 export function lerEstado(storage: StorageLike = localStorage): Estado {
   try {
     const bruto = storage.getItem(CHAVE);
@@ -219,7 +232,7 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
         })) as Record<string, string[]>;
       }
     }
-    const destinos = lido.destinos && typeof lido.destinos === "object" ? (lido.destinos as NonNullable<Estado["destinos"]>) : undefined;
+    const destinos = destinosLidos(lido.destinos);
     return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), litrosAjustado: true, tecnicoAjustado: true };
   } catch {
     return estadoPadrao();
