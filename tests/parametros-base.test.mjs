@@ -5,7 +5,7 @@ import {
   adicionarSubcategoria, renomearSubcategoria, removerSubcategoria, subcategoriasDa,
   adicionarOpcao, renomearOpcao, removerOpcao, moverOpcao, usoDaOpcao,
   autorizar, desautorizar, autorizados,
-  gerarCodigo, salvarRegraCodigo, removerRegraCodigo,
+  gerarCodigo, salvarRegraCodigo, removerRegraCodigo, adicionarRegraCodigo, regrasDaCategoria, regraDoCadastro,
   salvarCodigoFabrica, removerCodigoFabrica, combinaBusca,
   enderecamentoDaCategoria, salvarEnderecamentoCategoria,
 } from '../src/lib/parametros-base.ts';
@@ -222,4 +222,49 @@ test('código do uniforme: sequência UNI independente da de EPI', async () => {
   const { proximoCodigo } = await import('../src/lib/parametros-base.ts');
   const regra = lerParametros(storage()).regrasCodigo.find((r) => r.categoriaId === 'cat-uniformes');
   assert.equal(proximoCodigo(regra, ['UNI-0001', 'EPI-0009']), 'UNI-0002');
+});
+
+test('código do produto: várias siglas na mesma categoria, a primeira é a padrão', () => {
+  const s = storage();
+  const nova = adicionarRegraCodigo('cat-epi', ' luv ', '1', s);
+  assert.deepEqual(nova, { categoriaId: 'cat-epi', sigla: 'LUV', inicial: '0001' });
+  const regras = lerParametros(s).regrasCodigo;
+  assert.deepEqual(regrasDaCategoria(regras, 'cat-epi').map((r) => r.sigla), ['EPI', 'LUV']);
+  assert.equal(regras.length, 5);
+  // Sem escolha (ou sigla que sumiu) vale a padrão; com escolha vale a escolhida.
+  assert.equal(regraDoCadastro(regras, 'cat-epi')?.sigla, 'EPI');
+  assert.equal(regraDoCadastro(regras, 'cat-epi', 'LUV')?.sigla, 'LUV');
+  assert.equal(regraDoCadastro(regras, 'cat-epi', 'XXX')?.sigla, 'EPI');
+  assert.equal(regraDoCadastro([], 'cat-epi'), null);
+  // A sigla é única no sistema, na própria categoria ou em outra.
+  assert.throws(() => adicionarRegraCodigo('cat-epi', 'LUV', '5', s), /já é usada em EPI/);
+  assert.throws(() => adicionarRegraCodigo('cat-uniformes', 'LUV', '5', s), /já é usada em EPI/);
+  assert.throws(() => adicionarRegraCodigo('cat-epi', 'V E', '1', s), /sigla/);
+  assert.equal(lerParametros(s).regrasCodigo.length, 5);
+});
+
+test('código do produto: editar uma regra pela sigla anterior e excluir só a escolhida', () => {
+  const s = storage();
+  adicionarRegraCodigo('cat-epi', 'LUV', '1', s);
+  // Editar a segunda não mexe na padrão.
+  salvarRegraCodigo('cat-epi', 'LUVA', '0200', s, 'LUV');
+  assert.deepEqual(regrasDaCategoria(lerParametros(s).regrasCodigo, 'cat-epi').map((r) => `${r.sigla}:${r.inicial}`), ['EPI:0001', 'LUVA:0200']);
+  // Sem a sigla anterior vale a padrão (como antes).
+  salvarRegraCodigo('cat-epi', 'EPI', '0050', s);
+  assert.equal(regraDoCadastro(lerParametros(s).regrasCodigo, 'cat-epi')?.inicial, '0050');
+  assert.throws(() => salvarRegraCodigo('cat-epi', 'ABC', '1', s, 'NAO'), /não existe mais/);
+  // Excluir uma das duas é permitido; a última de uma categoria de módulo não sai.
+  removerRegraCodigo('cat-epi', s, 'LUVA');
+  assert.deepEqual(regrasDaCategoria(lerParametros(s).regrasCodigo, 'cat-epi').map((r) => r.sigla), ['EPI']);
+  assert.throws(() => removerRegraCodigo('cat-epi', s, 'EPI'), /novos cadastros de EPI ficariam bloqueados/);
+  // Excluir a padrão quando há outra: a outra vira a padrão.
+  adicionarRegraCodigo('cat-epi', 'LUV', '1', s);
+  removerRegraCodigo('cat-epi', s, 'EPI');
+  assert.equal(regraDoCadastro(lerParametros(s).regrasCodigo, 'cat-epi')?.sigla, 'LUV');
+  // Remover a categoria leva todas as regras dela.
+  const maq = adicionarCategoria('Máquinas', s);
+  adicionarRegraCodigo(maq.id, 'MAQ', '1', s);
+  adicionarRegraCodigo(maq.id, 'MQ2', '1', s);
+  removerCategoria(maq.id, s);
+  assert.equal(regrasDaCategoria(lerParametros(s).regrasCodigo, maq.id).length, 0);
 });

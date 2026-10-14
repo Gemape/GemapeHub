@@ -53,9 +53,13 @@ import {
   lerParametros,
   paraSelecao,
   proximoCodigo,
+  regraDoCadastro,
+  regrasDaCategoria,
   removerCodigosFabricaPorIds,
+  siglaDoCodigo,
   type CodigoFabrica,
 } from "@/lib/parametros-base";
+import { SiglaCodigo } from "@/components/modules/SiglaCodigo";
 import {
   nomeSubcategoria,
   resolverSubcategoria,
@@ -139,6 +143,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const [modelo, setModelo] = useState<Item | null>(null);
   const base = editando ?? modelo;
   const [previa, setPrevia] = useState("");
+  // Sigla escolhida para o código novo (só importa quando a categoria tem mais de uma regra em Gerais).
+  const [siglaSel, setSiglaSel] = useState("");
   const [empresaSel, setEmpresaSel] = useState("");
   // Subcategoria escolhida no formulário: define as unidades e os tamanhos de Gerais (decisão 23).
   const [subSel, setSubSel] = useState("");
@@ -164,7 +170,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   const salvar = useSalvar(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
   const excluir = useExcluir(tabela, [tabela, "produtos-gemape", "saidas-por-item"]);
 
-  const regra = parametros.regrasCodigo.find((r) => r.categoriaId === config.categoriaId);
+  const regra = regraDoCadastro(parametros.regrasCodigo, config.categoriaId, siglaSel);
   // Ao editar um produto antigo cuja subcategoria não está em Cadastros > Gerais, ela
   // continua aparecendo para não ser apagada sem querer.
   const subcategoriaAtual = editando
@@ -244,13 +250,32 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       setSubSel("");
       setTamanhosSelecionados([]);
     }
+    // Clonar começa com a mesma sigla do original; senão, a padrão da categoria.
+    const siglaInicial = origem ? siglaDoCodigo(parametros.regrasCodigo, config.categoriaId, origem.codigo_sku) : "";
+    setSiglaSel(siglaInicial);
     setPrevia("");
     setAberto(true);
+    await calcularPrevia(regraDoCadastro(parametros.regrasCodigo, config.categoriaId, siglaInicial));
+  }
+
+  // Só a última resposta vale: abrir outro cadastro ou trocar a sigla descarta a prévia que ainda vinha a caminho.
+  const pedidoPrevia = useRef(0);
+  async function calcularPrevia(r: typeof regra) {
+    const pedido = ++pedidoPrevia.current;
+    if (!r) return;
     try {
-      setPrevia(proximoCodigo(regra, await codigosUsados(tabela)));
+      const codigo = proximoCodigo(r, await codigosUsados(tabela));
+      if (pedido === pedidoPrevia.current) setPrevia(codigo);
     } catch {
-      setPrevia("");
+      if (pedido === pedidoPrevia.current) setPrevia("");
     }
+  }
+
+  // Trocar a sigla no cadastro novo troca também o código mostrado.
+  function escolherSigla(sigla: string) {
+    setSiglaSel(sigla);
+    setPrevia("");
+    void calcularPrevia(regraDoCadastro(parametros.regrasCodigo, config.categoriaId, sigla));
   }
 
   async function enviar(e: React.FormEvent<HTMLFormElement>) {
@@ -561,6 +586,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 value={editando?.codigo_sku ?? (previa || "Gerado ao salvar")}
               />
             </div>
+            {!editando && <SiglaCodigo regras={regrasDaCategoria(parametros.regrasCodigo, config.categoriaId)} valor={siglaSel} onMudar={escolherSigla} />}
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Subcategoria</Label>
               <Select name="categoria" value={subSel} onValueChange={(id) => { setSubSel(id); setTamanhosSelecionados([]); }}>
