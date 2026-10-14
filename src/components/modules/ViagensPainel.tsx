@@ -15,6 +15,7 @@ import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { ID_TECNICO_RESPONSAVEL, habilitadosAtivos, habilitadosDaPergunta, lerEstado, tiposDeDespesa } from "@/lib/questionario-despesas";
+import { lerPrazoDias } from "@/lib/prazo-viagens";
 import { listarRespostas } from "@/lib/respostas-despesas";
 import {
   MESES, dadosDoLancamento, formatarMoeda, formatarPercentual, indicadoresGlobais, periodoAtual, resultadosTecnicos, rotuloPeriodo,
@@ -38,6 +39,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   const tipos = tiposDeDespesa(estado);
   const [tipo, setTipo] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState(periodoAtual);
+  const prazoDias = useMemo(() => lerPrazoDias(), []);
   const [extratoDe, setExtratoDe] = useState<string | null>(null);
   // Relê os lançamentos sempre que volta do formulário, para o que acabou de ser enviado entrar na conta.
   const lista = useMemo(() => listarRespostas(), [tipo]);
@@ -57,8 +59,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
     return <QuestionarioFormulario key={tipo} tipoInicial={tipo} semPerguntaTipo onVoltar={{ rotulo: "Voltar ao painel", aoClicar: () => setTipo(null) }} />;
   }
 
-  const globais = indicadoresGlobais(lista, periodo);
-  const resultados = resultadosTecnicos(lista, periodo, tecnicos);
+  const globais = indicadoresGlobais(lista, periodo, prazoDias);
+  const resultados = resultadosTecnicos(lista, periodo, tecnicos, prazoDias);
   const noPeriodo = globais.quantidade;
 
   return (
@@ -114,7 +116,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             </PopoverContent>
           </Popover>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Indicador titulo="Despesas lançadas no mês" valor={String(globais.quantidade)} />
           <Indicador titulo="Custo total" valor={formatarMoeda(globais.custoTotal)} />
           <Indicador
@@ -122,6 +124,13 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             valor={formatarPercentual(globais.icl)}
             detalhe={globais.noIndice ? `${globais.noIndice - globais.naoConformes} de ${globais.noIndice} lançadas pelo próprio técnico` : "Sem lançamentos no índice neste mês"}
             explicacao={<ExplicacaoIcl />}
+          />
+          <Indicador
+            titulo="Índice de lançamento no prazo"
+            valor={formatarPercentual(globais.prazo)}
+            detalhe={globais.quantidade ? `${globais.noPrazo} de ${globais.quantidade} lançadas até ${prazoDias} ${prazoDias === 1 ? "dia" : "dias"} após a despesa` : "Sem lançamentos neste mês"}
+            explicacao={<ExplicacaoPrazo prazoDias={prazoDias} />}
+            roxo
           />
         </div>
       </section>
@@ -139,11 +148,12 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                 <TableHead className="px-2 text-right sm:px-4"><span className="sm:hidden">Lanç.</span><span className="hidden sm:inline">Lançamentos</span></TableHead>
                 <TableHead className="px-2 text-right sm:px-4">Valor<span className="hidden sm:inline"> total</span></TableHead>
                 <TableHead className="px-2 text-right sm:px-4"><span className="sm:hidden" title="Índice de conformidade de lançamento">ICL</span><span className="hidden sm:inline">Conformidade</span></TableHead>
+                <TableHead className="px-2 text-right text-purple-700 dark:text-purple-300 sm:px-4"><span className="sm:hidden" title="Índice de lançamento no prazo">Prazo</span><span className="hidden sm:inline">No prazo</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {resultados.length === 0 && (
-                <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground">Nenhum técnico habilitado. Cadastre em Parâmetros &gt; Veículos &gt; Questionário de Despesas (pergunta 04).</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Nenhum técnico habilitado. Cadastre em Parâmetros &gt; Veículos &gt; Questionário de Despesas (pergunta 04).</TableCell></TableRow>
               )}
               {resultados.map((r) => (
                 <TableRow key={r.nome}>
@@ -153,6 +163,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                   <TableCell className="px-2 text-right sm:px-4">{r.lancamentos}</TableCell>
                   <TableCell className="whitespace-nowrap px-2 text-right sm:px-4">{formatarMoeda(r.valorTotal)}</TableCell>
                   <TableCell className="px-2 text-right sm:px-4">{formatarPercentual(r.icl)}</TableCell>
+                  <TableCell className="px-2 text-right font-medium text-purple-700 dark:text-purple-300 sm:px-4">{formatarPercentual(r.prazo)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -165,14 +176,14 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   );
 }
 
-function Indicador({ titulo, valor, detalhe, explicacao }: { titulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode }) {
+function Indicador({ titulo, valor, detalhe, explicacao, roxo }: { titulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean }) {
   return (
-    <div className="panel space-y-1 p-4">
+    <div className={`panel space-y-1 p-4 ${roxo ? "border-l-4 border-l-purple-600" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm text-muted-foreground">{titulo}</p>
         {explicacao}
       </div>
-      <p className="text-2xl font-bold">{valor}</p>
+      <p className={`text-2xl font-bold ${roxo ? "text-purple-700 dark:text-purple-300" : ""}`}>{valor}</p>
       {detalhe && <p className="text-xs text-muted-foreground">{detalhe}</p>}
     </div>
   );
@@ -191,6 +202,24 @@ function ExplicacaoIcl() {
         <p>ICL = (despesas lançadas pelo próprio técnico ÷ total de despesas do técnico, técnico + gestor) × 100.</p>
         <p>Exemplo: o técnico teve 10 despesas; 8 ele mesmo lançou e 2 o gestor teve de lançar. ICL = 8 ÷ 10 × 100 = 80%.</p>
         <p className="text-muted-foreground">Conta como lançamento do gestor quando quem lança (pergunta 04) é do PCM ou do Administrativo. Os marcados como “Avulso – técnico não monitorado” ficam fora da conta.</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ExplicacaoPrazo({ prazoDias }: { prazoDias: number }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" aria-label="Como é calculado o índice de lançamento no prazo" className="shrink-0 text-muted-foreground hover:text-primary">
+          <Info className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 space-y-2 text-sm">
+        <p className="font-semibold">Índice de lançamento no prazo</p>
+        <p>Índice = (despesas lançadas dentro do prazo ÷ total de despesas lançadas no período) × 100.</p>
+        <p>Exemplo: 10 despesas no mês; 9 foram lançadas até {prazoDias} {prazoDias === 1 ? "dia" : "dias"} depois da data da despesa. Índice = 9 ÷ 10 × 100 = 90%.</p>
+        <p className="text-muted-foreground">O prazo ({prazoDias} {prazoDias === 1 ? "dia" : "dias"}) se configura em Parâmetros &gt; Viagens. Conta a diferença entre a data da despesa e o dia em que o formulário foi enviado.</p>
       </PopoverContent>
     </Popover>
   );

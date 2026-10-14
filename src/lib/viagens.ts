@@ -3,6 +3,7 @@
 // da pergunta de sistema; o que não foi respondido fica nulo.
 import { ID_HABILITADOS as ID_PERGUNTA_HABILITADOS, ID_TECNICO_RESPONSAVEL } from "./questionario-despesas.ts";
 import { valorNumerico } from "./questionario-respostas.ts";
+import { PRAZO_PADRAO_DIAS } from "./prazo-viagens.ts";
 import type { RespostaRegistrada } from "./respostas-despesas.ts";
 
 export { ID_PERGUNTA_HABILITADOS };
@@ -79,14 +80,27 @@ const dataDoLancamento = (r: RespostaRegistrada): string => dadosDoLancamento(r)
 export const lancamentosDoPeriodo = (lista: readonly RespostaRegistrada[], p: PeriodoMes): RespostaRegistrada[] =>
   lista.filter((r) => dataDoLancamento(r).startsWith(`${p.ano}-${String(p.mes).padStart(2, "0")}-`));
 
+// Dias de calendário entre duas datas "aaaa-mm-dd" (sem depender de fuso).
+export const diasEntre = (de: string, ate: string): number => Math.round((Date.parse(`${ate}T00:00:00Z`) - Date.parse(`${de}T00:00:00Z`)) / 86_400_000);
+
+// Índice de lançamento no prazo (dec 190): o lançamento é registrado até `prazoDias` dias depois da data da despesa.
+// Sem data da despesa, vale o dia do registro; despesa com data futura ao registro não conta como no prazo.
+export function lancadaNoPrazo(r: RespostaRegistrada, prazoDias: number = PRAZO_PADRAO_DIAS): boolean {
+  const atraso = diasEntre(dadosDoLancamento(r).dataDespesa ?? r.data, r.data);
+  return atraso >= 0 && atraso <= prazoDias;
+}
+export const indicePrazo = (noPrazo: number, total: number): number | null => (total > 0 ? (noPrazo / total) * 100 : null);
+
 // Índice de conformidade de lançamento: lançadas pelo técnico / total do técnico (técnico + gestor) x 100; nulo sem lançamentos no índice.
 export const indiceConformidade = (conformes: number, total: number): number | null => (total > 0 ? (conformes / total) * 100 : null);
 export const formatarPercentual = (v: number | null): string => (v === null ? "—" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
 export const formatarMoeda = (v: number): string => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export type IndicadoresGlobais = { quantidade: number; custoTotal: number; naoConformes: number; noIndice: number; icl: number | null };
-export function indicadoresGlobais(lista: readonly RespostaRegistrada[], p: PeriodoMes): IndicadoresGlobais {
-  const dados = lancamentosDoPeriodo(lista, p).map(dadosDoLancamento);
+export type IndicadoresGlobais = { quantidade: number; custoTotal: number; naoConformes: number; noIndice: number; icl: number | null; noPrazo: number; prazo: number | null };
+export function indicadoresGlobais(lista: readonly RespostaRegistrada[], p: PeriodoMes, prazoDias: number = PRAZO_PADRAO_DIAS): IndicadoresGlobais {
+  const lancamentos = lancamentosDoPeriodo(lista, p);
+  const dados = lancamentos.map(dadosDoLancamento);
+  const noPrazo = lancamentos.filter((r) => lancadaNoPrazo(r, prazoDias)).length;
   const noIndice = dados.filter((d) => d.conforme !== null);
   const conformes = noIndice.filter((d) => d.conforme).length;
   return {
@@ -95,21 +109,26 @@ export function indicadoresGlobais(lista: readonly RespostaRegistrada[], p: Peri
     naoConformes: noIndice.length - conformes,
     noIndice: noIndice.length,
     icl: indiceConformidade(conformes, noIndice.length),
+    noPrazo,
+    prazo: indicePrazo(noPrazo, lancamentos.length),
   };
 }
 
-export type ResultadoTecnico = { nome: string; lancamentos: number; valorTotal: number; icl: number | null };
+export type ResultadoTecnico = { nome: string; lancamentos: number; valorTotal: number; icl: number | null; prazo: number | null };
 // Uma linha para cada técnico habilitado, mesmo sem lançamentos no mês.
-export function resultadosTecnicos(lista: readonly RespostaRegistrada[], p: PeriodoMes, tecnicos: readonly string[]): ResultadoTecnico[] {
-  const dados = lancamentosDoPeriodo(lista, p).map(dadosDoLancamento);
+export function resultadosTecnicos(lista: readonly RespostaRegistrada[], p: PeriodoMes, tecnicos: readonly string[], prazoDias: number = PRAZO_PADRAO_DIAS): ResultadoTecnico[] {
+  const lancamentos = lancamentosDoPeriodo(lista, p).map((r) => ({ r, d: dadosDoLancamento(r) }));
+  const dados = lancamentos.map(({ d }) => d);
   return tecnicos.map((nome) => {
     const dele = dados.filter((d) => d.responsavel === nome);
+    const noPrazo = lancamentos.filter(({ r, d }) => d.responsavel === nome && lancadaNoPrazo(r, prazoDias)).length;
     const noIndice = dele.filter((d) => d.conforme !== null);
     return {
       nome,
       lancamentos: dele.length,
       valorTotal: dele.reduce((soma, d) => soma + (d.valor ?? 0), 0),
       icl: indiceConformidade(noIndice.filter((d) => d.conforme).length, noIndice.length),
+      prazo: indicePrazo(noPrazo, dele.length),
     };
   });
 }

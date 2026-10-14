@@ -439,3 +439,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 189: Parâmetros > Veículos > Questionário de Despesas só pré-visualiza (prop somentePrevia em QuestionarioFormulario); envio e respostas registradas só em Viagens.
 
 - 2026-10-14 dec 188: painel de Viagens sem a frase sobre o envio dos comprovantes (ViagensPainel.tsx).
+- 2026-10-14 dec 190: índice de lançamento no prazo (viagens.ts: lancadaNoPrazo, indicePrazo; prazo-viagens.ts) e Parâmetros > Viagens (cadastros/viagens.tsx) com o prazo em dias, padrão 3. Fecha o croqui do módulo Viagens.
