@@ -1,11 +1,11 @@
 // Módulo Viagens (decisão 176): cada resposta registrada do Questionário de Despesas é um lançamento na coleção única de
 // despesas (modo demonstração, no navegador). Os campos que os indicadores e o relatório usam saem das respostas pelo número
 // da pergunta de sistema; o que não foi respondido fica nulo.
-import { ID_TECNICO_RESPONSAVEL } from "./questionario-despesas.ts";
+import { ID_HABILITADOS as ID_PERGUNTA_HABILITADOS, ID_TECNICO_RESPONSAVEL } from "./questionario-despesas.ts";
 import { valorNumerico } from "./questionario-respostas.ts";
 import type { RespostaRegistrada } from "./respostas-despesas.ts";
 
-export const ID_PERGUNTA_HABILITADOS = "q-04";
+export { ID_PERGUNTA_HABILITADOS };
 export const ID_PERGUNTA_CLIENTE = "q-07";
 export const ID_PERGUNTA_DATA = "q-08";
 export const ID_PERGUNTA_DETALHAMENTO = "q-09";
