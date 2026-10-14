@@ -120,3 +120,20 @@ test("construtor e painel mostram a ramificação e a ação requerida", () => {
   assert.match(v, /Ação requerida/);
   assert.match(readFileSync("src/components/parametros/QuestionarioFormulario.tsx", "utf8"), /acaoRequerida/);
 });
+
+test("pergunta que passou a aceitar várias respostas pede ação e para de ramificar", () => {
+  const s = memoria();
+  let e = gravarDestino(estadoPadrao(), T, "q-01", "Dinheiro", "encerrar", s);
+  const p = e.perguntas.find((x) => x.id === "q-01");
+  e = salvarPergunta(e, { ...p, multiplas: true }, s);
+  assert.equal(pendencias(e, T).length, 1);
+  assert.ok(ids(e, respostas({ "q-01": ["Dinheiro"] })).length > 2);
+});
+
+test("destinos salvos com formato quebrado são descartados sem derrubar a leitura", () => {
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...estadoPadrao(), destinos: { [T]: { "q-01": null, "q-02": { A: 1, B: "encerrar" } }, X: "texto" } }));
+  const e = lerEstado(s);
+  assert.deepEqual(e.destinos, { [T]: { "q-02": { B: "encerrar" } } });
+  assert.equal(pendencias(e, T).length, 1);
+});
