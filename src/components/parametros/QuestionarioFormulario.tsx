@@ -324,6 +324,16 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
     return () => { vivo = false; };
   }, [p.fonte, sigla]);
 
+  // Clientes cadastrados em outra aba (link abaixo) aparecem ao voltar para o formulário, sem recarregar.
+  const [, setAtualizacao] = useState(0);
+  useEffect(() => {
+    if (p.fonte !== "clientes") return;
+    const atualizar = () => setAtualizacao((n) => n + 1);
+    window.addEventListener("focus", atualizar);
+    window.addEventListener("storage", atualizar);
+    return () => { window.removeEventListener("focus", atualizar); window.removeEventListener("storage", atualizar); };
+  }, [p.fonte]);
+
   const opcoes = p.fonte === "clientes" ? listarClientes().map((c) => `${c.codigo} - ${c.nome}`) : p.fonte === "municipios" ? filtrarMunicipios(municipios, busca) : p.opcoes;
   const mostradas = opcoes.slice(0, 200);
   const semUf = p.fonte === "municipios" && !sigla;
@@ -337,7 +347,12 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
         <SelectContent>{mostradas.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
       </Select>
       {opcoes.length > mostradas.length && <p className="text-xs text-muted-foreground">Mostrando {mostradas.length} de {opcoes.length}; refine a busca.</p>}
-      {p.fonte === "clientes" && opcoes.length === 0 && <p className="text-xs text-muted-foreground">Nenhum cliente cadastrado em Parâmetros &gt; Clientes.</p>}
+      {p.fonte === "clientes" && (
+        <p className="text-xs text-muted-foreground">
+          {opcoes.length === 0 ? "Nenhum cliente cadastrado em Parâmetros > Clientes. " : "Cliente não está na lista? "}
+          <Link to="/cadastros/clientes" target="_blank" rel="noopener" className="font-medium text-primary underline">Cadastrar cliente</Link> (abre em outra aba; a lista atualiza ao voltar).
+        </p>
+      )}
     </div>
   );
 }
