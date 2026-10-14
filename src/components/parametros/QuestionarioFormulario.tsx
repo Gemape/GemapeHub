@@ -19,6 +19,7 @@ import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
 import {
   ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
 } from "@/lib/questionario-despesas";
+import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { aplicarFormato, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   listarRespostas, registrarResposta, removerResposta, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
@@ -49,6 +50,8 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
   const idsAtivos = useMemo(() => new Set(empregados.filter((e) => empregadoAtivo(e)).map((e) => e.id)), [empregados]);
 
   const tipo = tipoEscolhido(respostas);
+  // Ramificação apontando para pergunta que saiu do questionário: não publica até corrigir (dec 178).
+  const acaoRequerida = !!tipo && tipos.includes(tipo) && !questionarioPublicado(estado, tipo);
   const visiveis = useMemo(() => {
     if (tipo && tipos.includes(tipo)) return perguntasVisiveis(estado, tipo, respostas);
     const inicial = estado.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
@@ -87,7 +90,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
-    if (enviando.current || ilegivel) return;
+    if (enviando.current || ilegivel || acaoRequerida) return;
     const achados = validarRespostas(visiveis, respostas);
     setErros(achados);
     const primeiro = visiveis.find((p) => achados[p.id]);
@@ -156,6 +159,11 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
         </div>
       ) : (
         <form key={chave} onSubmit={enviar} noValidate className="space-y-4">
+          {acaoRequerida && (
+            <p role="alert" className="rounded-md border border-destructive p-3 text-sm text-destructive">
+              Ação requerida: este questionário tem ramificação que aponta para uma pergunta removida e não está publicado. Corrija em Parâmetros, Veículos, Questionário de Despesas.
+            </p>
+          )}
           {obrigatorias.length > 0 && (
             <div className="space-y-1">
               <div role="progressbar" aria-label="Progresso do preenchimento" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progresso} className="h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -191,7 +199,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
           ))}
           {Object.keys(errosVisiveis).length > 0 && <p role="alert" className="text-sm text-destructive">Corrija as perguntas marcadas antes de enviar.</p>}
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={!tipo || ilegivel}>Enviar</Button>
+            <Button type="submit" disabled={!tipo || ilegivel || acaoRequerida}>Enviar</Button>
             <Button type="button" variant="ghost" onClick={preencherDeNovo}>Limpar formulário</Button>
           </div>
         </form>

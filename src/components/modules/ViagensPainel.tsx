@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
+import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { ID_TECNICO_RESPONSAVEL, habilitadosAtivos, habilitadosDaPergunta, lerEstado, tiposDeDespesa } from "@/lib/questionario-despesas";
 import { listarRespostas } from "@/lib/respostas-despesas";
 import {
@@ -64,15 +65,19 @@ export function ViagensPainel() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {tipos.map((t) => {
             const Icone = ICONE_TIPO[t] ?? Receipt;
+            const acaoRequerida = !questionarioPublicado(estado, t);
             return (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTipo(t)}
-                className="panel flex min-h-28 flex-col items-center justify-center gap-2 p-3 text-center text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                disabled={acaoRequerida}
+                title={acaoRequerida ? "Ação requerida: corrija as ramificações em Parâmetros antes de publicar" : undefined}
+                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-28 flex-col items-center justify-center gap-2 p-3 text-center text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
                 <Icone className="h-8 w-8 text-primary" aria-hidden="true" />
                 <span className="break-words">{t}</span>
+                {acaoRequerida && <span className="text-xs font-semibold text-destructive">Ação requerida</span>}
               </button>
             );
           })}
