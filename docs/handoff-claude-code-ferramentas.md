@@ -415,3 +415,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 164: Parâmetros > Clientes (código 5 dígitos, só nome obrigatório, CPF/CNPJ validado, Clonar/Editar/Excluir), menu abaixo de Fornecedores. Módulo Viagens só depois do sistema inteiro aprovado.
 - 2026-10-14 dec 165: Clientes com CPF (11 dígitos) e CNPJ (14 dígitos) em campos separados e opcionais; cadastros antigos migram do campo documento.
 - 2026-10-14 dec 166: Clientes: nome com inicial maiúscula por palavra (padrão de nome do sistema) e e-mail todo em minúsculas (novo modo de campo 'minusculas').
+- 2026-10-14 dec 167: Parâmetros > Veículos > Questionário de Despesas, etapa 1 (construtor de cards por esquema JSON, arrastar, tipos, obrigatória, duplicar/excluir). Faltam lógica se/então e coleta de respostas.

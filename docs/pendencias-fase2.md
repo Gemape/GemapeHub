@@ -73,3 +73,8 @@ Nada abaixo foi alterado: dependem de papéis, RLS ou migrations no Supabase rea
 
 - Tabela `clientes` com `empresa_id`: id, codigo (sequencial, único), nome, cpf (11 dígitos) e cnpj (14 dígitos), campos separados e opcionais, cada um único quando preenchido (decisão 165), endereco, contato, telefone, telefone2, email, observacao. Exclusão só pelo Administrador. Hoje o cadastro fica no navegador (`gemape-demo-clientes`).
 - Módulo Viagens (despesas por categoria, fotos de comprovantes, fechamento periódico e relatório de viagem): só depois de o sistema inteiro ser aprovado; vai usar Clientes, Empregados e Veículos.
+
+## Questionário de Despesas (decisão 167)
+
+- Hoje o esquema fica em `gemape-demo-questionario-despesas` (localStorage). Na Fase 2: tabela de esquema (JSON, com versão e `empresa_id`) separada da tabela de respostas (JSONB), com RLS por empresa e leitura para o Padrão.
+- Falta (etapas 2 e 3, ainda em modo demonstração): lógica condicional se/então, validação por regex e preenchimento com coleta de respostas.
