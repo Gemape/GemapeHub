@@ -2,10 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { ID_TIPO_DESPESA, estadoPadrao, excluirPergunta, gravarQuestionario, gravarRegra, lerEstado, salvarPergunta, questionarioDoTipo } from "../src/lib/questionario-despesas.ts";
+import { ID_TIPO_DESPESA, estadoPadrao as estadoDeFabrica, excluirPergunta, gravarQuestionario, gravarRegra, lerEstado, salvarPergunta, questionarioDoTipo } from "../src/lib/questionario-despesas.ts";
 import {
   aplicarFormato, areaDeQuemLanca, lancadoPorGestor, dimensoesReduzidas, mascaraDecimal2, mascaraInteiro, mascaraMoeda, perguntasVisiveis, validarRespostas, valorNumerico, visivel,
 } from "../src/lib/questionario-respostas.ts";
+
+// Estado de fábrica sem a condição do cartão (dec 182), para os testes que preenchem todas as perguntas.
+const estadoPadrao = () => ({ ...estadoDeFabrica(), regras: {} });
 
 const memoria = () => {
   const dados = new Map();
@@ -79,7 +82,7 @@ test("a condição de uma pergunta oculta não vale e a regra grava e relê do n
   // q-02 oculta => q-04 oculta mesmo com a resposta marcada
   assert.ok(!perguntasVisiveis(e, T, { "q-02": ["Cartão final 0129 – Roberto"] }).some((p) => p.id === "q-04"));
   assert.deepEqual(lerEstado(s).regras, e.regras);
-  assert.deepEqual(lerEstado(memoria()).regras, {});
+  assert.deepEqual(lerEstado(memoria()).regras, estadoDeFabrica().regras);
 });
 
 test("validação: obrigatórias, formatos, horário, data, upload e uma só resposta", () => {
@@ -163,4 +166,18 @@ test("técnico responsável pela despesa só aparece quando quem lança é PCM o
   assert.equal(lancadoPorGestor({ "q-04": ["Bruno (PCM)"] }), true);
   assert.equal(lancadoPorGestor({ "q-04": ["Wagner (Oficina)"] }), false);
   assert.equal(areaDeQuemLanca({}), null);
+});
+
+test("dec 182: Cartões de crédito só aparece com Moedas = Cartão de crédito, e dados salvos antes também ganham a condição", () => {
+  const e = estadoDeFabrica();
+  const aparece = (r) => perguntasVisiveis(e, T, r).some((p) => p.id === "q-02");
+  assert.equal(aparece({}), false);
+  assert.equal(aparece({ "q-01": ["Dinheiro"] }), false);
+  assert.equal(aparece({ "q-01": ["Cartão de crédito"] }), true);
+  assert.equal(visivel(e, "Hospedagem", "q-02", { "q-01": ["Ticket de abastecimento"] }), false);
+  const antigo = estadoDeFabrica();
+  const s = memoria();
+  const { cartaoAjustado: _a, regras: _r, ...semMarca } = antigo;
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...semMarca, regras: {} }));
+  assert.equal(lerEstado(s).regras[T]?.["q-02"]?.valor, "Cartão de crédito");
 });

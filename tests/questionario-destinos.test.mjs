@@ -2,10 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { estadoPadrao, excluirPergunta, gravarQuestionario, lerEstado, questionarioDoTipo, salvarPergunta } from "../src/lib/questionario-despesas.ts";
+import { estadoPadrao as estadoDeFabrica, excluirPergunta, gravarQuestionario, lerEstado, questionarioDoTipo, salvarPergunta } from "../src/lib/questionario-despesas.ts";
 import { conferirOrdem, destinoPergunta, encontrarCiclo, gravarDestino, pendencias, questionarioPublicado } from "../src/lib/questionario-destinos.ts";
 import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 import { registrarResposta } from "../src/lib/respostas-despesas.ts";
+
+// Estado de fábrica sem a condição do cartão (dec 182), para os testes que preenchem todas as perguntas.
+const estadoPadrao = () => ({ ...estadoDeFabrica(), regras: {} });
 
 const memoria = () => {
   const dados = new Map();
