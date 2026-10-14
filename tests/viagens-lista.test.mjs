@@ -112,3 +112,14 @@ test("despesa finalizada em relatório não pode ser excluída; a em aberto pode
   removerResposta(b.id, s);
   assert.deepEqual(listarRespostas(s).map((r) => r.id), [a.id]);
 });
+
+test("despesa lançada por gestor sem técnico responsável fica sem responsável e não vai para relatório", () => {
+  const s = memoria();
+  const completo = lancar(s, { "q-04": ["Paula (PCM)"], "q-14": ["Roberto (Oficina)"], "q-13": "Não conformidade – técnico monitorado não preencheu" }, "Pedágio", 14);
+  // O formulário exige a pergunta 14 para o gestor; um registro antigo sem ela precisa continuar seguro.
+  const r = { ...completo, itens: completo.itens.filter((i) => i.perguntaId !== "q-14") };
+  const [linha] = listaDoPeriodo([r], P, new Map());
+  assert.equal(linha.responsavel, null);
+  assert.equal(linha.tecnico, "Paula");
+  assert.throws(() => registrarRelatorio({ emitente: "Ana", empresa: "GEMAPE", comprovantesPorPagina: 4, supervisor: "", diretor: "", despesas: [{ id: r.id, data: r.data, responsavel: linha.responsavel }] }, s), /técnico só/);
+});
