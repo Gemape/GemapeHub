@@ -33,11 +33,12 @@ const vazia = (r: Resposta | undefined) => r === undefined || (Array.isArray(r) 
 
 // Formulário do Questionário de Despesas, no estilo Google Forms (dec 169): cartão central, perguntas em cartões, obrigatórias
 // com asterisco, Enviar com confirmação e lista de respostas para conferência. Respostas só no navegador (modo demonstração).
-export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { tipoInicial?: string | undefined; onEditar?: ((tipo: string) => void) | undefined; onVoltar?: { rotulo: string; aoClicar: () => void } | undefined }) {
+export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onEditar, onVoltar }: { tipoInicial?: string | undefined; semPerguntaTipo?: boolean | undefined; onEditar?: ((tipo: string) => void) | undefined; onVoltar?: { rotulo: string; aoClicar: () => void } | undefined }) {
   const { isAdmin, canWrite } = useAccess();
   const [estado] = useState(lerEstado);
   const tipos = tiposDeDespesa(estado);
-  const [respostas, setRespostas] = useState<Respostas>(() => (tipoInicial && tipos.includes(tipoInicial) ? { [ID_TIPO_DESPESA]: [tipoInicial] } : {}));
+  const respostasIniciais = (): Respostas => (tipoInicial && tipos.includes(tipoInicial) ? { [ID_TIPO_DESPESA]: [tipoInicial] } : {});
+  const [respostas, setRespostas] = useState<Respostas>(respostasIniciais);
   const [erros, setErros] = useState<Record<string, string>>({});
   const [imagens, setImagens] = useState<Record<string, ImagemReduzida[]>>({});
   const [enviada, setEnviada] = useState<RespostaRegistrada | null>(null);
@@ -61,7 +62,10 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
   }, [estado, tipo, tipos, respostas]);
   // Erro de pergunta que saiu da tela (troca de tipo, condição) não fica pendurado.
   const errosVisiveis = Object.fromEntries(Object.entries(erros).filter(([id]) => visiveis.some((p) => p.id === id)));
-  const obrigatorias = visiveis.filter((p) => p.obrigatoria);
+  // Aberto por um card de Viagens (dec 183): o tipo já vem do card, então a pergunta de tipos de despesa não aparece (a resposta segue valendo).
+  const ocultaTipo = !!semPerguntaTipo && !tipoDesconhecido && tipos.includes(tipo);
+  const escondida = (p: Pergunta) => ocultaTipo && p.id === ID_TIPO_DESPESA;
+  const obrigatorias = visiveis.filter((p) => p.obrigatoria && !escondida(p));
   const respondidas = obrigatorias.filter((p) => !vazia(respostas[p.id])).length;
   const progresso = obrigatorias.length ? Math.round((respondidas / obrigatorias.length) * 100) : 0;
   const habilitadosVisiveis = (p: Pergunta): Habilitado[] => {
@@ -77,7 +81,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
   const pagina = Math.min(paginaPedida, Math.max(paginas.length - 1, 0));
   const paginaAtual = paginas[pagina];
   const ultimaPagina = pagina >= paginas.length - 1;
-  const perguntasDaPagina = paginas.length > 1 && paginaAtual ? paginaAtual.perguntas : visiveis;
+  const perguntasDaPagina = (paginas.length > 1 && paginaAtual ? paginaAtual.perguntas : visiveis).filter((p) => !escondida(p));
 
   // A pergunta que depende da anterior (Município x UF) fica no mesmo cartão dela.
   const grupos = perguntasDaPagina.reduce<Pergunta[][]>((lista, p) => {
@@ -140,7 +144,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
   }
 
   function preencherDeNovo() {
-    setRespostas({});
+    setRespostas(respostasIniciais());
     setErros({});
     setImagens({});
     setEnviada(null);
@@ -157,7 +161,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
     <div className="mx-auto w-full max-w-2xl space-y-4 p-3 sm:p-4">
       <div className={`${cartao} border-t-8 border-t-primary`}>
         <h1 className="text-2xl font-semibold">{tituloDoQuestionario(tipo)}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Escolha o tipo de despesa e responda as perguntas. Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
+        <p className="mt-1 text-sm text-muted-foreground">{ocultaTipo ? "Responda as perguntas." : "Escolha o tipo de despesa e responda as perguntas."} Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
           {onVoltar && <button type="button" className="text-primary underline" onClick={onVoltar.aoClicar}>{onVoltar.rotulo}</button>}
           {canWrite && onEditar && (

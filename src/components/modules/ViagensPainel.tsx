@@ -51,7 +51,7 @@ export function ViagensPainel() {
   }, [lista, periodo.ano]);
 
   if (tipo !== null) {
-    return <QuestionarioFormulario key={tipo} tipoInicial={tipo} onVoltar={{ rotulo: "Voltar ao painel", aoClicar: () => setTipo(null) }} />;
+    return <QuestionarioFormulario key={tipo} tipoInicial={tipo} semPerguntaTipo onVoltar={{ rotulo: "Voltar ao painel", aoClicar: () => setTipo(null) }} />;
   }
 
   const globais = indicadoresGlobais(lista, periodo);
