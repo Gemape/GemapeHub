@@ -34,12 +34,12 @@ const dataIso = (br: string | null): string | null => {
 export function dadosDoLancamento(r: RespostaRegistrada): DadosLancamento {
   const valor = resposta(r, ID_PERGUNTA_VALOR);
   const habilitado = resposta(r, ID_PERGUNTA_HABILITADOS);
-  // O habilitado é guardado como "Nome (Área)".
-  const partes = habilitado ? /^(.*) \(([^()]*)\)$/.exec(habilitado) : null;
+  // O habilitado é guardado como "Nome (Área)"; se mais de um foi marcado, vale o primeiro.
+  const partes = habilitado ? /^(.+?) \(([^()]*)\)/.exec(habilitado) : null;
   return {
     tipo: r.tipo,
     dataDespesa: dataIso(resposta(r, ID_PERGUNTA_DATA)),
-    valor: valor === null || Number.isNaN(valorNumerico(valor)) ? null : valorNumerico(valor),
+    valor: valor !== null && /\d/.test(valor) ? valorNumerico(valor) : null,
     cliente: resposta(r, ID_PERGUNTA_CLIENTE),
     descricao: resposta(r, ID_PERGUNTA_DETALHAMENTO),
     tecnico: partes ? partes[1]!.trim() : habilitado,

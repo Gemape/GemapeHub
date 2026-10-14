@@ -57,3 +57,13 @@ test("o painel mostra um botão por tipo de despesa e abre o formulário daquele
   const rota = readFileSync(new URL("../src/routes/_authenticated/viagens.tsx", import.meta.url), "utf8");
   assert.match(rota, /ViagensPainel/);
 });
+
+test("valor sem algarismos não vira zero e, com mais de um habilitado, vale o primeiro", () => {
+  const d = dadosDoLancamento({ id: "x", tipo: "Pedágio", data: "2026-10-01", hora: "10:00", itens: [
+    { perguntaId: "q-11", titulo: "Valor da despesa", resposta: "sem valor" },
+    { perguntaId: "q-04", titulo: "Habilitados", resposta: "Roberto (Oficina), Eduardo (PCM)" },
+  ] });
+  assert.equal(d.valor, null);
+  assert.equal(d.tecnico, "Roberto");
+  assert.equal(d.tecnicoArea, "Oficina");
+});
