@@ -1,4 +1,4 @@
-import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Receipt, SquareParking, TrafficCone, UtensilsCrossed, Wrench, Boxes, type LucideIcon } from "lucide-react";
+import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Receipt, SquareParking, TrafficCone, Hamburger, Wrench, Boxes, type LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { QuestionarioFormulario } from "@/components/parametros/QuestionarioFormulario";
@@ -19,7 +19,7 @@ import {
 
 // Ícone sugestivo de cada tipo de despesa; tipo novo (cadastrado depois) usa o recibo.
 const ICONE_TIPO: Record<string, LucideIcon> = {
-  "Alimentação": UtensilsCrossed,
+  "Alimentação": Hamburger,
   "Hospedagem": BedDouble,
   "Abastecimento": Fuel,
   "Pedágio": TrafficCone,

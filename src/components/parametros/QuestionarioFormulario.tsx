@@ -18,6 +18,7 @@ import { reduzirImagem, type ImagemReduzida } from "@/lib/imagem-economica";
 import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
 import {
   ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
+  tituloDoQuestionario,
 } from "@/lib/questionario-despesas";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
@@ -155,7 +156,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 p-3 sm:p-4">
       <div className={`${cartao} border-t-8 border-t-primary`}>
-        <h1 className="text-2xl font-semibold">Questionário de Despesas</h1>
+        <h1 className="text-2xl font-semibold">{tituloDoQuestionario(tipo)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">Escolha o tipo de despesa e responda as perguntas. Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
           {onVoltar && <button type="button" className="text-primary underline" onClick={onVoltar.aoClicar}>{onVoltar.rotulo}</button>}
