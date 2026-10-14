@@ -423,3 +423,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 173: Questionário de Despesas em tela única: o menu abre o formulário e quem grava edita o questionário ali mesmo; sem banco de perguntas e sem rota separada.
 - 2026-10-14 dec 174: Questionário de Despesas: opção Outro abre o campo "Descreva o outro" (obrigatório), gravado como "Outro: descrição".
 - 2026-10-14 dec 175: Respostas registradas do Questionário de Despesas mostram as imagens anexadas (miniatura); guardadas no navegador em modo demonstração.
+- 2026-10-14 dec 176: Módulo Viagens etapa 1: item Viagens em Módulos (rota /viagens, submenu Painel), botões por tipo de despesa que abrem o formulário daquele tipo, lançamentos na coleção única (dadosDoLancamento em src/lib/viagens.ts). Plano em /mnt/project-files/viagens/plano-modulo-viagens.md.
