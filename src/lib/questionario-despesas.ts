@@ -66,7 +66,13 @@ export type Estado = {
   questionarios: Record<string, string[]>;
   // Tipo de despesa -> id da pergunta -> condição para ela aparecer naquele questionário.
   regras: Record<string, Record<string, Regra>>;
+  // Marca que "Litros abastecidos" já foi tirado dos tipos que não são Abastecimento (ajuste único dos dados salvos antes).
+  litrosAjustado?: true;
 };
+
+// Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
+export const ID_LITROS = "q-10";
+export const TIPO_ABASTECIMENTO = "Abastecimento";
 
 export const ID_TIPO_DESPESA = "q-03";
 export const ID_UF = "q-05";
@@ -120,7 +126,8 @@ export function estadoPadrao(): Estado {
   const perguntas = perguntasPadrao();
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
-  return { versao: 1, perguntas, questionarios: Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, [...resto]])), regras: {} };
+  const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, resto.filter((id) => id !== ID_LITROS || o === TIPO_ABASTECIMENTO)]));
+  return { versao: 1, perguntas, questionarios, regras: {}, litrosAjustado: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -183,7 +190,11 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     if (bruto === null) return estadoPadrao();
     const lido = JSON.parse(bruto);
     if (!lido || !Array.isArray(lido.perguntas) || typeof lido.questionarios !== "object" || lido.questionarios === null) return estadoPadrao();
-    return { versao: 1, perguntas: lido.perguntas, questionarios: lido.questionarios, regras: lido.regras && typeof lido.regras === "object" ? lido.regras : {} };
+    const regras = lido.regras && typeof lido.regras === "object" ? lido.regras : {};
+    if (lido.litrosAjustado === true) return { versao: 1, perguntas: lido.perguntas, questionarios: lido.questionarios, regras, litrosAjustado: true };
+    // Dado salvo antes do ajuste: Litros abastecidos sai dos tipos que não são Abastecimento (uma vez só).
+    const questionarios = Object.fromEntries(Object.entries(lido.questionarios as Record<string, unknown>).map(([tipo, ids]) => [tipo, Array.isArray(ids) && tipo !== TIPO_ABASTECIMENTO ? ids.filter((id) => id !== ID_LITROS) : ids]));
+    return { versao: 1, perguntas: lido.perguntas, questionarios: questionarios as Record<string, string[]>, regras, litrosAjustado: true };
   } catch {
     return estadoPadrao();
   }
