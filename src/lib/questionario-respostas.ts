@@ -1,6 +1,7 @@
 // Preenchimento do Questionário de Despesas: máscaras, condição se/então e validação das respostas (dec 169).
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
-import { aceitaDestino, destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
+import { inicioDaProximaSecao } from "./questionario-secoes.ts";
+import { DESTINO_PROXIMA_SECAO, aceitaDestino, destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
 import { ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
@@ -97,6 +98,12 @@ export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas)
     lista.push(p);
     const destino = aceitaDestino(p) ? destinos[id]?.[opcaoRespondida(respostas[id]) ?? ""] : undefined;
     if (destino === DESTINO_ENCERRAR) break;
+    if (destino === DESTINO_PROXIMA_SECAO) {
+      const inicio = inicioDaProximaSecao(e, tipo, id);
+      if (inicio === null) break;
+      salto = inicio;
+      continue;
+    }
     const alvo = destino ? idDoDestino(destino) : null;
     if (alvo !== null && todos.includes(alvo) && todos.indexOf(alvo) > todos.indexOf(id)) salto = alvo;
   }
