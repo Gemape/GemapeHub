@@ -1221,43 +1221,91 @@ export function proximoCodigo(
   return gerarCodigo(regra, maior + 1 - inicial);
 }
 
+// Uma categoria pode ter várias regras de código (siglas). A primeira é a padrão: é a usada quando o
+// cadastro não escolhe outra. A sigla é única no sistema inteiro.
+export function regrasDaCategoria(regras: RegraCodigo[], categoriaId: string): RegraCodigo[] {
+  return regras.filter((r) => r.categoriaId === categoriaId);
+}
+
+// Regra do cadastro: a da sigla escolhida; sem escolha (ou sigla que não existe mais), a padrão da categoria.
+export function regraDoCadastro(regras: RegraCodigo[], categoriaId: string, sigla?: string | null): RegraCodigo | null {
+  const doGrupo = regrasDaCategoria(regras, categoriaId);
+  return doGrupo.find((r) => r.sigla === sigla) ?? doGrupo[0] ?? null;
+}
+
+// Sigla do código já gravado (EPI-0007 -> EPI), para o Clonar começar com a mesma sigla da origem.
+export function siglaDoCodigo(regras: RegraCodigo[], categoriaId: string, codigo: string | null | undefined): string {
+  const texto = String(codigo ?? "").trim().toUpperCase();
+  return regrasDaCategoria(regras, categoriaId).find((r) => texto.startsWith(`${r.sigla}-`))?.sigla ?? "";
+}
+
+function validarRegraCodigo(d: ParametrosBase, categoriaId: string, sigla: string, inicial: string, ignorar?: RegraCodigo) {
+  achar(d.categorias, categoriaId, "Categoria");
+  const s = semAcento(sigla).trim().toUpperCase();
+  const n = completarDigitos(inicial.trim());
+  if (!/^[A-Z0-9]{1,6}$/.test(s))
+    throw new Error("A sigla deve ter de 1 a 6 letras ou números, sem espaços.");
+  if (!/^\d{4}$/.test(n) || Number(n) < 1) {
+    throw new Error(
+      "A numeração inicial deve ter até 4 dígitos, só números, maior que zero (ex.: 0001).",
+    );
+  }
+  const outra = d.regrasCodigo.find((r) => r !== ignorar && r.sigla === s);
+  if (outra) {
+    const nome = d.categorias.find((c) => c.id === outra.categoriaId)?.nome ?? "outra categoria";
+    throw new Error(`A sigla ${s} já é usada em ${nome}.`);
+  }
+  return { categoriaId, sigla: s, inicial: n };
+}
+
+// Salva (cria ou edita) a regra de uma categoria. `siglaAnterior` diz qual regra está sendo editada;
+// sem ela, vale a regra padrão da categoria (ou cria a primeira).
 export function salvarRegraCodigo(
+  categoriaId: string,
+  sigla: string,
+  inicial: string,
+  storage = storagePadrao(),
+  siglaAnterior?: string,
+): RegraCodigo {
+  return alterar(storage, (d) => {
+    const doGrupo = regrasDaCategoria(d.regrasCodigo, categoriaId);
+    const alvo = siglaAnterior === undefined ? doGrupo[0] : doGrupo.find((r) => r.sigla === siglaAnterior);
+    if (siglaAnterior !== undefined && !alvo) throw new Error(`A regra ${siglaAnterior} não existe mais.`);
+    const regra = validarRegraCodigo(d, categoriaId, sigla, inicial, alvo);
+    d.regrasCodigo = alvo
+      ? d.regrasCodigo.map((r) => (r === alvo ? regra : r))
+      : [...d.regrasCodigo, regra];
+    return regra;
+  });
+}
+
+// Novo código na categoria: mais uma sigla, sem mexer nas que já existem.
+export function adicionarRegraCodigo(
   categoriaId: string,
   sigla: string,
   inicial: string,
   storage = storagePadrao(),
 ): RegraCodigo {
   return alterar(storage, (d) => {
-    achar(d.categorias, categoriaId, "Categoria");
-    const s = semAcento(sigla).trim().toUpperCase();
-    const n = completarDigitos(inicial.trim());
-    if (!/^[A-Z0-9]{1,6}$/.test(s))
-      throw new Error("A sigla deve ter de 1 a 6 letras ou números, sem espaços.");
-    if (!/^\d{4}$/.test(n) || Number(n) < 1) {
-      throw new Error(
-        "A numeração inicial deve ter até 4 dígitos, só números, maior que zero (ex.: 0001).",
-      );
-    }
-    const outra = d.regrasCodigo.find((r) => r.categoriaId !== categoriaId && r.sigla === s);
-    if (outra) {
-      const nome = d.categorias.find((c) => c.id === outra.categoriaId)?.nome ?? "outra categoria";
-      throw new Error(`A sigla ${s} já é usada em ${nome}.`);
-    }
-    const regra = { categoriaId, sigla: s, inicial: n };
-    d.regrasCodigo = [...d.regrasCodigo.filter((r) => r.categoriaId !== categoriaId), regra];
+    const regra = validarRegraCodigo(d, categoriaId, sigla, inicial);
+    d.regrasCodigo = [...d.regrasCodigo, regra];
     return regra;
   });
 }
 
-export function removerRegraCodigo(categoriaId: string, storage = storagePadrao()): void {
+// Sem `sigla`, tira a regra padrão da categoria (como antes). A última regra de uma categoria de módulo não sai.
+export function removerRegraCodigo(categoriaId: string, storage = storagePadrao(), sigla?: string): void {
   alterar(storage, (d) => {
+    const doGrupo = regrasDaCategoria(d.regrasCodigo, categoriaId);
+    const alvo = sigla === undefined ? doGrupo[0] : doGrupo.find((r) => r.sigla === sigla);
+    if (!alvo) return;
     const modulo = CATEGORIAS_BASE[categoriaId];
-    if (modulo) {
+    if (modulo && doGrupo.length <= 1) {
       throw new Error(
         `Sem esta regra, novos cadastros de ${modulo} ficariam bloqueados. Edite a sigla ou a numeração em vez de excluir.`,
       );
     }
-    d.regrasCodigo = d.regrasCodigo.filter((r) => r.categoriaId !== categoriaId);
+    d.regrasCodigo = d.regrasCodigo.filter((r) => r !== alvo);
   });
 }
 
