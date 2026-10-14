@@ -32,6 +32,7 @@ import {
   Archive,
   Hash,
   Truck,
+  Handshake,
   MapPin,
   Tags,
   Ruler,
@@ -99,6 +100,7 @@ const grupos = [
       { titulo: "Empresas", url: "/empresas", icone: Building2 },
       { titulo: "Empregados", url: "/empregados", icone: Users },
       { titulo: "Fornecedores", url: "/cadastros/fornecedores", icone: Truck },
+      { titulo: "Clientes", url: "/cadastros/clientes", icone: Handshake },
     ],
   },
 ] as const;
