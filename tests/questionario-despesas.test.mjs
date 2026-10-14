@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 
 import {
   ID_TIPO_DESPESA, clonarPergunta, estadoPadrao, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId, novaPergunta,
-  perguntasPadrao, proximoCodigoPergunta, questionarioDoTipo, regraArquivos, salvarPergunta, tiposDeDespesa, validarPergunta,
+  perguntasPadrao, proximoCodigoPergunta, questionarioDoTipo, regraArquivos, salvarPergunta, tiposDeDespesa, tiposRemovidos, validarPergunta,
+  dadosIlegiveis,
 } from "../src/lib/questionario-despesas.ts";
 import { filtrarMunicipios, municipiosDaUf } from "../src/lib/municipios.ts";
 
@@ -126,6 +127,55 @@ test("municípios por UF vêm da lista do IBGE e a busca ignora acento e maiúsc
   assert.ok((await municipiosDaUf("sp")).includes("São Paulo"));
   assert.deepEqual(filtrarMunicipios(await municipiosDaUf("SP"), "sao jose do rio").slice(0, 2), ["São José do Rio Pardo", "São José do Rio Preto"]);
   assert.equal(filtrarMunicipios(["A", "B"], "").length, 2);
+});
+
+test("renomear um tipo de despesa leva o questionário dele; remover avisa e apaga só o removido", () => {
+  const s = memoria();
+  let e = gravarQuestionario(estadoPadrao(), "Pedágio", ["q-03", "q-08", "q-01"], s);
+  const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
+  e = salvarPergunta(e, { ...q3, opcoes: q3.opcoes.map((o) => (o === "Pedágio" ? "Pedágio (ticket)" : o)) }, s);
+  assert.deepEqual(questionarioDoTipo(e, "Pedágio (ticket)"), [ID_TIPO_DESPESA, "q-08", "q-01"]);
+  assert.deepEqual(tiposRemovidos(e, tiposDeDespesa(e).map((o) => o.toUpperCase())), []);
+  const menos = tiposDeDespesa(e).filter((o) => o !== "Hospedagem");
+  assert.deepEqual(tiposRemovidos(e, menos), ["Hospedagem"]);
+});
+
+test("a marca de sistema não se perde ao salvar e a pergunta 3 não é excluída", () => {
+  const s = memoria();
+  const e = estadoPadrao();
+  const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
+  const g = salvarPergunta(e, { ...q3, sistema: false }, s);
+  assert.equal(g.perguntas.find((p) => p.id === ID_TIPO_DESPESA).sistema, true);
+  assert.throws(() => excluirPergunta({ ...g, perguntas: g.perguntas.map((p) => ({ ...p, sistema: false })) }, ID_TIPO_DESPESA, s), /não pode ser excluída/);
+});
+
+test("não se exclui a pergunta de que outra depende (UF e município)", () => {
+  assert.throws(() => excluirPergunta(estadoPadrao(), "q-05", memoria()), /depende desta/);
+  const sem = excluirPergunta(excluirPergunta(estadoPadrao(), "q-06", memoria()), "q-05", memoria());
+  assert.ok(!sem.perguntas.some((p) => p.id === "q-05"));
+});
+
+test("número repetido por formulário antigo passa para o próximo livre e ids não colidem", () => {
+  const s = memoria();
+  let e = estadoPadrao();
+  const aberta = { ...novaPergunta("data", "14"), titulo: "Da aba" };
+  const clone = { ...clonarPergunta(e, "q-02", s), titulo: "Clone" };
+  e = salvarPergunta(e, clone, s);
+  e = salvarPergunta(e, aberta, s);
+  const codigos = e.perguntas.map((p) => p.codigo);
+  assert.equal(new Set(codigos).size, codigos.length);
+  assert.equal(e.perguntas.at(-1).codigo, "15");
+  assert.notEqual(novaPergunta("data", "14").id, novaPergunta("data", "14").id);
+});
+
+test("lista com opções vazias não passa mesmo com dependência; questionarios nulo conta como ilegível", () => {
+  const e = estadoPadrao();
+  assert.match(validarPergunta({ ...novaPergunta("lista", "14"), titulo: "X", dependeDe: "q-05" }, e.perguntas)[0], /opções/);
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ perguntas: perguntasPadrao(), questionarios: null }));
+  assert.equal(dadosIlegiveis(s), true);
+  assert.throws(() => salvarPergunta(e, { ...novaPergunta("data", "14"), titulo: "Nova" }, s), /ilegíveis/);
+  assert.equal(dadosIlegiveis(memoria()), false);
 });
 
 test("o submenu fica em Parâmetros > Veículos e a rota existe", () => {

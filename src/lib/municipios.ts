@@ -3,7 +3,10 @@
 let cache: Promise<Record<string, string[]>> | null = null;
 
 export function carregarMunicipios(): Promise<Record<string, string[]>> {
-  cache ??= import("./dados/municipios-ibge.json", { with: { type: "json" } }).then((m) => m.default as Record<string, string[]>);
+  cache ??= import("./dados/municipios-ibge.json", { with: { type: "json" } })
+    .then((m) => m.default as Record<string, string[]>)
+    // Falha de carregamento não fica guardada: a próxima chamada tenta de novo.
+    .catch((erro) => { cache = null; throw erro; });
   return cache;
 }
 

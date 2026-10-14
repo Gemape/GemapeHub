@@ -52,7 +52,7 @@ export function PerguntaPrevia({ pergunta, habilitadosVisiveis }: { pergunta: Pe
   if (tipo === "hora") return <div className={campo}><span>hh:mm</span><Clock className="h-4 w-4" /></div>;
   if (tipo === "paragrafo") {
     return (
-      <div className="space-y-2 pt-1" aria-label="Texto de resposta longa">
+      <div className="space-y-2 pt-1">
         <p className="text-sm text-muted-foreground">Texto de resposta longa</p>
         {[0, 1, 2].map((i) => <div key={i} className="border-b border-dashed" />)}
       </div>

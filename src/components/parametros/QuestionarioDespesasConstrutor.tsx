@@ -1,4 +1,4 @@
-import { GripHorizontal, Pencil, Plus, Trash2, Copy } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, GripHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -15,8 +15,8 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  ID_TIPO_DESPESA, TIPOS_PERGUNTA, clonarPergunta, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId,
-  proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, type Estado, type Pergunta,
+  ID_TIPO_DESPESA, TIPOS_PERGUNTA, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId,
+  proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta,
 } from "@/lib/questionario-despesas";
 
 // Parâmetros > Veículos > Questionário de Despesas: um questionário para cada tipo de despesa, montado com perguntas do banco.
@@ -29,7 +29,7 @@ export function QuestionarioDespesasConstrutor() {
   const [ativo, setAtivo] = useState<string | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [dialogo, setDialogo] = useState<{ modo: ModoPergunta; inicial: Pergunta | null } | null>(null);
-  const { data: empregados = [] } = useEmpregados(TODAS);
+  const { data: empregados = [], isSuccess: empregadosLidos } = useEmpregados(TODAS);
   const idsAtivos = useMemo(() => new Set(empregados.filter((e) => empregadoAtivo(e)).map((e) => e.id)), [empregados]);
 
   const ids = questionarioDoTipo(estado, tipoAtual);
@@ -48,6 +48,16 @@ export function QuestionarioDespesasConstrutor() {
   }
   const gravarIds = (novos: string[]) => executar(() => gravarQuestionario(estado, tipoAtual, novos));
 
+  // Sobe ou desce uma pergunta (alternativa ao arrastar, para quem usa teclado); a de tipos de despesa fica de fora.
+  const trocar = (lista: string[], id: string, passo: -1 | 1): string[] => {
+    const de = lista.indexOf(id);
+    const para = de + passo;
+    if (de < 0 || para < 1 || para >= lista.length) return lista;
+    const copia = [...lista];
+    [copia[de], copia[para]] = [copia[para] as string, copia[de] as string];
+    return copia.filter((x) => x !== ID_TIPO_DESPESA);
+  };
+
   function excluir(p: Pergunta) {
     const usos = Object.values(estado.questionarios).filter((l) => l.includes(p.id)).length;
     if (!confirm(`Excluir a pergunta ${p.codigo} (${p.titulo})?${usos ? ` Ela sai de ${usos} questionário${usos === 1 ? "" : "s"}.` : ""}`)) return;
@@ -62,6 +72,12 @@ export function QuestionarioDespesasConstrutor() {
           <Button onClick={() => setDialogo({ modo: "novo", inicial: null })}><Plus className="mr-1 h-4 w-4" />Cadastrar pergunta</Button>
         )}
       </div>
+
+      {dadosIlegiveis() && (
+        <p role="alert" className="rounded-md border border-destructive p-3 text-sm text-destructive">
+          As perguntas salvas neste navegador estão ilegíveis. A tela mostra o padrão e nada será gravado por cima; limpe os dados do site para recomeçar.
+        </p>
+      )}
 
       <div className="space-y-2 rounded-lg border-t-8 border-primary bg-white p-4 shadow-sm dark:bg-card">
         <Label htmlFor="tipo-despesa">Questionário do tipo de despesa</Label>
@@ -93,14 +109,17 @@ export function QuestionarioDespesasConstrutor() {
             {canWrite && !fixa && (
               <div
                 draggable
+                role="img"
                 aria-label="Arrastar para reordenar"
                 title="Arrastar para reordenar"
                 onDragStart={(e) => {
                   const cartao = e.currentTarget.closest("[data-cartao]");
                   if (cartao) e.dataTransfer.setDragImage(cartao, 16, 16);
                   e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", id);
                   setArrastando(id);
                 }}
+                onDragEnd={() => setArrastando(null)}
                 className="mx-auto mb-2 flex w-12 cursor-grab justify-center text-muted-foreground"
               ><GripHorizontal className="h-4 w-4" /></div>
             )}
@@ -111,12 +130,18 @@ export function QuestionarioDespesasConstrutor() {
               <p className="text-xs text-muted-foreground">
                 {TIPOS_PERGUNTA.find((t) => t.valor === p.tipo)?.rotulo}{fixa ? " · pergunta inicial de todo questionário" : ""}
               </p>
-              <PerguntaPrevia pergunta={p} habilitadosVisiveis={p.habilitados ? habilitadosAtivos(p.habilitados, idsAtivos) : undefined} />
+              <PerguntaPrevia pergunta={p} habilitadosVisiveis={p.habilitados && empregadosLidos ? habilitadosAtivos(p.habilitados, idsAtivos) : undefined} />
             </div>
             {aberto && canWrite && (
               <div className="mt-4 flex items-center justify-end gap-1 border-t pt-3">
                 <Button variant="ghost" size="icon" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" aria-label="Clonar pergunta" onClick={() => setDialogo({ modo: "clonar", inicial: clonarPergunta(estado, p.id) })}><Copy className="h-4 w-4" /></Button>
+                {!fixa && (
+                  <>
+                    <Button variant="ghost" size="icon" aria-label="Mover para cima" disabled={ids.indexOf(id) <= 1} onClick={() => gravarIds(trocar(ids, id, -1))}><ArrowUp className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" aria-label="Mover para baixo" disabled={ids.indexOf(id) === ids.length - 1} onClick={() => gravarIds(trocar(ids, id, 1))}><ArrowDown className="h-4 w-4" /></Button>
+                  </>
+                )}
                 {!fixa && (
                   <Button variant="ghost" size="icon" aria-label="Remover do questionário" title="Remover deste questionário" onClick={() => gravarIds(ids.filter((x) => x !== id && x !== ID_TIPO_DESPESA))}><Trash2 className="h-4 w-4" /></Button>
                 )}
@@ -174,6 +199,8 @@ export function QuestionarioDespesasConstrutor() {
         codigoNovo={proximoCodigoPergunta(estado)}
         onFechar={() => setDialogo(null)}
         onSalvar={(p) => {
+          const perdem = p.id === ID_TIPO_DESPESA ? tiposRemovidos(estado, p.opcoes.map((o) => o.trim())) : [];
+          if (perdem.length && !confirm(`Remover ${perdem.length === 1 ? "o tipo" : "os tipos"} ${perdem.join(", ")} apaga ${perdem.length === 1 ? "o questionário dele" : "os questionários deles"}. Continuar?`)) return;
           if (executar(() => salvarPergunta(estado, p), "Pergunta salva.")) setDialogo(null);
         }}
       />

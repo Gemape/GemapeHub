@@ -11,7 +11,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  AREAS_VIAGEM, FORMATOS_CURTA, TIPOS_PERGUNTA, novaPergunta, regraArquivos, validarPergunta,
+  AREAS_VIAGEM, FORMATOS_CURTA, TIPOS_PERGUNTA, habilitadosAtivos, novaPergunta, regraArquivos, validarPergunta,
   type AreaViagem, type Estado, type FormatoCurta, type Pergunta, type TipoPergunta,
 } from "@/lib/questionario-despesas";
 
@@ -101,7 +101,7 @@ function CamposDoTipo({ pergunta, onMudar }: { pergunta: Pergunta; onMudar: (p: 
   if (pergunta.tipo === "curta") {
     return (
       <div className="space-y-1">
-        <Label>Formato aceito na resposta</Label>
+        <p className="text-sm font-medium">Formato aceito na resposta</p>
         <Select value={pergunta.formato} onValueChange={(v) => onMudar({ ...pergunta, formato: v as FormatoCurta })}>
           <SelectTrigger aria-label="Formato aceito"><SelectValue /></SelectTrigger>
           <SelectContent>{FORMATOS_CURTA.map((f) => <SelectItem key={f.valor} value={f.valor}>{f.rotulo}</SelectItem>)}</SelectContent>
@@ -140,7 +140,7 @@ function Opcoes({ pergunta, onMudar }: { pergunta: Pergunta; onMudar: (p: Pergun
       )}
       {!deClientes && (
         <div className="space-y-2">
-          <Label>Opções de resposta</Label>
+          <p className="text-sm font-medium">Opções de resposta</p>
           {pergunta.opcoes.map((opcao, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className="w-6 text-center text-muted-foreground">{pergunta.tipo === "lista" ? `${i + 1}.` : pergunta.tipo === "multipla" ? "○" : "☐"}</span>
@@ -165,8 +165,10 @@ function Opcoes({ pergunta, onMudar }: { pergunta: Pergunta; onMudar: (p: Pergun
 
 // Empregados habilitados ao questionário de viagem, cada um com a sua área. Quem fica inativo no cadastro sai da lista.
 function Habilitados({ pergunta, onMudar }: { pergunta: Pergunta; onMudar: (p: Pergunta) => void }) {
-  const lista = pergunta.habilitados ?? [];
-  const { data: empregados = [] } = useEmpregados(TODAS);
+  const { data: empregados = [], isSuccess } = useEmpregados(TODAS);
+  // Empregado inativo sai da lista (só depois de o cadastro carregar, para não esconder todos enquanto isso).
+  const idsAtivos = new Set(empregados.filter((e) => empregadoAtivo(e)).map((e) => e.id));
+  const lista = isSuccess ? habilitadosAtivos(pergunta.habilitados ?? [], idsAtivos) : (pergunta.habilitados ?? []);
   const [busca, setBusca] = useState("");
   const jaIncluidos = new Set(lista.map((h) => h.empregadoId));
   const termo = busca.trim().toLocaleLowerCase("pt-BR");
@@ -188,7 +190,7 @@ function Habilitados({ pergunta, onMudar }: { pergunta: Pergunta; onMudar: (p: P
         {termo && achados.length === 0 && <p className="text-xs text-muted-foreground">Nenhum empregado ativo encontrado.</p>}
       </div>
       <div className="space-y-2">
-        <Label>Habilitados e área</Label>
+        <p className="text-sm font-medium">Habilitados e área</p>
         {lista.length === 0 && <p className="text-sm text-muted-foreground">Nenhum empregado habilitado.</p>}
         {lista.map((h, i) => (
           <div key={`${h.empregadoId ?? "sem"}-${h.nome}`} className="flex items-center gap-2">

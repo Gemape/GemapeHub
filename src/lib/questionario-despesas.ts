@@ -70,6 +70,8 @@ type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-questionario-despesas";
 const CHAVE_SEQUENCIA = "gemape-demo-questionario-despesas-sequencia";
 const formatarCodigo = (n: number) => String(n).padStart(2, "0");
+// Id único mesmo com duas perguntas criadas no mesmo instante.
+const novoId = (codigo: string) => `q-${codigo}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 export const UFS: readonly string[] = [
   "Acre - AC", "Alagoas - AL", "Amapá - AP", "Amazonas - AM", "Bahia - BA", "Ceará - CE", "Distrito Federal - DF", "Espírito Santo - ES",
@@ -129,7 +131,7 @@ export const regraArquivos = (p: Pergunta): { minimo: number; maximo: number } =
 
 export function novaPergunta(tipo: TipoPergunta, codigo: string): Pergunta {
   return {
-    id: `q-${codigo}-${Date.now().toString(36)}`, codigo, tipo, titulo: "", obrigatoria: true,
+    id: novoId(codigo), codigo, tipo, titulo: "", obrigatoria: true,
     opcoes: tipo === "multipla" || tipo === "lista" || tipo === "caixas" ? [""] : [], fonte: "propria", multiplas: false, formato: "livre",
     dependeDe: null, habilitados: null, sistema: false,
   };
@@ -148,7 +150,7 @@ export function validarPergunta(p: Pergunta, outras: Pergunta[]): string[] {
   if (!p.titulo.trim()) erros.push("Informe o título da pergunta.");
   const repetida = outras.some((o) => o.id !== p.id && o.titulo.trim().toLocaleLowerCase("pt-BR") === p.titulo.trim().toLocaleLowerCase("pt-BR"));
   if (p.titulo.trim() && repetida) erros.push("Já existe uma pergunta com esse título.");
-  if (TIPOS_COM_OPCOES.includes(p.tipo) && p.fonte === "propria" && !p.habilitados && p.dependeDe === null) {
+  if (TIPOS_COM_OPCOES.includes(p.tipo) && p.fonte === "propria" && !p.habilitados) {
     const opcoes = p.opcoes.map((o) => o.trim());
     if (opcoes.length === 0 || opcoes.some((o) => !o)) erros.push("Preencha todas as opções de resposta.");
     else if (new Set(opcoes.map((o) => o.toLocaleLowerCase("pt-BR"))).size !== opcoes.length) erros.push("Há opções de resposta repetidas.");
@@ -161,8 +163,13 @@ function conferirIntegridade(storage: StorageLike): void {
   const bruto = storage.getItem(CHAVE);
   if (bruto === null) return;
   let ok = false;
-  try { const lido = JSON.parse(bruto); ok = !!lido && Array.isArray(lido.perguntas) && typeof lido.questionarios === "object"; } catch { ok = false; }
+  try { const lido = JSON.parse(bruto); ok = !!lido && Array.isArray(lido.perguntas) && !!lido.questionarios && typeof lido.questionarios === "object"; } catch { ok = false; }
   if (!ok) throw new Error("As perguntas salvas neste navegador estão ilegíveis; nada foi alterado.");
+}
+
+// Verdadeiro quando há dado salvo que não dá para ler (a tela mostra o padrão, mas nada é sobrescrito).
+export function dadosIlegiveis(storage: StorageLike = localStorage): boolean {
+  try { conferirIntegridade(storage); return false; } catch { return true; }
 }
 
 export function lerEstado(storage: StorageLike = localStorage): Estado {
@@ -192,14 +199,29 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
   };
   const erros = validarPergunta(limpa, e.perguntas);
   if (erros.length) throw new Error(erros[0]);
-  const existe = e.perguntas.some((p) => p.id === limpa.id);
-  const perguntas = existe ? e.perguntas.map((p) => (p.id === limpa.id ? limpa : p)) : [...e.perguntas, limpa];
+  const atual = e.perguntas.find((p) => p.id === limpa.id);
+  // A marca de sistema não vem do formulário; e um número já usado (formulário aberto há tempo) passa para o próximo livre.
+  const gravar: Pergunta = atual
+    ? { ...limpa, sistema: atual.sistema, codigo: atual.codigo }
+    : { ...limpa, sistema: false, codigo: e.perguntas.some((p) => p.codigo === limpa.codigo) ? proximoCodigoPergunta(e, storage) : limpa.codigo };
+  const perguntas = atual ? e.perguntas.map((p) => (p.id === gravar.id ? gravar : p)) : [...e.perguntas, gravar];
   let questionarios = e.questionarios;
-  if (limpa.id === ID_TIPO_DESPESA) {
+  if (gravar.id === ID_TIPO_DESPESA) {
     const padrao = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
-    questionarios = Object.fromEntries(limpa.opcoes.map((o) => [o, e.questionarios[o] ?? padrao]));
+    const antigas = tiposDeDespesa(e);
+    // Mesma quantidade de opções: o que mudou de nome é o mesmo tipo (ele leva o questionário junto).
+    const renomeado = antigas.length === gravar.opcoes.length;
+    questionarios = Object.fromEntries(gravar.opcoes.map((o, i) => [o, e.questionarios[o] ?? (renomeado ? e.questionarios[antigas[i] ?? ""] : undefined) ?? padrao]));
   }
   return gravarEstado({ ...e, perguntas, questionarios }, storage);
+}
+
+// Tipos de despesa que perdem o questionário se a pergunta 3 for salva com estas opções (removidos, não renomeados).
+export function tiposRemovidos(e: Estado, opcoes: string[]): string[] {
+  const antigas = tiposDeDespesa(e);
+  if (antigas.length === opcoes.length) return [];
+  const novas = new Set(opcoes.map((o) => o.trim()));
+  return antigas.filter((t) => !novas.has(t));
 }
 
 // Clonar copia todos os campos (dec 138) com código e título novos.
@@ -208,7 +230,7 @@ export function clonarPergunta(e: Estado, id: string, storage: StorageLike = loc
   if (!origem) throw new Error("Pergunta não encontrada.");
   const codigo = proximoCodigoPergunta(e, storage);
   return {
-    ...origem, id: `q-${codigo}-${Date.now().toString(36)}`, codigo, sistema: false, titulo: `${origem.titulo} (cópia)`,
+    ...origem, id: novoId(codigo), codigo, sistema: false, titulo: `${origem.titulo} (cópia)`,
     opcoes: [...origem.opcoes], habilitados: origem.habilitados ? origem.habilitados.map((h) => ({ ...h })) : null,
   };
 }
@@ -216,7 +238,9 @@ export function clonarPergunta(e: Estado, id: string, storage: StorageLike = loc
 export function excluirPergunta(e: Estado, id: string, storage: StorageLike = localStorage): Estado {
   const alvo = e.perguntas.find((p) => p.id === id);
   if (!alvo) return e;
-  if (alvo.sistema) throw new Error("Esta pergunta abre todos os questionários e não pode ser excluída.");
+  if (alvo.sistema || id === ID_TIPO_DESPESA) throw new Error("Esta pergunta abre todos os questionários e não pode ser excluída.");
+  const dependente = e.perguntas.find((p) => p.dependeDe === id);
+  if (dependente) throw new Error(`A pergunta ${dependente.codigo} (${dependente.titulo}) depende desta; exclua-a primeiro.`);
   const questionarios = Object.fromEntries(Object.entries(e.questionarios).map(([t, ids]) => [t, ids.filter((x) => x !== id)]));
   return gravarEstado({ ...e, perguntas: e.perguntas.filter((p) => p.id !== id), questionarios }, storage);
 }
