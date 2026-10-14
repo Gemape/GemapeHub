@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  formatarDocumento, listarClientes, proximoCodigoCliente, removerCliente, salvarCliente,
+  listarClientes, proximoCodigoCliente, removerCliente, salvarCliente,
   type Cliente, type ClienteDados,
 } from "@/lib/clientes-demo";
 import { capitalizarNomePessoa, capitalizarTexto, formatarTelefone } from "@/lib/formatacao-cadastral";
@@ -48,7 +48,8 @@ function PaginaClientes() {
     const texto = (nome: string) => String(formulario.get(nome) ?? "").trim();
     const valores: ClienteDados = {
       nome: capitalizarTexto(texto("nome")),
-      documento: texto("documento"),
+      cpf: texto("cpf"),
+      cnpj: texto("cnpj"),
       endereco: capitalizarTexto(texto("endereco")),
       contato: capitalizarNomePessoa(texto("contato")),
       telefone: texto("telefone"),
@@ -95,15 +96,16 @@ function PaginaClientes() {
     <div className="panel overflow-x-auto">
       <Table>
         <TableHeader><TableRow>
-          <TableHead>Código</TableHead><TableHead>Nome</TableHead><TableHead>CPF/CNPJ</TableHead>
+          <TableHead>Código</TableHead><TableHead>Nome</TableHead><TableHead>CPF</TableHead><TableHead>CNPJ</TableHead>
           <TableHead>Contato</TableHead><TableHead>Telefone</TableHead><TableHead />
         </TableRow></TableHeader>
         <TableBody>
-          {clientes.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum cliente cadastrado.</TableCell></TableRow> :
+          {clientes.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Nenhum cliente cadastrado.</TableCell></TableRow> :
             clientes.map((cliente) => <TableRow key={cliente.id}>
               <TableCell className="font-mono text-xs">{cliente.codigo}</TableCell>
               <TableCell className="font-medium">{cliente.nome}</TableCell>
-              <TableCell>{cliente.documento ? formatarDocumento(cliente.documento) : "—"}</TableCell>
+              <TableCell>{cliente.cpf || "—"}</TableCell>
+              <TableCell>{cliente.cnpj || "—"}</TableCell>
               <TableCell>{cliente.contato || "—"}</TableCell>
               <TableCell>{formatarTelefone(cliente.telefone) || "—"}</TableCell>
               <TableCell className="whitespace-nowrap text-right">
@@ -124,8 +126,9 @@ function PaginaClientes() {
           <div className="space-y-1.5"><Label htmlFor="codigo">Código do cliente</Label><Input id="codigo" readOnly tabIndex={-1} className="bg-muted font-mono" value={codigoPrevisto} /><p className="text-xs text-muted-foreground">Gerado automaticamente.</p></div>
           <div className="hidden sm:block" />
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="nome">Nome do cliente</Label><Input id="nome" name="nome" capitalizar="texto" required defaultValue={base?.nome ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="documento">CNPJ ou CPF</Label><Input id="documento" name="documento" inputMode="numeric" onInput={aoDigitarMascarado("documento")} defaultValue={base ? formatarDocumento(base.documento) : ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="contato">Contato</Label><Input id="contato" name="contato" capitalizar="nome" defaultValue={base?.contato ?? ""} /></div>
+          <div className="space-y-1.5"><Label htmlFor="cpf">CPF</Label><Input id="cpf" name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" onInput={aoDigitarMascarado("cpf")} defaultValue={base?.cpf ?? ""} /></div>
+          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" maxLength={18} placeholder="00.000.000/0000-00" onInput={aoDigitarMascarado("cnpj")} defaultValue={base?.cnpj ?? ""} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="contato">Contato</Label><Input id="contato" name="contato" capitalizar="nome" defaultValue={base?.contato ?? ""} /></div>
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="endereco">Endereço</Label><Input id="endereco" name="endereco" capitalizar="texto" defaultValue={base?.endereco ?? ""} /></div>
           <div className="space-y-1.5"><Label htmlFor="telefone">Telefone</Label><Input id="telefone" name="telefone" inputMode="tel" onInput={aoDigitarMascarado("telefone")} defaultValue={formatarTelefone(base?.telefone ?? "")} /></div>
           <div className="space-y-1.5"><Label htmlFor="telefone2">Telefone 2</Label><Input id="telefone2" name="telefone2" inputMode="tel" onInput={aoDigitarMascarado("telefone2")} defaultValue={formatarTelefone(base?.telefone2 ?? "")} /></div>
