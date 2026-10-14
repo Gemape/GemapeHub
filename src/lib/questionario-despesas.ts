@@ -432,3 +432,6 @@ export function habilitadosDaPergunta(e: Estado, p: Pergunta): Habilitado[] | nu
 export function habilitadosAtivos(lista: Habilitado[], idsAtivos: ReadonlySet<string>): Habilitado[] {
   return lista.filter((h) => h.empregadoId === null || idsAtivos.has(h.empregadoId));
 }
+
+// Cada questionário tem o nome do seu card em Viagens (dec 181): "Despesas Alimentação", "Despesas Hospedagem"...
+export const tituloDoQuestionario = (tipo: string): string => (tipo.trim() ? `Despesas ${tipo.trim()}` : "Questionário de Despesas");

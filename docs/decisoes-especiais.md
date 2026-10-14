@@ -1033,6 +1033,10 @@ O documento (A4) traz: cabeçalho com a **logomarca à esquerda**, "Relatório d
 
 Fase 2: o relatório passa a ler a tabela de lançamentos (com `empresa_id`) e as imagens do armazenamento de arquivos; o nome do emitente virá do cadastro do usuário.
 
+### Decisão 181: Questionário com o nome do card e ícone de hambúrguer em Alimentação
+
+Ordem do responsável em 14/10 (17:58). **Antes:** o formulário se chamava sempre "Questionário de Despesas" e o card Alimentação usava talheres cruzados. **Agora:** o card Alimentação usa o ícone de **hambúrguer**; cada card de Viagens abre o questionário **daquele tipo**, com o nome **Despesas + nome do card** (Despesas Alimentação, Despesas Hospedagem, Despesas Abastecimento...), tanto no preenchimento quanto na montagem em Parâmetros > Veículos > Questionário de Despesas. As perguntas de cada questionário já vêm de Parâmetros (um questionário por tipo, decisões 167 e 168); quem monta escolhe o tipo na pergunta 03 e define ali as perguntas pertinentes a cada card. Tipo novo criado em "Criar novo questionário" ganha o nome do mesmo jeito. Nada no Supabase.
+
 ### Decisão 182: Cartões de crédito só aparece quando a moeda for Cartão de crédito
 
 Ordem do responsável em 14/10 (18:03). **Antes:** a pergunta "Cartões de crédito" aparecia em todo questionário, qualquer que fosse a moeda. **Agora:** ela só aparece quando em "Moedas" estiver marcado **Cartão de crédito**; com Dinheiro ou Ticket de abastecimento o campo não aparece (e não é cobrado). Usa a condição se/então já existente (decisão 169), aplicada de fábrica em todos os questionários que têm Moedas antes de Cartões, e também aos dados salvos antes, uma única vez (o responsável pode tirar ou mudar a condição depois). Nada no Supabase.

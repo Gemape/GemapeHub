@@ -20,6 +20,7 @@ import { criarQuestionario, gravarSecao, secoesDoTipo } from "@/lib/questionario
 import {
   ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
+  tituloDoQuestionario,
 } from "@/lib/questionario-despesas";
 
 // Montagem do Questionário de Despesas, dentro da mesma tela do formulário (dec 173): um questionário para cada tipo de despesa,
@@ -94,7 +95,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Questionário de Despesas</h1>
+        <h1 className="text-xl font-semibold">{tituloDoQuestionario(tipoAtual)}</h1>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => onAbrirFormulario(tipoAtual)}><Play className="mr-1 h-4 w-4" />Abrir formulário</Button>
           {canWrite && (

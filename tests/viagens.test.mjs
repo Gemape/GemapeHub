@@ -143,3 +143,13 @@ test("nome com parênteses: a área é o último parêntese do rótulo e vale o 
   const d = dadosDoLancamento(r);
   assert.deepEqual([d.tecnico, d.tecnicoArea, d.responsavel, d.conforme], ["João (Jr)", "PCM", "Roberto", false]);
 });
+
+test("cada questionário leva o nome do card e o card de Alimentação usa o ícone de hambúrguer", async () => {
+  const { tituloDoQuestionario } = await import("../src/lib/questionario-despesas.ts");
+  assert.equal(tituloDoQuestionario("Alimentação"), "Despesas Alimentação");
+  assert.equal(tituloDoQuestionario(""), "Questionário de Despesas");
+  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  assert.match(painel, /"Alimentação": Hamburger/);
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /tituloDoQuestionario\(tipo\)/);
+});
