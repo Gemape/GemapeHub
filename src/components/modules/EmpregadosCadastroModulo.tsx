@@ -35,6 +35,7 @@ import { exportarCsv, formatarData } from "@/lib/gemape";
 import { empregadoAtivo, mascararCpf, prepararEmpregado, separarEmpregados } from "@/lib/empregados";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
+import { lerTodas } from "@/lib/ler-todas";
 
 // O e-mail ainda não existe na tabela real de empregados: nesta fase só é gravado no
 // modo demonstração. A coluna entra na Fase 2.
@@ -78,8 +79,12 @@ export function EmpregadosCadastroModulo() {
     let valores: Record<string, unknown>;
     try {
       // Confere CPF e matrícula contra todos os empregados, de todas as empresas.
-      const { data: todos, error } = await supabase.from("empregados").select("id,cpf,matricula");
-      if (error) throw new Error("Não foi possível conferir CPF e matrícula. Tente de novo.");
+      let todos: { id: string; cpf: string | null; matricula: string | null }[];
+      try {
+        todos = await lerTodas(() => supabase.from("empregados").select("id,cpf,matricula"), (q) => q.order("id"));
+      } catch {
+        throw new Error("Não foi possível conferir CPF e matrícula. Tente de novo.");
+      }
       valores = prepararEmpregado(
         {
           nome: texto("nome"),

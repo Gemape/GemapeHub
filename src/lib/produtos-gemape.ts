@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { lerTodas } from "@/lib/ler-todas";
 import type { TabelaProduto } from "@/lib/parametros-base";
 
 export type ProdutoGemape = {
@@ -25,12 +26,11 @@ export function useProdutosGemape() {
       const tabelas = Object.keys(ROTULO_TABELA) as TabelaProduto[];
       const listas = await Promise.all(
         tabelas.map(async (tabela) => {
-          const { data, error } = await supabase
-            .from(tabela)
-            .select("codigo_sku,nome,empresa_id")
-            .order("nome");
-          if (error) throw error;
-          return ((data ?? []) as Omit<ProdutoGemape, "tabela">[]).map((p) => ({ ...p, tabela }));
+          const data = await lerTodas<Omit<ProdutoGemape, "tabela">>(
+            () => supabase.from(tabela).select("codigo_sku,nome,empresa_id"),
+            (q) => q.order("nome").order("id"),
+          );
+          return data.map((p) => ({ ...p, tabela }));
         }),
       );
       return listas.flat().filter((p) => p.codigo_sku);

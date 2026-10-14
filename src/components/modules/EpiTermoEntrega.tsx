@@ -92,7 +92,10 @@ export function EpiTermoEntrega() {
       return;
     }
 
-    if (!empregado || !empresa) return;
+    if (!empregado || !empresa) {
+      alert("Escolha a empresa e o empregado.");
+      return;
+    }
 
     // Não entrega mais do que o estoque disponível nem grava linha sem EPI.
     // Com tamanho, a conta é feita no saldo de cada tamanho.
@@ -161,7 +164,7 @@ export function EpiTermoEntrega() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label>Empresa</Label>
-            <Select value={empresaSel} onValueChange={setEmpresaSel}>
+            <Select value={empresaSel} onValueChange={(v) => { setEmpresaSel(v); setEmpregadoId(""); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>

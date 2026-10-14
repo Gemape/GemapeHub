@@ -87,7 +87,8 @@ export function codigosReservadosFerramenta(
 ): string[] {
   const salvo = storage.getItem(CHAVE_CODIGOS_RESERVADOS);
   if (!salvo) return [];
-  const codigos: unknown = JSON.parse(salvo);
+  let codigos: unknown;
+  try { codigos = JSON.parse(salvo); } catch { throw new Error("Histórico de códigos de ferramentas inválido."); }
   if (!Array.isArray(codigos) || !codigos.every((codigo) => typeof codigo === "string")) {
     throw new Error("Histórico de códigos de ferramentas inválido.");
   }

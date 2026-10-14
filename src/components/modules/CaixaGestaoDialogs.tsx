@@ -571,11 +571,18 @@ export function DialogTransferirCaixa({
         valores: valoresDe(destino),
         itens: [...itensDa(destino.id), { ferramenta_id: ferramentaId, quantidade: naOrigem.quantidade, observacao: naOrigem.observacao ?? "" }],
       });
-      await salvar.mutateAsync({
-        id: caixa.id,
-        valores: valoresDe(caixa),
-        itens: itensDa(caixa.id).filter((i) => i.ferramenta_id !== ferramentaId),
-      });
+      const itensDestinoAntes = itensDa(destino.id);
+      try {
+        await salvar.mutateAsync({
+          id: caixa.id,
+          valores: valoresDe(caixa),
+          itens: itensDa(caixa.id).filter((i) => i.ferramenta_id !== ferramentaId),
+        });
+      } catch (erro) {
+        // A saída da origem falhou: desfaz a entrada no destino para a ferramenta não ficar nas duas caixas.
+        await salvar.mutateAsync({ id: destino.id, valores: valoresDe(destino), itens: itensDestinoAntes }).catch(() => undefined);
+        throw erro;
+      }
       await registrar.mutateAsync([
         {
           modulo: "ferramenta",

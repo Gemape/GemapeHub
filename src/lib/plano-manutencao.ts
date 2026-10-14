@@ -22,8 +22,8 @@ function lerComEstado(storage: StorageLike | null): { planos: PlanoManutencao[];
   try {
     const salvos = JSON.parse(bruto) as unknown;
     if (!Array.isArray(salvos)) return { planos: [], integro: false };
-    const planos = salvos
-      .filter((p): p is Partial<PlanoManutencao> => !!p && typeof p === "object" && "veiculoId" in p)
+    const validos = salvos.filter((p): p is Partial<PlanoManutencao> => !!p && typeof p === "object" && "veiculoId" in p);
+    const planos = validos
       .map((p) => ({
         veiculoId: String(p.veiculoId),
         atualizadoEm: String(p.atualizadoEm ?? ""),
@@ -31,7 +31,8 @@ function lerComEstado(storage: StorageLike | null): { planos: PlanoManutencao[];
           acaoId: String(i.acaoId), km: Number(i.km) || 0, meses: Number(i.meses) || 0,
         })),
       }));
-    return { planos, integro: true };
+    // Entrada que não deu para ler: a lista aparece sem ela, mas nenhuma gravação passa por cima.
+    return { planos, integro: validos.length === salvos.length };
   } catch {
     return { planos: [], integro: false };
   }

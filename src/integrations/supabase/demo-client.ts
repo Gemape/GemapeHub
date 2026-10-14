@@ -33,7 +33,9 @@ const lerDados = (): Record<string, Linha[]> => {
   if (typeof window === "undefined") return dadosIniciais;
   try {
     const salvo = window.localStorage.getItem(chaveArmazenamento);
-    return salvo ? JSON.parse(salvo) : clone(dadosIniciais);
+    const lido: unknown = salvo ? JSON.parse(salvo) : null;
+    // Dados salvos que não sejam um objeto (arquivo corrompido) voltam ao conjunto inicial.
+    return lido && typeof lido === "object" && !Array.isArray(lido) ? { ...clone(dadosIniciais), ...(lido as Record<string, Linha[]>) } : clone(dadosIniciais);
   } catch {
     return clone(dadosIniciais);
   }

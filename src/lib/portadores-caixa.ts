@@ -59,7 +59,8 @@ export function dataBrasilia(agora = new Date()): string {
 export function lerPortadores(storage: StorageLike = localStorage): PortadorCaixa[] {
   const salvo = storage.getItem(CHAVE);
   if (!salvo) return [];
-  const registros: unknown = JSON.parse(salvo);
+  let registros: unknown;
+  try { registros = JSON.parse(salvo); } catch { throw new Error("Histórico de portadores inválido; nada foi alterado."); }
   if (!Array.isArray(registros) || !registros.every((item) =>
     item && typeof item === "object" && typeof item.id === "string" &&
     typeof item.caixa_id === "string" && typeof item.empregado_id === "string")) {

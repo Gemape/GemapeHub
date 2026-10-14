@@ -37,6 +37,7 @@ import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { useFichasEpi } from "@/lib/use-fichas-epi";
 import { exportarCsv } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
+import { lerTodas } from "@/lib/ler-todas";
 import { removerFicha } from "@/lib/fichas-epi";
 import {
   MARCA_LEGADA,
@@ -118,9 +119,8 @@ const CONFIG: Record<
 
 // Todos os códigos já usados na tabela, de todas as empresas, para seguir a sequência.
 async function codigosUsados(tabela: Tabela): Promise<string[]> {
-  const { data, error } = await supabase.from(tabela).select("codigo_sku");
-  if (error) throw error;
-  return ((data ?? []) as { codigo_sku: string | null }[]).map((e) => e.codigo_sku ?? "");
+  const linhas = await lerTodas<{ codigo_sku: string | null }>(() => supabase.from(tabela).select("codigo_sku"), (q) => q.order("id"));
+  return linhas.map((e) => e.codigo_sku ?? "");
 }
 
 // Cadastrar EPI e Cadastrar uniforme (especificação rev1): código automático,

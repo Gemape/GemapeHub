@@ -1,5 +1,6 @@
 // Termo de Encerramento de ferramentas (decisão 16, etapa 5): devolve só o
 // saldo ainda sob responsabilidade do empregado, uma única vez.
+import { lerTodas } from "./ler-todas.ts";
 import { ehBaixa } from "./historico-movimentacoes.ts";
 
 type MovimentacaoSaldo = {
@@ -46,17 +47,22 @@ export async function lerSaldosSobResponsabilidade(
   cliente: { from: (tabela: "movimentacoes") => { select: (colunas: string) => unknown } },
   filtro: { empregadoId: string; empresaId: string },
 ): Promise<Map<string, number>> {
-  const consulta = cliente
-    .from("movimentacoes")
-    .select(
-      "modulo,tipo_movimentacao,item_id,empresa_id,empregado_id,motivo_baixa,quantidade",
-    ) as ConsultaMovimentacoes;
-  const { data, error } = await consulta
-    .eq("modulo", "ferramenta")
-    .eq("empresa_id", filtro.empresaId)
-    .eq("empregado_id", filtro.empregadoId);
-  if (error) throw new Error(error.message);
-  return saldosSobResponsabilidade(data ?? [], filtro);
+  const montar = () =>
+    (cliente
+      .from("movimentacoes")
+      .select(
+        "modulo,tipo_movimentacao,item_id,empresa_id,empregado_id,motivo_baixa,quantidade",
+      ) as ConsultaMovimentacoes)
+      .eq("modulo", "ferramenta")
+      .eq("empresa_id", filtro.empresaId)
+      .eq("empregado_id", filtro.empregadoId);
+  let data: MovimentacaoSaldo[];
+  try {
+    data = await lerTodas<MovimentacaoSaldo>(montar, (q) => q.order("id"));
+  } catch (erro) {
+    throw new Error((erro as { message?: string })?.message ?? "Erro ao ler as movimentações.");
+  }
+  return saldosSobResponsabilidade(data, filtro);
 }
 
 /** Devolve a mensagem de erro, ou null quando todas as linhas cabem no saldo. */
