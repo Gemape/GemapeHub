@@ -7,6 +7,7 @@ import {
   ABAS_FERRAMENTA,
   ABAS_UNIFORME,
   ABAS_VEICULO,
+  ABAS_VIAGEM,
   MENU_EPI,
   MENU_FERRAMENTAS,
   MENU_GERAIS,
@@ -53,6 +54,7 @@ import {
   Fuel,
   Box,
   ListPlus,
+  Route as IconeViagens,
 } from "lucide-react";
 
 import {
@@ -92,6 +94,7 @@ const grupos = [
       { titulo: "Uniformes", url: "/uniformes", icone: Shirt, abas: ABAS_UNIFORME },
       { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench, abas: ABAS_FERRAMENTA },
       { titulo: "Veículos", url: "/veiculos", icone: Car, abas: ABAS_VEICULO },
+      { titulo: "Viagens", url: "/viagens", icone: IconeViagens, abas: ABAS_VIAGEM },
     ],
   },
   {

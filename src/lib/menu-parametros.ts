@@ -77,6 +77,9 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
   { aba: "checklist", titulo: "Check list", icone: "ListChecks" },
 ];
 
+// Viagens (decisão 176): o painel é a primeira aba; o relatório entra na etapa 4.
+export const ABAS_VIAGEM: readonly AbaMenu[] = [{ aba: "painel", titulo: "Painel", icone: "LayoutDashboard" }];
+
 // Tabelas de Apoio e Tamanho e Medidas de Produto ficam dentro de EPI, Uniformes e Ferramentas (decisão 86): é a mesma
 // tela nos três menus (cadastro e associação juntos, decisão 89), e ?de= diz de qual deles a pessoa veio, para marcar só aquele no menu lateral.
 export const URLS_APOIO: readonly string[] = ["/cadastros/gerais/categorias", "/cadastros/gerais/tamanhos-unidades"];
@@ -133,7 +136,7 @@ export const MENU_EPI: readonly ItemComFilhos[] = [
 ];
 
 // Aba aberta de um módulo: a pedida em ?aba= se existir nele, senão a primeira.
-export function abaDoModulo(modulo: "epi" | "uniforme" | "ferramenta" | "veiculo", aba: string | undefined): string {
-  const abas = { epi: ABAS_EPI, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO }[modulo];
+export function abaDoModulo(modulo: "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem", aba: string | undefined): string {
+  const abas = { epi: ABAS_EPI, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM }[modulo];
   return abas.find((a) => a.aba === aba)?.aba ?? abas[0]!.aba;
 }

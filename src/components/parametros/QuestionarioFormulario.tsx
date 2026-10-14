@@ -30,7 +30,7 @@ const vazia = (r: Resposta | undefined) => r === undefined || (Array.isArray(r) 
 
 // Formulário do Questionário de Despesas, no estilo Google Forms (dec 169): cartão central, perguntas em cartões, obrigatórias
 // com asterisco, Enviar com confirmação e lista de respostas para conferência. Respostas só no navegador (modo demonstração).
-export function QuestionarioFormulario({ tipoInicial, onEditar }: { tipoInicial?: string | undefined; onEditar?: ((tipo: string) => void) | undefined }) {
+export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { tipoInicial?: string | undefined; onEditar?: ((tipo: string) => void) | undefined; onVoltar?: { rotulo: string; aoClicar: () => void } | undefined }) {
   const { isAdmin, canWrite } = useAccess();
   const [estado] = useState(lerEstado);
   const tipos = tiposDeDespesa(estado);
@@ -122,6 +122,7 @@ export function QuestionarioFormulario({ tipoInicial, onEditar }: { tipoInicial?
         <h1 className="text-2xl font-semibold">Questionário de Despesas</h1>
         <p className="mt-1 text-sm text-muted-foreground">Escolha o tipo de despesa e responda as perguntas. Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          {onVoltar && <button type="button" className="text-primary underline" onClick={onVoltar.aoClicar}>{onVoltar.rotulo}</button>}
           {canWrite && onEditar && (
             <button type="button" className="inline-flex items-center gap-1 text-primary underline" onClick={() => onEditar(tipo)}><Pencil className="h-3 w-3" />Editar questionário</button>
           )}
