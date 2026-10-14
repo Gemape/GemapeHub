@@ -65,7 +65,7 @@ test('edição preserva inativo manual e dados antigos repetidos', () => {
 
 test('demissão futura = ativo; demissão passada = inativo', () => {
   const hoje = '2026-09-30';
-  assert.equal(hojeLocal(new Date(2026, 8, 5)), '2026-09-05');
+  assert.equal(hojeLocal(new Date('2026-09-05T15:00:00Z')), '2026-09-05');
   // Ao salvar: futura continua ativo, passada (ou hoje) fica inativo.
   assert.equal(prepararEmpregado({ ...base, data_demissao: '2026-10-15' }, [], undefined, hoje).ativo, true);
   assert.equal(prepararEmpregado({ ...base, data_demissao: '2026-09-01' }, [], undefined, hoje).ativo, false);

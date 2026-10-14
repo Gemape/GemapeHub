@@ -57,7 +57,7 @@ export function FerramentasTermoResponsabilidade() {
     if (empresas.length > 0 && empresaSel && !empresasParaEscolha(empresas).some((e) => e.id === empresaSel)) setEmpresaSel("");
   }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
-  const { data: itens = [] } = useItens("ferramenta", TODAS);
+  const { data: itens = [] } = useItens("ferramenta", empresaSel || TODAS);
   const { data: todasAsCaixas = [] } = useCaixasFerramentas(empresaSel || TODAS);
   // Só caixas habilitadas em Caixas de Ferramentas > Habilitar caixas.
   const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);

@@ -78,7 +78,7 @@ export function prepararEmpregado(
   let matricula = normalizarMatricula(dados.matricula);
   const email = dados.email.trim().toLowerCase();
   if (!nome) throw new Error("Informe o nome completo.");
-  const cpfMantido = anterior && digitos(cpf) !== "" && digitos(cpf) === digitos(anterior.cpf ?? "");
+  const cpfMantido = anterior && cpf.trim() !== "" && digitos(cpf) === digitos(anterior.cpf ?? "");
   if (!cpfMantido && !cpfValido(cpf)) throw new Error("CPF inválido.");
   if (cpfMantido) cpf = anterior.cpf ?? cpf;
   const matriculaMantida = anterior && matricula === normalizarMatricula(anterior.matricula ?? "");
