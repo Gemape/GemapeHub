@@ -974,3 +974,7 @@ Ordem do responsável em 14/10 (12:21 "pode seguir"; 12:27 e 12:27 pedindo a pá
 ### Decisão 170: Formulário de Despesas, cadastro de cliente na mesma tela
 
 Ordem do responsável em 14/10 (12:56). **Antes:** o campo Clientes do formulário tinha o link "Cadastrar cliente", que abria o cadastro em outra aba. **Agora:** o link abre a **janela de Novo cliente dentro do formulário** (a mesma de Parâmetros > Clientes, com os mesmos campos, máscaras e regras). Ao salvar, a janela fecha, o formulário continua como estava (nada preenchido se perde) e o **cliente novo já fica escolhido** no campo. Cancelar volta ao formulário sem mudar nada. A janela é um componente só, usado também na tela de Clientes. Nada no Supabase.
+
+### Decisão 171: Questionário de Despesas, Litros abastecidos só no Abastecimento
+
+Ordem do responsável em 14/10 (13:06). **Antes:** a pergunta "Litros abastecidos" vinha em todos os tipos de despesa. **Agora:** ela vem só no questionário do tipo **Abastecimento**; Alimentação, Hospedagem, Pedágio e os demais não a trazem, e um tipo novo também não a ganha. Vale para o padrão novo e, uma única vez, para os dados já salvos no navegador (tira Litros dos outros tipos; depois disso, quem incluir Litros num tipo de propósito mantém a escolha). Se nos dados salvos o tipo Abastecimento foi renomeado, nada é tirado. A condição se/então não foi usada porque ela depende de uma pergunta anterior e a pergunta de tipo é a origem do questionário. Nada no Supabase.
