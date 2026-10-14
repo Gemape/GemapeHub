@@ -345,13 +345,13 @@ export function moverId(ids: string[], origem: string, destino: string): string[
   return lista;
 }
 
-// Habilitados que continuam valendo: quem tem vínculo com um empregado que está inativo (ou não existe mais) sai da lista.
 // Lista de empregados de uma pergunta de habilitados. A do técnico responsável não tem lista própria: são os habilitados da pergunta 04 com área Oficina.
 export function habilitadosDaPergunta(e: Estado, p: Pergunta): Habilitado[] | null {
   if (p.id !== ID_TECNICO_RESPONSAVEL) return p.habilitados;
   return (e.perguntas.find((x) => x.id === ID_HABILITADOS)?.habilitados ?? []).filter((h) => h.area === "Oficina");
 }
 
+// Habilitados que continuam valendo: quem tem vínculo com um empregado que está inativo (ou não existe mais) sai da lista.
 export function habilitadosAtivos(lista: Habilitado[], idsAtivos: ReadonlySet<string>): Habilitado[] {
   return lista.filter((h) => h.empregadoId === null || idsAtivos.has(h.empregadoId));
 }
