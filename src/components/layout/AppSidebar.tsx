@@ -113,7 +113,7 @@ type ItemGrupo = { titulo: string; url: string; icone: typeof LayoutDashboard; a
 const ICONES = {
   Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive, Car,
   LayoutDashboard, Boxes, ShoppingCart, History, PackageMinus, FileSignature, FileMinus, FileCheck, FileX,
-  ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus,
+  ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus, FileText,
 } as const;
 
 function useDeAtual(): string | undefined {

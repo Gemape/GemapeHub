@@ -26,7 +26,8 @@ export type NomeIcone =
   | "TriangleAlert"
   | "Fuel"
   | "Box"
-  | "ListPlus";
+  | "ListPlus"
+  | "FileText";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
 export type AbaMenu = { aba: string; titulo: string; icone: NomeIcone; soAdmin?: boolean };
 export type DeMenu = "epi" | "uniformes" | "ferramentas" | "veiculos";
@@ -78,7 +79,10 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
 ];
 
 // Viagens (decisão 176): o painel é a primeira aba; o relatório entra na etapa 4.
-export const ABAS_VIAGEM: readonly AbaMenu[] = [{ aba: "painel", titulo: "Painel", icone: "LayoutDashboard" }];
+export const ABAS_VIAGEM: readonly AbaMenu[] = [
+  { aba: "painel", titulo: "Painel", icone: "LayoutDashboard" },
+  { aba: "relatorio", titulo: "Relatório", icone: "FileText" },
+];
 
 // Tabelas de Apoio e Tamanho e Medidas de Produto ficam dentro de EPI, Uniformes e Ferramentas (decisão 86): é a mesma
 // tela nos três menus (cadastro e associação juntos, decisão 89), e ?de= diz de qual deles a pessoa veio, para marcar só aquele no menu lateral.
