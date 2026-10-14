@@ -1,5 +1,5 @@
 import { grupoTemTamanhos } from "./tamanhos-ferramentas-padrao.ts";
-import { mesmoNome, proximoCodigo, subcategoriasDa, type ListaFerramenta, type Opcao, type ParametrosBase } from "./parametros-base.ts";
+import { mesmoNome, proximoCodigo, regraDoCadastro, subcategoriasDa, type ListaFerramenta, type Opcao, type ParametrosBase } from "./parametros-base.ts";
 
 export const SELECAO_SEM_MARCA = "sem-marca";
 export const SELECAO_MARCA_LEGADA = "marca-legada";
@@ -32,6 +32,8 @@ export type EntradaCadastroFerramenta = {
   // Tamanho já gravado na ferramenta em edição: continua aceito mesmo que tenha saído da lista do grupo.
   tamanhoAtual?: string;
   codigoAtual?: string;
+  // Sigla escolhida para o código novo, quando Gerais tem mais de uma para Ferramentas; sem ela vale a padrão.
+  sigla?: string;
 };
 
 /** Tamanhos cadastrados para o grupo de ferramenta em Parâmetros Específicos (decisão 117), na ordem do cadastro. */
@@ -132,7 +134,7 @@ export function prepararCadastroFerramenta(entrada: EntradaCadastroFerramenta) {
   }
   const minimoTexto = String(entrada.estoqueMinimo ?? "").trim();
   if (!/^\d{1,9}$/.test(minimoTexto)) throw new Error("Informe o estoque mínimo (número inteiro, 0 ou mais).");
-  const regra = entrada.parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
+  const regra = regraDoCadastro(entrada.parametros.regrasCodigo, "cat-ferramentas", entrada.sigla);
   if (!entrada.codigoAtual && !regra) throw new Error("Cadastre a regra do código de ferramentas em Cadastros > Gerais.");
   return {
     codigo_sku: entrada.codigoAtual || proximoCodigo(regra!, entrada.codigosExistentes),

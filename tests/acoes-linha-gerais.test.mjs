@@ -22,7 +22,7 @@ test("listas de nome (categorias, subcategorias, marcas, tamanhos, unidades) usa
 test("Código do produto usa AcoesLinha; Clonar copia a numeração e a sigla (dec 138)", () => {
   const tela = ler("routes/_authenticated/cadastros/gerais/codigo-produto.tsx");
   assert.match(tela, /<AcoesLinha[\s\S]*onClonar[\s\S]*onEditar=[\s\S]*onExcluir/);
-  assert.match(tela, /function clonar[\s\S]*setSigla\(origem\.sigla\)[\s\S]*setInicial\(origem\.inicial\)/);
+  assert.match(tela, /onClonar: \(\) => novo\(c\.id, regra\.sigla, regra\.inicial\)/);
   assert.match(tela, /CATEGORIAS_BASE\[c\.id\]/);
 });
 

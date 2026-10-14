@@ -48,11 +48,15 @@ import {
   lerParametros,
   paraSelecao,
   proximoCodigo,
+  regraDoCadastro,
+  regrasDaCategoria,
+  siglaDoCodigo,
   subcategoriasDa,
   removerCodigosFabricaPorIds,
   type CodigoFabrica,
 } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { SiglaCodigo } from "@/components/modules/SiglaCodigo";
 
 // Cadastro de ferramentas. EPI e uniforme usam CadastroProduto, e todas as listas
 // vêm de Cadastros > Gerais. Ferramenta não tem subcategoria (decisão 25).
@@ -74,9 +78,11 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const [tamanhoEscolhido, setTamanhoEscolhido] = useState(SEM_TAMANHO);
   useEffect(() => { if (aberto) setTamanhoEscolhido(base?.tamanho || SEM_TAMANHO); }, [aberto, base]);
   const [previaCodigo, setPreviaCodigo] = useState("");
+  // Sigla escolhida para o código novo (só importa quando Gerais tem mais de uma regra para Ferramentas).
+  const [siglaSel, setSiglaSel] = useState("");
   const salvando = useRef(false);
   const parametros = useParametrosBase();
-  const regraFerramenta = parametros.regrasCodigo.find((r) => r.categoriaId === "cat-ferramentas");
+  const regraFerramenta = regraDoCadastro(parametros.regrasCodigo, "cat-ferramentas", siglaSel);
   // Ferramenta antiga sem categoria de ferramenta usa a categoria gravada como valor inicial.
   const categoriaFerramentaInicial = base?.categoria_ferramenta ?? (base?.categoria === "Pneumática" ? "Pneumático" : base?.categoria ?? "");
   // Parâmetro desativado em Gerais sai da escolha; o que a ferramenta já usa continua na edição.
@@ -114,12 +120,27 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
     setEditando(null);
     setModelo(origem ?? null);
     setPreviaCodigo("");
+    // Clonar começa com a mesma sigla do original; senão, a padrão.
+    const siglaInicial = origem ? siglaDoCodigo(parametros.regrasCodigo, "cat-ferramentas", origem.codigo_sku) : "";
+    setSiglaSel(siglaInicial);
     setAberto(true);
+    await calcularPrevia(regraDoCadastro(parametros.regrasCodigo, "cat-ferramentas", siglaInicial));
+  }
+
+  async function calcularPrevia(r: typeof regraFerramenta) {
+    if (!r) return;
     try {
-      setPreviaCodigo(proximoCodigo(regraFerramenta, await codigosFerramenta()));
+      setPreviaCodigo(proximoCodigo(r, await codigosFerramenta()));
     } catch {
       setPreviaCodigo("");
     }
+  }
+
+  // Trocar a sigla no cadastro novo troca também o código mostrado.
+  function escolherSigla(sigla: string) {
+    setSiglaSel(sigla);
+    setPreviaCodigo("");
+    void calcularPrevia(regraDoCadastro(parametros.regrasCodigo, "cat-ferramentas", sigla));
   }
 
   async function enviar(e: React.FormEvent<HTMLFormElement>) {
@@ -155,6 +176,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       const cadastro = prepararCadastroFerramenta({
         parametros: parametrosSelecao,
         codigosExistentes: editando ? [] : await codigosFerramenta(),
+        sigla: siglaSel,
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
         categoriaAtual: base?.categoria_ferramenta ?? "",
         grupoFerramenta: grupoEscolhido,
@@ -336,6 +358,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
               <Label htmlFor="codigo_sku">Código/SKU</Label>
               <Input id="codigo_sku" readOnly value={editando?.codigo_sku ?? previaCodigo} placeholder="Gerado ao salvar" />
             </div>
+            {!editando && <SiglaCodigo regras={regrasDaCategoria(parametros.regrasCodigo, "cat-ferramentas")} valor={siglaSel} onMudar={escolherSigla} />}
             <p className="text-xs text-muted-foreground sm:pt-6">
               A descrição é montada sozinha: grupo, modelo e marca.
             </p>
