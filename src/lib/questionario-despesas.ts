@@ -77,6 +77,8 @@ export type Estado = {
   litrosAjustado?: true;
   // Marca que a pergunta "Técnico responsável pela despesa" já foi incluída nos dados salvos antes dela existir (ajuste único).
   tecnicoAjustado?: true;
+  // Marca que a condição "Cartões de crédito só com Moedas = Cartão de crédito" já foi aplicada aos dados salvos antes (dec 182).
+  cartaoAjustado?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -135,12 +137,29 @@ export function perguntasPadrao(): Pergunta[] {
   ];
 }
 
+// Dec 182: Cartões de crédito só aparece quando Moedas for Cartão de crédito. Vale em todo questionário que tem as duas perguntas
+// (Moedas antes de Cartões) e não sobrescreve condição que o responsável já tenha definido para Cartões.
+const ID_MOEDAS = "q-01";
+const ID_CARTOES = "q-02";
+const MOEDA_CARTAO = "Cartão de crédito";
+function comRegraDoCartao(questionarios: Record<string, string[]>, regras: Estado["regras"]): Estado["regras"] {
+  const novas: Estado["regras"] = { ...regras };
+  for (const [tipo, ids] of Object.entries(questionarios)) {
+    if (!Array.isArray(ids)) continue;
+    const iMoedas = ids.indexOf(ID_MOEDAS);
+    const iCartoes = ids.indexOf(ID_CARTOES);
+    if (iMoedas < 0 || iCartoes < 0 || iMoedas > iCartoes || novas[tipo]?.[ID_CARTOES]) continue;
+    novas[tipo] = { ...(novas[tipo] ?? {}), [ID_CARTOES]: { origem: ID_MOEDAS, operador: "igual", valor: MOEDA_CARTAO } };
+  }
+  return novas;
+}
+
 export function estadoPadrao(): Estado {
   const perguntas = perguntasPadrao();
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, resto.filter((id) => id !== ID_LITROS || o === TIPO_ABASTECIMENTO)]));
-  return { versao: 1, perguntas, questionarios, regras: {}, litrosAjustado: true, tecnicoAjustado: true };
+  return { versao: 1, perguntas, questionarios, regras: comRegraDoCartao(questionarios, {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -227,7 +246,7 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     if (bruto === null) return estadoPadrao();
     const lido = JSON.parse(bruto);
     if (!lido || !Array.isArray(lido.perguntas) || typeof lido.questionarios !== "object" || lido.questionarios === null) return estadoPadrao();
-    const regras = lido.regras && typeof lido.regras === "object" ? lido.regras : {};
+    let regras = (lido.regras && typeof lido.regras === "object" ? lido.regras : {}) as Estado["regras"];
     let perguntas = lido.perguntas as Pergunta[];
     let questionarios = lido.questionarios as Record<string, string[]>;
     // Dado salvo antes do ajuste: Litros abastecidos sai dos tipos que não são Abastecimento (uma vez só).
@@ -248,9 +267,11 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
         })) as Record<string, string[]>;
       }
     }
+    // Dado salvo antes da dec 182: Cartões de crédito passa a depender de Moedas (uma vez só; depois o responsável pode tirar).
+    if (lido.cartaoAjustado !== true) regras = comRegraDoCartao(questionarios, regras);
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true };
   } catch {
     return estadoPadrao();
   }
