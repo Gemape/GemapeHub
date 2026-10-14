@@ -82,3 +82,21 @@ test("relatório salvo é remontado só com as despesas dele", () => {
   assert.equal(linhas[0].tipo, "Alimentação");
   assert.deepEqual(linhasDasDespesas([a], ["x"]), []);
 });
+
+test("extrato do técnico: despesas, quantidade e custo do mês, e navegação entre meses", async () => {
+  const { extratoDoTecnico, deslocarMes } = await import("../src/lib/viagens-lista.ts");
+  const s = memoria();
+  const a = lancar(s, { "q-13": "Não conformidade – técnico monitorado não preencheu" }, "Abastecimento", 10);
+  const b = lancar(s, { "q-13": "Não conformidade – técnico monitorado não preencheu", "q-11": "50,00" }, "Alimentação", 12);
+  const outro = lancar(s, { "q-04": ["Maria (Oficina)"] }, "Hospedagem", 13);
+  const gestor = lancar(s, { "q-04": ["Paula (PCM)"], "q-14": ["Roberto (Oficina)"], "q-13": "Não conformidade – técnico monitorado não preencheu" }, "Pedágio", 14);
+  const lista = [a, b, outro, gestor];
+  const e = extratoDoTecnico(lista, P, "Roberto", new Map());
+  assert.equal(e.quantidade, 3);
+  assert.equal(e.custoTotal, 250);
+  assert.deepEqual(e.linhas.map((l) => l.conforme), [false, true, true]);
+  assert.equal(extratoDoTecnico(lista, { ano: 2026, mes: 9 }, "Roberto", new Map()).quantidade, 0);
+  assert.deepEqual(deslocarMes({ ano: 2026, mes: 1 }, -1), { ano: 2025, mes: 12 });
+  assert.deepEqual(deslocarMes({ ano: 2026, mes: 12 }, 1), { ano: 2027, mes: 1 });
+  assert.deepEqual(deslocarMes({ ano: 2026, mes: 5 }, 1), { ano: 2026, mes: 6 });
+});

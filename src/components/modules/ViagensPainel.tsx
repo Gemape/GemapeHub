@@ -1,4 +1,5 @@
 import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Receipt, SquareParking, Hamburger, Wrench, type LucideIcon } from "lucide-react";
+import { ViagensExtrato } from "./ViagensExtrato";
 import { ViagensLista } from "./ViagensLista";
 import { Cancela, ParafusoEPorca } from "./icones-viagens";
 import { useMemo, useState } from "react";
@@ -37,6 +38,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   const tipos = tiposDeDespesa(estado);
   const [tipo, setTipo] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState(periodoAtual);
+  const [extratoDe, setExtratoDe] = useState<string | null>(null);
   // Relê os lançamentos sempre que volta do formulário, para o que acabou de ser enviado entrar na conta.
   const lista = useMemo(() => listarRespostas(), [tipo]);
   const { data: empregados = [], isSuccess: empregadosLidos } = useEmpregados(TODAS);
@@ -145,7 +147,9 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
               )}
               {resultados.map((r) => (
                 <TableRow key={r.nome}>
-                  <TableCell className="px-2 font-medium sm:px-4">{r.nome}</TableCell>
+                  <TableCell className="px-2 font-medium sm:px-4">
+                    <button type="button" onClick={() => setExtratoDe(r.nome)} title="Abrir o extrato do técnico" className="text-left text-primary underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{r.nome}</button>
+                  </TableCell>
                   <TableCell className="px-2 text-right sm:px-4">{r.lancamentos}</TableCell>
                   <TableCell className="whitespace-nowrap px-2 text-right sm:px-4">{formatarMoeda(r.valorTotal)}</TableCell>
                   <TableCell className="px-2 text-right sm:px-4">{formatarPercentual(r.icl)}</TableCell>
@@ -155,6 +159,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           </Table>
         </div>
       </section>
+
+      {extratoDe && <ViagensExtrato tecnico={extratoDe} periodoInicial={periodo} lista={lista} aoFechar={() => setExtratoDe(null)} />}
     </div>
   );
 }
