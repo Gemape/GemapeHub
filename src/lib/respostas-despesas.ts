@@ -2,6 +2,7 @@
 // respostas (JSONB, com `empresa_id`) entra na Fase 2. Cada resposta guarda o título das perguntas da época.
 import { hojeLocal } from "./empregados.ts";
 import { ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
+import { listarRelatorios, relatorioPorDespesa } from "./relatorios-viagens.ts";
 import { questionarioPublicado } from "./questionario-destinos.ts";
 import { perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
 
@@ -78,6 +79,8 @@ export function registrarResposta(e: Estado, respostas: Respostas, storage: Stor
 
 export function removerResposta(id: string, storage: StorageLike = localStorage): void {
   conferirIntegridade(storage);
+  // Despesa que já entrou num relatório (Finalizada) não se exclui: o relatório salvo perderia a linha ao ser baixado de novo.
+  if (relatorioPorDespesa(listarRelatorios(storage)).has(id)) throw new Error("Esta despesa já está num relatório de viagens (Finalizada) e não pode ser excluída.");
   storage.setItem(CHAVE, JSON.stringify(listarRespostas(storage).filter((r) => r.id !== id)));
 }
 
