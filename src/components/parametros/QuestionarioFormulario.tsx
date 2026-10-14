@@ -14,7 +14,7 @@ import { listarClientes, proximoCodigoCliente } from "@/lib/clientes-demo";
 import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
-import { reduzirImagem, type ImagemReduzida } from "@/lib/imagem-economica";
+import { juntarImagens, mensagemDeLimite, reduzirImagem, type ImagemReduzida } from "@/lib/imagem-economica";
 import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
 import {
   ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
@@ -297,7 +297,7 @@ function Campo({
   const texto = typeof resposta === "string" ? resposta : "";
   const lista = Array.isArray(resposta) ? resposta : [];
   const [erroImagem, setErroImagem] = useState("");
-  const escolha = useRef(0);
+  const [lendo, setLendo] = useState(false);
 
   if (p.habilitados) {
     return (
@@ -343,46 +343,47 @@ function Campo({
   if (p.tipo === "data") return <Input type="date" aria-label={p.titulo} value={texto} onChange={(e) => onMudar(e.target.value)} />;
   if (p.tipo === "hora") return <Input type="time" aria-label={p.titulo} value={texto} onChange={(e) => onMudar(e.target.value)} />;
   if (p.tipo === "paragrafo") return <Textarea capitalizar="texto" aria-label={p.titulo} value={texto} onChange={(e) => onMudar(e.target.value)} rows={4} />;
-  // upload
+  // upload: cada escolha soma às imagens já anexadas (até MAX_ARQUIVOS), todas reduzidas no navegador; cada uma pode ser removida.
+  const cheio = imagens.length >= MAX_ARQUIVOS;
+  const aplicar = (lista: ImagemReduzida[]) => { onImagens(lista); onMudar(lista.map((r) => r.nome)); };
   return (
     <div className="space-y-2">
       <Input
         type="file"
         accept="image/*"
         multiple
+        disabled={cheio || lendo}
         aria-label={p.titulo}
         onChange={async (e) => {
           const campo = e.currentTarget;
           const escolhidos = Array.from(campo.files ?? []);
-          const minha = ++escolha.current;
-          if (escolhidos.length > MAX_ARQUIVOS) {
-            // Escolha demais: nada fica valendo e o campo é esvaziado para a tela não mentir.
-            campo.value = "";
-            onImagens([]);
-            onMudar([]);
-            setErroImagem(`No máximo ${MAX_ARQUIVOS} imagens.`);
-            return;
-          }
+          campo.value = ""; // o mesmo arquivo pode ser escolhido de novo depois de removido
+          if (!escolhidos.length) return;
+          const limite = mensagemDeLimite(imagens.length, escolhidos.length, MAX_ARQUIVOS);
+          if (limite) { setErroImagem(limite); return; }
+          setLendo(true);
           try {
             const reduzidas = await Promise.all(escolhidos.map(reduzirImagem));
-            if (minha !== escolha.current) return; // uma escolha mais nova já chegou
-            setErroImagem("");
-            onImagens(reduzidas);
-            onMudar(reduzidas.map((r) => r.nome));
+            const { lista, erro } = juntarImagens(imagens, reduzidas, MAX_ARQUIVOS);
+            setErroImagem(erro);
+            if (!erro) aplicar(lista);
           } catch (erro) {
-            if (minha !== escolha.current) return;
-            campo.value = "";
-            onImagens([]);
-            onMudar([]);
             setErroImagem(erro instanceof Error ? erro.message : "Não foi possível ler a imagem.");
+          } finally {
+            setLendo(false);
           }
         }}
       />
       {erroImagem && <p role="alert" className="text-sm text-destructive">{erroImagem}</p>}
-      <ul className="text-xs text-muted-foreground">
-        {imagens.map((i, n) => <li key={`${n}-${i.nome}`} className="break-words">{i.nome}: {kb(i.bytesAntes)} para {kb(i.bytesDepois)}</li>)}
+      <ul className="space-y-1 text-xs text-muted-foreground">
+        {imagens.map((i, n) => (
+          <li key={`${n}-${i.nome}`} className="flex items-center justify-between gap-2 break-words">
+            <span>{i.nome}: {kb(i.bytesAntes)} para {kb(i.bytesDepois)}</span>
+            <button type="button" className="shrink-0 text-primary underline" aria-label={`Remover ${i.nome}`} onClick={() => { setErroImagem(""); aplicar(imagens.filter((_, k) => k !== n)); }}>Remover</button>
+          </li>
+        ))}
       </ul>
-      <p className="text-xs text-muted-foreground">Até {MAX_ARQUIVOS} imagens{p.obrigatoria ? ", ao menos 1 obrigatória" : ""}; reduzidas no navegador antes do envio.</p>
+      <p className="text-xs text-muted-foreground">{imagens.length} de {MAX_ARQUIVOS} imagens{p.obrigatoria ? ", ao menos 1 obrigatória" : ""}; todas são reduzidas no navegador antes do envio.</p>
     </div>
   );
 }
