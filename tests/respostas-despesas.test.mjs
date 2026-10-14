@@ -115,3 +115,23 @@ test("o formulário abre o campo de descrição ao marcar Outro", () => {
   assert.match(fonte, /marcouOutro\(p, respostas\) &&/);
   assert.match(fonte, /placeholder="Descreva o outro"/);
 });
+
+test("a foto do comprovante vai junto na resposta registrada e só imagem é guardada", () => {
+  const e = estadoPadrao();
+  const png = "data:image/png;base64,iVBORw0KGgo=";
+  const r = registrarResposta(e, completas, memoria(), agora, { "q-12": [{ nome: "comprovante.jpg", dataUrl: png }, { nome: "x.html", dataUrl: "data:text/html;base64,PGI+" }], "q-09": [{ nome: "y.png", dataUrl: png }] });
+  const foto = r.itens.find((i) => i.perguntaId === "q-12");
+  assert.deepEqual(foto?.imagens, [{ nome: "comprovante.jpg", dataUrl: png }]);
+  assert.equal(r.itens.find((i) => i.perguntaId === "q-09")?.imagens, undefined);
+});
+
+test("sem espaço no navegador a resposta com imagens não é gravada e o erro é claro", () => {
+  const e = estadoPadrao();
+  const cheio = { getItem: () => null, setItem: () => { throw new Error("QuotaExceededError"); } };
+  assert.throws(() => registrarResposta(e, completas, cheio, agora), /não há espaço no navegador/i);
+});
+
+test("a lista de respostas mostra as imagens guardadas", () => {
+  const fonte = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(fonte, /src=\{f\.dataUrl\}/);
+});

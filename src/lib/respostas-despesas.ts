@@ -7,7 +7,8 @@ import { perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-respostas-despesas";
 
-export type ItemResposta = { perguntaId: string; titulo: string; resposta: string };
+export type ImagemGuardada = { nome: string; dataUrl: string };
+export type ItemResposta = { perguntaId: string; titulo: string; resposta: string; imagens?: ImagemGuardada[] };
 export type RespostaRegistrada = { id: string; tipo: string; data: string; hora: string; itens: ItemResposta[] };
 
 const dois = (n: number) => String(n).padStart(2, "0");
@@ -43,7 +44,7 @@ function conferirIntegridade(storage: StorageLike): void {
 }
 
 // Valida tudo e grava a resposta de uma vez; se algo falha, nada é gravado. As mais novas ficam primeiro.
-export function registrarResposta(e: Estado, respostas: Respostas, storage: StorageLike = localStorage, agora = new Date()): RespostaRegistrada {
+export function registrarResposta(e: Estado, respostas: Respostas, storage: StorageLike = localStorage, agora = new Date(), imagens: Record<string, ImagemGuardada[]> = {}): RespostaRegistrada {
   const tipo = tipoEscolhido(respostas);
   if (!tipo) throw new Error("Escolha o tipo de despesa.");
   if (!tiposDeDespesa(e).includes(tipo)) throw new Error("Esse tipo de despesa não existe mais no cadastro; recarregue o formulário.");
@@ -55,10 +56,21 @@ export function registrarResposta(e: Estado, respostas: Respostas, storage: Stor
   const registro: RespostaRegistrada = {
     id: `r-${agora.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     tipo, data: hojeLocal(agora), hora: horaLocal(agora),
-    // Data entra como dd/mm/aaaa, o formato que quem lê a conferência espera.
-    itens: visiveis.filter((p) => comoTexto(respostas[p.id]) !== "").map((p) => ({ perguntaId: p.id, titulo: p.titulo, resposta: p.tipo === "data" ? dataBr(comoTexto(respostas[p.id])) : textoDaResposta(p, respostas) })),
+    itens: visiveis.filter((p) => comoTexto(respostas[p.id]) !== "").map((p) => {
+      const fotos = p.tipo === "upload" ? (imagens[p.id] ?? []).filter((i) => i.dataUrl.startsWith("data:image/")) : [];
+      return {
+        perguntaId: p.id, titulo: p.titulo,
+        // Data entra como dd/mm/aaaa, o formato que quem lê a conferência espera.
+        resposta: p.tipo === "data" ? dataBr(comoTexto(respostas[p.id])) : textoDaResposta(p, respostas),
+        ...(fotos.length ? { imagens: fotos.map((i) => ({ nome: i.nome, dataUrl: i.dataUrl })) } : {}),
+      };
+    }),
   };
-  storage.setItem(CHAVE, JSON.stringify([registro, ...listarRespostas(storage)]));
+  try {
+    storage.setItem(CHAVE, JSON.stringify([registro, ...listarRespostas(storage)]));
+  } catch {
+    throw new Error("Não há espaço no navegador para guardar esta resposta com as imagens; exclua respostas antigas e tente de novo.");
+  }
   return registro;
 }
 

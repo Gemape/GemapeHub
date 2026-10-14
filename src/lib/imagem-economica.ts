@@ -2,7 +2,15 @@
 import { dimensoesReduzidas } from "./questionario-respostas.ts";
 import { IMAGEM_ECONOMICA } from "./questionario-despesas.ts";
 
-export type ImagemReduzida = { nome: string; bytesAntes: number; bytesDepois: number };
+// `dataUrl` é a imagem já reduzida, guardada na resposta para ser vista na lista de respostas registradas.
+export type ImagemReduzida = { nome: string; bytesAntes: number; bytesDepois: number; dataUrl: string };
+
+const comoDataUrl = (blob: Blob) => new Promise<string>((ok, falha) => {
+  const leitor = new FileReader();
+  leitor.onload = () => ok(String(leitor.result));
+  leitor.onerror = () => falha(new Error("não foi possível ler a imagem"));
+  leitor.readAsDataURL(blob);
+});
 
 export async function reduzirImagem(arquivo: File): Promise<ImagemReduzida> {
   if (!arquivo.type.startsWith("image/")) throw new Error(`${arquivo.name}: só imagens são aceitas.`);
@@ -18,5 +26,7 @@ export async function reduzirImagem(arquivo: File): Promise<ImagemReduzida> {
   const blob = await new Promise<Blob | null>((ok) => tela.toBlob(ok, IMAGEM_ECONOMICA.formato, IMAGEM_ECONOMICA.qualidade));
   if (!blob) throw new Error(`${arquivo.name}: não foi possível reduzir a imagem.`);
   // Se a redução ficou maior que o original (imagem já pequena), vale o original.
-  return { nome: arquivo.name, bytesAntes: arquivo.size, bytesDepois: Math.min(blob.size, arquivo.size) };
+  const final = blob.size <= arquivo.size ? blob : arquivo;
+  const dataUrl = await comoDataUrl(final).catch(() => { throw new Error(`${arquivo.name}: não foi possível reduzir a imagem.`); });
+  return { nome: arquivo.name, bytesAntes: arquivo.size, bytesDepois: final.size, dataUrl };
 }
