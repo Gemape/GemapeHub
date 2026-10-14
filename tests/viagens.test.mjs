@@ -184,3 +184,15 @@ test("revisão dec 183: seção que começa logo depois da pergunta de tipos nã
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /paginasDoPreenchimento\(estado, tipo, visiveis\.filter/);
 });
+
+test("dec 189: o Questionário de Despesas de Parâmetros é só pré-visualização, sem envio nem respostas registradas", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasTela.tsx", import.meta.url), "utf8");
+  assert.match(tela, /<QuestionarioFormulario[^>]*somentePrevia/);
+  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(painel, /somentePrevia/);
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /ultimaPagina && !somentePrevia && <Button type="submit"/);
+  assert.match(form, /if \(somentePrevia\) return;/);
+  assert.match(form, /\{!somentePrevia && \(\s*<button type="button" className="text-primary underline" onClick=\{\(\) => setVerLista/);
+  assert.match(form, /verLista && !somentePrevia && <ListaRespostas/);
+});

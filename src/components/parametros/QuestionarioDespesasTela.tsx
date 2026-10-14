@@ -4,7 +4,7 @@ import { QuestionarioDespesasConstrutor } from "@/components/parametros/Question
 import { QuestionarioFormulario } from "@/components/parametros/QuestionarioFormulario";
 import { useAccess } from "@/lib/access-context";
 
-// Tela única do Questionário de Despesas (dec 173): abre no formulário; quem pode gravar tem ali o Editar questionário,
+// Tela única do Questionário de Despesas (dec 173): abre na pré-visualização do formulário, sem envio (dec 189); quem pode gravar tem ali o Editar questionário,
 // que troca para a montagem na mesma tela, e o Abrir formulário volta para o preenchimento com o mesmo tipo de despesa.
 export function QuestionarioDespesasTela() {
   const { canWrite } = useAccess();
@@ -13,5 +13,5 @@ export function QuestionarioDespesasTela() {
   if (montando && canWrite) {
     return <QuestionarioDespesasConstrutor tipoInicial={tipo} onAbrirFormulario={(t) => { setTipo(t); setMontando(false); }} />;
   }
-  return <QuestionarioFormulario tipoInicial={tipo} onEditar={(t) => { setTipo(t || undefined); setMontando(true); }} />;
+  return <QuestionarioFormulario tipoInicial={tipo} somentePrevia onEditar={(t) => { setTipo(t || undefined); setMontando(true); }} />;
 }
