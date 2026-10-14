@@ -71,6 +71,8 @@ export function QuestionarioFormulario({ tipoInicial, onEditar, onVoltar }: { ti
   // Seções (dec 179): cada uma é uma página; sem seções o formulário é uma página só.
   const paginas = useMemo(() => (tipo && tipos.includes(tipo) ? paginasDoPreenchimento(estado, tipo, visiveis) : [{ secao: null, perguntas: visiveis }]), [estado, tipo, tipos, visiveis]);
   const [paginaPedida, setPaginaPedida] = useState(0);
+  // Trocar o tipo de despesa recomeça da primeira página.
+  useEffect(() => { setPaginaPedida(0); }, [tipo]);
   const pagina = Math.min(paginaPedida, Math.max(paginas.length - 1, 0));
   const paginaAtual = paginas[pagina];
   const ultimaPagina = pagina >= paginas.length - 1;

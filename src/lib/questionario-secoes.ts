@@ -53,6 +53,7 @@ export function gravarSecao(e: Estado, tipo: string, inicio: string, dados: { ti
   const lista = e.secoes?.[tipo] ?? [];
   const atual = lista.find((s) => s.inicio === inicio);
   if (dados === null) {
+    if (!atual) throw new Error("Não há seção iniciando nesta pergunta.");
     if (inicio === ID_TIPO_DESPESA) throw new Error("A primeira seção não pode ser removida.");
     return gravarEstado({ ...e, secoes: { ...(e.secoes ?? {}), [tipo]: lista.filter((s) => s.inicio !== inicio) } }, storage);
   }

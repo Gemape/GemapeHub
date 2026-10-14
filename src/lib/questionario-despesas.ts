@@ -215,7 +215,9 @@ function secoesLidas(bruto: unknown): Estado["secoes"] | undefined {
   if (!bruto || typeof bruto !== "object" || Array.isArray(bruto)) return undefined;
   return Object.fromEntries(Object.entries(bruto).filter(([, lista]) => Array.isArray(lista)).map(([tipo, lista]) => [
     tipo,
-    (lista as unknown[]).filter((x): x is Secao => !!x && typeof x === "object" && ["id", "titulo", "subtitulo", "inicio"].every((k) => typeof (x as Record<string, unknown>)[k] === "string")),
+    // Uma seção por pergunta inicial e por id: repetida (dado editado à mão) é descartada.
+    (lista as unknown[]).filter((x): x is Secao => !!x && typeof x === "object" && ["id", "titulo", "subtitulo", "inicio"].every((k) => typeof (x as Record<string, unknown>)[k] === "string"))
+      .filter((x, i, todas) => todas.findIndex((y) => y.inicio === x.inicio || y.id === x.id) === i),
   ]));
 }
 

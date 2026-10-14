@@ -37,7 +37,8 @@ export function pendencias(e: Estado, tipo: string): Pendencia[] {
     }
     for (const [opcao, destino] of Object.entries(porOpcao)) {
       const alvo = idDoDestino(destino);
-      if (!origem.opcoes.includes(opcao)) lista.push({ perguntaId, opcao, motivo: "A opção não existe mais." });
+      if (destino === DESTINO_PROXIMA_SECAO && inicioDaProximaSecao(e, tipo, perguntaId) === null) lista.push({ perguntaId, opcao, motivo: "Não há seção depois desta pergunta." });
+      else if (!origem.opcoes.includes(opcao)) lista.push({ perguntaId, opcao, motivo: "A opção não existe mais." });
       else if (alvo !== null && !ids.includes(alvo)) lista.push({ perguntaId, opcao, motivo: "A pergunta de destino saiu do questionário." });
     }
   }

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { ID_TIPO_DESPESA, estadoPadrao, excluirPergunta, gravarQuestionario, lerEstado, questionarioDoTipo, salvarPergunta } from "../src/lib/questionario-despesas.ts";
-import { encontrarCiclo, gravarDestino } from "../src/lib/questionario-destinos.ts";
+import { encontrarCiclo, gravarDestino, pendencias } from "../src/lib/questionario-destinos.ts";
 import { criarQuestionario, gravarSecao, inicioDaProximaSecao, paginasDoPreenchimento, secaoDaPergunta, secoesDoTipo } from "../src/lib/questionario-secoes.ts";
 import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 import { registrarResposta } from "../src/lib/respostas-despesas.ts";
@@ -136,4 +136,22 @@ test("telas: botão Criar novo questionário, janela de seção e páginas com P
   assert.match(f, /Próxima/);
   assert.match(f, /Voltar/);
   assert.match(f, /Página \{pagina \+ 1\} de/);
+});
+
+test("'Ir para a próxima seção' sem seção depois pede ação requerida", () => {
+  const s = memoria();
+  let e = comSecoes(s);
+  e = gravarDestino(e, T, "q-01", "Dinheiro", "proxima-secao", s);
+  assert.equal(pendencias(e, T).length, 0);
+  e = gravarSecao(e, T, "q-05", null, s);
+  e = gravarSecao(e, T, "q-08", null, s);
+  assert.equal(pendencias(e, T).length, 1);
+  assert.match(pendencias(e, T)[0].motivo, /seção/);
+});
+
+test("remover seção que não existe avisa; seção repetida na leitura é descartada", () => {
+  const s = memoria();
+  assert.throws(() => gravarSecao(estadoPadrao(), T, "q-04", null, s), /Não há seção/);
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...estadoPadrao(), secoes: { [T]: [{ id: "a", titulo: "A", subtitulo: "", inicio: "q-03" }, { id: "b", titulo: "B", subtitulo: "", inicio: "q-03" }] } }));
+  assert.equal(lerEstado(s).secoes[T].length, 1);
 });
