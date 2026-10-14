@@ -153,3 +153,13 @@ test("cada questionário leva o nome do card e o card de Alimentação usa o íc
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /tituloDoQuestionario\(tipo\)/);
 });
+
+test("dec 183: o card de Viagens abre o formulário sem a pergunta de tipos de despesas, e preencher de novo mantém o tipo", () => {
+  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  assert.match(painel, /<QuestionarioFormulario[^>]*tipoInicial=\{tipo\}[^>]*semPerguntaTipo/);
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /filter\(\(p\) => !escondida\(p\)\)/);
+  assert.match(form, /setRespostas\(respostasIniciais\(\)\)/);
+  const tela = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasTela.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(tela, /semPerguntaTipo/);
+});
