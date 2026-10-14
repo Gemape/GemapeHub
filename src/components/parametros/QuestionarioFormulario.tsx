@@ -33,7 +33,8 @@ const vazia = (r: Resposta | undefined) => r === undefined || (Array.isArray(r) 
 
 // Formulário do Questionário de Despesas, no estilo Google Forms (dec 169): cartão central, perguntas em cartões, obrigatórias
 // com asterisco, Enviar com confirmação e lista de respostas para conferência. Respostas só no navegador (modo demonstração).
-export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onEditar, onVoltar }: { tipoInicial?: string | undefined; semPerguntaTipo?: boolean | undefined; onEditar?: ((tipo: string) => void) | undefined; onVoltar?: { rotulo: string; aoClicar: () => void } | undefined }) {
+// `somentePrevia` (Parâmetros, dec 189): o formulário serve para conferir a montagem; não envia nem mostra respostas registradas.
+export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, somentePrevia, onEditar, onVoltar }: { tipoInicial?: string | undefined; semPerguntaTipo?: boolean | undefined; somentePrevia?: boolean | undefined; onEditar?: ((tipo: string) => void) | undefined; onVoltar?: { rotulo: string; aoClicar: () => void } | undefined }) {
   const { isAdmin, canWrite } = useAccess();
   const [estado] = useState(lerEstado);
   const tipos = tiposDeDespesa(estado);
@@ -123,6 +124,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onEditar,
     evento.preventDefault();
     if (enviando.current || ilegivel || acaoRequerida) return;
     if (!ultimaPagina) { avancar(); return; }
+    if (somentePrevia) return;
     const achados = validarRespostas(visiveis, respostas);
     setErros(achados);
     const primeiro = visiveis.find((p) => achados[p.id]);
@@ -161,15 +163,17 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onEditar,
     <div className="mx-auto w-full max-w-2xl space-y-4 p-3 sm:p-4">
       <div className={`${cartao} border-t-8 border-t-primary`}>
         <h1 className="text-2xl font-semibold">{tituloDoQuestionario(tipo)}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{ocultaTipo ? "Responda as perguntas." : "Escolha o tipo de despesa e responda as perguntas."} Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
+        <p className="mt-1 text-sm text-muted-foreground">{somentePrevia ? "Pré-visualização da montagem: nada é enviado daqui. As despesas são lançadas em Módulos > Viagens." : ocultaTipo ? "Responda as perguntas." : "Escolha o tipo de despesa e responda as perguntas."} Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
           {onVoltar && <button type="button" className="text-primary underline" onClick={onVoltar.aoClicar}>{onVoltar.rotulo}</button>}
           {canWrite && onEditar && (
             <button type="button" className="inline-flex items-center gap-1 text-primary underline" onClick={() => onEditar(tipo)}><Pencil className="h-3 w-3" />Editar questionário</button>
           )}
-          <button type="button" className="text-primary underline" onClick={() => setVerLista((v) => !v)}>
-            {verLista ? "Ocultar respostas registradas" : `Respostas registradas (${registradas.length})`}
-          </button>
+          {!somentePrevia && (
+            <button type="button" className="text-primary underline" onClick={() => setVerLista((v) => !v)}>
+              {verLista ? "Ocultar respostas registradas" : `Respostas registradas (${registradas.length})`}
+            </button>
+          )}
         </div>
       </div>
 
@@ -181,7 +185,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onEditar,
       {tipoDesconhecido && <p role="alert" className="text-sm text-destructive">O tipo de despesa “{tipoInicial}” não existe mais no cadastro; escolha um na primeira pergunta.</p>}
       {!tipo && !tipoDesconhecido && <p className="text-sm text-muted-foreground">Escolha o tipo de despesa para ver as demais perguntas.</p>}
 
-      {verLista && <ListaRespostas lista={registradas} podeExcluir={isAdmin} onExcluir={excluir} />}
+      {verLista && !somentePrevia && <ListaRespostas lista={registradas} podeExcluir={isAdmin} onExcluir={excluir} />}
 
       {enviada ? (
         <div className={`${cartao} space-y-3`} role="status">
@@ -245,7 +249,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onEditar,
           <div className="flex flex-wrap gap-2">
             {pagina > 0 && <Button type="button" variant="outline" onClick={() => irParaPagina(pagina - 1)}>Voltar</Button>}
             {!ultimaPagina && <Button type="button" onClick={avancar} disabled={!tipo || ilegivel || acaoRequerida}>Próxima</Button>}
-            {ultimaPagina && <Button type="submit" disabled={!tipo || ilegivel || acaoRequerida}>Enviar</Button>}
+            {ultimaPagina && !somentePrevia && <Button type="submit" disabled={!tipo || ilegivel || acaoRequerida}>Enviar</Button>}
             <Button type="button" variant="ghost" onClick={preencherDeNovo}>Limpar formulário</Button>
           </div>
         </form>

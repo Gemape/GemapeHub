@@ -436,4 +436,6 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 185: anexo de comprovante soma até 3 imagens, com Remover e bloqueio no limite (juntarImagens e mensagemDeLimite em src/lib/imagem-economica.ts; campo em QuestionarioFormulario.tsx).
 - 2026-10-14 dec 186: lista das despesas do mês no painel de Viagens (ViagensLista.tsx, viagens-lista.ts), Gerar relatório das marcadas e status Finalizado (relatorios-viagens.ts, chave gemape-demo-relatorios-viagens). Faltam extrato do técnico e índice no prazo.
 - 2026-10-14 dec 187: extrato do técnico (ViagensExtrato.tsx; extratoDoTecnico e deslocarMes em viagens-lista.ts), aberto pelo nome na tabela Resultados dos técnicos. Falta índice no prazo.
+- 2026-10-14 dec 189: Parâmetros > Veículos > Questionário de Despesas só pré-visualiza (prop somentePrevia em QuestionarioFormulario); envio e respostas registradas só em Viagens.
+
 - 2026-10-14 dec 188: painel de Viagens sem a frase sobre o envio dos comprovantes (ViagensPainel.tsx).
