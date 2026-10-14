@@ -99,7 +99,16 @@ test("nome com inicial maiúscula por palavra e e-mail em minúsculas, também a
   assert.equal(formatarPorModo("FaleCom@GMAIL.com", "minusculas"), "falecom@gmail.com");
   const s = memoria();
   assert.equal(salvarCliente({ ...vazio, nome: "A", email: "FALECOM@GMAIL.COM" }, s).email, "falecom@gmail.com");
-  const tela = readFileSync("src/routes/_authenticated/cadastros/clientes.tsx", "utf8");
+  const tela = readFileSync("src/components/parametros/ClienteDialog.tsx", "utf8");
   assert.match(tela, /id="nome" name="nome" capitalizar="nome"/);
   assert.match(tela, /id="email" name="email" type="email" capitalizar="minusculas"/);
+});
+
+test("a janela de cadastro de cliente é a mesma na tela de Clientes e no formulário de despesas, sem enviar o formulário de fora", () => {
+  const janela = readFileSync("src/components/parametros/ClienteDialog.tsx", "utf8");
+  assert.match(janela, /stopPropagation/);
+  assert.match(readFileSync("src/routes/_authenticated/cadastros/clientes.tsx", "utf8"), /<ClienteDialog/);
+  const formulario = readFileSync("src/components/parametros/QuestionarioFormulario.tsx", "utf8");
+  assert.match(formulario, /<ClienteDialog/);
+  assert.doesNotMatch(formulario, /target="_blank"/);
 });
