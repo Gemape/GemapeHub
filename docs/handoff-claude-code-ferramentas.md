@@ -430,3 +430,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 180: Viagens etapa 4: submenu Relatório (filtros, conferência, documento A4 com logo, clientes visitados, tabela, quadro por tipo, assinaturas, paginação 01/01 e comprovantes 1/2/4 por página). Código em src/lib/viagens-relatorio.ts e ViagensRelatorio.tsx. Plano do módulo Viagens concluído (etapas 1 a 4).
 - 2026-10-14 dec 181: título do questionário = "Despesas <card>" (tituloDoQuestionario em src/lib/questionario-despesas.ts) e ícone Hamburger em Alimentação (ViagensPainel.tsx).
 - 2026-10-14 dec 182: Cartões de crédito (q-02) só aparece com Moedas (q-01) = Cartão de crédito; regra de fábrica via comRegraDoCartao em src/lib/questionario-despesas.ts (migração única com cartaoAjustado).
+- 2026-10-14 dec 183: card de Viagens abre o formulário sem a pergunta de tipos (prop semPerguntaTipo em QuestionarioFormulario.tsx, usada só por ViagensPainel.tsx).
