@@ -51,7 +51,8 @@ function CodigoProduto() {
         })
       : "";
 
-  // Novo código: categoria em branco (ou a de origem, ao clonar) com a sigla e a numeração copiadas.
+  // Novo código: categoria em branco (ou a de origem, ao clonar, com a numeração copiada e a sigla em branco,
+  // porque a sigla é única no sistema e a cópia precisa de uma própria).
   function novo(categoriaId = "", sigla = "", inicial = "") {
     setAberto({ categoriaId, sigla, inicial, editando: null });
   }
@@ -181,7 +182,7 @@ function CodigoProduto() {
                 <TableCell className="whitespace-nowrap">
                   <AcoesLinha
                     rotulo={regra ? `código ${regra.sigla} de ${c.nome}` : `regra de código de ${c.nome}`}
-                    {...(regra ? { onClonar: () => novo(c.id, regra.sigla, regra.inicial) } : {})}
+                    {...(regra ? { onClonar: () => novo(c.id, "", regra.inicial) } : {})}
                     onEditar={() =>
                       setAberto({ categoriaId: c.id, sigla: regra?.sigla ?? "", inicial: regra?.inicial ?? "", editando: regra ? regra.sigla : null })
                     }
@@ -191,10 +192,13 @@ function CodigoProduto() {
                           onExcluir: () => {
                             // A última regra de categoria-base não sai: a exclusão é recusada com o aviso
                             // de quais cadastros ficariam bloqueados, sem pedir confirmação.
-                            const ultima = regrasDaCategoria(dados.regrasCodigo, c.id).length <= 1;
+                            const doGrupo = regrasDaCategoria(dados.regrasCodigo, c.id);
+                            const ultima = doGrupo.length <= 1;
+                            // Excluir a padrão passa a padrão a seguinte: o aviso diz qual.
+                            const proxima = doGrupo[0] === regra ? doGrupo[1] : undefined;
                             if (
                               (CATEGORIAS_BASE[c.id] && ultima) ||
-                              confirm(`Excluir o código ${regra.sigla} de ${c.nome}?`)
+                              confirm(`Excluir o código ${regra.sigla} de ${c.nome}?${proxima ? ` A sigla ${proxima.sigla} passa a ser a padrão.` : ""}`)
                             )
                               executar(() => removerRegraCodigo(c.id, undefined, regra.sigla), "Código excluído.");
                           },

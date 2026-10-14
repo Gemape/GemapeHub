@@ -258,12 +258,16 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
     await calcularPrevia(regraDoCadastro(parametros.regrasCodigo, config.categoriaId, siglaInicial));
   }
 
+  // Só a última resposta vale: abrir outro cadastro ou trocar a sigla descarta a prévia que ainda vinha a caminho.
+  const pedidoPrevia = useRef(0);
   async function calcularPrevia(r: typeof regra) {
+    const pedido = ++pedidoPrevia.current;
     if (!r) return;
     try {
-      setPrevia(proximoCodigo(r, await codigosUsados(tabela)));
+      const codigo = proximoCodigo(r, await codigosUsados(tabela));
+      if (pedido === pedidoPrevia.current) setPrevia(codigo);
     } catch {
-      setPrevia("");
+      if (pedido === pedidoPrevia.current) setPrevia("");
     }
   }
 

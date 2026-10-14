@@ -127,12 +127,16 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
     await calcularPrevia(regraDoCadastro(parametros.regrasCodigo, "cat-ferramentas", siglaInicial));
   }
 
+  // Só a última resposta vale: abrir outro cadastro ou trocar a sigla descarta a prévia que ainda vinha a caminho.
+  const pedidoPrevia = useRef(0);
   async function calcularPrevia(r: typeof regraFerramenta) {
+    const pedido = ++pedidoPrevia.current;
     if (!r) return;
     try {
-      setPreviaCodigo(proximoCodigo(r, await codigosFerramenta()));
+      const codigo = proximoCodigo(r, await codigosFerramenta());
+      if (pedido === pedidoPrevia.current) setPreviaCodigo(codigo);
     } catch {
-      setPreviaCodigo("");
+      if (pedido === pedidoPrevia.current) setPreviaCodigo("");
     }
   }
 
