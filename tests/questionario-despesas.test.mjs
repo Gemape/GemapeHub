@@ -3,75 +3,129 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
-  atualizarPergunta, duplicarPergunta, excluirPergunta, lerQuestionario, moverPergunta, mudarTipo, novaPergunta,
-  questionarioVazio, salvarQuestionario, validarQuestionario,
+  ID_TIPO_DESPESA, clonarPergunta, estadoPadrao, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId, novaPergunta,
+  perguntasPadrao, proximoCodigoPergunta, questionarioDoTipo, regraArquivos, salvarPergunta, tiposDeDespesa, validarPergunta,
 } from "../src/lib/questionario-despesas.ts";
+import { filtrarMunicipios, municipiosDaUf } from "../src/lib/municipios.ts";
 
 const memoria = () => {
   const dados = new Map();
   return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v), dados };
 };
-const com = (...perguntas) => ({ ...questionarioVazio(), perguntas });
-const p = (titulo, extra = {}) => ({ ...novaPergunta("texto"), titulo, ...extra });
 
-test("pergunta nova de múltipla escolha vem com uma opção; texto não tem opções", () => {
-  assert.deepEqual(novaPergunta("multipla").opcoes, ["Opção 1"]);
-  assert.deepEqual(novaPergunta("texto").opcoes, []);
+test("as 13 perguntas do responsável já vêm cadastradas, com tipos, formatos e obrigatoriedade", () => {
+  const p = perguntasPadrao();
+  assert.equal(p.length, 13);
+  assert.deepEqual(p.map((x) => x.codigo), ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"]);
+  assert.ok(p.every((x) => x.obrigatoria));
+  assert.deepEqual(p.map((x) => x.tipo), ["caixas", "caixas", "caixas", "caixas", "lista", "lista", "lista", "data", "paragrafo", "curta", "curta", "upload", "lista"]);
+  assert.ok(p.slice(0, 4).every((x) => x.multiplas === false));
+  assert.equal(p[4].opcoes.length, 27);
+  assert.equal(p[5].fonte, "municipios");
+  assert.equal(p[5].dependeDe, p[4].id);
+  assert.equal(p[6].fonte, "clientes");
+  assert.equal(p[9].formato, "decimal2");
+  assert.equal(p[10].formato, "decimal2");
+  assert.equal(p[3].habilitados.length, 7);
+  assert.deepEqual(p[3].habilitados.filter((h) => h.area === "PCM").map((h) => h.nome), ["Eduardo", "Bruno"]);
 });
 
-test("trocar o tipo guarda o enunciado e só mantém opções onde existem", () => {
-  const m = { ...novaPergunta("multipla"), titulo: "Forma de pagamento", opcoes: ["Pix", "Cartão"] };
-  assert.deepEqual(mudarTipo(m, "caixas").opcoes, ["Pix", "Cartão"]);
-  const t = mudarTipo(m, "texto");
-  assert.equal(t.titulo, "Forma de pagamento");
-  assert.deepEqual(t.opcoes, []);
-  assert.deepEqual(mudarTipo(t, "lista").opcoes, ["Opção 1"]);
+test("os tipos de despesa vêm da pergunta 3 e todo questionário começa por ela", () => {
+  const e = estadoPadrao();
+  assert.equal(tiposDeDespesa(e).length, 8);
+  for (const tipo of tiposDeDespesa(e)) assert.equal(questionarioDoTipo(e, tipo)[0], ID_TIPO_DESPESA);
+  assert.equal(questionarioDoTipo(e, "Pedágio").length, 13);
+  // Mesmo gravada fora de ordem ou repetida, a pergunta 3 volta ao início uma vez só.
+  const g = gravarQuestionario(e, "Pedágio", ["q-08", ID_TIPO_DESPESA, "q-01", "q-08"], memoria());
+  assert.deepEqual(questionarioDoTipo(g, "Pedágio"), [ID_TIPO_DESPESA, "q-08", "q-01"]);
 });
 
-test("duplicar põe a cópia logo abaixo, com id novo e opções independentes", () => {
-  const a = p("A", { tipo: "multipla", opcoes: ["x"] });
-  const lista = duplicarPergunta([a, p("B")], a.id);
-  assert.equal(lista.length, 3);
-  assert.equal(lista[1].titulo, "A");
-  assert.notEqual(lista[1].id, a.id);
-  lista[1].opcoes.push("y");
-  assert.deepEqual(a.opcoes, ["x"]);
+test("arrastar reordena, mas a pergunta de tipos de despesa não se move", () => {
+  assert.deepEqual(moverId(["q-03", "a", "b", "c"], "c", "a"), ["q-03", "c", "a", "b"]);
+  assert.deepEqual(moverId(["q-03", "a", "b"], "a", "q-03"), ["q-03", "a", "b"]);
+  assert.deepEqual(moverId(["q-03", "a", "b"], "q-03", "b"), ["q-03", "a", "b"]);
 });
 
-test("mover (arrastar) e excluir", () => {
-  const [a, b, c] = [p("A"), p("B"), p("C")];
-  assert.deepEqual(moverPergunta([a, b, c], c.id, a.id).map((x) => x.titulo), ["C", "A", "B"]);
-  assert.deepEqual(moverPergunta([a, b, c], a.id, c.id).map((x) => x.titulo), ["B", "C", "A"]);
-  assert.equal(moverPergunta([a, b], a.id, a.id).length, 2);
-  assert.deepEqual(excluirPergunta([a, b, c], b.id).map((x) => x.titulo), ["A", "C"]);
-  assert.equal(atualizarPergunta([a, b], { ...b, obrigatoria: true })[1].obrigatoria, true);
+test("cadastrar: título obrigatório, sem título repetido, opções preenchidas e sem repetição", () => {
+  const e = estadoPadrao();
+  const nova = novaPergunta("multipla", proximoCodigoPergunta(e, memoria()));
+  assert.equal(proximoCodigoPergunta(e, memoria()), "14");
+  assert.match(validarPergunta(nova, e.perguntas)[0], /título/);
+  assert.match(validarPergunta({ ...nova, titulo: "moedas" }, e.perguntas)[0], /Já existe/);
+  assert.match(validarPergunta({ ...nova, titulo: "Placa" }, e.perguntas)[0], /opções/);
+  assert.match(validarPergunta({ ...nova, titulo: "Placa", opcoes: ["a", "A"] }, e.perguntas)[0], /repetidas/);
+  assert.deepEqual(validarPergunta({ ...nova, titulo: "Placa", opcoes: ["a", "b"] }, e.perguntas), []);
+  assert.deepEqual(validarPergunta({ ...novaPergunta("data", "14"), titulo: "Outra data" }, e.perguntas), []);
 });
 
-test("validação: título, enunciado, opções vazias ou repetidas e escala", () => {
-  assert.deepEqual(validarQuestionario(com()), []);
-  assert.match(validarQuestionario({ ...com(), titulo: " " })[0], /título/);
-  assert.match(validarQuestionario(com(p("")))[0], /Pergunta 1: informe o enunciado/);
-  assert.match(validarQuestionario(com(p("A", { tipo: "lista", opcoes: ["a", ""] })))[0], /preencha todas as opções/);
-  assert.match(validarQuestionario(com(p("A", { tipo: "lista", opcoes: ["Pix", "pix"] })))[0], /repetidas/);
-  assert.match(validarQuestionario(com(p("A", { tipo: "escala", escalaMax: 11 })))[0], /2 a 10/);
-});
-
-test("salvar grava o esquema limpo e ler devolve o mesmo; inválido não grava", () => {
+test("salvar grava no navegador e o código excluído não é reaproveitado", () => {
   const s = memoria();
-  assert.deepEqual(lerQuestionario(s), questionarioVazio());
-  assert.throws(() => salvarQuestionario(com(p("")), s), /enunciado/);
-  assert.equal(s.dados.size, 0);
-  const gravado = salvarQuestionario(com(p("  Valor gasto  ", { obrigatoria: true })), s);
-  assert.equal(gravado.perguntas[0].titulo, "Valor gasto");
-  assert.deepEqual(lerQuestionario(s), gravado);
+  let e = estadoPadrao();
+  const nova = { ...novaPergunta("curta", proximoCodigoPergunta(e, s)), titulo: "Quilometragem", formato: "inteiro" };
+  e = salvarPergunta(e, nova, s);
+  assert.equal(lerEstado(s).perguntas.at(-1).titulo, "Quilometragem");
+  e = excluirPergunta(e, nova.id, s);
+  assert.equal(proximoCodigoPergunta(e, s), "15");
+});
+
+test("a pergunta de tipos de despesa não se exclui; excluir outra tira dos questionários", () => {
+  const s = memoria();
+  const e = estadoPadrao();
+  assert.throws(() => excluirPergunta(e, ID_TIPO_DESPESA, s), /não pode ser excluída/);
+  const sem = excluirPergunta(e, "q-10", s);
+  assert.ok(!sem.perguntas.some((p) => p.id === "q-10"));
+  assert.ok(Object.values(sem.questionarios).every((l) => !l.includes("q-10")));
+});
+
+test("incluir um tipo de despesa cria o questionário dele; tirar o tipo apaga o dele", () => {
+  const s = memoria();
+  const e = estadoPadrao();
+  const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
+  const g = salvarPergunta(e, { ...q3, opcoes: [...q3.opcoes.filter((o) => o !== "Pedágio"), "Lavagem"] }, s);
+  assert.ok(tiposDeDespesa(g).includes("Lavagem"));
+  assert.equal(questionarioDoTipo(g, "Lavagem").length, 13);
+  assert.ok(!("Pedágio" in g.questionarios));
+});
+
+test("clonar copia tudo com número novo e título de cópia", () => {
+  const e = estadoPadrao();
+  const c = clonarPergunta(e, "q-02", memoria());
+  assert.equal(c.codigo, "14");
+  assert.equal(c.titulo, "Cartões de crédito (cópia)");
+  assert.deepEqual(c.opcoes, e.perguntas[1].opcoes);
+  assert.notEqual(c.id, "q-02");
+  assert.equal(clonarPergunta(e, ID_TIPO_DESPESA, memoria()).sistema, false);
+});
+
+test("habilitados: quem tem vínculo com empregado inativo sai da lista; sem vínculo continua", () => {
+  const lista = [
+    { empregadoId: "e1", nome: "Roberto", area: "Oficina" },
+    { empregadoId: "e2", nome: "Bruno", area: "PCM" },
+    { empregadoId: null, nome: "Levindo", area: "Oficina" },
+  ];
+  assert.deepEqual(habilitadosAtivos(lista, new Set(["e1"])).map((h) => h.nome), ["Roberto", "Levindo"]);
+});
+
+test("upload: até 3 arquivos, e obrigatória exige só 1", () => {
+  const p = novaPergunta("upload", "14");
+  assert.deepEqual(regraArquivos({ ...p, obrigatoria: true }), { minimo: 1, maximo: 3 });
+  assert.deepEqual(regraArquivos({ ...p, obrigatoria: false }), { minimo: 0, maximo: 3 });
 });
 
 test("dado salvo ilegível não é sobrescrito", () => {
   const s = memoria();
   s.setItem("gemape-demo-questionario-despesas", "{quebrado");
-  assert.deepEqual(lerQuestionario(s), questionarioVazio());
-  assert.throws(() => salvarQuestionario(com(p("A")), s), /ilegível/);
+  assert.equal(lerEstado(s).perguntas.length, 13);
+  assert.throws(() => salvarPergunta(estadoPadrao(), { ...novaPergunta("data", "14"), titulo: "Nova" }, s), /ilegíveis/);
   assert.equal(s.getItem("gemape-demo-questionario-despesas"), "{quebrado");
+});
+
+test("municípios por UF vêm da lista do IBGE e a busca ignora acento e maiúscula", async () => {
+  assert.equal((await municipiosDaUf("MG")).length, 853);
+  assert.deepEqual(await municipiosDaUf("DF"), ["Brasília"]);
+  assert.ok((await municipiosDaUf("sp")).includes("São Paulo"));
+  assert.deepEqual(filtrarMunicipios(await municipiosDaUf("SP"), "sao jose do rio").slice(0, 2), ["São José do Rio Pardo", "São José do Rio Preto"]);
+  assert.equal(filtrarMunicipios(["A", "B"], "").length, 2);
 });
 
 test("o submenu fica em Parâmetros > Veículos e a rota existe", () => {
