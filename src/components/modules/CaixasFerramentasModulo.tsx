@@ -1,4 +1,14 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
+import {
+  controleDaFerramenta,
+  ferramentasComEmpregadoRemovidas,
+  ferramentasEmOutraCaixa,
+  movimentacoesDaCaixa,
+  validarFerramentasDaCaixa,
+} from "@/lib/controle-caixa";
 import { Plus, Trash2, Search, Check, ChevronsUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
@@ -55,6 +65,7 @@ import {
   useItens,
   useCaixasFerramentas,
   useCaixaItens,
+  useTodosCaixaItens,
   useSalvarCaixa,
   type CaixaFerramenta,
   type Item,
@@ -93,6 +104,13 @@ export function CaixasFerramentasModulo() {
   const numeroFixo = editando ? numeroDaCaixa(editando) : null;
   const disponiveis = numerosDisponiveis(habilitadas, todasCaixas, editando?.id);
   const { data: itensCarregados = [] } = useCaixaItens(base?.id ?? null);
+  // Uma ferramenta só fica em uma caixa, e quem está com empregado não sai da caixa: as mesmas regras do diálogo de ferramentas da caixa.
+  const { data: itensDeTodas = [] } = useTodosCaixaItens();
+  const { data: movimentacoesFerramenta = [] } = useQuery({
+    queryKey: ["movimentacoes", "ferramenta", "validar-caixa"],
+    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo: "ferramenta" }),
+    enabled: Boolean(editando),
+  });
 
   const salvar = useSalvarCaixa();
   const excluir = useExcluir("caixas_ferramentas", ["caixas_ferramentas"]);
@@ -174,6 +192,29 @@ export function CaixasFerramentasModulo() {
     const erroNumero = validarNumeroCaixa(numero, habilitadas, todasCaixas, editando?.id);
     if (erroNumero || numero === null) {
       toast.error(erroNumero ?? "Selecione o número da caixa.");
+      return;
+    }
+
+    const nomeFerramenta = (id: string) =>
+      itensVinculados.find((i) => i.ferramenta_id === id)?.ferramenta?.nome ??
+      itensCarregados.find((i) => i.ferramenta_id === id)?.ferramenta?.nome ??
+      "Ferramenta";
+    const historicoDaCaixa = editando
+      ? movimentacoesDaCaixa(movimentacoesFerramenta, editando.id, itensCarregados.map((i) => i.ferramenta_id), editando.codigo)
+      : [];
+    const comEmpregado = (id: string) => controleDaFerramenta(historicoDaCaixa, id).comEmpregado;
+    const erroItens =
+      validarFerramentasDaCaixa(itensVinculados, comEmpregado, nomeFerramenta) ??
+      ferramentasComEmpregadoRemovidas(editando ? itensCarregados : [], itensVinculados, comEmpregado, nomeFerramenta) ??
+      ferramentasEmOutraCaixa(
+        itensVinculados,
+        itensDeTodas.filter((o) => o.caixa_id !== editando?.id),
+        editando?.id,
+        nomeFerramenta,
+        (id) => todasCaixas.find((c) => c.id === id)?.codigo ?? "outra caixa",
+      );
+    if (erroItens) {
+      toast.error(erroItens);
       return;
     }
 

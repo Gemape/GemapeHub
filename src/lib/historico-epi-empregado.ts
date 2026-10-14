@@ -7,6 +7,7 @@ export type MovimentacaoFicha = {
   item_id: string | null;
   tipo_movimentacao: string;
   quantidade: number;
+  motivo_baixa?: string | null;
   data_movimentacao: string;
   created_at?: string | null;
   // Só no modo demonstração; no banco real a coluna entra na Fase 2 (decisão 23).
@@ -27,7 +28,7 @@ export async function lerHistoricoEpiEmpregado(
     (cliente
       .from("movimentacoes")
       .select(
-        `item_id,tipo_movimentacao,quantidade,data_movimentacao,created_at${filtro.comTamanho ? ",tamanho_id" : ""}`,
+        `item_id,tipo_movimentacao,quantidade,motivo_baixa,data_movimentacao,created_at${filtro.comTamanho ? ",tamanho_id" : ""}`,
       ) as ConsultaMovimentacoes)
       .eq("modulo", "epi")
       .eq("empresa_id", filtro.empresaId)

@@ -53,10 +53,9 @@ type Existente = {
   data_demissao?: string | null;
 };
 
-// Data de hoje no fuso local, no formato das colunas de data (AAAA-MM-DD).
+// Data de hoje no horário de Brasília, no formato das colunas de data (AAAA-MM-DD), qualquer que seja o fuso do dispositivo.
 export function hojeLocal(agora = new Date()): string {
-  const d = (n: number) => String(n).padStart(2, "0");
-  return `${agora.getFullYear()}-${d(agora.getMonth() + 1)}-${d(agora.getDate())}`;
+  return agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
 }
 
 // Decisão do responsável (30/09/2026): o empregado continua ativo até a data de demissão
@@ -79,7 +78,7 @@ export function prepararEmpregado(
   let matricula = normalizarMatricula(dados.matricula);
   const email = dados.email.trim().toLowerCase();
   if (!nome) throw new Error("Informe o nome completo.");
-  const cpfMantido = anterior && digitos(cpf) === digitos(anterior.cpf ?? "");
+  const cpfMantido = anterior && digitos(cpf) !== "" && digitos(cpf) === digitos(anterior.cpf ?? "");
   if (!cpfMantido && !cpfValido(cpf)) throw new Error("CPF inválido.");
   if (cpfMantido) cpf = anterior.cpf ?? cpf;
   const matriculaMantida = anterior && matricula === normalizarMatricula(anterior.matricula ?? "");

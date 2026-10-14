@@ -125,7 +125,8 @@ export function VeiculosCadastroModulo() {
   const salvando = useRef(false);
   const [gerando, setGerando] = useState(false);
   const { data: lista = [], isLoading } = useVeiculos(empresaId);
-  const empresaForm = empresaSel || base?.empresa_id || "";
+  const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
+  const empresaForm = empresaSel || base?.empresa_id || empresaPadrao;
   // Responsável: empregados ativos da empresa do veículo; os nomes da lista vêm de todos.
   const { data: empregadosEmpresa = [] } = useEmpregados(empresaForm || TODAS, true);
   const { data: empregados = [] } = useEmpregados(TODAS);
@@ -175,7 +176,6 @@ export function VeiculosCadastroModulo() {
   );
   const rotulo = (item: { id: string; nome: string }) =>
     estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`;
-  const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
 
   function destravar() {
     salvando.current = false;

@@ -15,6 +15,8 @@ export interface DadosFichaEpiAvulsa {
     ca?: Texto;
     tamanho?: Texto;
     tipo: string;
+    // Saída com motivo de baixa (perda, dano...) não é entrega: a ficha mostra BAIXA e o motivo.
+    baixaMotivo?: Texto;
   }[];
 }
 
@@ -28,7 +30,7 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.quantidade}</td>
         <td style="border: 1px solid #000; padding: 5px;">${escaparHtml(h.nome || "—")}${comTamanho(h.tamanho)}</td>
         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${escaparHtml(h.ca || "—")}</td>
-        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.tipo === "Saida" ? "ENTREGA" : "DEVOLUÇÃO"}</td>
+        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.tipo === "Saida" ? (h.baixaMotivo ? `BAIXA (${escaparHtml(h.baixaMotivo)})` : "ENTREGA") : "DEVOLUÇÃO"}</td>
         <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
       </tr>
     `;

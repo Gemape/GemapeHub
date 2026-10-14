@@ -191,7 +191,7 @@ export function FerramentasTermoVistoria() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end">
           <div className="space-y-1.5 lg:col-span-3">
             <Label>Empresa</Label>
-            <Select value={empresaSel} onValueChange={(v) => { setEmpresaSel(v); setEmpregadoId(""); }}>
+            <Select value={empresaSel} onValueChange={(v) => { if (!v) return; setEmpresaSel(v); setEmpregadoId(""); setCaixaSel(""); setItensVistoria([]); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>

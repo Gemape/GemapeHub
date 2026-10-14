@@ -191,7 +191,14 @@ class Consulta {
   eq(chave: string, valor: unknown) { this.filtros.push(l => l[chave] === valor); return this; }
   gte(chave: string, valor: unknown) { this.filtros.push(l => String(l[chave] ?? "") >= String(valor)); return this; }
   ilike(chave: string, valor: string) { const texto = valor.replaceAll("%", "").toLowerCase(); this.filtros.push(l => String(l[chave] ?? "").toLowerCase().includes(texto)); return this; }
-  or(_valor: string) { return this; }
+  lte(chave: string, valor: unknown) { this.filtros.push(l => String(l[chave] ?? "") <= String(valor)); return this; }
+  // Aceita o formato "coluna.ilike.%texto%,outra.ilike.%texto%" que os hooks usam na busca; basta uma coluna casar.
+  or(valor: string) {
+    const regras = valor.split(",").map(r => /^([\w]+)\.ilike\.(.*)$/.exec(r)).filter((m): m is RegExpExecArray => m !== null);
+    if (regras.length === 0) return this;
+    this.filtros.push(l => regras.some(m => String(l[m[1]!] ?? "").toLowerCase().includes(m[2]!.replaceAll("%", "").toLowerCase())));
+    return this;
+  }
   not(_a: string, _b: string, _c: string) { return this; }
   order(chave: string, opts?: { ascending?: boolean }) { this.ordens.push(`${chave}:${opts?.ascending === false ? "desc" : "asc"}`); return this; }
   limit(n: number) { this.limite = n; return this; }

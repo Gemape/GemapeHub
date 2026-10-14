@@ -71,6 +71,7 @@ export function FerramentasTermoEncerramento() {
 
   function trocarEmpresa(valor: string) {
     setEmpresaSel(valor);
+    setEmpregadoId("");
     setSaldos(new Map());
     setItensEncerramento([]);
   }

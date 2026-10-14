@@ -56,7 +56,7 @@ export function UniformesTermoBaixa() {
   const { data: empregados = [] } = useEmpregados(empresaId || TODAS, true);
   // Lista completa só para conferir a demissão: quem já saiu da lista de ativos continua bloqueado.
   const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
-  const { data: uniformes = [] } = useItens("uniforme", TODAS);
+  const { data: uniformes = [] } = useItens("uniforme", empresaId || TODAS);
   const parametros = useParametrosBase();
 
   const registrarBaixas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"]);
@@ -91,6 +91,10 @@ export function UniformesTermoBaixa() {
     if (salvando.current) return;
     if (!empresaId || itensBaixa.length === 0) {
       alert("Preencha os campos obrigatórios e adicione pelo menos um item.");
+      return;
+    }
+    if (!dataBaixa) {
+      alert("Informe a data da baixa.");
       return;
     }
     const bloqueio = bloqueioPorDemissao(
@@ -169,7 +173,7 @@ export function UniformesTermoBaixa() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label>Empresa</Label>
-            <Select value={empresaId} onValueChange={(v) => { setEmpresaId(v); setEmpregadoId(""); }}>
+            <Select value={empresaId} onValueChange={(v) => { if (!v) return; setEmpresaId(v); setEmpregadoId(""); setItensBaixa([]); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>

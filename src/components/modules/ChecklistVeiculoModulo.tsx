@@ -209,6 +209,11 @@ export function ChecklistVeiculoModulo() {
       toast.error("Escolha o tipo de check list.");
       return;
     }
+    // O responsável pré-preenchido pode ter sido desligado: o campo mostra vazio, então o envio também recusa.
+    if (responsavelId && !empregadosAtivos.some((x) => x.id === responsavelId)) {
+      toast.error("Selecione o responsável: o anterior não está mais ativo.");
+      return;
+    }
     trava.current = true;
     let criado: ChecklistVeiculo | undefined;
     const ok = executar(() => {
@@ -300,7 +305,7 @@ export function ChecklistVeiculoModulo() {
                       <TableCell>{tipoDe(v)?.nome ?? "—"}</TableCell>
                       <TableCell>{per ?? "—"}</TableCell>
                       <TableCell>{sit ? <Badge variant="outline" className={SITUACAO[sit].classe}>{SITUACAO[sit].rotulo}</Badge> : <span className="text-xs text-muted-foreground">Sem associação</span>}</TableCell>
-                      <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).length}</TableCell>
+                      <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).filter((p) => per === null || p.checklist.periodicidade === per).length}</TableCell>
                       <TableCell className="text-right">
                         {aberto ? (
                           <Button requiresWrite="operar" variant="ghost" size="sm" onClick={() => setTela({ tipo: "check", id: aberto.id })}>Continuar</Button>

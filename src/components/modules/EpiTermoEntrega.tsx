@@ -50,7 +50,7 @@ export function EpiTermoEntrega() {
     if (empresas.length > 0 && empresaSel && !empresasParaEscolha(empresas).some((e) => e.id === empresaSel)) setEmpresaSel("");
   }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
-  const { data: itens = [] } = useItens("epi", TODAS);
+  const { data: itens = [] } = useItens("epi", empresaSel || TODAS);
 
   const parametros = useParametrosBase();
   const registrarLote = useRegistrarMovimentacoesLote(["movimentacoes", "epis"]);
@@ -81,6 +81,10 @@ export function EpiTermoEntrega() {
     if (salvando.current) return;
     if (!empregadoId || itensTermo.length === 0) {
       alert("Selecione um empregado e adicione pelo menos um item.");
+      return;
+    }
+    if (!dataEntrega) {
+      alert("Informe a data da entrega.");
       return;
     }
 
@@ -164,7 +168,7 @@ export function EpiTermoEntrega() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label>Empresa</Label>
-            <Select value={empresaSel} onValueChange={(v) => { setEmpresaSel(v); setEmpregadoId(""); }}>
+            <Select value={empresaSel} onValueChange={(v) => { if (!v) return; setEmpresaSel(v); setEmpregadoId(""); setItensTermo([]); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>

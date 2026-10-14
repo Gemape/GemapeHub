@@ -186,7 +186,7 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Ocorrências registradas</CardTitle>
+            <CardTitle className="text-base">Ocorrências nas 20 movimentações recentes</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {ocorrencias.length === 0 ? (

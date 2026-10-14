@@ -59,6 +59,8 @@ export function EpiComprasModulo() {
   const [valorUnitario, setValorUnitario] = useState(0);
   // Produto e tamanho escolhidos: produto com tamanho em Gerais pede o tamanho (decisão 23).
   const [itemSel, setItemSel] = useState("");
+  // Empresa da compra: o item escolhido tem de ser do cadastro dela (cada empresa tem o seu registro do mesmo produto).
+  const [empresaCompra, setEmpresaCompra] = useState("");
   const [tamanho, setTamanho] = useState("");
   const [fornecedorId, setFornecedorId] = useState("");
   const parametros = useParametrosBase();
@@ -77,6 +79,7 @@ export function EpiComprasModulo() {
     setItemSel("");
     setTamanho("");
     setFornecedorId("");
+    setEmpresaCompra(empresasParaEscolha(empresas).some((e) => e.id === empresaId) ? empresaId : "");
     setAberto(true);
   }
 
@@ -251,7 +254,13 @@ export function EpiComprasModulo() {
               <Select
                 name="empresa_id"
                 required
-                defaultValue={empresasParaEscolha(empresas).some((e) => e.id === empresaId) ? empresaId : ""}
+                value={empresaCompra}
+                onValueChange={(v) => {
+                  if (!v) return;
+                  setEmpresaCompra(v);
+                  setItemSel("");
+                  setTamanho("");
+                }}
               >
                 <SelectTrigger id="empresa_id">
                   <SelectValue placeholder="Selecione a empresa" />
@@ -280,7 +289,7 @@ export function EpiComprasModulo() {
                   <SelectValue placeholder="Selecione o EPI" />
                 </SelectTrigger>
                 <SelectContent>
-                  {itens.map((i) => (
+                  {itens.filter((i) => i.empresa_id === empresaCompra).map((i) => (
                     <SelectItem key={i.id} value={i.id}>
                       {i.codigo_sku} · {i.nome}
                     </SelectItem>
