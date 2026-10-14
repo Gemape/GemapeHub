@@ -129,3 +129,10 @@ test("menu Viagens ganha o submenu Relatório e a tela usa o visualizador do sis
   assert.match(t, /Comprovantes por página/);
   assert.match(readFileSync("src/routes/_authenticated/viagens.tsx", "utf8"), /ViagensRelatorio/);
 });
+
+test("cliente de nome longo conta mais altura e empurra linhas para a página seguinte", () => {
+  const longo = "Cliente com razão social muito extensa para quebrar em várias linhas na coluna ".repeat(2);
+  const curtas = linhasDoRelatorio(Array.from({ length: 40 }, () => lanc({ cliente: "Alfa" })), FILTRO);
+  const compridas = linhasDoRelatorio(Array.from({ length: 40 }, () => lanc({ cliente: longo })), FILTRO);
+  assert.ok(secoes(montarRelatorioViagensHtml(base(compridas))) > secoes(montarRelatorioViagensHtml(base(curtas))));
+});

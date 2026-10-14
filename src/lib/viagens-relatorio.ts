@@ -92,7 +92,11 @@ export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
   const topoTabela = `<table class="despesas"><thead><tr><th>Data</th><th>Tipo</th><th>Cliente</th><th class="valor">Valor</th></tr></thead><tbody>`;
   const linhaHtml = (l: LinhaRelatorio) => `
     <tr><td>${escaparHtml(dataBr(l.data))}</td><td>${escaparHtml(l.tipo)}</td><td>${l.cliente ? escaparHtml(l.cliente) : "<em>Não informado</em>"}</td><td class="valor">${moeda(l.valor)}</td></tr>${l.descricao ? `<tr class="desc"><td colspan="4">${escaparHtml(l.descricao)}</td></tr>` : ""}`;
-  const alturaLinha = (l: LinhaRelatorio) => H.linha + (l.descricao ? H.linhaDescricao * linhasDeTexto(l.descricao, 80) : 0);
+  // Cliente e tipo longos quebram em mais de uma linha: a altura estimada acompanha a coluna que mais quebra.
+  const alturaLinha = (l: LinhaRelatorio) => {
+    const linhasPrincipais = Math.max(1, Math.ceil((l.cliente ?? "Não informado").length / 30), Math.ceil(l.tipo.length / 22));
+    return H.linha + H.linhaDescricao * (linhasPrincipais - 1) + (l.descricao ? H.linhaDescricao * linhasDeTexto(l.descricao, 80) : 0);
+  };
 
   const quadro = totais.length === 0 ? "" : `
     <div class="quadro"><h3>Total por tipo de despesa</h3>
