@@ -990,3 +990,7 @@ Ordem do responsável em 14/10 (13:20 e escolha "Tela só" às 13:22). **Antes:*
 **Ajuste (14/10, 13:40):** na montagem some o cartão separado "Questionário do tipo de despesa"; o tipo se escolhe na própria primeira pergunta (Tipos de despesa). O título do formulário passa a ser **Questionário de Despesas**.
 
 **Ajuste (14/10, 13:45):** no formulário, **Unidade da Federação** e **Município** ficam no mesmo cartão (a pergunta que depende da anterior entra no cartão dela).
+
+### Decisão 174: Questionário de Despesas, campo para descrever o "Outro"
+
+Ordem do responsável em 14/10 (13:47). **Antes:** marcar "Outro" em Tipos de despesas (ou em qualquer pergunta de escolha) não pedia mais nada. **Agora:** ao marcar a opção **Outro** de uma pergunta de escolha com opções próprias (múltipla escolha, caixas de seleção ou lista), abre logo abaixo o campo **Descreva o outro**, obrigatório (mensagem "Descreva o outro."). Desmarcar o Outro apaga a descrição. A resposta registrada guarda "Outro: descrição". Vale para qualquer pergunta que tenha uma opção chamada exatamente "Outro". Nada no Supabase.
