@@ -331,7 +331,10 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
   const [codigoNovo, setCodigoNovo] = useState("");
 
   const opcoes = p.fonte === "clientes" ? listarClientes().map((c) => `${c.codigo} - ${c.nome}`) : p.fonte === "municipios" ? filtrarMunicipios(municipios, busca) : p.opcoes;
+  // O valor escolhido sempre aparece, mesmo além das 200 primeiras opções (cliente recém-cadastrado, por exemplo).
   const mostradas = opcoes.slice(0, 200);
+  if (atual && opcoes.includes(atual) && !mostradas.includes(atual)) mostradas.push(atual);
+  const { canWrite } = useAccess();
   const semUf = p.fonte === "municipios" && !sigla;
   return (
     <div className="space-y-1">
@@ -347,8 +350,8 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
       {p.fonte === "clientes" && (
         <>
           <p className="text-xs text-muted-foreground">
-            {opcoes.length === 0 ? "Nenhum cliente cadastrado em Parâmetros > Clientes. " : "Cliente não está na lista? "}
-            <button type="button" className="font-medium text-primary underline" onClick={() => { setCodigoNovo(proximoCodigoCliente()); setNovoCliente(true); }}>Cadastrar cliente</button>
+            {opcoes.length === 0 ? "Nenhum cliente cadastrado em Parâmetros > Clientes. " : canWrite ? "Cliente não está na lista? " : ""}
+            {canWrite && <button type="button" className="font-medium text-primary underline" onClick={() => { setCodigoNovo(proximoCodigoCliente()); setNovoCliente(true); }}>Cadastrar cliente</button>}
           </p>
           <ClienteDialog
             aberto={novoCliente} onAberto={setNovoCliente} editando={null} modelo={null} codigoPrevisto={codigoNovo}
