@@ -1064,3 +1064,7 @@ Ordem do responsável em 14/10 (19:38), a partir do croqui "módulo viagens". **
 ### Decisão 189: Parâmetros > Veículos > Questionário de Despesas só configura, não lança despesa
 
 Ordem do responsável em 14/10 (19:57). **Antes:** a tela de Parâmetros abria o formulário completo, com o botão Enviar e a lista de respostas registradas, e por ela dava para lançar despesas. **Agora:** a tela é só **pré-visualização da montagem**: o formulário aparece para conferir perguntas, ramificações e seções, mas **não envia** (sem o botão Enviar) e **não mostra respostas registradas**; o aviso no topo diz que as despesas são lançadas em Módulos > Viagens. O Editar questionário continua ali para quem pode gravar. O lançamento e as respostas registradas ficam só no módulo Viagens. Nada no Supabase.
+
+### Decisão 188: Painel de Viagens sem o aviso sobre o envio dos comprovantes
+
+Ordem do responsável em 14/10 (19:54). **Antes:** abaixo do título "Questionários de despesas" o texto dizia "Escolha o tipo da despesa a lançar. O formulário termina sempre com o envio dos comprovantes." **Agora:** só "Escolha o tipo da despesa a lançar." A frase sobre os comprovantes foi retirada; o formulário continua pedindo a foto do comprovante como antes.

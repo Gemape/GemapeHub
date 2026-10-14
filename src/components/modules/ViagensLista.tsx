@@ -47,7 +47,6 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
   const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
   const [aberta, setAberta] = useState<LinhaDespesa | null>(null);
   const [confirmando, setConfirmando] = useState(false);
-  const [gerando, setGerando] = useState(false);
   const [supervisor, setSupervisor] = useState(NENHUM);
   const [diretor, setDiretor] = useState(NENHUM);
   const [porPagina, setPorPagina] = useState<ComprovantesPorPagina>(4);
@@ -59,7 +58,7 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
   const linhas = useMemo(() => (valido ? listaDoPeriodo(lista, periodo, finalizadas, filtro) : []), [lista, periodo, finalizadas, filtro, valido]);
   const selecionadas = linhas.filter((l) => marcadas.has(l.id));
   const nomesEmpregados = empregados.map((e) => e.nome).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  const mudar = (parcial: Partial<FiltroLista>) => { setFiltro((f) => ({ ...f, ...parcial })); setMarcadas(new Set()); };
+  const mudar = (parcial: Partial<FiltroLista>) => setFiltro((f) => ({ ...f, ...parcial }));
 
   function alternar(id: string, marcar: boolean) {
     setMarcadas((m) => { const n = new Set(m); if (marcar) n.add(id); else n.delete(id); return n; });
@@ -68,7 +67,6 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
   function gerar() {
     if (travado.current) return;
     travado.current = true;
-    setGerando(true);
     try {
       const empresa = empresaId === TODAS ? "Todas as empresas" : (empresas.find((e) => e.id === empresaId)?.razao_social ?? "GEMAPE");
       const salvo = registrarRelatorio({
@@ -85,7 +83,6 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
       setErro(e instanceof Error ? e.message : "Não foi possível gerar o relatório.");
     } finally {
       travado.current = false;
-      setGerando(false);
     }
   }
 
@@ -146,10 +143,13 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
           <TableBody>
             {linhas.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground">Nenhuma despesa para este filtro.</TableCell></TableRow>}
             {linhas.map((l) => (
-              <TableRow key={l.id} className="cursor-pointer" onClick={() => setAberta(l)}>
+              <TableRow
+                key={l.id} className="cursor-pointer" tabIndex={0} onClick={() => setAberta(l)}
+                onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); setAberta(l); } }}
+              >
                 <TableCell className="px-2" onClick={(e) => e.stopPropagation()}>
                   {l.status === STATUS_EM_ABERTO && (
-                    <Checkbox aria-label={`Marcar despesa de ${dataBr(l.data)}, ${l.tipo}`} checked={marcadas.has(l.id)} onCheckedChange={(c) => alternar(l.id, c === true)} />
+                    <Checkbox disabled={!l.responsavel} title={l.responsavel ? undefined : "Sem técnico responsável: não entra em relatório"} aria-label={`Marcar despesa de ${dataBr(l.data)}, ${l.tipo}`} checked={marcadas.has(l.id)} onCheckedChange={(c) => alternar(l.id, c === true)} />
                   )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap px-2">{dataBr(l.data)}</TableCell>
@@ -238,7 +238,7 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmando(false)}>Cancelar</Button>
-            <Button disabled={gerando} onClick={() => { gerar(); }}>Gerar relatório</Button>
+            <Button onClick={gerar}>Gerar relatório</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

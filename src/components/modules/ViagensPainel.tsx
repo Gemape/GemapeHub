@@ -65,7 +65,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
     <div className="space-y-8">
       <section className="space-y-3" aria-labelledby="viagens-questionarios">
         <h2 id="viagens-questionarios" className="text-lg font-semibold">Questionários de despesas</h2>
-        <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar. O formulário termina sempre com o envio dos comprovantes.</p>
+        <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar.</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {tipos.map((t) => {
             const Icone = ICONE_TIPO[t] ?? Receipt;
