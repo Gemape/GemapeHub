@@ -10,10 +10,10 @@ const arquivos = (dir) => readdirSync(dir).flatMap((n) => {
 });
 const tsx = arquivos(raiz).filter((f) => !f.includes("/components/ui/"));
 
-test("a propriedade capitalizar só aceita texto ou nome", () => {
+test("a propriedade capitalizar só aceita texto, nome ou minusculas (e-mail, dec 166)", () => {
   for (const f of tsx) {
     for (const m of readFileSync(f, "utf8").matchAll(/capitalizar[=:]\s*\{?\s*"(\w+)"/g)) {
-      assert.ok(["texto", "nome"].includes(m[1]), `${f}: ${m[1]}`);
+      assert.ok(["texto", "nome", "minusculas"].includes(m[1]), `${f}: ${m[1]}`);
     }
   }
 });
@@ -24,6 +24,8 @@ test("campo de código, documento, placa, e-mail, senha, data e busca não é ca
     for (const m of readFileSync(f, "utf8").matchAll(/<(?:Input|Textarea)\b[^>]*>/g)) {
       const tag = m[0];
       if (!/capitalizar=/.test(tag)) continue;
+      // O modo "minusculas" só baixa as letras (e-mail), não capitaliza: é o único permitido nesses campos.
+      if (/capitalizar="minusculas"/.test(tag)) continue;
       const nome = /(?:name|id)="([^"]+)"/.exec(tag)?.[1] ?? "";
       assert.doesNotMatch(nome, proibidos, `${f}: ${nome}`);
       assert.doesNotMatch(tag, /type="(number|date|time|email|password|tel|file|hidden|search)"/, `${f}: ${nome}`);
