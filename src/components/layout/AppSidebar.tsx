@@ -104,6 +104,7 @@ const grupos = [
       { titulo: "Empregados", url: "/empregados", icone: Users },
       { titulo: "Fornecedores", url: "/cadastros/fornecedores", icone: Truck },
       { titulo: "Clientes", url: "/cadastros/clientes", icone: Handshake },
+      { titulo: "Viagens", url: "/cadastros/viagens", icone: IconeViagens },
     ],
   },
 ] as const;

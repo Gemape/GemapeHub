@@ -45,6 +45,7 @@ import { Route as AuthenticatedCadastrosVeiculosManutencaoRouteImport } from './
 import { Route as AuthenticatedCadastrosVeiculosPlanoManutencaoRouteImport } from './routes/_authenticated/cadastros/veiculos-plano-manutencao'
 import { Route as AuthenticatedCadastrosVeiculosQuestionarioDespesasRouteImport } from './routes/_authenticated/cadastros/veiculos-questionario-despesas'
 import { Route as AuthenticatedCadastrosVeiculosTiposOcorrenciaRouteImport } from './routes/_authenticated/cadastros/veiculos-tipos-ocorrencia'
+import { Route as AuthenticatedCadastrosViagensRouteImport } from './routes/_authenticated/cadastros/viagens'
 import { Route as AuthenticatedCadastrosGeraisIndexRouteImport } from './routes/_authenticated/cadastros/gerais/index'
 import { Route as AuthenticatedCadastrosGeraisAssociarTamanhosRouteImport } from './routes/_authenticated/cadastros/gerais/associar-tamanhos'
 import { Route as AuthenticatedCadastrosGeraisCaixasRouteImport } from './routes/_authenticated/cadastros/gerais/caixas'
@@ -256,6 +257,12 @@ const AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute =
     path: '/cadastros/veiculos-tipos-ocorrencia',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCadastrosViagensRoute =
+  AuthenticatedCadastrosViagensRouteImport.update({
+    id: '/cadastros/viagens',
+    path: '/cadastros/viagens',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCadastrosGeraisIndexRoute =
   AuthenticatedCadastrosGeraisIndexRouteImport.update({
     id: '/',
@@ -341,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/cadastros/veiculos-plano-manutencao': typeof AuthenticatedCadastrosVeiculosPlanoManutencaoRoute
   '/cadastros/veiculos-questionario-despesas': typeof AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute
   '/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
+  '/cadastros/viagens': typeof AuthenticatedCadastrosViagensRoute
   '/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
   '/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
@@ -385,6 +393,7 @@ export interface FileRoutesByTo {
   '/cadastros/veiculos-plano-manutencao': typeof AuthenticatedCadastrosVeiculosPlanoManutencaoRoute
   '/cadastros/veiculos-questionario-despesas': typeof AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute
   '/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
+  '/cadastros/viagens': typeof AuthenticatedCadastrosViagensRoute
   '/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
   '/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
@@ -432,6 +441,7 @@ export interface FileRoutesById {
   '/_authenticated/cadastros/veiculos-plano-manutencao': typeof AuthenticatedCadastrosVeiculosPlanoManutencaoRoute
   '/_authenticated/cadastros/veiculos-questionario-despesas': typeof AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute
   '/_authenticated/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
+  '/_authenticated/cadastros/viagens': typeof AuthenticatedCadastrosViagensRoute
   '/_authenticated/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
   '/_authenticated/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/_authenticated/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
@@ -479,6 +489,7 @@ export interface FileRouteTypes {
     | '/cadastros/veiculos-plano-manutencao'
     | '/cadastros/veiculos-questionario-despesas'
     | '/cadastros/veiculos-tipos-ocorrencia'
+    | '/cadastros/viagens'
     | '/cadastros/gerais/associar-tamanhos'
     | '/cadastros/gerais/caixas'
     | '/cadastros/gerais/categorias'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/cadastros/veiculos-plano-manutencao'
     | '/cadastros/veiculos-questionario-despesas'
     | '/cadastros/veiculos-tipos-ocorrencia'
+    | '/cadastros/viagens'
     | '/cadastros/gerais/associar-tamanhos'
     | '/cadastros/gerais/caixas'
     | '/cadastros/gerais/categorias'
@@ -569,6 +581,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cadastros/veiculos-plano-manutencao'
     | '/_authenticated/cadastros/veiculos-questionario-despesas'
     | '/_authenticated/cadastros/veiculos-tipos-ocorrencia'
+    | '/_authenticated/cadastros/viagens'
     | '/_authenticated/cadastros/gerais/associar-tamanhos'
     | '/_authenticated/cadastros/gerais/caixas'
     | '/_authenticated/cadastros/gerais/categorias'
@@ -839,6 +852,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cadastros/viagens': {
+      id: '/_authenticated/cadastros/viagens'
+      path: '/cadastros/viagens'
+      fullPath: '/cadastros/viagens'
+      preLoaderRoute: typeof AuthenticatedCadastrosViagensRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cadastros/gerais/': {
       id: '/_authenticated/cadastros/gerais/'
       path: '/'
@@ -968,6 +988,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCadastrosVeiculosPlanoManutencaoRoute: typeof AuthenticatedCadastrosVeiculosPlanoManutencaoRoute
   AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute: typeof AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute
   AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute: typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
+  AuthenticatedCadastrosViagensRoute: typeof AuthenticatedCadastrosViagensRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1016,6 +1037,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute,
   AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute:
     AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute,
+  AuthenticatedCadastrosViagensRoute: AuthenticatedCadastrosViagensRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
