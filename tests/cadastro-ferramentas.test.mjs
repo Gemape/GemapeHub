@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { adicionarListaFerramenta, adicionarSubcategoria, adicionarTamanhoGrupoFerramenta, lerParametros, salvarRegraCodigo } from '../src/lib/parametros-base.ts';
+import { adicionarListaFerramenta, adicionarSubcategoria, adicionarTamanhoGrupoFerramenta, lerParametros, salvarRegraCodigo, adicionarRegraCodigo } from '../src/lib/parametros-base.ts';
 import * as cadastroFerramentas from '../src/lib/cadastro-ferramentas.ts';
 const { opcaoFerramentaEmUso, prepararCadastroFerramenta, descricaoFerramenta } = cadastroFerramentas;
 
@@ -139,4 +139,13 @@ test('o cadastro de ferramenta tem o campo Tamanho, depende do grupo e aparece n
   assert.match(tela, /tamanhosDoGrupoFerramenta\(parametros, grupoEscolhido\)/);
   assert.match(tela, /<TableHead>Tamanho<\/TableHead>/);
   assert.match(tela, /Sem tamanho/);
+});
+
+test('ferramenta usa a sigla escolhida quando Gerais tem mais de uma e a padrão quando não escolhe', () => {
+  const local = storage();
+  adicionarRegraCodigo('cat-ferramentas', 'MAN', '0010', local);
+  const entrada = { parametros: lerParametros(local), codigosExistentes: ['FER-0003', 'MAN-0012'], ...campos };
+  assert.equal(prepararCadastroFerramenta(entrada).codigo_sku, 'FER-0004');
+  assert.equal(prepararCadastroFerramenta({ ...entrada, sigla: 'MAN' }).codigo_sku, 'MAN-0013');
+  assert.equal(prepararCadastroFerramenta({ ...entrada, sigla: 'XXX' }).codigo_sku, 'FER-0004');
 });

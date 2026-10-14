@@ -34,7 +34,8 @@ import {
 } from "@/lib/estoque-tamanho";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { avisoExclusaoDoProduto } from "@/lib/codigo-fabrica-vinculos";
-import { estaAtivo, lerParametros, paraSelecao, proximoCodigo, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
+import { estaAtivo, lerParametros, paraSelecao, proximoCodigo, regraDoCadastro, regrasDaCategoria, removerCodigosFabricaPorIds, siglaDoCodigo, type CodigoFabrica } from "@/lib/parametros-base";
+import { SiglaCodigo } from "@/components/modules/SiglaCodigo";
 import { subcategoriasParaSelecao } from "@/lib/subcategoria-referencia";
 import { DialogAssociarTamanhos } from "@/components/parametros/DialogAssociarTamanhos";
 import { DialogTamanhoSubcategoria } from "@/components/parametros/DialogTamanhoSubcategoria";
@@ -79,6 +80,8 @@ function CatalogoEpi() {
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
   const [novoAberto, setNovoAberto] = useState(false);
+  // Sigla escolhida para o código novo (só importa quando a categoria tem mais de uma regra em Gerais).
+  const [siglaSel, setSiglaSel] = useState("");
   const [clonando, setClonando] = useState<EpiCatalogo | null>(null);
   const [editando, setEditando] = useState<EpiCatalogo | null>(null);
   const [subSel, setSubSel] = useState("");
@@ -96,7 +99,7 @@ function CatalogoEpi() {
   const rotuloTamanho = (id: string | null) => (id ? nomeTamanho(parametros, id) : "");
   const grupos = filtrarGrupos(agruparEpis(catalogo), busca, rotuloTamanho);
 
-  const regra = parametros.regrasCodigo.find((r) => r.categoriaId === CATEGORIA_EPI);
+  const regra = regraDoCadastro(parametros.regrasCodigo, CATEGORIA_EPI, siglaSel);
   const subcategorias = subcategoriasParaSelecao(parametros, CATEGORIA_EPI, null);
   const subEscolhida = subcategorias.find((s) => s.id === subSel);
   const produtoForm = { categoria: subEscolhida?.nome ?? "", subcategoria_id: subEscolhida?.id ?? null };
@@ -146,6 +149,7 @@ function CatalogoEpi() {
     setSubSel(item.subcategoria_id ?? subcategorias.find((s) => s.nome === item.categoria)?.id ?? "");
     setTamanhoSel("");
     setClonando(item);
+    setSiglaSel(siglaDoCodigo(parametros.regrasCodigo, CATEGORIA_EPI, item.codigo_sku));
     setNovoAberto(true);
   }
 
@@ -203,6 +207,7 @@ function CatalogoEpi() {
 
   function abrirNovo() {
     setClonando(null);
+    setSiglaSel("");
     setSubSel("");
     setTamanhoSel("");
     setNovoAberto(true);
@@ -317,6 +322,7 @@ function CatalogoEpi() {
                 <p className="text-xs text-muted-foreground">Nenhuma subcategoria de EPI em Parâmetros &gt; Parâmetros Específicos.</p>
               )}
             </div>
+            <SiglaCodigo regras={regrasDaCategoria(parametros.regrasCodigo, CATEGORIA_EPI)} valor={siglaSel} onMudar={setSiglaSel} />
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Descrição do item</Label>
               <Textarea id="nome" name="nome" capitalizar="texto" rows={2} defaultValue={clonando?.nome ?? ""} placeholder="Ex.: capacete de segurança em ABS de alto impacto" />

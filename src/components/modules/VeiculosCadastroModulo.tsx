@@ -57,7 +57,8 @@ import {
   selecaoInicialMarca,
   selecaoMarca,
 } from "@/lib/marcas-gerais";
-import { combinaBusca, estaAtivo, paraSelecao, proximoCodigo } from "@/lib/parametros-base";
+import { combinaBusca, estaAtivo, paraSelecao, proximoCodigo, regraDoCadastro, regrasDaCategoria, siglaDoCodigo } from "@/lib/parametros-base";
+import { SiglaCodigo } from "@/components/modules/SiglaCodigo";
 import {
   nomeSubcategoria,
   resolverSubcategoria,
@@ -114,6 +115,8 @@ export function VeiculosCadastroModulo() {
   const [origem, setOrigem] = useState<VeiculoCadastro | null>(null);
   const base = editando ?? origem;
   const [previa, setPrevia] = useState("");
+  // Sigla escolhida para o código novo (só importa quando a categoria tem mais de uma regra em Gerais).
+  const [siglaSel, setSiglaSel] = useState("");
   const [empresaSel, setEmpresaSel] = useState("");
   // Subcategoria escolhida no formulário (null = a que o cadastro já tem); decide se o campo Placa aparece.
   const [subSel, setSubSel] = useState<string | null>(null);
@@ -150,7 +153,7 @@ export function VeiculosCadastroModulo() {
       v.modelo,
     ),
   );
-  const regra = parametros.regrasCodigo.find((r) => r.categoriaId === CATEGORIA_VEICULO);
+  const regra = regraDoCadastro(parametros.regrasCodigo, CATEGORIA_VEICULO, siglaSel);
   // Tipo antigo que não está em Cadastros > Gerais continua aparecendo na edição.
   const subcategoriaAtual = base
     ? resolverSubcategoria(parametros, CATEGORIA_VEICULO, base)
@@ -194,18 +197,32 @@ export function VeiculosCadastroModulo() {
     setEmpresaSel(clonar?.empresa_id ?? "");
     setSubSel(null);
     setPrevia("");
-    const pedido = ++pedidoPrevia.current;
+    // Clonar começa com a mesma sigla do original; senão, a padrão da categoria.
+    const siglaInicial = clonar ? siglaDoCodigo(parametros.regrasCodigo, CATEGORIA_VEICULO, clonar.codigo_sku) : "";
+    setSiglaSel(siglaInicial);
     setAberto(true);
-    if (!MODO_DEMO || !regra) return;
+    await calcularPrevia(regraDoCadastro(parametros.regrasCodigo, CATEGORIA_VEICULO, siglaInicial));
+  }
+
+  async function calcularPrevia(r: typeof regra) {
+    const pedido = ++pedidoPrevia.current;
+    if (!MODO_DEMO || !r) return;
     try {
       const codigo = proximoCodigo(
-        regra,
+        r,
         (await todosVeiculos()).map((v) => v.codigo_sku),
       );
       if (pedido === pedidoPrevia.current) setPrevia(codigo);
     } catch {
       setPrevia("");
     }
+  }
+
+  // Trocar a sigla no cadastro novo troca também o código mostrado.
+  function escolherSigla(sigla: string) {
+    setSiglaSel(sigla);
+    setPrevia("");
+    void calcularPrevia(regraDoCadastro(parametros.regrasCodigo, CATEGORIA_VEICULO, sigla));
   }
 
   async function enviar(e: React.FormEvent<HTMLFormElement>) {
@@ -460,6 +477,7 @@ export function VeiculosCadastroModulo() {
                         setEmpresaSel(v.empresa_id ?? "");
                         setSubSel(null);
                         setPrevia("");
+                        setSiglaSel("");
                         setEditando(v);
                         setAberto(true);
                       }}
@@ -505,6 +523,9 @@ export function VeiculosCadastroModulo() {
                 }
               />
             </div>
+            {MODO_DEMO && !editando?.codigo_sku && (
+              <SiglaCodigo regras={regrasDaCategoria(parametros.regrasCodigo, CATEGORIA_VEICULO)} valor={siglaSel} onMudar={escolherSigla} />
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="tipo">Subcategoria</Label>
               <Select name="tipo" value={subEscolhida} onValueChange={setSubSel}>
