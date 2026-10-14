@@ -1044,3 +1044,7 @@ Ordem do responsável em 14/10 (18:03). **Antes:** a pergunta "Cartões de créd
 ### Decisão 183: Card de Viagens abre o formulário sem a pergunta "Tipos de despesas"
 
 Ordem do responsável em 14/10 (18:20). **Antes:** ao clicar num card de Viagens (por exemplo Alimentação), o formulário abria com a pergunta "Tipos de despesas" com o tipo já marcado. **Agora:** em **todos os cards** essa pergunta não aparece: o tipo é o do card clicado e o formulário se chama "Despesas <card>". A resposta continua gravada com o tipo certo, e o "Preencher novamente" mantém o tipo do card. Em Parâmetros > Veículos > Questionário de Despesas a pergunta continua visível, porque ali se escolhe o tipo para montar. Nada no Supabase.
+
+### Decisão 184: Ícones de Viagens (mala), Pedágio (cancela) e Compra de peças (parafuso e porca)
+
+Ordem do responsável em 14/10 (18:29 e 18:30). **Antes:** o menu Viagens usava um avião, o card Pedágio um cone e o card Compra de peças para cliente caixas empilhadas. **Agora:** o menu **Viagens** usa uma **mala**; o card **Pedágio** uma **cancela** (poste e braço listrado) e o card **Compra de peças para cliente** um **parafuso com porca**. Cancela e parafuso com porca não existem na biblioteca de ícones e foram desenhados no mesmo traço dos demais (src/components/modules/icones-viagens.ts). Nada no Supabase.

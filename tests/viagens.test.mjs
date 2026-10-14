@@ -133,9 +133,9 @@ test("o painel mostra os indicadores globais, os resultados dos técnicos e o se
   assert.match(painel, /aria-label="Ano"/);
 });
 
-test("o ícone do menu Viagens é um avião", () => {
+test("o ícone do menu Viagens é uma mala", () => {
   const menu = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
-  assert.match(menu, /Plane as IconeViagens/);
+  assert.match(menu, /Luggage as IconeViagens/);
 });
 
 test("nome com parênteses: a área é o último parêntese do rótulo e vale o primeiro habilitado", () => {
@@ -162,4 +162,11 @@ test("dec 183: o card de Viagens abre o formulário sem a pergunta de tipos de d
   assert.match(form, /setRespostas\(respostasIniciais\(\)\)/);
   const tela = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasTela.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(tela, /semPerguntaTipo/);
+});
+
+test("dec 184: Pedágio usa a cancela e Compra de peças usa parafuso e porca", () => {
+  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  assert.match(painel, /"Pedágio": Cancela/);
+  assert.match(painel, /"Compra de peças para cliente": ParafusoEPorca/);
+  assert.doesNotMatch(painel, /TrafficCone|Boxes/);
 });

@@ -431,3 +431,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 181: título do questionário = "Despesas <card>" (tituloDoQuestionario em src/lib/questionario-despesas.ts) e ícone Hamburger em Alimentação (ViagensPainel.tsx).
 - 2026-10-14 dec 182: Cartões de crédito (q-02) só aparece com Moedas (q-01) = Cartão de crédito; regra de fábrica via comRegraDoCartao em src/lib/questionario-despesas.ts (migração única com cartaoAjustado).
 - 2026-10-14 dec 183: card de Viagens abre o formulário sem a pergunta de tipos (prop semPerguntaTipo em QuestionarioFormulario.tsx, usada só por ViagensPainel.tsx).
+
+- 2026-10-14 dec 184: ícones: menu Viagens = Luggage (AppSidebar.tsx); cards Pedágio = Cancela e Compra de peças = ParafusoEPorca (src/components/modules/icones-viagens.ts).
