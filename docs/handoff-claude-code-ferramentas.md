@@ -421,4 +421,5 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14: correções da revisão do #221: Cadastrar cliente só para quem grava; cliente escolhido sempre aparece na lista (além de 200 opções).
 - 2026-10-14 dec 171: Litros abastecidos só no questionário do tipo Abastecimento (padrão novo e ajuste único dos dados salvos).
 - 2026-10-14 dec 173: Questionário de Despesas em tela única: o menu abre o formulário e quem grava edita o questionário ali mesmo; sem banco de perguntas e sem rota separada.
+- 2026-10-14 dec 174: Questionário de Despesas: opção Outro abre o campo "Descreva o outro" (obrigatório), gravado como "Outro: descrição".
 - 2026-10-14 dec 175: Respostas registradas do Questionário de Despesas mostram as imagens anexadas (miniatura); guardadas no navegador em modo demonstração.

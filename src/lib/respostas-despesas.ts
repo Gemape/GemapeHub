@@ -2,7 +2,7 @@
 // respostas (JSONB, com `empresa_id`) entra na Fase 2. Cada resposta guarda o título das perguntas da época.
 import { hojeLocal } from "./empregados.ts";
 import { ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
-import { perguntasVisiveis, validarRespostas, type Respostas } from "./questionario-respostas.ts";
+import { perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-respostas-despesas";
@@ -61,7 +61,7 @@ export function registrarResposta(e: Estado, respostas: Respostas, storage: Stor
       return {
         perguntaId: p.id, titulo: p.titulo,
         // Data entra como dd/mm/aaaa, o formato que quem lê a conferência espera.
-        resposta: p.tipo === "data" ? dataBr(comoTexto(respostas[p.id])) : comoTexto(respostas[p.id]),
+        resposta: p.tipo === "data" ? dataBr(comoTexto(respostas[p.id])) : textoDaResposta(p, respostas),
         ...(fotos.length ? { imagens: fotos.map((i) => ({ nome: i.nome, dataUrl: i.dataUrl })) } : {}),
       };
     }),

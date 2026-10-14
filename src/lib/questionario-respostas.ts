@@ -34,6 +34,23 @@ export function aplicarFormato(texto: string, formato: FormatoCurta): string {
 // Número que a resposta formatada representa (para somar depois): "R$ 1.234,56" -> 1234.56.
 export const valorNumerico = (texto: string): number => Number(texto.replace(/[^\d,]/g, "").replace(",", "."));
 
+// Opção "Outro" de uma pergunta de escolha: ao marcar, quem responde descreve o que é (dec 174).
+export const OPCAO_OUTRO = "Outro";
+export const chaveOutro = (perguntaId: string): string => `${perguntaId}:outro`;
+export function marcouOutro(p: Pergunta, respostas: Respostas): boolean {
+  if (!(p.tipo === "multipla" || p.tipo === "caixas" || p.tipo === "lista") || p.fonte !== "propria" || p.habilitados) return false;
+  const r = respostas[p.id];
+  return Array.isArray(r) ? r.includes(OPCAO_OUTRO) : r === OPCAO_OUTRO;
+}
+// Texto da resposta para registrar: a opção Outro leva a descrição ("Outro: motorista de aplicativo").
+export function textoDaResposta(p: Pergunta, respostas: Respostas): string {
+  const r = respostas[p.id];
+  if (r === undefined) return "";
+  const descricao = marcouOutro(p, respostas) ? String(respostas[chaveOutro(p.id)] ?? "").trim() : "";
+  const rotulo = (o: string) => (o === OPCAO_OUTRO && descricao ? `${OPCAO_OUTRO}: ${descricao}` : o);
+  return (Array.isArray(r) ? r.map(rotulo).join(", ") : rotulo(r)).trim();
+}
+
 export function visivel(e: Estado, tipo: string, id: string, respostas: Respostas): boolean {
   const regra = e.regras[tipo]?.[id];
   if (!regra) return true;
@@ -83,6 +100,7 @@ export function validarRespostas(visiveis: Pergunta[], respostas: Respostas): Re
     const marcadas = Array.isArray(r) ? r : [texto];
     const lista = (p.tipo === "multipla" || p.tipo === "caixas" || p.tipo === "lista") && p.fonte === "propria" && !p.habilitados ? p.opcoes : null;
     if (lista && marcadas.some((m) => !lista.includes(m))) erros[p.id] = "Escolha uma das opções da lista.";
+    else if (marcouOutro(p, respostas) && vazio(respostas[chaveOutro(p.id)])) erros[p.id] = "Descreva o outro.";
     else if (p.tipo === "hora" && !/^([01]\d|2[0-3]):[0-5]\d$/.test(texto)) erros[p.id] = "Informe o horário no formato hh:mm.";
     else if (p.tipo === "data" && !dataValida(texto)) erros[p.id] = "Informe uma data válida.";
     else if (p.tipo === "curta" && (p.formato === "moeda" || p.formato === "decimal2") && !/^(R\$ )?\d{1,3}(\.\d{3})*,\d{2}$/.test(texto)) erros[p.id] = "Informe um número com duas casas decimais.";

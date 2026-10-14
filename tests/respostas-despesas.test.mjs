@@ -91,6 +91,31 @@ test("o formulário abre pela tela única do menu de Parâmetros, sem rota nem l
   assert.doesNotMatch(menu + itens, /"\/questionario-despesas"/);
 });
 
+test("marcar Outro em Tipos de despesas exige a descrição e ela vai junto na resposta registrada", () => {
+  const e = estadoPadrao();
+  const s = memoria();
+  const base = { ...completas, "q-03": ["Outro"] };
+  delete base["q-10"];
+  assert.throws(() => registrarResposta(e, base, s, agora), /Descreva o outro/);
+  assert.throws(() => registrarResposta(e, { ...base, "q-03:outro": "   " }, s, agora), /Descreva o outro/);
+  assert.equal(listarRespostas(s).length, 0);
+  const r = registrarResposta(e, { ...base, "q-03:outro": "Lavagem do carro" }, s, agora);
+  assert.equal(r.tipo, "Outro");
+  assert.equal(r.itens.find((i) => i.perguntaId === "q-03")?.resposta, "Outro: Lavagem do carro");
+});
+
+test("a descrição do Outro é ignorada quando outra opção está marcada", () => {
+  const e = estadoPadrao();
+  const r = registrarResposta(e, { ...completas, "q-03:outro": "sobra" }, memoria(), agora);
+  assert.equal(r.itens.find((i) => i.perguntaId === "q-03")?.resposta, "Abastecimento");
+});
+
+test("o formulário abre o campo de descrição ao marcar Outro", () => {
+  const fonte = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(fonte, /marcouOutro\(p, respostas\) &&/);
+  assert.match(fonte, /placeholder="Descreva o outro"/);
+});
+
 test("a foto do comprovante vai junto na resposta registrada e só imagem é guardada", () => {
   const e = estadoPadrao();
   const png = "data:image/png;base64,iVBORw0KGgo=";

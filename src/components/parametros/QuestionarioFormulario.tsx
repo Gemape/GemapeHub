@@ -19,7 +19,7 @@ import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
 import {
   ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, lerEstado, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
 } from "@/lib/questionario-despesas";
-import { aplicarFormato, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
+import { aplicarFormato, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   listarRespostas, registrarResposta, removerResposta, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
 } from "@/lib/respostas-despesas";
@@ -72,6 +72,9 @@ export function QuestionarioFormulario({ tipoInicial, onEditar }: { tipoInicial?
   const mudar = (id: string, valor: Resposta) => {
     setRespostas((r) => {
       const novo = { ...r, [id]: valor };
+      // Descrição do "Outro" some quando a opção é desmarcada.
+      const alvo = estado.perguntas.find((p) => p.id === id);
+      if (alvo && !marcouOutro(alvo, novo)) delete novo[chaveOutro(id)];
       // Quem depende desta resposta (município x UF) recomeça vazio.
       for (const p of estado.perguntas) if (p.dependeDe === id) delete novo[p.id];
       return novo;
@@ -167,6 +170,16 @@ export function QuestionarioFormulario({ tipoInicial, onEditar }: { tipoInicial?
                     onMudar={(v) => mudar(p.id, v)}
                     onImagens={(lista) => setImagens((x) => ({ ...x, [p.id]: lista }))}
                   />
+                  {marcouOutro(p, respostas) && (
+                    <Input
+                      name={`outro-${p.id}`}
+                      capitalizar="texto"
+                      aria-label={`Descreva o outro (${p.titulo})`}
+                      placeholder="Descreva o outro"
+                      value={typeof respostas[chaveOutro(p.id)] === "string" ? (respostas[chaveOutro(p.id)] as string) : ""}
+                      onChange={(e) => { const v = e.target.value; setRespostas((r) => ({ ...r, [chaveOutro(p.id)]: v })); setErros((x) => { const { [p.id]: _t, ...resto } = x; return resto; }); }}
+                    />
+                  )}
                   {errosVisiveis[p.id] && <p role="alert" className="text-sm text-destructive">{errosVisiveis[p.id]}</p>}
                 </div>
               ))}
