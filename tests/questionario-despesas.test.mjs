@@ -204,3 +204,20 @@ test("Litros abastecidos só vem no Abastecimento, também nos dados salvos ante
   assert.ok(questionarioDoTipo(lerEstado(s), "Hospedagem").includes(ID_LITROS));
   assert.equal(volta.litrosAjustado, true);
 });
+
+test("tipo novo (opção a mais) não ganha Litros; sem tipo Abastecimento nos dados antigos o ajuste não tira nada", () => {
+  const s = memoria();
+  const e = estadoPadrao();
+  const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
+  const g = salvarPergunta(e, { ...q3, opcoes: [...q3.opcoes, "Lavagem"] }, s);
+  assert.ok(!questionarioDoTipo(g, "Lavagem").includes(ID_LITROS));
+  assert.ok(questionarioDoTipo(g, "Abastecimento").includes(ID_LITROS));
+  // Dado antigo em que Abastecimento foi renomeado: Litros continua onde estava.
+  const antigo = { ...estadoPadrao(), questionarios: { Combustível: e.perguntas.map((p) => p.id), Pedágio: e.perguntas.map((p) => p.id) } };
+  delete antigo.litrosAjustado;
+  const t = memoria();
+  t.setItem("gemape-demo-questionario-despesas", JSON.stringify(antigo));
+  const lido = lerEstado(t);
+  assert.ok(lido.questionarios["Combustível"].includes(ID_LITROS));
+  assert.ok(lido.questionarios["Pedágio"].includes(ID_LITROS));
+});

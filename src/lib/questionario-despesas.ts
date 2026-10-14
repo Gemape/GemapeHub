@@ -191,7 +191,8 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     const lido = JSON.parse(bruto);
     if (!lido || !Array.isArray(lido.perguntas) || typeof lido.questionarios !== "object" || lido.questionarios === null) return estadoPadrao();
     const regras = lido.regras && typeof lido.regras === "object" ? lido.regras : {};
-    if (lido.litrosAjustado === true) return { versao: 1, perguntas: lido.perguntas, questionarios: lido.questionarios, regras, litrosAjustado: true };
+    // Sem um tipo chamado Abastecimento nos dados salvos (renomeado), nada é tirado: o responsável decide onde Litros fica.
+    if (lido.litrosAjustado === true || !(TIPO_ABASTECIMENTO in (lido.questionarios as Record<string, unknown>))) return { versao: 1, perguntas: lido.perguntas, questionarios: lido.questionarios, regras, litrosAjustado: true };
     // Dado salvo antes do ajuste: Litros abastecidos sai dos tipos que não são Abastecimento (uma vez só).
     const questionarios = Object.fromEntries(Object.entries(lido.questionarios as Record<string, unknown>).map(([tipo, ids]) => [tipo, Array.isArray(ids) && tipo !== TIPO_ABASTECIMENTO ? ids.filter((id) => id !== ID_LITROS) : ids]));
     return { versao: 1, perguntas: lido.perguntas, questionarios: questionarios as Record<string, string[]>, regras, litrosAjustado: true };
@@ -249,10 +250,12 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
   let questionarios = e.questionarios;
   if (gravar.id === ID_TIPO_DESPESA) {
     const padrao = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
+    // Tipo novo recebe todas as perguntas, menos Litros abastecidos (que é só do Abastecimento).
+    const padraoDoTipo = (o: string) => (o === TIPO_ABASTECIMENTO ? padrao : padrao.filter((id) => id !== ID_LITROS));
     const antigas = tiposDeDespesa(e);
     // Mesma quantidade de opções: o que mudou de nome é o mesmo tipo (ele leva o questionário junto).
     const renomeado = antigas.length === gravar.opcoes.length;
-    questionarios = Object.fromEntries(gravar.opcoes.map((o, i) => [o, e.questionarios[o] ?? (renomeado ? e.questionarios[antigas[i] ?? ""] : undefined) ?? padrao]));
+    questionarios = Object.fromEntries(gravar.opcoes.map((o, i) => [o, e.questionarios[o] ?? (renomeado ? e.questionarios[antigas[i] ?? ""] : undefined) ?? padraoDoTipo(o)]));
     // As condições acompanham o tipo renomeado e somem com o tipo removido.
     regras = Object.fromEntries(gravar.opcoes.flatMap((o, i) => {
       const r = e.regras[o] ?? (renomeado ? e.regras[antigas[i] ?? ""] : undefined);
