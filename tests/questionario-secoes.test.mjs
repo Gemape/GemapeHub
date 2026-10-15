@@ -130,9 +130,9 @@ test("o envio registra as respostas de todas as páginas", () => {
   assert.throws(() => registrarResposta(e, respostas(), s), /obrigat|Resposta/i);
 });
 
-test("telas (dec 202): botão Criar novo questionário, janela de seção e páginas com Próxima e Voltar", () => {
+test("telas (dec 204): sem botão Criar novo questionário, janela de seção e páginas com Próxima e Voltar", () => {
   const c = readFileSync("src/components/parametros/QuestionarioDespesasConstrutor.tsx", "utf8");
-  assert.match(c, /Criar novo questionário/);
+  assert.doesNotMatch(c, /Criar novo questionário/);
   assert.match(c, /Editar seção/);
   assert.doesNotMatch(c, /Iniciar seção aqui|Nova página/);
   assert.match(c, /Ir para a próxima seção/);

@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import {
   ID_TIPO_DESPESA, clonarPergunta, estadoPadrao, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId, novaPergunta,
   perguntasPadrao, proximoCodigoPergunta, questionarioDoTipo, regraArquivos, salvarPergunta, tiposDeDespesa, tiposRemovidos, validarPergunta,
-  dadosIlegiveis, ID_LITROS, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, habilitadosDaPergunta,
+  criarRascunho, publicarRascunho, dadosIlegiveis, ID_LITROS, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, habilitadosDaPergunta,
 } from "../src/lib/questionario-despesas.ts";
 import { filtrarMunicipios, municipiosDaUf } from "../src/lib/municipios.ts";
 
@@ -258,4 +258,36 @@ test("dado salvo antes da pergunta do técnico responsável a recebe uma vez, de
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify(ocupado));
   const codigos = lerEstado(s).perguntas.map((p) => p.codigo);
   assert.equal(new Set(codigos).size, codigos.length);
+});
+
+test("dec 204: o rascunho guarda as alterações na memória e só Salvar Formulário grava no armazenamento", () => {
+  const real = memoria();
+  const rascunho = criarRascunho(real);
+  const e = lerEstado(rascunho);
+  const p = e.perguntas.find((x) => x.id !== ID_TIPO_DESPESA && x.tipo === "curta");
+  const mudou = salvarPergunta(e, { ...p, titulo: `${p.titulo} (editada)` }, rascunho);
+  assert.equal(real.getItem("gemape-demo-questionario-despesas"), null);
+  assert.equal(lerEstado(rascunho).perguntas.find((x) => x.id === p.id).titulo, `${p.titulo} (editada)`);
+  publicarRascunho(rascunho, real);
+  assert.equal(lerEstado(real).perguntas.find((x) => x.id === p.id).titulo, mudou.perguntas.find((x) => x.id === p.id).titulo);
+});
+
+test("dec 204: o rascunho parte do que já estava salvo e dado ilegível nunca é sobrescrito pelo Salvar Formulário", () => {
+  const real = memoria();
+  gravarQuestionario(estadoPadrao(), tiposDeDespesa(estadoPadrao())[0], questionarioDoTipo(estadoPadrao(), tiposDeDespesa(estadoPadrao())[0]), real);
+  const antes = real.getItem("gemape-demo-questionario-despesas");
+  assert.ok(antes);
+  assert.equal(criarRascunho(real).getItem("gemape-demo-questionario-despesas"), antes);
+  const quebrado = memoria();
+  quebrado.setItem("gemape-demo-questionario-despesas", "{ não é json");
+  const r = criarRascunho(quebrado);
+  assert.throws(() => publicarRascunho(r, quebrado), /ilegíveis/);
+  assert.equal(quebrado.getItem("gemape-demo-questionario-despesas"), "{ não é json");
+});
+
+test("dec 204: a tela não tem Criar novo questionário e termina com Salvar Formulário", () => {
+  const c = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(c, /Criar novo questionário/);
+  assert.match(c, /Salvar Formulário/);
+  assert.match(c, /publicarRascunho\(rascunho\)/);
 });

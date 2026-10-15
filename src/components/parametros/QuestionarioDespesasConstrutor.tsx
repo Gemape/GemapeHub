@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, GripHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { iconeDoTipo } from "@/components/modules/icones-viagens";
@@ -18,17 +18,20 @@ import { useEmpregados } from "@/lib/hooks-gemape";
 import {
   DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, pendencias,
 } from "@/lib/questionario-destinos";
-import { criarQuestionario, gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
+import { gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
-  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
-  proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
+  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, criarRascunho, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
+  proximoCodigoPergunta, publicarRascunho, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
 // Montagem do Questionário de Despesas, dentro da mesma tela do formulário (dec 173): um questionário para cada tipo de despesa,
 // montado com as perguntas cadastradas. O banco de perguntas não tem tela própria: o que sobra fora do questionário se adiciona pelo seletor.
 export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: string | undefined }) {
   const { canWrite } = useAccess();
-  const [estado, setEstado] = useState<Estado>(lerEstado);
+  // Tudo que se muda fica num rascunho; só o botão Salvar Formulário grava de verdade (e Viagens passa a usar).
+  const [rascunho, setRascunho] = useState(() => criarRascunho());
+  const [estado, setEstado] = useState<Estado>(() => lerEstado(rascunho));
+  const [alterado, setAlterado] = useState(false);
   const tipos = tiposDeDespesa(estado);
   const [tipo, setTipo] = useState(() => (tipoInicial && tipos.includes(tipoInicial) ? tipoInicial : (tipos[0] ?? "")));
   const tipoAtual = tipos.includes(tipo) ? tipo : (tipos[0] ?? "");
@@ -55,18 +58,15 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   };
   function salvarSecao(d: DadosSecao) {
     if (!dialogoSecao) return;
-    if (dialogoSecao.inicio === null) {
-      const nome = d.nome ?? "";
-      if (executar(() => criarQuestionario(estado, nome, d), "Questionário criado.")) { setTipo(nome.trim()); setAtivo(null); setDialogoSecao(null); }
-      return;
-    }
     const inicio = dialogoSecao.inicio;
-    if (executar(() => gravarSecao(estado, tipoAtual, inicio, d), "Seção salva.")) setDialogoSecao(null);
+    if (inicio === null) return;
+    if (executar(() => gravarSecao(estado, tipoAtual, inicio, d, rascunho), "Seção salva.")) setDialogoSecao(null);
   }
 
   function executar(acao: () => Estado, mensagem?: string): boolean {
     try {
       setEstado(acao());
+      setAlterado(true);
       if (mensagem) toast.success(mensagem);
       return true;
     } catch (erro) {
@@ -74,7 +74,31 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
       return false;
     }
   }
-  const gravarIds = (novos: string[]) => executar(() => { conferirOrdem(estado, tipoAtual, novos); return gravarQuestionario(estado, tipoAtual, novos); });
+  // Salvar Formulário: publica o rascunho. Descartar volta ao que já estava salvo.
+  function salvarFormulario() {
+    try {
+      publicarRascunho(rascunho);
+      setAlterado(false);
+      toast.success("Formulário salvo.");
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar o formulário.");
+    }
+  }
+  function descartar() {
+    if (!confirm("Descartar as alterações que ainda não foram salvas?")) return;
+    const novo = criarRascunho();
+    setRascunho(novo);
+    setEstado(lerEstado(novo));
+    setAtivo(null);
+    setAlterado(false);
+  }
+  useEffect(() => {
+    if (!alterado) return;
+    const avisar = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", avisar);
+    return () => window.removeEventListener("beforeunload", avisar);
+  }, [alterado]);
+  const gravarIds = (novos: string[]) => executar(() => { conferirOrdem(estado, tipoAtual, novos); return gravarQuestionario(estado, tipoAtual, novos, rascunho); });
 
   // Sobe ou desce uma pergunta (alternativa ao arrastar, para quem usa teclado); a de tipos de despesa fica de fora.
   const trocar = (lista: string[], id: string, passo: -1 | 1): string[] => {
@@ -89,19 +113,12 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   function excluir(p: Pergunta) {
     const usos = Object.values(estado.questionarios).filter((l) => l.includes(p.id)).length;
     if (!confirm(`Excluir a pergunta ${p.codigo} (${p.titulo})?${usos ? ` Ela sai de ${usos} questionário${usos === 1 ? "" : "s"}.` : ""}`)) return;
-    executar(() => excluirPergunta(estado, p.id), "Pergunta excluída.");
+    executar(() => excluirPergunta(estado, p.id, rascunho), "Pergunta excluída.");
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Configuração Formulário de Despesas</h1>
-        <div className="flex flex-wrap gap-2">
-          {canWrite && (
-            <Button variant="outline" onClick={() => setDialogoSecao({ inicio: null, inicial: { nome: "", titulo: "", subtitulo: "" } })}><Plus className="mr-1 h-4 w-4" />Criar novo questionário</Button>
-          )}
-        </div>
-      </div>
+      <h1 className="text-xl font-semibold">Configuração Formulário de Despesas</h1>
 
       <section className="space-y-2" aria-labelledby="escolher-card">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -164,7 +181,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
               {canWrite && (
                 <div className="flex shrink-0 gap-1">
                   <Button variant="ghost" size="icon" aria-label="Editar seção" onClick={() => abrirSecao(id)}><Pencil className="h-4 w-4" /></Button>
-                  {!fixa && <Button variant="ghost" size="icon" aria-label="Remover seção" title="Remover a seção (as perguntas ficam na seção anterior)" onClick={() => executar(() => gravarSecao(estado, tipoAtual, id, null), "Seção removida.")}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                  {!fixa && <Button variant="ghost" size="icon" aria-label="Remover seção" title="Remover a seção (as perguntas ficam na seção anterior)" onClick={() => executar(() => gravarSecao(estado, tipoAtual, id, null, rascunho), "Seção removida.")}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                 </div>
               )}
             </div>
@@ -220,7 +237,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
               {canWrite && !fixa && aceitaCondicao(p) && (
-                <AdicionarOpcao onAdicionar={(texto) => executar(() => salvarPergunta(estado, { ...p, opcoes: [...p.opcoes, texto] }), "Opção adicionada.")} />
+                <AdicionarOpcao onAdicionar={(texto) => executar(() => salvarPergunta(estado, { ...p, opcoes: [...p.opcoes, texto] }, rascunho), "Opção adicionada.")} />
               )}
             </div>
             {aberto && canWrite && !fixa && (
@@ -232,7 +249,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                     ids={ids}
                     pergunta={p}
                     destinos={destinosDoTipo(estado, tipoAtual)[id] ?? {}}
-                    onMudar={(opcao, d) => executar(() => gravarDestino(estado, tipoAtual, id, opcao, d))}
+                    onMudar={(opcao, d) => executar(() => gravarDestino(estado, tipoAtual, id, opcao, d, rascunho))}
                   />
                 )}
                 <CondicaoPergunta
@@ -240,7 +257,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                   ids={ids}
                   id={id}
                   regra={estado.regras[tipoAtual]?.[id] ?? null}
-                  onMudar={(r) => executar(() => gravarRegra(estado, tipoAtual, id, r))}
+                  onMudar={(r) => executar(() => gravarRegra(estado, tipoAtual, id, r, rascunho))}
                 />
               </details>
             )}
@@ -265,7 +282,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 )}
                 <div className="mx-2 h-6 w-px bg-border" />
                 <Label htmlFor={`obrigatoria-${id}`} className="text-sm">Obrigatória</Label>
-                <Switch id={`obrigatoria-${id}`} checked={p.obrigatoria} onCheckedChange={(v) => executar(() => salvarPergunta(estado, { ...p, obrigatoria: v }))} />
+                <Switch id={`obrigatoria-${id}`} checked={p.obrigatoria} onCheckedChange={(v) => executar(() => salvarPergunta(estado, { ...p, obrigatoria: v }, rascunho))} />
               </div>
             )}
           </div>
@@ -286,10 +303,18 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         </div>
       )}
 
+      {canWrite && (
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
+          <p className="mr-auto text-sm text-muted-foreground" role="status">{alterado ? "Há alterações que ainda não foram salvas." : "Tudo salvo."}</p>
+          {alterado && <Button type="button" variant="ghost" onClick={descartar}>Descartar alterações</Button>}
+          <Button type="button" disabled={!alterado || dadosIlegiveis()} onClick={salvarFormulario}>Salvar Formulário</Button>
+        </div>
+      )}
+
       <SecaoDialog
         aberto={dialogoSecao !== null}
-        titulo={dialogoSecao?.inicio === null ? "Criar novo questionário" : "Seção"}
-        comNome={dialogoSecao?.inicio === null}
+        titulo="Seção"
+        comNome={false}
         inicial={dialogoSecao?.inicial ?? { titulo: "", subtitulo: "" }}
         onSalvar={salvarSecao}
         onFechar={() => setDialogoSecao(null)}
@@ -300,17 +325,17 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         modo={dialogo?.modo ?? "novo"}
         inicial={dialogo?.inicial ?? null}
         estado={estado}
-        codigoNovo={proximoCodigoPergunta(estado)}
+        codigoNovo={proximoCodigoPergunta(estado, rascunho)}
         onFechar={() => setDialogo(null)}
         onSalvar={(p) => {
           const perdem = p.id === ID_TIPO_DESPESA ? tiposRemovidos(estado, p.opcoes.map((o) => o.trim())) : [];
           if (perdem.length && !confirm(`Remover ${perdem.length === 1 ? "o tipo" : "os tipos"} ${perdem.join(", ")} apaga ${perdem.length === 1 ? "o questionário dele" : "os questionários deles"}. Continuar?`)) return;
           const nova = dialogo?.modo === "novo" && p.id !== ID_TIPO_DESPESA;
           const gravar = () => {
-            const salvo = salvarPergunta(estado, p);
+            const salvo = salvarPergunta(estado, p, rascunho);
             if (!nova) return salvo;
             const atuais = questionarioDoTipo(salvo, tipoAtual).filter((x) => x !== ID_TIPO_DESPESA);
-            return gravarQuestionario(salvo, tipoAtual, [...atuais, p.id]);
+            return gravarQuestionario(salvo, tipoAtual, [...atuais, p.id], rascunho);
           };
           if (executar(gravar, nova ? "Pergunta criada e adicionada ao questionário." : "Pergunta salva.")) setDialogo(null);
         }}
