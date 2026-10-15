@@ -17,7 +17,7 @@ const completas = {
   "q-01": ["Dinheiro"], "q-02": ["Cartão final 0129 – Roberto"], "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"], "q-05": "Minas Gerais - MG", "q-06": "Belo Horizonte",
   "q-07": "00001 - Cliente Teste", "q-08": "2026-10-14", "q-09": "Almoço com o cliente", "q-10": "10,50", "q-11": "1.234,56", "q-12": ["comprovante.jpg"], "q-13": "Avulso – técnico não monitorado",
 };
-const agora = new Date(2026, 9, 14, 8, 5);
+const agora = new Date("2026-10-14T08:05:00-03:00");
 
 test("o tipo escolhido é a opção marcada na pergunta 3", () => {
   assert.equal(tipoEscolhido({ "q-03": ["Pedágio"] }), "Pedágio");
@@ -38,7 +38,7 @@ test("registrar grava a resposta com tipo, data e hora locais e as perguntas daq
   assert.equal(r.itens.find((i) => i.perguntaId === "q-08").resposta, "14/10/2026");
   assert.equal(listarRespostas(s).length, 1);
   assert.equal(listarRespostas(s)[0].id, r.id);
-  assert.equal(horaLocal(new Date(2026, 9, 14, 23, 59)), "23:59");
+  assert.equal(horaLocal(new Date("2026-10-14T23:59:00-03:00")), "23:59");
 });
 
 test("só grava o que passa na validação, de uma vez, e nada fica pela metade", () => {
@@ -63,7 +63,7 @@ test("respostas antigas guardam o título da época; resumo e remoção", () => 
   const s = memoria();
   const e = estadoPadrao();
   const r1 = registrarResposta(e, completas, s, agora);
-  const r2 = registrarResposta(e, { ...completas, "q-03": ["Manutenção do veículo de trabalho"] }, s, new Date(2026, 9, 14, 9, 0));
+  const r2 = registrarResposta(e, { ...completas, "q-03": ["Manutenção do veículo de trabalho"] }, s, new Date("2026-10-14T09:00:00-03:00"));
   assert.deepEqual(listarRespostas(s).map((r) => r.tipo), ["Manutenção do veículo de trabalho", "Abastecimento"]);
   assert.match(resumoDaResposta(r1), /Abastecimento/);
   assert.match(resumoDaResposta(r1), /1\.234,56/);
@@ -258,4 +258,15 @@ test("dec 218: dado salvo antes ganha a classificação em Alimentação uma vez
   // Depois do ajuste, tirar a classificação de Alimentação não a traz de volta.
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, "Alimentação": ali.filter((id) => id !== "q-15") } }));
   assert.ok(!lerEstado(s).questionarios["Alimentação"].includes("q-15"));
+});
+
+test("hora e mês de hoje seguem Brasília, mesmo com o relógio do dispositivo em outro fuso", async () => {
+  const { horaBrasilia } = await import("../src/lib/empregados.ts");
+  const { periodoAtual } = await import("../src/lib/viagens.ts");
+  // 01:30 UTC de 01/11 ainda é 22:30 de 31/10 em Brasília.
+  const virada = new Date("2026-11-01T01:30:00Z");
+  assert.equal(horaBrasilia(virada), "22:30");
+  assert.equal(horaLocal(virada), "22:30");
+  assert.deepEqual(periodoAtual(virada), { ano: 2026, mes: 10 });
+  assert.equal(horaBrasilia(new Date("2026-10-15T03:05:00Z")), "00:05");
 });

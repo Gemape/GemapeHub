@@ -58,6 +58,11 @@ export function hojeLocal(agora = new Date()): string {
   return agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
 }
 
+// Hora de agora (HH:MM) no horário de Brasília, qualquer que seja o fuso do dispositivo; par de `hojeLocal`.
+export function horaBrasilia(agora = new Date()): string {
+  return agora.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+}
+
 // Decisão do responsável (30/09/2026): o empregado continua ativo até a data de demissão
 // chegar. A partir dessa data, a demissão está vencida.
 export const demissaoVencida = (e: { data_demissao?: string | null }, hoje = hojeLocal()) =>
