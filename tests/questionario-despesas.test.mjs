@@ -39,7 +39,9 @@ test("os tipos de despesa vêm da pergunta 3 e todo questionário começa por el
   assert.equal(tiposDeDespesa(e).length, 8);
   for (const tipo of tiposDeDespesa(e)) assert.equal(questionarioDoTipo(e, tipo)[0], ID_TIPO_DESPESA);
   assert.equal(questionarioDoTipo(e, "Abastecimento").length, 14);
-  assert.equal(questionarioDoTipo(e, "Pedágio").length, 13);
+  assert.equal(questionarioDoTipo(e, "Outro").length, 13);
+  // Dec 216: Pedágio segue a lógica do PCM (11 perguntas e o tipo, sem Detalhamento).
+  assert.equal(questionarioDoTipo(e, "Pedágio").length, 12);
   // Mesmo gravada fora de ordem ou repetida, a pergunta 3 volta ao início uma vez só.
   const g = gravarQuestionario(e, "Pedágio", ["q-08", ID_TIPO_DESPESA, "q-01", "q-08"], memoria());
   assert.deepEqual(questionarioDoTipo(g, "Pedágio"), [ID_TIPO_DESPESA, "q-08", "q-01"]);
@@ -246,13 +248,13 @@ test("dado salvo antes da pergunta do técnico responsável a recebe uma vez, de
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify(antigo));
   const lido = lerEstado(s);
   assert.ok(lido.perguntas.some((p) => p.id === ID_TECNICO_RESPONSAVEL));
-  const ids = lido.questionarios["Pedágio"];
+  const ids = lido.questionarios["Outro"];
   assert.equal(ids[ids.indexOf(ID_HABILITADOS) + 1], ID_TECNICO_RESPONSAVEL);
   assert.equal(lido.tecnicoAjustado, true);
   // Tirar a pergunta de um questionário depois do ajuste não a traz de volta.
-  const sem = { ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, Pedágio: ids.filter((id) => id !== ID_TECNICO_RESPONSAVEL) } };
+  const sem = { ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, Outro: ids.filter((id) => id !== ID_TECNICO_RESPONSAVEL) } };
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify(sem));
-  assert.ok(!lerEstado(s).questionarios["Pedágio"].includes(ID_TECNICO_RESPONSAVEL));
+  assert.ok(!lerEstado(s).questionarios["Outro"].includes(ID_TECNICO_RESPONSAVEL));
   // Número 14 já usado por outra pergunta: ela recebe o próximo.
   const ocupado = { ...antigo, perguntas: [...antigo.perguntas, { ...novaPergunta("data", "14"), titulo: "Outra", id: "q-x" }] };
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify(ocupado));

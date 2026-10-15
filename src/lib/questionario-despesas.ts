@@ -81,6 +81,8 @@ export type Estado = {
   cartaoAjustado?: true;
   // Marca que os números das perguntas de fábrica já foram colocados em ordem sequencial nos dados salvos antes (dec 209).
   codigosOrdenados?: true;
+  // Marca que a ordem e as perguntas de Alimentação, Hospedagem, Pedágio e Estacionamento já seguem a lógica do scanner do dono (dec 216).
+  logicaViagemAjustada?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -91,6 +93,13 @@ export const ID_TIPO_DESPESA = "q-03";
 // Módulo Viagens (dec 177): quem lança é a pergunta 04; a 14 só aparece quando quem lança é PCM ou Administrativo, para dizer de qual técnico é a despesa.
 export const ID_HABILITADOS = "q-04";
 export const ID_TECNICO_RESPONSAVEL = "q-14";
+// Dec 216: Alimentação, Hospedagem, Pedágio e Estacionamento seguem a mesma lógica de perguntas: quem lança; se for PCM ou Administrativo,
+// "PCM responde" (Avulso ou Não conformidade) e, na Não conformidade, o técnico que não lançou; depois data, local, moeda, valor e comprovante
+// (sem Detalhamento, que fica na Compra de peças). Sem comprovante, o envio pede a justificativa.
+export const ID_PCM_RESPONDE = "q-13";
+export const TIPOS_COM_LOGICA_PCM = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento"];
+export const ORDEM_LOGICA_PCM = ["q-04", ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, "q-08", "q-05", "q-06", "q-07", "q-01", "q-02", "q-11", "q-12"];
+const FABRICA = new Set(["q-01", "q-02", "q-03", "q-04", "q-05", "q-06", "q-07", "q-08", "q-09", "q-10", "q-11", "q-12", "q-13", "q-14"]);
 export const ID_UF = "q-05";
 // Perguntas travadas (dec 207): Unidade da Federação, Município, Data, Valor, Foto do comprovante e Detalhamento não precisam de edição na montagem.
 export const IDS_TRAVADAS: readonly string[] = [ID_UF, "q-06", "q-08", "q-09", "q-11", "q-12"];
@@ -168,8 +177,8 @@ export function estadoPadrao(): Estado {
   const perguntas = perguntasPadrao();
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
-  const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, resto.filter((id) => id !== ID_LITROS || o === TIPO_ABASTECIMENTO)]));
-  return { versao: 1, perguntas, questionarios, regras: comRegraDoCartao(questionarios, {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true };
+  const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, TIPOS_COM_LOGICA_PCM.includes(o) ? [...ORDEM_LOGICA_PCM] : resto.filter((id) => id !== ID_LITROS || o === TIPO_ABASTECIMENTO)]));
+  return { versao: 1, perguntas, questionarios, regras: comRegraDoCartao(questionarios, {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, logicaViagemAjustada: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -289,9 +298,22 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
         return novos.has(p.codigo) && !/^q-(0[1-9]|1[0-4])$/.test(p.id) ? { ...p, codigo: formatarCodigo(++proximo) } : p;
       });
     }
+    // Dado salvo antes da dec 216: os quatro tipos passam para a ordem da lógica do scanner (uma vez só). Pergunta criada pelo responsável
+    // continua no questionário, logo antes do comprovante; Detalhamento sai desses tipos.
+    if (lido.logicaViagemAjustada !== true) {
+      const existentes = new Set(perguntas.map((p) => p.id));
+      questionarios = Object.fromEntries(Object.entries(questionarios as Record<string, unknown>).map(([tipo, ids]) => {
+        if (!Array.isArray(ids) || !TIPOS_COM_LOGICA_PCM.includes(tipo)) return [tipo, ids];
+        const fabrica = ORDEM_LOGICA_PCM.filter((id) => existentes.has(id));
+        const proprias = (ids as string[]).filter((id) => !FABRICA.has(id) && existentes.has(id));
+        const antesDaFoto = fabrica.indexOf("q-12");
+        return [tipo, antesDaFoto >= 0 ? [...fabrica.slice(0, antesDaFoto), ...proprias, ...fabrica.slice(antesDaFoto)] : [...fabrica, ...proprias]];
+      })) as Record<string, string[]>;
+      regras = comRegraDoCartao(questionarios, regras);
+    }
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, logicaViagemAjustada: true };
   } catch {
     return estadoPadrao();
   }

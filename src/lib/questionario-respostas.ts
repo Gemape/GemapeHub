@@ -2,7 +2,7 @@
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
 import { inicioDaProximaSecao } from "./questionario-secoes.ts";
 import { DESTINO_PROXIMA_SECAO, aceitaDestino, destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
-import { ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
+import { ID_HABILITADOS, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_LOGICA_PCM, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
 export type Resposta = string | string[];
@@ -53,6 +53,11 @@ export function textoDaResposta(p: Pergunta, respostas: Respostas): string {
   return (Array.isArray(r) ? r.map(rotulo).join(", ") : rotulo(r)).trim();
 }
 
+// Dec 216: nos tipos com a lógica do PCM, quem não anexa o comprovante pode encerrar com a justificativa da ausência do documento.
+export const chaveJustificativa = (perguntaId: string): string => `${perguntaId}:justificativa`;
+export const TITULO_JUSTIFICATIVA = "Justificativa da ausência do comprovante";
+export const aceitaJustificativa = (tipo: string): boolean => TIPOS_COM_LOGICA_PCM.includes(tipo);
+
 // Área de quem lança, lida do rótulo "Nome (Área)" da resposta à pergunta de habilitados.
 export function areaDeQuemLanca(respostas: Respostas): string | null {
   const r = respostas[ID_HABILITADOS];
@@ -93,6 +98,11 @@ export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas)
     // Pergunta que depende de outra (município x UF) só aparece com a de origem visível.
     if (p.dependeDe && !mostradas.has(p.dependeDe)) continue;
     if (id === ID_TECNICO_RESPONSAVEL && !lancadoPorGestor(respostas)) continue;
+    // Dec 216: nos tipos com a lógica do PCM, "PCM responde" é só de quem lança pelo PCM ou Administrativo e o técnico que não lançou só na Não conformidade.
+    if (TIPOS_COM_LOGICA_PCM.includes(tipo)) {
+      if (id === ID_PCM_RESPONDE && !lancadoPorGestor(respostas)) continue;
+      if (id === ID_TECNICO_RESPONSAVEL && mostradas.has(ID_PCM_RESPONDE) && !String(respostas[ID_PCM_RESPONDE] ?? "").startsWith("Não conformidade")) continue;
+    }
     if (!visivel(e, tipo, id, respostas)) continue;
     mostradas.add(id);
     lista.push(p);
@@ -121,12 +131,13 @@ function dataValida(iso: string): boolean {
 const vazio = (r: Resposta | undefined) => r === undefined || (Array.isArray(r) ? r.length === 0 : r.trim() === "");
 
 // Erros por pergunta visível; vazio quando o questionário pode ser enviado.
-export function validarRespostas(visiveis: Pergunta[], respostas: Respostas): Record<string, string> {
+export function validarRespostas(visiveis: Pergunta[], respostas: Respostas, justificavel = false): Record<string, string> {
   const erros: Record<string, string> = {};
   for (const p of visiveis) {
     const r = respostas[p.id];
     if (vazio(r)) {
-      if (p.obrigatoria) erros[p.id] = p.tipo === "upload" ? "Anexe ao menos uma imagem." : "Resposta obrigatória.";
+      if (p.obrigatoria && p.tipo === "upload" && justificavel && !vazio(respostas[chaveJustificativa(p.id)])) continue;
+      if (p.obrigatoria) erros[p.id] = p.tipo === "upload" ? (justificavel ? "Anexe ao menos uma imagem ou informe a justificativa." : "Anexe ao menos uma imagem.") : "Resposta obrigatória.";
       continue;
     }
     const texto = typeof r === "string" ? r : "";
