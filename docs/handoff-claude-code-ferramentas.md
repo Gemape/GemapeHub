@@ -446,3 +446,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 193: dois prazos em Parâmetros > Viagens (mecânico e PCM): prazo-viagens.ts (lerPrazos/salvarPrazos), viagens.ts (prazoDoLancamento), cadastros/viagens.tsx, ViagensPainel.tsx.
 - 2026-10-14 dec 194: revisão geral, correções de bugs (demo-client lte/or, empresa-context, CaixasFerramentasModulo, termos/compras por empresa, relatórios, ficha EPI, veículos). Detalhe em /mnt/project-files/revisoes/revisao-geral.md.
 - 2026-10-15 dec 195: busca de ações no Cadastrar nova manutenção (busca-acoes-manutencao.ts: filtrarAcoesManutencao; ManutencaoVeiculoModulo.tsx). Sem resultado, link para Parâmetros > Veículos > Manutenção.
+- 2026-10-15 dec 196: reverte a dec 195 (busca-acoes-manutencao.ts e o campo de busca saíram); o sistema já contemplava a ação.
