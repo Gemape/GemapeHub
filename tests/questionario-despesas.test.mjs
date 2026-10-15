@@ -311,6 +311,21 @@ test("dec 205: a tela tem o botão Restaurar configurações iniciais ao lado de
   assert.match(c, /gravarEstado\(estadoPadrao\(\), rascunho\)/);
 });
 
+test("dec 208: adicionar habilitado no card entra na pergunta 04 e o técnico responsável só recebe os da área Oficina", () => {
+  const rascunho = criarRascunho(memoria());
+  const e = lerEstado(rascunho);
+  const q04 = e.perguntas.find((p) => p.id === ID_HABILITADOS);
+  const novo = (area) => ({ empregadoId: `emp-${area}`, nome: `Fulano ${area}`, area });
+  let atual = salvarPergunta(e, { ...q04, habilitados: [...q04.habilitados, novo("PCM")] }, rascunho);
+  atual = salvarPergunta(atual, { ...atual.perguntas.find((p) => p.id === ID_HABILITADOS), habilitados: [...atual.perguntas.find((p) => p.id === ID_HABILITADOS).habilitados, novo("Oficina")] }, rascunho);
+  const tecnico = atual.perguntas.find((p) => p.id === ID_TECNICO_RESPONSAVEL);
+  const nomes = habilitadosDaPergunta(atual, tecnico).map((h) => h.nome);
+  assert.ok(nomes.includes("Fulano Oficina") && !nomes.includes("Fulano PCM"));
+  const c = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
+  assert.match(c, /<AdicionarHabilitado/);
+  assert.match(c, /id === ID_HABILITADOS \|\| id === ID_TECNICO_RESPONSAVEL/);
+});
+
 test("dec 207: UF, Município, Data, Valor, Foto do comprovante e Detalhamento são perguntas travadas", () => {
   const travadas = perguntasPadrao().filter((p) => perguntaTravada(p.id)).map((p) => p.titulo);
   assert.deepEqual(travadas, ["Unidade da Federação", "Município", "Data da despesa", "Detalhamento da despesa", "Valor da despesa", "Foto do comprovante"]);
