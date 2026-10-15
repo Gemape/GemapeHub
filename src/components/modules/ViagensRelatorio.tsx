@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { FileText, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -19,6 +18,7 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 
 const TODOS = "__todos__";
 const NENHUM = "__nenhum__";
+const CONFERIDO_POR = ["PCM", "Administrativo"];
 
 // Viagens > Relatório (dec 180): filtros, conferência rápida e geração do documento para imprimir ou salvar em PDF.
 export function ViagensRelatorio({ emitente }: { emitente: string }) {
@@ -31,6 +31,7 @@ export function ViagensRelatorio({ emitente }: { emitente: string }) {
   const [porPagina, setPorPagina] = useState<ComprovantesPorPagina>(4);
   const [supervisor, setSupervisor] = useState(NENHUM);
   const [diretor, setDiretor] = useState(NENHUM);
+  const [conferido, setConferido] = useState(NENHUM);
 
   const lista = useMemo(() => listarRespostas(), []);
   const nomes = useMemo(() => {
@@ -59,6 +60,7 @@ export function ViagensRelatorio({ emitente }: { emitente: string }) {
       html: montarRelatorioViagensHtml({
         empresa, empregado: quem, de, ate, linhas, comprovantesPorPagina: porPagina, emitente,
         supervisor: supervisor === NENHUM ? "" : supervisor, diretor: diretor === NENHUM ? "" : diretor,
+        conferido: conferido === NENHUM ? "" : conferido,
         geradoEm: new Date().toISOString(), logoUrl: `${window.location.origin}${import.meta.env["BASE_URL"] ?? "/"}logo.png`,
       }),
       arquivo: nomeArquivoDocumento("Relatorio de viagens", quem ?? "todos", de, ate),
@@ -122,7 +124,16 @@ export function ViagensRelatorio({ emitente }: { emitente: string }) {
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <Users className="h-4 w-4 text-primary" aria-hidden="true" />
           <span><strong>Clientes visitados:</strong> {clientes.length ? clientes.join(" · ") : "Clientes não informados"}</span>
-          <Button asChild variant="outline" size="sm"><Link to="/cadastros/clientes">Abrir Parâmetros &gt; Clientes</Link></Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <Label htmlFor="relatorio-conferido" className="font-bold">Conferido:</Label>
+          <Select value={conferido} onValueChange={(v) => { if (v) setConferido(v); }}>
+            <SelectTrigger id="relatorio-conferido" aria-label="Conferido" className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NENHUM}>Em branco</SelectItem>
+              {CONFERIDO_POR.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Button onClick={gerar} disabled={!periodoValido}><FileText className="mr-1 h-4 w-4" />Gerar relatório</Button>

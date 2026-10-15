@@ -125,7 +125,6 @@ test("menu Viagens ganha o submenu Relatório e a tela usa o visualizador do sis
   assert.equal(abaDoModulo("viagem", "relatorio"), "relatorio");
   const t = readFileSync("src/components/modules/ViagensRelatorio.tsx", "utf8");
   assert.match(t, /abrirDocumento/);
-  assert.match(t, /Parâmetros &gt; Clientes/);
   assert.match(t, /Comprovantes por página/);
   assert.match(readFileSync("src/routes/_authenticated/viagens.tsx", "utf8"), /ViagensRelatorio/);
 });
@@ -135,4 +134,15 @@ test("cliente de nome longo conta mais altura e empurra linhas para a página se
   const curtas = linhasDoRelatorio(Array.from({ length: 40 }, () => lanc({ cliente: "Alfa" })), FILTRO);
   const compridas = linhasDoRelatorio(Array.from({ length: 40 }, () => lanc({ cliente: longo })), FILTRO);
   assert.ok(secoes(montarRelatorioViagensHtml(base(compridas))) > secoes(montarRelatorioViagensHtml(base(curtas))));
+});
+
+test("dec 215: Conferido (PCM ou Administrativo) sai no documento só quando escolhido, e o botão de Parâmetros > Clientes saiu da Conferência", () => {
+  const linhas = linhasDoRelatorio([lanc({ cliente: "Alfa SA" })], FILTRO);
+  assert.doesNotMatch(montarRelatorioViagensHtml(base(linhas)), /Conferido:/);
+  assert.match(montarRelatorioViagensHtml(base(linhas, { conferido: "PCM" })), /Conferido:<\/strong> PCM/);
+  assert.match(montarRelatorioViagensHtml(base(linhas, { conferido: "<b>x" })), /Conferido:<\/strong> &lt;b&gt;x/);
+  const f = readFileSync(new URL("../src/components/modules/ViagensRelatorio.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(f, /Abrir Parâmetros/);
+  assert.match(f, /Conferido:/);
+  assert.match(f, /\["PCM", "Administrativo"\]/);
 });

@@ -466,3 +466,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-15 dec 212: "Preencher novamente" virou Novo e volta ao painel de Viagens.
 - 2026-10-15 dec 214: ícone do botão Faixas de desempenho (ViagensPainel.tsx) trocado de Palette para PieChart.
 - 2026-10-15 dec 213: botão Gerar relatório (ViagensLista.tsx) movido para baixo da listagem.
+- 2026-10-15 dec 215: Conferido (PCM/Administrativo) na Conferência do relatório (ViagensRelatorio.tsx, DadosRelatorio.conferido); botão Abrir Parâmetros > Clientes removido.
