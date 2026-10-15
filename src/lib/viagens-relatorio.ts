@@ -71,6 +71,7 @@ export type DadosRelatorio = {
   comprovantesPorPagina: ComprovantesPorPagina;
   supervisor: string;
   diretor: string;
+  conferido?: string;
   emitente: string;
   geradoEm: string;
   logoUrl: string;
@@ -97,7 +98,7 @@ export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
       <div class="empresa">${escaparHtml(d.empresa)}</div>
     </div>`;
   const blocoClientes = `
-    <div class="clientes"><strong>Clientes visitados:</strong> ${clientes.length ? escaparHtml(clientes.join(" · ")) : `<em>Clientes não informados</em>`}</div>`;
+    <div class="clientes"><strong>Clientes visitados:</strong> ${clientes.length ? escaparHtml(clientes.join(" · ")) : `<em>Clientes não informados</em>`}</div>${d.conferido ? `<div class="clientes"><strong>Conferido:</strong> ${escaparHtml(d.conferido)}</div>` : ""}`;
   const topoTabela = `<table class="despesas"><thead><tr><th>Data</th><th>Tipo</th><th>Cliente</th><th class="valor">Valor</th></tr></thead><tbody>`;
   const linhaHtml = (l: LinhaRelatorio) => `
     <tr><td>${escaparHtml(dataBr(l.data))}</td><td>${escaparHtml(l.tipo)}</td><td>${l.cliente ? escaparHtml(l.cliente) : "<em>Não informado</em>"}</td><td class="valor">${moeda(l.valor)}</td></tr>${l.descricao ? `<tr class="desc"><td colspan="4">${escaparHtml(l.descricao)}</td></tr>` : ""}`;
@@ -119,7 +120,7 @@ export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
   // Distribui o cabeçalho, as despesas, o quadro e as assinaturas nas páginas; linha e bloco nunca ficam cortados.
   const paginas: string[] = [];
   let atual = cabecalho + blocoClientes;
-  let usado = H.cabecalho + H.blocoClientes + H.linhaClientes * linhasDeTexto(clientes.join(" · "), 95);
+  let usado = H.cabecalho + H.blocoClientes + (d.conferido ? H.linhaClientes : 0) + H.linhaClientes * linhasDeTexto(clientes.join(" · "), 95);
   const fechar = () => { paginas.push(atual); atual = ""; usado = 0; };
   if (d.linhas.length === 0) {
     atual += `<p class="vazio">Nenhuma despesa lançada no período.</p>`;

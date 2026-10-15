@@ -1168,3 +1168,7 @@ Pedido do dono (15/10, 18:08): na lista de despesas do módulo Viagens, o botão
 ### Decisão 214: Ícone de gráfico de pizza em Faixas de desempenho
 
 Pedido do dono (15/10, 18:11): o botão **Faixas de desempenho** do painel de Viagens troca o ícone de paleta por um de gráfico de pizza. Só muda o ícone. Sem Supabase.
+
+### Decisão 215: Conferido (PCM ou Administrativo) na Conferência do relatório
+
+Pedido do dono (15/10, 18:58): na Conferência do Relatório de Viagens, sai o botão **Abrir Parâmetros > Clientes** e entra o campo **Conferido:** com lista suspensa de duas opções, **PCM** ou **Administrativo** (começa em branco). A escolha vale para o relatório gerado e, quando preenchida, sai no documento abaixo de "Clientes visitados". Sem campo novo no cadastro nem Supabase.
