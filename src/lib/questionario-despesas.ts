@@ -91,7 +91,7 @@ export const ID_HABILITADOS = "q-04";
 export const ID_TECNICO_RESPONSAVEL = "q-14";
 export const ID_UF = "q-05";
 
-type StorageLike = Pick<Storage, "getItem" | "setItem">;
+export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-questionario-despesas";
 const CHAVE_SEQUENCIA = "gemape-demo-questionario-despesas-sequencia";
 const formatarCodigo = (n: number) => String(n).padStart(2, "0");
@@ -302,6 +302,26 @@ export function limparRegras(e: Estado): Estado {
 
 // Só pergunta com opções escritas na própria pergunta (não clientes, municípios nem habilitados) serve de origem.
 export const aceitaCondicao = (p: Pergunta): boolean => p.id !== ID_TIPO_DESPESA && TIPOS_COM_OPCOES.includes(p.tipo) && p.fonte === "propria" && !p.habilitados;
+
+// Rascunho da montagem: as alterações ficam numa cópia na memória e só vão para o armazenamento de verdade em publicarRascunho (Salvar Formulário).
+export function criarRascunho(origem: StorageLike = localStorage): StorageLike {
+  const dados = new Map<string, string>();
+  for (const chave of [CHAVE, CHAVE_SEQUENCIA]) {
+    const valor = origem.getItem(chave);
+    if (valor !== null) dados.set(chave, valor);
+  }
+  return { getItem: (k) => dados.get(k) ?? null, setItem: (k, v) => { dados.set(k, v); } };
+}
+
+// Grava o rascunho no armazenamento: primeiro o dado principal e depois a sequência, como em gravarEstado. Dado ilegível nunca é sobrescrito.
+export function publicarRascunho(rascunho: StorageLike, destino: StorageLike = localStorage): void {
+  conferirIntegridade(destino);
+  conferirIntegridade(rascunho);
+  for (const chave of [CHAVE, CHAVE_SEQUENCIA]) {
+    const valor = rascunho.getItem(chave);
+    if (valor !== null) destino.setItem(chave, valor);
+  }
+}
 
 export function gravarEstado(inicial: Estado, storage: StorageLike = localStorage): Estado {
   conferirIntegridade(storage);
