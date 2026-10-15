@@ -1,6 +1,6 @@
 // Abastecimentos e manutenções por veículo (decisão 57). Fase 1: ficam só no navegador, em
 // modo demonstração; as tabelas no banco real são pendência da Fase 2.
-import { hojeLocal } from "./empregados.ts";
+import { horaBrasilia, hojeLocal } from "./empregados.ts";
 import { ehOutros } from "./veiculos-padrao.ts";
 
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -182,7 +182,7 @@ export function registrarAbastecimento(entrada: EntradaAbastecimento, storage = 
   const data = validarData(entrada.data, agora);
   const hora = validarHora(entrada.hora);
   const p2 = (n: number) => String(n).padStart(2, "0");
-  if (data === hojeLocal(agora) && hora > `${p2(agora.getHours())}:${p2(agora.getMinutes())}`) {
+  if (data === hojeLocal(agora) && hora > horaBrasilia(agora)) {
     throw new Error("A hora não pode ser futura.");
   }
   const km = inteiro(entrada.km);

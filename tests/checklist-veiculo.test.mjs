@@ -13,7 +13,7 @@ const memoria = () => {
   const dados = new Map();
   return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v) };
 };
-const agora = new Date(2026, 9, 6, 14, 30); // terça, 06/10/2026
+const agora = new Date("2026-10-06T14:30:00-03:00"); // terça, 06/10/2026
 const GRUPOS = [
   { id: "g1", nome: "Carros · Exterior", itens: [{ id: "i1", nome: "Lataria" }, { id: "i2", nome: "Pneus" }], tiposVeiculo: ["carro"] },
   { id: "g2", nome: "Todos · Comuns", itens: [{ id: "i3", nome: "Limpeza" }], tiposVeiculo: ["*"] },

@@ -17,7 +17,7 @@ const base = {
 };
 // Despesa em `dia` de outubro, registrada em `registro` de outubro.
 const lancar = (s, dia, registro, extra = {}) =>
-  registrarResposta(estadoPadrao(), { ...base, "q-08": `2026-10-${String(dia).padStart(2, "0")}`, ...extra }, s, new Date(2026, 9, registro, 9, 0));
+  registrarResposta(estadoPadrao(), { ...base, "q-08": `2026-10-${String(dia).padStart(2, "0")}`, ...extra }, s, new Date(`2026-10-${String(registro).padStart(2, "0")}T09:00:00-03:00`));
 const P = { ano: 2026, mes: 10 };
 
 test("dias entre datas conta dias de calendário, inclusive na virada de mês", () => {
