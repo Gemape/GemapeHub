@@ -42,6 +42,7 @@ import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { lerTodas } from "@/lib/ler-todas";
 import { codigosReservadosFerramenta, grupoPedeQualFerramenta, marcaDaSelecao, prepararCadastroFerramenta, reservarCodigoFerramenta, SELECAO_MARCA_LEGADA, SELECAO_SEM_MARCA, qualFerramentaDe, selecaoMarcaCadastrada, tamanhosDoGrupoFerramenta } from "@/lib/cadastro-ferramentas";
 import {
   estaAtivo,
@@ -103,9 +104,8 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const excluir = useExcluir(tabela, [tabela, "saidas-por-item"]);
 
   async function codigosFerramenta(): Promise<string[]> {
-    const { data, error } = await supabase.from("ferramentas").select("codigo_sku");
-    if (error) throw error;
-    const ativos = ((data ?? []) as { codigo_sku: string | null }[]).map((item) => item.codigo_sku ?? "");
+    const data = await lerTodas<{ codigo_sku: string | null }>(() => supabase.from("ferramentas").select("codigo_sku"), (q) => q.order("id"));
+    const ativos = data.map((item) => item.codigo_sku ?? "");
     return [...ativos, ...codigosReservadosFerramenta()];
   }
 

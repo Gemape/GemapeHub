@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { demoSupabase } from "@/integrations/supabase/demo-client";
+import { lerTodas } from "@/lib/ler-todas";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { IndicadoresViagens } from "@/components/parametros/IndicadoresViagens";
 import { SubgruposFerramenta } from "@/components/parametros/SubgruposFerramenta";
@@ -44,6 +45,16 @@ type De = (typeof DE)[number];
 // Parâmetros Específicos abre direto na categoria do menu de origem; sem menu (endereço antigo), mostra a escolha de categoria.
 const CATEGORIA_DO_MENU: Record<De, string> = { epi: "cat-epi", uniformes: "cat-uniformes", ferramentas: "cat-ferramentas", veiculos: "cat-veiculos" };
 const NOME_DO_MENU: Record<De, string> = { epi: "EPI", uniformes: "Uniformes", ferramentas: "Ferramentas", veiculos: "Veículos" };
+
+// Lê todos os registros da consulta (o servidor corta em 1000 linhas; com mais, um uso fora do corte liberaria a exclusão).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function lerRegistros(montar: () => any): Promise<{ data: Record<string, unknown>[]; error: unknown }> {
+  try {
+    return { data: await lerTodas<Record<string, unknown>>(montar, (q) => q.order("id")), error: null };
+  } catch (erro) {
+    return { data: [], error: erro };
+  }
+}
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
   validateSearch: (search: Record<string, unknown>): { de?: De } =>
@@ -92,13 +103,13 @@ function Categorias() {
     acao: Acao = "renomear",
   ): Promise<boolean> {
     // Marca de ferramenta tem coluna no banco real; categoria e grupo só existem no demo.
-    const consulta =
+    const consulta = () =>
       tipo === "marcasFerramenta"
         ? supabase.from("ferramentas").select("codigo_sku,nome,marca")
         : demoSupabase
             .from("ferramentas")
             .select("codigo_sku,nome,categoria_ferramenta,grupo_ferramenta");
-    const { data, error } = await consulta;
+    const { data, error } = await lerRegistros(consulta);
     if (error) {
       toast.error("Não foi possível conferir os modelos de ferramentas.");
       return true;
@@ -114,12 +125,12 @@ function Categorias() {
     nome: string,
     acao: Acao = "renomear",
   ): Promise<boolean> {
-    const consulta =
+    const consulta = () =>
       tipo === "marcasUniforme"
         ? demoSupabase.from("uniformes").select("codigo_sku,marca")
         : // Veículo tem a coluna marca no banco real; a marca de uniforme só existe no demo.
           supabase.from("veiculos").select("placa,marca");
-    const { data, error } = await consulta;
+    const { data, error } = await lerRegistros(consulta);
     if (error) {
       toast.error("Não foi possível conferir os cadastros que usam a marca.");
       return true;
@@ -140,7 +151,7 @@ function Categorias() {
       Record<keyof typeof SUBCATEGORIA_DAS_TABELAS, Record<string, unknown>[]>
     > = {};
     for (const tabela of tabelas) {
-      const { data, error } = await supabase.from(tabela).select("*");
+      const { data, error } = await lerRegistros(() => supabase.from(tabela).select("*"));
       if (error) {
         toast.error("Não foi possível conferir os cadastros que usam a subcategoria.");
         return true;
@@ -150,7 +161,7 @@ function Categorias() {
     const usos = usoDaSubcategoria(sub, dados, cadastros);
     // A categoria da ferramenta é uma subcategoria de Ferramentas (decisão 68), só no demo.
     if (sub.categoriaId === "cat-ferramentas") {
-      const { data, error } = await demoSupabase.from("ferramentas").select("codigo_sku,nome,categoria_ferramenta");
+      const { data, error } = await lerRegistros(() => demoSupabase.from("ferramentas").select("codigo_sku,nome,categoria_ferramenta"));
       if (error) {
         toast.error("Não foi possível conferir os modelos de ferramentas.");
         return true;

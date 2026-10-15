@@ -11,6 +11,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { lerTodas } from "@/lib/ler-todas";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
 import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
@@ -50,9 +51,7 @@ async function lerVeiculos(): Promise<VeiculoLinha[]> {
 type EmpregadoLinha = { id: string; nome: string; matricula?: string | null; empresa_id?: string | null; ativo?: boolean | null; data_demissao?: string | null };
 
 async function lerEmpregados(): Promise<EmpregadoLinha[]> {
-  const { data, error } = await supabase.from("empregados").select("*");
-  if (error) throw error;
-  return (data ?? []) as unknown as EmpregadoLinha[];
+  return lerTodas<EmpregadoLinha>(() => supabase.from("empregados").select("*"), (q) => q.order("id"));
 }
 
 function useAssociacoes(): AssociacaoChecklist[] {

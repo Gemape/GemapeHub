@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { lerTodas } from "@/lib/ler-todas";
 import { useEmpresa } from "@/lib/empresa-context";
 import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { formatarData, formatarMoeda } from "@/lib/gemape";
@@ -52,24 +53,25 @@ function useDadosImportacao(ativo: boolean) {
     queryFn: async () => {
       const listas = await Promise.all(
         TABELAS.map(async (tabela) => {
-          const { data, error } = await supabase
-            .from(tabela)
-            // Linha inteira: a subcategoria e o saldo dizem se o produto controla tamanho.
-            .select("*");
-          if (error) throw error;
-          return ((data ?? []) as (Omit<ProdutoComId, "tabela"> & ProdutoTamanho)[]).map((p) => ({
+          // Linha inteira: a subcategoria e o saldo dizem se o produto controla tamanho. Lê tudo (o servidor corta em 1000 linhas).
+          const produtos = await lerTodas<Omit<ProdutoComId, "tabela"> & ProdutoTamanho>(
+            () => supabase.from(tabela).select("*"),
+            (q) => q.order("id"),
+          );
+          return produtos.map((p) => ({
             ...p,
             tabela,
           }));
         }),
       );
-      const { data: notas, error } = await supabase
-        .from("notas_fiscais_importadas" as never)
-        .select("chave");
-      if (error) throw error;
+      // Todas as chaves: uma nota antiga fora da lista passaria na checagem de duplicidade e entraria em dobro no estoque.
+      const notas = await lerTodas<{ chave: string }>(
+        () => supabase.from("notas_fiscais_importadas" as never).select("chave"),
+        (q) => q.order("chave"),
+      );
       return {
         produtos: listas.flat(),
-        chaves: ((notas ?? []) as { chave: string }[]).map((n) => n.chave),
+        chaves: notas.map((n) => n.chave),
       };
     },
   });

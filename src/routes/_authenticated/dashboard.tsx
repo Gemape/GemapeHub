@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { lerTodas } from "@/lib/ler-todas";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { formatarMoeda, valorTotalEmEstoque, MODULO_LABEL, type Modulo } from "@/lib/gemape";
@@ -58,28 +59,23 @@ function DashboardGeral() {
       // o banco real continua recebendo só as colunas de sempre.
       const colunas = (TAMANHO_DISPONIVEL ? "*" : basicas) as typeof basicas;
 
-      const [episRes, uniformesRes, ferramentasRes] = await Promise.all([
-        empresaId !== TODAS
-          ? supabase.from("epis").select(colunas).eq("empresa_id", empresaId)
-          : supabase.from("epis").select(colunas),
-        empresaId !== TODAS
-          ? supabase.from("uniformes").select(colunas).eq("empresa_id", empresaId)
-          : supabase.from("uniformes").select(colunas),
-        empresaId !== TODAS
-          ? supabase.from("ferramentas").select(colunas).eq("empresa_id", empresaId)
-          : supabase.from("ferramentas").select(colunas),
-      ]);
+      // Lê tudo (o servidor corta em 1000 linhas e o valor em estoque ficaria subcontado).
+      const ler = (tabela: "epis" | "uniformes" | "ferramentas") =>
+        lerTodas<{ id: string; empresa_id: string | null; nome: string; estoque_atual: number; estoque_minimo: number; preco_unitario: number }>(
+          () => {
+            const q = supabase.from(tabela).select(colunas);
+            return empresaId !== TODAS ? q.eq("empresa_id", empresaId) : q;
+          },
+          (q) => q.order("id"),
+        );
+      const [episLidos, uniformesLidos, ferramentasLidas] = await Promise.all([ler("epis"), ler("uniformes"), ler("ferramentas")]);
 
-      if (episRes.error) throw episRes.error;
-      if (uniformesRes.error) throw uniformesRes.error;
-      if (ferramentasRes.error) throw ferramentasRes.error;
-
-      const epis = (episRes.data ?? []).map((i) => ({ ...i, modulo: "epi" as const }));
-      const uniformes = (uniformesRes.data ?? []).map((i) => ({
+      const epis = episLidos.map((i) => ({ ...i, modulo: "epi" as const }));
+      const uniformes = uniformesLidos.map((i) => ({
         ...i,
         modulo: "uniforme" as const,
       }));
-      const ferramentas = (ferramentasRes.data ?? []).map((i) => ({
+      const ferramentas = ferramentasLidas.map((i) => ({
         ...i,
         modulo: "ferramenta" as const,
       }));
@@ -93,11 +89,14 @@ function DashboardGeral() {
     staleTime: 60_000,
     queryFn: async () => {
       // Conta só quem está ativo hoje: demissão futura conta, demissão vencida não.
-      let q = supabase.from("empregados").select("ativo,data_demissao").eq("ativo", true);
-      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []).filter((e) => empregadoAtivo(e)).length;
+      const data = await lerTodas<{ ativo: boolean; data_demissao: string | null }>(
+        () => {
+          const q = supabase.from("empregados").select("ativo,data_demissao").eq("ativo", true);
+          return empresaId !== TODAS ? q.eq("empresa_id", empresaId) : q;
+        },
+        (q) => q.order("id"),
+      );
+      return data.filter((e) => empregadoAtivo(e)).length;
     },
   });
 
