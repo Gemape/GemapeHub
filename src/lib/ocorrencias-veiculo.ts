@@ -3,7 +3,7 @@
 import {
   alterarLista, dinheiroPositivo, lerLista, validarData, validarHora, type StorageLike,
 } from "./registros-veiculo.ts";
-import { hojeLocal } from "./empregados.ts";
+import { horaBrasilia, hojeLocal } from "./empregados.ts";
 
 const CHAVE = "gemape-demo-ocorrencias-veiculo";
 export const MAX_FOTOS = 6;
@@ -100,7 +100,7 @@ export function registrarOcorrenciaVeiculo(
   let hora: string;
   try { hora = validarHora(entrada.hora); } catch { throw new Error("Informe a hora do ocorrido (HH:MM)."); }
   const p2 = (n: number) => String(n).padStart(2, "0");
-  if (data === hojeLocal(agora) && hora > `${p2(agora.getHours())}:${p2(agora.getMinutes())}`) {
+  if (data === hojeLocal(agora) && hora > horaBrasilia(agora)) {
     throw new Error("A hora do ocorrido não pode ser futura.");
   }
   const local = entrada.local.trim().replace(/\s+/g, " ").slice(0, 200);
@@ -238,7 +238,7 @@ export function registrarOcorrenciasDoChecklist(
 ): OcorrenciaVeiculo[] {
   if (entradas.length === 0) return [];
   const p2 = (n: number) => String(n).padStart(2, "0");
-  const ocorridoEm = `${hojeLocal(agora)}T${p2(agora.getHours())}:${p2(agora.getMinutes())}`;
+  const ocorridoEm = `${hojeLocal(agora)}T${horaBrasilia(agora)}`;
   const criadas: OcorrenciaVeiculo[] = [];
   gravar(() =>
     alterarLista<OcorrenciaVeiculo>(CHAVE, storage, (lista) => {
