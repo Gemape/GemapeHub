@@ -1,4 +1,4 @@
-import { CalendarDays, Info, Palette } from "lucide-react";
+import { CalendarDays, Info, PieChart } from "lucide-react";
 import { ViagensExtrato } from "./ViagensExtrato";
 import { ViagensLista } from "./ViagensLista";
 import { iconeDoTipo } from "./icones-viagens";
@@ -257,7 +257,7 @@ function LegendaFaixas() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm"><Palette className="mr-1 h-4 w-4" />Faixas de desempenho</Button>
+        <Button variant="outline" size="sm"><PieChart className="mr-1 h-4 w-4" />Faixas de desempenho</Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[22rem] max-w-[90vw] space-y-3 text-sm">
         <p className="font-semibold">Faixas de desempenho</p>

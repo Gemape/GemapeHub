@@ -1164,3 +1164,7 @@ Pedido do dono (15/10, 17:53): na tela "Resposta registrada", o botão "Preenche
 ### Decisão 213: Gerar relatório abaixo da listagem
 
 Pedido do dono (15/10, 18:08): na lista de despesas do módulo Viagens, o botão **Gerar relatório** (com o contador de despesas marcadas) passa a ficar abaixo da tabela, não acima. Só muda a posição. Sem Supabase.
+
+### Decisão 214: Ícone de gráfico de pizza em Faixas de desempenho
+
+Pedido do dono (15/10, 18:11): o botão **Faixas de desempenho** do painel de Viagens troca o ícone de paleta por um de gráfico de pizza. Só muda o ícone. Sem Supabase.
