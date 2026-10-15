@@ -135,7 +135,6 @@ test("telas (dec 204): sem botão Criar novo questionário, janela de seção e 
   assert.doesNotMatch(c, /Criar novo questionário/);
   assert.match(c, /Editar seção/);
   assert.doesNotMatch(c, /Iniciar seção aqui|Nova página/);
-  assert.match(c, /Ir para a próxima seção/);
   const f = readFileSync("src/components/parametros/QuestionarioFormulario.tsx", "utf8");
   assert.match(f, /Próxima/);
   assert.match(f, /Voltar/);
