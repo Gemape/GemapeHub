@@ -20,7 +20,7 @@ import {
 } from "@/lib/questionario-destinos";
 import { gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
-  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, criarRascunho, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
+  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, publicarRascunho, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
@@ -91,6 +91,11 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
     setEstado(lerEstado(novo));
     setAtivo(null);
     setAlterado(false);
+  }
+  // Restaurar configurações iniciais: volta as perguntas e os questionários de todos os cards ao padrão, no rascunho (só vale ao Salvar Formulário).
+  function restaurarIniciais() {
+    if (!confirm("Restaurar as configurações iniciais do formulário? Perguntas, opções e questionários voltam ao padrão. Nada muda até clicar em Salvar Formulário.")) return;
+    if (executar(() => gravarEstado(estadoPadrao(), rascunho), "Configurações iniciais restauradas. Clique em Salvar Formulário para valer.")) setAtivo(null);
   }
   useEffect(() => {
     if (!alterado) return;
@@ -307,6 +312,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
           <p className="mr-auto text-sm text-muted-foreground" role="status">{alterado ? "Há alterações que ainda não foram salvas." : "Tudo salvo."}</p>
           {alterado && <Button type="button" variant="ghost" onClick={descartar}>Descartar alterações</Button>}
+          <Button type="button" variant="outline" disabled={dadosIlegiveis()} onClick={restaurarIniciais}>Restaurar configurações iniciais</Button>
           <Button type="button" disabled={!alterado || dadosIlegiveis()} onClick={salvarFormulario}>Salvar Formulário</Button>
         </div>
       )}
