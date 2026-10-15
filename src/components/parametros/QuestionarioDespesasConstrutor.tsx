@@ -101,9 +101,6 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
           {canWrite && (
             <Button variant="outline" onClick={() => setDialogoSecao({ inicio: null, inicial: { nome: "", titulo: "", subtitulo: "" } })}><Plus className="mr-1 h-4 w-4" />Criar novo questionário</Button>
           )}
-          {canWrite && (
-            <Button onClick={() => setDialogo({ modo: "novo", inicial: null })}><Plus className="mr-1 h-4 w-4" />Cadastrar pergunta</Button>
-          )}
         </div>
       </div>
 
@@ -278,13 +275,24 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         );
       })}
 
-      {canWrite && foraDoQuestionario.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Label htmlFor="adicionar-pergunta">Adicionar a este questionário</Label>
-          <Select value="" onValueChange={(v) => gravarIds([...ids.filter((x) => x !== ID_TIPO_DESPESA), v])}>
-            <SelectTrigger id="adicionar-pergunta" aria-label="Adicionar pergunta do banco" className="w-72"><SelectValue placeholder="Escolha uma pergunta do banco" /></SelectTrigger>
-            <SelectContent>{foraDoQuestionario.map((p) => <SelectItem key={p.id} value={p.id}>{p.codigo} · {p.titulo}</SelectItem>)}</SelectContent>
-          </Select>
+      {canWrite && (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setDialogo({ modo: "novo", inicial: null })}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/50 bg-white/60 p-5 text-sm font-medium text-primary transition hover:border-primary hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary dark:bg-card"
+          >
+            <Plus className="h-5 w-5" />Adicionar ao questionário
+          </button>
+          {foraDoQuestionario.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Label htmlFor="adicionar-pergunta" className="text-sm text-muted-foreground">Ou reaproveite uma pergunta já cadastrada</Label>
+              <Select value="" onValueChange={(v) => gravarIds([...ids.filter((x) => x !== ID_TIPO_DESPESA), v])}>
+                <SelectTrigger id="adicionar-pergunta" aria-label="Adicionar pergunta do banco" className="w-72"><SelectValue placeholder="Escolha uma pergunta já cadastrada" /></SelectTrigger>
+                <SelectContent>{foraDoQuestionario.map((p) => <SelectItem key={p.id} value={p.id}>{p.codigo} · {p.titulo}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       )}
 
@@ -307,7 +315,14 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         onSalvar={(p) => {
           const perdem = p.id === ID_TIPO_DESPESA ? tiposRemovidos(estado, p.opcoes.map((o) => o.trim())) : [];
           if (perdem.length && !confirm(`Remover ${perdem.length === 1 ? "o tipo" : "os tipos"} ${perdem.join(", ")} apaga ${perdem.length === 1 ? "o questionário dele" : "os questionários deles"}. Continuar?`)) return;
-          if (executar(() => salvarPergunta(estado, p), "Pergunta salva.")) setDialogo(null);
+          const nova = dialogo?.modo === "novo" && p.id !== ID_TIPO_DESPESA;
+          const gravar = () => {
+            const salvo = salvarPergunta(estado, p);
+            if (!nova) return salvo;
+            const atuais = questionarioDoTipo(salvo, tipoAtual).filter((x) => x !== ID_TIPO_DESPESA);
+            return gravarQuestionario(salvo, tipoAtual, [...atuais, p.id]);
+          };
+          if (executar(gravar, nova ? "Pergunta criada e adicionada ao questionário." : "Pergunta salva.")) setDialogo(null);
         }}
       />
     </div>
