@@ -458,3 +458,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-15 dec 204: configuração do questionário com rascunho (criarRascunho/publicarRascunho em questionario-despesas.ts) e botão Salvar Formulário no fim; Criar novo questionário removido; Descartar alterações e aviso de alterações não salvas.
 - 2026-10-15 dec 205: botão Restaurar configurações iniciais ao lado de Salvar Formulário (restaura o padrão via gravarEstado(estadoPadrao(), rascunho); só vale ao Salvar).
 - 2026-10-15 dec 206: Opções avançadas (ramificação e condição) retiradas da montagem do Questionário de Despesas; regras já gravadas continuam valendo, sem tela para editá-las.
+- 2026-10-15 dec 208: botão Adicionar opção (AdicionarHabilitado) nos cards Habilitados e Técnico responsável: busca empregado ativo e inclui na pergunta 04 (área escolhida; no técnico, Oficina).

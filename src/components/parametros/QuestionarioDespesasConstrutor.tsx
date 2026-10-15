@@ -20,8 +20,8 @@ import {
 } from "@/lib/questionario-destinos";
 import { gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
-  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
-  proximoCodigoPergunta, publicarRascunho, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
+  AREAS_VIAGEM, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
+  proximoCodigoPergunta, publicarRascunho, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type AreaViagem, type Estado, type Habilitado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
 // Montagem do Questionário de Despesas, dentro da mesma tela do formulário (dec 173): um questionário para cada tipo de despesa,
@@ -241,6 +241,17 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
               ) : (
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
+              {canWrite && (id === ID_HABILITADOS || id === ID_TECNICO_RESPONSAVEL) && (
+                <AdicionarHabilitado
+                  ativos={empregados.filter((e) => empregadoAtivo(e)).map((e) => ({ id: e.id, nome: e.nome }))}
+                  jaIncluidos={new Set((porId.get(ID_HABILITADOS)?.habilitados ?? []).map((h) => h.empregadoId))}
+                  areaFixa={id === ID_TECNICO_RESPONSAVEL ? "Oficina" : null}
+                  onAdicionar={(h) => {
+                    const q04 = porId.get(ID_HABILITADOS);
+                    return !!q04 && executar(() => salvarPergunta(estado, { ...q04, habilitados: [...(q04.habilitados ?? []), h] }, rascunho), "Habilitado adicionado.");
+                  }}
+                />
+              )}
               {canWrite && !fixa && aceitaCondicao(p) && (
                 <AdicionarOpcao onAdicionar={(texto) => executar(() => salvarPergunta(estado, { ...p, opcoes: [...p.opcoes, texto] }, rascunho), "Opção adicionada.")} />
               )}
@@ -341,6 +352,57 @@ const textoRegra = (e: Estado, r: Regra): string => {
   const origem = e.perguntas.find((p) => p.id === r.origem);
   return `Aparece só se "${origem?.titulo ?? "?"}" ${r.operador === "igual" ? "for" : "não for"} "${r.valor}"`;
 };
+
+// Adicionar habilitado direto no card (dec 208): busca o empregado ativo pelo nome e escolhe a área. No card do técnico responsável
+// a pessoa entra na mesma lista de habilitados (pergunta 04) com a área Oficina, que é de onde essa pergunta tira as opções.
+function AdicionarHabilitado({ ativos, jaIncluidos, areaFixa, onAdicionar }: {
+  ativos: { id: string; nome: string }[];
+  jaIncluidos: ReadonlySet<string | null>;
+  areaFixa: AreaViagem | null;
+  onAdicionar: (h: Habilitado) => boolean;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [area, setArea] = useState<AreaViagem>("Oficina");
+  const fechar = () => { setAberto(false); setBusca(""); };
+  if (!aberto) {
+    return <Button type="button" variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setAberto(true); }}><Plus className="mr-1 h-4 w-4" />Adicionar opção</Button>;
+  }
+  const termo = busca.trim().toLocaleLowerCase("pt-BR");
+  const achados = termo ? ativos.filter((e) => !jaIncluidos.has(e.id) && e.nome.toLocaleLowerCase("pt-BR").includes(termo)).slice(0, 8) : [];
+  return (
+    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          autoFocus
+          aria-label="Buscar empregado"
+          placeholder="Digite parte do nome do empregado"
+          className="w-64"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Escape") fechar(); }}
+        />
+        {areaFixa === null ? (
+          <Select value={area} onValueChange={(v) => { if (v) setArea(v as AreaViagem); }}>
+            <SelectTrigger aria-label="Área do novo habilitado" className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>{AREAS_VIAGEM.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+          </Select>
+        ) : (
+          <span className="text-xs text-muted-foreground">Área: {areaFixa}</span>
+        )}
+        <Button type="button" variant="ghost" size="sm" onClick={fechar}>Cancelar</Button>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {achados.map((e) => (
+          <Button key={e.id} type="button" variant="outline" size="sm" onClick={() => { if (onAdicionar({ empregadoId: e.id, nome: e.nome, area: areaFixa ?? area })) fechar(); }}>
+            <Plus className="mr-1 h-3 w-3" />{e.nome}
+          </Button>
+        ))}
+        {termo && achados.length === 0 && <p className="text-xs text-muted-foreground">Nenhum empregado ativo encontrado.</p>}
+      </div>
+    </div>
+  );
+}
 
 // Adicionar opção direto no card da pergunta: abre um campo, Enter ou Adicionar grava e fecha.
 function AdicionarOpcao({ onAdicionar }: { onAdicionar: (texto: string) => boolean }) {
