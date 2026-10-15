@@ -211,6 +211,8 @@ export function movimentarTamanho(
   const tipo = mov.tipo_movimentacao;
   const soma = tipo === "Entrada" || tipo === "Devolucao";
   if (!soma && tipo !== "Saida") return { ...saldos };
+  // Quantidade zero, negativa ou inválida nunca mexe no saldo (uma saída negativa somaria ao estoque).
+  if (!Number.isFinite(quantidade) || quantidade <= 0) throw new Error(`Informe uma quantidade maior que zero para ${nomeProduto(produto)}.`);
   const chave = mov.tamanho_id || SEM_TAMANHO;
   const autorizadosIds = new Set(tamanhosAutorizadosDoProduto(p, modulo, produto).map((t) => t.id));
   if (tipo === "Devolucao") {

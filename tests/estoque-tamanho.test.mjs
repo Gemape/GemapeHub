@@ -504,3 +504,17 @@ test("entrada em tamanho desativado é recusada também pelo gatilho", () => {
     { "tam-40": 1 },
   );
 });
+
+test("movimentarTamanho recusa quantidade zero, negativa ou inválida (saída negativa não pode somar ao estoque)", () => {
+  const p = gerais();
+  const produto = botina();
+  for (const quantidade of [0, -5, "abc", undefined]) {
+    for (const tipo of ["Saida", "Entrada", "Devolucao"]) {
+      assert.throws(
+        () => movimentarTamanho(p, "epi", produto, { "tam-40": 4 }, { tipo_movimentacao: tipo, quantidade, tamanho_id: "tam-40" }),
+        /quantidade maior que zero/,
+        `${tipo} ${quantidade}`,
+      );
+    }
+  }
+});
