@@ -453,3 +453,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-15 revisão #255 a #257: cartão de prazo com indicador desligado, campo travado fora da validação e textos das faixas aparados (detalhe em /mnt/project-files/revisoes/revisao-pr255-257.md).
 - 2026-10-15 dec 200: Questionário de Despesas em dois passos por card (QuestionarioDespesasConstrutor.tsx, QuestionarioFormulario.tsx, icones-viagens.ts com iconeDoTipo); ramificação e condição em Opções avançadas.
 - 2026-10-15 dec 201: Parâmetros > Questionário de Despesas abre direto na configuração (QuestionarioDespesasTela.tsx só renderiza o Construtor; título "Configuração Formulário de Despesas"); QuestionarioFormulario sem somentePrevia/onEditar.
+- 2026-10-15 dec 202: cards da montagem (QuestionarioDespesasConstrutor.tsx): botão Adicionar opção (AdicionarOpcao), barra com Editar, setas, lixeira e Obrigatória; saíram Nova página, Duplicar e Tirar daqui.

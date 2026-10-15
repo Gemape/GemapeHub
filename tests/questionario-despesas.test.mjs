@@ -216,6 +216,9 @@ test("tela única (dec 201): abre direto na configuração, sem formulário de p
   const construtor = ler("components/parametros/QuestionarioDespesasConstrutor.tsx");
   assert.doesNotMatch(construtor, /Banco de perguntas/);
   assert.match(construtor, /aria-label="Excluir pergunta"/);
+  // dec 202: barra do card só com Editar, lixeira e Obrigatória (mais as setas), e Adicionar opção direto na pergunta.
+  assert.doesNotMatch(construtor, /Duplicar|Nova página|Tirar daqui|Clonar pergunta/);
+  assert.match(construtor, /Adicionar opção/);
   assert.match(construtor, /Configuração Formulário de Despesas/);
   assert.doesNotMatch(ler("components/parametros/QuestionarioFormulario.tsx"), /Editar questionário/);
   assert.equal(existsSync(new URL("../src/routes/_authenticated/questionario-despesas.tsx", import.meta.url)), false);
