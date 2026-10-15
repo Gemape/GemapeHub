@@ -79,6 +79,8 @@ export type Estado = {
   tecnicoAjustado?: true;
   // Marca que a condição "Cartões de crédito só com Moedas = Cartão de crédito" já foi aplicada aos dados salvos antes (dec 182).
   cartaoAjustado?: true;
+  // Marca que os números das perguntas de fábrica já foram colocados em ordem sequencial nos dados salvos antes (dec 209).
+  codigosOrdenados?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -114,6 +116,11 @@ const base = (n: number, tipo: TipoPergunta, titulo: string, extra: Partial<Perg
   multiplas: false, formato: "livre", dependeDe: null, habilitados: null, sistema: false, ...extra,
 });
 
+// Dec 209: o número de cada pergunta de fábrica segue a ordem em que ela aparece no formulário (o id não muda).
+const CODIGO_ORDENADO: Record<string, string> = {
+  "q-14": "05", "q-05": "06", "q-06": "07", "q-07": "08", "q-08": "09", "q-09": "10", "q-10": "11", "q-11": "12", "q-12": "13", "q-13": "14",
+};
+
 // As 13 perguntas passadas pelo responsável em 14/10 (dec 168).
 export function perguntasPadrao(): Pergunta[] {
   const hab = (nome: string, area: AreaViagem): Habilitado => ({ empregadoId: null, nome, area });
@@ -137,7 +144,7 @@ export function perguntasPadrao(): Pergunta[] {
     base(11, "curta", "Valor da despesa", { formato: "decimal2" }),
     base(12, "upload", "Foto do comprovante"),
     base(13, "lista", "PCM responde", { opcoes: ["Avulso – técnico não monitorado", "Não conformidade – técnico monitorado não preencheu"] }),
-  ];
+  ].map((p) => ({ ...p, codigo: CODIGO_ORDENADO[p.id] ?? p.codigo }));
 }
 
 // Dec 182: Cartões de crédito só aparece quando Moedas for Cartão de crédito. Vale em todo questionário que tem as duas perguntas
@@ -162,7 +169,7 @@ export function estadoPadrao(): Estado {
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, resto.filter((id) => id !== ID_LITROS || o === TIPO_ABASTECIMENTO)]));
-  return { versao: 1, perguntas, questionarios, regras: comRegraDoCartao(questionarios, {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true };
+  return { versao: 1, perguntas, questionarios, regras: comRegraDoCartao(questionarios, {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -272,9 +279,19 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     }
     // Dado salvo antes da dec 182: Cartões de crédito passa a depender de Moedas (uma vez só; depois o responsável pode tirar).
     if (lido.cartaoAjustado !== true) regras = comRegraDoCartao(questionarios, regras);
+    // Dado salvo antes da dec 209: as perguntas de fábrica recebem o número da ordem em que aparecem (uma vez só).
+    // Pergunta criada pelo responsável que já usa um desses números passa para o próximo livre, para nenhum número se repetir.
+    if (lido.codigosOrdenados !== true) {
+      const novos = new Set(["01", "02", "03", "04", ...Object.values(CODIGO_ORDENADO)]);
+      let proximo = Math.max(14, ...perguntas.map((p) => Number(p.codigo) || 0));
+      perguntas = perguntas.map((p) => {
+        if (CODIGO_ORDENADO[p.id]) return { ...p, codigo: CODIGO_ORDENADO[p.id] as string };
+        return novos.has(p.codigo) && !/^q-(0[1-9]|1[0-4])$/.test(p.id) ? { ...p, codigo: formatarCodigo(++proximo) } : p;
+      });
+    }
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true };
   } catch {
     return estadoPadrao();
   }
