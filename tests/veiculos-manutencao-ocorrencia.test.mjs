@@ -190,7 +190,7 @@ test("restaurar padrão inicial das ações é tudo ou nada e só aceita ações
 
 test("a lista Ações de manutenção tem o botão Restaurar configurações iniciais (decisões 111 e 141)", () => {
   const lista = readFileSync(new URL("../src/components/parametros/VeiculosListasParametros.tsx", import.meta.url), "utf8");
-  assert.match(lista, /acaoExtra=\{<RestaurarPadraoAcoes \/>\}/);
+  assert.match(lista, /acaoExtra=\{\(cadastrar\) => <RestaurarPadraoAcoes aoCadastrar=\{cadastrar\} \/>\}/);
   assert.match(lista, /Restaurar configurações iniciais\n\s*<\/Button>/);
   assert.match(lista, /restaurarAcoesManutencaoEscolhidas\(/);
   assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
@@ -305,7 +305,7 @@ test("salvar em Ações de manutenção pergunta Sim ou Não antes de gravar (de
   assert.match(alerta, /<AlertDialogCancel>Não<\/AlertDialogCancel>/);
   assert.match(alerta, /<AlertDialogAction onClick=\{onSim\}>Sim<\/AlertDialogAction>/);
   const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
-  assert.match(tela, /acaoExtra=\{<RestaurarPadraoAcoes \/>\}\s*alertaPainel/); // cadastrar/editar ação
+  assert.match(tela, /acaoExtra=\{\(cadastrar\) => <RestaurarPadraoAcoes aoCadastrar=\{cadastrar\} \/>\}\s*alertaPainel/); // cadastrar/editar ação
   const restaurar = tela.slice(tela.indexOf("function RestaurarPadraoAcoes"));
   assert.match(restaurar, /<AlertaPainelManutencao aberto=\{aviso !== null\}/); // restaurar configurações iniciais
   assert.doesNotMatch(restaurar.slice(restaurar.indexOf("function salvar"), restaurar.indexOf("function gravar")), /confirm\(/);

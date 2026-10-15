@@ -41,6 +41,7 @@ import {
   removerTipoOcorrenciaVeiculo,
 } from "@/lib/parametros-base";
 import { separarPorTipoVeiculo } from "@/lib/checklist-por-tipo";
+import { filtrarPaisEFilhos } from "@/lib/busca-acoes-manutencao";
 import { executar, useParametrosBase, validarAntes } from "@/lib/use-parametros-base";
 
 // `extra` é a descrição (tipos de ocorrência) ou os subitens, um por linha (ações de manutenção).
@@ -77,7 +78,8 @@ function ListaVeiculos({
   // Check list (decisão 63): tipos de veículo (subcategorias de Veículos) a que o grupo se aplica.
   opcoesTipos?: { id: string; nome: string }[];
   // Botão a mais ao lado de "Cadastrar" (Restaurar padrão inicial do check list, decisão 110).
-  acaoExtra?: React.ReactNode;
+  // Pode ser função: recebe `cadastrar`, que abre o cadastro por cima, com o nome já preenchido (decisão 197).
+  acaoExtra?: React.ReactNode | ((cadastrar: (nomeInicial?: string) => void) => React.ReactNode);
   // Dentro de uma página com mais de uma lista (decisão 112): sem o caminho no alto e com título de seção.
   secao?: boolean;
   // Linhas separadas em seções, com uma faixa de título por seção (decisão 113: Itens check list por tipo de veículo).
@@ -143,7 +145,7 @@ function ListaVeiculos({
               Cadastrar padrão
             </Button>
           )}
-          {acaoExtra}
+          {typeof acaoExtra === "function" ? acaoExtra((nomeInicial) => { abrir(null, false); setNome(capitalizarTexto(nomeInicial ?? "")); }) : acaoExtra}
           <Button requiresWrite onClick={() => abrir(null, false)}>
             Cadastrar {singular}
           </Button>
@@ -315,7 +317,7 @@ export function AcoesManutencaoVeiculoLista({ secao = false }: { secao?: boolean
         )
       }
       onExcluir={(l) => executar(() => removerAcaoManutencaoVeiculo(l.id), "Ação de manutenção excluída.")}
-      acaoExtra={<RestaurarPadraoAcoes />}
+      acaoExtra={(cadastrar) => <RestaurarPadraoAcoes aoCadastrar={cadastrar} />}
       alertaPainel
       onValidar={(id, nome, extra, storage) =>
         id ? editarAcaoManutencaoVeiculo(id, nome, subitensDe(extra), storage) : adicionarAcaoManutencaoVeiculo(nome, subitensDe(extra), storage)
@@ -476,7 +478,7 @@ function RestaurarPadraoChecklist() {
 
 // Restaurar configurações iniciais das Ações de manutenção (decisão 142): lista os pais e os filhos do padrão inicial,
 // cada um com o seu checkbox, e restaura só o que foi marcado, tudo de uma vez.
-function RestaurarPadraoAcoes() {
+function RestaurarPadraoAcoes({ aoCadastrar }: { aoCadastrar: (nomeInicial?: string) => void }) {
   useParametrosBase(); // atualiza a lista quando o cadastro muda
   const [aberto, setAberto] = useState(false);
   // Pai marcado = chave presente; o valor são os filhos marcados dele.
@@ -486,6 +488,10 @@ function RestaurarPadraoAcoes() {
   const [aviso, setAviso] = useState<string | null>(null); // texto do que será feito, enquanto o alerta Sim/Não está aberto
   const padroes = aberto ? situacaoPadraoAcoesComFilhos() : [];
   const itensCriados = aberto ? itensCriadosAcoesManutencao() : [];
+  // Busca da ação ou do subitem (decisão 197); o que está marcado não se perde ao buscar.
+  const [busca, setBusca] = useState("");
+  const visiveis = filtrarPaisEFilhos(padroes, busca);
+  const criadosVisiveis = filtrarPaisEFilhos(itensCriados, busca);
   // Itens criados por você marcados para exclusão (decisão 151); só o Administrador exclui. Editar continua na lista.
   const { isAdmin } = useAccess();
   const [conferidos, setConferidos] = useState<string[]>([]);
@@ -497,12 +503,14 @@ function RestaurarPadraoAcoes() {
   function abrir() {
     setMarcados({});
     setConferidos([]);
+    setBusca("");
     setAberto(true);
   }
-  const marcarPai = (nome: string, marcar: boolean) =>
+  // Marcar o pai marca os filhos que estão na tela (todos, quando não há busca).
+  const marcarPai = (nome: string, marcar: boolean, filhosNaTela: string[]) =>
     setMarcados((atual) => {
       const { [nome]: _tirado, ...resto } = atual;
-      return marcar ? { ...resto, [nome]: padroes.find((p) => p.nome === nome)?.filhos.map((f) => f.nome) ?? [] } : resto;
+      return marcar ? { ...resto, [nome]: [...new Set([...(atual[nome] ?? []), ...filhosNaTela])] } : resto;
     });
   // Marcar um filho marca também o pai dele; desmarcar o último filho mantém o pai marcado.
   const marcarFilho = (pai: string, filho: string, marcar: boolean) =>
@@ -573,27 +581,44 @@ function RestaurarPadraoAcoes() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setMarcados(Object.fromEntries(padroes.map((p) => [p.nome, p.filhos.map((f) => f.nome)])))}
+                onClick={() => setMarcados((atual) => ({ ...atual, ...Object.fromEntries(visiveis.map(({ pai, filhos }) => [pai.nome, [...new Set([...(atual[pai.nome] ?? []), ...filhos.map((f) => f.nome)])]])) }))}
               >
                 Marcar todos
               </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setMarcados({})}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setMarcados((atual) => (busca.trim() ? Object.fromEntries(Object.entries(atual).filter(([nome]) => !visiveis.some((v) => v.pai.nome === nome))) : {}))}>
                 Desmarcar todos
               </Button>
             </div>
           </div>
+          <Input
+            type="search"
+            aria-label="Buscar ação ou subitem"
+            placeholder="Buscar ação ou subitem (ex.: pastilha, suspensao, óleo)"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          {busca.trim() && visiveis.length === 0 && criadosVisiveis.length === 0 && (
+            <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground" role="status">
+              Nenhuma ação ou subitem encontrado para “{busca.trim()}”.
+              {" "}Não achou a ação de manutenção?{" "}
+              <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => aoCadastrar(busca.trim())}>
+                Cadastrar a ação
+              </button>
+              . Ao salvar, você volta para esta busca.
+            </p>
+          )}
           <ul className="grid max-h-[55vh] gap-3 overflow-y-auto md:grid-cols-2">
-            {padroes.map((p, n) => (
+            {visiveis.map(({ pai: p, filhos }) => { const n = padroes.indexOf(p); return (
               <li key={p.nome} className="space-y-2 rounded-md border p-3">
                 <label htmlFor={`restaurar-pai-${n}`} className="flex cursor-pointer items-start gap-2">
-                  <Checkbox id={`restaurar-pai-${n}`} className="mt-0.5" checked={p.nome in marcados} onCheckedChange={(v) => marcarPai(p.nome, v === true)} />
+                  <Checkbox id={`restaurar-pai-${n}`} className="mt-0.5" checked={p.nome in marcados} onCheckedChange={(v) => marcarPai(p.nome, v === true, filhos.map((f) => f.nome))} />
                   <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
                     <span className="text-sm font-semibold">{p.nome}</span>
                     <span className={p.situacao === "igual" ? "text-xs text-muted-foreground" : "text-xs font-semibold"}>{ROTULO_SITUACAO[p.situacao]}</span>
                   </span>
                 </label>
                 <ul className="space-y-1 pl-6">
-                  {p.filhos.map((f, m) => (
+                  {filhos.map((f) => { const m = p.filhos.indexOf(f); return (
                     <li key={f.nome}>
                       <label htmlFor={`restaurar-filho-${n}-${m}`} className="flex cursor-pointer items-start gap-2 text-xs">
                         <Checkbox id={`restaurar-filho-${n}-${m}`} className="mt-0.5 size-3.5" checked={marcados[p.nome]?.includes(f.nome) ?? false} onCheckedChange={(v) => marcarFilho(p.nome, f.nome, v === true)} />
@@ -603,17 +628,17 @@ function RestaurarPadraoAcoes() {
                         </span>
                       </label>
                     </li>
-                  ))}
+                  ); })}
                 </ul>
               </li>
-            ))}
+            ); })}
           </ul>
-          {itensCriados.length > 0 && (
+          {criadosVisiveis.length > 0 && (
             <section className="space-y-2" data-testid="restaurar-criados">
               <h3 className="text-sm font-semibold">Criados por você</h3>
               <p className="text-xs text-muted-foreground">{isAdmin ? "Ações e subitens que não vieram do padrão inicial. Marque os que quer excluir e clique em Salvar. Para editar, use Editar na lista de ações." : "Ações e subitens que não vieram do padrão inicial. Só o Administrador pode excluir; para editar, use Editar na lista de ações."}</p>
               <ul className="grid gap-3 md:grid-cols-2">
-                {itensCriados.map((item) => (
+                {criadosVisiveis.map(({ pai: item, filhos }) => (
                   <li key={item.id} className="space-y-2 rounded-md border border-dashed p-3">
                     <label htmlFor={`criado-pai-${item.id}`} className="flex cursor-pointer items-start gap-2">
                       {isAdmin && <Checkbox id={`criado-pai-${item.id}`} className="mt-0.5" checked={conferidos.includes(item.id)} onCheckedChange={(v) => alternarConferido(item.id, v === true)} />}
@@ -623,7 +648,7 @@ function RestaurarPadraoAcoes() {
                       </span>
                     </label>
                     <ul className="space-y-1 pl-6">
-                      {item.filhos.map((f) => (
+                      {filhos.map((f) => (
                         <li key={f.id}>
                           <label htmlFor={`criado-filho-${f.id}`} className="flex cursor-pointer items-start gap-2 text-xs">
                             {isAdmin && <Checkbox id={`criado-filho-${f.id}`} className="mt-0.5 size-3.5" checked={conferidos.includes(f.id)} onCheckedChange={(v) => alternarConferido(f.id, v === true)} />}
