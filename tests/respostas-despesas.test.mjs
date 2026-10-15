@@ -181,3 +181,72 @@ test("decs 211 e 212: botão Editar na lista e botão Novo na confirmação", ()
   assert.match(f, />\s*Novo\s*</);
   assert.doesNotMatch(f, /Preencher novamente/);
 });
+
+// Dec 218: classificação Avulso ou Não conformidade no questionário de Alimentação.
+import { OPCAO_AVULSO, OPCAO_NAO_CONFORMIDADE, lerEstado } from "../src/lib/questionario-despesas.ts";
+import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
+
+test("dec 218: Alimentação traz a classificação logo depois de quem lança; os outros tipos não mudam", () => {
+  const e = estadoDeFabrica();
+  const ali = e.questionarios["Alimentação"];
+  assert.deepEqual(ali.slice(ali.indexOf("q-04"), ali.indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"]);
+  assert.deepEqual(e.regras["Alimentação"]["q-14"], { origem: "q-13", operador: "igual", valor: OPCAO_NAO_CONFORMIDADE });
+  assert.deepEqual(e.regras["Alimentação"]["q-15"], { origem: "q-13", operador: "igual", valor: OPCAO_AVULSO });
+  assert.ok(ali.includes("q-09") && ali.includes("q-07"));
+  for (const tipo of ["Hospedagem", "Pedágio", "Estacionamento", "Abastecimento", "Outro"]) {
+    assert.ok(!e.questionarios[tipo].includes("q-15"), tipo);
+    assert.equal(e.questionarios[tipo].at(-1), "q-13", tipo);
+  }
+});
+
+test("dec 218: só PCM ou Administrativo é classificado; Avulso abre o nome do empregado e Não conformidade pede o técnico que não lançou", () => {
+  const e = estadoDeFabrica();
+  const ids = (r) => perguntasVisiveis(e, "Alimentação", { "q-03": ["Alimentação"], ...r }).map((p) => p.id);
+  const oficina = ids({ "q-04": ["Roberto (Oficina)"] });
+  for (const id of ["q-13", "q-14", "q-15"]) assert.ok(!oficina.includes(id), id);
+  const pcm = { "q-04": ["Eduardo (PCM)"] };
+  assert.ok(ids(pcm).includes("q-13"));
+  assert.ok(!ids(pcm).includes("q-14") && !ids(pcm).includes("q-15"));
+  const avulso = ids({ ...pcm, "q-13": OPCAO_AVULSO });
+  assert.ok(avulso.includes("q-15") && !avulso.includes("q-14"));
+  const nc = ids({ ...pcm, "q-13": OPCAO_NAO_CONFORMIDADE });
+  assert.ok(nc.includes("q-14") && !nc.includes("q-15"));
+  assert.deepEqual(nc.slice(0, 5), ["q-03", "q-01", "q-04", "q-13", "q-14"]);
+  // Depois da classificação seguem as demais perguntas.
+  assert.ok(nc.indexOf("q-14") < nc.indexOf("q-05") && nc.includes("q-12"));
+  // Em outro tipo o comportamento é o de antes: PCM responde aparece para todos.
+  assert.ok(perguntasVisiveis(e, "Pedágio", { "q-03": ["Pedágio"], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"));
+});
+
+test("dec 218: registrar exige o nome no Avulso e grava o nome; na Não conformidade grava o técnico que não lançou", () => {
+  const e = estadoDeFabrica();
+  const base = { ...completas, "q-03": ["Alimentação"], "q-04": ["Eduardo (PCM)"], "q-01": ["Dinheiro"] };
+  delete base["q-02"]; delete base["q-13"];
+  assert.throws(() => registrarResposta(e, base, memoria(), agora), /PCM responde/);
+  assert.throws(() => registrarResposta(e, { ...base, "q-13": OPCAO_AVULSO }, memoria(), agora), /Nome do empregado/);
+  const a = registrarResposta(e, { ...base, "q-13": OPCAO_AVULSO, "q-15": "Carlos Souza" }, memoria(), agora);
+  assert.equal(a.itens.find((i) => i.perguntaId === "q-15").resposta, "Carlos Souza");
+  assert.ok(!a.itens.some((i) => i.perguntaId === "q-14"));
+  const n = registrarResposta(e, { ...base, "q-13": OPCAO_NAO_CONFORMIDADE, "q-14": ["Roberto (Oficina)"], "q-15": "sobra" }, memoria(), agora);
+  assert.equal(n.itens.find((i) => i.perguntaId === "q-14").resposta, "Roberto (Oficina)");
+  assert.ok(!n.itens.some((i) => i.perguntaId === "q-15"));
+});
+
+test("dec 218: dado salvo antes ganha a classificação em Alimentação uma vez só, mantendo o resto", () => {
+  const e = estadoDeFabrica();
+  const semNova = e.perguntas.filter((p) => p.id !== "q-15");
+  const antigoQ = Object.fromEntries(Object.entries(e.questionarios).map(([t, ids]) => [t, ids.filter((id) => id !== "q-15" && id !== "q-13").concat("q-13")]));
+  const antigoQ2 = { ...antigoQ, "Alimentação": ["q-01", "q-02", "q-04", "q-14", "q-05", "q-06", "q-07", "q-08", "q-09", "q-11", "q-12", "q-13"] };
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ versao: 1, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, perguntas: semNova, questionarios: antigoQ2, regras: {} }));
+  const lido = lerEstado(s);
+  assert.ok(lido.perguntas.some((p) => p.id === "q-15"));
+  const ali = lido.questionarios["Alimentação"];
+  assert.deepEqual(ali.slice(2, 7), ["q-04", "q-13", "q-14", "q-15", "q-05"]);
+  assert.equal(lido.regras["Alimentação"]["q-15"].valor, OPCAO_AVULSO);
+  assert.equal(lido.classificacaoAjustada, true);
+  assert.deepEqual(lido.questionarios["Pedágio"], antigoQ2["Pedágio"]);
+  // Depois do ajuste, tirar a classificação de Alimentação não a traz de volta.
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, "Alimentação": ali.filter((id) => id !== "q-15") } }));
+  assert.ok(!lerEstado(s).questionarios["Alimentação"].includes("q-15"));
+});
