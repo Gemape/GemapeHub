@@ -63,7 +63,6 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
     const inicio = dialogoSecao.inicio;
     if (executar(() => gravarSecao(estado, tipoAtual, inicio, d), "Seção salva.")) setDialogoSecao(null);
   }
-  const foraDoQuestionario = estado.perguntas.filter((p) => !ids.includes(p.id));
 
   function executar(acao: () => Estado, mensagem?: string): boolean {
     try {
@@ -276,7 +275,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
       })}
 
       {canWrite && (
-        <div className="space-y-3">
+        <div>
           <button
             type="button"
             onClick={() => setDialogo({ modo: "novo", inicial: null })}
@@ -284,15 +283,6 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
           >
             <Plus className="h-5 w-5" />Adicionar ao questionário
           </button>
-          {foraDoQuestionario.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Label htmlFor="adicionar-pergunta" className="text-sm text-muted-foreground">Ou reaproveite uma pergunta já cadastrada</Label>
-              <Select value="" onValueChange={(v) => gravarIds([...ids.filter((x) => x !== ID_TIPO_DESPESA), v])}>
-                <SelectTrigger id="adicionar-pergunta" aria-label="Adicionar pergunta do banco" className="w-72"><SelectValue placeholder="Escolha uma pergunta já cadastrada" /></SelectTrigger>
-                <SelectContent>{foraDoQuestionario.map((p) => <SelectItem key={p.id} value={p.id}>{p.codigo} · {p.titulo}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          )}
         </div>
       )}
 
