@@ -1199,3 +1199,12 @@ Pedido do dono (15/10, 19:46), para testar só em **Alimentação** (se ficar bo
 - As condições ficam gravadas como regras do questionário de Alimentação (14 só na Não conformidade, 15 só no Avulso). Os outros tipos não mudam.
 - Dado já salvo no navegador ganha a classificação em Alimentação **uma vez só**; a pergunta 15 nasce com o número 15, fora da sequência dos demais por não ter lugar sem renumerar todas.
 - O nome do empregado no Avulso fica só registrado na despesa; ele **não** vira técnico responsável nem entra em relatório (a confirmar com o dono). Registro de Fase 2 em docs/pendencias-fase2.md. Sem Supabase.
+
+### Decisão 219: Classificação nos demais cards de despesa (Hospedagem, Pedágio, Estacionamento, Compra de peças)
+
+Pedido do dono (15/10, 20:05 e 20:06), depois de validar a decisão 218 em Alimentação: aplicar a **mesma lógica** nos cards **Hospedagem**, **Pedágio**, **Estacionamento** e **Compra de peças para cliente**.
+
+- Em cada um desses cards, logo depois de **quem lança** (04), entram **PCM responde** (13), o **técnico responsável** (14) e o **Nome do empregado** (15), com as mesmas regras da decisão 218: a classificação só aparece quando quem lança é do PCM ou do Administrativo; Avulso abre o nome do empregado; Não conformidade pede o técnico que não lançou.
+- **Abastecimento, Manutenção do veículo de trabalho e Outro não mudam** (nada foi pedido para eles).
+- Dado já salvo no navegador ganha a classificação nesses quatro cards **uma vez só** (marca `classificacaoTiposAjustada`); Alimentação não é refeita, para não desfazer ajustes do dono na montagem.
+- O nome do empregado do Avulso continua só registrado na despesa (ponto da decisão 218 ainda a confirmar). Sem Supabase.
