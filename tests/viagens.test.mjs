@@ -148,7 +148,7 @@ test("cada questionário leva o nome do card e o card de Alimentação usa o íc
   const { tituloDoQuestionario } = await import("../src/lib/questionario-despesas.ts");
   assert.equal(tituloDoQuestionario("Alimentação"), "Despesas Alimentação");
   assert.equal(tituloDoQuestionario(""), "Questionário de Despesas");
-  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  const painel = readFileSync(new URL("../src/components/modules/icones-viagens.ts", import.meta.url), "utf8");
   assert.match(painel, /"Alimentação": Hamburger/);
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /tituloDoQuestionario\(tipo\)/);
@@ -165,7 +165,7 @@ test("dec 183: o card de Viagens abre o formulário sem a pergunta de tipos de d
 });
 
 test("dec 184: Pedágio usa a cancela e Compra de peças usa parafuso e porca", () => {
-  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  const painel = readFileSync(new URL("../src/components/modules/icones-viagens.ts", import.meta.url), "utf8");
   assert.match(painel, /"Pedágio": Cancela/);
   assert.match(painel, /"Compra de peças para cliente": ParafusoEPorca/);
   assert.doesNotMatch(painel, /TrafficCone|Boxes/);

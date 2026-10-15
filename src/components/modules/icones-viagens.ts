@@ -1,4 +1,4 @@
-import { createLucideIcon } from "lucide-react";
+import { BedDouble, Ellipsis, Fuel, Hamburger, Receipt, SquareParking, Wrench, createLucideIcon, type LucideIcon } from "lucide-react";
 
 // Ícones próprios (a biblioteca não tem estes), no mesmo traço dos demais: 24x24, contorno de 2.
 
@@ -17,3 +17,16 @@ export const ParafusoEPorca = createLucideIcon("ParafusoEPorca", [
   ["path", { d: "M17.5 8l4.3 2.5v5L17.5 18l-4.3-2.5v-5z", key: "porca" }],
   ["circle", { cx: "17.5", cy: "13", r: "1.5", key: "furo" }],
 ]);
+
+// Ícone sugestivo de cada tipo de despesa; tipo novo (cadastrado depois) usa o recibo.
+const ICONE_TIPO: Record<string, LucideIcon> = {
+  "Alimentação": Hamburger,
+  "Hospedagem": BedDouble,
+  "Abastecimento": Fuel,
+  "Pedágio": Cancela,
+  "Estacionamento": SquareParking,
+  "Manutenção do veículo de trabalho": Wrench,
+  "Compra de peças para cliente": ParafusoEPorca,
+  "Outro": Ellipsis,
+};
+export const iconeDoTipo = (tipo: string): LucideIcon => ICONE_TIPO[tipo] ?? Receipt;

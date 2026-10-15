@@ -1,7 +1,7 @@
-import { BedDouble, CalendarDays, Ellipsis, Fuel, Info, Palette, Receipt, SquareParking, Hamburger, Wrench, type LucideIcon } from "lucide-react";
+import { CalendarDays, Info, Palette } from "lucide-react";
 import { ViagensExtrato } from "./ViagensExtrato";
 import { ViagensLista } from "./ViagensLista";
-import { Cancela, ParafusoEPorca } from "./icones-viagens";
+import { iconeDoTipo } from "./icones-viagens";
 import { useMemo, useState } from "react";
 
 import { QuestionarioFormulario } from "@/components/parametros/QuestionarioFormulario";
@@ -21,18 +21,6 @@ import { listarRespostas } from "@/lib/respostas-despesas";
 import {
   MESES, dadosDoLancamento, formatarMoeda, formatarPercentual, indicadoresGlobais, periodoAtual, resultadosTecnicos, rotuloPeriodo,
 } from "@/lib/viagens";
-
-// Ícone sugestivo de cada tipo de despesa; tipo novo (cadastrado depois) usa o recibo.
-const ICONE_TIPO: Record<string, LucideIcon> = {
-  "Alimentação": Hamburger,
-  "Hospedagem": BedDouble,
-  "Abastecimento": Fuel,
-  "Pedágio": Cancela,
-  "Estacionamento": SquareParking,
-  "Manutenção do veículo de trabalho": Wrench,
-  "Compra de peças para cliente": ParafusoEPorca,
-  "Outro": Ellipsis,
-};
 
 // Painel do módulo Viagens (decisões 176 e 177): botões dos questionários, indicadores globais e resultados dos técnicos do mês escolhido.
 export function ViagensPainel({ emitente }: { emitente: string }) {
@@ -71,7 +59,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
         <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar.</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {tipos.map((t) => {
-            const Icone = ICONE_TIPO[t] ?? Receipt;
+            const Icone = iconeDoTipo(t);
             const acaoRequerida = !questionarioPublicado(estado, t);
             return (
               <button
