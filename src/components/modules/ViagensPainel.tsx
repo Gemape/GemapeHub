@@ -15,7 +15,7 @@ import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { ID_TECNICO_RESPONSAVEL, habilitadosAtivos, habilitadosDaPergunta, lerEstado, tiposDeDespesa } from "@/lib/questionario-despesas";
-import { FAIXAS, faixaDoIndice, type Faixa } from "@/lib/faixas-desempenho";
+import { descricoesFaixas, faixaDoIndice, lerFaixas, type Faixa } from "@/lib/faixas-desempenho";
 import { lerPrazos, type PrazosViagens } from "@/lib/prazo-viagens";
 import { listarRespostas } from "@/lib/respostas-despesas";
 import {
@@ -134,7 +134,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             titulo="Índice de lançamento no prazo"
             valor={formatarPercentual(globais.prazo)}
             faixa={faixaDoIndice(globais.prazo)?.faixa}
-            detalhe={globais.quantidade ? `${globais.noPrazo} de ${globais.quantidade} lançadas no prazo` : "Sem lançamentos neste mês"}
+            detalhe={globais.medidosNoPrazo ? `${globais.noPrazo} de ${globais.medidosNoPrazo} lançadas no prazo` : "Sem lançamentos do técnico mecânico neste mês"}
             explicacao={<ExplicacaoPrazo prazos={prazos} />}
             roxo
           />
@@ -226,10 +226,14 @@ function ExplicacaoPrazo({ prazos }: { prazos: PrazosViagens }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 space-y-2 text-sm">
         <p className="font-semibold">Índice de lançamento no prazo</p>
-        <p>Índice = (despesas lançadas dentro do prazo ÷ total de despesas lançadas no período) × 100.</p>
+        <p>Índice = (despesas lançadas dentro do prazo ÷ total de despesas lançadas pelo técnico mecânico no período) × 100.</p>
         <p>Exemplo: 10 despesas no mês; 9 foram lançadas dentro do prazo, contado em dias depois da data da despesa. Índice = 9 ÷ 10 × 100 = 90%.</p>
-        <p>Prazos de hoje: técnico mecânico, {dias(prazos.mecanico)}; PCM, {dias(prazos.pcm)}. Vale o prazo de quem lançou a despesa (o Administrativo segue o do PCM).</p>
-        <p className="text-muted-foreground">Os prazos se configuram em Parâmetros &gt; Viagens. Conta a diferença entre a data da despesa e o dia em que o formulário foi enviado.</p>
+        <p>
+          {prazos.mecanicoAplica === false
+            ? "O indicador está desligado para o técnico mecânico em Parâmetros, então o índice não é calculado."
+            : `Prazo de hoje para o técnico mecânico lançar: ${dias(prazos.mecanico)}. Despesas lançadas pelo PCM ou pelo Administrativo não entram neste índice.`}
+        </p>
+        <p className="text-muted-foreground">O prazo e as faixas se configuram em Parâmetros &gt; Veículos &gt; Parâmetros Específicos. Conta a diferença entre a data da despesa e o dia em que o formulário foi enviado.</p>
       </PopoverContent>
     </Popover>
   );
@@ -240,7 +244,7 @@ const COR_TEXTO: Record<Faixa, string> = { verde: "text-green-700 dark:text-gree
 
 // A cor nunca vai sozinha: o ponto vem com o nome da faixa por escrito.
 function ChipFaixa({ faixa }: { faixa: Faixa }) {
-  const f = FAIXAS.find((x) => x.faixa === faixa)!;
+  const f = descricoesFaixas(lerFaixas()).find((x) => x.faixa === faixa)!;
   return (
     <p className="flex items-center gap-1.5 text-xs font-medium">
       <span className={`inline-block h-2.5 w-2.5 rounded-full ${COR_PONTO[faixa]}`} aria-hidden="true" />
@@ -271,7 +275,7 @@ function LegendaFaixas() {
         <p className="font-semibold">Faixas de desempenho</p>
         <p className="text-muted-foreground">Valem para o índice de conformidade de lançamento e para o índice de lançamento no prazo.</p>
         <ul className="space-y-3">
-          {FAIXAS.map((f) => (
+          {descricoesFaixas(lerFaixas()).map((f) => (
             <li key={f.faixa} className="space-y-0.5">
               <p className={`flex items-center gap-1.5 font-medium ${COR_TEXTO[f.faixa]}`}>
                 <span className={`inline-block h-2.5 w-2.5 rounded-full ${COR_PONTO[f.faixa]}`} aria-hidden="true" />
