@@ -39,6 +39,11 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
     const habilitados = q14 ? (habilitadosDaPergunta(estado, q14) ?? []) : [];
     return (empregadosLidos ? habilitadosAtivos(habilitados, idsAtivos) : habilitados).map((h) => h.nome);
   }, [estado, empregadosLidos, idsAtivos]);
+  // O filtro de técnico da lista também traz os empregados Avulso lançados (dec 220); os resultados seguem só com os técnicos cadastrados.
+  const responsaveisDaLista = useMemo(() => {
+    const avulsos = lista.map(dadosDoLancamento).filter((d) => d.avulso && d.responsavel).map((d) => d.responsavel as string);
+    return [...new Set([...tecnicos, ...avulsos])];
+  }, [lista, tecnicos]);
   const anos = useMemo(() => {
     const dosLancamentos = lista.map((r) => Number((dadosDoLancamento(r).dataDespesa ?? r.data).slice(0, 4))).filter((a) => a > 2000);
     return [...new Set([periodoAtual().ano, periodo.ano, ...dosLancamentos])].sort((a, b) => b - a);
@@ -129,7 +134,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
         </div>
       </section>
 
-      <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={tecnicos} emitente={emitente} />
+      <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} />
 
       <section className="space-y-3" aria-labelledby="viagens-tecnicos">
         <h2 id="viagens-tecnicos" className="text-lg font-semibold">Resultados dos técnicos</h2>

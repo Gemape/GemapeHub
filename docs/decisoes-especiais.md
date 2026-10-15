@@ -1208,3 +1208,12 @@ Pedido do dono (15/10, 20:05 e 20:06), depois de validar a decisão 218 em Alime
 - **Abastecimento, Manutenção do veículo de trabalho e Outro não mudam** (nada foi pedido para eles).
 - Dado já salvo no navegador ganha a classificação nesses quatro cards **uma vez só** (marca `classificacaoTiposAjustada`); Alimentação não é refeita, para não desfazer ajustes do dono na montagem.
 - O nome do empregado do Avulso continua só registrado na despesa (ponto da decisão 218 ainda a confirmar). Sem Supabase.
+
+### Decisão 220: O Avulso entra no relatório com o nome do empregado
+
+Resposta do dono (15/10, 20:16) à dúvida da decisão 218: "O Avulso será um empregado diferente dos técnicos cadastrados, ele entra no relatório".
+
+- Quando quem lança é do PCM ou do Administrativo e a classificação é **Avulso**, o **Nome do empregado** (pergunta 15) passa a ser o **responsável** da despesa: ela aparece na lista de despesas de Viagens com esse nome, pode ser marcada e entra no **relatório** dele (um relatório por empregado, como para os técnicos).
+- O Avulso **não é técnico cadastrado**: continua **fora do índice de conformidade** e fora de "Resultados dos técnicos" no painel; o filtro de técnico da lista também traz os empregados Avulso lançados.
+- Não conformidade não muda (o responsável é o técnico que não lançou).
+- Substitui o ponto "só fica registrado" da decisão 218. Nada no Supabase; na Fase 2 o nome pode ligar ao cadastro de empregados (docs/pendencias-fase2.md).
