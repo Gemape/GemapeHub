@@ -24,7 +24,7 @@ import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
 import { aplicarFormato, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
-  listarRespostas, registrarResposta, removerResposta, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
+  atualizarResposta, despesaEmRelatorio, listarRespostas, registrarResposta, removerResposta, respostasParaEdicao, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
 } from "@/lib/respostas-despesas";
 
 const kb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -44,6 +44,9 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   const [enviada, setEnviada] = useState<RespostaRegistrada | null>(null);
   const [registradas, setRegistradas] = useState<RespostaRegistrada[]>(listarRespostas);
   const [verLista, setVerLista] = useState(false);
+  // Despesa registrada que está sendo editada neste formulário (dec 211); null no lançamento novo.
+  const [editando, setEditando] = useState<RespostaRegistrada | null>(null);
+  const [atualizada, setAtualizada] = useState(false);
   // Muda ao limpar: remonta os campos (inclusive o de arquivo, que o navegador guarda por conta própria).
   const [chave, setChave] = useState(0);
   const ilegivel = useMemo(() => dadosIlegiveis(), []);
@@ -134,7 +137,10 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
     }
     enviando.current = true;
     try {
-      setEnviada(registrarResposta(estado, respostas, localStorage, new Date(), Object.fromEntries(Object.entries(imagens).map(([id, l]) => [id, l.map((i) => ({ nome: i.nome, dataUrl: i.dataUrl }))]))));
+      const fotos = Object.fromEntries(Object.entries(imagens).map(([id, l]) => [id, l.map((i) => ({ nome: i.nome, dataUrl: i.dataUrl }))]));
+      setEnviada(editando ? atualizarResposta(estado, editando.id, respostas, localStorage, fotos) : registrarResposta(estado, respostas, localStorage, new Date(), fotos));
+      setAtualizada(editando !== null);
+      setEditando(null);
       setRegistradas(listarRespostas());
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível registrar a resposta.");
@@ -144,12 +150,30 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   }
 
   function preencherDeNovo() {
+    setEditando(null);
     setRespostas(respostasIniciais());
     setErros({});
     setImagens({});
     setEnviada(null);
     setPaginaPedida(0);
     setChave((c) => c + 1);
+  }
+
+  // Editar: volta à tela das perguntas com a despesa preenchida (dec 211). Despesa já num relatório não se edita.
+  function editar(r: RespostaRegistrada) {
+    if (despesaEmRelatorio(r.id)) { toast.error("Esta despesa já está num relatório de viagens (Finalizada) e não pode ser editada."); return; }
+    setRespostas(respostasParaEdicao(estado, r));
+    setImagens(Object.fromEntries(r.itens.filter((i) => i.imagens?.length).map((i) => [i.perguntaId, (i.imagens ?? []).map((f) => {
+      const bytes = Math.round((f.dataUrl.length * 3) / 4);
+      return { nome: f.nome, bytesAntes: bytes, bytesDepois: bytes, dataUrl: f.dataUrl };
+    })])));
+    setErros({});
+    setEnviada(null);
+    setVerLista(false);
+    setPaginaPedida(0);
+    setChave((c) => c + 1);
+    setEditando(r);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function excluir(r: RespostaRegistrada) {
@@ -178,19 +202,25 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
       {tipoDesconhecido && <p role="alert" className="text-sm text-destructive">O tipo de despesa “{tipoInicial}” não existe mais no cadastro; escolha um na primeira pergunta.</p>}
       {!tipo && !tipoDesconhecido && <p className="text-sm text-muted-foreground">Escolha o tipo de despesa para ver as demais perguntas.</p>}
 
-      {verLista && <ListaRespostas lista={registradas} podeExcluir={isAdmin} onExcluir={excluir} />}
+      {verLista && <ListaRespostas lista={registradas} podeExcluir={isAdmin} podeEditar={canWrite} onExcluir={excluir} onEditar={editar} />}
 
       {enviada ? (
         <div className={`${cartao} space-y-3`} role="status">
-          <h2 className="text-xl font-semibold">Resposta registrada</h2>
+          <h2 className="text-xl font-semibold">{atualizada ? "Resposta atualizada" : "Resposta registrada"}</h2>
           <p className="text-sm text-muted-foreground">{resumoDaResposta(enviada)}</p>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={preencherDeNovo}>Preencher novamente</Button>
+            <Button onClick={() => (onVoltar ? onVoltar.aoClicar() : preencherDeNovo())}>Novo</Button>
             <Button variant="outline" onClick={() => setVerLista(true)}>Ver respostas registradas</Button>
           </div>
         </div>
       ) : (
         <form key={chave} onSubmit={enviar} noValidate className="space-y-4">
+          {editando && (
+            <div role="status" className="flex flex-wrap items-center gap-2 rounded-md border border-primary p-3 text-sm">
+              <span className="mr-auto break-words">Editando a despesa: {resumoDaResposta(editando)}</span>
+              <Button type="button" variant="outline" size="sm" onClick={preencherDeNovo}>Cancelar edição</Button>
+            </div>
+          )}
           {acaoRequerida && (
             <p role="alert" className="rounded-md border border-destructive p-3 text-sm text-destructive">
               Ação requerida: este questionário tem ramificação que aponta para uma pergunta removida e não está publicado. Corrija em Parâmetros, Veículos, Questionário de Despesas.
@@ -242,7 +272,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
           <div className="flex flex-wrap gap-2">
             {pagina > 0 && <Button type="button" variant="outline" onClick={() => irParaPagina(pagina - 1)}>Voltar</Button>}
             {!ultimaPagina && <Button type="button" onClick={avancar} disabled={!tipo || ilegivel || acaoRequerida}>Próxima</Button>}
-            {ultimaPagina && <Button type="submit" disabled={!tipo || ilegivel || acaoRequerida}>Enviar</Button>}
+            {ultimaPagina && <Button type="submit" disabled={!tipo || ilegivel || acaoRequerida}>{editando ? "Salvar alterações" : "Enviar"}</Button>}
             <Button type="button" variant="ghost" onClick={preencherDeNovo}>Limpar formulário</Button>
           </div>
         </form>
@@ -251,7 +281,9 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   );
 }
 
-function ListaRespostas({ lista, podeExcluir, onExcluir }: { lista: RespostaRegistrada[]; podeExcluir: boolean; onExcluir: (r: RespostaRegistrada) => void }) {
+function ListaRespostas({ lista, podeExcluir, podeEditar, onExcluir, onEditar }: {
+  lista: RespostaRegistrada[]; podeExcluir: boolean; podeEditar: boolean; onExcluir: (r: RespostaRegistrada) => void; onEditar: (r: RespostaRegistrada) => void;
+}) {
   if (lista.length === 0) return <p className={`${cartao} text-sm text-muted-foreground`}>Nenhuma resposta registrada ainda.</p>;
   return (
     <ul className="space-y-2">
@@ -272,7 +304,10 @@ function ListaRespostas({ lista, podeExcluir, onExcluir }: { lista: RespostaRegi
                 </div>
               ))}
             </dl>
-            {podeExcluir && <Button variant="ghost" size="sm" className="mt-2 text-destructive" onClick={() => onExcluir(r)}>Excluir</Button>}
+            <div className="mt-2 flex flex-wrap gap-1">
+              {podeEditar && <Button variant="ghost" size="sm" onClick={() => onEditar(r)}>Editar</Button>}
+              {podeExcluir && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => onExcluir(r)}>Excluir</Button>}
+            </div>
           </details>
         </li>
       ))}
