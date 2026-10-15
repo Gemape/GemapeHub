@@ -17,7 +17,6 @@ import { combinaBusca } from "@/lib/parametros-base";
 import { hojeLocal } from "@/lib/empregados";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
-import { filtrarAcoesManutencao } from "@/lib/busca-acoes-manutencao";
 import { montarManutencaoHtml } from "@/lib/manutencao-relatorio-html";
 import { useVeiculos } from "@/lib/hooks-gemape";
 import { ehOutros } from "@/lib/veiculos-padrao";
@@ -73,8 +72,6 @@ export function ManutencaoVeiculoModulo() {
   // Ações não feitas de cada grupo, com a observação de por que merecem atenção antes do prazo do plano.
   const [naoFeitos, setNaoFeitos] = useState<Record<string, Record<string, string>>>({});
   const [busca, setBusca] = useState("");
-  // Busca de ações dentro do formulário (decisão 195); o que já está marcado não se perde ao filtrar.
-  const [buscaAcao, setBuscaAcao] = useState("");
   const [acoesAberto, setAcoesAberto] = useState(false);
   const trava = useRef(false);
   // Ações e observações de um grupo desmarcado: voltam se o grupo for marcado de novo (clique errado não perde o texto).
@@ -83,7 +80,6 @@ export function ManutencaoVeiculoModulo() {
   const acoes = parametros.acoesManutencaoVeiculo;
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const servicoDe = (m: (typeof todas)[number]) => resumoManutencao(m, (id) => acoes.find((a) => a.id === id)?.nome);
-  const acoesFiltradas = filtrarAcoesManutencao(acoes, buscaAcao);
   const lista = todas
     .filter((m) => idsDaEmpresa.has(m.veiculoId))
     .filter((m) => {
@@ -98,7 +94,6 @@ export function ManutencaoVeiculoModulo() {
 
   function abrir(m?: ManutencaoVeiculo) {
     guardados.current = {};
-    setBuscaAcao("");
     setEditando(m ?? null);
     setVeiculoId(m?.veiculoId ?? "");
     setTipo(m?.tipo ?? "Preventiva");
@@ -317,34 +312,11 @@ export function ManutencaoVeiculoModulo() {
             )}
             <div className="space-y-2 sm:col-span-2">
               <Label>Grupos de ações</Label>
-              <p className="text-xs text-muted-foreground">Busque a ação e marque o grupo e o que foi feito. Dá para marcar vários grupos.</p>
-              <Input
-                type="search"
-                aria-label="Buscar ação de manutenção"
-                placeholder="Buscar ação (ex.: pastilha, suspensao, óleo)"
-                value={buscaAcao}
-                onChange={(e) => setBuscaAcao(e.target.value)}
-              />
-              {Object.values(marcados).reduce((n, g) => n + Object.keys(g).length, 0) > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {Object.keys(marcados).length} grupo(s) e {Object.values(marcados).reduce((n, g) => n + Object.keys(g).length, 0)} ação(ões) marcada(s) até agora.
-                </p>
-              )}
-              {buscaAcao.trim() && acoes.length > 0 && acoesFiltradas.length === 0 && (
-                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground" role="status">
-                  Nenhuma ação encontrada para “{buscaAcao.trim()}”.{" "}
-                  {canWrite
-                    ? <>Cadastre a ação em{" "}
-                        <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setAcoesAberto(true)}>
-                          Parâmetros &gt; Veículos &gt; Manutenção
-                        </button>.</>
-                    : "Peça a quem pode cadastrar em Parâmetros > Veículos > Manutenção."}
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">Marque todos os grupos que a manutenção abrangeu e, em cada um, as ações feitas.</p>
               {acoes.length === 0 && (
                 <p className="text-xs text-muted-foreground">Nenhum grupo de ações cadastrado ainda.</p>
               )}
-              {acoesFiltradas.map(({ grupo, subitens }) => {
+              {acoes.map((grupo) => {
                 const grupoMarcado = grupo.id in marcados;
                 const filhosMarcados = marcados[grupo.id] ?? {};
                 return (
@@ -366,7 +338,7 @@ export function ManutencaoVeiculoModulo() {
                       {grupo.nome}
                     </label>
                     {grupoMarcado && grupo.subitens.length === 0 && <p className="text-xs text-muted-foreground">Este grupo não tem ações cadastradas.</p>}
-                    {(grupoMarcado || buscaAcao.trim() !== "") && subitens.map((sub) => {
+                    {grupoMarcado && grupo.subitens.map((sub) => {
                       const marcado = sub.id in filhosMarcados;
                       return (
                         <div key={sub.id} className="ml-6 space-y-1.5 rounded-lg border p-2">
