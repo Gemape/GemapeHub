@@ -1,7 +1,7 @@
 // Módulo Viagens (decisão 176): cada resposta registrada do Questionário de Despesas é um lançamento na coleção única de
 // despesas (modo demonstração, no navegador). Os campos que os indicadores e o relatório usam saem das respostas pelo número
 // da pergunta de sistema; o que não foi respondido fica nulo.
-import { ID_HABILITADOS as ID_PERGUNTA_HABILITADOS, ID_TECNICO_RESPONSAVEL } from "./questionario-despesas.ts";
+import { ID_HABILITADOS as ID_PERGUNTA_HABILITADOS, ID_NOME_EMPREGADO, ID_TECNICO_RESPONSAVEL } from "./questionario-despesas.ts";
 import { valorNumerico } from "./questionario-respostas.ts";
 import { PRAZOS_PADRAO, type PrazosViagens } from "./prazo-viagens.ts";
 import type { RespostaRegistrada } from "./respostas-despesas.ts";
@@ -22,8 +22,11 @@ export type DadosLancamento = {
   // Quem lançou (pergunta 04) e a área dela.
   tecnico: string | null;
   tecnicoArea: string | null;
-  // Técnico dono da despesa: quem lançou, se é da Oficina; senão o técnico responsável informado (pergunta 14).
+  // Dono da despesa: quem lançou, se é da Oficina; senão o técnico responsável informado (pergunta 14); no Avulso (dec 220), o
+  // empregado informado na pergunta 15, que não é um dos técnicos cadastrados.
   responsavel: string | null;
+  // Despesa Avulso: o dono é um empregado fora dos técnicos monitorados (dec 220).
+  avulso: boolean;
   // Índice de conformidade de lançamento (dec 177): verdadeiro quando o técnico lançou, falso quando o PCM ou o Administrativo
   // lançou por ele; nulo (fora do índice) quando é "Avulso – técnico não monitorado" ou não dá para saber o técnico.
   conforme: boolean | null;
@@ -54,7 +57,8 @@ export function dadosDoLancamento(r: RespostaRegistrada): DadosLancamento {
   const area = quemLanca?.area ?? null;
   const avulso = (resposta(r, ID_PERGUNTA_PCM) ?? "").startsWith("Avulso");
   const gestor = area === "PCM" || area === "Administrativo";
-  const responsavel = area === "Oficina" ? quemLanca!.nome : gestor ? (nomeEArea(resposta(r, ID_TECNICO_RESPONSAVEL))?.nome ?? null) : null;
+  const empregadoAvulso = avulso && gestor ? resposta(r, ID_NOME_EMPREGADO) : null;
+  const responsavel = area === "Oficina" ? quemLanca!.nome : gestor ? (empregadoAvulso ?? nomeEArea(resposta(r, ID_TECNICO_RESPONSAVEL))?.nome ?? null) : null;
   return {
     tipo: r.tipo,
     dataDespesa: dataIso(resposta(r, ID_PERGUNTA_DATA)),
@@ -64,6 +68,7 @@ export function dadosDoLancamento(r: RespostaRegistrada): DadosLancamento {
     tecnico: quemLanca?.nome ?? null,
     tecnicoArea: area,
     responsavel,
+    avulso: empregadoAvulso !== null,
     conforme: avulso || responsavel === null ? null : !gestor,
   };
 }

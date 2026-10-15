@@ -136,3 +136,19 @@ test("dec 213: o botão Gerar relatório fica abaixo da listagem", async () => {
   const f = readFileSync(new URL("../src/components/modules/ViagensLista.tsx", import.meta.url), "utf8");
   assert.ok(f.indexOf("<TableBody>") < f.indexOf("<FileText className=\"mr-1 h-4 w-4\" />Gerar relatório"));
 });
+
+test("dec 220: o Avulso lançado pelo PCM entra na lista e no relatório com o nome do empregado, fora do índice de conformidade", async () => {
+  const { dadosDoLancamento, indicadoresGlobais } = await import("../src/lib/viagens.ts");
+  const s = memoria();
+  const avulso = lancar(s, { "q-04": ["Eduardo (PCM)"], "q-03": ["Alimentação"], "q-13": "Avulso – técnico não monitorado", "q-15": "Carlos Souza" }, "Alimentação", 12);
+  const dados = dadosDoLancamento(avulso);
+  assert.deepEqual([dados.responsavel, dados.avulso, dados.conforme, dados.tecnico], ["Carlos Souza", true, null, "Eduardo"]);
+  const [linha] = listaDoPeriodo([avulso], P, new Map());
+  assert.deepEqual([linha.responsavel, linha.tecnico], ["Carlos Souza", "Carlos Souza"]);
+  assert.equal(indicadoresGlobais([avulso], P).noIndice, 0);
+  const rel = registrarRelatorio({ emitente: "Ana", empresa: "GEMAPE", comprovantesPorPagina: 4, supervisor: "", diretor: "", despesas: [{ id: avulso.id, data: avulso.data, responsavel: linha.responsavel }] }, s, new Date(2026, 9, 14, 9, 0));
+  assert.equal(rel.empregado, "Carlos Souza");
+  // Não conformidade segue com o técnico que não lançou; sem nome no Avulso não há responsável.
+  const nc = dadosDoLancamento(lancar(s, { "q-04": ["Eduardo (PCM)"], "q-03": ["Alimentação"], "q-13": "Não conformidade – técnico monitorado não preencheu", "q-14": ["Roberto (Oficina)"] }, "Alimentação", 13));
+  assert.deepEqual([nc.responsavel, nc.avulso, nc.conforme], ["Roberto", false, false]);
+});
