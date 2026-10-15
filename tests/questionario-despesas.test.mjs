@@ -17,7 +17,7 @@ const memoria = () => {
 test("as 14 perguntas do responsável já vêm cadastradas, com tipos, formatos e obrigatoriedade", () => {
   const p = perguntasPadrao();
   assert.equal(p.length, 14);
-  assert.deepEqual(p.map((x) => x.codigo), ["01", "02", "03", "04", "14", "05", "06", "07", "08", "09", "10", "11", "12", "13"]);
+  assert.deepEqual(p.map((x) => x.codigo), ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"]);
   assert.ok(p.every((x) => x.obrigatoria));
   assert.deepEqual(p.map((x) => x.tipo), ["caixas", "caixas", "caixas", "caixas", "caixas", "lista", "lista", "lista", "data", "paragrafo", "curta", "curta", "upload", "lista"]);
   assert.ok(p.slice(0, 4).every((x) => x.multiplas === false));
@@ -258,6 +258,26 @@ test("dado salvo antes da pergunta do técnico responsável a recebe uma vez, de
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify(ocupado));
   const codigos = lerEstado(s).perguntas.map((p) => p.codigo);
   assert.equal(new Set(codigos).size, codigos.length);
+});
+
+test("dec 209: as perguntas de fábrica seguem a ordem numérica 01 a 14 e dado antigo é renumerado sem repetir número", () => {
+  const nums = perguntasPadrao().map((p) => Number(p.codigo));
+  assert.deepEqual(nums, [...nums].sort((a, b) => a - b));
+  // Dado salvo no formato antigo (técnico com 14, UF com 05, uma pergunta própria com 14 ocupado).
+  const e = estadoPadrao();
+  const antigoCodigo = { "q-14": "14", "q-05": "05", "q-06": "06", "q-07": "07", "q-08": "08", "q-09": "09", "q-10": "10", "q-11": "11", "q-12": "12", "q-13": "13" };
+  const perguntas = e.perguntas.map((p) => (antigoCodigo[p.id] ? { ...p, codigo: antigoCodigo[p.id] } : p));
+  const propria = { ...novaPergunta("data", "14"), titulo: "Outra", id: "q-x" };
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ versao: 1, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, perguntas: [...perguntas, propria], questionarios: e.questionarios, regras: {} }));
+  const lido = lerEstado(s);
+  const porId = Object.fromEntries(lido.perguntas.map((p) => [p.id, p.codigo]));
+  assert.equal(porId["q-14"], "05");
+  assert.equal(porId["q-05"], "06");
+  assert.equal(porId["q-13"], "14");
+  assert.equal(porId["q-x"], "15");
+  assert.equal(new Set(lido.perguntas.map((p) => p.codigo)).size, lido.perguntas.length);
+  assert.equal(lido.codigosOrdenados, true);
 });
 
 test("dec 204: o rascunho guarda as alterações na memória e só Salvar Formulário grava no armazenamento", () => {
