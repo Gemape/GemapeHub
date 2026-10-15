@@ -1137,6 +1137,10 @@ Ordem do responsável em 15/10 (17:04): "em Parâmetros > Veículos > Questioná
 
 Ordem do responsável em 15/10 (17:10), com o print do item "Opções avançadas (ramificação e condição)": "retirar de todas as perguntas a opção em anexo para o usuário não fazer confusão, deixar a montagem do formulário mais simples possível." O bloco sai de todas as perguntas na configuração do Questionário de Despesas, com as telas de ramificação (próxima pergunta por opção) e de condição (mostrar só se). O que já estava configurado (por exemplo, a regra do cartão de crédito) continua valendo em Viagens e aparece como texto no card da pergunta; só não há mais tela para criar ou mudar essas regras. Sem campo novo nem Supabase.
 
+### Decisão 207: Perguntas travadas na montagem do formulário
+
+Ordem do responsável em 15/10 (17:23): "as caixas de unidades de federação, município, data da despesa, valor da despesa, foto do comprovante, detalhamento da despesa são travadas pois não terão necessidade de editar." Na configuração do Questionário de Despesas, essas seis perguntas ficam travadas: sem Editar, sem Adicionar opção e sem trocar Obrigatória; o card mostra "Pergunta travada: não precisa de edição". Continuam podendo mudar de posição e sair do questionário de um card (setas e lixeira). Sem campo novo nem Supabase.
+
 ### Decisão 208: Adicionar opção em Habilitados e em Técnico responsável pela despesa
 
 Ordem do responsável em 15/10 (17:29), com o print do botão: "adicionar botão de adicionar opção nos campos habilitados ao questionário de viagem, técnico responsável pela despesa." Nos cards dessas duas perguntas entra o botão **Adicionar opção**, como nas demais. Como as duas não têm opções escritas e sim empregados, o botão busca o empregado ativo pelo nome e inclui na lista de habilitados da pergunta 04. Em "Habilitados" o responsável escolhe a área (Oficina, PCM ou Administrativo); em "Técnico responsável pela despesa" a pessoa entra com a área Oficina, porque essa pergunta usa os habilitados de Oficina da pergunta 04. Quem já está na lista não aparece na busca. Vale só ao Salvar Formulário. Sem campo novo nem Supabase.

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, GripHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, GripHorizontal, Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,7 +20,7 @@ import {
 } from "@/lib/questionario-destinos";
 import { gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
-  AREAS_VIAGEM, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
+  AREAS_VIAGEM, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, ID_TIPO_DESPESA, TIPOS_PERGUNTA, perguntaTravada, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, publicarRascunho, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type AreaViagem, type Estado, type Habilitado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
@@ -172,6 +172,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         const p = porId.get(id);
         if (!p) return null;
         const fixa = id === ID_TIPO_DESPESA;
+        const travada = perguntaTravada(id);
         const aberto = ativo === id;
         const secaoAqui = secoes.find((x) => x.inicio === id);
         return (
@@ -252,13 +253,17 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                   }}
                 />
               )}
-              {canWrite && !fixa && aceitaCondicao(p) && (
+              {canWrite && !fixa && !travada && aceitaCondicao(p) && (
                 <AdicionarOpcao onAdicionar={(texto) => executar(() => salvarPergunta(estado, { ...p, opcoes: [...p.opcoes, texto] }, rascunho), "Opção adicionada.")} />
               )}
             </div>
             {aberto && canWrite && (
               <div className="mt-4 flex flex-wrap items-center justify-end gap-1 border-t pt-3">
-                <Button variant="ghost" size="sm" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="mr-1 h-4 w-4" />Editar</Button>
+                {travada ? (
+                  <span className="mr-auto flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3.5 w-3.5" />Pergunta travada: não precisa de edição</span>
+                ) : (
+                  <Button variant="ghost" size="sm" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="mr-1 h-4 w-4" />Editar</Button>
+                )}
                 {!fixa && (
                   <>
                     <Button variant="ghost" size="icon" aria-label="Mover para cima" disabled={ids.indexOf(id) <= 1} onClick={() => gravarIds(trocar(ids, id, -1))}><ArrowUp className="h-4 w-4" /></Button>
@@ -277,7 +282,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 )}
                 <div className="mx-2 h-6 w-px bg-border" />
                 <Label htmlFor={`obrigatoria-${id}`} className="text-sm">Obrigatória</Label>
-                <Switch id={`obrigatoria-${id}`} checked={p.obrigatoria} onCheckedChange={(v) => executar(() => salvarPergunta(estado, { ...p, obrigatoria: v }, rascunho))} />
+                <Switch id={`obrigatoria-${id}`} checked={p.obrigatoria} disabled={travada} onCheckedChange={(v) => executar(() => salvarPergunta(estado, { ...p, obrigatoria: v }, rascunho))} />
               </div>
             )}
           </div>

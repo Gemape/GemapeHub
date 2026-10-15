@@ -90,6 +90,9 @@ export const ID_TIPO_DESPESA = "q-03";
 export const ID_HABILITADOS = "q-04";
 export const ID_TECNICO_RESPONSAVEL = "q-14";
 export const ID_UF = "q-05";
+// Perguntas travadas (dec 207): Unidade da Federação, Município, Data, Valor, Foto do comprovante e Detalhamento não precisam de edição na montagem.
+export const IDS_TRAVADAS: readonly string[] = [ID_UF, "q-06", "q-08", "q-09", "q-11", "q-12"];
+export const perguntaTravada = (id: string): boolean => IDS_TRAVADAS.includes(id);
 
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-questionario-despesas";
