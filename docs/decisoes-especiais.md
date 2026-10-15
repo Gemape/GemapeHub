@@ -1183,3 +1183,7 @@ Pedido do dono (15/10, 19:18 e 19:21), a partir de um scanner de fluxograma: est
 - Clientes foi mantido nos quatro tipos (o scanner não o mostra; o relatório usa os clientes visitados).
 - Dado já salvo no navegador passa **uma vez só** para essa ordem; pergunta criada pelo responsável nesses tipos fica antes do comprovante. Registro para a Fase 2 em docs/pendencias-fase2.md. Sem Supabase.
 - Revisão do PR: a migração também limpa ramificações e seções que apontavam para pergunta que saiu dos quatro tipos (Detalhamento), para o questionário não ficar com "ação requerida".
+
+### Decisão 217: Desfeita a decisão 216 (lógica de perguntas dos 4 tipos)
+
+Pedido do dono (15/10, 19:35): "desfazer esta última alteração". O código da decisão 216 foi revertido: Alimentação, Hospedagem, Pedágio e Estacionamento voltam à ordem e às perguntas de antes (com Detalhamento, sem PCM responde condicional e sem tela de justificativa). O texto da decisão 216 e o registro de Fase 2 da justificativa ficam no histórico, **sem valer**. O scanner do dono segue como referência caso a lógica seja retomada. Navegadores que já migraram para a ordem da 216 continuam com ela até as perguntas serem reordenadas ou o questionário ser restaurado pelo botão Restaurar configurações iniciais. Sem Supabase.
