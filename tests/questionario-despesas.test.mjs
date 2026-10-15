@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import {
   ID_TIPO_DESPESA, clonarPergunta, estadoPadrao, excluirPergunta, gravarQuestionario, habilitadosAtivos, lerEstado, moverId, novaPergunta,
   perguntasPadrao, proximoCodigoPergunta, questionarioDoTipo, regraArquivos, salvarPergunta, tiposDeDespesa, tiposRemovidos, validarPergunta,
-  criarRascunho, publicarRascunho, gravarEstado, dadosIlegiveis, ID_LITROS, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, habilitadosDaPergunta,
+  criarRascunho, publicarRascunho, gravarEstado, dadosIlegiveis, perguntaTravada, ID_LITROS, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, habilitadosDaPergunta,
 } from "../src/lib/questionario-despesas.ts";
 import { filtrarMunicipios, municipiosDaUf } from "../src/lib/municipios.ts";
 
@@ -309,4 +309,14 @@ test("dec 205: a tela tem o botão Restaurar configurações iniciais ao lado de
   const c = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
   assert.match(c, /Restaurar configurações iniciais<\/Button>\s*<Button[^>]*>Salvar Formulário/);
   assert.match(c, /gravarEstado\(estadoPadrao\(\), rascunho\)/);
+});
+
+test("dec 207: UF, Município, Data, Valor, Foto do comprovante e Detalhamento são perguntas travadas", () => {
+  const travadas = perguntasPadrao().filter((p) => perguntaTravada(p.id)).map((p) => p.titulo);
+  assert.deepEqual(travadas, ["Unidade da Federação", "Município", "Data da despesa", "Detalhamento da despesa", "Valor da despesa", "Foto do comprovante"]);
+  assert.ok(!perguntaTravada("q-01") && !perguntaTravada(ID_TIPO_DESPESA));
+  const c = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
+  assert.match(c, /Pergunta travada/);
+  assert.match(c, /!fixa && !travada && aceitaCondicao/);
+  assert.match(c, /disabled=\{travada\}/);
 });
