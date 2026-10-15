@@ -115,14 +115,14 @@ export const MENU_UNIFORMES: readonly ItemMenu[] = [
   ...itensApoio("uniformes"),
 ];
 
-// Parâmetros > Veículos (decisões 46, 52 e 62): o cadastro da frota, a página Manutenção (ações de manutenção e plano de manutenções, decisão 112), os tipos de ocorrência e os itens de check list.
+// Parâmetros > Veículos (decisões 46, 52 e 62): o cadastro da frota, a página Manutenção (ações de manutenção e plano de manutenções, decisão 112), os tipos de ocorrência, os itens de check list, os Parâmetros Específicos e, por último, o Questionário de Despesas (decisão 198).
 export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Cadastro de Veículos", url: "/cadastros/veiculos", icone: "Car" },
   { titulo: "Manutenção", url: "/cadastros/veiculos-manutencao", icone: "Wrench" },
   { titulo: "Tipos de ocorrência", url: "/cadastros/veiculos-tipos-ocorrencia", icone: "ClipboardList" },
   { titulo: "Check list", url: "/cadastros/veiculos-checklist", icone: "ListChecks" },
-  { titulo: "Questionário de Despesas", url: "/cadastros/veiculos-questionario-despesas", icone: "ListPlus" },
   itemEspecificos("veiculos"),
+  { titulo: "Questionário de Despesas", url: "/cadastros/veiculos-questionario-despesas", icone: "ListPlus" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.
