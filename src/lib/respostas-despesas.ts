@@ -4,14 +4,15 @@ import { hojeLocal } from "./empregados.ts";
 import { ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
 import { listarRelatorios, relatorioPorDespesa } from "./relatorios-viagens.ts";
 import { questionarioPublicado } from "./questionario-destinos.ts";
-import { perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
+import { chaveOutro, perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-respostas-despesas";
 
 export type ImagemGuardada = { nome: string; dataUrl: string };
 export type ItemResposta = { perguntaId: string; titulo: string; resposta: string; imagens?: ImagemGuardada[] };
-export type RespostaRegistrada = { id: string; tipo: string; data: string; hora: string; itens: ItemResposta[] };
+// `valores` guarda o que foi respondido (já sem as perguntas escondidas) para a despesa poder ser editada depois (dec 211).
+export type RespostaRegistrada = { id: string; tipo: string; data: string; hora: string; itens: ItemResposta[]; valores?: Respostas };
 
 const dois = (n: number) => String(n).padStart(2, "0");
 // Hora local (Brasília para quem usa o sistema), nunca UTC.
@@ -45,8 +46,8 @@ function conferirIntegridade(storage: StorageLike): void {
   if (!ok) throw new Error("As respostas salvas neste navegador estão ilegíveis; nada foi alterado.");
 }
 
-// Valida tudo e grava a resposta de uma vez; se algo falha, nada é gravado. As mais novas ficam primeiro.
-export function registrarResposta(e: Estado, respostas: Respostas, storage: StorageLike = localStorage, agora = new Date(), imagens: Record<string, ImagemGuardada[]> = {}): RespostaRegistrada {
+// Confere o tipo e as respostas e monta os itens do registro; nada é gravado aqui.
+function montarItens(e: Estado, respostas: Respostas, imagens: Record<string, ImagemGuardada[]>): { tipo: string; itens: ItemResposta[]; valores: Respostas } {
   const tipo = tipoEscolhido(respostas);
   if (!tipo) throw new Error("Escolha o tipo de despesa.");
   if (!tiposDeDespesa(e).includes(tipo)) throw new Error("Esse tipo de despesa não existe mais no cadastro; recarregue o formulário.");
@@ -55,19 +56,32 @@ export function registrarResposta(e: Estado, respostas: Respostas, storage: Stor
   const erros = validarRespostas(visiveis, respostas);
   const primeiro = visiveis.find((p) => erros[p.id]);
   if (primeiro) throw new Error(`${primeiro.titulo}: ${erros[primeiro.id]}`);
+  const itens = visiveis.filter((p) => comoTexto(respostas[p.id]) !== "").map((p) => {
+    const fotos = p.tipo === "upload" ? (imagens[p.id] ?? []).filter((i) => i.dataUrl.startsWith("data:image/")) : [];
+    return {
+      perguntaId: p.id, titulo: p.titulo,
+      // Data entra como dd/mm/aaaa, o formato que quem lê a conferência espera.
+      resposta: p.tipo === "data" ? dataBr(comoTexto(respostas[p.id])) : textoDaResposta(p, respostas),
+      ...(fotos.length ? { imagens: fotos.map((i) => ({ nome: i.nome, dataUrl: i.dataUrl })) } : {}),
+    };
+  });
+  const valores: Respostas = {};
+  for (const p of visiveis) {
+    const r = respostas[p.id];
+    if (r !== undefined) valores[p.id] = r;
+    const outro = respostas[chaveOutro(p.id)];
+    if (outro !== undefined) valores[chaveOutro(p.id)] = outro;
+  }
+  return { tipo, itens, valores };
+}
+
+// Valida tudo e grava a resposta de uma vez; se algo falha, nada é gravado. As mais novas ficam primeiro.
+export function registrarResposta(e: Estado, respostas: Respostas, storage: StorageLike = localStorage, agora = new Date(), imagens: Record<string, ImagemGuardada[]> = {}): RespostaRegistrada {
+  const { tipo, itens, valores } = montarItens(e, respostas, imagens);
   conferirIntegridade(storage);
   const registro: RespostaRegistrada = {
     id: `r-${agora.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-    tipo, data: hojeLocal(agora), hora: horaLocal(agora),
-    itens: visiveis.filter((p) => comoTexto(respostas[p.id]) !== "").map((p) => {
-      const fotos = p.tipo === "upload" ? (imagens[p.id] ?? []).filter((i) => i.dataUrl.startsWith("data:image/")) : [];
-      return {
-        perguntaId: p.id, titulo: p.titulo,
-        // Data entra como dd/mm/aaaa, o formato que quem lê a conferência espera.
-        resposta: p.tipo === "data" ? dataBr(comoTexto(respostas[p.id])) : textoDaResposta(p, respostas),
-        ...(fotos.length ? { imagens: fotos.map((i) => ({ nome: i.nome, dataUrl: i.dataUrl })) } : {}),
-      };
-    }),
+    tipo, data: hojeLocal(agora), hora: horaLocal(agora), itens, valores,
   };
   try {
     storage.setItem(CHAVE, JSON.stringify([registro, ...listarRespostas(storage)]));
@@ -77,10 +91,53 @@ export function registrarResposta(e: Estado, respostas: Respostas, storage: Stor
   return registro;
 }
 
+// Despesa que já entrou num relatório (Finalizada) não se exclui nem se edita: o relatório salvo perderia a linha ou ficaria diferente.
+export const despesaEmRelatorio = (id: string, storage: StorageLike = localStorage): boolean => relatorioPorDespesa(listarRelatorios(storage)).has(id);
+
+// Edição (dec 211): mesmas conferências do registro; a despesa mantém o id, a data e a hora do lançamento e ocupa o mesmo lugar na lista.
+export function atualizarResposta(
+  e: Estado, id: string, respostas: Respostas, storage: StorageLike = localStorage, imagens: Record<string, ImagemGuardada[]> = {},
+): RespostaRegistrada {
+  const lista = listarRespostas(storage);
+  const atual = lista.find((r) => r.id === id);
+  if (!atual) throw new Error("Esta despesa não existe mais; recarregue a lista.");
+  if (despesaEmRelatorio(id, storage)) throw new Error("Esta despesa já está num relatório de viagens (Finalizada) e não pode ser editada.");
+  const { tipo, itens, valores } = montarItens(e, respostas, imagens);
+  conferirIntegridade(storage);
+  const registro: RespostaRegistrada = { id: atual.id, tipo, data: atual.data, hora: atual.hora, itens, valores };
+  try {
+    storage.setItem(CHAVE, JSON.stringify(lista.map((r) => (r.id === id ? registro : r))));
+  } catch {
+    throw new Error("Não há espaço no navegador para guardar esta resposta com as imagens; exclua respostas antigas e tente de novo.");
+  }
+  return registro;
+}
+
+// Respostas para reabrir a despesa no formulário. Registro novo traz `valores`; o antigo é refeito a partir do texto registrado.
+export function respostasParaEdicao(e: Estado, r: RespostaRegistrada): Respostas {
+  if (r.valores) return { ...r.valores };
+  const respostas: Respostas = { [ID_TIPO_DESPESA]: [r.tipo] };
+  for (const i of r.itens) {
+    const p = e.perguntas.find((x) => x.id === i.perguntaId);
+    if (!p || p.id === ID_TIPO_DESPESA) continue;
+    const texto = i.resposta;
+    if (p.tipo === "upload") { respostas[p.id] = (i.imagens ?? []).map((f) => f.nome); continue; }
+    if (p.tipo === "data") { respostas[p.id] = texto.split("/").reverse().join("-"); continue; }
+    if (p.tipo === "multipla" || p.tipo === "caixas" || p.tipo === "lista") {
+      const outro = /^Outro: (.*)$/.exec(texto);
+      if (outro && p.opcoes.includes("Outro")) { respostas[p.id] = p.tipo === "caixas" ? ["Outro"] : "Outro"; respostas[chaveOutro(p.id)] = outro[1] ?? ""; continue; }
+      respostas[p.id] = p.tipo === "caixas" ? (p.multiplas ? texto.split(", ") : [texto]) : texto;
+      continue;
+    }
+    respostas[p.id] = texto;
+  }
+  return respostas;
+}
+
 export function removerResposta(id: string, storage: StorageLike = localStorage): void {
   conferirIntegridade(storage);
   // Despesa que já entrou num relatório (Finalizada) não se exclui: o relatório salvo perderia a linha ao ser baixado de novo.
-  if (relatorioPorDespesa(listarRelatorios(storage)).has(id)) throw new Error("Esta despesa já está num relatório de viagens (Finalizada) e não pode ser excluída.");
+  if (despesaEmRelatorio(id, storage)) throw new Error("Esta despesa já está num relatório de viagens (Finalizada) e não pode ser excluída.");
   storage.setItem(CHAVE, JSON.stringify(listarRespostas(storage).filter((r) => r.id !== id)));
 }
 

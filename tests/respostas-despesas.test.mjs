@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { registrarRelatorio } from "../src/lib/relatorios-viagens.ts";
 
 import { estadoPadrao as estadoDeFabrica, gravarRegra } from "../src/lib/questionario-despesas.ts";
-import { horaLocal, listarRespostas, removerResposta, registrarResposta, resumoDaResposta, tipoEscolhido } from "../src/lib/respostas-despesas.ts";
+import { atualizarResposta, horaLocal, listarRespostas, respostasParaEdicao, removerResposta, registrarResposta, resumoDaResposta, tipoEscolhido } from "../src/lib/respostas-despesas.ts";
 
 // Estado de fábrica sem a condição do cartão (dec 182), para os testes que preenchem todas as perguntas.
 const estadoPadrao = () => ({ ...estadoDeFabrica(), regras: {} });
@@ -138,4 +139,45 @@ test("sem espaço no navegador a resposta com imagens não é gravada e o erro �
 test("a lista de respostas mostra as imagens guardadas", () => {
   const fonte = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(fonte, /src=\{f\.dataUrl\}/);
+});
+
+test("dec 211: editar mantém id, data e hora e troca as respostas", () => {
+  const s = memoria();
+  const e = estadoPadrao();
+  const r = registrarResposta(e, completas, s, agora);
+  assert.ok(r.valores);
+  const nova = atualizarResposta(e, r.id, { ...completas, "q-11": "50,00" }, s);
+  assert.equal(nova.id, r.id);
+  assert.equal(nova.hora, "08:05");
+  assert.equal(listarRespostas(s).length, 1);
+  assert.equal(listarRespostas(s)[0].itens.find((i) => i.perguntaId === "q-11").resposta, "50,00");
+  assert.throws(() => atualizarResposta(e, "nao-existe", completas, s), /não|encontr/i);
+});
+
+test("dec 211: despesa num relatório (Finalizada) não pode ser editada", () => {
+  const s = memoria();
+  const e = estadoPadrao();
+  const r = registrarResposta(e, completas, s, agora);
+  registrarRelatorio({ emitente: "Ana", empresa: "GEMAPE", comprovantesPorPagina: 4, supervisor: "", diretor: "", despesas: [{ id: r.id, data: r.data, responsavel: "Roberto" }] }, s, agora);
+  assert.throws(() => atualizarResposta(e, r.id, completas, s), /Finalizada/);
+});
+
+test("dec 211: respostasParaEdicao devolve as respostas para reabrir o formulário", () => {
+  const e = estadoPadrao();
+  const r = registrarResposta(e, completas, memoria(), agora);
+  const v = respostasParaEdicao(e, r);
+  assert.equal(v["q-11"], "1.234,56");
+  assert.deepEqual(v["q-03"], ["Abastecimento"]);
+  const { valores: _v, ...antiga } = r;
+  const w = respostasParaEdicao(e, antiga);
+  assert.deepEqual(w["q-03"], ["Abastecimento"]);
+  assert.equal(w["q-08"], "2026-10-14");
+});
+
+test("decs 211 e 212: botão Editar na lista e botão Novo na confirmação", () => {
+  const f = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(f, /Editar/);
+  assert.match(f, /Cancelar edição/);
+  assert.match(f, />\s*Novo\s*</);
+  assert.doesNotMatch(f, /Preencher novamente/);
 });

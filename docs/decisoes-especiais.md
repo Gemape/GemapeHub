@@ -1152,3 +1152,11 @@ Ordem do responsável em 15/10 (17:37): "colocar em ordem numérica todas as per
 ### Decisão 210: Remover ramificações antigas com problema
 
 Achado da revisão de 15/10 (17:38) sobre as decisões 205 a 208: com as Opções avançadas retiradas (decisão 206), uma ramificação antiga que ficou com problema (opção que não existe mais, pergunta de destino fora do questionário ou pergunta que não ramifica mais) deixava o aviso "Ação requerida" sem tela para corrigir. O aviso ganha o botão **Remover as ramificações com problema**: tira só as opções com problema, mantém as boas, e vale ao Salvar Formulário. Sem campo novo nem Supabase.
+
+### Decisão 211: Editar despesa registrada
+
+Pedido do dono (15/10, 17:52): na lista "Respostas registradas" do módulo Viagens, cada despesa ganha o botão **Editar** (ao lado de Excluir), que volta à tela das perguntas com a despesa preenchida. Ao salvar ("Salvar alterações") a despesa mantém número, data e hora do registro. Despesa que já está num relatório (Finalizada) não pode ser editada, igual à exclusão. Edita quem pode gravar. A resposta passa a guardar também os valores digitados (`valores`); registros antigos são reconstituídos a partir do texto. Sem Supabase.
+
+### Decisão 212: Botão Novo na resposta registrada
+
+Pedido do dono (15/10, 17:53): na tela "Resposta registrada", o botão "Preencher novamente" passa a se chamar **Novo** e volta à tela inicial do módulo Viagens para lançar uma nova despesa.
