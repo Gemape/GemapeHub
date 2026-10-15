@@ -16,11 +16,11 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, pendencias,
+  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinosDoTipo, idDoDestino, pendencias,
 } from "@/lib/questionario-destinos";
 import { gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
-  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
+  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, publicarRascunho, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
@@ -245,27 +245,6 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 <AdicionarOpcao onAdicionar={(texto) => executar(() => salvarPergunta(estado, { ...p, opcoes: [...p.opcoes, texto] }, rascunho), "Opção adicionada.")} />
               )}
             </div>
-            {aberto && canWrite && !fixa && (
-              <details className="mt-4 border-t pt-3" open={temAvancado(estado, tipoAtual, p, id) || undefined} onClick={(e) => e.stopPropagation()}>
-                <summary className="cursor-pointer text-sm font-medium text-muted-foreground">Opções avançadas (ramificação e condição)</summary>
-                {aceitaDestino(p) && (
-                  <RamificacaoPergunta
-                    estado={estado}
-                    ids={ids}
-                    pergunta={p}
-                    destinos={destinosDoTipo(estado, tipoAtual)[id] ?? {}}
-                    onMudar={(opcao, d) => executar(() => gravarDestino(estado, tipoAtual, id, opcao, d, rascunho))}
-                  />
-                )}
-                <CondicaoPergunta
-                  estado={estado}
-                  ids={ids}
-                  id={id}
-                  regra={estado.regras[tipoAtual]?.[id] ?? null}
-                  onMudar={(r) => executar(() => gravarRegra(estado, tipoAtual, id, r, rascunho))}
-                />
-              </details>
-            )}
             {aberto && canWrite && (
               <div className="mt-4 flex flex-wrap items-center justify-end gap-1 border-t pt-3">
                 <Button variant="ghost" size="sm" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="mr-1 h-4 w-4" />Editar</Button>
@@ -358,98 +337,10 @@ const textoDestino = (e: Estado, destino: string): string => {
   return p ? `vai para a pergunta ${p.codigo} (${p.titulo})` : "pergunta removida (ação requerida)";
 };
 
-// Ramificação: para cada opção, a próxima pergunta, encerrar o formulário ou ir direto a outra pergunta do questionário.
-function RamificacaoPergunta({
-  estado, ids, pergunta, destinos, onMudar,
-}: {
-  estado: Estado;
-  ids: string[];
-  pergunta: Pergunta;
-  destinos: Record<string, string>;
-  onMudar: (opcao: string, destino: string | null) => void;
-}) {
-  const alvos = ids.filter((x) => x !== ID_TIPO_DESPESA && x !== pergunta.id).map((x) => estado.perguntas.find((p) => p.id === x)).filter((p): p is Pergunta => !!p);
-  return (
-    <div className="mt-4 space-y-2 border-t pt-3" onClick={(e) => e.stopPropagation()}>
-      <p className="text-sm font-medium">Depois de responder, ir para...</p>
-      {pergunta.opcoes.map((opcao) => {
-        const atual = destinos[opcao] ?? "proxima";
-        const alvoAtual = idDoDestino(atual);
-        const removida = alvoAtual !== null && !alvos.some((p) => p.id === alvoAtual);
-        return (
-          <div key={opcao} className="flex flex-wrap items-center gap-2">
-            <span className="w-48 truncate text-sm" title={opcao}>{opcao}</span>
-            <Select value={atual} onValueChange={(v) => { if (v) onMudar(opcao, v === "proxima" ? null : v); }}>
-              <SelectTrigger aria-label={`Destino da opção ${opcao}`} className="w-64"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="proxima">Segue para a próxima pergunta</SelectItem>
-                <SelectItem value={DESTINO_PROXIMA_SECAO}>Ir para a próxima seção</SelectItem>
-                <SelectItem value={DESTINO_ENCERRAR}>Encerrar formulário</SelectItem>
-                {removida && <SelectItem value={atual}>Pergunta removida (ação requerida)</SelectItem>}
-                {alvos.map((p) => <SelectItem key={p.id} value={destinoPergunta(p.id)}>Ir para {p.codigo} · {p.titulo}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 const textoRegra = (e: Estado, r: Regra): string => {
   const origem = e.perguntas.find((p) => p.id === r.origem);
   return `Aparece só se "${origem?.titulo ?? "?"}" ${r.operador === "igual" ? "for" : "não for"} "${r.valor}"`;
 };
-
-// Se/então: a pergunta só aparece quando a resposta de uma pergunta anterior (com opções escritas) for ou não for um valor.
-function CondicaoPergunta({
-  estado, ids, id, regra, onMudar,
-}: {
-  estado: Estado;
-  ids: string[];
-  id: string;
-  regra: Regra | null;
-  onMudar: (r: Regra | null) => void;
-}) {
-  const anteriores = ids.slice(0, ids.indexOf(id)).map((x) => estado.perguntas.find((p) => p.id === x)).filter((p): p is Pergunta => !!p && aceitaCondicao(p));
-  if (anteriores.length === 0 && !regra) return null;
-  const origem = anteriores.find((p) => p.id === regra?.origem);
-  return (
-    <div className="mt-4 space-y-2 border-t pt-3" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center gap-2">
-        <Switch
-          id={`condicao-${id}`}
-          checked={regra !== null}
-          onCheckedChange={(v) => {
-            const primeira = anteriores[0];
-            onMudar(v && primeira ? { origem: primeira.id, operador: "igual", valor: primeira.opcoes[0] ?? "" } : null);
-          }}
-        />
-        <Label htmlFor={`condicao-${id}`} className="text-sm">Mostrar esta pergunta só se...</Label>
-      </div>
-      {regra && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Select value={regra.origem} onValueChange={(v) => { const o = anteriores.find((p) => p.id === v); onMudar({ origem: v, operador: regra.operador, valor: o?.opcoes[0] ?? "" }); }}>
-            <SelectTrigger aria-label="Pergunta de origem" className="w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>{anteriores.map((p) => <SelectItem key={p.id} value={p.id}>{p.codigo} · {p.titulo}</SelectItem>)}</SelectContent>
-          </Select>
-          <Select value={regra.operador} onValueChange={(v) => onMudar({ ...regra, operador: v as Regra["operador"] })}>
-            <SelectTrigger aria-label="Operador" className="w-32"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="igual">for</SelectItem><SelectItem value="diferente">não for</SelectItem></SelectContent>
-          </Select>
-          <Select value={regra.valor} onValueChange={(v) => onMudar({ ...regra, valor: v })}>
-            <SelectTrigger aria-label="Valor" className="w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>{(origem?.opcoes ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// A ramificação e a condição ficam recolhidas; abrem sozinhas quando a pergunta já tem alguma configurada.
-const temAvancado = (e: Estado, tipo: string, p: Pergunta, id: string): boolean =>
-  Boolean(e.regras[tipo]?.[id]) || (aceitaDestino(p) && Object.keys(destinosDoTipo(e, tipo)[id] ?? {}).length > 0);
 
 // Adicionar opção direto no card da pergunta: abre um campo, Enter ou Adicionar grava e fecha.
 function AdicionarOpcao({ onAdicionar }: { onAdicionar: (texto: string) => boolean }) {

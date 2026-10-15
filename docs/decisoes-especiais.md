@@ -1132,3 +1132,7 @@ Ordem do responsável em 15/10 (16:48), com o print do botão: "retirar o botão
 ### Decisão 205: Botão Restaurar configurações iniciais ao lado de Salvar Formulário
 
 Ordem do responsável em 15/10 (17:04): "em Parâmetros > Veículos > Questionário de Despesas incluir um botão de restaurar configurações iniciais ao lado de salvar formulário." No fim da configuração, ao lado de Salvar Formulário, entra o botão **Restaurar configurações iniciais**. Ele pede confirmação e devolve ao padrão as perguntas, as opções e os questionários de todos os cards, mas só no rascunho: nada muda no formulário usado em Viagens até clicar em Salvar Formulário (e Descartar alterações desfaz a restauração). Os códigos de pergunta já usados não se repetem. Sem campo novo nem Supabase.
+
+### Decisão 206: Retirada das Opções avançadas (ramificação e condição) da montagem do formulário
+
+Ordem do responsável em 15/10 (17:10), com o print do item "Opções avançadas (ramificação e condição)": "retirar de todas as perguntas a opção em anexo para o usuário não fazer confusão, deixar a montagem do formulário mais simples possível." O bloco sai de todas as perguntas na configuração do Questionário de Despesas, com as telas de ramificação (próxima pergunta por opção) e de condição (mostrar só se). O que já estava configurado (por exemplo, a regra do cartão de crédito) continua valendo em Viagens e aparece como texto no card da pergunta; só não há mais tela para criar ou mudar essas regras. Sem campo novo nem Supabase.

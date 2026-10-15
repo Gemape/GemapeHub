@@ -457,3 +457,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-15 dec 203: quadrante Adicionar ao questionário no rodapé da montagem (QuestionarioDespesasConstrutor.tsx): abre PerguntaDialog em modo novo e inclui a pergunta criada no questionário do card; botão Cadastrar pergunta do topo e seletor de perguntas já cadastradas removidos.
 - 2026-10-15 dec 204: configuração do questionário com rascunho (criarRascunho/publicarRascunho em questionario-despesas.ts) e botão Salvar Formulário no fim; Criar novo questionário removido; Descartar alterações e aviso de alterações não salvas.
 - 2026-10-15 dec 205: botão Restaurar configurações iniciais ao lado de Salvar Formulário (restaura o padrão via gravarEstado(estadoPadrao(), rascunho); só vale ao Salvar).
+- 2026-10-15 dec 206: Opções avançadas (ramificação e condição) retiradas da montagem do Questionário de Despesas; regras já gravadas continuam valendo, sem tela para editá-las.

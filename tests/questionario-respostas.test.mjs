@@ -150,10 +150,10 @@ test("imagem econômica: lado maior até 1280 sem ampliar", () => {
   assert.deepEqual(dimensoesReduzidas(800, 600, 1280), { largura: 800, altura: 600 });
 });
 
-test("dec 201: a tela de configuração não tem o botão Abrir formulário e mantém a condição se/então", () => {
+test("dec 201: a tela de configuração não tem o botão Abrir formulário e não tem Opções avançadas (dec 206)", () => {
   const tela = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(tela, /Abrir formulário/);
-  assert.match(tela, /Mostrar esta pergunta só se/);
+  assert.doesNotMatch(tela, /Mostrar esta pergunta só se|Opções avançadas/);
 });
 
 test("técnico responsável pela despesa só aparece quando quem lança é PCM ou Administrativo", () => {

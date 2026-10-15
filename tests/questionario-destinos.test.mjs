@@ -114,10 +114,9 @@ test("renomear o tipo de despesa leva a ramificação junto", () => {
   assert.equal(e.destinos[T], undefined);
 });
 
-test("construtor e painel mostram a ramificação e a ação requerida", () => {
+test("construtor e painel mostram a ação requerida; a montagem não tem mais Opções avançadas (dec 206)", () => {
   const c = readFileSync("src/components/parametros/QuestionarioDespesasConstrutor.tsx", "utf8");
-  assert.match(c, /Depois de responder, ir para/);
-  assert.match(c, /Encerrar formulário/);
+  assert.doesNotMatch(c, /Opções avançadas|Depois de responder, ir para/);
   assert.match(c, /Ação requerida/);
   const v = readFileSync("src/components/modules/ViagensPainel.tsx", "utf8");
   assert.match(v, /Ação requerida/);
