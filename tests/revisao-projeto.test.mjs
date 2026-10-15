@@ -32,3 +32,10 @@ test("datas de hoje nas telas usam o fuso local, não UTC", async () => {
     assert.doesNotMatch(readFileSync(`src/components/modules/${f}.tsx`, "utf8"), /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/, f);
   }
 });
+
+test("formatarData: data fora do formato AAAA-MM-DD não vai para o HTML dos documentos", () => {
+  assert.equal(formatarData("<b-x>-1-2"), "—");
+  assert.equal(formatarData("2026-1-2"), "—");
+  assert.equal(formatarData("abcd-ef-gh"), "—");
+  assert.equal(formatarData("2026-10-13"), "13/10/2026");
+});

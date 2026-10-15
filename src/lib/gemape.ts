@@ -175,7 +175,8 @@ export function formatarData(data: string | null | undefined): string {
     if (!Number.isNaN(t.getTime())) texto = t.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
   }
   const [ano, mes, dia] = texto.split("-");
-  if (!ano || !mes || !dia) return "—";
+  // Só dígitos: o texto sai direto em HTML gerado (termos e fichas), então data fora do formato não passa.
+  if (!/^\d{4}$/.test(ano ?? "") || !/^\d{2}$/.test(mes ?? "") || !/^\d{2}$/.test(dia ?? "")) return "—";
   return `${dia}/${mes}/${ano}`;
 }
 
