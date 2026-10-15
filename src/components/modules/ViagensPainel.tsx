@@ -134,7 +134,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             titulo="Índice de lançamento no prazo"
             valor={formatarPercentual(globais.prazo)}
             faixa={faixaDoIndice(globais.prazo)?.faixa}
-            detalhe={globais.medidosNoPrazo ? `${globais.noPrazo} de ${globais.medidosNoPrazo} lançadas no prazo` : "Sem lançamentos do técnico mecânico neste mês"}
+            detalhe={prazos.mecanicoAplica === false ? "Indicador desligado em Parâmetros" : globais.medidosNoPrazo ? `${globais.noPrazo} de ${globais.medidosNoPrazo} lançadas no prazo` : "Sem lançamentos do técnico mecânico neste mês"}
             explicacao={<ExplicacaoPrazo prazos={prazos} />}
             roxo
           />
