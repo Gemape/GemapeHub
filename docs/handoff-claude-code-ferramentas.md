@@ -468,3 +468,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-15 dec 213: botão Gerar relatório (ViagensLista.tsx) movido para baixo da listagem.
 - 2026-10-15 dec 215: Conferido (PCM/Administrativo) na Conferência do relatório (ViagensRelatorio.tsx, DadosRelatorio.conferido); botão Abrir Parâmetros > Clientes removido.
 - 2026-10-15 dec 216: 4 tipos (Alimentação, Hospedagem, Pedágio, Estacionamento) seguem a lógica do scanner: ORDEM_LOGICA_PCM, TIPOS_COM_LOGICA_PCM em questionario-despesas.ts; PCM responde/técnico só na Não conformidade em perguntasVisiveis; justificativa sem comprovante (chaveJustificativa, tela no QuestionarioFormulario); flag logicaViagemAjustada migra dado salvo.
+- 2026-10-15 dec 217: decisão 216 desfeita a pedido do dono; código revertido (ORDEM_LOGICA_PCM, justificativa e flag logicaViagemAjustada saíram).
