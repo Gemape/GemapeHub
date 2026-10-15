@@ -139,3 +139,10 @@ test("a tela nova é ligada na rota só em demonstração, sem Supabase, e o ext
   assert.match(tela, /AlertDialog/);
   assert.match(tela, /Encerrar tratativa/);
 });
+
+test("ocorrência salva sem código não trava o próximo cadastro", () => {
+  const s = memoria();
+  s.setItem("gemape-demo-ocorrencias-veiculo", JSON.stringify([{ id: "x", veiculoId: "v1", status: "Aberta" }]));
+  const nova = registrarOcorrenciaVeiculo(entrada, s, agora, tipos);
+  assert.equal(nova.codigo, "OCO-0001");
+});

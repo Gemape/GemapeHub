@@ -118,3 +118,13 @@ test("formulário de despesas: Cadastrar cliente só para quem grava, e o client
   assert.match(formulario, /canWrite && <button type="button"[\s\S]*?>Cadastrar cliente<\/button>/);
   assert.match(formulario, /mostradas\.push\(atual\)/);
 });
+
+test("lista com item nulo: a tela não esvazia e nada é sobrescrito", () => {
+  const s = memoria();
+  const bruto = JSON.stringify([{ id: "a", codigo: "00001", nome: "Ana" }, null]);
+  s.dados.set("gemape-demo-clientes", bruto);
+  assert.deepEqual(listarClientes(s).map((c) => c.nome), ["Ana"]);
+  assert.throws(() => salvarCliente({ ...vazio, nome: "B" }, s), /ilegíveis/);
+  assert.throws(() => removerCliente("a", s), /ilegíveis/);
+  assert.equal(s.dados.get("gemape-demo-clientes"), bruto);
+});
