@@ -1136,3 +1136,7 @@ Ordem do responsável em 15/10 (17:04): "em Parâmetros > Veículos > Questioná
 ### Decisão 206: Retirada das Opções avançadas (ramificação e condição) da montagem do formulário
 
 Ordem do responsável em 15/10 (17:10), com o print do item "Opções avançadas (ramificação e condição)": "retirar de todas as perguntas a opção em anexo para o usuário não fazer confusão, deixar a montagem do formulário mais simples possível." O bloco sai de todas as perguntas na configuração do Questionário de Despesas, com as telas de ramificação (próxima pergunta por opção) e de condição (mostrar só se). O que já estava configurado (por exemplo, a regra do cartão de crédito) continua valendo em Viagens e aparece como texto no card da pergunta; só não há mais tela para criar ou mudar essas regras. Sem campo novo nem Supabase.
+
+### Decisão 207: Perguntas travadas na montagem do formulário
+
+Ordem do responsável em 15/10 (17:23): "as caixas de unidades de federação, município, data da despesa, valor da despesa, foto do comprovante, detalhamento da despesa são travadas pois não terão necessidade de editar." Na configuração do Questionário de Despesas, essas seis perguntas ficam travadas: sem Editar, sem Adicionar opção e sem trocar Obrigatória; o card mostra "Pergunta travada: não precisa de edição". Continuam podendo mudar de posição e sair do questionário de um card (setas e lixeira). Sem campo novo nem Supabase.
