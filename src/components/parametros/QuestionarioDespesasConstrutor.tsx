@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Copy, GripHorizontal, MinusCircle, Pencil, Plus, Rows3, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, GripHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -7,6 +7,7 @@ import { PerguntaDialog, type ModoPergunta } from "@/components/parametros/Pergu
 import { SecaoDialog, type DadosSecao } from "@/components/parametros/SecaoDialog";
 import { PerguntaPrevia } from "@/components/parametros/PerguntaPrevia";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -19,7 +20,7 @@ import {
 } from "@/lib/questionario-destinos";
 import { criarQuestionario, gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
-  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
+  ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
 } from "@/lib/questionario-despesas";
 
@@ -222,6 +223,9 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
               ) : (
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
+              {canWrite && !fixa && aceitaCondicao(p) && (
+                <AdicionarOpcao onAdicionar={(texto) => executar(() => salvarPergunta(estado, { ...p, opcoes: [...p.opcoes, texto] }), "Opção adicionada.")} />
+              )}
             </div>
             {aberto && canWrite && !fixa && (
               <details className="mt-4 border-t pt-3" open={temAvancado(estado, tipoAtual, p, id) || undefined} onClick={(e) => e.stopPropagation()}>
@@ -246,22 +250,22 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
             )}
             {aberto && canWrite && (
               <div className="mt-4 flex flex-wrap items-center justify-end gap-1 border-t pt-3">
-                {!secoes.some((x) => x.inicio === id) && (
-                  <Button variant="ghost" size="sm" aria-label="Iniciar seção aqui" title="Iniciar uma seção (nova página) nesta pergunta" onClick={() => abrirSecao(id)}><Rows3 className="mr-1 h-4 w-4" />Nova página</Button>
-                )}
                 <Button variant="ghost" size="sm" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="mr-1 h-4 w-4" />Editar</Button>
-                <Button variant="ghost" size="sm" aria-label="Clonar pergunta" onClick={() => setDialogo({ modo: "clonar", inicial: clonarPergunta(estado, p.id) })}><Copy className="mr-1 h-4 w-4" />Duplicar</Button>
                 {!fixa && (
                   <>
                     <Button variant="ghost" size="icon" aria-label="Mover para cima" disabled={ids.indexOf(id) <= 1} onClick={() => gravarIds(trocar(ids, id, -1))}><ArrowUp className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" aria-label="Mover para baixo" disabled={ids.indexOf(id) === ids.length - 1} onClick={() => gravarIds(trocar(ids, id, 1))}><ArrowDown className="h-4 w-4" /></Button>
                   </>
                 )}
+                {/* Lixeira: exclui a pergunta; as de sistema não se excluem, então a lixeira só as tira deste questionário. */}
                 {!fixa && (
-                  <Button variant="ghost" size="sm" aria-label="Remover do questionário" title="Remover deste questionário" onClick={() => gravarIds(ids.filter((x) => x !== id && x !== ID_TIPO_DESPESA))}><MinusCircle className="mr-1 h-4 w-4" />Tirar daqui</Button>
-                )}
-                {!p.sistema && (
-                  <Button variant="ghost" size="icon" aria-label="Excluir pergunta" title="Excluir a pergunta de todos os questionários" onClick={() => excluir(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Excluir pergunta"
+                    title={p.sistema ? "Tirar a pergunta deste questionário" : "Excluir a pergunta de todos os questionários"}
+                    onClick={() => (p.sistema ? gravarIds(ids.filter((x) => x !== id && x !== ID_TIPO_DESPESA)) : excluir(p))}
+                  ><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 )}
                 <div className="mx-2 h-6 w-px bg-border" />
                 <Label htmlFor={`obrigatoria-${id}`} className="text-sm">Obrigatória</Label>
@@ -410,3 +414,30 @@ function CondicaoPergunta({
 // A ramificação e a condição ficam recolhidas; abrem sozinhas quando a pergunta já tem alguma configurada.
 const temAvancado = (e: Estado, tipo: string, p: Pergunta, id: string): boolean =>
   Boolean(e.regras[tipo]?.[id]) || (aceitaDestino(p) && Object.keys(destinosDoTipo(e, tipo)[id] ?? {}).length > 0);
+
+// Adicionar opção direto no card da pergunta: abre um campo, Enter ou Adicionar grava e fecha.
+function AdicionarOpcao({ onAdicionar }: { onAdicionar: (texto: string) => boolean }) {
+  const [aberto, setAberto] = useState(false);
+  const [texto, setTexto] = useState("");
+  const fechar = () => { setAberto(false); setTexto(""); };
+  const confirmar = () => { const limpo = texto.trim(); if (limpo && onAdicionar(limpo)) fechar(); };
+  if (!aberto) {
+    return <Button type="button" variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setAberto(true); }}><Plus className="mr-1 h-4 w-4" />Adicionar opção</Button>;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      <Input
+        autoFocus
+        capitalizar="texto"
+        aria-label="Nova opção"
+        placeholder="Nome da nova opção"
+        className="w-64"
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); confirmar(); } else if (e.key === "Escape") fechar(); }}
+      />
+      <Button type="button" size="sm" disabled={!texto.trim()} onClick={confirmar}>Adicionar</Button>
+      <Button type="button" variant="ghost" size="sm" onClick={fechar}>Cancelar</Button>
+    </div>
+  );
+}
