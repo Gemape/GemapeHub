@@ -107,7 +107,9 @@ export function AbastecimentoVeiculoModulo() {
         }),
       "Abastecimento registrado",
     );
-    trava.current = false;
+    // Depois de gravar, a trava fica um instante: o diálogo ainda está na tela na animação de saída.
+    if (ok) window.setTimeout(() => { trava.current = false; }, 800);
+    else trava.current = false;
     if (ok) {
       setAberto(false);
       setFiltro(veiculoId);

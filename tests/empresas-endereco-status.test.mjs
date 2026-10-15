@@ -151,7 +151,7 @@ test("o valor que já vem escolhido nunca é empresa inativa (termos, compras e 
     assert.match(ler(`${arq}.tsx`), /empresas\.length > 0 && empresaSel && !empresasParaEscolha\(empresas\)\.some/, arq);
   }
   for (const arq of ["EpiComprasModulo", "UniformesComprasModulo"]) {
-    assert.match(ler(`${arq}.tsx`), /defaultValue=\{empresasParaEscolha\(empresas\)\.some\(\(e\) => e\.id === empresaId\)/, arq);
+    assert.match(ler(`${arq}.tsx`), /setEmpresaCompra\(empresasParaEscolha\(empresas\)\.some\(\(e\) => e\.id === empresaId\)/, arq);
   }
   assert.match(ler("EnderecamentoModulo.tsx"), /doProduto && empresasParaEscolha\(empresas\)\.some/);
 });

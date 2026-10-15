@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated")({
 function FiltroEmpresa() {
   const { empresas, empresaId, setEmpresaId } = useEmpresa();
   return (
-    <Select value={empresaId} onValueChange={setEmpresaId}>
+    <Select value={empresaId} onValueChange={(v) => { if (v) setEmpresaId(v); }}>
       <SelectTrigger className="w-[210px]">
         <SelectValue placeholder="Empresa" />
       </SelectTrigger>

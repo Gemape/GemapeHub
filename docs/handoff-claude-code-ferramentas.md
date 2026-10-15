@@ -444,3 +444,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-14 dec 191: links do topo do formulário de despesas viram botões (QuestionarioFormulario.tsx).
 - 2026-10-14 dec 192: faixas verde/amarelo/vermelho nos índices do painel de Viagens (faixas-desempenho.ts, ViagensPainel.tsx).
 - 2026-10-14 dec 193: dois prazos em Parâmetros > Viagens (mecânico e PCM): prazo-viagens.ts (lerPrazos/salvarPrazos), viagens.ts (prazoDoLancamento), cadastros/viagens.tsx, ViagensPainel.tsx.
+- 2026-10-14 dec 194: revisão geral, correções de bugs (demo-client lte/or, empresa-context, CaixasFerramentasModulo, termos/compras por empresa, relatórios, ficha EPI, veículos). Detalhe em /mnt/project-files/revisoes/revisao-geral.md.

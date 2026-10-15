@@ -22,6 +22,7 @@ import {
 import { TODAS } from "@/lib/empresa-context";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
+import { ehBaixa } from "@/lib/historico-movimentacoes";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens } from "@/lib/hooks-gemape";
 
@@ -45,13 +46,13 @@ export function UniformesRelatorioFuncionario() {
   const historico = movimentacoes.filter((m) => m.empregado_id === empregadoId);
 
   const totalEntregue = historico
-    .filter((m) => m.tipo_movimentacao === "Saida" && !m.motivo_baixa)
+    .filter((m) => m.tipo_movimentacao === "Saida" && !ehBaixa(m))
     .reduce((acc, m) => acc + m.quantidade, 0);
   const totalDevolvido = historico
     .filter((m) => m.tipo_movimentacao === "Devolucao")
     .reduce((acc, m) => acc + m.quantidade, 0);
   const totalBaixado = historico
-    .filter((m) => m.tipo_movimentacao === "Saida" && m.motivo_baixa)
+    .filter((m) => ehBaixa(m))
     .reduce((acc, m) => acc + m.quantidade, 0);
   const emPosse = totalEntregue - totalDevolvido - totalBaixado;
 
@@ -175,7 +176,7 @@ export function UniformesRelatorioFuncionario() {
                       <TableCell>
                         {h.tipo_movimentacao === "Devolucao"
                           ? "Devolvido"
-                          : h.motivo_baixa
+                          : ehBaixa(h)
                             ? `Baixado: ${h.motivo_baixa}`
                             : "Em posse"}
                       </TableCell>

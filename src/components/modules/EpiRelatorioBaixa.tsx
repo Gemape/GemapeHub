@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
+import { ehBaixa } from "@/lib/historico-movimentacoes";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
@@ -48,8 +49,7 @@ export function EpiRelatorioBaixa() {
 
   const baixas = movimentacoes.filter(
     (m) =>
-      m.tipo_movimentacao === "Saida" &&
-      m.motivo_baixa &&
+      ehBaixa(m) &&
       m.data_movimentacao >= dataInicial &&
       m.data_movimentacao <= dataFinal &&
       (motivoFiltro === TODAS || m.motivo_baixa === motivoFiltro),
@@ -109,7 +109,7 @@ export function EpiRelatorioBaixa() {
                   Tamanho: tamanhoDe(b),
                   Motivo: b.motivo_baixa,
                   Qtd: b.quantidade,
-                  Valor: "R$ 0,00",
+                  Valor: formatarMoeda(b.quantidade * (b.preco_unitario_registrado ?? 0)),
                 })),
               )
             }

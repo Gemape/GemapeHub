@@ -69,6 +69,11 @@ export function EmpresaProvider({ children }: { children: ReactNode }) {
 
   const { data, isLoading } = useEmpresasQuery();
 
+  // A empresa escolhida pode ter sido excluída (ou nunca existido neste navegador): volta para todas as empresas.
+  useEffect(() => {
+    if (data && empresaId !== TODAS && !data.some((e) => e.id === empresaId)) setEmpresaId(TODAS);
+  }, [data, empresaId]);
+
   return (
     <EmpresaContext.Provider
       value={{ empresas: data ?? [], empresaId, setEmpresaId, carregando: isLoading }}

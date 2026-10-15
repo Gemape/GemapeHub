@@ -117,7 +117,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     empregadoElegivelPortador({ ativo: e.ativo ?? null, data_demissao: e.data_demissao ?? null } as never) &&
     (!veiculoEscolhido?.["empresa_id"] || e.empresa_id === veiculoEscolhido["empresa_id"]),
   );
-  const responsavel = empregados.find((e) => e.id === responsavelId) ?? null;
+  const responsavel = elegiveis.find((e) => e.id === responsavelId) ?? null;
   // Itens que se aplicam ao tipo do veículo e à periodicidade escolhida (Avulso traz só os grupos avulsos).
   const subcategoriaEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never) : null;
   const subcategoriaIdEscolhida = subcategoriaEscolhida?.id ?? null;
@@ -133,6 +133,15 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const linkCadastro = (rotulo: string, abrirTela: () => void) => (canWrite ? (
     <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={abrirTela}>{rotulo}</button>
   ) : null);
+
+  // Trocar o veículo mantém o responsável só se ele ainda pode responder por ele (ativo e da mesma empresa do novo veículo).
+  function trocarVeiculo(id: string) {
+    const empresaNova = (veiculosLivres.find((x) => x.id === id) as { empresa_id?: string | null } | undefined)?.empresa_id;
+    const continua = elegiveis.some((e) => e.id === responsavelId && (!empresaNova || e.empresa_id === empresaNova));
+    setVeiculoId(id);
+    setEscolhidos(null);
+    if (responsavelId !== SEM_RESPONSAVEL && !continua) setResponsavelId("");
+  }
 
   function abrir(a: AssociacaoChecklist | null, clonar: boolean) {
     setEditando(a && !clonar ? a.veiculoId : null);
@@ -289,7 +298,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-veiculo">Veículo</Label>
-                <Select value={veiculoId} onValueChange={(v) => { setVeiculoId(v); setEscolhidos(null); }}>
+                <Select value={veiculoId} onValueChange={(v) => { if (v) trocarVeiculo(v); }}>
                   <SelectTrigger id="assoc-veiculo"><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                   <SelectContent>
                     {veiculosLivres.map((v) => (

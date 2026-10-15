@@ -57,7 +57,7 @@ export function FerramentasTermoResponsabilidade() {
     if (empresas.length > 0 && empresaSel && !empresasParaEscolha(empresas).some((e) => e.id === empresaSel)) setEmpresaSel("");
   }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
-  const { data: itens = [] } = useItens("ferramenta", TODAS);
+  const { data: itens = [] } = useItens("ferramenta", empresaSel || TODAS);
   const { data: todasAsCaixas = [] } = useCaixasFerramentas(empresaSel || TODAS);
   // Só caixas habilitadas em Caixas de Ferramentas > Habilitar caixas.
   const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
@@ -189,7 +189,7 @@ export function FerramentasTermoResponsabilidade() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end">
           <div className="space-y-1.5 lg:col-span-3">
             <Label>Empresa</Label>
-            <Select value={empresaSel} onValueChange={(v) => { setEmpresaSel(v); setEmpregadoId(""); }}>
+            <Select value={empresaSel} onValueChange={(v) => { if (!v) return; setEmpresaSel(v); setEmpregadoId(""); setCaixaSel(""); setItensTermo([]); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>

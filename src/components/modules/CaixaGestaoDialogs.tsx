@@ -382,7 +382,7 @@ export function DialogBaixaCaixa({
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="baixa-empregado">Empregado</Label>
-            <Select value={empregadoId} onValueChange={setEmpregadoId}>
+            <Select value={empregadoId} onValueChange={(v) => { if (v) setEmpregadoId(v); }}>
               <SelectTrigger id="baixa-empregado">
                 <SelectValue />
               </SelectTrigger>
@@ -481,7 +481,7 @@ export function DialogOcorrenciaCaixa({ caixa, aberto, aoFechar, linhas }: Comum
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="oc-empregado">Empregado</Label>
-            <Select value={empregadoId} onValueChange={setEmpregadoId}>
+            <Select value={empregadoId} onValueChange={(v) => { if (v) setEmpregadoId(v); }}>
               <SelectTrigger id="oc-empregado">
                 <SelectValue />
               </SelectTrigger>

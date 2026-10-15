@@ -51,7 +51,7 @@ export function UniformesTermoEntrega() {
   const { data: empregados = [] } = useEmpregados(empresaId || TODAS, true);
   // Lista completa só para conferir a demissão: quem já saiu da lista de ativos continua bloqueado.
   const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
-  const { data: uniformes = [] } = useItens("uniforme", TODAS);
+  const { data: uniformes = [] } = useItens("uniforme", empresaId || TODAS);
   const parametros = useParametrosBase();
 
   const registrarEntregas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"]);
@@ -83,6 +83,10 @@ export function UniformesTermoEntrega() {
     if (salvando.current) return;
     if (!empresaId || !empregadoId || itensEntrega.length === 0) {
       alert("Preencha todos os campos e adicione pelo menos um item.");
+      return;
+    }
+    if (!dataEntrega) {
+      alert("Informe a data da entrega.");
       return;
     }
     const bloqueio = bloqueioPorDemissao(
@@ -162,7 +166,7 @@ export function UniformesTermoEntrega() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label>Empresa</Label>
-            <Select value={empresaId} onValueChange={(v) => { setEmpresaId(v); setEmpregadoId(""); }}>
+            <Select value={empresaId} onValueChange={(v) => { if (!v) return; setEmpresaId(v); setEmpregadoId(""); setItensEntrega([]); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
