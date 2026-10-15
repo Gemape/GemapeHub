@@ -83,6 +83,8 @@ export type Estado = {
   codigosOrdenados?: true;
   // Marca que a classificação Avulso ou Não conformidade já entrou no questionário de Alimentação dos dados salvos antes (dec 218).
   classificacaoAjustada?: true;
+  // Dec 219: a classificação também vale para Hospedagem, Pedágio, Estacionamento e Compra de peças para cliente (ajuste único dos dados salvos).
+  classificacaoTiposAjustada?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -94,12 +96,13 @@ export const ID_TIPO_DESPESA = "q-03";
 export const ID_HABILITADOS = "q-04";
 export const ID_TECNICO_RESPONSAVEL = "q-14";
 // Dec 218: em Alimentação, quem lança pelo PCM ou Administrativo classifica a despesa em "PCM responde": Avulso abre o nome do empregado
-// e Não conformidade pede o técnico que não lançou; depois seguem as demais perguntas. Outros tipos entram aqui quando o dono mandar.
+// e Não conformidade pede o técnico que não lançou; depois seguem as demais perguntas. Dec 219: vale também para Hospedagem, Pedágio, Estacionamento e Compra de peças para cliente.
 export const ID_PCM_RESPONDE = "q-13";
 export const ID_NOME_EMPREGADO = "q-15";
 export const OPCAO_AVULSO = "Avulso – técnico não monitorado";
 export const OPCAO_NAO_CONFORMIDADE = "Não conformidade – técnico monitorado não preencheu";
-export const TIPOS_COM_CLASSIFICACAO = ["Alimentação"];
+export const TIPOS_COM_CLASSIFICACAO = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"];
+const TIPOS_CLASSIFICACAO_DEC219 = ["Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"];
 export const ID_UF = "q-05";
 // Perguntas travadas (dec 207): Unidade da Federação, Município, Data, Valor, Foto do comprovante e Detalhamento não precisam de edição na montagem.
 export const IDS_TRAVADAS: readonly string[] = [ID_UF, "q-06", "q-08", "q-09", "q-11", "q-12"];
@@ -196,7 +199,7 @@ export function estadoPadrao(): Estado {
     return [o, TIPOS_COM_CLASSIFICACAO.includes(o) ? comClassificacao(ids) : ids];
   }));
   const regras = comRegraDoCartao(questionarios, Object.fromEntries(TIPOS_COM_CLASSIFICACAO.filter((t) => t in questionarios).map((t) => [t, regrasDaClassificacao()])));
-  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true };
+  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -323,7 +326,17 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
         if (nova) perguntas = [...perguntas, { ...nova, codigo: perguntas.some((p) => p.codigo === nova.codigo) ? formatarCodigo(Math.max(...perguntas.map((p) => Number(p.codigo) || 0)) + 1) : nova.codigo }];
       }
       const existentes = new Set(perguntas.map((p) => p.id));
-      for (const tipo of TIPOS_COM_CLASSIFICACAO) {
+      for (const tipo of ["Alimentação"]) {
+        const ids = questionarios[tipo];
+        if (!Array.isArray(ids)) continue;
+        questionarios = { ...questionarios, [tipo]: comClassificacao(ids).filter((id) => existentes.has(id)) };
+        regras = { ...regras, [tipo]: { ...(regras[tipo] ?? {}), ...regrasDaClassificacao() } };
+      }
+    }
+    // Dado salvo antes da dec 219: Hospedagem, Pedágio, Estacionamento e Compra de peças ganham a classificação (uma vez só; Alimentação já tem).
+    if (lido.classificacaoTiposAjustada !== true) {
+      const existentes = new Set(perguntas.map((p) => p.id));
+      for (const tipo of TIPOS_CLASSIFICACAO_DEC219) {
         const ids = questionarios[tipo];
         if (!Array.isArray(ids)) continue;
         questionarios = { ...questionarios, [tipo]: comClassificacao(ids).filter((id) => existentes.has(id)) };
@@ -332,7 +345,7 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     }
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true };
   } catch {
     return estadoPadrao();
   }

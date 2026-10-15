@@ -63,8 +63,8 @@ test("respostas antigas guardam o título da época; resumo e remoção", () => 
   const s = memoria();
   const e = estadoPadrao();
   const r1 = registrarResposta(e, completas, s, agora);
-  const r2 = registrarResposta(e, { ...completas, "q-03": ["Pedágio"] }, s, new Date(2026, 9, 14, 9, 0));
-  assert.deepEqual(listarRespostas(s).map((r) => r.tipo), ["Pedágio", "Abastecimento"]);
+  const r2 = registrarResposta(e, { ...completas, "q-03": ["Manutenção do veículo de trabalho"] }, s, new Date(2026, 9, 14, 9, 0));
+  assert.deepEqual(listarRespostas(s).map((r) => r.tipo), ["Manutenção do veículo de trabalho", "Abastecimento"]);
   assert.match(resumoDaResposta(r1), /Abastecimento/);
   assert.match(resumoDaResposta(r1), /1\.234,56/);
   removerResposta(r2.id, s);
@@ -186,14 +186,16 @@ test("decs 211 e 212: botão Editar na lista e botão Novo na confirmação", ()
 import { OPCAO_AVULSO, OPCAO_NAO_CONFORMIDADE, lerEstado } from "../src/lib/questionario-despesas.ts";
 import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 
-test("dec 218: Alimentação traz a classificação logo depois de quem lança; os outros tipos não mudam", () => {
+test("dec 218/219: Alimentação, Hospedagem, Pedágio, Estacionamento e Compra de peças trazem a classificação logo depois de quem lança; os outros tipos não mudam", () => {
   const e = estadoDeFabrica();
-  const ali = e.questionarios["Alimentação"];
-  assert.deepEqual(ali.slice(ali.indexOf("q-04"), ali.indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"]);
-  assert.deepEqual(e.regras["Alimentação"]["q-14"], { origem: "q-13", operador: "igual", valor: OPCAO_NAO_CONFORMIDADE });
-  assert.deepEqual(e.regras["Alimentação"]["q-15"], { origem: "q-13", operador: "igual", valor: OPCAO_AVULSO });
-  assert.ok(ali.includes("q-09") && ali.includes("q-07"));
-  for (const tipo of ["Hospedagem", "Pedágio", "Estacionamento", "Abastecimento", "Outro"]) {
+  for (const tipo of ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"]) {
+    const ali = e.questionarios[tipo];
+    assert.deepEqual(ali.slice(ali.indexOf("q-04"), ali.indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"], tipo);
+    assert.deepEqual(e.regras[tipo]["q-14"], { origem: "q-13", operador: "igual", valor: OPCAO_NAO_CONFORMIDADE }, tipo);
+    assert.deepEqual(e.regras[tipo]["q-15"], { origem: "q-13", operador: "igual", valor: OPCAO_AVULSO }, tipo);
+    assert.ok(ali.includes("q-09") && ali.includes("q-11"), tipo);
+  }
+  for (const tipo of ["Abastecimento", "Manutenção do veículo de trabalho", "Outro"]) {
     assert.ok(!e.questionarios[tipo].includes("q-15"), tipo);
     assert.equal(e.questionarios[tipo].at(-1), "q-13", tipo);
   }
@@ -214,8 +216,12 @@ test("dec 218: só PCM ou Administrativo é classificado; Avulso abre o nome do 
   assert.deepEqual(nc.slice(0, 5), ["q-03", "q-01", "q-04", "q-13", "q-14"]);
   // Depois da classificação seguem as demais perguntas.
   assert.ok(nc.indexOf("q-14") < nc.indexOf("q-05") && nc.includes("q-12"));
-  // Em outro tipo o comportamento é o de antes: PCM responde aparece para todos.
-  assert.ok(perguntasVisiveis(e, "Pedágio", { "q-03": ["Pedágio"], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"));
+  // Dec 219: nos outros três tipos da lógica vale o mesmo; em Abastecimento o comportamento é o de antes: PCM responde aparece para todos.
+  for (const tipo of ["Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"]) {
+    assert.ok(!perguntasVisiveis(e, tipo, { "q-03": [tipo], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"), tipo);
+    assert.ok(perguntasVisiveis(e, tipo, { "q-03": [tipo], "q-04": ["Bruno (PCM)"] }).some((p) => p.id === "q-13"), tipo);
+  }
+  assert.ok(perguntasVisiveis(e, "Abastecimento", { "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"));
 });
 
 test("dec 218: registrar exige o nome no Avulso e grava o nome; na Não conformidade grava o técnico que não lançou", () => {
@@ -245,7 +251,10 @@ test("dec 218: dado salvo antes ganha a classificação em Alimentação uma vez
   assert.deepEqual(ali.slice(2, 7), ["q-04", "q-13", "q-14", "q-15", "q-05"]);
   assert.equal(lido.regras["Alimentação"]["q-15"].valor, OPCAO_AVULSO);
   assert.equal(lido.classificacaoAjustada, true);
-  assert.deepEqual(lido.questionarios["Pedágio"], antigoQ2["Pedágio"]);
+  // Dec 219: Pedágio (e Hospedagem, Estacionamento) ganha a classificação na mesma leitura.
+  assert.deepEqual(lido.questionarios["Pedágio"].slice(lido.questionarios["Pedágio"].indexOf("q-04"), lido.questionarios["Pedágio"].indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"]);
+  assert.equal(lido.classificacaoTiposAjustada, true);
+  assert.deepEqual(lido.questionarios["Abastecimento"], antigoQ2["Abastecimento"]);
   // Depois do ajuste, tirar a classificação de Alimentação não a traz de volta.
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, "Alimentação": ali.filter((id) => id !== "q-15") } }));
   assert.ok(!lerEstado(s).questionarios["Alimentação"].includes("q-15"));
