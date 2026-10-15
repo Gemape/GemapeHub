@@ -116,15 +116,6 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
         {!valido && <p role="alert" className="text-sm text-destructive sm:col-span-2 lg:col-span-4">A data inicial não pode ser depois da final.</p>}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          {linhas.length} {linhas.length === 1 ? "despesa" : "despesas"}; {selecionadas.length} {selecionadas.length === 1 ? "marcada" : "marcadas"}.
-        </p>
-        <Button disabled={selecionadas.length === 0} onClick={() => { setErro(""); setConfirmando(true); }}>
-          <FileText className="mr-1 h-4 w-4" />Gerar relatório
-        </Button>
-      </div>
-
       <div className="panel overflow-x-auto">
         <Table>
           <TableHeader>
@@ -178,6 +169,15 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          {linhas.length} {linhas.length === 1 ? "despesa" : "despesas"}; {selecionadas.length} {selecionadas.length === 1 ? "marcada" : "marcadas"}.
+        </p>
+        <Button disabled={selecionadas.length === 0} onClick={() => { setErro(""); setConfirmando(true); }}>
+          <FileText className="mr-1 h-4 w-4" />Gerar relatório
+        </Button>
       </div>
 
       <Dialog open={aberta !== null} onOpenChange={(o) => { if (!o) setAberta(null); }}>

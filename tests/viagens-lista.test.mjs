@@ -130,3 +130,9 @@ test("dec 214: o botão Faixas de desempenho usa o ícone de gráfico de pizza",
   assert.match(f, /<PieChart className="mr-1 h-4 w-4" \/>Faixas de desempenho/);
   assert.doesNotMatch(f, /Palette/);
 });
+
+test("dec 213: o botão Gerar relatório fica abaixo da listagem", async () => {
+  const { readFileSync } = await import("node:fs");
+  const f = readFileSync(new URL("../src/components/modules/ViagensLista.tsx", import.meta.url), "utf8");
+  assert.ok(f.indexOf("<TableBody>") < f.indexOf("<FileText className=\"mr-1 h-4 w-4\" />Gerar relatório"));
+});
