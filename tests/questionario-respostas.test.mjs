@@ -158,7 +158,7 @@ test("dec 201: a tela de configuração não tem o botão Abrir formulário e n�
 
 test("técnico responsável pela despesa só aparece quando quem lança é PCM ou Administrativo", () => {
   const e = estadoPadrao();
-  const ids = (r) => perguntasVisiveis(e, "Pedágio", r).map((p) => p.id);
+  const ids = (r) => perguntasVisiveis(e, "Outro", r).map((p) => p.id);
   assert.ok(!ids({}).includes("q-14"));
   assert.ok(!ids({ "q-04": ["Roberto (Oficina)"] }).includes("q-14"));
   assert.ok(ids({ "q-04": ["Eduardo (PCM)"] }).includes("q-14"));

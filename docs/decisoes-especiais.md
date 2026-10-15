@@ -1172,3 +1172,14 @@ Pedido do dono (15/10, 18:11): o botão **Faixas de desempenho** do painel de Vi
 ### Decisão 215: Conferido (PCM ou Administrativo) na Conferência do relatório
 
 Pedido do dono (15/10, 18:58): na Conferência do Relatório de Viagens, sai o botão **Abrir Parâmetros > Clientes** e entra o campo **Conferido:** com lista suspensa de duas opções, **PCM** ou **Administrativo** (começa em branco). A escolha vale para o relatório gerado e, quando preenchida, sai no documento abaixo de "Clientes visitados". Sem campo novo no cadastro nem Supabase.
+
+### Decisão 216: Lógica de perguntas de Alimentação, Hospedagem, Pedágio e Estacionamento
+
+Pedido do dono (15/10, 19:18 e 19:21), a partir de um scanner de fluxograma: estes quatro tipos seguem a mesma lógica de perguntas, nesta ordem: **quem lança** (04); se quem lança é do PCM ou do Administrativo, **PCM responde** (13), com Avulso (técnico não monitorado) ou Não conformidade (técnico monitorado que não lançou); só na Não conformidade vem o **técnico responsável** (14), isto é, o técnico que não lançou; depois, para todos, **data**, **UF**, **município**, **cliente**, **moeda** (e o cartão, se for cartão de crédito), **valor** e **foto do comprovante**. Quem lança pela Oficina pula direto para a data.
+
+- **Detalhamento da despesa** sai destes quatro tipos; fica só na Compra de peças para cliente.
+- **Sem comprovante:** ao tentar encerrar sem anexar a foto, abre a tela "Comprovante não anexado", que pede a **justificativa da ausência do documento** e permite **Encerrar com justificativa** (ou Voltar e anexar). A justificativa fica na despesa e aparece nas respostas registradas. Vale só nestes quatro tipos; os demais continuam exigindo o comprovante.
+- Os outros tipos (Abastecimento, Manutenção, Compra de peças, Outro) não mudam.
+- Clientes foi mantido nos quatro tipos (o scanner não o mostra; o relatório usa os clientes visitados).
+- Dado já salvo no navegador passa **uma vez só** para essa ordem; pergunta criada pelo responsável nesses tipos fica antes do comprovante. Registro para a Fase 2 em docs/pendencias-fase2.md. Sem Supabase.
+- Revisão do PR: a migração também limpa ramificações e seções que apontavam para pergunta que saiu dos quatro tipos (Detalhamento), para o questionário não ficar com "ação requerida".

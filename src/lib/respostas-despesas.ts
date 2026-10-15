@@ -4,7 +4,7 @@ import { hojeLocal } from "./empregados.ts";
 import { ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
 import { listarRelatorios, relatorioPorDespesa } from "./relatorios-viagens.ts";
 import { questionarioPublicado } from "./questionario-destinos.ts";
-import { chaveOutro, perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
+import { TITULO_JUSTIFICATIVA, aceitaJustificativa, chaveJustificativa, chaveOutro, perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-respostas-despesas";
@@ -53,7 +53,7 @@ function montarItens(e: Estado, respostas: Respostas, imagens: Record<string, Im
   if (!tiposDeDespesa(e).includes(tipo)) throw new Error("Esse tipo de despesa não existe mais no cadastro; recarregue o formulário.");
   if (!questionarioPublicado(e, tipo)) throw new Error("Este questionário tem ação requerida e ainda não foi publicado; corrija as ramificações em Parâmetros.");
   const visiveis = perguntasVisiveis(e, tipo, respostas);
-  const erros = validarRespostas(visiveis, respostas);
+  const erros = validarRespostas(visiveis, respostas, aceitaJustificativa(tipo));
   const primeiro = visiveis.find((p) => erros[p.id]);
   if (primeiro) throw new Error(`${primeiro.titulo}: ${erros[primeiro.id]}`);
   const itens = visiveis.filter((p) => comoTexto(respostas[p.id]) !== "").map((p) => {
@@ -69,6 +69,12 @@ function montarItens(e: Estado, respostas: Respostas, imagens: Record<string, Im
   for (const p of visiveis) {
     const r = respostas[p.id];
     if (r !== undefined) valores[p.id] = r;
+    // Dec 216: comprovante ausente com justificativa (só vale quando o upload está mesmo vazio).
+    const justificativa = p.tipo === "upload" && aceitaJustificativa(tipo) && comoTexto(r ?? "") === "" ? String(respostas[chaveJustificativa(p.id)] ?? "").trim() : "";
+    if (justificativa) {
+      valores[chaveJustificativa(p.id)] = justificativa;
+      itens.push({ perguntaId: chaveJustificativa(p.id), titulo: TITULO_JUSTIFICATIVA, resposta: justificativa });
+    }
     const outro = respostas[chaveOutro(p.id)];
     if (outro !== undefined) valores[chaveOutro(p.id)] = outro;
   }
@@ -126,7 +132,10 @@ export function respostasParaEdicao(e: Estado, r: RespostaRegistrada): Respostas
     if (p.tipo === "multipla" || p.tipo === "caixas" || p.tipo === "lista") {
       const outro = /^Outro: (.*)$/.exec(texto);
       if (outro && p.opcoes.includes("Outro")) { respostas[p.id] = p.tipo === "caixas" ? ["Outro"] : "Outro"; respostas[chaveOutro(p.id)] = outro[1] ?? ""; continue; }
-      respostas[p.id] = p.tipo === "caixas" ? (p.multiplas ? texto.split(", ") : [texto]) : texto;
+      // Com várias opções marcadas, o texto junta tudo com vírgula; opção que tem vírgula no próprio texto é reconhecida pela lista de opções.
+      const juntas = (o: string) => texto === o || texto.startsWith(`${o}, `) || texto.endsWith(`, ${o}`) || texto.includes(`, ${o}, `);
+      const marcadas = p.multiplas && p.opcoes.length ? p.opcoes.filter(juntas) : [];
+      respostas[p.id] = p.tipo === "caixas" ? (p.multiplas ? (marcadas.length ? marcadas : texto.split(", ")) : [texto]) : texto;
       continue;
     }
     respostas[p.id] = texto;

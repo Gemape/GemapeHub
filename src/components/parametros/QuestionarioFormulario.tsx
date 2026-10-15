@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,7 +23,7 @@ import {
 } from "@/lib/questionario-despesas";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
-import { aplicarFormato, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
+import { aceitaJustificativa, aplicarFormato, chaveJustificativa, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   atualizarResposta, despesaEmRelatorio, listarRespostas, registrarResposta, removerResposta, respostasParaEdicao, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
 } from "@/lib/respostas-despesas";
@@ -42,6 +43,8 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   const [erros, setErros] = useState<Record<string, string>>({});
   const [imagens, setImagens] = useState<Record<string, ImagemReduzida[]>>({});
   const [enviada, setEnviada] = useState<RespostaRegistrada | null>(null);
+  // Dec 216: tela de justificativa quando se tenta encerrar sem o comprovante (Alimentação, Hospedagem, Pedágio e Estacionamento).
+  const [justificando, setJustificando] = useState<string | null>(null);
   const [registradas, setRegistradas] = useState<RespostaRegistrada[]>(listarRespostas);
   const [verLista, setVerLista] = useState(false);
   // Despesa registrada que está sendo editada neste formulário (dec 211); null no lançamento novo.
@@ -126,7 +129,12 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
     evento.preventDefault();
     if (enviando.current || ilegivel || acaoRequerida) return;
     if (!ultimaPagina) { avancar(); return; }
-    const achados = validarRespostas(visiveis, respostas);
+    const justificavel = aceitaJustificativa(tipo);
+    const achados = validarRespostas(visiveis, respostas, justificavel);
+    // Só falta o comprovante: abre a tela de justificativa em vez de marcar erro.
+    const faltas = Object.keys(achados);
+    const semComprovante = visiveis.find((p) => p.tipo === "upload" && achados[p.id]);
+    if (justificavel && semComprovante && faltas.length === 1) { setErros({}); setJustificando(semComprovante.id); return; }
     setErros(achados);
     const primeiro = visiveis.find((p) => achados[p.id]);
     if (primeiro) {
@@ -135,6 +143,12 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
       document.getElementById(`pergunta-${primeiro.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    concluir();
+  }
+
+  // Grava (ou atualiza) a despesa; a validação já foi feita por quem chama.
+  function concluir() {
+    if (enviando.current) return;
     enviando.current = true;
     try {
       const fotos = Object.fromEntries(Object.entries(imagens).map(([id, l]) => [id, l.map((i) => ({ nome: i.nome, dataUrl: i.dataUrl }))]));
@@ -201,6 +215,31 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
       )}
       {tipoDesconhecido && <p role="alert" className="text-sm text-destructive">O tipo de despesa “{tipoInicial}” não existe mais no cadastro; escolha um na primeira pergunta.</p>}
       {!tipo && !tipoDesconhecido && <p className="text-sm text-muted-foreground">Escolha o tipo de despesa para ver as demais perguntas.</p>}
+
+      <Dialog open={justificando !== null} onOpenChange={(o) => { if (!o) setJustificando(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Comprovante não anexado</DialogTitle>
+            <DialogDescription>Informe a justificativa da ausência do documento para encerrar sem o comprovante.</DialogDescription>
+          </DialogHeader>
+          {justificando && (
+            <div className="space-y-1">
+              <Label htmlFor="justificativa-ausencia">Justificativa da ausência do documento</Label>
+              <Textarea
+                id="justificativa-ausencia" name="justificativa-ausencia" rows={4} value={String(respostas[chaveJustificativa(justificando)] ?? "")}
+                onChange={(e) => setRespostas((r) => ({ ...r, [chaveJustificativa(justificando)]: e.target.value }))}
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setJustificando(null)}>Voltar e anexar</Button>
+            <Button
+              type="button" disabled={!justificando || vazia(respostas[chaveJustificativa(justificando)])}
+              onClick={() => { setJustificando(null); concluir(); }}
+            >Encerrar com justificativa</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {verLista && <ListaRespostas lista={registradas} podeExcluir={isAdmin} podeEditar={canWrite} onExcluir={excluir} onEditar={editar} />}
 
