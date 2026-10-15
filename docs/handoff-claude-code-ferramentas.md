@@ -448,3 +448,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-15 dec 195: busca de ações no Cadastrar nova manutenção (busca-acoes-manutencao.ts: filtrarAcoesManutencao; ManutencaoVeiculoModulo.tsx). Sem resultado, link para Parâmetros > Veículos > Manutenção.
 - 2026-10-15 dec 196: reverte a dec 195 (busca-acoes-manutencao.ts e o campo de busca saíram); o sistema já contemplava a ação.
 - 2026-10-15 dec 197: busca na janela Restaurar configurações iniciais das ações de manutenção (busca-acoes-manutencao.ts: filtrarPaisEFilhos; VeiculosListasParametros.tsx: RestaurarPadraoAcoes e acaoExtra como função com `cadastrar`). Sem resultado, Cadastrar a ação abre o cadastro por cima e volta para a busca.
+- 2026-10-15 dec 198: ordem do menu Parâmetros > Veículos (menu-parametros.ts, MENU_VEICULOS): Questionário de Despesas depois de Parâmetros Específicos.
