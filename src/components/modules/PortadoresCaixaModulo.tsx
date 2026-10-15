@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { lerTodas } from "@/lib/ler-todas";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
@@ -30,9 +31,7 @@ export function PortadoresCaixaModulo() {
   const { data: empregados = [] } = useQuery({
     queryKey: ["empregados-portadores"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("empregados").select("*");
-      if (error) throw error;
-      return (data ?? []) as unknown as Empregado[];
+      return lerTodas<Empregado>(() => supabase.from("empregados").select("*"), (q) => q.order("id"));
     },
   });
   const [caixaId, setCaixaId] = useState("");
