@@ -256,3 +256,22 @@ test("dec 216: o formulário abre a tela de justificativa quando só falta o com
   assert.match(f, /Encerrar com justificativa/);
   assert.match(f, /Voltar e anexar/);
 });
+
+test("revisão dec 216: editar registro antigo com opção que tem vírgula não quebra a opção; ramificação e seção de pergunta que saiu não ficam órfãs", () => {
+  const e = estadoDeFabrica();
+  const multipla = { ...e.perguntas.find((p) => p.id === "q-01"), multiplas: true, opcoes: ["Posto A, Centro", "Posto B"] };
+  const eMult = { ...e, perguntas: e.perguntas.map((p) => (p.id === "q-01" ? multipla : p)) };
+  const antigo = { id: "r-1", tipo: "Pedágio", data: "2026-10-14", hora: "08:05", itens: [{ perguntaId: "q-01", titulo: "Moedas", resposta: "Posto A, Centro, Posto B" }] };
+  assert.deepEqual(respostasParaEdicao(eMult, antigo)["q-01"], ["Posto A, Centro", "Posto B"]);
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({
+    versao: 1, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true,
+    perguntas: e.perguntas, questionarios: { ...e.questionarios, Pedágio: ["q-03", "q-01", "q-09", "q-11", "q-12"] }, regras: {},
+    destinos: { Pedágio: { "q-13": { "Avulso – técnico não monitorado": "pergunta:q-09" } }, Alimentação: { "q-13": { "Avulso – técnico não monitorado": "pergunta:q-08" } } },
+    secoes: { Pedágio: [{ id: "s1", titulo: "A", subtitulo: "", inicio: "q-09" }, { id: "s2", titulo: "B", subtitulo: "", inicio: "q-11" }] },
+  }));
+  const lido = lerEstado(s);
+  assert.deepEqual(lido.destinos.Pedágio, {});
+  assert.deepEqual(lido.destinos.Alimentação["q-13"], { "Avulso – técnico não monitorado": "pergunta:q-08" });
+  assert.deepEqual(lido.secoes.Pedágio.map((x) => x.id), ["s2"]);
+});

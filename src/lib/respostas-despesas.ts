@@ -132,7 +132,10 @@ export function respostasParaEdicao(e: Estado, r: RespostaRegistrada): Respostas
     if (p.tipo === "multipla" || p.tipo === "caixas" || p.tipo === "lista") {
       const outro = /^Outro: (.*)$/.exec(texto);
       if (outro && p.opcoes.includes("Outro")) { respostas[p.id] = p.tipo === "caixas" ? ["Outro"] : "Outro"; respostas[chaveOutro(p.id)] = outro[1] ?? ""; continue; }
-      respostas[p.id] = p.tipo === "caixas" ? (p.multiplas ? texto.split(", ") : [texto]) : texto;
+      // Com várias opções marcadas, o texto junta tudo com vírgula; opção que tem vírgula no próprio texto é reconhecida pela lista de opções.
+      const juntas = (o: string) => texto === o || texto.startsWith(`${o}, `) || texto.endsWith(`, ${o}`) || texto.includes(`, ${o}, `);
+      const marcadas = p.multiplas && p.opcoes.length ? p.opcoes.filter(juntas) : [];
+      respostas[p.id] = p.tipo === "caixas" ? (p.multiplas ? (marcadas.length ? marcadas : texto.split(", ")) : [texto]) : texto;
       continue;
     }
     respostas[p.id] = texto;

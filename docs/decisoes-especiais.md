@@ -1182,3 +1182,4 @@ Pedido do dono (15/10, 19:18 e 19:21), a partir de um scanner de fluxograma: est
 - Os outros tipos (Abastecimento, Manutenção, Compra de peças, Outro) não mudam.
 - Clientes foi mantido nos quatro tipos (o scanner não o mostra; o relatório usa os clientes visitados).
 - Dado já salvo no navegador passa **uma vez só** para essa ordem; pergunta criada pelo responsável nesses tipos fica antes do comprovante. Registro para a Fase 2 em docs/pendencias-fase2.md. Sem Supabase.
+- Revisão do PR: a migração também limpa ramificações e seções que apontavam para pergunta que saiu dos quatro tipos (Detalhamento), para o questionário não ficar com "ação requerida".

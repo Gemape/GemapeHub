@@ -300,10 +300,12 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     }
     // Dado salvo antes da dec 216: os quatro tipos passam para a ordem da lógica do scanner (uma vez só). Pergunta criada pelo responsável
     // continua no questionário, logo antes do comprovante; Detalhamento sai desses tipos.
+    const reordenados = new Set<string>();
     if (lido.logicaViagemAjustada !== true) {
       const existentes = new Set(perguntas.map((p) => p.id));
       questionarios = Object.fromEntries(Object.entries(questionarios as Record<string, unknown>).map(([tipo, ids]) => {
         if (!Array.isArray(ids) || !TIPOS_COM_LOGICA_PCM.includes(tipo)) return [tipo, ids];
+        reordenados.add(tipo);
         const fabrica = ORDEM_LOGICA_PCM.filter((id) => existentes.has(id));
         const proprias = (ids as string[]).filter((id) => !FABRICA.has(id) && existentes.has(id));
         const antesDaFoto = fabrica.indexOf("q-12");
@@ -311,8 +313,23 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
       })) as Record<string, string[]>;
       regras = comRegraDoCartao(questionarios, regras);
     }
-    const destinos = destinosLidos(lido.destinos);
-    const secoes = secoesLidas(lido.secoes);
+    let destinos = destinosLidos(lido.destinos);
+    let secoes = secoesLidas(lido.secoes);
+    // Ramificação e seção que apontavam para pergunta que saiu do questionário reordenado (Detalhamento) não ficam órfãs (revisão da dec 216).
+    if (reordenados.size > 0) {
+      const noTipo = (tipo: string) => new Set(questionarios[tipo] ?? []);
+      if (destinos) {
+        destinos = Object.fromEntries(Object.entries(destinos).map(([tipo, porPergunta]) => {
+          if (!reordenados.has(tipo)) return [tipo, porPergunta];
+          const ids = noTipo(tipo);
+          const limpo = Object.fromEntries(Object.entries(porPergunta).filter(([id]) => ids.has(id)).map(([id, porOpcao]) => [
+            id, Object.fromEntries(Object.entries(porOpcao).filter(([, d]) => !d.startsWith("pergunta:") || ids.has(d.slice("pergunta:".length)))),
+          ]).filter(([, porOpcao]) => Object.keys(porOpcao as object).length > 0));
+          return [tipo, limpo];
+        }));
+      }
+      if (secoes) secoes = Object.fromEntries(Object.entries(secoes).map(([tipo, lista]) => [tipo, reordenados.has(tipo) ? lista.filter((x) => noTipo(tipo).has(x.inicio)) : lista]));
+    }
     return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, logicaViagemAjustada: true };
   } catch {
     return estadoPadrao();
