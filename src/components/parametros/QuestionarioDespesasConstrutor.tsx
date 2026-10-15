@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Copy, GripHorizontal, MinusCircle, Pencil, Play, Plus, Rows3, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, GripHorizontal, MinusCircle, Pencil, Plus, Rows3, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,12 +21,11 @@ import { criarQuestionario, gravarSecao, secoesDoTipo } from "@/lib/questionario
 import {
   ID_TIPO_DESPESA, TIPOS_PERGUNTA, aceitaCondicao, clonarPergunta, dadosIlegiveis, excluirPergunta, gravarQuestionario, gravarRegra, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type Estado, type Pergunta, type Regra,
-  tituloDoQuestionario,
 } from "@/lib/questionario-despesas";
 
 // Montagem do Questionário de Despesas, dentro da mesma tela do formulário (dec 173): um questionário para cada tipo de despesa,
 // montado com as perguntas cadastradas. O banco de perguntas não tem tela própria: o que sobra fora do questionário se adiciona pelo seletor.
-export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario }: { tipoInicial?: string | undefined; onAbrirFormulario: (tipo: string) => void }) {
+export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: string | undefined }) {
   const { canWrite } = useAccess();
   const [estado, setEstado] = useState<Estado>(lerEstado);
   const tipos = tiposDeDespesa(estado);
@@ -96,9 +95,8 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">{tituloDoQuestionario(tipoAtual)}</h1>
+        <h1 className="text-xl font-semibold">Configuração Formulário de Despesas</h1>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => onAbrirFormulario(tipoAtual)}><Play className="mr-1 h-4 w-4" />Abrir formulário</Button>
           {canWrite && (
             <Button variant="outline" onClick={() => setDialogoSecao({ inicio: null, inicial: { nome: "", titulo: "", subtitulo: "" } })}><Plus className="mr-1 h-4 w-4" />Criar novo questionário</Button>
           )}

@@ -86,9 +86,10 @@ test("revisão: tipo que não existe no cadastro não grava e item estragado nã
   assert.deepEqual(listarRespostas(s).map((r) => r.id), ["r1"]);
 });
 
-test("o formulário abre pela tela única do menu de Parâmetros, sem rota nem link próprios", () => {
+test("dec 201: a tela única do menu de Parâmetros abre na configuração, sem rota nem link próprios", () => {
   const tela = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasTela.tsx", import.meta.url), "utf8");
-  assert.match(tela, /QuestionarioFormulario/);
+  assert.match(tela, /QuestionarioDespesasConstrutor/);
+  assert.doesNotMatch(tela, /QuestionarioFormulario/);
   const menu = readFileSync(new URL("../src/components/layout/AppSidebar.tsx", import.meta.url), "utf8");
   const itens = readFileSync(new URL("../src/lib/menu-parametros.ts", import.meta.url), "utf8");
   assert.doesNotMatch(menu + itens, /"\/questionario-despesas"/);
