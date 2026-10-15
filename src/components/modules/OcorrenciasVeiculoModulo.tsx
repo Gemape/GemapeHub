@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
-import { hojeLocal } from "@/lib/empregados";
+import { horaBrasilia, hojeLocal } from "@/lib/empregados";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
@@ -31,7 +31,7 @@ import { useOcorrenciasVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const horaAgora = () => `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`;
+const horaAgora = () => horaBrasilia();
 const dataHoraLocal = (ocorridoEm: string) => `${formatarData(ocorridoEm.slice(0, 10))} ${ocorridoEm.slice(11, 16)}`;
 const dataHoraBrasilia = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 

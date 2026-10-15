@@ -1,6 +1,6 @@
 // Respostas do Questionário de Despesas (dec 169). Fase 1: ficam só no navegador, em modo demonstração; a tabela de
 // respostas (JSONB, com `empresa_id`) entra na Fase 2. Cada resposta guarda o título das perguntas da época.
-import { hojeLocal } from "./empregados.ts";
+import { horaBrasilia, hojeLocal } from "./empregados.ts";
 import { ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
 import { listarRelatorios, relatorioPorDespesa } from "./relatorios-viagens.ts";
 import { questionarioPublicado } from "./questionario-destinos.ts";
@@ -14,9 +14,8 @@ export type ItemResposta = { perguntaId: string; titulo: string; resposta: strin
 // `valores` guarda o que foi respondido (já sem as perguntas escondidas) para a despesa poder ser editada depois (dec 211).
 export type RespostaRegistrada = { id: string; tipo: string; data: string; hora: string; itens: ItemResposta[]; valores?: Respostas };
 
-const dois = (n: number) => String(n).padStart(2, "0");
 // Hora local (Brasília para quem usa o sistema), nunca UTC.
-export const horaLocal = (agora = new Date()): string => `${dois(agora.getHours())}:${dois(agora.getMinutes())}`;
+export const horaLocal = (agora = new Date()): string => horaBrasilia(agora);
 
 // A pergunta 3 define o tipo de despesa: a primeira opção marcada.
 export function tipoEscolhido(respostas: Respostas): string {
