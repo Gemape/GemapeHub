@@ -16,7 +16,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinosDoTipo, idDoDestino, pendencias,
+  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinosDoTipo, idDoDestino, limparPendencias, pendencias,
 } from "@/lib/questionario-destinos";
 import { gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
@@ -161,10 +161,15 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
 
       {acoesRequeridas.length > 0 && (
         <div role="alert" className="space-y-1 rounded-md border border-destructive p-3 text-sm text-destructive">
-          <p className="font-medium">Ação requerida: o questionário "{tipoAtual}" não é publicado até corrigir as ramificações abaixo.</p>
+          <p className="font-medium">Ação requerida: o questionário "{tipoAtual}" não é publicado até corrigir as ramificações antigas abaixo.</p>
           <ul className="list-disc pl-5">
             {acoesRequeridas.map((a) => <li key={`${a.perguntaId}-${a.opcao}`}>Pergunta {porId.get(a.perguntaId)?.codigo}, opção "{a.opcao}": {a.motivo}</li>)}
           </ul>
+          {canWrite && (
+            <Button type="button" variant="outline" size="sm" onClick={() => executar(() => limparPendencias(estado, tipoAtual, rascunho), "Ramificações com problema removidas. Clique em Salvar Formulário para valer.")}>
+              Remover as ramificações com problema
+            </Button>
+          )}
         </div>
       )}
 

@@ -45,6 +45,24 @@ export function pendencias(e: Estado, tipo: string): Pendencia[] {
   return lista;
 }
 
+// Sem tela para editar ramificação (dec 206), o responsável limpa as pendências antigas: tira só as opções com problema
+// (ou todas as da pergunta que não ramifica mais) e o resto da ramificação fica como está.
+export function limparPendencias(e: Estado, tipo: string, storage: StorageLike = localStorage): Estado {
+  const pendentes = pendencias(e, tipo);
+  if (pendentes.length === 0) return e;
+  const porPergunta = { ...(e.destinos?.[tipo] ?? {}) };
+  for (const a of pendentes) {
+    const atual = porPergunta[a.perguntaId];
+    if (!atual) continue;
+    const origem = e.perguntas.find((p) => p.id === a.perguntaId);
+    if (!origem || !aceitaDestino(origem)) { delete porPergunta[a.perguntaId]; continue; }
+    const { [a.opcao]: _removida, ...resto } = atual;
+    if (Object.keys(resto).length) porPergunta[a.perguntaId] = resto;
+    else delete porPergunta[a.perguntaId];
+  }
+  return gravarEstado({ ...e, destinos: { ...(e.destinos ?? {}), [tipo]: porPergunta } }, storage);
+}
+
 export const questionarioPublicado = (e: Estado, tipo: string): boolean => pendencias(e, tipo).length === 0;
 
 const rotuloPergunta = (e: Estado, id: string): string => e.perguntas.find((p) => p.id === id)?.codigo ?? "?";

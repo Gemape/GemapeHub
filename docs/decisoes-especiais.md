@@ -1144,3 +1144,7 @@ Ordem do responsável em 15/10 (17:23): "as caixas de unidades de federação, m
 ### Decisão 208: Adicionar opção em Habilitados e em Técnico responsável pela despesa
 
 Ordem do responsável em 15/10 (17:29), com o print do botão: "adicionar botão de adicionar opção nos campos habilitados ao questionário de viagem, técnico responsável pela despesa." Nos cards dessas duas perguntas entra o botão **Adicionar opção**, como nas demais. Como as duas não têm opções escritas e sim empregados, o botão busca o empregado ativo pelo nome e inclui na lista de habilitados da pergunta 04. Em "Habilitados" o responsável escolhe a área (Oficina, PCM ou Administrativo); em "Técnico responsável pela despesa" a pessoa entra com a área Oficina, porque essa pergunta usa os habilitados de Oficina da pergunta 04. Quem já está na lista não aparece na busca. Vale só ao Salvar Formulário. Sem campo novo nem Supabase.
+
+### Decisão 210: Remover ramificações antigas com problema
+
+Achado da revisão de 15/10 (17:38) sobre as decisões 205 a 208: com as Opções avançadas retiradas (decisão 206), uma ramificação antiga que ficou com problema (opção que não existe mais, pergunta de destino fora do questionário ou pergunta que não ramifica mais) deixava o aviso "Ação requerida" sem tela para corrigir. O aviso ganha o botão **Remover as ramificações com problema**: tira só as opções com problema, mantém as boas, e vale ao Salvar Formulário. Sem campo novo nem Supabase.

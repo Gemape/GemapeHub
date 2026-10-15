@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { estadoPadrao as estadoDeFabrica, excluirPergunta, gravarQuestionario, lerEstado, questionarioDoTipo, salvarPergunta } from "../src/lib/questionario-despesas.ts";
-import { conferirOrdem, destinoPergunta, encontrarCiclo, gravarDestino, pendencias, questionarioPublicado } from "../src/lib/questionario-destinos.ts";
+import { conferirOrdem, destinoPergunta, encontrarCiclo, gravarDestino, limparPendencias, pendencias, questionarioPublicado } from "../src/lib/questionario-destinos.ts";
 import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 import { registrarResposta } from "../src/lib/respostas-despesas.ts";
 
@@ -138,4 +138,22 @@ test("destinos salvos com formato quebrado são descartados sem derrubar a leitu
   const e = lerEstado(s);
   assert.deepEqual(e.destinos, { [T]: { "q-02": { B: "encerrar" } } });
   assert.equal(pendencias(e, T).length, 1);
+});
+
+test("dec 210: limparPendencias tira só as ramificações com problema e deixa as boas", () => {
+  const s = memoria();
+  let e = estadoPadrao();
+  e = gravarDestino(e, T, "q-01", "Dinheiro", "encerrar", s);
+  e = gravarDestino(e, T, "q-01", "Cartão de crédito", destinoPergunta("q-04"), s);
+  // A opção "Dinheiro" deixa de existir: vira pendência, e "Cartão de crédito" continua válida.
+  const moedas = e.perguntas.find((p) => p.id === "q-01");
+  e = salvarPergunta(e, { ...moedas, opcoes: moedas.opcoes.filter((o) => o !== "Dinheiro") }, s);
+  assert.equal(pendencias(e, T).length, 1);
+  const limpo = limparPendencias(e, T, s);
+  assert.equal(pendencias(limpo, T).length, 0);
+  assert.deepEqual(limpo.destinos[T]["q-01"], { "Cartão de crédito": destinoPergunta("q-04") });
+  assert.equal(questionarioPublicado(limpo, T), true);
+  assert.equal(limparPendencias(limpo, T, s), limpo);
+  const c = readFileSync("src/components/parametros/QuestionarioDespesasConstrutor.tsx", "utf8");
+  assert.match(c, /Remover as ramificações com problema/);
 });
