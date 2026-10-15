@@ -150,9 +150,9 @@ test("imagem econômica: lado maior até 1280 sem ampliar", () => {
   assert.deepEqual(dimensoesReduzidas(800, 600, 1280), { largura: 800, altura: 600 });
 });
 
-test("a tela tem o botão Abrir formulário e a condição se/então", () => {
+test("dec 201: a tela de configuração não tem o botão Abrir formulário e mantém a condição se/então", () => {
   const tela = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
-  assert.match(tela, /Abrir formulário/);
+  assert.doesNotMatch(tela, /Abrir formulário/);
   assert.match(tela, /Mostrar esta pergunta só se/);
 });
 

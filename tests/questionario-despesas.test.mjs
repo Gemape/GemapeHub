@@ -208,16 +208,16 @@ test("Litros abastecidos só vem no Abastecimento, também nos dados salvos ante
   assert.equal(volta.litrosAjustado, true);
 });
 
-test("tela única: abre no formulário, quem grava edita ali mesmo e não há banco de perguntas nem rota separada", () => {
+test("tela única (dec 201): abre direto na configuração, sem formulário de pré-visualização, banco de perguntas nem rota separada", () => {
   const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
   const tela = ler("components/parametros/QuestionarioDespesasTela.tsx");
-  assert.match(tela, /<QuestionarioFormulario/);
+  assert.doesNotMatch(tela, /<QuestionarioFormulario/);
   assert.match(tela, /<QuestionarioDespesasConstrutor/);
-  assert.match(tela, /montando && canWrite/);
   const construtor = ler("components/parametros/QuestionarioDespesasConstrutor.tsx");
   assert.doesNotMatch(construtor, /Banco de perguntas/);
   assert.match(construtor, /aria-label="Excluir pergunta"/);
-  assert.match(ler("components/parametros/QuestionarioFormulario.tsx"), /Editar questionário/);
+  assert.match(construtor, /Configuração Formulário de Despesas/);
+  assert.doesNotMatch(ler("components/parametros/QuestionarioFormulario.tsx"), /Editar questionário/);
   assert.equal(existsSync(new URL("../src/routes/_authenticated/questionario-despesas.tsx", import.meta.url)), false);
 });
 

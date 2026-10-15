@@ -185,16 +185,12 @@ test("revisão dec 183: seção que começa logo depois da pergunta de tipos nã
   assert.match(form, /paginasDoPreenchimento\(estado, tipo, visiveis\.filter/);
 });
 
-test("dec 189: o Questionário de Despesas de Parâmetros é só pré-visualização, sem envio nem respostas registradas", () => {
+test("dec 189 e 201: Parâmetros não tem formulário de pré-visualização; o formulário com envio e respostas fica só em Viagens", () => {
   const tela = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasTela.tsx", import.meta.url), "utf8");
-  assert.match(tela, /<QuestionarioFormulario[^>]*somentePrevia/);
-  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(painel, /somentePrevia/);
+  assert.doesNotMatch(tela, /QuestionarioFormulario/);
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
-  assert.match(form, /ultimaPagina && !somentePrevia && <Button type="submit"/);
-  assert.match(form, /if \(somentePrevia\) return;/);
-  assert.match(form, /\{!somentePrevia && \(\s*<Button[^>]*onClick=\{\(\) => setVerLista/);
-  assert.match(form, /verLista && !somentePrevia && <ListaRespostas/);
+  assert.doesNotMatch(form, /somentePrevia/);
+  assert.match(form, /ultimaPagina && <Button type="submit"/);
 });
 
 test("dec 188: o painel não repete o aviso sobre o envio dos comprovantes", () => {
@@ -203,13 +199,12 @@ test("dec 188: o painel não repete o aviso sobre o envio dos comprovantes", () 
   assert.doesNotMatch(painel, /termina sempre com o envio/);
 });
 
-test("dec 191: Voltar ao painel, Editar questionário e Respostas registradas são botões, não links sublinhados", () => {
+test("dec 191: Voltar ao painel e Respostas registradas são botões, não links sublinhados", () => {
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   const inicio = form.indexOf("{onVoltar && <Button");
   assert.ok(inicio > 0);
-  const topo = form.slice(inicio, form.indexOf("{verLista && !somentePrevia"));
+  const topo = form.slice(inicio, form.indexOf("{verLista && <ListaRespostas"));
   assert.match(topo, /<Button[^>]*onClick=\{onVoltar\.aoClicar\}/);
-  assert.match(topo, /<Button[^>]*onClick=\{\(\) => onEditar\(tipo\)\}/);
   assert.match(topo, /<Button[\s\S]{0,120}setVerLista/);
   assert.doesNotMatch(topo, /underline/);
 });
