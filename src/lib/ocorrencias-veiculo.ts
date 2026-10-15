@@ -113,7 +113,7 @@ export function registrarOcorrenciaVeiculo(
   gravar(() =>
     alterarLista<OcorrenciaVeiculo>(CHAVE, storage, (lista) => {
       // O código é calculado dentro da gravação, para dois cadastros seguidos não repetirem o número.
-      const maior = lista.reduce((m, o) => Math.max(m, Number(o.codigo.replace(/\D/g, "")) || 0), 0);
+      const maior = lista.reduce((m, o) => Math.max(m, Number(String(o.codigo ?? "").replace(/\D/g, "")) || 0), 0);
       criada = {
         id: novoId(),
         codigo: `OCO-${String(maior + 1).padStart(4, "0")}`,
@@ -242,7 +242,7 @@ export function registrarOcorrenciasDoChecklist(
   const criadas: OcorrenciaVeiculo[] = [];
   gravar(() =>
     alterarLista<OcorrenciaVeiculo>(CHAVE, storage, (lista) => {
-      let maior = lista.reduce((m, o) => Math.max(m, Number(o.codigo.replace(/\D/g, "")) || 0), 0);
+      let maior = lista.reduce((m, o) => Math.max(m, Number(String(o.codigo ?? "").replace(/\D/g, "")) || 0), 0);
       for (const e of entradas) {
         maior += 1;
         criadas.push({

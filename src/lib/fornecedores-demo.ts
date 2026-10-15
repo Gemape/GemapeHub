@@ -43,7 +43,7 @@ function conferirIntegridade(storage: StorageLike): void {
   const bruto = storage.getItem(CHAVE);
   if (bruto === null) return;
   let ok = false;
-  try { ok = Array.isArray(JSON.parse(bruto)); } catch { ok = false; }
+  try { const lido: unknown = JSON.parse(bruto); ok = Array.isArray(lido) && lido.every((f) => !!f && typeof f === "object"); } catch { ok = false; }
   if (!ok) throw new Error("Os fornecedores salvos neste navegador estão ilegíveis; nada foi alterado.");
 }
 
@@ -51,7 +51,7 @@ export function listarFornecedores(storage: StorageLike = localStorage): Fornece
   let dados: Fornecedor[];
   try {
     const lidos = JSON.parse(storage.getItem(CHAVE) ?? "[]");
-    dados = Array.isArray(lidos) ? lidos as Fornecedor[] : [];
+    dados = Array.isArray(lidos) ? (lidos as Fornecedor[]).filter((f) => !!f && typeof f === "object") : [];
   } catch {
     return [];
   }

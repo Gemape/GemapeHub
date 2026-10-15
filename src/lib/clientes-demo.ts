@@ -30,7 +30,7 @@ function conferirIntegridade(storage: StorageLike): void {
   const bruto = storage.getItem(CHAVE);
   if (bruto === null) return;
   let ok = false;
-  try { ok = Array.isArray(JSON.parse(bruto)); } catch { ok = false; }
+  try { const lido: unknown = JSON.parse(bruto); ok = Array.isArray(lido) && lido.every((c) => !!c && typeof c === "object"); } catch { ok = false; }
   if (!ok) throw new Error("Os clientes salvos neste navegador estão ilegíveis; nada foi alterado.");
 }
 
@@ -39,7 +39,7 @@ export function listarClientes(storage: StorageLike = localStorage): Cliente[] {
     const lidos = JSON.parse(storage.getItem(CHAVE) ?? "[]");
     if (!Array.isArray(lidos)) return [];
     // Cadastros salvos com o campo único "documento" passam para CPF (11 dígitos) ou CNPJ (14 dígitos).
-    return (lidos as (Cliente & { documento?: string })[]).map(({ documento, ...resto }) => {
+    return (lidos as (Cliente & { documento?: string })[]).filter((c) => !!c && typeof c === "object").map(({ documento, ...resto }) => {
       const d = somenteDigitos(documento ?? "");
       return { ...resto, cpf: resto.cpf ?? (d.length === 11 ? formatarCpf(d) : ""), cnpj: resto.cnpj ?? (d.length === 14 ? formatarCnpj(d) : "") };
     });

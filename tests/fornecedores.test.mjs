@@ -143,3 +143,12 @@ test('a tela de fornecedores não tem mais o campo nem a coluna de categorias (d
   assert.doesNotMatch(src, /name="categorias"|<TableHead>Categorias<\/TableHead>|<legend/);
   assert.match(src, /categorias: editando\?\.categorias \?\? \[\]/);
 });
+
+test('lista com item nulo: a tela não quebra e nada é sobrescrito ao salvar', () => {
+  const s = storage();
+  const bruto = JSON.stringify([{ ...fornecedor, id: 'f1', codigo: '0001', categorias: [] }, null]);
+  s.setItem('gemape-demo-fornecedores', bruto);
+  assert.throws(() => salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81' }, s), /ilegíveis/);
+  assert.equal(s.getItem('gemape-demo-fornecedores'), bruto);
+  assert.deepEqual(listarFornecedores(s).map(f => f.id), ['f1']);
+});
