@@ -123,3 +123,9 @@ test("despesa lançada por gestor sem técnico responsável fica sem responsáve
   assert.equal(linha.tecnico, "Paula");
   assert.throws(() => registrarRelatorio({ emitente: "Ana", empresa: "GEMAPE", comprovantesPorPagina: 4, supervisor: "", diretor: "", despesas: [{ id: r.id, data: r.data, responsavel: linha.responsavel }] }, s), /técnico só/);
 });
+
+test("dec 213: o botão Gerar relatório fica abaixo da listagem", async () => {
+  const { readFileSync } = await import("node:fs");
+  const f = readFileSync(new URL("../src/components/modules/ViagensLista.tsx", import.meta.url), "utf8");
+  assert.ok(f.indexOf("<TableBody>") < f.indexOf("<FileText className=\"mr-1 h-4 w-4\" />Gerar relatório"));
+});

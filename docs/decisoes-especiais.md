@@ -1160,3 +1160,7 @@ Pedido do dono (15/10, 17:52): na lista "Respostas registradas" do módulo Viage
 ### Decisão 212: Botão Novo na resposta registrada
 
 Pedido do dono (15/10, 17:53): na tela "Resposta registrada", o botão "Preencher novamente" passa a se chamar **Novo** e volta à tela inicial do módulo Viagens para lançar uma nova despesa.
+
+### Decisão 213: Gerar relatório abaixo da listagem
+
+Pedido do dono (15/10, 18:08): na lista de despesas do módulo Viagens, o botão **Gerar relatório** (com o contador de despesas marcadas) passa a ficar abaixo da tabela, não acima. Só muda a posição. Sem Supabase.
