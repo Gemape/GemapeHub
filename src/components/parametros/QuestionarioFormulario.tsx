@@ -163,7 +163,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, somentePr
     <div className="mx-auto w-full max-w-2xl space-y-4 p-3 sm:p-4">
       <div className={`${cartao} border-t-8 border-t-primary`}>
         <h1 className="text-2xl font-semibold">{tituloDoQuestionario(tipo)}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{somentePrevia ? "Pré-visualização da montagem: nada é enviado daqui. As despesas são lançadas em Módulos > Viagens." : ocultaTipo ? "Responda as perguntas." : "Escolha o tipo de despesa e responda as perguntas."} Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
+        <p className="mt-1 text-sm text-muted-foreground">{somentePrevia ? "Configuração de perguntas para o questionário de despesa." : ocultaTipo ? "Responda as perguntas." : "Escolha o tipo de despesa e responda as perguntas."} Campos com <span className="text-destructive">*</span> são obrigatórios.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {onVoltar && <Button type="button" variant="outline" size="sm" onClick={onVoltar.aoClicar}><ArrowLeft className="mr-1 h-4 w-4" />{onVoltar.rotulo}</Button>}
           {canWrite && onEditar && (

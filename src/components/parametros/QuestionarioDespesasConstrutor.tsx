@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Copy, GripHorizontal, MinusCircle, Pencil, Play, Pl
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { iconeDoTipo } from "@/components/modules/icones-viagens";
 import { PerguntaDialog, type ModoPergunta } from "@/components/parametros/PerguntaDialog";
 import { SecaoDialog, type DadosSecao } from "@/components/parametros/SecaoDialog";
 import { PerguntaPrevia } from "@/components/parametros/PerguntaPrevia";
@@ -107,6 +108,34 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
         </div>
       </div>
 
+      <section className="space-y-2" aria-labelledby="escolher-card">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="escolher-card" className="text-sm font-medium">1. Escolha o card de Viagens que terá este questionário</h2>
+          {canWrite && (
+            <Button variant="ghost" size="sm" onClick={() => { const q = porId.get(ID_TIPO_DESPESA); if (q) setDialogo({ modo: "editar", inicial: q }); }}><Pencil className="mr-1 h-4 w-4" />Editar cards</Button>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {tipos.map((t) => {
+            const Icone = iconeDoTipo(t);
+            const escolhido = t === tipoAtual;
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={escolhido}
+                onClick={() => { setTipo(t); setAtivo(null); }}
+                className={`panel flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${escolhido ? "ring-2 ring-primary" : "opacity-80 hover:opacity-100"}`}
+              >
+                <Icone className="h-6 w-6 text-primary" aria-hidden="true" />
+                <span className="break-words">{t}</span>
+              </button>
+            );
+          })}
+        </div>
+        <h2 className="pt-2 text-sm font-medium">2. Monte as perguntas de "{tipoAtual}"</h2>
+      </section>
+
       {dadosIlegiveis() && (
         <p role="alert" className="rounded-md border border-destructive p-3 text-sm text-destructive">
           As perguntas salvas neste navegador estão ilegíveis. A tela mostra o padrão e nada será gravado por cima; limpe os dados do site para recomeçar.
@@ -145,6 +174,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
               )}
             </div>
           )}
+          {!fixa && (
           <div
             data-cartao
             role="group"
@@ -195,31 +225,34 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
             </div>
-            {aberto && canWrite && !fixa && aceitaDestino(p) && (
-              <RamificacaoPergunta
-                estado={estado}
-                ids={ids}
-                pergunta={p}
-                destinos={destinosDoTipo(estado, tipoAtual)[id] ?? {}}
-                onMudar={(opcao, d) => executar(() => gravarDestino(estado, tipoAtual, id, opcao, d))}
-              />
-            )}
             {aberto && canWrite && !fixa && (
-              <CondicaoPergunta
-                estado={estado}
-                ids={ids}
-                id={id}
-                regra={estado.regras[tipoAtual]?.[id] ?? null}
-                onMudar={(r) => executar(() => gravarRegra(estado, tipoAtual, id, r))}
-              />
+              <details className="mt-4 border-t pt-3" open={temAvancado(estado, tipoAtual, p, id) || undefined} onClick={(e) => e.stopPropagation()}>
+                <summary className="cursor-pointer text-sm font-medium text-muted-foreground">Opções avançadas (ramificação e condição)</summary>
+                {aceitaDestino(p) && (
+                  <RamificacaoPergunta
+                    estado={estado}
+                    ids={ids}
+                    pergunta={p}
+                    destinos={destinosDoTipo(estado, tipoAtual)[id] ?? {}}
+                    onMudar={(opcao, d) => executar(() => gravarDestino(estado, tipoAtual, id, opcao, d))}
+                  />
+                )}
+                <CondicaoPergunta
+                  estado={estado}
+                  ids={ids}
+                  id={id}
+                  regra={estado.regras[tipoAtual]?.[id] ?? null}
+                  onMudar={(r) => executar(() => gravarRegra(estado, tipoAtual, id, r))}
+                />
+              </details>
             )}
             {aberto && canWrite && (
               <div className="mt-4 flex flex-wrap items-center justify-end gap-1 border-t pt-3">
                 {!secoes.some((x) => x.inicio === id) && (
-                  <Button variant="ghost" size="icon" aria-label="Iniciar seção aqui" title="Iniciar uma seção (nova página) nesta pergunta" onClick={() => abrirSecao(id)}><Rows3 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" aria-label="Iniciar seção aqui" title="Iniciar uma seção (nova página) nesta pergunta" onClick={() => abrirSecao(id)}><Rows3 className="mr-1 h-4 w-4" />Nova página</Button>
                 )}
-                <Button variant="ghost" size="icon" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" aria-label="Clonar pergunta" onClick={() => setDialogo({ modo: "clonar", inicial: clonarPergunta(estado, p.id) })}><Copy className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="sm" aria-label="Editar pergunta" onClick={() => setDialogo({ modo: "editar", inicial: p })}><Pencil className="mr-1 h-4 w-4" />Editar</Button>
+                <Button variant="ghost" size="sm" aria-label="Clonar pergunta" onClick={() => setDialogo({ modo: "clonar", inicial: clonarPergunta(estado, p.id) })}><Copy className="mr-1 h-4 w-4" />Duplicar</Button>
                 {!fixa && (
                   <>
                     <Button variant="ghost" size="icon" aria-label="Mover para cima" disabled={ids.indexOf(id) <= 1} onClick={() => gravarIds(trocar(ids, id, -1))}><ArrowUp className="h-4 w-4" /></Button>
@@ -227,7 +260,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
                   </>
                 )}
                 {!fixa && (
-                  <Button variant="ghost" size="icon" aria-label="Remover do questionário" title="Remover deste questionário" onClick={() => gravarIds(ids.filter((x) => x !== id && x !== ID_TIPO_DESPESA))}><MinusCircle className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" aria-label="Remover do questionário" title="Remover deste questionário" onClick={() => gravarIds(ids.filter((x) => x !== id && x !== ID_TIPO_DESPESA))}><MinusCircle className="mr-1 h-4 w-4" />Tirar daqui</Button>
                 )}
                 {!p.sistema && (
                   <Button variant="ghost" size="icon" aria-label="Excluir pergunta" title="Excluir a pergunta de todos os questionários" onClick={() => excluir(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -238,6 +271,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial, onAbrirFormulario 
               </div>
             )}
           </div>
+          )}
           </div>
         );
       })}
@@ -374,3 +408,7 @@ function CondicaoPergunta({
     </div>
   );
 }
+
+// A ramificação e a condição ficam recolhidas; abrem sozinhas quando a pergunta já tem alguma configurada.
+const temAvancado = (e: Estado, tipo: string, p: Pergunta, id: string): boolean =>
+  Boolean(e.regras[tipo]?.[id]) || (aceitaDestino(p) && Object.keys(destinosDoTipo(e, tipo)[id] ?? {}).length > 0);
