@@ -1148,3 +1148,7 @@ Ordem do responsável em 15/10 (17:29), com o print do botão: "adicionar botão
 ### Decisão 209: Perguntas do questionário em ordem numérica
 
 Ordem do responsável em 15/10 (17:37): "colocar em ordem numérica todas as perguntas que estão no formulário do questionário, hoje as perguntas estão com números desordenados." As perguntas de fábrica passam a ter o número na ordem em que aparecem: Técnico responsável pela despesa vira 05 e as seguintes seguem de 06 (Unidade da Federação) a 14 (PCM responde). Os identificadores internos não mudam, então nada que já funciona se perde. Nos dados já salvos neste navegador a renumeração roda uma vez só; pergunta criada pelo responsável que já usasse um desses números passa para o próximo livre (15 em diante), para nenhum número se repetir. Sem campo novo nem Supabase.
+
+### Decisão 210: Remover ramificações antigas com problema
+
+Achado da revisão de 15/10 (17:38) sobre as decisões 205 a 208: com as Opções avançadas retiradas (decisão 206), uma ramificação antiga que ficou com problema (opção que não existe mais, pergunta de destino fora do questionário ou pergunta que não ramifica mais) deixava o aviso "Ação requerida" sem tela para corrigir. O aviso ganha o botão **Remover as ramificações com problema**: tira só as opções com problema, mantém as boas, e vale ao Salvar Formulário. Sem campo novo nem Supabase.

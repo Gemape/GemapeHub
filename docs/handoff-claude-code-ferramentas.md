@@ -461,3 +461,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-15 dec 207: perguntas travadas na montagem (IDS_TRAVADAS/perguntaTravada em questionario-despesas.ts): UF, Município, Data, Valor, Foto e Detalhamento sem Editar, Adicionar opção e Obrigatória.
 - 2026-10-15 dec 208: botão Adicionar opção (AdicionarHabilitado) nos cards Habilitados e Técnico responsável: busca empregado ativo e inclui na pergunta 04 (área escolhida; no técnico, Oficina).
 - 2026-10-15 dec 209: números das perguntas de fábrica em ordem 01 a 14 (CODIGO_ORDENADO em questionario-despesas.ts; migração única por codigosOrdenados em lerEstado, perguntas próprias com número ocupado vão para o próximo livre).
+- 2026-10-15 dec 210: botão Remover as ramificações com problema no aviso Ação requerida (limparPendencias em questionario-destinos.ts).
