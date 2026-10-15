@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { demoSupabase } from "@/integrations/supabase/demo-client";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
+import { IndicadoresViagens } from "@/components/parametros/IndicadoresViagens";
 import { SubgruposFerramenta } from "@/components/parametros/SubgruposFerramenta";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
@@ -381,6 +382,7 @@ function Categorias() {
               Cadastrar marcas padrão
             </Button>
           </div>}
+          {categoria.id === "cat-veiculos" && <IndicadoresViagens />}
         </>
       ) : null}
     </div>
