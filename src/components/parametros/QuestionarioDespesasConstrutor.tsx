@@ -94,7 +94,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   }
   // Restaurar configurações iniciais: volta as perguntas e os questionários de todos os cards ao padrão, no rascunho (só vale ao Salvar Formulário).
   function restaurarIniciais() {
-    if (!confirm("Restaurar as configurações iniciais do formulário? Perguntas, opções e questionários voltam ao padrão. Nada muda até clicar em Salvar Formulário.")) return;
+    if (!confirm("Restaurar as configurações iniciais do formulário? Perguntas, opções, questionários e cards criados por você voltam ao padrão (as respostas já registradas não mudam). Nada vale até clicar em Salvar Formulário.")) return;
     if (executar(() => gravarEstado(estadoPadrao(), rascunho), "Configurações iniciais restauradas. Clique em Salvar Formulário para valer.")) setAtivo(null);
   }
   useEffect(() => {
