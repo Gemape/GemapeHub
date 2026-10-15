@@ -33,9 +33,17 @@ function PrazosIndicadores() {
   const [pcm, setPcm] = useState(String(salvo.pcm));
   const [mecanicoAplica, setMecanicoAplica] = useState(salvo.mecanicoAplica);
   const [pcmAplica, setPcmAplica] = useState(salvo.pcmAplica);
-  const novo = { mecanico: numeroDe(mecanico), pcm: numeroDe(pcm), mecanicoAplica, pcmAplica };
-  const validoMecanico = prazoValido(novo.mecanico);
-  const validoPcm = prazoValido(novo.pcm);
+  // Com a caixa desmarcada o campo fica travado e o que estiver digitado nele não impede salvar: vale o dias já salvo.
+  const digitadoMecanico = numeroDe(mecanico);
+  const digitadoPcm = numeroDe(pcm);
+  const validoMecanico = !mecanicoAplica || prazoValido(digitadoMecanico);
+  const validoPcm = !pcmAplica || prazoValido(digitadoPcm);
+  const novo = {
+    mecanico: prazoValido(digitadoMecanico) ? digitadoMecanico : salvo.mecanico,
+    pcm: prazoValido(digitadoPcm) ? digitadoPcm : salvo.pcm,
+    mecanicoAplica,
+    pcmAplica,
+  };
   const valido = validoMecanico && validoPcm;
   const igual = novo.mecanico === salvo.mecanico && novo.pcm === salvo.pcm && mecanicoAplica === salvo.mecanicoAplica && pcmAplica === salvo.pcmAplica;
 
@@ -44,6 +52,8 @@ function PrazosIndicadores() {
     try {
       salvarPrazos(novo);
       setSalvo(novo);
+      setMecanico(String(novo.mecanico));
+      setPcm(String(novo.pcm));
       toast.success("Indicadores salvos.");
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar os indicadores.");

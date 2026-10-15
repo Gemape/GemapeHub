@@ -90,3 +90,17 @@ test("as faixas são definidas em Parâmetros Específicos de Veículos", () => 
   assert.match(tela, /Significado prático para a gestão/);
   assert.match(tela, /Restaurar padrão/);
 });
+
+test("salvar faixas tira os espaços das pontas dos textos", () => {
+  const s = memoria();
+  salvarFaixas({ ...FAIXAS_PADRAO, verde: { classificacao: "  Ótimo  ", significado: " Tudo certo. " } }, s);
+  assert.deepEqual(lerFaixas(s).verde, { classificacao: "Ótimo", significado: "Tudo certo." });
+});
+
+test("com a caixa desmarcada, o dias digitado no campo travado não impede salvar e o valor salvo vale", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/IndicadoresViagens.tsx", import.meta.url), "utf8");
+  assert.match(tela, /const validoMecanico = !mecanicoAplica \|\| prazoValido\(digitadoMecanico\)/);
+  assert.match(tela, /const validoPcm = !pcmAplica \|\| prazoValido\(digitadoPcm\)/);
+  const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  assert.match(painel, /Indicador desligado em Parâmetros/);
+});

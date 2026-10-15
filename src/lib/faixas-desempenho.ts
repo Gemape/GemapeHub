@@ -77,8 +77,9 @@ export function lerFaixas(storage?: StorageLike): ConfigFaixas {
 export function salvarFaixas(c: ConfigFaixas, storage?: StorageLike): void {
   const erro = validarFaixas(c);
   if (erro) throw new Error(erro);
+  const limpo = (t: TextosFaixa): TextosFaixa => ({ classificacao: t.classificacao.trim(), significado: t.significado.trim() });
   try {
-    (storage ?? localStorage).setItem(CHAVE, JSON.stringify({ ...c, verde: { ...c.verde }, amarelo: { ...c.amarelo }, vermelho: { ...c.vermelho } }));
+    (storage ?? localStorage).setItem(CHAVE, JSON.stringify({ ...c, verde: limpo(c.verde), amarelo: limpo(c.amarelo), vermelho: limpo(c.vermelho) }));
   } catch {
     throw new Error("Não foi possível guardar as faixas neste navegador.");
   }
