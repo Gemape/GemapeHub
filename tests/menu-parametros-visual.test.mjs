@@ -40,3 +40,11 @@ test("Parâmetros > EPI põe todos os submenus na mesma coluna de ícones, sem r
   assert.match(trecho, /MENU_EPI\.flatMap\(\(item\) => \[item, \.\.\.\(item\.filhos \?\? \[\]\)\]\)/);
   assert.doesNotMatch(trecho, /mx-0 border-l-0 px-0|mx-0 ml-2 px-1\.5/);
 });
+
+test("em Parâmetros > Veículos, o Questionário de Despesas vem depois de Parâmetros Específicos (decisão 198)", () => {
+  const trecho = menuDados.slice(menuDados.indexOf("export const MENU_VEICULOS"));
+  const fim = trecho.indexOf("];");
+  const lista = trecho.slice(0, fim);
+  assert.ok(lista.indexOf('itemEspecificos("veiculos")') > 0);
+  assert.ok(lista.indexOf("Questionário de Despesas") > lista.indexOf('itemEspecificos("veiculos")'));
+});
