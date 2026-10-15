@@ -1160,3 +1160,7 @@ Pedido do dono (15/10, 17:52): na lista "Respostas registradas" do módulo Viage
 ### Decisão 212: Botão Novo na resposta registrada
 
 Pedido do dono (15/10, 17:53): na tela "Resposta registrada", o botão "Preencher novamente" passa a se chamar **Novo** e volta à tela inicial do módulo Viagens para lançar uma nova despesa.
+
+### Decisão 214: Ícone de gráfico de pizza em Faixas de desempenho
+
+Pedido do dono (15/10, 18:11): o botão **Faixas de desempenho** do painel de Viagens troca o ícone de paleta por um de gráfico de pizza. Só muda o ícone. Sem Supabase.

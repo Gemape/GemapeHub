@@ -123,3 +123,10 @@ test("despesa lançada por gestor sem técnico responsável fica sem responsáve
   assert.equal(linha.tecnico, "Paula");
   assert.throws(() => registrarRelatorio({ emitente: "Ana", empresa: "GEMAPE", comprovantesPorPagina: 4, supervisor: "", diretor: "", despesas: [{ id: r.id, data: r.data, responsavel: linha.responsavel }] }, s), /técnico só/);
 });
+
+test("dec 214: o botão Faixas de desempenho usa o ícone de gráfico de pizza", async () => {
+  const { readFileSync } = await import("node:fs");
+  const f = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  assert.match(f, /<PieChart className="mr-1 h-4 w-4" \/>Faixas de desempenho/);
+  assert.doesNotMatch(f, /Palette/);
+});
