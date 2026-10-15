@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { lerTodas } from "@/lib/ler-todas";
 import { useAccess } from "@/lib/access-context";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import {
@@ -68,9 +69,7 @@ function useEpis() {
     queryKey: ["epis", "resumo-fichas"],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("epis").select("*").order("codigo_sku");
-      if (error) throw error;
-      return (data ?? []) as EpiResumo[];
+      return lerTodas<EpiResumo>(() => supabase.from("epis").select("*"), (q) => q.order("codigo_sku").order("id"));
     },
   });
 }

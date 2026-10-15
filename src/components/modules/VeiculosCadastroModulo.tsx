@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { lerTodas } from "@/lib/ler-todas";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import {
@@ -96,9 +97,7 @@ type VeiculoCadastro = Veiculo & {
 
 // Todos os veículos (de todas as empresas): códigos para a sequência e placas repetidas.
 async function todosVeiculos(): Promise<{ id: string; placa: string; codigo_sku?: string }[]> {
-  const { data, error } = await supabase.from("veiculos").select("*");
-  if (error) throw error;
-  return (data ?? []) as { id: string; placa: string; codigo_sku?: string }[];
+  return lerTodas<{ id: string; placa: string; codigo_sku?: string }>(() => supabase.from("veiculos").select("*"), (q) => q.order("id"));
 }
 
 // Cadastrar veículo (especificação rev1 + decisões especiais 9 e 10): código automático,

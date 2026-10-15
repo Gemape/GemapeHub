@@ -2,6 +2,7 @@
 // despesas (modo demonstração, no navegador). Os campos que os indicadores e o relatório usam saem das respostas pelo número
 // da pergunta de sistema; o que não foi respondido fica nulo.
 import { ID_HABILITADOS as ID_PERGUNTA_HABILITADOS, ID_NOME_EMPREGADO, ID_TECNICO_RESPONSAVEL } from "./questionario-despesas.ts";
+import { hojeLocal } from "./empregados.ts";
 import { valorNumerico } from "./questionario-respostas.ts";
 import { PRAZOS_PADRAO, type PrazosViagens } from "./prazo-viagens.ts";
 import type { RespostaRegistrada } from "./respostas-despesas.ts";
@@ -76,7 +77,11 @@ export function dadosDoLancamento(r: RespostaRegistrada): DadosLancamento {
 // ---- Indicadores do painel (dec 177) ----
 
 export type PeriodoMes = { ano: number; mes: number };
-export const periodoAtual = (agora = new Date()): PeriodoMes => ({ ano: agora.getFullYear(), mes: agora.getMonth() + 1 });
+// Mês de hoje no horário de Brasília (nunca o fuso do dispositivo).
+export const periodoAtual = (agora = new Date()): PeriodoMes => {
+  const [ano, mes] = hojeLocal(agora).split("-").map(Number) as [number, number];
+  return { ano, mes };
+};
 export const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"] as const;
 export const rotuloPeriodo = (p: PeriodoMes): string => `${MESES[p.mes - 1] ?? ""} de ${p.ano}`;
 

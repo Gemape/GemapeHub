@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAccess } from "@/lib/access-context";
-import { hojeLocal } from "@/lib/empregados";
+import { horaBrasilia, hojeLocal } from "@/lib/empregados";
 import { useEmpresa } from "@/lib/empresa-context";
 import { historicoAbastecimentos, mediaKmPorLitro, ultimoAbastecimentoDoVeiculo } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
@@ -24,7 +24,7 @@ const TODOS = "todos";
 const reais = (n: number | null | undefined) =>
   n === null || n === undefined ? "—" : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const numero = (n: number) => n.toLocaleString("pt-BR");
-const horaAgora = () => `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`;
+const horaAgora = () => horaBrasilia();
 
 // Módulos > Veículos > Abastecimento (decisão 58): escolhe o veículo (a tela já traz o km do
 // último abastecimento), informa data, hora, km (nunca menor que o anterior), litros e valor em
