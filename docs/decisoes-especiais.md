@@ -1187,3 +1187,15 @@ Pedido do dono (15/10, 19:18 e 19:21), a partir de um scanner de fluxograma: est
 ### Decisão 217: Desfeita a decisão 216 (lógica de perguntas dos 4 tipos)
 
 Pedido do dono (15/10, 19:35): "desfazer esta última alteração". O código da decisão 216 foi revertido: Alimentação, Hospedagem, Pedágio e Estacionamento voltam à ordem e às perguntas de antes (com Detalhamento, sem PCM responde condicional e sem tela de justificativa). O texto da decisão 216 e o registro de Fase 2 da justificativa ficam no histórico, **sem valer**. O scanner do dono segue como referência caso a lógica seja retomada. Navegadores que já migraram para a ordem da 216 continuam com ela até as perguntas serem reordenadas ou o questionário ser restaurado pelo botão Restaurar configurações iniciais. Sem Supabase.
+
+### Decisão 218: Classificação Avulso ou Não conformidade em Alimentação
+
+Pedido do dono (15/10, 19:46), para testar só em **Alimentação** (se ficar bom, ele manda estender aos outros tipos): logo depois de **quem lança** (04) entram os campos de classificação do PCM ou Administrativo.
+
+- **PCM responde** (13, Avulso ou Não conformidade) só aparece quando quem lança é do **PCM ou do Administrativo**; quem lança pela Oficina segue direto.
+- **Avulso (técnico não monitorado):** abre o campo **Nome do empregado** (pergunta 15, texto livre, obrigatório).
+- **Não conformidade (técnico monitorado que não lançou):** pede o **técnico responsável** (14), isto é, o técnico que não lançou.
+- Depois seguem as demais perguntas, na mesma ordem de antes (sem tirar Detalhamento, Clientes nem mudar a foto do comprovante).
+- As condições ficam gravadas como regras do questionário de Alimentação (14 só na Não conformidade, 15 só no Avulso). Os outros tipos não mudam.
+- Dado já salvo no navegador ganha a classificação em Alimentação **uma vez só**; a pergunta 15 nasce com o número 15, fora da sequência dos demais por não ter lugar sem renumerar todas.
+- O nome do empregado no Avulso fica só registrado na despesa; ele **não** vira técnico responsável nem entra em relatório (a confirmar com o dono). Registro de Fase 2 em docs/pendencias-fase2.md. Sem Supabase.

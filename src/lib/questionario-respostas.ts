@@ -2,7 +2,7 @@
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
 import { inicioDaProximaSecao } from "./questionario-secoes.ts";
 import { DESTINO_PROXIMA_SECAO, aceitaDestino, destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
-import { ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
+import { ID_HABILITADOS, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_CLASSIFICACAO, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
 export type Resposta = string | string[];
@@ -93,6 +93,8 @@ export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas)
     // Pergunta que depende de outra (município x UF) só aparece com a de origem visível.
     if (p.dependeDe && !mostradas.has(p.dependeDe)) continue;
     if (id === ID_TECNICO_RESPONSAVEL && !lancadoPorGestor(respostas)) continue;
+    // Dec 218: nos tipos com classificação, "PCM responde" é só de quem lança pelo PCM ou Administrativo.
+    if (id === ID_PCM_RESPONDE && TIPOS_COM_CLASSIFICACAO.includes(tipo) && !lancadoPorGestor(respostas)) continue;
     if (!visivel(e, tipo, id, respostas)) continue;
     mostradas.add(id);
     lista.push(p);

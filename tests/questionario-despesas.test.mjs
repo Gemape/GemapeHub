@@ -14,12 +14,12 @@ const memoria = () => {
   return { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v), dados };
 };
 
-test("as 14 perguntas do responsável já vêm cadastradas, com tipos, formatos e obrigatoriedade", () => {
+test("as 15 perguntas de fábrica já vêm cadastradas, com tipos, formatos e obrigatoriedade", () => {
   const p = perguntasPadrao();
-  assert.equal(p.length, 14);
-  assert.deepEqual(p.map((x) => x.codigo), ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"]);
+  assert.equal(p.length, 15);
+  assert.deepEqual(p.map((x) => x.codigo), ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]);
   assert.ok(p.every((x) => x.obrigatoria));
-  assert.deepEqual(p.map((x) => x.tipo), ["caixas", "caixas", "caixas", "caixas", "caixas", "lista", "lista", "lista", "data", "paragrafo", "curta", "curta", "upload", "lista"]);
+  assert.deepEqual(p.map((x) => x.tipo), ["caixas", "caixas", "caixas", "caixas", "caixas", "lista", "lista", "lista", "data", "paragrafo", "curta", "curta", "upload", "lista", "curta"]);
   assert.ok(p.slice(0, 4).every((x) => x.multiplas === false));
   assert.equal(p[5].opcoes.length, 27);
   assert.equal(p[6].fonte, "municipios");
@@ -54,7 +54,7 @@ test("arrastar reordena, mas a pergunta de tipos de despesa não se move", () =>
 test("cadastrar: título obrigatório, sem título repetido, opções preenchidas e sem repetição", () => {
   const e = estadoPadrao();
   const nova = novaPergunta("multipla", proximoCodigoPergunta(e, memoria()));
-  assert.equal(proximoCodigoPergunta(e, memoria()), "15");
+  assert.equal(proximoCodigoPergunta(e, memoria()), "16");
   assert.match(validarPergunta(nova, e.perguntas)[0], /título/);
   assert.match(validarPergunta({ ...nova, titulo: "moedas" }, e.perguntas)[0], /Já existe/);
   assert.match(validarPergunta({ ...nova, titulo: "Placa" }, e.perguntas)[0], /opções/);
@@ -70,7 +70,7 @@ test("salvar grava no navegador e o código excluído não é reaproveitado", ()
   e = salvarPergunta(e, nova, s);
   assert.equal(lerEstado(s).perguntas.at(-1).titulo, "Quilometragem");
   e = excluirPergunta(e, nova.id, s);
-  assert.equal(proximoCodigoPergunta(e, s), "16");
+  assert.equal(proximoCodigoPergunta(e, s), "17");
 });
 
 test("a pergunta de tipos de despesa não se exclui; excluir outra tira dos questionários", () => {
@@ -95,7 +95,7 @@ test("incluir um tipo de despesa cria o questionário dele; tirar o tipo apaga o
 test("clonar copia tudo com número novo e título de cópia", () => {
   const e = estadoPadrao();
   const c = clonarPergunta(e, "q-02", memoria());
-  assert.equal(c.codigo, "15");
+  assert.equal(c.codigo, "16");
   assert.equal(c.titulo, "Cartões de crédito (cópia)");
   assert.deepEqual(c.opcoes, e.perguntas[1].opcoes);
   assert.notEqual(c.id, "q-02");
@@ -120,7 +120,7 @@ test("upload: até 3 arquivos, e obrigatória exige só 1", () => {
 test("dado salvo ilegível não é sobrescrito", () => {
   const s = memoria();
   s.setItem("gemape-demo-questionario-despesas", "{quebrado");
-  assert.equal(lerEstado(s).perguntas.length, 14);
+  assert.equal(lerEstado(s).perguntas.length, 15);
   assert.throws(() => salvarPergunta(estadoPadrao(), { ...novaPergunta("data", "14"), titulo: "Nova" }, s), /ilegíveis/);
   assert.equal(s.getItem("gemape-demo-questionario-despesas"), "{quebrado");
 });
@@ -168,7 +168,7 @@ test("número repetido por formulário antigo passa para o próximo livre e ids 
   e = salvarPergunta(e, aberta, s);
   const codigos = e.perguntas.map((p) => p.codigo);
   assert.equal(new Set(codigos).size, codigos.length);
-  assert.equal(e.perguntas.at(-1).codigo, "16");
+  assert.equal(e.perguntas.at(-1).codigo, "17");
   assert.notEqual(novaPergunta("data", "14").id, novaPergunta("data", "14").id);
 });
 
@@ -275,7 +275,7 @@ test("dec 209: as perguntas de fábrica seguem a ordem numérica 01 a 14 e dado 
   assert.equal(porId["q-14"], "05");
   assert.equal(porId["q-05"], "06");
   assert.equal(porId["q-13"], "14");
-  assert.equal(porId["q-x"], "15");
+  assert.equal(porId["q-x"], "16");
   assert.equal(new Set(lido.perguntas.map((p) => p.codigo)).size, lido.perguntas.length);
   assert.equal(lido.codigosOrdenados, true);
 });

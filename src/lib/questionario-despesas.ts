@@ -81,6 +81,8 @@ export type Estado = {
   cartaoAjustado?: true;
   // Marca que os números das perguntas de fábrica já foram colocados em ordem sequencial nos dados salvos antes (dec 209).
   codigosOrdenados?: true;
+  // Marca que a classificação Avulso ou Não conformidade já entrou no questionário de Alimentação dos dados salvos antes (dec 218).
+  classificacaoAjustada?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -91,6 +93,13 @@ export const ID_TIPO_DESPESA = "q-03";
 // Módulo Viagens (dec 177): quem lança é a pergunta 04; a 14 só aparece quando quem lança é PCM ou Administrativo, para dizer de qual técnico é a despesa.
 export const ID_HABILITADOS = "q-04";
 export const ID_TECNICO_RESPONSAVEL = "q-14";
+// Dec 218: em Alimentação, quem lança pelo PCM ou Administrativo classifica a despesa em "PCM responde": Avulso abre o nome do empregado
+// e Não conformidade pede o técnico que não lançou; depois seguem as demais perguntas. Outros tipos entram aqui quando o dono mandar.
+export const ID_PCM_RESPONDE = "q-13";
+export const ID_NOME_EMPREGADO = "q-15";
+export const OPCAO_AVULSO = "Avulso – técnico não monitorado";
+export const OPCAO_NAO_CONFORMIDADE = "Não conformidade – técnico monitorado não preencheu";
+export const TIPOS_COM_CLASSIFICACAO = ["Alimentação"];
 export const ID_UF = "q-05";
 // Perguntas travadas (dec 207): Unidade da Federação, Município, Data, Valor, Foto do comprovante e Detalhamento não precisam de edição na montagem.
 export const IDS_TRAVADAS: readonly string[] = [ID_UF, "q-06", "q-08", "q-09", "q-11", "q-12"];
@@ -143,7 +152,8 @@ export function perguntasPadrao(): Pergunta[] {
     base(10, "curta", "Litros abastecidos", { formato: "decimal2" }),
     base(11, "curta", "Valor da despesa", { formato: "decimal2" }),
     base(12, "upload", "Foto do comprovante"),
-    base(13, "lista", "PCM responde", { opcoes: ["Avulso – técnico não monitorado", "Não conformidade – técnico monitorado não preencheu"] }),
+    base(13, "lista", "PCM responde", { opcoes: [OPCAO_AVULSO, OPCAO_NAO_CONFORMIDADE] }),
+    base(15, "curta", "Nome do empregado"),
   ].map((p) => ({ ...p, codigo: CODIGO_ORDENADO[p.id] ?? p.codigo }));
 }
 
@@ -164,12 +174,29 @@ function comRegraDoCartao(questionarios: Record<string, string[]>, regras: Estad
   return novas;
 }
 
+// Dec 218: coloca as três perguntas da classificação logo depois de quem lança (a 04) e liga as condições: o técnico que não lançou só na
+// Não conformidade e o nome do empregado só no Avulso. "PCM responde" só aparece para quem lança pelo PCM ou Administrativo (questionario-respostas).
+function comClassificacao(ids: string[]): string[] {
+  const resto = ids.filter((id) => id !== ID_PCM_RESPONDE && id !== ID_TECNICO_RESPONSAVEL && id !== ID_NOME_EMPREGADO);
+  const apos = resto.indexOf(ID_HABILITADOS);
+  const trio = [ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, ID_NOME_EMPREGADO];
+  return apos >= 0 ? [...resto.slice(0, apos + 1), ...trio, ...resto.slice(apos + 1)] : [...resto, ...trio];
+}
+const regrasDaClassificacao = (): Record<string, Regra> => ({
+  [ID_TECNICO_RESPONSAVEL]: { origem: ID_PCM_RESPONDE, operador: "igual", valor: OPCAO_NAO_CONFORMIDADE },
+  [ID_NOME_EMPREGADO]: { origem: ID_PCM_RESPONDE, operador: "igual", valor: OPCAO_AVULSO },
+});
+
 export function estadoPadrao(): Estado {
   const perguntas = perguntasPadrao();
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
-  const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => [o, resto.filter((id) => id !== ID_LITROS || o === TIPO_ABASTECIMENTO)]));
-  return { versao: 1, perguntas, questionarios, regras: comRegraDoCartao(questionarios, {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true };
+  const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => {
+    const ids = resto.filter((id) => (id !== ID_LITROS || o === TIPO_ABASTECIMENTO) && id !== ID_NOME_EMPREGADO);
+    return [o, TIPOS_COM_CLASSIFICACAO.includes(o) ? comClassificacao(ids) : ids];
+  }));
+  const regras = comRegraDoCartao(questionarios, Object.fromEntries(TIPOS_COM_CLASSIFICACAO.filter((t) => t in questionarios).map((t) => [t, regrasDaClassificacao()])));
+  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -289,9 +316,23 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
         return novos.has(p.codigo) && !/^q-(0[1-9]|1[0-4])$/.test(p.id) ? { ...p, codigo: formatarCodigo(++proximo) } : p;
       });
     }
+    // Dado salvo antes da dec 218: a pergunta "Nome do empregado" entra no banco e Alimentação ganha a classificação logo depois de quem lança (uma vez só).
+    if (lido.classificacaoAjustada !== true) {
+      if (!perguntas.some((p) => p.id === ID_NOME_EMPREGADO)) {
+        const nova = perguntasPadrao().find((p) => p.id === ID_NOME_EMPREGADO);
+        if (nova) perguntas = [...perguntas, { ...nova, codigo: perguntas.some((p) => p.codigo === nova.codigo) ? formatarCodigo(Math.max(...perguntas.map((p) => Number(p.codigo) || 0)) + 1) : nova.codigo }];
+      }
+      const existentes = new Set(perguntas.map((p) => p.id));
+      for (const tipo of TIPOS_COM_CLASSIFICACAO) {
+        const ids = questionarios[tipo];
+        if (!Array.isArray(ids)) continue;
+        questionarios = { ...questionarios, [tipo]: comClassificacao(ids).filter((id) => existentes.has(id)) };
+        regras = { ...regras, [tipo]: { ...(regras[tipo] ?? {}), ...regrasDaClassificacao() } };
+      }
+    }
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true };
   } catch {
     return estadoPadrao();
   }
