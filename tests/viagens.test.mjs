@@ -16,6 +16,12 @@ const completas = {
   "q-07": "00001 - Cliente Teste", "q-08": "2026-10-14", "q-09": "Almoço com o cliente", "q-10": "10,50", "q-11": "1.234,56", "q-12": ["comprovante.jpg"], "q-13": "Avulso – técnico não monitorado",
 };
 const agora = new Date(2026, 9, 14, 8, 5);
+// Dec 222: o questionário de fábrica não tem Clientes; estes testes incluem a pergunta de volta para conferir a leitura do cliente.
+const comCliente = () => {
+  const e = estadoPadrao();
+  return { ...e, questionarios: Object.fromEntries(Object.entries(e.questionarios).map(([t, ids]) => [t, [...ids, "q-07"]])) };
+};
+
 
 test("o menu de Módulos tem Viagens, com o Painel como primeira aba", () => {
   assert.equal(ABAS_VIAGEM[0]?.aba, "painel");
@@ -26,7 +32,7 @@ test("o menu de Módulos tem Viagens, com o Painel como primeira aba", () => {
 });
 
 test("o lançamento tem estrutura única e flexível: campos não respondidos ficam nulos", () => {
-  const e = estadoPadrao();
+  const e = comCliente();
   const r = registrarResposta(e, completas, memoria(), agora);
   const d = dadosDoLancamento(r);
   assert.equal(d.tipo, "Abastecimento");
