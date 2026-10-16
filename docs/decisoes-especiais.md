@@ -1355,3 +1355,11 @@ Pedido do responsável em 16/10 (17:37), com plano aprovado por ele ("ok") e a e
 - Histórico completo de movimentações de EPI por EPI e por empregado (lido em blocos, sem o limite de 1000 linhas), com Exportar CSV.
 - Ficha de EPI Avulsa: ganhou a coluna Código e, na devolução, o responsável. Cada entrega e devolução entra na ficha com data, EPI, tamanho, quantidade e código.
 - Só modo demonstração: as colunas `codigo_movimentacao` e `responsavel_nome` de `movimentacoes` existem só no demo (anotadas em `docs/pendencias-fase2.md`). Nada no Supabase.
+
+### Decisão 240: Tamanho na Entrada de Movimentações (EPI e Uniforme)
+
+Pedido do responsável em 16/10 (18:14), com a imagem da Nova movimentação de uniforme: "no campo de entrada de uniforme incluir o tamanho". Escolha dele no cartão: "Todos ativos".
+
+- Em Módulos > EPIs e Uniformes > Movimentações, na Entrada, o produto sem nenhum tamanho autorizado ativo na subcategoria passa a mostrar o campo Tamanho com todos os tamanhos ativos de Gerais; o tamanho é obrigatório. Produto com tamanho autorizado continua com só os autorizados.
+- Ao registrar, o tamanho escolhido é associado à subcategoria do produto (antes de gravar; se a gravação falhar, a associação é desfeita). O saldo antigo continua em "Sem tamanho", e a entrada soma no tamanho escolhido.
+- Compras e demais telas não mudam. Sem tamanhos em Gerais, o estoque continua único.

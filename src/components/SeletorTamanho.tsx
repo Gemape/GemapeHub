@@ -25,7 +25,12 @@ export const pedeTamanho = (
   parametros: ParametrosBase,
   modulo: ModuloTamanho,
   produto: ProdutoTamanho | undefined,
-) => TAMANHO_DISPONIVEL && !!produto && controlaTamanho(parametros, modulo, produto);
+  aceitarTodos = false,
+) =>
+  TAMANHO_DISPONIVEL &&
+  !!produto &&
+  (controlaTamanho(parametros, modulo, produto) ||
+    (aceitarTodos && opcoesTamanhoEntrada(parametros, modulo, produto, true).length > 0));
 
 /**
  * Lista suspensa do tamanho de uma linha (decisão 23). Entrada mostra os tamanhos autorizados
@@ -41,6 +46,7 @@ export function SeletorTamanho({
   valor,
   onChange,
   id,
+  aceitarTodos = false,
 }: {
   parametros: ParametrosBase;
   modulo: ModuloTamanho;
@@ -49,13 +55,15 @@ export function SeletorTamanho({
   valor: string;
   onChange: (valor: string) => void;
   id?: string;
+  /** Entrada: produto sem tamanho autorizado oferece todos os tamanhos ativos de Gerais. */
+  aceitarTodos?: boolean;
 }) {
-  if (!produto || !pedeTamanho(parametros, modulo, produto)) {
+  if (!produto || !pedeTamanho(parametros, modulo, produto, uso === "entrada" && aceitarTodos)) {
     return <span className="text-sm text-muted-foreground">—</span>;
   }
   const opcoes =
     uso === "entrada"
-      ? opcoesTamanhoEntrada(parametros, modulo, produto)
+      ? opcoesTamanhoEntrada(parametros, modulo, produto, aceitarTodos)
       : uso === "devolucao"
         ? opcoesTamanhoDevolucao(parametros, modulo, produto)
         : opcoesTamanhoSaida(parametros, modulo, produto).map((o) => ({
