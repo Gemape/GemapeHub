@@ -82,9 +82,10 @@ export function EpiEntrega() {
     [itens, movimentosDoEmpregado, empregadoId],
   );
 
+  // Só da empresa escolhida: o saldo e o mínimo são por empresa, e o mesmo código não aparece repetido (dec 238).
   const alertas = useMemo(
-    () => itens.map((i) => ({ item: i, estado: estadoEstoqueModulo(parametros, "epi", i) })).filter((x) => x.estado.alerta && (x.estado.minimo > 0 || x.estado.saldo === 0)),
-    [itens, parametros],
+    () => (empresaSel ? itens : []).map((i) => ({ item: i, estado: estadoEstoqueModulo(parametros, "epi", i) })).filter((x) => x.estado.alerta && (x.estado.minimo > 0 || x.estado.saldo === 0)),
+    [itens, parametros, empresaSel],
   );
   const calcularAlerta: CalculoAlerta = (item) => {
     const e = estadoEstoqueModulo(parametros, "epi", item as never);
@@ -167,7 +168,7 @@ export function EpiEntrega() {
     <div className="space-y-6">
       {alertas.length > 0 && (
         <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          <strong>Estoque no mínimo ou abaixo:</strong>{" "}
+          <strong>Estoque no mínimo ou abaixo ({empresa?.nome_fantasia}):</strong>{" "}
           {alertas.map(({ item, estado }) => `${item.codigo_sku} ${item.nome} (saldo ${estado.saldo}, mínimo ${estado.minimo})`).join("; ")}
         </div>
       )}
