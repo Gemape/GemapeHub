@@ -34,6 +34,9 @@ import {
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { validarTermoResponsabilidade } from "@/lib/encerramento-ferramentas";
+import { supabase } from "@/integrations/supabase/client";
+import { controleDaFerramenta, disponivelNaCaixa, movimentacoesDaCaixa } from "@/lib/controle-caixa";
+import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { montarTermoResponsabilidadeHtml } from "@/lib/termo-responsabilidade-html";
 
 interface ItemTermo {
@@ -124,8 +127,30 @@ export function FerramentasTermoResponsabilidade() {
 
     if (!empregado || !empresa) return;
 
-    // Não entrega mais do que o estoque disponível de cada ferramenta.
-    const erro = validarTermoResponsabilidade(itensTermo, itens);
+    // Com caixa escolhida, a quantidade vive na caixa: o limite é o que está guardado nela (decisão 244).
+    let guardadasNaCaixa: Record<string, number> | undefined;
+    if (caixaSel) {
+      try {
+        const { data: itensDaCaixa = [] } = await buscarItensCaixa();
+        const historicoCaixa = movimentacoesDaCaixa(
+          await lerMovimentacoesRelatorio(supabase, { modulo: "ferramenta", empresaId: empresaSel }),
+          caixaSel,
+          itensDaCaixa.map((ci) => ci.ferramenta_id),
+          caixa?.codigo,
+        );
+        guardadasNaCaixa = Object.fromEntries(
+          itensDaCaixa.map((ci) => {
+            const c = controleDaFerramenta(historicoCaixa, ci.ferramenta_id);
+            return [ci.ferramenta_id, disponivelNaCaixa(ci.quantidade, c.comEmpregado, c.baixadoDaCaixa)];
+          }),
+        );
+      } catch {
+        alert("Não foi possível conferir o que está guardado na caixa.");
+        return;
+      }
+    }
+    // Não entrega mais do que o estoque disponível de cada ferramenta (ou o guardado na caixa).
+    const erro = validarTermoResponsabilidade(itensTermo, itens, guardadasNaCaixa);
     if (erro) {
       alert(erro);
       return;

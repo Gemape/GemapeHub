@@ -94,10 +94,14 @@ export function validarEncerramento(
   return null;
 }
 
-/** Termo de Responsabilidade: não entrega mais do que o estoque disponível de cada ferramenta. */
+/**
+ * Termo de Responsabilidade: não entrega mais do que o estoque disponível de cada ferramenta. Com caixa
+ * escolhida, o limite é o que está guardado nela (`guardadasNaCaixa`, por ferramenta), não o estoque do cadastro.
+ */
 export function validarTermoResponsabilidade(
   linhas: { item_id: string; quantidade: number }[],
   itens: { id: string; nome: string; estoque_atual: number | null }[],
+  guardadasNaCaixa?: Record<string, number>,
 ): string | null {
   if (linhas.length === 0) return "Adicione pelo menos uma ferramenta.";
   const pedidas = new Map<string, number>();
@@ -110,6 +114,13 @@ export function validarTermoResponsabilidade(
   }
   for (const [itemId, quantidade] of pedidas) {
     const item = itens.find((i) => i.id === itemId);
+    if (guardadasNaCaixa) {
+      const guardadas = guardadasNaCaixa[itemId] ?? 0;
+      if (quantidade > guardadas) {
+        return `A entrega de ${quantidade} unidade(s) de ${item?.nome ?? "uma ferramenta"} passa do que está guardado na caixa (${guardadas}).`;
+      }
+      continue;
+    }
     const estoque = item?.estoque_atual ?? 0;
     if (quantidade > estoque) {
       return `A entrega de ${quantidade} unidade(s) de ${item?.nome ?? "uma ferramenta"} passa do estoque disponível (${estoque}).`;
