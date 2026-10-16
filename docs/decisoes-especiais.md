@@ -1355,3 +1355,12 @@ Pedido do responsável em 16/10 (17:37), com plano aprovado por ele ("ok") e a e
 - Histórico completo de movimentações de EPI por EPI e por empregado (lido em blocos, sem o limite de 1000 linhas), com Exportar CSV.
 - Ficha de EPI Avulsa: ganhou a coluna Código e, na devolução, o responsável. Cada entrega e devolução entra na ficha com data, EPI, tamanho, quantidade e código.
 - Só modo demonstração: as colunas `codigo_movimentacao` e `responsavel_nome` de `movimentacoes` existem só no demo (anotadas em `docs/pendencias-fase2.md`). Nada no Supabase.
+
+### Decisão 243: Transferir ferramenta entre caixas, inclusive para caixa ainda sem cadastro
+
+Pedido do responsável em 16/10 (18:28), com a imagem das caixas CX-0001 a CX-0003: "habilitar o campo: transferir permitindo passar uma ferramenta de uma caixa a outra e registrar a movimentação no histórico de movimentações".
+
+- Causa: o botão Transferir só ligava com duas caixas já cadastradas; CX-0002 e CX-0003 estavam habilitadas, mas sem ferramentas, e não contavam como destino.
+- Agora o botão liga quando há outra caixa cadastrada ou habilitada sem cadastro. A lista Caixa de destino mostra as duas, e a sem cadastro aparece como "(ainda sem ferramentas)".
+- Transferir para caixa sem cadastro cria a caixa (mesma empresa da origem, status Ativa) já com a ferramenta e a mesma quantidade; só depois a ferramenta sai da origem, e se a saída falhar a entrada no destino é desfeita.
+- A movimentação "Transferência" (origem, destino, data) fica no Histórico de movimentações das duas caixas.

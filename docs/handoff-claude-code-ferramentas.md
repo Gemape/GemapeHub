@@ -494,5 +494,6 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-16 dec 236: opção fixa "Sem cliente vinculado" no campo Clientes (SEM_CLIENTE_VINCULADO em viagens.ts; fora de Clientes visitados).
 - 2026-10-16 dec 237: autorizar tamanho em Associar ao Produto grava direto, sem o aviso de saldo em Sem tamanho (avisoAutorizacaoTamanhos ficou sem uso na tela).
 - 2026-10-16 dec 238: coluna Empresa no Estoque dos módulos (EstoqueModulo.tsx), no CSV e no título de Configurar.
+- 2026-10-16 dec 243: Transferir ferramenta aceita caixa habilitada sem cadastro (CaixaGestaoDialogs DialogTransferirCaixa `novas`, FerramentasCaixasModulo `novas={semCadastro}`): cria a caixa com a ferramenta e registra a Transferência. Teste: tests/transferir-caixa-sem-cadastro.test.mjs.
 - 2026-10-16 dec 239: Entrega EPI (EpiEntrega.tsx, entrega-epi.ts): entrega e devolução (só admin) com código ENT/DEV, histórico completo, alerta de mínimo, ficha com código e responsável.
 - 2026-10-16 dec 233: Clientes volta a todos os questionários de Viagens depois do Município (desfaz dec 222; migração única clientesEmTodos em questionario-despesas.ts; comOrdemViagens e estadoPadrao deixam de excluir ID_CLIENTES).

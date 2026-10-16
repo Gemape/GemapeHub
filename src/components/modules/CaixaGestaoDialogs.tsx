@@ -19,6 +19,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { MOTIVOS_BAIXA, ONUS_BAIXA } from "@/lib/gemape";
 import { capitalizarNomePessoa, capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { hojeLocal } from "@/lib/empregados";
+import { codigoCaixa } from "@/lib/caixas-habilitadas";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import {
   controleDaFerramenta,
@@ -42,6 +43,7 @@ import {
   type Movimentacao,
 } from "@/lib/hooks-gemape";
 
+const PREFIXO_CAIXA_NOVA = "nova:";
 const SEM_EMPREGADO = "sem-empregado";
 // "Fornecimento ao Empregado" é entrega, não baixa.
 const MOTIVOS_DA_BAIXA = MOTIVOS_BAIXA.filter((m) => m !== "Fornecimento ao Empregado");
@@ -524,7 +526,8 @@ export function DialogTransferirCaixa({
   aoFechar,
   linhas,
   destinos,
-}: Comum & { linhas: LinhaCaixa[]; destinos: CaixaFerramenta[] }) {
+  novas = [],
+}: Comum & { linhas: LinhaCaixa[]; destinos: CaixaFerramenta[]; novas?: number[] }) {
   const { data: itensDeTodas = [] } = useTodosCaixaItens();
   const salvar = useSalvarCaixa();
   const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
@@ -532,6 +535,8 @@ export function DialogTransferirCaixa({
   const [destinoId, setDestinoId] = useState("");
   const [executando, setExecutando] = useState(false);
   const linha = linhas.find((l) => l.ferramenta.id === ferramentaId);
+  // Caixa habilitada que ainda não foi cadastrada: a transferência cria a caixa já com a ferramenta.
+  const novoNumero = destinoId.startsWith(PREFIXO_CAIXA_NOVA) ? Number(destinoId.slice(PREFIXO_CAIXA_NOVA.length)) : null;
   const destino = destinos.find((d) => d.id === destinoId);
   const valoresDe = (c: CaixaFerramenta) => ({
     codigo: c.codigo,
@@ -554,7 +559,7 @@ export function DialogTransferirCaixa({
       comEmpregado: linha?.comEmpregado ?? 0,
       jaNoDestino: itensDeTodas.some((i) => i.caixa_id === destinoId && i.ferramenta_id === ferramentaId),
     });
-    if (erro || !linha || !destino) {
+    if (erro || !linha || (!destino && novoNumero === null)) {
       alert(erro ?? "Confira a ferramenta e a caixa de destino.");
       return;
     }
@@ -566,12 +571,27 @@ export function DialogTransferirCaixa({
     setExecutando(true);
     try {
       // Primeiro entra no destino; só depois sai da origem, para a ferramenta nunca ficar sem caixa por falha.
-      await salvar.mutateAsync({
-        id: destino.id,
-        valores: valoresDe(destino),
-        itens: [...itensDa(destino.id), { ferramenta_id: ferramentaId, quantidade: naOrigem.quantidade, observacao: naOrigem.observacao ?? "" }],
+      const itemTransferido = { ferramenta_id: ferramentaId, quantidade: naOrigem.quantidade, observacao: naOrigem.observacao ?? "" };
+      const codigoNovo = novoNumero !== null ? codigoCaixa(novoNumero) : null;
+      const codigoDestino = codigoNovo ?? destino?.codigo ?? "";
+      const valoresDestino =
+        destino && novoNumero === null
+          ? valoresDe(destino)
+          : {
+              codigo: codigoNovo,
+              codigo_num: novoNumero,
+              empresa_id: caixa.empresa_id,
+              nome: codigoNovo,
+              descricao: null,
+              localizacao: null,
+              status: "Ativa",
+            };
+      const itensDestinoAntes = destino && novoNumero === null ? itensDa(destino.id) : [];
+      const destinoReal = await salvar.mutateAsync({
+        ...(destino && novoNumero === null ? { id: destino.id } : {}),
+        valores: valoresDestino,
+        itens: [...itensDestinoAntes, itemTransferido],
       });
-      const itensDestinoAntes = itensDa(destino.id);
       try {
         await salvar.mutateAsync({
           id: caixa.id,
@@ -580,7 +600,7 @@ export function DialogTransferirCaixa({
         });
       } catch (erro) {
         // A saída da origem falhou: desfaz a entrada no destino para a ferramenta não ficar nas duas caixas.
-        await salvar.mutateAsync({ id: destino.id, valores: valoresDe(destino), itens: itensDestinoAntes }).catch(() => undefined);
+        await salvar.mutateAsync({ id: destinoReal, valores: valoresDestino, itens: itensDestinoAntes }).catch(() => undefined);
         throw erro;
       }
       await registrar.mutateAsync([
@@ -600,9 +620,9 @@ export function DialogTransferirCaixa({
           conducao_ocorrencia: null,
           data_movimentacao: hojeLocal(),
           origem_local: caixa.codigo,
-          destino_local: destino.codigo,
-          observacao: `Transferida da caixa ${caixa.codigo} para a caixa ${destino.codigo}.`,
-          ...(MODO_DEMO ? { caixa_id: destino.id } : {}),
+          destino_local: codigoDestino,
+          observacao: `Transferida da caixa ${caixa.codigo} para a caixa ${codigoDestino}.`,
+          ...(MODO_DEMO ? { caixa_id: destinoReal } : {}),
         },
       ]);
       aoFechar();
@@ -652,6 +672,11 @@ export function DialogTransferirCaixa({
                       {d.codigo}
                     </SelectItem>
                   ))}
+                {novas.map((n) => (
+                  <SelectItem key={`${PREFIXO_CAIXA_NOVA}${n}`} value={`${PREFIXO_CAIXA_NOVA}${n}`}>
+                    {codigoCaixa(n)} (ainda sem ferramentas)
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
