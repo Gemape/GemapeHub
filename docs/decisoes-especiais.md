@@ -1403,3 +1403,10 @@ Pedido do responsável em 16/10 (19:02), com a imagem do campo Município em Via
 - O campo "Buscar município" separado saiu. O Município passa a ser um só campo: ao clicar abre a lista dos municípios da UF respondida antes, e ao digitar a lista filtra (sem acento e sem diferenciar maiúscula). Não há mais o aviso "Mostrando 200 de 853".
 - A lista abre empurrando o que vem abaixo (`listaNoFluxo` do CampoBusca), porque o cartão seguinte cobria a lista flutuante.
 - Sem UF escolhida o campo fica desabilitado, como antes. Escolhido o município, aparece com o botão Trocar.
+
+### Decisão 246: Anexo de imagens mostra miniaturas
+
+Pedido do responsável em 16/10 (19:01), com a imagem do campo "Foto do comprovante": "ao anexar imagem no campo do anexo fazer com que apareça as miniaturas ao invés do texto".
+
+- Cada imagem anexada no questionário aparece como miniatura (já reduzida) em vez da linha "nome: tamanho para tamanho". O nome e a redução ficam na dica ao passar o mouse.
+- O botão × no canto da miniatura remove a imagem (substitui o link "Remover"). Limite de 3 imagens e mensagem de contagem continuam iguais.
