@@ -30,7 +30,7 @@ import {
 } from "@/lib/questionario-despesas";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
-import { aplicarFormato, chaveAbastecimento, chaveJustificativaPedida, chaveManutencao, chaveOutro, marcouOutro, perguntasVisiveis, respostasDaManutencao, respostasDoAbastecimento, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
+import { aplicarFormato, chaveAbastecimento, chaveJustificativaPedida, chaveManutencao, chaveOutro, marcouOutro, perguntasVisiveis, trazerAbastecimento, trazerManutencao, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   atualizarResposta, despesaEmRelatorio, listarRespostas, registrarResposta, removerResposta, respostasParaEdicao, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
 } from "@/lib/respostas-despesas";
@@ -109,7 +109,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   const ligadoId = typeof respostas[chaveAbastecimento] === "string" ? (respostas[chaveAbastecimento] as string) : "";
   const ligado = ligadoId ? abastecimentos.find((a) => a.id === ligadoId) ?? null : null;
   const trazerDoAbastecimento = (registro: Abastecimento) => {
-    setRespostas((r) => ({ ...r, ...respostasDoAbastecimento(registro) }));
+    setRespostas((r) => trazerAbastecimento(r, registro));
     setErros((x) => { const { [ID_DATA_DESPESA]: _d, [ID_VALOR_DESPESA]: _v, ...resto } = x; return resto; });
     toast.info("Data, valor e litros trazidos do abastecimento. Termine a despesa.");
   };
@@ -122,7 +122,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   const manutencaoLigada = manutencaoLigadaId ? manutencoes.find((m) => m.id === manutencaoLigadaId) ?? null : null;
   const servicoDaManutencao = (m: ManutencaoVeiculo) => resumoManutencao(m, (id) => parametrosBase.acoesManutencaoVeiculo.find((a) => a.id === id)?.nome);
   const trazerDaManutencao = (registro: ManutencaoVeiculo, servico: string) => {
-    setRespostas((r) => ({ ...r, ...respostasDaManutencao(registro, servico === "—" ? "" : servico) }));
+    setRespostas((r) => trazerManutencao(r, registro, servico === "—" ? "" : servico));
     setErros((x) => { const { [ID_DATA_DESPESA]: _d, [ID_VALOR_DESPESA]: _v, [ID_DETALHAMENTO]: _t, ...resto } = x; return resto; });
     toast.info("Data, detalhamento e custo total trazidos da manutenção. Termine a despesa.");
   };
@@ -354,14 +354,23 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
         </form>
       )}
 
-      <NovoAbastecimentoDialog
-        aberto={abastecimentoAberto}
-        aoMudar={setAbastecimentoAberto}
-        aoSalvar={trazerDoAbastecimento}
-      />
-      <EscolherAbastecimentoDialog aberto={escolhaAberta} aoMudar={setEscolhaAberta} aoEscolher={trazerDoAbastecimento} />
-      <NovaManutencaoDialog aberto={manutencaoAberta} aoMudar={setManutencaoAberta} aoSalvar={(registro) => trazerDaManutencao(registro, servicoDaManutencao(registro))} />
-      <EscolherManutencaoDialog aberto={escolhaManutencaoAberta} aoMudar={setEscolhaManutencaoAberta} aoEscolher={trazerDaManutencao} />
+      {/* As janelas de Veículos só existem nos cards que as usam. */}
+      {tipo === TIPO_ABASTECIMENTO && (
+        <>
+          <NovoAbastecimentoDialog
+            aberto={abastecimentoAberto}
+            aoMudar={setAbastecimentoAberto}
+            aoSalvar={trazerDoAbastecimento}
+          />
+          <EscolherAbastecimentoDialog aberto={escolhaAberta} aoMudar={setEscolhaAberta} aoEscolher={trazerDoAbastecimento} />
+        </>
+      )}
+      {tipo === TIPO_MANUTENCAO && (
+        <>
+          <NovaManutencaoDialog aberto={manutencaoAberta} aoMudar={setManutencaoAberta} aoSalvar={(registro) => trazerDaManutencao(registro, servicoDaManutencao(registro))} />
+          <EscolherManutencaoDialog aberto={escolhaManutencaoAberta} aoMudar={setEscolhaManutencaoAberta} aoEscolher={trazerDaManutencao} />
+        </>
+      )}
     </div>
   );
 }

@@ -83,7 +83,13 @@ export function sincronizarAbastecimento(respostas: Respostas, lista: { id: stri
   if (!a) throw new Error("O abastecimento ligado a esta despesa foi excluído de Veículos; escolha outro ou registre um novo.");
   const novo = { ...respostas, ...respostasDoAbastecimento(a) };
   if (!(typeof a.valor === "number" && a.valor > 0)) delete novo[ID_VALOR_DESPESA];
+  if (!(typeof a.litros === "number" && a.litros > 0)) delete novo[ID_LITROS];
   return novo;
+}
+// Ao trazer outro abastecimento, o valor e os litros do anterior saem se o novo não os tem.
+export function trazerAbastecimento(respostas: Respostas, abastecimento: { id?: string; data: string; valor?: number | null | undefined; litros?: number | null | undefined }): Respostas {
+  const { [ID_VALOR_DESPESA]: _valor, [ID_LITROS]: _litros, ...resto } = respostas;
+  return { ...resto, ...respostasDoAbastecimento(abastecimento) };
 }
 
 // Dec 226: no card Manutenção do veículo de trabalho, a Nova manutenção de Veículos devolve data, detalhamento (serviços) e custo total.
@@ -94,6 +100,11 @@ export function respostasDaManutencao(manutencao: { id?: string; data: string; c
   if (detalhamento.trim()) patch[ID_DETALHAMENTO] = detalhamento.trim();
   if (typeof manutencao.custoTotal === "number" && manutencao.custoTotal > 0) patch[ID_VALOR_DESPESA] = mascaraDecimal2(String(Math.round(manutencao.custoTotal * 100)));
   return patch;
+}
+// Ao trazer outra manutenção, o valor e o detalhamento da anterior saem se a nova não os tem.
+export function trazerManutencao(respostas: Respostas, manutencao: { id?: string; data: string; custoTotal?: number | null | undefined }, detalhamento: string): Respostas {
+  const { [ID_VALOR_DESPESA]: _valor, [ID_DETALHAMENTO]: _detalhe, ...resto } = respostas;
+  return { ...resto, ...respostasDaManutencao(manutencao, detalhamento) };
 }
 // Ao gravar, a despesa ligada puxa de novo data e custo total da manutenção (o detalhamento fica como foi digitado).
 export function sincronizarManutencao(respostas: Respostas, lista: { id: string; data: string; custoTotal?: number | null | undefined }[]): Respostas {
