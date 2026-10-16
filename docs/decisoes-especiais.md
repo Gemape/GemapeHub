@@ -1314,3 +1314,10 @@ Pedido do responsável em 16/10 (16:40), com a imagem da logomarca GEMAPE 40 ano
 
 - O Relatório de Viagens (ao gerar e ao reabrir pela lista) imprime a nova logomarca, arquivo `public/logo-relatorio-viagens.png` (a imagem enviada, sem a margem branca). A coluna da logo no cabeçalho ficou um pouco maior (46 mm) para o texto "Máquinas e Peças" continuar legível.
 - Só o relatório de Viagens muda: os demais documentos continuam com `public/logo.png`. Sem Supabase.
+
+### Decisão 235: Gasto por técnico responsável no relatório de todos os empregados
+
+Pedido do responsável em 16/10 (17:02): "quando for selecionado o relatório de todos empregados, constar no relatório o gasto por técnico responsável".
+
+- No Relatório de Viagens de "Todos os empregados" (ao gerar e ao reabrir pela lista), a tabela de despesas ganha a coluna Técnico e, depois do quadro por tipo, sai o quadro "Gasto por técnico responsável" (técnico, lançamentos e total, com total geral), em ordem alfabética.
+- Lançamento sem técnico responsável aparece como "Sem técnico responsável", por último. Relatório de um empregado só continua como antes. Sem Supabase.
