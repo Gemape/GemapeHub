@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,11 +23,17 @@ export function ClienteDialog({ aberto, onAberto, editando, modelo, codigoPrevis
   onSalvo: (cliente: Cliente) => void;
 }) {
   const base = editando ?? modelo;
+  // A janela fecha com animação: um segundo clique em Salvar nesse intervalo gravaria o cliente de novo.
+  const trava = useRef(false);
+  useEffect(() => {
+    if (aberto) trava.current = false;
+  }, [aberto]);
 
   function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     // A janela fica dentro de outro <form> no formulário de despesas; o envio não pode subir até ele.
     evento.stopPropagation();
+    if (trava.current) return;
     const formulario = new FormData(evento.currentTarget);
     const texto = (nome: string) => String(formulario.get(nome) ?? "").trim();
     const valores: ClienteDados = {
@@ -42,6 +49,7 @@ export function ClienteDialog({ aberto, onAberto, editando, modelo, codigoPrevis
     };
     try {
       const salvo = salvarCliente(editando ? { ...valores, id: editando.id } : valores);
+      trava.current = true;
       onAberto(false);
       toast.success("Cliente salvo");
       onSalvo(salvo);

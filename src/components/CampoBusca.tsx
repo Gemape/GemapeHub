@@ -64,7 +64,13 @@ export function CampoBusca({
   }
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onBlur={(e) => {
+        // A lista só fecha quando o foco sai do campo inteiro; Tab até uma opção não a desmonta.
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setAberto(false);
+      }}
+    >
       <Input
         id={id}
         aria-label={rotulo}
@@ -79,7 +85,6 @@ export function CampoBusca({
           setAberto(true);
         }}
         onFocus={() => setAberto(true)}
-        onBlur={() => setTimeout(() => setAberto(false), 150)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();

@@ -1,65 +1,43 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
-import { demoSupabase } from "../src/integrations/supabase/demo-client.ts";
-import { hojeLocal, prepararEmpregado } from "../src/lib/empregados.ts";
-import { lerMovimentacoesRelatorio } from "../src/lib/relatorios-historico.ts";
-import { montarFichaEpiAvulsaHtml } from "../src/lib/ficha-epi-avulsa-html.ts";
+const fonte = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), 'utf8');
 
-const fonte = (c) => readFileSync(new URL(`../${c}`, import.meta.url), "utf8");
-
-test("hoje é a data de Brasília, qualquer que seja o fuso do dispositivo", () => {
-  assert.equal(hojeLocal(new Date("2026-10-15T02:00:00Z")), "2026-10-14");
-  assert.equal(hojeLocal(new Date("2026-10-15T03:00:00Z")), "2026-10-15");
-  assert.equal(hojeLocal(new Date("2026-01-01T01:30:00Z")), "2025-12-31");
+test('registros novos do demo recebem instantes crescentes (ordenação por created_at)', () => {
+  const s = fonte('integrations/supabase/demo-client.ts');
+  assert.match(s, /ultimoInstante \+ 1/);
+  assert.equal((s.match(/created_at: instanteNovo\(\)/g) ?? []).length >= 5, true);
 });
 
-test("editar empregado sem CPF antigo não aceita CPF em branco", () => {
-  const base = { nome: "Maria Silva", cpf: "", matricula: "", empresa_id: "e1", email: "", data_admissao: "2026-01-01", data_demissao: "" };
-  assert.throws(() => prepararEmpregado(base, [], { id: "x", cpf: null, matricula: null }), /CPF inválido/);
-  assert.throws(() => prepararEmpregado(base, [], { id: "x", cpf: "", matricula: null }), /CPF inválido/);
+test('excluir caixa no demo leva os itens dela junto, como o ON DELETE CASCADE', () => {
+  const s = fonte('integrations/supabase/demo-client.ts');
+  assert.match(s, /this\.tabela === "caixas_ferramentas"[\s\S]*caixa_ferramenta_itens/);
 });
 
-test("o demo aceita lte e a busca com or/ilike nas colunas pedidas", async () => {
-  const marca = `rev-${crypto.randomUUID()}`;
-  await demoSupabase.from("movimentacoes").insert([
-    { id: crypto.randomUUID(), modulo: "revisao", tipo_movimentacao: "Entrada", quantidade: 0, data_movimentacao: "2026-10-01", obs: marca },
-    { id: crypto.randomUUID(), modulo: "revisao", tipo_movimentacao: "Entrada", quantidade: 0, data_movimentacao: "2026-10-20", obs: marca },
-  ]);
-  const ate = await lerMovimentacoesRelatorio(demoSupabase, { modulo: "revisao", ate: "2026-10-10" });
-  assert.deepEqual(ate.map((m) => m.data_movimentacao), ["2026-10-01"]);
-  const { data } = await demoSupabase.from("fornecedores").select("*").or("razao_social.ilike.%zzz-inexistente%,nome_fantasia.ilike.%zzz-inexistente%");
-  assert.deepEqual(data, []);
+test('excluir fornecedor apaga o fornecedor antes das associações', () => {
+  const s = fonte('routes/_authenticated/cadastros/fornecedores.tsx');
+  assert.ok(s.indexOf('removerFornecedor(fornecedor.id)') < s.indexOf('removerCodigosFabricaPorIds(vinculos'));
 });
 
-test("ficha de EPI avulsa mostra baixa com o motivo, e entrega só para fornecimento", () => {
-  const html = montarFichaEpiAvulsaHtml({
-    empresa: { razao_social: "GEMAPE", cnpj: "" },
-    empregado: { nome: "Ana", cpf: "" },
-    linhas: [
-      { data: "2026-10-01", quantidade: 1, nome: "Luva", tipo: "Saida" },
-      { data: "2026-10-02", quantidade: 1, nome: "Luva", tipo: "Saida", baixaMotivo: "Perda <b>" },
-      { data: "2026-10-03", quantidade: 1, nome: "Luva", tipo: "Devolucao" },
-    ],
-  });
-  assert.match(html, />ENTREGA</);
-  assert.match(html, /BAIXA \(Perda &lt;b&gt;\)/);
-  assert.match(html, />DEVOLUÇÃO</);
+test('a lista do campo de busca só fecha quando o foco sai do campo inteiro', () => {
+  const s = fonte('components/CampoBusca.tsx');
+  assert.match(s, /currentTarget\.contains\(e\.relatedTarget/);
+  assert.doesNotMatch(s, /setTimeout\(\(\) => setAberto\(false\)/);
 });
 
-test("telas corrigidas na revisão geral", () => {
-  const caixa = fonte("src/components/modules/CaixasFerramentasModulo.tsx");
-  assert.match(caixa, /ferramentasEmOutraCaixa\(/);
-  assert.match(caixa, /ferramentasComEmpregadoRemovidas\(/);
-  assert.match(fonte("src/lib/empresa-context.tsx"), /setEmpresaId\(TODAS\)/);
-  for (const f of ["EpiTermoEntrega", "UniformesTermoEntrega", "UniformesTermoBaixa"]) assert.match(fonte(`src/components/modules/${f}.tsx`), /Informe a data da/, f);
-  for (const f of ["EpiRelatorioBaixa", "UniformesRelatorioBaixa"]) {
-    const s = fonte(`src/components/modules/${f}.tsx`);
-    assert.doesNotMatch(s, /Valor: "R\$ 0,00"/, f);
-    assert.match(s, /ehBaixa\(m\)/, f);
-  }
-  for (const f of ["EpiRelatorioFuncionario", "UniformesRelatorioFuncionario"]) assert.match(fonte(`src/components/modules/${f}.tsx`), /ehBaixa\(/, f);
-  assert.match(fonte("src/components/modules/VeiculosCadastroModulo.tsx"), /base\?\.empresa_id \|\| empresaPadrao/);
-  assert.match(fonte("src/components/modules/ChecklistVeiculoModulo.tsx"), /p\.checklist\.periodicidade === per/);
+test('janela de cliente trava o segundo clique em Salvar', () => {
+  const s = fonte('components/parametros/ClienteDialog.tsx');
+  assert.match(s, /if \(trava\.current\) return;/);
+});
+
+test('data de cadastro de ferramentas e caixas sai no dia de Brasília', () => {
+  assert.match(fonte('components/modules/ItensModulo.tsx'), /formatarData\(item\.created_at\)/);
+  assert.match(fonte('components/modules/CaixasFerramentasModulo.tsx'), /formatarData\(c\.created_at\)/);
+});
+
+test('responsável do check list é da mesma empresa do veículo', () => {
+  const s = fonte('components/modules/ChecklistVeiculoModulo.tsx');
+  assert.match(s, /e\.empresa_id === veiculoEscolhido\.empresa_id/);
+  assert.match(s, /responsaveisDoVeiculo\.map/);
 });

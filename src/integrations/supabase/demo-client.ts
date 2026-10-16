@@ -15,6 +15,9 @@ import {
 
 type Linha = Record<string, unknown>;
 const agora = new Date().toISOString();
+// Cada registro novo recebe um instante próprio e crescente: a ordenação por created_at não desempata pelo id aleatório.
+let ultimoInstante = 0;
+const instanteNovo = () => new Date((ultimoInstante = Math.max(Date.now(), ultimoInstante + 1))).toISOString();
 const empresa = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração", cnpj: "00.000.000/0001-00", rua: "Rua Exemplo", numero: "100", bairro: "Centro", cep: "01000-000", cidade: "São Paulo", estado: "SP", status: "Ativa", created_at: agora };
 const usuario = { id: "admin-demo", email: "admin@demo.local" };
 const dadosIniciais: Record<string, Linha[]> = {
@@ -136,7 +139,7 @@ const registrarCompras = (tabela: string, compras: Linha[]): Error | null => {
     return new Error("Quantidade e valor de compra inválidos");
   }
   const entradas = compras.map(c => ({
-    id: id(), created_at: agora, modulo: MODULO_DA_COMPRA[tabela], tipo_movimentacao: "Entrada",
+    id: id(), created_at: instanteNovo(), modulo: MODULO_DA_COMPRA[tabela], tipo_movimentacao: "Entrada",
     quantidade: Number(c.quantidade), data_movimentacao: c.data_compra, item_id: c.item_id, empresa_id: c.empresa_id,
     tamanho_id: c.tamanho_id ?? null,
     empregado_id: null, motivo_baixa: null, onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false,
@@ -163,7 +166,7 @@ const importarNotaFiscal = (e: Linha): Error | null => {
   const valido = (l: Linha, tabela: string) => Number.isInteger(l.quantidade) && Number(l.quantidade) > 0 && l.empresa_id === e.empresa_id
     && (dados[tabela] ?? []).some(i => i.id === l.item_id && i.empresa_id === e.empresa_id);
   const desfazer = (erro: Error) => { Object.keys(dados).forEach(k => delete dados[k]); Object.assign(dados, copia); return erro; };
-  const novas = (linhas: unknown) => (Array.isArray(linhas) ? linhas : []).map((l: Linha) => ({ id: id(), created_at: agora, ...l }));
+  const novas = (linhas: unknown) => (Array.isArray(linhas) ? linhas : []).map((l: Linha) => ({ id: id(), created_at: instanteNovo(), ...l }));
   for (const tabela of ["compras_epis", "compras_uniformes"]) {
     const compras = novas(e[tabela]);
     const modulo = MODULO_DA_COMPRA[tabela];
@@ -179,7 +182,7 @@ const importarNotaFiscal = (e: Linha): Error | null => {
   const erro = aplicarEstoque(entradas);
   if (erro) return desfazer(erro);
   (dados.movimentacoes ?? (dados.movimentacoes = [])).push(...entradas);
-  notas.push({ id: id(), created_at: agora, chave: e.chave, numero: e.numero, serie: e.serie, data_emissao: e.data_emissao, empresa_id: e.empresa_id, fornecedor_id: e.fornecedor_id });
+  notas.push({ id: id(), created_at: instanteNovo(), chave: e.chave, numero: e.numero, serie: e.serie, data_emissao: e.data_emissao, empresa_id: e.empresa_id, fornecedor_id: e.fornecedor_id });
   return null;
 };
 class Consulta {
@@ -211,7 +214,7 @@ class Consulta {
   private async executar(unico: boolean) {
     const linhas = dados[this.tabela] ?? (dados[this.tabela] = []); let selecionadas = linhas.filter(l => this.filtros.every(f => f(l)));
     if (this.acao === "insert") {
-      const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: agora, ...l }));
+      const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: instanteNovo(), ...l }));
       if (this.tabela === "movimentacoes") { const erro = aplicarEstoque(novos); if (erro) return { data: null, error: erro }; }
       if (this.tabela in MODULO_DA_COMPRA) { const erro = registrarCompras(this.tabela, novos); if (erro) return { data: null, error: erro }; }
       if (this.tabela in CATALOGOS) { const erro = validarCatalogoEpi(CATALOGOS[this.tabela]!, novos); if (erro) return { data: null, error: erro }; }
@@ -238,7 +241,15 @@ class Consulta {
       if (this.tabela in CATALOGOS) { sincronizarEpis(); sincronizarUniformes(); }
       persistirDados();
     }
-    if (this.acao === "delete") { selecionadas.forEach(l => linhas.splice(linhas.indexOf(l), 1)); persistirDados(); }
+    if (this.acao === "delete") {
+      selecionadas.forEach(l => linhas.splice(linhas.indexOf(l), 1));
+      // Como o ON DELETE CASCADE do banco: os itens de uma caixa excluída saem com ela e voltam a ficar livres.
+      if (this.tabela === "caixas_ferramentas") {
+        const ids = new Set(selecionadas.map(l => l.id));
+        dados.caixa_ferramenta_itens = (dados.caixa_ferramenta_itens ?? []).filter(x => !ids.has(x.caixa_id));
+      }
+      persistirDados();
+    }
     if (this.ordens.length) selecionadas.sort((a,b) => {
       for (const ordem of this.ordens) {
         const [c,d] = ordem.split(":");
@@ -294,7 +305,7 @@ export const demoSupabase = {
     if (codigo && dados.caixas_ferramentas.some(x => x.codigo === codigo && x.id !== args.p_id)) {
       return { data: null, error: new Error(`Já existe a caixa ${codigo}.`) };
     }
-    const caixa = args.p_id ? (dados.caixas_ferramentas.find(x => x.id === args.p_id) ?? {}) : { id: id(), created_at: agora };
+    const caixa = args.p_id ? (dados.caixas_ferramentas.find(x => x.id === args.p_id) ?? {}) : { id: id(), created_at: instanteNovo() };
     Object.assign(caixa, args.p_valores); if (!args.p_id) dados.caixas_ferramentas.push(caixa);
     dados.caixa_ferramenta_itens = dados.caixa_ferramenta_itens.filter(x => x.caixa_id !== caixa.id);
     dados.caixa_ferramenta_itens.push(...(args.p_itens ?? []).map(x => ({ id: id(), caixa_id: caixa.id, ...x })));
