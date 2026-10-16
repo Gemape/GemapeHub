@@ -1299,3 +1299,10 @@ Pedido do responsável em 16/10 (14:24 a 14:35, escolha "Clonar o produto"): ao 
 ### Decisão 232: Responsividade para celular e tablet
 
 Pedido do responsável em 16/10 (14:42): "melhorar a responsividade do sistema para telas de celular e tablets"; escolha "Cartões" (14:47). **Conferido:** 26 telas em 390 px (celular) e 820 px (tablet); o menu já recolhe e o tablet já funcionava bem. **Antes:** no celular as colunas das listas ficavam espremidas e Editar e Excluir ficavam escondidos à direita; duas telas passavam da largura (Parâmetros > Veículos > Manutenção e Gerais > Tamanho e Medidas). **Agora:** (1) abaixo de 640 px cada linha de lista vira um **cartão** com rótulo e valor (o rótulo é o título da coluna) e os botões embaixo; de 640 px para cima a tabela é a mesma de sempre; (2) botões e campos ficam mais altos no celular (área de toque de 40 a 48 px); (3) nas janelas, Salvar e Cancelar ficam fixos no rodapé do celular, sem precisar rolar até o fim; (4) as duas telas que estouravam foram corrigidas. Vale para todas as listas do sistema, inclusive as de Parâmetros de Veículos e Ferramentas; uma tabela que deva continuar com rolagem lateral usa `semCartoes`. Nada no Supabase.
+
+### Decisão 234: Logomarca nova no Relatório de Viagens
+
+Pedido do responsável em 16/10 (16:40), com a imagem da logomarca GEMAPE 40 anos (colorida, fundo branco): "trocar a logo que sai impressa no relatório de viagens pela segunda imagem anexo".
+
+- O Relatório de Viagens (ao gerar e ao reabrir pela lista) imprime a nova logomarca, arquivo `public/logo-relatorio-viagens.png` (a imagem enviada, sem a margem branca). A coluna da logo no cabeçalho ficou um pouco maior (46 mm) para o texto "Máquinas e Peças" continuar legível.
+- Só o relatório de Viagens muda: os demais documentos continuam com `public/logo.png`. Sem Supabase.

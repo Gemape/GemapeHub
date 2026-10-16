@@ -171,8 +171,8 @@ export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
           * { box-sizing: border-box; }
           body { margin: 0; background: #e2e8f0; font-family: Arial, Helvetica, sans-serif; color: #1e293b; font-size: 10pt; }
           .pagina { position: relative; width: 210mm; height: 297mm; margin: 8px auto; padding: 12mm 14mm 18mm; background: #fff; overflow: hidden; page-break-after: always; }
-          .cabecalho { display: grid; grid-template-columns: 38mm 1fr 38mm; align-items: center; gap: 8px; border-bottom: 3px solid #0A007C; padding-bottom: 8px; margin-bottom: 10px; }
-          .logo { max-width: 38mm; max-height: 22mm; object-fit: contain; }
+          .cabecalho { display: grid; grid-template-columns: 46mm 1fr 46mm; align-items: center; gap: 8px; border-bottom: 3px solid #0A007C; padding-bottom: 8px; margin-bottom: 10px; }
+          .logo { max-width: 46mm; max-height: 26mm; object-fit: contain; }
           .titulos { text-align: center; }
           .titulo { font-size: 17pt; font-weight: bold; color: #0A007C; text-transform: uppercase; letter-spacing: .02em; }
           .sub { font-size: 10pt; color: #334155; margin-top: 2px; }

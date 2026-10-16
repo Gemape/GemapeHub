@@ -30,7 +30,7 @@ function abrirRelatorioSalvo(rel: RelatorioSalvo, lista: readonly RespostaRegist
     html: montarRelatorioViagensHtml({
       empresa: rel.empresa, empregado: rel.empregado, de: rel.de, ate: rel.ate, linhas: linhasDasDespesas(lista, rel.despesaIds),
       comprovantesPorPagina: rel.comprovantesPorPagina, emitente: rel.emitente, supervisor: rel.supervisor, diretor: rel.diretor,
-      geradoEm: rel.criadoEm, logoUrl: `${window.location.origin}${import.meta.env["BASE_URL"] ?? "/"}logo.png`,
+      geradoEm: rel.criadoEm, logoUrl: `${window.location.origin}${import.meta.env["BASE_URL"] ?? "/"}logo-relatorio-viagens.png`,
     }),
     arquivo: nomeArquivoDocumento("Relatorio de viagens", rel.empregado, rel.de, rel.ate),
   });
