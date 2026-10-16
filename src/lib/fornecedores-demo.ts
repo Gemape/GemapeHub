@@ -101,6 +101,7 @@ export function salvarFornecedor(
   const id = "id" in valores ? valores.id : crypto.randomUUID();
   const indice = fornecedores.findIndex((item) => item.id === id);
   const existente = fornecedores[indice];
+  if ("id" in valores && !existente) throw new Error("Este fornecedor foi excluído; feche a janela e cadastre de novo, se for o caso.");
   // Só a razão social é obrigatória; o nome fantasia é opcional (decisão 55).
   if (!valores.razao_social.trim()) {
     throw new Error("Informe a razão social.");

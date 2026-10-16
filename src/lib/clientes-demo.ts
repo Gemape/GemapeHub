@@ -66,6 +66,7 @@ export function salvarCliente(
   const id = "id" in valores ? valores.id : crypto.randomUUID();
   const indice = clientes.findIndex((item) => item.id === id);
   const existente = clientes[indice];
+  if ("id" in valores && !existente) throw new Error("Este cliente foi excluído; feche a janela e cadastre de novo, se for o caso.");
   const nome = capitalizarNomePessoa(valores.nome);
   if (!nome) throw new Error("Informe o nome do cliente.");
   // CPF e CNPJ são campos separados, ambos opcionais; preenchido, vale só com 11 (CPF) ou 14 (CNPJ) dígitos.

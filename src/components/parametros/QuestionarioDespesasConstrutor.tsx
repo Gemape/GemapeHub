@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, GripHorizontal, Lock, Pencil, Plus, Trash2 } from "lucide-react";
+import { useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -103,6 +104,12 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
     window.addEventListener("beforeunload", avisar);
     return () => window.removeEventListener("beforeunload", avisar);
   }, [alterado]);
+  // Sair para outra tela do sistema também descarta o rascunho: pergunta antes, como o aviso de fechar a aba.
+  useBlocker({
+    shouldBlockFn: () => !confirm("Há alterações do formulário que ainda não foram salvas. Sair e perdê-las?"),
+    disabled: !alterado,
+    enableBeforeUnload: false,
+  });
   const gravarIds = (novos: string[]) => executar(() => { conferirOrdem(estado, tipoAtual, novos); return gravarQuestionario(estado, tipoAtual, novos, rascunho); });
 
   // Sobe ou desce uma pergunta (alternativa ao arrastar, para quem usa teclado); a de tipos de despesa fica de fora.
@@ -250,7 +257,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
               {canWrite && (id === ID_HABILITADOS || id === ID_TECNICO_RESPONSAVEL) && (
                 <AdicionarHabilitado
                   ativos={empregados.filter((e) => empregadoAtivo(e)).map((e) => ({ id: e.id, nome: e.nome }))}
-                  jaIncluidos={new Set((porId.get(ID_HABILITADOS)?.habilitados ?? []).map((h) => h.empregadoId))}
+                  jaIncluidos={new Set((porId.get(ID_HABILITADOS)?.habilitados ?? []).flatMap((h) => [h.empregadoId, h.nome.trim().toLocaleLowerCase("pt-BR")]))}
                   areaFixa={id === ID_TECNICO_RESPONSAVEL ? "Oficina" : null}
                   onAdicionar={(h) => {
                     const q04 = porId.get(ID_HABILITADOS);
@@ -379,7 +386,7 @@ function AdicionarHabilitado({ ativos, jaIncluidos, areaFixa, onAdicionar }: {
     return <Button type="button" variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setAberto(true); }}><Plus className="mr-1 h-4 w-4" />Adicionar opção</Button>;
   }
   const termo = busca.trim().toLocaleLowerCase("pt-BR");
-  const achados = termo ? ativos.filter((e) => !jaIncluidos.has(e.id) && e.nome.toLocaleLowerCase("pt-BR").includes(termo)).slice(0, 8) : [];
+  const achados = termo ? ativos.filter((e) => !jaIncluidos.has(e.id) && !jaIncluidos.has(e.nome.trim().toLocaleLowerCase("pt-BR")) && e.nome.toLocaleLowerCase("pt-BR").includes(termo)).slice(0, 8) : [];
   return (
     <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-wrap items-center gap-2">

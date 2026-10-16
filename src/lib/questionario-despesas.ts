@@ -522,25 +522,30 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
   if (gravar.id === ID_TIPO_DESPESA) {
     const padrao = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
     const antigas = tiposDeDespesa(e);
-    // Mesma quantidade de opções: o que mudou de nome é o mesmo tipo (ele leva o questionário junto).
-    const renomeado = antigas.length === gravar.opcoes.length;
-    questionarios = Object.fromEntries(gravar.opcoes.map((o, i) => [o, e.questionarios[o] ?? (renomeado ? e.questionarios[antigas[i] ?? ""] : undefined) ?? padrao]));
+    // Renomear uma opção no lugar dela mantém o tipo (leva o questionário junto). Só vale quando a opção antiga
+    // daquela posição sumiu da lista; apagar um tipo e acrescentar outro não herda o questionário de quem continua.
+    const origem = (o: string, i: number): string => {
+      if (antigas.includes(o)) return o;
+      const anterior = antigas[i];
+      return antigas.length === gravar.opcoes.length && anterior && !gravar.opcoes.includes(anterior) ? anterior : "";
+    };
+    questionarios = Object.fromEntries(gravar.opcoes.map((o, i) => [o, e.questionarios[o] ?? e.questionarios[origem(o, i)] ?? padrao]));
     // As condições acompanham o tipo renomeado e somem com o tipo removido.
     regras = Object.fromEntries(gravar.opcoes.flatMap((o, i) => {
-      const r = e.regras[o] ?? (renomeado ? e.regras[antigas[i] ?? ""] : undefined);
+      const r = e.regras[o] ?? e.regras[origem(o, i)];
       return r ? [[o, r] as const] : [];
     }));
     // A ramificação também acompanha o tipo renomeado.
     if (e.destinos) {
       destinos = Object.fromEntries(gravar.opcoes.flatMap((o, i) => {
-        const d = e.destinos?.[o] ?? (renomeado ? e.destinos?.[antigas[i] ?? ""] : undefined);
+        const d = e.destinos?.[o] ?? e.destinos?.[origem(o, i)];
         return d ? [[o, d] as const] : [];
       }));
     }
     // As seções também acompanham o tipo renomeado.
     if (e.secoes) {
       secoes = Object.fromEntries(gravar.opcoes.flatMap((o, i) => {
-        const l = e.secoes?.[o] ?? (renomeado ? e.secoes?.[antigas[i] ?? ""] : undefined);
+        const l = e.secoes?.[o] ?? e.secoes?.[origem(o, i)];
         return l ? [[o, l] as const] : [];
       }));
     }
@@ -551,9 +556,9 @@ export function salvarPergunta(e: Estado, pergunta: Pergunta, storage: StorageLi
 // Tipos de despesa que perdem o questionário se a pergunta 3 for salva com estas opções (removidos, não renomeados).
 export function tiposRemovidos(e: Estado, opcoes: string[]): string[] {
   const antigas = tiposDeDespesa(e);
-  if (antigas.length === opcoes.length) return [];
-  const novas = new Set(opcoes.map((o) => o.trim()));
-  return antigas.filter((t) => !novas.has(t));
+  const novas = opcoes.map((o) => o.trim());
+  // Renomeado no lugar (mesma quantidade, opção daquela posição trocada) não é remoção.
+  return antigas.filter((t, i) => !novas.includes(t) && !(antigas.length === novas.length && novas[i] !== undefined && !antigas.includes(novas[i] as string)));
 }
 
 // Clonar copia todos os campos (dec 138) com código e título novos.

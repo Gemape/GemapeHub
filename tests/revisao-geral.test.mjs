@@ -41,3 +41,32 @@ test('responsável do check list é da mesma empresa do veículo', () => {
   assert.match(s, /e\.empresa_id === veiculoEscolhido\.empresa_id/);
   assert.match(s, /responsaveisDoVeiculo\.map/);
 });
+
+test('editar cliente ou fornecedor excluído em outra aba não recria o cadastro com código novo', async () => {
+  const { salvarCliente, listarClientes } = await import('../src/lib/clientes-demo.ts');
+  const { salvarFornecedor, listarFornecedores } = await import('../src/lib/fornecedores-demo.ts');
+  const dados = new Map();
+  const local = { getItem: (c) => dados.get(c) ?? null, setItem: (c, v) => dados.set(c, v) };
+  const cliente = { nome: 'Ana', cpf: '', cnpj: '', endereco: '', contato: '', telefone: '', telefone2: '', email: '', observacao: '' };
+  assert.throws(() => salvarCliente({ ...cliente, id: 'sumiu' }, local), /foi excluído/);
+  assert.equal(listarClientes(local).length, 0);
+  const forn = { razao_social: 'ABC', nome_fantasia: '', cnpj: '12.345.678/0001-90', rua: '', numero: '', bairro: '', cep: '', cidade: '', estado: '', pais: '', inscricao_estadual: '', telefone: '', contato: '', observacoes: '', categorias: [] };
+  assert.throws(() => salvarFornecedor({ ...forn, id: 'sumiu' }, local), /foi excluído/);
+  assert.equal(listarFornecedores(local).length, 0);
+});
+
+test('km do cadastro: lista mostra o maior entre cadastro e registros e a edição recusa km menor', () => {
+  const s = fonte('components/modules/VeiculosCadastroModulo.tsx');
+  assert.match(s, /kmAtualDe\(v\)/);
+  assert.match(s, /km < kmDosRegistros\(editando\.id\)/);
+});
+
+test('Habilitados do cadastro inicial (sem vínculo) não são oferecidos de novo pelo nome', () => {
+  const s = fonte('components/parametros/QuestionarioDespesasConstrutor.tsx');
+  assert.match(s, /flatMap\(\(h\) => \[h\.empregadoId, h\.nome\.trim\(\)/);
+});
+
+test('o Construtor pergunta antes de sair da tela com alterações não salvas', () => {
+  const s = fonte('components/parametros/QuestionarioDespesasConstrutor.tsx');
+  assert.match(s, /useBlocker\(\{[\s\S]*disabled: !alterado/);
+});
