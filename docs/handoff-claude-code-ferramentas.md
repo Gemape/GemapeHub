@@ -483,3 +483,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-16 dec 227 (complemento): Outro entra em TIPOS_COM_DETALHAMENTO (Detalhamento depois do valor).
 - 2026-10-16 revisão #289-#292: ajustes no PR fix/revisao-abastecimento-manutencao (reset da janela Novo abastecimento, trazer limpa campos antigos, vínculo solto ao trocar moeda, litros na sincronização, janelas só nos cards).
 - 2026-10-16 dec 228: adicionarCodigoComCategoria (parametros-base.ts) cria categoria + sigla + numeração numa gravação só; Código do produto > Novo código com campo Categoria digitável (datalist); Clonar/Editar seguem com select.
+- 2026-10-16 dec 229: removido o botão Clonar de Parâmetros > Gerais > Código do produto (codigo-produto.tsx: sem onClonar e sem função clonar); Editar e Excluir ficam.

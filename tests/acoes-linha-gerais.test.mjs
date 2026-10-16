@@ -19,10 +19,10 @@ test("listas de nome (categorias, subcategorias, marcas, tamanhos, unidades) usa
   assert.match(tamanhos, /ocupado\.current/);
 });
 
-test("Código do produto usa AcoesLinha; Clonar copia a numeração e a sigla (dec 138)", () => {
+test("Código do produto usa AcoesLinha, sem o botão Clonar (dec 229)", () => {
   const tela = ler("routes/_authenticated/cadastros/gerais/codigo-produto.tsx");
-  assert.match(tela, /<AcoesLinha[\s\S]*onClonar[\s\S]*onEditar=[\s\S]*onExcluir/);
-  assert.match(tela, /onClonar: \(\) => clonar\(c\.id, regra\.inicial\)/);
+  assert.match(tela, /<AcoesLinha[\s\S]*onEditar=[\s\S]*onExcluir/);
+  assert.doesNotMatch(tela, /onClonar|clonar/);
   assert.match(tela, /CATEGORIAS_BASE\[c\.id\]/);
 });
 
