@@ -1355,3 +1355,11 @@ Pedido do responsável em 16/10 (17:37), com plano aprovado por ele ("ok") e a e
 - Histórico completo de movimentações de EPI por EPI e por empregado (lido em blocos, sem o limite de 1000 linhas), com Exportar CSV.
 - Ficha de EPI Avulsa: ganhou a coluna Código e, na devolução, o responsável. Cada entrega e devolução entra na ficha com data, EPI, tamanho, quantidade e código.
 - Só modo demonstração: as colunas `codigo_movimentacao` e `responsavel_nome` de `movimentacoes` existem só no demo (anotadas em `docs/pendencias-fase2.md`). Nada no Supabase.
+
+### Decisão 241: Dar baixa em ferramenta pela caixa não exige estoque do cadastro
+
+Pedido do responsável em 16/10 (18:25), com a imagem da janela "Dar baixa em ferramenta da caixa CX-0001" e o aviso "Falha ao registrar movimentação: Estoque insuficiente": "corrigir a funcionalidade e permitir dar baixa na ferramenta nas caixas".
+
+- Causa: a ferramenta cadastrada em Parâmetros nasce com estoque zero (o que existe fica guardado na caixa), e a baixa era conferida contra esse estoque, mesmo com 1 guardada na caixa.
+- Agora a baixa pela caixa (com ou sem empregado) é gravada no histórico sem mexer no estoque do cadastro; o limite continua sendo o guardado na caixa (sem empregado) ou o que está com o empregado, conferido pela própria janela. Saída comum de ferramenta sem estoque continua recusada.
+- Só modo demonstração; no banco real o gatilho de movimentações precisa pular o estoque quando houver `caixa_id` em baixa (registrado em `docs/pendencias-fase2.md`).
