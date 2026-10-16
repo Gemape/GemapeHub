@@ -1355,3 +1355,10 @@ Pedido do responsável em 16/10 (17:37), com plano aprovado por ele ("ok") e a e
 - Histórico completo de movimentações de EPI por EPI e por empregado (lido em blocos, sem o limite de 1000 linhas), com Exportar CSV.
 - Ficha de EPI Avulsa: ganhou a coluna Código e, na devolução, o responsável. Cada entrega e devolução entra na ficha com data, EPI, tamanho, quantidade e código.
 - Só modo demonstração: as colunas `codigo_movimentacao` e `responsavel_nome` de `movimentacoes` existem só no demo (anotadas em `docs/pendencias-fase2.md`). Nada no Supabase.
+
+### Decisão 242: Motivo "Devolução" na baixa de ferramenta pela caixa
+
+Pedido do responsável em 16/10 (18:26), com a imagem da lista Motivo da baixa: "incluir no campo motivo da baixa: devolução".
+
+- Em Módulos > Ferramentas > Caixas > Dar baixa, a lista Motivo da baixa ganha "Devolução" no fim (Desligamento, Desgaste Natural, Quebra, Desaparecimento, Perda, Mau Uso, Devolução).
+- Conta como baixa, igual aos outros motivos. A lista de motivos das Movimentações dos módulos não mudou; se o responsável quiser Devolução lá também, é um pedido à parte.

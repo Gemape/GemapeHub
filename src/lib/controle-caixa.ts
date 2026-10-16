@@ -2,7 +2,10 @@
 // cadastradas nela, quanto está com empregados e o histórico de movimentações dessas ferramentas.
 // A caixa é gravada em entregas, vistorias e devoluções; compras e baixas ficam sem caixa.
 import { ehBaixa, naturezaMovimentacao } from "./historico-movimentacoes.ts";
-import { formatarData } from "./gemape.ts";
+import { formatarData, MOTIVOS_BAIXA } from "./gemape.ts";
+
+// Motivos da baixa pela caixa: os da baixa comum (sem a entrega) e Devolução (decisão 242).
+export const MOTIVOS_BAIXA_CAIXA: readonly string[] = [...MOTIVOS_BAIXA.filter((m) => m !== "Fornecimento ao Empregado"), "Devolução"];
 
 type MovimentoCaixa = {
   modulo: string;
