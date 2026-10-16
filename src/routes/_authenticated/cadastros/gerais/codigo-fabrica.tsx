@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { CampoBusca, type OpcaoBusca } from "@/components/CampoBusca";
 import { Button } from "@/components/ui/button";
@@ -29,10 +31,15 @@ import { FornecedorDialog } from "@/components/parametros/FornecedorDialog";
 import { listarFornecedores, proximoCodigoFornecedor, type Fornecedor } from "@/lib/fornecedores-demo";
 import {
   combinaBusca,
+  lerParametros,
   removerCodigoFabrica,
+  removerCodigosFabricaPorIds,
   salvarCodigoFabrica,
   type CodigoFabrica,
 } from "@/lib/parametros-base";
+import { supabase } from "@/integrations/supabase/client";
+import { codigoDaCopia, montarCopiaDoProduto } from "@/lib/clonar-produto-gemape";
+import { lerTodas } from "@/lib/ler-todas";
 import { ROTULO_TABELA, useProdutosGemape, type ProdutoGemape } from "@/lib/produtos-gemape";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -48,8 +55,14 @@ const chaveProduto = (p: {
   codigo_produto?: string;
 }) => `${p.tabela}|${p.empresa_id ?? ""}|${p.codigo_sku ?? p.codigo_produto ?? ""}`;
 
+const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
+
 function CodigoFabricaPagina() {
   const dados = useParametrosBase();
+  const queryClient = useQueryClient();
+  // O ref bloqueia o clique repetido na hora, antes de o estado desabilitar o botão.
+  const trava = useRef(false);
+  const [salvando, setSalvando] = useState(false);
   const { empresas } = useEmpresa();
   const { data: produtos = [], isLoading } = useProdutosGemape();
   const [busca, setBusca] = useState("");
@@ -121,8 +134,59 @@ function CodigoFabricaPagina() {
     setNovoFornecedorAberto(true);
   }
 
+  // Clonar (decisão 231): cria uma cópia do produto GEMAPE com o código seguinte e liga a ela o fornecedor,
+  // o código da nota e o CA. A associação é validada e gravada primeiro; se o produto não for criado, ela é desfeita.
+  async function enviarClone(origem: CodigoFabrica) {
+    if (trava.current) return;
+    trava.current = true;
+    setSalvando(true);
+    try {
+      const linhas = await lerTodas<Record<string, unknown>>(() => supabase.from(origem.tabela).select("*"), (q) => q.order("id"));
+      const produtoOrigem = linhas.find(
+        (l) => l["codigo_sku"] === origem.codigo_produto && (l["empresa_id"] ?? null) === (origem.empresa_id ?? null),
+      );
+      if (!produtoOrigem) throw new Error(`O produto ${origem.codigo_produto} não foi encontrado para clonar.`);
+      if (produtoOrigem["catalogo_id"]) {
+        throw new Error(
+          `${origem.codigo_produto} vem do catálogo de ${ROTULO_TABELA[origem.tabela]}. Clone-o em Parâmetros > ${ROTULO_TABELA[origem.tabela]} (que pede outro tamanho) e depois use Nova associação.`,
+        );
+      }
+      const codigo = codigoDaCopia(lerParametros().regrasCodigo, origem.tabela, origem.codigo_produto, linhas.map((l) => String(l["codigo_sku"] ?? "")));
+      const fornecedor = fornecedores.find((f) => f.id === fornecedorSel);
+      const salva = salvarCodigoFabrica({
+        empresa_id: origem.empresa_id ?? "",
+        tabela: origem.tabela,
+        codigo_produto: codigo,
+        nome_produto: origem.nome_produto,
+        fornecedor_id: fornecedor?.id ?? (fornecedorSel === origem.fornecedor_id ? origem.fornecedor_id : ""),
+        fornecedor_nome: (fornecedor ? fornecedor.nome_fantasia || fornecedor.razao_social : undefined) ?? origem.fornecedor_nome,
+        codigo_fornecedor: codigoNota,
+        ca,
+      });
+      const { error } = await (supabase.from(origem.tabela) as unknown as {
+        insert: (v: Record<string, unknown>) => Promise<{ error: Error | null }>;
+      }).insert(montarCopiaDoProduto(produtoOrigem, codigo));
+      if (error) {
+        removerCodigosFabricaPorIds([salva.id]);
+        throw error;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["produtos-gemape"] });
+      toast.success(`Produto ${codigo} criado e associado ao fornecedor.`);
+      setAberto(false);
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível clonar o produto.");
+    } finally {
+      trava.current = false;
+      setSalvando(false);
+    }
+  }
+
   function enviar(e: React.FormEvent) {
     e.preventDefault();
+    if (modelo && MODO_DEMO) {
+      void enviarClone(modelo);
+      return;
+    }
     // Ao editar, o produto pode não estar mais na lista; mantém o que estava salvo.
     const origem =
       produto ??
@@ -232,36 +296,48 @@ function CodigoFabricaPagina() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editando ? "Editar código de fábrica" : "Novo código de fábrica"}
+              {editando ? "Editar código de fábrica" : modelo ? "Clonar código de fábrica" : "Novo código de fábrica"}
             </DialogTitle>
             <DialogDescription>
-              Escolha o produto da GEMAPE e o fornecedor e informe o código que vem na nota fiscal.
+              {modelo && MODO_DEMO
+                ? "Cria uma cópia do produto com um código novo da GEMAPE e liga a ela o fornecedor e o código da nota, que vêm copiados e podem ser editados."
+                : "Escolha o produto da GEMAPE e o fornecedor e informe o código que vem na nota fiscal."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={enviar} className="grid min-w-0 gap-4 [&>*]:min-w-0">
-            <div className="space-y-1.5">
-              <Label htmlFor="produto">Produto GEMAPE</Label>
-              <CampoBusca
-                id="produto"
-                opcoes={
-                  base && !produto && produtoSel === chaveProduto(base)
-                    ? [
-                        ...opcoesProduto,
-                        {
-                          valor: produtoSel,
-                          rotulo: `${base.codigo_produto} · ${base.nome_produto}`,
-                        },
-                      ]
-                    : opcoesProduto
-                }
-                valor={produtoSel}
-                onChange={setProdutoSel}
-                placeholder={
-                  isLoading ? "Carregando produtos…" : "Digite código ou nome do produto"
-                }
-                vazio="Nenhum produto cadastrado com esse termo."
-              />
-            </div>
+            {modelo && MODO_DEMO ? (
+              <div className="space-y-1.5">
+                <Label>Produto GEMAPE</Label>
+                <p className="rounded-md border bg-muted px-3 py-2 text-sm">
+                  Novo produto, cópia de <span className="font-mono">{modelo.codigo_produto}</span> · {modelo.nome_produto}.
+                  O código é gerado ao salvar.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="produto">Produto GEMAPE</Label>
+                <CampoBusca
+                  id="produto"
+                  opcoes={
+                    base && !produto && produtoSel === chaveProduto(base)
+                      ? [
+                          ...opcoesProduto,
+                          {
+                            valor: produtoSel,
+                            rotulo: `${base.codigo_produto} · ${base.nome_produto}`,
+                          },
+                        ]
+                      : opcoesProduto
+                  }
+                  valor={produtoSel}
+                  onChange={setProdutoSel}
+                  placeholder={
+                    isLoading ? "Carregando produtos…" : "Digite código ou nome do produto"
+                  }
+                  vazio="Nenhum produto cadastrado com esse termo."
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="fornecedor">Fornecedor</Label>
               <CampoBusca
@@ -316,7 +392,7 @@ function CodigoFabricaPagina() {
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">Salvar</Button>
+              <Button type="submit" disabled={salvando}>Salvar</Button>
             </DialogFooter>
           </form>
         </DialogContent>
