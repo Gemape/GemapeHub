@@ -321,3 +321,8 @@ test("dec 222: Clientes sai de todos os questionários; dado salvo migra uma vez
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...lido, questionarios: { ...lido.questionarios, "Pedágio": [...lido.questionarios["Pedágio"], "q-07"] } }));
   assert.ok(lerEstado(s).questionarios["Pedágio"].includes("q-07"));
 });
+
+test("dec 221: com seções, a falta do documento não trava a página do documento quando a justificativa está aberta", () => {
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /visiveis\.some\(\(p\) => p\.id === ID_JUSTIFICATIVA\)\) for \(const p of perguntasDaPagina\) if \(p\.tipo === "upload"\) delete achados\[p\.id\]/);
+});
