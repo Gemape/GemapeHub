@@ -16,7 +16,6 @@ import {
   type TipoOpcao,
 } from "@/lib/parametros-base";
 import {
-  avisoAutorizacaoTamanhos,
   dependenciasDaDesautorizacao,
   descreverUso,
 } from "@/lib/uso-parametros";
@@ -42,25 +41,9 @@ export function AssociarTamanhosPainel({ categoriaFixa, aninhado = false }: { ca
     });
   }
 
-  // Autorizar o primeiro tamanho avisa que o saldo dos produtos fica em "Sem tamanho".
+  // Autorizar tamanho ou unidade grava direto, sem aviso (dec 237); só desautorizar confere o uso.
   const autorizarComAviso = (subId: string, tipo: TipoOpcao, ids: string[]) =>
-    conferir(async () => {
-      if (tipo === "tamanhos") {
-        const cadastros = await lerCadastrosDeUso(["epis", "uniformes"]);
-        if (!cadastros) {
-          toast.error("Não foi possível conferir os produtos desta subcategoria.");
-          return false;
-        }
-        const aviso = avisoAutorizacaoTamanhos(
-          lerParametros(),
-          subId,
-          [...(cadastros.epis ?? []), ...(cadastros.uniformes ?? [])],
-          ids,
-        );
-        if (aviso && !confirm(`${aviso}\n\nAutorizar mesmo assim?`)) return false;
-      }
-      return executar(() => autorizar(subId, tipo, ids));
-    });
+    conferir(async () => executar(() => autorizar(subId, tipo, ids)));
 
   // Desautorizar tamanho ou unidade em uso avisa quais produtos dependem dele.
   const desautorizarComAviso = (subId: string, tipo: TipoOpcao, ids: string[]) =>

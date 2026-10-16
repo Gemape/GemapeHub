@@ -169,6 +169,7 @@ test("as telas de Gerais usam o desativar, a proteção e os avisos", () => {
   assert.match(tela, /usoDaUnidade/);
   const associar = ler("components/parametros/AssociarTamanhosPainel.tsx");
   assert.match(associar, /dependenciasDaDesautorizacao/);
-  assert.match(associar, /avisoAutorizacaoTamanhos/);
+  // Dec 237: autorizar tamanho não pede mais confirmação do saldo em "Sem tamanho".
+  assert.doesNotMatch(associar, /avisoAutorizacaoTamanhos|Autorizar mesmo assim/);
   assert.match(associar, /\(desativado\)/);
 });
