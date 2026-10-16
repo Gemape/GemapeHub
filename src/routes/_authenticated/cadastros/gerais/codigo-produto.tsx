@@ -18,6 +18,7 @@ import { Cabecalho } from "@/components/parametros/Cabecalho";
 import {
   CATEGORIAS_BASE,
   DIGITOS_CODIGO,
+  adicionarCodigoComCategoria,
   adicionarRegraCodigo,
   gerarCodigo,
   regrasDaCategoria,
@@ -37,7 +38,8 @@ const exemplos = (regra: { sigla: string; inicial: string }) =>
   [0, 1, 2].map((i) => gerarCodigo(regra, i)).join(", ") + "…";
 
 // Formulário aberto: novo código numa categoria, ou edição de uma regra (pela sigla atual).
-type Aberto = { categoriaId: string; sigla: string; inicial: string; editando: string | null };
+// `nome` preenchido (mesmo vazio) é o Novo código com a categoria digitada; nulo é Clonar ou Editar, que usam a categoria da linha.
+type Aberto = { categoriaId: string; nome: string | null; sigla: string; inicial: string; editando: string | null };
 
 function CodigoProduto() {
   const dados = useParametrosBase();
@@ -53,16 +55,24 @@ function CodigoProduto() {
 
   // Novo código: categoria em branco (ou a de origem, ao clonar, com a numeração copiada e a sigla em branco,
   // porque a sigla é única no sistema e a cópia precisa de uma própria).
-  function novo(categoriaId = "", sigla = "", inicial = "") {
-    setAberto({ categoriaId, sigla, inicial, editando: null });
+  function novo() {
+    setAberto({ categoriaId: "", nome: "", sigla: "", inicial: "", editando: null });
+  }
+  function clonar(categoriaId: string, inicial: string) {
+    setAberto({ categoriaId, nome: null, sigla: "", inicial, editando: null });
   }
 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!aberto?.categoriaId) return;
-    const { categoriaId, sigla, inicial, editando } = aberto;
+    if (!aberto || (aberto.nome === null && !aberto.categoriaId)) return;
+    const { categoriaId, nome, sigla, inicial, editando } = aberto;
     const salvou = executar(
-      () => (editando === null ? adicionarRegraCodigo(categoriaId, sigla, inicial) : salvarRegraCodigo(categoriaId, sigla, inicial, undefined, editando)),
+      () =>
+        nome !== null
+          ? adicionarCodigoComCategoria(nome, sigla, inicial)
+          : editando === null
+            ? adicionarRegraCodigo(categoriaId, sigla, inicial)
+            : salvarRegraCodigo(categoriaId, sigla, inicial, undefined, editando),
       editando === null ? "Código criado." : "Código salvo.",
     );
     if (salvou) setAberto(null);
@@ -90,23 +100,42 @@ function CodigoProduto() {
         >
           <div className="space-y-1.5">
             <Label htmlFor="categoria">Categoria</Label>
-            <select
-              id="categoria"
-              required
-              disabled={aberto.editando !== null}
-              className={selectClasse}
-              value={aberto.categoriaId}
-              onChange={(e) => setAberto({ ...aberto, categoriaId: e.target.value })}
-            >
-              <option value="" disabled>
-                Selecione
-              </option>
-              {dados.categorias.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
+            {aberto.nome !== null ? (
+              <>
+                <Input
+                  id="categoria"
+                  required
+                  list="categorias-existentes"
+                  autoComplete="off"
+                  value={aberto.nome}
+                  onChange={(e) => setAberto({ ...aberto, nome: e.target.value })}
+                  placeholder="Escolha ou digite uma nova"
+                />
+                <datalist id="categorias-existentes">
+                  {dados.categorias.map((c) => (
+                    <option key={c.id} value={c.nome} />
+                  ))}
+                </datalist>
+              </>
+            ) : (
+              <select
+                id="categoria"
+                required
+                disabled={aberto.editando !== null}
+                className={selectClasse}
+                value={aberto.categoriaId}
+                onChange={(e) => setAberto({ ...aberto, categoriaId: e.target.value })}
+              >
+                <option value="" disabled>
+                  Selecione
                 </option>
-              ))}
-            </select>
+                {dados.categorias.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="sigla">Sigla</Label>
@@ -131,7 +160,7 @@ function CodigoProduto() {
               placeholder="0001"
             />
           </div>
-          <Button type="submit" disabled={!aberto.categoriaId}>
+          <Button type="submit" disabled={aberto.nome === null ? !aberto.categoriaId : !aberto.nome.trim()}>
             Salvar
           </Button>
           <Button type="button" variant="outline" onClick={() => setAberto(null)}>
@@ -182,9 +211,9 @@ function CodigoProduto() {
                 <TableCell className="whitespace-nowrap">
                   <AcoesLinha
                     rotulo={regra ? `código ${regra.sigla} de ${c.nome}` : `regra de código de ${c.nome}`}
-                    {...(regra ? { onClonar: () => novo(c.id, "", regra.inicial) } : {})}
+                    {...(regra ? { onClonar: () => clonar(c.id, regra.inicial) } : {})}
                     onEditar={() =>
-                      setAberto({ categoriaId: c.id, sigla: regra?.sigla ?? "", inicial: regra?.inicial ?? "", editando: regra ? regra.sigla : null })
+                      setAberto({ categoriaId: c.id, nome: null, sigla: regra?.sigla ?? "", inicial: regra?.inicial ?? "", editando: regra ? regra.sigla : null })
                     }
                     editarLivre
                     {...(regra
