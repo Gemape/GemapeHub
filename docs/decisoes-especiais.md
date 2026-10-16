@@ -1283,3 +1283,7 @@ Pedidos do dono (13:30): "colocar as perguntas do card outro na mesma ordem do m
 ### Decisão 228: Novo código cria a categoria junto com a sigla e a numeração
 
 Pedido do responsável em 16/10 (13:48): "ao clicar novo código permitir inserir uma nova categoria, sigla e numeração, estes são os parâmetros para gerar o código dos produtos". **Antes:** Novo código em Parâmetros > Gerais > Código do produto só deixava escolher uma categoria que já existia em Categorias. **Agora:** o campo Categoria é digitável, com sugestão das categorias existentes. Nome novo cria a categoria, a sigla e a numeração inicial numa gravação só; nome de categoria que já existe só ganha mais uma sigla (decisão 172). A sigla segue única no sistema, a numeração tem até 4 dígitos maior que zero e erro em qualquer campo não grava nada (nem a categoria). Clonar e Editar continuam com a categoria da linha. Nada no Supabase; a Fase 2 não precisa de nada novo (categoria e regra de código já estão em docs/pendencias-fase2.md).
+
+### Decisão 229: Código do produto sem o botão Clonar
+
+Pedido do responsável em 16/10 (14:00): "retirar todos os botões Clonar deste menu" (print de Parâmetros > Gerais > Código do produto). **Antes:** cada linha tinha Clonar, Editar e Excluir (decisões 138 e 172). **Agora:** a lista de Código do produto tem só Editar e Excluir; para mais uma sigla na categoria usa-se o botão Novo código (decisão 228). Exceção registrada à decisão 45 (Clonar em toda lista de Parâmetros) só para esta tela. Os demais menus de Parâmetros não mudam.
