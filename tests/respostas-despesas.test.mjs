@@ -101,7 +101,7 @@ test("dec 201: a tela única do menu de Parâmetros abre na configuração, sem 
 test("marcar Outro em Tipos de despesas exige a descrição e ela vai junto na resposta registrada", () => {
   const e = estadoPadrao();
   const s = memoria();
-  const base = { ...completas, "q-03": ["Outro"] };
+  const base = { ...completas, "q-03": ["Outro"], "q-15": "Fulano de Tal" };
   delete base["q-10"];
   assert.throws(() => registrarResposta(e, base, s, agora), /Descreva o outro/);
   assert.throws(() => registrarResposta(e, { ...base, "q-03:outro": "   " }, s, agora), /Descreva o outro/);
@@ -190,16 +190,12 @@ import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 
 test("dec 218/219: Alimentação, Hospedagem, Pedágio, Estacionamento e Compra de peças trazem a classificação logo depois de quem lança; os outros tipos não mudam", () => {
   const e = estadoNovo();
-  for (const tipo of ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento", "Manutenção do veículo de trabalho"]) {
+  for (const tipo of ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento", "Manutenção do veículo de trabalho", "Outro"]) {
     const ali = e.questionarios[tipo];
     assert.deepEqual(ali.slice(ali.indexOf("q-04"), ali.indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"], tipo);
     assert.deepEqual(e.regras[tipo]["q-14"], { origem: "q-13", operador: "igual", valor: OPCAO_NAO_CONFORMIDADE }, tipo);
     assert.deepEqual(e.regras[tipo]["q-15"], { origem: "q-13", operador: "igual", valor: OPCAO_AVULSO }, tipo);
     assert.ok(ali.includes("q-11"), tipo);
-  }
-  for (const tipo of ["Outro"]) {
-    assert.ok(!e.questionarios[tipo].includes("q-15"), tipo);
-    assert.equal(e.questionarios[tipo].at(-1), "q-13", tipo);
   }
 });
 
@@ -219,12 +215,10 @@ test("dec 218: só PCM ou Administrativo é classificado; Avulso abre o nome do 
   // Depois da classificação seguem as demais perguntas.
   assert.ok(nc.indexOf("q-14") < nc.indexOf("q-05") && nc.includes("q-12"));
   // Dec 219: nos outros três tipos da lógica vale o mesmo; em Abastecimento o comportamento é o de antes: PCM responde aparece para todos.
-  for (const tipo of ["Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento"]) {
+  for (const tipo of ["Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento", "Manutenção do veículo de trabalho", "Outro"]) {
     assert.ok(!perguntasVisiveis(e, tipo, { "q-03": [tipo], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"), tipo);
     assert.ok(perguntasVisiveis(e, tipo, { "q-03": [tipo], "q-04": ["Bruno (PCM)"] }).some((p) => p.id === "q-13"), tipo);
   }
-  // Dec 223: Abastecimento segue Alimentação; só Manutenção e Outro mantêm o comportamento de antes.
-  assert.ok(perguntasVisiveis(e, "Outro", { "q-03": ["Outro"], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"));
 });
 
 test("dec 218: registrar exige o nome no Avulso e grava o nome; na Não conformidade grava o técnico que não lançou", () => {
@@ -257,7 +251,8 @@ test("dec 218: dado salvo antes ganha a classificação em Alimentação uma vez
   // Dec 219: Pedágio (e Hospedagem, Estacionamento) ganha a classificação na mesma leitura.
   assert.deepEqual(lido.questionarios["Pedágio"].slice(lido.questionarios["Pedágio"].indexOf("q-04"), lido.questionarios["Pedágio"].indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"]);
   assert.equal(lido.classificacaoTiposAjustada, true);
-  assert.deepEqual(lido.questionarios["Outro"], antigoQ2["Outro"]);
+  // Dec 227: Outro também ganha a classificação na mesma leitura.
+  assert.ok(lido.questionarios["Outro"].includes("q-15"));
   // Depois do ajuste, tirar a classificação de Alimentação não a traz de volta.
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, "Alimentação": ali.filter((id) => id !== "q-15") } }));
   assert.ok(!lerEstado(s).questionarios["Alimentação"].includes("q-15"));
@@ -287,7 +282,7 @@ test("dec 221: os cinco tipos seguem Técnico responsável, data, UF, município
     assert.deepEqual(sem, esperado, tipo);
   }
   assert.equal(e.perguntas.find((p) => p.id === "q-04").titulo, "Técnico responsável");
-  assert.ok(!e.questionarios["Outro"].includes(ID_JUSTIFICATIVA));
+  assert.ok(e.questionarios["Outro"].includes(ID_JUSTIFICATIVA));
 });
 
 test("dec 221: sem documento a justificativa abre; com ela escrita encerra, e o anexo esconde a justificativa", () => {
@@ -442,4 +437,21 @@ test("dec 226: a ordem da Manutenção é a de Alimentação mais o detalhamento
   assert.match(form, /Escolher manutenção já registrada/);
   const modulo = readFileSync(new URL("../src/components/modules/ManutencaoVeiculoModulo.tsx", import.meta.url), "utf8");
   assert.match(modulo, /<NovaManutencaoDialog/);
+});
+
+// Dec 227: o card Outro segue a ordem e a classificação de Alimentação; dado salvo migra uma vez só.
+test("dec 227: dado salvo sem a marca do Outro ganha a ordem de Alimentação e, depois, tirar não traz de volta", () => {
+  const e = estadoNovo();
+  const antigo = JSON.parse(JSON.stringify(e));
+  delete antigo.outroAjustado;
+  antigo.questionarios["Outro"] = ["q-03", "q-01", "q-02", "q-04", "q-05", "q-06", "q-08", "q-11", "q-12"];
+  delete antigo.regras["Outro"];
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify(antigo));
+  const lido = lerEstado(s);
+  assert.deepEqual(lido.questionarios["Outro"], e.questionarios["Outro"]);
+  assert.deepEqual(lido.regras["Outro"]["q-15"], e.regras["Outro"]["q-15"]);
+  assert.equal(lido.outroAjustado, true);
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, Outro: lido.questionarios["Outro"].filter((id) => id !== "q-15") } }));
+  assert.ok(!lerEstado(s).questionarios["Outro"].includes("q-15"));
 });

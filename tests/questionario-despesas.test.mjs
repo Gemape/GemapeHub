@@ -89,7 +89,7 @@ test("incluir um tipo de despesa cria o questionário dele; tirar o tipo apaga o
   const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const g = salvarPergunta(e, { ...q3, opcoes: [...q3.opcoes.filter((o) => o !== "Pedágio"), "Lavagem"] }, s);
   assert.ok(tiposDeDespesa(g).includes("Lavagem"));
-  assert.equal(questionarioDoTipo(g, "Lavagem").length, 12);
+  assert.equal(questionarioDoTipo(g, "Lavagem").length, 13);
   assert.ok(!("Pedágio" in g.questionarios));
 });
 
@@ -248,7 +248,8 @@ test("dado salvo antes da pergunta do técnico responsável a recebe uma vez, de
   const lido = lerEstado(s);
   assert.ok(lido.perguntas.some((p) => p.id === ID_TECNICO_RESPONSAVEL));
   const ids = lido.questionarios["Outro"];
-  assert.equal(ids[ids.indexOf(ID_HABILITADOS) + 1], ID_TECNICO_RESPONSAVEL);
+  // Dec 227: Outro segue Alimentação; o técnico responsável vem logo depois da classificação (q-13).
+  assert.ok(ids.indexOf(ID_TECNICO_RESPONSAVEL) > ids.indexOf(ID_HABILITADOS));
   assert.equal(lido.tecnicoAjustado, true);
   // Tirar a pergunta de um questionário depois do ajuste não a traz de volta.
   const sem = { ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, Outro: ids.filter((id) => id !== ID_TECNICO_RESPONSAVEL) } };
