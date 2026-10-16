@@ -9,7 +9,7 @@ import { exportarCsv } from '@/lib/gemape';
 import { lerItensEstoque } from '@/lib/itens-estoque-modulo';
 import { prepararEstoqueFerramenta, prepararMinimoUnico, prepararMinimosEstoque, tamanhosConfiguraveisNoModulo } from '@/lib/estoque-configuracao';
 import { controlaTamanho, estadoEstoqueModulo, nomeTamanho, preservarMinimosNaoSelecionados, tamanhosAutorizadosDoProduto, tamanhosDisponiveisDoProduto } from '@/lib/estoque-tamanho';
-import { useSalvar } from '@/lib/hooks-gemape';
+import { useEmpresas, useSalvar } from '@/lib/hooks-gemape';
 import { estaAtivo } from '@/lib/parametros-base';
 import { useParametrosBase } from '@/lib/use-parametros-base';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,9 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
     queryKey: ['estoque-modulo', modulo, empresaId],
     queryFn: () => lerItensEstoque(supabase, modulo, empresaId),
   });
+  const { data: empresas = [] } = useEmpresas();
+  // Dec 238: o estoque é por empresa; cada linha diz de qual empresa é, para o mesmo código não parecer repetido.
+  const nomeDaEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome_fantasia ?? '—';
   const linhas = itens.map((item) => ({ item, estado: estadoEstoqueModulo(parametros, modulo, item) }));
   const itemEditado = itens.find((item) => item.id === itemId);
   const porTamanho = Boolean(itemEditado && MODO_DEMO && modulo !== 'ferramenta' && (
@@ -85,6 +88,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
         <Button variant="outline" disabled={isLoading || itens.length === 0} onClick={() =>
           exportarCsv(`estoque-${modulo}`, linhas.map(({ item, estado }) => ({
             Código: item.codigo_sku,
+            Empresa: nomeDaEmpresa(item.empresa_id),
             Item: item.nome,
             Saldo: estado.saldo,
             'Saldo histórico fora da seleção': estado.saldoForaDaSelecao,
@@ -98,17 +102,18 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
       <div className="panel overflow-x-auto">
         <Table>
           <TableHeader><TableRow>
-            <TableHead>Código</TableHead><TableHead>Item</TableHead>
+            <TableHead>Código</TableHead><TableHead>Item</TableHead><TableHead>Empresa</TableHead>
             <TableHead className="text-right">Saldo</TableHead>
             <TableHead className="text-right">Estoque mínimo</TableHead>
             <TableHead>Alerta</TableHead><TableHead />
           </TableRow></TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={6}>Carregando estoque…</TableCell></TableRow>
-              : linhas.length === 0 ? <TableRow><TableCell colSpan={6}>Nenhum item cadastrado.</TableCell></TableRow>
+            {isLoading ? <TableRow><TableCell colSpan={7}>Carregando estoque…</TableCell></TableRow>
+              : linhas.length === 0 ? <TableRow><TableCell colSpan={7}>Nenhum item cadastrado.</TableCell></TableRow>
                 : linhas.map(({ item, estado }) => <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell>{item.nome}</TableCell>
+                  <TableCell>{nomeDaEmpresa(item.empresa_id)}</TableCell>
                   <TableCell className="text-right">{estado.saldo}{estado.detalheSaldo && <p className="text-xs text-muted-foreground">{estado.detalheSaldo}</p>}{estado.saldoForaDaSelecao !== 0 && <p className="text-xs text-muted-foreground">Saldo histórico fora da seleção: {estado.saldoForaDaSelecao}</p>}</TableCell>
                   <TableCell className="text-right">{estado.minimo}{estado.detalheMinimo && <p className="text-xs text-muted-foreground">{estado.detalheMinimo}</p>}</TableCell>
                   <TableCell className={estado.alerta ? 'font-bold text-destructive' : ''}>
@@ -122,7 +127,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
       <Dialog open={Boolean(itemEditado)} onOpenChange={(aberto) => { if (!aberto) setItemId(null); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Configurar estoque — {itemEditado?.nome}</DialogTitle>
+            <DialogTitle>Configurar estoque — {itemEditado?.nome}{itemEditado ? ` (${nomeDaEmpresa(itemEditado.empresa_id)})` : ''}</DialogTitle>
             <DialogDescription>Saldo, mínimo e alertas pertencem ao módulo.</DialogDescription>
           </DialogHeader>
           {itemEditado && <form key={itemEditado.id} onSubmit={salvarConfiguracao} className="space-y-4">
