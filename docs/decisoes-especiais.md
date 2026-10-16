@@ -1227,10 +1227,10 @@ Ordem do responsável em 16/10 (11:49), com o print da pergunta "Habilitados ao 
 - **Escolhas minhas onde o pedido não dizia** (a conferir no preview): a classificação PCM responde (dec 218/219) continua logo depois do Técnico responsável; **Clientes** fica depois do Município e **Cartões de crédito** depois de Moeda (só com Moeda = Cartão de crédito, dec 182); os números das perguntas (dec 209) não foram trocados.
 - Abastecimento, Manutenção e Outro não mudam. Dado salvo no navegador migra **uma vez só** (marca `ordemViagensAjustada`), refazendo a ordem desses cinco tipos; pergunta criada pelo responsável fica entre o valor e o documento. Sem Supabase.
 
-### Decisão 222: Clientes só em Compra de peças para cliente
+### Decisão 222: Sem o campo Clientes nos questionários
 
-Ordem do responsável em 16/10 (12:00), com o print da pergunta Clientes: "retirar o campo de clientes dos módulos alimentação, hospedagem, pedágio, estacionamento".
+Ordem do responsável em 16/10: às 12:00 "retirar o campo de clientes dos módulos alimentação, hospedagem, pedágio, estacionamento" e às 12:14, com o print, "retirar o campo clientes de todos os cards".
 
-- A pergunta **Clientes** sai dos questionários de **Alimentação, Hospedagem, Pedágio e Estacionamento**. Continua em **Compra de peças para cliente** (não foi citada) e nos tipos que não mudaram (Abastecimento, Manutenção e Outro).
-- Despesas desses quatro tipos ficam sem cliente na lista e no relatório de Viagens (o campo já era opcional lá). Despesas já registradas mantêm o que foi respondido.
+- A pergunta **Clientes** sai de **todos** os questionários de Viagens: Alimentação, Hospedagem, Abastecimento, Pedágio, Estacionamento, Manutenção do veículo de trabalho, Compra de peças para cliente e Outro. A pergunta continua cadastrada no banco de perguntas e pode ser incluída de novo na montagem, se o responsável quiser.
+- Despesas desses tipos ficam sem cliente na lista e no relatório de Viagens (o campo já era opcional lá). Despesas já registradas mantêm o que foi respondido.
 - Dado salvo no navegador migra **uma vez só** (marca `clientesRetirados`); quem voltar Clientes à mão depois não é desfeito. Sem Supabase.

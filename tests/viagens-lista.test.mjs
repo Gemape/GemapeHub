@@ -15,9 +15,14 @@ const base = {
   "q-01": ["Dinheiro"], "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"], "q-05": "Minas Gerais - MG", "q-06": "Belo Horizonte",
   "q-07": "00001 - Cliente Teste", "q-08": "2026-10-14", "q-09": "Almoço", "q-10": "10,50", "q-11": "100,00", "q-12": ["a.jpg"], "q-13": "Avulso – técnico não monitorado",
 };
+// Dec 222: o questionário de fábrica não tem Clientes; estes testes incluem a pergunta de volta para conferir a leitura do cliente.
+const comCliente = () => {
+  const e = estadoPadrao();
+  return { ...e, questionarios: Object.fromEntries(Object.entries(e.questionarios).map(([t, ids]) => [t, [...ids, "q-07"]])) };
+};
 const foto = { "q-12": [{ nome: "a.jpg", dataUrl: "data:image/webp;base64,AAAA" }] };
 const lancar = (store, extra, tipo = "Abastecimento", dia = 14) =>
-  registrarResposta(estadoPadrao(), { ...base, "q-03": [tipo], "q-08": `2026-10-${String(dia).padStart(2, "0")}`, ...extra }, store, new Date(2026, 9, dia, 8, 5), foto);
+  registrarResposta(comCliente(), { ...base, "q-03": [tipo], "q-08": `2026-10-${String(dia).padStart(2, "0")}`, ...extra }, store, new Date(2026, 9, dia, 8, 5), foto);
 const P = { ano: 2026, mes: 10 };
 
 test("a lista traz data, local, foto, cliente, técnico, tipo, valor e status, da mais nova para a mais antiga", () => {
