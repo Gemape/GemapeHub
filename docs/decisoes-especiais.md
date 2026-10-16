@@ -1342,3 +1342,11 @@ Pedido do responsável em 16/10 (18:01), com a imagem do Estoque de EPI: "no mó
 
 - O código continua único no catálogo. Com "Todas as empresas", o Estoque mostrava uma linha por empresa (cada empresa tem o seu registro de saldo e mínimo do mesmo código, decisão 35) sem dizer qual era a empresa, e o código parecia repetido.
 - O Estoque de EPI, Uniformes e Ferramentas ganha a coluna Empresa em cada linha, o Exportar CSV traz a empresa, e a janela Configurar mostra a empresa no título. O saldo, o mínimo e o alerta seguem separados por empresa. Sem Supabase.
+
+### Decisão 240: Tamanho na Entrada de Movimentações (EPI e Uniforme)
+
+Pedido do responsável em 16/10 (18:14), com a imagem da Nova movimentação de uniforme: "no campo de entrada de uniforme incluir o tamanho". Escolha dele no cartão: "Todos ativos".
+
+- Em Módulos > EPIs e Uniformes > Movimentações, na Entrada, o produto sem nenhum tamanho autorizado ativo na subcategoria passa a mostrar o campo Tamanho com todos os tamanhos ativos de Gerais; o tamanho é obrigatório. Produto com tamanho autorizado continua com só os autorizados.
+- Ao registrar, o tamanho escolhido é associado à subcategoria do produto (antes de gravar; se a gravação falhar, a associação é desfeita). O saldo antigo continua em "Sem tamanho", e a entrada soma no tamanho escolhido.
+- Compras e demais telas não mudam. Sem tamanhos em Gerais, o estoque continua único.

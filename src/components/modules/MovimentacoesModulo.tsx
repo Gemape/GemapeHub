@@ -59,7 +59,9 @@ import {
   naturezaMovimentacao,
 } from "@/lib/historico-movimentacoes";
 import {
+  associarTamanhoNaEntrada,
   controlaModulo,
+  desfazerAssociacaoDaEntrada,
   nomeTamanhoGravado,
   tamanhoParaGravar,
   validarLinhasTamanho,
@@ -153,6 +155,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
         parametros,
         modulo,
         acao,
+        true,
       );
       if (erro) {
         alert(erro);
@@ -202,7 +205,18 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       // A devolução grava "Sem tamanho" explícito, para não confundir com tamanho ausente.
       ...(comTamanho ? { tamanho_id: tamanhoParaGravar(tamanho, tipo === "Devolucao") } : {}),
     };
-    registrarLote.mutate([valores], { onSuccess: () => setAberto(false) });
+    // Entrada com tamanho ainda não autorizado: associa à subcategoria antes de gravar e desfaz se a gravação falhar.
+    const produtoEntrada = itens.find((i) => i.id === alvo);
+    const associada =
+      comTamanho && tipo === "Entrada" && produtoEntrada && controlaModulo(modulo)
+        ? associarTamanhoNaEntrada(modulo, produtoEntrada, tamanho)
+        : null;
+    registrarLote.mutate([valores], {
+      onSuccess: () => setAberto(false),
+      onError: () => {
+        if (associada) desfazerAssociacaoDaEntrada(associada, tamanho);
+      },
+    });
   }
 
   return (
@@ -441,6 +455,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                         : "entrada"
                   }
                   valor={tamanho}
+                  aceitarTodos
                   onChange={setTamanho}
                 />
               </div>
