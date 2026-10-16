@@ -1387,3 +1387,11 @@ Pedido do responsável em 16/10 (18:28), com a imagem das caixas CX-0001 a CX-00
 - Agora o botão liga quando há outra caixa cadastrada ou habilitada sem cadastro. A lista Caixa de destino mostra as duas, e a sem cadastro aparece como "(ainda sem ferramentas)".
 - Transferir para caixa sem cadastro cria a caixa (mesma empresa da origem, status Ativa) já com a ferramenta e a mesma quantidade; só depois a ferramenta sai da origem, e se a saída falhar a entrada no destino é desfeita.
 - A movimentação "Transferência" (origem, destino, data) fica no Histórico de movimentações das duas caixas.
+
+### Decisão 244: Entrega da caixa no Termo de Responsabilidade não exige estoque do cadastro
+
+Pedido do responsável em 16/10 (18:37), com a imagem do aviso "A entrega de 1 unidade(s) de Amperimetro passa do estoque disponível (0)" ao gerar o Termo de Responsabilidade com a caixa CX-0001: "corrigir a mensagem em anexo".
+
+- Causa: a mesma da baixa (decisão 241). A ferramenta cadastrada nasce com estoque zero e a quantidade fica guardada na caixa, mas a entrega era conferida contra o estoque do cadastro.
+- Com caixa escolhida, o Termo confere o que está guardado na caixa (quantidade na caixa menos o que está com empregados e o baixado), com o aviso "passa do que está guardado na caixa (n)". Entrega avulsa, sem caixa, continua conferida contra o estoque.
+- No modo demonstração, entrega, devolução e baixa de ferramenta ligadas a uma caixa não mexem mais no estoque do cadastro (a caixa controla a quantidade). No banco real o gatilho precisa fazer o mesmo (`docs/pendencias-fase2.md`).
