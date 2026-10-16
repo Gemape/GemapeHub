@@ -309,13 +309,14 @@ test("dec 222: Clientes sai de todos os questionários; dado salvo migra uma vez
   for (const ids of Object.values(e.questionarios)) assert.ok(!ids.includes("q-07"));
   assert.ok(e.perguntas.some((p) => p.id === "q-07"));
   const salvo = JSON.parse(JSON.stringify(e));
-  delete salvo.clientesRetirados;
+  delete salvo.clientesRetiradosDeTodos;
+  salvo.clientesRetirados = true; // marca da primeira versão da dec 222 (só quatro tipos): não impede a retirada nos demais
   for (const tipo of ["Alimentação", "Compra de peças para cliente", "Outro"]) salvo.questionarios[tipo] = [...salvo.questionarios[tipo], "q-07"];
   const s = memoria();
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify(salvo));
   const lido = lerEstado(s);
   for (const ids of Object.values(lido.questionarios)) assert.ok(!ids.includes("q-07"));
-  assert.equal(lido.clientesRetirados, true);
+  assert.equal(lido.clientesRetiradosDeTodos, true);
   // Depois do ajuste, voltar Clientes ao questionário não é desfeito.
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...lido, questionarios: { ...lido.questionarios, "Pedágio": [...lido.questionarios["Pedágio"], "q-07"] } }));
   assert.ok(lerEstado(s).questionarios["Pedágio"].includes("q-07"));

@@ -1233,4 +1233,4 @@ Ordem do responsável em 16/10: às 12:00 "retirar o campo de clientes dos módu
 
 - A pergunta **Clientes** sai de **todos** os questionários de Viagens: Alimentação, Hospedagem, Abastecimento, Pedágio, Estacionamento, Manutenção do veículo de trabalho, Compra de peças para cliente e Outro. A pergunta continua cadastrada no banco de perguntas e pode ser incluída de novo na montagem, se o responsável quiser.
 - Despesas desses tipos ficam sem cliente na lista e no relatório de Viagens (o campo já era opcional lá). Despesas já registradas mantêm o que foi respondido.
-- Dado salvo no navegador migra **uma vez só** (marca `clientesRetirados`); quem voltar Clientes à mão depois não é desfeito. Sem Supabase.
+- Dado salvo no navegador migra **uma vez só** (marca `clientesRetiradosDeTodos`; a marca `clientesRetirados` da primeira versão, que só cobria quatro tipos, não conta); quem voltar Clientes à mão depois não é desfeito. Sem Supabase.

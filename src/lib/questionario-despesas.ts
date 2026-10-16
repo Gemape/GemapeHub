@@ -88,7 +88,7 @@ export type Estado = {
   // Dec 221: nova ordem das perguntas (Técnico responsável primeiro) e justificativa da ausência do documento nos cinco tipos com comprovante (ajuste único).
   ordemViagensAjustada?: true;
   // Dec 222: Clientes sai de todos os questionários (ajuste único dos dados salvos).
-  clientesRetirados?: true;
+  clientesRetiradosDeTodos?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -226,7 +226,7 @@ export function estadoPadrao(): Estado {
     return [o, TIPOS_COM_CLASSIFICACAO.includes(o) ? comClassificacao(ids) : ids];
   }));
   const regras = comRegraDoCartao(questionarios, Object.fromEntries(TIPOS_COM_CLASSIFICACAO.filter((t) => t in questionarios).map((t) => [t, regrasDaClassificacao()])));
-  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetirados: true };
+  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -389,12 +389,12 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
       }
     }
     // Dado salvo antes da dec 222: Clientes sai de todos os questionários (uma vez só).
-    if (lido.clientesRetirados !== true) {
+    if (lido.clientesRetiradosDeTodos !== true) {
       questionarios = Object.fromEntries(Object.entries(questionarios as Record<string, unknown>).map(([tipo, ids]) => [tipo, Array.isArray(ids) ? ids.filter((id) => id !== ID_CLIENTES) : ids])) as Record<string, string[]>;
     }
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetirados: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true };
   } catch {
     return estadoPadrao();
   }
