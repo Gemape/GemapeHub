@@ -1287,3 +1287,7 @@ Pedido do responsável em 16/10 (13:48): "ao clicar novo código permitir inseri
 ### Decisão 229: Código do produto sem o botão Clonar
 
 Pedido do responsável em 16/10 (14:00): "retirar todos os botões Clonar deste menu" (print de Parâmetros > Gerais > Código do produto). **Antes:** cada linha tinha Clonar, Editar e Excluir (decisões 138 e 172). **Agora:** a lista de Código do produto tem só Editar e Excluir; para mais uma sigla na categoria usa-se o botão Novo código (decisão 228). Exceção registrada à decisão 45 (Clonar em toda lista de Parâmetros) só para esta tela. Os demais menus de Parâmetros não mudam.
+
+### Decisão 230: Cadastrar fornecedor em janela no Novo código de fábrica
+
+Pedido do responsável em 16/10 (14:11): "em novo código de fábrica criar o link para ir ao cadastro de fornecedores, preencher e voltar ao formulário sem sair da tela". **Antes:** o aviso "Nenhum fornecedor cadastrado" levava a Cadastros > Fornecedores, fora do formulário, e só aparecia com a lista vazia. **Agora:** sob o campo Fornecedor há sempre o link **Cadastrar fornecedor**, que abre a janela de cadastro por cima do formulário (a mesma de Cadastros > Fornecedores, componente FornecedorDialog). Ao salvar, a janela fecha e o formulário volta com o fornecedor novo já escolhido; produto e código na nota digitados ficam como estavam. Cancelar volta sem mudar nada. Mesmo padrão do cadastro de cliente no formulário de despesas (decisão 170). Nada no Supabase.

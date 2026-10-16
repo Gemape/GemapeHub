@@ -47,5 +47,5 @@ test("nome de pessoa usa a regra por palavra nos cadastros de empregado e de con
   const ler = (c) => readFileSync(join(raiz, c), "utf8");
   assert.match(ler("lib/empregados.ts"), /capitalizarNomePessoa\(dados\.nome\)/);
   assert.match(ler("lib/fornecedores-demo.ts"), /contato: capitalizarNomePessoa\(valores\.contato\)/);
-  assert.match(ler("routes/_authenticated/cadastros/fornecedores.tsx"), /contato: capitalizarNomePessoa\(/);
+  assert.match(ler("components/parametros/FornecedorDialog.tsx"), /contato: capitalizarNomePessoa\(/);
 });

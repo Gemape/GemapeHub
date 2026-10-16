@@ -53,11 +53,11 @@ test("cada campo usa a máscara certa e os demais ficam sem máscara", () => {
 
 test("as telas de Empresas e Fornecedores aplicam a máscara ao digitar", () => {
   const raiz = new URL("../src/", import.meta.url);
-  for (const arquivo of ["routes/_authenticated/empresas.tsx", "routes/_authenticated/cadastros/fornecedores.tsx"]) {
+  for (const arquivo of ["routes/_authenticated/empresas.tsx", "components/parametros/FornecedorDialog.tsx"]) {
     const fonte = readFileSync(new URL(arquivo, raiz), "utf8");
     assert.match(fonte, /aoDigitarMascarado/, arquivo);
   }
-  const fornecedores = readFileSync(new URL("routes/_authenticated/cadastros/fornecedores.tsx", raiz), "utf8");
+  const fornecedores = readFileSync(new URL("components/parametros/FornecedorDialog.tsx", raiz), "utf8");
   assert.match(fornecedores, /aoDigitarMascarado\("telefone"\)|aoDigitarMascarado\(campo\.nome\)/);
 });
 
@@ -98,7 +98,7 @@ test("backspace sobre a pontuação apaga o dígito anterior em vez de ficar pre
 
 test("o CNPJ não limita o tamanho no navegador, para a colagem chegar inteira à máscara", () => {
   const raiz = new URL("../src/", import.meta.url);
-  for (const arquivo of ["routes/_authenticated/empresas.tsx", "routes/_authenticated/cadastros/fornecedores.tsx"]) {
+  for (const arquivo of ["routes/_authenticated/empresas.tsx", "components/parametros/FornecedorDialog.tsx"]) {
     assert.doesNotMatch(readFileSync(new URL(arquivo, raiz), "utf8"), /maxLength=\{18\}/, arquivo);
   }
 });
