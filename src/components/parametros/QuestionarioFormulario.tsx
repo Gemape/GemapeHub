@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
 import { formatarData } from "@/lib/gemape";
-import { useAbastecimentos } from "@/lib/use-registros-veiculo";
-import type { Abastecimento } from "@/lib/registros-veiculo";
+import { useAbastecimentos, useManutencoesVeiculo } from "@/lib/use-registros-veiculo";
+import { resumoManutencao, type Abastecimento, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
+import { useParametrosBase } from "@/lib/use-parametros-base";
+import { EscolherManutencaoDialog } from "@/components/modules/EscolherManutencaoDialog";
+import { NovaManutencaoDialog } from "@/components/modules/NovaManutencaoDialog";
 import { EscolherAbastecimentoDialog } from "@/components/modules/EscolherAbastecimentoDialog";
 import { NovoAbastecimentoDialog } from "@/components/modules/NovoAbastecimentoDialog";
 import { ClienteDialog } from "@/components/parametros/ClienteDialog";
@@ -22,12 +25,12 @@ import { useEmpregados } from "@/lib/hooks-gemape";
 import { juntarImagens, mensagemDeLimite, reduzirImagem, type ImagemReduzida } from "@/lib/imagem-economica";
 import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
 import {
-  ID_CARTOES, ID_DATA_DESPESA, ID_JUSTIFICATIVA, ID_TIPO_DESPESA, ID_VALOR_DESPESA, TIPO_ABASTECIMENTO, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, questionarioDoTipo, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
+  ID_CARTOES, ID_DATA_DESPESA, ID_DETALHAMENTO, ID_JUSTIFICATIVA, ID_TIPO_DESPESA, ID_VALOR_DESPESA, TIPO_ABASTECIMENTO, TIPO_MANUTENCAO, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, questionarioDoTipo, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
   tituloDoQuestionario,
 } from "@/lib/questionario-despesas";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
-import { aplicarFormato, chaveAbastecimento, chaveJustificativaPedida, chaveOutro, marcouOutro, perguntasVisiveis, respostasDoAbastecimento, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
+import { aplicarFormato, chaveAbastecimento, chaveJustificativaPedida, chaveManutencao, chaveOutro, marcouOutro, perguntasVisiveis, respostasDaManutencao, respostasDoAbastecimento, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   atualizarResposta, despesaEmRelatorio, listarRespostas, registrarResposta, removerResposta, respostasParaEdicao, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
 } from "@/lib/respostas-despesas";
@@ -110,8 +113,22 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
     setErros((x) => { const { [ID_DATA_DESPESA]: _d, [ID_VALOR_DESPESA]: _v, ...resto } = x; return resto; });
     toast.info("Data, valor e litros trazidos do abastecimento. Termine a despesa.");
   };
+  // Dec 226: o mesmo no card Manutenção do veículo de trabalho, com a Nova manutenção; voltam data, detalhamento (serviços) e custo total.
+  const [manutencaoAberta, setManutencaoAberta] = useState(false);
+  const [escolhaManutencaoAberta, setEscolhaManutencaoAberta] = useState(false);
+  const manutencoes = useManutencoesVeiculo();
+  const parametrosBase = useParametrosBase();
+  const manutencaoLigadaId = typeof respostas[chaveManutencao] === "string" ? (respostas[chaveManutencao] as string) : "";
+  const manutencaoLigada = manutencaoLigadaId ? manutencoes.find((m) => m.id === manutencaoLigadaId) ?? null : null;
+  const servicoDaManutencao = (m: ManutencaoVeiculo) => resumoManutencao(m, (id) => parametrosBase.acoesManutencaoVeiculo.find((a) => a.id === id)?.nome);
+  const trazerDaManutencao = (registro: ManutencaoVeiculo, servico: string) => {
+    setRespostas((r) => ({ ...r, ...respostasDaManutencao(registro, servico === "—" ? "" : servico) }));
+    setErros((x) => { const { [ID_DATA_DESPESA]: _d, [ID_VALOR_DESPESA]: _v, [ID_DETALHAMENTO]: _t, ...resto } = x; return resto; });
+    toast.info("Data, detalhamento e custo total trazidos da manutenção. Termine a despesa.");
+  };
   const mudar = (id: string, valor: Resposta) => {
     if (tipo === TIPO_ABASTECIMENTO && id === ID_CARTOES && !vazia(valor) && !respostas[chaveAbastecimento]) setAbastecimentoAberto(true);
+    if (tipo === TIPO_MANUTENCAO && id === ID_CARTOES && !vazia(valor) && !respostas[chaveManutencao]) setManutencaoAberta(true);
     setRespostas((r) => {
       const novo = { ...r, [id]: valor };
       // Descrição do "Outro" some quando a opção é desmarcada.
@@ -307,6 +324,21 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
                       </div>
                     </div>
                   )}
+                  {tipo === TIPO_MANUTENCAO && p.id === ID_CARTOES && (
+                    <div className="space-y-2">
+                      {manutencaoLigadaId && (
+                        <p className="rounded-md border bg-muted/40 p-2 text-xs">
+                          {manutencaoLigada
+                            ? <>Ligado à manutenção de Veículos: {formatarData(manutencaoLigada.data)} · {manutencaoLigada.tipo} · {manutencaoLigada.custoTotal === undefined ? "sem custo" : manutencaoLigada.custoTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · {servicoDaManutencao(manutencaoLigada)}. Data e custo total vêm dela ao enviar.</>
+                            : "A manutenção ligada foi excluída de Veículos; escolha outra ou registre uma nova."}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => setManutencaoAberta(true)}>Registrar na Nova manutenção</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setEscolhaManutencaoAberta(true)}>Escolher manutenção já registrada</Button>
+                      </div>
+                    </div>
+                  )}
                   {errosVisiveis[p.id] && <p role="alert" className="text-sm text-destructive">{errosVisiveis[p.id]}</p>}
                 </div>
               ))}
@@ -328,6 +360,8 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
         aoSalvar={trazerDoAbastecimento}
       />
       <EscolherAbastecimentoDialog aberto={escolhaAberta} aoMudar={setEscolhaAberta} aoEscolher={trazerDoAbastecimento} />
+      <NovaManutencaoDialog aberto={manutencaoAberta} aoMudar={setManutencaoAberta} aoSalvar={(registro) => trazerDaManutencao(registro, servicoDaManutencao(registro))} />
+      <EscolherManutencaoDialog aberto={escolhaManutencaoAberta} aoMudar={setEscolhaManutencaoAberta} aoEscolher={trazerDaManutencao} />
     </div>
   );
 }

@@ -1261,3 +1261,13 @@ Pedido do dono (13:00): "incluir litros abastecidos também ao clicar escolher a
 - Ao escolher um abastecimento já registrado, ou ao salvar o Novo abastecimento, **data, valor e litros** vão para o card Abastecimento. Km continua sem vir.
 - Ao enviar, a despesa ligada puxa de novo data, valor e litros do abastecimento (decisão 224).
 - Litros abastecidos segue como pergunta do card, na mesma posição, já preenchida.
+
+## Decisão 226 — Manutenção do veículo de trabalho em Viagens (2026-10-16)
+
+Pedido do dono (13:12): "no card manutenção de veículo de trabalho, colocar as perguntas na mesma ordem do card alimentação. Ao clicar no cartão de crédito e escolher o cartão seguir a mesma lógica do módulo de abastecimento, porém ele irá puxar as informações do módulo de manutenção: data de despesa, detalhamento da despesa, custo total, e retorna para preenchimento do formulário".
+
+- **Ordem:** Técnico responsável, Data da despesa, UF, Município, Moedas, Cartões de crédito, Valor da despesa, **Detalhamento da despesa**, Foto do comprovante. O card ganha a classificação "PCM responde" (decisão 218) e a justificativa da ausência do documento (decisão 221), como Alimentação; sem Clientes (decisão 222).
+- **Cartão de crédito:** ao escolher o cartão abre a janela **Cadastrar nova manutenção** (a mesma de Módulos > Veículos > Manutenção, agora um componente reaproveitado). Ao salvar, a manutenção fica registrada em Veículos e voltam para o card a **data**, o **detalhamento** (grupos e ações feitas, e a descrição da corretiva) e o **custo total**, que vai para o Valor da despesa. O botão "Registrar na Nova manutenção" reabre a janela.
+- **Vínculo (como na decisão 224):** a despesa guarda o id da manutenção; ao enviar, data e custo total são puxados de novo dela. O detalhamento vem uma vez e pode ser ajustado. Botão **"Escolher manutenção já registrada"** lista as manutenções da empresa para não duplicar. Manutenção excluída impede gravar e avisa.
+- **Escolhas minhas onde o pedido não dizia:** a janela abre ao escolher o cartão; ao cadastrar uma manutenção por este card o relatório de manutenção não abre sozinho (só na tela do módulo); o detalhamento fica editável.
+- Dado salvo migra uma vez só (marca `manutencaoAjustada`). Só modo demonstração; na Fase 2, coluna de ligação despesa x manutenção com `empresa_id` (docs/pendencias-fase2.md).

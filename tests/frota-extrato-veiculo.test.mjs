@@ -116,7 +116,7 @@ test("grupo sem ações cadastradas não exige ação", () => {
 });
 
 test("a tela de manutenção tem o fluxo da decisão 61 e continua sem Supabase", () => {
-  const tela = readFileSync("src/components/modules/ManutencaoVeiculoModulo.tsx", "utf8");
+  const tela = ["ManutencaoVeiculoModulo", "NovaManutencaoDialog"].map((n) => readFileSync(`src/components/modules/${n}.tsx`, "utf8")).join("\n");
   assert.match(tela, /Cadastrar nova manutenção/);
   assert.match(tela, /Observação/);
   assert.match(tela, /das peças/i);

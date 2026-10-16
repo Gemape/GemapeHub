@@ -65,7 +65,7 @@ test("respostas antigas guardam o título da época; resumo e remoção", () => 
   const s = memoria();
   const e = estadoPadrao();
   const r1 = registrarResposta(e, completas, s, agora);
-  const r2 = registrarResposta(e, { ...completas, "q-03": ["Manutenção do veículo de trabalho"] }, s, new Date("2026-10-14T09:00:00-03:00"));
+  const r2 = registrarResposta(e, { ...completas, "q-03": ["Manutenção do veículo de trabalho"], "q-15": "Fulano de Tal" }, s, new Date("2026-10-14T09:00:00-03:00"));
   assert.deepEqual(listarRespostas(s).map((r) => r.tipo), ["Manutenção do veículo de trabalho", "Abastecimento"]);
   assert.match(resumoDaResposta(r1), /Abastecimento/);
   assert.match(resumoDaResposta(r1), /1\.234,56/);
@@ -190,14 +190,14 @@ import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 
 test("dec 218/219: Alimentação, Hospedagem, Pedágio, Estacionamento e Compra de peças trazem a classificação logo depois de quem lança; os outros tipos não mudam", () => {
   const e = estadoNovo();
-  for (const tipo of ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento"]) {
+  for (const tipo of ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento", "Manutenção do veículo de trabalho"]) {
     const ali = e.questionarios[tipo];
     assert.deepEqual(ali.slice(ali.indexOf("q-04"), ali.indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"], tipo);
     assert.deepEqual(e.regras[tipo]["q-14"], { origem: "q-13", operador: "igual", valor: OPCAO_NAO_CONFORMIDADE }, tipo);
     assert.deepEqual(e.regras[tipo]["q-15"], { origem: "q-13", operador: "igual", valor: OPCAO_AVULSO }, tipo);
     assert.ok(ali.includes("q-11"), tipo);
   }
-  for (const tipo of ["Manutenção do veículo de trabalho", "Outro"]) {
+  for (const tipo of ["Outro"]) {
     assert.ok(!e.questionarios[tipo].includes("q-15"), tipo);
     assert.equal(e.questionarios[tipo].at(-1), "q-13", tipo);
   }
@@ -283,7 +283,7 @@ test("dec 221: os cinco tipos seguem Técnico responsável, data, UF, município
   for (const tipo of TIPOS_ORDEM_VIAGENS) {
     const ids = e.questionarios[tipo];
     const sem = ids.filter((id) => !["q-13", "q-14", "q-15", "q-02"].includes(id));
-    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Abastecimento" ? ["q-10"] : []), ...(tipo === "Compra de peças para cliente" ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
+    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Abastecimento" ? ["q-10"] : []), ...(["Compra de peças para cliente", "Manutenção do veículo de trabalho"].includes(tipo) ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
     assert.deepEqual(sem, esperado, tipo);
   }
   assert.equal(e.perguntas.find((p) => p.id === "q-04").titulo, "Técnico responsável");
@@ -390,4 +390,56 @@ test("dec 224: o formulário oferece escolher um abastecimento já registrado", 
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /<EscolherAbastecimentoDialog/);
   assert.match(form, /Escolher abastecimento já registrado/);
+});
+
+// Dec 226: Manutenção do veículo de trabalho na ordem de Alimentação, ligada à manutenção de Veículos.
+import { registrarManutencao, removerManutencao, resumoManutencao } from "../src/lib/registros-veiculo.ts";
+import { chaveManutencao, respostasDaManutencao, sincronizarManutencao } from "../src/lib/questionario-respostas.ts";
+
+const ACOES_MANUT = [{ id: "a1", nome: "Freios", subitens: [{ id: "s1", nome: "Pastilha" }] }];
+const manutencaoBase = { veiculoId: "v1", data: "2026-10-13", km: "1000", tipo: "Preventiva", grupos: [{ acaoId: "a1", itens: [{ subitemId: "s1" }] }], locais: [{ local: "empresa", descricao: "Troca", condicaoPagamento: "", custoPecas: "100", custoMaoDeObra: "50,50" }] };
+const daManutencao = () => ({ ...completas, "q-03": ["Manutenção do veículo de trabalho"], "q-04": ["Roberto (Oficina)"], "q-15": "Fulano de Tal" });
+
+test("dec 226: a manutenção devolve data, detalhamento e custo total para o card e o id para ligar", () => {
+  assert.deepEqual(
+    respostasDaManutencao({ id: "m1", data: "2026-10-13", custoTotal: 150.5 }, " Freios: Pastilha "),
+    { "q-08": "2026-10-13", [chaveManutencao]: "m1", "q-09": "Freios: Pastilha", "q-11": "150,50" },
+  );
+  assert.deepEqual(respostasDaManutencao({ data: "2026-10-13" }, ""), { "q-08": "2026-10-13" });
+});
+
+test("dec 226: ao gravar, a despesa puxa data e custo total da manutenção ligada e mantém o detalhamento digitado", () => {
+  const storage = memoria();
+  const m = registrarManutencao(manutencaoBase, storage, agora, ACOES_MANUT);
+  const r = registrarResposta(estadoPadrao(), { ...daManutencao(), "q-08": "2026-10-01", "q-11": "1,00", "q-09": "Texto que eu ajustei", [chaveManutencao]: m.id }, storage, agora);
+  assert.equal(r.valores[chaveManutencao], m.id);
+  assert.equal(r.valores["q-08"], "2026-10-13");
+  assert.equal(r.valores["q-11"], "150,50");
+  assert.equal(r.valores["q-09"], "Texto que eu ajustei");
+  assert.equal(respostasParaEdicao(estadoPadrao(), r)[chaveManutencao], m.id);
+  assert.match(resumoManutencao(m, undefined), /Freios/);
+});
+
+test("dec 226: manutenção ligada excluída impede gravar a despesa; sem vínculo nada muda", () => {
+  const storage = memoria();
+  const m = registrarManutencao(manutencaoBase, storage, agora, ACOES_MANUT);
+  removerManutencao(m.id, storage);
+  assert.throws(() => registrarResposta(estadoPadrao(), { ...daManutencao(), [chaveManutencao]: m.id }, storage, agora), /foi excluída de Veículos/);
+  assert.equal(listarRespostas(storage).length, 0);
+  const r = { "q-08": "2026-10-01" };
+  assert.equal(sincronizarManutencao(r, []), r);
+  const alimentacao = registrarResposta(estadoPadrao(), { ...completas, "q-03": ["Alimentação"], "q-15": "Fulano de Tal", [chaveManutencao]: "m-qualquer" }, memoria(), agora);
+  assert.equal(alimentacao.valores[chaveManutencao], undefined);
+});
+
+test("dec 226: a ordem da Manutenção é a de Alimentação mais o detalhamento, e o formulário liga à Nova manutenção", () => {
+  const e = estadoNovo();
+  const sem = e.questionarios["Manutenção do veículo de trabalho"].filter((id) => !["q-13", "q-14", "q-15", "q-02"].includes(id));
+  assert.deepEqual(sem, ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", "q-09", "q-12", ID_JUSTIFICATIVA]);
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /tipo === TIPO_MANUTENCAO && id === ID_CARTOES && !vazia\(valor\) && !respostas\[chaveManutencao\]\) setManutencaoAberta\(true\)/);
+  assert.match(form, /<NovaManutencaoDialog/);
+  assert.match(form, /Escolher manutenção já registrada/);
+  const modulo = readFileSync(new URL("../src/components/modules/ManutencaoVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(modulo, /<NovaManutencaoDialog/);
 });

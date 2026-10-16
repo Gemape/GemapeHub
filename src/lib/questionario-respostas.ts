@@ -2,7 +2,7 @@
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
 import { inicioDaProximaSecao } from "./questionario-secoes.ts";
 import { DESTINO_PROXIMA_SECAO, aceitaDestino, destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
-import { ID_DATA_DESPESA, ID_HABILITADOS, ID_JUSTIFICATIVA, ID_LITROS, ID_VALOR_DESPESA, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_CLASSIFICACAO, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
+import { ID_DATA_DESPESA, ID_DETALHAMENTO, ID_HABILITADOS, ID_JUSTIFICATIVA, ID_LITROS, ID_VALOR_DESPESA, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_CLASSIFICACAO, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
 export type Resposta = string | string[];
@@ -83,6 +83,27 @@ export function sincronizarAbastecimento(respostas: Respostas, lista: { id: stri
   if (!a) throw new Error("O abastecimento ligado a esta despesa foi excluído de Veículos; escolha outro ou registre um novo.");
   const novo = { ...respostas, ...respostasDoAbastecimento(a) };
   if (!(typeof a.valor === "number" && a.valor > 0)) delete novo[ID_VALOR_DESPESA];
+  return novo;
+}
+
+// Dec 226: no card Manutenção do veículo de trabalho, a Nova manutenção de Veículos devolve data, detalhamento (serviços) e custo total.
+export const chaveManutencao = "manutencao:id";
+export function respostasDaManutencao(manutencao: { id?: string; data: string; custoTotal?: number | null | undefined }, detalhamento: string): Respostas {
+  const patch: Respostas = { [ID_DATA_DESPESA]: manutencao.data };
+  if (manutencao.id) patch[chaveManutencao] = manutencao.id;
+  if (detalhamento.trim()) patch[ID_DETALHAMENTO] = detalhamento.trim();
+  if (typeof manutencao.custoTotal === "number" && manutencao.custoTotal > 0) patch[ID_VALOR_DESPESA] = mascaraDecimal2(String(Math.round(manutencao.custoTotal * 100)));
+  return patch;
+}
+// Ao gravar, a despesa ligada puxa de novo data e custo total da manutenção (o detalhamento fica como foi digitado).
+export function sincronizarManutencao(respostas: Respostas, lista: { id: string; data: string; custoTotal?: number | null | undefined }[]): Respostas {
+  const id = respostas[chaveManutencao];
+  if (typeof id !== "string" || id === "") return respostas;
+  const m = lista.find((x) => x.id === id);
+  if (!m) throw new Error("A manutenção ligada a esta despesa foi excluída de Veículos; escolha outra ou registre uma nova.");
+  const { [ID_DETALHAMENTO]: _d, ...dados } = respostasDaManutencao(m, "");
+  const novo = { ...respostas, ...dados };
+  if (!(typeof m.custoTotal === "number" && m.custoTotal > 0)) delete novo[ID_VALOR_DESPESA];
   return novo;
 }
 
