@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,7 +17,7 @@ const storage = () => {
   const dados = new Map();
   return { getItem: (chave) => dados.get(chave) ?? null, setItem: (chave, valor) => dados.set(chave, valor) };
 };
-const raiz = new URL('../src/', import.meta.url).pathname;
+const raiz = fileURLToPath(new URL('../src/', import.meta.url));
 const ler = (relativo) => readFileSync(join(raiz, relativo), 'utf8');
 
 test('Gerais tem marcas de uniformes e de veículos, começando vazias e sem duplicar', () => {

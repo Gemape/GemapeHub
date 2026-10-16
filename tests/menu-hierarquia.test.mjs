@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
@@ -123,7 +124,7 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
       const c = `${dir}/${n}`;
       return statSync(c).isDirectory() ? achar(c) : [c];
     });
-  const raiz = new URL("../src/", import.meta.url).pathname;
+  const raiz = fileURLToPath(new URL("../src/", import.meta.url));
   const comAbas = achar(raiz).filter((f) => f.endsWith(".tsx") && !f.includes("/components/ui/") && /<TabsTrigger|<TabsList/.test(readFileSync(f, "utf8")));
   assert.deepEqual(comAbas, []);
   assert.deepEqual(ABAS_VEICULO.map((a) => a.aba), ["frota", "abastecimento", "manutencao", "ocorrencias", "checklist"]);

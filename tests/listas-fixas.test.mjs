@@ -1,9 +1,10 @@
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const raiz = new URL("../src/", import.meta.url).pathname;
+const raiz = fileURLToPath(new URL("../src/", import.meta.url));
 const arquivos = (dir) =>
   readdirSync(dir).flatMap((nome) => {
     const caminho = join(dir, nome);
@@ -21,7 +22,7 @@ test("as listas fixas de EPI, Uniforme e Veículo só são usadas como sementes 
   for (const nome of SEMENTES) {
     const usos = fontes
       .filter((c) => new RegExp(`\\b${nome}\\b`).test(readFileSync(c, "utf8")))
-      .map((c) => c.slice(raiz.length))
+      .map((c) => c.slice(raiz.length).replaceAll("\\", "/"))
       .sort();
     assert.deepEqual(usos, ["lib/gemape.ts", "lib/parametros-base.ts"], nome);
   }
