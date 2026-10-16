@@ -52,9 +52,9 @@ function PaginaFornecedores() {
     const aviso = avisoExclusaoDoFornecedor(nome, vinculos);
     if (!confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${nome}?`)) return;
     try {
-      // As associações saem primeiro; se falhar, o fornecedor continua cadastrado.
-      removerCodigosFabricaPorIds(vinculos.map((c) => c.id));
+      // O fornecedor sai primeiro: se a leitura ou a gravação falhar, nada foi apagado e as associações continuam.
       removerFornecedor(fornecedor.id);
+      removerCodigosFabricaPorIds(vinculos.map((c) => c.id));
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível excluir o fornecedor.");
       return;

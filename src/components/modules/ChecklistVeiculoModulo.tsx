@@ -146,6 +146,8 @@ export function ChecklistVeiculoModulo() {
   // No avulso não há campo de tipo de veículo (decisão 118): entram todos os veículos ativos que têm tipo de check list, e o tipo vem do veículo.
   const veiculosDoDialogo = veiculos.filter((v) => v.status === "Ativo" && tipoCheckDe(v) !== null);
   const veiculoEscolhido = veiculosDoDialogo.find((v) => v.id === veiculoId);
+  // O responsável é da mesma empresa do veículo (a lista de empregados traz todas as empresas).
+  const responsaveisDoVeiculo = veiculoEscolhido?.empresa_id ? empregadosAtivos.filter((e) => e.empresa_id === veiculoEscolhido.empresa_id) : empregadosAtivos;
   const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === (veiculoEscolhido ? tipoCheckDe(veiculoEscolhido) : null))?.nome ?? "";
   // Opção do tipo de check list, na ordem pedida pelo responsável (decisão 157): Placa >> Responsável >> Periodicidade.
   const opcaoDoChecklist = (v: VeiculoChecklist, periodicidade: string, responsavelNome: string) =>
@@ -210,7 +212,7 @@ export function ChecklistVeiculoModulo() {
       return;
     }
     // O responsável pré-preenchido pode ter sido desligado: o campo mostra vazio, então o envio também recusa.
-    if (responsavelId && !empregadosAtivos.some((x) => x.id === responsavelId)) {
+    if (responsavelId && !responsaveisDoVeiculo.some((x) => x.id === responsavelId)) {
       toast.error("Selecione o responsável: o anterior não está mais ativo.");
       return;
     }
@@ -434,7 +436,7 @@ export function ChecklistVeiculoModulo() {
               <Label htmlFor="ck_resp">Responsável pelo check list</Label>
               <Select value={responsavelId} onValueChange={setResponsavelId}>
                 <SelectTrigger id="ck_resp" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>
-                <SelectContent>{empregadosAtivos.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                <SelectContent>{responsaveisDoVeiculo.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
               </Select>
             </div>}
             <DialogFooter>

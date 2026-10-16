@@ -37,6 +37,7 @@ import {
   ESTADOS_ITEM,
   STATUS_FERRAMENTA,
   exportarCsv,
+  formatarData,
 } from "@/lib/gemape";
 import { useExcluir, useItens, useSalvar, type Item } from "@/lib/hooks-gemape";
 import { Textarea } from "@/components/ui/textarea";
@@ -291,7 +292,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-[10px] text-muted-foreground">
-                    {new Date(item.created_at).toLocaleDateString("pt-BR")}
+                    {formatarData(item.created_at)}
                   </TableCell>
                   <TableCell className="text-right">
                     <AcoesLinha

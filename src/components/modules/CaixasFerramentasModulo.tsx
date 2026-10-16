@@ -332,7 +332,7 @@ export function CaixasFerramentasModulo() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-[10px] text-muted-foreground">
-                    {new Date(c.created_at).toLocaleDateString("pt-BR")}
+                    {formatarData(c.created_at)}
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     <AcoesLinha
