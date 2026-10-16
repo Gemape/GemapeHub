@@ -105,3 +105,4 @@ Nada abaixo foi alterado: dependem de papéis, RLS ou migrations no Supabase rea
 
 - Clonar código de fábrica (decisão 231): no banco real, criar a cópia do produto e a associação numa única operação (transação), com o código novo gerado no servidor.
 - **Entrega EPI (decisão 239):** criar em `movimentacoes` as colunas `codigo_movimentacao` (texto, único por sigla ENT/DEV, gerado no servidor junto da gravação, para duas pessoas salvando ao mesmo tempo não repetirem) e `responsavel_nome` (ou o id do usuário que registrou a devolução). Hoje só o modo demonstração grava os dois. A devolução só do Administrador precisa da regra no banco (RLS), além do botão da tela.
+- Baixa de ferramenta pela caixa (decisão 241): no gatilho de movimentações do banco real, `Saida` com `caixa_id` e `motivo_baixa` não pode conferir nem baixar `estoque_atual` da ferramenta (a quantidade vive na caixa).
