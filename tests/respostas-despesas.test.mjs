@@ -279,8 +279,8 @@ test("dec 221: os cinco tipos seguem Técnico responsável, data, UF, município
   const e = estadoDeFabrica();
   for (const tipo of TIPOS_ORDEM_VIAGENS) {
     const ids = e.questionarios[tipo];
-    const sem = ids.filter((id) => !["q-13", "q-14", "q-15", "q-07", "q-02"].includes(id));
-    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Compra de peças para cliente" ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
+    const sem = ids.filter((id) => !["q-13", "q-14", "q-15", "q-02"].includes(id));
+    const esperado = ["q-04", "q-08", "q-05", "q-06", ...(tipo === "Compra de peças para cliente" ? ["q-07"] : []), "q-01", "q-11", ...(tipo === "Compra de peças para cliente" ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
     assert.deepEqual(sem, esperado, tipo);
   }
   assert.equal(e.perguntas.find((p) => p.id === "q-04").titulo, "Técnico responsável");
@@ -301,4 +301,24 @@ test("dec 221: sem documento a justificativa abre; com ela escrita encerra, e o 
   assert.equal(r.itens.find((i) => i.perguntaId === ID_JUSTIFICATIVA).resposta, "Recibo não entregue");
   assert.equal(respostasParaEdicao(e, r)[chaveJustificativaPedida], "1");
   assert.ok(!ids({ ...pedida, "q-12": ["a.png"] }).includes(ID_JUSTIFICATIVA));
+});
+
+// Dec 222: Clientes só em Compra de peças para cliente.
+test("dec 222: Clientes sai de Alimentação, Hospedagem, Pedágio e Estacionamento e continua em Compra de peças; dado salvo migra uma vez só", () => {
+  const e = estadoDeFabrica();
+  for (const tipo of ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento"]) assert.ok(!e.questionarios[tipo].includes("q-07"), tipo);
+  assert.ok(e.questionarios["Compra de peças para cliente"].includes("q-07"));
+  assert.ok(e.questionarios["Abastecimento"].includes("q-07"));
+  const salvo = JSON.parse(JSON.stringify(e));
+  delete salvo.clientesRetirados;
+  for (const tipo of ["Alimentação", "Pedágio"]) salvo.questionarios[tipo] = [...salvo.questionarios[tipo], "q-07"];
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify(salvo));
+  const lido = lerEstado(s);
+  assert.ok(!lido.questionarios["Alimentação"].includes("q-07") && !lido.questionarios["Pedágio"].includes("q-07"));
+  assert.ok(lido.questionarios["Compra de peças para cliente"].includes("q-07"));
+  assert.equal(lido.clientesRetirados, true);
+  // Depois do ajuste, voltar Clientes ao questionário não é desfeito.
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...lido, questionarios: { ...lido.questionarios, "Pedágio": [...lido.questionarios["Pedágio"], "q-07"] } }));
+  assert.ok(lerEstado(s).questionarios["Pedágio"].includes("q-07"));
 });
