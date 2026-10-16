@@ -278,7 +278,7 @@ test("dec 221: os cinco tipos seguem Técnico responsável, data, UF, município
   for (const tipo of TIPOS_ORDEM_VIAGENS) {
     const ids = e.questionarios[tipo];
     const sem = ids.filter((id) => !["q-13", "q-14", "q-15", "q-02"].includes(id));
-    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Abastecimento" ? ["q-10"] : []), ...(["Compra de peças para cliente", "Manutenção do veículo de trabalho"].includes(tipo) ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
+    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Abastecimento" ? ["q-10"] : []), ...(["Compra de peças para cliente", "Manutenção do veículo de trabalho", "Outro"].includes(tipo) ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
     assert.deepEqual(sem, esperado, tipo);
   }
   assert.equal(e.perguntas.find((p) => p.id === "q-04").titulo, "Técnico responsável");

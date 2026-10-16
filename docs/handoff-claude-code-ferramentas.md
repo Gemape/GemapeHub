@@ -480,3 +480,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-16 dec 225: respostasDoAbastecimento e sincronizarAbastecimento passam a trazer também os litros (q-10, máscara de duas casas).
 - 2026-10-16 dec 226: Manutenção do veículo de trabalho na ordem de Alimentação (TIPO_MANUTENCAO, TIPOS_COM_DETALHAMENTO, flag manutencaoAjustada); NovaManutencaoDialog.tsx extraído do módulo de Veículos; EscolherManutencaoDialog.tsx; chaveManutencao, respostasDaManutencao e sincronizarManutencao em questionario-respostas.ts; comAbastecimento em respostas-despesas.ts também puxa data e custo total da manutenção.
 - 2026-10-16 dec 227: Outro entra em TIPOS_COM_CLASSIFICACAO e TIPOS_ORDEM_VIAGENS (TIPO_OUTRO, flag outroAjustado em lerEstado).
+- 2026-10-16 dec 227 (complemento): Outro entra em TIPOS_COM_DETALHAMENTO (Detalhamento depois do valor).

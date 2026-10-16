@@ -1274,8 +1274,8 @@ Pedido do dono (13:12): "no card manutenção de veículo de trabalho, colocar a
 
 ## Decisão 227 — Card Outro na ordem do Alimentação (2026-10-16)
 
-Pedido do dono (13:30): "colocar as perguntas do card outro na mesma ordem do módulo alimentação".
+Pedidos do dono (13:30): "colocar as perguntas do card outro na mesma ordem do módulo alimentação"; (13:37): "no card outros incluir o campo de detalhamento da despesa".
 
-- O card **Outro** segue a ordem do Alimentação: Técnico responsável, Data da despesa, UF, Município, Moedas, Cartões de crédito, Valor da despesa, Foto do comprovante. Ganha a classificação "PCM responde" (decisão 218) e a justificativa da ausência do documento (decisão 221); sem Clientes (decisão 222), sem Litros e sem Detalhamento, como Alimentação.
+- O card **Outro** segue a ordem do Alimentação: Técnico responsável, Data da despesa, UF, Município, Moedas, Cartões de crédito, Valor da despesa, **Detalhamento da despesa** (depois do valor, pedido do dono às 13:37), Foto do comprovante. Ganha a classificação "PCM responde" (decisão 218) e a justificativa da ausência do documento (decisão 221); sem Clientes (decisão 222) e sem Litros.
 - Com isso, os oito tipos de despesa seguem a mesma ordem.
 - Dado salvo migra uma vez só (marca `outroAjustado`). Tipo novo criado pelo responsável continua usando o questionário completo de fábrica.

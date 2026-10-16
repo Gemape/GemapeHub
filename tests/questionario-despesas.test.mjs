@@ -89,7 +89,7 @@ test("incluir um tipo de despesa cria o questionário dele; tirar o tipo apaga o
   const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const g = salvarPergunta(e, { ...q3, opcoes: [...q3.opcoes.filter((o) => o !== "Pedágio"), "Lavagem"] }, s);
   assert.ok(tiposDeDespesa(g).includes("Lavagem"));
-  assert.equal(questionarioDoTipo(g, "Lavagem").length, 13);
+  assert.equal(questionarioDoTipo(g, "Lavagem").length, 14);
   assert.ok(!("Pedágio" in g.questionarios));
 });
 

@@ -120,8 +120,8 @@ export const ID_JUSTIFICATIVA = "q-16";
 // Dec 221: Alimentação, Hospedagem, Pedágio, Estacionamento e Compra de peças para cliente seguem a mesma ordem de perguntas.
 export const TIPOS_ORDEM_VIAGENS = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", TIPO_ABASTECIMENTO, TIPO_MANUTENCAO, TIPO_OUTRO];
 export const TIPO_COM_DETALHAMENTO = "Compra de peças para cliente";
-// Dec 226: a Manutenção do veículo de trabalho também traz o detalhamento da despesa (vem da Nova manutenção de Veículos).
-export const TIPOS_COM_DETALHAMENTO: readonly string[] = [TIPO_COM_DETALHAMENTO, TIPO_MANUTENCAO];
+// Dec 226: a Manutenção do veículo de trabalho também traz o detalhamento da despesa (vem da Nova manutenção de Veículos). Dec 227: o Outro também.
+export const TIPOS_COM_DETALHAMENTO: readonly string[] = [TIPO_COM_DETALHAMENTO, TIPO_MANUTENCAO, TIPO_OUTRO];
 // Dec 222: nenhum questionário pergunta o cliente (a pergunta continua cadastrada e pode ser incluída de novo na montagem).
 export const ID_CLIENTES = "q-07";
 const TITULO_TECNICO_RESPONSAVEL = "Técnico responsável";
