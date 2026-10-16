@@ -1335,3 +1335,16 @@ Pedido do responsável em 16/10 (17:49), com a imagem da mensagem "Produtos com 
 
 - Autorizar tamanho (ou unidade) a uma subcategoria passa a gravar direto, sem a janela de confirmação. Era a única tela de Parâmetros com esse aviso.
 - O saldo dos produtos que já existiam continua em "Sem tamanho", como antes: só a pergunta saiu. O aviso de desautorizar (produtos que dependem do tamanho ou da unidade) não muda. Sem Supabase.
+
+### Decisão 239: Entrega EPI no módulo EPI (registro de entrega e devolução)
+
+Pedido do responsável em 16/10 (17:37), com plano aprovado por ele ("ok") e a escolha "Tela nova" no card.
+
+- Em Módulos > EPIs, o submenu "Entrega EPI" (antes de Termo de Entrega; `/epi?aba=entrega`) tem dois botões: Registrar entrega e Devolver EPI (só o Administrador vê este). O Termo de Entrega continua como está; depois de registrar a entrega, a tela oferece abrir o termo assinável da mesma entrega (textos escapados).
+- Registrar entrega: empresa (só ativas), empregado (ativo e sem demissão vencida), EPI do catálogo, tamanho, quantidade, data (Brasília) e observações (primeira maiúscula, resto minúsculo). Quantidade inteira maior que zero e não maior que o saldo da empresa (por tamanho, quando há). Todas as linhas são gravadas de uma vez: se uma passa do saldo, nenhuma é gravada; o botão trava o clique repetido e a lista é limpa depois de gravar.
+- Devolver EPI: só o Administrador; devolve até o que o empregado tem em posse (entregue menos devolvido e baixado, por EPI e tamanho); soma ao saldo; grava a data e o responsável (por padrão, o usuário logado, editável).
+- Cada movimentação ganha código automático, sigla + numeração, com contagem separada: ENT-0001 para entrega e DEV-0001 para devolução. O código nunca repete (lê todos os códigos já gravados antes de gerar).
+- Alerta de mínimo: faixa no alto da tela com os EPIs no mínimo ou abaixo (por tamanho, quando há) e aviso ao registrar a entrega que leva o saldo ao mínimo. O estoque do demo continua reativo.
+- Histórico completo de movimentações de EPI por EPI e por empregado (lido em blocos, sem o limite de 1000 linhas), com Exportar CSV.
+- Ficha de EPI Avulsa: ganhou a coluna Código e, na devolução, o responsável. Cada entrega e devolução entra na ficha com data, EPI, tamanho, quantidade e código.
+- Só modo demonstração: as colunas `codigo_movimentacao` e `responsavel_nome` de `movimentacoes` existem só no demo (anotadas em `docs/pendencias-fase2.md`). Nada no Supabase.
