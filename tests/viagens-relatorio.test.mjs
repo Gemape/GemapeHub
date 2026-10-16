@@ -179,3 +179,9 @@ test("dec 236: opção Sem cliente vinculado no campo Clientes; sai na linha, ma
   const f = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(f, /\[SEM_CLIENTE_VINCULADO, \.\.\.listarClientes\(\)/);
 });
+
+test("revisão #304-#307: responsável em branco sai como 'Sem técnico responsável' na linha e no quadro", () => {
+  const linhas = [{ data: "2026-10-05", tipo: "X", cliente: null, responsavel: "  ", descricao: null, valor: 3, imagens: [] }];
+  const html = montarRelatorioViagensHtml(base(linhas));
+  assert.equal(html.split("Sem técnico responsável").length - 1, 2);
+});
