@@ -17,6 +17,9 @@ type Props = {
   vazio?: string;
   // Nome do campo para leitores de tela.
   rotulo?: string;
+  // A lista abre no fluxo da página, empurrando o que vem abaixo, em vez de flutuar por cima
+  // (cartões com desfoque de fundo cobririam a lista flutuante).
+  listaNoFluxo?: boolean;
 };
 
 // Campo com busca por palavra-chave: digita, escolhe na lista e o item fica selecionado.
@@ -29,6 +32,7 @@ export function CampoBusca({
   placeholder,
   vazio = "Nada encontrado.",
   rotulo,
+  listaNoFluxo = false,
 }: Props) {
   const [termo, setTermo] = useState("");
   const [aberto, setAberto] = useState(false);
@@ -98,7 +102,10 @@ export function CampoBusca({
         <ul
           id={listaId}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover shadow-md"
+          className={cn(
+            "mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover shadow-md",
+            !listaNoFluxo && "absolute z-50",
+          )}
         >
           {encontradas.length === 0 && (
             <li className="px-3 py-2 text-sm text-muted-foreground">{vazio}</li>

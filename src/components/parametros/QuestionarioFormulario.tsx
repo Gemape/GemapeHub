@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CampoBusca } from "@/components/CampoBusca";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,7 +24,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import { juntarImagens, mensagemDeLimite, reduzirImagem, type ImagemReduzida } from "@/lib/imagem-economica";
-import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
+import { municipiosDaUf } from "@/lib/municipios";
 import {
   ID_CARTOES, ID_DATA_DESPESA, ID_DETALHAMENTO, ID_JUSTIFICATIVA, ID_TIPO_DESPESA, ID_VALOR_DESPESA, TIPO_ABASTECIMENTO, TIPO_MANUTENCAO, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, questionarioDoTipo, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
   tituloDoQuestionario,
@@ -543,11 +544,9 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
   const ufResposta = p.dependeDe ? respostas[p.dependeDe] : undefined;
   const sigla = typeof ufResposta === "string" ? siglaDaUf(ufResposta) : "";
   const [municipios, setMunicipios] = useState<string[]>([]);
-  const [busca, setBusca] = useState("");
   useEffect(() => {
     let vivo = true;
     if (p.fonte !== "municipios") return;
-    setBusca("");
     if (!sigla) { setMunicipios([]); return; }
     void municipiosDaUf(sigla).then((m) => { if (vivo) setMunicipios(m); }).catch(() => { if (vivo) setMunicipios([]); });
     return () => { vivo = false; };
@@ -558,7 +557,7 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
   const [novoCliente, setNovoCliente] = useState(false);
   const [codigoNovo, setCodigoNovo] = useState("");
 
-  const opcoes = p.fonte === "clientes" ? [SEM_CLIENTE_VINCULADO, ...listarClientes().map((c) => `${c.codigo} - ${c.nome}`)] : p.fonte === "municipios" ? filtrarMunicipios(municipios, busca) : p.opcoes;
+  const opcoes = p.fonte === "clientes" ? [SEM_CLIENTE_VINCULADO, ...listarClientes().map((c) => `${c.codigo} - ${c.nome}`)] : p.fonte === "municipios" ? municipios : p.opcoes;
   // O valor escolhido sempre aparece, mesmo além das 200 primeiras opções (cliente recém-cadastrado, por exemplo).
   const mostradas = opcoes.slice(0, 200);
   if (atual && opcoes.includes(atual) && !mostradas.includes(atual)) mostradas.push(atual);
@@ -566,15 +565,31 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
   const semUf = p.fonte === "municipios" && !sigla;
   return (
     <div className="space-y-1">
-      {p.fonte === "municipios" && (
-        <Input name={`busca-${p.id}`} aria-label="Buscar município" placeholder="Buscar município" value={busca} disabled={semUf} onChange={(e) => setBusca(e.target.value)} />
+      {/* Município: uma só lista suspensa; ao digitar, ela busca entre os municípios da UF escolhida. */}
+      {p.fonte === "municipios" ? (
+        semUf ? (
+          <Input aria-label={p.titulo} placeholder="Escolha antes a Unidade da Federação" disabled />
+        ) : (
+          <CampoBusca
+            id={`municipio-${p.id}`}
+            rotulo={p.titulo}
+            placeholder="Digite para buscar o município"
+            opcoes={municipios.map((m) => ({ valor: m, rotulo: m }))}
+            valor={atual}
+            listaNoFluxo
+            onChange={(v) => onMudar(v)}
+          />
+        )
+      ) : (
+        <>
+          {/* O Select zera o valor sozinho quando a lista muda (cliente recém-cadastrado); vazio nunca é uma escolha do usuário. */}
+          <Select value={atual} onValueChange={(v) => { if (v) onMudar(v); }}>
+            <SelectTrigger aria-label={p.titulo}><SelectValue placeholder="Selecione" /></SelectTrigger>
+            <SelectContent>{mostradas.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+          </Select>
+          {opcoes.length > mostradas.length && <p className="text-xs text-muted-foreground">Mostrando {mostradas.length} de {opcoes.length}; refine a busca.</p>}
+        </>
       )}
-      {/* O Select zera o valor sozinho quando a lista muda (cliente recém-cadastrado); vazio nunca é uma escolha do usuário. */}
-      <Select value={atual} onValueChange={(v) => { if (v) onMudar(v); }} disabled={semUf}>
-        <SelectTrigger aria-label={p.titulo}><SelectValue placeholder={semUf ? "Escolha antes a Unidade da Federação" : "Selecione"} /></SelectTrigger>
-        <SelectContent>{mostradas.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
-      </Select>
-      {opcoes.length > mostradas.length && <p className="text-xs text-muted-foreground">Mostrando {mostradas.length} de {opcoes.length}; refine a busca.</p>}
       {p.fonte === "clientes" && (
         <>
           <p className="text-xs text-muted-foreground">

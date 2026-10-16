@@ -501,4 +501,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-16 dec 244: Termo de Responsabilidade com caixa confere o guardado na caixa (validarTermoResponsabilidade 3º parâmetro; FerramentasTermoResponsabilidade) e o demo não mexe no estoque do cadastro em Saida/Devolucao de ferramenta com caixa_id (demo-client.ts). Teste: tests/termo-caixa-sem-estoque.test.mjs.
 - 2026-10-16 dec 239: Entrega EPI (EpiEntrega.tsx, entrega-epi.ts): entrega e devolução (só admin) com código ENT/DEV, histórico completo, alerta de mínimo, ficha com código e responsável.
 - 2026-10-16 dec 233: Clientes volta a todos os questionários de Viagens depois do Município (desfaz dec 222; migração única clientesEmTodos em questionario-despesas.ts; comOrdemViagens e estadoPadrao deixam de excluir ID_CLIENTES).
-- 2026-10-16 dec 246: anexo de imagens do questionário mostra miniaturas com × para remover (QuestionarioFormulario.tsx, usa ImagemReduzida.dataUrl).
+- 2026-10-16 dec 245: Município do questionário de Viagens é um campo único com busca ao digitar (ListaSuspensa usa CampoBusca; prop listaNoFluxo).
