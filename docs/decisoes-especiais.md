@@ -1356,10 +1356,10 @@ Pedido do responsável em 16/10 (17:37), com plano aprovado por ele ("ok") e a e
 - Ficha de EPI Avulsa: ganhou a coluna Código e, na devolução, o responsável. Cada entrega e devolução entra na ficha com data, EPI, tamanho, quantidade e código.
 - Só modo demonstração: as colunas `codigo_movimentacao` e `responsavel_nome` de `movimentacoes` existem só no demo (anotadas em `docs/pendencias-fase2.md`). Nada no Supabase.
 
-### Decisão 241: Dar baixa em ferramenta pela caixa não exige estoque do cadastro
+### Decisão 240: Tamanho na Entrada de Movimentações (EPI e Uniforme)
 
-Pedido do responsável em 16/10 (18:25), com a imagem da janela "Dar baixa em ferramenta da caixa CX-0001" e o aviso "Falha ao registrar movimentação: Estoque insuficiente": "corrigir a funcionalidade e permitir dar baixa na ferramenta nas caixas".
+Pedido do responsável em 16/10 (18:14), com a imagem da Nova movimentação de uniforme: "no campo de entrada de uniforme incluir o tamanho". Escolha dele no cartão: "Todos ativos".
 
-- Causa: a ferramenta cadastrada em Parâmetros nasce com estoque zero (o que existe fica guardado na caixa), e a baixa era conferida contra esse estoque, mesmo com 1 guardada na caixa.
-- Agora a baixa pela caixa (com ou sem empregado) é gravada no histórico sem mexer no estoque do cadastro; o limite continua sendo o guardado na caixa (sem empregado) ou o que está com o empregado, conferido pela própria janela. Saída comum de ferramenta sem estoque continua recusada.
-- Só modo demonstração; no banco real o gatilho de movimentações precisa pular o estoque quando houver `caixa_id` em baixa (registrado em `docs/pendencias-fase2.md`).
+- Em Módulos > EPIs e Uniformes > Movimentações, na Entrada, o produto sem nenhum tamanho autorizado ativo na subcategoria passa a mostrar o campo Tamanho com todos os tamanhos ativos de Gerais; o tamanho é obrigatório. Produto com tamanho autorizado continua com só os autorizados.
+- Ao registrar, o tamanho escolhido é associado à subcategoria do produto (antes de gravar; se a gravação falhar, a associação é desfeita). O saldo antigo continua em "Sem tamanho", e a entrada soma no tamanho escolhido.
+- Compras e demais telas não mudam. Sem tamanhos em Gerais, o estoque continua único.
