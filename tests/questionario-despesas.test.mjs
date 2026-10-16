@@ -40,7 +40,7 @@ test("os tipos de despesa vêm da pergunta 3 e todo questionário começa por el
   for (const tipo of tiposDeDespesa(e)) assert.equal(questionarioDoTipo(e, tipo)[0], ID_TIPO_DESPESA);
   assert.equal(questionarioDoTipo(e, "Abastecimento").length, 14);
   assert.equal(questionarioDoTipo(e, "Pedágio").length, 13);
-  assert.equal(questionarioDoTipo(e, "Manutenção do veículo de trabalho").length, 12);
+  assert.equal(questionarioDoTipo(e, "Manutenção do veículo de trabalho").length, 14);
   // Mesmo gravada fora de ordem ou repetida, a pergunta 3 volta ao início uma vez só.
   const g = gravarQuestionario(e, "Pedágio", ["q-08", ID_TIPO_DESPESA, "q-01", "q-08"], memoria());
   assert.deepEqual(questionarioDoTipo(g, "Pedágio"), [ID_TIPO_DESPESA, "q-08", "q-01"]);

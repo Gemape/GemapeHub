@@ -99,7 +99,7 @@ test("dec 161: o relatório mostra o custo de cada local, a condição de pagame
 });
 
 test("dec 161: a tela tem vários locais, botões de adicionar e observação do item não feito", () => {
-  const tela = readFileSync(new URL("../src/components/modules/ManutencaoVeiculoModulo.tsx", import.meta.url), "utf8");
+  const tela = ["ManutencaoVeiculoModulo", "NovaManutencaoDialog"].map((n) => readFileSync(new URL(`../src/components/modules/${n}.tsx`, import.meta.url), "utf8")).join("\n");
   assert.match(tela, /Adicionar terceiro/);
   assert.match(tela, /Adicionar local na Gemape/);
   assert.match(tela, /Condição de pagamento combinada/);
@@ -111,7 +111,7 @@ test("dec 161: a tela tem vários locais, botões de adicionar e observação do
 });
 
 test("dec 162: link abaixo dos grupos de ações abre as Ações de manutenção numa janela ao lado do formulário", () => {
-  const tela = readFileSync(new URL("../src/components/modules/ManutencaoVeiculoModulo.tsx", import.meta.url), "utf8");
+  const tela = ["ManutencaoVeiculoModulo", "NovaManutencaoDialog"].map((n) => readFileSync(new URL(`../src/components/modules/${n}.tsx`, import.meta.url), "utf8")).join("\n");
   assert.match(tela, /Cadastrar em Parâmetros &gt; Veículos &gt; Manutenção/);
   assert.match(tela, /setAcoesAberto\(true\)/);
   // A janela fica depois do diálogo da manutenção (irmã, não filha), para o que foi preenchido continuar montado.
@@ -126,7 +126,7 @@ test("dec 163: marcar Outros exige a descrição aberta, em qualquer grupo", () 
   assert.throws(() => registrarManutencao(entrada("  "), memoria(), hoje, acoes), /Descreva o que foi feito em Outros, do grupo Freios/);
   const m = registrarManutencao(entrada(" trocou a lâmpada do painel "), memoria(), hoje, acoes);
   assert.deepEqual(m.grupos[0].itens, [{ subitemId: "o1", nome: "Outros", observacao: "trocou a lâmpada do painel" }]);
-  const tela = readFileSync(new URL("../src/components/modules/ManutencaoVeiculoModulo.tsx", import.meta.url), "utf8");
+  const tela = ["ManutencaoVeiculoModulo", "NovaManutencaoDialog"].map((n) => readFileSync(new URL(`../src/components/modules/${n}.tsx`, import.meta.url), "utf8")).join("\n");
   assert.match(tela, /Descreva o que foi feito \(obrigatório\)/);
   assert.match(tela, /!marcado && !ehOutros\(sub\.nome\)/);
 });

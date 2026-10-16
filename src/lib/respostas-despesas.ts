@@ -1,11 +1,11 @@
 // Respostas do Questionário de Despesas (dec 169). Fase 1: ficam só no navegador, em modo demonstração; a tabela de
 // respostas (JSONB, com `empresa_id`) entra na Fase 2. Cada resposta guarda o título das perguntas da época.
 import { horaBrasilia, hojeLocal } from "./empregados.ts";
-import { ID_JUSTIFICATIVA, ID_TIPO_DESPESA, TIPO_ABASTECIMENTO, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
+import { ID_JUSTIFICATIVA, ID_TIPO_DESPESA, TIPO_ABASTECIMENTO, TIPO_MANUTENCAO, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
 import { listarRelatorios, relatorioPorDespesa } from "./relatorios-viagens.ts";
 import { questionarioPublicado } from "./questionario-destinos.ts";
-import { chaveAbastecimento, chaveJustificativaPedida, chaveOutro, perguntasVisiveis, sincronizarAbastecimento, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
-import { lerAbastecimentos } from "./registros-veiculo.ts";
+import { chaveAbastecimento, chaveJustificativaPedida, chaveManutencao, chaveOutro, perguntasVisiveis, sincronizarAbastecimento, sincronizarManutencao, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
+import { lerAbastecimentos, lerManutencoes } from "./registros-veiculo.ts";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-respostas-despesas";
@@ -73,12 +73,18 @@ function montarItens(e: Estado, respostas: Respostas, imagens: Record<string, Im
     if (outro !== undefined) valores[chaveOutro(p.id)] = outro;
   }
   if (tipo === TIPO_ABASTECIMENTO && typeof respostas[chaveAbastecimento] === "string") valores[chaveAbastecimento] = respostas[chaveAbastecimento];
+  if (tipo === TIPO_MANUTENCAO && typeof respostas[chaveManutencao] === "string") valores[chaveManutencao] = respostas[chaveManutencao];
   return { tipo, itens, valores };
 }
 
 // Dec 224: despesa de abastecimento ligada a um registro de Veículos puxa a data e o valor dele na hora de gravar.
-const comAbastecimento = (respostas: Respostas, storage: StorageLike): Respostas =>
-  tipoEscolhido(respostas) === TIPO_ABASTECIMENTO ? sincronizarAbastecimento(respostas, lerAbastecimentos(storage)) : respostas;
+// Dec 226: o mesmo vale para a Manutenção do veículo de trabalho (data e custo total).
+const comAbastecimento = (respostas: Respostas, storage: StorageLike): Respostas => {
+  const tipo = tipoEscolhido(respostas);
+  if (tipo === TIPO_ABASTECIMENTO) return sincronizarAbastecimento(respostas, lerAbastecimentos(storage));
+  if (tipo === TIPO_MANUTENCAO) return sincronizarManutencao(respostas, lerManutencoes(storage));
+  return respostas;
+};
 
 // Valida tudo e grava a resposta de uma vez; se algo falha, nada é gravado. As mais novas ficam primeiro.
 export function registrarResposta(e: Estado, respostas: Respostas, storage: StorageLike = localStorage, agora = new Date(), imagens: Record<string, ImagemGuardada[]> = {}): RespostaRegistrada {
