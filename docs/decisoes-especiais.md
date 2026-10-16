@@ -1328,3 +1328,10 @@ Pedido do responsável em 16/10 (17:13): "incluir no campo clientes: Sem cliente
 
 - A lista do campo Clientes (todos os cards de Viagens) começa com a opção fixa "Sem cliente vinculado"; satisfaz a obrigatoriedade do campo. Ela não é um cadastro e não depende de Parâmetros > Clientes.
 - No Relatório de Viagens a opção aparece na coluna Cliente da linha, mas não entra em "Clientes visitados". Sem Supabase.
+
+### Decisão 237: Sem confirmação ao autorizar tamanho em Associar Tamanho e Medida ao Produto
+
+Pedido do responsável em 16/10 (17:49), com a imagem da mensagem "Produtos com saldo: EPI-0001. Esse saldo fica em 'Sem tamanho': não é convertido e só pode sair até zerar. Autorizar mesmo assim?": "retirar esta mensagem de todas as telas de parâmetros".
+
+- Autorizar tamanho (ou unidade) a uma subcategoria passa a gravar direto, sem a janela de confirmação. Era a única tela de Parâmetros com esse aviso.
+- O saldo dos produtos que já existiam continua em "Sem tamanho", como antes: só a pergunta saiu. O aviso de desautorizar (produtos que dependem do tamanho ou da unidade) não muda. Sem Supabase.
