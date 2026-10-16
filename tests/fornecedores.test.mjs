@@ -132,14 +132,14 @@ test('nome fantasia é opcional; só a razão social é obrigatória (decisão 5
 
 test('o formulário de fornecedor não exige nome fantasia nem categoria', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync(new URL('../src/routes/_authenticated/cadastros/fornecedores.tsx', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../src/components/parametros/FornecedorDialog.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /id="nome_fantasia" name="nome_fantasia" required/);
   assert.match(src, /id="razao_social" name="razao_social" capitalizar="texto" required/);
 });
 
 test('a tela de fornecedores não tem mais o campo nem a coluna de categorias (decisão 55)', async () => {
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync(new URL('../src/routes/_authenticated/cadastros/fornecedores.tsx', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../src/components/parametros/FornecedorDialog.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /name="categorias"|<TableHead>Categorias<\/TableHead>|<legend/);
   assert.match(src, /categorias: editando\?\.categorias \?\? \[\]/);
 });
@@ -151,4 +151,17 @@ test('lista com item nulo: a tela não quebra e nada é sobrescrito ao salvar', 
   assert.throws(() => salvarFornecedor({ ...fornecedor, cnpj: '11.222.333/0001-81' }, s), /ilegíveis/);
   assert.equal(s.getItem('gemape-demo-fornecedores'), bruto);
   assert.deepEqual(listarFornecedores(s).map(f => f.id), ['f1']);
+});
+
+test('Novo código de fábrica cadastra o fornecedor em janela e volta com ele escolhido (dec 230)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const lerFonte = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), 'utf8');
+  const tela = lerFonte('routes/_authenticated/cadastros/gerais/codigo-fabrica.tsx');
+  assert.match(tela, /<FornecedorDialog/);
+  assert.match(tela, /Cadastrar fornecedor/);
+  assert.match(tela, /setFornecedorSel\(novo\.id\)/);
+  assert.doesNotMatch(tela, /to="\/cadastros\/fornecedores"/);
+  // A janela fica dentro de outro formulário: o envio não pode subir até ele.
+  assert.match(lerFonte('components/parametros/FornecedorDialog.tsx'), /evento\.stopPropagation\(\)/);
+  assert.match(lerFonte('routes/_authenticated/cadastros/fornecedores.tsx'), /<FornecedorDialog/);
 });

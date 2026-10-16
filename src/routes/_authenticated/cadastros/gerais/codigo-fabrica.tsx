@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { CampoBusca, type OpcaoBusca } from "@/components/CampoBusca";
@@ -25,7 +25,8 @@ import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarCnpj } from "@/lib/formatacao-cadastral";
-import { listarFornecedores, type Fornecedor } from "@/lib/fornecedores-demo";
+import { FornecedorDialog } from "@/components/parametros/FornecedorDialog";
+import { listarFornecedores, proximoCodigoFornecedor, type Fornecedor } from "@/lib/fornecedores-demo";
 import {
   combinaBusca,
   removerCodigoFabrica,
@@ -60,6 +61,9 @@ function CodigoFabricaPagina() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [produtoSel, setProdutoSel] = useState("");
   const [fornecedorSel, setFornecedorSel] = useState("");
+  // Cadastro de fornecedor em janela por cima do formulário, para não sair da tela.
+  const [novoFornecedorAberto, setNovoFornecedorAberto] = useState(false);
+  const [codigoNovoFornecedor, setCodigoNovoFornecedor] = useState("");
   const [codigoNota, setCodigoNota] = useState("");
   const [ca, setCa] = useState("");
   const nomeEmpresa = (id: string | null) =>
@@ -110,6 +114,11 @@ function CodigoFabricaPagina() {
     setCodigoNota(codigo?.codigo_fornecedor ?? "");
     setCa((codigo?.ca ?? "").replace(/\D/g, ""));
     setAberto(true);
+  }
+
+  function abrirNovoFornecedor() {
+    setCodigoNovoFornecedor(proximoCodigoFornecedor());
+    setNovoFornecedorAberto(true);
   }
 
   function enviar(e: React.FormEvent) {
@@ -270,15 +279,13 @@ function CodigoFabricaPagina() {
                 placeholder="Digite nome, razão social ou CNPJ"
                 vazio="Nenhum fornecedor encontrado."
               />
-              {fornecedores.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Nenhum fornecedor cadastrado. Cadastre em{" "}
-                  <Link to="/cadastros/fornecedores" className="underline">
-                    Cadastros › Fornecedores
-                  </Link>
-                  .
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                {fornecedores.length === 0 ? "Nenhum fornecedor cadastrado. " : "Não achou o fornecedor? "}
+                <button type="button" className="underline" onClick={abrirNovoFornecedor}>
+                  Cadastrar fornecedor
+                </button>
+                .
+              </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -314,6 +321,19 @@ function CodigoFabricaPagina() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <FornecedorDialog
+        aberto={novoFornecedorAberto}
+        onAberto={setNovoFornecedorAberto}
+        editando={null}
+        modelo={null}
+        codigoPrevisto={codigoNovoFornecedor}
+        onSalvo={(novo) => {
+          // Volta ao formulário com o fornecedor recém-cadastrado já escolhido.
+          setFornecedores(listarFornecedores());
+          setFornecedorSel(novo.id);
+        }}
+      />
     </div>
   );
 }

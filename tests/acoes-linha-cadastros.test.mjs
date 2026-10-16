@@ -26,7 +26,7 @@ test("Fornecedores usa AcoesLinha; Clonar gera código novo e copia o CNPJ (dec 
   const src = ler("cadastros/fornecedores.tsx");
   assert.match(src, /<AcoesLinha rotulo=\{nomeDoFornecedor\(fornecedor\)\} onClonar=.*onEditar=.*onExcluir=/);
   assert.match(src, /!clonar && fornecedor \? fornecedor\.codigo : proximoCodigoFornecedor\(\)/);
-  assert.match(src, /formatarCnpj\(base\?\.cnpj \?\? ""\)/);
+  assert.match(ler("../../components/parametros/FornecedorDialog.tsx"), /formatarCnpj\(base\?\.cnpj \?\? ""\)/);
 });
 
 test("Ficha de EPI usa AcoesLinha; Clonar copia só o texto e deixa o EPI em branco", () => {
