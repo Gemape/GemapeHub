@@ -38,7 +38,7 @@ const exemplos = (regra: { sigla: string; inicial: string }) =>
   [0, 1, 2].map((i) => gerarCodigo(regra, i)).join(", ") + "…";
 
 // Formulário aberto: novo código numa categoria, ou edição de uma regra (pela sigla atual).
-// `nome` preenchido (mesmo vazio) é o Novo código com a categoria digitada; nulo é Clonar ou Editar, que usam a categoria da linha.
+// `nome` preenchido (mesmo vazio) é o Novo código com a categoria digitada; nulo é o Editar, que usa a categoria da linha.
 type Aberto = { categoriaId: string; nome: string | null; sigla: string; inicial: string; editando: string | null };
 
 function CodigoProduto() {
@@ -53,13 +53,9 @@ function CodigoProduto() {
         })
       : "";
 
-  // Novo código: categoria em branco (ou a de origem, ao clonar, com a numeração copiada e a sigla em branco,
-  // porque a sigla é única no sistema e a cópia precisa de uma própria).
+  // Novo código: categoria digitada (existente ganha mais uma sigla; nome novo cria a categoria).
   function novo() {
     setAberto({ categoriaId: "", nome: "", sigla: "", inicial: "", editando: null });
-  }
-  function clonar(categoriaId: string, inicial: string) {
-    setAberto({ categoriaId, nome: null, sigla: "", inicial, editando: null });
   }
 
   function enviar(e: React.FormEvent) {
@@ -211,7 +207,6 @@ function CodigoProduto() {
                 <TableCell className="whitespace-nowrap">
                   <AcoesLinha
                     rotulo={regra ? `código ${regra.sigla} de ${c.nome}` : `regra de código de ${c.nome}`}
-                    {...(regra ? { onClonar: () => clonar(c.id, regra.inicial) } : {})}
                     onEditar={() =>
                       setAberto({ categoriaId: c.id, nome: null, sigla: regra?.sigla ?? "", inicial: regra?.inicial ?? "", editando: regra ? regra.sigla : null })
                     }
