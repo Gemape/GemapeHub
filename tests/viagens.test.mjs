@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { estadoPadrao } from "../src/lib/questionario-despesas.ts";
+import { legado } from "./estado-legado.mjs";
 import { registrarResposta } from "../src/lib/respostas-despesas.ts";
 import { dadosDoLancamento } from "../src/lib/viagens.ts";
 import { ABAS_VIAGEM, abaDoModulo } from "../src/lib/menu-parametros.ts";
@@ -18,7 +19,7 @@ const completas = {
 const agora = new Date(2026, 9, 14, 8, 5);
 // Dec 222: o questionário de fábrica não tem Clientes; estes testes incluem a pergunta de volta para conferir a leitura do cliente.
 const comCliente = () => {
-  const e = estadoPadrao();
+  const e = legado(estadoPadrao());
   return { ...e, questionarios: Object.fromEntries(Object.entries(e.questionarios).map(([t, ids]) => [t, [...ids, "q-07"]])) };
 };
 

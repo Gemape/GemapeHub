@@ -2,7 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { ID_TIPO_DESPESA, estadoPadrao as estadoDeFabrica, excluirPergunta, gravarQuestionario, gravarRegra, lerEstado, salvarPergunta, questionarioDoTipo } from "../src/lib/questionario-despesas.ts";
+import { ID_TIPO_DESPESA, estadoPadrao as estadoNovo, excluirPergunta, gravarQuestionario, gravarRegra, lerEstado, salvarPergunta, questionarioDoTipo } from "../src/lib/questionario-despesas.ts";
+import { legado } from "./estado-legado.mjs";
+const estadoDeFabrica = () => legado(estadoNovo());
 import {
   aplicarFormato, areaDeQuemLanca, lancadoPorGestor, dimensoesReduzidas, mascaraDecimal2, mascaraInteiro, mascaraMoeda, perguntasVisiveis, validarRespostas, valorNumerico, visivel,
 } from "../src/lib/questionario-respostas.ts";
@@ -82,14 +84,14 @@ test("a condição de uma pergunta oculta não vale e a regra grava e relê do n
   // q-02 oculta => q-04 oculta mesmo com a resposta marcada
   assert.ok(!perguntasVisiveis(e, T, { "q-02": ["Cartão final 0129 – Roberto"] }).some((p) => p.id === "q-04"));
   assert.deepEqual(lerEstado(s).regras, e.regras);
-  assert.deepEqual(lerEstado(memoria()).regras, estadoDeFabrica().regras);
+  assert.deepEqual(lerEstado(memoria()).regras, estadoNovo().regras);
 });
 
 test("validação: obrigatórias, formatos, horário, data, upload e uma só resposta", () => {
   const e = estadoPadrao();
   const todas = perguntasVisiveis(e, T, {});
   const vazios = validarRespostas(todas, {});
-  assert.equal(Object.keys(vazios).length, 12);
+  assert.equal(Object.keys(vazios).length, 11);
   assert.match(vazios["q-12"], /ao menos uma imagem/);
   const ok = {
     "q-01": ["Dinheiro"], "q-02": ["Cartão final 0129 – Roberto"], "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"], "q-05": "Acre - AC", "q-06": "Rio Branco",

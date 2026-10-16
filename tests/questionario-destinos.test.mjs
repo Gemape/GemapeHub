@@ -2,7 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { estadoPadrao as estadoDeFabrica, excluirPergunta, gravarQuestionario, lerEstado, questionarioDoTipo, salvarPergunta } from "../src/lib/questionario-despesas.ts";
+import { estadoPadrao as estadoNovo, excluirPergunta, gravarQuestionario, lerEstado, questionarioDoTipo, salvarPergunta } from "../src/lib/questionario-despesas.ts";
+import { legado } from "./estado-legado.mjs";
+const estadoDeFabrica = () => legado(estadoNovo());
 import { conferirOrdem, destinoPergunta, encontrarCiclo, gravarDestino, limparPendencias, pendencias, questionarioPublicado } from "../src/lib/questionario-destinos.ts";
 import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 import { registrarResposta } from "../src/lib/respostas-despesas.ts";
