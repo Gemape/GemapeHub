@@ -1307,3 +1307,10 @@ Pedido do responsável em 16/10 (16:38), com o print do Relatório de Viagens sa
 - A pergunta **Clientes** volta a **todos** os questionários (Alimentação, Hospedagem, Abastecimento, Pedágio, Estacionamento, Manutenção do veículo de trabalho, Compra de peças para cliente e Outro), logo depois do Município. Ela continua opcional e usa o cadastro de Parâmetros > Clientes, com o link **Cadastrar cliente** abrindo a janela de cadastro (dec 170) e voltando com o cliente escolhido.
 - O cliente escolhido sai na coluna Cliente e em **Clientes visitados** do Relatório de Viagens (o relatório já lia essa resposta).
 - Desfaz a decisão 222. Dado salvo no navegador migra **uma vez só** (marca `clientesEmTodos`): Clientes entra onde faltava; quem tirar a pergunta de um questionário depois não é desfeito. Despesas já registradas continuam sem cliente. Sem Supabase.
+
+### Decisão 234: Logomarca nova no Relatório de Viagens
+
+Pedido do responsável em 16/10 (16:40), com a imagem da logomarca GEMAPE 40 anos (colorida, fundo branco): "trocar a logo que sai impressa no relatório de viagens pela segunda imagem anexo".
+
+- O Relatório de Viagens (ao gerar e ao reabrir pela lista) imprime a nova logomarca, arquivo `public/logo-relatorio-viagens.png` (a imagem enviada, sem a margem branca). A coluna da logo no cabeçalho ficou um pouco maior (46 mm) para o texto "Máquinas e Peças" continuar legível.
+- Só o relatório de Viagens muda: os demais documentos continuam com `public/logo.png`. Sem Supabase.

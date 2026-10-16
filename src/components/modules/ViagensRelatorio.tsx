@@ -61,7 +61,7 @@ export function ViagensRelatorio({ emitente }: { emitente: string }) {
         empresa, empregado: quem, de, ate, linhas, comprovantesPorPagina: porPagina, emitente,
         supervisor: supervisor === NENHUM ? "" : supervisor, diretor: diretor === NENHUM ? "" : diretor,
         conferido: conferido === NENHUM ? "" : conferido,
-        geradoEm: new Date().toISOString(), logoUrl: `${window.location.origin}${import.meta.env["BASE_URL"] ?? "/"}logo.png`,
+        geradoEm: new Date().toISOString(), logoUrl: `${window.location.origin}${import.meta.env["BASE_URL"] ?? "/"}logo-relatorio-viagens.png`,
       }),
       arquivo: nomeArquivoDocumento("Relatorio de viagens", quem ?? "todos", de, ate),
     });

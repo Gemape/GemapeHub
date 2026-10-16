@@ -70,3 +70,9 @@ test('o Construtor pergunta antes de sair da tela com alterações não salvas',
   const s = fonte('components/parametros/QuestionarioDespesasConstrutor.tsx');
   assert.match(s, /useBlocker\(\{[\s\S]*disabled: !alterado/);
 });
+
+test('o relatório de Viagens usa a logomarca nova, tanto ao gerar quanto ao reabrir (dec 234)', () => {
+  assert.match(fonte('components/modules/ViagensRelatorio.tsx'), /logo-relatorio-viagens\.png/);
+  assert.match(fonte('components/modules/ViagensLista.tsx'), /logo-relatorio-viagens\.png/);
+  assert.equal(readFileSync(new URL('../public/logo-relatorio-viagens.png', import.meta.url)).subarray(1, 4).toString(), 'PNG');
+});
