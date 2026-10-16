@@ -89,8 +89,20 @@ test("incluir um tipo de despesa cria o questionário dele; tirar o tipo apaga o
   const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const g = salvarPergunta(e, { ...q3, opcoes: [...q3.opcoes.filter((o) => o !== "Pedágio"), "Lavagem"] }, s);
   assert.ok(tiposDeDespesa(g).includes("Lavagem"));
-  assert.equal(questionarioDoTipo(g, "Lavagem").length, 14);
+  // Apagar um tipo e acrescentar outro não herda o questionário de quem continua na lista (o "Outro" ocupava a posição).
+  assert.deepEqual(g.questionarios["Lavagem"], g.perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id));
   assert.ok(!("Pedágio" in g.questionarios));
+});
+
+test("renomear um tipo no lugar leva o questionário dele; apagar e criar outro pede aviso só do que sumiu", () => {
+  const e = estadoPadrao();
+  const q3 = e.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
+  const renomeadas = q3.opcoes.map((o) => (o === "Hospedagem" ? "Diária" : o));
+  const g = salvarPergunta(e, { ...q3, opcoes: renomeadas }, memoria());
+  assert.deepEqual(g.questionarios["Diária"], e.questionarios["Hospedagem"]);
+  assert.deepEqual(tiposRemovidos(e, renomeadas), []);
+  const trocadas = [...q3.opcoes.filter((o) => o !== "Hospedagem"), "Diária"];
+  assert.deepEqual(tiposRemovidos(e, trocadas), ["Hospedagem"]);
 });
 
 test("clonar copia tudo com número novo e título de cópia", () => {

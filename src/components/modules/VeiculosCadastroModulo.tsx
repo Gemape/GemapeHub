@@ -69,6 +69,7 @@ import {
   valorSelecaoSubcategoria,
 } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { useAbastecimentos, useManutencoesVeiculo } from "@/lib/use-registros-veiculo";
 import {
   anoValido,
   formatarPlaca,
@@ -107,6 +108,12 @@ async function todosVeiculos(): Promise<{ id: string; placa: string; codigo_sku?
 export function VeiculosCadastroModulo() {
   const { empresas, empresaId } = useEmpresa();
   const parametros = useParametrosBase();
+  // Km mostrado e conferido como no extrato e na frota: vale o maior entre o cadastro e os registros do veículo.
+  const abastecimentosKm = useAbastecimentos();
+  const manutencoesKm = useManutencoesVeiculo();
+  const kmDosRegistros = (id: string) =>
+    Math.max(0, ...abastecimentosKm.filter((a) => a.veiculoId === id).map((a) => a.km), ...manutencoesKm.filter((m) => m.veiculoId === id).map((m) => m.km));
+  const kmAtualDe = (v: { id: string; quilometragem_atual?: number | null }) => Math.max(v.quilometragem_atual ?? 0, kmDosRegistros(v.id));
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<VeiculoCadastro | null>(null);
@@ -285,6 +292,8 @@ export function VeiculosCadastroModulo() {
                   ? `Ano de fabricação inválido. Use de 1950 a ${new Date().getFullYear() + 1}.`
                   : !Number.isInteger(km) || km < 0
                     ? "Quilometragem inválida."
+                    : editando && km < kmDosRegistros(editando.id)
+                      ? `A quilometragem não pode ser menor que a dos registros do veículo (${kmDosRegistros(editando.id).toLocaleString("pt-BR")} km).`
                     : !empresa
                       ? "Selecione a empresa."
                       : MODO_DEMO && aquisicao.erro
@@ -392,7 +401,7 @@ export function VeiculosCadastroModulo() {
                         "Nota fiscal": v.numero_nota_fiscal ?? "",
                       }
                     : {}),
-                  Km: v.quilometragem_atual ?? 0,
+                  Km: kmAtualDe(v),
                   Situação: STATUS_VEICULO_LABEL[v.status] ?? v.status,
                   Responsável: nomeEmpregado(v.empregado_responsavel_id),
                   Observações: v.observacoes ?? "",
@@ -457,7 +466,7 @@ export function VeiculosCadastroModulo() {
                   <TableCell>{v.combustivel || "—"}</TableCell>
                   <TableCell>{nomeEmpresa(v.empresa_id)}</TableCell>
                   <TableCell className="text-right">
-                    {(v.quilometragem_atual ?? 0).toLocaleString("pt-BR")}
+                    {kmAtualDe(v).toLocaleString("pt-BR")}
                   </TableCell>
                   <TableCell>{nomeEmpregado(v.empregado_responsavel_id)}</TableCell>
                   <TableCell>
