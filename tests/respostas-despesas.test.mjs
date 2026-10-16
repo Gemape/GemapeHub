@@ -439,6 +439,23 @@ test("dec 226: a ordem da Manutenção é a de Alimentação mais o detalhamento
   assert.match(modulo, /<NovaManutencaoDialog/);
 });
 
+// Dec 227: o card Outro segue a ordem e a classificação de Alimentação; dado salvo migra uma vez só.
+test("dec 227: dado salvo sem a marca do Outro ganha a ordem de Alimentação e, depois, tirar não traz de volta", () => {
+  const e = estadoNovo();
+  const antigo = JSON.parse(JSON.stringify(e));
+  delete antigo.outroAjustado;
+  antigo.questionarios["Outro"] = ["q-03", "q-01", "q-02", "q-04", "q-05", "q-06", "q-08", "q-11", "q-12"];
+  delete antigo.regras["Outro"];
+  const s = memoria();
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify(antigo));
+  const lido = lerEstado(s);
+  assert.deepEqual(lido.questionarios["Outro"], e.questionarios["Outro"]);
+  assert.deepEqual(lido.regras["Outro"]["q-15"], e.regras["Outro"]["q-15"]);
+  assert.equal(lido.outroAjustado, true);
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, Outro: lido.questionarios["Outro"].filter((id) => id !== "q-15") } }));
+  assert.ok(!lerEstado(s).questionarios["Outro"].includes("q-15"));
+});
+
 // Ajustes da revisão dos PRs #289 a #291.
 import { trazerAbastecimento, trazerManutencao } from "../src/lib/questionario-respostas.ts";
 
