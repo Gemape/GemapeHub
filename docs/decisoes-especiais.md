@@ -1395,3 +1395,10 @@ Pedido do responsável em 16/10 (18:37), com a imagem do aviso "A entrega de 1 u
 - Causa: a mesma da baixa (decisão 241). A ferramenta cadastrada nasce com estoque zero e a quantidade fica guardada na caixa, mas a entrega era conferida contra o estoque do cadastro.
 - Com caixa escolhida, o Termo confere o que está guardado na caixa (quantidade na caixa menos o que está com empregados e o baixado), com o aviso "passa do que está guardado na caixa (n)". Entrega avulsa, sem caixa, continua conferida contra o estoque.
 - No modo demonstração, entrega, devolução e baixa de ferramenta ligadas a uma caixa não mexem mais no estoque do cadastro (a caixa controla a quantidade). No banco real o gatilho precisa fazer o mesmo (`docs/pendencias-fase2.md`).
+
+### Decisão 246: Anexo de imagens mostra miniaturas
+
+Pedido do responsável em 16/10 (19:01), com a imagem do campo "Foto do comprovante": "ao anexar imagem no campo do anexo fazer com que apareça as miniaturas ao invés do texto".
+
+- Cada imagem anexada no questionário aparece como miniatura (já reduzida) em vez da linha "nome: tamanho para tamanho". O nome e a redução ficam na dica ao passar o mouse.
+- O botão × no canto da miniatura remove a imagem (substitui o link "Remover"). Limite de 3 imagens e mensagem de contagem continuam iguais.
