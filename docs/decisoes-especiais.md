@@ -1364,10 +1364,26 @@ Pedido do responsável em 16/10 (18:14), com a imagem da Nova movimentação de 
 - Ao registrar, o tamanho escolhido é associado à subcategoria do produto (antes de gravar; se a gravação falhar, a associação é desfeita). O saldo antigo continua em "Sem tamanho", e a entrada soma no tamanho escolhido.
 - Compras e demais telas não mudam. Sem tamanhos em Gerais, o estoque continua único.
 
-### Decisão 244: Entrega da caixa no Termo de Responsabilidade não exige estoque do cadastro
+### Decisão 241: Dar baixa em ferramenta pela caixa não exige estoque do cadastro
 
-Pedido do responsável em 16/10 (18:37), com a imagem do aviso "A entrega de 1 unidade(s) de Amperimetro passa do estoque disponível (0)" ao gerar o Termo de Responsabilidade com a caixa CX-0001: "corrigir a mensagem em anexo".
+Pedido do responsável em 16/10 (18:25), com a imagem da janela "Dar baixa em ferramenta da caixa CX-0001" e o aviso "Falha ao registrar movimentação: Estoque insuficiente": "corrigir a funcionalidade e permitir dar baixa na ferramenta nas caixas".
 
-- Causa: a mesma da baixa (decisão 241). A ferramenta cadastrada nasce com estoque zero e a quantidade fica guardada na caixa, mas a entrega era conferida contra o estoque do cadastro.
-- Com caixa escolhida, o Termo confere o que está guardado na caixa (quantidade na caixa menos o que está com empregados e o baixado), com o aviso "passa do que está guardado na caixa (n)". Entrega avulsa, sem caixa, continua conferida contra o estoque.
-- No modo demonstração, entrega, devolução e baixa de ferramenta ligadas a uma caixa não mexem mais no estoque do cadastro (a caixa controla a quantidade). No banco real o gatilho precisa fazer o mesmo (`docs/pendencias-fase2.md`).
+- Causa: a ferramenta cadastrada em Parâmetros nasce com estoque zero (o que existe fica guardado na caixa), e a baixa era conferida contra esse estoque, mesmo com 1 guardada na caixa.
+- Agora a baixa pela caixa (com ou sem empregado) é gravada no histórico sem mexer no estoque do cadastro; o limite continua sendo o guardado na caixa (sem empregado) ou o que está com o empregado, conferido pela própria janela. Saída comum de ferramenta sem estoque continua recusada.
+- Só modo demonstração; no banco real o gatilho de movimentações precisa pular o estoque quando houver `caixa_id` em baixa (registrado em `docs/pendencias-fase2.md`).
+
+### Decisão 242: Motivo "Devolução" na baixa de ferramenta pela caixa
+
+Pedido do responsável em 16/10 (18:26), com a imagem da lista Motivo da baixa: "incluir no campo motivo da baixa: devolução".
+
+- Em Módulos > Ferramentas > Caixas > Dar baixa, a lista Motivo da baixa ganha "Devolução" no fim (Desligamento, Desgaste Natural, Quebra, Desaparecimento, Perda, Mau Uso, Devolução).
+- Conta como baixa, igual aos outros motivos. A lista de motivos das Movimentações dos módulos não mudou; se o responsável quiser Devolução lá também, é um pedido à parte.
+
+### Decisão 243: Transferir ferramenta entre caixas, inclusive para caixa ainda sem cadastro
+
+Pedido do responsável em 16/10 (18:28), com a imagem das caixas CX-0001 a CX-0003: "habilitar o campo: transferir permitindo passar uma ferramenta de uma caixa a outra e registrar a movimentação no histórico de movimentações".
+
+- Causa: o botão Transferir só ligava com duas caixas já cadastradas; CX-0002 e CX-0003 estavam habilitadas, mas sem ferramentas, e não contavam como destino.
+- Agora o botão liga quando há outra caixa cadastrada ou habilitada sem cadastro. A lista Caixa de destino mostra as duas, e a sem cadastro aparece como "(ainda sem ferramentas)".
+- Transferir para caixa sem cadastro cria a caixa (mesma empresa da origem, status Ativa) já com a ferramenta e a mesma quantidade; só depois a ferramenta sai da origem, e se a saída falhar a entrada no destino é desfeita.
+- A movimentação "Transferência" (origem, destino, data) fica no Histórico de movimentações das duas caixas.

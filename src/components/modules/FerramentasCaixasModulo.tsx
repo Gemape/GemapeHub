@@ -97,6 +97,7 @@ export function FerramentasCaixasModulo() {
               key={caixa.id}
               caixa={caixa}
               destinos={caixas}
+              novas={semCadastro}
               empresas={empresas}
               portador={portadorAtivo(portadores, caixa.id)?.empregado_nome}
               movimentacoes={movimentacoes}
@@ -144,6 +145,7 @@ function CaixaSemCadastro({ numero, empresaId }: { numero: number; empresaId: st
 function CaixaItem({
   caixa,
   destinos,
+  novas,
   empresas,
   portador,
   movimentacoes,
@@ -151,6 +153,7 @@ function CaixaItem({
 }: {
   caixa: CaixaFerramenta;
   destinos: CaixaFerramenta[];
+  novas: number[];
   empresas: { id: string; nome_fantasia: string }[];
   portador: string | undefined;
   movimentacoes: Movimentacao[];
@@ -262,7 +265,7 @@ function CaixaItem({
         <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
           Dar baixa
         </Button>
-        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0 || destinos.length < 2} onClick={() => setDialogo("transferencia")}>
+        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
           Transferir
         </Button>
         <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
@@ -390,7 +393,7 @@ function CaixaItem({
       )}
       {dialogo === "baixa" && <DialogBaixaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} historico={historico} />}
       {dialogo === "transferencia" && (
-        <DialogTransferirCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} destinos={destinos} />
+        <DialogTransferirCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} destinos={destinos} novas={novas} />
       )}
       {dialogo === "ocorrencia" && <DialogOcorrenciaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
     </div>
