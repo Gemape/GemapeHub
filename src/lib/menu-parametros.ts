@@ -17,6 +17,7 @@ export type NomeIcone =
   | "ShoppingCart"
   | "History"
   | "PackageMinus"
+  | "PackageCheck"
   | "FileSignature"
   | "FileMinus"
   | "FileCheck"
@@ -42,6 +43,7 @@ export const ABAS_EPI: readonly AbaMenu[] = [
   { aba: "compras", titulo: "Compras", icone: "ShoppingCart" },
   { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
   { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
+  { aba: "entrega", titulo: "Entrega EPI", icone: "PackageCheck" },
   { aba: "termo-entrega", titulo: "Termo de Entrega", icone: "FileSignature" },
   { aba: "ficha-avulsa", titulo: "Ficha de EPI Avulsa", icone: "ClipboardList" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
