@@ -1363,3 +1363,11 @@ Pedido do responsável em 16/10 (18:14), com a imagem da Nova movimentação de 
 - Em Módulos > EPIs e Uniformes > Movimentações, na Entrada, o produto sem nenhum tamanho autorizado ativo na subcategoria passa a mostrar o campo Tamanho com todos os tamanhos ativos de Gerais; o tamanho é obrigatório. Produto com tamanho autorizado continua com só os autorizados.
 - Ao registrar, o tamanho escolhido é associado à subcategoria do produto (antes de gravar; se a gravação falhar, a associação é desfeita). O saldo antigo continua em "Sem tamanho", e a entrada soma no tamanho escolhido.
 - Compras e demais telas não mudam. Sem tamanhos em Gerais, o estoque continua único.
+
+### Decisão 244: Entrega da caixa no Termo de Responsabilidade não exige estoque do cadastro
+
+Pedido do responsável em 16/10 (18:37), com a imagem do aviso "A entrega de 1 unidade(s) de Amperimetro passa do estoque disponível (0)" ao gerar o Termo de Responsabilidade com a caixa CX-0001: "corrigir a mensagem em anexo".
+
+- Causa: a mesma da baixa (decisão 241). A ferramenta cadastrada nasce com estoque zero e a quantidade fica guardada na caixa, mas a entrega era conferida contra o estoque do cadastro.
+- Com caixa escolhida, o Termo confere o que está guardado na caixa (quantidade na caixa menos o que está com empregados e o baixado), com o aviso "passa do que está guardado na caixa (n)". Entrega avulsa, sem caixa, continua conferida contra o estoque.
+- No modo demonstração, entrega, devolução e baixa de ferramenta ligadas a uma caixa não mexem mais no estoque do cadastro (a caixa controla a quantidade). No banco real o gatilho precisa fazer o mesmo (`docs/pendencias-fase2.md`).

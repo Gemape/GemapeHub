@@ -115,8 +115,8 @@ const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
         );
     }
     if (delta === 0) continue;
-    // Baixa feita pela caixa de ferramentas: a quantidade vive na caixa (o histórico dela a controla), não no estoque do cadastro, que nasce zerado.
-    if (m.modulo === "ferramenta" && m.caixa_id && m.tipo_movimentacao === "Saida" && m.motivo_baixa) continue;
+    // Ferramenta movimentada pela caixa (entrega, devolução ou baixa): a quantidade vive na caixa, cujo histórico a controla, e não no estoque do cadastro, que nasce zerado.
+    if (m.modulo === "ferramenta" && m.caixa_id && (m.tipo_movimentacao === "Saida" || m.tipo_movimentacao === "Devolucao")) continue;
     const saldo = (saldos.get(item) ?? (Number(item.estoque_atual) || 0)) + delta;
     if (saldo < 0) return new Error("Estoque insuficiente");
     saldos.set(item, saldo);
