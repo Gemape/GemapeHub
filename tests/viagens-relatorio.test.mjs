@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { ABAS_VIAGEM, abaDoModulo } from "../src/lib/menu-parametros.ts";
-import { clientesVisitados, linhasDoRelatorio, montarRelatorioViagensHtml, totaisPorTipo } from "../src/lib/viagens-relatorio.ts";
+import { clientesVisitados, linhasDoRelatorio, montarRelatorioViagensHtml, totaisPorTecnico, totaisPorTipo } from "../src/lib/viagens-relatorio.ts";
 
 const IMG = "data:image/webp;base64,AAAA";
 let n = 0;
@@ -145,4 +145,29 @@ test("dec 215: Conferido (PCM ou Administrativo) sai no documento só quando esc
   assert.doesNotMatch(f, /Abrir Parâmetros/);
   assert.match(f, /Conferido:/);
   assert.match(f, /\["PCM", "Administrativo"\]/);
+});
+
+test("dec 235: relatório de todos os empregados traz o gasto por técnico responsável; de um empregado só, não", () => {
+  const linhas = linhasDoRelatorio([
+    lanc({ quem: "Wellington (Oficina)", valor: "10,00" }), lanc({ quem: "Roberto (Oficina)", valor: "20,00" }), lanc({ quem: "Wellington (Oficina)", valor: "5,50" }),
+  ], FILTRO);
+  const t = totaisPorTecnico(linhas);
+  assert.deepEqual(t.map((x) => [x.tecnico, x.quantidade, x.total]), [["Roberto", 1, 20], ["Wellington", 2, 15.5]]);
+  const todos = montarRelatorioViagensHtml(base(linhas));
+  assert.match(todos, /Gasto por técnico responsável/);
+  assert.match(todos, /<th>Técnico<\/th>/);
+  const um = montarRelatorioViagensHtml(base(linhasDoRelatorio([lanc({ quem: "Roberto (Oficina)" })], { ...FILTRO, empregado: "Roberto" }), { empregado: "Roberto" }));
+  assert.doesNotMatch(um, /Gasto por técnico responsável/);
+  assert.doesNotMatch(um, /<th>Técnico<\/th>/);
+});
+
+test("dec 235: lançamento sem técnico responsável fica em 'Sem técnico responsável', por último, e o nome é escapado", () => {
+  const linhas = [
+    { data: "2026-10-05", tipo: "X", cliente: null, responsavel: null, descricao: null, valor: 3, imagens: [] },
+    { data: "2026-10-05", tipo: "X", cliente: null, responsavel: "<b>Zé</b>", descricao: null, valor: 4, imagens: [] },
+  ];
+  assert.deepEqual(totaisPorTecnico(linhas).map((x) => x.tecnico), ["<b>Zé</b>", "Sem técnico responsável"]);
+  const html = montarRelatorioViagensHtml(base(linhas));
+  assert.match(html, /&lt;b&gt;Z/);
+  assert.doesNotMatch(html, /<b>Z/);
 });

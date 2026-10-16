@@ -12,6 +12,7 @@ export type LinhaRelatorio = {
   data: string;
   tipo: string;
   cliente: string | null;
+  responsavel: string | null;
   descricao: string | null;
   valor: number | null;
   imagens: { nome: string; dataUrl: string }[];
@@ -27,7 +28,7 @@ export function linhasDoRelatorio(lista: readonly RespostaRegistrada[], f: Filtr
     .filter(({ d, data }) => data >= f.de && data <= f.ate && (f.empregado === null || d.responsavel === f.empregado))
     .sort((a, b) => a.data.localeCompare(b.data) || a.r.hora.localeCompare(b.r.hora) || a.r.id.localeCompare(b.r.id))
     .map(({ r, d, data }) => ({
-      data, tipo: d.tipo, cliente: d.cliente, descricao: d.descricao, valor: d.valor,
+      data, tipo: d.tipo, cliente: d.cliente, responsavel: d.responsavel, descricao: d.descricao, valor: d.valor,
       imagens: r.itens.flatMap((i) => i.imagens ?? []).filter((i) => i.dataUrl.startsWith("data:image/")),
     }));
 }
@@ -57,6 +58,22 @@ export function totaisPorTipo(linhas: readonly LinhaRelatorio[]): TotalPorTipo[]
   return [...mapa.values()].sort((a, b) => a.tipo.localeCompare(b.tipo, "pt-BR"));
 }
 
+export const SEM_TECNICO = "Sem técnico responsável";
+export type TotalPorTecnico = { tecnico: string; quantidade: number; total: number };
+// Gasto por técnico responsável (relatório de todos os empregados); lançamento sem responsável fica em SEM_TECNICO, por último.
+export function totaisPorTecnico(linhas: readonly LinhaRelatorio[]): TotalPorTecnico[] {
+  const mapa = new Map<string, TotalPorTecnico>();
+  for (const l of linhas) {
+    const tecnico = l.responsavel?.trim() || SEM_TECNICO;
+    const atual = mapa.get(tecnico) ?? { tecnico, quantidade: 0, total: 0 };
+    atual.quantidade += 1;
+    atual.total += l.valor ?? 0;
+    mapa.set(tecnico, atual);
+  }
+  const peso = (t: string) => (t === SEM_TECNICO ? 1 : 0);
+  return [...mapa.values()].sort((a, b) => peso(a.tecnico) - peso(b.tecnico) || a.tecnico.localeCompare(b.tecnico, "pt-BR"));
+}
+
 // Alturas aproximadas em milímetros para distribuir o conteúdo nas páginas A4 (estimativa com folga).
 const ALTURA_UTIL = 250;
 const H = { cabecalho: 48, linhaClientes: 5, blocoClientes: 14, tituloTabela: 10, linha: 6.8, linhaDescricao: 4.6, tituloQuadro: 14, linhaQuadro: 6.4, assinaturas: 42 };
@@ -83,6 +100,8 @@ const dois = (n: number) => String(n).padStart(2, "0");
 export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
   const clientes = clientesVisitados(d.linhas);
   const totais = totaisPorTipo(d.linhas);
+  const todos = d.empregado === null;
+  const porTecnico = todos ? totaisPorTecnico(d.linhas) : [];
   const totalGeral = d.linhas.reduce((s, l) => s + (l.valor ?? 0), 0);
   const moeda = (v: number | null) => (v === null ? "—" : escaparHtml(formatarMoeda(v)));
   const quando = new Date(d.geradoEm).toLocaleString("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(", ", " ");
@@ -99,12 +118,12 @@ export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
     </div>`;
   const blocoClientes = `
     <div class="clientes"><strong>Clientes visitados:</strong> ${clientes.length ? escaparHtml(clientes.join(" · ")) : `<em>Clientes não informados</em>`}</div>${d.conferido ? `<div class="clientes"><strong>Conferido:</strong> ${escaparHtml(d.conferido)}</div>` : ""}`;
-  const topoTabela = `<table class="despesas"><thead><tr><th>Data</th><th>Tipo</th><th>Cliente</th><th class="valor">Valor</th></tr></thead><tbody>`;
+  const topoTabela = `<table class="despesas"><thead><tr><th>Data</th><th>Tipo</th>${todos ? "<th>Técnico</th>" : ""}<th>Cliente</th><th class="valor">Valor</th></tr></thead><tbody>`;
   const linhaHtml = (l: LinhaRelatorio) => `
-    <tr><td>${escaparHtml(dataBr(l.data))}</td><td>${escaparHtml(l.tipo)}</td><td>${l.cliente ? escaparHtml(l.cliente) : "<em>Não informado</em>"}</td><td class="valor">${moeda(l.valor)}</td></tr>${l.descricao ? `<tr class="desc"><td colspan="4">${escaparHtml(l.descricao)}</td></tr>` : ""}`;
+    <tr><td>${escaparHtml(dataBr(l.data))}</td><td>${escaparHtml(l.tipo)}</td>${todos ? `<td>${escaparHtml(l.responsavel ?? SEM_TECNICO)}</td>` : ""}<td>${l.cliente ? escaparHtml(l.cliente) : "<em>Não informado</em>"}</td><td class="valor">${moeda(l.valor)}</td></tr>${l.descricao ? `<tr class="desc"><td colspan="${todos ? 5 : 4}">${escaparHtml(l.descricao)}</td></tr>` : ""}`;
   // Cliente e tipo longos quebram em mais de uma linha: a altura estimada acompanha a coluna que mais quebra.
   const alturaLinha = (l: LinhaRelatorio) => {
-    const linhasPrincipais = Math.max(1, Math.ceil((l.cliente ?? "Não informado").length / 30), Math.ceil(l.tipo.length / 22));
+    const linhasPrincipais = Math.max(1, Math.ceil((l.cliente ?? "Não informado").length / 30), Math.ceil(l.tipo.length / 22), todos ? Math.ceil((l.responsavel ?? SEM_TECNICO).length / 22) : 1);
     return H.linha + H.linhaDescricao * (linhasPrincipais - 1) + (l.descricao ? H.linhaDescricao * linhasDeTexto(l.descricao, 80) : 0);
   };
 
@@ -112,6 +131,12 @@ export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
     <div class="quadro"><h3>Total por tipo de despesa</h3>
       <table><thead><tr><th>Tipo</th><th class="num">Lançamentos</th><th class="valor">Total</th></tr></thead><tbody>
         ${totais.map((t) => `<tr><td>${escaparHtml(t.tipo)}</td><td class="num">${t.quantidade}</td><td class="valor">${moeda(t.total)}</td></tr>`).join("")}
+        <tr class="geral"><td>Total geral</td><td class="num">${d.linhas.length}</td><td class="valor">${moeda(totalGeral)}</td></tr>
+      </tbody></table></div>`;
+  const quadroTecnico = porTecnico.length === 0 ? "" : `
+    <div class="quadro"><h3>Gasto por técnico responsável</h3>
+      <table><thead><tr><th>Técnico responsável</th><th class="num">Lançamentos</th><th class="valor">Total</th></tr></thead><tbody>
+        ${porTecnico.map((t) => `<tr><td>${escaparHtml(t.tecnico)}</td><td class="num">${t.quantidade}</td><td class="valor">${moeda(t.total)}</td></tr>`).join("")}
         <tr class="geral"><td>Total geral</td><td class="num">${d.linhas.length}</td><td class="valor">${moeda(totalGeral)}</td></tr>
       </tbody></table></div>`;
   const assinatura = (rotulo: string, nome: string) => `<div class="assina"><div class="traco"></div><div class="nome">${escaparHtml(nome || "—")}</div><div class="papel">${escaparHtml(rotulo)}</div></div>`;
@@ -144,6 +169,12 @@ export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
     if (usado + alturaQuadro > ALTURA_UTIL) fechar();
     atual += quadro;
     usado += alturaQuadro;
+    if (quadroTecnico) {
+      const alturaTecnico = H.tituloQuadro + H.linhaQuadro * (porTecnico.length + 2);
+      if (usado + alturaTecnico > ALTURA_UTIL) fechar();
+      atual += quadroTecnico;
+      usado += alturaTecnico;
+    }
   }
   if (usado + H.assinaturas > ALTURA_UTIL) fechar();
   atual += assinaturas;
