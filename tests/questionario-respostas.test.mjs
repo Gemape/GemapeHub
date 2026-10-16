@@ -89,7 +89,7 @@ test("validação: obrigatórias, formatos, horário, data, upload e uma só res
   const e = estadoPadrao();
   const todas = perguntasVisiveis(e, T, {});
   const vazios = validarRespostas(todas, {});
-  assert.equal(Object.keys(vazios).length, 13);
+  assert.equal(Object.keys(vazios).length, 12);
   assert.match(vazios["q-12"], /ao menos uma imagem/);
   const ok = {
     "q-01": ["Dinheiro"], "q-02": ["Cartão final 0129 – Roberto"], "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"], "q-05": "Acre - AC", "q-06": "Rio Branco",

@@ -122,6 +122,8 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   function avancar() {
     const achados = validarRespostas(perguntasDaPagina, respostas);
     abrirJustificativa(achados, perguntasDaPagina);
+    // Justificativa aberta numa página adiante (seções): a falta do documento não trava a página do documento; o erro dela vem no envio.
+    if (visiveis.some((p) => p.id === ID_JUSTIFICATIVA)) for (const p of perguntasDaPagina) if (p.tipo === "upload") delete achados[p.id];
     setErros((x) => ({ ...x, ...achados }));
     if (Object.keys(achados).length > 0) {
       const primeiro = perguntasDaPagina.find((p) => achados[p.id]);
