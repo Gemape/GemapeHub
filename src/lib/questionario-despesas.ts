@@ -89,6 +89,7 @@ export type Estado = {
   ordemViagensAjustada?: true;
   // Dec 222: Clientes sai de todos os questionários (ajuste único dos dados salvos).
   clientesRetiradosDeTodos?: true;
+  clientesEmTodos?: true;
   // Dec 223: Abastecimento passa a seguir a mesma ordem e a classificação de Alimentação (ajuste único dos dados salvos).
   abastecimentoAjustado?: true;
   // Dec 226: Manutenção do veículo de trabalho passa a seguir a mesma ordem e a classificação de Alimentação (ajuste único).
@@ -122,7 +123,7 @@ export const TIPOS_ORDEM_VIAGENS = ["Alimentação", "Hospedagem", "Pedágio", "
 export const TIPO_COM_DETALHAMENTO = "Compra de peças para cliente";
 // Dec 226: a Manutenção do veículo de trabalho também traz o detalhamento da despesa (vem da Nova manutenção de Veículos). Dec 227: o Outro também.
 export const TIPOS_COM_DETALHAMENTO: readonly string[] = [TIPO_COM_DETALHAMENTO, TIPO_MANUTENCAO, TIPO_OUTRO];
-// Dec 222: nenhum questionário pergunta o cliente (a pergunta continua cadastrada e pode ser incluída de novo na montagem).
+// Dec 233: todos os questionários perguntam o cliente (cadastro de clientes, com o link Cadastrar cliente); ele sai em Clientes visitados no relatório.
 export const ID_CLIENTES = "q-07";
 const TITULO_TECNICO_RESPONSAVEL = "Técnico responsável";
 const TITULO_TECNICO_NAO_LANCOU = "Técnico que não lançou a despesa";
@@ -227,7 +228,7 @@ export function comOrdemViagens(tipo: string, ids: string[]): string[] {
   // Dec 223: no Abastecimento os litros vêm logo depois do valor (data e valor podem vir da janela de Novo abastecimento).
   const litros = tipo === TIPO_ABASTECIMENTO ? [ID_LITROS] : [];
   const proprias = ids.filter((id) => id !== ID_TIPO_DESPESA && !conhecidos.has(id));
-  const montada = [...ORDEM_VIAGENS_ANTES, ...litros, ...detalhamento, ...proprias, ...fim].filter((id) => id !== ID_CLIENTES);
+  const montada = [...ORDEM_VIAGENS_ANTES, ...litros, ...detalhamento, ...proprias, ...fim];
   // Só entra o que o questionário já tinha ou o que a nova ordem acrescenta (a justificativa).
   return montada.filter((id) => id === ID_JUSTIFICATIVA || ids.includes(id) || (id === "q-09" && detalhamento.length > 0));
 }
@@ -237,12 +238,12 @@ export function estadoPadrao(): Estado {
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => {
-    const ids = resto.filter((id) => (id !== ID_LITROS || o === TIPO_ABASTECIMENTO) && id !== ID_NOME_EMPREGADO && id !== ID_JUSTIFICATIVA && id !== ID_CLIENTES);
+    const ids = resto.filter((id) => (id !== ID_LITROS || o === TIPO_ABASTECIMENTO) && id !== ID_NOME_EMPREGADO && id !== ID_JUSTIFICATIVA);
     if (TIPOS_ORDEM_VIAGENS.includes(o)) return [o, comOrdemViagens(o, comClassificacao(ids))];
     return [o, TIPOS_COM_CLASSIFICACAO.includes(o) ? comClassificacao(ids) : ids];
   }));
   const regras = comRegraDoCartao(questionarios, Object.fromEntries(TIPOS_COM_CLASSIFICACAO.filter((t) => t in questionarios).map((t) => [t, regrasDaClassificacao()])));
-  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true, abastecimentoAjustado: true, manutencaoAjustada: true, outroAjustado: true };
+  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true, clientesEmTodos: true, abastecimentoAjustado: true, manutencaoAjustada: true, outroAjustado: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -408,6 +409,10 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     if (lido.clientesRetiradosDeTodos !== true) {
       questionarios = Object.fromEntries(Object.entries(questionarios as Record<string, unknown>).map(([tipo, ids]) => [tipo, Array.isArray(ids) ? ids.filter((id) => id !== ID_CLIENTES) : ids])) as Record<string, string[]>;
     }
+    // Dado salvo antes da dec 233: Clientes volta a todos os questionários, na ordem de Viagens (uma vez só; quem tirar depois não é desfeito).
+    if (lido.clientesEmTodos !== true && perguntas.some((p) => p.id === ID_CLIENTES)) {
+      questionarios = Object.fromEntries(Object.entries(questionarios as Record<string, unknown>).map(([tipo, ids]) => [tipo, Array.isArray(ids) && !ids.includes(ID_CLIENTES) && TIPOS_ORDEM_VIAGENS.includes(tipo) ? comOrdemViagens(tipo, [...ids, ID_CLIENTES]) : ids])) as Record<string, string[]>;
+    }
     // Dado salvo antes da dec 223: Abastecimento ganha a classificação, a justificativa e a ordem de Alimentação, com os litros depois do valor (uma vez só).
     if (lido.abastecimentoAjustado !== true) {
       const existentes = new Set(perguntas.map((p) => p.id));
@@ -437,7 +442,7 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
     }
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true, abastecimentoAjustado: true, manutencaoAjustada: true, outroAjustado: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true, clientesEmTodos: true, abastecimentoAjustado: true, manutencaoAjustada: true, outroAjustado: true };
   } catch {
     return estadoPadrao();
   }
