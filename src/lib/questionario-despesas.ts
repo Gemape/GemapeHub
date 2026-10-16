@@ -93,6 +93,8 @@ export type Estado = {
   abastecimentoAjustado?: true;
   // Dec 226: Manutenção do veículo de trabalho passa a seguir a mesma ordem e a classificação de Alimentação (ajuste único).
   manutencaoAjustada?: true;
+  // Dec 227: o card Outro passa a seguir a mesma ordem e a classificação de Alimentação (ajuste único).
+  outroAjustado?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -100,6 +102,7 @@ export const ID_LITROS = "q-10";
 export const ID_DETALHAMENTO = "q-09";
 export const TIPO_ABASTECIMENTO = "Abastecimento";
 export const TIPO_MANUTENCAO = "Manutenção do veículo de trabalho";
+export const TIPO_OUTRO = "Outro";
 
 export const ID_TIPO_DESPESA = "q-03";
 // Módulo Viagens (dec 177): quem lança é a pergunta 04; a 14 só aparece quando quem lança é PCM ou Administrativo, para dizer de qual técnico é a despesa.
@@ -111,14 +114,14 @@ export const ID_PCM_RESPONDE = "q-13";
 export const ID_NOME_EMPREGADO = "q-15";
 export const OPCAO_AVULSO = "Avulso – técnico não monitorado";
 export const OPCAO_NAO_CONFORMIDADE = "Não conformidade – técnico monitorado não preencheu";
-export const TIPOS_COM_CLASSIFICACAO = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento", TIPO_MANUTENCAO];
+export const TIPOS_COM_CLASSIFICACAO = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento", TIPO_MANUTENCAO, TIPO_OUTRO];
 const TIPOS_CLASSIFICACAO_DEC219 = ["Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"];
 export const ID_JUSTIFICATIVA = "q-16";
 // Dec 221: Alimentação, Hospedagem, Pedágio, Estacionamento e Compra de peças para cliente seguem a mesma ordem de perguntas.
-export const TIPOS_ORDEM_VIAGENS = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", TIPO_ABASTECIMENTO, TIPO_MANUTENCAO];
+export const TIPOS_ORDEM_VIAGENS = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", TIPO_ABASTECIMENTO, TIPO_MANUTENCAO, TIPO_OUTRO];
 export const TIPO_COM_DETALHAMENTO = "Compra de peças para cliente";
-// Dec 226: a Manutenção do veículo de trabalho também traz o detalhamento da despesa (vem da Nova manutenção de Veículos).
-export const TIPOS_COM_DETALHAMENTO: readonly string[] = [TIPO_COM_DETALHAMENTO, TIPO_MANUTENCAO];
+// Dec 226: a Manutenção do veículo de trabalho também traz o detalhamento da despesa (vem da Nova manutenção de Veículos). Dec 227: o Outro também.
+export const TIPOS_COM_DETALHAMENTO: readonly string[] = [TIPO_COM_DETALHAMENTO, TIPO_MANUTENCAO, TIPO_OUTRO];
 // Dec 222: nenhum questionário pergunta o cliente (a pergunta continua cadastrada e pode ser incluída de novo na montagem).
 export const ID_CLIENTES = "q-07";
 const TITULO_TECNICO_RESPONSAVEL = "Técnico responsável";
@@ -239,7 +242,7 @@ export function estadoPadrao(): Estado {
     return [o, TIPOS_COM_CLASSIFICACAO.includes(o) ? comClassificacao(ids) : ids];
   }));
   const regras = comRegraDoCartao(questionarios, Object.fromEntries(TIPOS_COM_CLASSIFICACAO.filter((t) => t in questionarios).map((t) => [t, regrasDaClassificacao()])));
-  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true, abastecimentoAjustado: true, manutencaoAjustada: true };
+  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true, abastecimentoAjustado: true, manutencaoAjustada: true, outroAjustado: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -423,9 +426,18 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
         regras = { ...regras, [TIPO_MANUTENCAO]: { ...(regras[TIPO_MANUTENCAO] ?? {}), ...regrasDaClassificacao() } };
       }
     }
+    // Dado salvo antes da dec 227: o card Outro ganha a classificação, a justificativa e a ordem de Alimentação (uma vez só).
+    if (lido.outroAjustado !== true) {
+      const existentes = new Set(perguntas.map((p) => p.id));
+      const ids = questionarios[TIPO_OUTRO];
+      if (Array.isArray(ids)) {
+        questionarios = { ...questionarios, [TIPO_OUTRO]: comOrdemViagens(TIPO_OUTRO, comClassificacao(ids)).filter((id) => existentes.has(id)) };
+        regras = { ...regras, [TIPO_OUTRO]: { ...(regras[TIPO_OUTRO] ?? {}), ...regrasDaClassificacao() } };
+      }
+    }
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true, abastecimentoAjustado: true, manutencaoAjustada: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true, clientesRetiradosDeTodos: true, abastecimentoAjustado: true, manutencaoAjustada: true, outroAjustado: true };
   } catch {
     return estadoPadrao();
   }

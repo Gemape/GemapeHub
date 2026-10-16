@@ -1271,3 +1271,11 @@ Pedido do dono (13:12): "no card manutenção de veículo de trabalho, colocar a
 - **Vínculo (como na decisão 224):** a despesa guarda o id da manutenção; ao enviar, data e custo total são puxados de novo dela. O detalhamento vem uma vez e pode ser ajustado. Botão **"Escolher manutenção já registrada"** lista as manutenções da empresa para não duplicar. Manutenção excluída impede gravar e avisa.
 - **Escolhas minhas onde o pedido não dizia:** a janela abre ao escolher o cartão; ao cadastrar uma manutenção por este card o relatório de manutenção não abre sozinho (só na tela do módulo); o detalhamento fica editável.
 - Dado salvo migra uma vez só (marca `manutencaoAjustada`). Só modo demonstração; na Fase 2, coluna de ligação despesa x manutenção com `empresa_id` (docs/pendencias-fase2.md).
+
+## Decisão 227 — Card Outro na ordem do Alimentação (2026-10-16)
+
+Pedidos do dono (13:30): "colocar as perguntas do card outro na mesma ordem do módulo alimentação"; (13:37): "no card outros incluir o campo de detalhamento da despesa".
+
+- O card **Outro** segue a ordem do Alimentação: Técnico responsável, Data da despesa, UF, Município, Moedas, Cartões de crédito, Valor da despesa, **Detalhamento da despesa** (depois do valor, pedido do dono às 13:37), Foto do comprovante. Ganha a classificação "PCM responde" (decisão 218) e a justificativa da ausência do documento (decisão 221); sem Clientes (decisão 222) e sem Litros.
+- Com isso, os oito tipos de despesa seguem a mesma ordem.
+- Dado salvo migra uma vez só (marca `outroAjustado`). Tipo novo criado pelo responsável continua usando o questionário completo de fábrica.
