@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
+import { formatarData } from "@/lib/gemape";
+import { useAbastecimentos } from "@/lib/use-registros-veiculo";
+import type { Abastecimento } from "@/lib/registros-veiculo";
+import { EscolherAbastecimentoDialog } from "@/components/modules/EscolherAbastecimentoDialog";
+import { NovoAbastecimentoDialog } from "@/components/modules/NovoAbastecimentoDialog";
 import { ClienteDialog } from "@/components/parametros/ClienteDialog";
 import { listarClientes, proximoCodigoCliente } from "@/lib/clientes-demo";
 import { TODAS } from "@/lib/empresa-context";
@@ -17,12 +22,12 @@ import { useEmpregados } from "@/lib/hooks-gemape";
 import { juntarImagens, mensagemDeLimite, reduzirImagem, type ImagemReduzida } from "@/lib/imagem-economica";
 import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
 import {
-  ID_JUSTIFICATIVA, ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, questionarioDoTipo, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
+  ID_CARTOES, ID_DATA_DESPESA, ID_JUSTIFICATIVA, ID_TIPO_DESPESA, ID_VALOR_DESPESA, TIPO_ABASTECIMENTO, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, questionarioDoTipo, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
   tituloDoQuestionario,
 } from "@/lib/questionario-despesas";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
-import { aplicarFormato, chaveJustificativaPedida, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
+import { aplicarFormato, chaveAbastecimento, chaveJustificativaPedida, chaveOutro, marcouOutro, perguntasVisiveis, respostasDoAbastecimento, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   atualizarResposta, despesaEmRelatorio, listarRespostas, registrarResposta, removerResposta, respostasParaEdicao, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
 } from "@/lib/respostas-despesas";
@@ -94,7 +99,19 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
     return lista;
   }, []);
 
+  // Dec 223: no card Abastecimento, escolher o cartão de crédito abre o Novo abastecimento de Veículos; só a data e o valor voltam para o card.
+  const [abastecimentoAberto, setAbastecimentoAberto] = useState(false);
+  const [escolhaAberta, setEscolhaAberta] = useState(false);
+  const abastecimentos = useAbastecimentos();
+  const ligadoId = typeof respostas[chaveAbastecimento] === "string" ? (respostas[chaveAbastecimento] as string) : "";
+  const ligado = ligadoId ? abastecimentos.find((a) => a.id === ligadoId) ?? null : null;
+  const trazerDoAbastecimento = (registro: Abastecimento) => {
+    setRespostas((r) => ({ ...r, ...respostasDoAbastecimento(registro) }));
+    setErros((x) => { const { [ID_DATA_DESPESA]: _d, [ID_VALOR_DESPESA]: _v, ...resto } = x; return resto; });
+    toast.info("Data e valor trazidos do abastecimento. Termine a despesa.");
+  };
   const mudar = (id: string, valor: Resposta) => {
+    if (tipo === TIPO_ABASTECIMENTO && id === ID_CARTOES && !vazia(valor) && !respostas[chaveAbastecimento]) setAbastecimentoAberto(true);
     setRespostas((r) => {
       const novo = { ...r, [id]: valor };
       // Descrição do "Outro" some quando a opção é desmarcada.
@@ -275,6 +292,21 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
                       onChange={(e) => { const v = e.target.value; setRespostas((r) => ({ ...r, [chaveOutro(p.id)]: v })); setErros((x) => { const { [p.id]: _t, ...resto } = x; return resto; }); }}
                     />
                   )}
+                  {tipo === TIPO_ABASTECIMENTO && p.id === ID_CARTOES && (
+                    <div className="space-y-2">
+                      {ligadoId && (
+                        <p className="rounded-md border bg-muted/40 p-2 text-xs">
+                          {ligado
+                            ? <>Ligado ao abastecimento de Veículos: {formatarData(ligado.data)}{ligado.hora ? ` às ${ligado.hora}` : ""} · {ligado.km.toLocaleString("pt-BR")} km · {ligado.litros.toLocaleString("pt-BR")} L · {ligado.valor ? ligado.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "sem valor"}. Data e valor vêm dele ao enviar.</>
+                            : "O abastecimento ligado foi excluído de Veículos; escolha outro ou registre um novo."}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => setAbastecimentoAberto(true)}>Registrar no Novo abastecimento</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setEscolhaAberta(true)}>Escolher abastecimento já registrado</Button>
+                      </div>
+                    </div>
+                  )}
                   {errosVisiveis[p.id] && <p role="alert" className="text-sm text-destructive">{errosVisiveis[p.id]}</p>}
                 </div>
               ))}
@@ -289,6 +321,13 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
           </div>
         </form>
       )}
+
+      <NovoAbastecimentoDialog
+        aberto={abastecimentoAberto}
+        aoMudar={setAbastecimentoAberto}
+        aoSalvar={trazerDoAbastecimento}
+      />
+      <EscolherAbastecimentoDialog aberto={escolhaAberta} aoMudar={setEscolhaAberta} aoEscolher={trazerDoAbastecimento} />
     </div>
   );
 }

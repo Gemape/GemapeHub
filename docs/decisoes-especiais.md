@@ -1234,3 +1234,22 @@ Ordem do responsável em 16/10: às 12:00 "retirar o campo de clientes dos módu
 - A pergunta **Clientes** sai de **todos** os questionários de Viagens: Alimentação, Hospedagem, Abastecimento, Pedágio, Estacionamento, Manutenção do veículo de trabalho, Compra de peças para cliente e Outro. A pergunta continua cadastrada no banco de perguntas e pode ser incluída de novo na montagem, se o responsável quiser.
 - Despesas desses tipos ficam sem cliente na lista e no relatório de Viagens (o campo já era opcional lá). Despesas já registradas mantêm o que foi respondido.
 - Dado salvo no navegador migra **uma vez só** (marca `clientesRetiradosDeTodos`; a marca `clientesRetirados` da primeira versão, que só cobria quatro tipos, não conta); quem voltar Clientes à mão depois não é desfeito. Sem Supabase.
+
+### Decisão 223: Card Abastecimento na ordem de Alimentação e cartão que abre o Novo abastecimento
+
+Ordem do responsável em 16/10 (12:31): "No módulo Viagens no card Despesas Abastecimento colocar as perguntas na mesma ordem do card Alimentação. Quando chegar na pergunta sobre o cartão de crédito, ao selecionar, irá abrir a tela do módulo de veículo > abastecimento > novo abastecimento e irá puxar os dados de lá e extrair apenas os dados de data da despesa do abastecimento e valor da despesa do abastecimento, depois volta para o card para finalizar a despesa de abastecimento".
+
+- **Ordem:** Técnico responsável, Data da despesa, UF, Município, Moedas, Cartões de crédito, Valor da despesa, **Litros abastecidos** (continua pedido; fica depois do valor), Foto do comprovante. Como em Alimentação, o card também ganha a classificação "PCM responde" (decisão 218) e a justificativa da ausência do documento (decisão 221); o Abastecimento não pergunta Clientes (decisão 222).
+- **Cartão de crédito:** ao escolher o cartão na pergunta Cartões de crédito do card Abastecimento abre a janela **Novo abastecimento**, a mesma de Módulos > Veículos > Abastecimento (veículo, data, hora, km, litros e valor; mesmas conferências de km). Ao salvar, o abastecimento fica registrado em Veículos e **só a data e o valor** voltam para Data da despesa e Valor da despesa do card; litros e km não vêm. Cancelar a janela mantém o card como está; o botão "Registrar no Novo abastecimento" embaixo da pergunta do cartão abre a janela de novo.
+- **Escolhas minhas onde o pedido não dizia:** a janela abre ao escolher o cartão (e não ao escolher a moeda); a classificação e a justificativa valem também no Abastecimento para a ordem ficar igual à de Alimentação.
+- Dado salvo no navegador migra uma vez só (marca `abastecimentoAjustado`). Só modo demonstração, nada no Supabase; na Fase 2 o vínculo entre a despesa e o abastecimento registrado pode ser gravado (docs/pendencias-fase2.md).
+
+## Decisão 224 — Despesa de abastecimento ligada ao módulo Abastecimento (2026-10-16)
+
+Pedido do dono (12:51): "ao preencher uma despesa de abastecimento ela deve conversar com o módulo abastecimento; quando as informações de despesas de viagens forem informadas devem puxar os dados do módulo abastecimento". Complementa a decisão 223.
+
+- **Vínculo:** a despesa do card Abastecimento guarda o id do abastecimento de Módulos > Veículos > Abastecimento (`abastecimento:id` em `valores`). Ao enviar ou salvar a edição, **data e valor da despesa são puxados do abastecimento ligado** (vale o que está em Veículos). Se o abastecimento foi excluído, a despesa não grava e avisa para escolher outro ou registrar um novo.
+- **Sem duplicar:** além de "Registrar no Novo abastecimento", o card tem **"Escolher abastecimento já registrado"**: lista os abastecimentos da empresa (mais novos primeiro) e a escolha traz data e valor. O cartão só abre o Novo abastecimento sozinho quando ainda não há abastecimento ligado.
+- Sob a pergunta do cartão aparece um resumo do abastecimento ligado (data, hora, km, litros, valor).
+- **Escolha minha onde o pedido não dizia:** continuam vindo só data e valor (decisão 223); litros seguem como pergunta do card.
+- Só modo demonstração; nada no Supabase. Fase 2: coluna de ligação despesa x abastecimento com `empresa_id` (docs/pendencias-fase2.md).

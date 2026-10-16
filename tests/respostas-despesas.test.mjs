@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { registrarRelatorio } from "../src/lib/relatorios-viagens.ts";
 
-import { estadoPadrao as estadoDeFabrica, gravarRegra } from "../src/lib/questionario-despesas.ts";
+import { estadoPadrao as estadoNovo, gravarRegra } from "../src/lib/questionario-despesas.ts";
+import { legado } from "./estado-legado.mjs";
+const estadoDeFabrica = () => legado(estadoNovo());
 import { atualizarResposta, horaLocal, listarRespostas, respostasParaEdicao, removerResposta, registrarResposta, resumoDaResposta, tipoEscolhido } from "../src/lib/respostas-despesas.ts";
 
 // Estado de fábrica sem a condição do cartão (dec 182), para os testes que preenchem todas as perguntas.
@@ -32,7 +34,7 @@ test("registrar grava a resposta com tipo, data e hora locais e as perguntas daq
   assert.equal(r.tipo, "Abastecimento");
   assert.equal(r.data, "2026-10-14");
   assert.equal(r.hora, "08:05");
-  assert.equal(r.itens.length, 12);
+  assert.equal(r.itens.length, 11);
   assert.deepEqual(r.itens[0], { perguntaId: "q-03", titulo: "Tipos de despesas", resposta: "Abastecimento" });
   assert.equal(r.itens.find((i) => i.perguntaId === "q-01").resposta, "Dinheiro");
   assert.equal(r.itens.find((i) => i.perguntaId === "q-08").resposta, "14/10/2026");
@@ -56,7 +58,7 @@ test("pergunta oculta pela condição não é exigida nem gravada", () => {
   const { "q-02": _cartao, ...semCartao } = completas;
   const r = registrarResposta(e, { ...semCartao }, s, agora);
   assert.ok(!r.itens.some((i) => i.perguntaId === "q-02"));
-  assert.equal(r.itens.length, 11);
+  assert.equal(r.itens.length, 10);
 });
 
 test("respostas antigas guardam o título da época; resumo e remoção", () => {
@@ -187,22 +189,22 @@ import { OPCAO_AVULSO, OPCAO_NAO_CONFORMIDADE, lerEstado } from "../src/lib/ques
 import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 
 test("dec 218/219: Alimentação, Hospedagem, Pedágio, Estacionamento e Compra de peças trazem a classificação logo depois de quem lança; os outros tipos não mudam", () => {
-  const e = estadoDeFabrica();
-  for (const tipo of ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"]) {
+  const e = estadoNovo();
+  for (const tipo of ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento"]) {
     const ali = e.questionarios[tipo];
     assert.deepEqual(ali.slice(ali.indexOf("q-04"), ali.indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"], tipo);
     assert.deepEqual(e.regras[tipo]["q-14"], { origem: "q-13", operador: "igual", valor: OPCAO_NAO_CONFORMIDADE }, tipo);
     assert.deepEqual(e.regras[tipo]["q-15"], { origem: "q-13", operador: "igual", valor: OPCAO_AVULSO }, tipo);
     assert.ok(ali.includes("q-11"), tipo);
   }
-  for (const tipo of ["Abastecimento", "Manutenção do veículo de trabalho", "Outro"]) {
+  for (const tipo of ["Manutenção do veículo de trabalho", "Outro"]) {
     assert.ok(!e.questionarios[tipo].includes("q-15"), tipo);
     assert.equal(e.questionarios[tipo].at(-1), "q-13", tipo);
   }
 });
 
 test("dec 218: só PCM ou Administrativo é classificado; Avulso abre o nome do empregado e Não conformidade pede o técnico que não lançou", () => {
-  const e = estadoDeFabrica();
+  const e = estadoNovo();
   const ids = (r) => perguntasVisiveis(e, "Alimentação", { "q-03": ["Alimentação"], ...r }).map((p) => p.id);
   const oficina = ids({ "q-04": ["Roberto (Oficina)"] });
   for (const id of ["q-13", "q-14", "q-15"]) assert.ok(!oficina.includes(id), id);
@@ -217,15 +219,16 @@ test("dec 218: só PCM ou Administrativo é classificado; Avulso abre o nome do 
   // Depois da classificação seguem as demais perguntas.
   assert.ok(nc.indexOf("q-14") < nc.indexOf("q-05") && nc.includes("q-12"));
   // Dec 219: nos outros três tipos da lógica vale o mesmo; em Abastecimento o comportamento é o de antes: PCM responde aparece para todos.
-  for (const tipo of ["Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"]) {
+  for (const tipo of ["Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente", "Abastecimento"]) {
     assert.ok(!perguntasVisiveis(e, tipo, { "q-03": [tipo], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"), tipo);
     assert.ok(perguntasVisiveis(e, tipo, { "q-03": [tipo], "q-04": ["Bruno (PCM)"] }).some((p) => p.id === "q-13"), tipo);
   }
-  assert.ok(perguntasVisiveis(e, "Abastecimento", { "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"));
+  // Dec 223: Abastecimento segue Alimentação; só Manutenção e Outro mantêm o comportamento de antes.
+  assert.ok(perguntasVisiveis(e, "Outro", { "q-03": ["Outro"], "q-04": ["Roberto (Oficina)"] }).some((p) => p.id === "q-13"));
 });
 
 test("dec 218: registrar exige o nome no Avulso e grava o nome; na Não conformidade grava o técnico que não lançou", () => {
-  const e = estadoDeFabrica();
+  const e = estadoNovo();
   const base = { ...completas, "q-03": ["Alimentação"], "q-04": ["Eduardo (PCM)"], "q-01": ["Dinheiro"] };
   delete base["q-02"]; delete base["q-13"];
   assert.throws(() => registrarResposta(e, base, memoria(), agora), /PCM responde/);
@@ -239,7 +242,7 @@ test("dec 218: registrar exige o nome no Avulso e grava o nome; na Não conformi
 });
 
 test("dec 218: dado salvo antes ganha a classificação em Alimentação uma vez só, mantendo o resto", () => {
-  const e = estadoDeFabrica();
+  const e = estadoNovo();
   const semNova = e.perguntas.filter((p) => p.id !== "q-15");
   const antigoQ = Object.fromEntries(Object.entries(e.questionarios).map(([t, ids]) => [t, ids.filter((id) => id !== "q-15" && id !== "q-13").concat("q-13")]));
   const antigoQ2 = { ...antigoQ, "Alimentação": ["q-01", "q-02", "q-04", "q-14", "q-05", "q-06", "q-07", "q-08", "q-09", "q-11", "q-12", "q-13"] };
@@ -254,7 +257,7 @@ test("dec 218: dado salvo antes ganha a classificação em Alimentação uma vez
   // Dec 219: Pedágio (e Hospedagem, Estacionamento) ganha a classificação na mesma leitura.
   assert.deepEqual(lido.questionarios["Pedágio"].slice(lido.questionarios["Pedágio"].indexOf("q-04"), lido.questionarios["Pedágio"].indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"]);
   assert.equal(lido.classificacaoTiposAjustada, true);
-  assert.deepEqual(lido.questionarios["Abastecimento"], antigoQ2["Abastecimento"]);
+  assert.deepEqual(lido.questionarios["Outro"], antigoQ2["Outro"]);
   // Depois do ajuste, tirar a classificação de Alimentação não a traz de volta.
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, "Alimentação": ali.filter((id) => id !== "q-15") } }));
   assert.ok(!lerEstado(s).questionarios["Alimentação"].includes("q-15"));
@@ -276,19 +279,19 @@ import { TIPOS_ORDEM_VIAGENS, ID_JUSTIFICATIVA } from "../src/lib/questionario-d
 import { chaveJustificativaPedida } from "../src/lib/questionario-respostas.ts";
 
 test("dec 221: os cinco tipos seguem Técnico responsável, data, UF, município, moeda, valor, (detalhamento só em compra de peças) e documento", () => {
-  const e = estadoDeFabrica();
+  const e = estadoNovo();
   for (const tipo of TIPOS_ORDEM_VIAGENS) {
     const ids = e.questionarios[tipo];
     const sem = ids.filter((id) => !["q-13", "q-14", "q-15", "q-02"].includes(id));
-    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Compra de peças para cliente" ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
+    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Abastecimento" ? ["q-10"] : []), ...(tipo === "Compra de peças para cliente" ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
     assert.deepEqual(sem, esperado, tipo);
   }
   assert.equal(e.perguntas.find((p) => p.id === "q-04").titulo, "Técnico responsável");
-  assert.ok(!e.questionarios["Abastecimento"].includes(ID_JUSTIFICATIVA));
+  assert.ok(!e.questionarios["Outro"].includes(ID_JUSTIFICATIVA));
 });
 
 test("dec 221: sem documento a justificativa abre; com ela escrita encerra, e o anexo esconde a justificativa", () => {
-  const e = estadoDeFabrica();
+  const e = estadoNovo();
   const base = { ...completas, "q-03": ["Pedágio"], "q-04": ["Roberto (Oficina)"], "q-01": ["Dinheiro"], "q-12": [] };
   delete base["q-02"]; delete base["q-09"];
   const ids = (r) => perguntasVisiveis(e, "Pedágio", r).map((p) => p.id);
@@ -305,7 +308,7 @@ test("dec 221: sem documento a justificativa abre; com ela escrita encerra, e o 
 
 // Dec 222: Clientes fora de todos os questionários.
 test("dec 222: Clientes sai de todos os questionários; dado salvo migra uma vez só", () => {
-  const e = estadoDeFabrica();
+  const e = estadoNovo();
   for (const ids of Object.values(e.questionarios)) assert.ok(!ids.includes("q-07"));
   assert.ok(e.perguntas.some((p) => p.id === "q-07"));
   const salvo = JSON.parse(JSON.stringify(e));
@@ -325,4 +328,65 @@ test("dec 222: Clientes sai de todos os questionários; dado salvo migra uma vez
 test("dec 221: com seções, a falta do documento não trava a página do documento quando a justificativa está aberta", () => {
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /visiveis\.some\(\(p\) => p\.id === ID_JUSTIFICATIVA\)\) for \(const p of perguntasDaPagina\) if \(p\.tipo === "upload"\) delete achados\[p\.id\]/);
+});
+
+// Dec 223: do Novo abastecimento voltam só a data e o valor.
+import { respostasDoAbastecimento } from "../src/lib/questionario-respostas.ts";
+
+test("dec 223: o abastecimento registrado preenche só a data e o valor da despesa, com máscara de duas casas", () => {
+  assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16", valor: 250, litros: 40.5, km: 1000, veiculoId: "v1" }), { "q-08": "2026-10-16", "q-11": "250,00" });
+  assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16", valor: 1234.56 }), { "q-08": "2026-10-16", "q-11": "1.234,56" });
+  assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16", valor: 0 }), { "q-08": "2026-10-16" });
+  assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16" }), { "q-08": "2026-10-16" });
+});
+
+test("dec 223: escolher o cartão no card Abastecimento abre o Novo abastecimento do módulo de Veículos", () => {
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /tipo === TIPO_ABASTECIMENTO && id === ID_CARTOES && !vazia\(valor\) && !respostas\[chaveAbastecimento\]\) setAbastecimentoAberto\(true\)/);
+  assert.match(form, /<NovoAbastecimentoDialog/);
+  const modulo = readFileSync(new URL("../src/components/modules/AbastecimentoVeiculoModulo.tsx", import.meta.url), "utf8");
+  assert.match(modulo, /<NovoAbastecimentoDialog/);
+});
+
+// Dec 224: a despesa fica ligada ao abastecimento de Veículos e puxa data e valor dele ao gravar.
+import { registrarAbastecimento, removerAbastecimento } from "../src/lib/registros-veiculo.ts";
+import { chaveAbastecimento, sincronizarAbastecimento } from "../src/lib/questionario-respostas.ts";
+
+const doAbastecimento = () => ({ ...completas, "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"], "q-15": "Fulano de Tal" });
+
+test("dec 224: o registro do abastecimento devolve o id para ligar a despesa", () => {
+  assert.deepEqual(respostasDoAbastecimento({ id: "a1", data: "2026-10-16", valor: 63 }), { "q-08": "2026-10-16", "q-11": "63,00", [chaveAbastecimento]: "a1" });
+});
+
+test("dec 224: ao gravar, a despesa puxa data e valor do abastecimento ligado e guarda o vínculo", () => {
+  const storage = memoria();
+  const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-13", hora: "09:00", km: "100", litros: "10", valor: "63,00" }, storage, agora);
+  // Respostas com data e valor diferentes do abastecimento: valem os do abastecimento.
+  const r = registrarResposta(estadoPadrao(), { ...doAbastecimento(), "q-08": "2026-10-01", "q-11": "1,00", [chaveAbastecimento]: a.id }, storage, agora);
+  assert.equal(r.valores[chaveAbastecimento], a.id);
+  assert.equal(r.valores["q-08"], "2026-10-13");
+  assert.equal(r.valores["q-11"], "63,00");
+  assert.equal(respostasParaEdicao(estadoPadrao(), r)[chaveAbastecimento], a.id);
+});
+
+test("dec 224: abastecimento ligado que foi excluído impede gravar a despesa e nada é salvo", () => {
+  const storage = memoria();
+  const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-13", hora: "09:00", km: "100", litros: "10", valor: "63,00" }, storage, agora);
+  removerAbastecimento(a.id, storage);
+  assert.throws(() => registrarResposta(estadoPadrao(), { ...doAbastecimento(), [chaveAbastecimento]: a.id }, storage, agora), /foi excluído de Veículos/);
+  assert.equal(listarRespostas(storage).length, 0);
+});
+
+test("dec 224: sem vínculo, nada muda; o vínculo só vale no card Abastecimento", () => {
+  const r = { "q-08": "2026-10-01", "q-11": "1,00" };
+  assert.equal(sincronizarAbastecimento(r, []), r);
+  const storage = memoria();
+  const alimentacao = registrarResposta(estadoPadrao(), { ...completas, "q-03": ["Alimentação"], "q-15": "Fulano de Tal", [chaveAbastecimento]: "a-qualquer" }, storage, agora);
+  assert.equal(alimentacao.valores[chaveAbastecimento], undefined);
+});
+
+test("dec 224: o formulário oferece escolher um abastecimento já registrado", () => {
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /<EscolherAbastecimentoDialog/);
+  assert.match(form, /Escolher abastecimento já registrado/);
 });
