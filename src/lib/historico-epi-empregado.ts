@@ -12,6 +12,8 @@ export type MovimentacaoFicha = {
   created_at?: string | null;
   // Só no modo demonstração; no banco real a coluna entra na Fase 2 (decisão 23).
   tamanho_id?: string | null;
+  codigo_movimentacao?: string | null;
+  responsavel_nome?: string | null;
 };
 
 type ConsultaMovimentacoes = PromiseLike<{
@@ -28,7 +30,7 @@ export async function lerHistoricoEpiEmpregado(
     (cliente
       .from("movimentacoes")
       .select(
-        `item_id,tipo_movimentacao,quantidade,motivo_baixa,data_movimentacao,created_at${filtro.comTamanho ? ",tamanho_id" : ""}`,
+        `item_id,tipo_movimentacao,quantidade,motivo_baixa,data_movimentacao,created_at${filtro.comTamanho ? ",tamanho_id,codigo_movimentacao,responsavel_nome" : ""}`,
       ) as ConsultaMovimentacoes)
       .eq("modulo", "epi")
       .eq("empresa_id", filtro.empresaId)

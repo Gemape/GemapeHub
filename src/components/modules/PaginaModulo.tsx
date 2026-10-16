@@ -9,6 +9,7 @@ import { UniformesTermoBaixa } from "@/components/modules/UniformesTermoBaixa";
 import { EpiComprasModulo } from "@/components/modules/EpiComprasModulo";
 import { EpiRelatorioFuncionario } from "@/components/modules/EpiRelatorioFuncionario";
 import { EpiRelatorioBaixa } from "@/components/modules/EpiRelatorioBaixa";
+import { EpiEntrega } from "@/components/modules/EpiEntrega";
 import { EpiTermoEntrega } from "@/components/modules/EpiTermoEntrega";
 import { EpiFichaEpiAvulsa } from "@/components/modules/EpiFichaEpiAvulsa";
 import { FerramentasCaixasModulo } from "@/components/modules/FerramentasCaixasModulo";
@@ -88,6 +89,9 @@ export function PaginaModulo({
             </TabsContent>
             <TabsContent value="baixas" className="mt-5">
               <EpiRelatorioBaixa />
+            </TabsContent>
+            <TabsContent value="entrega" className="mt-5">
+              <EpiEntrega />
             </TabsContent>
             <TabsContent value="termo-entrega" className="mt-5">
               <EpiTermoEntrega />

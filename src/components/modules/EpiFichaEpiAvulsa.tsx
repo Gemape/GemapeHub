@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { montarFichaEpiAvulsaHtml } from "@/lib/ficha-epi-avulsa-html";
-import { ehBaixa } from "@/lib/historico-movimentacoes";
+import { linhasDaFichaEpi } from "@/lib/entrega-epi";
 import { lerHistoricoEpiEmpregado, type MovimentacaoFicha } from "@/lib/historico-epi-empregado";
 import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
 import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
@@ -58,18 +58,7 @@ export function EpiFichaEpiAvulsa() {
     const html = montarFichaEpiAvulsaHtml({
       empresa,
       empregado,
-      linhas: historico.map((h) => {
-        const itemInfo = itens.find((i) => i.id === h.item_id);
-        return {
-          data: h.data_movimentacao,
-          quantidade: h.quantidade,
-          nome: itemInfo?.nome,
-          ca: itemInfo?.ca,
-          tipo: h.tipo_movimentacao,
-          baixaMotivo: ehBaixa({ tipo_movimentacao: h.tipo_movimentacao, motivo_baixa: h.motivo_baixa ?? null }) ? h.motivo_baixa : null,
-          tamanho: nomeTamanhoGravado(parametros, h.tamanho_id),
-        };
-      }),
+      linhas: linhasDaFichaEpi(historico, itens, (tamanhoId) => nomeTamanhoGravado(parametros, tamanhoId)),
     });
 
     abrirDocumento({
