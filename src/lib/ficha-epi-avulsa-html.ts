@@ -17,6 +17,9 @@ export interface DadosFichaEpiAvulsa {
     tipo: string;
     // Saída com motivo de baixa (perda, dano...) não é entrega: a ficha mostra BAIXA e o motivo.
     baixaMotivo?: Texto;
+    // Código da movimentação (ENT-0001, DEV-0001) e, na devolução, quem a registrou (Entrega EPI).
+    codigo?: Texto;
+    responsavel?: Texto;
   }[];
 }
 
@@ -30,7 +33,8 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.quantidade}</td>
         <td style="border: 1px solid #000; padding: 5px;">${escaparHtml(h.nome || "—")}${comTamanho(h.tamanho)}</td>
         <td style="border: 1px solid #000; padding: 5px; text-align: center;">${escaparHtml(h.ca || "—")}</td>
-        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.tipo === "Saida" ? (h.baixaMotivo ? `BAIXA (${escaparHtml(h.baixaMotivo)})` : "ENTREGA") : "DEVOLUÇÃO"}</td>
+        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.tipo === "Saida" ? (h.baixaMotivo ? `BAIXA (${escaparHtml(h.baixaMotivo)})` : "ENTREGA") : "DEVOLUÇÃO"}${h.tipo !== "Saida" && h.responsavel ? `<br/><span style="font-size: 8pt;">Resp.: ${escaparHtml(h.responsavel)}</span>` : ""}</td>
+        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${escaparHtml(h.codigo || "—")}</td>
         <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
       </tr>
     `;
@@ -42,6 +46,7 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
     .map(
       () => `
     <tr>
+      <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
       <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
       <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
       <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
@@ -108,7 +113,8 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
               <th>Descrição do EPI</th>
               <th style="width: 10%;">CA</th>
               <th style="width: 15%;">Tipo</th>
-              <th style="width: 25%;">Assinatura</th>
+              <th style="width: 11%;">Código</th>
+              <th style="width: 22%;">Assinatura</th>
             </tr>
           </thead>
           <tbody>
