@@ -86,11 +86,12 @@ async function lerCodigos(cliente: ClienteEntrega): Promise<(string | null)[]> {
   return todas.map((m) => m.codigo_movimentacao ?? null);
 }
 
-function conferirItens(linhas: LinhaEntrega[], itens: ItemEpiEntrega[]): void {
+// EPI inativo não sai mais do estoque, mas a devolução do que já foi entregue continua permitida.
+function conferirItens(linhas: LinhaEntrega[], itens: ItemEpiEntrega[], bloquearInativo: boolean): void {
   for (const linha of linhas) {
     const item = itens.find((i) => i.id === linha.item_id);
     if (linha.item_id && !item) throw new Error("O EPI escolhido não existe nesta empresa.");
-    if (item && estaInativo(item.status)) throw new Error(`${item.nome} está inativo e não pode ser movimentado.`);
+    if (bloquearInativo && item && estaInativo(item.status)) throw new Error(`${item.nome} está inativo e não pode ser movimentado.`);
   }
 }
 
@@ -149,7 +150,7 @@ export async function registrarEntregaEpi(cliente: ClienteEntrega, entrada: Entr
   if (bloqueio) throw new Error(bloqueio);
   if (!entrada.data) throw new Error("Informe a data da entrega.");
   const itens = await lerItens(cliente, entrada.empresaId);
-  conferirItens(entrada.linhas, itens);
+  conferirItens(entrada.linhas, itens, true);
   const erro = validarSaidaDeEpis(entrada.linhas, itens);
   if (erro) throw new Error(erro);
   return gravar(cliente, entrada, "Saida", null);
@@ -166,7 +167,7 @@ export async function registrarDevolucaoEpi(cliente: ClienteEntrega, entrada: En
   if (!entrada.responsavel.trim()) throw new Error("Informe o responsável pela devolução.");
   if (entrada.linhas.length === 0) throw new Error("Adicione pelo menos um EPI.");
   const itens = await lerItens(cliente, entrada.empresaId);
-  conferirItens(entrada.linhas, itens);
+  conferirItens(entrada.linhas, itens, false);
   const historico = await lerTodas<MovimentacaoEpi>(
     () => cliente.from("movimentacoes").select("*").eq("modulo", "epi").eq("empresa_id", entrada.empresaId).eq("empregado_id", entrada.empregado.id),
     (q) => q.order("created_at").order("id"),

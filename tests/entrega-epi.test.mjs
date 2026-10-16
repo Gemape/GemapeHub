@@ -123,3 +123,11 @@ test("empresa inativa não aparece na escolha da rotina", () => {
   const lista = empresasParaEscolha([{ id: "1", status: "Ativa" }, { id: "2", status: "Inativa" }]);
   assert.deepEqual(lista.map((e) => e.id), ["1"]);
 });
+
+test("devolução de EPI que ficou inativo depois da entrega é aceita", async () => {
+  const { empresa, id } = await novoEpi();
+  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16" });
+  await demoSupabase.from("epis").update({ status: "inativo" }).eq("id", id);
+  await registrarDevolucaoEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16", administrador: true, responsavel: "Admin" });
+  assert.equal(await saldo(id), 10);
+});
