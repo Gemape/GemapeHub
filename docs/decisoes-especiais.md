@@ -1321,3 +1321,10 @@ Pedido do responsável em 16/10 (17:02): "quando for selecionado o relatório de
 
 - No Relatório de Viagens de "Todos os empregados" (ao gerar e ao reabrir pela lista), a tabela de despesas ganha a coluna Técnico e, depois do quadro por tipo, sai o quadro "Gasto por técnico responsável" (técnico, lançamentos e total, com total geral), em ordem alfabética.
 - Lançamento sem técnico responsável aparece como "Sem técnico responsável", por último. Relatório de um empregado só continua como antes. Sem Supabase.
+
+### Decisão 236: Opção "Sem cliente vinculado" no campo Clientes
+
+Pedido do responsável em 16/10 (17:13): "incluir no campo clientes: Sem cliente vinculado, para viagens sem cliente específico".
+
+- A lista do campo Clientes (todos os cards de Viagens) começa com a opção fixa "Sem cliente vinculado"; satisfaz a obrigatoriedade do campo. Ela não é um cadastro e não depende de Parâmetros > Clientes.
+- No Relatório de Viagens a opção aparece na coluna Cliente da linha, mas não entra em "Clientes visitados". Sem Supabase.

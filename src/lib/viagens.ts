@@ -9,6 +9,8 @@ import type { RespostaRegistrada } from "./respostas-despesas.ts";
 
 export { ID_PERGUNTA_HABILITADOS };
 export const ID_PERGUNTA_CLIENTE = "q-07";
+// Dec 236: opção fixa do campo Clientes para viagem sem cliente específico; não conta em Clientes visitados.
+export const SEM_CLIENTE_VINCULADO = "Sem cliente vinculado";
 export const ID_PERGUNTA_DATA = "q-08";
 export const ID_PERGUNTA_DETALHAMENTO = "q-09";
 export const ID_PERGUNTA_VALOR = "q-11";
