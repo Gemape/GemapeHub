@@ -333,8 +333,8 @@ test("dec 221: com seções, a falta do documento não trava a página do docume
 // Dec 223: do Novo abastecimento voltam só a data e o valor.
 import { respostasDoAbastecimento } from "../src/lib/questionario-respostas.ts";
 
-test("dec 223: o abastecimento registrado preenche só a data e o valor da despesa, com máscara de duas casas", () => {
-  assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16", valor: 250, litros: 40.5, km: 1000, veiculoId: "v1" }), { "q-08": "2026-10-16", "q-11": "250,00" });
+test("dec 223/225: o abastecimento registrado preenche data, valor e litros da despesa, com máscara de duas casas", () => {
+  assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16", valor: 250, litros: 40.5, km: 1000, veiculoId: "v1" }), { "q-08": "2026-10-16", "q-11": "250,00", "q-10": "40,50" });
   assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16", valor: 1234.56 }), { "q-08": "2026-10-16", "q-11": "1.234,56" });
   assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16", valor: 0 }), { "q-08": "2026-10-16" });
   assert.deepEqual(respostasDoAbastecimento({ data: "2026-10-16" }), { "q-08": "2026-10-16" });
@@ -362,10 +362,11 @@ test("dec 224: ao gravar, a despesa puxa data e valor do abastecimento ligado e 
   const storage = memoria();
   const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-13", hora: "09:00", km: "100", litros: "10", valor: "63,00" }, storage, agora);
   // Respostas com data e valor diferentes do abastecimento: valem os do abastecimento.
-  const r = registrarResposta(estadoPadrao(), { ...doAbastecimento(), "q-08": "2026-10-01", "q-11": "1,00", [chaveAbastecimento]: a.id }, storage, agora);
+  const r = registrarResposta(estadoPadrao(), { ...doAbastecimento(), "q-08": "2026-10-01", "q-11": "1,00", "q-10": "1,00", [chaveAbastecimento]: a.id }, storage, agora);
   assert.equal(r.valores[chaveAbastecimento], a.id);
   assert.equal(r.valores["q-08"], "2026-10-13");
   assert.equal(r.valores["q-11"], "63,00");
+  assert.equal(r.valores["q-10"], "10,00");
   assert.equal(respostasParaEdicao(estadoPadrao(), r)[chaveAbastecimento], a.id);
 });
 

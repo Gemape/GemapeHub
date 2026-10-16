@@ -19,7 +19,7 @@ const numero = (n: number) => n.toLocaleString("pt-BR");
 
 // Janela "Novo abastecimento" de Módulos > Veículos > Abastecimento (decisão 58): escolhe o veículo (já vem com o km do último
 // abastecimento), informa data, hora, km (nunca menor que o anterior), litros e valor em reais. É usada na tela do módulo e no card
-// Abastecimento de Viagens (dec 223), que só aproveita a data e o valor do registro gravado. Só modo demonstração; nada no Supabase.
+// Abastecimento de Viagens (dec 223), que aproveita a data, o valor e os litros do registro gravado. Só modo demonstração; nada no Supabase.
 export function NovoAbastecimentoDialog({
   aberto, aoMudar, aoSalvar,
 }: { aberto: boolean; aoMudar: (aberto: boolean) => void; aoSalvar: (registro: Abastecimento) => void }) {

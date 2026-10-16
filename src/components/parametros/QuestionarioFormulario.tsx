@@ -108,7 +108,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   const trazerDoAbastecimento = (registro: Abastecimento) => {
     setRespostas((r) => ({ ...r, ...respostasDoAbastecimento(registro) }));
     setErros((x) => { const { [ID_DATA_DESPESA]: _d, [ID_VALOR_DESPESA]: _v, ...resto } = x; return resto; });
-    toast.info("Data e valor trazidos do abastecimento. Termine a despesa.");
+    toast.info("Data, valor e litros trazidos do abastecimento. Termine a despesa.");
   };
   const mudar = (id: string, valor: Resposta) => {
     if (tipo === TIPO_ABASTECIMENTO && id === ID_CARTOES && !vazia(valor) && !respostas[chaveAbastecimento]) setAbastecimentoAberto(true);
@@ -297,7 +297,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
                       {ligadoId && (
                         <p className="rounded-md border bg-muted/40 p-2 text-xs">
                           {ligado
-                            ? <>Ligado ao abastecimento de Veículos: {formatarData(ligado.data)}{ligado.hora ? ` às ${ligado.hora}` : ""} · {ligado.km.toLocaleString("pt-BR")} km · {ligado.litros.toLocaleString("pt-BR")} L · {ligado.valor ? ligado.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "sem valor"}. Data e valor vêm dele ao enviar.</>
+                            ? <>Ligado ao abastecimento de Veículos: {formatarData(ligado.data)}{ligado.hora ? ` às ${ligado.hora}` : ""} · {ligado.km.toLocaleString("pt-BR")} km · {ligado.litros.toLocaleString("pt-BR")} L · {ligado.valor ? ligado.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "sem valor"}. Data, valor e litros vêm dele ao enviar.</>
                             : "O abastecimento ligado foi excluído de Veículos; escolha outro ou registre um novo."}
                         </p>
                       )}

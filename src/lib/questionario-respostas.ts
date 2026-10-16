@@ -2,7 +2,7 @@
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
 import { inicioDaProximaSecao } from "./questionario-secoes.ts";
 import { DESTINO_PROXIMA_SECAO, aceitaDestino, destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
-import { ID_DATA_DESPESA, ID_HABILITADOS, ID_JUSTIFICATIVA, ID_VALOR_DESPESA, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_CLASSIFICACAO, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
+import { ID_DATA_DESPESA, ID_HABILITADOS, ID_JUSTIFICATIVA, ID_LITROS, ID_VALOR_DESPESA, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_CLASSIFICACAO, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
 export type Resposta = string | string[];
@@ -66,16 +66,17 @@ export const lancadoPorGestor = (respostas: Respostas): boolean => {
 };
 
 // Dec 223: do abastecimento registrado em Veículos vêm só a data e o valor, que preenchem Data da despesa e Valor da despesa do card.
-export function respostasDoAbastecimento(abastecimento: { id?: string; data: string; valor?: number | null | undefined }): Respostas {
+export function respostasDoAbastecimento(abastecimento: { id?: string; data: string; valor?: number | null | undefined; litros?: number | null | undefined }): Respostas {
   const patch: Respostas = { [ID_DATA_DESPESA]: abastecimento.data };
   if (abastecimento.id) patch[chaveAbastecimento] = abastecimento.id;
   if (typeof abastecimento.valor === "number" && abastecimento.valor > 0) patch[ID_VALOR_DESPESA] = mascaraDecimal2(String(Math.round(abastecimento.valor * 100)));
+  if (typeof abastecimento.litros === "number" && abastecimento.litros > 0) patch[ID_LITROS] = mascaraDecimal2(String(Math.round(abastecimento.litros * 100)));
   return patch;
 }
 
 // Dec 224: a despesa de abastecimento guarda o id do registro de Veículos e, ao encerrar, puxa data e valor dele (o que mudou lá vale aqui).
 export const chaveAbastecimento = "abastecimento:id";
-export function sincronizarAbastecimento(respostas: Respostas, lista: { id: string; data: string; valor?: number | null | undefined }[]): Respostas {
+export function sincronizarAbastecimento(respostas: Respostas, lista: { id: string; data: string; valor?: number | null | undefined; litros?: number | null | undefined }[]): Respostas {
   const id = respostas[chaveAbastecimento];
   if (typeof id !== "string" || id === "") return respostas;
   const a = lista.find((x) => x.id === id);
