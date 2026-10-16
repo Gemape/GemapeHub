@@ -97,7 +97,7 @@ export const diasEntre = (de: string, ate: string): number => Math.round((Date.p
 // prazo do técnico mecânico. Só entram no índice as despesas lançadas pela Oficina (o PCM e o Administrativo lançam por
 // ele e já pesam no índice de conformidade) e só se o indicador se aplica ao mecânico em Parâmetros. Sem data da despesa,
 // vale o dia do registro; despesa com data futura ao registro não conta como no prazo. Um número vale para todas.
-export const prazoDoLancamento = (_r: RespostaRegistrada, prazos: PrazosViagens | number = PRAZOS_PADRAO): number => (typeof prazos === "number" ? prazos : prazos.mecanico);
+const prazoMecanico = (prazos: PrazosViagens | number): number => (typeof prazos === "number" ? prazos : prazos.mecanico);
 export function medidoNoPrazo(r: RespostaRegistrada, prazos: PrazosViagens | number = PRAZOS_PADRAO): boolean {
   if (typeof prazos === "number") return true;
   const area = dadosDoLancamento(r).tecnicoArea;
@@ -105,7 +105,7 @@ export function medidoNoPrazo(r: RespostaRegistrada, prazos: PrazosViagens | num
 }
 export function lancadaNoPrazo(r: RespostaRegistrada, prazos: PrazosViagens | number = PRAZOS_PADRAO): boolean {
   const atraso = diasEntre(dadosDoLancamento(r).dataDespesa ?? r.data, r.data);
-  return atraso >= 0 && atraso <= prazoDoLancamento(r, prazos);
+  return atraso >= 0 && atraso <= prazoMecanico(prazos);
 }
 export const indicePrazo = (noPrazo: number, total: number): number | null => (total > 0 ? (noPrazo / total) * 100 : null);
 
