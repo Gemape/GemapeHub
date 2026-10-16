@@ -4,7 +4,10 @@
 // antigo, de antes do controle por tamanho, fica em "Sem tamanho" e só pode sair até zerar.
 import {
   autorizados,
+  autorizar,
+  desautorizar,
   estaAtivo,
+  lerParametros,
   mesmoNome,
   type Opcao,
   type ParametrosBase,
@@ -254,15 +257,43 @@ export function movimentarTamanho(
 export const somaSaldos = (saldos: Saldos) =>
   Object.values(saldos).reduce((total, valor) => total + numero(valor), 0);
 
-/** Tamanhos para entrada (compra): os autorizados e ativos. */
+/**
+ * Tamanhos para entrada (compra): os autorizados e ativos. Com `aceitarTodos` (Movimentações), o
+ * produto sem nenhum tamanho autorizado ativo oferece todos os tamanhos ativos de Gerais.
+ */
 export function opcoesTamanhoEntrada(
   p: ParametrosBase,
   modulo: ModuloTamanho,
   produto: ProdutoTamanho,
+  aceitarTodos = false,
 ): { valor: string; rotulo: string }[] {
-  return tamanhosAutorizadosDoProduto(p, modulo, produto)
-    .filter((t) => estaAtivo(p, t.id))
-    .map((t) => ({ valor: t.id, rotulo: t.nome }));
+  const autorizadosAtivos = tamanhosAutorizadosDoProduto(p, modulo, produto).filter((t) => estaAtivo(p, t.id));
+  const lista = autorizadosAtivos.length === 0 && aceitarTodos ? p.tamanhos.filter((t) => estaAtivo(p, t.id)) : autorizadosAtivos;
+  return lista.map((t) => ({ valor: t.id, rotulo: t.nome }));
+}
+
+/** Desfaz a associação feita por `associarTamanhoNaEntrada` quando a gravação da entrada falha. */
+export function desfazerAssociacaoDaEntrada(subcategoriaId: string, tamanhoId: string, storage?: Parameters<typeof lerParametros>[0]): void {
+  desautorizar(subcategoriaId, "tamanhos", [tamanhoId], storage);
+}
+
+/**
+ * Entrada com um tamanho ainda não autorizado: associa esse tamanho à subcategoria do produto antes de gravar
+ * (o estoque só aceita tamanho autorizado). Devolve a subcategoria alterada, para desfazer se a gravação falhar.
+ */
+export function associarTamanhoNaEntrada(
+  modulo: ModuloTamanho,
+  produto: ProdutoTamanho,
+  tamanhoId: string,
+  storage?: Parameters<typeof lerParametros>[0],
+): string | null {
+  const p = lerParametros(storage);
+  if (!tamanhoId || tamanhoId === SEM_TAMANHO) return null;
+  if (tamanhosAutorizadosDoProduto(p, modulo, produto).some((t) => t.id === tamanhoId)) return null;
+  const sub = resolverSubcategoria(p, CATEGORIA_DO_MODULO[modulo], produto);
+  if (!sub?.id) return null;
+  autorizar(sub.id, "tamanhos", [tamanhoId], storage);
+  return sub.id;
 }
 
 /**
@@ -411,6 +442,7 @@ export function validarLinhasTamanho(
   p: ParametrosBase,
   modulo: ModuloTamanho,
   acao: "entrega" | "baixa" | "saída" | "entrada" | "devolução",
+  aceitarTodos = false,
 ): string | null {
   const pedidas = new Map<string, { item: ItemComTamanho; chave: string; quantidade: number }>();
   const entrada = acao === "entrada" || acao === "devolução";
@@ -418,13 +450,13 @@ export function validarLinhasTamanho(
     acao === "devolução"
       ? opcoesTamanhoDevolucao(p, modulo, item)
       : acao === "entrada"
-        ? opcoesTamanhoEntrada(p, modulo, item)
+        ? opcoesTamanhoEntrada(p, modulo, item, aceitarTodos)
         : opcoesTamanhoSaida(p, modulo, item);
   for (const linha of linhas) {
     const item = itens.find((i) => i.id === linha.item_id);
     if (!item) continue;
     let chave = SEM_TAMANHO;
-    if (controlaTamanho(p, modulo, item)) {
+    if (controlaTamanho(p, modulo, item) || (acao === "entrada" && opcoes(item).length > 0)) {
       const escolhido = linha.tamanho ?? "";
       const validos = opcoes(item).map((o) => o.valor);
       if (acao === "entrada" && validos.length === 0) {

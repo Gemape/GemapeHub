@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
-import { MOTIVOS_BAIXA, ONUS_BAIXA } from "@/lib/gemape";
+import { ONUS_BAIXA } from "@/lib/gemape";
 import { capitalizarNomePessoa, capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { hojeLocal } from "@/lib/empregados";
 import { codigoCaixa } from "@/lib/caixas-habilitadas";
@@ -25,6 +25,7 @@ import {
   controleDaFerramenta,
   ferramentasComEmpregadoRemovidas,
   ferramentasEmOutraCaixa,
+  MOTIVOS_BAIXA_CAIXA,
   validarTransferenciaDeCaixa,
   validarBaixaDaCaixa,
   validarFerramentasDaCaixa,
@@ -45,8 +46,6 @@ import {
 
 const PREFIXO_CAIXA_NOVA = "nova:";
 const SEM_EMPREGADO = "sem-empregado";
-// "Fornecimento ao Empregado" é entrega, não baixa.
-const MOTIVOS_DA_BAIXA = MOTIVOS_BAIXA.filter((m) => m !== "Fornecimento ao Empregado");
 
 export interface LinhaCaixa {
   ferramenta: Item;
@@ -359,7 +358,7 @@ export function DialogBaixaCaixa({
                 <SelectValue placeholder="Escolha o motivo" />
               </SelectTrigger>
               <SelectContent>
-                {MOTIVOS_DA_BAIXA.map((m) => (
+                {MOTIVOS_BAIXA_CAIXA.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
                   </SelectItem>
