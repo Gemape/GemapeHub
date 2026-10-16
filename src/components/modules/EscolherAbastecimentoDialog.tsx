@@ -28,7 +28,7 @@ export function EscolherAbastecimentoDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Abastecimentos registrados</DialogTitle>
-          <DialogDescription>Escolha o abastecimento desta despesa; a data e o valor dele vêm para o card.</DialogDescription>
+          <DialogDescription>Escolha o abastecimento desta despesa; a data, o valor e os litros dele vêm para o card.</DialogDescription>
         </DialogHeader>
         {lista.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum abastecimento registrado. Use o Novo abastecimento.</p>

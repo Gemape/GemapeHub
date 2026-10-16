@@ -1253,3 +1253,11 @@ Pedido do dono (12:51): "ao preencher uma despesa de abastecimento ela deve conv
 - Sob a pergunta do cartão aparece um resumo do abastecimento ligado (data, hora, km, litros, valor).
 - **Escolha minha onde o pedido não dizia:** continuam vindo só data e valor (decisão 223); litros seguem como pergunta do card.
 - Só modo demonstração; nada no Supabase. Fase 2: coluna de ligação despesa x abastecimento com `empresa_id` (docs/pendencias-fase2.md).
+
+## Decisão 225 — Litros também vêm do abastecimento (2026-10-16)
+
+Pedido do dono (13:00): "incluir litros abastecidos também ao clicar escolher abastecimento já registrado". Muda a decisão 223 (só data e valor) e a 224.
+
+- Ao escolher um abastecimento já registrado, ou ao salvar o Novo abastecimento, **data, valor e litros** vão para o card Abastecimento. Km continua sem vir.
+- Ao enviar, a despesa ligada puxa de novo data, valor e litros do abastecimento (decisão 224).
+- Litros abastecidos segue como pergunta do card, na mesma posição, já preenchida.
