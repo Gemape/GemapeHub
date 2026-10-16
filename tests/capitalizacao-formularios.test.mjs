@@ -1,14 +1,15 @@
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const raiz = new URL("../src/", import.meta.url).pathname;
+const raiz = fileURLToPath(new URL("../src/", import.meta.url));
 const arquivos = (dir) => readdirSync(dir).flatMap((n) => {
   const c = join(dir, n);
   return statSync(c).isDirectory() ? arquivos(c) : /\.tsx$/.test(n) ? [c] : [];
 });
-const tsx = arquivos(raiz).filter((f) => !f.includes("/components/ui/"));
+const tsx = arquivos(raiz).filter((f) => !f.replaceAll("\\", "/").includes("/components/ui/"));
 
 test("a propriedade capitalizar só aceita texto, nome ou minusculas (e-mail, dec 166)", () => {
   for (const f of tsx) {
