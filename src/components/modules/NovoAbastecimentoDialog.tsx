@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Button } from "@/components/ui/button";
@@ -35,11 +35,10 @@ export function NovoAbastecimentoDialog({
   const daEmpresa = todos.filter((a) => idsDaEmpresa.has(a.veiculoId));
   const ultimo = veiculoId ? ultimoAbastecimentoDoVeiculo(daEmpresa, veiculoId) : null;
 
-  // Cada abertura recomeça vazia.
-  function mudar(valor: boolean) {
-    if (valor) { setVeiculoId(""); setKm(""); }
-    aoMudar(valor);
-  }
+  // Cada abertura recomeça vazia (quem controla `aberto` é o pai, então o Dialog não avisa a abertura).
+  useEffect(() => {
+    if (aberto) { setVeiculoId(""); setKm(""); }
+  }, [aberto]);
 
   // Ao escolher o veículo, o km já vem com o do último abastecimento informado.
   function escolherVeiculo(id: string) {
@@ -78,7 +77,7 @@ export function NovoAbastecimentoDialog({
   }
 
   return (
-    <Dialog open={aberto} onOpenChange={mudar}>
+    <Dialog open={aberto} onOpenChange={aoMudar}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Novo abastecimento</DialogTitle>
