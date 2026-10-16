@@ -2,12 +2,39 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
-    </div>
-  ),
+// No celular (abaixo de 640 px) cada linha vira um cartão: o rótulo de cada valor vem do cabeçalho da coluna
+// (atributo data-label, preenchido aqui e mantido quando as linhas mudam). `semCartoes` mantém a tabela com rolagem lateral.
+function rotularCelulas(tabela: HTMLTableElement) {
+  const rotulos = Array.from(tabela.querySelectorAll("thead th")).map((th) => (th.textContent ?? "").trim());
+  tabela.querySelectorAll("tbody tr").forEach((linha) => {
+    Array.from(linha.children).forEach((celula, i) => {
+      if (celula.tagName !== "TD") return;
+      const rotulo = (celula as HTMLTableCellElement).colSpan > 1 ? "" : (rotulos[i] ?? "");
+      if (celula.getAttribute("data-label") !== rotulo) celula.setAttribute("data-label", rotulo);
+    });
+  });
+}
+
+type TableProps = React.HTMLAttributes<HTMLTableElement> & { semCartoes?: boolean };
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className, semCartoes, ...props }, ref) => {
+    const interna = React.useRef<HTMLTableElement | null>(null);
+    React.useImperativeHandle(ref, () => interna.current as HTMLTableElement);
+    React.useEffect(() => {
+      const tabela = interna.current;
+      if (!tabela || semCartoes) return;
+      rotularCelulas(tabela);
+      const observador = new MutationObserver(() => rotularCelulas(tabela));
+      observador.observe(tabela, { childList: true, subtree: true });
+      return () => observador.disconnect();
+    }, [semCartoes]);
+    return (
+      <div className={cn("relative w-full overflow-auto", !semCartoes && "tabela-cartoes")}>
+        <table ref={interna} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+      </div>
+    );
+  },
 );
 Table.displayName = "Table";
 

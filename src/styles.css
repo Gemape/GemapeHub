@@ -532,3 +532,53 @@
     transform: scaleX(0.7);
   }
 }
+
+/* Tabelas em cartões no celular (ver Table em components/ui/table.tsx). */
+@media (max-width: 639px) {
+  .tabela-cartoes table,
+  .tabela-cartoes tbody,
+  .tabela-cartoes tr,
+  .tabela-cartoes td {
+    display: block;
+    width: 100%;
+  }
+  .tabela-cartoes thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .tabela-cartoes tbody tr {
+    margin: 0.5rem;
+    width: auto;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 0.25rem 0.75rem;
+  }
+  .tabela-cartoes tbody td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.375rem 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .tabela-cartoes tbody td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    flex: 0 0 38%;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted-foreground);
+  }
+  .tabela-cartoes tbody td[data-label=""] {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .tabela-cartoes tbody td[colspan] {
+    justify-content: center;
+    text-align: center;
+  }
+}

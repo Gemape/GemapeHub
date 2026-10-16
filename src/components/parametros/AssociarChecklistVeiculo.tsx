@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -235,7 +236,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       </header>
 
       <section className="panel overflow-x-auto p-0">
-        <table className="w-full text-sm">
+        <Table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
               <th className="px-3 py-2">Check list (Placa &gt;&gt; Periodicidade &gt;&gt; Responsável)</th>
@@ -282,7 +283,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               );
             })}
           </tbody>
-        </table>
+        </Table>
       </section>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
