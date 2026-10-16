@@ -426,6 +426,29 @@ function Campo({
   const lista = Array.isArray(resposta) ? resposta : [];
   const [erroImagem, setErroImagem] = useState("");
   const [lendo, setLendo] = useState(false);
+  // Foto tirada pela câmera, ainda em prévia: só entra na fila se o usuário confirmar.
+  const [pendente, setPendente] = useState<File | null>(null);
+  const camera = useRef<HTMLInputElement>(null);
+  const previa = useMemo(() => (pendente ? URL.createObjectURL(pendente) : ""), [pendente]);
+  useEffect(() => () => { if (previa) URL.revokeObjectURL(previa); }, [previa]);
+
+  // Único caminho das imagens (escolhidas ou tiradas na hora): mesmo limite, mesma redução no navegador.
+  async function adicionarImagens(escolhidos: File[]) {
+    const limite = mensagemDeLimite(imagens.length, escolhidos.length, MAX_ARQUIVOS);
+    if (limite) { setErroImagem(limite); return; }
+    setLendo(true);
+    try {
+      const reduzidas = await Promise.all(escolhidos.map(reduzirImagem));
+      const { lista, erro } = juntarImagens(imagens, reduzidas, MAX_ARQUIVOS);
+      setErroImagem(erro);
+      if (!erro) { onImagens(lista); onMudar(lista.map((r) => r.nome)); }
+    } catch (erro) {
+      setErroImagem(erro instanceof Error ? erro.message : "Não foi possível ler a imagem.");
+    } finally {
+      setLendo(false);
+    }
+  }
+  const abrirCamera = () => camera.current?.click();
 
   if (p.habilitados) {
     return (
@@ -482,26 +505,41 @@ function Campo({
         multiple
         disabled={cheio || lendo}
         aria-label={p.titulo}
-        onChange={async (e) => {
+        onChange={(e) => {
           const campo = e.currentTarget;
           const escolhidos = Array.from(campo.files ?? []);
           campo.value = ""; // o mesmo arquivo pode ser escolhido de novo depois de removido
-          if (!escolhidos.length) return;
-          const limite = mensagemDeLimite(imagens.length, escolhidos.length, MAX_ARQUIVOS);
-          if (limite) { setErroImagem(limite); return; }
-          setLendo(true);
-          try {
-            const reduzidas = await Promise.all(escolhidos.map(reduzirImagem));
-            const { lista, erro } = juntarImagens(imagens, reduzidas, MAX_ARQUIVOS);
-            setErroImagem(erro);
-            if (!erro) aplicar(lista);
-          } catch (erro) {
-            setErroImagem(erro instanceof Error ? erro.message : "Não foi possível ler a imagem.");
-          } finally {
-            setLendo(false);
-          }
+          if (escolhidos.length) void adicionarImagens(escolhidos);
         }}
       />
+      <input
+        ref={camera}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(e) => {
+          const foto = e.currentTarget.files?.[0] ?? null;
+          e.currentTarget.value = "";
+          if (foto) { setErroImagem(""); setPendente(foto); }
+        }}
+      />
+      <Button type="button" variant="outline" size="sm" disabled={cheio || lendo} onClick={abrirCamera}>
+        Tirar foto
+      </Button>
+      {pendente && (
+        <div className="space-y-2 rounded-md border p-2">
+          <img src={previa} alt="Prévia da foto tirada" className="max-h-64 rounded-md object-contain" />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" disabled={lendo} onClick={async () => { await adicionarImagens([pendente]); setPendente(null); }}>
+              Usar foto
+            </Button>
+            <Button type="button" variant="outline" size="sm" disabled={lendo} onClick={() => { setPendente(null); abrirCamera(); }}>
+              Descartar e tirar outra
+            </Button>
+          </div>
+        </div>
+      )}
       {erroImagem && <p role="alert" className="text-sm text-destructive">{erroImagem}</p>}
       <ul className="flex flex-wrap gap-3">
         {imagens.map((i, n) => (
