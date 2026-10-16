@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { Fragment, useRef, useState } from "react";
 import { useAccess } from "@/lib/access-context";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
@@ -139,7 +140,7 @@ function ListaVeiculos({
           {secao ? <h2 className="text-xl font-bold">{titulo}</h2> : <h1 className="text-2xl font-bold">{titulo}</h1>}
           <p className="mt-1 text-sm text-muted-foreground">{subtitulo}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {onPadrao && (
             <Button requiresWrite variant="outline" onClick={onPadrao}>
               Cadastrar padrão
@@ -153,7 +154,7 @@ function ListaVeiculos({
       </header>
 
       <section className="panel overflow-x-auto p-0">
-        <table className="w-full text-sm">
+        <Table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
               <th className="px-3 py-2">Nome</th>
@@ -212,7 +213,7 @@ function ListaVeiculos({
               </Fragment>
             ))}
           </tbody>
-        </table>
+        </Table>
       </section>
 
       <Dialog open={aberto} onOpenChange={setAberto}>

@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -148,7 +149,7 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
       </header>
 
       <section className="panel overflow-x-auto p-0">
-        <table className="w-full text-sm">
+        <Table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
               <th className="px-3 py-2">Veículo</th>
@@ -178,7 +179,7 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
               );
             })}
           </tbody>
-        </table>
+        </Table>
       </section>
 
       <Dialog open={aberto} onOpenChange={setAberto}>

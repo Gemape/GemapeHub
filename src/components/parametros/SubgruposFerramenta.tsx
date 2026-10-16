@@ -1,3 +1,4 @@
+import { Table } from "@/components/ui/table";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -117,7 +118,7 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
       </header>
 
       <div className="panel overflow-x-auto p-0">
-        <table className="w-full text-sm">
+        <Table className="w-full text-sm">
           <thead>
             <tr className="border-b text-left text-xs uppercase text-muted-foreground">
               <th className="px-3 py-2">Nome</th>
@@ -143,7 +144,7 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </Table>
       </div>
 
       <Dialog open={aberto} onOpenChange={setAberto}>

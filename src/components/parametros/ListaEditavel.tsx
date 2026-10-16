@@ -68,11 +68,11 @@ export function ListaEditavel({
   }
 
   return (
-    <section className="panel space-y-3 p-4">
+    <section className="panel min-w-0 space-y-3 p-4">
       <h2 className="text-sm font-semibold">
         {titulo} <span className="font-normal text-muted-foreground">({itens.length})</span>
       </h2>
-      <form onSubmit={incluir} className="flex gap-2">
+      <form onSubmit={incluir} className="flex gap-2 [&>*]:min-w-0">
         <label htmlFor={idCampo} className="sr-only">
           {novo}
         </label>
