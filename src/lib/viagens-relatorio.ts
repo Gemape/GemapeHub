@@ -120,10 +120,10 @@ export function montarRelatorioViagensHtml(d: DadosRelatorio): string {
     <div class="clientes"><strong>Clientes visitados:</strong> ${clientes.length ? escaparHtml(clientes.join(" · ")) : `<em>Clientes não informados</em>`}</div>${d.conferido ? `<div class="clientes"><strong>Conferido:</strong> ${escaparHtml(d.conferido)}</div>` : ""}`;
   const topoTabela = `<table class="despesas"><thead><tr><th>Data</th><th>Tipo</th>${todos ? "<th>Técnico</th>" : ""}<th>Cliente</th><th class="valor">Valor</th></tr></thead><tbody>`;
   const linhaHtml = (l: LinhaRelatorio) => `
-    <tr><td>${escaparHtml(dataBr(l.data))}</td><td>${escaparHtml(l.tipo)}</td>${todos ? `<td>${escaparHtml(l.responsavel ?? SEM_TECNICO)}</td>` : ""}<td>${l.cliente ? escaparHtml(l.cliente) : "<em>Não informado</em>"}</td><td class="valor">${moeda(l.valor)}</td></tr>${l.descricao ? `<tr class="desc"><td colspan="${todos ? 5 : 4}">${escaparHtml(l.descricao)}</td></tr>` : ""}`;
+    <tr><td>${escaparHtml(dataBr(l.data))}</td><td>${escaparHtml(l.tipo)}</td>${todos ? `<td>${escaparHtml(l.responsavel?.trim() || SEM_TECNICO)}</td>` : ""}<td>${l.cliente ? escaparHtml(l.cliente) : "<em>Não informado</em>"}</td><td class="valor">${moeda(l.valor)}</td></tr>${l.descricao ? `<tr class="desc"><td colspan="${todos ? 5 : 4}">${escaparHtml(l.descricao)}</td></tr>` : ""}`;
   // Cliente e tipo longos quebram em mais de uma linha: a altura estimada acompanha a coluna que mais quebra.
   const alturaLinha = (l: LinhaRelatorio) => {
-    const linhasPrincipais = Math.max(1, Math.ceil((l.cliente ?? "Não informado").length / 30), Math.ceil(l.tipo.length / 22), todos ? Math.ceil((l.responsavel ?? SEM_TECNICO).length / 22) : 1);
+    const linhasPrincipais = Math.max(1, Math.ceil((l.cliente ?? "Não informado").length / 30), Math.ceil(l.tipo.length / 22), todos ? Math.ceil((l.responsavel?.trim() || SEM_TECNICO).length / 22) : 1);
     return H.linha + H.linhaDescricao * (linhasPrincipais - 1) + (l.descricao ? H.linhaDescricao * linhasDeTexto(l.descricao, 80) : 0);
   };
 
