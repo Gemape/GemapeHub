@@ -3,7 +3,7 @@
 // informado passa por escaparHtml. Fase 1: lê os lançamentos do navegador (modo demonstração).
 import { escaparHtml } from "./gemape.ts";
 import type { RespostaRegistrada } from "./respostas-despesas.ts";
-import { dadosDoLancamento, formatarMoeda } from "./viagens.ts";
+import { dadosDoLancamento, formatarMoeda, SEM_CLIENTE_VINCULADO } from "./viagens.ts";
 
 export type FiltroRelatorio = { empregado: string | null; de: string; ate: string };
 export type ComprovantesPorPagina = 1 | 2 | 4;
@@ -44,7 +44,7 @@ export function linhasDasDespesas(lista: readonly RespostaRegistrada[], ids: rea
 
 // Clientes visitados no período, sem repetir e em ordem alfabética.
 export const clientesVisitados = (linhas: readonly LinhaRelatorio[]): string[] =>
-  [...new Set(linhas.map((l) => l.cliente).filter((c): c is string => !!c))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  [...new Set(linhas.map((l) => l.cliente).filter((c): c is string => !!c && c !== SEM_CLIENTE_VINCULADO))].sort((a, b) => a.localeCompare(b, "pt-BR"));
 
 export type TotalPorTipo = { tipo: string; quantidade: number; total: number };
 export function totaisPorTipo(linhas: readonly LinhaRelatorio[]): TotalPorTipo[] {

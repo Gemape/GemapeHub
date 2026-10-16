@@ -171,3 +171,11 @@ test("dec 235: lançamento sem técnico responsável fica em 'Sem técnico respo
   assert.match(html, /&lt;b&gt;Z/);
   assert.doesNotMatch(html, /<b>Z/);
 });
+
+test("dec 236: opção Sem cliente vinculado no campo Clientes; sai na linha, mas não em Clientes visitados", () => {
+  const linhas = linhasDoRelatorio([lanc({ cliente: "Sem cliente vinculado" }), lanc({ cliente: "Alfa SA" })], FILTRO);
+  assert.deepEqual(clientesVisitados(linhas), ["Alfa SA"]);
+  assert.match(montarRelatorioViagensHtml(base(linhas)), /<td>Sem cliente vinculado<\/td>/);
+  const f = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(f, /\[SEM_CLIENTE_VINCULADO, \.\.\.listarClientes\(\)/);
+});

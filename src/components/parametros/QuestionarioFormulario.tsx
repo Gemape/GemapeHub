@@ -30,6 +30,7 @@ import {
 } from "@/lib/questionario-despesas";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
+import { SEM_CLIENTE_VINCULADO } from "@/lib/viagens";
 import { aplicarFormato, chaveAbastecimento, chaveJustificativaPedida, chaveManutencao, chaveOutro, marcouOutro, perguntasVisiveis, trazerAbastecimento, trazerManutencao, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   atualizarResposta, despesaEmRelatorio, listarRespostas, registrarResposta, removerResposta, respostasParaEdicao, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
@@ -550,7 +551,7 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
   const [novoCliente, setNovoCliente] = useState(false);
   const [codigoNovo, setCodigoNovo] = useState("");
 
-  const opcoes = p.fonte === "clientes" ? listarClientes().map((c) => `${c.codigo} - ${c.nome}`) : p.fonte === "municipios" ? filtrarMunicipios(municipios, busca) : p.opcoes;
+  const opcoes = p.fonte === "clientes" ? [SEM_CLIENTE_VINCULADO, ...listarClientes().map((c) => `${c.codigo} - ${c.nome}`)] : p.fonte === "municipios" ? filtrarMunicipios(municipios, busca) : p.opcoes;
   // O valor escolhido sempre aparece, mesmo além das 200 primeiras opções (cliente recém-cadastrado, por exemplo).
   const mostradas = opcoes.slice(0, 200);
   if (atual && opcoes.includes(atual) && !mostradas.includes(atual)) mostradas.push(atual);
@@ -570,7 +571,7 @@ function ListaSuspensa({ pergunta: p, respostas, onMudar }: { pergunta: Pergunta
       {p.fonte === "clientes" && (
         <>
           <p className="text-xs text-muted-foreground">
-            {opcoes.length === 0 ? "Nenhum cliente cadastrado em Parâmetros > Clientes. " : canWrite ? "Cliente não está na lista? " : ""}
+            {opcoes.length <= 1 ? "Nenhum cliente cadastrado em Parâmetros > Clientes. " : canWrite ? "Cliente não está na lista? " : ""}
             {canWrite && <button type="button" className="font-medium text-primary underline" onClick={() => { setCodigoNovo(proximoCodigoCliente()); setNovoCliente(true); }}>Cadastrar cliente</button>}
           </p>
           <ClienteDialog
