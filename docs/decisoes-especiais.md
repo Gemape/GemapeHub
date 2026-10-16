@@ -1336,6 +1336,13 @@ Pedido do responsável em 16/10 (17:49), com a imagem da mensagem "Produtos com 
 - Autorizar tamanho (ou unidade) a uma subcategoria passa a gravar direto, sem a janela de confirmação. Era a única tela de Parâmetros com esse aviso.
 - O saldo dos produtos que já existiam continua em "Sem tamanho", como antes: só a pergunta saiu. O aviso de desautorizar (produtos que dependem do tamanho ou da unidade) não muda. Sem Supabase.
 
+### Decisão 238: Empresa em cada linha do Estoque dos módulos
+
+Pedido do responsável em 16/10 (18:01), com a imagem do Estoque de EPI: "no módulo estoque EPI está repetindo e gravando os mesmos códigos, novamente cada código é único e deve ser gerenciado única e exclusivamente separado". Escolha dele no card: "Coluna Empresa".
+
+- O código continua único no catálogo. Com "Todas as empresas", o Estoque mostrava uma linha por empresa (cada empresa tem o seu registro de saldo e mínimo do mesmo código, decisão 35) sem dizer qual era a empresa, e o código parecia repetido.
+- O Estoque de EPI, Uniformes e Ferramentas ganha a coluna Empresa em cada linha, o Exportar CSV traz a empresa, e a janela Configurar mostra a empresa no título. O saldo, o mínimo e o alerta seguem separados por empresa. Sem Supabase.
+
 ### Decisão 239: Entrega EPI no módulo EPI (registro de entrega e devolução)
 
 Pedido do responsável em 16/10 (17:37), com plano aprovado por ele ("ok") e a escolha "Tela nova" no card.
