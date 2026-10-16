@@ -17,12 +17,12 @@ import { useEmpregados } from "@/lib/hooks-gemape";
 import { juntarImagens, mensagemDeLimite, reduzirImagem, type ImagemReduzida } from "@/lib/imagem-economica";
 import { filtrarMunicipios, municipiosDaUf } from "@/lib/municipios";
 import {
-  ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
+  ID_JUSTIFICATIVA, ID_TIPO_DESPESA, MAX_ARQUIVOS, dadosIlegiveis, habilitadosAtivos, habilitadosDaPergunta, lerEstado, questionarioDoTipo, siglaDaUf, tiposDeDespesa, type Habilitado, type Pergunta,
   tituloDoQuestionario,
 } from "@/lib/questionario-despesas";
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
-import { aplicarFormato, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
+import { aplicarFormato, chaveJustificativaPedida, chaveOutro, marcouOutro, perguntasVisiveis, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   atualizarResposta, despesaEmRelatorio, listarRespostas, registrarResposta, removerResposta, respostasParaEdicao, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
 } from "@/lib/respostas-despesas";
@@ -107,12 +107,21 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
     setErros((x) => { const { [id]: _tira, ...resto } = x; return resto; });
   };
 
+  // Dec 221: sem o documento anexado, o campo de justificativa abre e permite encerrar com ela.
+  function abrirJustificativa(achados: Record<string, string>, lista: Pergunta[]) {
+    const faltaDocumento = lista.some((p) => p.tipo === "upload" && achados[p.id]);
+    if (!faltaDocumento || !questionarioDoTipo(estado, tipo).includes(ID_JUSTIFICATIVA) || respostas[chaveJustificativaPedida] === "1") return;
+    setRespostas((r) => ({ ...r, [chaveJustificativaPedida]: "1" }));
+    toast.info("Anexe o documento ou justifique a ausência dele para encerrar.");
+  }
+
   function irParaPagina(i: number) {
     setPaginaPedida(i);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function avancar() {
     const achados = validarRespostas(perguntasDaPagina, respostas);
+    abrirJustificativa(achados, perguntasDaPagina);
     setErros((x) => ({ ...x, ...achados }));
     if (Object.keys(achados).length > 0) {
       const primeiro = perguntasDaPagina.find((p) => achados[p.id]);
@@ -127,6 +136,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
     if (enviando.current || ilegivel || acaoRequerida) return;
     if (!ultimaPagina) { avancar(); return; }
     const achados = validarRespostas(visiveis, respostas);
+    abrirJustificativa(achados, visiveis);
     setErros(achados);
     const primeiro = visiveis.find((p) => achados[p.id]);
     if (primeiro) {

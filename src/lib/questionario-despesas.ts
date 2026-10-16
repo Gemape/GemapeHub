@@ -85,6 +85,8 @@ export type Estado = {
   classificacaoAjustada?: true;
   // Dec 219: a classificação também vale para Hospedagem, Pedágio, Estacionamento e Compra de peças para cliente (ajuste único dos dados salvos).
   classificacaoTiposAjustada?: true;
+  // Dec 221: nova ordem das perguntas (Técnico responsável primeiro) e justificativa da ausência do documento nos cinco tipos com comprovante (ajuste único).
+  ordemViagensAjustada?: true;
 };
 
 // Litros abastecidos só faz sentido no Abastecimento: os outros tipos de despesa não o trazem.
@@ -103,6 +105,12 @@ export const OPCAO_AVULSO = "Avulso – técnico não monitorado";
 export const OPCAO_NAO_CONFORMIDADE = "Não conformidade – técnico monitorado não preencheu";
 export const TIPOS_COM_CLASSIFICACAO = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"];
 const TIPOS_CLASSIFICACAO_DEC219 = ["Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"];
+export const ID_JUSTIFICATIVA = "q-16";
+// Dec 221: Alimentação, Hospedagem, Pedágio, Estacionamento e Compra de peças para cliente seguem a mesma ordem de perguntas.
+export const TIPOS_ORDEM_VIAGENS = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"];
+export const TIPO_COM_DETALHAMENTO = "Compra de peças para cliente";
+const TITULO_TECNICO_RESPONSAVEL = "Técnico responsável";
+const TITULO_TECNICO_NAO_LANCOU = "Técnico que não lançou a despesa";
 export const ID_UF = "q-05";
 // Perguntas travadas (dec 207): Unidade da Federação, Município, Data, Valor, Foto do comprovante e Detalhamento não precisam de edição na montagem.
 export const IDS_TRAVADAS: readonly string[] = [ID_UF, "q-06", "q-08", "q-09", "q-11", "q-12"];
@@ -143,10 +151,10 @@ export function perguntasPadrao(): Pergunta[] {
       sistema: true,
       opcoes: ["Alimentação", "Hospedagem", "Abastecimento", "Pedágio", "Estacionamento", "Manutenção do veículo de trabalho", "Compra de peças para cliente", "Outro"],
     }),
-    base(4, "caixas", "Habilitados ao questionário de viagem", {
+    base(4, "caixas", TITULO_TECNICO_RESPONSAVEL, {
       habilitados: [hab("Roberto", "Oficina"), hab("Wellington", "Oficina"), hab("Bionor", "Oficina"), hab("Levindo", "Oficina"), hab("Wagner", "Oficina"), hab("Eduardo", "PCM"), hab("Bruno", "PCM")],
     }),
-    base(14, "caixas", "Técnico responsável pela despesa", { sistema: true, habilitados: [] }),
+    base(14, "caixas", TITULO_TECNICO_NAO_LANCOU, { sistema: true, habilitados: [] }),
     base(5, "lista", "Unidade da Federação", { opcoes: [...UFS] }),
     base(6, "lista", "Município", { fonte: "municipios", dependeDe: ID_UF }),
     base(7, "lista", "Clientes", { fonte: "clientes" }),
@@ -157,6 +165,7 @@ export function perguntasPadrao(): Pergunta[] {
     base(12, "upload", "Foto do comprovante"),
     base(13, "lista", "PCM responde", { opcoes: [OPCAO_AVULSO, OPCAO_NAO_CONFORMIDADE] }),
     base(15, "curta", "Nome do empregado"),
+    base(16, "paragrafo", "Justifique a ausência do documento", { sistema: true }),
   ].map((p) => ({ ...p, codigo: CODIGO_ORDENADO[p.id] ?? p.codigo }));
 }
 
@@ -190,16 +199,30 @@ const regrasDaClassificacao = (): Record<string, Regra> => ({
   [ID_NOME_EMPREGADO]: { origem: ID_PCM_RESPONDE, operador: "igual", valor: OPCAO_AVULSO },
 });
 
+// Dec 221: ordem das perguntas dos cinco tipos com comprovante. Pergunta criada pelo responsável fica depois do valor, antes do documento.
+// O detalhamento só existe em Compra de peças para cliente; a justificativa só aparece quando o documento não é anexado (questionario-respostas).
+const ORDEM_VIAGENS_ANTES = [ID_HABILITADOS, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, ID_NOME_EMPREGADO, "q-08", ID_UF, "q-06", "q-07", "q-01", "q-02", "q-11"];
+export function comOrdemViagens(tipo: string, ids: string[]): string[] {
+  const fim = ["q-12", ID_JUSTIFICATIVA];
+  const conhecidos = new Set([...ORDEM_VIAGENS_ANTES, "q-09", ID_LITROS, ...fim]);
+  const detalhamento = tipo === TIPO_COM_DETALHAMENTO ? ["q-09"] : [];
+  const proprias = ids.filter((id) => id !== ID_TIPO_DESPESA && !conhecidos.has(id));
+  const montada = [...ORDEM_VIAGENS_ANTES, ...detalhamento, ...proprias, ...fim];
+  // Só entra o que o questionário já tinha ou o que a nova ordem acrescenta (a justificativa).
+  return montada.filter((id) => id === ID_JUSTIFICATIVA || ids.includes(id) || (id === "q-09" && detalhamento.length > 0));
+}
+
 export function estadoPadrao(): Estado {
   const perguntas = perguntasPadrao();
   const resto = perguntas.filter((p) => p.id !== ID_TIPO_DESPESA).map((p) => p.id);
   const tipo = perguntas.find((p) => p.id === ID_TIPO_DESPESA);
   const questionarios = Object.fromEntries((tipo?.opcoes ?? []).map((o) => {
-    const ids = resto.filter((id) => (id !== ID_LITROS || o === TIPO_ABASTECIMENTO) && id !== ID_NOME_EMPREGADO);
+    const ids = resto.filter((id) => (id !== ID_LITROS || o === TIPO_ABASTECIMENTO) && id !== ID_NOME_EMPREGADO && id !== ID_JUSTIFICATIVA);
+    if (TIPOS_ORDEM_VIAGENS.includes(o)) return [o, comOrdemViagens(o, comClassificacao(ids))];
     return [o, TIPOS_COM_CLASSIFICACAO.includes(o) ? comClassificacao(ids) : ids];
   }));
   const regras = comRegraDoCartao(questionarios, Object.fromEntries(TIPOS_COM_CLASSIFICACAO.filter((t) => t in questionarios).map((t) => [t, regrasDaClassificacao()])));
-  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true };
+  return { versao: 1, perguntas, questionarios, regras, litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true };
 }
 
 export const tiposDeDespesa = (e: Estado): string[] => e.perguntas.find((p) => p.id === ID_TIPO_DESPESA)?.opcoes ?? [];
@@ -343,9 +366,27 @@ export function lerEstado(storage: StorageLike = localStorage): Estado {
         regras = { ...regras, [tipo]: { ...(regras[tipo] ?? {}), ...regrasDaClassificacao() } };
       }
     }
+    // Dado salvo antes da dec 221: a pergunta de justificativa entra no banco, as perguntas dos cinco tipos seguem a nova ordem e os dois títulos mudam (uma vez só).
+    if (lido.ordemViagensAjustada !== true) {
+      if (!perguntas.some((p) => p.id === ID_JUSTIFICATIVA)) {
+        const nova = perguntasPadrao().find((p) => p.id === ID_JUSTIFICATIVA);
+        if (nova) perguntas = [...perguntas, { ...nova, codigo: perguntas.some((p) => p.codigo === nova.codigo) ? formatarCodigo(Math.max(...perguntas.map((p) => Number(p.codigo) || 0)) + 1) : nova.codigo }];
+      }
+      perguntas = perguntas.map((p) => {
+        if (p.id === ID_HABILITADOS && p.titulo === "Habilitados ao questionário de viagem") return { ...p, titulo: TITULO_TECNICO_RESPONSAVEL };
+        if (p.id === ID_TECNICO_RESPONSAVEL && p.titulo === "Técnico responsável pela despesa") return { ...p, titulo: TITULO_TECNICO_NAO_LANCOU };
+        return p;
+      });
+      const existentes = new Set(perguntas.map((p) => p.id));
+      for (const tipo of TIPOS_ORDEM_VIAGENS) {
+        const ids = questionarios[tipo];
+        if (!Array.isArray(ids)) continue;
+        questionarios = { ...questionarios, [tipo]: comOrdemViagens(tipo, ids).filter((id) => existentes.has(id)) };
+      }
+    }
     const destinos = destinosLidos(lido.destinos);
     const secoes = secoesLidas(lido.secoes);
-    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true };
+    return { versao: 1, perguntas, questionarios, regras, ...(destinos ? { destinos } : {}), ...(secoes ? { secoes } : {}), litrosAjustado: true, tecnicoAjustado: true, cartaoAjustado: true, codigosOrdenados: true, classificacaoAjustada: true, classificacaoTiposAjustada: true, ordemViagensAjustada: true };
   } catch {
     return estadoPadrao();
   }

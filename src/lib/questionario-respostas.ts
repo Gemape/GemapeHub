@@ -2,7 +2,7 @@
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
 import { inicioDaProximaSecao } from "./questionario-secoes.ts";
 import { DESTINO_PROXIMA_SECAO, aceitaDestino, destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
-import { ID_HABILITADOS, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_CLASSIFICACAO, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
+import { ID_HABILITADOS, ID_JUSTIFICATIVA, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_CLASSIFICACAO, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
 export type Resposta = string | string[];
@@ -65,6 +65,16 @@ export const lancadoPorGestor = (respostas: Respostas): boolean => {
   return area === "PCM" || area === "Administrativo";
 };
 
+// Dec 221: a justificativa da ausência do documento só abre depois de uma tentativa de encerrar sem anexo (marca `pedida`) e some se o anexo entrar.
+export const chaveJustificativaPedida = `${ID_JUSTIFICATIVA}:pedida`;
+const semArquivos = (r: Resposta | undefined): boolean => !Array.isArray(r) || r.length === 0;
+export function justificativaAberta(e: Estado, tipo: string, respostas: Respostas): boolean {
+  if (respostas[chaveJustificativaPedida] !== "1") return false;
+  const ids = questionarioDoTipo(e, tipo);
+  if (!ids.includes(ID_JUSTIFICATIVA)) return false;
+  return e.perguntas.filter((p) => p.tipo === "upload" && ids.includes(p.id)).every((p) => semArquivos(respostas[p.id]));
+}
+
 export function visivel(e: Estado, tipo: string, id: string, respostas: Respostas): boolean {
   const regra = e.regras[tipo]?.[id];
   if (!regra) return true;
@@ -93,6 +103,7 @@ export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas)
     // Pergunta que depende de outra (município x UF) só aparece com a de origem visível.
     if (p.dependeDe && !mostradas.has(p.dependeDe)) continue;
     if (id === ID_TECNICO_RESPONSAVEL && !lancadoPorGestor(respostas)) continue;
+    if (id === ID_JUSTIFICATIVA && !justificativaAberta(e, tipo, respostas)) continue;
     // Dec 218: nos tipos com classificação, "PCM responde" é só de quem lança pelo PCM ou Administrativo.
     if (id === ID_PCM_RESPONDE && TIPOS_COM_CLASSIFICACAO.includes(tipo) && !lancadoPorGestor(respostas)) continue;
     if (!visivel(e, tipo, id, respostas)) continue;
@@ -125,9 +136,13 @@ const vazio = (r: Resposta | undefined) => r === undefined || (Array.isArray(r) 
 // Erros por pergunta visível; vazio quando o questionário pode ser enviado.
 export function validarRespostas(visiveis: Pergunta[], respostas: Respostas): Record<string, string> {
   const erros: Record<string, string> = {};
+  // Com o campo de justificativa aberto, a falta do documento não impede encerrar se ele for preenchido (dec 221).
+  // Com o campo aberto, o erro vai para ele (obrigatório) e não para o documento.
+  const justificada = visiveis.some((p) => p.id === ID_JUSTIFICATIVA);
   for (const p of visiveis) {
     const r = respostas[p.id];
     if (vazio(r)) {
+      if (p.tipo === "upload" && justificada) continue;
       if (p.obrigatoria) erros[p.id] = p.tipo === "upload" ? "Anexe ao menos uma imagem." : "Resposta obrigatória.";
       continue;
     }

@@ -175,12 +175,12 @@ test("revisão dec 183: seção que começa logo depois da pergunta de tipos nã
   const { estadoPadrao: padrao } = await import("../src/lib/questionario-despesas.ts");
   const { gravarSecao, paginasDoPreenchimento } = await import("../src/lib/questionario-secoes.ts");
   const { perguntasVisiveis } = await import("../src/lib/questionario-respostas.ts");
-  const e = gravarSecao(padrao(), "Pedágio", "q-01", { titulo: "Pagamento", subtitulo: "" }, memoria());
+  const e = gravarSecao(padrao(), "Pedágio", "q-04", { titulo: "Pagamento", subtitulo: "" }, memoria());
   const visiveis = perguntasVisiveis(e, "Pedágio", { "q-03": ["Pedágio"] });
   assert.equal(paginasDoPreenchimento(e, "Pedágio", visiveis)[0].perguntas.length, 1);
   const semTipo = paginasDoPreenchimento(e, "Pedágio", visiveis.filter((p) => p.id !== "q-03"));
   assert.ok(semTipo.every((pg) => pg.perguntas.length > 0));
-  assert.equal(semTipo[0].perguntas[0].id, "q-01");
+  assert.equal(semTipo[0].perguntas[0].id, "q-04");
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /paginasDoPreenchimento\(estado, tipo, visiveis\.filter/);
 });
