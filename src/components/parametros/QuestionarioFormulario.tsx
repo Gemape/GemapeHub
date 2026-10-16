@@ -502,11 +502,18 @@ function Campo({
         }}
       />
       {erroImagem && <p role="alert" className="text-sm text-destructive">{erroImagem}</p>}
-      <ul className="space-y-1 text-xs text-muted-foreground">
+      <ul className="flex flex-wrap gap-3">
         {imagens.map((i, n) => (
-          <li key={`${n}-${i.nome}`} className="flex items-center justify-between gap-2 break-words">
-            <span>{i.nome}: {kb(i.bytesAntes)} para {kb(i.bytesDepois)}</span>
-            <button type="button" className="shrink-0 text-primary underline" aria-label={`Remover ${i.nome}`} onClick={() => { setErroImagem(""); aplicar(imagens.filter((_, k) => k !== n)); }}>Remover</button>
+          <li key={`${n}-${i.nome}`} className="relative w-24">
+            <img src={i.dataUrl} alt={i.nome} title={`${i.nome}: ${kb(i.bytesAntes)} para ${kb(i.bytesDepois)}`} className="size-24 rounded-md border object-cover" />
+            <button
+              type="button"
+              aria-label={`Remover ${i.nome}`}
+              className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-xs text-white"
+              onClick={() => { setErroImagem(""); aplicar(imagens.filter((_, k) => k !== n)); }}
+            >
+              ×
+            </button>
           </li>
         ))}
       </ul>
