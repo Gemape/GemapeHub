@@ -485,3 +485,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-16 dec 228: adicionarCodigoComCategoria (parametros-base.ts) cria categoria + sigla + numeração numa gravação só; Código do produto > Novo código com campo Categoria digitável (datalist); Clonar/Editar seguem com select.
 - 2026-10-16 dec 229: removido o botão Clonar de Parâmetros > Gerais > Código do produto (codigo-produto.tsx: sem onClonar e sem função clonar); Editar e Excluir ficam.
 - 2026-10-16 dec 230: FornecedorDialog.tsx extraído de cadastros/fornecedores.tsx; codigo-fabrica.tsx ganha link Cadastrar fornecedor (janela) que volta com o fornecedor escolhido; testes de fornecedores leem o novo componente.
+- 2026-10-16 dec 231: Clonar de codigo-fabrica.tsx clona o produto (lib clonar-produto-gemape.ts: codigoDaCopia e montarCopiaDoProduto), cria a associação primeiro e desfaz se o insert falhar; produto do catálogo (catalogo_id) é recusado com aviso.
