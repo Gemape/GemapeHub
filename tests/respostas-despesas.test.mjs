@@ -278,7 +278,7 @@ test("dec 221: os cinco tipos seguem Técnico responsável, data, UF, município
   for (const tipo of TIPOS_ORDEM_VIAGENS) {
     const ids = e.questionarios[tipo];
     const sem = ids.filter((id) => !["q-13", "q-14", "q-15", "q-02"].includes(id));
-    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Abastecimento" ? ["q-10"] : []), ...(["Compra de peças para cliente", "Manutenção do veículo de trabalho", "Outro"].includes(tipo) ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
+    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-07", "q-01", "q-11", ...(tipo === "Abastecimento" ? ["q-10"] : []), ...(["Compra de peças para cliente", "Manutenção do veículo de trabalho", "Outro"].includes(tipo) ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
     assert.deepEqual(sem, esperado, tipo);
   }
   assert.equal(e.perguntas.find((p) => p.id === "q-04").titulo, "Técnico responsável");
@@ -301,23 +301,25 @@ test("dec 221: sem documento a justificativa abre; com ela escrita encerra, e o 
   assert.ok(!ids({ ...pedida, "q-12": ["a.png"] }).includes(ID_JUSTIFICATIVA));
 });
 
-// Dec 222: Clientes fora de todos os questionários.
-test("dec 222: Clientes sai de todos os questionários; dado salvo migra uma vez só", () => {
+// Dec 233 (desfaz a dec 222): Clientes em todos os questionários, depois do Município.
+test("dec 233: Clientes entra em todos os questionários, depois do Município; dado salvo migra uma vez só", () => {
   const e = estadoNovo();
-  for (const ids of Object.values(e.questionarios)) assert.ok(!ids.includes("q-07"));
-  assert.ok(e.perguntas.some((p) => p.id === "q-07"));
+  for (const ids of Object.values(e.questionarios)) {
+    assert.ok(ids.includes("q-07"));
+    assert.equal(ids.indexOf("q-07"), ids.indexOf("q-06") + 1);
+  }
+  assert.equal(e.clientesEmTodos, true);
   const salvo = JSON.parse(JSON.stringify(e));
-  delete salvo.clientesRetiradosDeTodos;
-  salvo.clientesRetirados = true; // marca da primeira versão da dec 222 (só quatro tipos): não impede a retirada nos demais
-  for (const tipo of ["Alimentação", "Compra de peças para cliente", "Outro"]) salvo.questionarios[tipo] = [...salvo.questionarios[tipo], "q-07"];
+  delete salvo.clientesEmTodos;
+  for (const tipo of Object.keys(salvo.questionarios)) salvo.questionarios[tipo] = salvo.questionarios[tipo].filter((id) => id !== "q-07");
   const s = memoria();
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify(salvo));
   const lido = lerEstado(s);
-  for (const ids of Object.values(lido.questionarios)) assert.ok(!ids.includes("q-07"));
-  assert.equal(lido.clientesRetiradosDeTodos, true);
-  // Depois do ajuste, voltar Clientes ao questionário não é desfeito.
-  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...lido, questionarios: { ...lido.questionarios, "Pedágio": [...lido.questionarios["Pedágio"], "q-07"] } }));
-  assert.ok(lerEstado(s).questionarios["Pedágio"].includes("q-07"));
+  for (const ids of Object.values(lido.questionarios)) assert.equal(ids.indexOf("q-07"), ids.indexOf("q-06") + 1);
+  assert.equal(lido.clientesEmTodos, true);
+  // Depois do ajuste, tirar Clientes de um questionário não é desfeito.
+  s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...lido, questionarios: { ...lido.questionarios, "Pedágio": lido.questionarios["Pedágio"].filter((id) => id !== "q-07") } }));
+  assert.ok(!lerEstado(s).questionarios["Pedágio"].includes("q-07"));
 });
 
 test("dec 221: com seções, a falta do documento não trava a página do documento quando a justificativa está aberta", () => {
@@ -430,7 +432,7 @@ test("dec 226: manutenção ligada excluída impede gravar a despesa; sem víncu
 test("dec 226: a ordem da Manutenção é a de Alimentação mais o detalhamento, e o formulário liga à Nova manutenção", () => {
   const e = estadoNovo();
   const sem = e.questionarios["Manutenção do veículo de trabalho"].filter((id) => !["q-13", "q-14", "q-15", "q-02"].includes(id));
-  assert.deepEqual(sem, ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", "q-09", "q-12", ID_JUSTIFICATIVA]);
+  assert.deepEqual(sem, ["q-04", "q-08", "q-05", "q-06", "q-07", "q-01", "q-11", "q-09", "q-12", ID_JUSTIFICATIVA]);
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /tipo === TIPO_MANUTENCAO && id === ID_CARTOES && !vazia\(valor\) && !respostas\[chaveManutencao\]\) setManutencaoAberta\(true\)/);
   assert.match(form, /<NovaManutencaoDialog/);
@@ -444,7 +446,7 @@ test("dec 227: dado salvo sem a marca do Outro ganha a ordem de Alimentação e,
   const e = estadoNovo();
   const antigo = JSON.parse(JSON.stringify(e));
   delete antigo.outroAjustado;
-  antigo.questionarios["Outro"] = ["q-03", "q-01", "q-02", "q-04", "q-05", "q-06", "q-08", "q-11", "q-12"];
+  antigo.questionarios["Outro"] = ["q-03", "q-01", "q-02", "q-04", "q-05", "q-06", "q-07", "q-08", "q-11", "q-12"];
   delete antigo.regras["Outro"];
   const s = memoria();
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify(antigo));
