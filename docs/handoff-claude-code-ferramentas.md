@@ -481,3 +481,4 @@ Em 01/10/2026, o PR de `docs/link-visualizacao` foi preparado apenas para gerar 
 - 2026-10-16 dec 226: Manutenção do veículo de trabalho na ordem de Alimentação (TIPO_MANUTENCAO, TIPOS_COM_DETALHAMENTO, flag manutencaoAjustada); NovaManutencaoDialog.tsx extraído do módulo de Veículos; EscolherManutencaoDialog.tsx; chaveManutencao, respostasDaManutencao e sincronizarManutencao em questionario-respostas.ts; comAbastecimento em respostas-despesas.ts também puxa data e custo total da manutenção.
 - 2026-10-16 dec 227: Outro entra em TIPOS_COM_CLASSIFICACAO e TIPOS_ORDEM_VIAGENS (TIPO_OUTRO, flag outroAjustado em lerEstado).
 - 2026-10-16 dec 227 (complemento): Outro entra em TIPOS_COM_DETALHAMENTO (Detalhamento depois do valor).
+- 2026-10-16 revisão #289-#292: ajustes no PR fix/revisao-abastecimento-manutencao (reset da janela Novo abastecimento, trazer limpa campos antigos, vínculo solto ao trocar moeda, litros na sincronização, janelas só nos cards).

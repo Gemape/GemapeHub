@@ -455,3 +455,31 @@ test("dec 227: dado salvo sem a marca do Outro ganha a ordem de Alimentação e,
   s.setItem("gemape-demo-questionario-despesas", JSON.stringify({ ...JSON.parse(JSON.stringify(lido)), questionarios: { ...lido.questionarios, Outro: lido.questionarios["Outro"].filter((id) => id !== "q-15") } }));
   assert.ok(!lerEstado(s).questionarios["Outro"].includes("q-15"));
 });
+
+// Ajustes da revisão dos PRs #289 a #291.
+import { trazerAbastecimento, trazerManutencao } from "../src/lib/questionario-respostas.ts";
+
+test("revisão: trazer outro abastecimento ou outra manutenção tira o valor, os litros e o detalhamento que o novo não tem", () => {
+  const antes = { "q-08": "2026-10-01", "q-10": "10,00", "q-11": "63,00", "q-09": "Troca de óleo", "q-04": ["Roberto (Oficina)"] };
+  assert.deepEqual(trazerAbastecimento(antes, { id: "a2", data: "2026-10-02" }), { "q-08": "2026-10-02", "abastecimento:id": "a2", "q-09": "Troca de óleo", "q-04": ["Roberto (Oficina)"] });
+  assert.deepEqual(trazerManutencao(antes, { id: "m2", data: "2026-10-03" }, ""), { "q-08": "2026-10-03", "manutencao:id": "m2", "q-10": "10,00", "q-04": ["Roberto (Oficina)"] });
+  assert.equal(trazerManutencao(antes, { id: "m3", data: "2026-10-03", custoTotal: 5 }, "Freios")["q-11"], "5,00");
+});
+
+test("revisão: abastecimento sem litros apaga os litros antigos, e trocar a moeda solta o vínculo", () => {
+  const storage = memoria();
+  const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-13", hora: "09:00", km: "100", litros: "10", valor: "63,00" }, storage, agora);
+  assert.equal(sincronizarAbastecimento({ "q-10": "99,00", [chaveAbastecimento]: a.id }, [{ ...a, litros: 0 }])["q-10"], undefined);
+  // Moeda trocada para dinheiro: o cartão some, o vínculo não vale e a exclusão do abastecimento não trava a despesa.
+  removerAbastecimento(a.id, storage);
+  const r = registrarResposta(estadoNovo(), { ...doAbastecimento(), "q-01": ["Dinheiro"], [chaveAbastecimento]: a.id }, storage, agora);
+  assert.equal(r.valores[chaveAbastecimento], undefined);
+});
+
+test("revisão: a janela Novo abastecimento recomeça vazia a cada abertura e as janelas de Veículos só montam nos cards que as usam", () => {
+  const dialogo = readFileSync(new URL("../src/components/modules/NovoAbastecimentoDialog.tsx", import.meta.url), "utf8");
+  assert.match(dialogo, /useEffect\(\(\) => \{\s*if \(aberto\) \{ setVeiculoId\(""\); setKm\(""\); \}/);
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /\{tipo === TIPO_ABASTECIMENTO && \(\s*<>\s*<NovoAbastecimentoDialog/);
+  assert.match(form, /\{tipo === TIPO_MANUTENCAO && \(\s*<>\s*<NovaManutencaoDialog/);
+});

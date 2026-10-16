@@ -1,7 +1,7 @@
 // Respostas do Questionário de Despesas (dec 169). Fase 1: ficam só no navegador, em modo demonstração; a tabela de
 // respostas (JSONB, com `empresa_id`) entra na Fase 2. Cada resposta guarda o título das perguntas da época.
 import { horaBrasilia, hojeLocal } from "./empregados.ts";
-import { ID_JUSTIFICATIVA, ID_TIPO_DESPESA, TIPO_ABASTECIMENTO, TIPO_MANUTENCAO, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
+import { ID_CARTOES, ID_JUSTIFICATIVA, ID_TIPO_DESPESA, TIPO_ABASTECIMENTO, TIPO_MANUTENCAO, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
 import { listarRelatorios, relatorioPorDespesa } from "./relatorios-viagens.ts";
 import { questionarioPublicado } from "./questionario-destinos.ts";
 import { chaveAbastecimento, chaveJustificativaPedida, chaveManutencao, chaveOutro, perguntasVisiveis, sincronizarAbastecimento, sincronizarManutencao, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
@@ -79,8 +79,15 @@ function montarItens(e: Estado, respostas: Respostas, imagens: Record<string, Im
 
 // Dec 224: despesa de abastecimento ligada a um registro de Veículos puxa a data e o valor dele na hora de gravar.
 // Dec 226: o mesmo vale para a Manutenção do veículo de trabalho (data e custo total).
-const comAbastecimento = (respostas: Respostas, storage: StorageLike): Respostas => {
+// O vínculo só vale enquanto a pergunta do cartão está visível: trocar a moeda solta a ligação.
+const comAbastecimento = (e: Estado, respostas: Respostas, storage: StorageLike): Respostas => {
   const tipo = tipoEscolhido(respostas);
+  if (tipo === TIPO_ABASTECIMENTO || tipo === TIPO_MANUTENCAO) {
+    if (!perguntasVisiveis(e, tipo, respostas).some((p) => p.id === ID_CARTOES)) {
+      const { [chaveAbastecimento]: _a, [chaveManutencao]: _m, ...semVinculo } = respostas;
+      return semVinculo;
+    }
+  }
   if (tipo === TIPO_ABASTECIMENTO) return sincronizarAbastecimento(respostas, lerAbastecimentos(storage));
   if (tipo === TIPO_MANUTENCAO) return sincronizarManutencao(respostas, lerManutencoes(storage));
   return respostas;
@@ -88,7 +95,7 @@ const comAbastecimento = (respostas: Respostas, storage: StorageLike): Respostas
 
 // Valida tudo e grava a resposta de uma vez; se algo falha, nada é gravado. As mais novas ficam primeiro.
 export function registrarResposta(e: Estado, respostas: Respostas, storage: StorageLike = localStorage, agora = new Date(), imagens: Record<string, ImagemGuardada[]> = {}): RespostaRegistrada {
-  const { tipo, itens, valores } = montarItens(e, comAbastecimento(respostas, storage), imagens);
+  const { tipo, itens, valores } = montarItens(e, comAbastecimento(e, respostas, storage), imagens);
   conferirIntegridade(storage);
   const registro: RespostaRegistrada = {
     id: `r-${agora.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -113,7 +120,7 @@ export function atualizarResposta(
   const atual = lista.find((r) => r.id === id);
   if (!atual) throw new Error("Esta despesa não existe mais; recarregue a lista.");
   if (despesaEmRelatorio(id, storage)) throw new Error("Esta despesa já está num relatório de viagens (Finalizada) e não pode ser editada.");
-  const { tipo, itens, valores } = montarItens(e, comAbastecimento(respostas, storage), imagens);
+  const { tipo, itens, valores } = montarItens(e, comAbastecimento(e, respostas, storage), imagens);
   conferirIntegridade(storage);
   const registro: RespostaRegistrada = { id: atual.id, tipo, data: atual.data, hora: atual.hora, itens, valores };
   try {
