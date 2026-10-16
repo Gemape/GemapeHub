@@ -193,7 +193,7 @@ test("dec 218/219: Alimentação, Hospedagem, Pedágio, Estacionamento e Compra 
     assert.deepEqual(ali.slice(ali.indexOf("q-04"), ali.indexOf("q-04") + 4), ["q-04", "q-13", "q-14", "q-15"], tipo);
     assert.deepEqual(e.regras[tipo]["q-14"], { origem: "q-13", operador: "igual", valor: OPCAO_NAO_CONFORMIDADE }, tipo);
     assert.deepEqual(e.regras[tipo]["q-15"], { origem: "q-13", operador: "igual", valor: OPCAO_AVULSO }, tipo);
-    assert.ok(ali.includes("q-09") && ali.includes("q-11"), tipo);
+    assert.ok(ali.includes("q-11"), tipo);
   }
   for (const tipo of ["Abastecimento", "Manutenção do veículo de trabalho", "Outro"]) {
     assert.ok(!e.questionarios[tipo].includes("q-15"), tipo);
@@ -213,7 +213,7 @@ test("dec 218: só PCM ou Administrativo é classificado; Avulso abre o nome do 
   assert.ok(avulso.includes("q-15") && !avulso.includes("q-14"));
   const nc = ids({ ...pcm, "q-13": OPCAO_NAO_CONFORMIDADE });
   assert.ok(nc.includes("q-14") && !nc.includes("q-15"));
-  assert.deepEqual(nc.slice(0, 5), ["q-03", "q-01", "q-04", "q-13", "q-14"]);
+  assert.deepEqual(nc.slice(0, 5), ["q-03", "q-04", "q-13", "q-14", "q-08"]);
   // Depois da classificação seguem as demais perguntas.
   assert.ok(nc.indexOf("q-14") < nc.indexOf("q-05") && nc.includes("q-12"));
   // Dec 219: nos outros três tipos da lógica vale o mesmo; em Abastecimento o comportamento é o de antes: PCM responde aparece para todos.
@@ -248,7 +248,7 @@ test("dec 218: dado salvo antes ganha a classificação em Alimentação uma vez
   const lido = lerEstado(s);
   assert.ok(lido.perguntas.some((p) => p.id === "q-15"));
   const ali = lido.questionarios["Alimentação"];
-  assert.deepEqual(ali.slice(2, 7), ["q-04", "q-13", "q-14", "q-15", "q-05"]);
+  assert.deepEqual(ali.slice(0, 5), ["q-04", "q-13", "q-14", "q-15", "q-08"]);
   assert.equal(lido.regras["Alimentação"]["q-15"].valor, OPCAO_AVULSO);
   assert.equal(lido.classificacaoAjustada, true);
   // Dec 219: Pedágio (e Hospedagem, Estacionamento) ganha a classificação na mesma leitura.
@@ -269,4 +269,36 @@ test("hora e mês de hoje seguem Brasília, mesmo com o relógio do dispositivo 
   assert.equal(horaLocal(virada), "22:30");
   assert.deepEqual(periodoAtual(virada), { ano: 2026, mes: 10 });
   assert.equal(horaBrasilia(new Date("2026-10-15T03:05:00Z")), "00:05");
+});
+
+// Dec 221: nova ordem das perguntas e justificativa da ausência do documento.
+import { TIPOS_ORDEM_VIAGENS, ID_JUSTIFICATIVA } from "../src/lib/questionario-despesas.ts";
+import { chaveJustificativaPedida } from "../src/lib/questionario-respostas.ts";
+
+test("dec 221: os cinco tipos seguem Técnico responsável, data, UF, município, moeda, valor, (detalhamento só em compra de peças) e documento", () => {
+  const e = estadoDeFabrica();
+  for (const tipo of TIPOS_ORDEM_VIAGENS) {
+    const ids = e.questionarios[tipo];
+    const sem = ids.filter((id) => !["q-13", "q-14", "q-15", "q-07", "q-02"].includes(id));
+    const esperado = ["q-04", "q-08", "q-05", "q-06", "q-01", "q-11", ...(tipo === "Compra de peças para cliente" ? ["q-09"] : []), "q-12", ID_JUSTIFICATIVA];
+    assert.deepEqual(sem, esperado, tipo);
+  }
+  assert.equal(e.perguntas.find((p) => p.id === "q-04").titulo, "Técnico responsável");
+  assert.ok(!e.questionarios["Abastecimento"].includes(ID_JUSTIFICATIVA));
+});
+
+test("dec 221: sem documento a justificativa abre; com ela escrita encerra, e o anexo esconde a justificativa", () => {
+  const e = estadoDeFabrica();
+  const base = { ...completas, "q-03": ["Pedágio"], "q-04": ["Roberto (Oficina)"], "q-01": ["Dinheiro"], "q-12": [] };
+  delete base["q-02"]; delete base["q-09"];
+  const ids = (r) => perguntasVisiveis(e, "Pedágio", r).map((p) => p.id);
+  assert.ok(!ids(base).includes(ID_JUSTIFICATIVA));
+  assert.throws(() => registrarResposta(e, base, memoria(), agora), /Foto do comprovante/);
+  const pedida = { ...base, [chaveJustificativaPedida]: "1" };
+  assert.ok(ids(pedida).includes(ID_JUSTIFICATIVA));
+  assert.throws(() => registrarResposta(e, pedida, memoria(), agora), /Justifique/);
+  const r = registrarResposta(e, { ...pedida, [ID_JUSTIFICATIVA]: "Recibo não entregue" }, memoria(), agora);
+  assert.equal(r.itens.find((i) => i.perguntaId === ID_JUSTIFICATIVA).resposta, "Recibo não entregue");
+  assert.equal(respostasParaEdicao(e, r)[chaveJustificativaPedida], "1");
+  assert.ok(!ids({ ...pedida, "q-12": ["a.png"] }).includes(ID_JUSTIFICATIVA));
 });

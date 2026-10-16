@@ -1,10 +1,10 @@
 // Respostas do Questionário de Despesas (dec 169). Fase 1: ficam só no navegador, em modo demonstração; a tabela de
 // respostas (JSONB, com `empresa_id`) entra na Fase 2. Cada resposta guarda o título das perguntas da época.
 import { horaBrasilia, hojeLocal } from "./empregados.ts";
-import { ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
+import { ID_JUSTIFICATIVA, ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
 import { listarRelatorios, relatorioPorDespesa } from "./relatorios-viagens.ts";
 import { questionarioPublicado } from "./questionario-destinos.ts";
-import { chaveOutro, perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
+import { chaveJustificativaPedida, chaveOutro, perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-respostas-despesas";
@@ -114,7 +114,8 @@ export function atualizarResposta(
 
 // Respostas para reabrir a despesa no formulário. Registro novo traz `valores`; o antigo é refeito a partir do texto registrado.
 export function respostasParaEdicao(e: Estado, r: RespostaRegistrada): Respostas {
-  if (r.valores) return { ...r.valores };
+  // Despesa encerrada com justificativa reabre com a justificativa à mostra.
+  if (r.valores) return { ...r.valores, ...(r.valores[ID_JUSTIFICATIVA] !== undefined ? { [chaveJustificativaPedida]: "1" } : {}) };
   const respostas: Respostas = { [ID_TIPO_DESPESA]: [r.tipo] };
   for (const i of r.itens) {
     const p = e.perguntas.find((x) => x.id === i.perguntaId);

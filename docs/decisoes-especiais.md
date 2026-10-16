@@ -1217,3 +1217,12 @@ Resposta do dono (15/10, 20:16) à dúvida da decisão 218: "O Avulso será um e
 - O Avulso **não é técnico cadastrado**: continua **fora do índice de conformidade** e fora de "Resultados dos técnicos" no painel; o filtro de técnico da lista também traz os empregados Avulso lançados.
 - Não conformidade não muda (o responsável é o técnico que não lançou).
 - Substitui o ponto "só fica registrado" da decisão 218. Nada no Supabase; na Fase 2 o nome pode ligar ao cadastro de empregados (docs/pendencias-fase2.md).
+
+### Decisão 221: Nova ordem das perguntas do questionário de Viagens e justificativa sem documento
+
+Ordem do responsável em 16/10 (11:49), com o print da pergunta "Habilitados ao questionário de viagem": o nome passa a ser **Técnico responsável**, ela vai para o lugar da primeira pergunta e a ordem dos cards **Alimentação, Hospedagem, Pedágio e Estacionamento** (e **Compra de peças para cliente**, citada na ordem) passa a ser: Técnico responsável, Data da despesa, Unidade da Federação, Município (cidade), Moeda, Valor da despesa e Foto do comprovante (documento). **Detalhamento da despesa** só existe em Compra de peças para cliente, entre o valor e o documento.
+
+- A pergunta 04 ("quem lança") continua a mesma, só muda o nome; a pergunta 14 passou a se chamar **Técnico que não lançou a despesa**, para não repetir o nome.
+- **Sem documento:** se quem lança tentar encerrar sem anexar, abre o campo obrigatório **Justifique a ausência do documento** (pergunta 16, de sistema) e a despesa **pode ser encerrada com a justificativa**. Se o anexo entrar depois, a justificativa some e não é gravada. Despesa encerrada com justificativa reabre na edição com ela à mostra.
+- **Escolhas minhas onde o pedido não dizia** (a conferir no preview): a classificação PCM responde (dec 218/219) continua logo depois do Técnico responsável; **Clientes** fica depois do Município e **Cartões de crédito** depois de Moeda (só com Moeda = Cartão de crédito, dec 182); os números das perguntas (dec 209) não foram trocados.
+- Abastecimento, Manutenção e Outro não mudam. Dado salvo no navegador migra **uma vez só** (marca `ordemViagensAjustada`), refazendo a ordem desses cinco tipos; pergunta criada pelo responsável fica entre o valor e o documento. Sem Supabase.
