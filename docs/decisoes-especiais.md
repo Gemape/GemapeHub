@@ -1395,3 +1395,11 @@ Pedido do responsável em 16/10 (18:37), com a imagem do aviso "A entrega de 1 u
 - Causa: a mesma da baixa (decisão 241). A ferramenta cadastrada nasce com estoque zero e a quantidade fica guardada na caixa, mas a entrega era conferida contra o estoque do cadastro.
 - Com caixa escolhida, o Termo confere o que está guardado na caixa (quantidade na caixa menos o que está com empregados e o baixado), com o aviso "passa do que está guardado na caixa (n)". Entrega avulsa, sem caixa, continua conferida contra o estoque.
 - No modo demonstração, entrega, devolução e baixa de ferramenta ligadas a uma caixa não mexem mais no estoque do cadastro (a caixa controla a quantidade). No banco real o gatilho precisa fazer o mesmo (`docs/pendencias-fase2.md`).
+
+### Decisão 245: Município é uma única lista suspensa que busca ao digitar
+
+Pedido do responsável em 16/10 (19:02), com a imagem do campo Município em Viagens: "deixa somente a lista suspensa para selecionar os municípios e ao digitar ele irá buscar os municípios".
+
+- O campo "Buscar município" separado saiu. O Município passa a ser um só campo: ao clicar abre a lista dos municípios da UF respondida antes, e ao digitar a lista filtra (sem acento e sem diferenciar maiúscula). Não há mais o aviso "Mostrando 200 de 853".
+- A lista abre empurrando o que vem abaixo (`listaNoFluxo` do CampoBusca), porque o cartão seguinte cobria a lista flutuante.
+- Sem UF escolhida o campo fica desabilitado, como antes. Escolhido o município, aparece com o botão Trocar.
