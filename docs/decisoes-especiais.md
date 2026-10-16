@@ -1300,6 +1300,14 @@ Pedido do responsável em 16/10 (14:24 a 14:35, escolha "Clonar o produto"): ao 
 
 Pedido do responsável em 16/10 (14:42): "melhorar a responsividade do sistema para telas de celular e tablets"; escolha "Cartões" (14:47). **Conferido:** 26 telas em 390 px (celular) e 820 px (tablet); o menu já recolhe e o tablet já funcionava bem. **Antes:** no celular as colunas das listas ficavam espremidas e Editar e Excluir ficavam escondidos à direita; duas telas passavam da largura (Parâmetros > Veículos > Manutenção e Gerais > Tamanho e Medidas). **Agora:** (1) abaixo de 640 px cada linha de lista vira um **cartão** com rótulo e valor (o rótulo é o título da coluna) e os botões embaixo; de 640 px para cima a tabela é a mesma de sempre; (2) botões e campos ficam mais altos no celular (área de toque de 40 a 48 px); (3) nas janelas, Salvar e Cancelar ficam fixos no rodapé do celular, sem precisar rolar até o fim; (4) as duas telas que estouravam foram corrigidas. Vale para todas as listas do sistema, inclusive as de Parâmetros de Veículos e Ferramentas; uma tabela que deva continuar com rolagem lateral usa `semCartoes`. Nada no Supabase.
 
+### Decisão 233: Clientes volta a todos os questionários de Viagens
+
+Pedido do responsável em 16/10 (16:38), com o print do Relatório de Viagens saindo "Clientes não informados": "incluir o campo clientes em todos os cards de preenchimento, opção com link no cadastro de clientes, para que saia no relatório de viagens".
+
+- A pergunta **Clientes** volta a **todos** os questionários (Alimentação, Hospedagem, Abastecimento, Pedágio, Estacionamento, Manutenção do veículo de trabalho, Compra de peças para cliente e Outro), logo depois do Município. Ela continua opcional e usa o cadastro de Parâmetros > Clientes, com o link **Cadastrar cliente** abrindo a janela de cadastro (dec 170) e voltando com o cliente escolhido.
+- O cliente escolhido sai na coluna Cliente e em **Clientes visitados** do Relatório de Viagens (o relatório já lia essa resposta).
+- Desfaz a decisão 222. Dado salvo no navegador migra **uma vez só** (marca `clientesEmTodos`): Clientes entra onde faltava; quem tirar a pergunta de um questionário depois não é desfeito. Despesas já registradas continuam sem cliente. Sem Supabase.
+
 ### Decisão 234: Logomarca nova no Relatório de Viagens
 
 Pedido do responsável em 16/10 (16:40), com a imagem da logomarca GEMAPE 40 anos (colorida, fundo branco): "trocar a logo que sai impressa no relatório de viagens pela segunda imagem anexo".
