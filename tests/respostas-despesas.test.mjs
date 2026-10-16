@@ -342,8 +342,51 @@ test("dec 223: o abastecimento registrado preenche só a data e o valor da despe
 
 test("dec 223: escolher o cartão no card Abastecimento abre o Novo abastecimento do módulo de Veículos", () => {
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
-  assert.match(form, /tipo === TIPO_ABASTECIMENTO && id === ID_CARTOES && !vazia\(valor\)\) setAbastecimentoAberto\(true\)/);
+  assert.match(form, /tipo === TIPO_ABASTECIMENTO && id === ID_CARTOES && !vazia\(valor\) && !respostas\[chaveAbastecimento\]\) setAbastecimentoAberto\(true\)/);
   assert.match(form, /<NovoAbastecimentoDialog/);
   const modulo = readFileSync(new URL("../src/components/modules/AbastecimentoVeiculoModulo.tsx", import.meta.url), "utf8");
   assert.match(modulo, /<NovoAbastecimentoDialog/);
+});
+
+// Dec 224: a despesa fica ligada ao abastecimento de Veículos e puxa data e valor dele ao gravar.
+import { registrarAbastecimento, removerAbastecimento } from "../src/lib/registros-veiculo.ts";
+import { chaveAbastecimento, sincronizarAbastecimento } from "../src/lib/questionario-respostas.ts";
+
+const doAbastecimento = () => ({ ...completas, "q-03": ["Abastecimento"], "q-04": ["Roberto (Oficina)"], "q-15": "Fulano de Tal" });
+
+test("dec 224: o registro do abastecimento devolve o id para ligar a despesa", () => {
+  assert.deepEqual(respostasDoAbastecimento({ id: "a1", data: "2026-10-16", valor: 63 }), { "q-08": "2026-10-16", "q-11": "63,00", [chaveAbastecimento]: "a1" });
+});
+
+test("dec 224: ao gravar, a despesa puxa data e valor do abastecimento ligado e guarda o vínculo", () => {
+  const storage = memoria();
+  const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-13", hora: "09:00", km: "100", litros: "10", valor: "63,00" }, storage, agora);
+  // Respostas com data e valor diferentes do abastecimento: valem os do abastecimento.
+  const r = registrarResposta(estadoPadrao(), { ...doAbastecimento(), "q-08": "2026-10-01", "q-11": "1,00", [chaveAbastecimento]: a.id }, storage, agora);
+  assert.equal(r.valores[chaveAbastecimento], a.id);
+  assert.equal(r.valores["q-08"], "2026-10-13");
+  assert.equal(r.valores["q-11"], "63,00");
+  assert.equal(respostasParaEdicao(estadoPadrao(), r)[chaveAbastecimento], a.id);
+});
+
+test("dec 224: abastecimento ligado que foi excluído impede gravar a despesa e nada é salvo", () => {
+  const storage = memoria();
+  const a = registrarAbastecimento({ veiculoId: "v1", data: "2026-10-13", hora: "09:00", km: "100", litros: "10", valor: "63,00" }, storage, agora);
+  removerAbastecimento(a.id, storage);
+  assert.throws(() => registrarResposta(estadoPadrao(), { ...doAbastecimento(), [chaveAbastecimento]: a.id }, storage, agora), /foi excluído de Veículos/);
+  assert.equal(listarRespostas(storage).length, 0);
+});
+
+test("dec 224: sem vínculo, nada muda; o vínculo só vale no card Abastecimento", () => {
+  const r = { "q-08": "2026-10-01", "q-11": "1,00" };
+  assert.equal(sincronizarAbastecimento(r, []), r);
+  const storage = memoria();
+  const alimentacao = registrarResposta(estadoPadrao(), { ...completas, "q-03": ["Alimentação"], "q-15": "Fulano de Tal", [chaveAbastecimento]: "a-qualquer" }, storage, agora);
+  assert.equal(alimentacao.valores[chaveAbastecimento], undefined);
+});
+
+test("dec 224: o formulário oferece escolher um abastecimento já registrado", () => {
+  const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
+  assert.match(form, /<EscolherAbastecimentoDialog/);
+  assert.match(form, /Escolher abastecimento já registrado/);
 });

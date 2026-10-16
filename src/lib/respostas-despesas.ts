@@ -1,10 +1,11 @@
 // Respostas do Questionário de Despesas (dec 169). Fase 1: ficam só no navegador, em modo demonstração; a tabela de
 // respostas (JSONB, com `empresa_id`) entra na Fase 2. Cada resposta guarda o título das perguntas da época.
 import { horaBrasilia, hojeLocal } from "./empregados.ts";
-import { ID_JUSTIFICATIVA, ID_TIPO_DESPESA, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
+import { ID_JUSTIFICATIVA, ID_TIPO_DESPESA, TIPO_ABASTECIMENTO, tiposDeDespesa, type Estado } from "./questionario-despesas.ts";
 import { listarRelatorios, relatorioPorDespesa } from "./relatorios-viagens.ts";
 import { questionarioPublicado } from "./questionario-destinos.ts";
-import { chaveJustificativaPedida, chaveOutro, perguntasVisiveis, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
+import { chaveAbastecimento, chaveJustificativaPedida, chaveOutro, perguntasVisiveis, sincronizarAbastecimento, textoDaResposta, validarRespostas, type Respostas } from "./questionario-respostas.ts";
+import { lerAbastecimentos } from "./registros-veiculo.ts";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-respostas-despesas";
@@ -71,12 +72,17 @@ function montarItens(e: Estado, respostas: Respostas, imagens: Record<string, Im
     const outro = respostas[chaveOutro(p.id)];
     if (outro !== undefined) valores[chaveOutro(p.id)] = outro;
   }
+  if (tipo === TIPO_ABASTECIMENTO && typeof respostas[chaveAbastecimento] === "string") valores[chaveAbastecimento] = respostas[chaveAbastecimento];
   return { tipo, itens, valores };
 }
 
+// Dec 224: despesa de abastecimento ligada a um registro de Veículos puxa a data e o valor dele na hora de gravar.
+const comAbastecimento = (respostas: Respostas, storage: StorageLike): Respostas =>
+  tipoEscolhido(respostas) === TIPO_ABASTECIMENTO ? sincronizarAbastecimento(respostas, lerAbastecimentos(storage)) : respostas;
+
 // Valida tudo e grava a resposta de uma vez; se algo falha, nada é gravado. As mais novas ficam primeiro.
 export function registrarResposta(e: Estado, respostas: Respostas, storage: StorageLike = localStorage, agora = new Date(), imagens: Record<string, ImagemGuardada[]> = {}): RespostaRegistrada {
-  const { tipo, itens, valores } = montarItens(e, respostas, imagens);
+  const { tipo, itens, valores } = montarItens(e, comAbastecimento(respostas, storage), imagens);
   conferirIntegridade(storage);
   const registro: RespostaRegistrada = {
     id: `r-${agora.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -101,7 +107,7 @@ export function atualizarResposta(
   const atual = lista.find((r) => r.id === id);
   if (!atual) throw new Error("Esta despesa não existe mais; recarregue a lista.");
   if (despesaEmRelatorio(id, storage)) throw new Error("Esta despesa já está num relatório de viagens (Finalizada) e não pode ser editada.");
-  const { tipo, itens, valores } = montarItens(e, respostas, imagens);
+  const { tipo, itens, valores } = montarItens(e, comAbastecimento(respostas, storage), imagens);
   conferirIntegridade(storage);
   const registro: RespostaRegistrada = { id: atual.id, tipo, data: atual.data, hora: atual.hora, itens, valores };
   try {

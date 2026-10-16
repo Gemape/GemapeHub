@@ -66,10 +66,23 @@ export const lancadoPorGestor = (respostas: Respostas): boolean => {
 };
 
 // Dec 223: do abastecimento registrado em Veículos vêm só a data e o valor, que preenchem Data da despesa e Valor da despesa do card.
-export function respostasDoAbastecimento(abastecimento: { data: string; valor?: number | null | undefined }): Respostas {
+export function respostasDoAbastecimento(abastecimento: { id?: string; data: string; valor?: number | null | undefined }): Respostas {
   const patch: Respostas = { [ID_DATA_DESPESA]: abastecimento.data };
+  if (abastecimento.id) patch[chaveAbastecimento] = abastecimento.id;
   if (typeof abastecimento.valor === "number" && abastecimento.valor > 0) patch[ID_VALOR_DESPESA] = mascaraDecimal2(String(Math.round(abastecimento.valor * 100)));
   return patch;
+}
+
+// Dec 224: a despesa de abastecimento guarda o id do registro de Veículos e, ao encerrar, puxa data e valor dele (o que mudou lá vale aqui).
+export const chaveAbastecimento = "abastecimento:id";
+export function sincronizarAbastecimento(respostas: Respostas, lista: { id: string; data: string; valor?: number | null | undefined }[]): Respostas {
+  const id = respostas[chaveAbastecimento];
+  if (typeof id !== "string" || id === "") return respostas;
+  const a = lista.find((x) => x.id === id);
+  if (!a) throw new Error("O abastecimento ligado a esta despesa foi excluído de Veículos; escolha outro ou registre um novo.");
+  const novo = { ...respostas, ...respostasDoAbastecimento(a) };
+  if (!(typeof a.valor === "number" && a.valor > 0)) delete novo[ID_VALOR_DESPESA];
+  return novo;
 }
 
 // Dec 221: a justificativa da ausência do documento só abre depois de uma tentativa de encerrar sem anexo (marca `pedida`) e some se o anexo entrar.

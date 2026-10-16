@@ -1243,3 +1243,13 @@ Ordem do responsável em 16/10 (12:31): "No módulo Viagens no card Despesas Aba
 - **Cartão de crédito:** ao escolher o cartão na pergunta Cartões de crédito do card Abastecimento abre a janela **Novo abastecimento**, a mesma de Módulos > Veículos > Abastecimento (veículo, data, hora, km, litros e valor; mesmas conferências de km). Ao salvar, o abastecimento fica registrado em Veículos e **só a data e o valor** voltam para Data da despesa e Valor da despesa do card; litros e km não vêm. Cancelar a janela mantém o card como está; o botão "Registrar no Novo abastecimento" embaixo da pergunta do cartão abre a janela de novo.
 - **Escolhas minhas onde o pedido não dizia:** a janela abre ao escolher o cartão (e não ao escolher a moeda); a classificação e a justificativa valem também no Abastecimento para a ordem ficar igual à de Alimentação.
 - Dado salvo no navegador migra uma vez só (marca `abastecimentoAjustado`). Só modo demonstração, nada no Supabase; na Fase 2 o vínculo entre a despesa e o abastecimento registrado pode ser gravado (docs/pendencias-fase2.md).
+
+## Decisão 224 — Despesa de abastecimento ligada ao módulo Abastecimento (2026-10-16)
+
+Pedido do dono (12:51): "ao preencher uma despesa de abastecimento ela deve conversar com o módulo abastecimento; quando as informações de despesas de viagens forem informadas devem puxar os dados do módulo abastecimento". Complementa a decisão 223.
+
+- **Vínculo:** a despesa do card Abastecimento guarda o id do abastecimento de Módulos > Veículos > Abastecimento (`abastecimento:id` em `valores`). Ao enviar ou salvar a edição, **data e valor da despesa são puxados do abastecimento ligado** (vale o que está em Veículos). Se o abastecimento foi excluído, a despesa não grava e avisa para escolher outro ou registrar um novo.
+- **Sem duplicar:** além de "Registrar no Novo abastecimento", o card tem **"Escolher abastecimento já registrado"**: lista os abastecimentos da empresa (mais novos primeiro) e a escolha traz data e valor. O cartão só abre o Novo abastecimento sozinho quando ainda não há abastecimento ligado.
+- Sob a pergunta do cartão aparece um resumo do abastecimento ligado (data, hora, km, litros, valor).
+- **Escolha minha onde o pedido não dizia:** continuam vindo só data e valor (decisão 223); litros seguem como pergunta do card.
+- Só modo demonstração; nada no Supabase. Fase 2: coluna de ligação despesa x abastecimento com `empresa_id` (docs/pendencias-fase2.md).
