@@ -5,7 +5,7 @@ import {
   adicionarSubcategoria, renomearSubcategoria, removerSubcategoria, subcategoriasDa,
   adicionarOpcao, renomearOpcao, removerOpcao, moverOpcao, usoDaOpcao,
   autorizar, desautorizar, autorizados,
-  gerarCodigo, salvarRegraCodigo, removerRegraCodigo, adicionarRegraCodigo, regrasDaCategoria, regraDoCadastro,
+  gerarCodigo, salvarRegraCodigo, removerRegraCodigo, adicionarRegraCodigo, adicionarCodigoComCategoria, regrasDaCategoria, regraDoCadastro,
   salvarCodigoFabrica, removerCodigoFabrica, combinaBusca,
   enderecamentoDaCategoria, salvarEnderecamentoCategoria,
 } from '../src/lib/parametros-base.ts';
@@ -267,4 +267,30 @@ test('código do produto: editar uma regra pela sigla anterior e excluir só a e
   adicionarRegraCodigo(maq.id, 'MQ2', '1', s);
   removerCategoria(maq.id, s);
   assert.equal(regrasDaCategoria(lerParametros(s).regrasCodigo, maq.id).length, 0);
+});
+
+test('código do produto: Novo código cria a categoria digitada com sigla e numeração (dec 228)', () => {
+  const s = storage();
+  const r = adicionarCodigoComCategoria('  máquinas  ', 'maq', '5', s);
+  assert.equal(r.categoriaNova, true);
+  assert.equal(r.categoria.nome, 'Máquinas');
+  assert.deepEqual(r.regra, { categoriaId: r.categoria.id, sigla: 'MAQ', inicial: '0005' });
+  const d = lerParametros(s);
+  assert.ok(d.categorias.some((c) => c.id === r.categoria.id));
+  // Nome de categoria que já existe só ganha mais uma sigla, sem duplicar a categoria.
+  const antes = d.categorias.length;
+  const outra = adicionarCodigoComCategoria('EPI', 'LUV', '1', s);
+  assert.equal(outra.categoriaNova, false);
+  assert.equal(outra.categoria.id, 'cat-epi');
+  assert.equal(lerParametros(s).categorias.length, antes);
+  assert.deepEqual(regrasDaCategoria(lerParametros(s).regrasCodigo, 'cat-epi').map((x) => x.sigla), ['EPI', 'LUV']);
+});
+
+test('código do produto: Novo código com erro não deixa categoria solta (dec 228)', () => {
+  const s = storage();
+  const antes = lerParametros(s).categorias.length;
+  assert.throws(() => adicionarCodigoComCategoria('Máquinas', 'EPI', '1', s), /já é usada em EPI/);
+  assert.throws(() => adicionarCodigoComCategoria('Máquinas', 'MAQ', '0', s), /numeração/);
+  assert.throws(() => adicionarCodigoComCategoria('   ', 'MAQ', '1', s), /categoria/);
+  assert.equal(lerParametros(s).categorias.length, antes);
 });

@@ -1293,6 +1293,26 @@ export function adicionarRegraCodigo(
   });
 }
 
+// Novo código com a categoria digitada: se o nome já é de uma categoria, entra mais uma sigla nela; se não,
+// a categoria é criada junto com a sigla e a numeração, tudo numa gravação só (erro em qualquer parte não grava nada).
+export function adicionarCodigoComCategoria(
+  nome: string,
+  sigla: string,
+  inicial: string,
+  storage = storagePadrao(),
+): { categoria: Categoria; regra: RegraCodigo; categoriaNova: boolean } {
+  return alterar(storage, (d) => {
+    const limpo = limparNome(nome);
+    if (!limpo) throw new Error("Informe a categoria.");
+    const existente = d.categorias.find((c) => mesmoNome(c.nome, limpo));
+    const categoria = existente ?? { id: novoId(), nome: nomeUnico(d.categorias, limpo, "categoria") };
+    if (!existente) d.categorias.push(categoria);
+    const regra = validarRegraCodigo(d, categoria.id, sigla, inicial);
+    d.regrasCodigo = [...d.regrasCodigo, regra];
+    return { categoria, regra, categoriaNova: !existente };
+  });
+}
+
 // Sem `sigla`, tira a regra padrão da categoria (como antes). A última regra de uma categoria de módulo não sai.
 export function removerRegraCodigo(categoriaId: string, storage = storagePadrao(), sigla?: string): void {
   alterar(storage, (d) => {
