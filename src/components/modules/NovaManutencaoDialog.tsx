@@ -46,8 +46,12 @@ function totalGeral(locais: LocalForm[]): string {
 }
 
 export function NovaManutencaoDialog({
-  aberto, aoMudar, editando = null, aoSalvar,
-}: { aberto: boolean; aoMudar: (aberto: boolean) => void; editando?: ManutencaoVeiculo | null; aoSalvar: (registro: ManutencaoVeiculo, editou: boolean) => void }) {
+  aberto, aoMudar, editando = null, aoSalvar, tipoFixo,
+}: {
+  aberto: boolean; aoMudar: (aberto: boolean) => void; editando?: ManutencaoVeiculo | null; aoSalvar: (registro: ManutencaoVeiculo, editou: boolean) => void;
+  // Vindo de uma despesa de manutenção: abre neste tipo e o campo Tipo fica travado (a despesa é sempre Corretiva).
+  tipoFixo?: string;
+}) {
   const { empresaId } = useEmpresa();
   const { canWrite } = useAccess();
   const parametros = useParametrosBase();
@@ -71,7 +75,7 @@ export function NovaManutencaoDialog({
     const m = editando ?? undefined;
     guardados.current = {};
     setVeiculoId(m?.veiculoId ?? "");
-    setTipo(m?.tipo ?? "Preventiva");
+    setTipo(m?.tipo ?? tipoFixo ?? "Preventiva");
     setMarcados(
       Object.fromEntries(
         gruposDaManutencao(m ?? { acaoId: null, itens: [], grupos: [] }).map((g) => [
@@ -158,7 +162,7 @@ export function NovaManutencaoDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="tipo">Tipo</Label>
-              <Select value={tipo} onValueChange={setTipo}>
+              <Select value={tipo} onValueChange={setTipo} disabled={Boolean(tipoFixo)}>
                 <SelectTrigger id="tipo"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Preventiva">Preventiva</SelectItem>
