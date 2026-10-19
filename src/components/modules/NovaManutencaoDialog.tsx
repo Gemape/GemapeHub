@@ -354,7 +354,7 @@ export function NovaManutencaoDialog({
                             <div className="grid gap-2 sm:grid-cols-3">
                               <Select
                                 value={detalhes[chaveItem(grupo.id, sub.id)]?.chaveLocal ?? ""}
-                                onValueChange={(v) => mudarDetalhe(grupo.id, sub.id, { chaveLocal: v })}
+                                onValueChange={(v) => v && mudarDetalhe(grupo.id, sub.id, { chaveLocal: v })}
                                 disabled={locais.length === 0}
                               >
                                 <SelectTrigger aria-label={`Onde foi feito: ${sub.nome}`}>

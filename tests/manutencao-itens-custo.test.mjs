@@ -120,3 +120,7 @@ test("o local lista cada ação marcada com peças, mão de obra, total e a obse
   assert.match(dialogo, /em mão de obra/);
   assert.match(dialogo, /marcados\[a\.grupo\.id\]\?\.\[a\.sub\.id\]/);
 });
+
+test("o seletor Onde foi feito ignora valor vazio (o Radix o dispara ao montar o local novo e apagaria a atribuição automática)", () => {
+  assert.match(dialogo, /onValueChange=\{\(v\) => v && mudarDetalhe\(grupo\.id, sub\.id, \{ chaveLocal: v \}\)\}/);
+});
