@@ -71,3 +71,17 @@ test("nenhum outro módulo ganha câmera", () => {
   ]) assert.doesNotMatch(ler(arq), /capture="environment"/, arq);
   assert.equal(form.match(/capture="environment"/g)?.length, 1);
 });
+
+test("revisão: a prévia só fecha se a foto entrou na fila (não perde a foto no erro de limite)", () => {
+  assert.match(form, /async function adicionarImagens\(escolhidos: File\[\]\): Promise<boolean>/);
+  assert.match(form, /if \(await adicionarImagens\(\[pendente\]\)\) setPendente\(null\)/);
+});
+
+test("revisão: foto da câmera ganha nome único (no iOS toda captura se chama image.jpg)", () => {
+  assert.match(form, /new File\(\[foto\], `foto-\$\{Date\.now\(\)\}\./);
+});
+
+test("revisão: a URL da prévia é criada e liberada num efeito, não durante a renderização", () => {
+  assert.doesNotMatch(form, /useMemo\(\(\) => \(pendente \? URL\.createObjectURL/);
+  assert.match(form, /useEffect\(\(\) => \{[\s\S]{0,200}URL\.createObjectURL\(pendente\)[\s\S]{0,200}URL\.revokeObjectURL/);
+});
