@@ -369,7 +369,7 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
       )}
       {tipo === TIPO_MANUTENCAO && (
         <>
-          <NovaManutencaoDialog aberto={manutencaoAberta} aoMudar={setManutencaoAberta} aoSalvar={(registro) => trazerDaManutencao(registro, servicoDaManutencao(registro))} />
+          <NovaManutencaoDialog aberto={manutencaoAberta} aoMudar={setManutencaoAberta} tipoFixo="Corretiva" aoSalvar={(registro) => trazerDaManutencao(registro, servicoDaManutencao(registro))} />
           <EscolherManutencaoDialog aberto={escolhaManutencaoAberta} aoMudar={setEscolhaManutencaoAberta} aoEscolher={trazerDaManutencao} />
         </>
       )}
