@@ -62,7 +62,10 @@ export function ManutencaoVeiculoModulo() {
     const empresa = empresas.find((e) => e.id === v?.empresa_id)?.razao_social ?? "GEMAPE";
     abrirDocumento({
       titulo: "Relatório de manutenção",
-      html: montarManutencaoHtml(m, { empresa, veiculo, nomeGrupo: (id) => acoes.find((a) => a.id === id)?.nome }),
+      html: montarManutencaoHtml(m, {
+        empresa, veiculo, nomeGrupo: (id) => acoes.find((a) => a.id === id)?.nome,
+        logoUrl: `${window.location.origin}${import.meta.env["BASE_URL"] ?? "/"}logo-relatorio-viagens.png`,
+      }),
       arquivo: nomeArquivoDocumento("Manutencao", veiculo, m.data),
     });
   }
