@@ -23,7 +23,8 @@ export type Abastecimento = {
 export type TipoManutencao = "Preventiva" | "Corretiva";
 export type LocalManutencao = "empresa" | "terceiro";
 // Ação (filho) do grupo, com o nome guardado para o registro não mudar se Parâmetros mudar.
-export type ItemManutencao = { subitemId: string; nome: string; observacao: string };
+// `localIndice` (posição em `locais`) e os custos só existem quando o item foi ligado a um local (itens com custo, dec 232).
+export type ItemManutencao = { subitemId: string; nome: string; observacao: string; localIndice?: number; custoPecas?: number; custoMaoDeObra?: number };
 // Uma manutenção pode abranger vários grupos de ações; cada grupo guarda o nome e as ações feitas.
 // Ação do grupo que ficou sem fazer, com a observação de por que merece atenção antes do prazo do plano (dec 161).
 export type NaoRealizadoManutencao = { subitemId: string; nome: string; observacao: string };
@@ -214,17 +215,26 @@ export type EntradaLocalManutencao = {
   custoMaoDeObra?: string | number | undefined;
 };
 
+// Item feito na manutenção. Com `localIndice` (posição em `locais`), os custos do item somam no local; vazio vale 0.
+export type EntradaItemManutencao = {
+  subitemId: string;
+  observacao?: string | undefined;
+  localIndice?: number | null | undefined;
+  custoPecas?: string | number | undefined;
+  custoMaoDeObra?: string | number | undefined;
+};
+
 export type EntradaManutencao = {
   veiculoId: string;
   data: string;
   km: string | number;
   tipo: string;
   acaoId?: string | null;
-  itens?: { subitemId: string; observacao?: string | undefined }[];
+  itens?: EntradaItemManutencao[];
   // Vários grupos numa manutenção; sem `grupos`, acaoId e itens valem como um grupo só.
   grupos?: {
     acaoId: string;
-    itens?: { subitemId: string; observacao?: string | undefined }[];
+    itens?: EntradaItemManutencao[];
     // Ações do grupo que não foram feitas, só as que têm observação.
     naoRealizados?: { subitemId: string; observacao?: string | undefined }[];
   }[];
@@ -267,6 +277,7 @@ function montarManutencao(
   // Só a corretiva descreve o que está acontecendo com o veículo.
   const descricao = entrada.tipo === "Corretiva" ? String(entrada.descricao ?? "").trim().replace(/\s+/g, " ").slice(0, 300) : "";
   if (entrada.tipo === "Corretiva" && !descricao) throw new Error("Informe a descrição do que está acontecendo com o veículo.");
+  const pedidosLocais: EntradaLocalManutencao[] = entrada.locais ?? [{ local: entrada.local, nome: entrada.localNome, custoPecas: entrada.custoPecas, custoMaoDeObra: entrada.custoMaoDeObra }];
   const pedidos = entrada.grupos ?? [{ acaoId: entrada.acaoId ?? "", itens: entrada.itens ?? [] }];
   if (pedidos.length === 0) throw new Error("Selecione ao menos um grupo de ações da manutenção.");
   const grupos: GrupoManutencao[] = [];
@@ -282,7 +293,22 @@ function montarManutencao(
       const observacao = String(i.observacao ?? "").trim().replace(/\s+/g, " ").slice(0, 300);
       // Outros é o item de descrição aberta (decisão 163): marcado, exige dizer o que foi feito.
       if (ehOutros(filho.nome) && !observacao) throw new Error(`Descreva o que foi feito em Outros${grupo.nome ? `, do grupo ${grupo.nome}` : ""}.`);
-      itens.push({ subitemId: filho.id, nome: filho.nome, observacao });
+      // Local e custos do item (dec 232): o custo do item soma no local; custo sem local não tem onde somar.
+      const temLocal = i.localIndice !== undefined && i.localIndice !== null;
+      const vazio = (v: string | number | undefined) => v === undefined || String(v).trim() === "";
+      if (!temLocal && (!vazio(i.custoPecas) || !vazio(i.custoMaoDeObra))) throw new Error(`Escolha onde foi feito o item ${filho.nome}.`);
+      if (temLocal && (!Number.isInteger(i.localIndice) || (i.localIndice as number) < 0 || (i.localIndice as number) >= pedidosLocais.length)) {
+        throw new Error(`Escolha o local do item ${filho.nome} entre os locais lançados.`);
+      }
+      let custosDoItem: { localIndice: number; custoPecas: number; custoMaoDeObra: number } | undefined;
+      if (temLocal) {
+        const pecas = vazio(i.custoPecas) ? 0 : custoNaoNegativo(i.custoPecas);
+        if (pecas === null) throw new Error(`Informe o custo das peças de ${filho.nome} em reais (0 se não houve).`);
+        const mao = vazio(i.custoMaoDeObra) ? 0 : custoNaoNegativo(i.custoMaoDeObra);
+        if (mao === null) throw new Error(`Informe o custo da mão de obra de ${filho.nome} em reais (0 se não houve).`);
+        custosDoItem = { localIndice: i.localIndice as number, custoPecas: pecas, custoMaoDeObra: mao };
+      }
+      itens.push({ subitemId: filho.id, nome: filho.nome, observacao, ...(custosDoItem ?? {}) });
     }
     if (grupo.subitens.length > 0 && itens.length === 0) {
       throw new Error(grupo.nome ? `Marque ao menos uma ação do grupo ${grupo.nome}.` : "Marque ao menos uma ação do grupo.");
@@ -299,14 +325,28 @@ function montarManutencao(
     }
     grupos.push({ acaoId: grupo.id, nome: grupo.nome ?? "", itens, ...(naoRealizados.length > 0 ? { naoRealizados } : {}) });
   }
-  const pedidosLocais: EntradaLocalManutencao[] = entrada.locais ?? [{ local: entrada.local, nome: entrada.localNome, custoPecas: entrada.custoPecas, custoMaoDeObra: entrada.custoMaoDeObra }];
   if (pedidosLocais.length === 0) throw new Error("Informe o local da manutenção: na empresa ou em terceiro.");
   const locais: LocalServicoManutencao[] = [];
-  for (const pedido of pedidosLocais) {
+  const arredondar = (n: number) => Math.round(n * 100) / 100;
+  for (const [posicao, pedido] of pedidosLocais.entries()) {
     if (pedido.local !== "empresa" && pedido.local !== "terceiro") throw new Error("Informe o local da manutenção: na empresa ou em terceiro.");
     if (pedido.local === "empresa" && locais.some((l) => l.local === "empresa")) throw new Error("A manutenção só pode ter um local na própria empresa.");
     const nome = pedido.local === "terceiro" ? String(pedido.nome ?? "").trim().replace(/\s+/g, " ").slice(0, 120) : "";
     if (pedido.local === "terceiro" && !nome) throw new Error("Informe o local de terceiro onde foi feita a manutenção.");
+    // Local com itens (dec 232): serviço e custos vêm dos itens dele, não do que foi digitado.
+    const doLocal = grupos.flatMap((g) => g.itens).filter((i) => i.localIndice === posicao);
+    if (doLocal.length > 0) {
+      const pecasItens = arredondar(doLocal.reduce((t, i) => t + (i.custoPecas ?? 0), 0));
+      const maoItens = arredondar(doLocal.reduce((t, i) => t + (i.custoMaoDeObra ?? 0), 0));
+      locais.push({
+        local: pedido.local, nome,
+        // Texto gerado dos itens: limite maior que o da descrição digitada (300), para não cortar um local com muitas ações.
+        descricao: servicoDoLocal(grupos, posicao).slice(0, 1000),
+        condicaoPagamento: String(pedido.condicaoPagamento ?? "").trim().replace(/\s+/g, " ").slice(0, 120),
+        custoPecas: pecasItens, custoMaoDeObra: maoItens, custoTotal: arredondar(pecasItens + maoItens),
+      });
+      continue;
+    }
     const rotulo = pedido.local === "terceiro" ? ` de ${nome}` : " da empresa";
     const custoPecas = custoNaoNegativo(pedido.custoPecas);
     if (custoPecas === null) throw new Error(`Informe o custo das peças${pedidosLocais.length > 1 ? rotulo : ""} em reais (0 se não houve).`);
@@ -327,6 +367,20 @@ function montarManutencao(
     itens: grupos.flatMap((g) => g.itens), grupos, locais, local: locais[0]!.local, localNome: locais[0]!.nome,
     custoPecas: soma("custoPecas"), custoMaoDeObra: soma("custoMaoDeObra"), custoTotal: soma("custoTotal"),
   };
+}
+
+// Serviço de um local, montado dos itens ligados a ele (posição `indice` em `locais`), agrupado por grupo de ações.
+export function servicoDoLocal(
+  grupos: { nome: string; itens: { nome: string; localIndice?: number | undefined }[] }[],
+  indice: number,
+): string {
+  return grupos
+    .map((g) => {
+      const nomes = g.itens.filter((i) => i.localIndice === indice).map((i) => i.nome);
+      return nomes.length > 0 ? `${g.nome}: ${nomes.join(", ")}` : "";
+    })
+    .filter(Boolean)
+    .join("; ");
 }
 
 export function registrarManutencao(
