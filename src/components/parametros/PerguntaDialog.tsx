@@ -19,13 +19,15 @@ export type ModoPergunta = "novo" | "editar" | "clonar";
 
 // Cadastrar pergunta: primeiro se escolhe o tipo, depois se preenchem os campos daquele tipo.
 export function PerguntaDialog({
-  aberto, modo, inicial, estado, codigoNovo, onSalvar, onFechar,
+  aberto, modo, inicial, estado, codigoNovo, numero, onSalvar, onFechar,
 }: {
   aberto: boolean;
   modo: ModoPergunta;
   inicial: Pergunta | null;
   estado: Estado;
   codigoNovo: string;
+  // Número da pergunta na tela (posição no questionário); sem ele vale o código fixo.
+  numero?: string;
   onSalvar: (p: Pergunta) => void;
   onFechar: () => void;
 }) {
@@ -55,7 +57,7 @@ export function PerguntaDialog({
         <DialogHeader>
           <DialogTitle>{titulo}</DialogTitle>
           <DialogDescription>
-            {pergunta ? `Pergunta ${pergunta.codigo}` : "Qual tipo de pergunta você quer cadastrar?"}
+            {pergunta ? `Pergunta ${numero ?? pergunta.codigo}` : "Qual tipo de pergunta você quer cadastrar?"}
           </DialogDescription>
         </DialogHeader>
 
