@@ -78,7 +78,7 @@ test("revisão: a prévia só fecha se a foto entrou na fila (não perde a foto 
 });
 
 test("revisão: foto da câmera ganha nome único (no iOS toda captura se chama image.jpg)", () => {
-  assert.match(form, /new File\(\[foto\], `foto-\$\{Date\.now\(\)\}\./);
+  assert.match(form, /new File\(\[tirada\], `foto-\$\{Date\.now\(\)\}\./);
 });
 
 test("revisão: a URL da prévia é criada e liberada num efeito, não durante a renderização", () => {
