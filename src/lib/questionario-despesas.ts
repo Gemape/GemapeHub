@@ -157,6 +157,18 @@ const CODIGO_ORDENADO: Record<string, string> = {
   "q-14": "05", "q-05": "06", "q-06": "07", "q-07": "08", "q-08": "09", "q-09": "10", "q-10": "11", "q-11": "12", "q-12": "13", "q-13": "14",
 };
 
+// Número mostrado ao lado de cada pergunta na montagem: a posição na tela (01, 02, ...), na ordem do questionário e sem contar as
+// perguntas fixas fora da lista (a dos cards). O código fixo da pergunta continua existindo por baixo e não muda ao reordenar.
+export function numerosNaTela(ids: string[], fixas: string[]): Map<string, string> {
+  const numeros = new Map<string, string>();
+  let posicao = 0;
+  for (const id of ids) {
+    if (fixas.includes(id)) continue;
+    numeros.set(id, String(++posicao).padStart(2, "0"));
+  }
+  return numeros;
+}
+
 // As 13 perguntas passadas pelo responsável em 14/10 (dec 168).
 export function perguntasPadrao(): Pergunta[] {
   const hab = (nome: string, area: AreaViagem): Habilitado => ({ empregadoId: null, nome, area });

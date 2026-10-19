@@ -23,6 +23,7 @@ import { gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
   AREAS_VIAGEM, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, ID_TIPO_DESPESA, TIPOS_PERGUNTA, perguntaTravada, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, publicarRascunho, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type AreaViagem, type Estado, type Habilitado, type Pergunta, type Regra,
+  numerosNaTela,
 } from "@/lib/questionario-despesas";
 
 // Montagem do Questionário de Despesas, dentro da mesma tela do formulário (dec 173): um questionário para cada tipo de despesa,
@@ -50,6 +51,9 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   };
 
   const ids = questionarioDoTipo(estado, tipoAtual);
+  // O número ao lado da pergunta é a posição dela na tela (01, 02, ...), não o código fixo.
+  const numeros = numerosNaTela(ids, [ID_TIPO_DESPESA]);
+  const numeroDe = (id: string) => numeros.get(id) ?? "";
   const porId = new Map(estado.perguntas.map((p) => [p.id, p]));
   const acoesRequeridas = pendencias(estado, tipoAtual);
   const secoes = secoesDoTipo(estado, tipoAtual);
@@ -124,7 +128,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
 
   function excluir(p: Pergunta) {
     const usos = Object.values(estado.questionarios).filter((l) => l.includes(p.id)).length;
-    if (!confirm(`Excluir a pergunta ${p.codigo} (${p.titulo})?${usos ? ` Ela sai de ${usos} questionário${usos === 1 ? "" : "s"}.` : ""}`)) return;
+    if (!confirm(`Excluir a pergunta ${numeroDe(p.id)} (${p.titulo})?${usos ? ` Ela sai de ${usos} questionário${usos === 1 ? "" : "s"}.` : ""}`)) return;
     executar(() => excluirPergunta(estado, p.id, rascunho), "Pergunta excluída.");
   }
 
@@ -136,7 +140,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="escolher-card" className="text-sm font-medium">1. Escolha o card de Viagens que terá este questionário</h2>
           {canWrite && (
-            <Button variant="ghost" size="sm" onClick={() => { const q = porId.get(ID_TIPO_DESPESA); if (q) setDialogo({ modo: "editar", inicial: q }); }}><Pencil className="mr-1 h-4 w-4" />Editar cards</Button>
+            <Button variant="ghost" size="sm" onClick={() => { const q = porId.get(ID_TIPO_DESPESA); if (q) setDialogo({ modo: "editar", inicial: q }); }}><Pencil className="mr-1 h-4 w-4" />Novo questionário</Button>
           )}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -170,7 +174,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         <div role="alert" className="space-y-1 rounded-md border border-destructive p-3 text-sm text-destructive">
           <p className="font-medium">Ação requerida: o questionário "{tipoAtual}" não é publicado até corrigir as ramificações antigas abaixo.</p>
           <ul className="list-disc pl-5">
-            {acoesRequeridas.map((a) => <li key={`${a.perguntaId}-${a.opcao}`}>Pergunta {porId.get(a.perguntaId)?.codigo}, opção "{a.opcao}": {a.motivo}</li>)}
+            {acoesRequeridas.map((a) => <li key={`${a.perguntaId}-${a.opcao}`}>Pergunta {numeroDe(a.perguntaId)}, opção "{a.opcao}": {a.motivo}</li>)}
           </ul>
           {canWrite && (
             <Button type="button" variant="outline" size="sm" onClick={() => executar(() => limparPendencias(estado, tipoAtual, rascunho), "Ramificações com problema removidas. Clique em Salvar Formulário para valer.")}>
@@ -208,7 +212,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
           <div
             data-cartao
             role="group"
-            aria-label={`Pergunta ${p.codigo}: ${p.titulo}`}
+            aria-label={`Pergunta ${numeroDe(id)}: ${p.titulo}`}
             tabIndex={0}
             onClick={() => setAtivo(id)}
             onFocus={() => setAtivo(id)}
@@ -235,7 +239,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
             )}
             <div className="space-y-2">
               <p className="font-medium">
-                <span className="mr-2 text-xs text-muted-foreground">{p.codigo}</span>{p.titulo}{p.obrigatoria && <span className="text-destructive"> *</span>}
+                <span className="mr-2 text-xs text-muted-foreground">{numeroDe(id)}</span>{p.titulo}{p.obrigatoria && <span className="text-destructive"> *</span>}
               </p>
               <p className="text-xs text-muted-foreground">
                 {TIPOS_PERGUNTA.find((t) => t.valor === p.tipo)?.rotulo}{fixa ? " · pergunta inicial de todo questionário" : ""}
@@ -243,7 +247,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
               {estado.regras[tipoAtual]?.[id] && <p className="text-xs font-medium text-primary">{textoRegra(estado, estado.regras[tipoAtual][id] as Regra)}</p>}
               {!fixa && aceitaDestino(p) && Object.keys(destinosDoTipo(estado, tipoAtual)[id] ?? {}).length > 0 && (
                 <ul className="text-xs font-medium text-primary">
-                  {Object.entries(destinosDoTipo(estado, tipoAtual)[id] ?? {}).map(([opcao, d]) => <li key={opcao}>"{opcao}": {textoDestino(estado, d)}</li>)}
+                  {Object.entries(destinosDoTipo(estado, tipoAtual)[id] ?? {}).map(([opcao, d]) => <li key={opcao}>"{opcao}": {textoDestino(estado, d, numeroDe)}</li>)}
                 </ul>
               )}
               {fixa ? (
@@ -339,6 +343,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         inicial={dialogo?.inicial ?? null}
         estado={estado}
         codigoNovo={proximoCodigoPergunta(estado, rascunho)}
+        numero={dialogo?.inicial ? numeroDe(dialogo.inicial.id) : String(numeros.size + 1).padStart(2, "0")}
         onFechar={() => setDialogo(null)}
         onSalvar={(p) => {
           const perdem = p.id === ID_TIPO_DESPESA ? tiposRemovidos(estado, p.opcoes.map((o) => o.trim())) : [];
@@ -357,12 +362,12 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   );
 }
 
-const textoDestino = (e: Estado, destino: string): string => {
+const textoDestino = (e: Estado, destino: string, numeroDe: (id: string) => string): string => {
   if (destino === DESTINO_ENCERRAR) return "encerra o formulário";
   if (destino === DESTINO_PROXIMA_SECAO) return "vai para a próxima seção";
   const alvo = idDoDestino(destino);
   const p = e.perguntas.find((x) => x.id === alvo);
-  return p ? `vai para a pergunta ${p.codigo} (${p.titulo})` : "pergunta removida (ação requerida)";
+  return p ? `vai para a pergunta ${numeroDe(p.id) || p.codigo} (${p.titulo})` : "pergunta removida (ação requerida)";
 };
 
 const textoRegra = (e: Estado, r: Regra): string => {
