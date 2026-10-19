@@ -350,35 +350,19 @@ export function NovaManutencaoDialog({
                               onChange={(e) => setMarcados((m) => ({ ...m, [grupo.id]: { ...(m[grupo.id] ?? {}), [sub.id]: e.target.value } }))}
                             />
                           )}
-                          {marcado && (
-                            <div className="grid gap-2 sm:grid-cols-3">
-                              <Select
-                                value={detalhes[chaveItem(grupo.id, sub.id)]?.chaveLocal ?? ""}
-                                onValueChange={(v) => v && mudarDetalhe(grupo.id, sub.id, { chaveLocal: v })}
-                                disabled={locais.length === 0}
-                              >
-                                <SelectTrigger aria-label={`Onde foi feito: ${sub.nome}`}>
-                                  <SelectValue placeholder={locais.length === 0 ? "Adicione um local abaixo" : "Onde foi feito"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {locais.map((l, i) => <SelectItem key={l.chave} value={l.chave}>{tituloDoLocal(l, i)}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                              <Input
-                                inputMode="decimal"
-                                aria-label={`Custo das peças de ${sub.nome}`}
-                                placeholder="Peças (R$)"
-                                value={detalhes[chaveItem(grupo.id, sub.id)]?.pecas ?? ""}
-                                onChange={(e) => mudarDetalhe(grupo.id, sub.id, { pecas: e.target.value })}
-                              />
-                              <Input
-                                inputMode="decimal"
-                                aria-label={`Custo da mão de obra de ${sub.nome}`}
-                                placeholder="Mão de obra (R$)"
-                                value={detalhes[chaveItem(grupo.id, sub.id)]?.mao ?? ""}
-                                onChange={(e) => mudarDetalhe(grupo.id, sub.id, { mao: e.target.value })}
-                              />
-                            </div>
+                          {marcado && (locais.length !== 1 || !detalhes[chaveItem(grupo.id, sub.id)]?.chaveLocal) && (
+                            <Select
+                              value={detalhes[chaveItem(grupo.id, sub.id)]?.chaveLocal ?? ""}
+                              onValueChange={(v) => v && mudarDetalhe(grupo.id, sub.id, { chaveLocal: v })}
+                              disabled={locais.length === 0}
+                            >
+                              <SelectTrigger aria-label={`Onde foi feito: ${sub.nome}`}>
+                                <SelectValue placeholder={locais.length === 0 ? "Adicione um local abaixo para levar esta ação a ele" : "Onde foi feito"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {locais.map((l, i) => <SelectItem key={l.chave} value={l.chave}>{tituloDoLocal(l, i)}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
                           )}
                         </div>
                       );
@@ -427,8 +411,24 @@ export function NovaManutencaoDialog({
                             return (
                               <li key={`${a.grupo.id}/${a.sub.id}`} data-detalhe-item className="rounded-md border bg-muted/40 p-2 text-sm">
                                 <p className="font-medium">{a.sub.nome} <span className="text-xs font-normal text-muted-foreground">({a.grupo.nome})</span></p>
-                                <p className="text-xs text-muted-foreground">
-                                  {pecas === null ? "—" : moeda(pecas)} em peças · {mao === null ? "—" : moeda(mao)} em mão de obra · total {pecas === null || mao === null ? "—" : moeda(pecas + mao)}
+                                <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                                  <Input
+                                    inputMode="decimal"
+                                    aria-label={`Custo das peças de ${a.sub.nome}`}
+                                    placeholder="Peças (R$)"
+                                    value={a.d.pecas}
+                                    onChange={(e) => mudarDetalhe(a.grupo.id, a.sub.id, { pecas: e.target.value })}
+                                  />
+                                  <Input
+                                    inputMode="decimal"
+                                    aria-label={`Custo da mão de obra de ${a.sub.nome}`}
+                                    placeholder="Mão de obra (R$)"
+                                    value={a.d.mao}
+                                    onChange={(e) => mudarDetalhe(a.grupo.id, a.sub.id, { mao: e.target.value })}
+                                  />
+                                </div>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Total desta ação: {pecas === null || mao === null ? "—" : moeda(pecas + mao)}
                                 </p>
                                 {obs && <p className="text-xs">{obs}</p>}
                               </li>
