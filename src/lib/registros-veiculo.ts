@@ -340,7 +340,8 @@ function montarManutencao(
       const maoItens = arredondar(doLocal.reduce((t, i) => t + (i.custoMaoDeObra ?? 0), 0));
       locais.push({
         local: pedido.local, nome,
-        descricao: servicoDoLocal(grupos, posicao).slice(0, 300),
+        // Texto gerado dos itens: limite maior que o da descrição digitada (300), para não cortar um local com muitas ações.
+        descricao: servicoDoLocal(grupos, posicao).slice(0, 1000),
         condicaoPagamento: String(pedido.condicaoPagamento ?? "").trim().replace(/\s+/g, " ").slice(0, 120),
         custoPecas: pecasItens, custoMaoDeObra: maoItens, custoTotal: arredondar(pecasItens + maoItens),
       });
