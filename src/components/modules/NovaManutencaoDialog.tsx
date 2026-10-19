@@ -396,7 +396,7 @@ export function NovaManutencaoDialog({
                       <Input capitalizar="texto" aria-label={`Nome do ${titulo}`} maxLength={120} value={l.nome} onChange={(e) => mudar({ nome: e.target.value })} placeholder="Nome do local (oficina, concessionária…)" />
                     )}
                     {itensDoLocal(l.chave).length > 0 ? (
-                      <p className="rounded-md border bg-muted/40 p-2 text-sm" aria-label={`Serviço, ${titulo}`}>Serviço (das ações marcadas): {servicoDe(l.chave)}</p>
+                      <p className="rounded-md border bg-muted/40 p-2 text-sm">Serviço (das ações marcadas): {servicoDe(l.chave)}</p>
                     ) : (
                       <Textarea capitalizar="texto" aria-label={`Descrição do serviço, ${titulo}`} rows={2} maxLength={300} value={l.descricao} onChange={(e) => mudar({ descricao: e.target.value })} placeholder="Descrição do serviço feito neste local" />
                     )}

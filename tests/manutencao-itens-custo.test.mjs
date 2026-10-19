@@ -138,3 +138,18 @@ test("o local lista cada ação marcada com peças, mão de obra, total e a obse
 test("o seletor Onde foi feito ignora valor vazio (o Radix o dispara ao montar o local novo e apagaria a atribuição automática)", () => {
   assert.match(dialogo, /onValueChange=\{\(v\) => v && mudarDetalhe\(grupo\.id, sub\.id, \{ chaveLocal: v \}\)\}/);
 });
+
+test("revisão: o serviço gerado do local não é cortado em 300 caracteres quando há muitas ações", () => {
+  const subitens = Array.from({ length: 12 }, (_, i) => ({ id: `x${i}`, nome: `Ação de revisão número ${i + 1} do veículo` }));
+  const acoes = [{ id: "g1", nome: "Revisão geral do sistema de transmissão e fluidos", subitens }];
+  const m = registrarManutencao(
+    { ...base, locais: [gemape], grupos: [{ acaoId: "g1", itens: subitens.map((s) => ({ subitemId: s.id, localIndice: 0 })) }] },
+    memoria(), hoje, acoes,
+  );
+  assert.ok(m.locais[0].descricao.length > 300, `descrição de ${m.locais[0].descricao.length} caracteres`);
+  assert.ok(m.locais[0].descricao.endsWith("Ação de revisão número 12 do veículo"));
+});
+
+test("revisão: o parágrafo do serviço gerado não leva aria-label (rótulo em texto simples é ignorado)", () => {
+  assert.doesNotMatch(dialogo, /aria-label=\{`Serviço, \$\{titulo\}`\}/);
+});
