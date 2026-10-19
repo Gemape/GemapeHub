@@ -418,10 +418,28 @@ export function NovaManutencaoDialog({
                     )}
                     <Input capitalizar="texto" aria-label={`Condição de pagamento, ${titulo}`} maxLength={120} value={l.condicaoPagamento} onChange={(e) => mudar({ condicaoPagamento: e.target.value })} placeholder="Condição de pagamento combinada (ex.: 30 dias, à vista)" />
                     {itensDoLocal(l.chave).length > 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        Peças e mão de obra somados das ações marcadas neste local
-                        {(() => { const c = custosDosItens(itensDoLocal(l.chave).map((a) => a.d)); return c ? `: ${moeda(c.pecas)} em peças e ${moeda(c.mao)} em mão de obra.` : "."; })()}
-                      </p>
+                      <div className="space-y-2">
+                        <ul className="space-y-1.5">
+                          {itensDoLocal(l.chave).map((a) => {
+                            const pecas = valorOuZero(a.d.pecas);
+                            const mao = valorOuZero(a.d.mao);
+                            const obs = marcados[a.grupo.id]?.[a.sub.id]?.trim();
+                            return (
+                              <li key={`${a.grupo.id}/${a.sub.id}`} data-detalhe-item className="rounded-md border bg-muted/40 p-2 text-sm">
+                                <p className="font-medium">{a.sub.nome} <span className="text-xs font-normal text-muted-foreground">({a.grupo.nome})</span></p>
+                                <p className="text-xs text-muted-foreground">
+                                  {pecas === null ? "—" : moeda(pecas)} em peças · {mao === null ? "—" : moeda(mao)} em mão de obra · total {pecas === null || mao === null ? "—" : moeda(pecas + mao)}
+                                </p>
+                                {obs && <p className="text-xs">{obs}</p>}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        <p className="text-xs text-muted-foreground">
+                          Peças e mão de obra somados das ações marcadas neste local
+                          {(() => { const c = custosDosItens(itensDoLocal(l.chave).map((a) => a.d)); return c ? `: ${moeda(c.pecas)} em peças e ${moeda(c.mao)} em mão de obra.` : "."; })()}
+                        </p>
+                      </div>
                     ) : (
                       <div className="grid gap-2 sm:grid-cols-2">
                         <div className="space-y-1">

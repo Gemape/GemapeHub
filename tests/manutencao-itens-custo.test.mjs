@@ -112,3 +112,11 @@ test("cada item marcado tem Onde foi feito, custo das peças e da mão de obra",
 test("o serviço do local é o texto gerado dos itens (servicoDoLocal) quando há itens nele", () => {
   assert.match(dialogo, /servicoDoLocal\(/);
 });
+
+test("o local lista cada ação marcada com peças, mão de obra, total e a observação dela", () => {
+  assert.match(dialogo, /itensDoLocal\(l\.chave\)\.map\(\(a\) =>/);
+  assert.match(dialogo, /data-detalhe-item/);
+  assert.match(dialogo, /em peças/);
+  assert.match(dialogo, /em mão de obra/);
+  assert.match(dialogo, /marcados\[a\.grupo\.id\]\?\.\[a\.sub\.id\]/);
+});
