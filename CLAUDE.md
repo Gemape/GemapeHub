@@ -52,3 +52,33 @@ Configuração:
 
 - O build detecta a Vercel pela variável `VERCEL` e gera a saída no formato dela (`vite.config.ts`). Fora da Vercel, o build continua gerando o servidor Node usado na VPN (`npm start`).
 - Sem variáveis configuradas, o preview abre em modo demonstração, com dados fictícios salvos no navegador. A lista completa de variáveis está no `.env.example`.
+
+## Delegação (conselheiro + executores)
+
+O modelo principal (Opus, definido em `.claude/settings.json`) analisa, planeja, decide, delega e revisa. Os subagentes ficam em `.claude/agents/`, usam Haiku e só executam e relatam.
+
+| Subagente | Para quê | Ferramentas |
+|---|---|---|
+| `investigador-de-bugs` | Ler código, logs e testes e apontar a causa provável, com arquivos e linhas. | Read, Grep, Glob |
+| `executor-de-testes` | Rodar `npm test`, `npm run typecheck` e `npm run build` e resumir as falhas. Nunca roda comando de escrita (git, `npm install`, alteração de arquivos). | Bash, Read, Grep, Glob |
+| `revisor-de-padroes` | Conferir capitalização, escape de texto e fuso de Brasília nos arquivos apontados. Sem Bash. | Read, Grep, Glob |
+
+Delega:
+
+- tarefas repetitivas, leitura ampla e varredura de arquivos;
+- rodar a suíte e resumir as falhas;
+- a checagem mecânica de padrões nos arquivos alterados.
+
+Não delega:
+
+- decisões de arquitetura;
+- alterações em código de produção e em testes;
+- operações git (branch, commit, push, PR) e o `git diff --check`;
+- a comunicação com o responsável;
+- qualquer coisa que toque o Supabase.
+
+Regras:
+
+- O relatório dos subagentes nunca substitui o code review. O modelo principal confere cada achado contra o código antes de agir, e trata o relatório como pista, não como fato.
+- Subagente não corrige nada: quem edita é o modelo principal, depois de decidir.
+- Se o relatório não bater com o código, vale o código.
