@@ -10,7 +10,8 @@ const dia = (data: string) => `${data.slice(8, 10)}/${data.slice(5, 7)}/${data.s
 
 export function montarManutencaoHtml(
   m: ManutencaoVeiculo,
-  contexto: { empresa: string; veiculo: string; nomeGrupo: (acaoId: string) => string | undefined },
+  // `logoUrl` é o endereço completo da logomarca (o relatório abre num visualizador, sem endereço base); sem ele, sai sem imagem.
+  contexto: { empresa: string; veiculo: string; nomeGrupo: (acaoId: string) => string | undefined; logoUrl?: string },
 ): string {
   const grupos = gruposDaManutencao(m);
   const emitido = new Date().toLocaleString("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(", ", " ");
@@ -43,7 +44,9 @@ export function montarManutencaoHtml(
         <style>
           * { box-sizing: border-box; }
           body { font-family: Arial, Helvetica, sans-serif; color: #1e293b; padding: 28px; font-size: 10pt; line-height: 1.4; }
-          .topo { border-bottom: 3px solid #0A007C; padding-bottom: 12px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+          .topo { border-bottom: 3px solid #0A007C; padding-bottom: 12px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+          .logo { max-width: 46mm; max-height: 26mm; object-fit: contain; }
+          .titulos { flex: 1; }
           .titulo { font-size: 17pt; font-weight: bold; color: #0A007C; letter-spacing: .02em; text-transform: uppercase; }
           .empresa { font-size: 10pt; color: #475569; margin-top: 2px; }
           .selo { padding: 4px 12px; border-radius: 999px; font-weight: bold; font-size: 9pt; color: #fff; background: ${corretiva ? "#b45309" : "#0A007C"}; }
@@ -74,7 +77,8 @@ export function montarManutencaoHtml(
       </head>
       <body>
         <div class="topo">
-          <div>
+          ${contexto.logoUrl ? `<img class="logo" src="${escaparHtml(contexto.logoUrl)}" alt="Logomarca" />` : ""}
+          <div class="titulos">
             <div class="titulo">Relatório de manutenção</div>
             <div class="empresa">${escaparHtml(contexto.empresa)}</div>
           </div>
