@@ -429,21 +429,30 @@ function Campo({
   // Foto tirada pela câmera, ainda em prévia: só entra na fila se o usuário confirmar.
   const [pendente, setPendente] = useState<File | null>(null);
   const camera = useRef<HTMLInputElement>(null);
-  const previa = useMemo(() => (pendente ? URL.createObjectURL(pendente) : ""), [pendente]);
-  useEffect(() => () => { if (previa) URL.revokeObjectURL(previa); }, [previa]);
+  const [previa, setPrevia] = useState("");
+  useEffect(() => {
+    if (!pendente) { setPrevia(""); return; }
+    const url = URL.createObjectURL(pendente);
+    setPrevia(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendente]);
 
   // Único caminho das imagens (escolhidas ou tiradas na hora): mesmo limite, mesma redução no navegador.
-  async function adicionarImagens(escolhidos: File[]) {
+  async function adicionarImagens(escolhidos: File[]): Promise<boolean> {
     const limite = mensagemDeLimite(imagens.length, escolhidos.length, MAX_ARQUIVOS);
-    if (limite) { setErroImagem(limite); return; }
+    if (limite) { setErroImagem(limite); return false; }
     setLendo(true);
     try {
       const reduzidas = await Promise.all(escolhidos.map(reduzirImagem));
       const { lista, erro } = juntarImagens(imagens, reduzidas, MAX_ARQUIVOS);
       setErroImagem(erro);
-      if (!erro) { onImagens(lista); onMudar(lista.map((r) => r.nome)); }
+      if (erro) return false;
+      onImagens(lista);
+      onMudar(lista.map((r) => r.nome));
+      return true;
     } catch (erro) {
       setErroImagem(erro instanceof Error ? erro.message : "Não foi possível ler a imagem.");
+      return false;
     } finally {
       setLendo(false);
     }
@@ -519,9 +528,13 @@ function Campo({
         capture="environment"
         hidden
         onChange={(e) => {
-          const foto = e.currentTarget.files?.[0] ?? null;
+          const tirada = e.currentTarget.files?.[0] ?? null;
           e.currentTarget.value = "";
-          if (foto) { setErroImagem(""); setPendente(foto); }
+          if (!tirada) return;
+          // No iOS toda captura se chama image.jpg; o nome único evita imagens iguais na lista.
+          const foto = new File([tirada], `foto-${Date.now()}.${tirada.type.split("/")[1] || "jpg"}`, { type: tirada.type });
+          setErroImagem("");
+          setPendente(foto);
         }}
       />
       <Button type="button" variant="outline" size="sm" disabled={cheio || lendo} onClick={abrirCamera}>
@@ -531,7 +544,7 @@ function Campo({
         <div className="space-y-2 rounded-md border p-2">
           <img src={previa} alt="Prévia da foto tirada" className="max-h-64 rounded-md object-contain" />
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" disabled={lendo} onClick={async () => { await adicionarImagens([pendente]); setPendente(null); }}>
+            <Button type="button" size="sm" disabled={lendo} onClick={async () => { if (await adicionarImagens([pendente])) setPendente(null); }}>
               Usar foto
             </Button>
             <Button type="button" variant="outline" size="sm" disabled={lendo} onClick={() => { setPendente(null); abrirCamera(); }}>
