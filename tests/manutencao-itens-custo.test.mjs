@@ -103,10 +103,24 @@ test("a tela tem a caixa de busca dos grupos e ações", () => {
   assert.match(dialogo, /aria-label="Buscar grupo ou ação"/);
 });
 
-test("cada item marcado tem Onde foi feito, custo das peças e da mão de obra", () => {
+test("em Grupos de ações a ação marcada só escolhe Onde foi feito; os custos ficam dentro do local", () => {
   assert.match(dialogo, /aria-label=\{`Onde foi feito: \$\{sub\.nome\}`\}/);
-  assert.match(dialogo, /aria-label=\{`Custo das peças de \$\{sub\.nome\}`\}/);
-  assert.match(dialogo, /aria-label=\{`Custo da mão de obra de \$\{sub\.nome\}`\}/);
+  assert.doesNotMatch(dialogo, /Custo das peças de \$\{sub\.nome\}/);
+  assert.doesNotMatch(dialogo, /Custo da mão de obra de \$\{sub\.nome\}/);
+});
+
+test("cada ação puxada para o local tem os campos de peças e de mão de obra dentro do local", () => {
+  const lista = dialogo.indexOf("itensDoLocal(l.chave).map((a) =>");
+  assert.ok(lista > 0, "lista de ações do local");
+  const peças = dialogo.indexOf("Custo das peças de ${a.sub.nome}");
+  const mao = dialogo.indexOf("Custo da mão de obra de ${a.sub.nome}");
+  assert.ok(peças > lista && mao > lista, "campos dentro da lista do local");
+  assert.match(dialogo, /mudarDetalhe\(a\.grupo\.id, a\.sub\.id, \{ pecas: e\.target\.value \}\)/);
+  assert.match(dialogo, /mudarDetalhe\(a\.grupo\.id, a\.sub\.id, \{ mao: e\.target\.value \}\)/);
+});
+
+test("o seletor Onde foi feito some quando há um único local e a ação já está nele", () => {
+  assert.match(dialogo, /locais\.length !== 1 \|\| !/);
 });
 
 test("o serviço do local é o texto gerado dos itens (servicoDoLocal) quando há itens nele", () => {
