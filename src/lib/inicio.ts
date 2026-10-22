@@ -30,10 +30,10 @@ const dosItens = (itens: readonly (ItemComFilhos | GrupoMenu)[]): SubitemInicio[
 
 // Cada área tem um cartão só, com os atalhos do módulo e os dos parâmetros dela (Viagens só tem módulo; Gerais só tem parâmetros).
 export const GRUPOS_INICIO: readonly GrupoInicio[] = [
+  { titulo: "Visão geral", cartoes: [{ titulo: "Dashboard", url: "/dashboard", icone: "LayoutDashboard" }] },
   {
-    titulo: "Módulos e parâmetros",
+    titulo: "Módulos",
     cartoes: [
-      { titulo: "Dashboard", url: "/dashboard", icone: "LayoutDashboard" },
       { titulo: "EPIs", icone: "HardHat", itens: [...dasAbas("/epi", ABAS_EPI), ...dosItens(MENU_EPI)] },
       { titulo: "Uniformes", icone: "Shirt", itens: [...dasAbas("/uniformes", ABAS_UNIFORME), ...dosItens(MENU_UNIFORMES)] },
       { titulo: "Ferramentas", icone: "Wrench", itens: [...dasAbas("/ferramentas", ABAS_FERRAMENTA), ...dosItens(MENU_FERRAMENTAS)] },

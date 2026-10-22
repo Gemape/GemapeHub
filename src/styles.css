@@ -226,7 +226,21 @@
       var(--glass-highlight);
   }
 
-  /* Vidro mais opaco para o que precisa de leitura firme: janelas, menus e listas suspensas. */
+  /* Vidro dos cartões da tela inicial: desfoque e saturação fortes, borda clara e um brilho que cobre o topo. */
+.vidro-cartao {
+  background-image: linear-gradient(160deg, oklch(1 0 0 / 0.78), oklch(1 0 0 / 0.38));
+  background-color: oklch(1 0 0 / 0.3);
+  -webkit-backdrop-filter: blur(30px) saturate(2);
+  backdrop-filter: blur(30px) saturate(2);
+  border: 1px solid oklch(1 0 0 / 0.85);
+  box-shadow:
+    0 18px 44px oklch(0.24 0.2 266 / 0.28),
+    0 0 0 1px oklch(0.32 0.25 266 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.95),
+    inset 0 -1px 0 oklch(1 0 0 / 0.25);
+}
+
+/* Vidro mais opaco para o que precisa de leitura firme: janelas, menus e listas suspensas. */
   .glass-strong {
     background-color: var(--glass-bg-strong);
     -webkit-backdrop-filter: blur(22px) saturate(1.6);
@@ -406,9 +420,9 @@
   background-clip: text;
   color: transparent;
   animation:
-    titulo-entrada 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
-    logo-varredura 5s ease-in-out 1s infinite,
-    titulo-brilho 4s ease-in-out infinite;
+    titulo-entrada 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    logo-varredura 11s ease-in-out 1.5s infinite,
+    titulo-brilho 8s ease-in-out infinite;
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     background-position: 0 0;

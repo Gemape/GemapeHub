@@ -18,7 +18,7 @@ test("a tela inicial usa só o fundo padrão do sistema (o gradiente do body, o 
 });
 
 test("os cartões da tela inicial são de vidro (efeito glassmorphism do sistema), sem fundo sólido", () => {
-  assert.match(inicio, /"glass overflow-hidden/);
+  assert.match(inicio, /"vidro-cartao /);
   assert.doesNotMatch(inicio, /bg-card\b/);
 });
 
@@ -34,7 +34,7 @@ test("o topo traz o título animado Grupo Gemape Gestão de Patrimônio, central
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {
   assert.match(inicio, /bg-primary\/10/);
   assert.match(inicio, /Clique para acessar/);
-  assert.match(inicio, /lg:w-\[calc\(25%/);
+  assert.match(inicio, /lg:w-\[calc\(33\.333%/);
 });
 
 test("a tela inicial não mostra mais o texto de título (Início / Gestão de Patrimônio): começa direto nos cartões", () => {

@@ -11,15 +11,16 @@ import {
 const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 const cartao = (admin, grupo, titulo) => gruposDoInicio(admin).find((g) => g.titulo === grupo).cartoes.find((c) => c.titulo === titulo);
 const pagina = existsSync(new URL("../src/routes/_authenticated/inicio.tsx", import.meta.url)) ? ler("routes/_authenticated/inicio.tsx") : "";
-const AREAS = "Módulos e parâmetros";
+const AREAS = "Módulos";
 const daSecao = (c, secao) => c.itens.filter((i) => i.secao === secao);
 const titulos = (itens) => itens.map((i) => i.titulo);
 
-test("a tela inicial tem os grupos: Módulos e parâmetros (um cartão por área, com o Dashboard) e Cadastros (com Gerais)", () => {
+test("a tela inicial tem os grupos: Visão geral, Módulos (um cartão por área, 3 por linha) e Cadastros (com Gerais)", () => {
   const g = gruposDoInicio(true);
-  assert.deepEqual(g.map((x) => x.titulo), [AREAS, "Cadastros"]);
-  assert.deepEqual(titulos(g[0].cartoes), ["Dashboard", "EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos"]);
-  assert.deepEqual(titulos(g[1].cartoes), ["Gerais", "Empresas", "Empregados", "Fornecedores", "Clientes"]);
+  assert.deepEqual(g.map((x) => x.titulo), ["Visão geral", AREAS, "Cadastros"]);
+  assert.deepEqual(titulos(g[0].cartoes), ["Dashboard"]);
+  assert.deepEqual(titulos(g[1].cartoes), ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos"]);
+  assert.deepEqual(titulos(g[2].cartoes), ["Gerais", "Empresas", "Empregados", "Fornecedores", "Clientes"]);
 });
 
 test("Gerais só aparece para o Administrador, como no menu lateral", () => {
@@ -35,7 +36,7 @@ test("cartões com submenus se abrem no próprio cartão; os sem submenu abrem a
     assert.ok(c.itens?.length > 1, t);
     assert.equal(c.url, undefined, t);
   }
-  for (const [g, t] of [[AREAS, "Dashboard"], ["Cadastros", "Empresas"], ["Cadastros", "Empregados"], ["Cadastros", "Fornecedores"], ["Cadastros", "Clientes"]]) {
+  for (const [g, t] of [["Visão geral", "Dashboard"], ["Cadastros", "Empresas"], ["Cadastros", "Empregados"], ["Cadastros", "Fornecedores"], ["Cadastros", "Clientes"]]) {
     const c = cartao(true, g, t);
     assert.ok(c.url, `${g} > ${t}`);
     assert.equal(c.itens, undefined, `${g} > ${t}`);
@@ -104,7 +105,7 @@ test("o login leva para a tela inicial, e o Dashboard continua acessível pelo c
     assert.match(s, /to: "\/inicio"/, f);
     assert.doesNotMatch(s, /to: "\/dashboard"/, f);
   }
-  assert.equal(cartao(true, AREAS, "Dashboard").url, "/dashboard");
+  assert.equal(cartao(true, "Visão geral", "Dashboard").url, "/dashboard");
 });
 
 const layout = ler("routes/_authenticated/route.tsx");
@@ -126,7 +127,7 @@ test("a tela mostra cartões com ícone, título e Clique para acessar, só os d
   assert.match(pagina, /gruposDoInicio\(isAdmin\)/);
   assert.match(pagina, /Clique para acessar/);
   assert.match(pagina, /focus-visible:ring/);
-  assert.match(pagina, /lg:w-\[calc\(25%/);
+  assert.match(pagina, /lg:w-\[calc\(33\.333%/);
   assert.doesNotMatch(pagina, /dangerouslySetInnerHTML|innerHTML/);
 });
 

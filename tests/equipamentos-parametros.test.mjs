@@ -148,7 +148,7 @@ test("Parâmetros Específicos entra no menu de Equipamentos e no cartão da tel
     ["Check list de vistoria", "/cadastros/equipamentos-checklist"],
   ]);
   const { gruposDoInicio } = await import("../src/lib/inicio.ts");
-  const card = gruposDoInicio(true).find((g) => g.titulo === "Módulos e parâmetros").cartoes.find((c) => c.titulo === "Equipamentos");
+  const card = gruposDoInicio(true).find((g) => g.titulo === "Módulos").cartoes.find((c) => c.titulo === "Equipamentos");
   assert.deepEqual(card.itens.filter((i) => i.secao === "Parâmetros").map((i) => i.titulo), ["Cadastrar equipamento", "Parâmetros Específicos", "Check list de manutenção", "Check list de vistoria"]);
   assert.equal(card.url, undefined);
 });
