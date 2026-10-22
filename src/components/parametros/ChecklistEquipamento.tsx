@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
+import { EditorItensChecklist } from "@/components/parametros/EditorItensChecklist";
 import { TODAS } from "@/lib/empresa-context";
 import {
   cadastrarPadraoChecklist, checklistsDaAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
@@ -17,6 +17,8 @@ import {
   type AssociacaoChecklistEquipamento, type FinalidadeChecklist, type GrupoChecklistEquipamento, type TipoAssociacao,
 } from "@/lib/equipamentos-checklist";
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
+import { GRUPOS_PADRAO_MANUTENCAO } from "@/lib/equipamentos-manutencao-padrao";
+import { GRUPOS_PADRAO_VISTORIA } from "@/lib/equipamentos-vistoria-padrao";
 import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import { useVersaoArmazenamento } from "@/lib/use-versao-armazenamento";
@@ -38,6 +40,10 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
   const [itens, setItens] = useState("");
   const [escolhidos, setEscolhidos] = useState<string[]>([]);
   const trava = useRef(false);
+  // Itens do padrão do check list (manutenção ou vistoria) dos tipos escolhidos; sem tipo escolhido, ou com Todos os tipos, vêm todos.
+  const catalogo = (finalidade === "vistoria" ? GRUPOS_PADRAO_VISTORIA : GRUPOS_PADRAO_MANUTENCAO)
+    .filter((p) => escolhidos.length === 0 || escolhidos.includes(TODOS_OS_TIPOS) || escolhidos.includes(p.tipoId))
+    .map((p) => ({ titulo: p.nome, itens: p.itens }));
 
   function abrir(g: GrupoChecklistEquipamento | null, clonar: boolean) {
     setEditando(clonar ? null : g);
@@ -140,8 +146,8 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
               <Input id="grupo-equip-nome" capitalizar="texto" value={nome} maxLength={80} onChange={(e) => setNome(e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="grupo-equip-itens">Itens do check list (um por linha)</Label>
-              <Textarea id="grupo-equip-itens" rows={8} maxLength={5000} value={itens} onChange={(e) => setItens(e.target.value)} />
+              <Label htmlFor="grupo-equip-itens">Itens do check list</Label>
+              <EditorItensChecklist id="grupo-equip-itens" value={itens} onChange={setItens} catalogo={catalogo} />
             </div>
             <fieldset className="space-y-1.5">
               <legend className="text-sm font-medium">Tipo de equipamento</legend>

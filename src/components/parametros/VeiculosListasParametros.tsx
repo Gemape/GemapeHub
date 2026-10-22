@@ -41,6 +41,8 @@ import {
   removerAcaoManutencaoVeiculo,
   removerTipoOcorrenciaVeiculo,
 } from "@/lib/parametros-base";
+import { EditorItensChecklist } from "@/components/parametros/EditorItensChecklist";
+import { CHECKLIST_VEICULOS_PADRAO } from "@/lib/checklist-veiculos-padrao";
 import { separarPorTipoVeiculo } from "@/lib/checklist-por-tipo";
 import { filtrarPaisEFilhos } from "@/lib/busca-acoes-manutencao";
 import { executar, useParametrosBase, validarAntes } from "@/lib/use-parametros-base";
@@ -54,6 +56,7 @@ type CampoExtra = "descricao" | "subitens" | "itens" | null;
 // Também serve às listas de Parâmetros > Equipamentos (`eyebrow` troca o caminho no alto).
 export function ListaVeiculos({
   eyebrow = "Parâmetros > Veículos",
+  catalogoItens,
   titulo,
   subtitulo,
   singular,
@@ -70,6 +73,8 @@ export function ListaVeiculos({
   onValidar,
 }: {
   eyebrow?: string;
+  // Itens do padrão, para marcar e personalizar ao cadastrar o grupo (campoExtra "itens"); sem ele, vale o campo de texto.
+  catalogoItens?: { titulo: string; itens: readonly string[] }[];
   titulo: string;
   subtitulo: string;
   singular: string;
@@ -234,7 +239,10 @@ export function ListaVeiculos({
               <Label htmlFor="veiculo-lista-nome">Nome</Label>
               <Input id="veiculo-lista-nome" capitalizar="texto" value={nome} maxLength={80} onChange={(e) => setNome(e.target.value)} />
             </div>
-            {campoExtra && (
+            {campoExtra === "itens" && catalogoItens && (
+              <EditorItensChecklist id="veiculo-lista-descricao" value={descricao} onChange={setDescricao} catalogo={catalogoItens} />
+            )}
+            {campoExtra && !(campoExtra === "itens" && catalogoItens) && (
               <div className="space-y-1">
                 <Label htmlFor="veiculo-lista-descricao">
                   {campoExtra === "subitens" ? "Subitens (um por linha)" : campoExtra === "itens" ? "Itens do check list (um por linha)" : "Descrição"}
@@ -696,6 +704,7 @@ export function ChecklistVeiculoLista({ secao = false }: { secao?: boolean } = {
       singular="grupo do check list"
       linhas={itensChecklistVeiculo.map((g) => ({ id: g.id, nome: g.nome, extra: g.itens.map((i) => i.nome).join("\n"), tipos: g.tiposVeiculo }))}
       campoExtra="itens"
+      catalogoItens={CHECKLIST_VEICULOS_PADRAO.map((g) => ({ titulo: g.nome, itens: g.itens }))}
       opcoesTipos={tiposDeVeiculo}
       onSalvar={(id, nome, extra, tipos) =>
         executar(

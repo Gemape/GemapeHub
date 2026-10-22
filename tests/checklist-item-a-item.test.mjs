@@ -128,3 +128,18 @@ test("a tela de clonar acha o responsável do original, e o topo e o início nã
   assert.match(ler2("components/layout/MenuDaArea.tsx"), /useRouterState\(\{ select: \(s\) => s\.location\.pathname \}\)/);
   assert.match(ler2("routes/_authenticated/inicio.tsx"), /setAbertos\(\(a\) => \(a\.size \? new Set\(\) : a\)\)/);
 });
+
+test("cadastro de grupo: itens do padrão para marcar, lista editável dos selecionados e item próprio (veículos e equipamentos)", () => {
+  const editor = ler("components/parametros/EditorItensChecklist.tsx");
+  assert.match(editor, /Itens padrão \(marque para incluir no grupo\)/);
+  assert.match(editor, /selecionados/);
+  assert.match(editor, /Novo item do grupo/);
+  assert.match(editor, /aria-label=\{`Remover \$\{l\}`\}/);
+  assert.doesNotMatch(editor, /dangerouslySetInnerHTML|innerHTML|document\./);
+  const veic = ler("components/parametros/VeiculosListasParametros.tsx");
+  assert.match(veic, /<EditorItensChecklist id="veiculo-lista-descricao"/);
+  assert.match(veic, /catalogoItens=\{CHECKLIST_VEICULOS_PADRAO/);
+  const equip = ler("components/parametros/ChecklistEquipamento.tsx");
+  assert.match(equip, /<EditorItensChecklist id="grupo-equip-itens"/);
+  assert.match(equip, /GRUPOS_PADRAO_VISTORIA : GRUPOS_PADRAO_MANUTENCAO/);
+});
