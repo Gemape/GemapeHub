@@ -45,7 +45,7 @@ function PaginaInicio() {
     });
 
   return (
-    <div>
+    <div className="fonte-manrope">
       {/* Sem título na tela: ela começa direto nos cartões. O título fica só para o leitor de tela. */}
       <h1 className="sr-only">Início</h1>
       <div className="mx-auto max-w-6xl space-y-10">
@@ -72,7 +72,7 @@ function PaginaInicio() {
                     <Link to={c.url ?? "/inicio"} className={`flex flex-col ${classeCartao} ${classeFoco}`}>
                       {faixa}
                       <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
-                        <span className="font-semibold">{c.titulo}</span>
+                        <span className="font-medium">{c.titulo}</span>
                         <span className="text-xs text-muted-foreground">Clique para acessar</span>
                       </span>
                     </Link>
@@ -92,7 +92,7 @@ function PaginaInicio() {
                   >
                     {faixa}
                     <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
-                      <span className="font-semibold">{c.titulo}</span>
+                      <span className="font-medium">{c.titulo}</span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         {aberto ? "Clique para recolher" : "Clique para acessar"}
                         <ChevronDown className={`size-3.5 transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
