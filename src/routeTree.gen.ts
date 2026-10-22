@@ -20,6 +20,7 @@ import { Route as AuthenticatedEnderecamentoRouteImport } from './routes/_authen
 import { Route as AuthenticatedEpiRouteImport } from './routes/_authenticated/epi'
 import { Route as AuthenticatedEpiCadastrarRouteImport } from './routes/_authenticated/epi-cadastrar'
 import { Route as AuthenticatedEpiFichaRouteImport } from './routes/_authenticated/epi-ficha'
+import { Route as AuthenticatedEquipamentosRouteImport } from './routes/_authenticated/equipamentos'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedOcorrenciasRouteImport } from './routes/_authenticated/ocorrencias'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
@@ -33,6 +34,7 @@ import { Route as AuthenticatedCadastrosClientesRouteImport } from './routes/_au
 import { Route as AuthenticatedCadastrosEnderecamentoRouteImport } from './routes/_authenticated/cadastros/enderecamento'
 import { Route as AuthenticatedCadastrosEpiRouteImport } from './routes/_authenticated/cadastros/epi'
 import { Route as AuthenticatedCadastrosEpiFichaRouteImport } from './routes/_authenticated/cadastros/epi-ficha'
+import { Route as AuthenticatedCadastrosEquipamentosRouteImport } from './routes/_authenticated/cadastros/equipamentos'
 import { Route as AuthenticatedCadastrosFerramentasRouteImport } from './routes/_authenticated/cadastros/ferramentas'
 import { Route as AuthenticatedCadastrosFornecedoresRouteImport } from './routes/_authenticated/cadastros/fornecedores'
 import { Route as AuthenticatedCadastrosGeraisRouteRouteImport } from './routes/_authenticated/cadastros/gerais/route'
@@ -112,6 +114,12 @@ const AuthenticatedEpiFichaRoute = AuthenticatedEpiFichaRouteImport.update({
   path: '/epi-ficha',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEquipamentosRoute =
+  AuthenticatedEquipamentosRouteImport.update({
+    id: '/equipamentos',
+    path: '/equipamentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFerramentasRoute =
   AuthenticatedFerramentasRouteImport.update({
     id: '/ferramentas',
@@ -183,6 +191,12 @@ const AuthenticatedCadastrosEpiFichaRoute =
   AuthenticatedCadastrosEpiFichaRouteImport.update({
     id: '/cadastros/epi-ficha',
     path: '/cadastros/epi-ficha',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCadastrosEquipamentosRoute =
+  AuthenticatedCadastrosEquipamentosRouteImport.update({
+    id: '/cadastros/equipamentos',
+    path: '/cadastros/equipamentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedCadastrosFerramentasRoute =
@@ -323,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/epi': typeof AuthenticatedEpiRoute
   '/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
   '/epi-ficha': typeof AuthenticatedEpiFichaRoute
+  '/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -337,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/cadastros/enderecamento': typeof AuthenticatedCadastrosEnderecamentoRoute
   '/cadastros/epi': typeof AuthenticatedCadastrosEpiRoute
   '/cadastros/epi-ficha': typeof AuthenticatedCadastrosEpiFichaRoute
+  '/cadastros/equipamentos': typeof AuthenticatedCadastrosEquipamentosRoute
   '/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
   '/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
@@ -369,6 +385,7 @@ export interface FileRoutesByTo {
   '/epi': typeof AuthenticatedEpiRoute
   '/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
   '/epi-ficha': typeof AuthenticatedEpiFichaRoute
+  '/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -382,6 +399,7 @@ export interface FileRoutesByTo {
   '/cadastros/enderecamento': typeof AuthenticatedCadastrosEnderecamentoRoute
   '/cadastros/epi': typeof AuthenticatedCadastrosEpiRoute
   '/cadastros/epi-ficha': typeof AuthenticatedCadastrosEpiFichaRoute
+  '/cadastros/equipamentos': typeof AuthenticatedCadastrosEquipamentosRoute
   '/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
   '/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
@@ -416,6 +434,7 @@ export interface FileRoutesById {
   '/_authenticated/epi': typeof AuthenticatedEpiRoute
   '/_authenticated/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
   '/_authenticated/epi-ficha': typeof AuthenticatedEpiFichaRoute
+  '/_authenticated/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRoute
   '/_authenticated/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -430,6 +449,7 @@ export interface FileRoutesById {
   '/_authenticated/cadastros/enderecamento': typeof AuthenticatedCadastrosEnderecamentoRoute
   '/_authenticated/cadastros/epi': typeof AuthenticatedCadastrosEpiRoute
   '/_authenticated/cadastros/epi-ficha': typeof AuthenticatedCadastrosEpiFichaRoute
+  '/_authenticated/cadastros/equipamentos': typeof AuthenticatedCadastrosEquipamentosRoute
   '/_authenticated/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
   '/_authenticated/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/_authenticated/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
@@ -464,6 +484,7 @@ export interface FileRouteTypes {
     | '/epi'
     | '/epi-cadastrar'
     | '/epi-ficha'
+    | '/equipamentos'
     | '/ferramentas'
     | '/ocorrencias'
     | '/relatorios'
@@ -478,6 +499,7 @@ export interface FileRouteTypes {
     | '/cadastros/enderecamento'
     | '/cadastros/epi'
     | '/cadastros/epi-ficha'
+    | '/cadastros/equipamentos'
     | '/cadastros/ferramentas'
     | '/cadastros/fornecedores'
     | '/cadastros/uniformes'
@@ -510,6 +532,7 @@ export interface FileRouteTypes {
     | '/epi'
     | '/epi-cadastrar'
     | '/epi-ficha'
+    | '/equipamentos'
     | '/ferramentas'
     | '/ocorrencias'
     | '/relatorios'
@@ -523,6 +546,7 @@ export interface FileRouteTypes {
     | '/cadastros/enderecamento'
     | '/cadastros/epi'
     | '/cadastros/epi-ficha'
+    | '/cadastros/equipamentos'
     | '/cadastros/ferramentas'
     | '/cadastros/fornecedores'
     | '/cadastros/uniformes'
@@ -556,6 +580,7 @@ export interface FileRouteTypes {
     | '/_authenticated/epi'
     | '/_authenticated/epi-cadastrar'
     | '/_authenticated/epi-ficha'
+    | '/_authenticated/equipamentos'
     | '/_authenticated/ferramentas'
     | '/_authenticated/ocorrencias'
     | '/_authenticated/relatorios'
@@ -570,6 +595,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cadastros/enderecamento'
     | '/_authenticated/cadastros/epi'
     | '/_authenticated/cadastros/epi-ficha'
+    | '/_authenticated/cadastros/equipamentos'
     | '/_authenticated/cadastros/ferramentas'
     | '/_authenticated/cadastros/fornecedores'
     | '/_authenticated/cadastros/uniformes'
@@ -677,6 +703,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEpiFichaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/equipamentos': {
+      id: '/_authenticated/equipamentos'
+      path: '/equipamentos'
+      fullPath: '/equipamentos'
+      preLoaderRoute: typeof AuthenticatedEquipamentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ferramentas': {
       id: '/_authenticated/ferramentas'
       path: '/ferramentas'
@@ -766,6 +799,13 @@ declare module '@tanstack/react-router' {
       path: '/cadastros/epi-ficha'
       fullPath: '/cadastros/epi-ficha'
       preLoaderRoute: typeof AuthenticatedCadastrosEpiFichaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cadastros/equipamentos': {
+      id: '/_authenticated/cadastros/equipamentos'
+      path: '/cadastros/equipamentos'
+      fullPath: '/cadastros/equipamentos'
+      preLoaderRoute: typeof AuthenticatedCadastrosEquipamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cadastros/ferramentas': {
@@ -963,6 +1003,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEpiRoute: typeof AuthenticatedEpiRoute
   AuthenticatedEpiCadastrarRoute: typeof AuthenticatedEpiCadastrarRoute
   AuthenticatedEpiFichaRoute: typeof AuthenticatedEpiFichaRoute
+  AuthenticatedEquipamentosRoute: typeof AuthenticatedEquipamentosRoute
   AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRoute
   AuthenticatedOcorrenciasRoute: typeof AuthenticatedOcorrenciasRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
@@ -977,6 +1018,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCadastrosEnderecamentoRoute: typeof AuthenticatedCadastrosEnderecamentoRoute
   AuthenticatedCadastrosEpiRoute: typeof AuthenticatedCadastrosEpiRoute
   AuthenticatedCadastrosEpiFichaRoute: typeof AuthenticatedCadastrosEpiFichaRoute
+  AuthenticatedCadastrosEquipamentosRoute: typeof AuthenticatedCadastrosEquipamentosRoute
   AuthenticatedCadastrosFerramentasRoute: typeof AuthenticatedCadastrosFerramentasRoute
   AuthenticatedCadastrosFornecedoresRoute: typeof AuthenticatedCadastrosFornecedoresRoute
   AuthenticatedCadastrosUniformesRoute: typeof AuthenticatedCadastrosUniformesRoute
@@ -1000,6 +1042,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEpiRoute: AuthenticatedEpiRoute,
   AuthenticatedEpiCadastrarRoute: AuthenticatedEpiCadastrarRoute,
   AuthenticatedEpiFichaRoute: AuthenticatedEpiFichaRoute,
+  AuthenticatedEquipamentosRoute: AuthenticatedEquipamentosRoute,
   AuthenticatedFerramentasRoute: AuthenticatedFerramentasRoute,
   AuthenticatedOcorrenciasRoute: AuthenticatedOcorrenciasRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
@@ -1017,6 +1060,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCadastrosEnderecamentoRoute,
   AuthenticatedCadastrosEpiRoute: AuthenticatedCadastrosEpiRoute,
   AuthenticatedCadastrosEpiFichaRoute: AuthenticatedCadastrosEpiFichaRoute,
+  AuthenticatedCadastrosEquipamentosRoute:
+    AuthenticatedCadastrosEquipamentosRoute,
   AuthenticatedCadastrosFerramentasRoute:
     AuthenticatedCadastrosFerramentasRoute,
   AuthenticatedCadastrosFornecedoresRoute:

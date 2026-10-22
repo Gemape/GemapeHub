@@ -28,7 +28,8 @@ export type NomeIcone =
   | "Fuel"
   | "Box"
   | "ListPlus"
-  | "FileText";
+  | "FileText"
+  | "Forklift";
 // Submenus no menu lateral (decisão 43): cada aba antiga vira um item que abre a tela com ?aba=.
 export type AbaMenu = { aba: string; titulo: string; icone: NomeIcone; soAdmin?: boolean };
 export type DeMenu = "epi" | "uniformes" | "ferramentas" | "veiculos";
@@ -125,6 +126,11 @@ export const MENU_VEICULOS: readonly ItemMenu[] = [
   { titulo: "Check list", url: "/cadastros/veiculos-checklist", icone: "ListChecks" },
   itemEspecificos("veiculos"),
   { titulo: "Questionário de Despesas", url: "/cadastros/veiculos-questionario-despesas", icone: "ListPlus" },
+];
+
+// Parâmetros > Equipamentos: os dados cadastrados aqui alimentam o módulo Equipamentos (a lógica do módulo vem depois).
+export const MENU_EQUIPAMENTOS: readonly ItemMenu[] = [
+  { titulo: "Cadastrar equipamento", url: "/cadastros/equipamentos", icone: "Forklift" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.

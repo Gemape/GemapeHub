@@ -9,6 +9,7 @@ import {
   ABAS_VEICULO,
   ABAS_VIAGEM,
   MENU_EPI,
+  MENU_EQUIPAMENTOS,
   MENU_FERRAMENTAS,
   MENU_GERAIS,
   MENU_UNIFORMES,
@@ -21,6 +22,7 @@ import {
 import {
   Building2,
   Car,
+  Forklift,
   HardHat,
   LayoutDashboard,
   Shirt,
@@ -96,6 +98,7 @@ const grupos = [
       { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench, abas: ABAS_FERRAMENTA },
       { titulo: "Veículos", url: "/veiculos", icone: Car, abas: ABAS_VEICULO },
       { titulo: "Viagens", url: "/viagens", icone: IconeViagens, abas: ABAS_VIAGEM },
+      { titulo: "Equipamentos", url: "/equipamentos", icone: Forklift },
     ],
   },
   {
@@ -114,7 +117,7 @@ type ItemGrupo = { titulo: string; url: string; icone: typeof LayoutDashboard; a
 const ICONES = {
   Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive, Car,
   LayoutDashboard, Boxes, ShoppingCart, History, PackageMinus, PackageCheck, FileSignature, FileMinus, FileCheck, FileX,
-  ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus, FileText,
+  ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus, FileText, Forklift,
 } as const;
 
 function useDeAtual(): string | undefined {
@@ -305,6 +308,17 @@ function MenuVeiculos({ pathname }: { pathname: string }) {
   );
 }
 
+// Parâmetros > Equipamentos: o cadastro dos equipamentos (os dados que o módulo Equipamentos vai usar).
+function MenuEquipamentos({ pathname }: { pathname: string }) {
+  return (
+    <GrupoRecolhivel titulo="Equipamentos" icone={<Forklift />} prefixos={MENU_EQUIPAMENTOS.map((i) => i.url)} pathname={pathname}>
+      {MENU_EQUIPAMENTOS.map((item) => (
+        <SubLink key={item.url} item={item} pathname={pathname} />
+      ))}
+    </GrupoRecolhivel>
+  );
+}
+
 // Módulos: o menu abre e lista as antigas abas como submenus (decisão 43).
 function ModuloComAbas({ item, pathname }: { item: ItemGrupo; pathname: string }) {
   const { isAdmin } = useAccess();
@@ -371,6 +385,7 @@ export function AppSidebar() {
                     <MenuUniformes pathname={pathname} />
                     <MenuFerramentas pathname={pathname} />
                     <MenuVeiculos pathname={pathname} />
+                    <MenuEquipamentos pathname={pathname} />
                   </>
                 )}
                 {grupo.itens.map((item: ItemGrupo) =>
