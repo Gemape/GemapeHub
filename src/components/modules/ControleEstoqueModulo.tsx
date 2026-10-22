@@ -8,15 +8,15 @@ import { hojeLocal } from "@/lib/empregados";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { useItens, useMovimentacoes } from "@/lib/hooks-gemape";
 
-// Aba Estoque dos EPIs > Controle de estoque e consumo, como o REL_ESTOQUE da planilha: estoque crítico e atual, últimas e penúltimas entradas e saídas,
+// Aba Estoque dos EPIs e dos Uniformes > Controle de estoque e consumo, como o REL_ESTOQUE da planilha: estoque crítico e atual, últimas e penúltimas entradas e saídas,
 // médias de consumo (mensal, trimestral, semestral e anual) e cobertura em dias (estoque atual ÷ média diária do último ano).
 const numero = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 const data = (d: string | null) => (d ? formatarData(d) : "—");
 
-export function EpiControleEstoque() {
+export function ControleEstoqueModulo({ modulo }: { modulo: "epi" | "uniforme" }) {
   const { empresaId } = useEmpresa();
-  const { data: itens = [], isLoading: carregandoItens } = useItens("epi", empresaId);
-  const { data: movimentos = [], isLoading: carregandoMov } = useMovimentacoes("epi", empresaId);
+  const { data: itens = [], isLoading: carregandoItens } = useItens(modulo, empresaId);
+  const { data: movimentos = [], isLoading: carregandoMov } = useMovimentacoes(modulo, empresaId);
   const linhas = useMemo(() => controleDeEstoque(itens, movimentos, hojeLocal()), [itens, movimentos]);
   const carregando = carregandoItens || carregandoMov;
   const cobertura = (c: number | null) => (c === null ? "Sem consumo" : `${c.toLocaleString("pt-BR")}`);
@@ -33,7 +33,7 @@ export function EpiControleEstoque() {
         <Button
           variant="outline"
           disabled={carregando || linhas.length === 0}
-          onClick={() => exportarCsv("controle-estoque-epi", linhas.map((l) => ({
+          onClick={() => exportarCsv(`controle-estoque-${modulo}`, linhas.map((l) => ({
             Descrição: l.nome,
             "Estoque crítico": l.estoqueCritico,
             "Estoque atual": l.estoqueAtual,
@@ -69,7 +69,7 @@ export function EpiControleEstoque() {
           </TableHeader>
           <TableBody>
             {carregando ? <TableRow><TableCell colSpan={12}>Carregando…</TableCell></TableRow>
-              : linhas.length === 0 ? <TableRow><TableCell colSpan={12}>Nenhum EPI cadastrado.</TableCell></TableRow>
+              : linhas.length === 0 ? <TableRow><TableCell colSpan={12}>{modulo === "epi" ? "Nenhum EPI cadastrado." : "Nenhum uniforme cadastrado."}</TableCell></TableRow>
                 : linhas.map((l) => (
                   <TableRow key={l.itemId}>
                     <TableCell>{l.nome}</TableCell>

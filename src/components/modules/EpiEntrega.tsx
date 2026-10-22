@@ -13,12 +13,13 @@ import { useAccess } from "@/lib/access-context";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
-import { emPosseEpi, lerHistoricoEpiPorItem, MENSAGEM_SO_ADMIN, registrarDevolucaoEpi, registrarEntregaEpi, type CalculoAlerta } from "@/lib/entrega-epi";
+import { emPosseEpi, lerHistoricoEpiPorItem, mensagemSoAdmin, registrarDevolucaoEpi, registrarEntregaEpi, type CalculoAlerta, type ModuloEntrega } from "@/lib/entrega-epi";
 import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { useEmpregados, useEmpresas, useItens } from "@/lib/hooks-gemape";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { montarTermoEntregaEpiHtml } from "@/lib/termo-entrega-epi-html";
+import { montarTermoEntregaUniformeHtml } from "@/lib/termo-entrega-uniforme-html";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
@@ -27,7 +28,17 @@ const TODOS = "todos";
 const novaLinha = (): Linha => ({ id: Math.random().toString(36).slice(2, 11), item_id: "", quantidade: 1, tamanho: "" });
 const ROTULO_TIPO: Record<string, string> = { Saida: "Entrega", Devolucao: "Devolução", Entrada: "Entrada" };
 
-export function EpiEntrega() {
+// Palavras de cada módulo: a mesma tela de entrega e devolução serve ao EPI e ao Uniforme.
+const ROTULO: Record<ModuloEntrega, { um: string; plural: string; Plural: string; termo: string; Sing: string }> = {
+  epi: { um: "EPI", plural: "EPIs", Plural: "EPIs", Sing: "EPI", termo: "Termo de Entrega de EPI" },
+  uniforme: { um: "uniforme", plural: "uniformes", Plural: "Uniformes", Sing: "Uniforme", termo: "Termo de Entrega de Uniformes" },
+};
+
+export const EpiEntrega = () => <EntregaModulo modulo="epi" />;
+export const UniformesEntrega = () => <EntregaModulo modulo="uniforme" />;
+
+function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
+  const rot = ROTULO[modulo];
   const { empresaId } = useEmpresa();
   const { isAdmin, canOperate } = useAccess();
   const queryClient = useQueryClient();
@@ -55,26 +66,27 @@ export function EpiEntrega() {
   useEffect(() => { if (!responsavel) setResponsavel(responsavelPadrao); }, [responsavelPadrao, responsavel]);
 
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
-  const { data: itens = [] } = useItens("epi", empresaSel || TODAS);
+  const { data: itens = [] } = useItens(modulo, empresaSel || TODAS);
   const parametros = useParametrosBase();
   const empregado = empregados.find((e) => e.id === empregadoId);
   const empresa = empresas.find((e) => e.id === empresaSel);
 
   // Histórico completo da empresa (sem o limite de 1000 linhas), filtrado por EPI e empregado.
   const historico = useQuery({
-    queryKey: ["epi-entrega-historico", empresaSel, filtroItem, filtroEmpregado],
+    queryKey: [`${modulo}-entrega-historico`, empresaSel, filtroItem, filtroEmpregado],
     enabled: Boolean(empresaSel),
     queryFn: () => lerHistoricoEpiPorItem(supabase, {
       empresaId: empresaSel,
+      modulo,
       ...(filtroItem !== TODOS ? { itemId: filtroItem } : {}),
       ...(filtroEmpregado !== TODOS ? { empregadoId: filtroEmpregado } : {}),
     }),
   });
   // O que o empregado tem em posse, para a devolução.
   const doEmpregado = useQuery({
-    queryKey: ["epi-entrega-em-posse", empresaSel, empregadoId],
+    queryKey: [`${modulo}-entrega-em-posse`, empresaSel, empregadoId],
     enabled: Boolean(empresaSel && empregadoId && modo === "devolucao"),
-    queryFn: () => lerHistoricoEpiPorItem(supabase, { empresaId: empresaSel, empregadoId }),
+    queryFn: () => lerHistoricoEpiPorItem(supabase, { empresaId: empresaSel, empregadoId, modulo }),
   });
   const movimentosDoEmpregado = doEmpregado.data ?? [];
   const itensEmPosse = useMemo(
@@ -84,11 +96,11 @@ export function EpiEntrega() {
 
   // Só da empresa escolhida: o saldo e o mínimo são por empresa, e o mesmo código não aparece repetido (dec 238).
   const alertas = useMemo(
-    () => (empresaSel ? itens : []).map((i) => ({ item: i, estado: estadoEstoqueModulo(parametros, "epi", i) })).filter((x) => x.estado.alerta && (x.estado.minimo > 0 || x.estado.saldo === 0)),
+    () => (empresaSel ? itens : []).map((i) => ({ item: i, estado: estadoEstoqueModulo(parametros, modulo, i) })).filter((x) => x.estado.alerta && (x.estado.minimo > 0 || x.estado.saldo === 0)),
     [itens, parametros, empresaSel],
   );
   const calcularAlerta: CalculoAlerta = (item) => {
-    const e = estadoEstoqueModulo(parametros, "epi", item as never);
+    const e = estadoEstoqueModulo(parametros, modulo, item as never);
     return { alerta: e.alerta, saldo: e.saldo, minimo: e.minimo };
   };
 
@@ -104,14 +116,14 @@ export function EpiEntrega() {
   async function salvar() {
     if (salvando.current) return;
     if (!empregado || !empresa) { alert("Escolha a empresa e o empregado."); return; }
-    if (linhas.length === 0) { alert("Adicione pelo menos um EPI."); return; }
+    if (linhas.length === 0) { alert(`Adicione pelo menos um ${rot.um}.`); return; }
     if (!data) { alert("Informe a data."); return; }
     const devolucao = modo === "devolucao";
-    if (devolucao && !isAdmin) { alert(MENSAGEM_SO_ADMIN); return; }
+    if (devolucao && !isAdmin) { alert(mensagemSoAdmin(modulo)); return; }
     const bloqueio = bloqueioPorDemissao(empregado, devolucao ? "devolucao" : "entrega", data);
     if (bloqueio) { alert(bloqueio); return; }
     if (TAMANHO_DISPONIVEL) {
-      const erroTamanho = validarLinhasTamanho(linhas, itens, parametros, "epi", devolucao ? "devolução" : "entrega");
+      const erroTamanho = validarLinhasTamanho(linhas, itens, parametros, modulo, devolucao ? "devolução" : "entrega");
       if (erroTamanho) { alert(erroTamanho); return; }
     }
     const entrada = {
@@ -123,6 +135,7 @@ export function EpiEntrega() {
       }),
       data,
       observacao,
+      modulo,
       comCodigo: MODO_DEMO,
       calcularAlerta,
     };
@@ -138,12 +151,12 @@ export function EpiEntrega() {
       if (!devolucao) {
         setUltima({
           codigos: r.codigos,
-          arquivo: nomeArquivoDocumento("Termo de Entrega de EPI", empregado.nome, data),
-          html: montarTermoEntregaEpiHtml({
+          arquivo: nomeArquivoDocumento(rot.termo, empregado.nome, data),
+          html: (modulo === "epi" ? montarTermoEntregaEpiHtml : montarTermoEntregaUniformeHtml)({
             empresa, empregado, data,
             linhas: linhas.map((l) => {
               const info = itens.find((i) => i.id === l.item_id);
-              return { nome: info?.nome, ca: info?.ca, tamanho: tamanhoParaGravar(l.tamanho) ? nomeTamanho(parametros, l.tamanho) : undefined, quantidade: l.quantidade, estado: "Novo" };
+              return { nome: info?.nome, ca: info?.ca, marca: info?.marca, modelo: info?.modelo, tamanho: tamanhoParaGravar(l.tamanho) ? nomeTamanho(parametros, l.tamanho) : undefined, quantidade: l.quantidade, estado: "Novo" };
             }),
           }),
         });
@@ -176,8 +189,8 @@ export function EpiEntrega() {
       <div className="panel p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant={modo === "entrega" ? "default" : "outline"} onClick={() => trocarModo("entrega")}>Registrar entrega</Button>
-          {isAdmin && <Button type="button" variant={modo === "devolucao" ? "default" : "outline"} onClick={() => trocarModo("devolucao")}>Devolver EPI</Button>}
-          {!isAdmin && <span className="text-xs text-muted-foreground">A devolução de EPI é registrada somente pelo Administrador.</span>}
+          {isAdmin && <Button type="button" variant={modo === "devolucao" ? "default" : "outline"} onClick={() => trocarModo("devolucao")}>Devolver {rot.Sing}</Button>}
+          {!isAdmin && <span className="text-xs text-muted-foreground">A devolução de {rot.um} é registrada somente pelo Administrador.</span>}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -207,27 +220,27 @@ export function EpiEntrega() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="obs-entrega-epi">Observações</Label>
-            <Input id="obs-entrega-epi" value={observacao} maxLength={500} onChange={(e) => setObservacao(e.target.value)} />
+            <Label htmlFor={`obs-entrega-${modulo}`}>Observações</Label>
+            <Input id={`obs-entrega-${modulo}`} value={observacao} maxLength={500} onChange={(e) => setObservacao(e.target.value)} />
           </div>
           {modo === "devolucao" && (
             <div className="space-y-1.5">
-              <Label htmlFor="resp-devolucao-epi">Responsável pela devolução</Label>
-              <Input id="resp-devolucao-epi" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
+              <Label htmlFor={`resp-devolucao-${modulo}`}>Responsável pela devolução</Label>
+              <Input id={`resp-devolucao-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
             </div>
           )}
         </div>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-lg font-bold">{modo === "entrega" ? "EPIs entregues" : "EPIs devolvidos"}</Label>
-            <Button type="button" variant="outline" size="sm" disabled={!empresaSel || (modo === "devolucao" && !empregadoId)} onClick={() => setLinhas([...linhas, novaLinha()])}>+ Adicionar EPI</Button>
+            <Label className="text-lg font-bold">{modo === "entrega" ? `${rot.Plural} entregues` : `${rot.Plural} devolvidos`}</Label>
+            <Button type="button" variant="outline" size="sm" disabled={!empresaSel || (modo === "devolucao" && !empregadoId)} onClick={() => setLinhas([...linhas, novaLinha()])}>+ Adicionar {rot.Sing}</Button>
           </div>
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>EPI</TableHead>
+                  <TableHead>{rot.Sing}</TableHead>
                   <TableHead className="w-40">Tamanho</TableHead>
                   <TableHead className="w-32">Quantidade</TableHead>
                   <TableHead className="w-20"></TableHead>
@@ -235,14 +248,14 @@ export function EpiEntrega() {
               </TableHeader>
               <TableBody>
                 {linhas.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum EPI adicionado. Clique em "+ Adicionar EPI".</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum {rot.um} adicionado. Clique em "+ Adicionar {rot.Sing}".</TableCell></TableRow>
                 ) : linhas.map((l) => {
                   const produto = itens.find((i) => i.id === l.item_id);
                   return (
                     <TableRow key={l.id}>
                       <TableCell>
                         <Select value={l.item_id} onValueChange={(v) => { mudarLinha(l.id, "item_id", v); mudarLinha(l.id, "tamanho", ""); }}>
-                          <SelectTrigger><SelectValue placeholder="Selecione o EPI" /></SelectTrigger>
+                          <SelectTrigger><SelectValue placeholder={`Selecione o ${rot.um}`} /></SelectTrigger>
                           <SelectContent>
                             {escolhaItens.map((i) => (
                               <SelectItem key={i.id} value={i.id}>
@@ -253,7 +266,7 @@ export function EpiEntrega() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <SeletorTamanho parametros={parametros} modulo="epi" produto={produto} uso={modo === "entrega" ? "saida" : "devolucao"} valor={l.tamanho} onChange={(v) => mudarLinha(l.id, "tamanho", v)} />
+                        <SeletorTamanho parametros={parametros} modulo={modulo} produto={produto} uso={modo === "entrega" ? "saida" : "devolucao"} valor={l.tamanho} onChange={(v) => mudarLinha(l.id, "tamanho", v)} />
                       </TableCell>
                       <TableCell><Input type="number" min="1" value={l.quantidade} onChange={(e) => mudarLinha(l.id, "quantidade", Number(e.target.value))} /></TableCell>
                       <TableCell><Button variant="ghost" size="sm" className="text-red-500" onClick={() => setLinhas(linhas.filter((x) => x.id !== l.id))}>Remover</Button></TableCell>
@@ -266,17 +279,17 @@ export function EpiEntrega() {
         </div>
 
         <div className="flex flex-wrap justify-end gap-2 pt-2">
-          {ultima && <Button type="button" variant="outline" onClick={() => abrirDocumento({ titulo: "Termo de Entrega de EPI", html: ultima.html, arquivo: ultima.arquivo })}>Gerar Termo de Entrega ({ultima.codigos.join(", ") || "entrega registrada"})</Button>}
+          {ultima && <Button type="button" variant="outline" onClick={() => abrirDocumento({ titulo: rot.termo, html: ultima.html, arquivo: ultima.arquivo })}>Gerar Termo de Entrega ({ultima.codigos.join(", ") || "entrega registrada"})</Button>}
           <Button requiresWrite="operar" disabled={gravando || !canOperate} onClick={salvar}>{modo === "entrega" ? "Registrar entrega" : "Registrar devolução"}</Button>
         </div>
       </div>
 
       <div className="panel p-6 space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h3 className="text-lg font-bold">Histórico de movimentações de EPI</h3>
-          <Button type="button" variant="outline" disabled={movimentos.length === 0} onClick={() => exportarCsv("entrega-epi-historico", movimentos.map((m) => ({
+          <h3 className="text-lg font-bold">Histórico de movimentações de {rot.um}</h3>
+          <Button type="button" variant="outline" disabled={movimentos.length === 0} onClick={() => exportarCsv(`entrega-${modulo}-historico`, movimentos.map((m) => ({
             Código: m.codigo_movimentacao ?? "", Data: formatarData(m.data_movimentacao), Tipo: ROTULO_TIPO[m.tipo_movimentacao] ?? m.tipo_movimentacao,
-            EPI: nomeDoItem(m.item_id)?.nome ?? "", Tamanho: nomeTamanhoGravado(parametros, m.tamanho_id) ?? "", Quantidade: m.quantidade,
+            [rot.Sing]: nomeDoItem(m.item_id)?.nome ?? "", Tamanho: nomeTamanhoGravado(parametros, m.tamanho_id) ?? "", Quantidade: m.quantidade,
             Empregado: nomeDoEmpregado(m.empregado_id), Responsável: m.responsavel_nome ?? "", Observação: m.observacao ?? "",
           })))}>Exportar CSV</Button>
         </div>
@@ -284,11 +297,11 @@ export function EpiEntrega() {
           <>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>EPI</Label>
+                <Label>{rot.Sing}</Label>
                 <Select value={filtroItem} onValueChange={setFiltroItem}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={TODOS}>Todos os EPIs</SelectItem>
+                    <SelectItem value={TODOS}>Todos os {rot.plural}</SelectItem>
                     {itens.map((i) => <SelectItem key={i.id} value={i.id}>{i.codigo_sku} · {i.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -309,7 +322,7 @@ export function EpiEntrega() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Código</TableHead><TableHead>Data</TableHead><TableHead>Tipo</TableHead><TableHead>EPI</TableHead><TableHead>Tam.</TableHead>
+                      <TableHead>Código</TableHead><TableHead>Data</TableHead><TableHead>Tipo</TableHead><TableHead>{rot.Sing}</TableHead><TableHead>Tam.</TableHead>
                       <TableHead className="text-right">Qtd</TableHead><TableHead>Empregado</TableHead><TableHead>Responsável</TableHead><TableHead>Observação</TableHead>
                     </TableRow>
                   </TableHeader>

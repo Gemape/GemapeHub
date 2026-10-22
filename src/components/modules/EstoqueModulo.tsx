@@ -12,7 +12,7 @@ import { controlaTamanho, estadoEstoqueModulo, nomeTamanho, preservarMinimosNaoS
 import { useEmpresas, useSalvar } from '@/lib/hooks-gemape';
 import { estaAtivo } from '@/lib/parametros-base';
 import { useParametrosBase } from '@/lib/use-parametros-base';
-import { EpiControleEstoque } from '@/components/modules/EpiControleEstoque';
+import { ControleEstoqueModulo } from '@/components/modules/ControleEstoqueModulo';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -125,7 +125,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
           </TableBody>
         </Table>
       </div>
-      {modulo === 'epi' && <EpiControleEstoque />}
+      {modulo !== 'ferramenta' && <ControleEstoqueModulo modulo={modulo} />}
       <Dialog open={Boolean(itemEditado)} onOpenChange={(aberto) => { if (!aberto) setItemId(null); }}>
         <DialogContent>
           <DialogHeader>

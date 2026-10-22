@@ -11,7 +11,7 @@ import { hojeLocal } from "@/lib/empregados";
 import { exportarCsv } from "@/lib/gemape";
 import { useItens, useMovimentacoes } from "@/lib/hooks-gemape";
 
-// Aba Compras dos EPIs > Sugestão de compras, como o REL_COMPRAS da planilha: o que comprar para chegar à meta de cobertura, com prioridade e observação.
+// Aba Compras dos EPIs e dos Uniformes > Sugestão de compras, como o REL_COMPRAS da planilha: o que comprar para chegar à meta de cobertura, com prioridade e observação.
 const classePrioridade: Record<string, string> = {
   "1-URGENTE": "bg-destructive text-destructive-foreground",
   "2-ALTA": "bg-accent text-accent-foreground",
@@ -19,11 +19,12 @@ const classePrioridade: Record<string, string> = {
   "4-BAIXA": "bg-info text-info-foreground",
 };
 
-export function EpiSugestaoCompras() {
+export function SugestaoComprasModulo({ modulo }: { modulo: "epi" | "uniforme" }) {
+  const plural = modulo === "epi" ? "EPIs" : "uniformes";
   const { empresaId } = useEmpresa();
   const [meta, setMeta] = useState<number>(() => lerMetaCobertura());
-  const { data: itens = [], isLoading: carregandoItens } = useItens("epi", empresaId);
-  const { data: movimentos = [], isLoading: carregandoMov } = useMovimentacoes("epi", empresaId);
+  const { data: itens = [], isLoading: carregandoItens } = useItens(modulo, empresaId);
+  const { data: movimentos = [], isLoading: carregandoMov } = useMovimentacoes(modulo, empresaId);
   const sugestoes = useMemo(() => sugestoesDeCompra(controleDeEstoque(itens, movimentos, hojeLocal()), meta), [itens, movimentos, meta]);
   const carregando = carregandoItens || carregandoMov;
 
@@ -42,7 +43,7 @@ export function EpiSugestaoCompras() {
         <div>
           <h2 className="text-lg font-semibold">Sugestão de compras</h2>
           <p className="text-sm text-muted-foreground">
-            EPIs abaixo do estoque crítico ou com cobertura abaixo da meta. A quantidade sugerida leva o estoque até a meta, pela média de consumo dos últimos 12 meses.
+            {plural} abaixo do estoque crítico ou com cobertura abaixo da meta. A quantidade sugerida leva o estoque até a meta, pela média de consumo dos últimos 12 meses.
           </p>
         </div>
         <div className="flex items-end gap-2">
@@ -56,7 +57,7 @@ export function EpiSugestaoCompras() {
           <Button
             variant="outline"
             disabled={carregando || sugestoes.length === 0}
-            onClick={() => exportarCsv("sugestao-compras-epi", sugestoes.map((s) => ({
+            onClick={() => exportarCsv(`sugestao-compras-${modulo}`, sugestoes.map((s) => ({
               Descrição: s.nome,
               "Estoque crítico": s.estoqueCritico,
               "Estoque atual": s.estoqueAtual,
@@ -85,7 +86,7 @@ export function EpiSugestaoCompras() {
           </TableHeader>
           <TableBody>
             {carregando ? <TableRow><TableCell colSpan={8}>Carregando…</TableCell></TableRow>
-              : sugestoes.length === 0 ? <TableRow><TableCell colSpan={8}>Nenhum EPI precisa de compra com a meta de {meta} dias.</TableCell></TableRow>
+              : sugestoes.length === 0 ? <TableRow><TableCell colSpan={8}>Nenhum {modulo === "epi" ? "EPI" : "uniforme"} precisa de compra com a meta de {meta} dias.</TableCell></TableRow>
                 : sugestoes.map((s) => (
                   <TableRow key={s.itemId}>
                     <TableCell>{s.nome}</TableCell>

@@ -1458,3 +1458,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - **Prioridade:** "1-URGENTE" (abaixo do crítico ou menos de 25% da meta), "2-ALTA" (menos de 50%), "3-MÉDIA" (menos de 75%), "4-BAIXA" (de 75% até a meta). Na planilha só se viram 1-URGENTE e 4-BAIXA: **os cortes de 25% e 50% são inferidos e precisam ser confirmados**.
 - **Fora desta decisão:** giro de estoque (a fórmula não pôde ser deduzida) e bloqueio de saída sem estoque (a planilha permite saldo negativo).
 - Só modo demonstração; nada no Supabase.
+
+## 253. Uniformes com a mesma lógica e os mesmos submenus do módulo de EPIs
+- **Submenus dos Uniformes** passam a seguir os do EPI: Dashboard, Estoque, Movimentações (continua), Compras, Histórico do empregado, Baixar Definitivas, **Entrega Uniforme** (nova), Termo de Entrega, Termo de Baixa e Ocorrências. Os nomes "Histórico do empregado" e "Baixar Definitivas" são os mesmos do EPI. A Ficha de EPI Avulsa não tem equivalente em Uniformes.
+- **Entrega Uniforme:** a mesma tela de Entrega EPI (entrega e devolução por empregado, códigos ENT e DEV, devolução só do Administrador, histórico filtrável, alerta de estoque mínimo e termo de entrega), agora usada pelos dois módulos. A entrega aceita o módulo (`epi` ou `uniforme`), que define a tabela dos itens, o módulo gravado na movimentação e as palavras das mensagens.
+- **Estoque e Compras dos Uniformes:** ganham o Controle de estoque e consumo e a Sugestão de compras da decisão 252 (mesmos cálculos e a mesma meta de cobertura, que vale para os dois módulos).
+- Só modo demonstração; nada no Supabase.

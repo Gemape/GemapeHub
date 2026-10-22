@@ -85,12 +85,57 @@ test("meta de cobertura: 30, 60, 90, 120 ou 180 dias; padrão 120; lixo salvo vo
   assert.equal(lerMetaCobertura(s), META_COBERTURA_PADRAO);
 });
 
-test("as telas: estoque detalhado na aba Estoque e sugestão de compras na aba Compras, só do módulo de EPIs", () => {
-  assert.match(ler("components/modules/EstoqueModulo.tsx"), /modulo === 'epi' && <EpiControleEstoque/);
-  assert.match(ler("components/modules/EpiComprasModulo.tsx"), /<EpiSugestaoCompras/);
-  const tela = ler("components/modules/EpiControleEstoque.tsx");
+test("as telas: estoque detalhado na aba Estoque e sugestão de compras na aba Compras, nos módulos de EPIs e de Uniformes", () => {
+  assert.match(ler("components/modules/EstoqueModulo.tsx"), /modulo !== 'ferramenta' && <ControleEstoqueModulo modulo=\{modulo\}/);
+  assert.match(ler("components/modules/EpiComprasModulo.tsx"), /<SugestaoComprasModulo modulo="epi"/);
+  assert.match(ler("components/modules/UniformesComprasModulo.tsx"), /<SugestaoComprasModulo modulo="uniforme"/);
+  const tela = ler("components/modules/ControleEstoqueModulo.tsx");
   for (const t of ["Média mensal", "Média trimestral", "Média semestral", "Média anual", "Última entrada", "Penúltima entrada", "Última saída", "Penúltima saída", "Cobertura \\(dias\\)"]) assert.match(tela, new RegExp(t));
-  const sug = ler("components/modules/EpiSugestaoCompras.tsx");
+  const sug = ler("components/modules/SugestaoComprasModulo.tsx");
   for (const t of ["Quantidade sugerida", "Prioridade", "Observação", "Meta de cobertura"]) assert.match(sug, new RegExp(t));
   assert.doesNotMatch(tela + sug, /dangerouslySetInnerHTML|innerHTML/);
+});
+
+test("Uniformes segue o EPI: mesmos nomes de submenu, aba Entrega Uniforme, e a entrega serve aos dois módulos", async () => {
+  const { ABAS_EPI, ABAS_UNIFORME } = await import("../src/lib/menu-parametros.ts");
+  const titulos = (abas) => abas.map((a) => a.titulo);
+  for (const t of ["Dashboard", "Estoque", "Compras", "Histórico do empregado", "Baixar Definitivas", "Termo de Entrega", "Ocorrências"]) {
+    assert.ok(titulos(ABAS_EPI).includes(t) && titulos(ABAS_UNIFORME).includes(t), t);
+  }
+  assert.ok(titulos(ABAS_EPI).includes("Entrega EPI") && titulos(ABAS_UNIFORME).includes("Entrega Uniforme"));
+  assert.ok(titulos(ABAS_UNIFORME).includes("Movimentações"), "Movimentações continua nos uniformes");
+  const pagina = ler("components/modules/PaginaModulo.tsx");
+  assert.match(pagina, /<TabsContent value="entrega"[^>]*>\s*<UniformesEntrega \/>/);
+  const entrega = ler("components/modules/EpiEntrega.tsx");
+  assert.match(entrega, /export const UniformesEntrega = \(\) => <EntregaModulo modulo="uniforme" \/>/);
+  assert.match(entrega, /useItens\(modulo,/);
+  assert.match(entrega, /montarTermoEntregaUniformeHtml/);
+});
+
+test("entrega e devolução de uniforme: grava no módulo uniforme, confere os itens da tabela de uniformes e usa as palavras do módulo", async () => {
+  const { registrarEntregaEpi, registrarDevolucaoEpi, lerHistoricoEpiPorItem } = await import("../src/lib/entrega-epi.ts");
+  const itens = [{ id: "u1", nome: "Camisa G", estoque_atual: 5, estoque_minimo: 1 }];
+  const gravado = [];
+  const cliente = {
+    from: (tabela) => {
+      const consulta = {
+        tabela, filtros: {},
+        select() { return consulta; },
+        eq(c, v) { consulta.filtros[c] = v; return consulta; },
+        order() { return consulta; },
+        range() { return Promise.resolve({ data: tabela === "uniformes" ? itens : [], error: null }); },
+        insert(linhas) { gravado.push(...linhas); return Promise.resolve({ error: null }); },
+        then(res) { return Promise.resolve({ data: tabela === "uniformes" ? itens : [], error: null }).then(res); },
+      };
+      return consulta;
+    },
+  };
+  const empregado = { id: "e1", nome: "Maria", data_demissao: null, ativo: true };
+  const r = await registrarEntregaEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "u1", quantidade: 2 }], data: "2026-04-10", modulo: "uniforme", comCodigo: false });
+  assert.equal(r.codigos.length, 0);
+  assert.equal(gravado[0].modulo, "uniforme");
+  await assert.rejects(() => registrarEntregaEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "u1", quantidade: 9 }], data: "2026-04-10", modulo: "uniforme", comCodigo: false }), /uniforme|Camisa G/);
+  await assert.rejects(() => registrarEntregaEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "nao", quantidade: 1 }], data: "2026-04-10", modulo: "uniforme", comCodigo: false }), /O uniforme escolhido não existe/);
+  await assert.rejects(() => registrarDevolucaoEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "u1", quantidade: 1 }], data: "2026-04-10", modulo: "uniforme", administrador: false, responsavel: "x" }), /devolução de uniforme/);
+  assert.deepEqual(await lerHistoricoEpiPorItem(cliente, { empresaId: "emp", modulo: "uniforme" }), []);
 });
