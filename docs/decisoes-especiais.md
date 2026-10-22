@@ -1410,3 +1410,13 @@ Pedido do responsável em 16/10 (19:01), com a imagem do campo "Foto do comprova
 
 - Cada imagem anexada no questionário aparece como miniatura (já reduzida) em vez da linha "nome: tamanho para tamanho". O nome e a redução ficam na dica ao passar o mouse.
 - O botão × no canto da miniatura remove a imagem (substitui o link "Remover"). Limite de 3 imagens e mensagem de contagem continuam iguais.
+
+### Decisão 247: Parâmetros > Equipamentos > Cadastrar equipamento (e Módulos > Equipamentos)
+
+Pedido do responsável em 22/10: criar o menu **Equipamentos** em Parâmetros e em Módulos. Em Parâmetros ficam os cadastros; em Módulos ficarão a lógica e as funcionalidades (por ora o módulo só mostra "em construção"). Feito conforme as sugestões, com ajustes combinados para depois.
+
+- **Dados gerais (todos obrigatórios):** empresa, código de patrimônio (TAG ou placa, digitado e único; guardado em maiúsculas), nome/descrição, categoria, marca/fabricante, modelo, número de série, data de aquisição (real e não futura, em horário de Brasília), valor de compra (0 ou mais) e setor/localização. Status atual: Ativo, Em manutenção, Baixado/Inativo ou Reserva.
+- **Categorias:** Máquina / Veículo, Maquinário elétrico, Jato de alta pressão, Segurança (extintor) e Ferramental. A categoria decide quais **grupos de especificações técnicas** aparecem; os campos dos outros grupos somem do formulário e não são guardados. O jato de alta pressão junta os grupos de motor e elétrico; o Ferramental não tem especificação técnica.
+- **Máquina / Veículo:** propulsão (Diesel, Gasolina, Elétrico, GLP/Gás, Manual), capacidade de carga (kg ou t), horímetro inicial (h), consumo estimado (L/h) e capacidade do tanque (L). **Elétrico:** tensão (110V, 220V Monofásico, 220V Trifásico, 380V, 440V), potência (CV, HP ou kW), corrente nominal (A), pressão de trabalho (PSI ou Bar) e vazão de água (L/min). **Extintor:** agente (Água, Pó PQS ABC, Pó PQS BC, CO2), capacidade (kg ou L), data da última recarga e vencimento do teste hidrostático, **estes quatro obrigatórios**. Nos demais, os técnicos são opcionais.
+- Marca e setor são texto digitado por enquanto (a integração com listas de Cadastros > Gerais fica para depois). Clonar copia os dados e deixa o patrimônio e o número de série em branco. Excluir é só do Administrador (decisão 45).
+- Só modo demonstração: nada no Supabase.

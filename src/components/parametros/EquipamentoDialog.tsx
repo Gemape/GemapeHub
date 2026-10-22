@@ -1,0 +1,177 @@
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEmpresa } from "@/lib/empresa-context";
+import { hojeLocal } from "@/lib/empregados";
+import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
+import { salvarEquipamento, type Equipamento } from "@/lib/equipamentos-demo";
+import {
+  CATEGORIAS_EQUIPAMENTO, STATUS_EQUIPAMENTO, TITULO_GRUPO_TECNICO, camposTecnicosDaCategoria, gruposDaCategoria,
+  type CampoTecnico,
+} from "@/lib/equipamentos";
+
+// Cadastrar equipamento (Parâmetros > Equipamentos): dados gerais sempre visíveis e especificações técnicas que aparecem
+// ou somem na hora, conforme a categoria escolhida. Campo de categoria que não vale some do formulário e não é guardado.
+type Valores = {
+  empresaId: string; patrimonio: string; nome: string; categoria: string; marca: string; modelo: string; numeroSerie: string;
+  dataAquisicao: string; valorCompra: string; status: string; setor: string; tecnico: Record<string, string>;
+};
+
+const valorEmTexto = (n: number) => String(n).replace(".", ",");
+const tecnicoEmTexto = (t: Record<string, string>, campos: readonly string[]) =>
+  Object.fromEntries(Object.entries(t).map(([k, v]) => [k, campos.includes(k) ? valorEmTexto(Number(v)) : v]));
+
+function valoresIniciais(base: Equipamento | null, clonar: boolean, empresaPadrao: string): Valores {
+  if (!base) {
+    return { empresaId: empresaPadrao, patrimonio: "", nome: "", categoria: "", marca: "", modelo: "", numeroSerie: "", dataAquisicao: "", valorCompra: "", status: "Ativo", setor: "", tecnico: {} };
+  }
+  const numericos = camposTecnicosDaCategoria(base.categoria).filter((c) => c.tipo === "numero").map((c) => c.id);
+  return {
+    empresaId: base.empresaId,
+    // Clonar copia os dados, mas o patrimônio é único e o número de série é de cada unidade: os dois voltam em branco.
+    patrimonio: clonar ? "" : base.patrimonio,
+    nome: base.nome, categoria: base.categoria, marca: base.marca, modelo: base.modelo,
+    numeroSerie: clonar ? "" : base.numeroSerie,
+    dataAquisicao: base.dataAquisicao, valorCompra: valorEmTexto(base.valorCompra), status: base.status, setor: base.setor,
+    tecnico: tecnicoEmTexto(base.tecnico, numericos),
+  };
+}
+
+function Formulario({ editando, modelo, onFechar, onSalvo }: {
+  editando: Equipamento | null;
+  modelo: Equipamento | null;
+  onFechar: () => void;
+  onSalvo: (e: Equipamento) => void;
+}) {
+  const { empresas, empresaId } = useEmpresa();
+  const base = editando ?? modelo;
+  const [v, setV] = useState<Valores>(() => valoresIniciais(base, !editando && !!modelo, empresaPadraoParaEscolha(empresas, empresaId)));
+  // Um segundo clique em Salvar enquanto a janela fecha gravaria o equipamento de novo.
+  const trava = useRef(false);
+  const mudar = (parte: Partial<Valores>) => setV((x) => ({ ...x, ...parte }));
+  const mudarTecnico = (id: string, valor: string) => setV((x) => ({ ...x, tecnico: { ...x.tecnico, [id]: valor } }));
+
+  const campos = camposTecnicosDaCategoria(v.categoria);
+  const grupos = gruposDaCategoria(v.categoria);
+  const listaEmpresas = empresasParaEscolha(empresas, [v.empresaId]);
+
+  function enviar(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (trava.current) return;
+    try {
+      const salvo = salvarEquipamento({ ...v, ...(editando ? { id: editando.id } : {}) });
+      trava.current = true;
+      onFechar();
+      toast.success("Equipamento salvo");
+      onSalvo(salvo);
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar o equipamento.");
+    }
+  }
+
+  function campoTecnico(c: CampoTecnico) {
+    const valor = v.tecnico[c.id] ?? "";
+    const unidade = c.unidades ? (v.tecnico[`${c.id}Unidade`] ?? c.unidades[0]) : c.unidadeFixa;
+    return (
+      <div key={c.id} className="space-y-1.5">
+        <Label htmlFor={c.id}>{c.rotulo}{c.obrigatorio && <span className="text-destructive"> *</span>}</Label>
+        {c.tipo === "select" && (
+          <Select value={valor} onValueChange={(x) => x && mudarTecnico(c.id, x)}>
+            <SelectTrigger id={c.id}><SelectValue placeholder="Selecione" /></SelectTrigger>
+            <SelectContent>{c.opcoes?.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+          </Select>
+        )}
+        {c.tipo === "data" && <Input id={c.id} type="date" max={c.id === "ultimaRecarga" ? hojeLocal() : undefined} value={valor} onChange={(e) => mudarTecnico(c.id, e.target.value)} />}
+        {c.tipo === "numero" && (
+          <div className="flex items-center gap-2">
+            <Input id={c.id} inputMode="decimal" placeholder="0" value={valor} onChange={(e) => mudarTecnico(c.id, e.target.value)} />
+            {c.unidades ? (
+              <Select value={unidade ?? ""} onValueChange={(x) => x && mudarTecnico(`${c.id}Unidade`, x)}>
+                <SelectTrigger aria-label={`Unidade de ${c.rotulo.toLocaleLowerCase("pt-BR")}`} className="w-24"><SelectValue /></SelectTrigger>
+                <SelectContent>{c.unidades.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+              </Select>
+            ) : (
+              <span className="w-24 text-sm text-muted-foreground">{unidade}</span>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
+      <p className="text-sm font-semibold sm:col-span-2">Dados gerais <span className="font-normal text-muted-foreground">(todos obrigatórios)</span></p>
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label htmlFor="empresa">Empresa</Label>
+        <Select value={v.empresaId} onValueChange={(x) => x && mudar({ empresaId: x })}>
+          <SelectTrigger id="empresa"><SelectValue placeholder="Selecione a empresa" /></SelectTrigger>
+          <SelectContent>{listaEmpresas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome_fantasia}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5"><Label htmlFor="patrimonio">Código de patrimônio (TAG ou placa)</Label><Input id="patrimonio" value={v.patrimonio} onChange={(e) => mudar({ patrimonio: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor="nome">Nome / descrição do equipamento</Label><Input id="nome" capitalizar="texto" placeholder="Ex.: Empilhadeira Yale 2.5T" value={v.nome} onChange={(e) => mudar({ nome: e.target.value })} /></div>
+      <div className="space-y-1.5">
+        <Label htmlFor="categoria">Categoria</Label>
+        <Select value={v.categoria} onValueChange={(x) => x && mudar({ categoria: x })}>
+          <SelectTrigger id="categoria" aria-label="Categoria"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+          <SelectContent>{CATEGORIAS_EQUIPAMENTO.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5"><Label htmlFor="marca">Marca / fabricante</Label><Input id="marca" capitalizar="texto" value={v.marca} onChange={(e) => mudar({ marca: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor="modelo">Modelo</Label><Input id="modelo" capitalizar="texto" value={v.modelo} onChange={(e) => mudar({ modelo: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor="numeroSerie">Número de série</Label><Input id="numeroSerie" value={v.numeroSerie} onChange={(e) => mudar({ numeroSerie: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor="dataAquisicao">Data de aquisição</Label><Input id="dataAquisicao" type="date" max={hojeLocal()} value={v.dataAquisicao} onChange={(e) => mudar({ dataAquisicao: e.target.value })} /></div>
+      <div className="space-y-1.5"><Label htmlFor="valorCompra">Valor de compra (R$)</Label><Input id="valorCompra" inputMode="decimal" placeholder="0,00" value={v.valorCompra} onChange={(e) => mudar({ valorCompra: e.target.value })} /></div>
+      <div className="space-y-1.5">
+        <Label htmlFor="status">Status atual</Label>
+        <Select value={v.status} onValueChange={(x) => x && mudar({ status: x })}>
+          <SelectTrigger id="status"><SelectValue placeholder="Selecione o status" /></SelectTrigger>
+          <SelectContent>{STATUS_EQUIPAMENTO.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5"><Label htmlFor="setor">Setor / localização</Label><Input id="setor" capitalizar="texto" placeholder="Ex.: Lavador, Serralheria, Estoque" value={v.setor} onChange={(e) => mudar({ setor: e.target.value })} /></div>
+
+      <p className="pt-2 text-sm font-semibold sm:col-span-2">Especificações técnicas</p>
+      {!v.categoria && <p className="text-sm text-muted-foreground sm:col-span-2">Escolha a categoria para ver as especificações técnicas dela.</p>}
+      {v.categoria && grupos.length === 0 && <p className="text-sm text-muted-foreground sm:col-span-2">Esta categoria não tem especificações técnicas.</p>}
+      {grupos.map((g) => (
+        <fieldset key={g} className="space-y-3 rounded-lg border p-3 sm:col-span-2">
+          <legend className="px-1 text-sm font-medium">{TITULO_GRUPO_TECNICO[g]}</legend>
+          <div className="grid gap-3 sm:grid-cols-2">{campos.filter((c) => c.grupo === g).map(campoTecnico)}</div>
+        </fieldset>
+      ))}
+
+      <DialogFooter className="sm:col-span-2">
+        <Button type="button" variant="outline" onClick={onFechar}>Cancelar</Button>
+        <Button requiresWrite type="submit">Salvar</Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+export function EquipamentoDialog({ aberto, onAberto, editando, modelo, onSalvo }: {
+  aberto: boolean;
+  onAberto: (aberto: boolean) => void;
+  editando: Equipamento | null;
+  modelo: Equipamento | null;
+  onSalvo: (e: Equipamento) => void;
+}) {
+  return (
+    <Dialog open={aberto} onOpenChange={onAberto}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{editando ? "Editar equipamento" : modelo ? "Clonar equipamento" : "Cadastrar equipamento"}</DialogTitle>
+          <DialogDescription>Escolha a categoria para aparecerem só as especificações técnicas dela.</DialogDescription>
+        </DialogHeader>
+        <Formulario key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "novo")} editando={editando} modelo={modelo} onFechar={() => onAberto(false)} onSalvo={onSalvo} />
+      </DialogContent>
+    </Dialog>
+  );
+}
