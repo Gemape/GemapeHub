@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { ICONES } from "@/components/layout/AppSidebar";
 import { useAccess } from "@/lib/access-context";
-import { gruposDoInicio, type IconeInicio } from "@/lib/inicio";
+import { gruposDoInicio, type IconeInicio, type SecaoInicio, type SubitemInicio } from "@/lib/inicio";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   head: () => ({ meta: [{ title: "Início | Patrimônio GEMAPE" }] }),
@@ -18,6 +18,17 @@ const ICONES_CARTAO: Record<IconeInicio, typeof Car> = {
 const classeCartao =
   "overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-border transition hover:shadow-md motion-reduce:transition-none";
 const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+const SECOES: readonly SecaoInicio[] = ["Módulo", "Parâmetros"];
+
+function AtalhoDoCartao({ sub }: { sub: SubitemInicio }) {
+  const IconeSub = ICONES[sub.icone];
+  return (
+    <Link to={sub.url} search={sub.search as never} className={`flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-primary/10 ${classeFoco}`}>
+      <IconeSub className="size-4 shrink-0 text-primary" aria-hidden="true" />
+      {sub.titulo}
+    </Link>
+  );
+}
 
 // Tela inicial: o menu em cartões. Cartão com submenus abre a lista de atalhos no próprio cartão; os outros abrem a tela direto.
 // Não há menu lateral: tudo se acessa por aqui, e as outras telas têm o botão Voltar ao início no topo.
@@ -81,23 +92,22 @@ function PaginaInicio() {
                     </span>
                   </button>
                   {aberto && (
-                    <ul id={idLista} className="divide-y border-t">
-                      {c.itens.map((sub) => {
-                        const IconeSub = ICONES[sub.icone];
+                    <div id={idLista} className="border-t">
+                      {SECOES.map((secao) => {
+                        const doCartao = (c.itens ?? []).filter((i) => i.secao === secao);
+                        if (doCartao.length === 0) return null;
                         return (
-                          <li key={`${sub.titulo}-${sub.url}`}>
-                            <Link
-                              to={sub.url}
-                              search={sub.search as never}
-                              className={`flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-primary/10 ${classeFoco}`}
-                            >
-                              <IconeSub className="size-4 shrink-0 text-primary" aria-hidden="true" />
-                              {sub.titulo}
-                            </Link>
-                          </li>
+                          <section key={secao} aria-label={secao}>
+                            <h3 className="bg-muted/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{secao}</h3>
+                            <ul className="divide-y">
+                              {doCartao.map((sub) => (
+                                <li key={`${sub.titulo}-${sub.url}`}><AtalhoDoCartao sub={sub} /></li>
+                              ))}
+                            </ul>
+                          </section>
                         );
                       })}
-                    </ul>
+                    </div>
                   )}
                 </li>
               );

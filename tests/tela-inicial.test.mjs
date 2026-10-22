@@ -10,14 +10,17 @@ import {
 
 const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 const cartao = (admin, grupo, titulo) => gruposDoInicio(admin).find((g) => g.titulo === grupo).cartoes.find((c) => c.titulo === titulo);
+const pagina = existsSync(new URL("../src/routes/_authenticated/inicio.tsx", import.meta.url)) ? ler("routes/_authenticated/inicio.tsx") : "";
+const AREAS = "Módulos e parâmetros";
+const daSecao = (c, secao) => c.itens.filter((i) => i.secao === secao);
 const titulos = (itens) => itens.map((i) => i.titulo);
 
-test("a tela inicial tem os grupos do menu: Visão geral, Módulos e Parâmetros", () => {
+test("a tela inicial tem os grupos: Visão geral, Módulos e parâmetros (um cartão por área) e Cadastros", () => {
   const g = gruposDoInicio(true);
-  assert.deepEqual(g.map((x) => x.titulo), ["Visão geral", "Módulos", "Parâmetros"]);
+  assert.deepEqual(g.map((x) => x.titulo), ["Visão geral", AREAS, "Cadastros"]);
   assert.deepEqual(titulos(g[0].cartoes), ["Dashboard"]);
-  assert.deepEqual(titulos(g[1].cartoes), ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos"]);
-  assert.deepEqual(titulos(g[2].cartoes), ["Gerais", "EPI", "Uniformes", "Ferramentas", "Veículos", "Equipamentos", "Empresas", "Empregados", "Fornecedores", "Clientes"]);
+  assert.deepEqual(titulos(g[1].cartoes), ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos", "Gerais"]);
+  assert.deepEqual(titulos(g[2].cartoes), ["Empresas", "Empregados", "Fornecedores", "Clientes"]);
 });
 
 test("Gerais só aparece para o Administrador, como no menu lateral", () => {
@@ -28,23 +31,36 @@ test("Gerais só aparece para o Administrador, como no menu lateral", () => {
 });
 
 test("cartões com submenus se abrem no próprio cartão; os sem submenu abrem a tela direto", () => {
-  for (const t of ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens"]) {
-    const c = cartao(true, "Módulos", t);
+  for (const t of ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos", "Gerais"]) {
+    const c = cartao(true, AREAS, t);
     assert.ok(c.itens?.length > 1, t);
     assert.equal(c.url, undefined, t);
   }
-  for (const t of ["Gerais", "EPI", "Uniformes", "Ferramentas", "Veículos", "Equipamentos"]) assert.ok(cartao(true, "Parâmetros", t).itens?.length > 1, t);
-  for (const [g, t] of [["Visão geral", "Dashboard"], ["Módulos", "Equipamentos"], ["Parâmetros", "Empresas"], ["Parâmetros", "Empregados"], ["Parâmetros", "Fornecedores"], ["Parâmetros", "Clientes"]]) {
+  for (const [g, t] of [["Visão geral", "Dashboard"], ["Cadastros", "Empresas"], ["Cadastros", "Empregados"], ["Cadastros", "Fornecedores"], ["Cadastros", "Clientes"]]) {
     const c = cartao(true, g, t);
     assert.ok(c.url, `${g} > ${t}`);
     assert.equal(c.itens, undefined, `${g} > ${t}`);
   }
 });
 
-test("os submenus dos Módulos são as abas do módulo, as mesmas do menu lateral, abrindo na aba certa", () => {
+test("cada cartão junta o módulo e os parâmetros da área, separados por seção; Viagens só tem módulo e Gerais só tem parâmetros", () => {
+  for (const t of ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Equipamentos"]) {
+    const c = cartao(true, AREAS, t);
+    assert.ok(daSecao(c, "Módulo").length > 0 && daSecao(c, "Parâmetros").length > 0, t);
+    // Os do módulo vêm primeiro, depois os dos parâmetros.
+    assert.deepEqual(c.itens.map((i) => i.secao), [...daSecao(c, "Módulo"), ...daSecao(c, "Parâmetros")].map((i) => i.secao), t);
+  }
+  assert.equal(daSecao(cartao(true, AREAS, "Viagens"), "Parâmetros").length, 0);
+  assert.equal(daSecao(cartao(true, AREAS, "Gerais"), "Módulo").length, 0);
+  assert.equal(gruposDoInicio(true).flatMap((g) => g.cartoes).filter((c) => c.titulo === "Veículos").length, 1);
+  assert.match(pagina, /SECOES/);
+  assert.match(pagina, /aria-label=\{secao\}/);
+});
+
+test("os submenus de módulo são as abas do módulo, as mesmas do menu lateral, abrindo na aba certa", () => {
   const modulos = [["EPIs", "/epi", ABAS_EPI, "epi"], ["Uniformes", "/uniformes", ABAS_UNIFORME, "uniforme"], ["Ferramentas", "/ferramentas", ABAS_FERRAMENTA, "ferramenta"], ["Veículos", "/veiculos", ABAS_VEICULO, "veiculo"], ["Viagens", "/viagens", ABAS_VIAGEM, "viagem"]];
   for (const [nome, url, abas, chave] of modulos) {
-    const itens = cartao(true, "Módulos", nome).itens;
+    const itens = daSecao(cartao(true, AREAS, nome), "Módulo");
     assert.deepEqual(titulos(itens), titulos(abas), nome);
     for (const [i, a] of itens.entries()) {
       assert.equal(a.url, url);
@@ -52,25 +68,27 @@ test("os submenus dos Módulos são as abas do módulo, as mesmas do menu latera
       assert.equal(abaDoModulo(chave, a.search.aba), abas[i].aba, `${nome}: ${a.titulo}`);
     }
   }
+  assert.deepEqual(daSecao(cartao(true, AREAS, "Equipamentos"), "Módulo").map((i) => i.url), ["/equipamentos"]);
 });
 
-test("os submenus de Parâmetros são os itens do menu de cada grupo, com Cadastrar Ficha de EPI dentro de EPI", () => {
-  assert.deepEqual(titulos(cartao(true, "Parâmetros", "Gerais").itens), titulos(MENU_GERAIS));
-  assert.deepEqual(titulos(cartao(true, "Parâmetros", "EPI").itens), ["Cadastrar EPI", "Cadastrar Ficha de EPI", "Parâmetros Específicos", "Tamanho e Medidas de Produto"]);
-  assert.deepEqual(titulos(cartao(true, "Parâmetros", "Uniformes").itens), titulos(MENU_UNIFORMES));
-  assert.deepEqual(titulos(cartao(true, "Parâmetros", "Ferramentas").itens), titulos(MENU_FERRAMENTAS));
-  assert.deepEqual(titulos(cartao(true, "Parâmetros", "Veículos").itens), titulos(MENU_VEICULOS));
-  assert.deepEqual(titulos(cartao(true, "Parâmetros", "Equipamentos").itens), titulos(MENU_EQUIPAMENTOS));
+test("os submenus de parâmetros são os itens do menu de cada grupo, com Cadastrar Ficha de EPI dentro de EPI", () => {
+  const par = (t) => titulos(daSecao(cartao(true, AREAS, t), "Parâmetros"));
+  assert.deepEqual(par("Gerais"), titulos(MENU_GERAIS));
+  assert.deepEqual(par("EPIs"), ["Cadastrar EPI", "Cadastrar Ficha de EPI", "Parâmetros Específicos", "Tamanho e Medidas de Produto"]);
+  assert.deepEqual(par("Uniformes"), titulos(MENU_UNIFORMES));
+  assert.deepEqual(par("Ferramentas"), titulos(MENU_FERRAMENTAS));
+  assert.deepEqual(par("Veículos"), titulos(MENU_VEICULOS));
+  assert.deepEqual(par("Equipamentos"), titulos(MENU_EQUIPAMENTOS));
   assert.deepEqual(MENU_EPI.flatMap((i) => i.filhos ?? []).map((f) => f.titulo), ["Cadastrar Ficha de EPI"]);
 });
 
 test("itens de tela repetida levam o ?de= do menu de origem, e Cadastrar Caixa só aparece para o Administrador", () => {
-  const apoioEpi = cartao(true, "Parâmetros", "EPI").itens.find((i) => i.titulo === "Parâmetros Específicos");
+  const apoioEpi = cartao(true, AREAS, "EPIs").itens.find((i) => i.titulo === "Parâmetros Específicos");
   assert.deepEqual(apoioEpi.search, { de: "epi" });
-  const ferramentas = (admin) => titulos(cartao(admin, "Parâmetros", "Ferramentas").itens);
+  const ferramentas = (admin) => titulos(cartao(admin, AREAS, "Ferramentas").itens);
   assert.ok(ferramentas(true).includes("Cadastrar Caixa"));
   assert.ok(!ferramentas(false).includes("Cadastrar Caixa"));
-  const caixa = cartao(true, "Parâmetros", "Ferramentas").itens.find((i) => i.titulo === "Cadastrar Caixa");
+  const caixa = cartao(true, AREAS, "Ferramentas").itens.find((i) => i.titulo === "Cadastrar Caixa");
   assert.deepEqual(caixa.search, { aba: "habilitar" });
 });
 
@@ -103,7 +121,6 @@ test("em toda tela a logomarca no topo leva à tela inicial, e fora dela há o b
   assert.match(layout, /Voltar ao início/);
 });
 
-const pagina = existsSync(new URL("../src/routes/_authenticated/inicio.tsx", import.meta.url)) ? ler("routes/_authenticated/inicio.tsx") : "";
 
 test("a tela mostra cartões com ícone, título e Clique para acessar, só os do perfil de quem entrou", () => {
   assert.ok(pagina, "rota /inicio");
