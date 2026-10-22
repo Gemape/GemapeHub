@@ -23,6 +23,7 @@ import {
   Building2,
   Car,
   Forklift,
+  House,
   HardHat,
   LayoutDashboard,
   Shirt,
@@ -88,7 +89,10 @@ const SEPARADOR_GRUPO = "mt-3 border-t border-white/20 pt-5";
 const grupos = [
   {
     titulo: "Visão geral",
-    itens: [{ titulo: "Dashboard", url: "/dashboard", icone: LayoutDashboard }],
+    itens: [
+      { titulo: "Início", url: "/inicio", icone: House },
+      { titulo: "Dashboard", url: "/dashboard", icone: LayoutDashboard },
+    ],
   },
   {
     titulo: "Módulos",
@@ -114,7 +118,7 @@ const grupos = [
 
 type ItemGrupo = { titulo: string; url: string; icone: typeof LayoutDashboard; abas?: readonly AbaMenu[] };
 
-const ICONES = {
+export const ICONES = {
   Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive, Car,
   LayoutDashboard, Boxes, ShoppingCart, History, PackageMinus, PackageCheck, FileSignature, FileMinus, FileCheck, FileX,
   ClipboardCheck, ArrowLeftRight, TriangleAlert, Fuel, Box, ListPlus, FileText, Forklift,
@@ -345,12 +349,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="px-4 py-8">
         <div className="text-center leading-tight">
-          <div
-            className="logo-marca"
-            role="img"
-            aria-label="GEMAPE, 40 anos, máquinas e peças"
-            style={{ maskImage: `url(${logoMarca})`, WebkitMaskImage: `url(${logoMarca})` }}
-          />
+          <Link to="/inicio" aria-label="Ir para a tela inicial" title="Ir para a tela inicial" className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+            <div
+              className="logo-marca"
+              role="img"
+              aria-label="GEMAPE, 40 anos, máquinas e peças"
+              style={{ maskImage: `url(${logoMarca})`, WebkitMaskImage: `url(${logoMarca})` }}
+            />
+          </Link>
           <div className="marca-linha mt-3" aria-hidden="true" />
           <p className="marca-subtitulo mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/80">
             Gestão de Patrimônio

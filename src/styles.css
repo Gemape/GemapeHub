@@ -325,6 +325,47 @@
   }
 }
 
+/* Logo do topo do sistema (fundo claro): a mesma logo GEMAPE 40 anos, na cor azul do site, com entrada, varredura de brilho e halo suave.
+   Quem reduz movimento recebe a logo parada (decisão 114). A imagem é só a forma (máscara); a cor vem do fundo. */
+@keyframes logo-halo-site {
+  0%,
+  100% {
+    filter: drop-shadow(0 1px 2px oklch(0.32 0.25 266 / 0.18));
+  }
+  50% {
+    filter: drop-shadow(0 1px 6px oklch(0.55 0.2 262 / 0.5));
+  }
+}
+@utility logo-marca-site {
+  display: block;
+  width: 100%;
+  aspect-ratio: 600 / 209;
+  background-image: linear-gradient(
+    105deg,
+    var(--color-primary) 0%,
+    var(--color-primary) 38%,
+    oklch(0.62 0.2 262) 46%,
+    var(--color-primary) 54%,
+    var(--color-primary) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  animation:
+    logo-entrada 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    logo-varredura 4.5s ease-in-out 1s infinite,
+    logo-halo-site 4s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background-position: 0 0;
+  }
+}
+
 /* Botões do menu em vidro fosco: sobem de leve ao passar o mouse e afundam ao clicar. */
 @utility menu-vidro {
   background: oklch(1 0 0 / 0.05);

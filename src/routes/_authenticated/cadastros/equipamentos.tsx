@@ -7,8 +7,8 @@ import { EquipamentoDialog } from "@/components/parametros/EquipamentoDialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEmpresa } from "@/lib/empresa-context";
-import { CATEGORIAS_EQUIPAMENTO } from "@/lib/equipamentos";
 import { listarEquipamentos, removerEquipamento, type Equipamento } from "@/lib/equipamentos-demo";
+import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
 
 export const Route = createFileRoute("/_authenticated/cadastros/equipamentos")({
   head: () => ({ meta: [{ title: "Cadastrar equipamento | Patrimônio GEMAPE" }] }),
@@ -45,7 +45,10 @@ function PaginaEquipamentos() {
     return <p>O cadastro de equipamentos será conectado ao banco após a aprovação da demonstração.</p>;
   }
 
-  const nomeCategoria = (id: string) => CATEGORIAS_EQUIPAMENTO.find((c) => c.id === id)?.nome ?? "—";
+  // Tipo (filho) e subcategoria (pai) de Parâmetros Específicos; equipamento antigo, sem tipo, mostra traço até ser editado.
+  const parametros = lerParametrosEquipamento();
+  const tipoDe = (id: string) => parametros.tipos.find((t) => t.id === id);
+  const nomeSubcategoria = (id: string) => parametros.subcategorias.find((s) => s.id === tipoDe(id)?.subcategoriaId)?.nome ?? "—";
   const nomeEmpresa = (id: string) => empresas.find((x) => x.id === id)?.nome_fantasia ?? "—";
 
   return (
@@ -63,20 +66,21 @@ function PaginaEquipamentos() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Patrimônio</TableHead><TableHead>Equipamento</TableHead><TableHead>Categoria</TableHead>
+              <TableHead>Patrimônio</TableHead><TableHead>Equipamento</TableHead><TableHead>Subcategoria</TableHead><TableHead>Tipo</TableHead>
               <TableHead>Marca / modelo</TableHead><TableHead>Setor</TableHead><TableHead>Status</TableHead>
               <TableHead>Empresa</TableHead><TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {equipamentos.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Nenhum equipamento cadastrado.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Nenhum equipamento cadastrado.</TableCell></TableRow>
             ) : (
               equipamentos.map((e) => (
                 <TableRow key={e.id}>
                   <TableCell className="font-mono text-xs">{e.patrimonio}</TableCell>
                   <TableCell className="font-medium">{e.nome}</TableCell>
-                  <TableCell>{nomeCategoria(e.categoria)}</TableCell>
+                  <TableCell>{nomeSubcategoria(e.tipoId)}</TableCell>
+                  <TableCell>{tipoDe(e.tipoId)?.nome ?? "—"}</TableCell>
                   <TableCell>{e.marca} {e.modelo}</TableCell>
                   <TableCell>{e.setor}</TableCell>
                   <TableCell>{e.status}</TableCell>

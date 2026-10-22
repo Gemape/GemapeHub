@@ -39,7 +39,7 @@ function Home() {
   useEffect(() => {
     if (variaveisSupabaseFaltando().length) return;
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard", replace: true });
+      if (data.session) navigate({ to: "/inicio", replace: true });
     });
   }, [navigate]);
 

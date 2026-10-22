@@ -1420,3 +1420,21 @@ Pedido do responsável em 22/10: criar o menu **Equipamentos** em Parâmetros e 
 - **Máquina / Veículo:** propulsão (Diesel, Gasolina, Elétrico, GLP/Gás, Manual), capacidade de carga (kg ou t), horímetro inicial (h), consumo estimado (L/h) e capacidade do tanque (L). **Elétrico:** tensão (110V, 220V Monofásico, 220V Trifásico, 380V, 440V), potência (CV, HP ou kW), corrente nominal (A), pressão de trabalho (PSI ou Bar) e vazão de água (L/min). **Extintor:** agente (Água, Pó PQS ABC, Pó PQS BC, CO2), capacidade (kg ou L), data da última recarga e vencimento do teste hidrostático, **estes quatro obrigatórios**. Nos demais, os técnicos são opcionais.
 - Marca e setor são texto digitado por enquanto (a integração com listas de Cadastros > Gerais fica para depois). Clonar copia os dados e deixa o patrimônio e o número de série em branco. Excluir é só do Administrador (decisão 45).
 - Só modo demonstração: nada no Supabase.
+
+### Decisão 248: Parâmetros > Equipamentos > Parâmetros Específicos (subcategorias e tipos)
+
+Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equipamentos segue o desenho **pai e filho**. O pai é a **subcategoria** e o filho é o **tipo**, que sempre fica debaixo de uma subcategoria.
+
+- **Subcategorias de fábrica (as das Normas Regulamentadoras):** Movimentação e elevação de carga (NR-11); Maquinário industrial ferramental (NR-12 e NR-10); Sistemas pneumáticos e hidráulicos (NR-13); Equipamentos de emergência e combate a incêndio (NR-23).
+- **Tipos de fábrica, cada um debaixo da sua norma:** NR-11: Empilhadeiras, Munck, Ponte rolante. NR-12 e NR-10: Serra de corte, Máquina de solda. NR-13: Compressor de ar (vaso de pressão), Jato de alta pressão (lavador). NR-23: Extintores de incêndio. (O responsável escreveu "muck"; entrou como "Munck", que é o nome do equipamento, e dá para editar.)
+- A tela é uma só, em árvore: cada subcategoria é um bloco com seus tipos embaixo. Há Cadastrar subcategoria, Cadastrar tipo (já com o pai escolhido), Editar e Excluir (só do Administrador, decisão 45). O tipo pode mudar de subcategoria na edição.
+- Regras: nomes em texto capitalizado e únicos sem diferenciar acento nem maiúscula (o nome do tipo é único no cadastro todo); **não se exclui uma subcategoria que ainda tem tipos**; erro não grava nada.
+- **Ligado ao Cadastrar equipamento:** o equipamento passa a ter Subcategoria e Tipo no lugar das cinco categorias antigas. Cada tipo guarda os **grupos de campos técnicos** que aparecem no cadastro dos equipamentos dele (Máquinas e veículos; Equipamentos elétricos e motores; Extintor, que tem 4 campos obrigatórios). De fábrica: Empilhadeiras e Munck, motor; Ponte rolante, Serra de corte, Máquina de solda e Compressor, elétrico; Jato de alta pressão, motor e elétrico; Extintores, extintor. Tipo novo começa sem campos técnicos até o grupo ser marcado.
+- Não se exclui um tipo que algum equipamento usa. Equipamento salvo antes dos tipos continua na lista com o tipo em branco e pede o tipo ao ser editado; os valores técnicos dele ficam.
+- Só modo demonstração: nada no Supabase.
+
+## 249. Parâmetros > Equipamentos > Check list (manutenção e vistoria)
+- Duas opções independentes, escolhidas por `?aba=manutencao|vistoria` (itens "Check list de manutenção" e "Check list de vistoria" no menu e no cartão Equipamentos). Cada uma tem os seus grupos e as suas associações; o mesmo nome de grupo pode existir nas duas.
+- A tela segue Parâmetros > Veículos > Check list: no alto os **Itens check list** (grupo com nome, itens um por linha e tipos de equipamento de Parâmetros Específicos, ou "Todos os tipos") e embaixo a **associação a um equipamento** (responsável ou "Não definido"; por grupo, Periódico com periodicidade Diária/Semanal/Quinzenal/Mensal, obrigatório, ou Avulso, não obrigatório). Cada periodicidade forma um check list chamado PATRIMÔNIO >> PERIODICIDADE >> RESPONSÁVEL.
+- Regras: um equipamento tem uma associação por check list; só se associam grupos que valem para o tipo do equipamento; **não se exclui um grupo que algum equipamento usa**; nome único sem diferenciar acento/maiúscula; erro não grava nada; dado ilegível nunca é sobrescrito.
+- Não há "Restaurar configurações iniciais": nenhum grupo padrão foi definido. Só modo demonstração (`gemape-demo-equipamentos-checklist`); nada no Supabase.
