@@ -33,6 +33,10 @@ function useMenosMovimento(): boolean {
   return menos;
 }
 
+// Cores do céu: a página inteira no tom lavanda da faixa dos cartões (o primário a 10% sobre o branco), com nuvens brancas.
+// Se o WebGL não estiver disponível, o fundo do componente é esta mesma cor.
+const CORES_DO_CEU = { background: "#E8E4F5", baseColor: "#F6F4FC", accentColor: "#FFFFFF" };
+
 // O shader do céu é pesado: ele é desenhado nesta fração do tamanho da janela e o navegador amplia (nuvens macias não mostram a diferença).
 const ESCALA_DO_CEU = 2.5;
 function useTamanhoDoCeu(): { w: number; h: number } {
@@ -68,9 +72,9 @@ function PaginaInicio() {
           aqui ele ocupa a janela e desenha em resolução menor. */}
       <div className="fixed inset-0 -z-10" aria-hidden="true">
         {menosMovimento ? (
-          <CloudSky width={tamanho.w} height={tamanho.h} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }} speed={0} pointer={{ wind: 0, parallax: 0, damping: 50 }} />
+          <CloudSky {...CORES_DO_CEU} width={tamanho.w} height={tamanho.h} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }} speed={0} pointer={{ wind: 0, parallax: 0, damping: 50 }} />
         ) : (
-          <CloudSky width={tamanho.w} height={tamanho.h} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }} />
+          <CloudSky {...CORES_DO_CEU} width={tamanho.w} height={tamanho.h} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }} />
         )}
       </div>
       <div className="space-y-8">

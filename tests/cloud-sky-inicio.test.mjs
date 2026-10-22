@@ -56,3 +56,15 @@ test("o texto da tela fica legível sobre o céu: título e grupos em painéis c
   assert.match(inicio, /bg-card\/\d+/);
   assert.match(inicio, /backdrop-blur/);
 });
+
+test("o céu usa o tom lavanda da faixa dos cartões (a página inteira na cor do layout), não o azul forte do padrão", () => {
+  assert.match(inicio, /const CORES_DO_CEU = \{ background: "#E8E4F5"/);
+  assert.match(inicio, /baseColor: "#F6F4FC"/);
+  assert.match(inicio, /accentColor: "#FFFFFF"/);
+  assert.equal([...inicio.matchAll(/\{\.\.\.CORES_DO_CEU\}/g)].length, 2, "nas duas versões (com e sem movimento)");
+  assert.doesNotMatch(inicio, /#0075FF/i);
+});
+
+test("a faixa dos cartões e o fundo da página partem do mesmo tom", () => {
+  assert.match(inicio, /bg-primary\/10/);
+});
