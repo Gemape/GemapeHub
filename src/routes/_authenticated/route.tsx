@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { LogOut } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { VisualizadorDocumento } from "@/components/layout/VisualizadorDocumento";
@@ -59,6 +59,8 @@ function LayoutAutenticado() {
   const { perfil } = Route.useRouteContext();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  // Na tela inicial só aparecem os cartões: sem menu lateral. Nas outras telas, o menu e o botão de voltar ao início.
+  const noInicio = useRouterState({ select: (s) => s.location.pathname === "/inicio" });
 
   // Sessão encerrada em outra aba ou expirada: volta ao login sem deixar dados em cache.
   useEffect(() => {
@@ -81,10 +83,20 @@ function LayoutAutenticado() {
   return (
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
-        <AppSidebar />
+        {!noInicio && <AppSidebar />}
         <main className="flex min-h-screen w-full min-w-0 flex-col">
           <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 glass border-x-0 border-t-0 px-4 py-3 rounded-none">
-            <SidebarTrigger />
+            {!noInicio && <SidebarTrigger />}
+            {noInicio && (
+              <Link to="/inicio" aria-label="GEMAPE, tela inicial" className="shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <img src={`${import.meta.env["BASE_URL"] ?? "/"}logo-relatorio-viagens.png`} alt="GEMAPE, 40 anos, máquinas e peças" className="h-10 w-auto mix-blend-multiply" />
+              </Link>
+            )}
+            {!noInicio && (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/inicio"><ArrowLeft className="mr-1 size-4" aria-hidden="true" />Voltar ao início</Link>
+              </Button>
+            )}
             <span className="text-eyebrow hidden sm:inline">Grupo GEMAPE</span>
             <span className="text-xs text-muted-foreground">{import.meta.env["VITE_DEMO_MODE"] !== "false" ? "Demonstração · dados locais" : ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</span>
             <div className="ml-auto flex items-center gap-2">

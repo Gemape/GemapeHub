@@ -57,3 +57,28 @@ test("a tela mostra cartões com ícone, título e Clique para acessar, só os d
   assert.match(pagina, /lg:grid-cols-3/);
   assert.doesNotMatch(pagina, /dangerouslySetInnerHTML|innerHTML/);
 });
+
+const layout = ler("routes/_authenticated/route.tsx");
+
+test("na tela inicial não há menu lateral: só os cartões; nas outras telas o menu continua", () => {
+  assert.match(layout, /useRouterState/);
+  assert.match(layout, /const noInicio = /);
+  assert.match(layout, /\{!noInicio && <AppSidebar \/>\}/);
+  assert.match(layout, /\{!noInicio && <SidebarTrigger \/>\}/);
+});
+
+test("fora da tela inicial há o botão Voltar ao início no topo de toda tela", () => {
+  assert.match(layout, /\{!noInicio && \(?\s*<Button[^>]*asChild[^>]*>\s*<Link to="\/inicio">/s);
+  assert.match(layout, /Voltar ao início/);
+});
+
+test("na tela inicial a logomarca fica no topo e leva à própria tela inicial", () => {
+  assert.match(layout, /\{noInicio && \(?\s*<Link to="\/inicio"[^>]*aria-label="GEMAPE, tela inicial"/s);
+});
+
+test("clicar na logomarca do menu lateral volta à tela inicial", () => {
+  const menu = ler("components/layout/AppSidebar.tsx");
+  const link = menu.match(/<Link to="\/inicio"[^>]*aria-label="Ir para a tela inicial"[^>]*>[\s\S]*?<\/Link>/)?.[0] ?? "";
+  assert.ok(link, "logo dentro de um Link para /inicio");
+  assert.match(link, /className="logo-marca"/);
+});

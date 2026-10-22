@@ -349,12 +349,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="px-4 py-8">
         <div className="text-center leading-tight">
-          <div
-            className="logo-marca"
-            role="img"
-            aria-label="GEMAPE, 40 anos, máquinas e peças"
-            style={{ maskImage: `url(${logoMarca})`, WebkitMaskImage: `url(${logoMarca})` }}
-          />
+          <Link to="/inicio" aria-label="Ir para a tela inicial" title="Ir para a tela inicial" className="block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+            <div
+              className="logo-marca"
+              role="img"
+              aria-label="GEMAPE, 40 anos, máquinas e peças"
+              style={{ maskImage: `url(${logoMarca})`, WebkitMaskImage: `url(${logoMarca})` }}
+            />
+          </Link>
           <div className="marca-linha mt-3" aria-hidden="true" />
           <p className="marca-subtitulo mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-foreground/80">
             Gestão de Patrimônio
