@@ -133,6 +133,9 @@ export const MENU_EQUIPAMENTOS: readonly ItemMenu[] = [
   { titulo: "Cadastrar equipamento", url: "/cadastros/equipamentos", icone: "Forklift" },
   // Subcategorias (pai) e tipos (filho) de equipamento.
   { titulo: "Parâmetros Específicos", url: "/cadastros/equipamentos-especificos", icone: "Tags" },
+  // Check list de manutenção e de vistoria: itens por tipo de equipamento e associação a cada equipamento.
+  { titulo: "Check list de manutenção", url: "/cadastros/equipamentos-checklist", icone: "ClipboardCheck", search: { aba: "manutencao" } },
+  { titulo: "Check list de vistoria", url: "/cadastros/equipamentos-checklist", icone: "ClipboardCheck", search: { aba: "vistoria" } },
 ];
 
 // URLs de Gerais, para o destaque do grupo.

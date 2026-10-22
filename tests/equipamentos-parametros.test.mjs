@@ -144,10 +144,12 @@ test("Parâmetros Específicos entra no menu de Equipamentos e no cartão da tel
   assert.deepEqual(MENU_EQUIPAMENTOS.map((i) => [i.titulo, i.url]), [
     ["Cadastrar equipamento", "/cadastros/equipamentos"],
     ["Parâmetros Específicos", "/cadastros/equipamentos-especificos"],
+    ["Check list de manutenção", "/cadastros/equipamentos-checklist"],
+    ["Check list de vistoria", "/cadastros/equipamentos-checklist"],
   ]);
   const { gruposDoInicio } = await import("../src/lib/inicio.ts");
   const card = gruposDoInicio(true).find((g) => g.titulo === "Parâmetros").cartoes.find((c) => c.titulo === "Equipamentos");
-  assert.deepEqual(card.itens.map((i) => i.titulo), ["Cadastrar equipamento", "Parâmetros Específicos"]);
+  assert.deepEqual(card.itens.map((i) => i.titulo), ["Cadastrar equipamento", "Parâmetros Específicos", "Check list de manutenção", "Check list de vistoria"]);
   assert.equal(card.url, undefined);
 });
 
