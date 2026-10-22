@@ -19,11 +19,20 @@ test("a tela inicial usa só o fundo padrão do sistema (o gradiente do body, o 
 
 test("o texto da tela volta ao estilo simples, sem painéis que existiam só para dar leitura sobre o céu", () => {
   assert.doesNotMatch(inicio, /backdrop-blur|bg-card\/\d+/);
-  assert.match(inicio, /<header>/);
+  assert.match(inicio, /<header className="text-center">/);
 });
 
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {
   assert.match(inicio, /bg-primary\/10/);
   assert.match(inicio, /Clique para acessar/);
   assert.match(inicio, /lg:grid-cols-3/);
+});
+
+test("o cabeçalho da tela inicial não tem a frase Escolha onde você quer trabalhar", () => {
+  assert.doesNotMatch(inicio, /Escolha onde você quer trabalhar/);
+  assert.match(inicio, /Gestão de Patrimônio/);
+});
+
+test("o título da tela inicial fica centralizado no topo da página", () => {
+  assert.match(inicio, /<header className="text-center">/);
 });

@@ -33,10 +33,9 @@ function PaginaInicio() {
 
   return (
     <div className="space-y-8">
-      <header>
+      <header className="text-center">
         <p className="text-eyebrow">Início</p>
         <h1 className="text-2xl font-bold">Gestão de Patrimônio</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Escolha onde você quer trabalhar.</p>
       </header>
       {gruposDoInicio(isAdmin).map((grupo) => (
         <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="space-y-3">
