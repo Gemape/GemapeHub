@@ -33,9 +33,9 @@ function useMenosMovimento(): boolean {
   return menos;
 }
 
-// Cores do céu: a página inteira no tom lavanda da faixa dos cartões (o primário a 10% sobre o branco), com nuvens brancas.
-// Se o WebGL não estiver disponível, o fundo do componente é esta mesma cor.
-const CORES_DO_CEU = { background: "#E8E4F5", baseColor: "#F6F4FC", accentColor: "#FFFFFF" };
+// Cores do céu: tons bem claros e nuvens brancas, desenhados com 60% de opacidade sobre o fundo padrão do sistema (o gradiente do body,
+// o mesmo das telas internas). Assim a tela inicial fica na cor padrão, com nuvens suaves por cima. Sem WebGL, sobra só o fundo padrão.
+const CORES_DO_CEU = { background: "#EEF2FF", baseColor: "#F7F9FF", accentColor: "#FFFFFF" };
 
 // O shader do céu é pesado: ele é desenhado nesta fração do tamanho da janela e o navegador amplia (nuvens macias não mostram a diferença).
 const ESCALA_DO_CEU = 2.5;
@@ -70,7 +70,7 @@ function PaginaInicio() {
       {/* Céu animado (Cloud Sky, Originkit) como fundo da tela inicial: atrás de tudo e sem papel para o leitor de tela. Fica fora do
           contêiner com espaçamento, senão a margem dele encolhe o fundo. O componente traz mínimo de 1200x800 e tamanho em pixels:
           aqui ele ocupa a janela e desenha em resolução menor. */}
-      <div className="fixed inset-0 -z-10" aria-hidden="true">
+      <div className="fixed inset-0 -z-10 opacity-60" aria-hidden="true">
         {menosMovimento ? (
           <CloudSky {...CORES_DO_CEU} width={tamanho.w} height={tamanho.h} style={{ width: "100%", height: "100%", minWidth: 0, minHeight: 0 }} speed={0} pointer={{ wind: 0, parallax: 0, damping: 50 }} />
         ) : (

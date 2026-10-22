@@ -34,7 +34,7 @@ test("a tela inicial usa o céu como fundo, atrás dos cartões, sem atrapalhar 
 });
 
 test("o fundo fica fora do contêiner com espaçamento (a margem do space-y encolhia o fundo e deixava uma faixa)", () => {
-  const fundo = inicio.indexOf('className="fixed inset-0 -z-10"');
+  const fundo = inicio.indexOf('className="fixed inset-0 -z-10');
   const conteiner = inicio.indexOf('className="space-y-8"');
   assert.ok(fundo > 0 && conteiner > fundo, "o fundo vem antes e fora do div space-y-8");
   assert.ok(inicio.indexOf("</div>", fundo) < conteiner, "o div do fundo fecha antes do contêiner");
@@ -57,14 +57,21 @@ test("o texto da tela fica legível sobre o céu: título e grupos em painéis c
   assert.match(inicio, /backdrop-blur/);
 });
 
-test("o céu usa o tom lavanda da faixa dos cartões (a página inteira na cor do layout), não o azul forte do padrão", () => {
-  assert.match(inicio, /const CORES_DO_CEU = \{ background: "#E8E4F5"/);
-  assert.match(inicio, /baseColor: "#F6F4FC"/);
+test("a tela inicial fica na cor padrão do sistema: o céu é claro e translúcido sobre o fundo padrão das telas internas", () => {
+  assert.match(inicio, /const CORES_DO_CEU = \{ background: "#EEF2FF"/);
+  assert.match(inicio, /baseColor: "#F7F9FF"/);
   assert.match(inicio, /accentColor: "#FFFFFF"/);
   assert.equal([...inicio.matchAll(/\{\.\.\.CORES_DO_CEU\}/g)].length, 2, "nas duas versões (com e sem movimento)");
-  assert.doesNotMatch(inicio, /#0075FF/i);
+  assert.match(inicio, /className="fixed inset-0 -z-10 opacity-60"/);
+  assert.doesNotMatch(inicio, /#0075FF|#E8E4F5/i);
 });
 
-test("a faixa dos cartões e o fundo da página partem do mesmo tom", () => {
+test("o fundo padrão (gradiente do body) continua sendo o das telas internas, sem cor própria da tela inicial", () => {
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(css, /body \{[\s\S]*?linear-gradient\(160deg, var\(--fundo-a\), var\(--fundo-b\)\)/);
+  assert.doesNotMatch(inicio, /bg-\[#|style=\{\{[^}]*background:/);
+});
+
+test("a faixa dos cartões segue em tom do azul da marca (bg-primary/10)", () => {
   assert.match(inicio, /bg-primary\/10/);
 });
