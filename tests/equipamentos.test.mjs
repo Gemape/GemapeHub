@@ -170,3 +170,16 @@ test("o nome do equipamento é só texto: nada é interpretado ao guardar (a tel
   assert.match(e.nome, /^<img src=x onerror=alert\(1\)>$/i);
   assert.equal(listarEquipamentos(s)[0].nome, e.nome);
 });
+
+test("revisão: ponto de milhar (como se escreve no Brasil) vale como milhar, não como decimal", () => {
+  const valor = (v) => normalizarEquipamento({ ...geral, valorCompra: v }, { hoje }).valorCompra;
+  const carga = (v) => normalizarEquipamento({ ...geral, tecnico: { capacidadeCarga: v } }, { hoje }).tecnico.capacidadeCarga;
+  assert.equal(valor("185.000"), 185000);
+  assert.equal(valor("1.234.567"), 1234567);
+  assert.equal(valor("1.250,50"), 1250.5);
+  assert.equal(valor("12.50"), 12.5);
+  assert.equal(carga("2.500"), "2500");
+  assert.equal(carga("2,5"), "2.5");
+  assert.equal(carga("0.125"), "0.125");
+  assert.equal(carga("1.25"), "1.25");
+});

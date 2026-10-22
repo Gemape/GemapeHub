@@ -101,7 +101,9 @@ function lerNumero(valor: string | number | undefined, casas: number, maximo: nu
   if (valor === undefined || String(valor).trim() === "") return null;
   if (typeof valor === "number") return valor >= 0 && valor <= maximo ? valor : null;
   const texto = String(valor).replace(/R\$/gi, "").replace(/\s/g, "");
-  const normal = texto.includes(",") ? texto.replace(/\./g, "").replace(",", ".") : texto;
+  // Sem vírgula, ponto seguido de exatamente 3 dígitos é milhar ("185.000", "2.500"), como se escreve no Brasil; "0.125" e "12.5" são decimais.
+  const milhar = !texto.includes(",") && /^[1-9]\d{0,2}(\.\d{3})+$/.test(texto);
+  const normal = texto.includes(",") || milhar ? texto.replace(/\./g, "").replace(",", ".") : texto;
   if (!new RegExp(`^\\d+(\\.\\d{1,${casas}})?$`).test(normal)) return null;
   const n = Number(normal);
   return n <= maximo ? n : null;
