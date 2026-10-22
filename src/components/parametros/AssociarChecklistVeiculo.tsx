@@ -15,7 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lerTodas } from "@/lib/ler-todas";
 import { EditorItensChecklist } from "@/components/parametros/EditorItensChecklist";
 import { CHECKLIST_VEICULOS_PADRAO } from "@/lib/checklist-veiculos-padrao";
-import { adicionarGrupoChecklistVeiculo, removerGrupoChecklistVeiculo, TODOS_OS_TIPOS } from "@/lib/parametros-base";
+import { adicionarGrupoChecklistVeiculo, editarGrupoChecklistVeiculo, removerGrupoChecklistVeiculo, TODOS_OS_TIPOS } from "@/lib/parametros-base";
+import { ehGrupoPersonalizado, ehPersonalizadoDe, nomeGrupoPersonalizado } from "@/lib/grupo-personalizado";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
 import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
@@ -104,7 +105,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const [travado, setTravado] = useState(false);
   const salvando = useRef(false);
   // Itens personalizados deste veículo (um por linha): viram um grupo próprio ao salvar, além dos grupos marcados.
-  const [personalizados, setPersonalizados] = useState("");
+  // null = ainda não mexeu: o bloco mostra os itens do grupo personalizado já salvo do veículo, se houver.
+  const [personalizados, setPersonalizados] = useState<string | null>(null);
 
   const rotuloVeiculo = (v: VeiculoLinha) =>
     descricaoVeiculo({
@@ -127,7 +129,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const subcategoriaEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never) : null;
   const subcategoriaIdEscolhida = subcategoriaEscolhida?.id ?? null;
   // Os itens vêm do tipo do veículo, já antes de escolher a periodicidade; Avulso traz os itens simples, para qualquer veículo (decisão 155).
-  const aplicaveis = veiculoEscolhido ? gruposAplicaveis(grupos, subcategoriaIdEscolhida, periodicidade === AVULSO) : [];
+  // Grupos personalizados não entram na lista comum: o de cada veículo é cuidado no bloco "Personalizar itens".
+  const aplicaveis = veiculoEscolhido ? gruposAplicaveis(grupos, subcategoriaIdEscolhida, periodicidade === AVULSO).filter((g) => !ehGrupoPersonalizado(g.nome)) : [];
+  const placaEscolhida = String(veiculoEscolhido?.["placa"] ?? "").trim().toUpperCase() || "veículo";
+  const personalizadoSalvo = veiculoEscolhido ? grupos.find((g) => g.nome === nomeGrupoPersonalizado(placaEscolhida, periodicidade === AVULSO)) : undefined;
+  const valorPersonalizados = personalizados ?? personalizadoSalvo?.itens.map((i) => i.nome).join("\n") ?? "";
   const todosItensIds = aplicaveis.flatMap((g) => g.itens.map((i) => i.id));
   const marcados = escolhidos === null ? todosItensIds : escolhidos.filter((id) => todosItensIds.includes(id));
   const marcadosDoGrupo = (g: { itens: { id: string }[] }) => g.itens.filter((i) => marcados.includes(i.id)).map((i) => i.id);
@@ -171,7 +177,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       toast.warning(`Este check list tinha mais de uma periodicidade. A janela mostra só ${escolhida}; ao salvar, os itens das outras periodicidades saem.`);
     }
     setEscolhidos(a ? daEscolhida.flatMap((i) => i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? []) : null);
-    setPersonalizados("");
+    setPersonalizados(null);
     setAberto(true);
   }
 
@@ -215,29 +221,38 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
         ? { grupoId: g.id, tipo: "avulso", periodicidade: "", obrigatorio: false, ...escolha }
         : { grupoId: g.id, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true, ...escolha };
     });
-    // Itens personalizados viram um grupo próprio ("Personalizado · PLACA", ou "Avulso · Personalizado · PLACA" no avulso), do tipo do veículo.
-    const proprios = personalizados.split("\n").map((t) => t.trim()).filter(Boolean);
-    const placa = String(veiculoEscolhido?.["placa"] ?? "").trim().toUpperCase() || "veículo";
+    // Itens personalizados viram um grupo próprio ("Personalizado · PLACA", ou "Avulso · Personalizado · PLACA" no avulso), do tipo do veículo;
+    // se o veículo já tem esse grupo, ele é atualizado, não duplicado.
+    const proprios = valorPersonalizados.split("\n").map((t) => t.trim()).filter(Boolean);
+    const placa = placaEscolhida;
     const ok = executar(
       () => {
         let novoId: string | null = null;
+        let usadoId: string | null = null;
         const idsValidos = grupos.map((g) => g.id);
         try {
           if (proprios.length > 0) {
-            const base = `${avulso ? "Avulso · " : ""}Personalizado · ${placa}`;
-            let nome = base;
-            for (let n = 2; grupos.some((g) => g.nome === nome); n += 1) nome = `${base} (${n})`;
-            const novo = adicionarGrupoChecklistVeiculo(nome, proprios, subcategoriaIdEscolhida ? [subcategoriaIdEscolhida] : [TODOS_OS_TIPOS]);
-            novoId = novo.id;
-            idsValidos.push(novo.id);
-            itensDosGrupos[novo.id] = novo.itens.map((i) => i.id);
+            if (personalizadoSalvo) {
+              editarGrupoChecklistVeiculo(personalizadoSalvo.id, personalizadoSalvo.nome, proprios, personalizadoSalvo.tiposVeiculo);
+              usadoId = personalizadoSalvo.id;
+            } else {
+              const novo = adicionarGrupoChecklistVeiculo(nomeGrupoPersonalizado(placa, avulso), proprios, subcategoriaIdEscolhida ? [subcategoriaIdEscolhida] : [TODOS_OS_TIPOS]);
+              novoId = novo.id;
+              usadoId = novo.id;
+              idsValidos.push(novo.id);
+            }
             itens.push(avulso
-              ? { grupoId: novo.id, tipo: "avulso", periodicidade: "", obrigatorio: false }
-              : { grupoId: novo.id, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true });
+              ? { grupoId: usadoId, tipo: "avulso", periodicidade: "", obrigatorio: false }
+              : { grupoId: usadoId, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true });
           }
-          return editando
+          const salva = editando
             ? editarAssociacao(editando, { veiculoId, responsavel: escolhido, itens }, undefined, undefined, idsValidos, itensDosGrupos)
             : criarAssociacao(veiculoId, escolhido, itens, undefined, undefined, idsValidos, itensDosGrupos);
+          // Grupos personalizados antigos deste veículo (outro tipo de check list, ou sufixos de versões antigas) que ficaram sem uso saem.
+          for (const g of grupos) {
+            if (g.id !== usadoId && ehPersonalizadoDe(g.nome, placa)) { try { removerGrupoChecklistVeiculo(g.id); } catch { /* sem o que fazer */ } }
+          }
+          return salva;
         } catch (erro) {
           // A associação não saiu: o grupo personalizado recém-criado não fica sobrando.
           if (novoId) { try { removerGrupoChecklistVeiculo(novoId); } catch { /* sem o que fazer */ } }
@@ -433,10 +448,10 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               {veiculoEscolhido && (
                 <div className="space-y-1.5 rounded-md border p-3" data-testid="itens-personalizados">
                   <h3 className="text-sm font-semibold">Personalizar itens deste veículo</h3>
-                  <p className="text-xs text-muted-foreground">Marque itens do padrão ou adicione itens próprios: eles formam um grupo só deste veículo ao salvar, junto com os grupos marcados acima.</p>
+                  <p className="text-xs text-muted-foreground">Marque itens do padrão ou adicione itens próprios: eles formam o grupo “Personalizado · placa”, que só entra neste veículo, junto com os grupos marcados acima. Ao abrir de novo, os itens salvos voltam aqui.</p>
                   <EditorItensChecklist
                     id="assoc-personalizados"
-                    value={personalizados}
+                    value={valorPersonalizados}
                     onChange={setPersonalizados}
                     catalogo={CHECKLIST_VEICULOS_PADRAO.filter((g) => (periodicidade === AVULSO) === g.nome.startsWith("Avulso ·")).map((g) => ({ titulo: g.nome, itens: g.itens }))}
                   />

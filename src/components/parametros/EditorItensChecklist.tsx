@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 // acrescentam itens próprios. O valor é o mesmo de antes (um item por linha), então quem grava não muda.
 export type GrupoCatalogo = { titulo: string; itens: readonly string[] };
 
+const LIMITE_GRUPO = 5000;
+const LIMITE_ITEM = 200;
 const normalizar = (t: string) => t.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
 
 export function EditorItensChecklist({ id, value, onChange, catalogo }: { id: string; value: string; onChange: (v: string) => void; catalogo: readonly GrupoCatalogo[] }) {
@@ -16,7 +18,18 @@ export function EditorItensChecklist({ id, value, onChange, catalogo }: { id: st
   const linhas = value.split("\n");
   const selecionados = linhas.filter((l) => l.trim());
   const tem = (item: string) => linhas.some((l) => normalizar(l) === normalizar(item));
-  const grava = (proximas: string[]) => onChange(proximas.join("\n"));
+  const [aviso, setAviso] = useState("");
+  // Uma linha só, esvaziada na edição, vira um espaço: a linha continua na tela para o texto ser reescrito (a gravação ignora linha em branco).
+  const grava = (proximas: string[]) => {
+    const texto = proximas.length === 1 && proximas[0] === "" ? " " : proximas.join("\n");
+    // Mesmo limite de antes, de 5000 caracteres no grupo; quem passa disso não entra.
+    if (texto.length > LIMITE_GRUPO && texto.length > value.length) {
+      setAviso(`Limite de ${LIMITE_GRUPO} caracteres no grupo.`);
+      return;
+    }
+    setAviso("");
+    onChange(texto);
+  };
 
   const alternar = (item: string, marcar: boolean) => {
     if (marcar) {
@@ -66,7 +79,7 @@ export function EditorItensChecklist({ id, value, onChange, catalogo }: { id: st
         <ul className="max-h-48 space-y-1.5 overflow-y-auto">
           {(value === "" ? [] : linhas).map((l, n) => (
             <li key={n} className="flex items-center gap-2">
-              <Input id={`${id}-${n}`} value={l} aria-label={`Item ${n + 1}`} onChange={(e) => grava(linhas.map((x, k) => (k === n ? e.target.value : x)))} />
+              <Input id={`${id}-${n}`} value={l} maxLength={LIMITE_ITEM} aria-label={`Item ${n + 1}`} onChange={(e) => grava(linhas.map((x, k) => (k === n ? e.target.value : x)))} />
               <Button type="button" size="icon" variant="ghost" aria-label={`Remover ${l}`} onClick={() => grava(linhas.filter((_, k) => k !== n))}>
                 <X className="size-4" aria-hidden="true" />
               </Button>
@@ -76,6 +89,7 @@ export function EditorItensChecklist({ id, value, onChange, catalogo }: { id: st
         <div className="flex items-center gap-2">
           <Input
             value={novo}
+            maxLength={LIMITE_ITEM}
             placeholder="Novo item do grupo"
             aria-label="Novo item do grupo"
             onChange={(e) => setNovo(e.target.value)}
@@ -90,6 +104,7 @@ export function EditorItensChecklist({ id, value, onChange, catalogo }: { id: st
             <Plus className="mr-1 size-4" aria-hidden="true" />Adicionar
           </Button>
         </div>
+        {aviso && <p role="alert" className="text-xs text-destructive">{aviso}</p>}
       </fieldset>
     </div>
   );

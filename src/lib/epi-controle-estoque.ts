@@ -2,11 +2,12 @@
 // deduzidas dos valores da planilha, cujas macros não vieram no arquivo (docs/ANALISE_PLANILHA_EPI.md): onde há dúvida, está marcado.
 // Funções puras: recebem os itens e as movimentações já lidos, e a data de hoje (AAAA-MM-DD, Brasília).
 
-export type ItemControle = { id: string; nome: string; estoque_atual?: number | null; estoque_minimo?: number | null };
+export type ItemControle = { id: string; nome: string; estoque_atual?: number | null; estoque_minimo?: number | null; status?: string | null; empresa_id?: string | null };
 export type MovimentoControle = { item_id: string | null; tipo_movimentacao: string; quantidade: number | null; data_movimentacao: string };
 
 export type LinhaControle = {
   itemId: string;
+  empresaId: string | null;
   nome: string;
   estoqueCritico: number;
   estoqueAtual: number;
@@ -14,10 +15,10 @@ export type LinhaControle = {
   penultimaEntrada: string | null;
   ultimaSaida: string | null;
   penultimaSaida: string | null;
-  consumoMensal: number; // saídas dos últimos 30 dias
-  consumoTrimestral: number; // saídas dos últimos 90 dias ÷ 3
-  consumoSemestral: number; // saídas dos últimos 180 dias ÷ 6
-  consumoAnual: number; // saídas dos últimos 365 dias ÷ 12
+  consumoMensal: number; // consumo dos últimos 30 dias (saídas menos devoluções)
+  consumoTrimestral: number; // 90 dias ÷ 3
+  consumoSemestral: number; // 180 dias ÷ 6
+  consumoAnual: number; // 365 dias ÷ 12
   cobertura: number | null; // dias; null = sem consumo no último ano
 };
 
@@ -36,19 +37,29 @@ function ultimas(datas: string[]): [string | null, string | null] {
 
 export function controleDeEstoque(itens: ItemControle[], movimentos: MovimentoControle[], hoje: string): LinhaControle[] {
   const porItem = new Map<string, MovimentoControle[]>();
-  for (const m of movimentos) if (m.item_id) porItem.set(m.item_id, [...(porItem.get(m.item_id) ?? []), m]);
-  return itens.map((item) => {
+  for (const m of movimentos) {
+    if (!m.item_id) continue;
+    const lista = porItem.get(m.item_id);
+    if (lista) lista.push(m);
+    else porItem.set(m.item_id, [m]);
+  }
+  // Item inativo não se repõe: fica fora do controle e da sugestão.
+  return itens.filter((item) => (item.status ?? "").toLocaleLowerCase("pt-BR") !== "inativo").map((item) => {
     const doItem = porItem.get(item.id) ?? [];
     const entradas = doItem.filter((m) => m.tipo_movimentacao === "Entrada").map((m) => dia(m.data_movimentacao));
     const saidas = doItem.filter((m) => m.tipo_movimentacao === "Saida");
-    const somaSaidas = (janela: number) =>
-      saidas.filter((m) => { const d = dias(dia(m.data_movimentacao), hoje); return d >= 0 && d < janela; }).reduce((t, m) => t + (m.quantidade ?? 0), 0);
+    // O que o empregado devolve volta ao estoque e não é consumo: sai da conta da mesma janela.
+    const devolucoes = doItem.filter((m) => m.tipo_movimentacao === "Devolucao");
+    const soma = (lista: MovimentoControle[], janela: number) =>
+      lista.filter((m) => { const d = dias(dia(m.data_movimentacao), hoje); return d >= 0 && d < janela; }).reduce((t, m) => t + (m.quantidade ?? 0), 0);
+    const somaSaidas = (janela: number) => Math.max(0, soma(saidas, janela) - soma(devolucoes, janela));
     const [ultimaEntrada, penultimaEntrada] = ultimas(entradas);
     const [ultimaSaida, penultimaSaida] = ultimas(saidas.map((m) => dia(m.data_movimentacao)));
     const consumoAnual = somaSaidas(365) / 12;
     const estoqueAtual = item.estoque_atual ?? 0;
     return {
       itemId: item.id,
+      empresaId: item.empresa_id ?? null,
       nome: item.nome,
       estoqueCritico: item.estoque_minimo ?? 0,
       estoqueAtual,

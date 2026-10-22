@@ -139,3 +139,54 @@ test("entrega e devolução de uniforme: grava no módulo uniforme, confere os i
   await assert.rejects(() => registrarDevolucaoEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "u1", quantidade: 1 }], data: "2026-04-10", modulo: "uniforme", administrador: false, responsavel: "x" }), /devolução de uniforme/);
   assert.deepEqual(await lerHistoricoEpiPorItem(cliente, { empresaId: "emp", modulo: "uniforme" }), []);
 });
+
+// ---------- correções do code review ----------
+test("item inativo fica fora do controle e da sugestão de compras", () => {
+  const itens = [{ id: "a", nome: "Antigo", estoque_atual: 0, estoque_minimo: 2, status: "Inativo" }, item("b", "Ativo", 0, 2)];
+  const linhas = controleDeEstoque(itens, [], HOJE);
+  assert.deepEqual(linhas.map((l) => l.nome), ["Ativo"]);
+  assert.deepEqual(sugestoesDeCompra(linhas, 120).map((s) => s.nome), ["Ativo"]);
+});
+
+test("devolução volta ao estoque: sai do consumo da mesma janela e o consumo nunca fica negativo", () => {
+  const movs = [mov("a", "Saida", 10, "2026-04-01"), mov("a", "Devolucao", 8, "2026-04-05")];
+  const [l] = controleDeEstoque([item("a", "Luva", 5, 0)], movs, HOJE);
+  assert.equal(l.consumoMensal, 2);
+  assert.ok(Math.abs(l.consumoAnual - 2 / 12) < 1e-9);
+  const [m] = controleDeEstoque([item("a", "Luva", 5, 0)], [mov("a", "Devolucao", 3, "2026-04-05")], HOJE);
+  assert.equal(m.consumoMensal, 0);
+});
+
+test("a linha leva a empresa do item, e muitos movimentos de um item são lidos sem recopiar a lista", () => {
+  const [l] = controleDeEstoque([{ ...item("a", "Luva", 1, 0), empresa_id: "emp-1" }], [], HOJE);
+  assert.equal(l.empresaId, "emp-1");
+  const muitos = Array.from({ length: 50_000 }, (_, n) => mov("a", "Saida", 1, n % 2 ? "2026-04-01" : "2026-03-01"));
+  const inicio = Date.now();
+  const [g] = controleDeEstoque([item("a", "Luva", 1, 0)], muitos, HOJE);
+  assert.ok(Date.now() - inicio < 2000, "leitura linear");
+  assert.equal(g.consumoAnual, 50_000 / 12);
+  assert.match(ler("components/modules/ControleEstoqueModulo.tsx"), /comEmpresa && <TableHead>Empresa<\/TableHead>/);
+  assert.match(ler("components/modules/SugestaoComprasModulo.tsx"), /comEmpresa && <TableHead>Empresa<\/TableHead>/);
+});
+
+test("grupo personalizado: nomes por veículo ou equipamento, e o que é de outro não se confunde", async () => {
+  const { nomeGrupoPersonalizado, ehGrupoPersonalizado, ehPersonalizadoDe } = await import("../src/lib/grupo-personalizado.ts");
+  assert.equal(nomeGrupoPersonalizado("ABC-1234"), "Personalizado · ABC-1234");
+  assert.equal(nomeGrupoPersonalizado("ABC-1234", true), "Avulso · Personalizado · ABC-1234");
+  assert.ok(ehGrupoPersonalizado("Personalizado · X") && ehGrupoPersonalizado("Avulso · Personalizado · X") && !ehGrupoPersonalizado("Avulso · Pneus e rodas"));
+  assert.ok(ehPersonalizadoDe("Personalizado · ABC-1234", "ABC-1234"));
+  assert.ok(ehPersonalizadoDe("Avulso · Personalizado · ABC-1234 (3)", "ABC-1234"), "sufixo de versões antigas");
+  assert.ok(!ehPersonalizadoDe("Personalizado · ABC-12345", "ABC-1234"));
+  assert.ok(!ehPersonalizadoDe("Personalizado · ABC-1234 (x)", "ABC-1234"));
+  assert.match(ler("components/parametros/AssociarChecklistVeiculo.tsx"), /filter\(\(g\) => !ehGrupoPersonalizado\(g\.nome\)\)/);
+  assert.match(ler("components/parametros/ChecklistEquipamento.tsx"), /filter\(\(g\) => !ehGrupoPersonalizado\(g\.nome\)\)/);
+});
+
+test("editor de itens: apagar o único item mantém a linha, há limite de tamanho e a entrega não tem mais mensagem duplicada", () => {
+  const editor = ler("components/parametros/EditorItensChecklist.tsx");
+  assert.match(editor, /proximas\.length === 1 && proximas\[0\] === "" \? " "/);
+  assert.match(editor, /LIMITE_GRUPO = 5000/);
+  assert.match(editor, /maxLength=\{LIMITE_ITEM\}/);
+  const entrega = ler("lib/entrega-epi.ts");
+  assert.doesNotMatch(entrega, /artigo|MENSAGEM_SO_ADMIN/);
+});

@@ -11,9 +11,9 @@ import { validarSaidaDeEpis, validarSaidaDeUniformes } from "./termos-atomicos.t
 
 // A mesma entrega e devolução serve ao módulo de EPI e ao de Uniformes: muda a tabela dos itens, o módulo gravado e o rótulo nas mensagens.
 export type ModuloEntrega = "epi" | "uniforme";
-const CONTEXTO: Record<ModuloEntrega, { tabela: string; rotulo: string; artigo: string }> = {
-  epi: { tabela: "epis", rotulo: "EPI", artigo: "O" },
-  uniforme: { tabela: "uniformes", rotulo: "uniforme", artigo: "O" },
+const CONTEXTO: Record<ModuloEntrega, { tabela: string; rotulo: string }> = {
+  epi: { tabela: "epis", rotulo: "EPI" },
+  uniforme: { tabela: "uniformes", rotulo: "uniforme" },
 };
 
 export const SIGLA_ENTREGA = "ENT";
@@ -167,7 +167,6 @@ export async function registrarEntregaEpi(cliente: ClienteEntrega, entrada: Entr
   return gravar(cliente, entrada, "Saida", null);
 }
 
-export const MENSAGEM_SO_ADMIN = "Somente o Administrador registra a devolução de EPI.";
 export const mensagemSoAdmin = (modulo: ModuloEntrega) => `Somente o Administrador registra a devolução de ${CONTEXTO[modulo].rotulo}.`;
 
 /** Devolução de EPI (só Administrador): volta ao estoque, no limite do que o empregado tem em posse. */

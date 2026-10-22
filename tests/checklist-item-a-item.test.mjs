@@ -147,13 +147,14 @@ test("cadastro de grupo: itens do padrão para marcar, lista editável dos selec
 test("associação: personalizar itens (padrão + próprios) vira um grupo só do veículo/equipamento e não deixa grupo sobrando se a associação falhar", () => {
   const veic = ler("components/parametros/AssociarChecklistVeiculo.tsx");
   assert.match(veic, /data-testid="itens-personalizados"/);
-  assert.match(veic, /Personalizado · \$\{placa\}/);
-  assert.match(veic, /adicionarGrupoChecklistVeiculo\(nome, proprios/);
+  assert.match(veic, /nomeGrupoPersonalizado\(placa, avulso\)/);
+  assert.match(veic, /adicionarGrupoChecklistVeiculo\(nomeGrupoPersonalizado/);
+  assert.match(veic, /editarGrupoChecklistVeiculo\(personalizadoSalvo\.id/); // reabrir atualiza o grupo, não cria outro
   assert.match(veic, /removerGrupoChecklistVeiculo\(novoId\)/);
   const equip = ler("components/parametros/ChecklistEquipamento.tsx");
   assert.match(equip, /data-testid="itens-personalizados"/);
-  assert.match(equip, /Personalizado · \$\{escolhido\.patrimonio\}/);
-  assert.match(equip, /salvarGrupoChecklist\(finalidade, \{ nome, itens: proprios, tipos: \[escolhido\.tipoId\] \}\)/);
+  assert.match(equip, /nomeGrupoPersonalizado\(escolhido\.patrimonio\)/);
+  assert.match(equip, /\.\.\.\(personalizadoSalvo \? \{ id: personalizadoSalvo\.id \} : \{\}\)/); // reabrir atualiza o grupo, não cria outro
   assert.match(equip, /removerGrupoChecklist\(finalidade, novoGrupoId\)/);
 });
 

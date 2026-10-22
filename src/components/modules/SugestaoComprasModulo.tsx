@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useEmpresa } from "@/lib/empresa-context";
+import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { controleDeEstoque, lerMetaCobertura, METAS_COBERTURA, salvarMetaCobertura, sugestoesDeCompra } from "@/lib/epi-controle-estoque";
 import { hojeLocal } from "@/lib/empregados";
 import { exportarCsv } from "@/lib/gemape";
-import { useItens, useMovimentacoes } from "@/lib/hooks-gemape";
+import { useEmpresas, useItens, useMovimentacoes } from "@/lib/hooks-gemape";
 
 // Aba Compras dos EPIs e dos Uniformes > Sugestão de compras, como o REL_COMPRAS da planilha: o que comprar para chegar à meta de cobertura, com prioridade e observação.
 const classePrioridade: Record<string, string> = {
@@ -25,6 +25,10 @@ export function SugestaoComprasModulo({ modulo }: { modulo: "epi" | "uniforme" }
   const [meta, setMeta] = useState<number>(() => lerMetaCobertura());
   const { data: itens = [], isLoading: carregandoItens } = useItens(modulo, empresaId);
   const { data: movimentos = [], isLoading: carregandoMov } = useMovimentacoes(modulo, empresaId);
+  const { data: empresas = [] } = useEmpresas();
+  // Com Todas as empresas, quem compra precisa saber para qual empresa: cada linha diz de qual é.
+  const comEmpresa = empresaId === TODAS;
+  const nomeDaEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
   const sugestoes = useMemo(() => sugestoesDeCompra(controleDeEstoque(itens, movimentos, hojeLocal()), meta), [itens, movimentos, meta]);
   const carregando = carregandoItens || carregandoMov;
 
@@ -58,6 +62,7 @@ export function SugestaoComprasModulo({ modulo }: { modulo: "epi" | "uniforme" }
             variant="outline"
             disabled={carregando || sugestoes.length === 0}
             onClick={() => exportarCsv(`sugestao-compras-${modulo}`, sugestoes.map((s) => ({
+              Empresa: nomeDaEmpresa(s.empresaId),
               Descrição: s.nome,
               "Estoque crítico": s.estoqueCritico,
               "Estoque atual": s.estoqueAtual,
@@ -75,6 +80,7 @@ export function SugestaoComprasModulo({ modulo }: { modulo: "epi" | "uniforme" }
           <TableHeader>
             <TableRow>
               <TableHead>Descrição</TableHead>
+              {comEmpresa && <TableHead>Empresa</TableHead>}
               <TableHead className="text-right">Estoque crítico</TableHead>
               <TableHead className="text-right">Estoque atual</TableHead>
               <TableHead className="text-right">Cobertura (dias)</TableHead>
@@ -85,11 +91,12 @@ export function SugestaoComprasModulo({ modulo }: { modulo: "epi" | "uniforme" }
             </TableRow>
           </TableHeader>
           <TableBody>
-            {carregando ? <TableRow><TableCell colSpan={8}>Carregando…</TableCell></TableRow>
-              : sugestoes.length === 0 ? <TableRow><TableCell colSpan={8}>Nenhum {modulo === "epi" ? "EPI" : "uniforme"} precisa de compra com a meta de {meta} dias.</TableCell></TableRow>
+            {carregando ? <TableRow><TableCell colSpan={9}>Carregando…</TableCell></TableRow>
+              : sugestoes.length === 0 ? <TableRow><TableCell colSpan={9}>Nenhum {modulo === "epi" ? "EPI" : "uniforme"} precisa de compra com a meta de {meta} dias.</TableCell></TableRow>
                 : sugestoes.map((s) => (
                   <TableRow key={s.itemId}>
                     <TableCell>{s.nome}</TableCell>
+                    {comEmpresa && <TableCell>{nomeDaEmpresa(s.empresaId)}</TableCell>}
                     <TableCell className="text-right">{s.estoqueCritico}</TableCell>
                     <TableCell className="text-right">{s.estoqueAtual}</TableCell>
                     <TableCell className="text-right">{s.cobertura === null ? "Sem consumo" : s.cobertura.toLocaleString("pt-BR")}</TableCell>

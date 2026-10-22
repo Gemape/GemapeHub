@@ -1464,3 +1464,8 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - **Entrega Uniforme:** a mesma tela de Entrega EPI (entrega e devolução por empregado, códigos ENT e DEV, devolução só do Administrador, histórico filtrável, alerta de estoque mínimo e termo de entrega), agora usada pelos dois módulos. A entrega aceita o módulo (`epi` ou `uniforme`), que define a tabela dos itens, o módulo gravado na movimentação e as palavras das mensagens.
 - **Estoque e Compras dos Uniformes:** ganham o Controle de estoque e consumo e a Sugestão de compras da decisão 252 (mesmos cálculos e a mesma meta de cobertura, que vale para os dois módulos).
 - Só modo demonstração; nada no Supabase.
+
+## 254. Ajustes de revisão: grupo personalizado, controle de estoque e editor de itens
+- **Grupo personalizado** ("Personalizado · PLACA" ou "· PATRIMÔNIO"): fica fora da lista de grupos de outros veículos e equipamentos; ao reabrir a associação, os itens salvos voltam no bloco "Personalizar itens" e salvar atualiza o mesmo grupo (não cria "(2)", "(3)"); grupos antigos do mesmo veículo ou equipamento que ficaram sem uso são removidos.
+- **Controle de estoque e sugestão de compras:** item inativo fica de fora; a devolução sai do consumo da mesma janela (consumo = saídas − devoluções, nunca negativo); com "Todas as empresas" há coluna Empresa (e no CSV), porque cada empresa tem o seu registro do mesmo produto.
+- **Editor de itens do grupo:** apagar o único item mantém a linha para reescrever; item com até 200 caracteres e grupo com até 5000 (o limite do campo de texto de antes).
