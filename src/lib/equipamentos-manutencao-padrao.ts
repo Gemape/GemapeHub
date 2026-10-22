@@ -1,8 +1,8 @@
 // Ações de manutenção já disponíveis para cada tipo de equipamento (lista fornecida pela Gemape): um grupo por rotina, valendo só para o tipo.
 // Entram no check list de manutenção pelo botão "Cadastrar padrão".
-export type GrupoPadraoManutencao = { tipoId: string; nome: string; itens: readonly string[] };
+export type GrupoPadrao = { tipoId: string; nome: string; itens: readonly string[] };
 
-export const GRUPOS_PADRAO_MANUTENCAO: readonly GrupoPadraoManutencao[] = [
+export const GRUPOS_PADRAO_MANUTENCAO: readonly GrupoPadrao[] = [
   {
     tipoId: "tipo-extintores", nome: "Extintores: preventiva de 2º grau (anual, empresa credenciada)", itens: [
       "Recarga de componentes: despressurizar o cilindro, esvaziar por completo e trocar o agente extintor (água, pó ABC/BC ou CO2)",

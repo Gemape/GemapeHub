@@ -12,7 +12,7 @@ import { Table } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
 import {
-  cadastrarPadraoManutencao, cadastrarPadraoVistoria, checklistsDaAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
+  cadastrarPadraoChecklist, checklistsDaAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
   removerAssociacao, removerGrupoChecklist, salvarAssociacao, salvarGrupoChecklist, TODOS_OS_TIPOS,
   type AssociacaoChecklistEquipamento, type FinalidadeChecklist, type GrupoChecklistEquipamento, type TipoAssociacao,
 } from "@/lib/equipamentos-checklist";
@@ -65,7 +65,8 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
 
   function padrao() {
     try {
-      const { criados } = finalidade === "vistoria" ? cadastrarPadraoVistoria() : cadastrarPadraoManutencao();
+      const { criados, semTipo } = cadastrarPadraoChecklist(finalidade);
+      if (semTipo > 0) toast.warning(`${semTipo} ações do padrão não foram cadastradas porque o tipo de equipamento delas não existe mais em Parâmetros Específicos.`);
       toast.success(criados === 0 ? `As ações de ${nomeFinalidade.toLowerCase()} padrão já estão cadastradas.` : `${criados} ações de ${nomeFinalidade.toLowerCase()} padrão cadastradas.`);
       aoMudar();
     } catch (erro) {

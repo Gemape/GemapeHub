@@ -2,8 +2,9 @@
 // check lists independentes, o de manutenção e o de vistoria, cada um com os seus grupos e as suas associações. Segue o modelo de
 // Parâmetros > Veículos > Check list (decisões 74, 116, 119 e 136). Fase 1: só no navegador, em modo demonstração; as tabelas
 // entram na Fase 2.
-import { GRUPOS_PADRAO_MANUTENCAO, type GrupoPadraoManutencao } from "./equipamentos-manutencao-padrao.ts";
+import { GRUPOS_PADRAO_MANUTENCAO, type GrupoPadrao } from "./equipamentos-manutencao-padrao.ts";
 import { GRUPOS_PADRAO_VISTORIA } from "./equipamentos-vistoria-padrao.ts";
+import { lerParametrosEquipamento } from "./equipamentos-parametros.ts";
 import { capitalizarTexto } from "./formatacao-cadastral.ts";
 
 export type FinalidadeChecklist = "manutencao" | "vistoria";
@@ -182,21 +183,30 @@ export function removerAssociacao(finalidade: string, equipamentoId: string, sto
   });
 }
 
+const PADRAO: Record<FinalidadeChecklist, readonly GrupoPadrao[]> = { manutencao: GRUPOS_PADRAO_MANUTENCAO, vistoria: GRUPOS_PADRAO_VISTORIA };
+
 // "Cadastrar padrão": cria os grupos do padrão que ainda não existem (por nome); os que já existem, mesmo editados, ficam como estão.
-function cadastrarPadrao(finalidade: FinalidadeChecklist, padrao: readonly GrupoPadraoManutencao[], storage: StorageLike): { criados: number } {
+// Grupo de um tipo que não existe mais em Parâmetros Específicos não é criado (ficaria sem equipamento): conta em `semTipo`.
+export function cadastrarPadraoChecklist(finalidade: FinalidadeChecklist, storage: StorageLike = localStorage): { criados: number; semTipo: number } {
   return alterar(finalidade, storage, (parte) => {
+    const tipos = lerParametrosEquipamento(storage).tipos;
     let criados = 0;
-    for (const p of padrao) {
+    let semTipo = 0;
+    for (const p of PADRAO[finalidade]) {
       // Texto do padrão entra como foi escrito (siglas como ART, GLP e CO2 não passam pela capitalização automática).
       if (parte.grupos.some((g) => chave(g.nome) === chave(p.nome))) continue;
+      if (!tipos.some((t) => t.id === p.tipoId)) {
+        semTipo++;
+        continue;
+      }
       parte.grupos.push({ id: novoId(), nome: p.nome, itens: p.itens.map((t) => ({ id: novoId(), nome: t })), tipos: [p.tipoId] });
       criados++;
     }
-    return { criados };
+    return { criados, semTipo };
   });
 }
-export const cadastrarPadraoManutencao = (storage: StorageLike = localStorage) => cadastrarPadrao("manutencao", GRUPOS_PADRAO_MANUTENCAO, storage);
-export const cadastrarPadraoVistoria = (storage: StorageLike = localStorage) => cadastrarPadrao("vistoria", GRUPOS_PADRAO_VISTORIA, storage);
+export const cadastrarPadraoManutencao = (storage?: StorageLike) => cadastrarPadraoChecklist("manutencao", storage);
+export const cadastrarPadraoVistoria = (storage?: StorageLike) => cadastrarPadraoChecklist("vistoria", storage);
 
 // ---------- Check lists do equipamento ----------
 // Os grupos habilitados se juntam por periodicidade: cada periodicidade é um check list do equipamento, com o nome

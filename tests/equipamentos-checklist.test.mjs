@@ -234,3 +234,13 @@ test("padrão de vistoria: um grupo por rotina no tipo certo, só na vistoria, s
   assert.equal(lerChecklistEquipamento(s).manutencao.grupos.length, 0);
   assert.equal(cadastrarPadraoVistoria(s).criados, 0);
 });
+
+test("padrão não cria grupo de tipo que não existe mais e avisa quantos ficaram de fora", async () => {
+  const { cadastrarPadraoChecklist } = await import("../src/lib/equipamentos-checklist.ts");
+  const { lerParametrosEquipamento, removerTipo } = await import("../src/lib/equipamentos-parametros.ts");
+  const s = memoria();
+  removerTipo("tipo-munck", s);
+  assert.ok(!lerParametrosEquipamento(s).tipos.some((t) => t.id === "tipo-munck"));
+  assert.deepEqual(cadastrarPadraoChecklist("vistoria", s), { criados: 14, semTipo: 2 });
+  assert.ok(lerChecklistEquipamento(s).vistoria.grupos.every((g) => !g.tipos.includes("tipo-munck")));
+});

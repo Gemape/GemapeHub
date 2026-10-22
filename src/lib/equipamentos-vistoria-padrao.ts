@@ -1,8 +1,8 @@
-import type { GrupoPadraoManutencao } from "./equipamentos-manutencao-padrao.ts";
+import type { GrupoPadrao } from "./equipamentos-manutencao-padrao.ts";
 
 // Ações de vistoria já disponíveis para cada tipo de equipamento (lista fornecida pela Gemape): um grupo por rotina, valendo só para o tipo.
 // Entram no check list de vistoria pelo botão "Cadastrar padrão".
-export const GRUPOS_PADRAO_VISTORIA: readonly GrupoPadraoManutencao[] = [
+export const GRUPOS_PADRAO_VISTORIA: readonly GrupoPadrao[] = [
   {
     tipoId: "tipo-extintores", nome: "Extintores: vistoria visual (semanal ou mensal)", itens: [
       "Acessibilidade: verificar se o acesso ao extintor está desobstruído e se a sinalização de parede e de piso está visível",
