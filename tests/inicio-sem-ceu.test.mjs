@@ -46,3 +46,12 @@ test("a tela inicial não mostra mais o texto de título (Início / Gestão de P
 test("o título da página continua existindo só para o leitor de tela (acessibilidade)", () => {
   assert.match(inicio, /<h1 className="sr-only">Início<\/h1>/);
 });
+
+test("o título do topo usa Open Sans em maiúsculas e o topo é maior (logo e altura)", () => {
+  const css = ler("styles.css");
+  assert.match(css, /@utility titulo-marca \{[\s\S]*?"Open Sans"[\s\S]*?text-transform: uppercase/);
+  assert.match(ler("routes/__root.tsx"), /family=Open\+Sans/);
+  const rota = ler("routes/_authenticated/route.tsx");
+  assert.match(rota, /sm:w-52/);
+  assert.match(rota, /py-5/);
+});
