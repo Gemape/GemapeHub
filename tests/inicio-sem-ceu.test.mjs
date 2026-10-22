@@ -17,8 +17,18 @@ test("a tela inicial usa só o fundo padrão do sistema (o gradiente do body, o 
   assert.match(css, /body \{[\s\S]*?linear-gradient\(160deg, var\(--fundo-a\), var\(--fundo-b\)\)/);
 });
 
-test("a tela não tem painéis que existiam só para dar leitura sobre o céu", () => {
-  assert.doesNotMatch(inicio, /backdrop-blur|bg-card\/\d+/);
+test("os cartões da tela inicial são de vidro (efeito glassmorphism do sistema), sem fundo sólido", () => {
+  assert.match(inicio, /"glass overflow-hidden/);
+  assert.doesNotMatch(inicio, /bg-card\b/);
+});
+
+test("o topo traz o título animado Grupo Gemape Gestão de Patrimônio, centralizado, no lugar do texto antigo", () => {
+  const rota = ler("routes/_authenticated/route.tsx");
+  assert.match(rota, /titulo-marca[^>]*>Grupo Gemape Gestão de Patrimônio</);
+  assert.doesNotMatch(rota, /Demonstração · dados locais|Grupo GEMAPE</);
+  assert.match(rota, /md:grid-cols-\[1fr_auto_1fr\]/);
+  const css = ler("styles.css");
+  assert.match(css, /@utility titulo-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
 });
 
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {

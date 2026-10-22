@@ -84,7 +84,8 @@ function LayoutAutenticado() {
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
         <main className="flex min-h-screen w-full min-w-0 flex-col">
-          <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 glass border-x-0 border-t-0 px-4 py-3 rounded-none">
+          <header className="sticky top-0 z-10 grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 glass border-x-0 border-t-0 px-4 py-3 rounded-none md:grid-cols-[1fr_auto_1fr]">
+            <div className="flex items-center gap-3">
             <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-36 shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <div
                 className="logo-marca-site"
@@ -98,9 +99,13 @@ function LayoutAutenticado() {
                 <Link to="/inicio"><ArrowLeft className="mr-1 size-4" aria-hidden="true" />Voltar ao início</Link>
               </Button>
             )}
-            <span className="text-eyebrow hidden sm:inline">Grupo GEMAPE</span>
-            <span className="text-xs text-muted-foreground">{import.meta.env["VITE_DEMO_MODE"] !== "false" ? "Demonstração · dados locais" : ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</span>
-            <div className="ml-auto flex items-center gap-2">
+            </div>
+            {/* Título da marca, centralizado no topo; no celular desce para uma linha própria. */}
+            <div className="order-last col-span-2 text-center md:order-none md:col-span-1">
+              <p className="titulo-marca text-lg sm:text-xl lg:text-2xl">Grupo Gemape Gestão de Patrimônio</p>
+              {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
+            </div>
+            <div className="flex items-center justify-end gap-2">
               <FiltroEmpresa />
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <><a className="text-xs underline" href="/auth?password=update">Trocar senha</a>
               <Button variant="ghost" size="sm" onClick={sair}>

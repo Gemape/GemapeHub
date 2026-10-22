@@ -16,7 +16,7 @@ const ICONES_CARTAO: Record<IconeInicio, typeof Car> = {
 };
 
 const classeCartao =
-  "overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-border transition hover:shadow-md motion-reduce:transition-none";
+  "glass overflow-hidden rounded-lg transition hover:-translate-y-0.5 hover:bg-white/80 motion-reduce:transition-none motion-reduce:hover:translate-y-0";
 const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 // Quatro cartões por linha no desktop; a última linha, se incompleta, fica centralizada.
 const larguraCartao = "w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)]";

@@ -366,6 +366,55 @@
   }
 }
 
+/* Título do topo (Grupo Gemape Gestão de Patrimônio): entra de baixo, um brilho percorre as letras e a sombra respira.
+   Quem reduz movimento recebe o título parado (decisão 114). */
+@keyframes titulo-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes titulo-brilho {
+  0%,
+  100% {
+    filter: drop-shadow(0 1px 1px oklch(0.32 0.25 266 / 0.15));
+  }
+  50% {
+    filter: drop-shadow(0 2px 8px oklch(0.55 0.2 262 / 0.45));
+  }
+}
+@utility titulo-marca {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  background-image: linear-gradient(
+    105deg,
+    var(--color-primary) 0%,
+    var(--color-primary) 40%,
+    oklch(0.62 0.2 262) 50%,
+    var(--color-primary) 60%,
+    var(--color-primary) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    titulo-entrada 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    logo-varredura 5s ease-in-out 1s infinite,
+    titulo-brilho 4s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background-position: 0 0;
+  }
+}
+
 /* Botões do menu em vidro fosco: sobem de leve ao passar o mouse e afundam ao clicar. */
 @utility menu-vidro {
   background: oklch(1 0 0 / 0.05);
