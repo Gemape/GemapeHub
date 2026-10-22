@@ -9,45 +9,46 @@ export type IconeInicio =
   | "LayoutDashboard" | "HardHat" | "Shirt" | "Wrench" | "Car" | "Luggage" | "Forklift"
   | "FolderCog" | "Building2" | "Users" | "Truck" | "Handshake";
 
+// Cada atalho é do módulo (a rotina do dia a dia) ou dos parâmetros (o cadastro que a alimenta); o cartão mostra os dois separados.
+export type SecaoInicio = "Módulo" | "Parâmetros";
 // Atalho dentro de um cartão: a tela, com ?aba= ou ?de= quando o menu lateral também levava (decisões 43 e 86).
-export type SubitemInicio = { titulo: string; url: string; icone: NomeIcone; search?: Record<string, string>; soAdmin?: boolean };
+export type SubitemInicio = { titulo: string; url: string; icone: NomeIcone; secao: SecaoInicio; search?: Record<string, string>; soAdmin?: boolean };
 // Ou `url` (abre a tela direto) ou `itens` (abre a lista de atalhos no cartão).
 export type CartaoInicio = { titulo: string; icone: IconeInicio; soAdmin?: boolean; url?: string; itens?: readonly SubitemInicio[] };
 export type GrupoInicio = { titulo: string; cartoes: readonly CartaoInicio[] };
 
 const dasAbas = (url: string, abas: readonly AbaMenu[]): SubitemInicio[] =>
-  abas.map((a) => ({ titulo: a.titulo, url, icone: a.icone, search: { aba: a.aba }, ...(a.soAdmin ? { soAdmin: true } : {}) }));
+  abas.map((a) => ({ titulo: a.titulo, url, icone: a.icone, secao: "Módulo", search: { aba: a.aba }, ...(a.soAdmin ? { soAdmin: true } : {}) }));
 
 const doItem = (i: ItemMenu): SubitemInicio => {
   const search = i.search ?? (i.de ? { de: i.de } : undefined);
-  return { titulo: i.titulo, url: i.url, icone: i.icone, ...(search ? { search } : {}), ...(i.soAdmin ? { soAdmin: true } : {}) };
+  return { titulo: i.titulo, url: i.url, icone: i.icone, secao: "Parâmetros", ...(search ? { search } : {}), ...(i.soAdmin ? { soAdmin: true } : {}) };
 };
 // Itens do menu na ordem da tela; os filhos (como Cadastrar Ficha de EPI) vêm logo depois do pai.
 const dosItens = (itens: readonly (ItemComFilhos | GrupoMenu)[]): SubitemInicio[] =>
   itens.flatMap((i) => ("url" in i ? [doItem(i), ...(i.filhos ?? []).map(doItem)] : i.filhos.map(doItem)));
 
+// Cada área tem um cartão só, com os atalhos do módulo e os dos parâmetros dela (Viagens só tem módulo; Gerais só tem parâmetros).
 export const GRUPOS_INICIO: readonly GrupoInicio[] = [
   { titulo: "Visão geral", cartoes: [{ titulo: "Dashboard", url: "/dashboard", icone: "LayoutDashboard" }] },
   {
     titulo: "Módulos",
     cartoes: [
-      { titulo: "EPIs", icone: "HardHat", itens: dasAbas("/epi", ABAS_EPI) },
-      { titulo: "Uniformes", icone: "Shirt", itens: dasAbas("/uniformes", ABAS_UNIFORME) },
-      { titulo: "Ferramentas", icone: "Wrench", itens: dasAbas("/ferramentas", ABAS_FERRAMENTA) },
-      { titulo: "Veículos", icone: "Car", itens: dasAbas("/veiculos", ABAS_VEICULO) },
+      { titulo: "EPIs", icone: "HardHat", itens: [...dasAbas("/epi", ABAS_EPI), ...dosItens(MENU_EPI)] },
+      { titulo: "Uniformes", icone: "Shirt", itens: [...dasAbas("/uniformes", ABAS_UNIFORME), ...dosItens(MENU_UNIFORMES)] },
+      { titulo: "Ferramentas", icone: "Wrench", itens: [...dasAbas("/ferramentas", ABAS_FERRAMENTA), ...dosItens(MENU_FERRAMENTAS)] },
+      { titulo: "Veículos", icone: "Car", itens: [...dasAbas("/veiculos", ABAS_VEICULO), ...dosItens(MENU_VEICULOS)] },
       { titulo: "Viagens", icone: "Luggage", itens: dasAbas("/viagens", ABAS_VIAGEM) },
-      { titulo: "Equipamentos", icone: "Forklift", url: "/equipamentos" },
+      {
+        titulo: "Equipamentos", icone: "Forklift",
+        itens: [{ titulo: "Equipamentos", url: "/equipamentos", icone: "Forklift", secao: "Módulo" }, ...dosItens(MENU_EQUIPAMENTOS)],
+      },
     ],
   },
   {
-    titulo: "Parâmetros",
+    titulo: "Cadastros",
     cartoes: [
       { titulo: "Gerais", icone: "FolderCog", soAdmin: true, itens: dosItens(MENU_GERAIS) },
-      { titulo: "EPI", icone: "HardHat", itens: dosItens(MENU_EPI) },
-      { titulo: "Uniformes", icone: "Shirt", itens: dosItens(MENU_UNIFORMES) },
-      { titulo: "Ferramentas", icone: "Wrench", itens: dosItens(MENU_FERRAMENTAS) },
-      { titulo: "Veículos", icone: "Car", itens: dosItens(MENU_VEICULOS) },
-      { titulo: "Equipamentos", icone: "Forklift", itens: dosItens(MENU_EQUIPAMENTOS) },
       { titulo: "Empresas", icone: "Building2", url: "/empresas" },
       { titulo: "Empregados", icone: "Users", url: "/empregados" },
       { titulo: "Fornecedores", icone: "Truck", url: "/cadastros/fornecedores" },

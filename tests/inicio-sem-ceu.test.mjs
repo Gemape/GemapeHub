@@ -17,14 +17,25 @@ test("a tela inicial usa só o fundo padrão do sistema (o gradiente do body, o 
   assert.match(css, /body \{[\s\S]*?linear-gradient\(160deg, var\(--fundo-a\), var\(--fundo-b\)\)/);
 });
 
-test("a tela não tem painéis que existiam só para dar leitura sobre o céu", () => {
-  assert.doesNotMatch(inicio, /backdrop-blur|bg-card\/\d+/);
+test("os cartões da tela inicial são de vidro (efeito glassmorphism do sistema), sem fundo sólido", () => {
+  assert.match(inicio, /"vidro-cartao /);
+  assert.doesNotMatch(inicio, /bg-card\b/);
+});
+
+test("o topo traz Grupo Gemape (eyebrow) e Gestão de Patrimônio (título animado), centralizados, no lugar do texto antigo", () => {
+  const rota = ler("routes/_authenticated/route.tsx");
+  assert.match(rota, /eyebrow-marca">Grupo Gemape</);
+  assert.match(rota, /titulo-marca[^>]*>Gestão de Patrimônio</);
+  assert.doesNotMatch(rota, /Demonstração · dados locais|Grupo GEMAPE</);
+  assert.match(rota, /md:grid-cols-\[1fr_auto_1fr\]/);
+  const css = ler("styles.css");
+  assert.match(css, /@utility titulo-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
 });
 
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {
   assert.match(inicio, /bg-primary\/10/);
   assert.match(inicio, /Clique para acessar/);
-  assert.match(inicio, /lg:grid-cols-3/);
+  assert.match(inicio, /lg:w-\[calc\(33\.333%/);
 });
 
 test("a tela inicial não mostra mais o texto de título (Início / Gestão de Patrimônio): começa direto nos cartões", () => {
@@ -35,4 +46,22 @@ test("a tela inicial não mostra mais o texto de título (Início / Gestão de P
 
 test("o título da página continua existindo só para o leitor de tela (acessibilidade)", () => {
   assert.match(inicio, /<h1 className="sr-only">Início<\/h1>/);
+});
+
+test("a tipografia é Manrope: título 700, eyebrow 600 em caixa alta (0,06em), cartões 500 e 400; e o topo é maior", () => {
+  const css = ler("styles.css");
+  assert.match(css, /@utility titulo-marca \{[\s\S]*?"Manrope"[\s\S]*?font-weight: 700/);
+  assert.match(css, /@utility eyebrow-marca \{[\s\S]*?font-weight: 600[\s\S]*?text-transform: uppercase[\s\S]*?letter-spacing: 0\.06em/);
+  assert.match(inicio, /fonte-manrope/);
+  assert.match(inicio, /font-medium">\{c\.titulo\}/);
+  assert.match(ler("routes/__root.tsx"), /family=Manrope/);
+  const rota = ler("routes/_authenticated/route.tsx");
+  assert.match(rota, /sm:w-52/);
+  assert.match(rota, /py-5/);
+});
+
+test("o fundo segue o site da Gemape: branco descendo para um azul clarinho, com manchas suaves", () => {
+  const css = ler("styles.css");
+  assert.match(css, /--fundo-a: oklch\(1 0 0\);/);
+  assert.match(css, /--fundo-b: oklch\(0\.97[0-9]* 0\.01/);
 });

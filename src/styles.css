@@ -131,9 +131,10 @@
   --glass-border: oklch(1 0 0 / 0.7);
   --glass-shadow: 0 8px 32px oklch(0.24 0.2 266 / 0.12);
   --glass-highlight: inset 0 1px 0 oklch(1 0 0 / 0.75);
-  --fundo-a: oklch(0.96 0.025 266);
-  --fundo-b: oklch(0.92 0.045 266);
-  --fundo-brilho: oklch(0.38 0.22 266 / 0.3);
+  /* Identidade do site da Gemape: fundo branco que desce para um azul bem clarinho, com manchas de luz suaves. */
+  --fundo-a: oklch(1 0 0);
+  --fundo-b: oklch(0.978 0.014 255);
+  --fundo-brilho: oklch(0.85 0.06 255 / 0.16);
 }
 
 .dark {
@@ -226,7 +227,21 @@
       var(--glass-highlight);
   }
 
-  /* Vidro mais opaco para o que precisa de leitura firme: janelas, menus e listas suspensas. */
+  /* Vidro dos cartões da tela inicial: desfoque e saturação fortes, borda clara e um brilho que cobre o topo. */
+.vidro-cartao {
+  background-image: linear-gradient(160deg, oklch(1 0 0 / 0.78), oklch(1 0 0 / 0.38));
+  background-color: oklch(1 0 0 / 0.3);
+  -webkit-backdrop-filter: blur(30px) saturate(2);
+  backdrop-filter: blur(30px) saturate(2);
+  border: 1px solid oklch(1 0 0 / 0.85);
+  box-shadow:
+    0 18px 44px oklch(0.24 0.2 266 / 0.28),
+    0 0 0 1px oklch(0.32 0.25 266 / 0.1),
+    inset 0 1px 0 oklch(1 0 0 / 0.95),
+    inset 0 -1px 0 oklch(1 0 0 / 0.25);
+}
+
+/* Vidro mais opaco para o que precisa de leitura firme: janelas, menus e listas suspensas. */
   .glass-strong {
     background-color: var(--glass-bg-strong);
     -webkit-backdrop-filter: blur(22px) saturate(1.6);
@@ -360,6 +375,70 @@
     logo-entrada 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both,
     logo-varredura 4.5s ease-in-out 1s infinite,
     logo-halo-site 4s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background-position: 0 0;
+  }
+}
+
+/* Linha pequena acima do título do topo: Manrope 600, caixa alta e letras espaçadas (~0,06em). */
+@utility eyebrow-marca {
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted-foreground);
+}
+/* Texto da tela inicial em Manrope (cartões: títulos 500 e "Clique para acessar" 400). */
+@utility fonte-manrope {
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Título do topo (Gestão de Patrimônio): entra de baixo, um brilho percorre as letras e a sombra respira.
+   Quem reduz movimento recebe o título parado (decisão 114). */
+@keyframes titulo-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes titulo-brilho {
+  0%,
+  100% {
+    filter: drop-shadow(0 1px 1px oklch(0.32 0.25 266 / 0.15));
+  }
+  50% {
+    filter: drop-shadow(0 2px 8px oklch(0.55 0.2 262 / 0.45));
+  }
+}
+@utility titulo-marca {
+  /* Manrope 700: combina com os cantos arredondados e o traço dos ícones; o "Grupo Gemape" vai acima, em eyebrow-marca. */
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  background-image: linear-gradient(
+    105deg,
+    var(--color-primary) 0%,
+    var(--color-primary) 40%,
+    oklch(0.62 0.2 262) 50%,
+    var(--color-primary) 60%,
+    var(--color-primary) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    titulo-entrada 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    logo-varredura 11s ease-in-out 1.5s infinite,
+    titulo-brilho 8s ease-in-out infinite;
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     background-position: 0 0;
