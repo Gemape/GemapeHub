@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { lerTodas } from "@/lib/ler-todas";
+import { EditorItensChecklist } from "@/components/parametros/EditorItensChecklist";
+import { CHECKLIST_VEICULOS_PADRAO } from "@/lib/checklist-veiculos-padrao";
+import { adicionarGrupoChecklistVeiculo, removerGrupoChecklistVeiculo, TODOS_OS_TIPOS } from "@/lib/parametros-base";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
 import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
@@ -100,6 +103,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const [escolhidos, setEscolhidos] = useState<string[] | null>(null);
   const [travado, setTravado] = useState(false);
   const salvando = useRef(false);
+  // Itens personalizados deste veículo (um por linha): viram um grupo próprio ao salvar, além dos grupos marcados.
+  const [personalizados, setPersonalizados] = useState("");
 
   const rotuloVeiculo = (v: VeiculoLinha) =>
     descricaoVeiculo({
@@ -166,6 +171,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
       toast.warning(`Este check list tinha mais de uma periodicidade. A janela mostra só ${escolhida}; ao salvar, os itens das outras periodicidades saem.`);
     }
     setEscolhidos(a ? daEscolhida.flatMap((i) => i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? []) : null);
+    setPersonalizados("");
     setAberto(true);
   }
 
@@ -209,10 +215,35 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
         ? { grupoId: g.id, tipo: "avulso", periodicidade: "", obrigatorio: false, ...escolha }
         : { grupoId: g.id, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true, ...escolha };
     });
+    // Itens personalizados viram um grupo próprio ("Personalizado · PLACA", ou "Avulso · Personalizado · PLACA" no avulso), do tipo do veículo.
+    const proprios = personalizados.split("\n").map((t) => t.trim()).filter(Boolean);
+    const placa = String(veiculoEscolhido?.["placa"] ?? "").trim().toUpperCase() || "veículo";
     const ok = executar(
-      () => (editando
-        ? editarAssociacao(editando, { veiculoId, responsavel: escolhido, itens }, undefined, undefined, grupos.map((g) => g.id), itensDosGrupos)
-        : criarAssociacao(veiculoId, escolhido, itens, undefined, undefined, grupos.map((g) => g.id), itensDosGrupos)),
+      () => {
+        let novoId: string | null = null;
+        const idsValidos = grupos.map((g) => g.id);
+        try {
+          if (proprios.length > 0) {
+            const base = `${avulso ? "Avulso · " : ""}Personalizado · ${placa}`;
+            let nome = base;
+            for (let n = 2; grupos.some((g) => g.nome === nome); n += 1) nome = `${base} (${n})`;
+            const novo = adicionarGrupoChecklistVeiculo(nome, proprios, subcategoriaIdEscolhida ? [subcategoriaIdEscolhida] : [TODOS_OS_TIPOS]);
+            novoId = novo.id;
+            idsValidos.push(novo.id);
+            itensDosGrupos[novo.id] = novo.itens.map((i) => i.id);
+            itens.push(avulso
+              ? { grupoId: novo.id, tipo: "avulso", periodicidade: "", obrigatorio: false }
+              : { grupoId: novo.id, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true });
+          }
+          return editando
+            ? editarAssociacao(editando, { veiculoId, responsavel: escolhido, itens }, undefined, undefined, idsValidos, itensDosGrupos)
+            : criarAssociacao(veiculoId, escolhido, itens, undefined, undefined, idsValidos, itensDosGrupos);
+        } catch (erro) {
+          // A associação não saiu: o grupo personalizado recém-criado não fica sobrando.
+          if (novoId) { try { removerGrupoChecklistVeiculo(novoId); } catch { /* sem o que fazer */ } }
+          throw erro;
+        }
+      },
       "Itens de check list associados ao veículo.",
     );
     if (ok) setAberto(false);
@@ -363,7 +394,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               {!veiculoEscolhido ? (
                 <p className="text-sm text-muted-foreground">Escolha o veículo para ver os itens.</p>
               ) : aplicaveis.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum item de check list serve a este veículo. Cadastre em Itens check list.</p>
+                <p className="text-sm text-muted-foreground">Nenhum grupo de itens serve a este veículo. Personalize os itens abaixo ou cadastre em Itens check list.</p>
               ) : (
                 <>
                   <div className="flex items-center justify-between text-sm">
@@ -398,6 +429,18 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
                     })}
                   </ul>
                 </>
+              )}
+              {veiculoEscolhido && (
+                <div className="space-y-1.5 rounded-md border p-3" data-testid="itens-personalizados">
+                  <h3 className="text-sm font-semibold">Personalizar itens deste veículo</h3>
+                  <p className="text-xs text-muted-foreground">Marque itens do padrão ou adicione itens próprios: eles formam um grupo só deste veículo ao salvar, junto com os grupos marcados acima.</p>
+                  <EditorItensChecklist
+                    id="assoc-personalizados"
+                    value={personalizados}
+                    onChange={setPersonalizados}
+                    catalogo={CHECKLIST_VEICULOS_PADRAO.filter((g) => (periodicidade === AVULSO) === g.nome.startsWith("Avulso ·")).map((g) => ({ titulo: g.nome, itens: g.itens }))}
+                  />
+                </div>
               )}
             </fieldset>
 

@@ -143,3 +143,16 @@ test("cadastro de grupo: itens do padrão para marcar, lista editável dos selec
   assert.match(equip, /<EditorItensChecklist id="grupo-equip-itens"/);
   assert.match(equip, /GRUPOS_PADRAO_VISTORIA : GRUPOS_PADRAO_MANUTENCAO/);
 });
+
+test("associação: personalizar itens (padrão + próprios) vira um grupo só do veículo/equipamento e não deixa grupo sobrando se a associação falhar", () => {
+  const veic = ler("components/parametros/AssociarChecklistVeiculo.tsx");
+  assert.match(veic, /data-testid="itens-personalizados"/);
+  assert.match(veic, /Personalizado · \$\{placa\}/);
+  assert.match(veic, /adicionarGrupoChecklistVeiculo\(nome, proprios/);
+  assert.match(veic, /removerGrupoChecklistVeiculo\(novoId\)/);
+  const equip = ler("components/parametros/ChecklistEquipamento.tsx");
+  assert.match(equip, /data-testid="itens-personalizados"/);
+  assert.match(equip, /Personalizado · \$\{escolhido\.patrimonio\}/);
+  assert.match(equip, /salvarGrupoChecklist\(finalidade, \{ nome, itens: proprios, tipos: \[escolhido\.tipoId\] \}\)/);
+  assert.match(equip, /removerGrupoChecklist\(finalidade, novoGrupoId\)/);
+});
