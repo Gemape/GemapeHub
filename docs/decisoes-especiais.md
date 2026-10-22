@@ -1449,3 +1449,12 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 251. Novo check list: opções com o nome da associação
 - Em Módulos > Veículos > Check list > Novo check list, as opções do campo Tipo de check list passam a ter o **mesmo nome da tabela de associação** (Parâmetros > Veículos > Check list): **Placa >> Periodicidade >> Responsável** (ex.: ABC-1599 >> Diária >> Maria da Silva). Isso revisa a ordem Placa >> Responsável >> Periodicidade da decisão 157.
 - O Avulso é **Placa >> Não definida >> Responsável**; leva o responsável da associação quando ela tem grupos avulsos e, sem eles, "Não definido".
+
+## 252. EPIs: controle de estoque e sugestão de compras, como na planilha de controle
+- Base: `docs/ANALISE_PLANILHA_EPI.md` (análise da planilha CONTROLE DE UNIFORMES E EPIs; as macros VBA não vieram no arquivo, então as regras abaixo foram deduzidas dos valores gravados).
+- **Aba Estoque dos EPIs > Controle de estoque e consumo:** estoque crítico e atual, penúltima e última entrada e saída, médias de consumo (mensal = saídas de 30 dias; trimestral = 90 dias ÷ 3; semestral = 180 dias ÷ 6; anual = 365 dias ÷ 12) e cobertura em dias = estoque atual ÷ (média anual ÷ 30); sem consumo no ano aparece "Sem consumo".
+- **Aba Compras dos EPIs > Sugestão de compras:** entra o EPI abaixo do estoque crítico ou com cobertura abaixo da meta. Quantidade = arredonda para cima de (maior entre média anual × meta em meses e o estoque crítico, menos o estoque atual), no mínimo 1. Observação: "Abaixo do estoque crítico.", "Cobertura abaixo da meta (N%).", "Sem consumo no último ano.".
+- **Meta de cobertura:** 30, 60, 90, 120 ou 180 dias, escolhida na própria aba (padrão 120), guardada no navegador.
+- **Prioridade:** "1-URGENTE" (abaixo do crítico ou menos de 25% da meta), "2-ALTA" (menos de 50%), "3-MÉDIA" (menos de 75%), "4-BAIXA" (de 75% até a meta). Na planilha só se viram 1-URGENTE e 4-BAIXA: **os cortes de 25% e 50% são inferidos e precisam ser confirmados**.
+- **Fora desta decisão:** giro de estoque (a fórmula não pôde ser deduzida) e bloqueio de saída sem estoque (a planilha permite saldo negativo).
+- Só modo demonstração; nada no Supabase.
