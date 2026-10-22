@@ -206,3 +206,18 @@ test("a tela do check list: itens no alto, associação embaixo, dois check list
   const { MENU_EQUIPAMENTOS } = await import("../src/lib/menu-parametros.ts");
   assert.deepEqual(MENU_EQUIPAMENTOS.filter((i) => i.url.endsWith("equipamentos-checklist")).map((i) => i.search.aba), ["manutencao", "vistoria"]);
 });
+
+test("padrão de manutenção: um grupo por rotina, só no tipo certo, sem duplicar ao repetir", async () => {
+  const { cadastrarPadraoManutencao } = await import("../src/lib/equipamentos-checklist.ts");
+  const { GRUPOS_PADRAO_MANUTENCAO } = await import("../src/lib/equipamentos-manutencao-padrao.ts");
+  const { TIPOS_PADRAO } = await import("../src/lib/equipamentos-parametros.ts");
+  assert.ok(GRUPOS_PADRAO_MANUTENCAO.length === 16);
+  assert.ok(GRUPOS_PADRAO_MANUTENCAO.every((g) => TIPOS_PADRAO.some((t) => t.id === g.tipoId) && g.itens.length > 0));
+  const s = memoria();
+  assert.equal(cadastrarPadraoManutencao(s).criados, GRUPOS_PADRAO_MANUTENCAO.length);
+  assert.equal(lerChecklistEquipamento(s).manutencao.grupos.length, GRUPOS_PADRAO_MANUTENCAO.length);
+  assert.equal(lerChecklistEquipamento(s).vistoria.grupos.length, 0);
+  assert.equal(cadastrarPadraoManutencao(s).criados, 0);
+  const g = lerChecklistEquipamento(s).manutencao.grupos.find((x) => x.tipos.includes("tipo-munck"));
+  assert.deepEqual(g.tipos, ["tipo-munck"]);
+});
