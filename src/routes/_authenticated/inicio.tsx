@@ -33,10 +33,8 @@ function PaginaInicio() {
 
   return (
     <div className="space-y-8">
-      <header className="text-center">
-        <p className="text-eyebrow">Início</p>
-        <h1 className="text-2xl font-bold">Gestão de Patrimônio</h1>
-      </header>
+      {/* Sem título na tela: ela começa direto nos cartões. O título fica só para o leitor de tela. */}
+      <h1 className="sr-only">Início</h1>
       {gruposDoInicio(isAdmin).map((grupo) => (
         <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="space-y-3">
           <h2 id={`grupo-${grupo.titulo}`} className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{grupo.titulo}</h2>
