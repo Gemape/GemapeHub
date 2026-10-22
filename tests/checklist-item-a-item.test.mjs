@@ -156,3 +156,18 @@ test("associação: personalizar itens (padrão + próprios) vira um grupo só d
   assert.match(equip, /salvarGrupoChecklist\(finalidade, \{ nome, itens: proprios, tipos: \[escolhido\.tipoId\] \}\)/);
   assert.match(equip, /removerGrupoChecklist\(finalidade, novoGrupoId\)/);
 });
+
+test("opções do Novo check list têm o nome da tabela de associação: Placa >> Periodicidade >> Responsável (avulso: Não definida)", async () => {
+  const { nomeDoChecklistAssociado, checklistsDaAssociacao: nomesDaTabela } = await import("../src/lib/checklist-associacao-veiculo.ts");
+  const maria = { id: "m", nome: "Maria da Silva" };
+  const diaria = { responsavel: maria, itens: [{ grupoId: "g1", tipo: "periodico", periodicidade: "Diária", obrigatorio: true }] };
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", diaria, "Diário"), "ABC-1599 >> Diária >> Maria da Silva");
+  // é o mesmo texto que a tabela de associação mostra
+  assert.equal(nomesDaTabela("ABC-1599", { veiculoId: "v", atualizadoEm: "", ...diaria }, [{ id: "g1", nome: "G" }])[0].nome, nomeDoChecklistAssociado("ABC-1599", diaria, "Diário"));
+  // avulso sem grupos avulsos na associação: responsável não definido; com grupos avulsos, o da associação
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", diaria, "avulso"), "ABC-1599 >> Não definida >> Não definido");
+  const avulsa = { responsavel: maria, itens: [{ grupoId: "g2", tipo: "avulso", periodicidade: "Não definida", obrigatorio: false }] };
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", avulsa, "avulso"), "ABC-1599 >> Não definida >> Maria da Silva");
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", null, "avulso"), "ABC-1599 >> Não definida >> Não definido");
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", { responsavel: null, itens: [{ grupoId: "g", tipo: "periodico", periodicidade: "Mensal", obrigatorio: true }] }, "Mensal"), "ABC-1599 >> Mensal >> Não definido");
+});

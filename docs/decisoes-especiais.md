@@ -1445,3 +1445,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - **Tipos de ocorrência** (`/cadastros/equipamentos-tipos-ocorrencia`): nome único e descrição.
 - **Clonar** na associação do check list e no plano de manutenção, além de Editar e Excluir (Excluir só do Administrador), como em Veículos. Reaproveita a lista de Veículos (`ListaVeiculos` agora exportada, com o caminho no alto configurável).
 - Dados em `gemape-demo-equipamentos-manutencao`: erro de validação não grava nada e dado ilegível nunca é sobrescrito. Só modo demonstração; nada no Supabase.
+
+## 251. Novo check list: opções com o nome da associação
+- Em Módulos > Veículos > Check list > Novo check list, as opções do campo Tipo de check list passam a ter o **mesmo nome da tabela de associação** (Parâmetros > Veículos > Check list): **Placa >> Periodicidade >> Responsável** (ex.: ABC-1599 >> Diária >> Maria da Silva). Isso revisa a ordem Placa >> Responsável >> Periodicidade da decisão 157.
+- O Avulso é **Placa >> Não definida >> Responsável**; leva o responsável da associação quando ela tem grupos avulsos e, sem eles, "Não definido".
