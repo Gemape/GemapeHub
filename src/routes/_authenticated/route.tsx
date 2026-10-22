@@ -3,7 +3,6 @@ import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } 
 import { useEffect } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 
-import { AppSidebar } from "@/components/layout/AppSidebar";
 import { VisualizadorDocumento } from "@/components/layout/VisualizadorDocumento";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { EmpresaProvider, TODAS, useEmpresa } from "@/lib/empresa-context";
 import { AccessProvider, ROTULO_PAPEL, type Perfil } from "@/lib/access-context";
@@ -59,7 +58,7 @@ function LayoutAutenticado() {
   const { perfil } = Route.useRouteContext();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  // Na tela inicial só aparecem os cartões: sem menu lateral. Nas outras telas, o menu e o botão de voltar ao início.
+  // Sem menu lateral: tudo se acessa pelos cartões da tela inicial. Fora dela, o topo traz o botão de voltar ao início.
   const noInicio = useRouterState({ select: (s) => s.location.pathname === "/inicio" });
 
   // Sessão encerrada em outra aba ou expirada: volta ao login sem deixar dados em cache.
@@ -83,15 +82,11 @@ function LayoutAutenticado() {
   return (
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
-        {!noInicio && <AppSidebar />}
         <main className="flex min-h-screen w-full min-w-0 flex-col">
           <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 glass border-x-0 border-t-0 px-4 py-3 rounded-none">
-            {!noInicio && <SidebarTrigger />}
-            {noInicio && (
-              <Link to="/inicio" aria-label="GEMAPE, tela inicial" className="shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <img src={`${import.meta.env["BASE_URL"] ?? "/"}logo-relatorio-viagens.png`} alt="GEMAPE, 40 anos, máquinas e peças" className="h-10 w-auto mix-blend-multiply" />
-              </Link>
-            )}
+            <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              <img src={`${import.meta.env["BASE_URL"] ?? "/"}logo-relatorio-viagens.png`} alt="GEMAPE, 40 anos, máquinas e peças" className="h-10 w-auto mix-blend-multiply" />
+            </Link>
             {!noInicio && (
               <Button asChild variant="outline" size="sm">
                 <Link to="/inicio"><ArrowLeft className="mr-1 size-4" aria-hidden="true" />Voltar ao início</Link>
