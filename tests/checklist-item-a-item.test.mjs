@@ -123,7 +123,7 @@ test("equipamento: associação de equipamento que não existe mais não trava a
 test("a tela de clonar acha o responsável do original, e o topo e o início não renderizam à toa", async () => {
   const { readFileSync } = await import("node:fs");
   const ler2 = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
-  assert.match(ler2("components/parametros/ChecklistEquipamento.tsx"), /\(editando \?\? clonandoDe\)\?\.responsavel/);
+  assert.match(ler2("components/parametros/ChecklistEquipamento.tsx"), /\(editando \?\? clonandoDe\)\)\?\.responsavel/);
   assert.match(ler2("components/parametros/ChecklistEquipamento.tsx"), /useVersaoArmazenamento/);
   assert.match(ler2("components/layout/MenuDaArea.tsx"), /useRouterState\(\{ select: \(s\) => s\.location\.pathname \}\)/);
   assert.match(ler2("routes/_authenticated/inicio.tsx"), /setAbertos\(\(a\) => \(a\.size \? new Set\(\) : a\)\)/);
