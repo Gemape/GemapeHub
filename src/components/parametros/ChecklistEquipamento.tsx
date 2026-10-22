@@ -180,6 +180,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
+  const [clonando, setClonando] = useState(false);
   const [equipamentoId, setEquipamentoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaGrupo>>({});
@@ -197,13 +198,15 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     mudar(g.id, { itens: marcar ? [...marcadosDe(g).filter((x) => x !== itemId), itemId] : marcadosDe(g).filter((x) => x !== itemId) });
   const mudar = (id: string, parcial: Partial<EscolhaGrupo>) => setEscolhas((atuais) => ({ ...atuais, [id]: { ...escolhaDe(id), ...parcial } }));
 
-  function abrir(a: AssociacaoChecklistEquipamento | null) {
-    if (a && !porId(a.equipamentoId)) {
+  // Clonar abre com responsável, grupos e itens do original, para outro equipamento (como em Veículos).
+  function abrir(a: AssociacaoChecklistEquipamento | null, clonar = false) {
+    if (a && !clonar && !porId(a.equipamentoId)) {
       toast.error("Este equipamento foi removido; exclua a associação.");
       return;
     }
-    setEditando(a?.equipamentoId ?? null);
-    setEquipamentoId(a?.equipamentoId ?? "");
+    setClonando(clonar);
+    setEditando(a && !clonar ? a.equipamentoId : null);
+    setEquipamentoId(a && !clonar ? a.equipamentoId : "");
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
     setEscolhas(Object.fromEntries((a?.itens ?? []).map((i) => [i.grupoId, {
       itens: i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? [], tipo: i.tipo, periodicidade: i.tipo === "periodico" ? i.periodicidade : "",
@@ -297,7 +300,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
                   <tr className="bg-muted/50">
                     <td colSpan={4} className="px-3 py-2 font-semibold">{e ? rotulo(e) : "Equipamento removido"} <span className="font-normal text-muted-foreground">· responsável: {a.responsavel?.nome ?? NAO_DEFINIDO}</span></td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{dataBr(a.atualizadoEm)}</td>
-                    <td className="px-3 py-2"><AcoesLinha rotulo={e ? rotulo(e) : "equipamento"} onEditar={() => abrir(a)} onExcluir={() => excluir(a)} /></td>
+                    <td className="px-3 py-2"><AcoesLinha rotulo={e ? rotulo(e) : "equipamento"} onClonar={() => abrir(a, true)} onEditar={() => abrir(a)} onExcluir={() => excluir(a)} /></td>
                   </tr>
                   {listas.length === 0 && <tr><td colSpan={6} className="px-3 py-2 text-muted-foreground">Nenhum grupo habilitado existente.</td></tr>}
                   {listas.map((c) => (
@@ -324,14 +327,14 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{editando ? "Editar itens de check list do equipamento" : "Associar itens de check list a um equipamento"}</DialogTitle>
+            <DialogTitle>{editando ? "Editar itens de check list do equipamento" : clonando ? "Clonar itens de check list do equipamento" : "Associar itens de check list a um equipamento"}</DialogTitle>
             <DialogDescription>Escolha o equipamento e o responsável, marque os grupos para trazer os itens, escolha item a item e diga se cada grupo é periódico ou avulso.</DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-equipamento">Equipamento</Label>
-                <Select value={equipamentoId} disabled={!!editando} onValueChange={(v) => { if (v) { setEquipamentoId(v); setEscolhas({}); } }}>
+                <Select value={equipamentoId} disabled={!!editando} onValueChange={(v) => { if (v) { setEquipamentoId(v); if (!clonando) setEscolhas({}); } }}>
                   <SelectTrigger id="assoc-equipamento"><SelectValue placeholder="Selecione o equipamento" /></SelectTrigger>
                   <SelectContent>{livres.map((e) => <SelectItem key={e.id} value={e.id}>{rotulo(e)}</SelectItem>)}</SelectContent>
                 </Select>
