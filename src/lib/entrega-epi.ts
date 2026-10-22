@@ -7,7 +7,14 @@ import { capitalizarTexto } from "./formatacao-cadastral.ts";
 import { bloqueioPorDemissao } from "./empregados.ts";
 import { ehBaixa } from "./historico-movimentacoes.ts";
 import { lerTodas } from "./ler-todas.ts";
-import { validarSaidaDeEpis } from "./termos-atomicos.ts";
+import { validarSaidaDeEpis, validarSaidaDeUniformes } from "./termos-atomicos.ts";
+
+// A mesma entrega e devolução serve ao módulo de EPI e ao de Uniformes: muda a tabela dos itens, o módulo gravado e o rótulo nas mensagens.
+export type ModuloEntrega = "epi" | "uniforme";
+const CONTEXTO: Record<ModuloEntrega, { tabela: string; rotulo: string }> = {
+  epi: { tabela: "epis", rotulo: "EPI" },
+  uniforme: { tabela: "uniformes", rotulo: "uniforme" },
+};
 
 export const SIGLA_ENTREGA = "ENT";
 export const SIGLA_DEVOLUCAO = "DEV";
@@ -56,9 +63,9 @@ export const alertaMinimoEpi = (saldo: number, minimo: number): boolean => saldo
 
 const estaInativo = (status: string | null | undefined) => (status ?? "").toLocaleLowerCase("pt-BR") === "inativo";
 
-export function empregadoPodeReceberEpi(e: { nome?: string; ativo?: boolean | null } | null | undefined): string | null {
+export function empregadoPodeReceberEpi(e: { nome?: string; ativo?: boolean | null } | null | undefined, modulo: ModuloEntrega = "epi"): string | null {
   if (!e) return "Escolha o empregado.";
-  if (e.ativo === false) return `${e.nome ?? "O empregado"} está inativo(a) e não pode receber nem devolver EPI.`;
+  if (e.ativo === false) return `${e.nome ?? "O empregado"} está inativo(a) e não pode receber nem devolver ${CONTEXTO[modulo].rotulo}.`;
   return null;
 }
 
@@ -77,8 +84,8 @@ export function emPosseEpi(movs: readonly MovimentacaoEpi[], empregadoId: string
 
 const textoObservacao = (texto: string | null | undefined) => capitalizarTexto(texto ?? "").slice(0, 500) || null;
 
-async function lerItens(cliente: ClienteEntrega, empresaId: string): Promise<ItemEpiEntrega[]> {
-  return lerTodas<ItemEpiEntrega>(() => cliente.from("epis").select("*").eq("empresa_id", empresaId), (q) => q.order("id"));
+async function lerItens(cliente: ClienteEntrega, empresaId: string, modulo: ModuloEntrega): Promise<ItemEpiEntrega[]> {
+  return lerTodas<ItemEpiEntrega>(() => cliente.from(CONTEXTO[modulo].tabela).select("*").eq("empresa_id", empresaId), (q) => q.order("id"));
 }
 
 async function lerCodigos(cliente: ClienteEntrega): Promise<(string | null)[]> {
@@ -87,10 +94,10 @@ async function lerCodigos(cliente: ClienteEntrega): Promise<(string | null)[]> {
 }
 
 // EPI inativo não sai mais do estoque, mas a devolução do que já foi entregue continua permitida.
-function conferirItens(linhas: LinhaEntrega[], itens: ItemEpiEntrega[], bloquearInativo: boolean): void {
+function conferirItens(linhas: LinhaEntrega[], itens: ItemEpiEntrega[], bloquearInativo: boolean, modulo: ModuloEntrega): void {
   for (const linha of linhas) {
     const item = itens.find((i) => i.id === linha.item_id);
-    if (linha.item_id && !item) throw new Error("O EPI escolhido não existe nesta empresa.");
+    if (linha.item_id && !item) throw new Error(`O ${CONTEXTO[modulo].rotulo} escolhido não existe nesta empresa.`);
     if (bloquearInativo && item && estaInativo(item.status)) throw new Error(`${item.nome} está inativo e não pode ser movimentado.`);
   }
 }
@@ -110,6 +117,8 @@ type EntradaBase = {
   linhas: LinhaEntrega[];
   data: string;
   observacao?: string | null;
+  /** Módulo da entrega; sem ele, EPI. */
+  modulo?: ModuloEntrega;
   /** Falso fora do modo demonstração: as colunas de código e responsável ainda não existem no banco real. */
   comCodigo?: boolean;
   calcularAlerta?: CalculoAlerta;
@@ -117,6 +126,7 @@ type EntradaBase = {
 export type ResultadoMovimentacao = { codigos: string[]; saldoApos: Record<string, number>; alertas: AlertaMinimo[] };
 
 async function gravar(cliente: ClienteEntrega, entrada: EntradaBase, tipo: "Saida" | "Devolucao", responsavel: string | null): Promise<ResultadoMovimentacao> {
+  const modulo = entrada.modulo ?? "epi";
   const comCodigo = entrada.comCodigo !== false;
   const sigla = tipo === "Saida" ? SIGLA_ENTREGA : SIGLA_DEVOLUCAO;
   const usados = comCodigo ? await lerCodigos(cliente) : [];
@@ -126,7 +136,7 @@ async function gravar(cliente: ClienteEntrega, entrada: EntradaBase, tipo: "Said
     const codigo = comCodigo ? proximoCodigoMovimentacao(sigla, [...usados, ...codigos]) : null;
     if (codigo) codigos.push(codigo);
     return {
-      modulo: "epi", tipo_movimentacao: tipo, quantidade: l.quantidade, data_movimentacao: entrada.data,
+      modulo, tipo_movimentacao: tipo, quantidade: l.quantidade, data_movimentacao: entrada.data,
       item_id: l.item_id, empresa_id: entrada.empresaId, empregado_id: entrada.empregado.id, observacao,
       ...(l.tamanho_id !== undefined ? { tamanho_id: l.tamanho_id } : {}),
       ...(comCodigo ? { codigo_movimentacao: codigo, ...(responsavel ? { responsavel_nome: responsavel } : {}) } : {}),
@@ -135,7 +145,7 @@ async function gravar(cliente: ClienteEntrega, entrada: EntradaBase, tipo: "Said
   // Uma única gravação: o gatilho confere o saldo de todas as linhas e grava todas ou nenhuma.
   const { error } = await cliente.from("movimentacoes").insert(linhas);
   if (error) throw new Error(error.message);
-  const depois = await lerItens(cliente, entrada.empresaId);
+  const depois = await lerItens(cliente, entrada.empresaId, modulo);
   const ids = [...new Set(entrada.linhas.map((l) => l.item_id))];
   return {
     codigos,
@@ -146,36 +156,39 @@ async function gravar(cliente: ClienteEntrega, entrada: EntradaBase, tipo: "Said
 
 /** Entrega de EPI: confere empregado, EPI e saldo e grava todas as saídas de uma vez (ou nenhuma). */
 export async function registrarEntregaEpi(cliente: ClienteEntrega, entrada: EntradaBase): Promise<ResultadoMovimentacao> {
-  const bloqueio = empregadoPodeReceberEpi(entrada.empregado) ?? bloqueioPorDemissao(entrada.empregado, "entrega", entrada.data);
+  const modulo = entrada.modulo ?? "epi";
+  const bloqueio = empregadoPodeReceberEpi(entrada.empregado, modulo) ?? bloqueioPorDemissao(entrada.empregado, "entrega", entrada.data);
   if (bloqueio) throw new Error(bloqueio);
   if (!entrada.data) throw new Error("Informe a data da entrega.");
-  const itens = await lerItens(cliente, entrada.empresaId);
-  conferirItens(entrada.linhas, itens, true);
-  const erro = validarSaidaDeEpis(entrada.linhas, itens);
+  const itens = await lerItens(cliente, entrada.empresaId, modulo);
+  conferirItens(entrada.linhas, itens, true, modulo);
+  const erro = modulo === "uniforme" ? validarSaidaDeUniformes(entrada.linhas, itens, "entrega") : validarSaidaDeEpis(entrada.linhas, itens);
   if (erro) throw new Error(erro);
   return gravar(cliente, entrada, "Saida", null);
 }
 
-export const MENSAGEM_SO_ADMIN = "Somente o Administrador registra a devolução de EPI.";
+export const mensagemSoAdmin = (modulo: ModuloEntrega) => `Somente o Administrador registra a devolução de ${CONTEXTO[modulo].rotulo}.`;
 
 /** Devolução de EPI (só Administrador): volta ao estoque, no limite do que o empregado tem em posse. */
 export async function registrarDevolucaoEpi(cliente: ClienteEntrega, entrada: EntradaBase & { administrador: boolean; responsavel: string }): Promise<ResultadoMovimentacao> {
-  if (!entrada.administrador) throw new Error(MENSAGEM_SO_ADMIN);
-  const bloqueio = empregadoPodeReceberEpi(entrada.empregado) ?? bloqueioPorDemissao(entrada.empregado, "devolucao", entrada.data);
+  const modulo = entrada.modulo ?? "epi";
+  const rotulo = CONTEXTO[modulo].rotulo;
+  if (!entrada.administrador) throw new Error(mensagemSoAdmin(modulo));
+  const bloqueio = empregadoPodeReceberEpi(entrada.empregado, modulo) ?? bloqueioPorDemissao(entrada.empregado, "devolucao", entrada.data);
   if (bloqueio) throw new Error(bloqueio);
   if (!entrada.data) throw new Error("Informe a data da devolução.");
   if (!entrada.responsavel.trim()) throw new Error("Informe o responsável pela devolução.");
-  if (entrada.linhas.length === 0) throw new Error("Adicione pelo menos um EPI.");
-  const itens = await lerItens(cliente, entrada.empresaId);
-  conferirItens(entrada.linhas, itens, false);
+  if (entrada.linhas.length === 0) throw new Error(`Adicione pelo menos um ${rotulo}.`);
+  const itens = await lerItens(cliente, entrada.empresaId, modulo);
+  conferirItens(entrada.linhas, itens, false, modulo);
   const historico = await lerTodas<MovimentacaoEpi>(
-    () => cliente.from("movimentacoes").select("*").eq("modulo", "epi").eq("empresa_id", entrada.empresaId).eq("empregado_id", entrada.empregado.id),
+    () => cliente.from("movimentacoes").select("*").eq("modulo", modulo).eq("empresa_id", entrada.empresaId).eq("empregado_id", entrada.empregado.id),
     (q) => q.order("created_at").order("id"),
   );
   const pedidas = new Map<string, { quantidade: number; tamanho: string | null; item: string }>();
   for (const l of entrada.linhas) {
-    if (!l.item_id) throw new Error("Selecione o EPI de cada linha.");
-    if (!Number.isInteger(l.quantidade) || l.quantidade < 1) throw new Error("A quantidade de cada EPI deve ser um número inteiro maior que zero.");
+    if (!l.item_id) throw new Error(`Selecione o ${rotulo} de cada linha.`);
+    if (!Number.isInteger(l.quantidade) || l.quantidade < 1) throw new Error(`A quantidade de cada ${rotulo} deve ser um número inteiro maior que zero.`);
     const chave = `${l.item_id}|${l.tamanho_id ?? ""}`;
     const atual = pedidas.get(chave) ?? { quantidade: 0, tamanho: l.tamanho_id ?? null, item: l.item_id };
     atual.quantidade += l.quantidade;
@@ -184,7 +197,7 @@ export async function registrarDevolucaoEpi(cliente: ClienteEntrega, entrada: En
   for (const p of pedidas.values()) {
     const comEmpregado = emPosseEpi(historico, entrada.empregado.id, p.item, p.tamanho && p.tamanho !== "sem-tamanho" ? p.tamanho : null);
     if (p.quantidade > comEmpregado) {
-      const nome = itens.find((i) => i.id === p.item)?.nome ?? "um EPI";
+      const nome = itens.find((i) => i.id === p.item)?.nome ?? `um ${rotulo}`;
       throw new Error(`A devolução de ${p.quantidade} unidade(s) de ${nome} passa do que o empregado tem em posse (${Math.max(0, comEmpregado)}).`);
     }
   }
@@ -194,10 +207,10 @@ export async function registrarDevolucaoEpi(cliente: ClienteEntrega, entrada: En
 /** Histórico completo de movimentações de EPI da empresa, por EPI e/ou empregado, lido em blocos (sem o limite de 1000 linhas). */
 export async function lerHistoricoEpiPorItem(
   cliente: ClienteEntrega,
-  filtro: { empresaId: string; itemId?: string; empregadoId?: string },
+  filtro: { empresaId: string; itemId?: string; empregadoId?: string; modulo?: ModuloEntrega },
 ): Promise<MovimentacaoEpi[]> {
   const montar = () => {
-    let q = cliente.from("movimentacoes").select("*").eq("modulo", "epi").eq("empresa_id", filtro.empresaId);
+    let q = cliente.from("movimentacoes").select("*").eq("modulo", filtro.modulo ?? "epi").eq("empresa_id", filtro.empresaId);
     if (filtro.itemId) q = q.eq("item_id", filtro.itemId);
     if (filtro.empregadoId) q = q.eq("empregado_id", filtro.empregadoId);
     return q;

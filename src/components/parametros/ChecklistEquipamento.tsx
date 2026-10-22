@@ -9,16 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
+import { EditorItensChecklist } from "@/components/parametros/EditorItensChecklist";
 import { TODAS } from "@/lib/empresa-context";
 import {
-  cadastrarPadraoChecklist, checklistsDaAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
+  cadastrarPadraoChecklist, checklistsDaAssociacao, type EntradaItemAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
   removerAssociacao, removerGrupoChecklist, salvarAssociacao, salvarGrupoChecklist, TODOS_OS_TIPOS,
   type AssociacaoChecklistEquipamento, type FinalidadeChecklist, type GrupoChecklistEquipamento, type TipoAssociacao,
 } from "@/lib/equipamentos-checklist";
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
+import { GRUPOS_PADRAO_MANUTENCAO } from "@/lib/equipamentos-manutencao-padrao";
+import { GRUPOS_PADRAO_VISTORIA } from "@/lib/equipamentos-vistoria-padrao";
 import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
 import { useEmpregados } from "@/lib/hooks-gemape";
+import { ehGrupoPersonalizado, ehPersonalizadoDe, nomeGrupoPersonalizado } from "@/lib/grupo-personalizado";
 import { useVersaoArmazenamento } from "@/lib/use-versao-armazenamento";
 
 // Parâmetros > Equipamentos > Check list (manutenção ou vistoria): no alto os grupos de itens, por tipo de equipamento; embaixo a
@@ -38,6 +41,10 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
   const [itens, setItens] = useState("");
   const [escolhidos, setEscolhidos] = useState<string[]>([]);
   const trava = useRef(false);
+  // Itens do padrão do check list (manutenção ou vistoria) dos tipos escolhidos; sem tipo escolhido, ou com Todos os tipos, vêm todos.
+  const catalogo = (finalidade === "vistoria" ? GRUPOS_PADRAO_VISTORIA : GRUPOS_PADRAO_MANUTENCAO)
+    .filter((p) => escolhidos.length === 0 || escolhidos.includes(TODOS_OS_TIPOS) || escolhidos.includes(p.tipoId))
+    .map((p) => ({ titulo: p.nome, itens: p.itens }));
 
   function abrir(g: GrupoChecklistEquipamento | null, clonar: boolean) {
     setEditando(clonar ? null : g);
@@ -140,8 +147,8 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
               <Input id="grupo-equip-nome" capitalizar="texto" value={nome} maxLength={80} onChange={(e) => setNome(e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="grupo-equip-itens">Itens do check list (um por linha)</Label>
-              <Textarea id="grupo-equip-itens" rows={8} maxLength={5000} value={itens} onChange={(e) => setItens(e.target.value)} />
+              <Label htmlFor="grupo-equip-itens">Itens do check list</Label>
+              <EditorItensChecklist id="grupo-equip-itens" value={itens} onChange={setItens} catalogo={catalogo} />
             </div>
             <fieldset className="space-y-1.5">
               <legend className="text-sm font-medium">Tipo de equipamento</legend>
@@ -188,12 +195,20 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
   const [responsavelId, setResponsavelId] = useState("");
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaGrupo>>({});
   const trava = useRef(false);
+  // Itens personalizados deste equipamento (um por linha): viram um grupo próprio ao salvar, além dos grupos marcados.
+  // null = ainda não mexeu: o bloco mostra os itens do grupo personalizado já salvo do equipamento, se houver.
+  const [personalizados, setPersonalizados] = useState<string | null>(null);
+  const [persTipo, setPersTipo] = useState<TipoAssociacao>("periodico");
+  const [persPeriodicidade, setPersPeriodicidade] = useState("");
 
   const porId = (id: string): Equipamento | undefined => equipamentos.find((e) => e.id === id);
   const rotulo = (e: Equipamento) => `${e.patrimonio} · ${e.nome}`;
   const livres = equipamentos.filter((e) => e.tipoId && (!associacoes.some((a) => a.equipamentoId === e.id) || e.id === editando));
   const escolhido = porId(equipamentoId);
-  const aplicaveis = escolhido ? gruposAplicaveis(escolhido.tipoId, grupos) : [];
+  // Grupos personalizados não entram na lista comum: o de cada equipamento é cuidado no bloco "Personalizar itens".
+  const aplicaveis = escolhido ? gruposAplicaveis(escolhido.tipoId, grupos).filter((g) => !ehGrupoPersonalizado(g.nome)) : [];
+  const personalizadoSalvo = escolhido ? grupos.find((g) => g.nome === nomeGrupoPersonalizado(escolhido.patrimonio)) : undefined;
+  const valorPersonalizados = personalizados ?? personalizadoSalvo?.itens.map((i) => i.nome).join("\n") ?? "";
   const escolhaDe = (id: string): EscolhaGrupo => escolhas[id] ?? { itens: [], tipo: "periodico", periodicidade: "" };
   // Só os itens que ainda existem no grupo contam como marcados.
   const marcadosDe = (g: GrupoChecklistEquipamento) => g.itens.filter((i) => escolhaDe(g.id).itens.includes(i.id)).map((i) => i.id);
@@ -214,6 +229,14 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     setEscolhas(Object.fromEntries((a?.itens ?? []).map((i) => [i.grupoId, {
       itens: i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? [], tipo: i.tipo, periodicidade: i.tipo === "periodico" ? i.periodicidade : "",
     }])));
+    // Reaberto: o tipo e a periodicidade dos itens personalizados voltam como foram salvos.
+    const equipamentoDaAssociacao = a ? porId(a.equipamentoId) : undefined;
+    const doPersonalizado = a && !clonar && equipamentoDaAssociacao
+      ? a.itens.find((i) => grupos.find((g) => g.id === i.grupoId)?.nome === nomeGrupoPersonalizado(equipamentoDaAssociacao.patrimonio))
+      : undefined;
+    setPersonalizados(null);
+    setPersTipo(doPersonalizado?.tipo ?? "periodico");
+    setPersPeriodicidade(doPersonalizado?.tipo === "periodico" ? doPersonalizado.periodicidade : "");
     setAberto(true);
   }
 
@@ -236,15 +259,33 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
       return;
     }
     const responsavel = responsavelId === SEM_RESPONSAVEL ? null : achado;
+    // Itens personalizados viram um grupo próprio ("Personalizado · PATRIMÔNIO"), do tipo do equipamento, associado junto com os marcados;
+    // se o equipamento já tem esse grupo, ele é atualizado, não duplicado.
+    const proprios = valorPersonalizados.split("\n").map((t) => t.trim()).filter(Boolean);
+    let novoGrupoId: string | null = null;
+    let usadoId: string | null = null;
     try {
-      salvarAssociacao(finalidade, {
-        modo: editando ? "editar" : "criar",
-        equipamentoId: escolhido.id,
-        tipoId: escolhido.tipoId,
-        responsavel,
-        itens: aplicaveis.filter((g) => marcadosDe(g).length > 0).map((g) => ({ grupoId: g.id, tipo: escolhaDe(g.id).tipo, periodicidade: escolhaDe(g.id).periodicidade, itensIds: marcadosDe(g) })),
-      });
+      const itensAssoc: EntradaItemAssociacao[] = aplicaveis.filter((g) => marcadosDe(g).length > 0)
+        .map((g) => ({ grupoId: g.id, tipo: escolhaDe(g.id).tipo, periodicidade: escolhaDe(g.id).periodicidade, itensIds: marcadosDe(g) }));
+      if (proprios.length > 0) {
+        const grupo = salvarGrupoChecklist(finalidade, {
+          ...(personalizadoSalvo ? { id: personalizadoSalvo.id } : {}),
+          nome: personalizadoSalvo?.nome ?? nomeGrupoPersonalizado(escolhido.patrimonio),
+          itens: proprios,
+          tipos: personalizadoSalvo?.tipos ?? [escolhido.tipoId],
+        });
+        if (!personalizadoSalvo) novoGrupoId = grupo.id;
+        usadoId = grupo.id;
+        itensAssoc.push({ grupoId: grupo.id, tipo: persTipo, periodicidade: persPeriodicidade });
+      }
+      salvarAssociacao(finalidade, { modo: editando ? "editar" : "criar", equipamentoId: escolhido.id, tipoId: escolhido.tipoId, responsavel, itens: itensAssoc });
+      // Grupos personalizados antigos deste equipamento (sufixos de versões antigas) que ficaram sem uso saem.
+      for (const g of grupos) {
+        if (g.id !== usadoId && ehPersonalizadoDe(g.nome, escolhido.patrimonio)) { try { removerGrupoChecklist(finalidade, g.id); } catch { /* sem o que fazer */ } }
+      }
     } catch (erro) {
+      // A associação não saiu: o grupo personalizado recém-criado não fica sobrando.
+      if (novoGrupoId) { try { removerGrupoChecklist(finalidade, novoGrupoId); } catch { /* sem o que fazer */ } }
       toast.error(erroDe(erro, "Não foi possível salvar a associação."));
       return;
     }
@@ -359,7 +400,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
               {!escolhido ? (
                 <p className="text-sm text-muted-foreground">Escolha o equipamento para ver os grupos.</p>
               ) : aplicaveis.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum grupo serve ao tipo deste equipamento. Cadastre em Itens check list.</p>
+                <p className="text-sm text-muted-foreground">Nenhum grupo serve ao tipo deste equipamento. Personalize os itens abaixo ou cadastre em Itens check list.</p>
               ) : (
                 <ul className="grid max-h-80 gap-2 overflow-y-auto">
                   {aplicaveis.map((g) => {
@@ -405,6 +446,37 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
                     );
                   })}
                 </ul>
+              )}
+              {escolhido && (
+                <div className="space-y-1.5 rounded-md border p-3" data-testid="itens-personalizados">
+                  <h3 className="text-sm font-semibold">Personalizar itens deste equipamento</h3>
+                  <p className="text-xs text-muted-foreground">Marque itens do padrão ou adicione itens próprios: eles formam o grupo “Personalizado · patrimônio”, que só entra neste equipamento, junto com os grupos marcados acima. Ao abrir de novo, os itens salvos voltam aqui.</p>
+                  <EditorItensChecklist
+                    id="assoc-equip-personalizados"
+                    value={valorPersonalizados}
+                    onChange={setPersonalizados}
+                    catalogo={(finalidade === "vistoria" ? GRUPOS_PADRAO_VISTORIA : GRUPOS_PADRAO_MANUTENCAO).filter((p) => p.tipoId === escolhido.tipoId).map((p) => ({ titulo: p.nome, itens: p.itens }))}
+                  />
+                  {valorPersonalizados.trim() && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Select value={persTipo} onValueChange={(v) => v && setPersTipo(v as TipoAssociacao)}>
+                        <SelectTrigger aria-label="Tipo dos itens personalizados"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="periodico">Periódico</SelectItem>
+                          <SelectItem value="avulso">Avulso</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {persTipo === "periodico" ? (
+                        <Select value={persPeriodicidade} onValueChange={(v) => v && setPersPeriodicidade(v)}>
+                          <SelectTrigger aria-label="Periodicidade dos itens personalizados"><SelectValue placeholder="Periodicidade" /></SelectTrigger>
+                          <SelectContent>{PERIODICIDADES.filter((x) => x !== NAO_DEFINIDA).map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent>
+                        </Select>
+                      ) : (
+                        <p className="self-center text-xs text-muted-foreground">Avulso: não obrigatório, sem periodicidade.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </fieldset>
             <DialogFooter>

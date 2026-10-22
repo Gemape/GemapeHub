@@ -128,3 +128,47 @@ test("a tela de clonar acha o responsável do original, e o topo e o início nã
   assert.match(ler2("components/layout/MenuDaArea.tsx"), /useRouterState\(\{ select: \(s\) => s\.location\.pathname \}\)/);
   assert.match(ler2("routes/_authenticated/inicio.tsx"), /setAbertos\(\(a\) => \(a\.size \? new Set\(\) : a\)\)/);
 });
+
+test("cadastro de grupo: itens do padrão para marcar, lista editável dos selecionados e item próprio (veículos e equipamentos)", () => {
+  const editor = ler("components/parametros/EditorItensChecklist.tsx");
+  assert.match(editor, /Itens padrão \(marque para incluir no grupo\)/);
+  assert.match(editor, /selecionados/);
+  assert.match(editor, /Novo item do grupo/);
+  assert.match(editor, /aria-label=\{`Remover \$\{l\}`\}/);
+  assert.doesNotMatch(editor, /dangerouslySetInnerHTML|innerHTML|document\./);
+  const veic = ler("components/parametros/VeiculosListasParametros.tsx");
+  assert.match(veic, /<EditorItensChecklist id="veiculo-lista-descricao"/);
+  assert.match(veic, /catalogoItens=\{CHECKLIST_VEICULOS_PADRAO/);
+  const equip = ler("components/parametros/ChecklistEquipamento.tsx");
+  assert.match(equip, /<EditorItensChecklist id="grupo-equip-itens"/);
+  assert.match(equip, /GRUPOS_PADRAO_VISTORIA : GRUPOS_PADRAO_MANUTENCAO/);
+});
+
+test("associação: personalizar itens (padrão + próprios) vira um grupo só do veículo/equipamento e não deixa grupo sobrando se a associação falhar", () => {
+  const veic = ler("components/parametros/AssociarChecklistVeiculo.tsx");
+  assert.match(veic, /data-testid="itens-personalizados"/);
+  assert.match(veic, /nomeGrupoPersonalizado\(placa, avulso\)/);
+  assert.match(veic, /adicionarGrupoChecklistVeiculo\(nomeGrupoPersonalizado/);
+  assert.match(veic, /editarGrupoChecklistVeiculo\(personalizadoSalvo\.id/); // reabrir atualiza o grupo, não cria outro
+  assert.match(veic, /removerGrupoChecklistVeiculo\(novoId\)/);
+  const equip = ler("components/parametros/ChecklistEquipamento.tsx");
+  assert.match(equip, /data-testid="itens-personalizados"/);
+  assert.match(equip, /nomeGrupoPersonalizado\(escolhido\.patrimonio\)/);
+  assert.match(equip, /\.\.\.\(personalizadoSalvo \? \{ id: personalizadoSalvo\.id \} : \{\}\)/); // reabrir atualiza o grupo, não cria outro
+  assert.match(equip, /removerGrupoChecklist\(finalidade, novoGrupoId\)/);
+});
+
+test("opções do Novo check list têm o nome da tabela de associação: Placa >> Periodicidade >> Responsável (avulso: Não definida)", async () => {
+  const { nomeDoChecklistAssociado, checklistsDaAssociacao: nomesDaTabela } = await import("../src/lib/checklist-associacao-veiculo.ts");
+  const maria = { id: "m", nome: "Maria da Silva" };
+  const diaria = { responsavel: maria, itens: [{ grupoId: "g1", tipo: "periodico", periodicidade: "Diária", obrigatorio: true }] };
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", diaria, "Diário"), "ABC-1599 >> Diária >> Maria da Silva");
+  // é o mesmo texto que a tabela de associação mostra
+  assert.equal(nomesDaTabela("ABC-1599", { veiculoId: "v", atualizadoEm: "", ...diaria }, [{ id: "g1", nome: "G" }])[0].nome, nomeDoChecklistAssociado("ABC-1599", diaria, "Diário"));
+  // avulso sem grupos avulsos na associação: responsável não definido; com grupos avulsos, o da associação
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", diaria, "avulso"), "ABC-1599 >> Não definida >> Não definido");
+  const avulsa = { responsavel: maria, itens: [{ grupoId: "g2", tipo: "avulso", periodicidade: "Não definida", obrigatorio: false }] };
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", avulsa, "avulso"), "ABC-1599 >> Não definida >> Maria da Silva");
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", null, "avulso"), "ABC-1599 >> Não definida >> Não definido");
+  assert.equal(nomeDoChecklistAssociado("ABC-1599", { responsavel: null, itens: [{ grupoId: "g", tipo: "periodico", periodicidade: "Mensal", obrigatorio: true }] }, "Mensal"), "ABC-1599 >> Mensal >> Não definido");
+});

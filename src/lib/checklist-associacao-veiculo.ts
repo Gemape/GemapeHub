@@ -209,6 +209,21 @@ export function checklistsDaAssociacao(
   });
 }
 
+// Nome do check list do veículo exatamente como a tabela de associação mostra (PLACA >> PERIODICIDADE >> RESPONSÁVEL), para as opções do
+// Novo check list. `periodicidade` é a do módulo ("Diário", "Semanal"...) ou "avulso". O avulso leva o responsável da associação quando ela
+// tem grupos avulsos; sem eles, "Não definido".
+export function nomeDoChecklistAssociado(
+  rotuloVeiculo: string,
+  associacao: Pick<AssociacaoChecklist, "responsavel" | "itens"> | null | undefined,
+  periodicidade: string,
+): string {
+  const avulso = periodicidade === "avulso";
+  const daAssociacao = periodicidade === "Diário" ? "Diária" : periodicidade;
+  const temAvulsos = (associacao?.itens ?? []).some((i) => i.tipo === "avulso");
+  const responsavel = !avulso || temAvulsos ? associacao?.responsavel?.nome : undefined;
+  return [rotuloVeiculo, avulso ? NAO_DEFINIDA : daAssociacao, responsavel ?? NAO_DEFINIDO].map(textoDoNome).join(" >> ");
+}
+
 // Grupos de cada check list do veículo (decisão 119), para o módulo: o periódico traz só os grupos periódicos da sua
 // periodicidade; o avulso traz só os grupos marcados como avulsos. Sem associação, quem chama decide o que traz.
 export function gruposDaPeriodicidade<T extends { grupoId: string; tipo: TipoAssociacao; periodicidade: string }>(

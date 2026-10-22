@@ -1,5 +1,6 @@
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useState } from "react";
+import { SugestaoComprasModulo } from "@/components/modules/SugestaoComprasModulo";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
 import { pedeTamanho, SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
@@ -136,6 +137,7 @@ export function EpiComprasModulo() {
 
   return (
     <div className="space-y-4">
+      <SugestaoComprasModulo modulo="epi" />
       <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Buscar por fornecedor ou NF"

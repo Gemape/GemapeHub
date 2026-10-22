@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { gruposAvulsosDaAssociacao, gruposDaPeriodicidade } from "@/lib/checklist-associacao-veiculo";
+import { gruposAvulsosDaAssociacao, gruposDaPeriodicidade, nomeDoChecklistAssociado } from "@/lib/checklist-associacao-veiculo";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
@@ -149,9 +149,10 @@ export function ChecklistVeiculoModulo() {
   // O responsável é da mesma empresa do veículo (a lista de empregados traz todas as empresas).
   const responsaveisDoVeiculo = veiculoEscolhido?.empresa_id ? empregadosAtivos.filter((e) => e.empresa_id === veiculoEscolhido.empresa_id) : empregadosAtivos;
   const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === (veiculoEscolhido ? tipoCheckDe(veiculoEscolhido) : null))?.nome ?? "";
-  // Opção do tipo de check list, na ordem pedida pelo responsável (decisão 157): Placa >> Responsável >> Periodicidade.
-  const opcaoDoChecklist = (v: VeiculoChecklist, periodicidade: string, responsavelNome: string) =>
-    [(v.placa ?? "").trim().toUpperCase() || rotuloDe(v), responsavelNome.trim() || "Não definido", periodicidade].map((t) => t.trim().replace(/\s+/g, " ")).join(" >> ");
+  // Opção do tipo de check list: o nome do check list como está na associação do veículo (Parâmetros > Veículos > Check list):
+  // Placa >> Periodicidade >> Responsável; o avulso é "Não definida" na periodicidade.
+  const opcaoDoChecklist = (v: VeiculoChecklist, periodicidade: string) =>
+    nomeDoChecklistAssociado((v.placa ?? "").trim().toUpperCase() || rotuloDe(v), associacaoDe(v), periodicidade);
   // Atalho para a associação de itens (grupos, periodicidade e responsável), aberta numa janela ao lado do Novo check list.
   const linkAssociar = canWrite ? (
     <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setAssociarAberto(true)}>
@@ -411,10 +412,10 @@ export function ChecklistVeiculoModulo() {
                 <SelectContent>
                   {veiculoEscolhido && periodicidadesDe(veiculoEscolhido).map((p) => (
                     <SelectItem key={p} value={p}>
-                      {opcaoDoChecklist(veiculoEscolhido, p, associacaoEscolhida?.responsavel?.nome ?? "")}
+                      {opcaoDoChecklist(veiculoEscolhido, p)}
                     </SelectItem>
                   ))}
-                  {veiculoEscolhido && <SelectItem value="avulso">{`${(veiculoEscolhido.placa ?? "").trim().toUpperCase() || rotuloDe(veiculoEscolhido)} >> Avulso`}</SelectItem>}
+                  {veiculoEscolhido && <SelectItem value="avulso">{opcaoDoChecklist(veiculoEscolhido, "avulso")}</SelectItem>}
                 </SelectContent>
               </Select>
               {veiculoEscolhido && periodicidadesDe(veiculoEscolhido).length === 0 && (
