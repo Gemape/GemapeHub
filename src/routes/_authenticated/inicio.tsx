@@ -60,7 +60,7 @@ function PaginaInicio() {
               const Icone = ICONES_CARTAO[c.icone];
               const chave = `${grupo.titulo}/${c.titulo}`;
               const faixa = (
-                <span className="flex h-28 items-center justify-center bg-gradient-to-br from-primary/25 to-primary/10 text-primary">
+                <span className="flex h-28 items-center justify-center bg-gradient-to-br from-[oklch(0.9_0.05_255)] to-[oklch(0.965_0.025_255)] text-primary">
                   <span className="flex size-14 items-center justify-center rounded-full bg-white/70 shadow-md ring-1 ring-white transition-transform duration-300 group-hover/cartao:scale-110 motion-reduce:transition-none">
                     <Icone className="size-7" aria-hidden="true" />
                   </span>

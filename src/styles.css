@@ -131,9 +131,10 @@
   --glass-border: oklch(1 0 0 / 0.7);
   --glass-shadow: 0 8px 32px oklch(0.24 0.2 266 / 0.12);
   --glass-highlight: inset 0 1px 0 oklch(1 0 0 / 0.75);
-  --fundo-a: oklch(0.96 0.025 266);
-  --fundo-b: oklch(0.92 0.045 266);
-  --fundo-brilho: oklch(0.38 0.22 266 / 0.3);
+  /* Identidade do site da Gemape: fundo branco que desce para um azul bem clarinho, com manchas de luz suaves. */
+  --fundo-a: oklch(1 0 0);
+  --fundo-b: oklch(0.955 0.03 255);
+  --fundo-brilho: oklch(0.8 0.09 255 / 0.28);
 }
 
 .dark {

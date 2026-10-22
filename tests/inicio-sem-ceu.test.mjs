@@ -55,3 +55,9 @@ test("o título do topo usa Open Sans em maiúsculas e o topo é maior (logo e a
   assert.match(rota, /sm:w-52/);
   assert.match(rota, /py-5/);
 });
+
+test("o fundo segue o site da Gemape: branco descendo para um azul clarinho, com manchas suaves", () => {
+  const css = ler("styles.css");
+  assert.match(css, /--fundo-a: oklch\(1 0 0\);/);
+  assert.match(css, /--fundo-b: oklch\(0\.9[0-9]* 0\.0[0-4]/);
+});
