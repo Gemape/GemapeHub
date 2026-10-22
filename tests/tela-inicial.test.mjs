@@ -33,8 +33,8 @@ test("cartões com submenus se abrem no próprio cartão; os sem submenu abrem a
     assert.ok(c.itens?.length > 1, t);
     assert.equal(c.url, undefined, t);
   }
-  for (const t of ["Gerais", "EPI", "Uniformes", "Ferramentas", "Veículos"]) assert.ok(cartao(true, "Parâmetros", t).itens?.length > 1, t);
-  for (const [g, t] of [["Visão geral", "Dashboard"], ["Módulos", "Equipamentos"], ["Parâmetros", "Equipamentos"], ["Parâmetros", "Empresas"], ["Parâmetros", "Empregados"], ["Parâmetros", "Fornecedores"], ["Parâmetros", "Clientes"]]) {
+  for (const t of ["Gerais", "EPI", "Uniformes", "Ferramentas", "Veículos", "Equipamentos"]) assert.ok(cartao(true, "Parâmetros", t).itens?.length > 1, t);
+  for (const [g, t] of [["Visão geral", "Dashboard"], ["Módulos", "Equipamentos"], ["Parâmetros", "Empresas"], ["Parâmetros", "Empregados"], ["Parâmetros", "Fornecedores"], ["Parâmetros", "Clientes"]]) {
     const c = cartao(true, g, t);
     assert.ok(c.url, `${g} > ${t}`);
     assert.equal(c.itens, undefined, `${g} > ${t}`);
@@ -60,7 +60,7 @@ test("os submenus de Parâmetros são os itens do menu de cada grupo, com Cadast
   assert.deepEqual(titulos(cartao(true, "Parâmetros", "Uniformes").itens), titulos(MENU_UNIFORMES));
   assert.deepEqual(titulos(cartao(true, "Parâmetros", "Ferramentas").itens), titulos(MENU_FERRAMENTAS));
   assert.deepEqual(titulos(cartao(true, "Parâmetros", "Veículos").itens), titulos(MENU_VEICULOS));
-  assert.equal(cartao(true, "Parâmetros", "Equipamentos").url, MENU_EQUIPAMENTOS[0].url);
+  assert.deepEqual(titulos(cartao(true, "Parâmetros", "Equipamentos").itens), titulos(MENU_EQUIPAMENTOS));
   assert.deepEqual(MENU_EPI.flatMap((i) => i.filhos ?? []).map((f) => f.titulo), ["Cadastrar Ficha de EPI"]);
 });
 

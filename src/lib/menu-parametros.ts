@@ -131,6 +131,8 @@ export const MENU_VEICULOS: readonly ItemMenu[] = [
 // Parâmetros > Equipamentos: os dados cadastrados aqui alimentam o módulo Equipamentos (a lógica do módulo vem depois).
 export const MENU_EQUIPAMENTOS: readonly ItemMenu[] = [
   { titulo: "Cadastrar equipamento", url: "/cadastros/equipamentos", icone: "Forklift" },
+  // Subcategorias (pai) e tipos (filho) de equipamento.
+  { titulo: "Parâmetros Específicos", url: "/cadastros/equipamentos-especificos", icone: "Tags" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.

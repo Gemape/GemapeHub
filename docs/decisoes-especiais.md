@@ -1420,3 +1420,14 @@ Pedido do responsável em 22/10: criar o menu **Equipamentos** em Parâmetros e 
 - **Máquina / Veículo:** propulsão (Diesel, Gasolina, Elétrico, GLP/Gás, Manual), capacidade de carga (kg ou t), horímetro inicial (h), consumo estimado (L/h) e capacidade do tanque (L). **Elétrico:** tensão (110V, 220V Monofásico, 220V Trifásico, 380V, 440V), potência (CV, HP ou kW), corrente nominal (A), pressão de trabalho (PSI ou Bar) e vazão de água (L/min). **Extintor:** agente (Água, Pó PQS ABC, Pó PQS BC, CO2), capacidade (kg ou L), data da última recarga e vencimento do teste hidrostático, **estes quatro obrigatórios**. Nos demais, os técnicos são opcionais.
 - Marca e setor são texto digitado por enquanto (a integração com listas de Cadastros > Gerais fica para depois). Clonar copia os dados e deixa o patrimônio e o número de série em branco. Excluir é só do Administrador (decisão 45).
 - Só modo demonstração: nada no Supabase.
+
+### Decisão 248: Parâmetros > Equipamentos > Parâmetros Específicos (subcategorias e tipos)
+
+Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equipamentos segue o desenho **pai e filho**. O pai é a **subcategoria** e o filho é o **tipo**, que sempre fica debaixo de uma subcategoria.
+
+- **Subcategorias de fábrica (as das Normas Regulamentadoras):** Movimentação e elevação de carga (NR-11); Maquinário industrial ferramental (NR-12 e NR-10); Sistemas pneumáticos e hidráulicos (NR-13); Equipamentos de emergência e combate a incêndio (NR-23).
+- **Tipos de fábrica, cada um debaixo da sua norma:** NR-11: Empilhadeiras, Munck, Ponte rolante. NR-12 e NR-10: Serra de corte, Máquina de solda. NR-13: Compressor de ar (vaso de pressão), Jato de alta pressão (lavador). NR-23: Extintores de incêndio. (O responsável escreveu "muck"; entrou como "Munck", que é o nome do equipamento, e dá para editar.)
+- A tela é uma só, em árvore: cada subcategoria é um bloco com seus tipos embaixo. Há Cadastrar subcategoria, Cadastrar tipo (já com o pai escolhido), Editar e Excluir (só do Administrador, decisão 45). O tipo pode mudar de subcategoria na edição.
+- Regras: nomes em texto capitalizado e únicos sem diferenciar acento nem maiúscula (o nome do tipo é único no cadastro todo); **não se exclui uma subcategoria que ainda tem tipos**; erro não grava nada.
+- **Ainda não ligado ao Cadastrar equipamento:** o cadastro continua usando as cinco categorias de campos técnicos. Ligar Subcategoria e Tipo a ele, e decidir que campos técnicos cada tipo mostra, é o próximo passo.
+- Só modo demonstração: nada no Supabase.

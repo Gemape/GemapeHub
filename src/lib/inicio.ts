@@ -2,7 +2,7 @@
 // atalhos; cartão sem submenu abre a tela direto. Os submenus saem dos mesmos dados do menu (menu-parametros.ts), sem lista paralela.
 import {
   ABAS_EPI, ABAS_FERRAMENTA, ABAS_UNIFORME, ABAS_VEICULO, ABAS_VIAGEM, MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES,
-  MENU_VEICULOS, type AbaMenu, type GrupoMenu, type ItemComFilhos, type ItemMenu, type NomeIcone,
+  MENU_EQUIPAMENTOS, MENU_VEICULOS, type AbaMenu, type GrupoMenu, type ItemComFilhos, type ItemMenu, type NomeIcone,
 } from "./menu-parametros.ts";
 
 export type IconeInicio =
@@ -47,7 +47,7 @@ export const GRUPOS_INICIO: readonly GrupoInicio[] = [
       { titulo: "Uniformes", icone: "Shirt", itens: dosItens(MENU_UNIFORMES) },
       { titulo: "Ferramentas", icone: "Wrench", itens: dosItens(MENU_FERRAMENTAS) },
       { titulo: "Veículos", icone: "Car", itens: dosItens(MENU_VEICULOS) },
-      { titulo: "Equipamentos", icone: "Forklift", url: "/cadastros/equipamentos" },
+      { titulo: "Equipamentos", icone: "Forklift", itens: dosItens(MENU_EQUIPAMENTOS) },
       { titulo: "Empresas", icone: "Building2", url: "/empresas" },
       { titulo: "Empregados", icone: "Users", url: "/empregados" },
       { titulo: "Fornecedores", icone: "Truck", url: "/cadastros/fornecedores" },

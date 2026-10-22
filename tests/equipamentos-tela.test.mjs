@@ -8,7 +8,7 @@ const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8")
 const menu = ler("components/layout/AppSidebar.tsx");
 
 test("Parâmetros > Equipamentos > Cadastrar equipamento está no menu de Parâmetros", () => {
-  assert.deepEqual(MENU_EQUIPAMENTOS.map((i) => [i.titulo, i.url]), [["Cadastrar equipamento", "/cadastros/equipamentos"]]);
+  assert.deepEqual(MENU_EQUIPAMENTOS.map((i) => [i.titulo, i.url]), [["Cadastrar equipamento", "/cadastros/equipamentos"], ["Parâmetros Específicos", "/cadastros/equipamentos-especificos"]]);
   assert.match(menu, /function MenuEquipamentos/);
   assert.match(menu, /<MenuEquipamentos pathname=\{pathname\} \/>/);
 });
