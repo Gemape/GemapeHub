@@ -73,7 +73,7 @@ function alterar<T>(storage: StorageLike, acao: (d: ParametrosEquipamento) => T)
 }
 
 // Sem acento, sem maiúscula e sem espaço repetido: "Movimentacao" e "movimentação" são o mesmo nome.
-const chaveDoNome = (nome: string) => nome.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR").replace(/\s+/g, " ").trim();
+export const chaveDoNome = (nome: string) => nome.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR").replace(/\s+/g, " ").trim();
 const novoId = (prefixo: string) => `${prefixo}-${crypto.randomUUID()}`;
 
 export function salvarSubcategoria(entrada: { id?: string; nome: string }, storage: StorageLike = localStorage): SubcategoriaEquipamento {
