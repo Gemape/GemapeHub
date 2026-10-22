@@ -1,5 +1,5 @@
 // Parâmetros > Equipamentos > Cadastrar equipamento: dados gerais (obrigatórios para todo equipamento) e especificações
-// técnicas por grupo. A categoria escolhida decide quais grupos de campos técnicos aparecem; os demais ficam de fora do
+// técnicas por grupo. O tipo escolhido (Parâmetros Específicos) decide quais grupos de campos técnicos aparecem; os demais ficam de fora do
 // formulário e não são guardados. Fase 1: fica só no navegador, em modo demonstração; a tabela entra na Fase 2.
 import { hojeLocal } from "./empregados.ts";
 import { capitalizarTexto } from "./formatacao-cadastral.ts";
@@ -8,14 +8,7 @@ export type GrupoTecnico = "motor" | "eletrico" | "extintor";
 
 export const STATUS_EQUIPAMENTO = ["Ativo", "Em manutenção", "Baixado/Inativo", "Reserva"] as const;
 
-// Uma categoria pode liberar mais de um grupo (o jato de alta pressão tem motor e parte elétrica/hidráulica).
-export const CATEGORIAS_EQUIPAMENTO: readonly { id: string; nome: string; grupos: readonly GrupoTecnico[] }[] = [
-  { id: "maquina-veiculo", nome: "Máquina / Veículo", grupos: ["motor"] },
-  { id: "maquinario-eletrico", nome: "Maquinário elétrico", grupos: ["eletrico"] },
-  { id: "jato-alta-pressao", nome: "Jato de alta pressão", grupos: ["motor", "eletrico"] },
-  { id: "seguranca", nome: "Segurança (extintor)", grupos: ["extintor"] },
-  { id: "ferramental", nome: "Ferramental", grupos: [] },
-];
+export const GRUPOS_TECNICOS: readonly GrupoTecnico[] = ["motor", "eletrico", "extintor"];
 
 export const TITULO_GRUPO_TECNICO: Record<GrupoTecnico, string> = {
   motor: "Máquinas e veículos",
@@ -52,13 +45,8 @@ export const CAMPOS_TECNICOS: readonly CampoTecnico[] = [
   { id: "vencimentoTesteHidrostatico", grupo: "extintor", rotulo: "Vencimento do teste hidrostático", tipo: "data", obrigatorio: true },
 ];
 
-export function gruposDaCategoria(categoria: string): readonly GrupoTecnico[] {
-  return CATEGORIAS_EQUIPAMENTO.find((c) => c.id === categoria)?.grupos ?? [];
-}
-
-// Campos técnicos que valem para a categoria, na ordem da tela.
-export function camposTecnicosDaCategoria(categoria: string): CampoTecnico[] {
-  const grupos = gruposDaCategoria(categoria);
+// Campos técnicos dos grupos que o tipo do equipamento libera (Parâmetros Específicos), na ordem da tela.
+export function camposTecnicosDosGrupos(grupos: readonly GrupoTecnico[]): CampoTecnico[] {
   return CAMPOS_TECNICOS.filter((c) => grupos.includes(c.grupo));
 }
 
@@ -67,7 +55,7 @@ export type EntradaEquipamento = {
   empresaId: string;
   patrimonio: string;
   nome: string;
-  categoria: string;
+  tipoId: string;
   marca: string;
   modelo: string;
   numeroSerie: string;
@@ -83,7 +71,7 @@ export type EquipamentoDados = {
   empresaId: string;
   patrimonio: string;
   nome: string;
-  categoria: string;
+  tipoId: string;
   marca: string;
   modelo: string;
   numeroSerie: string;
@@ -117,7 +105,11 @@ function dataReal(d: string): boolean {
 }
 
 // Valida e normaliza o equipamento. Qualquer erro interrompe antes de gravar (quem chama grava tudo ou nada).
-export function normalizarEquipamento(entrada: EntradaEquipamento, contexto: { hoje?: Date } = {}): EquipamentoDados {
+// `contexto.tipo` é o tipo do equipamento já lido dos Parâmetros Específicos (quem chama resolve); os grupos dele decidem os campos técnicos.
+export function normalizarEquipamento(
+  entrada: EntradaEquipamento,
+  contexto: { hoje?: Date; tipo?: { id: string; grupos: readonly GrupoTecnico[] } | undefined } = {},
+): EquipamentoDados {
   const hoje = hojeLocal(contexto.hoje ?? new Date());
   const exigir = (valor: string, mensagem: string) => {
     if (!valor) throw new Error(mensagem);
@@ -126,7 +118,7 @@ export function normalizarEquipamento(entrada: EntradaEquipamento, contexto: { h
   const empresaId = exigir(compactar(entrada.empresaId), "Escolha a empresa do equipamento.");
   const patrimonio = exigir(compactar(entrada.patrimonio).toLocaleUpperCase("pt-BR"), "Informe o código de patrimônio (TAG ou placa).");
   const nome = exigir(capitalizarTexto(entrada.nome), "Informe o nome do equipamento.");
-  if (!CATEGORIAS_EQUIPAMENTO.some((c) => c.id === entrada.categoria)) throw new Error("Escolha a categoria do equipamento.");
+  if (!contexto.tipo || contexto.tipo.id !== entrada.tipoId) throw new Error("Escolha o tipo do equipamento.");
   const marca = exigir(capitalizarTexto(entrada.marca), "Informe a marca ou o fabricante.");
   const modelo = exigir(capitalizarTexto(entrada.modelo), "Informe o modelo do equipamento.");
   const numeroSerie = exigir(compactar(entrada.numeroSerie), "Informe o número de série.");
@@ -139,9 +131,9 @@ export function normalizarEquipamento(entrada: EntradaEquipamento, contexto: { h
   if (!(STATUS_EQUIPAMENTO as readonly string[]).includes(entrada.status)) throw new Error("Escolha o status atual do equipamento.");
   const setor = exigir(capitalizarTexto(entrada.setor), "Informe o setor ou a localização.");
 
-  // Só os campos da categoria escolhida; o que sobrou de outra categoria é descartado.
+  // Só os campos dos grupos do tipo escolhido; o que sobrou de outro tipo é descartado.
   const tecnico: Record<string, string> = {};
-  for (const campo of camposTecnicosDaCategoria(entrada.categoria)) {
+  for (const campo of camposTecnicosDosGrupos(contexto.tipo.grupos)) {
     const bruto = compactar(entrada.tecnico?.[campo.id]);
     if (!bruto) {
       if (campo.obrigatorio) throw new Error(`Informe: ${campo.rotulo}.`);
@@ -165,5 +157,5 @@ export function normalizarEquipamento(entrada: EntradaEquipamento, contexto: { h
       }
     }
   }
-  return { empresaId, patrimonio, nome, categoria: entrada.categoria, marca, modelo, numeroSerie, dataAquisicao, valorCompra, status: entrada.status, setor, tecnico };
+  return { empresaId, patrimonio, nome, tipoId: entrada.tipoId, marca, modelo, numeroSerie, dataAquisicao, valorCompra, status: entrada.status, setor, tecnico };
 }

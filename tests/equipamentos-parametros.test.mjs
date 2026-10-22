@@ -150,3 +150,54 @@ test("Parâmetros Específicos entra no menu de Equipamentos e no cartão da tel
   assert.deepEqual(card.itens.map((i) => i.titulo), ["Cadastrar equipamento", "Parâmetros Específicos"]);
   assert.equal(card.url, undefined);
 });
+
+test("o tipo guarda os grupos de campos técnicos que aparecem no cadastro do equipamento", () => {
+  const s = memoria();
+  const nr13 = SUBCATEGORIAS_PADRAO[2].id;
+  const t = salvarTipo({ subcategoriaId: nr13, nome: "caldeira", grupos: ["eletrico", "motor"] }, s);
+  assert.deepEqual(t.grupos, ["eletrico", "motor"]);
+  assert.deepEqual(salvarTipo({ subcategoriaId: nr13, nome: "outro" }, s).grupos, [], "sem grupos por padrão");
+  assert.throws(() => salvarTipo({ subcategoriaId: nr13, nome: "x1", grupos: ["asa-delta"] }, s), /campos técnicos/i);
+  assert.deepEqual(salvarTipo({ subcategoriaId: nr13, nome: "x2", grupos: ["motor", "motor"] }, s).grupos, ["motor"], "sem repetir");
+});
+
+test("editar o tipo sem informar os grupos mantém os que ele já tinha", () => {
+  const s = memoria();
+  const jato = TIPOS_PADRAO.find((t) => t.nome === "Jato de alta pressão (lavador)");
+  const e = salvarTipo({ id: jato.id, subcategoriaId: jato.subcategoriaId, nome: "Jato de alta pressão (lavador) novo" }, s);
+  assert.deepEqual(e.grupos, ["motor", "eletrico"]);
+  assert.deepEqual(salvarTipo({ id: jato.id, subcategoriaId: jato.subcategoriaId, nome: "Jato de alta pressão (lavador) novo", grupos: [] }, s).grupos, []);
+});
+
+test("tipo salvo antes dos grupos (sem o campo) recebe o padrão do mesmo id, ou nenhum grupo", () => {
+  const s = memoria();
+  s.setItem("gemape-demo-equipamentos-parametros", JSON.stringify({
+    subcategorias: SUBCATEGORIAS_PADRAO,
+    tipos: [{ id: "tipo-munck", subcategoriaId: "sub-nr11", nome: "Munck" }, { id: "tipo-meu", subcategoriaId: "sub-nr11", nome: "Meu" }],
+  }));
+  const tipos = lerParametrosEquipamento(s).tipos;
+  assert.deepEqual(tipos.find((t) => t.id === "tipo-munck").grupos, ["motor"]);
+  assert.deepEqual(tipos.find((t) => t.id === "tipo-meu").grupos, []);
+});
+
+test("não se exclui um tipo que algum equipamento usa", () => {
+  const s = memoria();
+  assert.throws(() => removerTipo("tipo-munck", s, (id) => (id === "tipo-munck" ? 2 : 0)), /2 equipamentos/);
+  assert.equal(lerParametrosEquipamento(s).tipos.length, 8);
+  removerTipo("tipo-munck", s, () => 0);
+  assert.equal(lerParametrosEquipamento(s).tipos.length, 7);
+});
+
+test("a janela do tipo pede os campos técnicos que aparecem no cadastro do equipamento", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/EquipamentosEspecificos.tsx", import.meta.url), "utf8");
+  assert.match(tela, /GRUPOS_TECNICOS/);
+  assert.match(tela, /TITULO_GRUPO_TECNICO/);
+  assert.match(tela, /Checkbox/);
+  assert.match(tela, /grupos,\s*\}\)|grupos \}\)|, grupos\b/);
+});
+
+test("excluir um tipo consulta os equipamentos que o usam", () => {
+  const tela = readFileSync(new URL("../src/components/parametros/EquipamentosEspecificos.tsx", import.meta.url), "utf8");
+  assert.match(tela, /listarEquipamentos/);
+  assert.match(tela, /removerTipo\(t\.id, undefined, /);
+});

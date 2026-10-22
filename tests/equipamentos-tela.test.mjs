@@ -25,15 +25,17 @@ test("as duas telas existem: o cadastro (Parâmetros) e o módulo (por enquanto 
 
 const dialogo = ler("components/parametros/EquipamentoDialog.tsx");
 
-test("a janela mostra os campos técnicos só da categoria escolhida (camposTecnicosDaCategoria)", () => {
-  assert.match(dialogo, /camposTecnicosDaCategoria\(/);
-  assert.match(dialogo, /aria-label="Categoria"|htmlFor="categoria"/);
+test("a janela mostra os campos técnicos só dos grupos do tipo escolhido (camposTecnicosDosGrupos)", () => {
+  assert.match(dialogo, /camposTecnicosDosGrupos\(/);
+  assert.match(dialogo, /htmlFor="subcategoria"/);
+  assert.match(dialogo, /htmlFor="tipo"/);
+  assert.doesNotMatch(dialogo, /CATEGORIAS_EQUIPAMENTO/);
   // os grupos são títulos de seção que só existem se houver campo
   assert.match(dialogo, /TITULO_GRUPO_TECNICO/);
 });
 
 test("os dados gerais pedem todos os campos combinados", () => {
-  for (const rotulo of ["Código de patrimônio", "Nome / descrição do equipamento", "Categoria", "Marca / fabricante", "Modelo", "Número de série", "Data de aquisição", "Valor de compra", "Status atual", "Setor / localização", "Empresa"]) {
+  for (const rotulo of ["Código de patrimônio", "Nome / descrição do equipamento", "Subcategoria", "Tipo", "Marca / fabricante", "Modelo", "Número de série", "Data de aquisição", "Valor de compra", "Status atual", "Setor / localização", "Empresa"]) {
     assert.ok(dialogo.includes(rotulo), rotulo);
   }
 });

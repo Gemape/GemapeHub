@@ -1,6 +1,7 @@
 // Cadastro de equipamentos (Parâmetros > Equipamentos), guardado só no navegador em modo demonstração.
 // Fase 1: a tabela `equipamentos` entra na Fase 2 (docs/pendencias-fase2.md).
 import { normalizarEquipamento, type EntradaEquipamento, type EquipamentoDados } from "./equipamentos.ts";
+import { lerParametrosEquipamento } from "./equipamentos-parametros.ts";
 
 export type Equipamento = EquipamentoDados & { id: string; criadoEm: string };
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -23,7 +24,9 @@ function conferirIntegridade(storage: StorageLike): void {
 export function listarEquipamentos(storage: StorageLike = localStorage): Equipamento[] {
   try {
     const lidos: unknown = JSON.parse(storage.getItem(CHAVE) ?? "[]");
-    return Array.isArray(lidos) ? (lidos as Equipamento[]).filter((e) => !!e && typeof e === "object") : [];
+    if (!Array.isArray(lidos)) return [];
+    // Equipamento salvo antes dos tipos (com categoria, sem tipoId): fica na lista com o tipo em branco até ser editado.
+    return (lidos as Equipamento[]).filter((e) => !!e && typeof e === "object").map((e) => ({ ...e, tipoId: typeof e.tipoId === "string" ? e.tipoId : "" }));
   } catch {
     return [];
   }
@@ -36,7 +39,8 @@ export function salvarEquipamento(valores: EntradaEquipamento, storage: StorageL
   const id = valores.id ?? crypto.randomUUID();
   const indice = lista.findIndex((e) => e.id === id);
   if (valores.id && indice < 0) throw new Error("Este equipamento foi excluído; feche a janela e cadastre de novo, se for o caso.");
-  const dados = normalizarEquipamento(valores, { hoje: agora });
+  const tipo = lerParametrosEquipamento(storage).tipos.find((t) => t.id === valores.tipoId);
+  const dados = normalizarEquipamento(valores, { hoje: agora, tipo });
   if (lista.some((e) => e.id !== id && e.patrimonio.toLocaleUpperCase("pt-BR") === dados.patrimonio)) {
     throw new Error(`Já existe um equipamento com o código de patrimônio ${dados.patrimonio}.`);
   }

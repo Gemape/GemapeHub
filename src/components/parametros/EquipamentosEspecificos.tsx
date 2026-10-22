@@ -3,10 +3,13 @@ import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { GRUPOS_TECNICOS, TITULO_GRUPO_TECNICO, type GrupoTecnico } from "@/lib/equipamentos";
+import { listarEquipamentos } from "@/lib/equipamentos-demo";
 import {
   lerParametrosEquipamento, removerSubcategoria, removerTipo, salvarSubcategoria, salvarTipo,
   type SubcategoriaEquipamento, type TipoEquipamento,
@@ -58,13 +61,16 @@ function FormularioTipo({ editando, subcategoriaInicial, subcategorias, onFechar
 }) {
   const [nome, setNome] = useState(editando?.nome ?? "");
   const [subcategoriaId, setSubcategoriaId] = useState(editando?.subcategoriaId ?? subcategoriaInicial);
+  // Campos técnicos que aparecem no cadastro dos equipamentos deste tipo.
+  const [grupos, setGrupos] = useState<GrupoTecnico[]>(editando?.grupos ?? []);
+  const alternarGrupo = (g: GrupoTecnico, marcar: boolean) => setGrupos((atuais) => (marcar ? [...atuais.filter((x) => x !== g), g] : atuais.filter((x) => x !== g)));
   const trava = useRef(false);
   function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     e.stopPropagation();
     if (trava.current) return;
     try {
-      salvarTipo({ ...(editando ? { id: editando.id } : {}), subcategoriaId, nome });
+      salvarTipo({ ...(editando ? { id: editando.id } : {}), subcategoriaId, nome, grupos });
       trava.current = true;
       onFechar();
       toast.success("Tipo salvo");
@@ -86,6 +92,16 @@ function FormularioTipo({ editando, subcategoriaInicial, subcategorias, onFechar
         <Label htmlFor="nome-tipo">Nome do tipo</Label>
         <Input id="nome-tipo" capitalizar="texto" placeholder="Ex.: Empilhadeiras" value={nome} onChange={(e) => setNome(e.target.value)} />
       </div>
+      <fieldset className="space-y-2 rounded-lg border p-3">
+        <legend className="px-1 text-sm font-medium">Especificações técnicas deste tipo</legend>
+        <p className="text-xs text-muted-foreground">Marque os grupos de campos técnicos que aparecem no cadastro dos equipamentos deste tipo.</p>
+        {GRUPOS_TECNICOS.map((g) => (
+          <label key={g} className="flex items-center gap-2 text-sm">
+            <Checkbox checked={grupos.includes(g)} onCheckedChange={(v) => alternarGrupo(g, v === true)} aria-label={TITULO_GRUPO_TECNICO[g]} />
+            {TITULO_GRUPO_TECNICO[g]}
+          </label>
+        ))}
+      </fieldset>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onFechar}>Cancelar</Button>
         <Button requiresWrite type="submit">Salvar</Button>
@@ -146,11 +162,16 @@ export function EquipamentosEspecificos() {
               {tipos.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">Nenhum tipo nesta subcategoria.</li>}
               {tipos.map((t) => (
                 <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 pl-8">
-                  <span className="text-sm">{t.nome}</span>
+                  <span className="text-sm">
+                    {t.nome}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {t.grupos.length === 0 ? "sem campos técnicos" : `campos técnicos: ${t.grupos.map((g) => TITULO_GRUPO_TECNICO[g]).join(" e ")}`}
+                    </span>
+                  </span>
                   <AcoesLinha
                     rotulo={t.nome}
                     onEditar={() => setDialogoTipo({ editando: t, subcategoriaId: t.subcategoriaId })}
-                    onExcluir={() => excluir(`Excluir o tipo ${t.nome}?`, () => removerTipo(t.id), "Tipo excluído")}
+                    onExcluir={() => excluir(`Excluir o tipo ${t.nome}?`, () => removerTipo(t.id, undefined, (id) => listarEquipamentos().filter((e) => e.tipoId === id).length), "Tipo excluído")}
                   />
                 </li>
               ))}

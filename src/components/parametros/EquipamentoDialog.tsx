@@ -10,15 +10,14 @@ import { useEmpresa } from "@/lib/empresa-context";
 import { hojeLocal } from "@/lib/empregados";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { salvarEquipamento, type Equipamento } from "@/lib/equipamentos-demo";
-import {
-  CATEGORIAS_EQUIPAMENTO, STATUS_EQUIPAMENTO, TITULO_GRUPO_TECNICO, camposTecnicosDaCategoria, gruposDaCategoria,
-  type CampoTecnico,
-} from "@/lib/equipamentos";
+import { STATUS_EQUIPAMENTO, TITULO_GRUPO_TECNICO, camposTecnicosDosGrupos, type CampoTecnico } from "@/lib/equipamentos";
+import { lerParametrosEquipamento, type ParametrosEquipamento } from "@/lib/equipamentos-parametros";
 
-// Cadastrar equipamento (Parâmetros > Equipamentos): dados gerais sempre visíveis e especificações técnicas que aparecem
-// ou somem na hora, conforme a categoria escolhida. Campo de categoria que não vale some do formulário e não é guardado.
+// Cadastrar equipamento (Parâmetros > Equipamentos): dados gerais sempre visíveis e especificações técnicas que aparecem ou somem
+// na hora, conforme o tipo escolhido (a subcategoria é o pai; o tipo, o filho, de Parâmetros Específicos). Campo de grupo que o tipo não
+// libera some do formulário e não é guardado.
 type Valores = {
-  empresaId: string; patrimonio: string; nome: string; categoria: string; marca: string; modelo: string; numeroSerie: string;
+  empresaId: string; patrimonio: string; nome: string; subcategoriaId: string; tipoId: string; marca: string; modelo: string; numeroSerie: string;
   dataAquisicao: string; valorCompra: string; status: string; setor: string; tecnico: Record<string, string>;
 };
 
@@ -26,16 +25,17 @@ const valorEmTexto = (n: number) => String(n).replace(".", ",");
 const tecnicoEmTexto = (t: Record<string, string>, campos: readonly string[]) =>
   Object.fromEntries(Object.entries(t).map(([k, v]) => [k, campos.includes(k) ? valorEmTexto(Number(v)) : v]));
 
-function valoresIniciais(base: Equipamento | null, clonar: boolean, empresaPadrao: string): Valores {
+function valoresIniciais(base: Equipamento | null, clonar: boolean, empresaPadrao: string, params: ParametrosEquipamento): Valores {
   if (!base) {
-    return { empresaId: empresaPadrao, patrimonio: "", nome: "", categoria: "", marca: "", modelo: "", numeroSerie: "", dataAquisicao: "", valorCompra: "", status: "Ativo", setor: "", tecnico: {} };
+    return { empresaId: empresaPadrao, patrimonio: "", nome: "", subcategoriaId: "", tipoId: "", marca: "", modelo: "", numeroSerie: "", dataAquisicao: "", valorCompra: "", status: "Ativo", setor: "", tecnico: {} };
   }
-  const numericos = camposTecnicosDaCategoria(base.categoria).filter((c) => c.tipo === "numero").map((c) => c.id);
+  const tipoBase = params.tipos.find((t) => t.id === base.tipoId);
+  const numericos = camposTecnicosDosGrupos(tipoBase?.grupos ?? []).filter((c) => c.tipo === "numero").map((c) => c.id);
   return {
     empresaId: base.empresaId,
     // Clonar copia os dados, mas o patrimônio é único e o número de série é de cada unidade: os dois voltam em branco.
     patrimonio: clonar ? "" : base.patrimonio,
-    nome: base.nome, categoria: base.categoria, marca: base.marca, modelo: base.modelo,
+    nome: base.nome, subcategoriaId: tipoBase?.subcategoriaId ?? "", tipoId: base.tipoId, marca: base.marca, modelo: base.modelo,
     numeroSerie: clonar ? "" : base.numeroSerie,
     dataAquisicao: base.dataAquisicao, valorCompra: valorEmTexto(base.valorCompra), status: base.status, setor: base.setor,
     tecnico: tecnicoEmTexto(base.tecnico, numericos),
@@ -50,14 +50,18 @@ function Formulario({ editando, modelo, onFechar, onSalvo }: {
 }) {
   const { empresas, empresaId } = useEmpresa();
   const base = editando ?? modelo;
-  const [v, setV] = useState<Valores>(() => valoresIniciais(base, !editando && !!modelo, empresaPadraoParaEscolha(empresas, empresaId)));
+  // Subcategorias e tipos de Parâmetros Específicos, lidos ao abrir a janela.
+  const [params] = useState(lerParametrosEquipamento);
+  const [v, setV] = useState<Valores>(() => valoresIniciais(base, !editando && !!modelo, empresaPadraoParaEscolha(empresas, empresaId), params));
   // Um segundo clique em Salvar enquanto a janela fecha gravaria o equipamento de novo.
   const trava = useRef(false);
   const mudar = (parte: Partial<Valores>) => setV((x) => ({ ...x, ...parte }));
   const mudarTecnico = (id: string, valor: string) => setV((x) => ({ ...x, tecnico: { ...x.tecnico, [id]: valor } }));
 
-  const campos = camposTecnicosDaCategoria(v.categoria);
-  const grupos = gruposDaCategoria(v.categoria);
+  const tipoAtual = params.tipos.find((t) => t.id === v.tipoId);
+  const tiposDaSubcategoria = params.tipos.filter((t) => t.subcategoriaId === v.subcategoriaId);
+  const grupos = tipoAtual?.grupos ?? [];
+  const campos = camposTecnicosDosGrupos(grupos);
   const listaEmpresas = empresasParaEscolha(empresas, [v.empresaId]);
 
   function enviar(e: React.FormEvent<HTMLFormElement>) {
@@ -65,7 +69,8 @@ function Formulario({ editando, modelo, onFechar, onSalvo }: {
     e.stopPropagation();
     if (trava.current) return;
     try {
-      const salvo = salvarEquipamento({ ...v, ...(editando ? { id: editando.id } : {}) });
+      const { subcategoriaId: _pai, ...dados } = v;
+      const salvo = salvarEquipamento({ ...dados, ...(editando ? { id: editando.id } : {}) });
       trava.current = true;
       onFechar();
       toast.success("Equipamento salvo");
@@ -118,10 +123,17 @@ function Formulario({ editando, modelo, onFechar, onSalvo }: {
       <div className="space-y-1.5"><Label htmlFor="patrimonio">Código de patrimônio (TAG ou placa)</Label><Input id="patrimonio" value={v.patrimonio} onChange={(e) => mudar({ patrimonio: e.target.value })} /></div>
       <div className="space-y-1.5"><Label htmlFor="nome">Nome / descrição do equipamento</Label><Input id="nome" capitalizar="texto" placeholder="Ex.: Empilhadeira Yale 2.5T" value={v.nome} onChange={(e) => mudar({ nome: e.target.value })} /></div>
       <div className="space-y-1.5">
-        <Label htmlFor="categoria">Categoria</Label>
-        <Select value={v.categoria} onValueChange={(x) => x && mudar({ categoria: x })}>
-          <SelectTrigger id="categoria" aria-label="Categoria"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
-          <SelectContent>{CATEGORIAS_EQUIPAMENTO.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+        <Label htmlFor="subcategoria">Subcategoria</Label>
+        <Select value={v.subcategoriaId} onValueChange={(x) => x && x !== v.subcategoriaId && mudar({ subcategoriaId: x, tipoId: "" })}>
+          <SelectTrigger id="subcategoria"><SelectValue placeholder="Selecione a subcategoria" /></SelectTrigger>
+          <SelectContent>{params.subcategorias.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="tipo">Tipo</Label>
+        <Select value={v.tipoId} onValueChange={(x) => x && mudar({ tipoId: x })} disabled={!v.subcategoriaId}>
+          <SelectTrigger id="tipo"><SelectValue placeholder={v.subcategoriaId ? "Selecione o tipo" : "Escolha antes a subcategoria"} /></SelectTrigger>
+          <SelectContent>{tiposDaSubcategoria.map((t) => <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div className="space-y-1.5"><Label htmlFor="marca">Marca / fabricante</Label><Input id="marca" capitalizar="texto" value={v.marca} onChange={(e) => mudar({ marca: e.target.value })} /></div>
@@ -139,8 +151,8 @@ function Formulario({ editando, modelo, onFechar, onSalvo }: {
       <div className="space-y-1.5"><Label htmlFor="setor">Setor / localização</Label><Input id="setor" capitalizar="texto" placeholder="Ex.: Lavador, Serralheria, Estoque" value={v.setor} onChange={(e) => mudar({ setor: e.target.value })} /></div>
 
       <p className="pt-2 text-sm font-semibold sm:col-span-2">Especificações técnicas</p>
-      {!v.categoria && <p className="text-sm text-muted-foreground sm:col-span-2">Escolha a categoria para ver as especificações técnicas dela.</p>}
-      {v.categoria && grupos.length === 0 && <p className="text-sm text-muted-foreground sm:col-span-2">Esta categoria não tem especificações técnicas.</p>}
+      {!v.tipoId && <p className="text-sm text-muted-foreground sm:col-span-2">Escolha a subcategoria e o tipo para ver as especificações técnicas dele.</p>}
+      {v.tipoId && grupos.length === 0 && <p className="text-sm text-muted-foreground sm:col-span-2">Este tipo não tem especificações técnicas.</p>}
       {grupos.map((g) => (
         <fieldset key={g} className="space-y-3 rounded-lg border p-3 sm:col-span-2">
           <legend className="px-1 text-sm font-medium">{TITULO_GRUPO_TECNICO[g]}</legend>
@@ -168,7 +180,7 @@ export function EquipamentoDialog({ aberto, onAberto, editando, modelo, onSalvo 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{editando ? "Editar equipamento" : modelo ? "Clonar equipamento" : "Cadastrar equipamento"}</DialogTitle>
-          <DialogDescription>Escolha a categoria para aparecerem só as especificações técnicas dela.</DialogDescription>
+          <DialogDescription>Escolha a subcategoria e o tipo para aparecerem só as especificações técnicas dele.</DialogDescription>
         </DialogHeader>
         <Formulario key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "novo")} editando={editando} modelo={modelo} onFechar={() => onAberto(false)} onSalvo={onSalvo} />
       </DialogContent>

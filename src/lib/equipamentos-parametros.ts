@@ -1,9 +1,11 @@
 // Parâmetros > Equipamentos > Parâmetros Específicos: cadastro em pai e filho. O pai é a subcategoria e o filho é o tipo
 // (cada tipo pertence a uma subcategoria). Fase 1: fica só no navegador, em modo demonstração; as tabelas entram na Fase 2.
+import { GRUPOS_TECNICOS, type GrupoTecnico } from "./equipamentos.ts";
 import { capitalizarTexto } from "./formatacao-cadastral.ts";
 
 export type SubcategoriaEquipamento = { id: string; nome: string };
-export type TipoEquipamento = { id: string; subcategoriaId: string; nome: string };
+// `grupos`: os grupos de campos técnicos que aparecem no cadastro dos equipamentos deste tipo.
+export type TipoEquipamento = { id: string; subcategoriaId: string; nome: string; grupos: GrupoTecnico[] };
 export type ParametrosEquipamento = { subcategorias: SubcategoriaEquipamento[]; tipos: TipoEquipamento[] };
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
@@ -19,19 +21,19 @@ export const SUBCATEGORIAS_PADRAO: readonly SubcategoriaEquipamento[] = [
 
 // Tipos de fábrica, cada um debaixo da subcategoria da norma a que pertence.
 export const TIPOS_PADRAO: readonly TipoEquipamento[] = [
-  { id: "tipo-empilhadeiras", subcategoriaId: "sub-nr11", nome: "Empilhadeiras" },
-  { id: "tipo-munck", subcategoriaId: "sub-nr11", nome: "Munck" },
-  { id: "tipo-ponte-rolante", subcategoriaId: "sub-nr11", nome: "Ponte rolante" },
-  { id: "tipo-serra-de-corte", subcategoriaId: "sub-nr12-nr10", nome: "Serra de corte" },
-  { id: "tipo-maquina-de-solda", subcategoriaId: "sub-nr12-nr10", nome: "Máquina de solda" },
-  { id: "tipo-compressor-de-ar", subcategoriaId: "sub-nr13", nome: "Compressor de ar (vaso de pressão)" },
-  { id: "tipo-jato-alta-pressao", subcategoriaId: "sub-nr13", nome: "Jato de alta pressão (lavador)" },
-  { id: "tipo-extintores", subcategoriaId: "sub-nr23", nome: "Extintores de incêndio" },
+  { id: "tipo-empilhadeiras", subcategoriaId: "sub-nr11", nome: "Empilhadeiras", grupos: ["motor"] },
+  { id: "tipo-munck", subcategoriaId: "sub-nr11", nome: "Munck", grupos: ["motor"] },
+  { id: "tipo-ponte-rolante", subcategoriaId: "sub-nr11", nome: "Ponte rolante", grupos: ["eletrico"] },
+  { id: "tipo-serra-de-corte", subcategoriaId: "sub-nr12-nr10", nome: "Serra de corte", grupos: ["eletrico"] },
+  { id: "tipo-maquina-de-solda", subcategoriaId: "sub-nr12-nr10", nome: "Máquina de solda", grupos: ["eletrico"] },
+  { id: "tipo-compressor-de-ar", subcategoriaId: "sub-nr13", nome: "Compressor de ar (vaso de pressão)", grupos: ["eletrico"] },
+  { id: "tipo-jato-alta-pressao", subcategoriaId: "sub-nr13", nome: "Jato de alta pressão (lavador)", grupos: ["motor", "eletrico"] },
+  { id: "tipo-extintores", subcategoriaId: "sub-nr23", nome: "Extintores de incêndio", grupos: ["extintor"] },
 ];
 
 const padrao = (): ParametrosEquipamento => ({
   subcategorias: SUBCATEGORIAS_PADRAO.map((s) => ({ ...s })),
-  tipos: TIPOS_PADRAO.map((t) => ({ ...t })),
+  tipos: TIPOS_PADRAO.map((t) => ({ ...t, grupos: [...t.grupos] })),
 });
 
 const ehObjeto = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
@@ -44,7 +46,11 @@ function ler(storage: StorageLike): { dados: ParametrosEquipamento; legivel: boo
     const lido: unknown = JSON.parse(bruto);
     if (ehObjeto(lido) && Array.isArray(lido["subcategorias"]) && Array.isArray(lido["tipos"])) {
       const subcategorias = (lido["subcategorias"] as unknown[]).filter(ehObjeto) as unknown as SubcategoriaEquipamento[];
-      const tipos = (lido["tipos"] as unknown[]).filter(ehObjeto) as unknown as TipoEquipamento[];
+      // Tipo salvo antes dos grupos de campos técnicos: vale o padrão do mesmo id, ou nenhum grupo.
+      const tipos = (lido["tipos"] as unknown[]).filter(ehObjeto).map((t) => {
+        const doPadrao = TIPOS_PADRAO.find((p) => p.id === t["id"])?.grupos ?? [];
+        return { ...t, grupos: Array.isArray(t["grupos"]) ? (t["grupos"] as GrupoTecnico[]) : [...doPadrao] };
+      }) as unknown as TipoEquipamento[];
       return { dados: { subcategorias, tipos }, legivel: true };
     }
   } catch {
@@ -98,7 +104,10 @@ export function removerSubcategoria(id: string, storage: StorageLike = localStor
   });
 }
 
-export function salvarTipo(entrada: { id?: string; subcategoriaId: string; nome: string }, storage: StorageLike = localStorage): TipoEquipamento {
+export function salvarTipo(
+  entrada: { id?: string; subcategoriaId: string; nome: string; grupos?: string[] },
+  storage: StorageLike = localStorage,
+): TipoEquipamento {
   return alterar(storage, (d) => {
     if (!d.subcategorias.some((s) => s.id === entrada.subcategoriaId)) throw new Error("Escolha a subcategoria do tipo.");
     const nome = capitalizarTexto(entrada.nome);
@@ -107,16 +116,22 @@ export function salvarTipo(entrada: { id?: string; subcategoriaId: string; nome:
     if (entrada.id && indice < 0) throw new Error("Este tipo foi excluído; feche a janela e cadastre de novo, se for o caso.");
     // O nome do tipo é único no cadastro todo, para a escolha no cadastro do equipamento não ficar ambígua.
     if (d.tipos.some((t) => t.id !== entrada.id && chaveDoNome(t.nome) === chaveDoNome(nome))) throw new Error(`Já existe o tipo ${nome}.`);
-    const tipo = { id: entrada.id ?? novoId("tipo"), subcategoriaId: entrada.subcategoriaId, nome };
+    // Grupos de campos técnicos: sem informar na edição, ficam os que o tipo já tinha; novo sem informar, nenhum.
+    if (entrada.grupos?.some((g) => !(GRUPOS_TECNICOS as readonly string[]).includes(g))) throw new Error("Grupo de campos técnicos inválido.");
+    const grupos = entrada.grupos ? ([...new Set(entrada.grupos)] as GrupoTecnico[]) : (d.tipos[indice]?.grupos ?? []);
+    const tipo = { id: entrada.id ?? novoId("tipo"), subcategoriaId: entrada.subcategoriaId, nome, grupos };
     if (indice >= 0) d.tipos[indice] = tipo;
     else d.tipos.push(tipo);
     return tipo;
   });
 }
 
-export function removerTipo(id: string, storage: StorageLike = localStorage): void {
+// `emUso` diz quantos equipamentos usam o tipo (quem chama conhece os equipamentos): tipo em uso não se exclui.
+export function removerTipo(id: string, storage: StorageLike = localStorage, emUso: (tipoId: string) => number = () => 0): void {
   alterar(storage, (d) => {
     if (!d.tipos.some((t) => t.id === id)) throw new Error("Este tipo já foi excluído.");
+    const usos = emUso(id);
+    if (usos > 0) throw new Error(`Este tipo é usado por ${usos} ${usos === 1 ? "equipamento" : "equipamentos"}; troque o tipo deles antes de excluir.`);
     d.tipos = d.tipos.filter((t) => t.id !== id);
   });
 }
