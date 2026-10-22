@@ -244,3 +244,33 @@ test("padrão não cria grupo de tipo que não existe mais e avisa quantos ficar
   assert.deepEqual(cadastrarPadraoChecklist("vistoria", s), { criados: 14, semTipo: 2 });
   assert.ok(lerChecklistEquipamento(s).vistoria.grupos.every((g) => !g.tipos.includes("tipo-munck")));
 });
+
+test("editar sem mudar o texto não estraga siglas do padrão; texto novo continua capitalizado", async () => {
+  const { cadastrarPadraoManutencao } = await import("../src/lib/equipamentos-checklist.ts");
+  const s = memoria();
+  cadastrarPadraoManutencao(s);
+  const g = lerChecklistEquipamento(s).manutencao.grupos.find((x) => x.nome.startsWith("Compressor de ar: elétrica"));
+  assert.match(g.itens[1].nome, /ART de Engenheiro/);
+  const salvo = salvarGrupoChecklist("manutencao", { id: g.id, nome: g.nome, itens: g.itens.map((i) => i.nome).concat("novo item"), tipos: g.tipos }, s);
+  assert.equal(salvo.nome, g.nome);
+  assert.equal(salvo.itens[1].nome, g.itens[1].nome);
+  assert.match(salvo.itens[2].nome, /^Novo/);
+});
+
+test("não se tira de um grupo o tipo de um equipamento que o usa", () => {
+  const s = memoria();
+  const g = novoGrupo(s, "manutencao", { ...grupo("Freios"), tipos: ["tipo-munck", "tipo-empilhadeiras"] });
+  salvarAssociacao("manutencao", { modo: "criar", equipamentoId: "e1", tipoId: "tipo-munck", responsavel: null, itens: [{ grupoId: g.id, tipo: "avulso" }] }, s, new Date());
+  const tipoDe = (id) => (id === "e1" ? "tipo-munck" : undefined);
+  assert.throws(() => salvarGrupoChecklist("manutencao", { id: g.id, nome: g.nome, itens: g.itens.map((i) => i.nome), tipos: ["tipo-empilhadeiras"] }, s, undefined, tipoDe), /1 equipamento/);
+  salvarGrupoChecklist("manutencao", { id: g.id, nome: g.nome, itens: g.itens.map((i) => i.nome), tipos: ["tipo-munck"] }, s, undefined, tipoDe);
+});
+
+test("dado salvo com elemento quebrado é ilegível, não derruba a leitura", () => {
+  for (const ruim of [{ grupos: [null], associacoes: [] }, { grupos: [{ id: "g", nome: "x", itens: [] }], associacoes: [] }, { grupos: [], associacoes: [{ equipamentoId: "x" }] }]) {
+    const s = memoria();
+    s.setItem("gemape-demo-equipamentos-checklist", JSON.stringify({ manutencao: ruim }));
+    assert.deepEqual(lerChecklistEquipamento(s).manutencao, { grupos: [], associacoes: [] });
+    assert.throws(() => novoGrupo(s), /ilegíveis/i);
+  }
+});

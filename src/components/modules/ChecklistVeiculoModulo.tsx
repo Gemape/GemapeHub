@@ -168,7 +168,7 @@ export function ChecklistVeiculoModulo() {
   // o periódico traz os grupos da sua periodicidade; o avulso traz os "Não definida" (ou todos, se o veículo é de check list avulso).
   // Veículo sem associação: o avulso traz os grupos do tipo do veículo.
   const associacaoEscolhida = veiculoEscolhido ? associacaoDe(veiculoEscolhido) : undefined;
-  const comoAssociacao = (itens: { grupoId: string }[]) => gruposAssociadosDoVeiculo({ itens } as never, parametros.itensChecklistVeiculo);
+  const comoAssociacao = (itens: { grupoId: string; itensIds?: string[] }[]) => gruposAssociadosDoVeiculo({ itens } as never, parametros.itensChecklistVeiculo);
   const gruposDoVeiculo = !veiculoEscolhido
     ? []
     : avulsoNovo

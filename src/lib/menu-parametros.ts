@@ -136,6 +136,9 @@ export const MENU_EQUIPAMENTOS: readonly ItemMenu[] = [
   // Check list de manutenção e de vistoria: itens por tipo de equipamento e associação a cada equipamento.
   { titulo: "Check list de manutenção", url: "/cadastros/equipamentos-checklist", icone: "ClipboardCheck", search: { aba: "manutencao" } },
   { titulo: "Check list de vistoria", url: "/cadastros/equipamentos-checklist", icone: "ClipboardCheck", search: { aba: "vistoria" } },
+  // Como em Veículos: ações de manutenção e plano por equipamento, e os tipos de ocorrência.
+  { titulo: "Manutenção", url: "/cadastros/equipamentos-manutencao", icone: "Wrench" },
+  { titulo: "Tipos de ocorrência", url: "/cadastros/equipamentos-tipos-ocorrencia", icone: "ClipboardList" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.

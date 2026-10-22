@@ -51,7 +51,9 @@ type CampoExtra = "descricao" | "subitens" | "itens" | null;
 
 // Tela de lista de Parâmetros > Veículos (decisão 46): ações de manutenção (pai e subitens) e tipos de
 // ocorrência (nome e descrição). Clonar, Editar e Excluir seguem a decisão 45.
-function ListaVeiculos({
+// Também serve às listas de Parâmetros > Equipamentos (`eyebrow` troca o caminho no alto).
+export function ListaVeiculos({
+  eyebrow = "Parâmetros > Veículos",
   titulo,
   subtitulo,
   singular,
@@ -67,6 +69,7 @@ function ListaVeiculos({
   alertaPainel = false,
   onValidar,
 }: {
+  eyebrow?: string;
   titulo: string;
   subtitulo: string;
   singular: string;
@@ -136,7 +139,7 @@ function ListaVeiculos({
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          {!secao && <p className="text-eyebrow">Parâmetros &gt; Veículos</p>}
+          {!secao && <p className="text-eyebrow">{eyebrow}</p>}
           {secao ? <h2 className="text-xl font-bold">{titulo}</h2> : <h1 className="text-2xl font-bold">{titulo}</h1>}
           <p className="mt-1 text-sm text-muted-foreground">{subtitulo}</p>
         </div>

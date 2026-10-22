@@ -193,9 +193,11 @@ test("na janela Associar a periodicidade vem antes e vale para todos; os itens d
   const ordem = ["assoc-periodicidade", "Itens que compõem o check list"].map((t) => tela.indexOf(t));
   assert.ok(ordem[0] > 0 && ordem[0] < ordem[1]); // periodicidade antes da escolha dos itens
   assert.match(tela, /data-testid="associar-itens"/);
-  assert.match(tela, /id=\{`assoc-item-\$\{g\.id\}`\}/); // um checkbox por item
+  assert.match(tela, /id=\{`assoc-grupo-\$\{g\.id\}`\}/); // um checkbox por grupo
+  assert.match(tela, /id=\{`assoc-item-\$\{i\.id\}`\}/); // e um por item dentro dele (escolha item a item)
   assert.match(tela, /A periodicidade vale para todos os itens marcados/);
-  assert.match(tela, /aplicaveis\.filter\(\(g\) => marcados\.includes\(g\.id\)\)/); // só os marcados viram a associação
+  assert.match(tela, /escolha, item a item/);
+  assert.match(tela, /aplicaveis\.filter\(\(g\) => marcadosDoGrupo\(g\)\.length > 0\)/); // só os grupos com itens marcados viram a associação
   // a periodicidade não é por item: cada item marcado recebe a mesma
   assert.match(tela, /periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true/);
 });
@@ -221,7 +223,7 @@ test("Clonar, Editar e Excluir ficam só no cabeçalho de cada check list, não 
 test("Clonar abre com veículo, responsável, periodicidade e itens do original, e exige trocar o veículo (dec 156)", () => {
   const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
   assert.match(tela, /setVeiculoId\(a \? a\.veiculoId : ""\)/);
-  assert.match(tela, /setEscolhidos\(a \? daEscolhida\.map/);
+  assert.match(tela, /setEscolhidos\(a \? daEscolhida\.flatMap/);
   assert.match(tela, /v\.id === clonandoDe/);
   assert.match(tela, /veiculoId === clonandoDe/);
   assert.match(tela, /Escolha outro veículo para o clone/);
@@ -239,5 +241,5 @@ test("Editar ou Clonar um check list antigo com mais de uma periodicidade avisa 
   const tela = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
   assert.match(tela, /daEscolhida\.length < daAssociacao\.length/);
   assert.match(tela, /tinha mais de uma periodicidade/);
-  assert.match(tela, /setEscolhidos\(a \? daEscolhida\.map/);
+  assert.match(tela, /setEscolhidos\(a \? daEscolhida\.flatMap/);
 });

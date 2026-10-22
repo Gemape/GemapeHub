@@ -3,6 +3,7 @@ import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } 
 import { useEffect } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 
+import { MenuDaArea } from "@/components/layout/MenuDaArea";
 import { VisualizadorDocumento } from "@/components/layout/VisualizadorDocumento";
 import { Button } from "@/components/ui/button";
 import {
@@ -99,6 +100,7 @@ function LayoutAutenticado() {
                 <Link to="/inicio"><ArrowLeft className="mr-1 size-4" aria-hidden="true" />Voltar ao início</Link>
               </Button>
             )}
+            {!noInicio && <MenuDaArea />}
             </div>
             {/* Título da marca, centralizado no topo; no celular desce para uma linha própria. */}
             <div className="order-last col-span-2 text-center md:order-none md:col-span-1">

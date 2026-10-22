@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, Car, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Shirt, Truck, Users, Wrench } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ICONES } from "@/components/layout/AppSidebar";
 import { useAccess } from "@/lib/access-context";
@@ -44,6 +44,22 @@ function PaginaInicio() {
       return nova;
     });
 
+  // Clicar em qualquer lugar fora dos cartões (ou apertar Esc) recolhe os menus abertos.
+  useEffect(() => {
+    const fora = (e: PointerEvent) => {
+      if (!(e.target instanceof Element) || !e.target.closest("[data-cartao]")) setAbertos((a) => (a.size ? new Set() : a));
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAbertos((a) => (a.size ? new Set() : a));
+    };
+    document.addEventListener("pointerdown", fora);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", fora);
+      document.removeEventListener("keydown", esc);
+    };
+  }, []);
+
   return (
     <div className="fonte-manrope">
       {/* Sem título na tela: ela começa direto nos cartões. O título fica só para o leitor de tela. */}
@@ -68,7 +84,7 @@ function PaginaInicio() {
               );
               if (!c.itens) {
                 return (
-                  <li key={chave} className={larguraCartao}>
+                  <li key={chave} data-cartao className={larguraCartao}>
                     <Link to={c.url ?? "/inicio"} className={`flex flex-col ${classeCartao} ${classeFoco}`}>
                       {faixa}
                       <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
@@ -82,7 +98,7 @@ function PaginaInicio() {
               const aberto = abertos.has(chave);
               const idLista = `atalhos-${grupo.titulo}-${c.titulo}`;
               return (
-                <li key={chave} className={`${classeCartao} ${larguraCartao}`}>
+                <li key={chave} data-cartao className={`${classeCartao} ${larguraCartao}`}>
                   <button
                     type="button"
                     aria-expanded={aberto}

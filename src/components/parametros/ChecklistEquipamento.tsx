@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
@@ -19,6 +19,7 @@ import {
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
 import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
 import { useEmpregados } from "@/lib/hooks-gemape";
+import { useVersaoArmazenamento } from "@/lib/use-versao-armazenamento";
 
 // Parâmetros > Equipamentos > Check list (manutenção ou vistoria): no alto os grupos de itens, por tipo de equipamento; embaixo a
 // associação deles a cada equipamento. Segue Parâmetros > Veículos > Check list. Só modo demonstração (navegador).
@@ -27,9 +28,9 @@ const dataBr = (iso: string) => (iso ? new Date(iso).toLocaleDateString("pt-BR",
 const erroDe = (e: unknown, padrao: string) => (e instanceof Error ? e.message : padrao);
 
 function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; nomeFinalidade: string; versao: number; aoMudar: () => void }) {
-  void versao;
-  const grupos = lerChecklistEquipamento()[finalidade].grupos;
-  const tipos = lerParametrosEquipamento().tipos;
+  // Lido de novo só quando algo muda (versao), não a cada tecla digitada nas janelas.
+  const grupos = useMemo(() => lerChecklistEquipamento()[finalidade].grupos, [finalidade, versao]);
+  const tipos = useMemo(() => lerParametrosEquipamento().tipos, [versao]);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<GrupoChecklistEquipamento | null>(null);
   const [modelo, setModelo] = useState<GrupoChecklistEquipamento | null>(null);
@@ -51,7 +52,7 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
     e.preventDefault();
     if (trava.current) return;
     try {
-      salvarGrupoChecklist(finalidade, { ...(editando ? { id: editando.id } : {}), nome, itens: itens.split("\n"), tipos: escolhidos }, undefined, tipos.map((t) => t.id));
+      salvarGrupoChecklist(finalidade, { ...(editando ? { id: editando.id } : {}), nome, itens: itens.split("\n"), tipos: escolhidos }, undefined, tipos.map((t) => t.id), (id) => listarEquipamentos().find((e) => e.id === id)?.tipoId);
     } catch (erro) {
       toast.error(erroDe(erro, "Não foi possível salvar o grupo."));
       return;
@@ -171,15 +172,18 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
   );
 }
 
-type EscolhaGrupo = { marcado: boolean; tipo: TipoAssociacao; periodicidade: string };
+// `itens`: ids dos itens marcados do grupo (escolha item a item); o grupo entra no check list se tem ao menos um marcado.
+type EscolhaGrupo = { itens: string[]; tipo: TipoAssociacao; periodicidade: string };
 
 function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; versao: number; aoMudar: () => void }) {
-  void versao;
-  const { grupos, associacoes } = lerChecklistEquipamento()[finalidade];
-  const equipamentos = listarEquipamentos();
+  const { grupos, associacoes } = useMemo(() => lerChecklistEquipamento()[finalidade], [finalidade, versao]);
+  const equipamentos = useMemo(() => listarEquipamentos(), [versao]);
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
+  // equipamento da associação que está sendo clonada (null = não é clone)
+  const [clonandoDe, setClonandoDe] = useState<string | null>(null);
+  const clonando = clonandoDe !== null;
   const [equipamentoId, setEquipamentoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaGrupo>>({});
@@ -190,14 +194,26 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
   const livres = equipamentos.filter((e) => e.tipoId && (!associacoes.some((a) => a.equipamentoId === e.id) || e.id === editando));
   const escolhido = porId(equipamentoId);
   const aplicaveis = escolhido ? gruposAplicaveis(escolhido.tipoId, grupos) : [];
-  const escolhaDe = (id: string): EscolhaGrupo => escolhas[id] ?? { marcado: false, tipo: "periodico", periodicidade: "" };
+  const escolhaDe = (id: string): EscolhaGrupo => escolhas[id] ?? { itens: [], tipo: "periodico", periodicidade: "" };
+  // Só os itens que ainda existem no grupo contam como marcados.
+  const marcadosDe = (g: GrupoChecklistEquipamento) => g.itens.filter((i) => escolhaDe(g.id).itens.includes(i.id)).map((i) => i.id);
+  const alternarItem = (g: GrupoChecklistEquipamento, itemId: string, marcar: boolean) =>
+    mudar(g.id, { itens: marcar ? [...marcadosDe(g).filter((x) => x !== itemId), itemId] : marcadosDe(g).filter((x) => x !== itemId) });
   const mudar = (id: string, parcial: Partial<EscolhaGrupo>) => setEscolhas((atuais) => ({ ...atuais, [id]: { ...escolhaDe(id), ...parcial } }));
 
-  function abrir(a: AssociacaoChecklistEquipamento | null) {
-    setEditando(a?.equipamentoId ?? null);
-    setEquipamentoId(a?.equipamentoId ?? "");
+  // Clonar abre com responsável, grupos e itens do original, para outro equipamento (como em Veículos).
+  function abrir(a: AssociacaoChecklistEquipamento | null, clonar = false) {
+    if (a && !clonar && !porId(a.equipamentoId)) {
+      toast.error("Este equipamento foi removido; exclua a associação.");
+      return;
+    }
+    setClonandoDe(a && clonar ? a.equipamentoId : null);
+    setEditando(a && !clonar ? a.equipamentoId : null);
+    setEquipamentoId(a && !clonar ? a.equipamentoId : "");
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
-    setEscolhas(Object.fromEntries((a?.itens ?? []).map((i) => [i.grupoId, { marcado: true, tipo: i.tipo, periodicidade: i.tipo === "periodico" ? i.periodicidade : "" }])));
+    setEscolhas(Object.fromEntries((a?.itens ?? []).map((i) => [i.grupoId, {
+      itens: i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? [], tipo: i.tipo, periodicidade: i.tipo === "periodico" ? i.periodicidade : "",
+    }])));
     setAberto(true);
   }
 
@@ -212,15 +228,21 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
       return;
     }
     const emp = empregados.find((x) => x.id === responsavelId);
-    const atual = associacoes.find((a) => a.equipamentoId === editando)?.responsavel;
-    const responsavel = responsavelId === SEM_RESPONSAVEL ? null : emp ? { id: emp.id, nome: emp.nome } : atual && atual.id === responsavelId ? atual : null;
+    const atual = associacoes.find((a) => a.equipamentoId === (editando ?? clonandoDe))?.responsavel;
+    const achado = emp ? { id: emp.id, nome: emp.nome } : atual && atual.id === responsavelId ? atual : null;
+    // Responsável escolhido que não está mais na lista não vira "Não definido" sem aviso.
+    if (responsavelId !== SEM_RESPONSAVEL && !achado) {
+      toast.error("Não encontrei o responsável escolhido; escolha de novo.");
+      return;
+    }
+    const responsavel = responsavelId === SEM_RESPONSAVEL ? null : achado;
     try {
       salvarAssociacao(finalidade, {
         modo: editando ? "editar" : "criar",
         equipamentoId: escolhido.id,
         tipoId: escolhido.tipoId,
         responsavel,
-        itens: aplicaveis.filter((g) => escolhaDe(g.id).marcado).map((g) => ({ grupoId: g.id, tipo: escolhaDe(g.id).tipo, periodicidade: escolhaDe(g.id).periodicidade })),
+        itens: aplicaveis.filter((g) => marcadosDe(g).length > 0).map((g) => ({ grupoId: g.id, tipo: escolhaDe(g.id).tipo, periodicidade: escolhaDe(g.id).periodicidade, itensIds: marcadosDe(g) })),
       });
     } catch (erro) {
       toast.error(erroDe(erro, "Não foi possível salvar a associação."));
@@ -246,7 +268,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     aoMudar();
   }
 
-  const atualResponsavel = associacoes.find((a) => a.equipamentoId === editando)?.responsavel;
+  const atualResponsavel = associacoes.find((a) => a.equipamentoId === (editando ?? clonandoDe))?.responsavel;
   const opcoes = empregados.map((x) => ({ id: x.id, rotulo: x.matricula ? `${x.nome} · ${x.matricula}` : x.nome }));
   if (atualResponsavel && !opcoes.some((o) => o.id === atualResponsavel.id)) opcoes.push({ id: atualResponsavel.id, rotulo: `${atualResponsavel.nome} (atual)` });
 
@@ -281,7 +303,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
                   <tr className="bg-muted/50">
                     <td colSpan={4} className="px-3 py-2 font-semibold">{e ? rotulo(e) : "Equipamento removido"} <span className="font-normal text-muted-foreground">· responsável: {a.responsavel?.nome ?? NAO_DEFINIDO}</span></td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{dataBr(a.atualizadoEm)}</td>
-                    <td className="px-3 py-2"><AcoesLinha rotulo={e ? rotulo(e) : "equipamento"} onEditar={() => abrir(a)} onExcluir={() => excluir(a)} /></td>
+                    <td className="px-3 py-2"><AcoesLinha rotulo={e ? rotulo(e) : "equipamento"} onClonar={() => abrir(a, true)} onEditar={() => abrir(a)} onExcluir={() => excluir(a)} /></td>
                   </tr>
                   {listas.length === 0 && <tr><td colSpan={6} className="px-3 py-2 text-muted-foreground">Nenhum grupo habilitado existente.</td></tr>}
                   {listas.map((c) => (
@@ -292,7 +314,10 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
                         {c.tipo === "Livre" && <span className="block text-xs text-muted-foreground">livre: qualquer hora, qualquer pessoa</span>}
                       </td>
                       <td className="px-3 py-2">{c.obrigatorio}</td>
-                      <td className="px-3 py-2 text-muted-foreground" colSpan={3}>{c.grupos.map((g) => g.nome).join("; ")}</td>
+                      <td className="px-3 py-2 text-muted-foreground" colSpan={3}>{c.grupos.map((g) => {
+                        const total = grupos.find((x) => x.id === g.grupoId)?.itens.length;
+                        return g.itensIds && total ? `${g.nome} (${g.itensIds.length} de ${total} itens)` : g.nome;
+                      }).join("; ")}</td>
                     </tr>
                   ))}
                 </Fragment>
@@ -305,14 +330,14 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{editando ? "Editar itens de check list do equipamento" : "Associar itens de check list a um equipamento"}</DialogTitle>
-            <DialogDescription>Escolha o equipamento e o responsável, marque os grupos e diga se cada um é periódico ou avulso.</DialogDescription>
+            <DialogTitle>{editando ? "Editar itens de check list do equipamento" : clonando ? "Clonar itens de check list do equipamento" : "Associar itens de check list a um equipamento"}</DialogTitle>
+            <DialogDescription>Escolha o equipamento e o responsável, marque os grupos para trazer os itens, escolha item a item e diga se cada grupo é periódico ou avulso.</DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-equipamento">Equipamento</Label>
-                <Select value={equipamentoId} disabled={!!editando} onValueChange={(v) => { if (v) { setEquipamentoId(v); setEscolhas({}); } }}>
+                <Select value={equipamentoId} disabled={!!editando} onValueChange={(v) => { if (v) { setEquipamentoId(v); if (!clonando) setEscolhas({}); } }}>
                   <SelectTrigger id="assoc-equipamento"><SelectValue placeholder="Selecione o equipamento" /></SelectTrigger>
                   <SelectContent>{livres.map((e) => <SelectItem key={e.id} value={e.id}>{rotulo(e)}</SelectItem>)}</SelectContent>
                 </Select>
@@ -339,16 +364,25 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
                 <ul className="grid max-h-80 gap-2 overflow-y-auto">
                   {aplicaveis.map((g) => {
                     const c = escolhaDe(g.id);
+                    const marcados = marcadosDe(g);
+                    const estado = marcados.length === 0 ? false : marcados.length === g.itens.length ? true : "indeterminate";
                     return (
                       <li key={g.id} className="rounded-md border p-2">
                         <label className="flex cursor-pointer items-start gap-2 text-sm">
-                          <Checkbox className="mt-0.5" checked={c.marcado} onCheckedChange={(v) => mudar(g.id, { marcado: v === true })} aria-label={g.nome} />
-                          <span>
-                            <span className="font-medium">{g.nome}</span>
-                            <span className="block text-xs text-muted-foreground">{g.itens.map((i) => i.nome).join(" · ")}</span>
-                          </span>
+                          <Checkbox className="mt-0.5" checked={estado} onCheckedChange={(v) => mudar(g.id, { itens: v === true ? g.itens.map((i) => i.id) : [] })} aria-label={g.nome} />
+                          <span className="font-medium">{g.nome} <span className="font-normal text-muted-foreground">({marcados.length} de {g.itens.length})</span></span>
                         </label>
-                        {c.marcado && (
+                        <ul className="mt-1.5 space-y-1 pl-6" aria-label={`Itens de ${g.nome}`}>
+                          {g.itens.map((i) => (
+                            <li key={i.id}>
+                              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                                <Checkbox className="mt-0.5" checked={marcados.includes(i.id)} onCheckedChange={(v) => alternarItem(g, i.id, v === true)} aria-label={i.nome} />
+                                <span>{i.nome}</span>
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                        {marcados.length > 0 && (
                           <div className="mt-2 grid gap-2 pl-6 sm:grid-cols-2">
                             <Select value={c.tipo} onValueChange={(v) => v && mudar(g.id, { tipo: v as TipoAssociacao })}>
                               <SelectTrigger aria-label={`Tipo de ${g.nome}`}><SelectValue /></SelectTrigger>
@@ -385,8 +419,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
 }
 
 export function ChecklistEquipamento({ finalidade, aoEscolher }: { finalidade: FinalidadeChecklist | null; aoEscolher: (f: FinalidadeChecklist) => void }) {
-  const [versao, setVersao] = useState(0);
-  const aoMudar = () => setVersao((v) => v + 1);
+  const [versao, aoMudar] = useVersaoArmazenamento();
   const atual = FINALIDADES.find((f) => f.id === finalidade);
 
   if (!atual) {
