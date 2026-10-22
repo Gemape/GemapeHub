@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
@@ -27,9 +27,9 @@ const dataBr = (iso: string) => (iso ? new Date(iso).toLocaleDateString("pt-BR",
 const erroDe = (e: unknown, padrao: string) => (e instanceof Error ? e.message : padrao);
 
 function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; nomeFinalidade: string; versao: number; aoMudar: () => void }) {
-  void versao;
-  const grupos = lerChecklistEquipamento()[finalidade].grupos;
-  const tipos = lerParametrosEquipamento().tipos;
+  // Lido de novo só quando algo muda (versao), não a cada tecla digitada nas janelas.
+  const grupos = useMemo(() => lerChecklistEquipamento()[finalidade].grupos, [finalidade, versao]);
+  const tipos = useMemo(() => lerParametrosEquipamento().tipos, [versao]);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<GrupoChecklistEquipamento | null>(null);
   const [modelo, setModelo] = useState<GrupoChecklistEquipamento | null>(null);
@@ -51,7 +51,7 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
     e.preventDefault();
     if (trava.current) return;
     try {
-      salvarGrupoChecklist(finalidade, { ...(editando ? { id: editando.id } : {}), nome, itens: itens.split("\n"), tipos: escolhidos }, undefined, tipos.map((t) => t.id));
+      salvarGrupoChecklist(finalidade, { ...(editando ? { id: editando.id } : {}), nome, itens: itens.split("\n"), tipos: escolhidos }, undefined, tipos.map((t) => t.id), (id) => listarEquipamentos().find((e) => e.id === id)?.tipoId);
     } catch (erro) {
       toast.error(erroDe(erro, "Não foi possível salvar o grupo."));
       return;
@@ -174,9 +174,8 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
 type EscolhaGrupo = { marcado: boolean; tipo: TipoAssociacao; periodicidade: string };
 
 function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; versao: number; aoMudar: () => void }) {
-  void versao;
-  const { grupos, associacoes } = lerChecklistEquipamento()[finalidade];
-  const equipamentos = listarEquipamentos();
+  const { grupos, associacoes } = useMemo(() => lerChecklistEquipamento()[finalidade], [finalidade, versao]);
+  const equipamentos = useMemo(() => listarEquipamentos(), [versao]);
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
@@ -194,6 +193,10 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
   const mudar = (id: string, parcial: Partial<EscolhaGrupo>) => setEscolhas((atuais) => ({ ...atuais, [id]: { ...escolhaDe(id), ...parcial } }));
 
   function abrir(a: AssociacaoChecklistEquipamento | null) {
+    if (a && !porId(a.equipamentoId)) {
+      toast.error("Este equipamento foi removido; exclua a associação.");
+      return;
+    }
     setEditando(a?.equipamentoId ?? null);
     setEquipamentoId(a?.equipamentoId ?? "");
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
@@ -213,7 +216,13 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     }
     const emp = empregados.find((x) => x.id === responsavelId);
     const atual = associacoes.find((a) => a.equipamentoId === editando)?.responsavel;
-    const responsavel = responsavelId === SEM_RESPONSAVEL ? null : emp ? { id: emp.id, nome: emp.nome } : atual && atual.id === responsavelId ? atual : null;
+    const achado = emp ? { id: emp.id, nome: emp.nome } : atual && atual.id === responsavelId ? atual : null;
+    // Responsável escolhido que não está mais na lista não vira "Não definido" sem aviso.
+    if (responsavelId !== SEM_RESPONSAVEL && !achado) {
+      toast.error("Não encontrei o responsável escolhido; escolha de novo.");
+      return;
+    }
+    const responsavel = responsavelId === SEM_RESPONSAVEL ? null : achado;
     try {
       salvarAssociacao(finalidade, {
         modo: editando ? "editar" : "criar",

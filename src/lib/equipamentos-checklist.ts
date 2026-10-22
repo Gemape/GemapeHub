@@ -4,7 +4,7 @@
 // entram na Fase 2.
 import { GRUPOS_PADRAO_MANUTENCAO, type GrupoPadrao } from "./equipamentos-manutencao-padrao.ts";
 import { GRUPOS_PADRAO_VISTORIA } from "./equipamentos-vistoria-padrao.ts";
-import { lerParametrosEquipamento } from "./equipamentos-parametros.ts";
+import { chaveDoNome as chave, lerParametrosEquipamento } from "./equipamentos-parametros.ts";
 import { capitalizarTexto } from "./formatacao-cadastral.ts";
 
 export type FinalidadeChecklist = "manutencao" | "vistoria";
@@ -48,6 +48,15 @@ const vazio = (): ChecklistEquipamento => ({ manutencao: { grupos: [], associaco
 const ehObjeto = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 const ehPeriodicidade = (v: unknown): v is Periodicidade => PERIODICIDADES.includes(v as Periodicidade);
 
+const ehTexto = (v: unknown): v is string => typeof v === "string";
+const ehGrupo = (v: unknown) =>
+  ehObjeto(v) && ehTexto(v["id"]) && ehTexto(v["nome"]) && Array.isArray(v["tipos"]) && v["tipos"].every(ehTexto)
+  && Array.isArray(v["itens"]) && v["itens"].every((i) => ehObjeto(i) && ehTexto(i["id"]) && ehTexto(i["nome"]));
+const ehAssociacao = (v: unknown) =>
+  ehObjeto(v) && ehTexto(v["equipamentoId"]) && ehTexto(v["atualizadoEm"])
+  && (v["responsavel"] === null || (ehObjeto(v["responsavel"]) && ehTexto(v["responsavel"]["id"]) && ehTexto(v["responsavel"]["nome"])))
+  && Array.isArray(v["itens"]) && v["itens"].every((i) => ehObjeto(i) && ehTexto(i["grupoId"]) && ehTexto(i["tipo"]) && ehPeriodicidade(i["periodicidade"]) && typeof i["obrigatorio"] === "boolean");
+
 // Dado salvo ilegível nunca é sobrescrito: a leitura vem vazia, mas gravar por cima apagaria o que sobrou.
 function ler(storage: StorageLike): { dados: ChecklistEquipamento; legivel: boolean } {
   const bruto = storage.getItem(CHAVE);
@@ -59,7 +68,7 @@ function ler(storage: StorageLike): { dados: ChecklistEquipamento; legivel: bool
       for (const f of FINALIDADES) {
         const parte = lido[f.id];
         if (parte === undefined) continue;
-        if (!ehObjeto(parte) || !Array.isArray(parte["grupos"]) || !Array.isArray(parte["associacoes"])) return { dados: vazio(), legivel: false };
+        if (!ehObjeto(parte) || !Array.isArray(parte["grupos"]) || !Array.isArray(parte["associacoes"]) || !parte["grupos"].every(ehGrupo) || !parte["associacoes"].every(ehAssociacao)) return { dados: vazio(), legivel: false };
         dados[f.id] = { grupos: parte["grupos"] as GrupoChecklistEquipamento[], associacoes: parte["associacoes"] as AssociacaoChecklistEquipamento[] };
       }
       return { dados, legivel: true };
@@ -83,7 +92,6 @@ function alterar<T>(finalidade: string, storage: StorageLike, acao: (parte: Part
 }
 
 // Sem acento, sem maiúscula e sem espaço repetido: "Lança" e "lanca" são o mesmo nome.
-const chave = (nome: string) => nome.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("pt-BR").replace(/\s+/g, " ").trim();
 const novoId = () => crypto.randomUUID();
 
 export function salvarGrupoChecklist(
@@ -91,11 +99,16 @@ export function salvarGrupoChecklist(
   entrada: { id?: string; nome: string; itens: string[]; tipos: string[] },
   storage: StorageLike = localStorage,
   tiposValidos?: string[],
+  tipoDoEquipamento?: (equipamentoId: string) => string | undefined,
 ): GrupoChecklistEquipamento {
   return alterar(finalidade, storage, (parte) => {
-    const nome = capitalizarTexto(entrada.nome);
+    const atual = entrada.id ? parte.grupos.find((g) => g.id === entrada.id) : undefined;
+    // Texto igual ao já salvo não passa de novo pela capitalização: o padrão traz siglas (ART, GLP, CO2) que ela estragaria.
+    const mesmo = (texto: string, salvo: string | undefined) => (salvo !== undefined && texto.trim().replace(/\s+/g, " ") === salvo ? salvo : capitalizarTexto(texto));
+    const nome = mesmo(entrada.nome, atual?.nome);
     if (!nome) throw new Error("Informe o nome do grupo.");
-    const textos = entrada.itens.map((i) => capitalizarTexto(i)).filter(Boolean);
+    const salvos = new Map((atual?.itens ?? []).map((i) => [i.nome, i.nome]));
+    const textos = entrada.itens.map((i) => mesmo(i, salvos.get(i.trim().replace(/\s+/g, " ")))).filter(Boolean);
     if (textos.length === 0) throw new Error("Informe ao menos um item do grupo.");
     const vistos = new Set<string>();
     for (const t of textos) {
@@ -107,6 +120,13 @@ export function salvarGrupoChecklist(
     if (parte.grupos.some((g) => g.id !== entrada.id && chave(g.nome) === chave(nome))) throw new Error(`Já existe o grupo ${nome} neste check list.`);
     const tipos = [...new Set(entrada.tipos)];
     if (tiposValidos && tipos.some((t) => t !== TODOS_OS_TIPOS && !tiposValidos.includes(t))) throw new Error("Tipo de equipamento inválido: escolha só tipos que existem em Parâmetros Específicos.");
+    // Tirar um tipo do grupo deixaria equipamentos desse tipo com um grupo que não vale mais para eles.
+    if (tipoDoEquipamento && atual && !tipos.includes(TODOS_OS_TIPOS)) {
+      const presos = parte.associacoes.filter((a) => a.itens.some((i) => i.grupoId === atual.id) && !tipos.includes(tipoDoEquipamento(a.equipamentoId) ?? ""));
+      if (presos.length > 0) {
+        throw new Error(`Este grupo está associado a ${presos.length} ${presos.length === 1 ? "equipamento" : "equipamentos"} de um tipo que você está tirando; remova a associação antes.`);
+      }
+    }
     // Na edição os itens que continuam mantêm o id.
     const anteriores = new Map((parte.grupos[indice]?.itens ?? []).map((i) => [chave(i.nome), i.id]));
     const grupo: GrupoChecklistEquipamento = {
