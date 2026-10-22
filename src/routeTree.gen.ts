@@ -22,6 +22,7 @@ import { Route as AuthenticatedEpiCadastrarRouteImport } from './routes/_authent
 import { Route as AuthenticatedEpiFichaRouteImport } from './routes/_authenticated/epi-ficha'
 import { Route as AuthenticatedEquipamentosRouteImport } from './routes/_authenticated/equipamentos'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
+import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedOcorrenciasRouteImport } from './routes/_authenticated/ocorrencias'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedUniformesRouteImport } from './routes/_authenticated/uniformes'
@@ -126,6 +127,11 @@ const AuthenticatedFerramentasRoute =
     path: '/ferramentas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOcorrenciasRoute =
   AuthenticatedOcorrenciasRouteImport.update({
     id: '/ocorrencias',
@@ -339,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
+  '/inicio': typeof AuthenticatedInicioRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/uniformes': typeof AuthenticatedUniformesRoute
@@ -387,6 +394,7 @@ export interface FileRoutesByTo {
   '/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
+  '/inicio': typeof AuthenticatedInicioRoute
   '/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/uniformes': typeof AuthenticatedUniformesRoute
@@ -436,6 +444,7 @@ export interface FileRoutesById {
   '/_authenticated/epi-ficha': typeof AuthenticatedEpiFichaRoute
   '/_authenticated/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRoute
+  '/_authenticated/inicio': typeof AuthenticatedInicioRoute
   '/_authenticated/ocorrencias': typeof AuthenticatedOcorrenciasRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/uniformes': typeof AuthenticatedUniformesRoute
@@ -486,6 +495,7 @@ export interface FileRouteTypes {
     | '/epi-ficha'
     | '/equipamentos'
     | '/ferramentas'
+    | '/inicio'
     | '/ocorrencias'
     | '/relatorios'
     | '/uniformes'
@@ -534,6 +544,7 @@ export interface FileRouteTypes {
     | '/epi-ficha'
     | '/equipamentos'
     | '/ferramentas'
+    | '/inicio'
     | '/ocorrencias'
     | '/relatorios'
     | '/uniformes'
@@ -582,6 +593,7 @@ export interface FileRouteTypes {
     | '/_authenticated/epi-ficha'
     | '/_authenticated/equipamentos'
     | '/_authenticated/ferramentas'
+    | '/_authenticated/inicio'
     | '/_authenticated/ocorrencias'
     | '/_authenticated/relatorios'
     | '/_authenticated/uniformes'
@@ -715,6 +727,13 @@ declare module '@tanstack/react-router' {
       path: '/ferramentas'
       fullPath: '/ferramentas'
       preLoaderRoute: typeof AuthenticatedFerramentasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inicio': {
+      id: '/_authenticated/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof AuthenticatedInicioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ocorrencias': {
@@ -1005,6 +1024,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEpiFichaRoute: typeof AuthenticatedEpiFichaRoute
   AuthenticatedEquipamentosRoute: typeof AuthenticatedEquipamentosRoute
   AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRoute
+  AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
   AuthenticatedOcorrenciasRoute: typeof AuthenticatedOcorrenciasRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedUniformesRoute: typeof AuthenticatedUniformesRoute
@@ -1044,6 +1064,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEpiFichaRoute: AuthenticatedEpiFichaRoute,
   AuthenticatedEquipamentosRoute: AuthenticatedEquipamentosRoute,
   AuthenticatedFerramentasRoute: AuthenticatedFerramentasRoute,
+  AuthenticatedInicioRoute: AuthenticatedInicioRoute,
   AuthenticatedOcorrenciasRoute: AuthenticatedOcorrenciasRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedUniformesRoute: AuthenticatedUniformesRoute,

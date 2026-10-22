@@ -62,7 +62,7 @@ function FormularioAuth() {
         if (!(perfil as { ativo: boolean } | null)?.ativo) {
           await supabase.auth.signOut(); throw new Error("Seu acesso não está ativo. Contate o administrador.");
         }
-        navigate({ to: "/dashboard", replace: true });
+        navigate({ to: "/inicio", replace: true });
       }
     } catch (error) { toast.error(error instanceof Error ? error.message : "Não foi possível concluir"); }
     finally { setCarregando(false); }
@@ -70,7 +70,7 @@ function FormularioAuth() {
   if (demo) return <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4 [background-attachment:fixed]">
     <LogoEntrada />
     <Card className="w-full max-w-md bg-white/85! shadow-2xl backdrop-blur-xl"><CardHeader><CardTitle className="text-2xl">Modo demonstração</CardTitle><p className="text-sm text-muted-foreground">Explore o sistema com dados salvos neste navegador. O acesso real será configurado após a aprovação.</p></CardHeader>
-      <CardContent><Button className="w-full" onClick={() => { void supabase.auth.signInWithPassword({ email: "demo@local", password: "demo" }).then(() => navigate({ to: "/dashboard", replace: true })); }}>Acessar demonstração</Button></CardContent>
+      <CardContent><Button className="w-full" onClick={() => { void supabase.auth.signInWithPassword({ email: "demo@local", password: "demo" }).then(() => navigate({ to: "/inicio", replace: true })); }}>Acessar demonstração</Button></CardContent>
     </Card>
   </main>;
   return <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 p-4 [background-attachment:fixed]">

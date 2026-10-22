@@ -23,6 +23,7 @@ import {
   Building2,
   Car,
   Forklift,
+  House,
   HardHat,
   LayoutDashboard,
   Shirt,
@@ -88,7 +89,10 @@ const SEPARADOR_GRUPO = "mt-3 border-t border-white/20 pt-5";
 const grupos = [
   {
     titulo: "Visão geral",
-    itens: [{ titulo: "Dashboard", url: "/dashboard", icone: LayoutDashboard }],
+    itens: [
+      { titulo: "Início", url: "/inicio", icone: House },
+      { titulo: "Dashboard", url: "/dashboard", icone: LayoutDashboard },
+    ],
   },
   {
     titulo: "Módulos",
