@@ -15,6 +15,7 @@ import {
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { EmpresaProvider, TODAS, useEmpresa } from "@/lib/empresa-context";
+import logoSite from "@/assets/logo-gemape-site.png";
 import { AccessProvider, ROTULO_PAPEL, type Perfil } from "@/lib/access-context";
 import { variaveisSupabaseFaltando } from "@/lib/supabase-env";
 
@@ -84,8 +85,13 @@ function LayoutAutenticado() {
       <SidebarProvider>
         <main className="flex min-h-screen w-full min-w-0 flex-col">
           <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 glass border-x-0 border-t-0 px-4 py-3 rounded-none">
-            <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-              <img src={`${import.meta.env["BASE_URL"] ?? "/"}logo-relatorio-viagens.png`} alt="GEMAPE, 40 anos, máquinas e peças" className="h-10 w-auto mix-blend-multiply" />
+            <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-36 shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+              <div
+                className="logo-marca-site"
+                role="img"
+                aria-label="GEMAPE, 40 anos, máquinas e peças"
+                style={{ maskImage: `url(${logoSite})`, WebkitMaskImage: `url(${logoSite})` }}
+              />
             </Link>
             {!noInicio && (
               <Button asChild variant="outline" size="sm">
