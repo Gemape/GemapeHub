@@ -221,3 +221,16 @@ test("padrão de manutenção: um grupo por rotina, só no tipo certo, sem dupli
   const g = lerChecklistEquipamento(s).manutencao.grupos.find((x) => x.tipos.includes("tipo-munck"));
   assert.deepEqual(g.tipos, ["tipo-munck"]);
 });
+
+test("padrão de vistoria: um grupo por rotina no tipo certo, só na vistoria, sem duplicar ao repetir", async () => {
+  const { cadastrarPadraoVistoria } = await import("../src/lib/equipamentos-checklist.ts");
+  const { GRUPOS_PADRAO_VISTORIA } = await import("../src/lib/equipamentos-vistoria-padrao.ts");
+  const { TIPOS_PADRAO } = await import("../src/lib/equipamentos-parametros.ts");
+  assert.equal(GRUPOS_PADRAO_VISTORIA.length, 16);
+  assert.ok(GRUPOS_PADRAO_VISTORIA.every((g) => TIPOS_PADRAO.some((t) => t.id === g.tipoId) && g.itens.length > 0));
+  const s = memoria();
+  assert.equal(cadastrarPadraoVistoria(s).criados, 16);
+  assert.equal(lerChecklistEquipamento(s).vistoria.grupos.length, 16);
+  assert.equal(lerChecklistEquipamento(s).manutencao.grupos.length, 0);
+  assert.equal(cadastrarPadraoVistoria(s).criados, 0);
+});
