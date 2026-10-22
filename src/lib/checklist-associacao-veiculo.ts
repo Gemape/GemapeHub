@@ -13,7 +13,8 @@ export const NAO_DEFINIDO = "Não definido";
 export const PERIODICIDADES_ASSOCIACAO = ["Diária", "Semanal", "Quinzenal", "Mensal", NAO_DEFINIDA] as const;
 export type PeriodicidadeAssociacao = (typeof PERIODICIDADES_ASSOCIACAO)[number];
 
-export type ItemAssociacao = { grupoId: string; tipo: TipoAssociacao; periodicidade: PeriodicidadeAssociacao; obrigatorio: boolean };
+// `itensIds`: só esses itens do grupo entram no check list (escolha item a item); sem ele, valem todos os itens do grupo.
+export type ItemAssociacao = { grupoId: string; tipo: TipoAssociacao; periodicidade: PeriodicidadeAssociacao; obrigatorio: boolean; itensIds?: string[] };
 export type ResponsavelAssociacao = { id: string; nome: string };
 // Cada grupo habilitado é de um dos dois check lists do veículo (decisão 119): o periódico, mais apurado, com periodicidade
 // definida, ou o avulso, só para registrar itens mais simples, sem periodicidade (guardada como "Não definida").
@@ -29,7 +30,7 @@ export type AssociacaoChecklist = {
   itens: ItemAssociacao[];
   atualizadoEm: string;
 };
-export type EntradaItemAssociacao = { grupoId: string; tipo?: TipoAssociacao; periodicidade: string; obrigatorio?: boolean };
+export type EntradaItemAssociacao = { grupoId: string; tipo?: TipoAssociacao; periodicidade: string; obrigatorio?: boolean; itensIds?: string[] };
 
 const storagePadrao = (): StorageLike | null =>
   typeof localStorage === "undefined" ? null : localStorage;
@@ -57,7 +58,8 @@ function lerComEstado(storage: StorageLike | null): { lista: AssociacaoChecklist
             // Sem tipo gravado (antes da decisão 119): periódico se tem periodicidade definida, senão avulso.
             const tipo: TipoAssociacao = ehTipoAssociacao(i.tipo) ? i.tipo : i.periodicidade === NAO_DEFINIDA ? "avulso" : "periodico";
             // Decisão 136: o tipo define a obrigatoriedade (periódico é obrigatório e entra no KPI; avulso não), mesmo em dados gravados antes.
-            return { grupoId: String(i.grupoId), tipo, periodicidade: i.periodicidade, obrigatorio: tipo === "periodico" };
+            const ids = Array.isArray(i.itensIds) ? i.itensIds.map(String) : [];
+            return { grupoId: String(i.grupoId), tipo, periodicidade: i.periodicidade, obrigatorio: tipo === "periodico", ...(ids.length > 0 ? { itensIds: ids } : {}) };
           }),
       }));
     // Entrada que não deu para ler: a lista aparece sem ela, mas nenhuma gravação passa por cima.
@@ -96,13 +98,15 @@ function validar(
   const validos = itens.map((i) => {
     if (vistos.has(i.grupoId)) throw new Error("Grupo de itens repetido na associação.");
     vistos.add(i.grupoId);
+    if (i.itensIds && i.itensIds.length === 0) throw new Error("Marque ao menos um item de cada grupo habilitado.");
+    const itensIds = i.itensIds ? { itensIds: [...new Set(i.itensIds)] } : {};
     // O avulso não tem periodicidade (fica "Não definida"); o periódico precisa de uma periodicidade definida.
     const tipo: TipoAssociacao = i.tipo === "avulso" ? "avulso" : "periodico";
-    if (tipo === "avulso") return { grupoId: i.grupoId, tipo, periodicidade: NAO_DEFINIDA as PeriodicidadeAssociacao, obrigatorio: false };
+    if (tipo === "avulso") return { grupoId: i.grupoId, tipo, periodicidade: NAO_DEFINIDA as PeriodicidadeAssociacao, obrigatorio: false, ...itensIds };
     if (!ehPeriodicidade(i.periodicidade) || i.periodicidade === NAO_DEFINIDA) {
       throw new Error("Escolha a periodicidade (Diária, Semanal, Quinzenal ou Mensal) de cada grupo periódico, ou marque o grupo como Avulso.");
     }
-    return { grupoId: i.grupoId, tipo, periodicidade: i.periodicidade, obrigatorio: true };
+    return { grupoId: i.grupoId, tipo, periodicidade: i.periodicidade, obrigatorio: true, ...itensIds };
   });
   return { responsavel: responsavel ? { id: responsavel.id, nome: responsavel.nome.trim() } : null, itens: validos };
 }
@@ -171,7 +175,7 @@ export type ChecklistAssociado = {
   responsavelNome: string | null;
   tipo: TipoChecklistAssociado;
   obrigatorio: "Sim" | "Não" | "Parcial";
-  grupos: { grupoId: string; nome: string; obrigatorio: boolean }[];
+  grupos: { grupoId: string; nome: string; obrigatorio: boolean; itensIds?: string[] }[];
 };
 
 export const textoDoNome = (t: string) => t.trim().replace(/\s+/g, " ");
@@ -194,7 +198,7 @@ export function checklistsDaAssociacao(
       responsavelNome,
       tipo: definida ? "Periódico" : responsavelNome ? "Avulso" : "Livre",
       obrigatorio: sims === 0 ? "Não" : sims === deste.length ? "Sim" : "Parcial",
-      grupos: deste.map((i) => ({ grupoId: i.grupoId, nome: i.nome, obrigatorio: i.obrigatorio })),
+      grupos: deste.map((i) => ({ grupoId: i.grupoId, nome: i.nome, obrigatorio: i.obrigatorio, ...(i.itensIds ? { itensIds: i.itensIds } : {}) })),
     } satisfies ChecklistAssociado];
   });
 }

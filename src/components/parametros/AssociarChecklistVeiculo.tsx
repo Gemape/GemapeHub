@@ -96,7 +96,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const [veiculoId, setVeiculoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [periodicidade, setPeriodicidade] = useState("");
-  // Itens (grupos) escolhidos para compor o check list (decisão 148); null = ainda não mexeu, vale todos os que se aplicam.
+  // Itens escolhidos, um a um, dentro dos grupos que valem para o veículo; null = ainda não mexeu, vale todos os itens dos grupos que se aplicam.
   const [escolhidos, setEscolhidos] = useState<string[] | null>(null);
   const [travado, setTravado] = useState(false);
   const salvando = useRef(false);
@@ -123,9 +123,16 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const subcategoriaIdEscolhida = subcategoriaEscolhida?.id ?? null;
   // Os itens vêm do tipo do veículo, já antes de escolher a periodicidade; Avulso traz os itens simples, para qualquer veículo (decisão 155).
   const aplicaveis = veiculoEscolhido ? gruposAplicaveis(grupos, subcategoriaIdEscolhida, periodicidade === AVULSO) : [];
-  const marcados = escolhidos === null ? aplicaveis.map((g) => g.id) : escolhidos.filter((id) => aplicaveis.some((g) => g.id === id));
+  const todosItensIds = aplicaveis.flatMap((g) => g.itens.map((i) => i.id));
+  const marcados = escolhidos === null ? todosItensIds : escolhidos.filter((id) => todosItensIds.includes(id));
+  const marcadosDoGrupo = (g: { itens: { id: string }[] }) => g.itens.filter((i) => marcados.includes(i.id)).map((i) => i.id);
   const alternarItem = (id: string, marcar: boolean) =>
     setEscolhidos(marcar ? [...marcados.filter((m) => m !== id), id] : marcados.filter((m) => m !== id));
+  // Marcar ou desmarcar o grupo marca ou desmarca todos os itens dele.
+  const alternarGrupo = (g: { itens: { id: string }[] }, marcar: boolean) => {
+    const ids = g.itens.map((i) => i.id);
+    setEscolhidos(marcar ? [...marcados.filter((m) => !ids.includes(m)), ...ids] : marcados.filter((m) => !ids.includes(m)));
+  };
 
   // Ao fechar a tela de cadastro, a lista de veículos ou de empregados da janela é lida de novo e o que foi escolhido continua.
   const aoFecharVeiculos = (a: boolean) => { setVeiculosAberto(a); if (!a) void queryClient.invalidateQueries({ queryKey: ["veiculos-checklist-assoc"] }); };
@@ -158,7 +165,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     if (a && daEscolhida.length < daAssociacao.length) {
       toast.warning(`Este check list tinha mais de uma periodicidade. A janela mostra só ${escolhida}; ao salvar, os itens das outras periodicidades saem.`);
     }
-    setEscolhidos(a ? daEscolhida.map((i) => i.grupoId) : null);
+    setEscolhidos(a ? daEscolhida.flatMap((i) => i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? []) : null);
     setAberto(true);
   }
 
@@ -193,9 +200,14 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     }
     // Os itens são os grupos escolhidos entre os que valem para o tipo do veículo: periódico (obrigatórios) ou avulso (grupos Avulso, não obrigatórios); a periodicidade é uma só para todos.
     const avulso = periodicidade === AVULSO;
-    const itens: EntradaItemAssociacao[] = aplicaveis.filter((g) => marcados.includes(g.id)).map((g) => (
-      avulso ? { grupoId: g.id, tipo: "avulso", periodicidade: "", obrigatorio: false } : { grupoId: g.id, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true }
-    ));
+    // Grupo com todos os itens marcados vale inteiro (os itens que entrarem nele depois também); com parte, guarda só os escolhidos.
+    const itens: EntradaItemAssociacao[] = aplicaveis.filter((g) => marcadosDoGrupo(g).length > 0).map((g) => {
+      const ids = marcadosDoGrupo(g);
+      const escolha = ids.length === g.itens.length ? {} : { itensIds: ids };
+      return avulso
+        ? { grupoId: g.id, tipo: "avulso", periodicidade: "", obrigatorio: false, ...escolha }
+        : { grupoId: g.id, tipo: "periodico", periodicidade: periodicidade as PeriodicidadeAssociacao, obrigatorio: true, ...escolha };
+    });
     const ok = executar(
       () => (editando
         ? editarAssociacao(editando, { veiculoId, responsavel: escolhido, itens }, undefined, undefined, grupos.map((g) => g.id))
@@ -344,7 +356,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
             <fieldset className="space-y-2" data-testid="associar-itens">
               <legend className="text-sm font-medium">Itens que compõem o check list</legend>
               <p className="text-xs text-muted-foreground">
-                A periodicidade vale para todos os itens marcados; ela não é escolhida item a item.
+                Marque o grupo para trazer a lista de itens dele e escolha, item a item, os que compõem o check list. A periodicidade vale para todos os itens marcados.
               </p>
               <p className="text-xs">{linkCadastro("Cadastrar itens de check list", () => setItensAberto(true))}</p>
               {!veiculoEscolhido ? (
@@ -354,24 +366,35 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
               ) : (
                 <>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{marcados.length} de {aplicaveis.length} itens marcados</span>
+                    <span className="text-muted-foreground">{marcados.length} de {todosItensIds.length} itens marcados</span>
                     <div className="flex gap-1">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setEscolhidos(aplicaveis.map((g) => g.id))}>Marcar todos</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEscolhidos(todosItensIds)}>Marcar todos</Button>
                       <Button type="button" variant="ghost" size="sm" onClick={() => setEscolhidos([])}>Desmarcar todos</Button>
                     </div>
                   </div>
                   <ul className="grid max-h-64 gap-2 overflow-y-auto md:grid-cols-2">
-                    {aplicaveis.map((g) => (
-                      <li key={g.id} className="rounded-md border p-2">
-                        <label htmlFor={`assoc-item-${g.id}`} className="flex cursor-pointer items-start gap-2 text-sm">
-                          <Checkbox id={`assoc-item-${g.id}`} className="mt-0.5" checked={marcados.includes(g.id)} onCheckedChange={(v) => alternarItem(g.id, v === true)} />
-                          <span>
-                            <span className="font-medium">{g.nome}</span>
-                            <span className="block text-xs text-muted-foreground">{g.itens.map((i) => i.nome).join(" · ")}</span>
-                          </span>
-                        </label>
-                      </li>
-                    ))}
+                    {aplicaveis.map((g) => {
+                      const doGrupo = marcadosDoGrupo(g);
+                      const estado = doGrupo.length === 0 ? false : doGrupo.length === g.itens.length ? true : "indeterminate";
+                      return (
+                        <li key={g.id} className="rounded-md border p-2">
+                          <label htmlFor={`assoc-grupo-${g.id}`} className="flex cursor-pointer items-start gap-2 text-sm">
+                            <Checkbox id={`assoc-grupo-${g.id}`} className="mt-0.5" checked={estado} onCheckedChange={(v) => alternarGrupo(g, v === true)} />
+                            <span className="font-medium">{g.nome} <span className="font-normal text-muted-foreground">({doGrupo.length} de {g.itens.length})</span></span>
+                          </label>
+                          <ul className="mt-1.5 space-y-1 pl-6" aria-label={`Itens de ${g.nome}`}>
+                            {g.itens.map((i) => (
+                              <li key={i.id}>
+                                <label htmlFor={`assoc-item-${i.id}`} className="flex cursor-pointer items-start gap-2 text-sm">
+                                  <Checkbox id={`assoc-item-${i.id}`} className="mt-0.5" checked={marcados.includes(i.id)} onCheckedChange={(v) => alternarItem(i.id, v === true)} />
+                                  <span>{i.nome}</span>
+                                </label>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </>
               )}

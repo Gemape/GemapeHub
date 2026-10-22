@@ -171,7 +171,8 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
   );
 }
 
-type EscolhaGrupo = { marcado: boolean; tipo: TipoAssociacao; periodicidade: string };
+// `itens`: ids dos itens marcados do grupo (escolha item a item); o grupo entra no check list se tem ao menos um marcado.
+type EscolhaGrupo = { itens: string[]; tipo: TipoAssociacao; periodicidade: string };
 
 function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; versao: number; aoMudar: () => void }) {
   const { grupos, associacoes } = useMemo(() => lerChecklistEquipamento()[finalidade], [finalidade, versao]);
@@ -189,7 +190,11 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
   const livres = equipamentos.filter((e) => e.tipoId && (!associacoes.some((a) => a.equipamentoId === e.id) || e.id === editando));
   const escolhido = porId(equipamentoId);
   const aplicaveis = escolhido ? gruposAplicaveis(escolhido.tipoId, grupos) : [];
-  const escolhaDe = (id: string): EscolhaGrupo => escolhas[id] ?? { marcado: false, tipo: "periodico", periodicidade: "" };
+  const escolhaDe = (id: string): EscolhaGrupo => escolhas[id] ?? { itens: [], tipo: "periodico", periodicidade: "" };
+  // Só os itens que ainda existem no grupo contam como marcados.
+  const marcadosDe = (g: GrupoChecklistEquipamento) => g.itens.filter((i) => escolhaDe(g.id).itens.includes(i.id)).map((i) => i.id);
+  const alternarItem = (g: GrupoChecklistEquipamento, itemId: string, marcar: boolean) =>
+    mudar(g.id, { itens: marcar ? [...marcadosDe(g).filter((x) => x !== itemId), itemId] : marcadosDe(g).filter((x) => x !== itemId) });
   const mudar = (id: string, parcial: Partial<EscolhaGrupo>) => setEscolhas((atuais) => ({ ...atuais, [id]: { ...escolhaDe(id), ...parcial } }));
 
   function abrir(a: AssociacaoChecklistEquipamento | null) {
@@ -200,7 +205,9 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     setEditando(a?.equipamentoId ?? null);
     setEquipamentoId(a?.equipamentoId ?? "");
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
-    setEscolhas(Object.fromEntries((a?.itens ?? []).map((i) => [i.grupoId, { marcado: true, tipo: i.tipo, periodicidade: i.tipo === "periodico" ? i.periodicidade : "" }])));
+    setEscolhas(Object.fromEntries((a?.itens ?? []).map((i) => [i.grupoId, {
+      itens: i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? [], tipo: i.tipo, periodicidade: i.tipo === "periodico" ? i.periodicidade : "",
+    }])));
     setAberto(true);
   }
 
@@ -229,7 +236,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
         equipamentoId: escolhido.id,
         tipoId: escolhido.tipoId,
         responsavel,
-        itens: aplicaveis.filter((g) => escolhaDe(g.id).marcado).map((g) => ({ grupoId: g.id, tipo: escolhaDe(g.id).tipo, periodicidade: escolhaDe(g.id).periodicidade })),
+        itens: aplicaveis.filter((g) => marcadosDe(g).length > 0).map((g) => ({ grupoId: g.id, tipo: escolhaDe(g.id).tipo, periodicidade: escolhaDe(g.id).periodicidade, itensIds: marcadosDe(g) })),
       });
     } catch (erro) {
       toast.error(erroDe(erro, "Não foi possível salvar a associação."));
@@ -301,7 +308,10 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
                         {c.tipo === "Livre" && <span className="block text-xs text-muted-foreground">livre: qualquer hora, qualquer pessoa</span>}
                       </td>
                       <td className="px-3 py-2">{c.obrigatorio}</td>
-                      <td className="px-3 py-2 text-muted-foreground" colSpan={3}>{c.grupos.map((g) => g.nome).join("; ")}</td>
+                      <td className="px-3 py-2 text-muted-foreground" colSpan={3}>{c.grupos.map((g) => {
+                        const total = grupos.find((x) => x.id === g.grupoId)?.itens.length;
+                        return g.itensIds && total ? `${g.nome} (${g.itensIds.length} de ${total} itens)` : g.nome;
+                      }).join("; ")}</td>
                     </tr>
                   ))}
                 </Fragment>
@@ -315,7 +325,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{editando ? "Editar itens de check list do equipamento" : "Associar itens de check list a um equipamento"}</DialogTitle>
-            <DialogDescription>Escolha o equipamento e o responsável, marque os grupos e diga se cada um é periódico ou avulso.</DialogDescription>
+            <DialogDescription>Escolha o equipamento e o responsável, marque os grupos para trazer os itens, escolha item a item e diga se cada grupo é periódico ou avulso.</DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -348,16 +358,25 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
                 <ul className="grid max-h-80 gap-2 overflow-y-auto">
                   {aplicaveis.map((g) => {
                     const c = escolhaDe(g.id);
+                    const marcados = marcadosDe(g);
+                    const estado = marcados.length === 0 ? false : marcados.length === g.itens.length ? true : "indeterminate";
                     return (
                       <li key={g.id} className="rounded-md border p-2">
                         <label className="flex cursor-pointer items-start gap-2 text-sm">
-                          <Checkbox className="mt-0.5" checked={c.marcado} onCheckedChange={(v) => mudar(g.id, { marcado: v === true })} aria-label={g.nome} />
-                          <span>
-                            <span className="font-medium">{g.nome}</span>
-                            <span className="block text-xs text-muted-foreground">{g.itens.map((i) => i.nome).join(" · ")}</span>
-                          </span>
+                          <Checkbox className="mt-0.5" checked={estado} onCheckedChange={(v) => mudar(g.id, { itens: v === true ? g.itens.map((i) => i.id) : [] })} aria-label={g.nome} />
+                          <span className="font-medium">{g.nome} <span className="font-normal text-muted-foreground">({marcados.length} de {g.itens.length})</span></span>
                         </label>
-                        {c.marcado && (
+                        <ul className="mt-1.5 space-y-1 pl-6" aria-label={`Itens de ${g.nome}`}>
+                          {g.itens.map((i) => (
+                            <li key={i.id}>
+                              <label className="flex cursor-pointer items-start gap-2 text-sm">
+                                <Checkbox className="mt-0.5" checked={marcados.includes(i.id)} onCheckedChange={(v) => alternarItem(g, i.id, v === true)} aria-label={i.nome} />
+                                <span>{i.nome}</span>
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                        {marcados.length > 0 && (
                           <div className="mt-2 grid gap-2 pl-6 sm:grid-cols-2">
                             <Select value={c.tipo} onValueChange={(v) => v && mudar(g.id, { tipo: v as TipoAssociacao })}>
                               <SelectTrigger aria-label={`Tipo de ${g.nome}`}><SelectValue /></SelectTrigger>

@@ -127,14 +127,17 @@ export function gruposDoTipoChecklist(
 }
 
 // Grupos do check list de um veículo: só os habilitados na associação dele (Parâmetros > Veículos > Associar
-// itens de check list a um veículo), na ordem da associação; grupo apagado ou sem itens fica de fora.
+// itens de check list a um veículo), na ordem da associação; grupo apagado ou sem itens fica de fora. Quando a associação
+// escolheu item a item (`itensIds`), o grupo vem só com esses itens.
 export function gruposAssociadosDoVeiculo(
   associacao: Pick<AssociacaoChecklist, "itens"> | null | undefined,
   grupos: GrupoChecklistVeiculo[],
 ): GrupoChecklistVeiculo[] {
   return (associacao?.itens ?? []).flatMap((i) => {
     const grupo = grupos.find((g) => g.id === i.grupoId);
-    return grupo && grupo.itens.length > 0 ? [grupo] : [];
+    if (!grupo) return [];
+    const itens = i.itensIds ? grupo.itens.filter((x) => i.itensIds!.includes(x.id)) : grupo.itens;
+    return itens.length > 0 ? [{ ...grupo, itens }] : [];
   });
 }
 

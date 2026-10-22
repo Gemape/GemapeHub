@@ -29,7 +29,8 @@ export const TIPOS_ASSOCIACAO: readonly { id: TipoAssociacao; nome: string }[] =
   { id: "periodico", nome: "Periódico" },
   { id: "avulso", nome: "Avulso" },
 ];
-export type ItemAssociacao = { grupoId: string; tipo: TipoAssociacao; periodicidade: Periodicidade; obrigatorio: boolean };
+// `itensIds`: só esses itens do grupo entram no check list (escolha item a item); sem ele, valem todos os itens do grupo.
+export type ItemAssociacao = { grupoId: string; tipo: TipoAssociacao; periodicidade: Periodicidade; obrigatorio: boolean; itensIds?: string[] };
 export type ResponsavelAssociacao = { id: string; nome: string };
 export type AssociacaoChecklistEquipamento = {
   equipamentoId: string;
@@ -39,7 +40,7 @@ export type AssociacaoChecklistEquipamento = {
 };
 export type ParteChecklist = { grupos: GrupoChecklistEquipamento[]; associacoes: AssociacaoChecklistEquipamento[] };
 export type ChecklistEquipamento = Record<FinalidadeChecklist, ParteChecklist>;
-export type EntradaItemAssociacao = { grupoId: string; tipo?: string; periodicidade?: string };
+export type EntradaItemAssociacao = { grupoId: string; tipo?: string; periodicidade?: string; itensIds?: string[] };
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-equipamentos-checklist";
@@ -55,7 +56,8 @@ const ehGrupo = (v: unknown) =>
 const ehAssociacao = (v: unknown) =>
   ehObjeto(v) && ehTexto(v["equipamentoId"]) && ehTexto(v["atualizadoEm"])
   && (v["responsavel"] === null || (ehObjeto(v["responsavel"]) && ehTexto(v["responsavel"]["id"]) && ehTexto(v["responsavel"]["nome"])))
-  && Array.isArray(v["itens"]) && v["itens"].every((i) => ehObjeto(i) && ehTexto(i["grupoId"]) && ehTexto(i["tipo"]) && ehPeriodicidade(i["periodicidade"]) && typeof i["obrigatorio"] === "boolean");
+  && Array.isArray(v["itens"]) && v["itens"].every((i) => ehObjeto(i) && ehTexto(i["grupoId"]) && ehTexto(i["tipo"]) && ehPeriodicidade(i["periodicidade"]) && typeof i["obrigatorio"] === "boolean"
+    && (i["itensIds"] === undefined || (Array.isArray(i["itensIds"]) && i["itensIds"].every(ehTexto))));
 
 // Dado salvo ilegível nunca é sobrescrito: a leitura vem vazia, mas gravar por cima apagaria o que sobrou.
 function ler(storage: StorageLike): { dados: ChecklistEquipamento; legivel: boolean } {
@@ -175,12 +177,17 @@ export function salvarAssociacao(
       const grupo = parte.grupos.find((g) => g.id === i.grupoId);
       if (!grupo) throw new Error("Um grupo de itens não existe mais no check list. Remova-o e salve de novo.");
       if (gruposAplicaveis(entrada.tipoId, [grupo]).length === 0) throw new Error(`O grupo ${grupo.nome} não vale para o tipo deste equipamento.`);
+      // Escolha item a item: só itens que o grupo tem, ao menos um; com todos eles, o grupo vale inteiro (itens novos entram sozinhos).
+      if (i.itensIds && i.itensIds.length === 0) throw new Error(`Marque ao menos um item do grupo ${grupo.nome}.`);
+      if (i.itensIds?.some((id) => !grupo.itens.some((x) => x.id === id))) throw new Error(`Um item escolhido não existe mais no grupo ${grupo.nome}.`);
+      const escolhidos = [...new Set(i.itensIds ?? [])];
+      const itensIds = i.itensIds && escolhidos.length < grupo.itens.length ? { itensIds: escolhidos } : {};
       // O avulso não tem periodicidade e não é obrigatório; o periódico precisa de uma periodicidade definida e é obrigatório.
-      if (i.tipo === "avulso") return { grupoId: i.grupoId, tipo: "avulso", periodicidade: NAO_DEFINIDA, obrigatorio: false };
+      if (i.tipo === "avulso") return { grupoId: i.grupoId, tipo: "avulso", periodicidade: NAO_DEFINIDA, obrigatorio: false, ...itensIds };
       if (!ehPeriodicidade(i.periodicidade) || i.periodicidade === NAO_DEFINIDA) {
         throw new Error("Escolha a periodicidade (Diária, Semanal, Quinzenal ou Mensal) de cada grupo periódico, ou marque o grupo como Avulso.");
       }
-      return { grupoId: i.grupoId, tipo: "periodico", periodicidade: i.periodicidade, obrigatorio: true };
+      return { grupoId: i.grupoId, tipo: "periodico", periodicidade: i.periodicidade, obrigatorio: true, ...itensIds };
     });
     const indice = parte.associacoes.findIndex((a) => a.equipamentoId === entrada.equipamentoId);
     if (entrada.modo === "criar" && indice >= 0) throw new Error("Este equipamento já tem itens de check list associados.");
@@ -239,7 +246,7 @@ export type ChecklistAssociado = {
   responsavelNome: string | null;
   tipo: TipoChecklistAssociado;
   obrigatorio: "Sim" | "Não" | "Parcial";
-  grupos: { grupoId: string; nome: string; obrigatorio: boolean }[];
+  grupos: { grupoId: string; nome: string; obrigatorio: boolean; itensIds?: string[] }[];
 };
 
 const textoDoNome = (t: string) => t.trim().replace(/\s+/g, " ");
@@ -266,7 +273,7 @@ export function checklistsDaAssociacao(
       responsavelNome,
       tipo: definida ? "Periódico" : responsavelNome ? "Avulso" : "Livre",
       obrigatorio: sims === 0 ? "Não" : sims === deste.length ? "Sim" : "Parcial",
-      grupos: deste.map((i) => ({ grupoId: i.grupoId, nome: i.nome, obrigatorio: i.obrigatorio })),
+      grupos: deste.map((i) => ({ grupoId: i.grupoId, nome: i.nome, obrigatorio: i.obrigatorio, ...(i.itensIds ? { itensIds: i.itensIds } : {}) })),
     } satisfies ChecklistAssociado];
   });
 }
