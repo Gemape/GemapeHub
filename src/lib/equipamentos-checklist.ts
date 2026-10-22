@@ -2,6 +2,7 @@
 // check lists independentes, o de manutenção e o de vistoria, cada um com os seus grupos e as suas associações. Segue o modelo de
 // Parâmetros > Veículos > Check list (decisões 74, 116, 119 e 136). Fase 1: só no navegador, em modo demonstração; as tabelas
 // entram na Fase 2.
+import { GRUPOS_PADRAO_MANUTENCAO } from "./equipamentos-manutencao-padrao.ts";
 import { capitalizarTexto } from "./formatacao-cadastral.ts";
 
 export type FinalidadeChecklist = "manutencao" | "vistoria";
@@ -177,6 +178,20 @@ export function salvarAssociacao(
 export function removerAssociacao(finalidade: string, equipamentoId: string, storage: StorageLike = localStorage): void {
   alterar(finalidade, storage, (parte) => {
     parte.associacoes = parte.associacoes.filter((a) => a.equipamentoId !== equipamentoId);
+  });
+}
+
+// "Cadastrar padrão": cria os grupos de manutenção que ainda não existem (por nome); os que já existem, mesmo editados, ficam como estão.
+export function cadastrarPadraoManutencao(storage: StorageLike = localStorage): { criados: number } {
+  return alterar("manutencao", storage, (parte) => {
+    let criados = 0;
+    for (const p of GRUPOS_PADRAO_MANUTENCAO) {
+      // Texto do padrão entra como foi escrito (siglas como ART, GLP e CO2 não passam pela capitalização automática).
+      if (parte.grupos.some((g) => chave(g.nome) === chave(p.nome))) continue;
+      parte.grupos.push({ id: novoId(), nome: p.nome, itens: p.itens.map((t) => ({ id: novoId(), nome: t })), tipos: [p.tipoId] });
+      criados++;
+    }
+    return { criados };
   });
 }
 

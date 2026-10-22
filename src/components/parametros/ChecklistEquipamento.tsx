@@ -12,7 +12,7 @@ import { Table } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS } from "@/lib/empresa-context";
 import {
-  checklistsDaAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
+  cadastrarPadraoManutencao, checklistsDaAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
   removerAssociacao, removerGrupoChecklist, salvarAssociacao, salvarGrupoChecklist, TODOS_OS_TIPOS,
   type AssociacaoChecklistEquipamento, type FinalidadeChecklist, type GrupoChecklistEquipamento, type TipoAssociacao,
 } from "@/lib/equipamentos-checklist";
@@ -63,6 +63,16 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
     setTimeout(() => { trava.current = false; }, 400);
   }
 
+  function padrao() {
+    try {
+      const { criados } = cadastrarPadraoManutencao();
+      toast.success(criados === 0 ? "As ações de manutenção padrão já estão cadastradas." : `${criados} ações de manutenção padrão cadastradas.`);
+      aoMudar();
+    } catch (erro) {
+      toast.error(erroDe(erro, "Não foi possível cadastrar o padrão."));
+    }
+  }
+
   function excluir(g: GrupoChecklistEquipamento) {
     if (!confirm(`Excluir o grupo ${g.nome}?`)) return;
     try {
@@ -87,7 +97,10 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
           <h2 className="text-xl font-bold">Itens check list</h2>
           <p className="mt-1 text-sm text-muted-foreground">Os grupos de itens do check list de {nomeFinalidade.toLowerCase()}, cada um para os tipos de equipamento a que se aplica.</p>
         </div>
-        <Button requiresWrite onClick={() => abrir(null, false)}>Cadastrar grupo do check list</Button>
+        <div className="flex flex-wrap gap-2">
+          {finalidade === "manutencao" && <Button requiresWrite variant="outline" onClick={padrao}>Cadastrar padrão</Button>}
+          <Button requiresWrite onClick={() => abrir(null, false)}>Cadastrar grupo do check list</Button>
+        </div>
       </header>
       <section className="panel overflow-x-auto p-0">
         <Table className="w-full text-sm">
