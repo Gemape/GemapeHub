@@ -24,7 +24,7 @@ test("a tela não tem painéis que existiam só para dar leitura sobre o céu", 
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {
   assert.match(inicio, /bg-primary\/10/);
   assert.match(inicio, /Clique para acessar/);
-  assert.match(inicio, /lg:grid-cols-3/);
+  assert.match(inicio, /lg:w-\[calc\(25%/);
 });
 
 test("a tela inicial não mostra mais o texto de título (Início / Gestão de Patrimônio): começa direto nos cartões", () => {

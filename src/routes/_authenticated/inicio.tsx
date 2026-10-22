@@ -18,6 +18,8 @@ const ICONES_CARTAO: Record<IconeInicio, typeof Car> = {
 const classeCartao =
   "overflow-hidden rounded-lg bg-card shadow-sm ring-1 ring-border transition hover:shadow-md motion-reduce:transition-none";
 const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+// Quatro cartões por linha no desktop; a última linha, se incompleta, fica centralizada.
+const larguraCartao = "w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.75rem)]";
 const SECOES: readonly SecaoInicio[] = ["Módulo", "Parâmetros"];
 
 function AtalhoDoCartao({ sub }: { sub: SubitemInicio }) {
@@ -43,14 +45,12 @@ function PaginaInicio() {
     });
 
   return (
-    <div className="space-y-8">
+    <div>
       {/* Sem título na tela: ela começa direto nos cartões. O título fica só para o leitor de tela. */}
       <h1 className="sr-only">Início</h1>
-      {gruposDoInicio(isAdmin).map((grupo) => (
-        <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="space-y-3">
-          <h2 id={`grupo-${grupo.titulo}`} className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{grupo.titulo}</h2>
-          <ul className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {grupo.cartoes.map((c) => {
+      {/* Uma grade só, quatro por linha: os grupos de gruposDoInicio dão a ordem, sem faixa de título entre eles (a linha não se parte). */}
+      <ul className="flex flex-wrap items-start justify-center gap-4">
+            {gruposDoInicio(isAdmin).flatMap((grupo) => grupo.cartoes.map((c) => ({ grupo, c }))).map(({ grupo, c }) => {
               const Icone = ICONES_CARTAO[c.icone];
               const chave = `${grupo.titulo}/${c.titulo}`;
               const faixa = (
@@ -60,7 +60,7 @@ function PaginaInicio() {
               );
               if (!c.itens) {
                 return (
-                  <li key={chave}>
+                  <li key={chave} className={larguraCartao}>
                     <Link to={c.url ?? "/inicio"} className={`group flex flex-col ${classeCartao} ${classeFoco}`}>
                       {faixa}
                       <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
@@ -74,7 +74,7 @@ function PaginaInicio() {
               const aberto = abertos.has(chave);
               const idLista = `atalhos-${grupo.titulo}-${c.titulo}`;
               return (
-                <li key={chave} className={classeCartao}>
+                <li key={chave} className={`${classeCartao} ${larguraCartao}`}>
                   <button
                     type="button"
                     aria-expanded={aberto}
@@ -112,9 +112,7 @@ function PaginaInicio() {
                 </li>
               );
             })}
-          </ul>
-        </section>
-      ))}
+      </ul>
     </div>
   );
 }

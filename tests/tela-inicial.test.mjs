@@ -15,12 +15,11 @@ const AREAS = "Módulos e parâmetros";
 const daSecao = (c, secao) => c.itens.filter((i) => i.secao === secao);
 const titulos = (itens) => itens.map((i) => i.titulo);
 
-test("a tela inicial tem os grupos: Visão geral, Módulos e parâmetros (um cartão por área) e Cadastros", () => {
+test("a tela inicial tem os grupos: Módulos e parâmetros (um cartão por área, com o Dashboard) e Cadastros (com Gerais)", () => {
   const g = gruposDoInicio(true);
-  assert.deepEqual(g.map((x) => x.titulo), ["Visão geral", AREAS, "Cadastros"]);
-  assert.deepEqual(titulos(g[0].cartoes), ["Dashboard"]);
-  assert.deepEqual(titulos(g[1].cartoes), ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos", "Gerais"]);
-  assert.deepEqual(titulos(g[2].cartoes), ["Empresas", "Empregados", "Fornecedores", "Clientes"]);
+  assert.deepEqual(g.map((x) => x.titulo), [AREAS, "Cadastros"]);
+  assert.deepEqual(titulos(g[0].cartoes), ["Dashboard", "EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos"]);
+  assert.deepEqual(titulos(g[1].cartoes), ["Gerais", "Empresas", "Empregados", "Fornecedores", "Clientes"]);
 });
 
 test("Gerais só aparece para o Administrador, como no menu lateral", () => {
@@ -31,12 +30,12 @@ test("Gerais só aparece para o Administrador, como no menu lateral", () => {
 });
 
 test("cartões com submenus se abrem no próprio cartão; os sem submenu abrem a tela direto", () => {
-  for (const t of ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos", "Gerais"]) {
-    const c = cartao(true, AREAS, t);
+  for (const [g, t] of [[AREAS, "EPIs"], [AREAS, "Uniformes"], [AREAS, "Ferramentas"], [AREAS, "Veículos"], [AREAS, "Viagens"], [AREAS, "Equipamentos"], ["Cadastros", "Gerais"]]) {
+    const c = cartao(true, g, t);
     assert.ok(c.itens?.length > 1, t);
     assert.equal(c.url, undefined, t);
   }
-  for (const [g, t] of [["Visão geral", "Dashboard"], ["Cadastros", "Empresas"], ["Cadastros", "Empregados"], ["Cadastros", "Fornecedores"], ["Cadastros", "Clientes"]]) {
+  for (const [g, t] of [[AREAS, "Dashboard"], ["Cadastros", "Empresas"], ["Cadastros", "Empregados"], ["Cadastros", "Fornecedores"], ["Cadastros", "Clientes"]]) {
     const c = cartao(true, g, t);
     assert.ok(c.url, `${g} > ${t}`);
     assert.equal(c.itens, undefined, `${g} > ${t}`);
@@ -51,7 +50,7 @@ test("cada cartão junta o módulo e os parâmetros da área, separados por seç
     assert.deepEqual(c.itens.map((i) => i.secao), [...daSecao(c, "Módulo"), ...daSecao(c, "Parâmetros")].map((i) => i.secao), t);
   }
   assert.equal(daSecao(cartao(true, AREAS, "Viagens"), "Parâmetros").length, 0);
-  assert.equal(daSecao(cartao(true, AREAS, "Gerais"), "Módulo").length, 0);
+  assert.equal(daSecao(cartao(true, "Cadastros", "Gerais"), "Módulo").length, 0);
   assert.equal(gruposDoInicio(true).flatMap((g) => g.cartoes).filter((c) => c.titulo === "Veículos").length, 1);
   assert.match(pagina, /SECOES/);
   assert.match(pagina, /aria-label=\{secao\}/);
@@ -73,7 +72,7 @@ test("os submenus de módulo são as abas do módulo, as mesmas do menu lateral,
 
 test("os submenus de parâmetros são os itens do menu de cada grupo, com Cadastrar Ficha de EPI dentro de EPI", () => {
   const par = (t) => titulos(daSecao(cartao(true, AREAS, t), "Parâmetros"));
-  assert.deepEqual(par("Gerais"), titulos(MENU_GERAIS));
+  assert.deepEqual(titulos(daSecao(cartao(true, "Cadastros", "Gerais"), "Parâmetros")), titulos(MENU_GERAIS));
   assert.deepEqual(par("EPIs"), ["Cadastrar EPI", "Cadastrar Ficha de EPI", "Parâmetros Específicos", "Tamanho e Medidas de Produto"]);
   assert.deepEqual(par("Uniformes"), titulos(MENU_UNIFORMES));
   assert.deepEqual(par("Ferramentas"), titulos(MENU_FERRAMENTAS));
@@ -105,7 +104,7 @@ test("o login leva para a tela inicial, e o Dashboard continua acessível pelo c
     assert.match(s, /to: "\/inicio"/, f);
     assert.doesNotMatch(s, /to: "\/dashboard"/, f);
   }
-  assert.equal(cartao(true, "Visão geral", "Dashboard").url, "/dashboard");
+  assert.equal(cartao(true, AREAS, "Dashboard").url, "/dashboard");
 });
 
 const layout = ler("routes/_authenticated/route.tsx");
@@ -127,7 +126,7 @@ test("a tela mostra cartões com ícone, título e Clique para acessar, só os d
   assert.match(pagina, /gruposDoInicio\(isAdmin\)/);
   assert.match(pagina, /Clique para acessar/);
   assert.match(pagina, /focus-visible:ring/);
-  assert.match(pagina, /lg:grid-cols-3/);
+  assert.match(pagina, /lg:w-\[calc\(25%/);
   assert.doesNotMatch(pagina, /dangerouslySetInnerHTML|innerHTML/);
 });
 
