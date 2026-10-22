@@ -4,6 +4,7 @@ import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
 import { TABELAS_EPI, TABELAS_UNIFORME, duplicadoNoCatalogo, editarEpiCatalogo, excluirEpiCatalogo, sincronizarEstoqueEpis, travasDoItem, type TabelasCatalogo } from "../../lib/epi-catalogo.ts";
 import { aplicarSeparacao, opcoesDaSeparacao } from "../../lib/epi-separar-tamanhos.ts";
 import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
+import { prepararDadosDeTeste } from "../../lib/dados-teste/aplicar.ts";
 import {
   controlaModulo,
   controlaTamanho,
@@ -20,7 +21,7 @@ let ultimoInstante = 0;
 const instanteNovo = () => new Date((ultimoInstante = Math.max(Date.now(), ultimoInstante + 1))).toISOString();
 const empresa = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração", cnpj: "00.000.000/0001-00", rua: "Rua Exemplo", numero: "100", bairro: "Centro", cep: "01000-000", cidade: "São Paulo", estado: "SP", status: "Ativa", created_at: agora };
 const usuario = { id: "admin-demo", email: "admin@demo.local" };
-const dadosIniciais: Record<string, Linha[]> = {
+export const dadosIniciais: Record<string, Linha[]> = {
   perfis: [{ id: usuario.id, papel: "admin", ativo: true }], empresas: [empresa],
   empregados: [{ id: "emp-demo", empresa_id: empresa.id, nome: "Maria da Silva", cpf: "000.000.000-00", cargo: "Técnica", matricula: "1001", ativo: true }],
   epis: [{ id: "epi-demo", empresa_id: empresa.id, nome: "Capacete de segurança", codigo_sku: "EPI-0001", categoria: "Capacete", subcategoria_id: "sub-epi-capacete", ca: "12345", estoque_atual: 12, estoque_minimo: 5, status: "Ativo", preco_unitario: 85, created_at: agora }],
@@ -43,6 +44,9 @@ const lerDados = (): Record<string, Linha[]> => {
     return clone(dadosIniciais);
   }
 };
+// Dados de teste (3 registros por cadastro): gravados no armazenamento local uma vez por versão, antes de qualquer leitura, só no modo demonstração.
+// `import.meta.env` vale `false` na produção e a chamada some do pacote; sem janela (testes em Node) não faz nada.
+if (typeof window !== "undefined" && import.meta.env?.["VITE_DEMO_MODE"] !== "false") prepararDadosDeTeste(window.localStorage, dadosIniciais);
 const dados = lerDados();
 const persistirDados = () => {
   if (typeof window !== "undefined") window.localStorage.setItem(chaveArmazenamento, JSON.stringify(dados));

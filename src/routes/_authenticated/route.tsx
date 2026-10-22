@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 
 import { MenuDaArea } from "@/components/layout/MenuDaArea";
@@ -19,6 +19,11 @@ import { EmpresaProvider, TODAS, useEmpresa } from "@/lib/empresa-context";
 import logoSite from "@/assets/logo-gemape-site.png";
 import { AccessProvider, ROTULO_PAPEL, type Perfil } from "@/lib/access-context";
 import { variaveisSupabaseFaltando } from "@/lib/supabase-env";
+
+// Menu Restaurar e Limpar dados de teste: só existe no modo demonstração (na produção, a condição é falsa na compilação e o código nem é gerado).
+const MenuDadosDeTeste = import.meta.env["VITE_DEMO_MODE"] !== "false"
+  ? lazy(() => import("@/components/layout/MenuDadosDeTeste").then((m) => ({ default: m.MenuDadosDeTeste })))
+  : null;
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -109,6 +114,7 @@ function LayoutAutenticado() {
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
             <div className="flex items-center justify-end gap-2">
+              {MenuDadosDeTeste && <Suspense fallback={null}><MenuDadosDeTeste /></Suspense>}
               <FiltroEmpresa />
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <><a className="text-xs underline" href="/auth?password=update">Trocar senha</a>
               <Button variant="ghost" size="sm" onClick={sair}>
