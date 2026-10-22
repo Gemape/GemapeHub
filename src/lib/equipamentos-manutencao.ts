@@ -153,6 +153,7 @@ export function salvarPlano(
 
 export function removerPlano(equipamentoId: string, storage: StorageLike = localStorage): void {
   alterar(storage, (d) => {
+    if (!d.planos.some((p) => p.equipamentoId === equipamentoId)) throw new Error("Este plano já foi excluído.");
     d.planos = d.planos.filter((p) => p.equipamentoId !== equipamentoId);
   });
 }

@@ -87,6 +87,7 @@ function validar(
   responsavel: ResponsavelAssociacao | null,
   itens: EntradaItemAssociacao[],
   gruposValidos?: string[],
+  itensDosGrupos?: Record<string, string[]>,
 ): { responsavel: ResponsavelAssociacao | null; itens: ItemAssociacao[] } {
   if (!veiculoId) throw new Error("Selecione o veículo.");
   if (responsavel && (!responsavel.id || !responsavel.nome.trim())) throw new Error("Responsável inválido: escolha um empregado ou deixe Não definido.");
@@ -99,6 +100,9 @@ function validar(
     if (vistos.has(i.grupoId)) throw new Error("Grupo de itens repetido na associação.");
     vistos.add(i.grupoId);
     if (i.itensIds && i.itensIds.length === 0) throw new Error("Marque ao menos um item de cada grupo habilitado.");
+    if (i.itensIds && itensDosGrupos && i.itensIds.some((id) => !itensDosGrupos[i.grupoId]?.includes(id))) {
+      throw new Error("Um item escolhido não existe mais no grupo. Feche a janela, abra de novo e escolha os itens.");
+    }
     const itensIds = i.itensIds ? { itensIds: [...new Set(i.itensIds)] } : {};
     // O avulso não tem periodicidade (fica "Não definida"); o periódico precisa de uma periodicidade definida.
     const tipo: TipoAssociacao = i.tipo === "avulso" ? "avulso" : "periodico";
@@ -118,8 +122,9 @@ export function criarAssociacao(
   storage = storagePadrao(),
   agora = new Date(),
   gruposValidos?: string[],
+  itensDosGrupos?: Record<string, string[]>,
 ): AssociacaoChecklist {
-  const v = validar(veiculoId, responsavel, itens, gruposValidos);
+  const v = validar(veiculoId, responsavel, itens, gruposValidos, itensDosGrupos);
   const associacao: AssociacaoChecklist = { veiculoId, ...v, atualizadoEm: agora.toISOString() };
   alterar(storage, (lista) => {
     if (lista.some((a) => a.veiculoId === veiculoId)) throw new Error("Este veículo já tem itens de check list associados.");
@@ -136,8 +141,9 @@ export function editarAssociacao(
   storage = storagePadrao(),
   agora = new Date(),
   gruposValidos?: string[],
+  itensDosGrupos?: Record<string, string[]>,
 ): AssociacaoChecklist {
-  const v = validar(novo.veiculoId, novo.responsavel, novo.itens, gruposValidos);
+  const v = validar(novo.veiculoId, novo.responsavel, novo.itens, gruposValidos, itensDosGrupos);
   const associacao: AssociacaoChecklist = { veiculoId: novo.veiculoId, ...v, atualizadoEm: agora.toISOString() };
   alterar(storage, (lista) => {
     if (!lista.some((a) => a.veiculoId === veiculoIdAtual)) throw new Error("Associação não encontrada.");

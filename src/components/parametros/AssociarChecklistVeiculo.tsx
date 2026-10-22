@@ -200,6 +200,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     }
     // Os itens são os grupos escolhidos entre os que valem para o tipo do veículo: periódico (obrigatórios) ou avulso (grupos Avulso, não obrigatórios); a periodicidade é uma só para todos.
     const avulso = periodicidade === AVULSO;
+    const itensDosGrupos = Object.fromEntries(grupos.map((g) => [g.id, g.itens.map((i) => i.id)]));
     // Grupo com todos os itens marcados vale inteiro (os itens que entrarem nele depois também); com parte, guarda só os escolhidos.
     const itens: EntradaItemAssociacao[] = aplicaveis.filter((g) => marcadosDoGrupo(g).length > 0).map((g) => {
       const ids = marcadosDoGrupo(g);
@@ -210,8 +211,8 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     });
     const ok = executar(
       () => (editando
-        ? editarAssociacao(editando, { veiculoId, responsavel: escolhido, itens }, undefined, undefined, grupos.map((g) => g.id))
-        : criarAssociacao(veiculoId, escolhido, itens, undefined, undefined, grupos.map((g) => g.id))),
+        ? editarAssociacao(editando, { veiculoId, responsavel: escolhido, itens }, undefined, undefined, grupos.map((g) => g.id), itensDosGrupos)
+        : criarAssociacao(veiculoId, escolhido, itens, undefined, undefined, grupos.map((g) => g.id), itensDosGrupos)),
       "Itens de check list associados ao veículo.",
     );
     if (ok) setAberto(false);

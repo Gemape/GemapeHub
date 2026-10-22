@@ -47,10 +47,10 @@ function PaginaInicio() {
   // Clicar em qualquer lugar fora dos cartões (ou apertar Esc) recolhe os menus abertos.
   useEffect(() => {
     const fora = (e: PointerEvent) => {
-      if (!(e.target instanceof Element) || !e.target.closest("[data-cartao]")) setAbertos(new Set());
+      if (!(e.target instanceof Element) || !e.target.closest("[data-cartao]")) setAbertos((a) => (a.size ? new Set() : a));
     };
     const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAbertos(new Set());
+      if (e.key === "Escape") setAbertos((a) => (a.size ? new Set() : a));
     };
     document.addEventListener("pointerdown", fora);
     document.addEventListener("keydown", esc);

@@ -19,6 +19,7 @@ import {
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
 import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
 import { useEmpregados } from "@/lib/hooks-gemape";
+import { useVersaoArmazenamento } from "@/lib/use-versao-armazenamento";
 
 // Parâmetros > Equipamentos > Check list (manutenção ou vistoria): no alto os grupos de itens, por tipo de equipamento; embaixo a
 // associação deles a cada equipamento. Segue Parâmetros > Veículos > Check list. Só modo demonstração (navegador).
@@ -180,7 +181,9 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
-  const [clonando, setClonando] = useState(false);
+  // equipamento da associação que está sendo clonada (null = não é clone)
+  const [clonandoDe, setClonandoDe] = useState<string | null>(null);
+  const clonando = clonandoDe !== null;
   const [equipamentoId, setEquipamentoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
   const [escolhas, setEscolhas] = useState<Record<string, EscolhaGrupo>>({});
@@ -204,7 +207,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
       toast.error("Este equipamento foi removido; exclua a associação.");
       return;
     }
-    setClonando(clonar);
+    setClonandoDe(a && clonar ? a.equipamentoId : null);
     setEditando(a && !clonar ? a.equipamentoId : null);
     setEquipamentoId(a && !clonar ? a.equipamentoId : "");
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
@@ -225,7 +228,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
       return;
     }
     const emp = empregados.find((x) => x.id === responsavelId);
-    const atual = associacoes.find((a) => a.equipamentoId === editando)?.responsavel;
+    const atual = associacoes.find((a) => a.equipamentoId === (editando ?? clonandoDe))?.responsavel;
     const achado = emp ? { id: emp.id, nome: emp.nome } : atual && atual.id === responsavelId ? atual : null;
     // Responsável escolhido que não está mais na lista não vira "Não definido" sem aviso.
     if (responsavelId !== SEM_RESPONSAVEL && !achado) {
@@ -265,7 +268,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     aoMudar();
   }
 
-  const atualResponsavel = associacoes.find((a) => a.equipamentoId === editando)?.responsavel;
+  const atualResponsavel = associacoes.find((a) => a.equipamentoId === (editando ?? clonandoDe))?.responsavel;
   const opcoes = empregados.map((x) => ({ id: x.id, rotulo: x.matricula ? `${x.nome} · ${x.matricula}` : x.nome }));
   if (atualResponsavel && !opcoes.some((o) => o.id === atualResponsavel.id)) opcoes.push({ id: atualResponsavel.id, rotulo: `${atualResponsavel.nome} (atual)` });
 
@@ -416,8 +419,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
 }
 
 export function ChecklistEquipamento({ finalidade, aoEscolher }: { finalidade: FinalidadeChecklist | null; aoEscolher: (f: FinalidadeChecklist) => void }) {
-  const [versao, setVersao] = useState(0);
-  const aoMudar = () => setVersao((v) => v + 1);
+  const [versao, aoMudar] = useVersaoArmazenamento();
   const atual = FINALIDADES.find((f) => f.id === finalidade);
 
   if (!atual) {

@@ -14,6 +14,7 @@ import {
   itensDoPlano, lerManutencaoEquipamento, OUTROS, removerAcao, removerPlano, removerTipoOcorrencia, salvarAcao, salvarPlano, salvarTipoOcorrencia,
   type EntradaItemPlano, type PlanoEquipamento,
 } from "@/lib/equipamentos-manutencao";
+import { useVersaoArmazenamento } from "@/lib/use-versao-armazenamento";
 
 // Parâmetros > Equipamentos > Manutenção (ações de manutenção e plano de manutenção por equipamento) e Tipos de ocorrência: as mesmas telas e
 // regras de Parâmetros > Veículos, com horas de uso no lugar de km. Só modo demonstração (navegador).
@@ -234,8 +235,7 @@ export function PlanoManutencaoEquipamento({ secao = false, versao, aoMudar }: {
 
 // Parâmetros > Equipamentos > Manutenção: numa só página, as ações de manutenção e o plano de cada equipamento, que usa essas ações.
 export function ManutencaoEquipamentoPagina() {
-  const [versao, setVersao] = useState(0);
-  const aoMudar = () => setVersao((v) => v + 1);
+  const [versao, aoMudar] = useVersaoArmazenamento();
   return (
     <div className="space-y-10">
       <header>
@@ -250,6 +250,6 @@ export function ManutencaoEquipamentoPagina() {
 }
 
 export function TiposOcorrenciaEquipamentoPagina() {
-  const [versao, setVersao] = useState(0);
-  return <TiposOcorrenciaEquipamentoLista versao={versao} aoMudar={() => setVersao((v) => v + 1)} />;
+  const [versao, aoMudar] = useVersaoArmazenamento();
+  return <TiposOcorrenciaEquipamentoLista versao={versao} aoMudar={aoMudar} />;
 }

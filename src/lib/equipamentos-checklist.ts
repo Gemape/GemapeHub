@@ -124,7 +124,11 @@ export function salvarGrupoChecklist(
     if (tiposValidos && tipos.some((t) => t !== TODOS_OS_TIPOS && !tiposValidos.includes(t))) throw new Error("Tipo de equipamento inválido: escolha só tipos que existem em Parâmetros Específicos.");
     // Tirar um tipo do grupo deixaria equipamentos desse tipo com um grupo que não vale mais para eles.
     if (tipoDoEquipamento && atual && !tipos.includes(TODOS_OS_TIPOS)) {
-      const presos = parte.associacoes.filter((a) => a.itens.some((i) => i.grupoId === atual.id) && !tipos.includes(tipoDoEquipamento(a.equipamentoId) ?? ""));
+      // Associação de equipamento que já não existe (sem tipo) não trava a edição: só se exclui.
+      const presos = parte.associacoes.filter((a) => {
+        const tipoDele = tipoDoEquipamento(a.equipamentoId);
+        return tipoDele !== undefined && a.itens.some((i) => i.grupoId === atual.id) && !tipos.includes(tipoDele);
+      });
       if (presos.length > 0) {
         throw new Error(`Este grupo está associado a ${presos.length} ${presos.length === 1 ? "equipamento" : "equipamentos"} de um tipo que você está tirando; remova a associação antes.`);
       }
@@ -206,6 +210,7 @@ export function salvarAssociacao(
 
 export function removerAssociacao(finalidade: string, equipamentoId: string, storage: StorageLike = localStorage): void {
   alterar(finalidade, storage, (parte) => {
+    if (!parte.associacoes.some((a) => a.equipamentoId === equipamentoId)) throw new Error("Esta associação já foi excluída.");
     parte.associacoes = parte.associacoes.filter((a) => a.equipamentoId !== equipamentoId);
   });
 }
@@ -254,12 +259,15 @@ const textoDoNome = (t: string) => t.trim().replace(/\s+/g, " ");
 export function checklistsDaAssociacao(
   rotuloEquipamento: string,
   associacao: AssociacaoChecklistEquipamento,
-  grupos: { id: string; nome: string }[],
+  grupos: { id: string; nome: string; itens?: { id: string }[] }[],
 ): ChecklistAssociado[] {
-  // Só os grupos que ainda existem.
+  // Só os grupos que ainda existem e, na escolha item a item, só os itens que ainda existem (item renomeado ganha id novo); sem nenhum, o grupo sai.
   const doEquipamento = associacao.itens.flatMap((i) => {
     const grupo = grupos.find((g) => g.id === i.grupoId);
-    return grupo ? [{ ...i, nome: grupo.nome }] : [];
+    if (!grupo) return [];
+    if (!i.itensIds) return [{ ...i, nome: grupo.nome }];
+    const existentes = grupo.itens ? i.itensIds.filter((id) => grupo.itens!.some((x) => x.id === id)) : i.itensIds;
+    return existentes.length > 0 ? [{ ...i, itensIds: existentes, nome: grupo.nome }] : [];
   });
   return PERIODICIDADES.flatMap((periodicidade) => {
     const deste = doEquipamento.filter((i) => i.periodicidade === periodicidade);
