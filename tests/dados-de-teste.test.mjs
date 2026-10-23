@@ -43,7 +43,7 @@ test("três registros em cada cadastro, com os que o sistema já trazia mantidos
   assert.deepEqual([1, 2, 3].filter((n) => gerais.caixasHabilitadas.includes(n)), [1, 2, 3]);
 });
 
-test("documentos, e-mails, telefones, CEPs, matrículas e placas têm formato válido e são fictícios", () => {
+test("documentos, e-mails, telefones, CEPs, matrículas e placas têm formato válido", () => {
   const s = prontos();
   const d = dados(s);
   for (const e of doTeste(d.empresas)) { assert.ok(validarCnpj(e.cnpj), e.cnpj); assert.ok(validarCep(e.cep)); }
@@ -149,10 +149,10 @@ test("os dados ficam gravados: abrir de novo não faz nada e o que foi mexido no
   assert.equal(prepararDadosDeTeste(s, base, new Date("2026-11-01T12:00:00-03:00")), "igual");
   assert.deepEqual([...s.m], [...antes], "nada foi regravado");
   const d = dados(s);
-  d.empresas.find((e) => e.id === "teste-empresa-1").nome_fantasia = "Alfa (editada pelo usuário)";
+  d.empresas.find((e) => e.id === "teste-empresa-1").nome_fantasia = "Gemape (editada pelo usuário)";
   s.setItem("gemape-demo-dados", JSON.stringify(d));
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "igual");
-  assert.equal(dados(s).empresas.find((e) => e.id === "teste-empresa-1").nome_fantasia, "Alfa (editada pelo usuário)");
+  assert.equal(dados(s).empresas.find((e) => e.id === "teste-empresa-1").nome_fantasia, "Gemape (editada pelo usuário)");
 });
 
 test("versão nova do conjunto troca só o que é de teste e mantém o que o usuário criou", () => {
@@ -222,7 +222,7 @@ test("dado salvo ilegível não é sobrescrito: os dados de teste não são apli
 
 test("só no modo demonstração e só no armazenamento local: nada no Supabase e a produção não carrega o conjunto", () => {
   const demo = ler("integrations/supabase/demo-client.ts");
-  assert.match(demo, /typeof window !== "undefined" && import\.meta\.env\?\.\["VITE_DEMO_MODE"\] !== "false"\) prepararDadosDeTeste\(window\.localStorage/);
+  assert.match(demo, /typeof window !== "undefined" && import\.meta\.env\?\.VITE_DEMO_MODE !== "false"\) prepararDadosDeTeste\(window\.localStorage/);
   const arquivos = readdirSync(new URL("../src/lib/dados-teste/", import.meta.url));
   assert.ok(arquivos.length >= 4);
   for (const a of arquivos) {
@@ -232,9 +232,64 @@ test("só no modo demonstração e só no armazenamento local: nada no Supabase 
   }
   // O menu de Restaurar e Limpar só existe no demo.
   const rota = ler("routes/_authenticated/route.tsx");
-  assert.match(rota, /const MenuDadosDeTeste = import\.meta\.env\["VITE_DEMO_MODE"\] !== "false"\s*\? lazy\(/);
+  // A forma com ponto é trocada pelo valor no começo da compilação: na produção o menu e os dados de teste nem entram no pacote (conferido no build).
+  assert.match(rota, /const MenuDadosDeTeste = import\.meta\.env\.VITE_DEMO_MODE !== "false"\s*\? lazy\(/);
+  assert.match(ler("env.d.ts"), /readonly VITE_DEMO_MODE\?: string/);
   assert.match(rota, /\{MenuDadosDeTeste && <Suspense/);
   const menu = ler("components/layout/MenuDadosDeTeste.tsx");
   assert.match(menu, /Restaurar dados de teste/);
   assert.match(menu, /Limpar dados de teste/);
+});
+
+test("EPI e uniforme com tamanho guardam saldo e mínimo por tamanho, como a tela de Estoque lê", () => {
+  const s = prontos();
+  const d = dados(s);
+  for (const linha of [...doTeste(d.epis), ...doTeste(d.uniformes)].filter((l) => l.tamanhos_selecionados.length === 1)) {
+    const tam = linha.tamanhos_selecionados[0];
+    assert.deepEqual(linha.saldos_tamanho, { [tam]: linha.estoque_atual }, linha.codigo_sku);
+    assert.deepEqual(linha.minimos_tamanho, { [tam]: linha.estoque_minimo }, linha.codigo_sku);
+  }
+  assert.ok(doTeste(d.epis).some((l) => l.saldos_tamanho));
+});
+
+test("as empresas de teste são as três do grupo, com os CNPJs da planilha de controle", () => {
+  const d = dados(prontos());
+  assert.deepEqual(doTeste(d.empresas).map((e) => e.razao_social), ["Gemape Máquinas e Peças Ltda", "GMP Locações de Máquinas e Serviços Ltda", "Lapa Máquinas e Peças Ltda"]);
+  assert.deepEqual(doTeste(d.empresas).map((e) => e.cnpj), ["21.866.173/0001-67", "08.184.170/0001-85", "44.578.791/0001-07"]);
+});
+
+test("formulários abrem preenchidos (2.8): o quarto registro é válido, único e nunca é gravado sozinho", async () => {
+  const { exemploEmpresa, exemploEmpregado, exemploFornecedor, exemploCliente, exemploVeiculo, exemploCaixa, exemploFerramenta, ehExemplo } = await import("../src/lib/dados-teste/exemplos.ts");
+  const s = prontos();
+  const d = dados(s);
+  const antes = JSON.stringify(d);
+  const emp = exemploEmpresa(d.empresas);
+  assert.ok(validarCnpj(emp.cnpj) && validarCep(emp.cep) && ehExemplo(emp));
+  assert.ok(!d.empresas.some((e) => e.cnpj.replace(/\D/g, "") === emp.cnpj.replace(/\D/g, "")));
+  const pessoa = exemploEmpregado(d.empregados, d.empresas[0].id, AGORA);
+  assert.ok(cpfValido(pessoa.cpf) && matriculaValida(pessoa.matricula) && emailValido(pessoa.email));
+  assert.ok(!d.empregados.some((e) => e.cpf === pessoa.cpf || e.matricula === pessoa.matricula));
+  const forn = exemploFornecedor(json(s, "gemape-demo-fornecedores"));
+  assert.ok(validarCnpj(forn.cnpj) && validarTelefone(forn.telefone));
+  const cli = exemploCliente(json(s, "gemape-demo-clientes"));
+  assert.ok(cpfValido(cli.cpf) && validarCnpj(cli.cnpj) && emailValido(cli.email));
+  const vei = exemploVeiculo(d.veiculos, d.empresas[0].id, "Fiat", AGORA);
+  assert.ok(placaValida(vei.placa) && !d.veiculos.some((v) => String(v.placa).replace("-", "") === vei.placa));
+  assert.ok(exemploCaixa("x").status === "Ativa" && exemploFerramenta("Manual", "Ferrotec").grupo_ferramenta === "Chave L");
+  assert.equal(JSON.stringify(dados(s)), antes, "o exemplo não grava nada");
+});
+
+test("formulários de exemplo só no modo demonstração: cada ponto de uso confere o modo na compilação", () => {
+  const usos = ["routes/_authenticated/empresas.tsx", "routes/_authenticated/cadastros/fornecedores.tsx", "routes/_authenticated/cadastros/clientes.tsx", "routes/_authenticated/cadastros/equipamentos.tsx",
+    "components/modules/EmpregadosCadastroModulo.tsx", "components/modules/CadastroEpi.tsx", "components/modules/CadastroUniforme.tsx", "components/modules/ItensModulo.tsx",
+    "components/modules/VeiculosCadastroModulo.tsx", "components/modules/CaixasFerramentasModulo.tsx", "components/parametros/QuestionarioFormulario.tsx"];
+  assert.equal(usos.length, 11);
+  const gate = 'import.meta.env.VITE_DEMO_MODE !== "false"';
+  for (const u of usos) {
+    const fonte = ler(u);
+    const chamadas = [...fonte.matchAll(/\b(exemplo[A-Z]\w*)\(/g)].map((m) => m.index);
+    assert.ok(chamadas.length > 0, `${u} usa um exemplo`);
+    // Toda chamada vem logo depois da conferência do modo (na mesma linha ou até 400 caracteres antes), na forma que o build troca por constante.
+    for (const c of chamadas) assert.ok(fonte.lastIndexOf(gate, c) >= 0 && c - fonte.lastIndexOf(gate, c) < 400, `${u}: exemplo fora do modo demonstração`);
+  }
 });

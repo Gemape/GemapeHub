@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { exemploCliente } from "@/lib/dados-teste/exemplos";
 import { ClienteDialog } from "@/components/parametros/ClienteDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,7 +56,7 @@ function PaginaClientes() {
         <h1 className="text-2xl font-bold">Clientes</h1>
         <p className="mt-1 text-sm text-muted-foreground">Clientes atendidos pela equipe em viagens e saídas externas.</p>
       </div>
-      <Button requiresWrite onClick={() => abrir(null)}>Novo cliente</Button>
+      <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploCliente(clientes), true) : abrir(null)}>Novo cliente</Button>
     </header>
 
     <div className="panel overflow-x-auto">

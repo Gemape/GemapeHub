@@ -21,7 +21,7 @@ import { AccessProvider, ROTULO_PAPEL, type Perfil } from "@/lib/access-context"
 import { variaveisSupabaseFaltando } from "@/lib/supabase-env";
 
 // Menu Restaurar e Limpar dados de teste: só existe no modo demonstração (na produção, a condição é falsa na compilação e o código nem é gerado).
-const MenuDadosDeTeste = import.meta.env["VITE_DEMO_MODE"] !== "false"
+const MenuDadosDeTeste = import.meta.env.VITE_DEMO_MODE !== "false"
   ? lazy(() => import("@/components/layout/MenuDadosDeTeste").then((m) => ({ default: m.MenuDadosDeTeste })))
   : null;
 
@@ -109,8 +109,7 @@ function LayoutAutenticado() {
             </div>
             {/* Título da marca, centralizado no topo; no celular desce para uma linha própria. */}
             <div className="order-last col-span-2 text-center md:order-none md:col-span-1">
-              <p className="eyebrow-marca">Grupo Gemape</p>
-              <p className="titulo-marca text-xl sm:text-3xl lg:text-4xl">Gestão de Patrimônio</p>
+              <p className="titulo-marca text-lg sm:text-2xl lg:text-3xl">GESTÃO DE PATRIMÔNIO</p>
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
             <div className="flex items-center justify-end gap-2">

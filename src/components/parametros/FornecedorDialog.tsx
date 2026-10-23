@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 
+import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
@@ -76,7 +77,7 @@ export function FornecedorDialog({ aberto, onAberto, editando, modelo, codigoPre
       <Dialog open={aberto} onOpenChange={onAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editando ? "Editar fornecedor" : modelo ? "Clonar fornecedor" : "Novo fornecedor"}</DialogTitle>
+            <DialogTitle>{editando ? "Editar fornecedor" : modelo && !ehExemplo(modelo) ? "Clonar fornecedor" : "Novo fornecedor"}</DialogTitle>
             <DialogDescription>Informações cadastrais do fornecedor.</DialogDescription>
           </DialogHeader>
           <form key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "novo")} onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">

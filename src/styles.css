@@ -381,15 +381,6 @@
   }
 }
 
-/* Linha pequena acima do título do topo: Manrope 600, caixa alta e letras espaçadas (~0,06em). */
-@utility eyebrow-marca {
-  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-muted-foreground);
-}
 /* Texto da tela inicial em Manrope (cartões: títulos 500 e "Clique para acessar" 400). */
 @utility fonte-manrope {
   font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
@@ -400,11 +391,11 @@
 @keyframes titulo-entrada {
   from {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateY(-8px) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 @keyframes titulo-brilho {
@@ -417,10 +408,13 @@
   }
 }
 @utility titulo-marca {
-  /* Manrope 700: combina com os cantos arredondados e o traço dos ícones; o "Grupo Gemape" vai acima, em eyebrow-marca. */
+  /* Manrope 700 em caixa alta e letras bem espaçadas: a entrada sobe e cresce (só transform e opacidade) e o brilho percorre as letras. */
   font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  /* O espaçamento também vem depois da última letra; o padding à esquerda do mesmo tamanho mantém o título no centro. */
+  padding-left: 0.16em;
   line-height: 1.15;
   background-image: linear-gradient(
     105deg,

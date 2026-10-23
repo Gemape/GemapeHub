@@ -33,6 +33,8 @@ import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
 import { formatarCnpj, formatarCep } from "@/lib/formatacao-cadastral";
 import { aoDigitarMascarado } from "@/lib/mascaras";
+import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
+import { exemploEmpresa } from "@/lib/dados-teste/exemplos";
 // Endereço e status ainda não existem no banco real (Fase 2): só aparecem na demonstração.
 import { MODO_DEMO } from "@/lib/modo-demo";
 
@@ -90,7 +92,8 @@ function PaginaEmpresas() {
         <Button requiresWrite
           onClick={() => {
             setEditando(null);
-            setModelo(null);
+            // Demonstração (2.8): o cadastro novo abre já preenchido com uma empresa fictícia, que só é gravada se a pessoa salvar.
+            setModelo(import.meta.env.VITE_DEMO_MODE !== "false" ? exemploEmpresa(empresas) : null);
             setAberto(true);
           }}
         >
@@ -145,7 +148,7 @@ function PaginaEmpresas() {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editando ? "Editar empresa" : modelo ? "Clonar empresa" : "Nova empresa"}</DialogTitle>
+            <DialogTitle>{editando ? "Editar empresa" : modelo && !ehExemplo(modelo) ? "Clonar empresa" : "Nova empresa"}</DialogTitle>
             <DialogDescription>Dados cadastrais da unidade.</DialogDescription>
           </DialogHeader>
           <form key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "nova")} onSubmit={enviar} className="space-y-4">

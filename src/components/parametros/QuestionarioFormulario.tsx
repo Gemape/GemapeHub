@@ -1,4 +1,5 @@
 import { ArrowLeft, ClipboardList } from "lucide-react";
+import { exemploViagem } from "@/lib/dados-teste/exemplos";
 import { useId, useMemo, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -47,7 +48,11 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
   const { isAdmin, canWrite } = useAccess();
   const [estado] = useState(lerEstado);
   const tipos = tiposDeDespesa(estado);
-  const respostasIniciais = (): Respostas => (tipoInicial && tipos.includes(tipoInicial) ? { [ID_TIPO_DESPESA]: [tipoInicial] } : {});
+  // Demonstração (2.8): a resposta nova abre já preenchida (menos a foto do comprovante); só é gravada se a pessoa enviar.
+  const respostasIniciais = (): Respostas => {
+    if (!tipoInicial || !tipos.includes(tipoInicial)) return {};
+    return import.meta.env.VITE_DEMO_MODE !== "false" ? exemploViagem(estado, tipoInicial, listarClientes()) : { [ID_TIPO_DESPESA]: [tipoInicial] };
+  };
   const [respostas, setRespostas] = useState<Respostas>(respostasIniciais);
   const [erros, setErros] = useState<Record<string, string>>({});
   const [imagens, setImagens] = useState<Record<string, ImagemReduzida[]>>({});

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,7 @@ export function ClienteDialog({ aberto, onAberto, editando, modelo, codigoPrevis
     <Dialog open={aberto} onOpenChange={onAberto}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{editando ? "Editar cliente" : modelo ? "Clonar cliente" : "Novo cliente"}</DialogTitle>
+          <DialogTitle>{editando ? "Editar cliente" : modelo && !ehExemplo(modelo) ? "Clonar cliente" : "Novo cliente"}</DialogTitle>
           <DialogDescription>Só o nome é obrigatório.</DialogDescription>
         </DialogHeader>
         <form key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "novo")} onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">

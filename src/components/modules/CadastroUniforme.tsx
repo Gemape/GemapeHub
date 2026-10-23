@@ -33,6 +33,8 @@ import {
   unidadesAutorizadasDoProduto,
 } from "@/lib/estoque-tamanho";
 import { MODO_DEMO } from "@/lib/modo-demo";
+import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
+import { exemploCatalogo } from "@/lib/dados-teste/exemplos";
 import { avisoExclusaoDoProduto } from "@/lib/codigo-fabrica-vinculos";
 import { estaAtivo, lerParametros, paraSelecao, proximoCodigo, regraDoCadastro, regrasDaCategoria, removerCodigosFabricaPorIds, siglaDoCodigo, type CodigoFabrica } from "@/lib/parametros-base";
 import { SiglaCodigo } from "@/components/modules/SiglaCodigo";
@@ -221,6 +223,13 @@ function CatalogoUniforme() {
   }
 
   function abrirNovo() {
+    // Demonstração (2.8): abre já preenchido com um item fictício, que só é gravado se a pessoa salvar.
+    const exemplo = import.meta.env.VITE_DEMO_MODE !== "false" ? exemploCatalogo("uniforme", parametros, subcategorias, catalogo) : null;
+    if (exemplo) {
+      abrirClone(exemplo);
+      setTamanhoSel(exemplo.tamanho_id ?? "");
+      return;
+    }
     setClonando(null);
     setSiglaSel("");
     setSubSel("");
@@ -247,7 +256,7 @@ function CatalogoUniforme() {
           codigo,
           pedeTamanho: associados.length > 0,
           tamanhosPermitidos: associados.map((t) => t.id),
-          clonando: !!clonando,
+          clonando: !!clonando && !ehExemplo(clonando),
           nomeProduto: "uniforme",
         }),
       () => {
@@ -332,9 +341,9 @@ function CatalogoUniforme() {
       <Dialog open={novoAberto} onOpenChange={setNovoAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>{clonando ? "Clonar uniforme" : "Novo uniforme"}</DialogTitle>
+            <DialogTitle>{clonando && !ehExemplo(clonando) ? "Clonar uniforme" : "Novo uniforme"}</DialogTitle>
             <DialogDescription>
-              {clonando ? "Copia todos os dados do cadastro de origem, que podem ser editados. O código é gerado ao salvar; não herda estoque nem movimentações." : "Cadastra uma descrição ainda não existente. O código é gerado ao salvar; outros tamanhos entram pelo Clonar."}
+              {clonando && !ehExemplo(clonando) ? "Copia todos os dados do cadastro de origem, que podem ser editados. O código é gerado ao salvar; não herda estoque nem movimentações." : "Cadastra uma descrição ainda não existente. O código é gerado ao salvar; outros tamanhos entram pelo Clonar."}
             </DialogDescription>
           </DialogHeader>
           <form key={clonando?.id ?? "novo"} onSubmit={enviarNovo} className="grid gap-3 sm:grid-cols-2">
