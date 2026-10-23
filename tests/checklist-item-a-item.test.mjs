@@ -82,8 +82,8 @@ test("equipamento: recusa lista vazia e item que não é do grupo, sem gravar na
 test("equipamento: a tela traz grupo → itens com caixas por item e mostra 'N de M itens' na tabela", () => {
   const tela = ler("components/parametros/ChecklistEquipamento.tsx");
   assert.match(tela, /Itens de \$\{g\.nome\}/);
-  assert.match(tela, /alternarItem\(g, i\.id/);
-  assert.match(tela, /itensIds: marcadosDe\(g\)/);
+  assert.match(tela, /alternarItem\(i\.id/);
+  assert.match(tela, /itensIds: ids/);
   assert.match(tela, /de \$\{total\} itens/);
 });
 
@@ -153,7 +153,7 @@ test("associação: personalizar itens (padrão + próprios) vira um grupo só d
   assert.match(veic, /removerGrupoChecklistVeiculo\(novoId\)/);
   const equip = ler("components/parametros/ChecklistEquipamento.tsx");
   assert.match(equip, /data-testid="itens-personalizados"/);
-  assert.match(equip, /nomeGrupoPersonalizado\(escolhido\.patrimonio\)/);
+  assert.match(equip, /nomeGrupoPersonalizado\(escolhido\.patrimonio, avulso\)/);
   assert.match(equip, /\.\.\.\(personalizadoSalvo \? \{ id: personalizadoSalvo\.id \} : \{\}\)/); // reabrir atualiza o grupo, não cria outro
   assert.match(equip, /removerGrupoChecklist\(finalidade, novoGrupoId\)/);
 });

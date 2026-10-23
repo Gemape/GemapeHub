@@ -17,7 +17,7 @@ export function AcoesLinha({
   // Quem só lê também pode abrir o registro (a gravação continua exigindo permissão no formulário).
   editarLivre?: boolean;
 }) {
-  const { isAdmin } = useAccess();
+  const { canDelete } = useAccess();
   return (
     <div className="flex justify-end gap-1">
       {onClonar && (
@@ -30,7 +30,7 @@ export function AcoesLinha({
           Editar
         </Button>
       )}
-      {onExcluir && isAdmin && (
+      {onExcluir && canDelete && (
         <Button requiresWrite variant="ghost" size="sm" aria-label={`Excluir ${rotulo}`} className="text-destructive hover:text-destructive" onClick={onExcluir}>
           Excluir
         </Button>

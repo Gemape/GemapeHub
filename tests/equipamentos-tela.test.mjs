@@ -8,19 +8,20 @@ const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8")
 const menu = ler("components/layout/AppSidebar.tsx");
 
 test("Parâmetros > Equipamentos > Cadastrar equipamento está no menu de Parâmetros", () => {
-  assert.deepEqual(MENU_EQUIPAMENTOS.map((i) => [i.titulo, i.url]), [["Cadastrar equipamento", "/cadastros/equipamentos"], ["Parâmetros Específicos", "/cadastros/equipamentos-especificos"], ["Check list de manutenção", "/cadastros/equipamentos-checklist"], ["Check list de vistoria", "/cadastros/equipamentos-checklist"], ["Manutenção", "/cadastros/equipamentos-manutencao"], ["Tipos de ocorrência", "/cadastros/equipamentos-tipos-ocorrencia"]]);
+  assert.deepEqual(MENU_EQUIPAMENTOS.map((i) => [i.titulo, i.url]), [["Cadastrar equipamento", "/cadastros/equipamentos"], ["Manutenção", "/cadastros/equipamentos-manutencao"], ["Tipos de ocorrência", "/cadastros/equipamentos-tipos-ocorrencia"], ["Check list de manutenção", "/cadastros/equipamentos-checklist"], ["Check list de vistoria", "/cadastros/equipamentos-checklist"], ["Parâmetros Específicos", "/cadastros/equipamentos-especificos"]]);
   assert.match(menu, /function MenuEquipamentos/);
   assert.match(menu, /<MenuEquipamentos pathname=\{pathname\} \/>/);
 });
 
 test("Módulos > Equipamentos está no menu de Módulos", () => {
-  assert.match(menu, /\{ titulo: "Equipamentos", url: "\/equipamentos", icone: Forklift \}/);
+  assert.match(menu, /\{ titulo: "Equipamentos", url: "\/equipamentos", icone: Forklift, abas: ABAS_EQUIPAMENTO \}/);
 });
 
-test("as duas telas existem: o cadastro (Parâmetros) e o módulo (por enquanto só o aviso)", () => {
+test("as duas telas existem: o cadastro (Parâmetros) e o módulo, com as seis abas", () => {
   assert.ok(existsSync(new URL("../src/routes/_authenticated/cadastros/equipamentos.tsx", import.meta.url)));
   assert.ok(existsSync(new URL("../src/routes/_authenticated/equipamentos.tsx", import.meta.url)));
-  assert.match(ler("routes/_authenticated/equipamentos.tsx"), /será construída|em construção/i);
+  const modulo = ler("routes/_authenticated/equipamentos.tsx");
+  for (const aba of ["inventario", "indicadores", "abastecimento", "manutencao", "ocorrencias", "checklist-manutencao", "checklist-vistoria"]) assert.match(modulo, new RegExp(`TabsContent value="${aba}"`));
 });
 
 const dialogo = ler("components/parametros/EquipamentoDialog.tsx");

@@ -1,7 +1,7 @@
 // Tela inicial (Início): o menu em cartões. Só dados: a tela desenha. Cartão com submenus se abre no próprio cartão e mostra os
 // atalhos; cartão sem submenu abre a tela direto. Os submenus saem dos mesmos dados do menu (menu-parametros.ts), sem lista paralela.
 import {
-  ABAS_EPI, ABAS_FERRAMENTA, ABAS_UNIFORME, ABAS_VEICULO, ABAS_VIAGEM, MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES,
+  ABAS_EPI, ABAS_EQUIPAMENTO, ABAS_FERRAMENTA, ABAS_UNIFORME, ABAS_VEICULO, ABAS_VIAGEM, MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES,
   MENU_EQUIPAMENTOS, MENU_VEICULOS, type AbaMenu, type GrupoMenu, type ItemComFilhos, type ItemMenu, type NomeIcone,
 } from "./menu-parametros.ts";
 
@@ -41,7 +41,7 @@ export const GRUPOS_INICIO: readonly GrupoInicio[] = [
       { titulo: "Viagens", icone: "Luggage", itens: dasAbas("/viagens", ABAS_VIAGEM) },
       {
         titulo: "Equipamentos", icone: "Forklift",
-        itens: [{ titulo: "Equipamentos", url: "/equipamentos", icone: "Forklift", secao: "Módulo" }, ...dosItens(MENU_EQUIPAMENTOS)],
+        itens: [...dasAbas("/equipamentos", ABAS_EQUIPAMENTO), ...dosItens(MENU_EQUIPAMENTOS)],
       },
     ],
   },
@@ -58,21 +58,23 @@ export const GRUPOS_INICIO: readonly GrupoInicio[] = [
 ];
 
 // Os cartões e atalhos que o perfil pode ver (Gerais e Cadastrar Caixa são só do Administrador, como no menu lateral).
-export function gruposDoInicio(isAdmin: boolean): GrupoInicio[] {
+// `podeVer` (só no demo, pelas permissões de Configurações) tira cartões e atalhos de telas que o usuário não pode ver; cartão que fica sem atalhos some.
+export function gruposDoInicio(isAdmin: boolean, podeVer: (url: string) => boolean = () => true): GrupoInicio[] {
   return GRUPOS_INICIO.map((g) => ({
     ...g,
     cartoes: g.cartoes
       .filter((c) => !c.soAdmin || isAdmin)
-      .map((c) => (c.itens ? { ...c, itens: c.itens.filter((i) => !i.soAdmin || isAdmin) } : c)),
-  }));
+      .map((c) => (c.itens ? { ...c, itens: c.itens.filter((i) => (!i.soAdmin || isAdmin) && podeVer(i.url)) } : c))
+      .filter((c) => (c.itens ? c.itens.length > 0 : !c.url || podeVer(c.url))),
+  })).filter((g) => g.cartoes.length > 0);
 }
 
 // Área (cartão) a que uma tela pertence, para o menu do topo levar às outras rotinas dela sem voltar ao início. Telas repetidas
 // em mais de uma área (como Parâmetros Específicos) se resolvem pelo ?de= ou ?aba= do atalho; sem cartão com submenu, devolve null.
-export function areaDaRota(pathname: string, search: Record<string, unknown>, isAdmin: boolean): { cartao: CartaoInicio; atual: SubitemInicio } | null {
+export function areaDaRota(pathname: string, search: Record<string, unknown>, isAdmin: boolean, podeVer: (url: string) => boolean = () => true): { cartao: CartaoInicio; atual: SubitemInicio } | null {
   const caminho = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   const casaBusca = (i: SubitemInicio) => !!i.search && Object.entries(i.search).every(([k, v]) => String(search[k] ?? "") === v);
-  const candidatos = gruposDoInicio(isAdmin).flatMap((g) => g.cartoes).flatMap((cartao) =>
+  const candidatos = gruposDoInicio(isAdmin, podeVer).flatMap((g) => g.cartoes).flatMap((cartao) =>
     (cartao.itens ?? []).map((atual) => ({ cartao, atual })),
   );
   const daUrl = candidatos.filter((c) => c.atual.url === caminho);

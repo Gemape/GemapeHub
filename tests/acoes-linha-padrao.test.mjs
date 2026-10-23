@@ -10,7 +10,7 @@ test("o botão padrão das listas tem Clonar, Editar e Excluir, nessa ordem, e E
   const e = acoes.indexOf("Editar\n");
   const x = acoes.indexOf("Excluir\n");
   assert.ok(c > 0 && c < e && e < x);
-  assert.match(acoes, /onExcluir && isAdmin/);
+  assert.match(acoes, /onExcluir && canDelete/);
 });
 
 test("Cadastrar EPI usa o botão padrão com os três botões", () => {

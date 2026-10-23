@@ -696,3 +696,73 @@
     text-align: center;
   }
 }
+
+/* Ícone dos cartões da tela inicial: medalhão grande de vidro com brilho, que flutua devagar, tem um halo que respira e se anima ao passar o mouse.
+   O atraso da flutuação varia de um cartão para outro (--atraso), para não se moverem todos juntos. Quem reduz movimento recebe tudo parado. */
+@keyframes cartao-flutua {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes cartao-halo {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 oklch(0.7 0.16 258 / 0.35),
+      0 10px 22px -8px oklch(0.45 0.2 264 / 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 10px oklch(0.7 0.16 258 / 0),
+      0 14px 26px -8px oklch(0.45 0.2 264 / 0.55);
+  }
+}
+@keyframes cartao-icone-giro {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+  35% {
+    transform: rotate(-12deg) scale(1.18);
+  }
+  70% {
+    transform: rotate(8deg) scale(1.12);
+  }
+  100% {
+    transform: rotate(0) scale(1.1);
+  }
+}
+@utility medalhao-cartao {
+  display: flex;
+  height: 5rem;
+  width: 5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 25%, oklch(1 0 0) 0%, oklch(0.95 0.04 255) 55%, oklch(0.88 0.08 258) 100%);
+  border: 1px solid oklch(1 0 0 / 0.9);
+  color: var(--color-primary);
+  animation:
+    cartao-flutua 5s ease-in-out var(--atraso, 0s) infinite,
+    cartao-halo 3.6s ease-in-out var(--atraso, 0s) infinite;
+  & > svg {
+    height: 2.5rem;
+    width: 2.5rem;
+    filter: drop-shadow(0 2px 3px oklch(0.4 0.2 264 / 0.3));
+    transition: transform 0.3s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    box-shadow: 0 8px 18px -8px oklch(0.45 0.2 264 / 0.45);
+  }
+}
+.group\/cartao:hover .medalhao-cartao > svg {
+  animation: cartao-icone-giro 0.7s ease-out forwards;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transform: scale(1.1);
+  }
+}

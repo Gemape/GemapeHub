@@ -84,9 +84,10 @@ export const CATEGORIAS_BASE: Record<string, string> = {
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
 const CHAVE = "gemape-demo-parametros-base";
-// Decisão 69: quem já tinha cadastros salvos recebe a subcategoria Empilhadeira uma vez; depois de qualquer
-// gravação o marcador impede que ela volte se o responsável a excluir.
-const CHAVE_EMPILHADEIRA = "gemape-demo-subcategoria-empilhadeira";
+// Decisão 69 (substituída): a subcategoria Empilhadeira de Veículos sai uma vez; depois de qualquer gravação o marcador
+// impede nova limpeza, e quem a criar de novo em Gerais a mantém.
+// (Chave nova: a antiga já estava gravada em quem salvou algum parâmetro antes da saída da Empilhadeira de Veículos.)
+const CHAVE_EMPILHADEIRA = "gemape-demo-sem-empilhadeira-veiculos";
 // Marca que os grupos "Avulso · ..." já foram ajustados aos 16 itens da decisão 131 (só roda uma vez por navegador).
 // Marca que os tamanhos da Chave de fenda (decisão 135) já foram incluídos neste navegador.
 const CHAVE_FENDA_135 = "gemape-demo-tamanhos-chave-de-fenda-135";
@@ -213,7 +214,7 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
     if (salvos.enderecamentoCategorias && typeof salvos.enderecamentoCategorias === "object" &&
       !Array.isArray(salvos.enderecamentoCategorias)) {
       for (const [id, tipo] of Object.entries(salvos.enderecamentoCategorias)) {
-        if (base.categorias.some((c) => c.id === id) &&
+        if ((id === CATEGORIA_EQUIPAMENTOS || base.categorias.some((c) => c.id === id)) &&
           (tipo === "nao_usa" || tipo === "opcional" || tipo === "obrigatorio")) {
           base.enderecamentoCategorias[id] = tipo;
         }
@@ -261,9 +262,10 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
         base.tamanhosGrupoFerramenta[fenda.id] = lista;
       }
     }
-    if (storage.getItem(CHAVE_EMPILHADEIRA) === null &&
-      !base.subcategorias.some((s) => s.categoriaId === "cat-veiculos" && /empilh/i.test(s.nome))) {
-      base.subcategorias.push({ id: "sub-veiculos-empilhadeira", categoriaId: "cat-veiculos", nome: "Empilhadeira" });
+    // Empilhadeira passou a ser só do módulo Equipamentos: quem tinha a subcategoria em Veículos e os grupos de check list dela perde os dois, uma vez só.
+    if (storage.getItem(CHAVE_EMPILHADEIRA) === null) {
+      base.subcategorias = base.subcategorias.filter((s) => !(s.categoriaId === "cat-veiculos" && /empilh/i.test(s.nome)));
+      base.itensChecklistVeiculo = base.itensChecklistVeiculo.filter((g) => !g.nome.startsWith("Empilhadeiras ·"));
     }
     // Regras salvas antes da definição de 4 dígitos (ex.: 001) passam para 0001.
     base.regrasCodigo = base.regrasCodigo.map((r) => ({
@@ -317,6 +319,9 @@ function achar<T extends { id: string }>(lista: T[], id: string, oQue: string): 
 
 // ---------- Categorias ----------
 
+// Equipamentos não são uma categoria de Gerais: o endereçamento deles tem esta chave própria, definida em Parâmetros > Equipamentos > Parâmetros Específicos.
+export const CATEGORIA_EQUIPAMENTOS = "cat-equipamentos";
+
 export function enderecamentoDaCategoria(dados: ParametrosBase, categoriaId: string): TipoEnderecamento {
   return dados.enderecamentoCategorias?.[categoriaId] ?? "nao_usa";
 }
@@ -327,7 +332,7 @@ export function salvarEnderecamentoCategoria(
   storage = storagePadrao(),
 ): void {
   alterar(storage, (dados) => {
-    achar(dados.categorias, categoriaId, "Categoria");
+    if (categoriaId !== CATEGORIA_EQUIPAMENTOS) achar(dados.categorias, categoriaId, "Categoria");
     if (tipo !== "nao_usa" && tipo !== "opcional" && tipo !== "obrigatorio") {
       throw new Error("Tipo de endereçamento inválido.");
     }

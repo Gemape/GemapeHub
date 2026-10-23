@@ -7,6 +7,7 @@ import {
   ABAS_FERRAMENTA,
   ABAS_UNIFORME,
   ABAS_VEICULO,
+  ABAS_EQUIPAMENTO,
   ABAS_VIAGEM,
   MENU_EPI,
   MENU_EQUIPAMENTOS,
@@ -102,7 +103,7 @@ const grupos = [
       { titulo: "Ferramentas", url: "/ferramentas", icone: Wrench, abas: ABAS_FERRAMENTA },
       { titulo: "Veículos", url: "/veiculos", icone: Car, abas: ABAS_VEICULO },
       { titulo: "Viagens", url: "/viagens", icone: IconeViagens, abas: ABAS_VIAGEM },
-      { titulo: "Equipamentos", url: "/equipamentos", icone: Forklift },
+      { titulo: "Equipamentos", url: "/equipamentos", icone: Forklift, abas: ABAS_EQUIPAMENTO },
     ],
   },
   {

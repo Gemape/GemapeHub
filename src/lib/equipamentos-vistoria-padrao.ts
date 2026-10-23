@@ -1,4 +1,4 @@
-import type { GrupoPadrao } from "./equipamentos-manutencao-padrao.ts";
+import { GRUPOS_AVULSOS_VISTORIA, type GrupoPadrao } from "./equipamentos-manutencao-padrao.ts";
 
 // Ações de vistoria já disponíveis para cada tipo de equipamento (lista fornecida pela Gemape): um grupo por rotina, valendo só para o tipo.
 // Entram no check list de vistoria pelo botão "Cadastrar padrão".
@@ -101,4 +101,5 @@ export const GRUPOS_PADRAO_VISTORIA: readonly GrupoPadrao[] = [
       "Desgaste do freio de içamento: suspender uma carga padrão próxima ao limite nominal a cerca de 30 cm do chão, desligar o comando e observar se há escorregamento (descida lenta involuntária), sinal de desgaste das pastilhas do freio do motor",
     ],
   },
+  ...GRUPOS_AVULSOS_VISTORIA,
 ];

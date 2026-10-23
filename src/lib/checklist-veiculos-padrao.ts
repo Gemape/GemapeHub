@@ -1,6 +1,6 @@
 // Itens de check list de veículos (decisões 62 e 64), carregados pelo botão "Cadastrar padrão".
 // Três listas por tipo de veículo: leves (carros, SUVs, picapes, vans), pesados (caminhões, cavalo
-// mecânico, carreta, ônibus) e empilhadeiras. Cada grupo é "tipo · seção".
+// mecânico, carreta, ônibus). Empilhadeira não é veículo: fica no módulo Equipamentos. Cada grupo é "tipo · seção".
 export const CHECKLIST_VEICULOS_PADRAO: readonly { nome: string; itens: readonly string[] }[] = [
   {
     nome: "Veículos leves · Mecânica",
@@ -130,91 +130,6 @@ export const CHECKLIST_VEICULOS_PADRAO: readonly { nome: string; itens: readonly
     ],
   },
   {
-    nome: "Empilhadeiras · Elevação e mastro",
-    itens: [
-      "Mastro: rolamentos, guias e deslizamento suave",
-      "Correntes de elevação (tensão, desgaste, lubrificação)",
-      "Cilindros de elevação e inclinação (vazamentos)",
-      "Travamento e folga do mastro",
-      "Movimento de elevação/abaixamento sem trancos ou ruídos",
-    ],
-  },
-  {
-    nome: "Empilhadeiras · Garfo e estrutura de carga",
-    itens: [
-      "Garfos: deformações, trincas e desgaste",
-      "Suporte do garfo e pinos de travamento",
-      "Extensões do garfo (quando houver)",
-      "Apoios e proteção traseira da carga",
-      "Inclinador do garfo funcionando",
-    ],
-  },
-  {
-    nome: "Empilhadeiras · Pneus e rodas",
-    itens: [
-      "Pneus maciços/pneumáticos (desgaste, trincas)",
-      "Rodas e parafusos",
-      "Roda traseira (direção) alinhada",
-    ],
-  },
-  {
-    nome: "Empilhadeiras · Freios e direção",
-    itens: [
-      "Freio de serviço (teste de frenagem)",
-      "Freio de estacionamento",
-      "Direção hidráulica (folga e esforço)",
-      "Vazamentos no sistema hidráulico",
-    ],
-  },
-  {
-    nome: "Empilhadeiras · Bateria (empilhadeira elétrica)",
-    itens: [
-      "Nível da bateria (carga)",
-      "Nível de eletrólito e água destilada",
-      "Cabos, bornes e conectores",
-      "Carregador em boas condições",
-    ],
-  },
-  {
-    nome: "Empilhadeiras · Motor e combustível (empilhadeira a combustão)",
-    itens: [
-      "Nível de óleo do motor",
-      "Nível de arrefecimento",
-      "Filtro de ar e combustível",
-      "Nível de GPL/diesel e vazamentos",
-      "Ruídos e fumaça anormais",
-    ],
-  },
-  {
-    nome: "Empilhadeiras · Elétrica e iluminação",
-    itens: [
-      "Faróis, lanternas e pisca-alerta",
-      "Buzina e alarme de ré",
-      "Sinal de marcha à ré",
-      "Luzes de trabalho (quando houver)",
-      "Cinto/sensor de presença do operador",
-    ],
-  },
-  {
-    nome: "Empilhadeiras · Segurança do operador",
-    itens: [
-      "Estrutura de proteção (FOP) — capô e teto",
-      "Espelho retrovisor (quando houver)",
-      "Retrovisor e visibilidade geral",
-      "Placa de capacidade de carga legível",
-      "Extintor (quando aplicável)",
-    ],
-  },
-  {
-    nome: "Empilhadeiras · Documentação e inspeção",
-    itens: [
-      "Inspeção diária do operador registrada",
-      "Checklist anterior assinado/resolvido",
-      "Manutenção preventiva em dia",
-      "Registro de pendências abertas",
-    ],
-  },
-  {
     nome: "Avulso · Mecânicos e funcionamento",
     itens: [
       "Nível do óleo do motor",
@@ -273,11 +188,10 @@ export const NOMES_PADRAO_ANTIGO: readonly string[] = [
 ];
 
 // Tipo de veículo a que cada grupo padrão se destina (decisões 63 e 64).
-export type ChaveTipoVeiculo = "passeio" | "suv" | "van" | "pesado" | "onibus" | "empilhadeira";
+export type ChaveTipoVeiculo = "passeio" | "suv" | "van" | "pesado" | "onibus";
 const POR_PREFIXO: readonly (readonly [string, readonly ChaveTipoVeiculo[]])[] = [
   ["Veículos leves", ["passeio", "suv", "van"]],
   ["Veículos pesados", ["pesado", "onibus"]],
-  ["Empilhadeiras", ["empilhadeira"]],
 ];
 
 // Chaves dos tipos a que o grupo padrão se aplica; "todos" quando vale para qualquer veículo.
@@ -289,7 +203,6 @@ export function tiposDoGrupoPadrao(nome: string): readonly ChaveTipoVeiculo[] | 
 // mecânico e carreta são pesados; moto e outros tipos não têm lista padrão.
 export function chaveDoTipoVeiculo(nomeSubcategoria: string): ChaveTipoVeiculo | null {
   const n = nomeSubcategoria.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  if (/empilh/.test(n)) return "empilhadeira";
   if (/onibus/.test(n)) return "onibus";
   if (/caminhonete|utilit|suv|picape|pick-?up/.test(n)) return "suv";
   if (/caminh|pesad|carreta|cavalo|bitrem/.test(n)) return "pesado";

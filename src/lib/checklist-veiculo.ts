@@ -48,7 +48,7 @@ export type ChecklistVeiculo = {
   itens: ItemChecklist[];
 };
 
-// Nome do check list (decisão 90): Placa >> Periodicidade >> Responsável. Sem placa (empilhadeira), entra a descrição do veículo.
+// Nome do check list (decisão 90): Placa >> Periodicidade >> Responsável. Sem placa, entra a descrição do veículo.
 export function nomeDoChecklist(c: { placa: string; fallbackVeiculo?: string; periodicidade: string; responsavelNome: string }): string {
   const veiculo = c.placa.trim().toUpperCase() || (c.fallbackVeiculo ?? "").trim();
   // Sem periodicidade ou sem responsável, o nome diz "Não definida" / "Não definido" (decisão 116).
@@ -93,7 +93,6 @@ export const ehPeriodicidade = (v: unknown): v is Periodicidade => PERIODICIDADE
 export const TIPOS_CHECKLIST = [
   { id: "leves", nome: "Veículos leves", chaves: ["passeio", "suv", "van"] },
   { id: "pesados", nome: "Veículos pesados", chaves: ["pesado", "onibus"] },
-  { id: "empilhadeira", nome: "Empilhadeira", chaves: ["empilhadeira"] },
 ] as const satisfies readonly { id: string; nome: string; chaves: readonly ChaveTipoVeiculo[] }[];
 export type TipoChecklistId = (typeof TIPOS_CHECKLIST)[number]["id"];
 

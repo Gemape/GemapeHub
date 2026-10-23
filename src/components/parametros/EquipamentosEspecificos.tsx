@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import { EnderecamentoEquipamentos } from "@/components/parametros/EnderecamentoEquipamentos";
+import { IndicadoresEquipamentoParametros } from "@/components/parametros/IndicadoresEquipamentoParametros";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
@@ -139,6 +141,8 @@ export function EquipamentosEspecificos() {
         <Button requiresWrite onClick={() => setDialogoSub({ editando: null })}>Cadastrar subcategoria</Button>
       </header>
 
+      <EnderecamentoEquipamentos />
+
       {params.subcategorias.length === 0 && <p className="panel p-4 text-sm text-muted-foreground">Nenhuma subcategoria cadastrada.</p>}
       {params.subcategorias.map((sub) => {
         const tipos = params.tipos.filter((t) => t.subcategoriaId === sub.id);
@@ -179,6 +183,8 @@ export function EquipamentosEspecificos() {
           </section>
         );
       })}
+
+      <IndicadoresEquipamentoParametros />
 
       <Dialog open={dialogoSub !== null} onOpenChange={(a) => !a && setDialogoSub(null)}>
         <DialogContent className="sm:max-w-lg">

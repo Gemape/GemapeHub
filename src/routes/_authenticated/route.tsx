@@ -17,13 +17,31 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { EmpresaProvider, TODAS, useEmpresa } from "@/lib/empresa-context";
 import logoSite from "@/assets/logo-gemape-site.png";
-import { AccessProvider, ROTULO_PAPEL, type Perfil } from "@/lib/access-context";
+import { AccessProvider, ROTULO_PAPEL, useAccess, type Perfil } from "@/lib/access-context";
 import { variaveisSupabaseFaltando } from "@/lib/supabase-env";
 
 // Menu Restaurar e Limpar dados de teste: só existe no modo demonstração (na produção, a condição é falsa na compilação e o código nem é gerado).
 const MenuDadosDeTeste = import.meta.env.VITE_DEMO_MODE !== "false"
   ? lazy(() => import("@/components/layout/MenuDadosDeTeste").then((m) => ({ default: m.MenuDadosDeTeste })))
   : null;
+
+// Troca de usuário de teste e matriz de acessos (Configurações): só no modo demonstração, como o menu acima.
+const ConfiguracoesDemo = import.meta.env.VITE_DEMO_MODE !== "false"
+  ? lazy(() => import("@/components/layout/ConfiguracoesDemo").then((m) => ({ default: m.ConfiguracoesDemo })))
+  : null;
+
+// Tela sem permissão (modo demonstração): mostra o aviso no lugar do conteúdo. Em produção `semAcesso` é sempre falso.
+function ConteudoComAcesso() {
+  const { semAcesso } = useAccess();
+  if (!semAcesso) return <Outlet />;
+  return (
+    <div role="alert" className="panel mx-auto max-w-lg space-y-3 p-6 text-center">
+      <p className="text-lg font-semibold">Sem acesso a esta tela</p>
+      <p className="text-sm text-muted-foreground">O usuário atual não tem permissão para ver esta tela. Um Administrador pode liberar em Configurações.</p>
+      <Button asChild variant="outline"><Link to="/inicio">Ir para o início</Link></Button>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -113,6 +131,7 @@ function LayoutAutenticado() {
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
             <div className="flex items-center justify-end gap-2">
+              {ConfiguracoesDemo && <Suspense fallback={null}><ConfiguracoesDemo /></Suspense>}
               {MenuDadosDeTeste && <Suspense fallback={null}><MenuDadosDeTeste /></Suspense>}
               <FiltroEmpresa />
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <><a className="text-xs underline" href="/auth?password=update">Trocar senha</a>
@@ -122,7 +141,7 @@ function LayoutAutenticado() {
             </div>
           </header>
           <div className="flex-1 p-4 md:p-6">
-            <Outlet />
+            <ConteudoComAcesso />
           </div>
           <VisualizadorDocumento />
         </main>

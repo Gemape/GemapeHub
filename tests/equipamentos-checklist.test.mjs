@@ -211,7 +211,7 @@ test("padrão de manutenção: um grupo por rotina, só no tipo certo, sem dupli
   const { cadastrarPadraoManutencao } = await import("../src/lib/equipamentos-checklist.ts");
   const { GRUPOS_PADRAO_MANUTENCAO } = await import("../src/lib/equipamentos-manutencao-padrao.ts");
   const { TIPOS_PADRAO } = await import("../src/lib/equipamentos-parametros.ts");
-  assert.ok(GRUPOS_PADRAO_MANUTENCAO.length === 16);
+  assert.ok(GRUPOS_PADRAO_MANUTENCAO.length === 24, "16 do periódico e 8 avulsos, um por tipo");
   assert.ok(GRUPOS_PADRAO_MANUTENCAO.every((g) => TIPOS_PADRAO.some((t) => t.id === g.tipoId) && g.itens.length > 0));
   const s = memoria();
   assert.equal(cadastrarPadraoManutencao(s).criados, GRUPOS_PADRAO_MANUTENCAO.length);
@@ -226,11 +226,11 @@ test("padrão de vistoria: um grupo por rotina no tipo certo, só na vistoria, s
   const { cadastrarPadraoVistoria } = await import("../src/lib/equipamentos-checklist.ts");
   const { GRUPOS_PADRAO_VISTORIA } = await import("../src/lib/equipamentos-vistoria-padrao.ts");
   const { TIPOS_PADRAO } = await import("../src/lib/equipamentos-parametros.ts");
-  assert.equal(GRUPOS_PADRAO_VISTORIA.length, 16);
+  assert.equal(GRUPOS_PADRAO_VISTORIA.length, 24);
   assert.ok(GRUPOS_PADRAO_VISTORIA.every((g) => TIPOS_PADRAO.some((t) => t.id === g.tipoId) && g.itens.length > 0));
   const s = memoria();
-  assert.equal(cadastrarPadraoVistoria(s).criados, 16);
-  assert.equal(lerChecklistEquipamento(s).vistoria.grupos.length, 16);
+  assert.equal(cadastrarPadraoVistoria(s).criados, 24);
+  assert.equal(lerChecklistEquipamento(s).vistoria.grupos.length, 24);
   assert.equal(lerChecklistEquipamento(s).manutencao.grupos.length, 0);
   assert.equal(cadastrarPadraoVistoria(s).criados, 0);
 });
@@ -241,7 +241,7 @@ test("padrão não cria grupo de tipo que não existe mais e avisa quantos ficar
   const s = memoria();
   removerTipo("tipo-munck", s);
   assert.ok(!lerParametrosEquipamento(s).tipos.some((t) => t.id === "tipo-munck"));
-  assert.deepEqual(cadastrarPadraoChecklist("vistoria", s), { criados: 14, semTipo: 2 });
+  assert.deepEqual(cadastrarPadraoChecklist("vistoria", s), { criados: 21, semTipo: 3 });
   assert.ok(lerChecklistEquipamento(s).vistoria.grupos.every((g) => !g.tipos.includes("tipo-munck")));
 });
 

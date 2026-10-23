@@ -35,7 +35,7 @@ function AtalhoDoCartao({ sub }: { sub: SubitemInicio }) {
 // Tela inicial: o menu em cartões. Cartão com submenus abre a lista de atalhos no próprio cartão; os outros abrem a tela direto.
 // Não há menu lateral: tudo se acessa por aqui, e as outras telas têm o botão Voltar ao início no topo.
 function PaginaInicio() {
-  const { isAdmin } = useAccess();
+  const { isAdmin, podeVerCaminho } = useAccess();
   const [abertos, setAbertos] = useState<ReadonlySet<string>>(new Set());
   const alternar = (chave: string) =>
     setAbertos((a) => {
@@ -65,20 +65,20 @@ function PaginaInicio() {
       {/* Sem título na tela: ela começa direto nos cartões. O título fica só para o leitor de tela. */}
       <h1 className="sr-only">Início</h1>
       <div className="mx-auto max-w-6xl space-y-10">
-      {gruposDoInicio(isAdmin).map((grupo) => (
+      {gruposDoInicio(isAdmin, podeVerCaminho).map((grupo) => (
         <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="space-y-4">
           <h2 id={`grupo-${grupo.titulo}`} className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-primary/80">
             {grupo.titulo}
             <span aria-hidden="true" className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
           </h2>
           <ul className="flex flex-wrap items-start justify-center gap-6">
-            {grupo.cartoes.map((c) => {
+            {grupo.cartoes.map((c, indice) => {
               const Icone = ICONES_CARTAO[c.icone];
               const chave = `${grupo.titulo}/${c.titulo}`;
               const faixa = (
-                <span className="flex h-28 items-center justify-center bg-gradient-to-br from-[oklch(0.9_0.05_255)] to-[oklch(0.965_0.025_255)] text-primary">
-                  <span className="flex size-14 items-center justify-center rounded-full bg-white/70 shadow-md ring-1 ring-white transition-transform duration-300 group-hover/cartao:scale-110 motion-reduce:transition-none">
-                    <Icone className="size-7" aria-hidden="true" />
+                <span className="flex h-36 items-center justify-center bg-gradient-to-br from-[oklch(0.9_0.05_255)] to-[oklch(0.965_0.025_255)] text-primary">
+                  <span className="medalhao-cartao" style={{ "--atraso": `${(indice % 6) * -0.8}s` } as React.CSSProperties}>
+                    <Icone aria-hidden="true" />
                   </span>
                 </span>
               );

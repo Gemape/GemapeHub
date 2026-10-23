@@ -71,6 +71,7 @@ export function ListaVeiculos({
   secoes,
   alertaPainel = false,
   onValidar,
+  textoAlerta,
 }: {
   eyebrow?: string;
   // Itens do padrão, para marcar e personalizar ao cadastrar o grupo (campoExtra "itens"); sem ele, vale o campo de texto.
@@ -96,6 +97,8 @@ export function ListaVeiculos({
   // Pergunta Sim ou Não antes de gravar (Ações de manutenção, decisão 145): a alteração muda o painel de manutenção.
   alertaPainel?: boolean;
   onValidar?: (id: string | null, nome: string, extra: string, storage: StorageLike) => unknown;
+  // Texto do alerta Sim/Não (alertaPainel); sem ele vale o de Veículos.
+  textoAlerta?: string;
 }) {
   const [aberto, setAberto] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
@@ -296,6 +299,7 @@ export function ListaVeiculos({
       </Dialog>
       <AlertaPainelManutencao
         aberto={confirmando}
+        {...(textoAlerta ? { texto: textoAlerta } : {})}
         onSim={() => {
           setConfirmando(false);
           gravar();
@@ -375,6 +379,7 @@ export function RestaurarPadraoInicial({
   perdas,
   feminino = false,
   rotulo = "Restaurar configurações iniciais",
+  semTipoTexto = "sem o tipo de veículo em Gerais: o tipo foi mantido como estava, escolha em Editar.",
 }: {
   singular: string;
   plural: string;
@@ -384,6 +389,8 @@ export function RestaurarPadraoInicial({
   feminino?: boolean;
   // Nome do botão e da janela (Ações de manutenção usa "Restaurar configurações iniciais", decisão 141).
   rotulo?: string;
+  // Texto do aviso de grupo restaurado sem o tipo (cada módulo diz onde o tipo é cadastrado).
+  semTipoTexto?: string;
 }) {
   useParametrosBase(); // atualiza a lista quando o cadastro muda
   const [aberto, setAberto] = useState(false);
@@ -414,7 +421,7 @@ export function RestaurarPadraoInicial({
       const r = restaurar(marcados);
       const partes = [r.restaurados > 0 ? `${r.restaurados} ${r.restaurados === 1 ? "restaurado" : "restaurados"}` : "", r.criados > 0 ? `${r.criados} ${r.criados === 1 ? "cadastrado" : "cadastrados"} de novo` : ""].filter(Boolean);
       toast.success(
-        `Padrão inicial: ${partes.join(" e ")}.` + ((r.semTipo ?? 0) > 0 ? ` ${r.semTipo} sem o tipo de veículo em Gerais: o tipo foi mantido como estava, escolha em Editar.` : ""),
+        `Padrão inicial: ${partes.join(" e ")}.` + ((r.semTipo ?? 0) > 0 ? ` ${r.semTipo} ${semTipoTexto}` : ""),
       );
     });
     if (ok) setAberto(false);
