@@ -21,7 +21,7 @@ import { AccessProvider, ROTULO_PAPEL, type Perfil } from "@/lib/access-context"
 import { variaveisSupabaseFaltando } from "@/lib/supabase-env";
 
 // Menu Restaurar e Limpar dados de teste: só existe no modo demonstração (na produção, a condição é falsa na compilação e o código nem é gerado).
-const MenuDadosDeTeste = import.meta.env["VITE_DEMO_MODE"] !== "false"
+const MenuDadosDeTeste = import.meta.env.VITE_DEMO_MODE !== "false"
   ? lazy(() => import("@/components/layout/MenuDadosDeTeste").then((m) => ({ default: m.MenuDadosDeTeste })))
   : null;
 

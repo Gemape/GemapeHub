@@ -279,10 +279,17 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     const doModulo = movimentosDe.filter((m) => m["modulo"] === (tabelaEstoque === "epis" ? "epi" : "uniforme"));
     for (const linha of tabela(tabelaEstoque).filter(teste)) {
       const saldo = doModulo.filter((m) => m["item_id"] === linha["id"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? -Number(m["quantidade"]) : Number(m["quantidade"])), 0);
-      linha["estoque_atual"] = saldo;
-      // A empresa de índice 1 e 2 tem mínimo ajustado: o primeiro item de cada grupo fica acima do saldo, para o alerta aparecer.
+      // Cada empresa tem o seu mínimo, em torno do do catálogo: a primeira acima (alertas aparecem), a segunda um pouco abaixo e a terceira igual.
       const empresa = empresaIds.indexOf(String(linha["empresa_id"]));
-      if (empresa >= 0) linha["estoque_minimo"] = Math.max(0, Number(linha["estoque_minimo"]) + (empresa === 0 ? 3 : empresa === 1 ? -1 : 0));
+      const minimo = Math.max(0, Number(linha["estoque_minimo"]) + (empresa === 0 ? 3 : empresa === 1 ? -1 : 0));
+      linha["estoque_atual"] = saldo;
+      linha["estoque_minimo"] = minimo;
+      // Produto com tamanho: saldo e mínimo ficam por tamanho (decisão 23); o estoque e o mínimo do produto são a soma.
+      const tamanhos = linha["tamanhos_selecionados"];
+      if (Array.isArray(tamanhos) && tamanhos.length === 1) {
+        linha["saldos_tamanho"] = { [String(tamanhos[0])]: saldo };
+        linha["minimos_tamanho"] = { [String(tamanhos[0])]: minimo };
+      }
     }
   };
   aplicarSaldos("epis");

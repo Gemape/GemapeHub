@@ -46,7 +46,7 @@ const lerDados = (): Record<string, Linha[]> => {
 };
 // Dados de teste (3 registros por cadastro): gravados no armazenamento local uma vez por versão, antes de qualquer leitura, só no modo demonstração.
 // `import.meta.env` vale `false` na produção e a chamada some do pacote; sem janela (testes em Node) não faz nada.
-if (typeof window !== "undefined" && import.meta.env?.["VITE_DEMO_MODE"] !== "false") prepararDadosDeTeste(window.localStorage, dadosIniciais);
+if (typeof window !== "undefined" && import.meta.env?.VITE_DEMO_MODE !== "false") prepararDadosDeTeste(window.localStorage, dadosIniciais);
 const dados = lerDados();
 const persistirDados = () => {
   if (typeof window !== "undefined") window.localStorage.setItem(chaveArmazenamento, JSON.stringify(dados));

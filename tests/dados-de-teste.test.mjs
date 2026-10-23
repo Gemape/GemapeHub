@@ -222,7 +222,7 @@ test("dado salvo ilegível não é sobrescrito: os dados de teste não são apli
 
 test("só no modo demonstração e só no armazenamento local: nada no Supabase e a produção não carrega o conjunto", () => {
   const demo = ler("integrations/supabase/demo-client.ts");
-  assert.match(demo, /typeof window !== "undefined" && import\.meta\.env\?\.\["VITE_DEMO_MODE"\] !== "false"\) prepararDadosDeTeste\(window\.localStorage/);
+  assert.match(demo, /typeof window !== "undefined" && import\.meta\.env\?\.VITE_DEMO_MODE !== "false"\) prepararDadosDeTeste\(window\.localStorage/);
   const arquivos = readdirSync(new URL("../src/lib/dados-teste/", import.meta.url));
   assert.ok(arquivos.length >= 4);
   for (const a of arquivos) {
@@ -232,9 +232,22 @@ test("só no modo demonstração e só no armazenamento local: nada no Supabase 
   }
   // O menu de Restaurar e Limpar só existe no demo.
   const rota = ler("routes/_authenticated/route.tsx");
-  assert.match(rota, /const MenuDadosDeTeste = import\.meta\.env\["VITE_DEMO_MODE"\] !== "false"\s*\? lazy\(/);
+  // A forma com ponto é trocada pelo valor no começo da compilação: na produção o menu e os dados de teste nem entram no pacote (conferido no build).
+  assert.match(rota, /const MenuDadosDeTeste = import\.meta\.env\.VITE_DEMO_MODE !== "false"\s*\? lazy\(/);
+  assert.match(ler("env.d.ts"), /readonly VITE_DEMO_MODE\?: string/);
   assert.match(rota, /\{MenuDadosDeTeste && <Suspense/);
   const menu = ler("components/layout/MenuDadosDeTeste.tsx");
   assert.match(menu, /Restaurar dados de teste/);
   assert.match(menu, /Limpar dados de teste/);
+});
+
+test("EPI e uniforme com tamanho guardam saldo e mínimo por tamanho, como a tela de Estoque lê", () => {
+  const s = prontos();
+  const d = dados(s);
+  for (const linha of [...doTeste(d.epis), ...doTeste(d.uniformes)].filter((l) => l.tamanhos_selecionados.length === 1)) {
+    const tam = linha.tamanhos_selecionados[0];
+    assert.deepEqual(linha.saldos_tamanho, { [tam]: linha.estoque_atual }, linha.codigo_sku);
+    assert.deepEqual(linha.minimos_tamanho, { [tam]: linha.estoque_minimo }, linha.codigo_sku);
+  }
+  assert.ok(doTeste(d.epis).some((l) => l.saldos_tamanho));
 });
