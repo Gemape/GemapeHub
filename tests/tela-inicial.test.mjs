@@ -68,7 +68,10 @@ test("os submenus de módulo são as abas do módulo, as mesmas do menu lateral,
       assert.equal(abaDoModulo(chave, a.search.aba), abas[i].aba, `${nome}: ${a.titulo}`);
     }
   }
-  assert.deepEqual(daSecao(cartao(true, AREAS, "Equipamentos"), "Módulo").map((i) => i.url), ["/equipamentos"]);
+  const doEquipamento = daSecao(cartao(true, AREAS, "Equipamentos"), "Módulo");
+  assert.deepEqual(doEquipamento.map((i) => i.titulo), ["Inventário dos Equipamentos", "Indicadores", "Abastecimento", "Manutenção", "Ocorrências", "Check list de Manutenção", "Check list de vistoria"]);
+  assert.ok(doEquipamento.every((i) => i.url === "/equipamentos"));
+  assert.deepEqual(doEquipamento.map((i) => abaDoModulo("equipamento", i.search.aba)), doEquipamento.map((i) => i.search.aba));
 });
 
 test("os submenus de parâmetros são os itens do menu de cada grupo, com Cadastrar Ficha de EPI dentro de EPI", () => {
@@ -124,7 +127,7 @@ test("em toda tela a logomarca no topo leva à tela inicial, e fora dela há o b
 
 test("a tela mostra cartões com ícone, título e Clique para acessar, só os do perfil de quem entrou", () => {
   assert.ok(pagina, "rota /inicio");
-  assert.match(pagina, /gruposDoInicio\(isAdmin\)/);
+  assert.match(pagina, /gruposDoInicio\(isAdmin, podeVerCaminho\)/);
   assert.match(pagina, /Clique para acessar/);
   assert.match(pagina, /focus-visible:ring/);
   assert.match(pagina, /lg:w-\[calc\(33\.333%/);

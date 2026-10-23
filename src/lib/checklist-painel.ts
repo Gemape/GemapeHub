@@ -24,9 +24,10 @@ export type Previsao = {
 export type VeiculoPrevisto = Pick<Previsao, "veiculoId" | "veiculoRotulo" | "periodicidade" | "responsavelNome" | "obrigatorio"> & { desde?: string };
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
-const lerBruto = (storage: StorageLike | null) => lerLista<Previsao>(CHAVE, storage);
+const lerBruto = (storage: StorageLike | null, chave = CHAVE) => lerLista<Previsao>(chave, storage);
 
-export const lerPrevisoes = (storage: StorageLike | null = storagePadrao()): Previsao[] => lerBruto(storage).lista;
+// `chave` e `evento` próprios permitem a outro módulo (Equipamentos) ter o seu painel, com a mesma lógica; sem eles valem os de Veículos.
+export const lerPrevisoes = (storage: StorageLike | null = storagePadrao(), chave = CHAVE): Previsao[] => lerBruto(storage, chave).lista;
 
 // ---------- Datas (aritmética em UTC: independe do fuso do navegador) ----------
 
@@ -73,9 +74,11 @@ const idDa = (v: VeiculoPrevisto, p: { inicio: string; fim: string }) => `${v.ve
 export function sincronizarPrevisoes(
   entrada: { veiculos: VeiculoPrevisto[]; hoje: string },
   storage: StorageLike | null = storagePadrao(),
+  opcoes: { chave?: string; evento?: string } = {},
 ): void {
   if (!storage) throw new Error("Armazenamento do navegador indisponível.");
-  const { lista, integro } = lerBruto(storage);
+  const chave = opcoes.chave ?? CHAVE;
+  const { lista, integro } = lerBruto(storage, chave);
   if (!integro) throw new Error("Os registros salvos neste navegador não puderam ser lidos. Nada foi alterado, para não apagá-los.");
   const { hoje } = entrada;
   const desejadas = new Map<string, Previsao>();
@@ -98,8 +101,8 @@ export function sincronizarPrevisoes(
   const novas = [...desejadas.values()].filter((p) => !existentes.has(p.id));
   const resultado = [...mantidas, ...novas];
   if (JSON.stringify(resultado) === JSON.stringify(lista)) return;
-  storage.setItem(CHAVE, JSON.stringify(resultado));
-  if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_PREVISOES_CHECKLIST));
+  storage.setItem(chave, JSON.stringify(resultado));
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(opcoes.evento ?? EVENTO_PREVISOES_CHECKLIST));
 }
 
 // ---------- Painel ----------
@@ -121,7 +124,7 @@ export type ResumoPainel = {
   pctNaoNoPrazo: number | null;
 };
 
-type ChecklistDoPainel = Pick<ChecklistVeiculo, "id" | "codigo" | "veiculoId" | "periodicidade" | "status" | "data" | "concluidoEm" | "responsavelNome">;
+export type ChecklistDoPainel = Pick<ChecklistVeiculo, "id" | "codigo" | "veiculoId" | "periodicidade" | "status" | "data" | "concluidoEm" | "responsavelNome">;
 
 const diaDaConclusao = (c: ChecklistDoPainel) => (c.concluidoEm ? hojeBrasilia(new Date(c.concluidoEm)) : c.data);
 

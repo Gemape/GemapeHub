@@ -25,15 +25,18 @@ const doTeste = (lista) => lista.filter((l) => String(l.id).startsWith("teste-")
 const dados = (s) => json(s, "gemape-demo-dados");
 const LISTAS = ["gemape-demo-fornecedores", "gemape-demo-clientes", "gemape-demo-equipamentos", "gemape-demo-abastecimentos", "gemape-demo-portadores-caixa", "gemape-demo-respostas-despesas"];
 
-test("três registros em cada cadastro, com os que o sistema já trazia mantidos", () => {
+test("cinco registros em cada cadastro (cinco empregados por empresa), com os que o sistema já trazia mantidos", () => {
   const s = prontos();
   const d = dados(s);
-  for (const t of ["empresas", "empregados", "ferramentas", "veiculos", "caixas_ferramentas"]) assert.equal(doTeste(d[t]).length, 3, t);
+  for (const t of ["ferramentas", "veiculos", "caixas_ferramentas"]) assert.equal(doTeste(d[t]).length, 5, t);
+  assert.equal(doTeste(d.empresas).length, 3, "as três empresas do grupo");
   assert.equal(d.empresas.length, 4, "a empresa que já existia fica");
-  assert.equal(d.empregados.length, 4);
-  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 3, k);
+  assert.equal(doTeste(d.empregados).length, 15);
+  for (const e of doTeste(d.empresas)) assert.equal(doTeste(d.empregados).filter((x) => x.empresa_id === e.id).length, 5, `cinco empregados em ${e.nome_fantasia}`);
+  assert.equal(d.empregados.length, 16);
+  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 5, k);
   // EPIs e uniformes: três produtos (descrições), um registro de catálogo por tamanho.
-  for (const t of ["epis_catalogo", "uniformes_catalogo"]) assert.equal(new Set(doTeste(d[t]).map((c) => c.nome)).size, 3, t);
+  for (const t of ["epis_catalogo", "uniformes_catalogo"]) assert.equal(new Set(doTeste(d[t]).map((c) => c.nome)).size, 5, t);
   assert.ok(doTeste(d.epis_catalogo).length > 3, "tamanhos variados");
   const gerais = json(s, "gemape-demo-parametros-base");
   for (const lista of ["marcasFerramenta", "marcasUniforme", "tiposOcorrenciaVeiculo", "acoesManutencaoVeiculo"]) {
@@ -113,7 +116,7 @@ test("coerência: cada registro aponta para algo que existe, na mesma empresa", 
   const abastecimentos = new Map(json(s, "gemape-demo-abastecimentos").map((a) => [a.id, a]));
   const questionario = json(s, "gemape-demo-questionario-despesas");
   const habilitados = questionario.perguntas.find((p) => p.id === "q-04").habilitados.filter((h) => String(h.empregadoId).startsWith("teste-"));
-  assert.equal(habilitados.length, 3);
+  assert.equal(habilitados.length, 15);
   for (const v of doTeste(json(s, "gemape-demo-respostas-despesas"))) {
     const ab = abastecimentos.get(v.valores["abastecimento:id"]);
     assert.ok(ab && veiculos.has(ab.veiculoId), "viagem sem veículo");
@@ -167,9 +170,9 @@ test("versão nova do conjunto troca só o que é de teste e mantém o que o usu
   const depois = dados(s);
   assert.equal(depois.empresas.filter((e) => e.id.startsWith("teste-")).length, 3, "sem duplicar");
   assert.equal(depois.empresas.filter((e) => e.nome_fantasia === "Minha empresa").length, 1);
-  assert.equal(depois.empregados.filter((e) => e.id.startsWith("teste-")).length, 3);
+  assert.equal(depois.empregados.filter((e) => e.id.startsWith("teste-")).length, 15);
   assert.equal(lerControle(s).versao, VERSAO_DADOS_TESTE);
-  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 3, `${k} sem duplicar`);
+  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 5, `${k} sem duplicar`);
   const gerais = json(s, "gemape-demo-parametros-base");
   assert.equal(gerais.marcasFerramenta.filter((m) => ["Ferrotec", "Maxforça", "Duramax"].includes(m.nome)).length, 3, "marcas sem duplicar");
 });
@@ -198,19 +201,21 @@ test("Limpar tira só os dados de teste e não grava de novo; Restaurar repõe o
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
   assert.equal(doTeste(dados(s).empresas).length, 3);
   assert.ok(dados(s).empresas.some((e) => e.id === "empresa-do-usuario"), "o do usuário continua");
-  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 3, k);
+  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 5, k);
 });
 
 test("restaurar desfaz o que foi sujo nos dados de teste", () => {
   const s = prontos();
   const d = dados(s);
   d.empregados.find((e) => e.id === "teste-empregado-1").nome = "Nome sujo";
+  const episAntes = d.epis.length;
   d.epis = d.epis.filter((e) => !e.id.startsWith("teste-epi-est-1"));
+  assert.ok(d.epis.length < episAntes);
   s.setItem("gemape-demo-dados", JSON.stringify(d));
   pedirRestaurar(s);
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
   assert.equal(dados(s).empregados.find((e) => e.id === "teste-empregado-1").nome, "Ana Beatriz Correia");
-  assert.equal(doTeste(dados(s).epis).length, 28);
+  assert.equal(dados(s).epis.length, episAntes, "o estoque apagado voltou");
 });
 
 test("dado salvo ilegível não é sobrescrito: os dados de teste não são aplicados", () => {

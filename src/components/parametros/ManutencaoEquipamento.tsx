@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { RestaurarAcoesEquipamento, TEXTO_ALERTA_EQUIPAMENTO } from "@/components/parametros/RestaurarAcoesEquipamento";
 import { ListaVeiculos } from "@/components/parametros/VeiculosListasParametros";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table } from "@/components/ui/table";
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
 import {
-  itensDoPlano, lerManutencaoEquipamento, OUTROS, removerAcao, removerPlano, removerTipoOcorrencia, salvarAcao, salvarPlano, salvarTipoOcorrencia,
+  aplicarAcoesPadraoUmaVez, itensDoPlano, lerManutencaoEquipamento, OUTROS, removerAcao, removerPlano, removerTipoOcorrencia, salvarAcao, salvarPlano, salvarTipoOcorrencia,
   type EntradaItemPlano, type PlanoEquipamento,
 } from "@/lib/equipamentos-manutencao";
 import { useVersaoArmazenamento } from "@/lib/use-versao-armazenamento";
@@ -38,6 +39,8 @@ function executar(acao: () => unknown, ok: string, aoMudar: () => void): boolean
 export function AcoesManutencaoEquipamentoLista({ secao = false, versao, aoMudar }: { secao?: boolean; versao: number; aoMudar: () => void }) {
   const { acoes } = useMemo(() => lerManutencaoEquipamento(), [versao]);
   const subitensDe = (texto: string) => texto.split("\n");
+  // Como em Veículos, as ações do padrão inicial já vêm cadastradas (uma vez só); depois, o botão Restaurar configurações iniciais as devolve.
+  useEffect(() => { if (aplicarAcoesPadraoUmaVez()) aoMudar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <ListaVeiculos
       eyebrow={CAMINHO}
@@ -49,6 +52,10 @@ export function AcoesManutencaoEquipamentoLista({ secao = false, versao, aoMudar
       campoExtra="subitens"
       onSalvar={(id, nome, extra) => executar(() => salvarAcao({ ...(id ? { id } : {}), nome, subitens: subitensDe(extra) }), "Ação de manutenção salva.", aoMudar)}
       onExcluir={(l) => executar(() => removerAcao(l.id), "Ação de manutenção excluída.", aoMudar)}
+      acaoExtra={(cadastrar) => <RestaurarAcoesEquipamento aoCadastrar={cadastrar} aoMudar={aoMudar} />}
+      alertaPainel
+      textoAlerta={TEXTO_ALERTA_EQUIPAMENTO}
+      onValidar={(id, nome, extra, storage) => salvarAcao({ ...(id ? { id } : {}), nome, subitens: subitensDe(extra) }, storage)}
     />
   );
 }

@@ -15,6 +15,8 @@ import { salvarEquipamento } from "../equipamentos-demo.ts";
 import { salvarFornecedor } from "../fornecedores-demo.ts";
 import { registrarAbastecimento } from "../registros-veiculo.ts";
 import * as Gerais from "../parametros-base.ts";
+import { restaurarPermissoes } from "../permissoes-demo.ts";
+import { semearModuloEquipamentos } from "./equipamentos-modulo.ts";
 import { semearViagens } from "./viagens.ts";
 import {
   ACOES_MANUTENCAO_VEICULO, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
@@ -30,7 +32,8 @@ const CHAVE_DADOS = "gemape-demo-dados";
 // Coleções guardadas à parte, uma lista de registros com `id` cada.
 export const CHAVES_LISTAS = [
   "gemape-demo-fornecedores", "gemape-demo-clientes", "gemape-demo-equipamentos", "gemape-demo-abastecimentos", "gemape-demo-portadores-caixa",
-  "gemape-demo-respostas-despesas",
+  "gemape-demo-respostas-despesas", "gemape-demo-eq-abastecimentos", "gemape-demo-eq-manutencoes", "gemape-demo-eq-ocorrencias", "gemape-demo-eq-checklists", "gemape-demo-eq-checklists-exec",
+  "gemape-demo-eq-previsoes-manutencao", "gemape-demo-eq-previsoes-vistoria",
 ] as const;
 const CHAVE_QUESTIONARIO = "gemape-demo-questionario-despesas";
 
@@ -90,6 +93,23 @@ export function removerDadosDeTeste(storage: Armazenamento, base: Dados): void {
   // (O abastecimento guarda `veiculoId`; já saiu acima quando o id tinha o prefixo, e este passo cobre os registros do usuário.)
   const abastecimentos = lerJson(storage, "gemape-demo-abastecimentos");
   if (Array.isArray(abastecimentos)) storage.setItem("gemape-demo-abastecimentos", JSON.stringify(abastecimentos.filter((a) => !(ehLinha(a) && typeof a["veiculoId"] === "string" && (a["veiculoId"] as string).startsWith(PREFIXO)))));
+  // Registros do módulo Equipamentos feitos em equipamentos de teste (os de teste já saíram acima pelo prefixo).
+  for (const chave of CHAVES_LISTAS.filter((c) => c.startsWith("gemape-demo-eq-"))) {
+    const lido = lerJson(storage, chave);
+    if (Array.isArray(lido)) storage.setItem(chave, JSON.stringify(lido.filter((r) => !(ehLinha(r) && typeof r["equipamentoId"] === "string" && (r["equipamentoId"] as string).startsWith(PREFIXO)))));
+  }
+  // Planos de manutenção e check lists associados a equipamentos de teste (os parâmetros em si, como ações e grupos, ficam).
+  for (const chave of ["gemape-demo-equipamentos-manutencao", "gemape-demo-equipamentos-checklist"]) {
+    const lido = lerJson(storage, chave);
+    if (!ehLinha(lido)) continue;
+    const doTeste = (r: unknown) => ehLinha(r) && typeof r["equipamentoId"] === "string" && (r["equipamentoId"] as string).startsWith(PREFIXO);
+    if (Array.isArray(lido["planos"])) lido["planos"] = lido["planos"].filter((p) => !doTeste(p));
+    for (const f of ["manutencao", "vistoria"]) {
+      const parte = lido[f];
+      if (ehLinha(parte) && Array.isArray(parte["associacoes"])) parte["associacoes"] = parte["associacoes"].filter((a) => !doTeste(a));
+    }
+    storage.setItem(chave, JSON.stringify(lido));
+  }
   // Técnicos habilitados do questionário de viagens que são empregados de teste.
   const questionario = lerJson(storage, CHAVE_QUESTIONARIO);
   if (ehLinha(questionario) && Array.isArray(questionario["perguntas"])) {
@@ -129,7 +149,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     Gerais.autorizar(sub, "tamanhos", [...tamanhos], storage);
     Gerais.autorizar(sub, "unidades", [sub === "sub-epi-botina" || sub === "sub-epi-luva" ? "uni-par" : "uni-unidade"], storage);
   }
-  Gerais.autorizar("sub-epi-capacete", "unidades", ["uni-unidade"], storage);
+  for (const sub of ["sub-epi-capacete", "sub-epi-oculos", "sub-epi-protetor-auricular"]) Gerais.autorizar(sub, "unidades", ["uni-unidade"], storage);
   for (const nome of MARCAS_FERRAMENTA) anotar("marcasFerramenta", Gerais.adicionarListaFerramenta("marcasFerramenta", nome, storage).id);
   for (const nome of MARCAS_UNIFORME) anotar("marcasUniforme", Gerais.adicionarListaFerramenta("marcasUniforme", nome, storage).id);
   for (const t of TIPOS_OCORRENCIA_VEICULO) anotar("tiposOcorrenciaVeiculo", Gerais.adicionarTipoOcorrenciaVeiculo(t.nome, t.descricao, storage).id);
@@ -314,8 +334,8 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     });
   }
 
-  // Caixas de ferramentas: habilita 1 a 3 e cria uma caixa por empresa com a ferramenta dela, aos cuidados de um empregado.
-  const habilitadas = [...new Set([...Gerais.lerParametros(storage).caixasHabilitadas, 1, 2, 3])];
+  // Caixas de ferramentas: habilita os números das caixas e cria uma caixa por ferramenta, aos cuidados de um empregado.
+  const habilitadas = [...new Set([...Gerais.lerParametros(storage).caixasHabilitadas, ...ferramentas.map((_, n) => n + 1)])];
   const caixasUsuario = tabela("caixas_ferramentas").filter((c) => !teste(c)).map((c) => ({ id: String(c["id"]), codigo: String(c["codigo"] ?? ""), codigo_num: Number(c["codigo_num"]) || null }));
   Gerais.salvarCaixasHabilitadas(habilitadas, caixasUsuario, storage);
   const portadores: Linha[] = [];
@@ -324,12 +344,12 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     const numero = n + 1;
     tabela("caixas_ferramentas").push({
       id: caixaId, created_at: criadoEm, codigo: codigoCaixa(numero), codigo_num: numero, empresa_id: empresaIds[f.empresaIndice], nome: codigoCaixa(numero),
-      descricao: `Caixa de ${f.grupo.toLocaleLowerCase("pt-BR")} da ${EMPRESAS[f.empresaIndice]!.nome_fantasia}`, localizacao: ["Oficina — bancada 1", "Almoxarifado — prateleira B", "Galpão — armário 3"][n] ?? "Almoxarifado", status: "Ativa",
+      descricao: `Caixa de ${f.grupo.toLocaleLowerCase("pt-BR")} da ${EMPRESAS[f.empresaIndice]!.nome_fantasia}`, localizacao: ["Oficina — bancada 1", "Almoxarifado — prateleira B", "Galpão — armário 3", "Oficina — bancada 4", "Expedição — armário 1"][n] ?? "Almoxarifado", status: "Ativa",
     });
     tabela("caixa_ferramenta_itens").push({ id: `${PREFIXO}caixa-item-${n + 1}`, caixa_id: caixaId, ferramenta_id: id, quantidade: 1, observacao: "Item de teste da caixa" });
     portadores.push({
-      id: `${PREFIXO}portador-${n + 1}`, caixa_id: caixaId, caixa_codigo: codigoCaixa(numero), empresa_id: empresaIds[f.empresaIndice], empregado_id: EMPREGADOS[f.empresaIndice]!.id,
-      empregado_nome: EMPREGADOS[f.empresaIndice]!.nome, status: "Ativa", observacao: "Portador de teste", data_inicio: dia(agora, 40), data_fim: null,
+      id: `${PREFIXO}portador-${n + 1}`, caixa_id: caixaId, caixa_codigo: codigoCaixa(numero), empresa_id: empresaIds[f.empresaIndice], empregado_id: EMPREGADOS[n]!.id,
+      empregado_nome: EMPREGADOS[n]!.nome, status: "Ativa", observacao: "Portador de teste", data_inicio: dia(agora, 40), data_fim: null,
     });
   });
   storage.setItem(CHAVE_DADOS, JSON.stringify(dados));
@@ -352,6 +372,9 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     const salvo = salvarEquipamento({ ...e, empresaId: empresaIds[e.empresaIndice]!, tecnico: { ...e.tecnico } }, storage as Storage, agora);
     trocarId(storage, "gemape-demo-equipamentos", salvo.id, `${PREFIXO}equipamento-${n + 1}`);
   });
+
+  // Módulo Equipamentos: abastecimentos, manutenções, ocorrências e check lists, pelas mesmas funções das telas.
+  semearModuloEquipamentos(storage, agora);
 
   // Abastecimentos dos veículos (as mesmas conferências do registro em Veículos).
   VEICULOS.forEach((v, n) => {
@@ -378,6 +401,8 @@ function trocarId(storage: Armazenamento, chave: string, antigo: string, novo: s
 export function prepararDadosDeTeste(storage: Armazenamento, base: Dados, agora = new Date()): "aplicado" | "limpo" | "igual" | "erro" {
   try {
     const controle = lerControle(storage);
+    // Restaurar dados de teste repõe também as permissões originais dos usuários de teste.
+    if (controle?.estado === "restaurar") restaurarPermissoes(storage, false);
     if (controle?.estado === "limpar") {
       removerDadosDeTeste(storage, base);
       storage.setItem(CHAVE_CONTROLE, JSON.stringify({ versao: VERSAO_DADOS_TESTE, estado: "limpo", aplicadoEm: agora.toISOString(), gerais: {} } satisfies Controle));

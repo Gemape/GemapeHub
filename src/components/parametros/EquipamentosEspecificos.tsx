@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { IndicadoresEquipamentoParametros } from "@/components/parametros/IndicadoresEquipamentoParametros";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
@@ -179,6 +180,8 @@ export function EquipamentosEspecificos() {
           </section>
         );
       })}
+
+      <IndicadoresEquipamentoParametros />
 
       <Dialog open={dialogoSub !== null} onOpenChange={(a) => !a && setDialogoSub(null)}>
         <DialogContent className="sm:max-w-lg">

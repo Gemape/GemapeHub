@@ -14,13 +14,14 @@ test("Parâmetros > Equipamentos > Cadastrar equipamento está no menu de Parâm
 });
 
 test("Módulos > Equipamentos está no menu de Módulos", () => {
-  assert.match(menu, /\{ titulo: "Equipamentos", url: "\/equipamentos", icone: Forklift \}/);
+  assert.match(menu, /\{ titulo: "Equipamentos", url: "\/equipamentos", icone: Forklift, abas: ABAS_EQUIPAMENTO \}/);
 });
 
-test("as duas telas existem: o cadastro (Parâmetros) e o módulo (por enquanto só o aviso)", () => {
+test("as duas telas existem: o cadastro (Parâmetros) e o módulo, com as seis abas", () => {
   assert.ok(existsSync(new URL("../src/routes/_authenticated/cadastros/equipamentos.tsx", import.meta.url)));
   assert.ok(existsSync(new URL("../src/routes/_authenticated/equipamentos.tsx", import.meta.url)));
-  assert.match(ler("routes/_authenticated/equipamentos.tsx"), /será construída|em construção/i);
+  const modulo = ler("routes/_authenticated/equipamentos.tsx");
+  for (const aba of ["inventario", "indicadores", "abastecimento", "manutencao", "ocorrencias", "checklist-manutencao", "checklist-vistoria"]) assert.match(modulo, new RegExp(`TabsContent value="${aba}"`));
 });
 
 const dialogo = ler("components/parametros/EquipamentoDialog.tsx");

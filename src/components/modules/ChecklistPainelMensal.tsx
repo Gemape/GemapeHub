@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { mesDe, mesesDisponiveis, painelDoMes, type Previsao, type SituacaoPrevisao } from "@/lib/checklist-painel";
-import type { ChecklistVeiculo } from "@/lib/checklist-veiculo";
+import { mesDe, mesesDisponiveis, painelDoMes, type ChecklistDoPainel, type Previsao, type SituacaoPrevisao } from "@/lib/checklist-painel";
 import { formatarData } from "@/lib/gemape";
 
 const SITUACAO: Record<SituacaoPrevisao, { rotulo: string; classe: string }> = {
@@ -28,13 +27,16 @@ const porcento = (n: number | null) => (n === null ? "—" : `${n.toLocaleString
 // resultado de cada um e, no topo, o percentual realizado e o não realizado no prazo. O mês atual está
 // aberto; os anteriores mostram o resultado já fechado (as previsões vencidas não mudam mais).
 export function ChecklistPainelMensal({
-  previsoes, checklists, idsDosVeiculos, hoje, onAbrirChecklist,
+  previsoes, checklists, idsDosVeiculos, hoje, onAbrirChecklist, objeto = "Veículo", textoVazio = "Nenhum check list previsto: associe itens de check list aos veículos em Parâmetros.",
 }: {
   previsoes: Previsao[];
-  checklists: ChecklistVeiculo[];
+  checklists: ChecklistDoPainel[];
   idsDosVeiculos: Set<string>;
   hoje: string;
   onAbrirChecklist: (id: string) => void;
+  // Nome da coluna do item (Veículo ou Equipamento) e o texto de quando não há nada previsto: o painel é o mesmo nos dois módulos.
+  objeto?: string;
+  textoVazio?: string;
 }) {
   const meses = mesesDisponiveis(hoje);
   // Só guarda a escolha do usuário: sem escolha, o painel acompanha o mês de hoje (virada do mês com a tela aberta).
@@ -90,7 +92,7 @@ export function ChecklistPainelMensal({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Prazo</TableHead><TableHead>Veículo</TableHead><TableHead>Periodicidade</TableHead>
+              <TableHead>Prazo</TableHead><TableHead>{objeto}</TableHead><TableHead>Periodicidade</TableHead>
               <TableHead>Responsável</TableHead><TableHead>Situação</TableHead><TableHead>Check list</TableHead>
             </TableRow>
           </TableHeader>
@@ -98,7 +100,7 @@ export function ChecklistPainelMensal({
             {linhas.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                  {atual ? "Nenhum check list previsto: associe itens de check list aos veículos em Parâmetros." : "Nenhum check list previsto neste mês."}
+                  {atual ? textoVazio : "Nenhum check list previsto neste mês."}
                 </TableCell>
               </TableRow>
             )}

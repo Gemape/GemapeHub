@@ -5,6 +5,7 @@ import { TABELAS_EPI, TABELAS_UNIFORME, duplicadoNoCatalogo, editarEpiCatalogo, 
 import { aplicarSeparacao, opcoesDaSeparacao } from "../../lib/epi-separar-tamanhos.ts";
 import { vincularSubcategorias } from "../../lib/subcategoria-referencia.ts";
 import { prepararDadosDeTeste } from "../../lib/dados-teste/aplicar.ts";
+import { recusaGravacao } from "../../lib/permissoes-demo.ts";
 import {
   controlaModulo,
   controlaTamanho,
@@ -218,6 +219,11 @@ class Consulta {
   single() { return this.executar(true); }
   then<TResult1 = { data: Linha[] | null; error: null; count?: number }, TResult2 = never>(ok?: ((v: { data: Linha[] | null; error: null; count?: number }) => TResult1 | PromiseLike<TResult1>) | null, bad?: ((e: unknown) => TResult2 | PromiseLike<TResult2>) | null) { return this.executar(false).then(ok, bad); }
   private async executar(unico: boolean) {
+    // Permissões por usuário de Configurações (só teste): a gravação é recusada se o usuário ativo não tem a ação na tela da tabela.
+    if (this.acao && typeof window !== "undefined" && import.meta.env?.VITE_DEMO_MODE !== "false") {
+      const recusa = recusaGravacao(window.localStorage, this.tabela, this.acao, this.payload);
+      if (recusa) return { data: null, error: new Error(recusa) };
+    }
     const linhas = dados[this.tabela] ?? (dados[this.tabela] = []); let selecionadas = linhas.filter(l => this.filtros.every(f => f(l)));
     if (this.acao === "insert") {
       const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: instanteNovo(), ...l }));

@@ -1,0 +1,172 @@
+import { useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { lerChecklistEquipamento } from "@/lib/equipamentos-checklist";
+import { lerManutencaoEquipamento } from "@/lib/equipamentos-manutencao";
+import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
+import { formatarData } from "@/lib/gemape";
+import { calcularKpis, semaforoCusto, semaforoPct, type Semaforo } from "@/lib/kpis-equipamento";
+import { lerConfigKpis } from "@/lib/kpis-equipamento-config";
+import { hoje, numero, reais, useLeitura, rotuloDoEquipamento, useAbastecimentosEq, useChecklistsEq, useEquipamentosDaEmpresa, useManutencoesEq, useOcorrenciasEq } from "./comum";
+
+const COR: Record<Semaforo, string> = {
+  verde: "border-emerald-300 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200",
+  amarelo: "border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200",
+  vermelho: "border-red-300 bg-red-50 text-red-900 dark:bg-red-950/40 dark:text-red-200",
+  neutro: "border-border bg-muted/40 text-foreground",
+};
+const ROTULO: Record<Semaforo, string> = { verde: "Dentro da meta", amarelo: "Atenção", vermelho: "Fora da meta", neutro: "Sem dados" };
+const pct = (v: number | null) => (v === null ? "—" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
+
+function Cartao({ pergunta, titulo, valor, detalhe, meta, semaforo, calculo }: { pergunta: string; titulo: string; valor: string; detalhe: string; meta: string; semaforo: Semaforo; calculo: string[] }) {
+  return (
+    <div className={`rounded-xl border p-4 ${COR[semaforo]}`} data-semaforo={semaforo}>
+      <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{titulo}</p>
+      <p className="mt-1 text-3xl font-bold">{valor}</p>
+      <p className="mt-1 text-sm">{detalhe}</p>
+      <p className="mt-2 text-xs opacity-80">{pergunta}</p>
+      <p className="mt-1 text-xs font-medium">{ROTULO[semaforo]} · {meta}</p>
+      <div className="mt-3 border-t border-current/20 pt-2">
+        <p className="text-xs font-semibold">Como é calculado</p>
+        <ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-snug opacity-90">{calculo.map((c) => <li key={c}>{c}</li>)}</ul>
+      </div>
+    </div>
+  );
+}
+const Celula = ({ semaforo, children }: { semaforo: Semaforo; children: React.ReactNode }) => <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${COR[semaforo]}`}>{children}</span>;
+
+// Módulos > Equipamentos > Indicadores: os cinco KPIs que bastam para gerir os equipamentos, da frota e de cada equipamento (disponibilidade, custo de
+// manutenção por hora, razão preventiva/corretiva, aderência ao plano de manutenção e conformidade legal), a partir do horímetro, das manutenções,
+// das ocorrências e dos check lists. Só modo demonstração.
+export function IndicadoresEquipamentoModulo() {
+  const equipamentos = useEquipamentosDaEmpresa();
+  const abastecimentos = useAbastecimentosEq();
+  const manutencoes = useManutencoesEq();
+  const ocorrencias = useOcorrenciasEq();
+  const checklists = useChecklistsEq();
+  // Metas, jornada e prazos vêm de Parâmetros > Equipamentos > Parâmetros Específicos > Indicadores.
+  const cfg = useLeitura(() => lerConfigKpis());
+  const META = cfg;
+  const [periodoEscolhido, setPeriodo] = useState<string | null>(null);
+  const periodo = periodoEscolhido ?? String(cfg.periodoPadraoDias);
+  const parametros = lerParametrosEquipamento();
+  const manutencao = lerManutencaoEquipamento();
+  const { frota, porEquipamento, inicio } = calcularKpis({
+    equipamentos: equipamentos.map((e) => ({ id: e.id, patrimonio: e.patrimonio, nome: e.nome, tipoId: e.tipoId, status: e.status, dataAquisicao: e.dataAquisicao, tecnico: e.tecnico })),
+    subcategoriaDoTipo: (id) => parametros.tipos.find((t) => t.id === id)?.subcategoriaId ?? "",
+    abastecimentos, manutencoes, ocorrencias, checklists, planos: manutencao.planos, acoes: manutencao.acoes.map((a) => ({ id: a.id, nome: a.nome })),
+    associacoesVistoria: lerChecklistEquipamento().vistoria.associacoes, hoje: hoje(), periodoDias: Number(periodo), config: cfg,
+  });
+  const custoMedio = frota.custoPorHora;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="periodo_kpi">Período</Label>
+          <Select value={periodo} onValueChange={setPeriodo}>
+            <SelectTrigger id="periodo_kpi" className="w-56"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[["30", "Últimos 30 dias"], ["90", "Últimos 90 dias"], ["180", "Últimos 180 dias"], ["365", "Últimos 12 meses"]].map(([v, r]) => <SelectItem key={v} value={v!}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="pb-2 text-xs text-muted-foreground">De {formatarData(inicio)} a {formatarData(hoje())} · {frota.total} equipamento{frota.total === 1 ? "" : "s"} · {frota.prontos} pronto{frota.prontos === 1 ? "" : "s"} para trabalhar agora</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <Cartao titulo="Disponibilidade" pergunta="Meu equipamento está pronto para trabalhar?" valor={pct(frota.disponibilidade)} detalhe={`${frota.prontos} de ${frota.total} prontos agora`}
+          meta={`meta ≥ ${META.disponibilidade.verde}%`} semaforo={semaforoPct(frota.disponibilidade, META.disponibilidade)}
+          calculo={[
+            `Horas programadas = dias úteis do período × ${cfg.jornadaHoras} h, por equipamento.`,
+            "Horas paradas = soma do \"tempo parado\" informado nas manutenções do período.",
+            "Disponibilidade = (programadas − paradas) ÷ programadas.",
+            `Verde a partir de ${META.disponibilidade.verde}%, amarelo a partir de ${META.disponibilidade.amarelo}%, vermelho abaixo.`,
+            `\"Pronto agora\" exige status Ativo ou Reserva${cfg.prontoOcorrenciaAberta ? ", nenhuma ocorrência aberta" : ""}${cfg.prontoVistoriaNok ? " e a última vistoria sem item não conforme pendente" : ""}.`,
+          ]} />
+        <Cartao titulo="Custo de manutenção por hora" pergunta="Esse equipamento está me custando caro demais?" valor={frota.custoPorHora === null ? "—" : reais(frota.custoPorHora)}
+          detalhe={`${reais(frota.custo)} em ${numero(frota.horasTrabalhadas)} h trabalhadas`} meta="cada equipamento é comparado à média da frota" semaforo="neutro"
+          calculo={[
+            "Custo = peças + mão de obra das manutenções do período.",
+            "Horas trabalhadas = horímetro mais recente do período − horímetro de antes do período (abastecimentos e manutenções).",
+            "Custo por hora = custo ÷ horas trabalhadas; sem leitura de horímetro no período não há valor.",
+            `Cada equipamento é comparado à média da frota: verde até a média, amarelo até ${String(cfg.custoFatorAmarelo).replace(".", ",")}×, vermelho acima.`,
+          ]} />
+        <Cartao titulo="Razão preventiva/corretiva" pergunta="Estou apagando incêndio ou prevenindo?" valor={pct(frota.razaoPreventiva)}
+          detalhe={`${frota.preventivas} preventiva${frota.preventivas === 1 ? "" : "s"} e ${frota.corretivas} corretiva${frota.corretivas === 1 ? "" : "s"}`} meta={`meta ≥ ${META.preventiva.verde}% preventiva`} semaforo={semaforoPct(frota.razaoPreventiva, META.preventiva)}
+          calculo={[
+            "Conta as manutenções do período por tipo.",
+            "Razão = preventivas ÷ (preventivas + corretivas).",
+            `Verde a partir de ${META.preventiva.verde}%, amarelo a partir de ${META.preventiva.amarelo}%, vermelho abaixo: se a maioria é corretiva, o problema é de gestão, não da máquina.`,
+          ]} />
+        <Cartao titulo="Aderência ao plano" pergunta="A preventiva está sendo feita mesmo?" valor={pct(frota.aderencia)} detalhe={`${frota.itensEmDia} de ${frota.itensTotal} itens do plano em dia`}
+          meta={`meta ≥ ${META.aderencia.verde}%`} semaforo={semaforoPct(frota.aderencia, META.aderencia)}
+          calculo={[
+            "Cada ação do plano do equipamento (limite de horas e de meses) é um item.",
+            "O item vence quando as horas de uso OU os meses desde a última execução chegam ao limite; sem execução registrada, conta da aquisição e do horímetro inicial.",
+            "Aderência = itens em dia ÷ itens dos planos. Equipamento sem plano não entra.",
+            `Verde a partir de ${META.aderencia.verde}%, amarelo a partir de ${META.aderencia.amarelo}%.`,
+          ]} />
+        <Cartao titulo="Conformidade legal" pergunta="Estou exposto a risco de multa ou acidente?" valor={pct(frota.conformidade)} detalhe={`${frota.comPendencia} equipamento${frota.comPendencia === 1 ? "" : "s"} com pendência`}
+          meta={`meta ${META.conformidade.verde}%`} semaforo={semaforoPct(frota.conformidade, META.conformidade)}
+          calculo={[
+            `Todos: vistoria periódica em dia, conforme a periodicidade do check list de vistoria associado (diária ${cfg.prazoVistoriaDias["Diária"]} d, semanal ${cfg.prazoVistoriaDias["Semanal"]} d, quinzenal ${cfg.prazoVistoriaDias["Quinzenal"]} d, mensal ${cfg.prazoVistoriaDias["Mensal"]} d).`,
+            `Extintor: teste hidrostático válido e recarga em até ${cfg.recargaExtintorMeses} meses.`,
+            `Vaso de pressão: manutenção preventiva (inspeção de segurança) nos últimos ${cfg.inspecaoVasoMeses} meses.`,
+            ...(cfg.exigirSemOcorrenciaAberta ? ["Empilhadeiras e máquinas: nenhuma ocorrência de segurança aberta."] : []),
+            `Conformidade = requisitos atendidos ÷ requisitos de todos os equipamentos; meta ${META.conformidade.verde}%, amarelo a partir de ${META.conformidade.amarelo}%.`,
+          ]} />
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Equipamento</TableHead><TableHead>Pronto agora?</TableHead><TableHead>Disponibilidade</TableHead><TableHead>Custo por hora</TableHead>
+              <TableHead>Preventiva / corretiva</TableHead><TableHead>Aderência ao plano</TableHead><TableHead>Conformidade legal</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {porEquipamento.length === 0 && <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Nenhum equipamento cadastrado. Cadastre em Parâmetros &gt; Equipamentos.</TableCell></TableRow>}
+            {porEquipamento.map((k) => {
+              const ader = k.aderencia ? (k.aderencia.total > 0 ? (k.aderencia.emDia / k.aderencia.total) * 100 : null) : null;
+              const conf = k.conformidade.total > 0 ? (k.conformidade.atendidos / k.conformidade.total) * 100 : null;
+              return (
+                <TableRow key={k.equipamento.id} className="align-top">
+                  <TableCell className="font-medium">{rotuloDoEquipamento(k.equipamento)}</TableCell>
+                  <TableCell>
+                    {k.prontoAgora.ok ? <Badge variant="secondary">Pronto</Badge> : <Badge variant="destructive">Não</Badge>}
+                    {k.prontoAgora.motivos.map((m) => <span key={m} className="block text-xs text-muted-foreground">{m}</span>)}
+                  </TableCell>
+                  <TableCell>
+                    <Celula semaforo={semaforoPct(k.disponibilidade, META.disponibilidade)}>{pct(k.disponibilidade)}</Celula>
+                    <span className="block text-xs text-muted-foreground">{numero(k.horasParada)} h paradas de {numero(k.horasProgramadas)} h</span>
+                  </TableCell>
+                  <TableCell>
+                    <Celula semaforo={semaforoCusto(k.custoPorHora, custoMedio, cfg.custoFatorAmarelo)}>{k.custoPorHora === null ? "—" : reais(k.custoPorHora)}</Celula>
+                    <span className="block text-xs text-muted-foreground">{reais(k.custo)} · {k.horasTrabalhadas === null ? "sem horas medidas" : `${numero(k.horasTrabalhadas)} h`}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Celula semaforo={semaforoPct(k.razaoPreventiva, META.preventiva)}>{pct(k.razaoPreventiva)}</Celula>
+                    <span className="block text-xs text-muted-foreground">{k.preventivas} prev. / {k.corretivas} corr.</span>
+                  </TableCell>
+                  <TableCell>
+                    {k.aderencia ? <Celula semaforo={semaforoPct(ader, META.aderencia)}>{k.aderencia.emDia}/{k.aderencia.total} em dia</Celula> : <span className="text-xs text-muted-foreground">Sem plano de manutenção</span>}
+                    {k.aderencia?.vencidos.map((v) => <span key={v.acao} className="block text-xs text-muted-foreground">Vencida: {v.acao} ({v.motivo})</span>)}
+                  </TableCell>
+                  <TableCell>
+                    <Celula semaforo={semaforoPct(conf, META.conformidade)}>{k.conformidade.atendidos}/{k.conformidade.total} requisitos</Celula>
+                    {k.conformidade.pendencias.map((p) => <span key={p} className="block text-xs text-muted-foreground">Pendente: {p}</span>)}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}

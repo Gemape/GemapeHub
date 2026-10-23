@@ -1,9 +1,6 @@
 // Regras do cadastro de veículo (especificação rev1, Etapa D).
-import { chaveDoTipoVeiculo } from "./checklist-veiculos-padrao.ts";
-
-// Decisão 66: empilhadeira não tem placa; o campo só existe para os demais tipos de veículo.
-export const subcategoriaTemPlaca = (nomeSubcategoria: string | null | undefined): boolean =>
-  chaveDoTipoVeiculo(nomeSubcategoria ?? "") !== "empilhadeira";
+// Decisão 66 (substituída): empilhadeira deixou de ser veículo e fica no módulo Equipamentos; todo veículo tem placa.
+export const subcategoriaTemPlaca = (_nomeSubcategoria: string | null | undefined): boolean => true;
 
 // Placa no padrão antigo (ABC-1234) ou Mercosul (ABC1D23). Guarda sem hífen, em maiúsculas.
 export function normalizarPlaca(placa: string): string {

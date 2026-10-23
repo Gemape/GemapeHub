@@ -2,6 +2,7 @@
 // equipamento (limite de horas de uso e de meses, o que vier primeiro) e os tipos de ocorrência. Segue Parâmetros > Veículos (decisões 46, 52 e
 // 112), com horas de uso no lugar de km. Fase 1: só no navegador, em modo demonstração; as tabelas entram na Fase 2.
 import { chaveDoNome as chave } from "./equipamentos-parametros.ts";
+import { ACOES_PADRAO_EQUIPAMENTO } from "./equipamentos-manutencao-padrao.ts";
 import { capitalizarTexto } from "./formatacao-cadastral.ts";
 
 export type SubitemAcao = { id: string; nome: string };
@@ -57,15 +58,17 @@ function alterar<T>(storage: StorageLike, acao: (d: ManutencaoEquipamento) => T)
 }
 
 // ---------- Ações de manutenção ----------
-export function salvarAcao(entrada: { id?: string; nome: string; subitens: string[] }, storage: StorageLike = localStorage): AcaoManutencaoEquipamento {
+// `literal` grava os textos como vieram (siglas como QTA e GLP não passam pela capitalização automática): é como entra o padrão inicial.
+export function salvarAcao(entrada: { id?: string; nome: string; subitens: string[]; literal?: boolean }, storage: StorageLike = localStorage): AcaoManutencaoEquipamento {
   return alterar(storage, (d) => {
-    const nome = capitalizarTexto(entrada.nome);
+    const texto = (t: string) => (entrada.literal ? t.trim().replace(/\s+/g, " ") : capitalizarTexto(t));
+    const nome = texto(entrada.nome);
     if (!nome) throw new Error("Informe o nome da ação de manutenção.");
     const atual = entrada.id ? d.acoes.find((a) => a.id === entrada.id) : undefined;
     if (entrada.id && !atual) throw new Error("Esta ação de manutenção foi excluída.");
     if (d.acoes.some((a) => a.id !== entrada.id && chave(a.nome) === chave(nome))) throw new Error(`Já existe a ação de manutenção ${nome}.`);
     // Todo grupo tem também o item Outros, de descrição aberta; ele fica sempre por último.
-    const textos = entrada.subitens.map((s) => capitalizarTexto(s)).filter((s) => s && chave(s) !== chave(OUTROS));
+    const textos = entrada.subitens.map((s) => texto(s)).filter((s) => s && chave(s) !== chave(OUTROS));
     const vistos = new Set<string>();
     for (const t of textos) {
       if (vistos.has(chave(t))) throw new Error(`Subitem repetido: ${t}.`);
@@ -163,5 +166,142 @@ export function itensDoPlano(plano: PlanoEquipamento, acoes: { id: string; nome:
   return plano.itens.flatMap((i) => {
     const acao = acoes.find((a) => a.id === i.acaoId);
     return acao ? [{ ...i, nome: acao.nome }] : [];
+  });
+}
+
+
+// ---------- Padrão inicial das ações de manutenção ----------
+export type SituacaoPadraoAcao = "igual" | "alterado" | "ausente";
+export type FilhoPadraoAcao = { nome: string; existe: boolean };
+const subitensDoPadrao = (p: { subitens: readonly string[] }) => [...p.subitens, OUTROS];
+const acaoDoPadrao = (acoes: AcaoManutencaoEquipamento[], nome: string) => acoes.find((a) => chave(a.nome) === chave(nome));
+// Outros fica sempre por último (e existe em toda ação).
+const comOutros = (subitens: SubitemAcao[]): SubitemAcao[] => [...subitens.filter((s) => chave(s.nome) !== chave(OUTROS)), subitens.find((s) => chave(s.nome) === chave(OUTROS)) ?? { id: novoId(), nome: OUTROS }];
+
+// Cadastra as ações do padrão inicial que ainda não existem (mesmo nome, sem diferenciar maiúsculas e acentos); o que já existe não é repetido nem alterado.
+export function cadastrarPadraoAcoes(storage: StorageLike = localStorage): { criadas: number } {
+  return alterar(storage, (d) => {
+    let criadas = 0;
+    for (const p of ACOES_PADRAO_EQUIPAMENTO) {
+      if (acaoDoPadrao(d.acoes, p.nome)) continue;
+      d.acoes.push({ id: novoId(), nome: p.nome, subitens: comOutros(p.subitens.map((nome) => ({ id: novoId(), nome }))) });
+      criadas += 1;
+    }
+    return { criadas };
+  });
+}
+// As ações padrão entram sozinhas na primeira vez (como as de Veículos); depois, o que a pessoa excluir só volta pelo botão Restaurar configurações iniciais.
+const CHAVE_ACOES_PADRAO = "gemape-demo-equipamentos-acoes-padrao";
+export function aplicarAcoesPadraoUmaVez(storage: StorageLike = localStorage): boolean {
+  if (storage.getItem(CHAVE_ACOES_PADRAO) === "1") return false;
+  try {
+    cadastrarPadraoAcoes(storage);
+    storage.setItem(CHAVE_ACOES_PADRAO, "1");
+    return true;
+  } catch {
+    return false; // dado ilegível: nada é gravado por cima, e a tentativa se repete na próxima abertura
+  }
+}
+
+// Todas as ações do padrão inicial com a situação de cada uma no cadastro atual: "igual" (nome e subitens, na ordem), "alterado" ou "ausente" (não existe mais),
+// e, para cada subitem, se ele existe.
+export function situacaoPadraoAcoes(storage: StorageLike = localStorage): { nome: string; situacao: SituacaoPadraoAcao; filhos: FilhoPadraoAcao[] }[] {
+  const { acoes } = lerManutencaoEquipamento(storage);
+  return ACOES_PADRAO_EQUIPAMENTO.map((p) => {
+    const acao = acaoDoPadrao(acoes, p.nome);
+    const esperados = subitensDoPadrao(p);
+    const igual = !!acao && acao.nome === p.nome && acao.subitens.length === esperados.length && acao.subitens.every((s, n) => s.nome === esperados[n]);
+    return {
+      nome: p.nome, situacao: !acao ? "ausente" : igual ? "igual" : "alterado",
+      filhos: esperados.map((nome) => ({ nome, existe: !!acao?.subitens.some((s) => chave(s.nome) === chave(nome)) })),
+    };
+  });
+}
+
+// Restaura as ações do padrão inicial escolhendo pais e filhos, tudo ou nada. Pai marcado volta ao nome inicial (ou é cadastrado de novo, se foi excluído); só os
+// filhos marcados são restaurados ou incluídos. Os não marcados e os que a pessoa criou ficam como estão.
+export function restaurarAcoesEscolhidas(escolhas: { nome: string; filhos: string[] }[], storage: StorageLike = localStorage): { restaurados: number; criados: number; filhos: number } {
+  if (escolhas.length === 0) throw new Error("Marque ao menos uma ação para restaurar.");
+  const planos = escolhas.map((e) => {
+    const padrao = ACOES_PADRAO_EQUIPAMENTO.find((p) => chave(p.nome) === chave(e.nome));
+    if (!padrao) throw new Error("Há uma ação que não faz parte do padrão inicial.");
+    const todos = subitensDoPadrao(padrao);
+    for (const f of e.filhos) if (!todos.some((i) => chave(i) === chave(f))) throw new Error(`O subitem ${f} não faz parte do padrão inicial de ${padrao.nome}.`);
+    return { padrao, todos, marcados: todos.filter((i) => e.filhos.some((f) => chave(i) === chave(f))) };
+  });
+  return alterar(storage, (d) => {
+    let restaurados = 0;
+    let criados = 0;
+    let filhos = 0;
+    for (const { padrao, todos, marcados } of planos) {
+      const acao = acaoDoPadrao(d.acoes, padrao.nome);
+      if (!acao) {
+        d.acoes.push({ id: novoId(), nome: padrao.nome, subitens: comOutros(marcados.map((nome) => ({ id: novoId(), nome }))) });
+        criados += 1;
+        filhos += marcados.length;
+        continue;
+      }
+      // Na ordem do padrão: o que já existe fica (o marcado volta ao nome inicial), o marcado que falta entra; os criados pela pessoa vão ao fim.
+      const resultado: SubitemAcao[] = [];
+      for (const i of todos) {
+        const atual = acao.subitens.find((s) => chave(s.nome) === chave(i));
+        const marcado = marcados.some((m) => chave(m) === chave(i));
+        if (atual) {
+          resultado.push(marcado ? { ...atual, nome: i } : atual);
+          if (marcado) filhos += 1;
+        } else if (marcado) {
+          resultado.push({ id: novoId(), nome: i });
+          filhos += 1;
+        }
+      }
+      for (const s of acao.subitens) if (!todos.some((i) => chave(i) === chave(s.nome))) resultado.push(s);
+      acao.nome = padrao.nome;
+      acao.subitens = comOutros(resultado);
+      restaurados += 1;
+    }
+    return { restaurados, criados, filhos };
+  });
+}
+
+export type ItemCriadoAcaoEq = { id: string; nome: string; doPadrao: boolean; filhos: SubitemAcao[] };
+// Pais e filhos que a pessoa criou: as ações fora do padrão inicial (com todos os subitens) e, nas do padrão, só os subitens extras. Ação do padrão sem extras não aparece.
+export function itensCriadosAcoes(storage: StorageLike = localStorage): ItemCriadoAcaoEq[] {
+  const lista: ItemCriadoAcaoEq[] = [];
+  for (const a of lerManutencaoEquipamento(storage).acoes) {
+    const padrao = ACOES_PADRAO_EQUIPAMENTO.find((p) => chave(p.nome) === chave(a.nome));
+    const proprios = a.subitens.filter((s) => chave(s.nome) !== chave(OUTROS));
+    if (!padrao) { lista.push({ id: a.id, nome: a.nome, doPadrao: false, filhos: proprios }); continue; }
+    const extras = proprios.filter((s) => !padrao.subitens.some((i) => chave(i) === chave(s.nome)));
+    if (extras.length > 0) lista.push({ id: a.id, nome: a.nome, doPadrao: true, filhos: extras });
+  }
+  return lista;
+}
+
+// Exclui os itens criados pela pessoa que foram marcados. Pai marcado: some a ação criada por ela ou, numa ação do padrão, os subitens extras. Filho marcado:
+// some só esse subitem. Só vale para o que aparece em itensCriadosAcoes: o padrão inicial nunca é apagado por aqui; ação em uso num plano não se exclui.
+export function excluirItensCriadosAcoes(ids: string[], storage: StorageLike = localStorage): { acoes: number; subitens: number } {
+  const criados = itensCriadosAcoes(storage);
+  const escolhidos = new Set(ids);
+  if (!criados.some((c) => escolhidos.has(c.id) || c.filhos.some((f) => escolhidos.has(f.id)))) throw new Error("Marque ao menos um item criado por você.");
+  return alterar(storage, (d) => {
+    let acoes = 0;
+    let subitens = 0;
+    for (const c of criados) {
+      const paiMarcado = escolhidos.has(c.id);
+      const sairam = new Set(c.filhos.filter((f) => paiMarcado || escolhidos.has(f.id)).map((f) => f.id));
+      const removeAcaoInteira = paiMarcado && !c.doPadrao;
+      if (sairam.size === 0 && !removeAcaoInteira) continue;
+      if (removeAcaoInteira) {
+        const usos = d.planos.filter((p) => p.itens.some((i) => i.acaoId === c.id)).length;
+        if (usos > 0) throw new Error(`A ação ${c.nome} está em ${usos} ${usos === 1 ? "plano" : "planos"} de manutenção; remova-a do plano antes de excluir.`);
+        d.acoes = d.acoes.filter((a) => a.id !== c.id);
+        acoes += 1;
+      } else {
+        const acao = d.acoes.find((a) => a.id === c.id);
+        if (acao) acao.subitens = acao.subitens.filter((i) => !sairam.has(i.id));
+      }
+      subitens += sairam.size;
+    }
+    return { acoes, subitens };
   });
 }

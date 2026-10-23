@@ -237,6 +237,19 @@ export function cadastrarPadraoChecklist(finalidade: FinalidadeChecklist, storag
     return { criados, semTipo };
   });
 }
+// Os grupos padrão de manutenção e de vistoria entram sozinhos na primeira vez (como os de Veículos); depois, o que a pessoa excluir não volta.
+const CHAVE_PADRAO = "gemape-demo-equipamentos-checklist-padrao";
+// Devolve se gravou, para a tela ler de novo.
+export function aplicarPadraoUmaVez(storage: StorageLike & Pick<Storage, "getItem"> = localStorage): boolean {
+  if (storage.getItem(CHAVE_PADRAO) === "1") return false;
+  try {
+    for (const f of FINALIDADES) cadastrarPadraoChecklist(f.id, storage);
+    storage.setItem(CHAVE_PADRAO, "1");
+    return true;
+  } catch {
+    return false; // dado ilegível: nada é gravado por cima, e a tentativa se repete na próxima abertura
+  }
+}
 export const cadastrarPadraoManutencao = (storage?: StorageLike) => cadastrarPadraoChecklist("manutencao", storage);
 export const cadastrarPadraoVistoria = (storage?: StorageLike) => cadastrarPadraoChecklist("vistoria", storage);
 

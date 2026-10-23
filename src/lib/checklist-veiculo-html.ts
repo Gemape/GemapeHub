@@ -11,7 +11,9 @@ const dia = (data: string) => `${data.slice(8, 10)}/${data.slice(5, 7)}/${data.s
 
 const COR: Record<string, string> = { OK: "#15803d", NOK: "#b91c1c", "N.A.": "#475569" };
 
-export function montarChecklistHtml(c: ChecklistVeiculo, empresa: string): string {
+// `objeto` troca o rótulo do item (veículo ou equipamento): o relatório é o mesmo nos dois módulos.
+export function montarChecklistHtml(c: Pick<ChecklistVeiculo, "codigo" | "veiculoRotulo" | "tipoVeiculo" | "periodicidade" | "data" | "responsavelNome" | "status" | "concluidoEm" | "itens">, empresa: string, objeto = "veículo"): string {
+  const Objeto = objeto.charAt(0).toUpperCase() + objeto.slice(1);
   const r = resumoChecklist(c);
   const grupos = [...new Set(c.itens.map((i) => i.grupo))];
   const blocos = grupos
@@ -59,12 +61,12 @@ export function montarChecklistHtml(c: ChecklistVeiculo, empresa: string): strin
       </head>
       <body>
         <div class="header">
-          <div class="title">Check list de veículo ${escaparHtml(c.codigo)}</div>
+          <div class="title">Check list de ${escaparHtml(objeto)} ${escaparHtml(c.codigo)}</div>
           <strong>${escaparHtml(empresa)}</strong>
         </div>
         <p>
-          <strong>Veículo:</strong> ${escaparHtml(c.veiculoRotulo)}<br>
-          <strong>Tipo de veículo:</strong> ${escaparHtml(c.tipoVeiculo || "—")}<br>
+          <strong>${escaparHtml(Objeto)}:</strong> ${escaparHtml(c.veiculoRotulo)}<br>
+          <strong>Tipo de ${escaparHtml(objeto)}:</strong> ${escaparHtml(c.tipoVeiculo || "—")}<br>
           <strong>Periodicidade:</strong> ${escaparHtml(c.periodicidade || "Avulso (sem periodicidade)")}<br>
           <strong>Data:</strong> ${escaparHtml(dia(c.data))}<br>
           <strong>Responsável pelo check list:</strong> ${escaparHtml(c.responsavelNome || "—")}<br>

@@ -15,11 +15,13 @@ export const TEXTO_ALERTA_PAINEL = "As alterações feitas modificarão o painel
 export function AlertaPainelManutencao({
   aberto,
   detalhe,
+  texto = TEXTO_ALERTA_PAINEL,
   onSim,
   onNao,
 }: {
   aberto: boolean;
   detalhe?: string | undefined;
+  texto?: string;
   onSim: () => void;
   onNao: () => void;
 }) {
@@ -29,7 +31,7 @@ export function AlertaPainelManutencao({
         <AlertDialogHeader>
           <AlertDialogTitle>Salvar alterações?</AlertDialogTitle>
           <AlertDialogDescription>
-            {TEXTO_ALERTA_PAINEL}
+            {texto}
             {detalhe && <span className="mt-2 block">{detalhe}</span>}
           </AlertDialogDescription>
         </AlertDialogHeader>

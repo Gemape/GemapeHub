@@ -82,6 +82,17 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
   { aba: "checklist", titulo: "Check list", icone: "ListChecks" },
 ];
 
+// Equipamentos: a mesma lógica dos controles de Veículos, voltada a equipamentos (horímetro no lugar do km).
+export const ABAS_EQUIPAMENTO: readonly AbaMenu[] = [
+  { aba: "inventario", titulo: "Inventário dos Equipamentos", icone: "Forklift" },
+  { aba: "indicadores", titulo: "Indicadores", icone: "LayoutDashboard" },
+  { aba: "abastecimento", titulo: "Abastecimento", icone: "Fuel" },
+  { aba: "manutencao", titulo: "Manutenção", icone: "Wrench" },
+  { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
+  { aba: "checklist-manutencao", titulo: "Check list de Manutenção", icone: "ClipboardCheck" },
+  { aba: "checklist-vistoria", titulo: "Check list de vistoria", icone: "ListChecks" },
+];
+
 // Viagens (decisão 176): o painel é a primeira aba; o relatório entra na etapa 4.
 export const ABAS_VIAGEM: readonly AbaMenu[] = [
   { aba: "painel", titulo: "Painel", icone: "LayoutDashboard" },
@@ -157,7 +168,7 @@ export const MENU_EPI: readonly ItemComFilhos[] = [
 ];
 
 // Aba aberta de um módulo: a pedida em ?aba= se existir nele, senão a primeira.
-export function abaDoModulo(modulo: "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem", aba: string | undefined): string {
-  const abas = { epi: ABAS_EPI, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM }[modulo];
+export function abaDoModulo(modulo: "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem" | "equipamento", aba: string | undefined): string {
+  const abas = { epi: ABAS_EPI, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO }[modulo];
   return abas.find((a) => a.aba === aba)?.aba ?? abas[0]!.aba;
 }

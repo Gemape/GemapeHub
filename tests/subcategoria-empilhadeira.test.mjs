@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { lerParametros, adicionarSubcategoria, removerSubcategoria } from "../src/lib/parametros-base.ts";
+import { lerParametros, adicionarSubcategoria } from "../src/lib/parametros-base.ts";
 
 const storage = () => {
   const dados = new Map();
@@ -8,27 +8,27 @@ const storage = () => {
 };
 const veiculos = (d) => d.subcategorias.filter((s) => s.categoriaId === "cat-veiculos").map((s) => s.nome);
 
-test("Gerais já traz a subcategoria Empilhadeira em Veículos, antes de Outros", () => {
-  assert.deepEqual(veiculos(lerParametros(storage())), ["Carro", "Moto", "Caminhão", "Utilitário", "Van", "Empilhadeira"]);
+test("Veículos não tem mais a subcategoria Empilhadeira: ela é só do módulo Equipamentos", () => {
+  assert.deepEqual(veiculos(lerParametros(storage())), ["Carro", "Moto", "Caminhão", "Utilitário", "Van"]);
 });
 
-test("quem já tinha cadastros salvos sem Empilhadeira passa a tê-la, uma vez só", () => {
+test("quem já tinha a Empilhadeira (e os grupos de check list dela) em Veículos perde os dois, uma vez só", () => {
   const s = storage();
   s.setItem("gemape-demo-parametros-base", JSON.stringify({
-    subcategorias: [{ id: "sub-veiculos-carro", categoriaId: "cat-veiculos", nome: "Carro" }],
+    subcategorias: [
+      { id: "sub-veiculos-carro", categoriaId: "cat-veiculos", nome: "Carro" },
+      { id: "sub-veiculos-empilhadeira", categoriaId: "cat-veiculos", nome: "Empilhadeira" },
+      { id: "sub-veiculos-empilhadeira-eletrica", categoriaId: "cat-veiculos", nome: "Empilhadeira elétrica" },
+    ],
+    itensChecklistVeiculo: [
+      { id: "g1", nome: "Veículos leves · Mecânica", itens: [{ id: "i1", nome: "Freio" }], tiposVeiculo: ["*"] },
+      { id: "g2", nome: "Empilhadeiras · Elevação e mastro", itens: [{ id: "i2", nome: "Mastro" }], tiposVeiculo: ["sub-veiculos-empilhadeira"] },
+    ],
   }));
-  assert.deepEqual(veiculos(lerParametros(s)), ["Carro", "Empilhadeira"]);
-  // Qualquer gravação grava o marcador: se o responsável excluir a Empilhadeira, ela não volta.
-  const emp = lerParametros(s).subcategorias.find((x) => x.nome === "Empilhadeira");
-  adicionarSubcategoria("cat-veiculos", "Triciclo", s);
-  removerSubcategoria(emp.id, s);
-  assert.deepEqual(veiculos(lerParametros(s)), ["Carro", "Triciclo"]);
-});
-
-test("subcategoria de empilhadeira já existente (outro nome) não é duplicada", () => {
-  const s = storage();
-  s.setItem("gemape-demo-parametros-base", JSON.stringify({
-    subcategorias: [{ id: "x1", categoriaId: "cat-veiculos", nome: "Empilhadeira elétrica" }],
-  }));
-  assert.deepEqual(veiculos(lerParametros(s)), ["Empilhadeira elétrica"]);
+  const lido = lerParametros(s);
+  assert.deepEqual(veiculos(lido), ["Carro"]);
+  assert.deepEqual(lido.itensChecklistVeiculo.map((g) => g.nome), ["Veículos leves · Mecânica"]);
+  // Qualquer gravação grava o marcador: quem criar a Empilhadeira de novo em Gerais a mantém.
+  adicionarSubcategoria("cat-veiculos", "Empilhadeira", s);
+  assert.ok(veiculos(lerParametros(s)).includes("Empilhadeira"));
 });

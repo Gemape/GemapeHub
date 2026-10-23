@@ -1,4 +1,5 @@
-import { Fragment, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
@@ -9,12 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table } from "@/components/ui/table";
+import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
 import { EditorItensChecklist } from "@/components/parametros/EditorItensChecklist";
+import { EquipamentoDialog } from "@/components/parametros/EquipamentoDialog";
+import { useAccess } from "@/lib/access-context";
+import { empregadoElegivelPortador } from "@/lib/portadores-caixa";
 import { TODAS } from "@/lib/empresa-context";
 import {
-  cadastrarPadraoChecklist, checklistsDaAssociacao, type EntradaItemAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
+  aplicarPadraoUmaVez, cadastrarPadraoChecklist, checklistsDaAssociacao, type EntradaItemAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
   removerAssociacao, removerGrupoChecklist, salvarAssociacao, salvarGrupoChecklist, TODOS_OS_TIPOS,
-  type AssociacaoChecklistEquipamento, type FinalidadeChecklist, type GrupoChecklistEquipamento, type TipoAssociacao,
+  type AssociacaoChecklistEquipamento, type FinalidadeChecklist, type GrupoChecklistEquipamento,
 } from "@/lib/equipamentos-checklist";
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
 import { GRUPOS_PADRAO_MANUTENCAO } from "@/lib/equipamentos-manutencao-padrao";
@@ -102,7 +107,7 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div id="itens-check-list-equipamento" className="scroll-mt-24">
           <h2 className="text-xl font-bold">Itens check list</h2>
           <p className="mt-1 text-sm text-muted-foreground">Os grupos de itens do check list de {nomeFinalidade.toLowerCase()}, cada um para os tipos de equipamento a que se aplica.</p>
         </div>
@@ -179,44 +184,76 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
   );
 }
 
-// `itens`: ids dos itens marcados do grupo (escolha item a item); o grupo entra no check list se tem ao menos um marcado.
-type EscolhaGrupo = { itens: string[]; tipo: TipoAssociacao; periodicidade: string };
+// Como em Veículos (decisão 137): um campo de periodicidade só define o check list do equipamento; periódico (Diária, Semanal, Quinzenal ou Mensal,
+// obrigatório e entra nos KPI) ou Avulso (não obrigatório). Os itens são escolhidos um a um dentro dos grupos que valem para o tipo do equipamento.
+const AVULSO = "Avulso";
+const PERIODICIDADES_CAMPO = [...PERIODICIDADES.filter((p) => p !== NAO_DEFINIDA), AVULSO] as const;
 
 function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; versao: number; aoMudar: () => void }) {
   const { grupos, associacoes } = useMemo(() => lerChecklistEquipamento()[finalidade], [finalidade, versao]);
   const equipamentos = useMemo(() => listarEquipamentos(), [versao]);
   const { data: empregados = [] } = useEmpregados(TODAS, true);
+  const queryClient = useQueryClient();
+  const { canWrite } = useAccess();
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
-  // equipamento da associação que está sendo clonada (null = não é clone)
+  // equipamento da associação que está sendo clonada: aparece preenchido, mas o clone precisa de outro equipamento (como em Veículos).
   const [clonandoDe, setClonandoDe] = useState<string | null>(null);
   const clonando = clonandoDe !== null;
   const [equipamentoId, setEquipamentoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
-  const [escolhas, setEscolhas] = useState<Record<string, EscolhaGrupo>>({});
+  const [periodicidade, setPeriodicidade] = useState("");
+  // Itens escolhidos, um a um, dentro dos grupos que valem para o equipamento; null = ainda não mexeu, vale todos os itens dos grupos que se aplicam.
+  const [escolhidos, setEscolhidos] = useState<string[] | null>(null);
+  const [travado, setTravado] = useState(false);
   const trava = useRef(false);
   // Itens personalizados deste equipamento (um por linha): viram um grupo próprio ao salvar, além dos grupos marcados.
   // null = ainda não mexeu: o bloco mostra os itens do grupo personalizado já salvo do equipamento, se houver.
   const [personalizados, setPersonalizados] = useState<string | null>(null);
-  const [persTipo, setPersTipo] = useState<TipoAssociacao>("periodico");
-  const [persPeriodicidade, setPersPeriodicidade] = useState("");
+  // Telas de cadastro abertas ao lado da janela, nunca dentro, para não perder o que já foi escolhido (decisão 120).
+  const [equipamentosAberto, setEquipamentosAberto] = useState(false);
+  const [empregadosAberto, setEmpregadosAberto] = useState(false);
 
   const porId = (id: string): Equipamento | undefined => equipamentos.find((e) => e.id === id);
   const rotulo = (e: Equipamento) => `${e.patrimonio} · ${e.nome}`;
-  const livres = equipamentos.filter((e) => e.tipoId && (!associacoes.some((a) => a.equipamentoId === e.id) || e.id === editando));
+  // Cada equipamento tem uma associação só: ao criar, só os sem associação; ao editar ou clonar, mais o do original.
+  const livres = equipamentos.filter((e) => !associacoes.some((a) => a.equipamentoId === e.id) || e.id === editando || e.id === clonandoDe);
   const escolhido = porId(equipamentoId);
+  const avulso = periodicidade === AVULSO;
+  // Responsável: empregado ativo, da empresa do equipamento.
+  const elegiveis = empregados.filter((x) => empregadoElegivelPortador({ ativo: x.ativo ?? null, data_demissao: x.data_demissao ?? null } as never) && (!escolhido?.empresaId || x.empresa_id === escolhido.empresaId));
   // Grupos personalizados não entram na lista comum: o de cada equipamento é cuidado no bloco "Personalizar itens".
   const aplicaveis = escolhido ? gruposAplicaveis(escolhido.tipoId, grupos).filter((g) => !ehGrupoPersonalizado(g.nome)) : [];
-  const personalizadoSalvo = escolhido ? grupos.find((g) => g.nome === nomeGrupoPersonalizado(escolhido.patrimonio)) : undefined;
+  const personalizadoSalvo = escolhido ? grupos.find((g) => g.nome === nomeGrupoPersonalizado(escolhido.patrimonio, avulso)) : undefined;
   const valorPersonalizados = personalizados ?? personalizadoSalvo?.itens.map((i) => i.nome).join("\n") ?? "";
-  const escolhaDe = (id: string): EscolhaGrupo => escolhas[id] ?? { itens: [], tipo: "periodico", periodicidade: "" };
-  // Só os itens que ainda existem no grupo contam como marcados.
-  const marcadosDe = (g: GrupoChecklistEquipamento) => g.itens.filter((i) => escolhaDe(g.id).itens.includes(i.id)).map((i) => i.id);
-  const alternarItem = (g: GrupoChecklistEquipamento, itemId: string, marcar: boolean) =>
-    mudar(g.id, { itens: marcar ? [...marcadosDe(g).filter((x) => x !== itemId), itemId] : marcadosDe(g).filter((x) => x !== itemId) });
-  const mudar = (id: string, parcial: Partial<EscolhaGrupo>) => setEscolhas((atuais) => ({ ...atuais, [id]: { ...escolhaDe(id), ...parcial } }));
+  const todosItensIds = aplicaveis.flatMap((g) => g.itens.map((i) => i.id));
+  const marcados = escolhidos === null ? todosItensIds : escolhidos.filter((id) => todosItensIds.includes(id));
+  const marcadosDoGrupo = (g: { itens: { id: string }[] }) => g.itens.filter((i) => marcados.includes(i.id)).map((i) => i.id);
+  const alternarItem = (id: string, marcar: boolean) => setEscolhidos(marcar ? [...marcados.filter((m) => m !== id), id] : marcados.filter((m) => m !== id));
+  // Marcar ou desmarcar o grupo marca ou desmarca todos os itens dele.
+  const alternarGrupo = (g: { itens: { id: string }[] }, marcar: boolean) => {
+    const ids = g.itens.map((i) => i.id);
+    setEscolhidos(marcar ? [...marcados.filter((m) => !ids.includes(m)), ...ids] : marcados.filter((m) => !ids.includes(m)));
+  };
+  const catalogoPadrao = (finalidade === "vistoria" ? GRUPOS_PADRAO_VISTORIA : GRUPOS_PADRAO_MANUTENCAO).filter((p) => !escolhido || p.tipoId === escolhido.tipoId).map((p) => ({ titulo: p.nome, itens: p.itens }));
 
-  // Clonar abre com responsável, grupos e itens do original, para outro equipamento (como em Veículos).
+  const aoFecharEquipamentos = (a: boolean) => { setEquipamentosAberto(a); if (!a) aoMudar(); };
+  const aoFecharEmpregados = (a: boolean) => { setEmpregadosAberto(a); if (!a) void queryClient.invalidateQueries({ queryKey: ["empregados"] }); };
+  const linkCadastro = (texto: string, abrirTela: () => void) => (canWrite ? (
+    <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={abrirTela}>{texto}</button>
+  ) : null);
+  // Os grupos de itens ficam na mesma tela, logo acima: o atalho fecha a janela e leva até eles.
+  const irParaItens = () => { setAberto(false); setTimeout(() => document.getElementById("itens-check-list-equipamento")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150); };
+
+  // Trocar o equipamento mantém o responsável só se ele ainda pode responder por ele (ativo e da mesma empresa do novo equipamento).
+  function trocarEquipamento(id: string) {
+    const empresaNova = porId(id)?.empresaId;
+    const continua = empregados.some((x) => x.id === responsavelId && (!empresaNova || x.empresa_id === empresaNova));
+    setEquipamentoId(id);
+    setEscolhidos(null);
+    if (responsavelId !== SEM_RESPONSAVEL && !continua) setResponsavelId("");
+  }
+
   function abrir(a: AssociacaoChecklistEquipamento | null, clonar = false) {
     if (a && !clonar && !porId(a.equipamentoId)) {
       toast.error("Este equipamento foi removido; exclua a associação.");
@@ -224,76 +261,77 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     }
     setClonandoDe(a && clonar ? a.equipamentoId : null);
     setEditando(a && !clonar ? a.equipamentoId : null);
-    setEquipamentoId(a && !clonar ? a.equipamentoId : "");
+    // Editar e Clonar abrem com tudo do original, inclusive o equipamento (o clone precisa de outro, como em Veículos).
+    setEquipamentoId(a ? a.equipamentoId : "");
     setResponsavelId(a ? (a.responsavel?.id ?? SEM_RESPONSAVEL) : "");
-    setEscolhas(Object.fromEntries((a?.itens ?? []).map((i) => [i.grupoId, {
-      itens: i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? [], tipo: i.tipo, periodicidade: i.tipo === "periodico" ? i.periodicidade : "",
-    }])));
-    // Reaberto: o tipo e a periodicidade dos itens personalizados voltam como foram salvos.
-    const equipamentoDaAssociacao = a ? porId(a.equipamentoId) : undefined;
-    const doPersonalizado = a && !clonar && equipamentoDaAssociacao
-      ? a.itens.find((i) => grupos.find((g) => g.id === i.grupoId)?.nome === nomeGrupoPersonalizado(equipamentoDaAssociacao.patrimonio))
-      : undefined;
+    const doGrupo = (a?.itens ?? []).filter((i) => grupos.some((g) => g.id === i.grupoId));
+    const escolhida = a ? (doGrupo.find((i) => i.tipo === "periodico")?.periodicidade ?? AVULSO) : "";
+    setPeriodicidade(escolhida);
+    // A janela guarda uma periodicidade só. Um check list antigo com mais de uma mostra só os itens da escolhida, e o aviso diz o que sai ao salvar.
+    const daEscolhida = doGrupo.filter((i) => (escolhida === AVULSO ? i.tipo === "avulso" : i.tipo === "periodico" && i.periodicidade === escolhida));
+    if (a && daEscolhida.length < doGrupo.length) toast.warning(`Este check list tinha mais de uma periodicidade. A janela mostra só ${escolhida}; ao salvar, os itens das outras periodicidades saem.`);
+    setEscolhidos(a ? daEscolhida.flatMap((i) => i.itensIds ?? grupos.find((g) => g.id === i.grupoId)?.itens.map((x) => x.id) ?? []) : null);
     setPersonalizados(null);
-    setPersTipo(doPersonalizado?.tipo ?? "periodico");
-    setPersPeriodicidade(doPersonalizado?.tipo === "periodico" ? doPersonalizado.periodicidade : "");
     setAberto(true);
   }
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
-    if (trava.current || !escolhido) {
-      if (!escolhido) toast.error("Selecione o equipamento.");
-      return;
-    }
-    if (!responsavelId) {
-      toast.error("Escolha o responsável ou marque Não definido.");
-      return;
-    }
+    if (trava.current) return;
+    if (!escolhido) return void toast.error("Selecione o equipamento.");
+    if (clonandoDe && equipamentoId === clonandoDe) return void toast.error("Escolha outro equipamento para o clone: este já tem o check list original.");
+    if (!responsavelId) return void toast.error("Escolha o responsável ou marque Não definido.");
+    if (!periodicidade) return void toast.error("Escolha a periodicidade do check list ou Avulso.");
     const emp = empregados.find((x) => x.id === responsavelId);
     const atual = associacoes.find((a) => a.equipamentoId === (editando ?? clonandoDe))?.responsavel;
     const achado = emp ? { id: emp.id, nome: emp.nome } : atual && atual.id === responsavelId ? atual : null;
     // Responsável escolhido que não está mais na lista não vira "Não definido" sem aviso.
-    if (responsavelId !== SEM_RESPONSAVEL && !achado) {
-      toast.error("Não encontrei o responsável escolhido; escolha de novo.");
-      return;
-    }
+    if (responsavelId !== SEM_RESPONSAVEL && !achado) return void toast.error("Não encontrei o responsável escolhido; escolha de novo.");
     const responsavel = responsavelId === SEM_RESPONSAVEL ? null : achado;
-    // Itens personalizados viram um grupo próprio ("Personalizado · PATRIMÔNIO"), do tipo do equipamento, associado junto com os marcados;
-    // se o equipamento já tem esse grupo, ele é atualizado, não duplicado.
+    trava.current = true;
+    setTravado(true);
+    // Itens personalizados viram um grupo próprio ("Personalizado · PATRIMÔNIO", ou "Avulso · Personalizado · PATRIMÔNIO"), do tipo do equipamento,
+    // associado junto com os marcados; se o equipamento já tem esse grupo, ele é atualizado, não duplicado.
     const proprios = valorPersonalizados.split("\n").map((t) => t.trim()).filter(Boolean);
     let novoGrupoId: string | null = null;
     let usadoId: string | null = null;
+    let salvou = false;
     try {
-      const itensAssoc: EntradaItemAssociacao[] = aplicaveis.filter((g) => marcadosDe(g).length > 0)
-        .map((g) => ({ grupoId: g.id, tipo: escolhaDe(g.id).tipo, periodicidade: escolhaDe(g.id).periodicidade, itensIds: marcadosDe(g) }));
+      // Grupo com todos os itens marcados vale inteiro (os itens que entrarem nele depois também); com parte, guarda só os escolhidos.
+      const itensAssoc: EntradaItemAssociacao[] = aplicaveis.filter((g) => marcadosDoGrupo(g).length > 0).map((g) => {
+        const ids = marcadosDoGrupo(g);
+        const escolha = ids.length === g.itens.length ? {} : { itensIds: ids };
+        return avulso ? { grupoId: g.id, tipo: "avulso", periodicidade: "", ...escolha } : { grupoId: g.id, tipo: "periodico", periodicidade, ...escolha };
+      });
       if (proprios.length > 0) {
         const grupo = salvarGrupoChecklist(finalidade, {
           ...(personalizadoSalvo ? { id: personalizadoSalvo.id } : {}),
-          nome: personalizadoSalvo?.nome ?? nomeGrupoPersonalizado(escolhido.patrimonio),
+          nome: personalizadoSalvo?.nome ?? nomeGrupoPersonalizado(escolhido.patrimonio, avulso),
           itens: proprios,
-          tipos: personalizadoSalvo?.tipos ?? [escolhido.tipoId],
+          tipos: personalizadoSalvo?.tipos ?? [escolhido.tipoId || TODOS_OS_TIPOS],
         });
         if (!personalizadoSalvo) novoGrupoId = grupo.id;
         usadoId = grupo.id;
-        itensAssoc.push({ grupoId: grupo.id, tipo: persTipo, periodicidade: persPeriodicidade });
+        itensAssoc.push(avulso ? { grupoId: grupo.id, tipo: "avulso", periodicidade: "" } : { grupoId: grupo.id, tipo: "periodico", periodicidade });
       }
       salvarAssociacao(finalidade, { modo: editando ? "editar" : "criar", equipamentoId: escolhido.id, tipoId: escolhido.tipoId, responsavel, itens: itensAssoc });
-      // Grupos personalizados antigos deste equipamento (sufixos de versões antigas) que ficaram sem uso saem.
+      salvou = true;
+      // Grupos personalizados antigos deste equipamento (outro tipo de check list, ou sufixos de versões antigas) que ficaram sem uso saem.
       for (const g of grupos) {
         if (g.id !== usadoId && ehPersonalizadoDe(g.nome, escolhido.patrimonio)) { try { removerGrupoChecklist(finalidade, g.id); } catch { /* sem o que fazer */ } }
       }
     } catch (erro) {
       // A associação não saiu: o grupo personalizado recém-criado não fica sobrando.
-      if (novoGrupoId) { try { removerGrupoChecklist(finalidade, novoGrupoId); } catch { /* sem o que fazer */ } }
+      if (novoGrupoId && !salvou) { try { removerGrupoChecklist(finalidade, novoGrupoId); } catch { /* sem o que fazer */ } }
       toast.error(erroDe(erro, "Não foi possível salvar a associação."));
-      return;
     }
-    trava.current = true;
-    setAberto(false);
-    toast.success("Itens de check list associados ao equipamento.");
-    aoMudar();
-    setTimeout(() => { trava.current = false; }, 400);
+    if (salvou) {
+      setAberto(false);
+      toast.success("Itens de check list associados ao equipamento.");
+      aoMudar();
+    }
+    // Só solta a trava depois de o diálogo fechar ou de o erro aparecer.
+    setTimeout(() => { trava.current = false; setTravado(false); }, 400);
   }
 
   function excluir(a: AssociacaoChecklistEquipamento) {
@@ -309,16 +347,18 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     aoMudar();
   }
 
-  const atualResponsavel = associacoes.find((a) => a.equipamentoId === (editando ?? clonandoDe))?.responsavel;
-  const opcoes = empregados.map((x) => ({ id: x.id, rotulo: x.matricula ? `${x.nome} · ${x.matricula}` : x.nome }));
-  if (atualResponsavel && !opcoes.some((o) => o.id === atualResponsavel.id)) opcoes.push({ id: atualResponsavel.id, rotulo: `${atualResponsavel.nome} (atual)` });
+  // O responsável salvo pode ser de alguém que deixou de ser elegível; continua aparecendo para não sumir do campo.
+  const salvoNaEdicao = associacoes.find((a) => a.equipamentoId === (editando ?? clonandoDe))?.responsavel;
+  const opcoes = salvoNaEdicao && !elegiveis.some((x) => x.id === salvoNaEdicao.id)
+    ? [...elegiveis.map((x) => ({ id: x.id, rotulo: x.nome })), { id: salvoNaEdicao.id, rotulo: `${salvoNaEdicao.nome} (atual)` }]
+    : elegiveis.map((x) => ({ id: x.id, rotulo: x.matricula ? `${x.nome} · ${x.matricula}` : x.nome }));
 
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold">Associar itens de check list a um equipamento</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Para cada equipamento, escolha o responsável e, por grupo, se é periódico (obrigatório, entra nos KPI) ou avulso (não obrigatório).</p>
+          <p className="mt-1 text-sm text-muted-foreground">Para cada equipamento, escolha o responsável e a periodicidade do check list. Periódico é obrigatório e entra nos KPI; avulso não é obrigatório e não entra nos KPI.</p>
         </div>
         <Button requiresWrite onClick={() => abrir(null)}>Associar itens</Button>
       </header>
@@ -369,129 +409,115 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
       </section>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>{editando ? "Editar itens de check list do equipamento" : clonando ? "Clonar itens de check list do equipamento" : "Associar itens de check list a um equipamento"}</DialogTitle>
-            <DialogDescription>Escolha o equipamento e o responsável, marque os grupos para trazer os itens, escolha item a item e diga se cada grupo é periódico ou avulso.</DialogDescription>
+            <DialogDescription>Escolha o equipamento, o responsável e a periodicidade do check list (ou Avulso) e marque os itens que o compõem.</DialogDescription>
           </DialogHeader>
           <form onSubmit={salvar} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-equipamento">Equipamento</Label>
-                <Select value={equipamentoId} disabled={!!editando} onValueChange={(v) => { if (v) { setEquipamentoId(v); if (!clonando) setEscolhas({}); } }}>
+                <Select value={equipamentoId} disabled={!!editando} onValueChange={(v) => { if (v) trocarEquipamento(v); }}>
                   <SelectTrigger id="assoc-equipamento"><SelectValue placeholder="Selecione o equipamento" /></SelectTrigger>
                   <SelectContent>{livres.map((e) => <SelectItem key={e.id} value={e.id}>{rotulo(e)}</SelectItem>)}</SelectContent>
                 </Select>
-                {livres.length === 0 && <p className="text-xs text-muted-foreground">Todos os equipamentos já têm itens associados, ou nenhum equipamento com tipo está cadastrado.</p>}
+                {livres.length === 0 && <p className="text-xs text-muted-foreground">Todos os equipamentos já têm itens associados, ou nenhum equipamento está cadastrado.</p>}
+                <p className="text-xs">{linkCadastro("Cadastrar equipamento", () => setEquipamentosAberto(true))}</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-equip-responsavel">Responsável</Label>
-                <Select value={responsavelId} onValueChange={(v) => v && setResponsavelId(v)}>
+                <Select key={`${equipamentoId}-${opcoes.length}`} value={responsavelId} onValueChange={(v) => v && setResponsavelId(v)}>
                   <SelectTrigger id="assoc-equip-responsavel"><SelectValue placeholder="Selecione o responsável ou Não definido" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={SEM_RESPONSAVEL}>{NAO_DEFINIDO}</SelectItem>
                     {opcoes.map((o) => <SelectItem key={o.id} value={o.id}>{o.rotulo}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {opcoes.length === 0 && <p className="text-xs text-muted-foreground">Nenhum empregado ativo encontrado para este equipamento. Cadastre em Parâmetros &gt; Empregados.</p>}
+                <p className="text-xs">{linkCadastro("Cadastrar empregado", () => setEmpregadosAberto(true))}</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="assoc-equip-periodicidade">Periodicidade</Label>
+                <Select value={periodicidade} onValueChange={(v) => { setPeriodicidade(v); setEscolhidos(null); }}>
+                  <SelectTrigger id="assoc-equip-periodicidade"><SelectValue placeholder="Selecione a periodicidade" /></SelectTrigger>
+                  <SelectContent>{PERIODICIDADES_CAMPO.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Diária, semanal, quinzenal ou mensal: check list periódico, obrigatório (entra nos KPI). Avulso: não obrigatório (não entra nos KPI), para qualquer equipamento.</p>
               </div>
             </div>
+
             <fieldset className="space-y-2" data-testid="associar-itens">
-              <legend className="text-sm font-medium">Grupos de itens</legend>
+              <legend className="text-sm font-medium">Itens que compõem o check list</legend>
+              <p className="text-xs text-muted-foreground">Marque o grupo para trazer a lista de itens dele e escolha, item a item, os que compõem o check list. A periodicidade vale para todos os itens marcados.</p>
+              <p className="text-xs">{linkCadastro("Cadastrar itens de check list", irParaItens)}</p>
               {!escolhido ? (
-                <p className="text-sm text-muted-foreground">Escolha o equipamento para ver os grupos.</p>
+                <p className="text-sm text-muted-foreground">Escolha o equipamento para ver os itens.</p>
               ) : aplicaveis.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum grupo serve ao tipo deste equipamento. Personalize os itens abaixo ou cadastre em Itens check list.</p>
+                <p className="text-sm text-muted-foreground">Nenhum grupo de itens serve a este equipamento. Personalize os itens abaixo ou cadastre em Itens check list.</p>
               ) : (
-                <ul className="grid max-h-80 gap-2 overflow-y-auto">
-                  {aplicaveis.map((g) => {
-                    const c = escolhaDe(g.id);
-                    const marcados = marcadosDe(g);
-                    const estado = marcados.length === 0 ? false : marcados.length === g.itens.length ? true : "indeterminate";
-                    return (
-                      <li key={g.id} className="rounded-md border p-2">
-                        <label className="flex cursor-pointer items-start gap-2 text-sm">
-                          <Checkbox className="mt-0.5" checked={estado} onCheckedChange={(v) => mudar(g.id, { itens: v === true ? g.itens.map((i) => i.id) : [] })} aria-label={g.nome} />
-                          <span className="font-medium">{g.nome} <span className="font-normal text-muted-foreground">({marcados.length} de {g.itens.length})</span></span>
-                        </label>
-                        <ul className="mt-1.5 space-y-1 pl-6" aria-label={`Itens de ${g.nome}`}>
-                          {g.itens.map((i) => (
-                            <li key={i.id}>
-                              <label className="flex cursor-pointer items-start gap-2 text-sm">
-                                <Checkbox className="mt-0.5" checked={marcados.includes(i.id)} onCheckedChange={(v) => alternarItem(g, i.id, v === true)} aria-label={i.nome} />
-                                <span>{i.nome}</span>
-                              </label>
-                            </li>
-                          ))}
-                        </ul>
-                        {marcados.length > 0 && (
-                          <div className="mt-2 grid gap-2 pl-6 sm:grid-cols-2">
-                            <Select value={c.tipo} onValueChange={(v) => v && mudar(g.id, { tipo: v as TipoAssociacao })}>
-                              <SelectTrigger aria-label={`Tipo de ${g.nome}`}><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="periodico">Periódico</SelectItem>
-                                <SelectItem value="avulso">Avulso</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            {c.tipo === "periodico" ? (
-                              <Select value={c.periodicidade} onValueChange={(v) => v && mudar(g.id, { periodicidade: v })}>
-                                <SelectTrigger aria-label={`Periodicidade de ${g.nome}`}><SelectValue placeholder="Periodicidade" /></SelectTrigger>
-                                <SelectContent>{PERIODICIDADES.filter((p) => p !== NAO_DEFINIDA).map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-                              </Select>
-                            ) : (
-                              <p className="self-center text-xs text-muted-foreground">Avulso: não obrigatório, sem periodicidade.</p>
-                            )}
-                          </div>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{marcados.length} de {todosItensIds.length} itens marcados</span>
+                    <div className="flex gap-1">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEscolhidos(todosItensIds)}>Marcar todos</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEscolhidos([])}>Desmarcar todos</Button>
+                    </div>
+                  </div>
+                  <ul className="grid max-h-64 gap-2 overflow-y-auto md:grid-cols-2">
+                    {aplicaveis.map((g) => {
+                      const doGrupo = marcadosDoGrupo(g);
+                      const estado = doGrupo.length === 0 ? false : doGrupo.length === g.itens.length ? true : "indeterminate";
+                      return (
+                        <li key={g.id} className="rounded-md border p-2">
+                          <label htmlFor={`assoc-grupo-${g.id}`} className="flex cursor-pointer items-start gap-2 text-sm">
+                            <Checkbox id={`assoc-grupo-${g.id}`} className="mt-0.5" checked={estado} onCheckedChange={(v) => alternarGrupo(g, v === true)} />
+                            <span className="font-medium">{g.nome} <span className="font-normal text-muted-foreground">({doGrupo.length} de {g.itens.length})</span></span>
+                          </label>
+                          <ul className="mt-1.5 space-y-1 pl-6" aria-label={`Itens de ${g.nome}`}>
+                            {g.itens.map((i) => (
+                              <li key={i.id}>
+                                <label htmlFor={`assoc-item-${i.id}`} className="flex cursor-pointer items-start gap-2 text-sm">
+                                  <Checkbox id={`assoc-item-${i.id}`} className="mt-0.5" checked={marcados.includes(i.id)} onCheckedChange={(v) => alternarItem(i.id, v === true)} />
+                                  <span>{i.nome}</span>
+                                </label>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
               )}
               {escolhido && (
                 <div className="space-y-1.5 rounded-md border p-3" data-testid="itens-personalizados">
                   <h3 className="text-sm font-semibold">Personalizar itens deste equipamento</h3>
                   <p className="text-xs text-muted-foreground">Marque itens do padrão ou adicione itens próprios: eles formam o grupo “Personalizado · patrimônio”, que só entra neste equipamento, junto com os grupos marcados acima. Ao abrir de novo, os itens salvos voltam aqui.</p>
-                  <EditorItensChecklist
-                    id="assoc-equip-personalizados"
-                    value={valorPersonalizados}
-                    onChange={setPersonalizados}
-                    catalogo={(finalidade === "vistoria" ? GRUPOS_PADRAO_VISTORIA : GRUPOS_PADRAO_MANUTENCAO).filter((p) => p.tipoId === escolhido.tipoId).map((p) => ({ titulo: p.nome, itens: p.itens }))}
-                  />
-                  {valorPersonalizados.trim() && (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Select value={persTipo} onValueChange={(v) => v && setPersTipo(v as TipoAssociacao)}>
-                        <SelectTrigger aria-label="Tipo dos itens personalizados"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="periodico">Periódico</SelectItem>
-                          <SelectItem value="avulso">Avulso</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {persTipo === "periodico" ? (
-                        <Select value={persPeriodicidade} onValueChange={(v) => v && setPersPeriodicidade(v)}>
-                          <SelectTrigger aria-label="Periodicidade dos itens personalizados"><SelectValue placeholder="Periodicidade" /></SelectTrigger>
-                          <SelectContent>{PERIODICIDADES.filter((x) => x !== NAO_DEFINIDA).map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent>
-                        </Select>
-                      ) : (
-                        <p className="self-center text-xs text-muted-foreground">Avulso: não obrigatório, sem periodicidade.</p>
-                      )}
-                    </div>
-                  )}
+                  <EditorItensChecklist id="assoc-equip-personalizados" value={valorPersonalizados} onChange={setPersonalizados} catalogo={catalogoPadrao} />
                 </div>
               )}
             </fieldset>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAberto(false)}>Cancelar</Button>
-              <Button requiresWrite type="submit">Salvar</Button>
+              <Button requiresWrite type="submit" disabled={travado}>Salvar</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Ao lado da janela da associação, nunca dentro dela (decisão 120). */}
+      <EquipamentoDialog aberto={equipamentosAberto} onAberto={aoFecharEquipamentos} editando={null} modelo={null} onSalvo={aoMudar} />
+      <DialogCadastroEmpregados aberto={empregadosAberto} onAbrirMudou={aoFecharEmpregados} />
     </div>
   );
 }
 
 export function ChecklistEquipamento({ finalidade, aoEscolher }: { finalidade: FinalidadeChecklist | null; aoEscolher: (f: FinalidadeChecklist) => void }) {
   const [versao, aoMudar] = useVersaoArmazenamento();
+  // Como em Veículos, os grupos de itens padrão já vêm cadastrados (uma vez só; o que for excluído depois não volta).
+  useEffect(() => { if (aplicarPadraoUmaVez()) aoMudar(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const atual = FINALIDADES.find((f) => f.id === finalidade);
 
   if (!atual) {

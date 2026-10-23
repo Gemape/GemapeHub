@@ -95,3 +95,74 @@ export const GRUPOS_PADRAO_MANUTENCAO: readonly GrupoPadrao[] = [
     ],
   },
 ];
+
+// Ações de manutenção do padrão inicial de Parâmetros > Equipamentos > Manutenção (lista fornecida pela Gemape): um pai por rotina de cada família de
+// equipamento, com os subitens (filhos). O nome do pai leva a família ("Geradores · Revisão do sistema..."), como os grupos de check list de Veículos.
+// Todo pai tem também o subitem Outros, de descrição aberta, acrescentado ao gravar.
+const LUBRIFICACAO = "Revisão do sistema de lubrificação e filtros";
+const TRANSMISSAO = "Revisão do sistema de transmissão e fluidos";
+const ELETRICO = "Revisão do sistema elétrico e iluminação";
+const FAMILIAS: readonly { familia: string; acoes: readonly (readonly [string, readonly string[]])[] }[] = [
+  { familia: "Geradores (todas as potências)", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor", "Troca de filtro de óleo", "Troca de filtro de ar", "Troca de filtro de combustível"]],
+    [TRANSMISSAO, ["Troca/verificação do líquido de arrefecimento"]],
+    [ELETRICO, ["Troca de bateria", "Troca de velas de ignição (se aplicável a gasolina)", "Reparo no alternador", "Reparo no motor de partida", "Substituição de lâmpadas de sinalização/painel"]],
+    ["Outros serviços", ["Serviços em painéis de controle, QTA e quadros com tomada associados"]],
+  ] },
+  { familia: "Empilhadeiras (2,5 ton e Clark C70D)", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor", "Filtro de óleo", "Filtro de ar", "Filtro de combustível"]],
+    [TRANSMISSAO, ["Fluido de freio", "Líquido de arrefecimento", "Óleo do câmbio", "Fluido da direção hidráulica"]],
+    ["Manutenção do sistema de freios", ["Pastilhas/lonas dianteiras e traseiras", "Discos/tambores de freio", "Cilindro mestre"]],
+    ["Manutenção de pneus e alinhamento", ["Calibragem", "Troca de pneus industriais", "Vulcanização", "Balanceamento"]],
+    ["Revisão de suspensão e direção", ["Amortecedores", "Buchas", "Pivôs", "Terminais de direção", "Molas"]],
+    [ELETRICO, ["Troca de bateria", "Substituição de faróis e lanternas de trabalho", "Reparo no alternador e motor de partida"]],
+  ] },
+  { familia: "Compressores diesel (190 PCM a 900 PCM)", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor", "Filtro de óleo", "Filtro de ar do motor", "Filtro de combustível"]],
+    [TRANSMISSAO, ["Líquido de arrefecimento", "Óleo do compressor/separador de ar-óleo"]],
+    [ELETRICO, ["Troca de bateria", "Reparo no alternador", "Reparo no motor de partida", "Lâmpadas do painel de instrumentos"]],
+  ] },
+  { familia: "Torres de iluminação diesel", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor", "Filtro de óleo", "Filtro de ar", "Filtro de combustível"]],
+    [TRANSMISSAO, ["Líquido de arrefecimento"]],
+    [ELETRICO, ["Substituição de lâmpadas (projetores/faróis de alta potência)", "Troca de bateria", "Reparo no alternador", "Reparo no motor de partida"]],
+    ["Manutenção de pneus e rodagem", ["Calibragem e troca de pneus do reboque da torre"]],
+  ] },
+  { familia: "Compactadores de solo e motores (placas reversíveis e percussão)", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor", "Filtro de ar", "Filtro de combustível"]],
+    [TRANSMISSAO, ["Óleo do sistema de vibração/câmbio"]],
+    [ELETRICO, ["Troca de velas de ignição (motores a gasolina)", "Reparo no sistema de partida retrátil/motor de partida"]],
+  ] },
+  { familia: "Martelos rompedores, perfuradores e pneumáticos (10 kg a 40 kg)", acoes: [
+    ["Manutenção operacional e mecânica", ["Limpeza e lubrificação pneumática/mecânica interna", "Troca de retentores", "Troca de ponteiros", "Troca de talhadeiras"]],
+    [TRANSMISSAO, ["Lubrificação com óleos específicos para ferramentas pneumáticas (no caso dos pneumáticos)"]],
+  ] },
+  { familia: "Betoneiras (400 litros, com motor)", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor (quando a combustão)", "Lubrificação de mancais, cremalheira e redutores"]],
+    [ELETRICO, ["Revisão de chaves liga/desliga, cabos e motores elétricos (se versão elétrica)"]],
+  ] },
+  { familia: "Motobombas e bombas submersas (2\", 3\", mangote)", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor a combustão", "Lubrificação dos selos mecânicos e rolamentos das bombas submersas/mangotes"]],
+    ["Manutenção hidráulica", ["Inspeção de rotores", "Inspeção de volutas", "Inspeção de conexões", "Inspeção de vedações"]],
+  ] },
+  { familia: "Cortadoras de piso a gasolina", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor", "Limpeza/troca do filtro de ar"]],
+    [ELETRICO, ["Troca de velas de ignição"]],
+    ["Manutenção de corte", ["Inspeção e troca de discos de corte diamantados", "Inspeção e troca de correias de transmissão"]],
+  ] },
+  { familia: "Motores estacionários e diversos (Agrale, Yanmar, Tobata, etc.)", acoes: [
+    [LUBRIFICACAO, ["Troca de óleo do motor", "Substituição de filtros de óleo, ar e combustível"]],
+    [TRANSMISSAO, ["Líquido de arrefecimento"]],
+    [ELETRICO, ["Troca de velas (gasolina)", "Revisão de bicos e bomba injetora (diesel)", "Troca de bateria", "Motor de partida e alternador"]],
+  ] },
+  { familia: "Equipamentos de apoio e elétricos (QTA/QTM, painéis, transformadores, lavadora, serras, esmerilhadeiras)", acoes: [
+    [ELETRICO, ["Inspeção de conexões e disjuntores em quadros de transferência (QTA/QTM) e painéis com tomada", "Testes em transformadores de energia"]],
+    ["Manutenção eletromecânica", ["Troca de escovas de carvão", "Troca de rolamentos", "Verificação de cabos elétricos em ferramentas portáteis (serra mármore, esmerilhadeira 7\", lavadora Karcher HD585)"]],
+    ["Inspeção de estruturas", ["Verificação de integridade física em bacias de contenção e reservatórios de abastecimento"]],
+  ] },
+];
+export type AcaoPadraoEquipamento = { nome: string; subitens: readonly string[] };
+export const ACOES_PADRAO_EQUIPAMENTO: readonly AcaoPadraoEquipamento[] = FAMILIAS.flatMap((f) => f.acoes.map(([acao, subitens]) => ({ nome: `${f.familia} · ${acao}`, subitens })));
+// Nome do pai por família e ação, para quem precisa apontar para uma ação do padrão (dados de teste e planos).
+export const nomeAcaoPadrao = (familiaInicio: string, acao: string): string => ACOES_PADRAO_EQUIPAMENTO.find((a) => a.nome.startsWith(familiaInicio) && a.nome.endsWith(` · ${acao}`))?.nome ?? `${familiaInicio} · ${acao}`;
+export const ROTULOS_ACAO = { LUBRIFICACAO, TRANSMISSAO, ELETRICO } as const;

@@ -34,9 +34,8 @@ test('código do veículo: sequência VEI', () => {
   assert.equal(proximoCodigo(regra, ['VEI-0001', 'UNI-0005']), 'VEI-0002');
 });
 
-test("empilhadeira não tem placa; os demais tipos continuam com placa (decisão 66)", async () => {
+test("todo veículo tem placa: empilhadeira saiu de Veículos e é só do módulo Equipamentos", async () => {
   const { subcategoriaTemPlaca } = await import("../src/lib/veiculos.ts");
-  assert.equal(subcategoriaTemPlaca("Empilhadeira"), false);
   for (const nome of ["Carro", "Van", "Utilitário", "Caminhão", "Moto", "Outros"]) assert.equal(subcategoriaTemPlaca(nome), true, nome);
   assert.equal(subcategoriaTemPlaca(undefined), true);
 });

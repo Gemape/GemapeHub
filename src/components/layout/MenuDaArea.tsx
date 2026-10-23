@@ -12,12 +12,12 @@ const SECOES: readonly SecaoInicio[] = ["Módulo", "Parâmetros"];
 // Topo, ao lado do Voltar ao início: as outras rotinas do mesmo cartão da tela inicial (módulo e parâmetros), para trocar de rotina
 // sem voltar ao início. Telas que não pertencem a um cartão com submenu (Dashboard, Empresas...) não mostram o menu.
 export function MenuDaArea() {
-  const { isAdmin } = useAccess();
+  const { isAdmin, podeVerCaminho } = useAccess();
   // Primitivos separados: o roteador compara por valor e o menu não renderiza de novo sem a rota mudar.
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const buscaTexto = useRouterState({ select: (s) => JSON.stringify(s.location.search ?? {}) });
   const search = JSON.parse(buscaTexto) as Record<string, unknown>;
-  const area = areaDaRota(pathname, search, isAdmin);
+  const area = areaDaRota(pathname, search, isAdmin, podeVerCaminho);
   if (!area) return null;
   const { cartao, atual } = area;
   return (

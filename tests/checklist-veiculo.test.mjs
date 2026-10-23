@@ -281,9 +281,9 @@ test("hojeBrasilia independe do fuso do navegador", async () => {
   assert.equal(hojeBrasilia(new Date("2026-10-07T01:30:00.000Z")), "2026-10-06");
 });
 
-test("tipo do check list: leves, pesados e empilhadeira puxam os grupos ligados em Parâmetros", async () => {
+test("tipo do check list: leves e pesados puxam os grupos ligados em Parâmetros (empilhadeira é só de Equipamentos)", async () => {
   const { gruposDoTipoChecklist, tipoChecklistDaSubcategoria, TIPOS_CHECKLIST } = await import("../src/lib/checklist-veiculo.ts");
-  assert.deepEqual(TIPOS_CHECKLIST.map((t) => t.nome), ["Veículos leves", "Veículos pesados", "Empilhadeira"]);
+  assert.deepEqual(TIPOS_CHECKLIST.map((t) => t.nome), ["Veículos leves", "Veículos pesados"]);
   const subs = [
     { id: "s-carro", nome: "Carro" }, { id: "s-van", nome: "Van" }, { id: "s-cam", nome: "Caminhão" },
     { id: "s-emp", nome: "Empilhadeira" }, { id: "s-moto", nome: "Moto" },
@@ -300,11 +300,11 @@ test("tipo do check list: leves, pesados e empilhadeira puxam os grupos ligados 
   const nomes = (t) => gruposDoTipoChecklist(grupos, subs, t).map((g) => g.nome);
   assert.deepEqual(nomes("leves"), ["Leves", "Todos"]);
   assert.deepEqual(nomes("pesados"), ["Pesados", "Todos"]);
-  assert.deepEqual(nomes("empilhadeira"), ["Emp", "Todos"]);
+  assert.deepEqual(nomes("empilhadeira"), []);
   assert.deepEqual(nomes("outro"), []);
   assert.equal(tipoChecklistDaSubcategoria("Utilitário"), "leves");
   assert.equal(tipoChecklistDaSubcategoria("Caminhão"), "pesados");
-  assert.equal(tipoChecklistDaSubcategoria("Empilhadeira"), "empilhadeira");
+  assert.equal(tipoChecklistDaSubcategoria("Empilhadeira"), null);
   assert.equal(tipoChecklistDaSubcategoria("Moto"), null);
 });
 
@@ -318,6 +318,6 @@ test("veículos do tipo: só ativos e só da subcategoria do tipo", async () => 
   const ids = (t) => veiculosDoTipoChecklist(veiculos, t, (v) => v.sub).map((v) => v.id);
   assert.deepEqual(ids("leves"), ["a"]);
   assert.deepEqual(ids("pesados"), ["d"]);
-  assert.deepEqual(ids("empilhadeira"), ["e"]);
+  assert.deepEqual(ids("empilhadeira"), []);
   assert.deepEqual(ids(""), []);
 });

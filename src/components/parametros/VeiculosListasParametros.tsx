@@ -71,6 +71,7 @@ export function ListaVeiculos({
   secoes,
   alertaPainel = false,
   onValidar,
+  textoAlerta,
 }: {
   eyebrow?: string;
   // Itens do padrão, para marcar e personalizar ao cadastrar o grupo (campoExtra "itens"); sem ele, vale o campo de texto.
@@ -96,6 +97,8 @@ export function ListaVeiculos({
   // Pergunta Sim ou Não antes de gravar (Ações de manutenção, decisão 145): a alteração muda o painel de manutenção.
   alertaPainel?: boolean;
   onValidar?: (id: string | null, nome: string, extra: string, storage: StorageLike) => unknown;
+  // Texto do alerta Sim/Não (alertaPainel); sem ele vale o de Veículos.
+  textoAlerta?: string;
 }) {
   const [aberto, setAberto] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
@@ -296,6 +299,7 @@ export function ListaVeiculos({
       </Dialog>
       <AlertaPainelManutencao
         aberto={confirmando}
+        {...(textoAlerta ? { texto: textoAlerta } : {})}
         onSim={() => {
           setConfirmando(false);
           gravar();
