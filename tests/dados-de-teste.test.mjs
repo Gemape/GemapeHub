@@ -275,7 +275,7 @@ test("formulários abrem preenchidos (2.8): o quarto registro é válido, único
   assert.ok(cpfValido(cli.cpf) && validarCnpj(cli.cnpj) && emailValido(cli.email));
   const vei = exemploVeiculo(d.veiculos, d.empresas[0].id, "Fiat", AGORA);
   assert.ok(placaValida(vei.placa) && !d.veiculos.some((v) => String(v.placa).replace("-", "") === vei.placa));
-  assert.ok(exemploCaixa("x").status === "Ativa" && exemploFerramenta("Manual", "Ferrotec").grupo_ferramenta === "Chave L");
+  assert.ok(exemploCaixa("x").status === "Ativa" && exemploFerramenta("Manual", "Ferrotec").grupo_ferramenta === "Chave L" && exemploFerramenta("Manual", "Ferrotec", "Lima", "8").tamanho === "8");
   assert.equal(JSON.stringify(dados(s)), antes, "o exemplo não grava nada");
 });
 
