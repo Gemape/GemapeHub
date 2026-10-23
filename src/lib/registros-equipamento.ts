@@ -1,6 +1,7 @@
 // Registros do módulo Equipamentos (Inventário, Abastecimento, Manutenção, Ocorrências e Check lists), na mesma lógica dos de Veículos, mas por equipamento e com
 // horímetro no lugar do km. Fase 1: ficam só no navegador, em modo demonstração; as tabelas no banco real são pendência da Fase 2.
 import { horaBrasilia, hojeLocal } from "./empregados.ts";
+import { MAX_FOTOS } from "./ocorrencias-veiculo.ts";
 import { alterarLista, dinheiroPositivo, lerLista, validarData, validarHora, type StorageLike } from "./registros-veiculo.ts";
 
 export const CHAVE_ABASTECIMENTOS_EQ = "gemape-demo-eq-abastecimentos";
@@ -19,6 +20,8 @@ export type ManutencaoEquipamentoRegistro = {
 };
 export type OcorrenciaEquipamento = {
   id: string; equipamentoId: string; tipoId: string; tipoNome: string; data: string; descricao: string; status: "Aberta" | "Resolvida"; solucao: string; resolvidaEm: string | null; criadoEm: string;
+  // Fotos da ocorrência (data URLs já reduzidas na tela), como em Veículos; registros antigos não têm.
+  fotos?: string[];
 };
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
@@ -122,16 +125,39 @@ export function registrarManutencaoEq(entrada: EntradaManutencaoEq, storage = st
 export const removerManutencaoEq = (id: string, storage = storagePadrao()) => gravar<ManutencaoEquipamentoRegistro>(CHAVE_MANUTENCOES_EQ, storage, (l) => l.filter((m) => m.id !== id));
 export const custoDaManutencaoEq = (m: Pick<ManutencaoEquipamentoRegistro, "custoPecas" | "custoMaoDeObra">) => m.custoPecas + m.custoMaoDeObra;
 
-export type EntradaOcorrenciaEq = { equipamentoId: string; tipoId: string; tipoNome: string; data: string; descricao: string };
+// Fotos como as da ocorrência de veículo: até MAX_FOTOS por ocorrência, só imagens, já reduzidas na tela.
+const LIMITE_FOTO = 600_000;
+function validarFotosEq(fotos: string[]): string[] {
+  if (fotos.length > MAX_FOTOS) throw new Error(`No máximo ${MAX_FOTOS} fotos por ocorrência.`);
+  if (fotos.some((f) => typeof f !== "string" || !f.startsWith("data:image/") || f.length > LIMITE_FOTO)) throw new Error("Uma das fotos não é uma imagem válida ou ficou grande demais.");
+  return fotos;
+}
+export type EntradaOcorrenciaEq = { equipamentoId: string; tipoId: string; tipoNome: string; data: string; descricao: string; fotos?: string[] };
 export function registrarOcorrenciaEq(entrada: EntradaOcorrenciaEq, storage = storagePadrao(), agora = new Date()): OcorrenciaEquipamento {
   if (!entrada.equipamentoId) throw new Error("Selecione o equipamento.");
   if (!entrada.tipoId || !entrada.tipoNome.trim()) throw new Error("Escolha o tipo da ocorrência.");
   const data = validarData(entrada.data, agora);
   const descricao = entrada.descricao.trim();
   if (descricao.length < 5) throw new Error("Descreva a ocorrência (ao menos 5 letras).");
-  const registro: OcorrenciaEquipamento = { id: novoId(), equipamentoId: entrada.equipamentoId, tipoId: entrada.tipoId, tipoNome: entrada.tipoNome.trim(), data, descricao, status: "Aberta", solucao: "", resolvidaEm: null, criadoEm: agora.toISOString() };
+  const registro: OcorrenciaEquipamento = { id: novoId(), equipamentoId: entrada.equipamentoId, tipoId: entrada.tipoId, tipoNome: entrada.tipoNome.trim(), data, descricao, status: "Aberta", solucao: "", resolvidaEm: null, fotos: validarFotosEq(entrada.fotos ?? []), criadoEm: agora.toISOString() };
   gravar<OcorrenciaEquipamento>(CHAVE_OCORRENCIAS_EQ, storage, (l) => [...l, registro]);
   return registro;
+}
+export function adicionarFotosOcorrenciaEq(id: string, fotos: string[], storage = storagePadrao()): void {
+  gravar<OcorrenciaEquipamento>(CHAVE_OCORRENCIAS_EQ, storage, (l) => {
+    const o = l.find((x) => x.id === id);
+    if (!o) throw new Error("Ocorrência não encontrada.");
+    const novas = validarFotosEq([...(o.fotos ?? []), ...fotos]);
+    return l.map((x) => (x.id === id ? { ...x, fotos: novas } : x));
+  });
+}
+export function removerFotoOcorrenciaEq(id: string, indice: number, storage = storagePadrao()): void {
+  gravar<OcorrenciaEquipamento>(CHAVE_OCORRENCIAS_EQ, storage, (l) => {
+    const o = l.find((x) => x.id === id);
+    if (!o) throw new Error("Ocorrência não encontrada.");
+    if (!Number.isInteger(indice) || indice < 0 || indice >= (o.fotos ?? []).length) throw new Error("Foto não encontrada.");
+    return l.map((x) => (x.id === id ? { ...x, fotos: (x.fotos ?? []).filter((_, n) => n !== indice) } : x));
+  });
 }
 export function resolverOcorrenciaEq(id: string, solucao: string, storage = storagePadrao(), agora = new Date()): void {
   const texto = solucao.trim();

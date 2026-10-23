@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useEmpresa } from "@/lib/empresa-context";
 import { hojeLocal } from "@/lib/empregados";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
+import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
+import { CATEGORIA_EQUIPAMENTOS, lerParametros } from "@/lib/parametros-base";
 import { salvarEquipamento, type Equipamento } from "@/lib/equipamentos-demo";
 import { STATUS_EQUIPAMENTO, TITULO_GRUPO_TECNICO, camposTecnicosDosGrupos, type CampoTecnico } from "@/lib/equipamentos";
 import { lerParametrosEquipamento, type ParametrosEquipamento } from "@/lib/equipamentos-parametros";
@@ -76,6 +78,8 @@ function Formulario({ editando, modelo, onFechar, onSalvo }: {
       onFechar();
       toast.success("Equipamento salvo");
       onSalvo(salvo);
+      // Endereçamento obrigatório só avisa (não impede salvar), como nas outras categorias.
+      void avisarEnderecamentoObrigatorio(lerParametros(), CATEGORIA_EQUIPAMENTOS, salvo.empresaId, salvo.patrimonio);
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar o equipamento.");
     }

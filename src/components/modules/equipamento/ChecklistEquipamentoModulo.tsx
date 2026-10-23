@@ -1,8 +1,9 @@
-import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ChecklistPainelMensal } from "@/components/modules/ChecklistPainelMensal";
+import { DialogAssociarChecklistEquipamento, DialogItensChecklistEquipamento } from "@/components/modules/equipamento/DialogosChecklistEquipamento";
+import { EquipamentoDialog } from "@/components/parametros/EquipamentoDialog";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -82,6 +83,10 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
   const [tipoEscolhido, setTipoEscolhido] = useState("");
   const [equipamentoId, setEquipamentoId] = useState("");
   const [responsavelId, setResponsavelId] = useState("");
+  // Telas de cadastro abertas ao lado do Novo check list (nunca dentro): o que já foi escolhido continua montado, como em Veículos.
+  const [equipamentosAberto, setEquipamentosAberto] = useState(false);
+  const [associarAberto, setAssociarAberto] = useState(false);
+  const [itensAberto, setItensAberto] = useState(false);
   const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
   const [confirmando, setConfirmando] = useState<"concluir" | "descartar" | null>(null);
   const [resolvendo, setResolvendo] = useState<string | null>(null);
@@ -124,13 +129,23 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
   const atual = tela?.tipo === "check" ? (todosDaFinalidade.find((c) => c.id === tela.id) ?? null) : null;
   const equipamentosDoDialogo = equipamentos.filter((e) => e.status === "Ativo");
   const equipamentoEscolhido = equipamentosDoDialogo.find((e) => e.id === equipamentoId);
+  // O equipamento escolhido pode ter sido excluído ou desativado numa das janelas ao lado: sem ele na lista, a escolha é limpa e a pessoa é avisada.
+  useEffect(() => {
+    if (tela?.tipo === "novo" && equipamentoId && !equipamentoEscolhido && !equipamentosAberto) {
+      setEquipamentoId("");
+      toast.info("O equipamento escolhido não está mais disponível. Escolha outro.");
+    }
+  }, [tela, equipamentoId, equipamentoEscolhido, equipamentosAberto]);
   const associacaoEscolhida = equipamentoEscolhido ? associacaoDe(equipamentoEscolhido.id) : undefined;
   const responsaveis = equipamentoEscolhido?.empresaId ? empregadosAtivos.filter((e) => e.empresa_id === equipamentoEscolhido.empresaId) : empregadosAtivos;
   const opcaoDoChecklist = (patrimonio: string, periodicidade: string) =>
     nomeDoChecklistEq({ patrimonio, periodicidade: periodicidade === "avulso" ? "" : rotuloPeriodo(periodicidade), responsavelNome: periodicidade === "avulso" ? "" : (associacaoEscolhida?.responsavel?.nome ?? "") });
-  const linkParametros = (texto: string) => (canWrite
-    ? <Link to="/cadastros/equipamentos-checklist" search={{ aba: finalidade }} className="font-medium text-primary underline underline-offset-2">{texto}</Link>
-    : `Associe em Parâmetros > Equipamentos > ${titulo}.`);
+  // Atalhos para a associação de itens (grupos, periodicidade e responsável) e para o cadastro dos itens, abertos em janelas ao lado do Novo check list.
+  const botaoLink = (texto: string, aoClicar: () => void) => (
+    <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={aoClicar}>{texto}</button>
+  );
+  const linkAssociar = canWrite ? botaoLink("Associar itens de check list a um equipamento", () => setAssociarAberto(true)) : `Associe em Parâmetros > Equipamentos > ${titulo}.`;
+  const linkItens = canWrite ? botaoLink("Cadastrar itens de check list", () => setItensAberto(true)) : `Cadastre em Parâmetros > Equipamentos > ${titulo}.`;
   // Só os grupos habilitados na associação do equipamento e os da periodicidade escolhida; o avulso traz os grupos avulsos (ou, sem associação, os do tipo).
   const gruposDoEquipamento = !equipamentoEscolhido || !tipoEscolhido ? [] : avulsoNovo
     ? (associacaoEscolhida ? gruposDoChecklistEq(associacaoEscolhida, parte.grupos, "avulso") : gruposDoTipoEq(parte.grupos, equipamentoEscolhido.tipoId))
@@ -322,7 +337,12 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
                 <SelectTrigger id="ck_equipamento" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o equipamento" /></SelectTrigger>
                 <SelectContent>{equipamentosDoDialogo.map((e) => <SelectItem key={e.id} value={e.id}>{rotuloDoEquipamento(e)}</SelectItem>)}</SelectContent>
               </Select>
-              {equipamentosDoDialogo.length === 0 && <p className="text-xs text-muted-foreground">Nenhum equipamento ativo cadastrado. Cadastre em Parâmetros &gt; Equipamentos.</p>}
+              {canWrite && (
+                <p className="text-xs text-muted-foreground">
+                  Equipamento não está na lista? {botaoLink("Cadastrar equipamento", () => setEquipamentosAberto(true))}
+                </p>
+              )}
+              {equipamentosDoDialogo.length === 0 && <p className="text-xs text-muted-foreground">Nenhum equipamento ativo cadastrado. A situação e o tipo do equipamento são definidos em Parâmetros &gt; Equipamentos &gt; Cadastrar equipamento.</p>}
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_modo">Tipo de check list</Label>
@@ -333,12 +353,12 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
                   {equipamentoEscolhido && <SelectItem value="avulso">{opcaoDoChecklist(equipamentoEscolhido.patrimonio, "avulso")}</SelectItem>}
                 </SelectContent>
               </Select>
-              {equipamentoEscolhido && periodicidadesDe(equipamentoEscolhido.id).length === 0 && <p className="text-xs text-muted-foreground">Este equipamento não tem check list periódico associado. {linkParametros(`Associar itens de ${titulo.toLowerCase()} a um equipamento`)}</p>}
+              {equipamentoEscolhido && periodicidadesDe(equipamentoEscolhido.id).length === 0 && <p className="text-xs text-muted-foreground">Este equipamento não tem check list periódico associado. {linkAssociar}</p>}
               {equipamentoEscolhido && !tipoEscolhido && <p className="text-xs text-muted-foreground">Escolha o tipo de check list para ver os itens e iniciar.</p>}
               {equipamentoEscolhido && tipoEscolhido && (
                 <p className="text-xs text-muted-foreground">
                   {gruposDoEquipamento.length === 0
-                    ? (avulsoNovo ? <>Este equipamento não tem grupos Avulso na associação. {linkParametros("Associar itens")}</> : <>Este equipamento não tem itens associados. {linkParametros("Associar itens")}</>)
+                    ? (avulsoNovo ? (associacaoEscolhida ? <>Este equipamento não tem grupos Avulso na associação. {linkAssociar}</> : <>Não há itens de check list para o tipo deste equipamento. {linkItens}</>) : <>Este equipamento não tem itens associados. {linkAssociar}</>)
                     : `${itensDoEquipamento} ${itensDoEquipamento === 1 ? "item" : "itens"} em ${gruposDoEquipamento.length} ${gruposDoEquipamento.length === 1 ? "grupo" : "grupos"}: ${gruposDoEquipamento.map((g) => g.nome).join(", ")}.`}
                   {!avulsoNovo && pendenciasAbertasEq(checklists, equipamentoEscolhido.id).length > 0 && ` · ${pendenciasAbertasEq(checklists, equipamentoEscolhido.id).length} pendência(s) aberta(s) de check lists anteriores`}
                 </p>
@@ -360,6 +380,16 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
           </form>
         </DialogContent>
       </Dialog>
+
+      <DialogItensChecklistEquipamento aberto={itensAberto} onAbrirMudou={setItensAberto} finalidade={finalidade} />
+      <DialogAssociarChecklistEquipamento aberto={associarAberto} onAbrirMudou={setAssociarAberto} finalidade={finalidade} equipamentoId={equipamentoId} />
+      <EquipamentoDialog
+        aberto={equipamentosAberto}
+        onAberto={setEquipamentosAberto}
+        editando={null}
+        modelo={null}
+        onSalvo={() => window.dispatchEvent(new Event(EVENTO_REGISTROS_EQUIPAMENTO))}
+      />
 
       <Dialog open={!!atual} onOpenChange={(a) => { if (!a) { (document.activeElement as HTMLElement | null)?.blur(); setTela(null); } }}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-4xl">

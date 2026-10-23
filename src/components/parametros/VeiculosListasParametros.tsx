@@ -379,6 +379,7 @@ export function RestaurarPadraoInicial({
   perdas,
   feminino = false,
   rotulo = "Restaurar configurações iniciais",
+  semTipoTexto = "sem o tipo de veículo em Gerais: o tipo foi mantido como estava, escolha em Editar.",
 }: {
   singular: string;
   plural: string;
@@ -388,6 +389,8 @@ export function RestaurarPadraoInicial({
   feminino?: boolean;
   // Nome do botão e da janela (Ações de manutenção usa "Restaurar configurações iniciais", decisão 141).
   rotulo?: string;
+  // Texto do aviso de grupo restaurado sem o tipo (cada módulo diz onde o tipo é cadastrado).
+  semTipoTexto?: string;
 }) {
   useParametrosBase(); // atualiza a lista quando o cadastro muda
   const [aberto, setAberto] = useState(false);
@@ -418,7 +421,7 @@ export function RestaurarPadraoInicial({
       const r = restaurar(marcados);
       const partes = [r.restaurados > 0 ? `${r.restaurados} ${r.restaurados === 1 ? "restaurado" : "restaurados"}` : "", r.criados > 0 ? `${r.criados} ${r.criados === 1 ? "cadastrado" : "cadastrados"} de novo` : ""].filter(Boolean);
       toast.success(
-        `Padrão inicial: ${partes.join(" e ")}.` + ((r.semTipo ?? 0) > 0 ? ` ${r.semTipo} sem o tipo de veículo em Gerais: o tipo foi mantido como estava, escolha em Editar.` : ""),
+        `Padrão inicial: ${partes.join(" e ")}.` + ((r.semTipo ?? 0) > 0 ? ` ${r.semTipo} ${semTipoTexto}` : ""),
       );
     });
     if (ok) setAberto(false);

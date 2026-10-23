@@ -143,15 +143,15 @@ test("Parâmetros Específicos entra no menu de Equipamentos e no cartão da tel
   const { MENU_EQUIPAMENTOS } = await import("../src/lib/menu-parametros.ts");
   assert.deepEqual(MENU_EQUIPAMENTOS.map((i) => [i.titulo, i.url]), [
     ["Cadastrar equipamento", "/cadastros/equipamentos"],
-    ["Parâmetros Específicos", "/cadastros/equipamentos-especificos"],
-    ["Check list de manutenção", "/cadastros/equipamentos-checklist"],
-    ["Check list de vistoria", "/cadastros/equipamentos-checklist"],
     ["Manutenção", "/cadastros/equipamentos-manutencao"],
     ["Tipos de ocorrência", "/cadastros/equipamentos-tipos-ocorrencia"],
+    ["Check list de manutenção", "/cadastros/equipamentos-checklist"],
+    ["Check list de vistoria", "/cadastros/equipamentos-checklist"],
+    ["Parâmetros Específicos", "/cadastros/equipamentos-especificos"],
   ]);
   const { gruposDoInicio } = await import("../src/lib/inicio.ts");
   const card = gruposDoInicio(true).find((g) => g.titulo === "Módulos").cartoes.find((c) => c.titulo === "Equipamentos");
-  assert.deepEqual(card.itens.filter((i) => i.secao === "Parâmetros").map((i) => i.titulo), ["Cadastrar equipamento", "Parâmetros Específicos", "Check list de manutenção", "Check list de vistoria", "Manutenção", "Tipos de ocorrência"]);
+  assert.deepEqual(card.itens.filter((i) => i.secao === "Parâmetros").map((i) => i.titulo), ["Cadastrar equipamento", "Manutenção", "Tipos de ocorrência", "Check list de manutenção", "Check list de vistoria", "Parâmetros Específicos"]);
   assert.equal(card.url, undefined);
 });
 

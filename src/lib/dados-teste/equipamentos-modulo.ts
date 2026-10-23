@@ -52,7 +52,7 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
   EQUIPAMENTOS.forEach((e, n) => {
     const responsavel = EMPREGADOS[n]!;
     for (const finalidade of ["manutencao", "vistoria"] as FinalidadeChecklist[]) {
-      const grupos = gruposAplicaveis(e.tipoId, lerChecklistEquipamento(storage)[finalidade].grupos).slice(0, 2);
+      const grupos = gruposAplicaveis(e.tipoId, lerChecklistEquipamento(storage)[finalidade].grupos, false).slice(0, 2);
       if (grupos.length === 0 || !tipos.some((t) => t.id === e.tipoId)) continue;
       ignorar(() => salvarAssociacao(finalidade, {
         modo: "criar", equipamentoId: idEquipamento(n), tipoId: e.tipoId, responsavel: { id: responsavel.id, nome: responsavel.nome },

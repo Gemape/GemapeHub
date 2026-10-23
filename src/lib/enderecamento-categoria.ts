@@ -1,7 +1,7 @@
 import { combinaBusca, enderecamentoDaCategoria, type ParametrosBase } from "./parametros-base.ts";
 
 export type ProdutoEnderecavel = {
-  tabela: "epis" | "uniformes" | "ferramentas" | "veiculos";
+  tabela: "epis" | "uniformes" | "ferramentas" | "veiculos" | "equipamentos";
   codigo_sku: string;
   nome: string;
   empresa_id: string | null;
@@ -21,6 +21,7 @@ const CATEGORIA: Record<ProdutoEnderecavel["tabela"], string> = {
   uniformes: "cat-uniformes",
   ferramentas: "cat-ferramentas",
   veiculos: "cat-veiculos",
+  equipamentos: "cat-equipamentos",
 };
 const chave = (valor: string) => valor.trim().toUpperCase();
 

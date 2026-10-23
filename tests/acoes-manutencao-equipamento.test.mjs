@@ -15,11 +15,11 @@ const acoes = (s) => M.lerManutencaoEquipamento(s).acoes;
 const acao = (s, nome) => acoes(s).find((a) => a.nome === nome);
 const EMP_LUB = "Empilhadeiras (2,5 ton e Clark C70D) · Revisão do sistema de lubrificação e filtros";
 
-test("o padrão inicial tem as 11 famílias da lista, sem nome repetido e sem Outros nos dados", () => {
-  assert.equal(ACOES_PADRAO_EQUIPAMENTO.length, 35);
-  assert.equal(new Set(ACOES_PADRAO_EQUIPAMENTO.map((a) => a.nome.toLowerCase())).size, 35);
+test("o padrão inicial tem as 12 famílias da lista, sem nome repetido e sem Outros nos dados", () => {
+  assert.equal(ACOES_PADRAO_EQUIPAMENTO.length, 36);
+  assert.equal(new Set(ACOES_PADRAO_EQUIPAMENTO.map((a) => a.nome.toLowerCase())).size, 36);
   const familias = new Set(ACOES_PADRAO_EQUIPAMENTO.map((a) => a.nome.split(" · ")[0]));
-  assert.equal(familias.size, 11);
+  assert.equal(familias.size, 12);
   for (const a of ACOES_PADRAO_EQUIPAMENTO) {
     assert.ok(a.subitens.length > 0, a.nome);
     assert.ok(!a.subitens.some((s) => s.toLowerCase() === "outros"), `${a.nome}: o Outros entra ao gravar`);
@@ -31,8 +31,8 @@ test("o padrão inicial tem as 11 famílias da lista, sem nome repetido e sem Ou
 test("cadastrar o padrão grava todas as ações, com Outros por último em cada uma, sem repetir e sem mexer no que existe", () => {
   const s = memoria();
   M.salvarAcao({ nome: "Minha ação", subitens: ["A"] }, s);
-  assert.deepEqual(M.cadastrarPadraoAcoes(s), { criadas: 35 });
-  assert.equal(acoes(s).length, 36);
+  assert.deepEqual(M.cadastrarPadraoAcoes(s), { criadas: 36 });
+  assert.equal(acoes(s).length, 37);
   for (const a of acoes(s)) assert.equal(a.subitens.at(-1).nome, "Outros", a.nome);
   assert.deepEqual(M.cadastrarPadraoAcoes(s), { criadas: 0 });
   assert.ok(acao(s, "Geradores (todas as potências) · Outros serviços").subitens.some((x) => x.nome.includes("QTA")), "siglas entram como foram escritas");
@@ -41,10 +41,30 @@ test("cadastrar o padrão grava todas as ações, com Outros por último em cada
 test("as ações do padrão entram sozinhas uma vez só; o que for excluído depois não volta sozinho", () => {
   const s = memoria();
   assert.equal(M.aplicarAcoesPadraoUmaVez(s), true);
-  assert.equal(acoes(s).length, 35);
+  assert.equal(acoes(s).length, 36);
   M.removerAcao(acao(s, EMP_LUB).id, s);
   assert.equal(M.aplicarAcoesPadraoUmaVez(s), false);
-  assert.equal(acoes(s).length, 34);
+  assert.equal(acoes(s).length, 35);
+});
+
+test("quem já tinha as 35 ações do padrão recebe só as novas, uma vez, sem trazer de volta o que excluiu", () => {
+  const s = memoria();
+  M.cadastrarPadraoAcoes(s, 0);
+  M.removerAcao(acao(s, EMP_LUB).id, s);
+  M.removerAcao(acao(s, "Extintores de incêndio · Manutenção e inspeção de extintores de incêndio").id, s);
+  s.setItem("gemape-demo-equipamentos-acoes-padrao", "1"); // marcador da primeira versão
+  assert.equal(M.aplicarAcoesPadraoUmaVez(s), true);
+  assert.ok(acao(s, "Extintores de incêndio · Manutenção e inspeção de extintores de incêndio"), "a ação nova entrou");
+  assert.equal(acao(s, EMP_LUB), undefined, "o que foi excluído não voltou");
+  assert.equal(M.aplicarAcoesPadraoUmaVez(s), false);
+});
+
+test("extintores: a ação traz os quatro itens de manutenção e inspeção, com Outros por último", () => {
+  const s = memoria();
+  M.cadastrarPadraoAcoes(s);
+  const a = acao(s, "Extintores de incêndio · Manutenção e inspeção de extintores de incêndio");
+  assert.deepEqual(a.subitens.map((x) => x.nome.split(":")[0]), ["Inspeção visual mensal", "Verificação da sinalização e suporte", "Manutenção de 1º nível (recarga e revisão anual)", "Teste hidrostático (manutenção de 3º nível)", "Outros"]);
+  assert.match(a.subitens[3].nome, /a cada 5 anos.*CO2/);
 });
 
 test("situação do padrão: igual, alterado ou não cadastrado, com a situação de cada subitem", () => {

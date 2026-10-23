@@ -2,7 +2,7 @@
 // Entram no check list de manutenção pelo botão "Cadastrar padrão".
 export type GrupoPadrao = { tipoId: string; nome: string; itens: readonly string[] };
 
-export const GRUPOS_PADRAO_MANUTENCAO: readonly GrupoPadrao[] = [
+const GRUPOS_PERIODICOS_MANUTENCAO: readonly GrupoPadrao[] = [
   {
     tipoId: "tipo-extintores", nome: "Extintores: preventiva de 2º grau (anual, empresa credenciada)", itens: [
       "Recarga de componentes: despressurizar o cilindro, esvaziar por completo e trocar o agente extintor (água, pó ABC/BC ou CO2)",
@@ -160,9 +160,49 @@ const FAMILIAS: readonly { familia: string; acoes: readonly (readonly [string, r
     ["Manutenção eletromecânica", ["Troca de escovas de carvão", "Troca de rolamentos", "Verificação de cabos elétricos em ferramentas portáteis (serra mármore, esmerilhadeira 7\", lavadora Karcher HD585)"]],
     ["Inspeção de estruturas", ["Verificação de integridade física em bacias de contenção e reservatórios de abastecimento"]],
   ] },
+  // Fica por último: as ações anteriores mantêm a posição, e quem já tinha o padrão recebe só esta (ver aplicarAcoesPadraoUmaVez).
+  { familia: "Extintores de incêndio", acoes: [
+    ["Manutenção e inspeção de extintores de incêndio", [
+      "Inspeção visual mensal: verificar o lacre, o manômetro (pressão na faixa verde), o bico difusor/mangueira e se o extintor está desobstruído e com o acesso livre",
+      "Verificação da sinalização e suporte: checar as placas de sinalização de solo/parede e a fixação correta do suporte (de parede ou solo)",
+      "Manutenção de 1º nível (recarga e revisão anual): realizada por empresa certificada para recarga do agente extintor e pressurização anual",
+      "Teste hidrostático (manutenção de 3º nível): realizado a cada 5 anos (ou conforme norma aplicável para o tipo de extintor, como pó químico, água ou CO2) para testar a resistência do cilindro sob pressão",
+    ]],
+  ] },
 ];
 export type AcaoPadraoEquipamento = { nome: string; subitens: readonly string[] };
 export const ACOES_PADRAO_EQUIPAMENTO: readonly AcaoPadraoEquipamento[] = FAMILIAS.flatMap((f) => f.acoes.map(([acao, subitens]) => ({ nome: `${f.familia} · ${acao}`, subitens })));
 // Nome do pai por família e ação, para quem precisa apontar para uma ação do padrão (dados de teste e planos).
 export const nomeAcaoPadrao = (familiaInicio: string, acao: string): string => ACOES_PADRAO_EQUIPAMENTO.find((a) => a.nome.startsWith(familiaInicio) && a.nome.endsWith(` · ${acao}`))?.nome ?? `${familiaInicio} · ${acao}`;
 export const ROTULOS_ACAO = { LUBRIFICACAO, TRANSMISSAO, ELETRICO } as const;
+
+// Check list avulso (como em Veículos): grupos "Avulso · ..." com os itens mais simples, um por tipo de equipamento, para registrar uma conferência rápida fora do
+// check list periódico. Entram no fim de cada padrão, depois dos grupos do periódico.
+export const PREFIXO_GRUPO_AVULSO = "Avulso ·";
+export const ehGrupoAvulsoEq = (nome: string): boolean => nome.trim().startsWith(PREFIXO_GRUPO_AVULSO);
+const TIPOS_AVULSO: readonly (readonly [string, string])[] = [
+  ["tipo-empilhadeiras", "Empilhadeiras"], ["tipo-munck", "Munck"], ["tipo-ponte-rolante", "Ponte rolante"], ["tipo-serra-de-corte", "Serra de corte"],
+  ["tipo-maquina-de-solda", "Máquina de solda"], ["tipo-compressor-de-ar", "Compressor de ar"], ["tipo-jato-alta-pressao", "Jato de alta pressão"], ["tipo-extintores", "Extintores"],
+];
+export const GRUPOS_AVULSOS_MANUTENCAO: readonly GrupoPadrao[] = TIPOS_AVULSO.map(([tipoId, nome]) => ({ tipoId, nome: `${PREFIXO_GRUPO_AVULSO} ${nome}`, itens: ({
+  "tipo-empilhadeiras": ["Completar o nível de óleo e dos fluidos", "Calibrar os pneus", "Lubrificar as correntes e as articulações", "Limpar o filtro de ar e o radiador"],
+  "tipo-munck": ["Lubrificar os pinos e as articulações", "Completar o nível do óleo hidráulico", "Reapertar as fixações", "Limpeza geral"],
+  "tipo-ponte-rolante": ["Lubrificar rolamentos e redutores", "Conferir a folga e a fixação do gancho", "Limpar trilhos e carro", "Testar o fim de curso"],
+  "tipo-serra-de-corte": ["Trocar o disco desgastado", "Limpar e lubrificar as guias", "Conferir as correias", "Limpeza geral"],
+  "tipo-maquina-de-solda": ["Limpar as entradas de ar", "Trocar cabos ou garras danificados", "Reapertar as conexões", "Conferir o gás ou o arame"],
+  "tipo-compressor-de-ar": ["Drenar o reservatório", "Completar o óleo", "Limpar o filtro de ar", "Reapertar as conexões"],
+  "tipo-jato-alta-pressao": ["Trocar o bico", "Limpar o filtro de entrada de água", "Completar o óleo", "Trocar a mangueira danificada"],
+  "tipo-extintores": ["Trocar o lacre", "Fixar o suporte", "Limpar o extintor e a sinalização", "Substituir a etiqueta de inspeção"],
+} as Record<string, string[]>)[tipoId]! }));
+export const GRUPOS_AVULSOS_VISTORIA: readonly GrupoPadrao[] = TIPOS_AVULSO.map(([tipoId, nome]) => ({ tipoId, nome: `${PREFIXO_GRUPO_AVULSO} ${nome}`, itens: ({
+  "tipo-empilhadeiras": ["Limpeza e organização da máquina", "Aparência geral dos pneus e rodas", "Buzina e alarme de ré funcionando", "Cinto de segurança do operador", "Nível de combustível, gás ou carga da bateria"],
+  "tipo-munck": ["Lança e cilindros sem vazamentos aparentes", "Gancho e trava de segurança", "Cabos de aço sem fios rompidos visíveis", "Limpeza geral"],
+  "tipo-ponte-rolante": ["Botoeira e comandos funcionando", "Gancho e trava de segurança", "Aparência geral do cabo de aço e da corrente", "Sinal sonoro e luminoso"],
+  "tipo-serra-de-corte": ["Disco sem trincas e bem fixado", "Proteção do disco no lugar", "Cabos elétricos sem danos", "Área de trabalho limpa"],
+  "tipo-maquina-de-solda": ["Cabos e garras sem danos", "Aterramento conectado", "Máscara e EPI disponíveis", "Ventilação e conexões"],
+  "tipo-compressor-de-ar": ["Purgar a água do reservatório", "Nível de óleo no visor", "Manômetro na faixa de trabalho", "Vazamentos de ar audíveis"],
+  "tipo-jato-alta-pressao": ["Mangueira sem trincas ou bolhas", "Pistola e trava do gatilho", "Nível de óleo e de combustível", "Bico limpo e fixado"],
+  "tipo-extintores": ["Lacre intacto", "Ponteiro do manômetro na faixa verde", "Acesso livre e sinalização visível", "Etiqueta de recarga dentro da validade"],
+} as Record<string, string[]>)[tipoId]! }));
+
+export const GRUPOS_PADRAO_MANUTENCAO: readonly GrupoPadrao[] = [...GRUPOS_PERIODICOS_MANUTENCAO, ...GRUPOS_AVULSOS_MANUTENCAO];

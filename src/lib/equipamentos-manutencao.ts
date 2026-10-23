@@ -179,10 +179,10 @@ const acaoDoPadrao = (acoes: AcaoManutencaoEquipamento[], nome: string) => acoes
 const comOutros = (subitens: SubitemAcao[]): SubitemAcao[] => [...subitens.filter((s) => chave(s.nome) !== chave(OUTROS)), subitens.find((s) => chave(s.nome) === chave(OUTROS)) ?? { id: novoId(), nome: OUTROS }];
 
 // Cadastra as ações do padrão inicial que ainda não existem (mesmo nome, sem diferenciar maiúsculas e acentos); o que já existe não é repetido nem alterado.
-export function cadastrarPadraoAcoes(storage: StorageLike = localStorage): { criadas: number } {
+export function cadastrarPadraoAcoes(storage: StorageLike = localStorage, aPartirDe = 0): { criadas: number } {
   return alterar(storage, (d) => {
     let criadas = 0;
-    for (const p of ACOES_PADRAO_EQUIPAMENTO) {
+    for (const p of ACOES_PADRAO_EQUIPAMENTO.slice(aPartirDe)) {
       if (acaoDoPadrao(d.acoes, p.nome)) continue;
       d.acoes.push({ id: novoId(), nome: p.nome, subitens: comOutros(p.subitens.map((nome) => ({ id: novoId(), nome }))) });
       criadas += 1;
@@ -191,12 +191,17 @@ export function cadastrarPadraoAcoes(storage: StorageLike = localStorage): { cri
   });
 }
 // As ações padrão entram sozinhas na primeira vez (como as de Veículos); depois, o que a pessoa excluir só volta pelo botão Restaurar configurações iniciais.
+// O marcador guarda quantas ações do padrão já foram oferecidas (o valor antigo "1" valia as 35 primeiras): ação nova no fim do padrão entra uma vez em quem
+// já tinha o padrão, sem trazer de volta o que foi excluído.
 const CHAVE_ACOES_PADRAO = "gemape-demo-equipamentos-acoes-padrao";
+const ACOES_DA_PRIMEIRA_VERSAO = 35;
 export function aplicarAcoesPadraoUmaVez(storage: StorageLike = localStorage): boolean {
-  if (storage.getItem(CHAVE_ACOES_PADRAO) === "1") return false;
+  const marcador = storage.getItem(CHAVE_ACOES_PADRAO);
+  const oferecidas = marcador === "1" ? ACOES_DA_PRIMEIRA_VERSAO : Number(marcador) || 0;
+  if (oferecidas >= ACOES_PADRAO_EQUIPAMENTO.length) return false;
   try {
-    cadastrarPadraoAcoes(storage);
-    storage.setItem(CHAVE_ACOES_PADRAO, "1");
+    cadastrarPadraoAcoes(storage, oferecidas);
+    storage.setItem(CHAVE_ACOES_PADRAO, String(ACOES_PADRAO_EQUIPAMENTO.length));
     return true;
   } catch {
     return false; // dado ilegível: nada é gravado por cima, e a tentativa se repete na próxima abertura

@@ -25,6 +25,7 @@ import {
   type ProdutoEnderecavel,
 } from "@/lib/enderecamento-categoria";
 import { descricaoVeiculo } from "@/lib/descricao-veiculo";
+import { useEquipamentosTodos } from "@/components/modules/equipamento/comum";
 import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -45,7 +46,7 @@ const CAMPOS = [
   { nome: "apartamento", rotulo: "Apartamento (nível)" },
 ] as const;
 const chave = (v: string) => v.trim().toUpperCase();
-const ROTULOS = { ...ROTULO_TABELA, veiculos: "Veículo" };
+const ROTULOS = { ...ROTULO_TABELA, veiculos: "Veículo", equipamentos: "Equipamento" };
 
 function useEnderecos(empresaId: string) {
   return useQuery({
@@ -67,8 +68,11 @@ export function EnderecamentoModulo() {
   const { data: produtosBase = [] } = useProdutosGemape();
   const { data: veiculos = [] } = useVeiculos(TODAS);
   const parametros = useParametrosBase();
+  // Equipamentos ficam no navegador (modo demonstração); o código que se endereça é o patrimônio.
+  const equipamentos = useEquipamentosTodos();
   const produtos: ProdutoEnderecavel[] = useMemo(() => [
     ...produtosBase,
+    ...equipamentos.map((e) => ({ tabela: "equipamentos" as const, codigo_sku: e.patrimonio, nome: e.nome, empresa_id: e.empresaId })),
     ...veiculos.map((veiculo) => {
       const atual = veiculo as typeof veiculo & { codigo_sku?: string; descricao?: string; ano?: unknown; cor?: string; combustivel?: string };
       // Mesma descrição automática do cadastro (decisão 49); sem dados, cai no texto gravado.
@@ -78,7 +82,7 @@ export function EnderecamentoModulo() {
       });
       return { tabela: "veiculos" as const, codigo_sku: atual.codigo_sku ?? "", nome: montada || atual.descricao || veiculo.modelo, empresa_id: veiculo.empresa_id };
     }),
-  ], [produtosBase, veiculos, parametros]);
+  ], [produtosBase, veiculos, equipamentos, parametros]);
   const salvar = useSalvar("enderecamentos", ["enderecamentos"]);
   const excluir = useExcluir("enderecamentos", ["enderecamentos"]);
   const [busca, setBusca] = useState("");

@@ -3,9 +3,10 @@
 // check list, aberta até ser resolvida. A periodicidade vem da associação do equipamento. Fase 1: só no navegador, em modo demonstração.
 import type { AssociacaoChecklistEquipamento, FinalidadeChecklist, GrupoChecklistEquipamento } from "./equipamentos-checklist.ts";
 import { TODOS_OS_TIPOS } from "./equipamentos-checklist.ts";
+import { ehGrupoAvulsoEq } from "./equipamentos-manutencao-padrao.ts";
 import { AVALIACOES, ehPeriodicidade, hojeBrasilia, MAX_FOTOS_ITEM, PERIODICIDADES, type Avaliacao, type ItemChecklist, type Periodicidade, type StatusChecklist } from "./checklist-veiculo.ts";
-import { registrarOcorrenciaEq, removerOcorrenciaEq } from "./registros-equipamento.ts";
-import { alterarLista, lerLista, type StorageLike } from "./registros-veiculo.ts";
+import { EVENTO_REGISTROS_EQUIPAMENTO, registrarOcorrenciaEq, removerOcorrenciaEq } from "./registros-equipamento.ts";
+import { alterarLista as alterarListaBase, lerLista, type StorageLike } from "./registros-veiculo.ts";
 
 export const CHAVE_CHECKLISTS_EQ = "gemape-demo-eq-checklists-exec";
 const CHAVE_SEQUENCIA = "gemape-demo-eq-checklists-sequencia";
@@ -28,6 +29,12 @@ export type ChecklistEquipamentoRegistro = {
   concluidoEm: string | null;
   itens: ItemChecklist[];
 };
+
+// Grava e avisa as telas do módulo Equipamentos (o aviso de alterarLista é o de Veículos, que estas telas não escutam).
+function alterarLista<T>(chave: string, storage: StorageLike | null, mudanca: (lista: T[]) => T[]): void {
+  alterarListaBase<T>(chave, storage, mudanca);
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_REGISTROS_EQUIPAMENTO));
+}
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now() + Math.random()));
@@ -67,9 +74,9 @@ export function gruposDoChecklistEq(associacao: Pick<AssociacaoChecklistEquipame
       return itens.length > 0 ? [{ ...grupo, itens }] : [];
     });
 }
-// Equipamento sem associação: o avulso traz os grupos que valem para o tipo dele e os de todos os tipos.
+// Equipamento sem associação: o avulso traz os grupos "Avulso · ..." que valem para o tipo dele e os de todos os tipos.
 export const gruposDoTipoEq = (grupos: GrupoChecklistEquipamento[], tipoId: string): GrupoChecklistEquipamento[] =>
-  grupos.filter((g) => g.itens.length > 0 && (g.tipos.includes(TODOS_OS_TIPOS) || (!!tipoId && g.tipos.includes(tipoId))));
+  grupos.filter((g) => g.itens.length > 0 && ehGrupoAvulsoEq(g.nome) && (g.tipos.includes(TODOS_OS_TIPOS) || (!!tipoId && g.tipos.includes(tipoId))));
 
 // ---------- Gravação ----------
 function gravar<T>(acao: () => T): T {

@@ -12,13 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table } from "@/components/ui/table";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
 import { EditorItensChecklist } from "@/components/parametros/EditorItensChecklist";
+import { RestaurarPadraoInicial } from "@/components/parametros/VeiculosListasParametros";
 import { EquipamentoDialog } from "@/components/parametros/EquipamentoDialog";
 import { useAccess } from "@/lib/access-context";
 import { empregadoElegivelPortador } from "@/lib/portadores-caixa";
 import { TODAS } from "@/lib/empresa-context";
 import {
-  aplicarPadraoUmaVez, cadastrarPadraoChecklist, checklistsDaAssociacao, type EntradaItemAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
-  removerAssociacao, removerGrupoChecklist, salvarAssociacao, salvarGrupoChecklist, TODOS_OS_TIPOS,
+  aplicarPadraoUmaVez, checklistsDaAssociacao, type EntradaItemAssociacao, FINALIDADES, gruposAplicaveis, lerChecklistEquipamento, NAO_DEFINIDO, PERIODICIDADES, NAO_DEFINIDA,
+  removerAssociacao, removerGrupoChecklist, restaurarPadroesChecklist, salvarAssociacao, situacaoPadraoChecklist, salvarGrupoChecklist, TODOS_OS_TIPOS,
   type AssociacaoChecklistEquipamento, type FinalidadeChecklist, type GrupoChecklistEquipamento,
 } from "@/lib/equipamentos-checklist";
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
@@ -35,7 +36,7 @@ const SEM_RESPONSAVEL = "__nao-definido__";
 const dataBr = (iso: string) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
 const erroDe = (e: unknown, padrao: string) => (e instanceof Error ? e.message : padrao);
 
-function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; nomeFinalidade: string; versao: number; aoMudar: () => void }) {
+export function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; nomeFinalidade: string; versao: number; aoMudar: () => void }) {
   // Lido de novo só quando algo muda (versao), não a cada tecla digitada nas janelas.
   const grupos = useMemo(() => lerChecklistEquipamento()[finalidade].grupos, [finalidade, versao]);
   const tipos = useMemo(() => lerParametrosEquipamento().tipos, [versao]);
@@ -76,17 +77,6 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
     setTimeout(() => { trava.current = false; }, 400);
   }
 
-  function padrao() {
-    try {
-      const { criados, semTipo } = cadastrarPadraoChecklist(finalidade);
-      if (semTipo > 0) toast.warning(`${semTipo} ações do padrão não foram cadastradas porque o tipo de equipamento delas não existe mais em Parâmetros Específicos.`);
-      toast.success(criados === 0 ? `As ações de ${nomeFinalidade.toLowerCase()} padrão já estão cadastradas.` : `${criados} ações de ${nomeFinalidade.toLowerCase()} padrão cadastradas.`);
-      aoMudar();
-    } catch (erro) {
-      toast.error(erroDe(erro, "Não foi possível cadastrar o padrão."));
-    }
-  }
-
   function excluir(g: GrupoChecklistEquipamento) {
     if (!confirm(`Excluir o grupo ${g.nome}?`)) return;
     try {
@@ -112,7 +102,14 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
           <p className="mt-1 text-sm text-muted-foreground">Os grupos de itens do check list de {nomeFinalidade.toLowerCase()}, cada um para os tipos de equipamento a que se aplica.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button requiresWrite variant="outline" onClick={padrao}>Cadastrar padrão</Button>
+          <RestaurarPadraoInicial
+            singular="grupo"
+            plural="grupos"
+            perdas="(nome, itens e tipo de equipamento) "
+            semTipoTexto="sem o tipo de equipamento em Parâmetros Específicos: o tipo foi mantido como estava, escolha em Editar."
+            situacoes={() => situacaoPadraoChecklist(finalidade)}
+            restaurar={(nomes) => { const r = restaurarPadroesChecklist(finalidade, nomes); aoMudar(); return r; }}
+          />
           <Button requiresWrite onClick={() => abrir(null, false)}>Cadastrar grupo do check list</Button>
         </div>
       </header>
@@ -189,7 +186,9 @@ function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { finalida
 const AVULSO = "Avulso";
 const PERIODICIDADES_CAMPO = [...PERIODICIDADES.filter((p) => p !== NAO_DEFINIDA), AVULSO] as const;
 
-function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: FinalidadeChecklist; versao: number; aoMudar: () => void }) {
+// `abrirDireto`: abre o formulário de associação já ao montar, com o equipamento escolhido (a janela aberta de dentro do Novo check list); se ele já tem
+// associação, abre a edição dela.
+export function AssociarEquipamento({ finalidade, versao, aoMudar, abrirDireto }: { finalidade: FinalidadeChecklist; versao: number; aoMudar: () => void; abrirDireto?: { equipamentoId: string } | undefined }) {
   const { grupos, associacoes } = useMemo(() => lerChecklistEquipamento()[finalidade], [finalidade, versao]);
   const equipamentos = useMemo(() => listarEquipamentos(), [versao]);
   const { data: empregados = [] } = useEmpregados(TODAS, true);
@@ -216,14 +215,16 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
 
   const porId = (id: string): Equipamento | undefined => equipamentos.find((e) => e.id === id);
   const rotulo = (e: Equipamento) => `${e.patrimonio} · ${e.nome}`;
-  // Cada equipamento tem uma associação só: ao criar, só os sem associação; ao editar ou clonar, mais o do original.
-  const livres = equipamentos.filter((e) => !associacoes.some((a) => a.equipamentoId === e.id) || e.id === editando || e.id === clonandoDe);
+  // Cada equipamento tem uma associação só: todos os cadastrados aparecem; os que já têm itens (menos o do original, ao editar) ficam desabilitados.
+  const temItens = (id: string) => associacoes.some((a) => a.equipamentoId === id) && id !== editando;
+  const livres = equipamentos.filter((e) => !temItens(e.id));
   const escolhido = porId(equipamentoId);
   const avulso = periodicidade === AVULSO;
   // Responsável: empregado ativo, da empresa do equipamento.
   const elegiveis = empregados.filter((x) => empregadoElegivelPortador({ ativo: x.ativo ?? null, data_demissao: x.data_demissao ?? null } as never) && (!escolhido?.empresaId || x.empresa_id === escolhido.empresaId));
   // Grupos personalizados não entram na lista comum: o de cada equipamento é cuidado no bloco "Personalizar itens".
-  const aplicaveis = escolhido ? gruposAplicaveis(escolhido.tipoId, grupos).filter((g) => !ehGrupoPersonalizado(g.nome)) : [];
+  // Periódico traz os grupos do periódico; Avulso, só os grupos "Avulso · ..." (os itens simples), como em Veículos.
+  const aplicaveis = escolhido ? gruposAplicaveis(escolhido.tipoId, grupos, avulso).filter((g) => !ehGrupoPersonalizado(g.nome)) : [];
   const personalizadoSalvo = escolhido ? grupos.find((g) => g.nome === nomeGrupoPersonalizado(escolhido.patrimonio, avulso)) : undefined;
   const valorPersonalizados = personalizados ?? personalizadoSalvo?.itens.map((i) => i.nome).join("\n") ?? "";
   const todosItensIds = aplicaveis.flatMap((g) => g.itens.map((i) => i.id));
@@ -251,6 +252,7 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
     const continua = empregados.some((x) => x.id === responsavelId && (!empresaNova || x.empresa_id === empresaNova));
     setEquipamentoId(id);
     setEscolhidos(null);
+    setPersonalizados(null);
     if (responsavelId !== SEM_RESPONSAVEL && !continua) setResponsavelId("");
   }
 
@@ -314,8 +316,14 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
         usadoId = grupo.id;
         itensAssoc.push(avulso ? { grupoId: grupo.id, tipo: "avulso", periodicidade: "" } : { grupoId: grupo.id, tipo: "periodico", periodicidade });
       }
-      salvarAssociacao(finalidade, { modo: editando ? "editar" : "criar", equipamentoId: escolhido.id, tipoId: escolhido.tipoId, responsavel, itens: itensAssoc });
+      salvarAssociacao(finalidade, { modo: editando && escolhido.id === editando ? "editar" : "criar", equipamentoId: escolhido.id, tipoId: escolhido.tipoId, responsavel, itens: itensAssoc });
       salvou = true;
+      // Editar trocando de equipamento move a associação: a do equipamento antigo sai, com os itens personalizados dele.
+      if (editando && escolhido.id !== editando) {
+        try { removerAssociacao(finalidade, editando); } catch (erro) { removerAssociacao(finalidade, escolhido.id); salvou = false; throw erro; } // sem a antiga sair, a nova também não fica
+        const antigo = porId(editando);
+        if (antigo) for (const g of grupos) if (g.id !== usadoId && ehPersonalizadoDe(g.nome, antigo.patrimonio)) { try { removerGrupoChecklist(finalidade, g.id); } catch { /* sem o que fazer */ } }
+      }
       // Grupos personalizados antigos deste equipamento (outro tipo de check list, ou sufixos de versões antigas) que ficaram sem uso saem.
       for (const g of grupos) {
         if (g.id !== usadoId && ehPersonalizadoDe(g.nome, escolhido.patrimonio)) { try { removerGrupoChecklist(finalidade, g.id); } catch { /* sem o que fazer */ } }
@@ -352,6 +360,14 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
   const opcoes = salvoNaEdicao && !elegiveis.some((x) => x.id === salvoNaEdicao.id)
     ? [...elegiveis.map((x) => ({ id: x.id, rotulo: x.nome })), { id: salvoNaEdicao.id, rotulo: `${salvoNaEdicao.nome} (atual)` }]
     : elegiveis.map((x) => ({ id: x.id, rotulo: x.matricula ? `${x.nome} · ${x.matricula}` : x.nome }));
+
+  useEffect(() => {
+    if (!abrirDireto) return;
+    const existente = associacoes.find((a) => a.equipamentoId === abrirDireto.equipamentoId);
+    if (existente) abrir(existente);
+    else if (abrirDireto.equipamentoId) { abrir(null); setEquipamentoId(abrirDireto.equipamentoId); }
+    else abrir(null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-5">
@@ -418,9 +434,9 @@ function AssociarEquipamento({ finalidade, versao, aoMudar }: { finalidade: Fina
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="assoc-equipamento">Equipamento</Label>
-                <Select value={equipamentoId} disabled={!!editando} onValueChange={(v) => { if (v) trocarEquipamento(v); }}>
+                <Select value={equipamentoId} onValueChange={(v) => { if (v) trocarEquipamento(v); }}>
                   <SelectTrigger id="assoc-equipamento"><SelectValue placeholder="Selecione o equipamento" /></SelectTrigger>
-                  <SelectContent>{livres.map((e) => <SelectItem key={e.id} value={e.id}>{rotulo(e)}</SelectItem>)}</SelectContent>
+                  <SelectContent>{equipamentos.map((e) => <SelectItem key={e.id} value={e.id} disabled={!livres.includes(e)}>{rotulo(e)}{livres.includes(e) ? "" : " · já tem itens associados"}</SelectItem>)}</SelectContent>
                 </Select>
                 {livres.length === 0 && <p className="text-xs text-muted-foreground">Todos os equipamentos já têm itens associados, ou nenhum equipamento está cadastrado.</p>}
                 <p className="text-xs">{linkCadastro("Cadastrar equipamento", () => setEquipamentosAberto(true))}</p>

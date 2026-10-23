@@ -144,13 +144,13 @@ test("check list: periodicidades e grupos vêm da associação do equipamento, i
     { grupoId: "g2", tipo: "periodico", periodicidade: "Mensal", obrigatorio: false },
     { grupoId: "g3", tipo: "avulso", periodicidade: "Não definida", obrigatorio: false },
   ] };
-  const grupos = [grupo, { id: "g2", nome: "Hidráulica", itens: [{ id: "h1", nome: "Mangueiras" }], tipos: ["todos"] }, { id: "g3", nome: "Simples", itens: [{ id: "s1", nome: "Limpeza" }], tipos: ["todos"] }];
+  const grupos = [grupo, { id: "g2", nome: "Hidráulica", itens: [{ id: "h1", nome: "Mangueiras" }], tipos: ["todos"] }, { id: "g3", nome: "Avulso · Simples", itens: [{ id: "s1", nome: "Limpeza" }], tipos: ["todos"] }];
   assert.deepEqual(C.periodicidadesDaAssociacaoEq(associacao), ["Diário", "Mensal"]);
   assert.equal(C.periodicidadeObrigatoriaEq(associacao, "Diário"), true);
   assert.equal(C.periodicidadeObrigatoriaEq(associacao, "Mensal"), false);
   assert.deepEqual(C.gruposDoChecklistEq(associacao, grupos, "Diário").map((g) => [g.nome, g.itens.map((i) => i.nome)]), [["Motor", ["Correia"]]]);
-  assert.deepEqual(C.gruposDoChecklistEq(associacao, grupos, "avulso").map((g) => g.nome), ["Simples"]);
-  assert.deepEqual(C.gruposDoTipoEq(grupos, "qualquer").map((g) => g.nome), ["Motor", "Hidráulica", "Simples"]);
+  assert.deepEqual(C.gruposDoChecklistEq(associacao, grupos, "avulso").map((g) => g.nome), ["Avulso · Simples"]);
+  assert.deepEqual(C.gruposDoTipoEq(grupos, "qualquer").map((g) => g.nome), ["Avulso · Simples"]);
   assert.equal(C.nomeDoChecklistEq({ patrimonio: "pat-1", periodicidade: "", responsavelNome: "" }), "PAT-1 >> Não definida >> Não definido");
 });
 
@@ -160,4 +160,22 @@ test("o módulo tem as sete abas, só aparece no demo e não toca o Supabase", (
   const menu = ler("lib/menu-parametros.ts");
   for (const titulo of ["Inventário dos Equipamentos", "Indicadores", "Abastecimento", "Manutenção", "Ocorrências", "Check list de Manutenção", "Check list de vistoria"]) assert.match(menu, new RegExp(`titulo: "${titulo}"`));
   for (const arq of ["lib/registros-equipamento.ts", "lib/dados-teste/equipamentos-modulo.ts", "components/modules/equipamento/InventarioEquipamentoModulo.tsx", "components/modules/equipamento/ChecklistEquipamentoModulo.tsx"]) assert.doesNotMatch(ler(arq), /supabase|fetch\(|\.from\(/, arq);
+});
+
+test("iniciar, avaliar e concluir um check list avisam as telas de Equipamentos (a tela abre o check list recém-criado)", () => {
+  const avisos = [];
+  globalThis.window = { dispatchEvent: (e) => void avisos.push(e.type) };
+  try {
+    const s = memoria();
+    const base = { equipamentoId: "e1", equipamentoRotulo: "PAT-1 · Empilhadeira", tipoEquipamento: "Empilhadeiras", finalidade: "vistoria", periodicidade: "Semanal", responsavelId: "r1", responsavelNome: "Ana", grupos: [{ id: "g", nome: "Motor", itens: [{ id: "i", nome: "Óleo" }], tipos: ["todos"] }] };
+    const c = C.iniciarChecklistEq(base, s, AGORA);
+    assert.ok(avisos.includes("gemape-registros-equipamento"), "iniciar avisa");
+    avisos.length = 0;
+    C.avaliarItemEq(c.id, c.itens[0].id, { avaliacao: "OK", observacao: "" }, s);
+    C.concluirChecklistEq(c.id, s, AGORA);
+    assert.ok(avisos.includes("gemape-registros-equipamento"), "avaliar e concluir avisam");
+    assert.ok(!avisos.includes("gemape-registros-veiculo") || avisos.includes("gemape-registros-equipamento"));
+  } finally {
+    delete globalThis.window;
+  }
 });

@@ -12,7 +12,8 @@ import { useAccess } from "@/lib/access-context";
 import { lerManutencaoEquipamento } from "@/lib/equipamentos-manutencao";
 import { formatarData } from "@/lib/gemape";
 import { combinaBusca } from "@/lib/parametros-base";
-import { registrarOcorrenciaEq, removerOcorrenciaEq, resolverOcorrenciaEq } from "@/lib/registros-equipamento";
+import { adicionarFotosOcorrenciaEq, registrarOcorrenciaEq, removerFotoOcorrenciaEq, removerOcorrenciaEq, resolverOcorrenciaEq } from "@/lib/registros-equipamento";
+import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
 import { executar } from "@/lib/use-parametros-base";
 import { hoje, rotuloDoEquipamento, TODOS, useEquipamentosDaEmpresa, useOcorrenciasEq } from "./comum";
 
@@ -24,6 +25,7 @@ export function OcorrenciasEquipamentoModulo() {
   const todas = useOcorrenciasEq();
   const [aberto, setAberto] = useState(false);
   const [resolvendo, setResolvendo] = useState<string | null>(null);
+  const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
   const [filtro, setFiltro] = useState(TODOS);
   const [status, setStatus] = useState(TODOS);
   const [busca, setBusca] = useState("");
@@ -75,7 +77,13 @@ export function OcorrenciasEquipamentoModulo() {
                 <TableCell>{formatarData(o.data)}</TableCell>
                 <TableCell>{rotulos.get(o.equipamentoId)}</TableCell>
                 <TableCell>{o.tipoNome}</TableCell>
-                <TableCell className="max-w-sm text-sm">{o.descricao}{o.solucao && <span className="block text-xs text-muted-foreground">Solução ({o.resolvidaEm ? formatarData(o.resolvidaEm) : ""}): {o.solucao}</span>}</TableCell>
+                <TableCell className="max-w-sm text-sm">{o.descricao}{(o.fotos?.length ?? 0) > 0 || o.status === "Aberta" ? (
+                  <span className="mt-2 block space-y-1">
+                    <GaleriaFotos fotos={o.fotos ?? []} onAmpliar={(n) => setVisor({ foto: o.fotos?.[n] ?? "", titulo: `${rotulos.get(o.equipamentoId) ?? ""} · foto ${n + 1}` })}
+                      onRemover={o.status === "Aberta" ? (n) => { executar(() => removerFotoOcorrenciaEq(o.id, n), "Foto removida"); } : undefined} />
+                    {o.status === "Aberta" && <span className="flex flex-wrap items-center gap-2"><BotaoAnexarFotos quantidadeAtual={o.fotos?.length ?? 0} onFotos={(f) => executar(() => adicionarFotosOcorrenciaEq(o.id, f), "Fotos anexadas")} /></span>}
+                  </span>
+                ) : null}{o.solucao && <span className="block text-xs text-muted-foreground">Solução ({o.resolvidaEm ? formatarData(o.resolvidaEm) : ""}): {o.solucao}</span>}</TableCell>
                 <TableCell><Badge variant={o.status === "Aberta" ? "destructive" : "secondary"}>{o.status}</Badge></TableCell>
                 <TableCell className="whitespace-nowrap text-right">
                   {o.status === "Aberta" && <Button requiresWrite="operar" variant="ghost" size="sm" onClick={() => setResolvendo(o.id)}>Resolver</Button>}
@@ -87,6 +95,7 @@ export function OcorrenciasEquipamentoModulo() {
         </Table>
       </div>
       <NovaOcorrencia aberto={aberto} aoMudar={setAberto} equipamentos={equipamentos} />
+      <VisorFoto foto={visor?.foto ?? null} titulo={visor?.titulo ?? ""} onFechar={() => setVisor(null)} />
       <Dialog open={resolvendo !== null} onOpenChange={(v) => { if (!v) setResolvendo(null); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Resolver ocorrência</DialogTitle><DialogDescription>Conte como a ocorrência foi resolvida.</DialogDescription></DialogHeader>
@@ -111,9 +120,12 @@ function NovaOcorrencia({ aberto, aoMudar, equipamentos }: { aberto: boolean; ao
   const tipos = lerManutencaoEquipamento().tiposOcorrencia;
   const [equipamentoId, setEquipamentoId] = useState("");
   const [tipoId, setTipoId] = useState("");
+  const [fotos, setFotos] = useState<string[]>([]);
+  const [visorNova, setVisorNova] = useState<string | null>(null);
   // Fechar (cancelar ou salvar) limpa o que foi escolhido.
-  const fechar = (v: boolean) => { if (!v) { setEquipamentoId(""); setTipoId(""); } aoMudar(v); };
+  const fechar = (v: boolean) => { if (!v) { setEquipamentoId(""); setTipoId(""); setFotos([]); } aoMudar(v); };
   return (
+    <>
     <Dialog open={aberto} onOpenChange={fechar}>
       <DialogContent>
         <DialogHeader><DialogTitle>Nova ocorrência</DialogTitle><DialogDescription>Escolha o equipamento e o tipo, e descreva o que aconteceu.</DialogDescription></DialogHeader>
@@ -124,7 +136,7 @@ function NovaOcorrencia({ aberto, aoMudar, equipamentos }: { aberto: boolean; ao
             ev.preventDefault();
             const f = new FormData(ev.currentTarget);
             const tipo = tipos.find((t) => t.id === tipoId);
-            const ok = executar(() => registrarOcorrenciaEq({ equipamentoId, tipoId, tipoNome: tipo?.nome ?? "", data: String(f.get("data")), descricao: String(f.get("descricao") ?? "") }), "Ocorrência registrada");
+            const ok = executar(() => registrarOcorrenciaEq({ equipamentoId, tipoId, tipoNome: tipo?.nome ?? "", data: String(f.get("data")), descricao: String(f.get("descricao") ?? ""), fotos }), "Ocorrência registrada");
             if (ok) fechar(false);
           }}
         >
@@ -145,9 +157,15 @@ function NovaOcorrencia({ aberto, aoMudar, equipamentos }: { aberto: boolean; ao
           </div>
           <div className="space-y-1.5"><Label htmlFor="data">Data</Label><Input id="data" name="data" type="date" max={hoje()} defaultValue={hoje()} required /></div>
           <div className="space-y-1.5"><Label htmlFor="descricao">Descrição</Label><Textarea id="descricao" name="descricao" capitalizar="texto" rows={3} required /></div>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2"><BotaoAnexarFotos quantidadeAtual={fotos.length} onFotos={(f) => setFotos((a) => [...a, ...f])} /></div>
+            <GaleriaFotos fotos={fotos} onAmpliar={(i) => setVisorNova(fotos[i] ?? null)} onRemover={(i) => setFotos((a) => a.filter((_, j) => j !== i))} />
+          </div>
           <DialogFooter><Button type="button" variant="outline" onClick={() => fechar(false)}>Cancelar</Button><Button requiresWrite="operar" type="submit">Salvar</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+    <VisorFoto foto={visorNova} titulo="Foto da ocorrência" onFechar={() => setVisorNova(null)} />
+    </>
   );
 }

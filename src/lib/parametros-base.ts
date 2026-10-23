@@ -214,7 +214,7 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
     if (salvos.enderecamentoCategorias && typeof salvos.enderecamentoCategorias === "object" &&
       !Array.isArray(salvos.enderecamentoCategorias)) {
       for (const [id, tipo] of Object.entries(salvos.enderecamentoCategorias)) {
-        if (base.categorias.some((c) => c.id === id) &&
+        if ((id === CATEGORIA_EQUIPAMENTOS || base.categorias.some((c) => c.id === id)) &&
           (tipo === "nao_usa" || tipo === "opcional" || tipo === "obrigatorio")) {
           base.enderecamentoCategorias[id] = tipo;
         }
@@ -319,6 +319,9 @@ function achar<T extends { id: string }>(lista: T[], id: string, oQue: string): 
 
 // ---------- Categorias ----------
 
+// Equipamentos não são uma categoria de Gerais: o endereçamento deles tem esta chave própria, definida em Parâmetros > Equipamentos > Parâmetros Específicos.
+export const CATEGORIA_EQUIPAMENTOS = "cat-equipamentos";
+
 export function enderecamentoDaCategoria(dados: ParametrosBase, categoriaId: string): TipoEnderecamento {
   return dados.enderecamentoCategorias?.[categoriaId] ?? "nao_usa";
 }
@@ -329,7 +332,7 @@ export function salvarEnderecamentoCategoria(
   storage = storagePadrao(),
 ): void {
   alterar(storage, (dados) => {
-    achar(dados.categorias, categoriaId, "Categoria");
+    if (categoriaId !== CATEGORIA_EQUIPAMENTOS) achar(dados.categorias, categoriaId, "Categoria");
     if (tipo !== "nao_usa" && tipo !== "opcional" && tipo !== "obrigatorio") {
       throw new Error("Tipo de endereçamento inválido.");
     }

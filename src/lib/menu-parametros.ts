@@ -143,14 +143,14 @@ export const MENU_VEICULOS: readonly ItemMenu[] = [
 // Parâmetros > Equipamentos: os dados cadastrados aqui alimentam o módulo Equipamentos (a lógica do módulo vem depois).
 export const MENU_EQUIPAMENTOS: readonly ItemMenu[] = [
   { titulo: "Cadastrar equipamento", url: "/cadastros/equipamentos", icone: "Forklift" },
-  // Subcategorias (pai) e tipos (filho) de equipamento.
-  { titulo: "Parâmetros Específicos", url: "/cadastros/equipamentos-especificos", icone: "Tags" },
-  // Check list de manutenção e de vistoria: itens por tipo de equipamento e associação a cada equipamento.
-  { titulo: "Check list de manutenção", url: "/cadastros/equipamentos-checklist", icone: "ClipboardCheck", search: { aba: "manutencao" } },
-  { titulo: "Check list de vistoria", url: "/cadastros/equipamentos-checklist", icone: "ClipboardCheck", search: { aba: "vistoria" } },
   // Como em Veículos: ações de manutenção e plano por equipamento, e os tipos de ocorrência.
   { titulo: "Manutenção", url: "/cadastros/equipamentos-manutencao", icone: "Wrench" },
   { titulo: "Tipos de ocorrência", url: "/cadastros/equipamentos-tipos-ocorrencia", icone: "ClipboardList" },
+  // Check list de manutenção e de vistoria: itens por tipo de equipamento e associação a cada equipamento.
+  { titulo: "Check list de manutenção", url: "/cadastros/equipamentos-checklist", icone: "ClipboardCheck", search: { aba: "manutencao" } },
+  { titulo: "Check list de vistoria", url: "/cadastros/equipamentos-checklist", icone: "ClipboardCheck", search: { aba: "vistoria" } },
+  // Subcategorias (pai) e tipos (filho) de equipamento, o endereçamento de estoque e os indicadores.
+  { titulo: "Parâmetros Específicos", url: "/cadastros/equipamentos-especificos", icone: "Tags" },
 ];
 
 // URLs de Gerais, para o destaque do grupo.

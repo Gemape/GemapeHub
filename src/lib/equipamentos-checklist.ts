@@ -2,7 +2,7 @@
 // check lists independentes, o de manutenção e o de vistoria, cada um com os seus grupos e as suas associações. Segue o modelo de
 // Parâmetros > Veículos > Check list (decisões 74, 116, 119 e 136). Fase 1: só no navegador, em modo demonstração; as tabelas
 // entram na Fase 2.
-import { GRUPOS_PADRAO_MANUTENCAO, type GrupoPadrao } from "./equipamentos-manutencao-padrao.ts";
+import { GRUPOS_PADRAO_MANUTENCAO, ehGrupoAvulsoEq, type GrupoPadrao } from "./equipamentos-manutencao-padrao.ts";
 import { GRUPOS_PADRAO_VISTORIA } from "./equipamentos-vistoria-padrao.ts";
 import { chaveDoNome as chave, lerParametrosEquipamento } from "./equipamentos-parametros.ts";
 import { capitalizarTexto } from "./formatacao-cadastral.ts";
@@ -158,8 +158,9 @@ export function removerGrupoChecklist(finalidade: string, id: string, storage: S
 }
 
 // Grupos que valem para um equipamento: os ligados ao tipo dele e os de todos os tipos.
-export function gruposAplicaveis(tipoId: string, grupos: GrupoChecklistEquipamento[]): GrupoChecklistEquipamento[] {
-  return grupos.filter((g) => g.tipos.includes(TODOS_OS_TIPOS) || (!!tipoId && g.tipos.includes(tipoId)));
+// `avulso` (como em Veículos): true traz só os grupos "Avulso · ..."; false traz os do periódico; sem o parâmetro, todos.
+export function gruposAplicaveis(tipoId: string, grupos: GrupoChecklistEquipamento[], avulso?: boolean): GrupoChecklistEquipamento[] {
+  return grupos.filter((g) => (avulso === undefined || ehGrupoAvulsoEq(g.nome) === avulso) && (g.tipos.includes(TODOS_OS_TIPOS) || (!!tipoId && g.tipos.includes(tipoId))));
 }
 
 export function salvarAssociacao(
@@ -219,12 +220,12 @@ const PADRAO: Record<FinalidadeChecklist, readonly GrupoPadrao[]> = { manutencao
 
 // "Cadastrar padrão": cria os grupos do padrão que ainda não existem (por nome); os que já existem, mesmo editados, ficam como estão.
 // Grupo de um tipo que não existe mais em Parâmetros Específicos não é criado (ficaria sem equipamento): conta em `semTipo`.
-export function cadastrarPadraoChecklist(finalidade: FinalidadeChecklist, storage: StorageLike = localStorage): { criados: number; semTipo: number } {
+export function cadastrarPadraoChecklist(finalidade: FinalidadeChecklist, storage: StorageLike = localStorage, aPartirDe = 0): { criados: number; semTipo: number } {
   return alterar(finalidade, storage, (parte) => {
     const tipos = lerParametrosEquipamento(storage).tipos;
     let criados = 0;
     let semTipo = 0;
-    for (const p of PADRAO[finalidade]) {
+    for (const p of PADRAO[finalidade].slice(aPartirDe)) {
       // Texto do padrão entra como foi escrito (siglas como ART, GLP e CO2 não passam pela capitalização automática).
       if (parte.grupos.some((g) => chave(g.nome) === chave(p.nome))) continue;
       if (!tipos.some((t) => t.id === p.tipoId)) {
@@ -237,14 +238,72 @@ export function cadastrarPadraoChecklist(finalidade: FinalidadeChecklist, storag
     return { criados, semTipo };
   });
 }
-// Os grupos padrão de manutenção e de vistoria entram sozinhos na primeira vez (como os de Veículos); depois, o que a pessoa excluir não volta.
+// ---------- Restaurar configurações iniciais ----------
+export type SituacaoPadraoGrupo = "igual" | "alterado" | "ausente";
+
+// Todos os grupos do padrão inicial do check list (manutenção ou vistoria) e a situação de cada um no cadastro atual: "igual" (nome, itens na ordem e tipo de
+// equipamento como no padrão), "alterado" ou "ausente" (não existe mais).
+export function situacaoPadraoChecklist(finalidade: FinalidadeChecklist, storage: StorageLike = localStorage): { nome: string; itens: readonly string[]; situacao: SituacaoPadraoGrupo }[] {
+  const { grupos } = lerChecklistEquipamento(storage)[finalidade];
+  return PADRAO[finalidade].map((p) => {
+    const grupo = grupos.find((g) => chave(g.nome) === chave(p.nome));
+    if (!grupo) return { nome: p.nome, itens: p.itens, situacao: "ausente" as const };
+    const igual = grupo.nome === p.nome && grupo.itens.length === p.itens.length && grupo.itens.every((i, n) => i.nome === p.itens[n]) && grupo.tipos.length === 1 && grupo.tipos[0] === p.tipoId;
+    return { nome: p.nome, itens: p.itens, situacao: igual ? ("igual" as const) : ("alterado" as const) };
+  });
+}
+
+// Restaura de uma vez os grupos do padrão inicial escolhidos, tudo ou nada. Grupo que existe volta ao nome, aos itens e ao tipo iniciais (o id fica, e os itens que já
+// existiam mantêm o id); grupo excluído é cadastrado de novo. Se o tipo de equipamento do padrão não existe mais em Parâmetros Específicos, os tipos atuais ficam como
+// estão (o grupo novo fica sem tipo) e o retorno conta.
+export function restaurarPadroesChecklist(finalidade: FinalidadeChecklist, nomes: string[], storage: StorageLike = localStorage): { restaurados: number; criados: number; semTipo: number } {
+  if (nomes.length === 0) throw new Error("Marque ao menos um padrão para restaurar.");
+  const escolhidos = nomes.map((n) => {
+    const p = PADRAO[finalidade].find((x) => chave(x.nome) === chave(n));
+    if (!p) throw new Error("Há um grupo que não faz parte do padrão inicial.");
+    return p;
+  });
+  return alterar(finalidade, storage, (parte) => {
+    const tiposExistentes = lerParametrosEquipamento(storage).tipos;
+    let restaurados = 0;
+    let criados = 0;
+    let semTipo = 0;
+    for (const p of new Set(escolhidos)) {
+      const tipoExiste = tiposExistentes.some((t) => t.id === p.tipoId);
+      const grupo = parte.grupos.find((g) => chave(g.nome) === chave(p.nome));
+      if (grupo) {
+        const anteriores = new Map(grupo.itens.map((i) => [chave(i.nome), i.id]));
+        grupo.nome = p.nome;
+        grupo.itens = p.itens.map((t) => ({ id: anteriores.get(chave(t)) ?? novoId(), nome: t }));
+        if (tipoExiste) grupo.tipos = [p.tipoId];
+        else semTipo += 1;
+        restaurados += 1;
+      } else {
+        parte.grupos.push({ id: novoId(), nome: p.nome, itens: p.itens.map((t) => ({ id: novoId(), nome: t })), tipos: tipoExiste ? [p.tipoId] : [] });
+        if (!tipoExiste) semTipo += 1;
+        criados += 1;
+      }
+    }
+    return { restaurados, criados, semTipo };
+  });
+}
+
+// Os grupos padrão de manutenção e de vistoria entram sozinhos na primeira vez (como os de Veículos); depois, o que a pessoa excluir só volta pelo botão Restaurar
+// configurações iniciais. O marcador guarda quantos grupos de cada padrão já foram oferecidos (o valor antigo "1" valia os 16 primeiros de cada): grupo novo no fim
+// do padrão, como os avulsos, entra uma vez em quem já tinha o padrão, sem trazer de volta o que foi excluído.
 const CHAVE_PADRAO = "gemape-demo-equipamentos-checklist-padrao";
+const GRUPOS_DA_PRIMEIRA_VERSAO = 16;
 // Devolve se gravou, para a tela ler de novo.
 export function aplicarPadraoUmaVez(storage: StorageLike & Pick<Storage, "getItem"> = localStorage): boolean {
-  if (storage.getItem(CHAVE_PADRAO) === "1") return false;
+  const marcador = storage.getItem(CHAVE_PADRAO);
+  let oferecidos: Record<string, number> = { manutencao: 0, vistoria: 0 };
+  if (marcador === "1") oferecidos = { manutencao: GRUPOS_DA_PRIMEIRA_VERSAO, vistoria: GRUPOS_DA_PRIMEIRA_VERSAO };
+  else if (marcador) { try { oferecidos = { ...oferecidos, ...(JSON.parse(marcador) as Record<string, number>) }; } catch { oferecidos = { manutencao: PADRAO.manutencao.length, vistoria: PADRAO.vistoria.length }; /* marcador ilegível: não recadastra o que a pessoa pode ter excluído */ } }
+  const faltam = FINALIDADES.filter((f) => (oferecidos[f.id] ?? 0) < PADRAO[f.id].length);
+  if (faltam.length === 0) return false;
   try {
-    for (const f of FINALIDADES) cadastrarPadraoChecklist(f.id, storage);
-    storage.setItem(CHAVE_PADRAO, "1");
+    for (const f of faltam) cadastrarPadraoChecklist(f.id, storage, oferecidos[f.id] ?? 0);
+    storage.setItem(CHAVE_PADRAO, JSON.stringify({ manutencao: PADRAO.manutencao.length, vistoria: PADRAO.vistoria.length }));
     return true;
   } catch {
     return false; // dado ilegível: nada é gravado por cima, e a tentativa se repete na próxima abertura
