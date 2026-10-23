@@ -101,6 +101,8 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const marcaAntiga = base?.marca && !marcaCadastrada ? base.marca : null;
   const tamanhosDoGrupo = tamanhosDoGrupoFerramenta(parametros, grupoEscolhido);
   const tamanhoForaDaLista = base?.tamanho && !tamanhosDoGrupo.includes(base.tamanho) && grupoEscolhido === base.grupo_ferramenta ? base.tamanho : null;
+  // Exemplo de ferramenta: "Chave L" (ou o primeiro grupo ativo) e o primeiro tamanho cadastrado para ele, para o Salvar passar na validação.
+  const grupoExemplo = parametrosSelecao.gruposFerramenta.find((g) => g.nome === "Chave L") ?? parametrosSelecao.gruposFerramenta[0];
   const tabela = "ferramentas";
   const { data: itens = [], isLoading } = useItens(modulo, empresaId, busca);
   const salvar = useSalvar(tabela, [tabela, "saidas-por-item"]);
@@ -243,7 +245,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={() => void abrirNovo(import.meta.env.VITE_DEMO_MODE !== "false" && modulo === "ferramenta" ? (exemploFerramenta(parametrosSelecao.categoriasFerramenta[0]?.nome ?? "", parametrosSelecao.marcasFerramenta[0]?.nome ?? "") as unknown as Item) : undefined)}>Novo item</Button>
+          <Button requiresWrite onClick={() => void abrirNovo(import.meta.env.VITE_DEMO_MODE !== "false" && modulo === "ferramenta" ? (exemploFerramenta(parametrosSelecao.categoriasFerramenta[0]?.nome ?? "", parametrosSelecao.marcasFerramenta[0]?.nome ?? "", grupoExemplo?.nome, grupoExemplo ? (tamanhosDoGrupoFerramenta(parametros, grupoExemplo.nome)[0] ?? "") : "") as unknown as Item) : undefined)}>Novo item</Button>
         </div>
       </div>
 
