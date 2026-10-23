@@ -33,6 +33,8 @@ import {
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { avisoExclusaoDoProduto, vinculosDoProduto } from "@/lib/codigo-fabrica-vinculos";
 import { empresaPadraoParaEscolha } from "@/lib/empresas";
+import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
+import { exemploFerramenta } from "@/lib/dados-teste/exemplos";
 import {
   ESTADOS_ITEM,
   STATUS_FERRAMENTA,
@@ -241,7 +243,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={() => void abrirNovo()}>Novo item</Button>
+          <Button requiresWrite onClick={() => void abrirNovo(import.meta.env.VITE_DEMO_MODE !== "false" && modulo === "ferramenta" ? (exemploFerramenta(parametrosSelecao.categoriasFerramenta[0]?.nome ?? "", parametrosSelecao.marcasFerramenta[0]?.nome ?? "") as unknown as Item) : undefined)}>Novo item</Button>
         </div>
       </div>
 
@@ -350,12 +352,12 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
             <DialogTitle>
               {editando
                 ? "Editar ferramenta"
-                : modelo
+                : modelo && !ehExemplo(modelo)
                   ? "Clonar ferramenta"
                   : "Cadastrar ferramenta"}
             </DialogTitle>
             <DialogDescription>
-              {modelo && !editando ? "Informe só o modelo novo; categoria, grupo, marca e estoque mínimo vêm da ferramenta copiada." : "Preencha os dados do cadastro."}
+              {modelo && !editando && !ehExemplo(modelo) ? "Informe só o modelo novo; categoria, grupo, marca e estoque mínimo vêm da ferramenta copiada." : "Preencha os dados do cadastro."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">

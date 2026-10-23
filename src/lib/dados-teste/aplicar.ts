@@ -18,7 +18,7 @@ import * as Gerais from "../parametros-base.ts";
 import { semearViagens } from "./viagens.ts";
 import {
   ACOES_MANUTENCAO_VEICULO, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
-  TAMANHOS_AUTORIZADOS, TIPOS_OCORRENCIA_VEICULO, UNIFORMES, VEICULOS, VERSAO_DADOS_TESTE, type ItemCatalogoTeste,
+  TAMANHOS_AUTORIZADOS, TAMANHOS_GRUPO_FERRAMENTA, TIPOS_OCORRENCIA_VEICULO, UNIFORMES, VEICULOS, VERSAO_DADOS_TESTE, type ItemCatalogoTeste,
 } from "./conjunto.ts";
 
 export type Armazenamento = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -139,9 +139,13 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     if (!g) throw new Error(`Grupo de ferramenta ${nome} não existe em Gerais.`);
     return g;
   };
-  for (const f of FERRAMENTAS) if (f.tamanho) {
-    const g = grupoPorNome(f.grupo);
-    if (!(Gerais.lerParametros(storage).tamanhosGrupoFerramenta[g.id] ?? []).some((t) => Gerais.mesmoNome(t, f.tamanho))) Gerais.adicionarTamanhoGrupoFerramenta(g.id, f.tamanho, storage);
+  const tamanhosDosGrupos = { ...TAMANHOS_GRUPO_FERRAMENTA };
+  for (const f of FERRAMENTAS) if (f.tamanho) tamanhosDosGrupos[f.grupo] = [...(tamanhosDosGrupos[f.grupo] ?? []), f.tamanho];
+  for (const [grupo, tamanhos] of Object.entries(tamanhosDosGrupos)) {
+    const g = grupoPorNome(grupo);
+    for (const tamanho of tamanhos) {
+      if (!(Gerais.lerParametros(storage).tamanhosGrupoFerramenta[g.id] ?? []).some((t) => Gerais.mesmoNome(t, tamanho))) Gerais.adicionarTamanhoGrupoFerramenta(g.id, tamanho, storage);
+    }
   }
 
   // ----- Fornecedores e clientes (as mesmas gravações das telas; o id de teste entra depois) -----
@@ -238,7 +242,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   entrega("epi", "epis", epiDe("Botina", 1).id, 0, 3, 30, "tam-40");
   entrega("epi", "epis", epiDe("Luva", 1).id, 0, 5, 28, "tam-m");
   entrega("epi", "epis", epiDe("Capacete", 0).id, 0, 2, 26, null);
-  entrega("epi", "epis", epiDe("Luva", 1).id, 0, 1, 12, "tam-m", { responsavel_nome: "Almoxarifado Alfa", observacao: "Luva devolvida sem uso" }, "Devolucao");
+  entrega("epi", "epis", epiDe("Luva", 1).id, 0, 1, 12, "tam-m", { responsavel_nome: "Almoxarifado Gemape", observacao: "Luva devolvida sem uso" }, "Devolucao");
   entrega("epi", "epis", epiDe("Botina", 1).id, 0, 1, 8, "tam-40", { motivo_baixa: "Desgaste Natural", observacao: "Solado gasto" });
   // Empresa 2 (Carlos).
   entrega("epi", "epis", epiDe("Botina", 2).id, 1, 2, 24, "tam-42");
@@ -255,7 +259,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   entrega("uniforme", "uniformes", uniDe("Camisa", 0).id, 1, 3, 21, "tam-p");
   entrega("uniforme", "uniformes", uniDe("Calça", 2).id, 1, 2, 21, "tam-44");
   entrega("uniforme", "uniformes", uniDe("Camisa", 2).id, 2, 2, 15, "tam-g");
-  entrega("uniforme", "uniformes", uniDe("Camisa", 2).id, 2, 1, 6, "tam-g", { responsavel_nome: "Almoxarifado Gama" }, "Devolucao");
+  entrega("uniforme", "uniformes", uniDe("Camisa", 2).id, 2, 1, 6, "tam-g", { responsavel_nome: "Almoxarifado Lapa" }, "Devolucao");
 
   // Ferramentas: uma por empresa, com estoque inicial por entrada.
   const novaFerramenta = sequencia("ferramenta");
@@ -281,10 +285,10 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       const saldo = doModulo.filter((m) => m["item_id"] === linha["id"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? -Number(m["quantidade"]) : Number(m["quantidade"])), 0);
       // Cada empresa tem o seu mínimo, em torno do do catálogo: a primeira acima (alertas aparecem), a segunda um pouco abaixo e a terceira igual.
       const empresa = empresaIds.indexOf(String(linha["empresa_id"]));
-      const minimo = Math.max(0, Number(linha["estoque_minimo"]) + (empresa === 0 ? 3 : empresa === 1 ? -1 : 0));
+      const minimo = Math.max(0, (Number(linha["estoque_minimo"]) || 0) + (empresa === 0 ? 3 : empresa === 1 ? -1 : 0));
       linha["estoque_atual"] = saldo;
       linha["estoque_minimo"] = minimo;
-      // Produto com tamanho: saldo e mínimo ficam por tamanho (decisão 23); o estoque e o mínimo do produto são a soma.
+      // Produto com um tamanho só (o catálogo de teste tem um registro por tamanho): saldo e mínimo ficam nesse tamanho (decisão 23).
       const tamanhos = linha["tamanhos_selecionados"];
       if (Array.isArray(tamanhos) && tamanhos.length === 1) {
         linha["saldos_tamanho"] = { [String(tamanhos[0])]: saldo };

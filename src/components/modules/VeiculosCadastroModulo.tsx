@@ -36,6 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { lerTodas } from "@/lib/ler-todas";
+import { exemploVeiculo } from "@/lib/dados-teste/exemplos";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import {
@@ -411,7 +412,9 @@ export function VeiculosCadastroModulo() {
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={() => void abrirNovo()}>
+          <Button requiresWrite onClick={() => void (import.meta.env.VITE_DEMO_MODE !== "false"
+            ? todosVeiculos().then((todos) => abrirNovo(exemploVeiculo(todos, empresaPadrao, parametros.marcasVeiculo[0]?.nome ?? "Fiat") as unknown as VeiculoCadastro)).catch(() => abrirNovo())
+            : abrirNovo())}>
             Novo veículo
           </Button>
         </div>

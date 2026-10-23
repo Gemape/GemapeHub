@@ -36,6 +36,8 @@ import { empregadoAtivo, mascararCpf, prepararEmpregado, separarEmpregados } fro
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 import { lerTodas } from "@/lib/ler-todas";
+import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
+import { exemploEmpregado } from "@/lib/dados-teste/exemplos";
 
 // O e-mail ainda não existe na tabela real de empregados: nesta fase só é gravado no
 // modo demonstração. A coluna entra na Fase 2.
@@ -68,6 +70,16 @@ export function EmpregadosCadastroModulo() {
     setModelo(clonar ? empregado : null);
     setEmpresaSel(empregado?.empresa_id ?? "");
     setAberto(true);
+  }
+
+  // Demonstração (2.8): o cadastro novo abre já preenchido com um empregado fictício; CPF e matrícula saem diferentes dos de todas as empresas.
+  async function abrirNovo() {
+    if (import.meta.env.VITE_DEMO_MODE !== "false") {
+      let todos: { cpf?: string | null; matricula?: string | null }[] = empregados;
+      try { todos = await lerTodas(() => supabase.from("empregados").select("id,cpf,matricula"), (q) => q.order("id")); } catch { /* fica com a lista da tela */ }
+      return abrir(exemploEmpregado(todos, empresaPadrao) as EmpregadoCadastro, true);
+    }
+    abrir(null);
   }
 
   async function enviar(e: React.FormEvent<HTMLFormElement>) {
@@ -149,7 +161,7 @@ export function EmpregadosCadastroModulo() {
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={() => abrir(null)}>
+          <Button requiresWrite onClick={() => void abrirNovo()}>
             Novo empregado
           </Button>
         </div>
@@ -187,7 +199,7 @@ export function EmpregadosCadastroModulo() {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>{editando ? "Editar empregado" : modelo ? "Clonar empregado" : "Novo empregado"}</DialogTitle>
+            <DialogTitle>{editando ? "Editar empregado" : modelo && !ehExemplo(modelo) ? "Clonar empregado" : "Novo empregado"}</DialogTitle>
             <DialogDescription>Dados do empregado.</DialogDescription>
           </DialogHeader>
           <form onSubmit={(e) => void enviar(e)} className="grid gap-4 sm:grid-cols-2">

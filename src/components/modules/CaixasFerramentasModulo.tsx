@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { exemploCaixa } from "@/lib/dados-teste/exemplos";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
@@ -136,8 +137,10 @@ export function CaixasFerramentasModulo() {
   function abrirNovo() {
     setAbertura((n) => n + 1);
     setEditando(null);
-    setModelo(null);
-    setNumero(null);
+    // Demonstração (2.8): abre já preenchido com uma caixa fictícia e o primeiro número livre; só é gravada se a pessoa salvar.
+    const exemplo = import.meta.env.VITE_DEMO_MODE !== "false" ? exemploCaixa(empresaPadraoParaEscolha(empresas, empresaId)) : null;
+    setModelo(exemplo as unknown as CaixaFerramenta | null);
+    setNumero(exemplo ? (disponiveis[0] ?? null) : null);
     setItensVinculados([]);
     setAberto(true);
   }

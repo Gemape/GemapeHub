@@ -1,9 +1,9 @@
-// Conjunto de dados de teste do modo demonstração: três registros por cadastro, todos os campos preenchidos, todos fictícios (empresas, pessoas,
-// documentos, e-mails e telefones inventados). Só dados descritivos: quem grava e confere é aplicar.ts. Quem altera aqui sobe a VERSAO para os
+// Conjunto de dados de teste do modo demonstração: três registros por cadastro, todos os campos preenchidos. As empresas são as do grupo (nome e CNPJ da
+// planilha de controle); endereços, pessoas, documentos, e-mails e telefones são inventados. Só dados descritivos: quem grava e confere é aplicar.ts. Quem altera aqui sobe a VERSAO para os
 // dados serem atualizados sozinhos no navegador.
 import { gerarCnpj, gerarCpf } from "./documentos.ts";
 
-export const VERSAO_DADOS_TESTE = 2;
+export const VERSAO_DADOS_TESTE = 4;
 
 // Prefixo dos ids escritos à mão: dá para reconhecer o que é de teste mesmo sem a lista de ids guardada.
 export const PREFIXO = "teste-";
@@ -12,9 +12,9 @@ export type EmpresaTeste = {
   id: string; nome_fantasia: string; razao_social: string; cnpj: string; rua: string; numero: string; bairro: string; cep: string; cidade: string; estado: string;
 };
 export const EMPRESAS: readonly EmpresaTeste[] = [
-  { id: `${PREFIXO}empresa-1`, nome_fantasia: "Alfa Máquinas", razao_social: "Alfa Máquinas e Peças Ltda", cnpj: gerarCnpj("112223330001"), rua: "Rua das Acácias", numero: "120", bairro: "Distrito Industrial", cep: "38400-100", cidade: "Uberlândia", estado: "MG" },
-  { id: `${PREFIXO}empresa-2`, nome_fantasia: "Beta Locações", razao_social: "Beta Locações de Máquinas Ltda", cnpj: gerarCnpj("223334440001"), rua: "Avenida Brasil", numero: "2500", bairro: "Centro", cep: "30110-010", cidade: "Belo Horizonte", estado: "MG" },
-  { id: `${PREFIXO}empresa-3`, nome_fantasia: "Gama Serviços", razao_social: "Gama Serviços Industriais Ltda", cnpj: gerarCnpj("334445550001"), rua: "Rua do Comércio", numero: "45", bairro: "Jardim Europa", cep: "13010-050", cidade: "Campinas", estado: "SP" },
+  { id: `${PREFIXO}empresa-1`, nome_fantasia: "Gemape Máquinas", razao_social: "Gemape Máquinas e Peças Ltda", cnpj: "21.866.173/0001-67", rua: "Rua das Acácias", numero: "120", bairro: "Distrito Industrial", cep: "38400-100", cidade: "Uberlândia", estado: "MG" },
+  { id: `${PREFIXO}empresa-2`, nome_fantasia: "GMP Locações", razao_social: "GMP Locações de Máquinas e Serviços Ltda", cnpj: "08.184.170/0001-85", rua: "Avenida Brasil", numero: "2500", bairro: "Centro", cep: "30110-010", cidade: "Belo Horizonte", estado: "MG" },
+  { id: `${PREFIXO}empresa-3`, nome_fantasia: "Lapa Máquinas", razao_social: "Lapa Máquinas e Peças Ltda", cnpj: "44.578.791/0001-07", rua: "Rua do Comércio", numero: "45", bairro: "Jardim Europa", cep: "13010-050", cidade: "Campinas", estado: "SP" },
 ];
 
 export type EmpregadoTeste = { id: string; empresaId: string; nome: string; cpf: string; matricula: string; email: string; admissao: string };
@@ -65,7 +65,7 @@ export const CLIENTES = [
 
 // Veículos: um por empresa, cada um com um empregado responsável.
 export const VEICULOS = [
-  { id: `${PREFIXO}veiculo-1`, empresaId: EMPRESAS[0]!.id, responsavelId: EMPREGADOS[0]!.id, tipo: "Utilitário", subId: "sub-veiculos-utilitario", placa: "TST1A23", marca: "Fiat", modelo: "Strada Endurance", ano: 2022, cor: "Branca", combustivel: "Flex", renavam: "00123456789", km: 38500, aquisicao: "2022-02-18", custo: 98500, nota: "NF-004512", observacoes: "Veículo da equipe de campo da Alfa Máquinas." },
+  { id: `${PREFIXO}veiculo-1`, empresaId: EMPRESAS[0]!.id, responsavelId: EMPREGADOS[0]!.id, tipo: "Utilitário", subId: "sub-veiculos-utilitario", placa: "TST1A23", marca: "Fiat", modelo: "Strada Endurance", ano: 2022, cor: "Branca", combustivel: "Flex", renavam: "00123456789", km: 38500, aquisicao: "2022-02-18", custo: 98500, nota: "NF-004512", observacoes: "Veículo da equipe de campo da Gemape Máquinas." },
   { id: `${PREFIXO}veiculo-2`, empresaId: EMPRESAS[1]!.id, responsavelId: EMPREGADOS[1]!.id, tipo: "Caminhão", subId: "sub-veiculos-caminhao", placa: "TST2B34", marca: "Volkswagen", modelo: "Delivery 11.180", ano: 2020, cor: "Branco", combustivel: "Diesel", renavam: "00234567890", km: 112300, aquisicao: "2020-06-05", custo: 285000, nota: "NF-001873", observacoes: "Transporte de máquinas até o cliente." },
   { id: `${PREFIXO}veiculo-3`, empresaId: EMPRESAS[2]!.id, responsavelId: EMPREGADOS[2]!.id, tipo: "Carro", subId: "sub-veiculos-carro", placa: "TST3C45", marca: "Chevrolet", modelo: "Onix LT", ano: 2023, cor: "Prata", combustivel: "Flex", renavam: "00345678901", km: 15200, aquisicao: "2023-03-22", custo: 84900, nota: "NF-007790", observacoes: "Uso administrativo e visitas comerciais." },
 ] as const;
@@ -97,9 +97,16 @@ export const MARCAS_UNIFORME = ["Vestir Bem", "Trabalho Forte", "Norte Uniformes
 // Ferramentas: uma por empresa. `grupo` e `categoria` são das listas de Gerais; `qual` só vale para grupos que pedem "qual é".
 export const FERRAMENTAS = [
   { empresaIndice: 0, categoria: "Manual", grupo: "Alicates", qual: "", marca: "Ferrotec", modelo: "Universal Isolado 1000V", tamanho: "8 pol", minimo: 3, entrada: 8, fornecedor: 1 },
-  { empresaIndice: 1, categoria: "Medição", grupo: "Chave Allen", qual: "", marca: "Maxforça", modelo: "Jogo Hexagonal Cromo-Vanádio", tamanho: "10 mm", minimo: 2, entrada: 5, fornecedor: 1 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Chave Allen", qual: "", marca: "Maxforça", modelo: "Jogo Hexagonal Cromo-Vanádio", tamanho: "10", minimo: 2, entrada: 5, fornecedor: 1 },
   { empresaIndice: 2, categoria: "Elétrica", grupo: "Diversos", qual: "Furadeira de Impacto", marca: "Duramax", modelo: "DX-650 650W", tamanho: "", minimo: 2, entrada: 4, fornecedor: 1 },
 ] as const;
+
+// Tamanhos de alguns grupos de ferramenta, como na planilha de controle de ferramentas (entram em Gerais junto com os dados de teste).
+export const TAMANHOS_GRUPO_FERRAMENTA: Record<string, readonly string[]> = {
+  "Chave L": ["8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "3/8"],
+  "Chave Allen": ["1,5", "2", "2,5", "3", "4", "5", "6", "8", "10"],
+  Alicates: ["Corte", "Universal", "Terminal elétrico", "Pressão", "Bico", "Amperímetro", "Desencapador"],
+};
 
 export const TIPOS_OCORRENCIA_VEICULO = [
   { nome: "Colisão leve", descricao: "Batida sem vítimas, com danos à lataria ou ao para-choque." },

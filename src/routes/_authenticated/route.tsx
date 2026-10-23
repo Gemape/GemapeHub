@@ -109,8 +109,7 @@ function LayoutAutenticado() {
             </div>
             {/* Título da marca, centralizado no topo; no celular desce para uma linha própria. */}
             <div className="order-last col-span-2 text-center md:order-none md:col-span-1">
-              <p className="eyebrow-marca">Grupo Gemape</p>
-              <p className="titulo-marca text-xl sm:text-3xl lg:text-4xl">Gestão de Patrimônio</p>
+              <p className="titulo-marca text-lg sm:text-2xl lg:text-3xl">GESTÃO DE PATRIMÔNIO</p>
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
             <div className="flex items-center justify-end gap-2">

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ function Formulario({ editando, modelo, onFechar, onSalvo }: {
   const base = editando ?? modelo;
   // Subcategorias e tipos de Parâmetros Específicos, lidos ao abrir a janela.
   const [params] = useState(lerParametrosEquipamento);
-  const [v, setV] = useState<Valores>(() => valoresIniciais(base, !editando && !!modelo, empresaPadraoParaEscolha(empresas, empresaId), params));
+  const [v, setV] = useState<Valores>(() => valoresIniciais(base, !editando && !!modelo && !ehExemplo(modelo), empresaPadraoParaEscolha(empresas, empresaId), params));
   // Um segundo clique em Salvar enquanto a janela fecha gravaria o equipamento de novo.
   const trava = useRef(false);
   const mudar = (parte: Partial<Valores>) => setV((x) => ({ ...x, ...parte }));
@@ -179,7 +180,7 @@ export function EquipamentoDialog({ aberto, onAberto, editando, modelo, onSalvo 
     <Dialog open={aberto} onOpenChange={onAberto}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{editando ? "Editar equipamento" : modelo ? "Clonar equipamento" : "Cadastrar equipamento"}</DialogTitle>
+          <DialogTitle>{editando ? "Editar equipamento" : modelo && !ehExemplo(modelo) ? "Clonar equipamento" : "Cadastrar equipamento"}</DialogTitle>
           <DialogDescription>Escolha a subcategoria e o tipo para aparecerem só as especificações técnicas dele.</DialogDescription>
         </DialogHeader>
         <Formulario key={editando?.id ?? (modelo ? `clone-${modelo.id}` : "novo")} editando={editando} modelo={modelo} onFechar={() => onAberto(false)} onSalvo={onSalvo} />

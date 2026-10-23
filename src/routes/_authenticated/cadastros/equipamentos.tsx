@@ -3,10 +3,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { exemploEquipamento } from "@/lib/dados-teste/exemplos";
 import { EquipamentoDialog } from "@/components/parametros/EquipamentoDialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEmpresa } from "@/lib/empresa-context";
+import { empresaPadraoParaEscolha } from "@/lib/empresas";
 import { listarEquipamentos, removerEquipamento, type Equipamento } from "@/lib/equipamentos-demo";
 import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
 
@@ -16,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/equipamentos")({
 });
 
 function PaginaEquipamentos() {
-  const { empresas } = useEmpresa();
+  const { empresas, empresaId } = useEmpresa();
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>(listarEquipamentos);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Equipamento | null>(null);
@@ -59,7 +61,7 @@ function PaginaEquipamentos() {
           <h1 className="text-2xl font-bold">Cadastrar equipamento</h1>
           <p className="mt-1 text-sm text-muted-foreground">Dados gerais e especificações técnicas por categoria. O módulo Equipamentos usa estes cadastros.</p>
         </div>
-        <Button requiresWrite onClick={() => abrir(null)}>Cadastrar equipamento</Button>
+        <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploEquipamento(equipamentos, empresaPadraoParaEscolha(empresas, empresaId)), true) : abrir(null)}>Cadastrar equipamento</Button>
       </header>
 
       <div className="panel overflow-x-auto">
