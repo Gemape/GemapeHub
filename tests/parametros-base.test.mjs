@@ -38,7 +38,7 @@ test('categoria nova usa padrão e removê-la elimina a configuração', () => {
 
 test('parte das categorias e listas que já existiam', () => {
   const d = lerParametros(storage());
-  assert.deepEqual(d.categorias.map((c) => c.nome), ['EPI', 'Uniformes', 'Ferramentas', 'Veículos']);
+  assert.deepEqual(d.categorias.map((c) => c.nome), ['EPI', 'Uniformes', 'Ferramentas', 'Veículos', 'Equipamentos', 'Check list']);
   assert.deepEqual(subcategoriasDa(d, 'cat-ferramentas').map((s) => s.nome),
     ['Manual', 'Elétrica', 'Pneumático', 'Hidráulica', 'Medição', 'Corte']);
   assert.ok(subcategoriasDa(d, 'cat-epi').some((s) => s.nome === 'Luva'));
@@ -142,7 +142,7 @@ test('associação: autoriza e desautoriza mantendo a ordem da lista', () => {
 test('código do produto: sigla e numeração de 4 dígitos', () => {
   const s = storage();
   const d = lerParametros(s);
-  assert.deepEqual(d.regrasCodigo.map((r) => gerarCodigo(r)), ['EPI-0001', 'UNI-0001', 'FER-0001', 'VEI-0001']);
+  assert.deepEqual(d.regrasCodigo.map((r) => gerarCodigo(r)), ['EPI-0001', 'UNI-0001', 'FER-0001', 'VEI-0001', 'EQP-0001', 'CHK-0001']);
   assert.equal(gerarCodigo({ sigla: 'EPI', inicial: '0001' }, 2), 'EPI-0003');
   assert.equal(gerarCodigo({ sigla: 'EPI', inicial: '9999' }, 1), 'EPI-10000');
   const r = salvarRegraCodigo('cat-veiculos', ' vei ', '1', s);
@@ -159,7 +159,7 @@ test('código do produto: sigla e numeração de 4 dígitos', () => {
   const maquinas = adicionarCategoria('Máquinas', s);
   salvarRegraCodigo(maquinas.id, 'MAQ', '1', s);
   removerRegraCodigo(maquinas.id, s);
-  assert.equal(lerParametros(s).regrasCodigo.length, 4);
+  assert.equal(lerParametros(s).regrasCodigo.length, 6);
 });
 
 test('regras salvas com 3 dígitos passam para 4', () => {
@@ -196,10 +196,10 @@ test('código de fábrica: CA obrigatório para EPI e sem código repetido por f
 test('dados salvos com defeito voltam ao padrão', () => {
   const s = storage();
   s.setItem('gemape-demo-parametros-base', '{quebrado');
-  assert.equal(lerParametros(s).categorias.length, 4);
+  assert.equal(lerParametros(s).categorias.length, 6);
   s.setItem('gemape-demo-parametros-base', JSON.stringify({ categorias: [{ id: 'x', nome: 'Só esta' }] }));
   const d = lerParametros(s);
-  assert.deepEqual(d.categorias, [{ id: 'x', nome: 'Só esta' }]);
+  assert.deepEqual(d.categorias, [{ id: 'x', nome: 'Só esta' }, { id: 'cat-equipamentos', nome: 'Equipamentos' }, { id: 'cat-checklist', nome: 'Check list' }]);
   assert.equal(d.unidades.length, 4);
 });
 
@@ -230,7 +230,7 @@ test('código do produto: várias siglas na mesma categoria, a primeira é a pad
   assert.deepEqual(nova, { categoriaId: 'cat-epi', sigla: 'LUV', inicial: '0001' });
   const regras = lerParametros(s).regrasCodigo;
   assert.deepEqual(regrasDaCategoria(regras, 'cat-epi').map((r) => r.sigla), ['EPI', 'LUV']);
-  assert.equal(regras.length, 5);
+  assert.equal(regras.length, 7);
   // Sem escolha (ou sigla que sumiu) vale a padrão; com escolha vale a escolhida.
   assert.equal(regraDoCadastro(regras, 'cat-epi')?.sigla, 'EPI');
   assert.equal(regraDoCadastro(regras, 'cat-epi', 'LUV')?.sigla, 'LUV');
@@ -240,7 +240,7 @@ test('código do produto: várias siglas na mesma categoria, a primeira é a pad
   assert.throws(() => adicionarRegraCodigo('cat-epi', 'LUV', '5', s), /já é usada em EPI/);
   assert.throws(() => adicionarRegraCodigo('cat-uniformes', 'LUV', '5', s), /já é usada em EPI/);
   assert.throws(() => adicionarRegraCodigo('cat-epi', 'V E', '1', s), /sigla/);
-  assert.equal(lerParametros(s).regrasCodigo.length, 5);
+  assert.equal(lerParametros(s).regrasCodigo.length, 7);
 });
 
 test('código do produto: editar uma regra pela sigla anterior e excluir só a escolhida', () => {
@@ -293,4 +293,30 @@ test('código do produto: Novo código com erro não deixa categoria solta (dec 
   assert.throws(() => adicionarCodigoComCategoria('Máquinas', 'MAQ', '0', s), /numeração/);
   assert.throws(() => adicionarCodigoComCategoria('   ', 'MAQ', '1', s), /categoria/);
   assert.equal(lerParametros(s).categorias.length, antes);
+});
+
+test('código do produto: Equipamentos (EQP) e Check list (CHK) têm linha própria, também para quem já tinha o cadastro salvo', () => {
+  const s = storage();
+  const novo = lerParametros(s);
+  assert.deepEqual(novo.regrasCodigo.filter((r) => ['cat-equipamentos', 'cat-checklist'].includes(r.categoriaId)).map((r) => `${r.sigla}-${r.inicial}`), ['EQP-0001', 'CHK-0001']);
+  assert.equal(gerarCodigo({ sigla: 'CHK', inicial: '0001' }, 4), 'CHK-0005');
+  // Cadastro salvo antes (só com os quatro módulos): ganha as duas linhas sem mexer no que existe.
+  const antigo = { ...novo, categorias: novo.categorias.slice(0, 4), regrasCodigo: novo.regrasCodigo.slice(0, 4).map((r) => (r.sigla === 'EPI' ? { ...r, inicial: '0100' } : r)) };
+  s.setItem('gemape-demo-parametros-base', JSON.stringify(antigo));
+  const depois = lerParametros(s);
+  assert.deepEqual(depois.categorias.map((c) => c.nome), ['EPI', 'Uniformes', 'Ferramentas', 'Veículos', 'Equipamentos', 'Check list']);
+  assert.deepEqual(depois.regrasCodigo.map((r) => r.sigla), ['EPI', 'UNI', 'FER', 'VEI', 'EQP', 'CHK']);
+  assert.equal(depois.regrasCodigo[0].inicial, '0100', 'a numeração que a pessoa mudou fica');
+  // Sigla já usada por outra categoria não é tomada.
+  s.setItem('gemape-demo-parametros-base', JSON.stringify({ ...antigo, regrasCodigo: [...antigo.regrasCodigo, { categoriaId: 'cat-epi', sigla: 'CHK', inicial: '0001' }] }));
+  assert.equal(lerParametros(s).regrasCodigo.filter((r) => r.sigla === 'CHK').length, 1);
+  assert.throws(() => removerRegraCodigo('cat-checklist', storage()), /novos cadastros de Check list ficariam bloqueados/);
+});
+
+test('Equipamentos e Check list ficam só na tabela de códigos: as telas de categorias e de tamanhos não os listam', async () => {
+  const { categoriasDeCadastro, CATEGORIAS_SO_DE_CODIGO } = await import('../src/lib/parametros-base.ts');
+  const d = lerParametros(storage());
+  assert.deepEqual(categoriasDeCadastro(d.categorias).map((c) => c.nome), ['EPI', 'Uniformes', 'Ferramentas', 'Veículos']);
+  assert.deepEqual([...CATEGORIAS_SO_DE_CODIGO], ['cat-equipamentos', 'cat-checklist']);
+  assert.equal(d.categorias.length, 6, 'a tabela de códigos continua com as seis');
 });

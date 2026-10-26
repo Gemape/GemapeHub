@@ -82,6 +82,10 @@ export function ChecklistVeiculoModulo() {
   const [tela, setTela] = useState<Tela>(null);
   const [visao, setVisao] = useState<"periodicos" | "avulsos">("periodicos");
   const [busca, setBusca] = useState("");
+  // A situação por veículo mostra só quem tem check list associado; os sem associação ficam escondidos até pedir.
+  const [semAssociacao, setSemAssociacao] = useState(false);
+  // A lista mostra as primeiras linhas do mês e deixa o resto atrás de "Mostrar todos".
+  const [todosOsChecklists, setTodosOsChecklists] = useState(false);
   // A lista mostra um mês de cada vez; sem escolha acompanha o mês de hoje (inclusive na virada do mês), e "todos" mostra tudo.
   const [mesEscolhidoLista, setMesLista] = useState<string | null>(null);
   const [soPendencias, setSoPendencias] = useState(false);
@@ -144,6 +148,10 @@ export function ChecklistVeiculoModulo() {
   // O avulso (decisão 90) não tem periodicidade nem responsável: fica numa lista à parte e não entra no painel do mês nem na situação por veículo.
   const avulsos = checklists.filter((c) => !checklistVisivelNaLista(c));
   const mesLista = mesEscolhidoLista ?? hoje.slice(0, 7);
+  // Sem associação mas com pendência NOK aberta (de um avulso) continua na situação: o contador de pendências do cabeçalho conta essa linha.
+  const noSituacao = (v: VeiculoChecklist) => periodicidadesDe(v).length > 0 || pendenciasAbertas(checklists, v.id).length > 0;
+  const veiculosSemAssociacao = veiculos.filter((v) => !noSituacao(v)).length;
+  const veiculosDaSituacao = veiculos.filter((v) => semAssociacao || noSituacao(v));
   const mesDaLista = mesLista === "todos" ? null : mesLista;
   const naListaDoMes = naLista.filter((c) => noMesDaLista(c, mesDaLista));
   const avulsosDoMes = avulsos.filter((c) => noMesDaLista(c, mesDaLista));
@@ -189,6 +197,9 @@ export function ChecklistVeiculoModulo() {
     .filter((c) => !soPendencias || pendenciaDoChecklist(c) > 0)
     .filter((c) => combinaBusca(busca, c.codigo, nomeDe(c), c.veiculoRotulo, c.responsavelNome, c.tipoVeiculo, c.status, formatarData(c.data)))
     .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+  const listaVisivel = todosOsChecklists ? lista : lista.slice(0, 10);
+  // Mudou o mês, a visão, a busca ou o filtro de pendências: a lista volta às dez primeiras.
+  useEffect(() => { setTodosOsChecklists(false); }, [mesLista, visao, busca, soPendencias]);
 
   function pendenciaDoChecklist(c: ChecklistVeiculo) {
     return c.itens.filter(pendenciaAberta).length;
@@ -208,6 +219,9 @@ export function ChecklistVeiculoModulo() {
     setTela({ tipo: "novo" });
   }
 
+  // Responsável da associação que ainda pode responder (ativo e da empresa do veículo): só então o campo fica escondido e vale o dele.
+  const responsavelDaAssociacaoAtivo = !!associacaoEscolhida?.responsavel && responsaveisDoVeiculo.some((x) => x.id === associacaoEscolhida.responsavel?.id);
+
   function iniciar(e: React.FormEvent) {
     e.preventDefault();
     if (trava.current || !veiculoEscolhido) {
@@ -218,8 +232,10 @@ export function ChecklistVeiculoModulo() {
       toast.error("Escolha o tipo de check list.");
       return;
     }
+    // Com associação que define o responsável, o campo fica escondido e vale o dela, mesmo que a associação tenha sido criada depois de o veículo ser escolhido (pela janela ao lado).
+    const idResponsavel = (!avulsoNovo && responsavelDaAssociacaoAtivo && associacaoEscolhida?.responsavel?.id) || responsavelId;
     // O responsável pré-preenchido pode ter sido desligado: o campo mostra vazio, então o envio também recusa.
-    if (responsavelId && !responsaveisDoVeiculo.some((x) => x.id === responsavelId)) {
+    if (idResponsavel && !responsaveisDoVeiculo.some((x) => x.id === idResponsavel)) {
       toast.error("Selecione o responsável: o anterior não está mais ativo.");
       return;
     }
@@ -232,8 +248,8 @@ export function ChecklistVeiculoModulo() {
         : iniciarChecklist({
           ...base,
           periodicidade: periodicidadeDoDialogo(veiculoEscolhido),
-          responsavelId,
-          responsavelNome: empregadosAtivos.find((x) => x.id === responsavelId)?.nome ?? "",
+          responsavelId: idResponsavel,
+          responsavelNome: empregadosAtivos.find((x) => x.id === idResponsavel)?.nome ?? associacaoEscolhida?.responsavel?.nome ?? "",
         });
     }, avulsoNovo ? "Check list avulso iniciado" : "Check list iniciado");
     if (ok && criado) setTela({ tipo: "check", id: criado.id });
@@ -289,6 +305,7 @@ export function ChecklistVeiculoModulo() {
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold">Situação por veículo</h2>
           <p className="text-xs text-muted-foreground">{pendencias.length} pendência(s) NOK aberta(s).</p>
+          { veiculosSemAssociacao > 0 && <Button variant="ghost" size="sm" aria-pressed={semAssociacao} onClick={() => setSemAssociacao((v) => !v)}>{semAssociacao ? "Ocultar" : "Mostrar"} sem associação ({veiculosSemAssociacao})</Button>}
           <Button requiresWrite="operar" className="ml-auto" onClick={() => abrirNovo()}>Novo check list</Button>
         </div>
         <div className="overflow-x-auto rounded-xl border">
@@ -300,8 +317,8 @@ export function ChecklistVeiculoModulo() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {veiculos.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum veículo cadastrado.</TableCell></TableRow>}
-              {veiculos.flatMap((v) => {
+              {veiculosDaSituacao.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{veiculos.length === 0 ? "Nenhum veículo cadastrado." : "Nenhum veículo com check list associado."}</TableCell></TableRow>}
+              {veiculosDaSituacao.flatMap((v) => {
                 // Uma linha por periodicidade do veículo (decisão 123); sem associação, uma linha só.
                 const periodicidades: (Periodicidade | null)[] = periodicidadesDe(v).length > 0 ? periodicidadesDe(v) : [null];
                 return periodicidades.map((per) => {
@@ -366,7 +383,7 @@ export function ChecklistVeiculoModulo() {
               {lista.length === 0 && (
                 <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{busca.trim() || soPendencias ? "Nenhum resultado para o filtro." : visao === "avulsos" ? "Nenhum check list avulso feito ainda." : "Nenhum check list feito ainda."}</TableCell></TableRow>
               )}
-              {lista.map((c) => {
+              {listaVisivel.map((c) => {
                 const r = resumoChecklist(c);
                 return (
                   <TableRow key={c.id} className="cursor-pointer" onClick={() => setTela({ tipo: "check", id: c.id })}>
@@ -382,6 +399,11 @@ export function ChecklistVeiculoModulo() {
             </TableBody>
           </Table>
         </div>
+        {lista.length > 10 && (
+          <div className="flex justify-center">
+            <Button variant="ghost" size="sm" onClick={() => setTodosOsChecklists((v) => !v)}>{todosOsChecklists ? "Mostrar menos" : `Mostrar todos os ${lista.length} check lists`}</Button>
+          </div>
+        )}
       </section>
 
       <Dialog open={tela?.tipo === "novo"} onOpenChange={(a) => !a && setTela(null)}>
@@ -449,7 +471,7 @@ export function ChecklistVeiculoModulo() {
                 </p>
               )}
             </div>
-            {!avulsoNovo && tipoEscolhido && !associacaoEscolhida?.responsavel && <div className="min-w-0 space-y-1.5">
+            {!avulsoNovo && tipoEscolhido && !responsavelDaAssociacaoAtivo && <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ck_resp">Responsável pelo check list</Label>
               <Select value={responsavelId} onValueChange={setResponsavelId}>
                 <SelectTrigger id="ck_resp" className="min-w-0 [&>span]:min-w-0 [&>span]:truncate"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>

@@ -52,7 +52,8 @@ function removerEquipamentosSemAssociacao(storage: Armazenamento): number {
   const comAssociacao = (f: string) => new Set((param?.[f]?.associacoes ?? []).map((a) => a.equipamentoId));
   const manutencao = comAssociacao("manutencao");
   const vistoria = comAssociacao("vistoria");
-  const sai = new Set(equipamentos.map((e) => String(e["id"])).filter((id) => !manutencao.has(id) || !vistoria.has(id)));
+  // Os de teste ficam (os extras do catálogo nascem sem associação, para testar a janela de associar); sai o que a pessoa cadastrou e não associou.
+  const sai = new Set(equipamentos.map((e) => String(e["id"])).filter((id) => !id.startsWith("teste-") && (!manutencao.has(id) || !vistoria.has(id))));
   if (sai.size === 0) return 0;
   storage.setItem("gemape-demo-equipamentos", JSON.stringify(equipamentos.filter((e) => !sai.has(String(e["id"])))));
   for (const chave of REGISTROS_DO_EQUIPAMENTO) {

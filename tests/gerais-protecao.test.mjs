@@ -20,13 +20,13 @@ test('categoria-base de um módulo não pode ser excluída', () => {
     for (const sub of pb.subcategoriasDa(pb.lerParametros(s), id)) pb.removerSubcategoria(sub.id, s);
     assert.throws(() => pb.removerCategoria(id, s), new RegExp(`base do cadastro de ${modulo}`));
   }
-  assert.equal(pb.lerParametros(s).categorias.length, 4);
+  assert.equal(pb.lerParametros(s).categorias.length, 6);
 });
 
 test('regra de código de categoria-base não pode ser excluída; a de outra categoria pode', () => {
   const s = storage();
   assert.throws(() => pb.removerRegraCodigo('cat-epi', s), /novos cadastros de EPI ficariam bloqueados/);
-  assert.equal(pb.lerParametros(s).regrasCodigo.length, 4);
+  assert.equal(pb.lerParametros(s).regrasCodigo.length, 6);
 });
 
 test('desativar: o parâmetro sai das listas de seleção, mas continua em Gerais', () => {

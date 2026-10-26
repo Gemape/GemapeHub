@@ -13,6 +13,7 @@ import {
   lerParametros,
   ROTULO_OPCAO,
   subcategoriasDa,
+  categoriasDeCadastro,
   type TipoOpcao,
 } from "@/lib/parametros-base";
 import {
@@ -26,7 +27,7 @@ const selectClasse = "flex h-9 w-full rounded-md border border-input bg-transpar
 // `categoriaFixa`: a categoria já vem do menu (EPI, Uniformes ou Ferramentas) e a escolha some da tela (decisão 89).
 export function AssociarTamanhosPainel({ categoriaFixa, aninhado = false }: { categoriaFixa?: string; aninhado?: boolean }) {
   const dados = useParametrosBase();
-  const [categoriaEscolhida, setCategoriaId] = useState(dados.categorias[0]?.id ?? "");
+  const [categoriaEscolhida, setCategoriaId] = useState(categoriasDeCadastro(dados.categorias)[0]?.id ?? "");
   const categoriaId = categoriaFixa ?? categoriaEscolhida;
   const [subcategoriaId, setSubcategoriaId] = useState("");
   const subcategorias = subcategoriasDa(dados, categoriaId);
@@ -113,7 +114,7 @@ export function AssociarTamanhosPainel({ categoriaFixa, aninhado = false }: { ca
                 setSubcategoriaId("");
               }}
             >
-              {dados.categorias.map((c) => (
+              {categoriasDeCadastro(dados.categorias).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}
                 </option>

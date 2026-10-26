@@ -1650,3 +1650,21 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 286. Celular: indicadores compactos e botões lado a lado
 
 - Os quadros de indicadores (painel de check lists, dashboard, abastecimento, inventário de equipamentos, frota, relatórios de EPI e de uniformes) ficam em duas colunas no celular, com o cartão (`StatCard`) mais compacto (menos espaço interno, número menor e sem o ícone), em vez de uma coluna de cartões altos. O rodapé das janelas põe os botões lado a lado (Salvar e Cancelar) e ocupa metade da altura. Conferido em 360 px, sem rolagem lateral em 29 telas.
+
+## 287. Equipamentos de teste: 40 cadastrados e só 10 com dados; códigos EQP e CHK; aplicação dos dados à prova de interrupção
+
+- Os dados de teste (versão 27) cadastram 40 equipamentos, cinco de cada um dos oito tipos (PAT-0001 a PAT-0040, empresa girando entre as três), e só dez levam registros: PAT-0006, 0007, 0009, 0014, 0019, 0024, 0029, 0033, 0038 e 0039 (ao menos um de cada tipo), cada um com associação de check list (manutenção e vistoria, periodicidade semanal, quinzenal ou mensal), plano de manutenção, manutenção preventiva e corretiva, ocorrência e 15 check lists preenchidos (5 periódicos de manutenção, 5 de vistoria e 5 avulsos), mais três abastecimentos nos de motor a combustão. PAT-0001 a PAT-0005 ficam só cadastrados, limpos. Os trinta sem associação aparecem na janela de Associar itens de check list a um equipamento (a lista traz todos os cadastrados, com "já tem itens associados" nos outros) e a limpeza de equipamento sem associação não alcança os de teste.
+- Código do produto (Gerais) ganhou as linhas Equipamentos (EQP-0001) e Check list (CHK-0001), também para quem já tinha o cadastro salvo (sem mexer no que existe nem tomar uma sigla em uso). Elas definem sigla e numeração; o código do check list continua sendo gerado em sequência (CHK-0001...) pela tela de check list.
+- Aplicar os dados de teste agora é tudo ou nada: se algo falhar no meio, o navegador volta ao que era, em vez de ficar com a metade (era o que travava a reaplicação com "Já existe a opção Ferrotec" e "código SE-100 já associado"). Marcas, tipos e ações de Gerais e códigos de fábrica que já existem ficam como estão e não são anotados para o Limpar. Só no navegador, em modo demonstração, sem Supabase.
+
+## 288. Novo check list: o responsável da associação vale
+
+- No Novo check list (equipamentos e veículos), quando a associação do equipamento ou do veículo define o responsável, o campo Responsável fica escondido e vale o da associação. Antes o envio usava só o responsável guardado ao escolher o equipamento: se a associação fosse criada depois, pela janela de Associar ao lado, o campo sumia mas o envio seguia sem responsável ("Selecione o responsável pelo check list" com o responsável aparecendo na opção do tipo). Agora o envio usa o responsável da associação. Só no navegador, em modo demonstração, sem Supabase.
+
+## 289. Telas de check list mais limpas
+
+- Nas telas de Check list de Veículos e de Equipamentos: a situação por veículo e por equipamento mostra só quem tem check list associado (os sem associação, que podem ser dezenas, ficam atrás do botão "Mostrar sem associação (N)"); o painel de indicadores mostra as 8 primeiras linhas, com o período mais recente primeiro, e "Mostrar todas as N linhas"; e a lista de check lists do mês mostra as 10 primeiras, com "Mostrar todos os N check lists". Nada é apagado, só escondido até pedir. Só no navegador, em modo demonstração, sem Supabase.
+
+## 290. Ajustes da revisão dos check lists
+
+- Equipamentos e Check list (categorias só de código) ficam fora das telas de Categorias e de associar tamanhos; aparecem só em Código do produto. O responsável da associação só esconde o campo no Novo check list quando está ativo e é da empresa do equipamento ou veículo; senão o campo volta para escolher outro. A lista de check lists volta às dez primeiras ao mudar mês, visão, busca ou filtro. O painel em "todos os períodos" ordena pelo prazo mais recente e, no mesmo dia, pelo nome de A a Z. O equipamento de teste de motor elétrico parte do horímetro inicial nas manutenções. A aplicação dos dados de teste só ignora o que já existe (outro erro desfaz tudo) e a restauração não troca o erro original. Só no navegador, em modo demonstração, sem Supabase.

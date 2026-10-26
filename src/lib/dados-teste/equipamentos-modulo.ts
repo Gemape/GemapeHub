@@ -1,28 +1,24 @@
-// Registros do módulo Equipamentos nos dados de teste: parâmetros mínimos (ações de manutenção, tipos de ocorrência e check lists associados) e cinco
-// registros de cada controle (abastecimento, manutenção, ocorrência, check list de manutenção e de vistoria). Grava pelas mesmas funções das telas.
+// Módulo Equipamentos nos dados de teste: os parâmetros (padrão de check lists, ações de manutenção e tipos de ocorrência) e os registros de só dez equipamentos
+// (INDICES_COM_DADOS), um ou dois de cada tipo: associação de check list, plano de manutenção, abastecimentos (nos de motor a combustão), manutenção preventiva e
+// corretiva, ocorrência e quinze check lists preenchidos (cinco periódicos de manutenção, cinco de vistoria e cinco avulsos). Os outros equipamentos de teste
+// ficam só cadastrados, para registrar tudo do zero. Grava pelas mesmas funções das telas, com datas no passado e o horímetro sempre crescendo.
 import {
-  aplicarPadraoUmaVez, cadastrarPadraoManutencao, cadastrarPadraoVistoria, checklistsDaAssociacao, gruposAplicaveis, lerChecklistEquipamento, salvarAssociacao, type FinalidadeChecklist,
+  aplicarPadraoUmaVez, cadastrarPadraoManutencao, cadastrarPadraoVistoria, gruposAplicaveis, lerChecklistEquipamento, salvarAssociacao, type FinalidadeChecklist,
 } from "../equipamentos-checklist.ts";
 import { cadastrarPadraoAcoes, lerManutencaoEquipamento, salvarPlano, salvarTipoOcorrencia } from "../equipamentos-manutencao.ts";
 import { lerParametrosEquipamento } from "../equipamentos-parametros.ts";
 import { hojeLocal } from "../empregados.ts";
-import { ACOES_PADRAO_EQUIPAMENTO, nomeAcaoPadrao, ROTULOS_ACAO } from "../equipamentos-manutencao-padrao.ts";
+import { ACOES_PADRAO_EQUIPAMENTO } from "../equipamentos-manutencao-padrao.ts";
 import {
   CHAVE_ABASTECIMENTOS_EQ, CHAVE_MANUTENCOES_EQ, CHAVE_OCORRENCIAS_EQ, registrarAbastecimentoEq, registrarManutencaoEq, registrarOcorrenciaEq, resolverOcorrenciaEq,
 } from "../registros-equipamento.ts";
 import {
   avaliarItemEq, CHAVE_CHECKLISTS_EQ, concluirChecklistEq, gruposDoChecklistEq, gruposDoTipoEq, iniciarChecklistAvulsoEq, iniciarChecklistEq, periodicidadesDaAssociacaoEq,
 } from "../checklist-equipamento-exec.ts";
-import { EMPREGADOS, EQUIPAMENTOS, PLANOS_CHECKLIST_TESTE, PREFIXO } from "./conjunto.ts";
+import { EMPREGADOS, EQUIPAMENTOS_DE_TESTE, INDICES_COM_DADOS, PLANOS_CHECKLIST_TESTE, PREFIXO } from "./conjunto.ts";
 
 type Armazenamento = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
-// Ações do padrão inicial usadas nas manutenções e nos planos de teste (os nomes vêm do padrão, para não duplicar ações em Parâmetros).
-const LUB_EMPILHADEIRA = nomeAcaoPadrao("Empilhadeiras", ROTULOS_ACAO.LUBRIFICACAO);
-const SUSPENSAO_EMPILHADEIRA = nomeAcaoPadrao("Empilhadeiras", "Revisão de suspensão e direção");
-const ELETRICO_EMPILHADEIRA = nomeAcaoPadrao("Empilhadeiras", ROTULOS_ACAO.ELETRICO);
-const LUB_COMPRESSOR = nomeAcaoPadrao("Compressores diesel", ROTULOS_ACAO.LUBRIFICACAO);
-const TRANSMISSAO_COMPRESSOR = nomeAcaoPadrao("Compressores diesel", ROTULOS_ACAO.TRANSMISSAO);
 const TIPOS_OCORRENCIA = [
   { nome: "Falha mecânica", descricao: "O equipamento parou ou perdeu desempenho por defeito mecânico." },
   { nome: "Vazamento de fluido", descricao: "Vazamento de óleo, combustível ou fluido hidráulico." },
@@ -30,9 +26,23 @@ const TIPOS_OCORRENCIA = [
   { nome: "Falha elétrica", descricao: "Problema em bateria, painel, cabos ou sensores." },
   { nome: "Incidente sem vítimas", descricao: "Batida ou queda de carga sem pessoas feridas." },
 ] as const;
+const TEXTO_OCORRENCIA: Record<string, string> = {
+  "Falha mecânica": "Ruído forte e perda de rendimento durante a operação.",
+  "Vazamento de fluido": "Vazamento pequeno de fluido notado na partida.",
+  "Dano estrutural": "Trinca e desgaste na estrutura, notados na vistoria.",
+  "Falha elétrica": "Painel apagou duas vezes durante a operação.",
+  "Incidente sem vítimas": "Batida leve ao manobrar, sem feridos e sem danos ao equipamento.",
+};
+// Família de ações do padrão de cada tipo de equipamento (as manutenções e os planos usam as ações dela).
+const FAMILIA_DO_TIPO: Record<string, string> = {
+  "tipo-empilhadeiras": "Empilhadeiras", "tipo-munck": "Motores estacionários", "tipo-ponte-rolante": "Equipamentos de apoio", "tipo-serra-de-corte": "Equipamentos de apoio",
+  "tipo-maquina-de-solda": "Equipamentos de apoio", "tipo-compressor-de-ar": "Compressores diesel", "tipo-jato-alta-pressao": "Equipamentos de apoio", "tipo-extintores": "Extintores de incêndio",
+};
 
 const dia = (agora: Date, atras: number) => hojeLocal(new Date(agora.getTime() - atras * 86_400_000));
-const ignorar = (acao: () => unknown) => { try { acao(); } catch { /* já existe: o conjunto é aplicado de novo sem duplicar */ } };
+// Só o que já existe é ignorado (o conjunto é aplicado de novo sem duplicar); qualquer outro erro sobe e desfaz a aplicação inteira.
+const ignorar = (acao: () => unknown) => { try { acao(); } catch (erro) { if (!/já (existe|tem|está)|Já existe/i.test(String(erro))) throw erro; } };
+const numeroDe = (texto: string | undefined) => Number(String(texto ?? "").replace(/\./g, "").replace(",", ".")) || 0;
 
 function trocarId(storage: Armazenamento, chave: string, antigo: string, novo: string): void {
   const lista = JSON.parse(storage.getItem(chave) ?? "[]") as { id: string }[];
@@ -41,123 +51,105 @@ function trocarId(storage: Armazenamento, chave: string, antigo: string, novo: s
 }
 
 export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): void {
-  // Parâmetros: o que as telas de Parâmetros > Equipamentos trazem (o padrão de check lists e as ações e tipos de ocorrência) e a associação de cada equipamento.
+  // Parâmetros: o que as telas de Parâmetros > Equipamentos trazem (o padrão de check lists e as ações e tipos de ocorrência).
   ignorar(() => aplicarPadraoUmaVez(storage));
   ignorar(() => cadastrarPadraoManutencao(storage));
   ignorar(() => cadastrarPadraoVistoria(storage));
   ignorar(() => cadastrarPadraoAcoes(storage));
   for (const t of TIPOS_OCORRENCIA) ignorar(() => salvarTipoOcorrencia({ nome: t.nome, descricao: t.descricao }, storage));
-  const idEquipamento = (n: number) => `${PREFIXO}equipamento-${n + 1}`;
   const tipos = lerParametrosEquipamento(storage).tipos;
-  EQUIPAMENTOS.forEach((e, n) => {
-    const responsavel = EMPREGADOS[n]!;
+  const acoes = lerManutencaoEquipamento(storage).acoes;
+  const tiposOcorrencia = lerManutencaoEquipamento(storage).tiposOcorrencia;
+  const st = storage as Storage;
+  const checklists: { idx: number; k: number; finalidade: FinalidadeChecklist; atras: number; problema: boolean; avulso?: boolean }[] = [];
+
+  INDICES_COM_DADOS.forEach((idx, k) => {
+    const e = EQUIPAMENTOS_DE_TESTE[idx]!;
+    const id = `${PREFIXO}equipamento-${idx + 1}`;
+    const responsavel = EMPREGADOS[k]!;
+    const plano = PLANOS_CHECKLIST_TESTE[k % PLANOS_CHECKLIST_TESTE.length]!;
+
+    // Associação de check list (manutenção e vistoria), valendo desde antes dos check lists para o painel do mês ter as previsões do período.
     for (const finalidade of ["manutencao", "vistoria"] as FinalidadeChecklist[]) {
       const grupos = gruposAplicaveis(e.tipoId, lerChecklistEquipamento(storage)[finalidade].grupos, false).slice(0, 2);
       if (grupos.length === 0 || !tipos.some((t) => t.id === e.tipoId)) continue;
       ignorar(() => salvarAssociacao(finalidade, {
-        modo: "criar", equipamentoId: idEquipamento(n), tipoId: e.tipoId, responsavel: { id: responsavel.id, nome: responsavel.nome },
-        itens: grupos.map((g) => ({ grupoId: g.id, tipo: "periodico", periodicidade: PLANOS_CHECKLIST_TESTE[n]!.periodicidade })),
-      }, storage, new Date(agora.getTime() - PLANOS_CHECKLIST_TESTE[n]!.desde * 86_400_000)));
+        modo: "criar", equipamentoId: id, tipoId: e.tipoId, responsavel: { id: responsavel.id, nome: responsavel.nome },
+        itens: grupos.map((g) => ({ grupoId: g.id, tipo: "periodico", periodicidade: plano.periodicidade })),
+      }, storage, new Date(agora.getTime() - plano.desde * 86_400_000)));
+    }
+
+    // Abastecimentos: só nos de motor a combustão, com o horímetro sempre crescendo.
+    const tecnico = e.tecnico as Record<string, string>;
+    const base = numeroDe(tecnico["horimetroInicial"]);
+    const combustao = ["Diesel", "Gasolina", "GLP/Gás"].includes(tecnico["propulsao"] ?? "");
+    if (combustao) {
+      ([[58, "08:00", 20, 35, 210], [44, "09:10", 70, 38, 228], [26, "07:40", 130, 36, 216]] as const).forEach(([atras, hora, soma, litros, valor], i) => {
+        const r = registrarAbastecimentoEq({ equipamentoId: id, data: dia(agora, atras), hora, horimetro: base + soma, litros, valor }, st, agora);
+        trocarId(storage, CHAVE_ABASTECIMENTOS_EQ, r.id, `${PREFIXO}eq-abastecimento-${k + 1}-${i + 1}`);
+      });
+    }
+
+    // Manutenções (uma preventiva na empresa e uma corretiva em terceiro) e plano, com as ações do padrão da família do tipo.
+    const familia = ACOES_PADRAO_EQUIPAMENTO.filter((a) => a.nome.startsWith(FAMILIA_DO_TIPO[e.tipoId] ?? ""));
+    const daFamilia = familia.map((a) => acoes.find((x) => x.nome === a.nome)).filter((a): a is NonNullable<typeof a> => !!a);
+    const primeira = familia[0];
+    const segunda = familia[1] ?? familia[0];
+    const comoAcao = (a: typeof primeira) => { const x = a && acoes.find((y) => y.nome === a.nome); return x && a ? [{ acaoId: x.id, nome: x.nome, subitens: [a.subitens[0]!] }] : []; };
+    const horas = (soma: number) => (base > 0 ? base + soma : 0);
+    ([
+      { tipo: "Preventiva", atras: 22, soma: 150, a: primeira, local: "empresa", localNome: "", pecas: "260,00", mao: "140,00", parada: "4", obs: "Revisão programada, sem pendências." },
+      { tipo: "Corretiva", atras: 12, soma: 190, a: segunda, local: "terceiro", localNome: "Oficina Industrial Triângulo", pecas: "980,00", mao: "420,00", parada: "16", obs: "Reparo de defeito notado na vistoria." },
+    ] as const).forEach((m, i) => {
+      const r = registrarManutencaoEq({
+        equipamentoId: id, tipo: m.tipo, data: dia(agora, m.atras), horimetro: horas(m.soma), acoes: comoAcao(m.a), local: m.local, localNome: m.localNome,
+        custoPecas: m.pecas, custoMaoDeObra: m.mao, observacao: m.obs, horasParada: m.parada,
+      }, st, agora);
+      trocarId(storage, CHAVE_MANUTENCOES_EQ, r.id, `${PREFIXO}eq-manutencao-${k + 1}-${i + 1}`);
+    });
+    if (daFamilia.length > 0) {
+      ignorar(() => salvarPlano({ modo: "criar", equipamentoId: id, itens: daFamilia.slice(0, 2).map((a, i) => ({ acaoId: a.id, horas: i === 0 ? 250 * ((k % 3) + 1) : 1000, meses: i === 0 ? 3 + (k % 4) : 12 })) }, storage, agora));
+    }
+
+    // Ocorrência: uma por equipamento, três delas resolvidas.
+    const nomeTipo = TIPOS_OCORRENCIA[k % TIPOS_OCORRENCIA.length]!.nome;
+    const tipoOcorrencia = tiposOcorrencia.find((t) => t.nome === nomeTipo);
+    const oc = registrarOcorrenciaEq({ equipamentoId: id, tipoId: tipoOcorrencia?.id ?? "", tipoNome: nomeTipo, data: dia(agora, 20 - k), descricao: TEXTO_OCORRENCIA[nomeTipo]! }, st, agora);
+    if (k % 3 === 0) resolverOcorrenciaEq(oc.id, "Defeito corrigido e equipamento liberado.", st, agora);
+    trocarId(storage, CHAVE_OCORRENCIAS_EQ, oc.id, `${PREFIXO}eq-ocorrencia-${k + 1}`);
+
+    // Check lists: cinco periódicos de cada finalidade (um por período da periodicidade da associação) e cinco avulsos, todos concluídos.
+    for (let j = 0; j < 5; j++) {
+      const dias = plano.dias[j]!;
+      checklists.push({ idx, k, finalidade: "manutencao", atras: dias, problema: (k + j) % 4 === 0 });
+      checklists.push({ idx, k, finalidade: "vistoria", atras: dias, problema: (k + j) % 4 === 1 });
+      checklists.push({ idx, k, finalidade: j % 2 === 0 ? "manutencao" : "vistoria", atras: 1 + j * 3, problema: (k + j) % 3 === 0, avulso: true });
     }
   });
 
-  // Abastecimentos: o equipamento a gás (quarto), com o horímetro sempre crescendo.
-  const abastecimentos = [[50, "08:10", 120, 38, 215], [42, "09:25", 168, 41.5, 232.4], [28, "07:50", 214, 39, 221.2], [14, "10:05", 262, 42, 240.8], [5, "08:40", 310, 40.5, 233.1]] as const;
-  abastecimentos.forEach(([atras, hora, horimetro, litros, valor], i) => {
-    const r = registrarAbastecimentoEq({ equipamentoId: idEquipamento(3), data: dia(agora, atras), hora, horimetro, litros, valor }, storage as Storage, agora);
-    trocarId(storage, CHAVE_ABASTECIMENTOS_EQ, r.id, `${PREFIXO}eq-abastecimento-${i + 1}`);
-  });
-
-  // Compressor a diesel (segundo): três abastecimentos antes da manutenção das 3.200 horas, com o horímetro sempre crescendo.
-  ([[58, "08:00", 3050, 22, 140], [44, "09:10", 3120, 24, 152], [26, "07:40", 3185, 21.5, 138]] as const).forEach(([atras, hora, horimetro, litros, valor], i) => {
-    const r = registrarAbastecimentoEq({ equipamentoId: idEquipamento(1), data: dia(agora, atras), hora, horimetro, litros, valor }, storage as Storage, agora);
-    trocarId(storage, CHAVE_ABASTECIMENTOS_EQ, r.id, `${PREFIXO}eq-abastecimento-compressor-${i + 1}`);
-  });
-
-  // Manutenções: seis, nos cinco equipamentos, preventivas e corretivas, na empresa ou em terceiro, com custos.
-  const acoes = lerManutencaoEquipamento(storage).acoes;
-  const acao = (nome: string, ...subitens: string[]) => { const a = acoes.find((x) => x.nome === nome); return a ? [{ acaoId: a.id, nome: a.nome, subitens }] : []; };
-  const extintor = ACOES_PADRAO_EQUIPAMENTO.find((a) => a.nome.startsWith("Extintores de incêndio"));
-  const manutencoes = [
-    { n: 3, atras: 35, tipo: "Preventiva", horimetro: 190, acoes: acao(LUB_EMPILHADEIRA, "Troca de óleo do motor", "Filtro de óleo"), local: "empresa", localNome: "", pecas: "320,00", mao: "180,00", parada: "6", obs: "Revisão das 190 horas." },
-    { n: 0, atras: 30, tipo: "Corretiva", horimetro: 1480, acoes: acao(ELETRICO_EMPILHADEIRA, "Troca de bateria"), local: "terceiro", localNome: "Elétrica Industrial Triângulo", pecas: "1.450,00", mao: "600,00", parada: "24", obs: "Troca de células da bateria." },
-    { n: 1, atras: 20, tipo: "Preventiva", horimetro: 3200, acoes: acao(LUB_COMPRESSOR, "Filtro de óleo"), local: "empresa", localNome: "", pecas: "85,00", mao: "120,00", parada: "4", obs: "Lubrificação do conjunto motor-compressor." },
-    { n: 0, atras: 10, tipo: "Preventiva", horimetro: 1530, acoes: acao(SUSPENSAO_EMPILHADEIRA, "Amortecedores", "Molas"), local: "empresa", localNome: "", pecas: "0,00", mao: "150,00", parada: "3", obs: "Sem vazamentos." },
-    { n: 2, atras: 60, tipo: "Preventiva", horimetro: 0, acoes: acao(TRANSMISSAO_COMPRESSOR, "Líquido de arrefecimento"), local: "terceiro", localNome: "Recarga Segura Extintores", pecas: "90,00", mao: "60,00", parada: "2", obs: "Inspeção anual do extintor." },
-    { n: 4, atras: 45, tipo: "Preventiva", horimetro: 0, acoes: extintor ? acao(extintor.nome, extintor.subitens[0]!) : [], local: "terceiro", localNome: "Recarga Segura Extintores", pecas: "45,00", mao: "70,00", parada: "1", obs: "Inspeção e recarga anual." },
-  ];
-  manutencoes.forEach((m, i) => {
-    const r = registrarManutencaoEq({
-      equipamentoId: idEquipamento(m.n), tipo: m.tipo, data: dia(agora, m.atras), horimetro: m.horimetro, acoes: m.acoes, local: m.local, localNome: m.localNome,
-      custoPecas: m.pecas === "0,00" ? "" : m.pecas, custoMaoDeObra: m.mao, observacao: m.obs, horasParada: m.parada,
-    }, storage as Storage, agora);
-    trocarId(storage, CHAVE_MANUTENCOES_EQ, r.id, `${PREFIXO}eq-manutencao-${i + 1}`);
-  });
-
-  // Planos de manutenção por equipamento (ação, limite de horas e de meses): uns em dia, outros vencidos, para os indicadores mostrarem os dois casos.
-  const nomeAcao = (nome: string) => acoes.find((a) => a.nome === nome)?.id ?? "";
-  const planos: [number, [string, number, number][]][] = [
-    [0, [[ELETRICO_EMPILHADEIRA, 500, 6], [SUSPENSAO_EMPILHADEIRA, 200, 3]]],
-    [1, [[LUB_COMPRESSOR, 500, 6], [TRANSMISSAO_COMPRESSOR, 1000, 6]]],
-    [2, [[TRANSMISSAO_COMPRESSOR, 1000, 12]]],
-    [3, [[LUB_EMPILHADEIRA, 250, 3], [SUSPENSAO_EMPILHADEIRA, 100, 1], [ELETRICO_EMPILHADEIRA, 500, 6]]],
-  ];
-  for (const [n, itens] of planos) {
-    ignorar(() => salvarPlano({ modo: "criar", equipamentoId: idEquipamento(n), itens: itens.filter(([nome]) => nomeAcao(nome)).map(([nome, horas, meses]) => ({ acaoId: nomeAcao(nome), horas, meses })) }, storage, agora));
-  }
-
-  // Ocorrências: seis, quatro abertas e duas resolvidas.
-  const tiposOcorrencia = lerManutencaoEquipamento(storage).tiposOcorrencia;
-  const tipoDe = (nome: string) => tiposOcorrencia.find((t) => t.nome === nome);
-  const ocorrencias = [
-    { n: 3, atras: 20, tipo: "Vazamento de fluido", texto: "Pequeno vazamento de gás na conexão do cilindro, notado na partida.", solucao: "Conexão reapertada e vedação trocada." },
-    { n: 0, atras: 18, tipo: "Falha elétrica", texto: "Painel apagou duas vezes durante a operação no turno da manhã.", solucao: "" },
-    { n: 1, atras: 12, tipo: "Falha mecânica", texto: "Ruído forte no cabeçote ao atingir a pressão máxima.", solucao: "" },
-    { n: 2, atras: 9, tipo: "Dano estrutural", texto: "Suporte de parede do extintor solto e com a pintura trincada.", solucao: "Suporte refixado com buchas novas." },
-    { n: 3, atras: 3, tipo: "Incidente sem vítimas", texto: "Carga tombou levemente ao manobrar no corredor 4, sem feridos e sem danos ao mastro.", solucao: "" },
-    { n: 4, atras: 6, tipo: "Dano estrutural", texto: "Mangueira do extintor ressecada e com pequena trinca perto do bico difusor.", solucao: "" },
-  ];
-  ocorrencias.forEach((o, i) => {
-    const tipo = tipoDe(o.tipo);
-    const r = registrarOcorrenciaEq({ equipamentoId: idEquipamento(o.n), tipoId: tipo?.id ?? "", tipoNome: tipo?.nome ?? o.tipo, data: dia(agora, o.atras), descricao: o.texto }, storage as Storage, agora);
-    if (o.solucao) resolverOcorrenciaEq(r.id, o.solucao, storage as Storage, agora);
-    trocarId(storage, CHAVE_OCORRENCIAS_EQ, r.id, `${PREFIXO}eq-ocorrencia-${i + 1}`);
-  });
-
-  // Check lists para consulta e teste, iniciados, avaliados e concluídos pelas mesmas funções da tela: em cada equipamento, cinco periódicos de manutenção, cinco
-  // periódicos de vistoria (os itens vêm da associação dele) e cinco avulsos (os grupos "Avulso ·" do tipo, três de manutenção e dois de vistoria), todos
-  // concluídos e preenchidos; parte deles com item NOK, que gera ocorrência e pendência aberta.
-  const checklists: { n: number; finalidade: FinalidadeChecklist; atras: number; problema: boolean; avulso?: boolean }[] = [];
-  EQUIPAMENTOS.forEach((_, n) => {
-    for (let k = 0; k < 5; k++) {
-      const dias = PLANOS_CHECKLIST_TESTE[n]!.dias[k]!;
-      checklists.push({ n, finalidade: "manutencao", atras: dias, problema: (n + k) % 4 === 0 });
-      checklists.push({ n, finalidade: "vistoria", atras: dias, problema: (n + k) % 4 === 1 });
-      checklists.push({ n, finalidade: k % 2 === 0 ? "manutencao" : "vistoria", atras: 1 + k * 3, problema: (n + k) % 3 === 0, avulso: true });
-    }
-  });
   checklists.forEach((c, i) => {
-    const e = EQUIPAMENTOS[c.n]!;
+    const e = EQUIPAMENTOS_DE_TESTE[c.idx]!;
+    const id = `${PREFIXO}equipamento-${c.idx + 1}`;
     const parte = lerChecklistEquipamento(storage)[c.finalidade];
-    const associacao = parte.associacoes.find((a) => a.equipamentoId === idEquipamento(c.n));
+    const associacao = parte.associacoes.find((a) => a.equipamentoId === id);
     const periodicidade = c.avulso ? undefined : periodicidadesDaAssociacaoEq(associacao)[0];
     const grupos = periodicidade ? gruposDoChecklistEq(associacao, parte.grupos, periodicidade) : gruposDoTipoEq(parte.grupos, e.tipoId);
     if (grupos.length === 0) return;
     const agoraDoCheck = new Date(agora.getTime() - c.atras * 86_400_000);
-    const base = { equipamentoId: idEquipamento(c.n), equipamentoRotulo: `${e.patrimonio} · ${e.nome}`, tipoEquipamento: tipos.find((t) => t.id === e.tipoId)?.nome ?? "", finalidade: c.finalidade, grupos };
+    const baseCheck = { equipamentoId: id, equipamentoRotulo: `${e.patrimonio} · ${e.nome}`, tipoEquipamento: tipos.find((t) => t.id === e.tipoId)?.nome ?? "", finalidade: c.finalidade, grupos };
     const criado = periodicidade
-      ? iniciarChecklistEq({ ...base, periodicidade, responsavelId: EMPREGADOS[c.n]!.id, responsavelNome: EMPREGADOS[c.n]!.nome }, storage as Storage, agoraDoCheck)
-      : iniciarChecklistAvulsoEq(base, storage as Storage, agoraDoCheck);
-    criado.itens.forEach((item, k) => {
-      const nok = c.problema && k === 0;
-      avaliarItemEq(criado.id, item.id, { avaliacao: nok ? "NOK" : "OK", observacao: nok ? "Desgaste visível, agendar troca na próxima parada." : "" }, storage as Storage);
+      ? iniciarChecklistEq({ ...baseCheck, periodicidade, responsavelId: EMPREGADOS[c.k]!.id, responsavelNome: EMPREGADOS[c.k]!.nome }, st, agoraDoCheck)
+      : iniciarChecklistAvulsoEq(baseCheck, st, agoraDoCheck);
+    criado.itens.forEach((item, n) => {
+      const nok = c.problema && n === 0;
+      avaliarItemEq(criado.id, item.id, { avaliacao: nok ? "NOK" : "OK", observacao: nok ? "Desgaste visível, agendar troca na próxima parada." : "" }, st);
     });
-    concluirChecklistEq(criado.id, storage as Storage, agoraDoCheck);
+    concluirChecklistEq(criado.id, st, agoraDoCheck);
     // As ocorrências geradas pelos itens NOK ganham id de teste (e o check list passa a apontar para o novo), para saírem junto no Limpar.
     const concluidoAgora = JSON.parse(storage.getItem(CHAVE_CHECKLISTS_EQ) ?? "[]") as { id: string; itens: { ocorrenciaId: string | null }[] }[];
-    concluidoAgora.find((x) => x.id === criado.id)?.itens.forEach((item, k) => {
+    concluidoAgora.find((x) => x.id === criado.id)?.itens.forEach((item, n) => {
       if (!item.ocorrenciaId) return;
-      const novo = `${PREFIXO}eq-ocorrencia-checklist-${i + 1}-${k + 1}`;
+      const novo = `${PREFIXO}eq-ocorrencia-checklist-${i + 1}-${n + 1}`;
       trocarId(storage, CHAVE_OCORRENCIAS_EQ, item.ocorrenciaId, novo);
       item.ocorrenciaId = novo;
     });

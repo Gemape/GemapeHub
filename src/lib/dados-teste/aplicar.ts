@@ -21,7 +21,7 @@ import { semearModuloVeiculos } from "./veiculos-modulo.ts";
 import { removerGruposDeChecklistSemUso } from "./enxugar-checklists.ts";
 import { semearViagens } from "./viagens.ts";
 import {
-  ACOES_MANUTENCAO_VEICULO, CAIXAS_TESTE, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
+  ACOES_MANUTENCAO_VEICULO, CAIXAS_TESTE, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, EQUIPAMENTOS_CATALOGO, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
   TAMANHOS_AUTORIZADOS, TAMANHOS_GRUPO_FERRAMENTA, TIPOS_OCORRENCIA_VEICULO, UNIFORMES, VEICULOS, VERSAO_DADOS_TESTE, type ItemCatalogoTeste,
 } from "./conjunto.ts";
 
@@ -185,10 +185,12 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     Gerais.autorizar(sub, "unidades", [sub === "sub-epi-botina" || sub === "sub-epi-luva" ? "uni-par" : "uni-unidade"], storage);
   }
   for (const sub of ["sub-epi-capacete", "sub-epi-oculos", "sub-epi-protetor-auricular"]) Gerais.autorizar(sub, "unidades", ["uni-unidade"], storage);
-  for (const nome of MARCAS_FERRAMENTA) anotar("marcasFerramenta", Gerais.adicionarListaFerramenta("marcasFerramenta", nome, storage).id);
-  for (const nome of MARCAS_UNIFORME) anotar("marcasUniforme", Gerais.adicionarListaFerramenta("marcasUniforme", nome, storage).id);
-  for (const t of TIPOS_OCORRENCIA_VEICULO) anotar("tiposOcorrenciaVeiculo", Gerais.adicionarTipoOcorrenciaVeiculo(t.nome, t.descricao, storage).id);
-  for (const a of ACOES_MANUTENCAO_VEICULO) anotar("acoesManutencaoVeiculo", Gerais.adicionarAcaoManutencaoVeiculo(a.nome, [...a.subitens], storage).id);
+  // O que já existe em Gerais (de quem cadastrou igual, ou de uma aplicação que parou no meio) fica como está e não é anotado: o Limpar só tira o que o conjunto criou.
+  const criar = (lista: string, novo: () => { id: string }) => { try { anotar(lista, novo().id); } catch (erro) { if (!/Já existe/.test(String(erro))) throw erro; } };
+  for (const nome of MARCAS_FERRAMENTA) criar("marcasFerramenta", () => Gerais.adicionarListaFerramenta("marcasFerramenta", nome, storage));
+  for (const nome of MARCAS_UNIFORME) criar("marcasUniforme", () => Gerais.adicionarListaFerramenta("marcasUniforme", nome, storage));
+  for (const t of TIPOS_OCORRENCIA_VEICULO) criar("tiposOcorrenciaVeiculo", () => Gerais.adicionarTipoOcorrenciaVeiculo(t.nome, t.descricao, storage));
+  for (const a of ACOES_MANUTENCAO_VEICULO) criar("acoesManutencaoVeiculo", () => Gerais.adicionarAcaoManutencaoVeiculo(a.nome, [...a.subitens], storage));
   const grupoPorNome = (nome: string) => {
     const g = Gerais.lerParametros(storage).gruposFerramenta.find((x) => x.nome === nome);
     if (!g) throw new Error(`Grupo de ferramenta ${nome} não existe em Gerais.`);
@@ -462,7 +464,9 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   const codigoFornecedor = (prefixo: string, n: number) => `${prefixo}-${String(100 + n)}`;
   const fabrica = (tabelaProduto: "epis" | "uniformes" | "ferramentas", codigoProduto: string, nome: string, fornecedorIndice: number, empresaId: string, n: number, ca = "") => {
     const f = FORNECEDORES[fornecedorIndice]!;
-    const salvo = Gerais.salvarCodigoFabrica({ tabela: tabelaProduto, empresa_id: empresaId, codigo_produto: codigoProduto, nome_produto: nome, fornecedor_id: f.id, fornecedor_nome: f.nome_fantasia, codigo_fornecedor: codigoFornecedor(f.nome_fantasia.slice(0, 2).toUpperCase(), n), ca } as Gerais.DadosCodigoFabrica, undefined, storage);
+    // Código de fábrica que já existe (de uma aplicação interrompida ou cadastrado igual) fica como está e não é anotado.
+    let salvo: { id: string };
+    try { salvo = Gerais.salvarCodigoFabrica({ tabela: tabelaProduto, empresa_id: empresaId, codigo_produto: codigoProduto, nome_produto: nome, fornecedor_id: f.id, fornecedor_nome: f.nome_fantasia, codigo_fornecedor: codigoFornecedor(f.nome_fantasia.slice(0, 2).toUpperCase(), n), ca } as Gerais.DadosCodigoFabrica, undefined, storage); } catch (erro) { if (/já está associado|Já existe/.test(String(erro))) return; throw erro; }
     anotar("codigosFabrica", salvo.id);
   };
   catalogoEpis.forEach((c, n) => fabrica("epis", c.codigo, c.item.nome, c.item.fornecedor, empresaIds[0]!, n, c.item.ca ?? ""));
@@ -473,6 +477,11 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   EQUIPAMENTOS.forEach((e, n) => {
     const salvo = salvarEquipamento({ ...e, empresaId: empresaIds[e.empresaIndice]!, tecnico: { ...e.tecnico } }, storage as Storage, agora);
     trocarId(storage, "gemape-demo-equipamentos", salvo.id, `${PREFIXO}equipamento-${n + 1}`);
+  });
+  // Mais equipamentos, até cinco em cada tipo, sem associação nem registros: dão o que escolher ao associar itens de check list.
+  EQUIPAMENTOS_CATALOGO.forEach((e, n) => {
+    const salvo = salvarEquipamento({ ...e, empresaId: empresaIds[e.empresaIndice]!, tecnico: { ...e.tecnico } }, storage as Storage, agora);
+    trocarId(storage, "gemape-demo-equipamentos", salvo.id, `${PREFIXO}equipamento-${EQUIPAMENTOS.length + n + 1}`);
   });
 
   // Módulo Equipamentos: abastecimentos, manutenções, ocorrências e check lists, pelas mesmas funções das telas.
@@ -506,6 +515,27 @@ function trocarId(storage: Armazenamento, chave: string, antigo: string, novo: s
 }
 
 // ---------- ponto de entrada, ao abrir o sistema ----------
+// Cópia das chaves do sistema de demonstração (só onde o armazenamento sabe listar as chaves, como o do navegador), para desfazer uma aplicação que falhou.
+function fotografiaDoArmazenamento(storage: Armazenamento): Map<string, string> | null {
+  const real = storage as Partial<Storage>;
+  if (typeof real.length !== "number" || typeof real.key !== "function") return null;
+  const mapa = new Map<string, string>();
+  for (let i = 0; i < real.length; i++) {
+    const chave = real.key(i);
+    if (chave?.startsWith("gemape-")) mapa.set(chave, storage.getItem(chave) ?? "");
+  }
+  return mapa;
+}
+function restaurarArmazenamento(storage: Armazenamento, antes: Map<string, string> | null): void {
+  const real = storage as Partial<Storage>;
+  if (!antes || typeof real.length !== "number" || typeof real.key !== "function") return;
+  const agora: string[] = [];
+  for (let i = 0; i < real.length; i++) { const chave = real.key(i); if (chave?.startsWith("gemape-")) agora.push(chave); }
+  // Cada passo é protegido: se a restauração também falhar (espaço do navegador), o erro que veio da aplicação é o que a pessoa vê.
+  for (const chave of agora) if (!antes.has(chave)) { try { storage.removeItem(chave); } catch { /* segue com as outras */ } }
+  for (const [chave, valor] of antes) { try { storage.setItem(chave, valor); } catch { /* segue com as outras */ } }
+}
+
 export function prepararDadosDeTeste(storage: Armazenamento, base: Dados, agora = new Date()): "aplicado" | "limpo" | "igual" | "erro" {
   try {
     const controle = lerControle(storage);
@@ -518,8 +548,15 @@ export function prepararDadosDeTeste(storage: Armazenamento, base: Dados, agora 
     }
     if (controle?.estado === "limpo") return "igual";
     if (controle?.estado === "aplicado" && controle.versao === VERSAO_DADOS_TESTE) return "igual";
-    removerDadosDeTeste(storage, base);
-    aplicarDadosDeTeste(storage, base, agora);
+    // Tudo ou nada: se algo falhar no meio, o armazenamento volta ao que era, em vez de ficar com a metade dos dados (que travaria a próxima tentativa).
+    const antes = fotografiaDoArmazenamento(storage);
+    try {
+      removerDadosDeTeste(storage, base);
+      aplicarDadosDeTeste(storage, base, agora);
+    } catch (erro) {
+      restaurarArmazenamento(storage, antes);
+      throw erro;
+    }
     return "aplicado";
   } catch (erro) {
     console.warn("Dados de teste não aplicados:", erro);
