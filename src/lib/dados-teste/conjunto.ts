@@ -3,7 +3,7 @@
 // dados serem atualizados sozinhos no navegador.
 import { gerarCnpj, gerarCpf } from "./documentos.ts";
 
-export const VERSAO_DADOS_TESTE = 14;
+export const VERSAO_DADOS_TESTE = 21;
 
 // Prefixo dos ids escritos à mão: dá para reconhecer o que é de teste mesmo sem a lista de ids guardada.
 export const PREFIXO = "teste-";
@@ -163,6 +163,17 @@ export const ACOES_MANUTENCAO_VEICULO = [
   { nome: "Freios e suspensão", subitens: ["Pastilhas de freio", "Discos de freio", "Amortecedores", "Fluido de freio"] },
   { nome: "Pneus e alinhamento", subitens: ["Rodízio de pneus", "Alinhamento", "Balanceamento", "Calibragem"] },
 ] as const;
+
+// Periodicidade e datas (dias atrás) dos cinco check lists periódicos de cada veículo e de cada equipamento (a ordem é a dos cadastros de teste). A associação
+// vale desde `desde` dias atrás, para o painel do mês ter as previsões do período: nele há semanas, quinzenas e meses feitos no prazo, outros sem check
+// list (não realizados) e um mês em aberto (a vencer).
+export const PLANOS_CHECKLIST_TESTE: readonly { periodicidade: "Semanal" | "Quinzenal" | "Mensal"; dias: readonly number[]; desde: number }[] = [
+  { periodicidade: "Semanal", dias: [7, 14, 28, 35, 49], desde: 56 },
+  { periodicidade: "Quinzenal", dias: [18, 33, 48, 64, 79], desde: 90 },
+  { periodicidade: "Mensal", dias: [46, 77, 108, 138, 170], desde: 175 },
+  { periodicidade: "Semanal", dias: [7, 21, 28, 42, 49], desde: 56 },
+  { periodicidade: "Semanal", dias: [14, 21, 35, 42, 49], desde: 56 },
+];
 
 export const EQUIPAMENTOS = [
   {

@@ -2,13 +2,13 @@
 // ocorrências e check list (com itens NOK em alguns), para testar o extrato, os relatórios e os painéis. Grava pelas mesmas funções das telas, com datas
 // no passado e o km sempre crescendo (a regra de km do registro confere abastecimentos e manutenções juntos).
 import { criarAssociacao } from "../checklist-associacao-veiculo.ts";
-import { avaliarItem, concluirChecklist, gruposAplicaveis, iniciarChecklist } from "../checklist-veiculo.ts";
+import { avaliarItem, concluirChecklist, gruposAplicaveis, iniciarChecklist, iniciarChecklistAvulso } from "../checklist-veiculo.ts";
 import { hojeLocal } from "../empregados.ts";
 import { registrarOcorrenciaVeiculo, salvarTratativa } from "../ocorrencias-veiculo.ts";
 import * as Gerais from "../parametros-base.ts";
 import { criarPlano } from "../plano-manutencao.ts";
 import { registrarAbastecimento, registrarManutencao } from "../registros-veiculo.ts";
-import { EMPREGADOS, VEICULOS } from "./conjunto.ts";
+import { EMPREGADOS, PLANOS_CHECKLIST_TESTE, VEICULOS } from "./conjunto.ts";
 
 type Armazenamento = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -86,25 +86,36 @@ export function semearModuloVeiculos(storage: Armazenamento, agora: Date): void 
     });
   });
 
-  // Check lists: um por veículo, semanal, concluído; os do segundo e do quarto têm item NOK, que gera ocorrência e pendência aberta.
+  // Check lists para consulta e teste: em cada veículo, cinco periódicos (semanais, quinzenais ou mensais, conforme o veículo, com períodos feitos e perdidos) e cinco avulsos, todos concluídos e preenchidos; parte deles com
+  // item NOK, que gera ocorrência e pendência aberta. Os avulsos usam os grupos "Avulso ·" do tipo do veículo (sem periodicidade nem responsável).
   const grupos = Gerais.lerParametros(storage as never).itensChecklistVeiculo;
-  VEICULOS.forEach((v, n) => {
-    const aplicaveis = gruposAplicaveis(grupos, v.subId, false).slice(0, 2);
-    if (aplicaveis.length === 0) return;
-    const responsavel = EMPREGADOS[n]!;
-    ignorar(() => criarAssociacao(v.id, { id: responsavel.id, nome: responsavel.nome }, aplicaveis.map((g) => ({ grupoId: g.id, tipo: "periodico", periodicidade: "Semanal" })), st, agora));
-    const quando = em(agora, 6 - n);
-    ignorar(() => {
-      const criado = iniciarChecklist({
-        veiculoId: v.id, veiculoRotulo: `${v.placa.slice(0, 3)}-${v.placa.slice(3)} · ${v.marca} ${v.modelo}`, tipoVeiculo: v.tipo, periodicidade: "Semanal",
-        responsavelId: responsavel.id, responsavelNome: responsavel.nome, grupos: aplicaveis,
-      }, st, quando);
-      const problema = n === 1 || n === 3;
-      criado.itens.forEach((item, k) => {
-        const nok = problema && k === 0;
-        avaliarItem(criado.id, item.id, { avaliacao: nok ? "NOK" : "OK", observacao: nok ? "Desgaste visível, agendar troca na próxima parada." : "" }, st);
-      });
-      concluirChecklist(criado.id, st, quando);
+  // Os grupos do padrão primeiro; os que a pessoa criou (e os personalizados de outro veículo) ficam de fora dos check lists de teste.
+  const escolher = (lista: typeof grupos) => lista.filter((g) => !g.nome.startsWith("Personalizado")).sort((x, y) => Number(Gerais.ehGrupoChecklistPadrao(y.nome)) - Number(Gerais.ehGrupoChecklistPadrao(x.nome))).slice(0, 2);
+  const preencher = (criado: { id: string; itens: { id: string }[] }, problema: boolean, quando: Date) => {
+    criado.itens.forEach((item, k) => {
+      const nok = problema && k === 0;
+      avaliarItem(criado.id, item.id, { avaliacao: nok ? "NOK" : "OK", observacao: nok ? "Desgaste visível, agendar troca na próxima parada." : "" }, st);
     });
+    concluirChecklist(criado.id, st, quando);
+  };
+  VEICULOS.forEach((v, n) => {
+    const periodicos = escolher(gruposAplicaveis(grupos, v.subId, false));
+    const avulsos = escolher(gruposAplicaveis(grupos, v.subId, true));
+    const responsavel = EMPREGADOS[n]!;
+    const plano = PLANOS_CHECKLIST_TESTE[n]!;
+    const rotulo = `${v.placa.slice(0, 3)}-${v.placa.slice(3)} · ${v.marca} ${v.modelo}`;
+    if (periodicos.length > 0) {
+      ignorar(() => criarAssociacao(v.id, { id: responsavel.id, nome: responsavel.nome }, periodicos.map((g) => ({ grupoId: g.id, tipo: "periodico", periodicidade: plano.periodicidade })), st, em(agora, plano.desde)));
+      plano.dias.forEach((dias, k) => {
+        const quando = em(agora, dias);
+        ignorar(() => preencher(iniciarChecklist({ veiculoId: v.id, veiculoRotulo: rotulo, tipoVeiculo: v.tipo, periodicidade: plano.periodicidade, responsavelId: responsavel.id, responsavelNome: responsavel.nome, grupos: periodicos }, st, quando), (n + k) % 4 === 1, quando));
+      });
+    }
+    if (avulsos.length > 0) {
+      for (let k = 0; k < 5; k++) {
+        const quando = em(agora, 1 + k * 3);
+        ignorar(() => preencher(iniciarChecklistAvulso({ veiculoId: v.id, veiculoRotulo: rotulo, tipoVeiculo: v.tipo, grupos: avulsos }, st, quando), (n + k) % 3 === 0, quando));
+      }
+    }
   });
 }

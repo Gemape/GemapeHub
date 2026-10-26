@@ -140,3 +140,13 @@ test("Abastecimento de veículos tem o Gerar PDF: relatório por veículo, no pa
   assert.match(tela, /Total: \$\{g\.dele\.length\} abastecimento\(s\)/);
   for (const coluna of ["Data e hora", "Km rodados", "Litros", "Valor", "R$/L", "Km/L"]) assert.ok(tela.includes(`titulo: "${coluna}"`), coluna);
 });
+
+test("Abastecimento de equipamentos tem o mesmo Gerar PDF: relatório por equipamento, no padrão, com os filtros da tela", () => {
+  const tela = ler("components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx");
+  assert.match(tela, /<Button variant="outline" className="ml-auto" onClick=\{gerarRelatorio\}[^>]*>Gerar PDF<\/Button>/);
+  assert.match(tela, /montarExtratoHtml\(\{\s*titulo: "Relatório de abastecimento"/);
+  assert.match(tela, /telaCheia: true/);
+  assert.match(tela, /equipamentos\s*\.filter\(\(e\) => linhas\.some/, "um quadro por equipamento, só dos que têm abastecimento no filtro");
+  assert.match(tela, /Total: \$\{g\.dele\.length\} abastecimento\(s\)/);
+  for (const coluna of ["Data e hora", "Horímetro", "Horas trabalhadas", "Litros", "Valor", "R$/L", "L/h"]) assert.ok(tela.includes(`titulo: "${coluna}"`), coluna);
+});

@@ -18,6 +18,7 @@ import * as Gerais from "../parametros-base.ts";
 import { restaurarPermissoes } from "../permissoes-demo.ts";
 import { semearModuloEquipamentos } from "./equipamentos-modulo.ts";
 import { semearModuloVeiculos } from "./veiculos-modulo.ts";
+import { removerGruposDeChecklistSemUso } from "./enxugar-checklists.ts";
 import { semearViagens } from "./viagens.ts";
 import {
   ACOES_MANUTENCAO_VEICULO, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
@@ -117,7 +118,9 @@ export function removerDadosDeTeste(storage: Armazenamento, base: Dados): void {
   if (Array.isArray(abastecimentos)) storage.setItem("gemape-demo-abastecimentos", JSON.stringify(abastecimentos.filter((a) => !(ehLinha(a) && typeof a["veiculoId"] === "string" && (a["veiculoId"] as string).startsWith(PREFIXO)))));
   // Registros do módulo Veículos (manutenções, ocorrências, check lists, planos e associações) dos veículos de teste: saem junto com eles.
   // A numeração dos check lists de veículo recomeça com os de teste removidos.
-  if (!lerJson(storage, "gemape-demo-checklists-veiculo") || (lerJson(storage, "gemape-demo-checklists-veiculo") as unknown[]).every((c) => ehLinha(c) && typeof c["veiculoId"] === "string" && (c["veiculoId"] as string).startsWith(PREFIXO))) storage.removeItem("gemape-demo-checklists-veiculo-sequencia");
+  if (!lerJson(storage, "gemape-demo-checklists-veiculo") || (lerJson(storage, "gemape-demo-checklists-veiculo") as unknown[]).every((c) => ehLinha(c) && typeof c["veiculoId"] === "string" && (c["veiculoId"] as string).startsWith(PREFIXO))) storage.removeItem?.("gemape-demo-checklists-veiculo-sequencia");
+  // O mesmo para os de equipamento.
+  { const lido = lerJson(storage, "gemape-demo-eq-checklists-exec") as unknown[] | null; if (!Array.isArray(lido) || lido.every((c) => ehLinha(c) && typeof c["equipamentoId"] === "string" && (c["equipamentoId"] as string).startsWith(PREFIXO))) storage.removeItem?.("gemape-demo-eq-checklists-sequencia"); }
   for (const chave of ["gemape-demo-manutencoes-veiculo", "gemape-demo-ocorrencias-veiculo", "gemape-demo-checklists-veiculo", "gemape-demo-planos-manutencao", "gemape-demo-associacoes-checklist-veiculo"]) {
     const lido = lerJson(storage, chave);
     if (Array.isArray(lido)) storage.setItem(chave, JSON.stringify(lido.filter((r) => !(ehLinha(r) && typeof r["veiculoId"] === "string" && (r["veiculoId"] as string).startsWith(PREFIXO)))));
@@ -424,6 +427,9 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   semearModuloVeiculos(storage, agora);
 
   semearViagens(storage, agora);
+
+  // Só ficam os grupos de check list com uso (associados ou em check lists preenchidos); os do padrão sem uso saem.
+  try { removerGruposDeChecklistSemUso(storage); } catch { /* parâmetros ilegíveis: ficam como estão */ }
 
   const controle: Controle = { versao: VERSAO_DADOS_TESTE, estado: "aplicado", aplicadoEm: agora.toISOString(), gerais };
   storage.setItem(CHAVE_CONTROLE, JSON.stringify(controle));

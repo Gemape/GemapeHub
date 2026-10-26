@@ -7,7 +7,7 @@ import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/
 import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
 import { DialogAssociarChecklist } from "@/components/modules/DialogAssociarChecklist";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
-import { ChecklistPainelMensal } from "@/components/modules/ChecklistPainelMensal";
+import { ChecklistPainelMensal, rotuloDoMes } from "@/components/modules/ChecklistPainelMensal";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -27,7 +27,7 @@ import {
   hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
   PERIODICIDADES, periodicidadeObrigatoria, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type Periodicidade, type SituacaoPeriodica,
 } from "@/lib/checklist-veiculo";
-import { sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
+import { mesesDisponiveis, noMesDaLista, sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
@@ -82,6 +82,8 @@ export function ChecklistVeiculoModulo() {
   const [tela, setTela] = useState<Tela>(null);
   const [visao, setVisao] = useState<"periodicos" | "avulsos">("periodicos");
   const [busca, setBusca] = useState("");
+  // A lista mostra um mês de cada vez; sem escolha acompanha o mês de hoje (inclusive na virada do mês), e "todos" mostra tudo.
+  const [mesEscolhidoLista, setMesLista] = useState<string | null>(null);
   const [soPendencias, setSoPendencias] = useState(false);
   // Novo check list (decisão 157): primeiro o veículo, depois o tipo de check list, uma das opções "Placa >> Periodicidade >> Responsável"
   // da associação do veículo ou Avulso. Guarda a periodicidade escolhida, "avulso" ou vazio (ainda sem escolha).
@@ -141,6 +143,10 @@ export function ChecklistVeiculoModulo() {
   const naLista = checklists.filter(checklistVisivelNaLista);
   // O avulso (decisão 90) não tem periodicidade nem responsável: fica numa lista à parte e não entra no painel do mês nem na situação por veículo.
   const avulsos = checklists.filter((c) => !checklistVisivelNaLista(c));
+  const mesLista = mesEscolhidoLista ?? hoje.slice(0, 7);
+  const mesDaLista = mesLista === "todos" ? null : mesLista;
+  const naListaDoMes = naLista.filter((c) => noMesDaLista(c, mesDaLista));
+  const avulsosDoMes = avulsos.filter((c) => noMesDaLista(c, mesDaLista));
   const avulsoNovo = tela?.tipo === "novo" && tipoEscolhido === "avulso";
   const atual = tela?.tipo === "check" ? (todos.find((c) => c.id === tela.id) ?? null) : null;
   // No avulso não há campo de tipo de veículo (decisão 118): entram todos os veículos ativos que têm tipo de check list, e o tipo vem do veículo.
@@ -179,7 +185,7 @@ export function ChecklistVeiculoModulo() {
       : comoAssociacao(gruposDaPeriodicidade(associacaoEscolhida, periodicidadeDoDialogo(veiculoEscolhido) ?? ""));
   const itensDoVeiculo = gruposDoVeiculo.reduce((t, g) => t + g.itens.length, 0);
 
-  const lista = (visao === "avulsos" ? avulsos : naLista)
+  const lista = (visao === "avulsos" ? avulsosDoMes : naListaDoMes)
     .filter((c) => !soPendencias || pendenciaDoChecklist(c) > 0)
     .filter((c) => combinaBusca(busca, c.codigo, nomeDe(c), c.veiculoRotulo, c.responsavelNome, c.tipoVeiculo, c.status, formatarData(c.data)))
     .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
@@ -328,14 +334,24 @@ export function ChecklistVeiculoModulo() {
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold">Check lists</h2>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="mes_lista" className="text-xs">Mês</Label>
+            <Select value={mesLista} onValueChange={setMesLista}>
+              <SelectTrigger id="mes_lista" className="h-8 w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os meses</SelectItem>
+                {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-1" role="group" aria-label="Tipo de check list">
-            <Button size="sm" variant={visao === "periodicos" ? "default" : "outline"} aria-pressed={visao === "periodicos"} onClick={() => setVisao("periodicos")}>Periódicos ({naLista.length})</Button>
-            <Button size="sm" variant={visao === "avulsos" ? "default" : "outline"} aria-pressed={visao === "avulsos"} onClick={() => setVisao("avulsos")}>Avulsos ({avulsos.length})</Button>
+            <Button size="sm" variant={visao === "periodicos" ? "default" : "outline"} aria-pressed={visao === "periodicos"} onClick={() => setVisao("periodicos")}>Periódicos ({naListaDoMes.length})</Button>
+            <Button size="sm" variant={visao === "avulsos" ? "default" : "outline"} aria-pressed={visao === "avulsos"} onClick={() => setVisao("avulsos")}>Avulsos ({avulsosDoMes.length})</Button>
           </div>
           {visao === "avulsos" && <Button requiresWrite="operar" size="sm" onClick={abrirNovoAvulso}>Novo check list avulso</Button>}
           <Input aria-label="Buscar check list" placeholder="Buscar por código, veículo ou responsável" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
           <Button variant={soPendencias ? "default" : "outline"} size="sm" onClick={() => setSoPendencias((v) => !v)}>
-            Com pendências abertas ({(visao === "avulsos" ? avulsos : naLista).filter((c) => pendenciaDoChecklist(c) > 0).length})
+            Com pendências abertas ({(visao === "avulsos" ? avulsosDoMes : naListaDoMes).filter((c) => pendenciaDoChecklist(c) > 0).length})
           </Button>
         </div>
         <div className="overflow-x-auto rounded-xl border">

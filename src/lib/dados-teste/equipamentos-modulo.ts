@@ -13,7 +13,7 @@ import {
 import {
   avaliarItemEq, CHAVE_CHECKLISTS_EQ, concluirChecklistEq, gruposDoChecklistEq, gruposDoTipoEq, iniciarChecklistAvulsoEq, iniciarChecklistEq, periodicidadesDaAssociacaoEq,
 } from "../checklist-equipamento-exec.ts";
-import { EMPREGADOS, EQUIPAMENTOS, PREFIXO } from "./conjunto.ts";
+import { EMPREGADOS, EQUIPAMENTOS, PLANOS_CHECKLIST_TESTE, PREFIXO } from "./conjunto.ts";
 
 type Armazenamento = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -56,8 +56,8 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
       if (grupos.length === 0 || !tipos.some((t) => t.id === e.tipoId)) continue;
       ignorar(() => salvarAssociacao(finalidade, {
         modo: "criar", equipamentoId: idEquipamento(n), tipoId: e.tipoId, responsavel: { id: responsavel.id, nome: responsavel.nome },
-        itens: grupos.map((g, i) => ({ grupoId: g.id, tipo: "periodico", periodicidade: "Semanal" })),
-      }, storage, agora));
+        itens: grupos.map((g) => ({ grupoId: g.id, tipo: "periodico", periodicidade: PLANOS_CHECKLIST_TESTE[n]!.periodicidade })),
+      }, storage, new Date(agora.getTime() - PLANOS_CHECKLIST_TESTE[n]!.desde * 86_400_000)));
     }
   });
 
@@ -124,18 +124,23 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
     trocarId(storage, CHAVE_OCORRENCIAS_EQ, r.id, `${PREFIXO}eq-ocorrencia-${i + 1}`);
   });
 
-  // Check lists: três de manutenção e dois de vistoria, iniciados, avaliados e concluídos pelas mesmas funções da tela; os itens vêm da associação de cada
-  // equipamento (sem associação, os do tipo dele, como avulso). Dois deles têm item NOK, que gera ocorrência e pendência aberta.
-  const checklists: { n: number; finalidade: FinalidadeChecklist; atras: number; problema: boolean }[] = [
-    { n: 3, finalidade: "manutencao", atras: 34, problema: false }, { n: 0, finalidade: "manutencao", atras: 29, problema: true }, { n: 1, finalidade: "manutencao", atras: 19, problema: false },
-    { n: 3, finalidade: "vistoria", atras: 7, problema: true }, { n: 2, finalidade: "vistoria", atras: 2, problema: false },
-    { n: 4, finalidade: "manutencao", atras: 12, problema: false }, { n: 4, finalidade: "vistoria", atras: 4, problema: true },
-  ];
+  // Check lists para consulta e teste, iniciados, avaliados e concluídos pelas mesmas funções da tela: em cada equipamento, cinco periódicos de manutenção, cinco
+  // periódicos de vistoria (os itens vêm da associação dele) e cinco avulsos (os grupos "Avulso ·" do tipo, três de manutenção e dois de vistoria), todos
+  // concluídos e preenchidos; parte deles com item NOK, que gera ocorrência e pendência aberta.
+  const checklists: { n: number; finalidade: FinalidadeChecklist; atras: number; problema: boolean; avulso?: boolean }[] = [];
+  EQUIPAMENTOS.forEach((_, n) => {
+    for (let k = 0; k < 5; k++) {
+      const dias = PLANOS_CHECKLIST_TESTE[n]!.dias[k]!;
+      checklists.push({ n, finalidade: "manutencao", atras: dias, problema: (n + k) % 4 === 0 });
+      checklists.push({ n, finalidade: "vistoria", atras: dias, problema: (n + k) % 4 === 1 });
+      checklists.push({ n, finalidade: k % 2 === 0 ? "manutencao" : "vistoria", atras: 1 + k * 3, problema: (n + k) % 3 === 0, avulso: true });
+    }
+  });
   checklists.forEach((c, i) => {
     const e = EQUIPAMENTOS[c.n]!;
     const parte = lerChecklistEquipamento(storage)[c.finalidade];
     const associacao = parte.associacoes.find((a) => a.equipamentoId === idEquipamento(c.n));
-    const periodicidade = periodicidadesDaAssociacaoEq(associacao)[0];
+    const periodicidade = c.avulso ? undefined : periodicidadesDaAssociacaoEq(associacao)[0];
     const grupos = periodicidade ? gruposDoChecklistEq(associacao, parte.grupos, periodicidade) : gruposDoTipoEq(parte.grupos, e.tipoId);
     if (grupos.length === 0) return;
     const agoraDoCheck = new Date(agora.getTime() - c.atras * 86_400_000);
