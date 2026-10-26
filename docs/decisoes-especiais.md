@@ -1634,3 +1634,19 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Cada ferramenta é única e fica em uma caixa só. A base de demonstração recusa gravar uma caixa com ferramenta que já está em outra ("Esta ferramenta já está na caixa CX-0001..."), como já fazia a tela de Vincular ferramentas. A transferência agora tira a ferramenta da origem e depois a coloca no destino (se a entrada falhar, ela volta para a origem), em vez de ficar nas duas caixas no meio do caminho.
 - A repetição que aparecia (FER-0002 e FER-0003 nas caixas CX-0001 e CX-0002) vinha de linhas de transferências antigas que ficavam presas aos ids das caixas de teste ao reaplicar os dados: ao limpar, o que está ligado a caixa ou ferramenta de teste sai junto, e quem ainda tem ferramenta em duas caixas fica com a primeira.
 - Dados de teste (versão 23): 20 ferramentas (entradas de estoque, código de fábrica e fornecedor) distribuídas nas 5 caixas, quatro em cada, cada ferramenta na caixa da sua empresa. Só no navegador, em modo demonstração, sem Supabase.
+
+## 283. Histórico de movimentações de EPI e de uniforme para os 15 empregados de teste
+
+- Os dados de teste (versão 25) dão histórico de movimentações aos 15 empregados das três empresas, tanto em EPIs como em Uniformes: os quatro empregados que só tinham o primeiro de cada empresa ganham entregas (botina, luvas e capacete; camisa, calça e jaqueta) em dias diferentes, e parte deles uma devolução ou uma baixa (desgaste, perda ou quebra). Cada empregado fica com 4 movimentações de EPI e 4 de uniforme (o primeiro de cada empresa mantém as dele), todas com código ENT ou DEV quando é o caso, da própria empresa e sem estoque negativo (as compras de capacete das empresas 2 e 3 subiram). Só no navegador, em modo demonstração, sem Supabase.
+
+## 284. Tirar foto no anexo de fotos das ocorrências e dos check lists
+
+- O anexo de fotos compartilhado (`BotaoAnexarFotos`: nova ocorrência e ocorrências abertas de veículo e de equipamento, e itens dos check lists) ganhou o botão "Tirar foto", ao lado de "Anexar fotos": no celular abre direto a câmera de trás (`capture="environment"`), no computador vira a escolha de um arquivo. As duas entradas passam pela mesma redução da imagem e pelo mesmo limite de fotos (6 por ocorrência, 3 por item de check list). Segue o comprovante da despesa, que já tinha a câmera. Só no navegador, sem Supabase.
+
+## 285. Celular
+
+- O cabeçalho (logo, menu da área, título, usuário, testes e empresa) empilha em uma coluna no celular, com os controles em duas colunas, e só fica fixo no topo a partir de md; antes a tela ficava com até três vezes a largura do celular. Toda janela (`DialogContent`) rola na tela pequena (máximo de 100dvh), com o rodapé de botões fixo embaixo. O visualizador de documentos e os relatórios impressos (`relatorio-padrao.ts`) empilham o cabeçalho e rolam as tabelas de lado em telas até 640 px; a impressão continua A4. Conferido em 390 px de largura nas telas inicial, Veículos, Equipamentos, Ferramentas e EPIs.
+
+## 286. Celular: indicadores compactos e botões lado a lado
+
+- Os quadros de indicadores (painel de check lists, dashboard, abastecimento, inventário de equipamentos, frota, relatórios de EPI e de uniformes) ficam em duas colunas no celular, com o cartão (`StatCard`) mais compacto (menos espaço interno, número menor e sem o ícone), em vez de uma coluna de cartões altos. O rodapé das janelas põe os botões lado a lado (Salvar e Cancelar) e ocupa metade da altura. Conferido em 360 px, sem rolagem lateral em 29 telas.

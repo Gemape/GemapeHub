@@ -64,7 +64,7 @@ function FiltroEmpresa() {
   const { empresas, empresaId, setEmpresaId } = useEmpresa();
   return (
     <Select value={empresaId} onValueChange={(v) => { if (v) setEmpresaId(v); }}>
-      <SelectTrigger className="w-[210px]">
+      <SelectTrigger className="w-full min-w-0 sm:w-[210px]">
         <SelectValue placeholder="Empresa" />
       </SelectTrigger>
       <SelectContent>
@@ -108,9 +108,9 @@ function LayoutAutenticado() {
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
         <main className="flex min-h-screen w-full min-w-0 flex-col">
-          <header className="sticky top-0 z-10 grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 glass border-x-0 border-t-0 px-4 py-5 rounded-none md:grid-cols-[1fr_auto_1fr]">
-            <div className="flex items-center gap-3">
-            <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-40 shrink-0 rounded-md sm:w-52 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <header className="z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[1fr_auto_1fr]">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-32 shrink-0 rounded-md sm:w-52 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <div
                 className="logo-marca-site"
                 role="img"
@@ -125,22 +125,23 @@ function LayoutAutenticado() {
             )}
             {!noInicio && <MenuDaArea />}
             </div>
-            {/* Título da marca, centralizado no topo; no celular desce para uma linha própria. */}
-            <div className="order-last col-span-2 text-center md:order-none md:col-span-1">
-              <p className="titulo-marca text-lg sm:text-2xl lg:text-3xl">GESTÃO DE PATRIMÔNIO</p>
+            {/* Título da marca, centralizado no topo; no celular fica numa linha própria, entre o menu e os filtros. */}
+            <div className="text-center">
+              <p className="titulo-marca text-base sm:text-2xl lg:text-3xl">GESTÃO DE PATRIMÔNIO</p>
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
-            <div className="flex items-center justify-end gap-2">
-              {ConfiguracoesDemo && <Suspense fallback={null}><ConfiguracoesDemo /></Suspense>}
-              {MenuDadosDeTeste && <Suspense fallback={null}><MenuDadosDeTeste /></Suspense>}
-              <FiltroEmpresa />
+            {/* No celular os controles ficam em duas colunas (usuário em linha própria, depois testes e empresa); a partir de md voltam a uma linha só. */}
+            <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:justify-end">
+              {ConfiguracoesDemo && <Suspense fallback={null}><div className="col-span-2 min-w-0 md:col-auto"><ConfiguracoesDemo /></div></Suspense>}
+              {MenuDadosDeTeste && <Suspense fallback={null}><div className="min-w-0"><MenuDadosDeTeste /></div></Suspense>}
+              <div className="min-w-0"><FiltroEmpresa /></div>
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <><a className="text-xs underline" href="/auth?password=update">Trocar senha</a>
               <Button variant="ghost" size="sm" onClick={sair}>
                 <LogOut className="mr-1 size-4" /> Sair
               </Button></>}
             </div>
           </header>
-          <div className="flex-1 p-4 md:p-6">
+          <div className="min-w-0 flex-1 p-3 sm:p-4 md:p-6">
             <ConteudoComAcesso />
           </div>
           <VisualizadorDocumento />

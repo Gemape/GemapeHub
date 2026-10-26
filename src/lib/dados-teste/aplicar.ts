@@ -292,7 +292,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     });
   };
   // Quantidades por empresa (linhas) e por item do catálogo (colunas), variadas de propósito para o alerta de estoque mínimo.
-  comprar("compras_epis", "epi", "epis", catalogoEpis, [[12, 9, 8, 8, 10, 6, 14], [6, 7, 6, 10, 7, 12, 8], [9, 12, 10, 6, 6, 9, 5]], 60);
+  comprar("compras_epis", "epi", "epis", catalogoEpis, [[12, 9, 8, 8, 10, 6, 14], [6, 7, 6, 10, 7, 12, 12], [9, 12, 10, 6, 6, 9, 9]], 60);
   comprar("compras_uniformes", "uniforme", "uniformes", catalogoUniformes, [[14, 16, 12, 10, 12, 8, 6, 5], [8, 10, 9, 8, 14, 7, 5, 6], [10, 9, 8, 12, 6, 6, 4, 4]], 55);
 
   // Entregas (saídas) com código ENT, devolução com código DEV e baixa por desgaste, sempre a um empregado da mesma empresa.
@@ -320,6 +320,27 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   entrega("epi", "epis", epiDe("Botina", 0).id, 2, 2, 18, "tam-38");
   entrega("epi", "epis", epiDe("Luva", 0).id, 2, 3, 16, "tam-p");
   entrega("epi", "epis", epiDe("Capacete", 0).id, 2, 3, 14, null);
+  // Os outros quatro empregados de cada empresa (o primeiro já tem as entregas acima): botina, luvas e capacete entregues em dias diferentes, e alguns com
+  // devolução ou baixa, para o histórico de movimentações de cada um ter o que mostrar. O empregado de ordem c + 3k é da empresa c.
+  const BOTINA_DO_EMPREGADO = [null, 1, 2, 0, 1] as const; // índice do tamanho no catálogo (38, 40, 42)
+  const LUVA_DO_EMPREGADO = [null, 1, 2, 0, 1] as const; // P, M, G
+  const TAMANHO_BOTINA = ["tam-38", "tam-40", "tam-42"] as const;
+  const TAMANHO_LUVA = ["tam-p", "tam-m", "tam-g"] as const;
+  for (let empresa = 0; empresa < 3; empresa++) {
+    for (let k = 1; k <= 4; k++) {
+      const quem: Linha = { empregado_id: EMPREGADOS[empresa + 3 * k]!.id };
+      const diaBase = 27 - k * 4 - empresa;
+      const botina = BOTINA_DO_EMPREGADO[k]!;
+      const luva = LUVA_DO_EMPREGADO[k]!;
+      entrega("epi", "epis", epiDe("Botina", botina).id, empresa, 1, diaBase, TAMANHO_BOTINA[botina], quem);
+      entrega("epi", "epis", epiDe("Luva", luva).id, empresa, 2, diaBase - 1, TAMANHO_LUVA[luva], quem);
+      entrega("epi", "epis", epiDe("Capacete", 0).id, empresa, 1, diaBase - 2, null, quem);
+      if (k === 1) entrega("epi", "epis", epiDe("Luva", luva).id, empresa, 1, diaBase - 6, TAMANHO_LUVA[luva], { ...quem, responsavel_nome: `Almoxarifado ${EMPRESAS[empresa]!.nome_fantasia}`, observacao: "Luva devolvida sem uso" }, "Devolucao");
+      if (k === 2) entrega("epi", "epis", epiDe("Capacete", 0).id, empresa, 1, diaBase - 5, null, { ...quem, motivo_baixa: "Perda", observacao: "Perdido em obra" });
+      if (k === 3) entrega("epi", "epis", epiDe("Botina", botina).id, empresa, 1, diaBase - 4, TAMANHO_BOTINA[botina], { ...quem, motivo_baixa: "Quebra", observacao: "Biqueira solta" });
+      if (k === 4) entrega("epi", "epis", epiDe("Capacete", 0).id, empresa, 1, diaBase - 6, null, { ...quem, responsavel_nome: `Almoxarifado ${EMPRESAS[empresa]!.nome_fantasia}`, observacao: "Devolução por troca de função" }, "Devolucao");
+    }
+  }
   // Uniformes.
   entrega("uniforme", "uniformes", uniDe("Camisa", 1).id, 0, 2, 27, "tam-m");
   entrega("uniforme", "uniformes", uniDe("Calça", 1).id, 0, 2, 27, "tam-42");
@@ -328,6 +349,32 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   entrega("uniforme", "uniformes", uniDe("Calça", 2).id, 1, 2, 21, "tam-44");
   entrega("uniforme", "uniformes", uniDe("Camisa", 2).id, 2, 2, 15, "tam-g");
   entrega("uniforme", "uniformes", uniDe("Camisa", 2).id, 2, 1, 6, "tam-g", { responsavel_nome: "Almoxarifado Lapa" }, "Devolucao");
+
+  // Uniformes dos outros quatro empregados de cada empresa: camisa, calça e jaqueta entregues em dias diferentes, e alguns com devolução ou baixa, para o histórico
+  // de cada um ter o que mostrar (o empregado de ordem c + 3k é da empresa c).
+  const CAMISA_DO_EMPREGADO = [null, 1, 2, 0, 1] as const; // P, M, G
+  const CALCA_DO_EMPREGADO = [null, 2, 0, 1, 2] as const; // 40, 42, 44
+  const JAQUETA_DO_EMPREGADO = [null, 0, 1, 0, 1] as const; // M, G
+  const TAMANHO_CAMISA = ["tam-p", "tam-m", "tam-g"] as const;
+  const TAMANHO_CALCA = ["tam-40", "tam-42", "tam-44"] as const;
+  const TAMANHO_JAQUETA = ["tam-m", "tam-g"] as const;
+  for (let empresa = 0; empresa < 3; empresa++) {
+    for (let k = 1; k <= 4; k++) {
+      const quem: Linha = { empregado_id: EMPREGADOS[empresa + 3 * k]!.id };
+      const diaBase = 26 - k * 4 - empresa;
+      const camisa = CAMISA_DO_EMPREGADO[k]!;
+      const calca = CALCA_DO_EMPREGADO[k]!;
+      const jaqueta = JAQUETA_DO_EMPREGADO[k]!;
+      const almoxarifado = `Almoxarifado ${EMPRESAS[empresa]!.nome_fantasia}`;
+      entrega("uniforme", "uniformes", uniDe("Camisa", camisa).id, empresa, 2, diaBase, TAMANHO_CAMISA[camisa], quem);
+      entrega("uniforme", "uniformes", uniDe("Calça", calca).id, empresa, 1, diaBase - 1, TAMANHO_CALCA[calca], quem);
+      entrega("uniforme", "uniformes", uniDe("Jaqueta", jaqueta).id, empresa, 1, diaBase - 2, TAMANHO_JAQUETA[jaqueta], quem);
+      if (k === 1) entrega("uniforme", "uniformes", uniDe("Camisa", camisa).id, empresa, 1, diaBase - 6, TAMANHO_CAMISA[camisa], { ...quem, responsavel_nome: almoxarifado, observacao: "Camisa devolvida: tamanho errado" }, "Devolucao");
+      if (k === 2) entrega("uniforme", "uniformes", uniDe("Calça", calca).id, empresa, 1, diaBase - 5, TAMANHO_CALCA[calca], { ...quem, motivo_baixa: "Desgaste Natural", observacao: "Tecido puído nos joelhos" });
+      if (k === 3) entrega("uniforme", "uniformes", uniDe("Jaqueta", jaqueta).id, empresa, 1, diaBase - 4, TAMANHO_JAQUETA[jaqueta], { ...quem, motivo_baixa: "Perda", observacao: "Extraviada em obra" });
+      if (k === 4) entrega("uniforme", "uniformes", uniDe("Jaqueta", jaqueta).id, empresa, 1, diaBase - 6, TAMANHO_JAQUETA[jaqueta], { ...quem, responsavel_nome: almoxarifado, observacao: "Devolução por troca de função" }, "Devolucao");
+    }
+  }
 
   // Ferramentas: uma por empresa, com estoque inicial por entrada.
   const novaFerramenta = sequencia("ferramenta");

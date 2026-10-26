@@ -52,6 +52,17 @@ export const CSS_RELATORIO = `
           .assina .papel { font-size: 8pt; color: #64748b; text-transform: uppercase; letter-spacing: .06em; }
           .rodape { margin-top: 14px; padding-top: 6px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 8pt; text-align: right; }
           .texto p { margin: 0 0 8px; text-align: justify; }
+          /* Celular: o cabeçalho empilha, os quadros caem para duas colunas e as tabelas rolam de lado em vez de espremer as colunas. */
+          @media screen and (max-width: 640px) {
+            .folha { width: auto; min-height: 0; margin: 0; padding: 10px 12px 16px; }
+            .cabecalho { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+            .empresa { text-align: center; }
+            .titulo { font-size: 14pt; }
+            .grade { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            table.padrao, .termo table { display: block; overflow-x: auto; }
+            .assinaturas { grid-template-columns: 1fr; gap: 10mm; }
+            .termo .signatures { flex-direction: column; gap: 10mm; }
+          }
           @media print {
             body { background: #fff; }
             .folha { width: auto; min-height: 0; margin: 0; padding: 0; }

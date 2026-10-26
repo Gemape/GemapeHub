@@ -557,3 +557,27 @@ test("limpar e reaplicar os dados de teste não deixa ferramenta repetida em cai
   for (const i of itens) por.set(i.ferramenta_id, (por.get(i.ferramenta_id) ?? 0) + 1);
   assert.ok([...por.values()].every((n) => n === 1), "cada ferramenta em uma caixa só");
 });
+
+test("os 15 empregados de teste (5 em cada empresa) têm histórico de movimentações de EPI e de uniforme: entregas, devoluções e baixas, sem estoque negativo", () => {
+  const s = prontos();
+  const d = dados(s);
+  const empregados = doTeste(d.empregados);
+  assert.equal(empregados.length, 15);
+  const movs = doTeste(d.movimentacoes);
+  for (const modulo of ["epi", "uniforme"]) {
+    const doModulo = movs.filter((m) => m.modulo === modulo && m.empregado_id);
+    for (const e of empregados) {
+      const dele = doModulo.filter((m) => m.empregado_id === e.id);
+      assert.ok(dele.some((m) => m.tipo_movimentacao === "Saida" && !m.motivo_baixa), `${e.nome}: entrega de ${modulo}`);
+      assert.ok(dele.every((m) => m.empresa_id === e.empresa_id), `${e.nome}: movimentação da própria empresa`);
+    }
+    assert.ok(doModulo.some((m) => m.tipo_movimentacao === "Devolucao") && doModulo.some((m) => m.tipo_movimentacao === "Saida" && m.motivo_baixa), `${modulo}: há devoluções e baixas`);
+    assert.ok(doModulo.some((m) => m.codigo_movimentacao?.startsWith("ENT-")) && doModulo.some((m) => m.codigo_movimentacao?.startsWith("DEV-")));
+    // Dias diferentes entre os empregados, e nenhuma data futura.
+    assert.ok(new Set(doModulo.map((m) => m.data_movimentacao)).size >= 15 && doModulo.every((m) => m.data_movimentacao <= AGORA.toISOString().slice(0, 10)));
+  }
+  // O estoque de cada item nunca fica negativo depois de todas as movimentações.
+  for (const tabela of ["epis", "uniformes"]) {
+    for (const linha of doTeste(d[tabela])) assert.ok(linha.estoque_atual >= 0, `${tabela} ${linha.codigo_sku}: ${linha.estoque_atual}`);
+  }
+});

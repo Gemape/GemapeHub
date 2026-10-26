@@ -145,7 +145,7 @@ export function EpiRelatorioBaixa() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
         <div className="panel p-4 text-center">
           <p className="text-sm text-muted-foreground">Total de Baixas</p>
           <p className="text-2xl font-black">{baixas.length}</p>

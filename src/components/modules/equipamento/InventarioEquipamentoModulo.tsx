@@ -88,7 +88,7 @@ export function InventarioEquipamentoModulo() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Equipamentos</p><p className="text-lg font-semibold">{equipamentos.length}</p></div>
         <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Em manutenção</p><p className="text-lg font-semibold">{equipamentos.filter((e) => e.status === "Em manutenção").length}</p></div>
         <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Ocorrências abertas</p><p className="text-lg font-semibold">{abertasTotal}</p></div>

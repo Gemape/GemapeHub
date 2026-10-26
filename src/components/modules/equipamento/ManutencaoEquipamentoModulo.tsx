@@ -65,7 +65,7 @@ export function ManutencaoEquipamentoModulo() {
         <Button requiresWrite className="ml-auto" onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova manutenção</Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
         <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Manutenções</p><p className="text-lg font-semibold">{linhas.length}</p></div>
         <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Preventivas / corretivas</p><p className="text-lg font-semibold">{linhas.filter((m) => m.tipo === "Preventiva").length} / {linhas.filter((m) => m.tipo === "Corretiva").length}</p></div>
         <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Custo total</p><p className="text-lg font-semibold">{reais(custo)}</p></div>

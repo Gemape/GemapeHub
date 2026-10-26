@@ -65,7 +65,7 @@ export function VisualizadorDocumento() {
             className="min-h-0 w-full flex-1 rounded-md border bg-white"
           />
         )}
-        <DialogFooter className="gap-2">
+        <DialogFooter className="max-sm:flex-row max-sm:flex-wrap max-sm:justify-end gap-2">
           <Button variant="outline" onClick={fecharDocumento}>
             Fechar
           </Button>
