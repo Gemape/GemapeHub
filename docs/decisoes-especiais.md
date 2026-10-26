@@ -1569,3 +1569,24 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - O sistema de demonstração não traz mais a empresa "GEMAPE" (id `empresa-demo`) nem os cadastros dela (empregada, EPI, uniforme, ferramenta FER-0001 e veículo GEM-2026). As três empresas do grupo vêm dos dados de teste.
 - Quem já tinha a empresa antiga no navegador a perde ao aplicar os dados de teste (versão 13): saem a empresa, o que tinha o id dela, as movimentações, caixas e compras ligadas a esses itens, os portadores de caixa e os abastecimentos do veículo antigo.
+
+## 270. Relatório do extrato do veículo
+
+- O extrato do veículo passou a ser um relatório no padrão dos demais (decisão 266), aberto no visualizador do sistema, onde se imprime ou se baixa o arquivo (ver decisões 271 e 272 para o botão e a abertura direta em tela cheia). Seções: preventivas sugeridas, manutenções realizadas, itens não realizados em atenção, histórico de abastecimentos e ocorrências.
+- O HTML vem de `src/lib/extrato-html.ts`; as contas (km atual, média, sugestões) continuam na tela. Só no navegador, sem Supabase.
+
+## 271. Gerar PDF nos extratos e dados de teste completos para os relatórios
+
+- O botão dos extratos de veículo e de equipamento passou a se chamar só "Gerar PDF". O do equipamento (Inventário > Extrato) abre o extrato no padrão dos relatórios, com abastecimentos, manutenções, ocorrências e check lists; os dois usam `src/lib/extrato-html.ts`.
+- Os cinco veículos de teste vêm com abastecimentos (4 cada), uma manutenção preventiva e uma corretiva, plano de manutenção (o do primeiro e o do quarto já com preventiva vencida), uma ocorrência (aberta, em tratativa e encerrada) e um check list semanal concluído, com itens NOK em dois deles (`veiculos-modulo.ts`). Os cinco equipamentos agora têm manutenção, ocorrência e check list, e o compressor tem abastecimentos. Tudo gravado pelas mesmas funções das telas, com datas no passado e km/horímetro crescendo.
+- Versão 14 dos dados de teste; Limpar leva os registros dos veículos de teste junto. Só no navegador, em modo demonstração.
+
+## 272. Extrato abre direto em tela cheia, com a situação colorida
+
+- Ver extrato (veículos) e Extrato (inventário de equipamentos) deixaram de abrir a janela com listas: o relatório abre direto no visualizador, ocupando a tela toda (`telaCheia`), com a folha na largura da tela para consultar com folga; ao imprimir segue A4. No visualizador em tela cheia o botão de imprimir se chama "Gerar PDF" (e há "Baixar").
+- A situação sai com o ponto colorido dos indicadores da tela: vermelho (Vencida, Aberta, NOK), amarelo (Atenção, Em tratativa), verde (Em dia, Encerrada, Resolvida, Tudo OK) e cinza (Sem registro). Os quadros do topo ficam em vermelho quando há preventiva vencida ou ocorrência aberta.
+
+## 273. Relatório de abastecimento por veículo
+
+- Em Módulos > Veículos > Abastecimento, o botão "Gerar PDF" abre, em tela cheia no visualizador, o relatório de abastecimento no padrão dos demais (decisão 266): resumo no topo (veículos, abastecimentos, litros, total gasto e, com um veículo só, a média de consumo) e um quadro por veículo, com data e hora, km, km rodados, litros, valor, R$/L e km/L, e o total e a média de cada um. O relatório segue os filtros da tela (empresa do cabeçalho, veículo escolhido e busca).
+- Só no navegador, em modo demonstração, sem Supabase.

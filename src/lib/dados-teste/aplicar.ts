@@ -17,6 +17,7 @@ import { registrarAbastecimento } from "../registros-veiculo.ts";
 import * as Gerais from "../parametros-base.ts";
 import { restaurarPermissoes } from "../permissoes-demo.ts";
 import { semearModuloEquipamentos } from "./equipamentos-modulo.ts";
+import { semearModuloVeiculos } from "./veiculos-modulo.ts";
 import { semearViagens } from "./viagens.ts";
 import {
   ACOES_MANUTENCAO_VEICULO, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
@@ -114,6 +115,13 @@ export function removerDadosDeTeste(storage: Armazenamento, base: Dados): void {
   // (O abastecimento guarda `veiculoId`; já saiu acima quando o id tinha o prefixo, e este passo cobre os registros do usuário.)
   const abastecimentos = lerJson(storage, "gemape-demo-abastecimentos");
   if (Array.isArray(abastecimentos)) storage.setItem("gemape-demo-abastecimentos", JSON.stringify(abastecimentos.filter((a) => !(ehLinha(a) && typeof a["veiculoId"] === "string" && (a["veiculoId"] as string).startsWith(PREFIXO)))));
+  // Registros do módulo Veículos (manutenções, ocorrências, check lists, planos e associações) dos veículos de teste: saem junto com eles.
+  // A numeração dos check lists de veículo recomeça com os de teste removidos.
+  if (!lerJson(storage, "gemape-demo-checklists-veiculo") || (lerJson(storage, "gemape-demo-checklists-veiculo") as unknown[]).every((c) => ehLinha(c) && typeof c["veiculoId"] === "string" && (c["veiculoId"] as string).startsWith(PREFIXO))) storage.removeItem("gemape-demo-checklists-veiculo-sequencia");
+  for (const chave of ["gemape-demo-manutencoes-veiculo", "gemape-demo-ocorrencias-veiculo", "gemape-demo-checklists-veiculo", "gemape-demo-planos-manutencao", "gemape-demo-associacoes-checklist-veiculo"]) {
+    const lido = lerJson(storage, chave);
+    if (Array.isArray(lido)) storage.setItem(chave, JSON.stringify(lido.filter((r) => !(ehLinha(r) && typeof r["veiculoId"] === "string" && (r["veiculoId"] as string).startsWith(PREFIXO)))));
+  }
   // Registros do módulo Equipamentos feitos em equipamentos de teste (os de teste já saíram acima pelo prefixo).
   for (const chave of CHAVES_LISTAS.filter((c) => c.startsWith("gemape-demo-eq-"))) {
     const lido = lerJson(storage, chave);
@@ -411,6 +419,9 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     const ab = registrarAbastecimento({ veiculoId: v.id, data: dia(agora, 20 - n * 3), hora: `${String(8 + n).padStart(2, "0")}:30`, km: String(v.km - 400 + n * 40), litros: String(38.5 + n * 12), valor: String(240 + n * 85) }, storage as Storage, agora);
     trocarId(storage, "gemape-demo-abastecimentos", ab.id, `${PREFIXO}abastecimento-${n + 1}`);
   });
+
+  // Módulo Veículos: manutenções, planos, ocorrências e check lists dos cinco veículos, pelas mesmas funções das telas.
+  semearModuloVeiculos(storage, agora);
 
   semearViagens(storage, agora);
 

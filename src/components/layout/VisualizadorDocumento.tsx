@@ -17,6 +17,9 @@ import { assinarDocumento, documentoAberto, fecharDocumento } from "@/lib/visual
 export function VisualizadorDocumento() {
   const documento = useSyncExternalStore(assinarDocumento, documentoAberto, () => null);
   const quadro = useRef<HTMLIFrameElement>(null);
+  // Guarda o tamanho do último documento: ao fechar, `documento` some e a janela não pode encolher durante a animação de saída.
+  const telaCheia = useRef(false);
+  if (documento) telaCheia.current = !!documento.telaCheia;
 
   // Os botões de impressão do próprio termo não funcionam no quadro: ficam ocultos na tela.
   function ocultarBotoesDoTermo() {
@@ -45,7 +48,7 @@ export function VisualizadorDocumento() {
 
   return (
     <Dialog open={!!documento} onOpenChange={(aberto) => !aberto && fecharDocumento()}>
-      <DialogContent className="flex h-[92vh] max-w-5xl flex-col gap-3 p-4 sm:p-6">
+      <DialogContent className={telaCheia.current ? "flex h-[96vh] w-[98vw] max-w-none flex-col gap-3 p-4 sm:max-w-none sm:p-5" : "flex h-[92vh] max-w-5xl flex-col gap-3 p-4 sm:p-6"}>
         <DialogHeader>
           <DialogTitle>{documento?.titulo}</DialogTitle>
           <DialogDescription>
@@ -70,7 +73,7 @@ export function VisualizadorDocumento() {
             <Download className="mr-1 size-4" /> Baixar
           </Button>
           <Button onClick={imprimir}>
-            <Printer className="mr-1 size-4" /> Imprimir
+            <Printer className="mr-1 size-4" /> {documento?.telaCheia ? "Gerar PDF" : "Imprimir"}
           </Button>
         </DialogFooter>
       </DialogContent>

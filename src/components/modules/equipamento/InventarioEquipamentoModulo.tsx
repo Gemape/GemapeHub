@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +10,8 @@ import { useEmpresa } from "@/lib/empresa-context";
 import type { Equipamento } from "@/lib/equipamentos-demo";
 import { STATUS_EQUIPAMENTO } from "@/lib/equipamentos";
 import { formatarData } from "@/lib/gemape";
+import { montarExtratoHtml, type Celula } from "@/lib/extrato-html";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { combinaBusca } from "@/lib/parametros-base";
 import { pendenciasAbertasEq } from "@/lib/checklist-equipamento-exec";
 import { custoDaManutencaoEq, ultimoHorimetro } from "@/lib/registros-equipamento";
@@ -28,7 +29,6 @@ export function InventarioEquipamentoModulo() {
   const checklists = useChecklistsEq();
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState(TODOS);
-  const [extrato, setExtrato] = useState<Equipamento | null>(null);
   const nomeEmpresa = (id: string) => empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
 
   const situacao = (e: Equipamento) => {
@@ -39,6 +39,47 @@ export function InventarioEquipamentoModulo() {
       ultimaManut, ultimoCheck, abertas: ocorrencias.filter((o) => o.equipamentoId === e.id && o.status === "Aberta").length,
     };
   };
+  // O Extrato abre direto o relatório no padrão dos demais, no visualizador em tela cheia (onde se imprime ou se baixa), com abastecimentos, manutenções, ocorrências e check lists.
+  function gerarRelatorio(e: Equipamento) {
+    const dele = <T extends { equipamentoId: string; data: string }>(l: T[]) => l.filter((x) => x.equipamentoId === e.id).sort((a, b) => b.data.localeCompare(a.data));
+    const manut = dele(manutencoes);
+    const abertas = ocorrencias.filter((o) => o.equipamentoId === e.id && o.status === "Aberta").length;
+    const horimetro = ultimoHorimetro(e.id, localStorage) ?? (Number(e.tecnico["horimetroInicial"]) || null);
+    const html = montarExtratoHtml({
+      titulo: "Extrato do equipamento",
+      assunto: rotuloDoEquipamento(e),
+      subtitulo: `${nomeDoTipo(e)} · ${e.marca} ${e.modelo} · série ${e.numeroSerie} · adquirido em ${formatarData(e.dataAquisicao)} por ${reais(e.valorCompra)}`,
+      empresa: nomeEmpresa(e.empresaId),
+      resumo: [["Horímetro atual", horimetro === null ? "—" : `${numero(horimetro)} h`], ["Custo de manutenção", reais(manut.reduce((s, m) => s + custoDaManutencaoEq(m), 0))], abertas > 0 ? ["Ocorrências abertas", String(abertas), "vermelho"] : ["Ocorrências abertas", "0"]],
+      tabelas: [
+        {
+          titulo: "Abastecimentos", vazio: "Nenhum abastecimento.",
+          colunas: [{ titulo: "Data e hora" }, { titulo: "Horímetro", direita: true }, { titulo: "Litros", direita: true }, { titulo: "Valor", direita: true }],
+          linhas: dele(abastecimentos).map((a) => [`${formatarData(a.data)} ${a.hora}`, `${numero(a.horimetro)} h`, numero(a.litros), reais(a.valor)]),
+        },
+        {
+          titulo: "Manutenções", vazio: "Nenhuma manutenção.",
+          colunas: [{ titulo: "Data" }, { titulo: "Tipo" }, { titulo: "Horímetro", direita: true }, { titulo: "Ações" }, { titulo: "Local" }, { titulo: "Custo", direita: true }],
+          linhas: manut.map((m) => [formatarData(m.data), m.tipo, `${numero(m.horimetro)} h`, m.acoes.map((a) => a.nome).join(", "), m.localNome || "Na empresa", reais(custoDaManutencaoEq(m))]),
+        },
+        {
+          titulo: "Ocorrências", vazio: "Nenhuma ocorrência.",
+          colunas: [{ titulo: "Data" }, { titulo: "Tipo" }, { titulo: "Status" }, { titulo: "Descrição" }],
+          linhas: dele(ocorrencias).map((o): Celula[] => [formatarData(o.data), o.tipoNome, { texto: o.status, cor: o.status === "Aberta" ? "vermelho" : "verde" }, o.descricao]),
+        },
+        {
+          titulo: "Check lists", vazio: "Nenhum check list.",
+          colunas: [{ titulo: "Data" }, { titulo: "Finalidade" }, { titulo: "Responsável" }, { titulo: "Situação" }, { titulo: "Resultado" }],
+          linhas: dele(checklists).map((c): Celula[] => {
+            const nok = c.itens.filter((i) => i.avaliacao === "NOK").length;
+            return [formatarData(c.data), c.finalidade === "manutencao" ? "Manutenção" : "Vistoria", c.responsavelNome || "avulso", c.status, nok > 0 ? { texto: `${nok} NOK`, cor: "vermelho" } : { texto: "Tudo OK", cor: "verde" }];
+          }),
+        },
+      ],
+    });
+    abrirDocumento({ titulo: "Extrato do equipamento", html, arquivo: nomeArquivoDocumento("Extrato do equipamento", e.patrimonio, e.nome), telaCheia: true });
+  }
+
   const linhas = equipamentos
     .filter((e) => status === TODOS || e.status === status)
     .filter((e) => combinaBusca(busca, e.patrimonio, e.nome, nomeDoTipo(e), e.marca, e.modelo, e.setor, e.numeroSerie, nomeEmpresa(e.empresaId)));
@@ -88,7 +129,7 @@ export function InventarioEquipamentoModulo() {
                   <TableCell>{s.ultimaManut ? `${formatarData(s.ultimaManut.data)} · ${s.ultimaManut.tipo}` : "—"}</TableCell>
                   <TableCell>{s.abertas > 0 ? <Badge variant="destructive">{s.abertas}</Badge> : "0"}</TableCell>
                   <TableCell>{s.ultimoCheck ? <>{formatarData(s.ultimoCheck.data)} {pendenciasAbertasEq([s.ultimoCheck], e.id).length > 0 ? <Badge variant="destructive">{pendenciasAbertasEq([s.ultimoCheck], e.id).length} pend.</Badge> : <Badge variant="secondary">OK</Badge>}</> : "—"}</TableCell>
-                  <TableCell className="text-right"><Button variant="ghost" size="sm" aria-label={`Extrato de ${e.nome}`} onClick={() => setExtrato(e)}>Extrato</Button></TableCell>
+                  <TableCell className="text-right"><Button variant="ghost" size="sm" aria-label={`Extrato de ${e.nome}`} onClick={() => gerarRelatorio(e)}>Extrato</Button></TableCell>
                 </TableRow>
               );
             })}
@@ -96,39 +137,6 @@ export function InventarioEquipamentoModulo() {
         </Table>
       </div>
 
-      <Dialog open={extrato !== null} onOpenChange={(v) => { if (!v) setExtrato(null); }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-          {extrato && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Extrato · {rotuloDoEquipamento(extrato)}</DialogTitle>
-                <DialogDescription>{nomeDoTipo(extrato)} · {extrato.marca} {extrato.modelo} · série {extrato.numeroSerie} · {nomeEmpresa(extrato.empresaId)} · adquirido em {formatarData(extrato.dataAquisicao)} por {reais(extrato.valorCompra)}</DialogDescription>
-              </DialogHeader>
-              <Secao titulo="Abastecimentos" vazio="Nenhum abastecimento.">
-                {abastecimentos.filter((a) => a.equipamentoId === extrato.id).sort((a, b) => b.data.localeCompare(a.data)).map((a) => <li key={a.id}>{formatarData(a.data)} {a.hora} · {numero(a.horimetro)} h · {numero(a.litros)} L · {reais(a.valor)}</li>)}
-              </Secao>
-              <Secao titulo="Manutenções" vazio="Nenhuma manutenção.">
-                {manutencoes.filter((m) => m.equipamentoId === extrato.id).sort((a, b) => b.data.localeCompare(a.data)).map((m) => <li key={m.id}>{formatarData(m.data)} · {m.tipo} · {numero(m.horimetro)} h · {m.acoes.map((a) => a.nome).join(", ")} · {m.localNome} · {reais(custoDaManutencaoEq(m))}</li>)}
-              </Secao>
-              <Secao titulo="Ocorrências" vazio="Nenhuma ocorrência.">
-                {ocorrencias.filter((o) => o.equipamentoId === extrato.id).sort((a, b) => b.data.localeCompare(a.data)).map((o) => <li key={o.id}>{formatarData(o.data)} · {o.tipoNome} · {o.status} · {o.descricao}</li>)}
-              </Secao>
-              <Secao titulo="Check lists" vazio="Nenhum check list.">
-                {checklists.filter((c) => c.equipamentoId === extrato.id).sort((a, b) => b.data.localeCompare(a.data)).map((c) => <li key={c.id}>{formatarData(c.data)} · {c.finalidade === "manutencao" ? "Manutenção" : "Vistoria"} · {c.responsavelNome || "avulso"} · {c.status} · {c.itens.filter((i) => i.avaliacao === "NOK").length > 0 ? `${c.itens.filter((i) => i.avaliacao === "NOK").length} NOK` : "tudo OK"}</li>)}
-              </Secao>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-}
-
-function Secao({ titulo, vazio, children }: { titulo: string; vazio: string; children: React.ReactNode[] }) {
-  return (
-    <section className="space-y-1">
-      <h3 className="text-sm font-semibold">{titulo} ({children.length})</h3>
-      {children.length === 0 ? <p className="text-xs text-muted-foreground">{vazio}</p> : <ul className="list-disc space-y-0.5 pl-5 text-xs">{children}</ul>}
-    </section>
   );
 }
