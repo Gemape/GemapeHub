@@ -150,3 +150,28 @@ test("Abastecimento de equipamentos tem o mesmo Gerar PDF: relatório por equipa
   assert.match(tela, /Total: \$\{g\.dele\.length\} abastecimento\(s\)/);
   for (const coluna of ["Data e hora", "Horímetro", "Horas trabalhadas", "Litros", "Valor", "R$/L", "L/h"]) assert.ok(tela.includes(`titulo: "${coluna}"`), coluna);
 });
+
+test("o anexo de fotos (ocorrências e check lists de veículos e equipamentos) tem Tirar foto, que abre a câmera do celular, além de Anexar fotos", () => {
+  const botao = ler("components/modules/FotosOcorrencia.tsx");
+  assert.match(botao, /<input ref=\{entrada\} type="file" accept="image\/\*" multiple hidden/, "a galeria continua, com várias fotos");
+  assert.match(botao, /<input ref=\{camera\} type="file" accept="image\/\*" capture="environment" hidden onChange=\{\(e\) => void escolher\(e\)\}/, "câmera de trás do celular");
+  assert.match(botao, /onClick=\{\(\) => camera\.current\?\.click\(\)\}>\s*Tirar foto/);
+  // Os dois caminhos passam pela mesma redução e pelo mesmo limite de fotos.
+  assert.equal((botao.match(/onChange=\{\(e\) => void escolher\(e\)\}/g) ?? []).length, 2);
+  for (const arq of ["components/modules/equipamento/OcorrenciasEquipamentoModulo.tsx", "components/modules/OcorrenciasVeiculoModulo.tsx", "components/modules/ChecklistVeiculoModulo.tsx", "components/modules/equipamento/ChecklistEquipamentoModulo.tsx"]) {
+    assert.match(ler(arq), /<BotaoAnexarFotos/, arq);
+  }
+});
+
+test("celular: o cabeçalho da tela, as janelas e os relatórios se ajustam à tela estreita", async () => {
+  const rota = ler("routes/_authenticated/route.tsx");
+  assert.match(rota, /grid-cols-1 [^"]*md:grid-cols-\[1fr_auto_1fr\]/, "cabeçalho em uma coluna no celular");
+  assert.match(rota, /md:sticky md:top-0/, "só fixa no topo a partir de md");
+  assert.match(rota, /grid grid-cols-2 items-center gap-2 md:flex/, "controles em duas colunas no celular");
+  assert.match(rota, /w-full min-w-0 sm:w-\[210px\]/, "o filtro de empresa não força a largura");
+  assert.match(ler("components/layout/ConfiguracoesDemo.tsx"), /w-full min-w-0 text-xs sm:w-56/);
+  assert.match(ler("components/ui/dialog.tsx"), /max-h-\[100dvh\] gap-4 overflow-x-hidden overflow-y-auto/, "toda janela rola na tela pequena, com o rodapé fixo embaixo");
+  const { CSS_RELATORIO } = await import("../src/lib/relatorio-padrao.ts");
+  assert.match(CSS_RELATORIO, /@media screen and \(max-width: 640px\)[\s\S]*\.cabecalho \{ grid-template-columns: 1fr/);
+  assert.match(CSS_RELATORIO, /table\.padrao, \.termo table \{ display: block; overflow-x: auto; \}/);
+});

@@ -22,7 +22,7 @@ export function ConfiguracoesDemo() {
 
   return (
     <Select value={ativo.id} onValueChange={entrarComo}>
-      <SelectTrigger aria-label="Entrar como" className="h-8 w-56 text-xs">
+      <SelectTrigger aria-label="Entrar como" className="h-8 w-full min-w-0 text-xs sm:w-56">
         <UserRound className="mr-1 size-4 shrink-0" aria-hidden="true" /><SelectValue />
       </SelectTrigger>
       <SelectContent>

@@ -22,6 +22,7 @@ export function BotaoAnexarFotos({
   oQue?: string;
 }) {
   const entrada = useRef<HTMLInputElement>(null);
+  const camera = useRef<HTMLInputElement>(null);
   const [processando, setProcessando] = useState(false);
   const restante = maximo - quantidadeAtual;
 
@@ -46,6 +47,8 @@ export function BotaoAnexarFotos({
   return (
     <>
       <input ref={entrada} type="file" accept="image/*" multiple hidden onChange={(e) => void escolher(e)} />
+      {/* No celular, capture abre direto a câmera de trás; no computador vira a escolha de um arquivo, como a galeria. */}
+      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => void escolher(e)} />
       <Button
         type="button"
         variant="outline"
@@ -54,6 +57,9 @@ export function BotaoAnexarFotos({
         onClick={() => entrada.current?.click()}
       >
         {processando ? "Reduzindo as fotos..." : "Anexar fotos"}
+      </Button>
+      <Button type="button" variant="outline" size="sm" disabled={desabilitado || processando || restante <= 0} onClick={() => camera.current?.click()}>
+        Tirar foto
       </Button>
       <span className="text-xs text-muted-foreground">{quantidadeAtual}/{maximo} fotos, reduzidas ao anexar</span>
     </>

@@ -60,9 +60,10 @@ test("a obrigatoriedade de ao menos 1 imagem e o texto de contagem continuam", (
   assert.match(form, /todas são reduzidas no navegador antes do envio/);
 });
 
-test("nenhum outro módulo ganha câmera", () => {
+test("a câmera fica no comprovante da despesa e no anexo de fotos das ocorrências e dos check lists (BotaoAnexarFotos); os outros módulos não têm", () => {
+  // O anexo de fotos (ocorrências e check lists de veículos e equipamentos) ganhou o Tirar foto por pedido: uma câmera só, no componente compartilhado.
+  assert.equal(ler("components/modules/FotosOcorrencia.tsx").match(/capture="environment"/g)?.length, 1);
   for (const arq of [
-    "components/modules/FotosOcorrencia.tsx",
     "components/modules/OcorrenciasVeiculoModulo.tsx",
     "components/modules/ChecklistVeiculoModulo.tsx",
     "components/modules/MovimentacoesModulo.tsx",
