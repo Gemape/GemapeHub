@@ -85,25 +85,56 @@ export function FerramentasTermoResponsabilidade() {
     setItensTermo(itensTermo.map((i) => (i.id === id ? { ...i, [campo]: valor } : i)));
   }
 
-  // Filtrar itens por caixa se o número da caixa for preenchido
+  // O que a caixa guarda de cada ferramenta (cadastrada menos o que está com empregado ou baixado) e o que já está com empregados.
+  async function situacaoDaCaixa() {
+    const caixa = caixas.find((c) => c.id === caixaSel);
+    const { data: itensDaCaixa = [] } = await buscarItensCaixa();
+    const historicoCaixa = movimentacoesDaCaixa(
+      await lerMovimentacoesRelatorio(supabase, { modulo: "ferramenta", empresaId: empresaSel }),
+      caixaSel,
+      itensDaCaixa.map((ci) => ci.ferramenta_id),
+      caixa?.codigo,
+    );
+    return itensDaCaixa.map((ci) => {
+      const c = controleDaFerramenta(historicoCaixa, ci.ferramenta_id);
+      return { ferramentaId: ci.ferramenta_id, cadastrada: ci.quantidade, comEmpregado: c.comEmpregado, guardadas: disponivelNaCaixa(ci.quantidade, c.comEmpregado, c.baixadoDaCaixa) };
+    });
+  }
+
+  // Carrega só as ferramentas da caixa que existem no cadastro da empresa e ainda estão guardadas nela (as já entregues não entram).
   async function carregarItensDaCaixa() {
     if (!caixaSel) {
       alert("Selecione uma caixa para carregar os itens.");
       return;
     }
 
-    const { data: novosItens } = await buscarItensCaixa();
-
-    if (!novosItens || novosItens.length === 0) {
+    let situacao: Awaited<ReturnType<typeof situacaoDaCaixa>>;
+    try {
+      situacao = await situacaoDaCaixa();
+    } catch {
+      alert("Não foi possível conferir o que está guardado na caixa.");
+      return;
+    }
+    if (situacao.length === 0) {
       alert("Nenhum item encontrado para esta caixa.");
       return;
     }
+    const doCadastro = situacao.filter((s) => itens.some((i) => i.id === s.ferramentaId));
+    const disponiveis = doCadastro.filter((s) => s.guardadas > 0);
+    if (disponiveis.length === 0) {
+      alert(doCadastro.length === 0
+        ? "As ferramentas desta caixa não estão no cadastro desta empresa."
+        : "Todas as ferramentas desta caixa já foram entregues a empregados. Registre a devolução antes de gerar um novo termo.");
+      return;
+    }
+    const fora = situacao.length - disponiveis.length;
+    if (fora > 0) alert(`${fora} ferramenta(s) da caixa não entraram no termo: já estão com empregados ou não pertencem ao cadastro desta empresa.`);
 
     setItensTermo(
-      novosItens.map((ci) => ({
+      disponiveis.map((s) => ({
         id: Math.random().toString(36).substr(2, 9),
-        item_id: ci.ferramenta_id,
-        quantidade: ci.quantidade,
+        item_id: s.ferramentaId,
+        quantidade: s.guardadas,
         estado: "Novo",
       })),
     );
@@ -129,28 +160,19 @@ export function FerramentasTermoResponsabilidade() {
 
     // Com caixa escolhida, a quantidade vive na caixa: o limite é o que está guardado nela (decisão 244).
     let guardadasNaCaixa: Record<string, number> | undefined;
+    let comEmpregadoNaCaixa: Record<string, number> | undefined;
     if (caixaSel) {
       try {
-        const { data: itensDaCaixa = [] } = await buscarItensCaixa();
-        const historicoCaixa = movimentacoesDaCaixa(
-          await lerMovimentacoesRelatorio(supabase, { modulo: "ferramenta", empresaId: empresaSel }),
-          caixaSel,
-          itensDaCaixa.map((ci) => ci.ferramenta_id),
-          caixa?.codigo,
-        );
-        guardadasNaCaixa = Object.fromEntries(
-          itensDaCaixa.map((ci) => {
-            const c = controleDaFerramenta(historicoCaixa, ci.ferramenta_id);
-            return [ci.ferramenta_id, disponivelNaCaixa(ci.quantidade, c.comEmpregado, c.baixadoDaCaixa)];
-          }),
-        );
+        const situacao = await situacaoDaCaixa();
+        comEmpregadoNaCaixa = Object.fromEntries(situacao.map((x) => [x.ferramentaId, x.comEmpregado]));
+        guardadasNaCaixa = Object.fromEntries(situacao.map((x) => [x.ferramentaId, x.guardadas]));
       } catch {
         alert("Não foi possível conferir o que está guardado na caixa.");
         return;
       }
     }
     // Não entrega mais do que o estoque disponível de cada ferramenta (ou o guardado na caixa).
-    const erro = validarTermoResponsabilidade(itensTermo, itens, guardadasNaCaixa);
+    const erro = validarTermoResponsabilidade(itensTermo, itens, guardadasNaCaixa, comEmpregadoNaCaixa);
     if (erro) {
       alert(erro);
       return;

@@ -73,11 +73,13 @@ test("Restaurar dados de teste também restaura as permissões originais", () =>
 });
 
 test("telas e tabelas ligam à matriz; rotinas administrativas são só do Administrador", () => {
-  assert.equal(P.telaDaRota("/epi"), "epi");
-  assert.equal(P.telaDaRota("/epi-ficha"), "epi");
-  assert.equal(P.telaDaRota("/cadastros/epi"), "epi");
-  assert.equal(P.telaDaRota("/cadastros/caixas-ferramentas"), "ferramentas");
-  assert.equal(P.telaDaRota("/cadastros/veiculos-checklist"), "veiculos");
+  // Cada rota cai no menu dela (aba ou item de Parâmetros) ou, sem menu próprio, no módulo; o início da id é sempre o módulo.
+  const modulo = (rota, busca) => P.telaDaRota(rota, busca)?.split("|")[0] ?? null;
+  assert.equal(modulo("/epi"), "epi");
+  assert.equal(modulo("/epi-ficha"), "epi");
+  assert.equal(modulo("/cadastros/epi"), "epi");
+  assert.equal(modulo("/cadastros/caixas-ferramentas"), "ferramentas");
+  assert.equal(modulo("/cadastros/veiculos-checklist"), "veiculos");
   assert.equal(P.telaDaRota("/empresas"), "empresas");
   assert.equal(P.telaDaRota("/inicio"), null);
   assert.ok(P.rotaSoAdministrador("/cadastros/gerais/categorias") && !P.rotaSoAdministrador("/cadastros/epi"));
@@ -103,5 +105,35 @@ test("só no modo demonstração: nada de permissões em produção e nada no Su
   assert.match(acesso, /if \(import\.meta\.env\.VITE_DEMO_MODE !== "false"\) \{[\s\S]*?useRouterState[\s\S]*?useSyncExternalStore/);
   assert.match(ler("routes/_authenticated/route.tsx"), /const ConfiguracoesDemo = import\.meta\.env\.VITE_DEMO_MODE !== "false"\s*\n\s*\? lazy\(/);
   assert.match(ler("integrations/supabase/demo-client.ts"), /this\.acao && typeof window !== "undefined" && import\.meta\.env\?\.VITE_DEMO_MODE !== "false"\) \{\s*\n\s*const recusa = recusaGravacao/);
-  for (const arq of ["lib/permissoes-demo.ts", "components/layout/ConfiguracoesDemo.tsx"]) assert.doesNotMatch(ler(arq), /supabase|fetch\(|\.from\(/, arq);
+  for (const arq of ["lib/permissoes-demo.ts", "components/layout/ConfiguracoesDemo.tsx", "components/layout/ConfiguracoesAcessos.tsx"]) assert.doesNotMatch(ler(arq), /supabase|fetch\(|\.from\(/, arq);
+});
+
+test("cada menu do sistema (aba do módulo e item de Parâmetros) é uma tela da matriz e herda o que o módulo tem", async () => {
+  const { GRUPOS_INICIO } = await import("../src/lib/inicio.ts");
+  const itens = GRUPOS_INICIO.flatMap((g) => g.cartoes).filter((c) => c.itens && !c.soAdmin).flatMap((c) => c.itens.filter((i) => !i.soAdmin));
+  assert.ok(P.SUBTELAS.length >= itens.length - 3 && P.SUBTELAS.length > 60, `um menu por aba e por item de Parâmetros (${P.SUBTELAS.length})`);
+  assert.equal(new Set(P.SUBTELAS.map((s) => s.id)).size, P.SUBTELAS.length, "ids únicos");
+  const s = memoria();
+  const padrao = P.lerPermissoes(s).usuarios.find((u) => u.id === "teste-usuario-3");
+  const menu = P.SUBTELAS.find((m) => m.pai === "epi" && m.secao === "Módulo");
+  const ef = P.efetivas(padrao);
+  assert.deepEqual(ef[menu.id], ef.epi, "sem exceção, herda o módulo");
+  // Tirar só um menu: o resto do módulo continua, e a rota daquele menu fica sem acesso.
+  let e = P.alternarAcao(P.lerPermissoes(s), "teste-usuario-3", menu.id, "ver", false);
+  const u = e.usuarios.find((x) => x.id === "teste-usuario-3");
+  assert.ok(!P.pode(u, menu.id, "ver") && P.pode(u, "epi", "ver"));
+  assert.deepEqual(Object.keys(u.excecoes), [menu.id], "só a exceção do menu é guardada");
+  const rota = P.telaDaRota(menu.url, menu.search ?? {});
+  assert.equal(rota, menu.id);
+  assert.ok(!P.pode(u, rota, "ver"));
+  const outro = P.SUBTELAS.find((m) => m.pai === "epi" && m.id !== menu.id && m.secao === "Módulo");
+  assert.ok(P.pode(u, P.telaDaRota(outro.url, outro.search ?? {}), "ver"), "outro menu do módulo segue liberado");
+  // Mexer no módulo não apaga a exceção do menu; tirar "ver" do módulo esconde todos os menus.
+  e = P.alternarAcao(e, "teste-usuario-3", "epi", "ver", false);
+  const sem = e.usuarios.find((x) => x.id === "teste-usuario-3");
+  assert.ok(P.SUBTELAS.filter((m) => m.pai === "epi").every((m) => !P.pode(sem, m.id, "ver")));
+  assert.ok(sem.excecoes[menu.id], "a exceção do menu continua guardada");
+  // Liberar criar só num menu, sem liberar no módulo.
+  const so = P.alternarAcao(P.lerPermissoes(s), "teste-usuario-3", outro.id, "editar", true).usuarios.find((x) => x.id === "teste-usuario-3");
+  assert.ok(P.pode(so, outro.id, "editar") && !P.pode(so, "epi", "editar"));
 });

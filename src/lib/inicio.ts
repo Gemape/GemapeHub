@@ -59,19 +59,19 @@ export const GRUPOS_INICIO: readonly GrupoInicio[] = [
 
 // Os cartões e atalhos que o perfil pode ver (Gerais e Cadastrar Caixa são só do Administrador, como no menu lateral).
 // `podeVer` (só no demo, pelas permissões de Configurações) tira cartões e atalhos de telas que o usuário não pode ver; cartão que fica sem atalhos some.
-export function gruposDoInicio(isAdmin: boolean, podeVer: (url: string) => boolean = () => true): GrupoInicio[] {
+export function gruposDoInicio(isAdmin: boolean, podeVer: (url: string, search?: Record<string, string>) => boolean = () => true): GrupoInicio[] {
   return GRUPOS_INICIO.map((g) => ({
     ...g,
     cartoes: g.cartoes
       .filter((c) => !c.soAdmin || isAdmin)
-      .map((c) => (c.itens ? { ...c, itens: c.itens.filter((i) => (!i.soAdmin || isAdmin) && podeVer(i.url)) } : c))
+      .map((c) => (c.itens ? { ...c, itens: c.itens.filter((i) => (!i.soAdmin || isAdmin) && podeVer(i.url, i.search)) } : c))
       .filter((c) => (c.itens ? c.itens.length > 0 : !c.url || podeVer(c.url))),
   })).filter((g) => g.cartoes.length > 0);
 }
 
 // Área (cartão) a que uma tela pertence, para o menu do topo levar às outras rotinas dela sem voltar ao início. Telas repetidas
 // em mais de uma área (como Parâmetros Específicos) se resolvem pelo ?de= ou ?aba= do atalho; sem cartão com submenu, devolve null.
-export function areaDaRota(pathname: string, search: Record<string, unknown>, isAdmin: boolean, podeVer: (url: string) => boolean = () => true): { cartao: CartaoInicio; atual: SubitemInicio } | null {
+export function areaDaRota(pathname: string, search: Record<string, unknown>, isAdmin: boolean, podeVer: (url: string, search?: Record<string, string>) => boolean = () => true): { cartao: CartaoInicio; atual: SubitemInicio } | null {
   const caminho = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   const casaBusca = (i: SubitemInicio) => !!i.search && Object.entries(i.search).every(([k, v]) => String(search[k] ?? "") === v);
   const candidatos = gruposDoInicio(isAdmin, podeVer).flatMap((g) => g.cartoes).flatMap((cartao) =>

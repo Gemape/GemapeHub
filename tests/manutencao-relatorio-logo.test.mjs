@@ -16,10 +16,10 @@ const ctx = { empresa: "GEMAPE", veiculo: "ABC-1250 · Fiat · Strada", nomeGrup
 test("o relatório de manutenção mostra a logomarca no topo, antes do título", () => {
   const html = montarManutencaoHtml(manut, { ...ctx, logoUrl: "http://x/logo.png" });
   assert.match(html, /<img class="logo" src="http:\/\/x\/logo\.png" alt="Logomarca"/);
-  const topo = html.indexOf('class="topo"');
+  const topo = html.indexOf('class="cabecalho"');
   const logo = html.indexOf('class="logo"');
   const titulo = html.indexOf("Relatório de manutenção</div>");
-  assert.ok(topo > 0 && logo > topo && titulo > logo, "logo dentro do topo e antes do título");
+  assert.ok(topo > 0 && logo > topo && titulo > logo, "logo dentro do cabeçalho e antes do título");
 });
 
 test("a logo tem tamanho limitado e imprime junto com o relatório", () => {

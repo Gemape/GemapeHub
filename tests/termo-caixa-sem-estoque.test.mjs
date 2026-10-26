@@ -39,3 +39,20 @@ test("Termo com caixa confere o guardado na caixa, não o estoque do cadastro", 
   assert.match(validarTermoResponsabilidade([{ item_id: "f", quantidade: 2 }], itens, { f: 1 }) ?? "", /guardad[ao]s? na caixa \(1\)/);
   assert.match(validarTermoResponsabilidade([{ item_id: "f", quantidade: 1 }], itens) ?? "", /estoque/);
 });
+
+test("caixa com a ferramenta já entregue explica que ela está com um empregado, em vez de só dizer que passou do guardado", () => {
+  const itens = [{ id: "f", nome: "Chave L", estoque_atual: 1 }];
+  const msg = validarTermoResponsabilidade([{ item_id: "f", quantidade: 1 }], itens, { f: 0 }, { f: 1 }) ?? "";
+  assert.match(msg, /Chave L já foi entregue \(1 unidade\(s\) com empregado\)/);
+  assert.match(msg, /devolução/);
+  assert.match(validarTermoResponsabilidade([{ item_id: "f", quantidade: 2 }], itens, { f: 1 }, { f: 0 }) ?? "", /guardad[ao]s? na caixa \(1\)/);
+});
+
+test("Carregar a caixa só traz ferramentas do cadastro da empresa que ainda estão guardadas nela, com a quantidade guardada", async () => {
+  const { readFileSync } = await import("node:fs");
+  const tela = readFileSync(new URL("../src/components/modules/FerramentasTermoResponsabilidade.tsx", import.meta.url), "utf8");
+  assert.match(tela, /itens\.some\(\(i\) => i\.id === s\.ferramentaId\)/, "sem linha em branco: a ferramenta precisa existir no cadastro");
+  assert.match(tela, /filter\(\(s\) => s\.guardadas > 0\)/, "as já entregues não entram");
+  assert.match(tela, /quantidade: s\.guardadas/, "a quantidade é a que está guardada");
+  assert.match(tela, /async function situacaoDaCaixa/);
+});

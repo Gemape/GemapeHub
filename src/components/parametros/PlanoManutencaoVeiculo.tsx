@@ -196,9 +196,10 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
               <Select value={veiculoId} onValueChange={setVeiculoId}>
                 <SelectTrigger id="plano-veiculo"><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
                 <SelectContent>
-                  {veiculosLivres.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>{rotuloVeiculo(v)}</SelectItem>
-                  ))}
+                  {veiculos.map((v) => {
+                    const ocupado = !veiculosLivres.includes(v);
+                    return <SelectItem key={v.id} value={v.id} disabled={ocupado}>{rotuloVeiculo(v)}{ocupado ? " · já tem plano" : ""}</SelectItem>;
+                  })}
                 </SelectContent>
               </Select>
               {veiculosLivres.length === 0 && (

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table } from "@/components/ui/table";
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
 import {
-  aplicarAcoesPadraoUmaVez, itensDoPlano, lerManutencaoEquipamento, OUTROS, removerAcao, removerPlano, removerTipoOcorrencia, salvarAcao, salvarPlano, salvarTipoOcorrencia,
+  aplicarAcoesPadraoUmaVez, itensDoPlano, lerManutencaoEquipamento, opcoesDePlano, OUTROS, removerAcao, removerPlano, removerTipoOcorrencia, salvarAcao, salvarPlano, salvarTipoOcorrencia,
   type EntradaItemPlano, type PlanoEquipamento,
 } from "@/lib/equipamentos-manutencao";
 import { useVersaoArmazenamento } from "@/lib/use-versao-armazenamento";
@@ -88,8 +88,9 @@ export function PlanoManutencaoEquipamento({ secao = false, versao, aoMudar }: {
 
   const porId = (id: string): Equipamento | undefined => equipamentos.find((e) => e.id === id);
   const rotulo = (e: Equipamento) => `${e.patrimonio} · ${e.nome}`;
-  // Cada equipamento tem um plano só: ao criar ou clonar, só os sem plano; ao editar, o próprio.
-  const livres = equipamentos.filter((e) => !planos.some((p) => p.equipamentoId === e.id) || e.id === editando);
+  // Cada equipamento tem um plano só: ao criar ou clonar, só os sem plano podem ser escolhidos; ao editar, o próprio.
+  const opcoes = opcoesDePlano(equipamentos, planos, editando);
+  const temLivre = opcoes.some((o) => !o.ocupado);
 
   function abrir(plano: PlanoEquipamento | null, clonar: boolean) {
     if (plano && !clonar && !porId(plano.equipamentoId)) {
@@ -178,9 +179,9 @@ export function PlanoManutencaoEquipamento({ secao = false, versao, aoMudar }: {
               <Label htmlFor="plano-equipamento">Equipamento</Label>
               <Select value={equipamentoId} disabled={!!editando} onValueChange={(v) => v && setEquipamentoId(v)}>
                 <SelectTrigger id="plano-equipamento"><SelectValue placeholder="Selecione o equipamento" /></SelectTrigger>
-                <SelectContent>{livres.map((e) => <SelectItem key={e.id} value={e.id}>{rotulo(e)}</SelectItem>)}</SelectContent>
+                <SelectContent>{opcoes.map(({ equipamento: e, ocupado }) => <SelectItem key={e.id} value={e.id} disabled={ocupado}>{rotulo(e)}{ocupado ? " · já tem plano" : ""}</SelectItem>)}</SelectContent>
               </Select>
-              {livres.length === 0 && <p className="text-xs text-muted-foreground">Todos os equipamentos já têm plano, ou nenhum equipamento está cadastrado.</p>}
+              {!temLivre && <p className="text-xs text-muted-foreground">{opcoes.length === 0 ? "Nenhum equipamento disponível (ativo) cadastrado" : "Todos os equipamentos já têm plano"}: cadastre outro equipamento em {CAMINHO} &gt; Cadastrar equipamento{opcoes.length > 0 ? " ou edite o plano existente" : ""}.</p>}
             </div>
 
             {(equipamentoId || itens.length > 0) && (

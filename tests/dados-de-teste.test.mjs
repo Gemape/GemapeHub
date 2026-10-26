@@ -25,15 +25,15 @@ const doTeste = (lista) => lista.filter((l) => String(l.id).startsWith("teste-")
 const dados = (s) => json(s, "gemape-demo-dados");
 const LISTAS = ["gemape-demo-fornecedores", "gemape-demo-clientes", "gemape-demo-equipamentos", "gemape-demo-abastecimentos", "gemape-demo-portadores-caixa", "gemape-demo-respostas-despesas"];
 
-test("cinco registros em cada cadastro (cinco empregados por empresa), com os que o sistema já trazia mantidos", () => {
+test("cinco registros em cada cadastro (cinco empregados por empresa); o sistema não traz mais a empresa GEMAPE de demonstração", () => {
   const s = prontos();
   const d = dados(s);
   for (const t of ["ferramentas", "veiculos", "caixas_ferramentas"]) assert.equal(doTeste(d[t]).length, 5, t);
   assert.equal(doTeste(d.empresas).length, 3, "as três empresas do grupo");
-  assert.equal(d.empresas.length, 4, "a empresa que já existia fica");
+  assert.equal(d.empresas.length, 3, "só as três empresas do grupo");
   assert.equal(doTeste(d.empregados).length, 15);
   for (const e of doTeste(d.empresas)) assert.equal(doTeste(d.empregados).filter((x) => x.empresa_id === e.id).length, 5, `cinco empregados em ${e.nome_fantasia}`);
-  assert.equal(d.empregados.length, 16);
+  assert.equal(d.empregados.length, 15);
   for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 5, k);
   // EPIs e uniformes: três produtos (descrições), um registro de catálogo por tamanho.
   for (const t of ["epis_catalogo", "uniformes_catalogo"]) assert.equal(new Set(doTeste(d[t]).map((c) => c.nome)).size, 5, t);
@@ -187,7 +187,7 @@ test("Limpar tira só os dados de teste e não grava de novo; Restaurar repõe o
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "limpo");
   const limpo = dados(s);
   for (const [tabela, linhas] of Object.entries(limpo)) assert.equal(doTeste(linhas).length, 0, tabela);
-  assert.ok(limpo.empresas.some((e) => e.id === "empresa-do-usuario") && limpo.empresas.some((e) => e.id === "empresa-demo"));
+  assert.ok(limpo.empresas.some((e) => e.id === "empresa-do-usuario") && !limpo.empresas.some((e) => e.id === "empresa-demo"), "a empresa GEMAPE antiga não volta");
   assert.ok(!limpo.movimentacoes.some((m) => m.id === "mov-usuario"), "o que apontava para item de teste vai junto");
   for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 0, k);
   const gerais = json(s, "gemape-demo-parametros-base");
@@ -297,4 +297,49 @@ test("formulários de exemplo só no modo demonstração: cada ponto de uso conf
     // Toda chamada vem logo depois da conferência do modo (na mesma linha ou até 400 caracteres antes), na forma que o build troca por constante.
     for (const c of chamadas) assert.ok(fonte.lastIndexOf(gate, c) >= 0 && c - fonte.lastIndexOf(gate, c) < 400, `${u}: exemplo fora do modo demonstração`);
   }
+});
+
+test("o número da caixa é único: as caixas de teste não repetem o número de uma caixa cadastrada pela pessoa", () => {
+  const s = memoria();
+  s.setItem("gemape-demo-dados", JSON.stringify({ ...base, caixas_ferramentas: [{ id: "u1", codigo: "CX-0003", codigo_num: 3, empresa_id: "x", nome: "CX-0003", status: "Ativa" }] }));
+  assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
+  const numeros = dados(s).caixas_ferramentas.map((c) => c.codigo_num);
+  assert.equal(new Set(numeros).size, numeros.length, "nenhum número repetido");
+  assert.ok(numeros.includes(3) && doTeste(dados(s).caixas_ferramentas).length === 5);
+  assert.deepEqual(doTeste(dados(s).caixas_ferramentas).map((c) => c.codigo_num).sort(), [1, 2, 4, 5, 6]);
+});
+
+test("a base de demonstração recusa uma segunda caixa com o mesmo número", async () => {
+  const { demoSupabase: supabase } = await import("../src/integrations/supabase/demo-client.ts");
+  const caixa = (n) => ({ codigo: `CX-${String(n).padStart(4, "0")}`, codigo_num: n, nome: `CX-${n}`, status: "Ativa" });
+  const primeira = await supabase.from("caixas_ferramentas").insert(caixa(97));
+  assert.equal(primeira.error, null);
+  const repetida = await supabase.from("caixas_ferramentas").insert(caixa(97));
+  assert.match(repetida.error?.message ?? "", /Já existe a caixa CX-0097/);
+});
+
+test("quem ainda tem a empresa GEMAPE antiga no navegador a perde com os cadastros dela, e ficam só as três empresas do grupo", () => {
+  const s = memoria();
+  const antiga = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração", cnpj: "00.000.000/0001-00", status: "Ativa" };
+  s.setItem("gemape-demo-dados", JSON.stringify({
+    ...base,
+    empresas: [antiga],
+    empregados: [{ id: "emp-demo", empresa_id: "empresa-demo", nome: "Maria" }],
+    epis: [{ id: "epi-demo", empresa_id: "empresa-demo", nome: "Capacete", codigo_sku: "EPI-0001" }],
+    ferramentas: [{ id: "fer-demo", empresa_id: "empresa-demo", nome: "Furadeira", codigo_sku: "FER-0001" }, { id: "fer-minha", empresa_id: "empresa-demo", nome: "Serra", codigo_sku: "FER-0002" }],
+    veiculos: [{ id: "vei-demo", empresa_id: "empresa-demo", placa: "GEM-2026" }],
+    movimentacoes: [{ id: "m1", modulo: "ferramenta", item_id: "fer-demo", empresa_id: "empresa-demo" }],
+    caixas_ferramentas: [{ id: "cx-antiga", codigo: "CX-0003", codigo_num: 3, empresa_id: "empresa-demo" }],
+    caixa_ferramenta_itens: [{ id: "ci1", caixa_id: "cx-antiga", ferramenta_id: "fer-demo", quantidade: 1 }],
+  }));
+  assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
+  const d = dados(s);
+  assert.deepEqual(d.empresas.map((e) => e.id), ["teste-empresa-1", "teste-empresa-2", "teste-empresa-3"]);
+  for (const t of ["empregados", "epis", "ferramentas", "veiculos", "movimentacoes", "caixas_ferramentas", "caixa_ferramenta_itens"]) {
+    assert.ok(!d[t].some((l) => ["emp-demo", "epi-demo", "fer-demo", "fer-minha", "vei-demo", "m1", "cx-antiga", "ci1"].includes(l.id)), t);
+  }
+  assert.ok(d.caixas_ferramentas.every((c) => String(c.id).startsWith("teste-")), "o número CX-0003 fica livre para as de teste");
+  // O sistema novo já começa sem a empresa antiga.
+  assert.deepEqual(base.empresas, []);
+  assert.ok(!JSON.stringify(base).includes("empresa-demo"));
 });

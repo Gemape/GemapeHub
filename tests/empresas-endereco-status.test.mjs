@@ -48,7 +48,7 @@ test("fora da demonstração não envia colunas que o banco real ainda não tem"
   assert.deepEqual(Object.keys(v).sort(), ["cnpj", "nome_fantasia", "razao_social"]);
 });
 
-test("a tela de empresas mostra endereço e status e a empresa demo vem com eles", () => {
+test("a tela de empresas mostra endereço e status e as empresas de teste vêm com eles", () => {
   const raiz = new URL("../src/", import.meta.url);
   const tela = readFileSync(new URL("routes/_authenticated/empresas.tsx", raiz), "utf8");
   assert.match(tela, /<TableHead>Endereço<\/TableHead>/);
@@ -56,7 +56,8 @@ test("a tela de empresas mostra endereço e status e a empresa demo vem com eles
   assert.match(tela, /CAMPOS_ENDERECO_EMPRESA/);
   assert.match(tela, /valoresDaEmpresa/);
   const demo = readFileSync(new URL("integrations/supabase/demo-client.ts", raiz), "utf8");
-  assert.match(demo, /status: "Ativa"/);
+  assert.doesNotMatch(demo, /empresa-demo/, "o sistema começa sem a empresa GEMAPE de demonstração");
+  assert.match(readFileSync(new URL("lib/dados-teste/aplicar.ts", raiz), "utf8"), /\.\.\.e, status: "Ativa"/, "as empresas de teste vêm com status");
 });
 
 test("fora da demonstração a consulta de empresas pede só as colunas que existem", () => {

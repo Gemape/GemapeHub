@@ -1,8 +1,13 @@
-import test from "node:test";
+import test, { before } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { demoSupabase } from "../src/integrations/supabase/demo-client.ts";
+
+// O sistema começa sem empresas: o estoque do catálogo nasce em cada empresa cadastrada, então o teste cadastra uma.
+before(async () => {
+  await demoSupabase.from("empresas").insert({ id: "empresa-do-teste", nome_fantasia: "Empresa do teste", razao_social: "Empresa do teste Ltda", cnpj: "00.000.000/0001-00", status: "Ativa" });
+});
 import {
   TABELAS_UNIFORME,
   editarEpiCatalogo,

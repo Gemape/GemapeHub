@@ -2,6 +2,7 @@
 // passa por escaparHtml, como nos demais termos.
 import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
+import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 
 type Texto = string | null | undefined;
 
@@ -34,30 +35,11 @@ export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme)
     )
     .join("");
 
-  return `
-    <html>
-      <head>
-        <title>Termo de Entrega - ${escaparHtml(empregado?.nome)}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
-          .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; }
-          .title { font-size: 20px; font-weight: bold; text-transform: uppercase; }
-          .content { margin-bottom: 40px; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th, td { border: 1px solid #000; padding: 10px; text-align: left; }
-          .footer { margin-top: 60px; }
-          .signatures { display: flex; justify-content: space-between; margin-top: 80px; }
-          .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 10px; }
-          @print { .no-print { display: none; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="title">Termo de Entrega de Uniforme</div>
-          <div style="margin-top: 10px; font-weight: bold;">${escaparHtml(empresa?.razao_social)}</div>
-          <div>CNPJ: ${escaparHtml(formatarCnpj(empresa?.cnpj ?? ""))}</div>
-        </div>
-
+  return paginaRelatorio({
+    titulo: `Termo de Entrega - ${empregado?.nome ?? ""}`,
+    cabecalho: cabecalhoRelatorio({ titulo: "Termo de Entrega de Uniforme", subtitulos: [`CNPJ: ${formatarCnpj(empresa?.cnpj ?? "")}`], empresa: empresa?.razao_social }),
+    css: CSS_TERMO,
+    corpo: `<div class="termo">
         <div class="content">
           <p>Declaramos que nesta data, <strong>${formatarData(dados.data)}</strong>, entregamos ao colaborador(a)
           <strong>${escaparHtml(empregado?.nome)}</strong>, CPF nº <strong>${escaparHtml(empregado?.cpf)}</strong>, os seguintes itens de uniforme:</p>
@@ -88,9 +70,7 @@ export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme)
             <strong>Responsável</strong><br>${escaparHtml(empresa?.nome_fantasia)}
           </div>
         </div>
-
-        <script>window.print();</script>
-      </body>
-    </html>
-  `;
+        </div>`,
+    botao: BOTAO_IMPRIMIR("Imprimir Termo") + "<script>window.print();</script>",
+  });
 }

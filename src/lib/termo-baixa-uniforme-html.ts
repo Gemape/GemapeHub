@@ -2,6 +2,7 @@
 // escaparHtml, como nos termos de Encerramento e de Responsabilidade.
 import { comTamanho, escaparHtml, formatarData, formatarMoeda } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
+import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 
 export interface DadosTermoBaixaUniforme {
   empresa: { razao_social: string; cnpj: string; nome_fantasia: string } | undefined;
@@ -35,30 +36,11 @@ export function montarTermoBaixaUniformeHtml(dados: DadosTermoBaixaUniforme): st
     )
     .join("");
 
-  return `
-        <html>
-          <head>
-            <title>Termo de Baixa - Uniforme</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 40px; line-height: 1.6; }
-              .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; }
-              .title { font-size: 20px; font-weight: bold; text-transform: uppercase; }
-              .content { margin-bottom: 40px; }
-              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-              th, td { border: 1px solid #000; padding: 10px; text-align: left; }
-              .footer { margin-top: 60px; }
-              .signatures { display: flex; justify-content: space-between; margin-top: 80px; }
-              .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 10px; }
-              .total-box { text-align: right; font-weight: bold; font-size: 18px; margin-top: 20px; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <div class="title">Termo de Baixa Definitiva de Uniforme</div>
-              <div style="margin-top: 10px; font-weight: bold;">${escaparHtml(empresa?.razao_social)}</div>
-              <div>CNPJ: ${escaparHtml(formatarCnpj(empresa?.cnpj ?? ""))}</div>
-            </div>
-
+  return paginaRelatorio({
+    titulo: "Termo de Baixa - Uniforme",
+    cabecalho: cabecalhoRelatorio({ titulo: "Termo de Baixa Definitiva de Uniforme", subtitulos: [`CNPJ: ${formatarCnpj(empresa?.cnpj ?? "")}`], empresa: empresa?.razao_social }),
+    css: CSS_TERMO,
+    corpo: `<div class="termo">
             <div class="content">
               <p>Registramos nesta data, <strong>${formatarData(dados.data)}</strong>, a baixa definitiva
               dos seguintes itens de uniforme vinculados ao colaborador(a)
@@ -82,7 +64,7 @@ export function montarTermoBaixaUniformeHtml(dados: DadosTermoBaixaUniforme): st
 
               <div class="total-box">VALOR TOTAL DA BAIXA: ${formatarMoeda(0)}</div>
 
-              <div style="margin-top: 30px; border: 1px solid #ddd; padding: 15px; background: #f9f9f9;">
+              <div style="margin-top: 30px; background: #f9f9f9;">
                 <strong>Motivo:</strong> ${escaparHtml(dados.motivo)}<br>
                 <strong>Ônus:</strong> ${escaparHtml(dados.onus)}
               </div>
@@ -98,9 +80,7 @@ export function montarTermoBaixaUniformeHtml(dados: DadosTermoBaixaUniforme): st
                 <strong>Responsável</strong><br>${escaparHtml(empresa?.nome_fantasia)}
               </div>
             </div>
-
-            <script>window.print();</script>
-          </body>
-        </html>
-      `;
+        </div>`,
+    botao: BOTAO_IMPRIMIR("Imprimir Termo") + "<script>window.print();</script>",
+  });
 }
