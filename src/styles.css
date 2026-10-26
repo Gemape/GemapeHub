@@ -766,3 +766,105 @@
     transform: scale(1.1);
   }
 }
+
+/* Página inicial pública (glassmorphism): fundo azul com manchas de luz que derivam devagar e vidro fosco por cima. As manchas só usam transform e opacidade; quem
+   reduz movimento recebe tudo parado. */
+@keyframes mancha-deriva-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(7%, 9%, 0) scale(1.18);
+  }
+}
+@keyframes mancha-deriva-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-9%, -6%, 0) scale(0.92);
+  }
+}
+@keyframes vidro-reflexo {
+  from {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(260%) skewX(-18deg);
+  }
+}
+@keyframes vidro-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@utility fundo-vidro {
+  background:
+    radial-gradient(120% 90% at 15% 0%, oklch(0.42 0.26 266) 0%, transparent 60%),
+    radial-gradient(90% 80% at 90% 100%, oklch(0.5 0.22 250) 0%, transparent 55%),
+    linear-gradient(160deg, oklch(0.27 0.24 268) 0%, oklch(0.2 0.2 270) 100%);
+}
+@utility mancha-luz {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  pointer-events: none;
+  will-change: transform;
+}
+@utility vidro-claro {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, oklch(1 0 0 / 0.17) 0%, oklch(1 0 0 / 0.06) 100%);
+  border: 1px solid oklch(1 0 0 / 0.22);
+  backdrop-filter: blur(26px) saturate(1.5);
+  -webkit-backdrop-filter: blur(26px) saturate(1.5);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.4),
+    inset 0 -1px 0 oklch(1 0 0 / 0.06),
+    0 24px 60px -24px oklch(0.1 0.2 268 / 0.75);
+}
+/* Reflexo que atravessa o vidro ao passar o mouse (ou, no cartão grande, de tempos em tempos). */
+@utility vidro-reflexo {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -20% auto -20% 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.22), transparent);
+    transform: translateX(-120%) skewX(-18deg);
+    pointer-events: none;
+  }
+  &:hover::after {
+    animation: vidro-reflexo 1.1s ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      display: none;
+    }
+  }
+}
+@utility vidro-entra {
+  animation: vidro-sobe 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--atraso, 0s) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+@utility mancha-a {
+  animation: mancha-deriva-a 16s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+@utility mancha-b {
+  animation: mancha-deriva-b 20s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}

@@ -140,3 +140,13 @@ test("o cartão com submenus é um botão que abre e fecha a lista de atalhos de
   assert.match(pagina, /<button[^>]*type="button"/);
   assert.match(pagina, /search=\{sub\.search/);
 });
+
+test("a página pública usa vidro e a logo brilhante animada da tela dos módulos", () => {
+  const pagina = ler("routes/index.tsx");
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(pagina, /<LogoEntrada grande \/>/);
+  for (const c of ["fundo-vidro", "vidro-claro", "mancha-a", "mancha-b", "vidro-entra"]) assert.match(pagina, new RegExp(c), c);
+  assert.match(pagina, /<Link to="\/auth">Acessar o sistema<\/Link>/);
+  for (const c of ["fundo-vidro", "vidro-claro", "mancha-luz", "vidro-reflexo"]) assert.match(css, new RegExp(`@utility ${c} {`), c);
+  assert.match(css, /prefers-reduced-motion[\s\S]*vidro-entra/);
+});

@@ -1668,3 +1668,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 290. Ajustes da revisão dos check lists
 
 - Equipamentos e Check list (categorias só de código) ficam fora das telas de Categorias e de associar tamanhos; aparecem só em Código do produto. O responsável da associação só esconde o campo no Novo check list quando está ativo e é da empresa do equipamento ou veículo; senão o campo volta para escolher outro. A lista de check lists volta às dez primeiras ao mudar mês, visão, busca ou filtro. O painel em "todos os períodos" ordena pelo prazo mais recente e, no mesmo dia, pelo nome de A a Z. O equipamento de teste de motor elétrico parte do horímetro inicial nas manutenções. A aplicação dos dados de teste só ignora o que já existe (outro erro desfaz tudo) e a restauração não troca o erro original. Só no navegador, em modo demonstração, sem Supabase.
+
+## 291. Página inicial pública em vidro
+
+- A página de entrada usa fundo azul com manchas de luz que derivam devagar, cartões de vidro (desfoque, borda e reflexo ao passar o mouse) que sobem em sequência, e a mesma logomarca brilhante e animada do login e dos módulos, em tamanho grande. Os seis módulos aparecem em cartões de vidro. Quem já tem sessão continua indo para a tela inicial. Quem prefere menos movimento recebe tudo parado. Só visual, sem Supabase.
