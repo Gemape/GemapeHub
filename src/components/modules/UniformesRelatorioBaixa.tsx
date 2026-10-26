@@ -27,6 +27,8 @@ import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
 import { hojeLocal } from "@/lib/empregados";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
+import { montarRelatorioTabelaHtml } from "@/lib/relatorio-padrao";
 
 export function UniformesRelatorioBaixa() {
   const { empresaId } = useEmpresa();
@@ -60,6 +62,30 @@ export function UniformesRelatorioBaixa() {
     return acc + b.quantidade * (b.preco_unitario_registrado ?? 0);
   }, 0);
 
+  const imprimir = () =>
+    abrirDocumento({
+      titulo: "Relatório de baixas de uniforme",
+      html: montarRelatorioTabelaHtml({
+        titulo: "Relatório de baixas de uniforme",
+        subtitulos: [`Período: ${formatarData(dataInicial)} a ${formatarData(dataFinal)}`, motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`],
+        empresa: empresaId === TODAS ? "Todas as empresas" : empresas.find((e) => e.id === empresaId)?.nome_fantasia,
+        resumo: [["Total de baixas", String(baixas.length)], ["Total de peças", String(totalQuantidade)], ["Valor total", formatarMoeda(totalValor)]],
+        colunas: [{ titulo: "Data" }, { titulo: "Empresa" }, { titulo: "Empregado" }, { titulo: "Uniforme" }, { titulo: "Tamanho" }, { titulo: "Motivo" }, { titulo: "Qtd", direita: true }, { titulo: "Valor total", direita: true }],
+        linhas: baixas.map((b) => [
+          formatarData(b.data_movimentacao),
+          empresas.find((e) => e.id === b.empresa_id)?.nome_fantasia ?? "—",
+          empregados.find((e) => e.id === b.empregado_id)?.nome ?? "—",
+          itens.find((i) => i.id === b.item_id)?.nome ?? "—",
+          tamanhoDe(b) || "—",
+          b.motivo_baixa ?? "—",
+          String(b.quantidade),
+          formatarMoeda(b.quantidade * (b.preco_unitario_registrado ?? 0)),
+        ]),
+        vazio: "Nenhuma baixa no período.",
+      }),
+      arquivo: nomeArquivoDocumento("Relatório de baixas de uniforme", dataInicial, dataFinal),
+    });
+
   if (isError) return <div role="alert">Não foi possível carregar o histórico completo: {error.message}</div>;
 
   return (
@@ -91,7 +117,7 @@ export function UniformesRelatorioBaixa() {
           </Select>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => window.print()}>
+          <Button variant="outline" className="flex-1" onClick={imprimir}>
             Imprimir
           </Button>
           <Button

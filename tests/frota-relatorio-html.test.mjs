@@ -18,7 +18,7 @@ test("o relatório da Frota escapa todos os textos informados", () => {
   assert.ok(html.includes(`GEMAPE ${escapado}`));
   assert.ok(html.includes(`GEM-2026 ${escapado}`));
   assert.ok(html.includes(`Ana ${escapado}`));
-  assert.ok(html.includes(`<strong>Busca:</strong> ${escapado}`));
+  assert.ok(html.includes(`Busca: ${escapado}`));
 });
 
 test("o relatório da Frota mostra totais por situação, km formatado e data de Brasília", () => {

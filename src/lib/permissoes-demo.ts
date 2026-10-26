@@ -2,6 +2,8 @@
 // dá o ponto de partida e cada usuário pode ter exceções; só a diferença para o perfil é guardada. Tudo fica no armazenamento do navegador, nunca no Supabase.
 // Quem usa confere o modo demonstração (`import.meta.env.VITE_DEMO_MODE !== "false"`) no ponto de uso, para este arquivo sair do sistema de produção.
 
+import { GRUPOS_INICIO } from "./inicio.ts";
+
 export const ACOES = ["ver", "criar", "editar", "excluir"] as const;
 export type Acao = (typeof ACOES)[number];
 export type Matriz = Record<string, Partial<Record<Acao, boolean>>>;
@@ -32,6 +34,30 @@ export const TELAS = [
   { id: "clientes", nome: "Clientes", grupo: "Cadastros", caminhos: ["/cadastros/clientes"], tabelas: [] },
 ] as const;
 export type TelaId = (typeof TELAS)[number]["id"];
+
+// Cada menu do sistema (aba do módulo e item de Parâmetros) é uma tela da matriz, abaixo da tela do módulo: sem exceção, herda o que o módulo tem;
+// com exceção, o Administrador libera ou tira só aquele menu. Os menus saem dos mesmos dados da tela inicial, sem lista paralela.
+export type SubTela = { id: string; nome: string; grupo: string; pai: TelaId; url: string; secao: string; search?: Record<string, string> };
+const PAI_DO_CARTAO: Record<string, TelaId> = { EPIs: "epi", Uniformes: "uniformes", Ferramentas: "ferramentas", Veículos: "veiculos", Viagens: "viagens", Equipamentos: "equipamentos" };
+export const SUBTELAS: readonly SubTela[] = (() => {
+  const vistos = new Set<string>();
+  const saida: SubTela[] = [];
+  for (const cartao of GRUPOS_INICIO.flatMap((g) => g.cartoes)) {
+    const pai = PAI_DO_CARTAO[cartao.titulo];
+    if (!pai) continue;
+    for (const i of cartao.itens ?? []) {
+      if (i.soAdmin) continue;
+      let id = `${pai}|${i.secao}|${i.titulo}`;
+      if (vistos.has(id)) id += `|${Object.values(i.search ?? {}).join("-")}`;
+      for (let n = 2; vistos.has(id); n++) id += `|${n}`;
+      vistos.add(id);
+      saida.push({ id, nome: i.titulo, grupo: `${cartao.titulo} · ${i.secao}`, pai, url: i.url, secao: i.secao, ...(i.search ? { search: i.search } : {}) });
+    }
+  }
+  return saida;
+})();
+const SUBTELA_POR_ID = new Map(SUBTELAS.map((s) => [s.id, s]));
+export const ehSubTela = (id: string): boolean => SUBTELA_POR_ID.has(id);
 
 export const PERFIS: readonly { id: PerfilId; nome: string }[] = [
   { id: "admin", nome: "Administrador" },
@@ -80,6 +106,13 @@ export function efetivas(u: Pick<Usuario, "perfil" | "excecoes">): Matriz {
     const ver = u.excecoes[t.id]?.ver ?? PADRAO_DO_PERFIL[u.perfil][t.id]?.ver ?? false;
     saida[t.id] = Object.fromEntries(ACOES.map((a) => [a, a === "ver" ? ver : ver && (u.excecoes[t.id]?.[a] ?? PADRAO_DO_PERFIL[u.perfil][t.id]?.[a] ?? false)]));
   }
+  // Menus: herdam do módulo, e a exceção do menu vale por cima (só com "ver" do módulo).
+  for (const s of SUBTELAS) {
+    const pai = saida[s.pai] ?? {};
+    const exc = u.excecoes[s.id];
+    const ver = !!pai.ver && (exc?.ver ?? true);
+    saida[s.id] = Object.fromEntries(ACOES.map((a) => [a, a === "ver" ? ver : ver && (exc?.[a] ?? pai[a] ?? false)]));
+  }
   cacheEfetivas.set(u, saida);
   return saida;
 }
@@ -123,7 +156,7 @@ export function definirUsuarioAtivo(storage: Armazenamento, id: string): void {
 }
 
 // Marca ou desmarca uma ação do usuário. Marcar criar, editar ou excluir marca também "ver"; desmarcar "ver" desmarca as outras. Administrador não muda.
-export function alternarAcao(estado: Estado, usuarioId: string, tela: TelaId, acao: Acao, valor: boolean): Estado {
+export function alternarAcao(estado: Estado, usuarioId: string, tela: string, acao: Acao, valor: boolean): Estado {
   return {
     ...estado,
     usuarios: estado.usuarios.map((u) => {
@@ -132,8 +165,18 @@ export function alternarAcao(estado: Estado, usuarioId: string, tela: TelaId, ac
       const novo = { ...atual, [acao]: valor };
       if (acao === "ver" && !valor) for (const a of ACOES) novo[a] = false;
       if (acao !== "ver" && valor) novo.ver = true;
+      const menu = SUBTELA_POR_ID.get(tela);
+      // Exceções dos menus ficam como estão; a do módulo (ou a do menu mexido) é recalculada contra o padrão dele.
+      const dosMenus = Object.fromEntries(Object.entries(u.excecoes).filter(([id]) => SUBTELA_POR_ID.has(id) && id !== tela));
+      if (menu) {
+        const pai = efetivas(u)[menu.pai] ?? {};
+        const exc: Partial<Record<Acao, boolean>> = {};
+        for (const a of ACOES) if (!!novo[a] !== (a === "ver" ? true : !!pai[a])) exc[a] = !!novo[a];
+        const proprias = Object.fromEntries(Object.entries(u.excecoes).filter(([id]) => !SUBTELA_POR_ID.has(id)));
+        return { ...u, excecoes: { ...proprias, ...dosMenus, ...(Object.keys(exc).length ? { [tela]: exc } : {}) } };
+      }
       const desejada: Matriz = { ...efetivas(u), [tela]: novo };
-      return { ...u, excecoes: diferencaParaPerfil(u.perfil, desejada) };
+      return { ...u, excecoes: { ...diferencaParaPerfil(u.perfil, desejada), ...dosMenus } };
     }),
   };
 }
@@ -144,14 +187,22 @@ export const voltarAoPerfil = (estado: Estado, usuarioId: string): Estado => ({
   ...estado, usuarios: estado.usuarios.map((u) => (u.id === usuarioId ? { ...u, excecoes: {} } : u)),
 });
 
-export function pode(u: Usuario, tela: TelaId | null, acao: Acao): boolean {
+export function pode(u: Usuario, tela: string | null, acao: Acao): boolean {
   return tela ? !!efetivas(u)[tela]?.[acao] : u.perfil === "admin";
 }
 const casa = (pathname: string, caminho: string) => pathname === caminho || pathname.startsWith(`${caminho}/`) || pathname.startsWith(`${caminho}-`);
 // Tela da matriz a que o caminho pertence; null para as que não entram na matriz (início, Gerais, ocorrências...).
-export function telaDaRota(pathname: string): TelaId | null {
+// Com `search` (?aba= ou ?de=), vale o menu mais específico da rota; sem menu que case, a tela do módulo. Numa rota de abas sem ?aba=, vale a primeira aba.
+export function telaDaRota(pathname: string, search: Record<string, unknown> = {}): string | null {
   const achada = TELAS.flatMap((t) => t.caminhos.map((c) => ({ id: t.id, c }))).filter(({ c }) => casa(pathname, c)).sort((a, b) => b.c.length - a.c.length)[0];
-  return achada?.id ?? null;
+  if (!achada) return null;
+  const caminho = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  const doModulo = SUBTELAS.filter((s) => s.pai === achada.id && (s.url === caminho || caminho.startsWith(`${s.url}/`)));
+  const casaBusca = (s: SubTela) => !!s.search && Object.entries(s.search).every(([k, v]) => String(search[k] ?? "") === v);
+  const exatos = doModulo.filter((s) => s.url === caminho);
+  const candidatos = exatos.length > 0 ? exatos : doModulo;
+  const menu = candidatos.find(casaBusca) ?? candidatos.find((s) => !s.search) ?? (Object.keys(search).length === 0 ? candidatos.find((s) => s.secao === "Módulo") : undefined);
+  return menu?.id ?? achada.id;
 }
 export const telaDaTabela = (tabela: string): TelaId | null => TELAS.find((t) => (t.tabelas as readonly string[]).includes(tabela))?.id ?? null;
 export const telaDoModulo = (modulo: unknown): TelaId | null => (modulo === "epi" ? "epi" : modulo === "uniforme" ? "uniformes" : modulo === "ferramenta" ? "ferramentas" : null);

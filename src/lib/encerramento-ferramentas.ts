@@ -102,6 +102,8 @@ export function validarTermoResponsabilidade(
   linhas: { item_id: string; quantidade: number }[],
   itens: { id: string; nome: string; estoque_atual: number | null }[],
   guardadasNaCaixa?: Record<string, number>,
+  // Por ferramenta, quanto da caixa já está com empregados: explica o porquê quando não sobra nada guardado.
+  comEmpregadoNaCaixa?: Record<string, number>,
 ): string | null {
   if (linhas.length === 0) return "Adicione pelo menos uma ferramenta.";
   const pedidas = new Map<string, number>();
@@ -117,6 +119,8 @@ export function validarTermoResponsabilidade(
     if (guardadasNaCaixa) {
       const guardadas = guardadasNaCaixa[itemId] ?? 0;
       if (quantidade > guardadas) {
+        const fora = comEmpregadoNaCaixa?.[itemId] ?? 0;
+        if (fora > 0) return `${item?.nome ?? "A ferramenta"} já foi entregue (${fora} unidade(s) com empregado) e só ${guardadas} está guardada na caixa. Registre a devolução antes de entregar de novo.`;
         return `A entrega de ${quantidade} unidade(s) de ${item?.nome ?? "uma ferramenta"} passa do que está guardado na caixa (${guardadas}).`;
       }
       continue;

@@ -25,6 +25,8 @@ import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { ehBaixa } from "@/lib/historico-movimentacoes";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens } from "@/lib/hooks-gemape";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
+import { montarRelatorioTabelaHtml } from "@/lib/relatorio-padrao";
 
 export function EpiRelatorioFuncionario() {
   const [empresaSel, setEmpresaSel] = useState(TODAS);
@@ -55,6 +57,29 @@ export function EpiRelatorioFuncionario() {
     .filter((m) => ehBaixa(m))
     .reduce((acc, m) => acc + m.quantidade, 0);
   const emPosse = totalEntregue - totalDevolvido - totalBaixado;
+
+  const imprimir = () =>
+    abrirDocumento({
+      titulo: "Histórico de movimentações de EPI",
+      html: montarRelatorioTabelaHtml({
+        titulo: "Histórico de movimentações de EPI",
+        subtitulos: [empregado?.nome],
+        empresa: empresas.find((e) => e.id === empregado?.empresa_id)?.nome_fantasia,
+        resumo: [["Entregues", String(totalEntregue)], ["Devolvidos", String(totalDevolvido)], ["Baixados", String(totalBaixado)], ["Em posse", String(emPosse)]],
+        colunas: [{ titulo: "Data" }, { titulo: "EPI" }, { titulo: "Tamanho" }, { titulo: "Tipo" }, { titulo: "Qtd", direita: true }, { titulo: "Status/Motivo" }, { titulo: "Observação" }],
+        linhas: historico.map((h) => [
+          formatarData(h.data_movimentacao),
+          itens.find((i) => i.id === h.item_id)?.nome ?? "—",
+          tamanhoDe(h) || "—",
+          h.tipo_movimentacao,
+          String(h.quantidade),
+          h.tipo_movimentacao === "Devolucao" ? "Devolvido" : ehBaixa(h) ? `Baixado: ${h.motivo_baixa ?? "—"}` : "Em posse",
+          h.observacao || "—",
+        ]),
+        vazio: "Nenhuma movimentação para este empregado.",
+      }),
+      arquivo: nomeArquivoDocumento("Histórico de movimentações de EPI", empregado?.nome),
+    });
 
   if (isError) return <div role="alert">Não foi possível carregar o histórico completo: {error.message}</div>;
   if (empregado && isLoading) return <div>Carregando histórico completo…</div>;
@@ -119,7 +144,7 @@ export function EpiRelatorioFuncionario() {
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold">Histórico de Movimentações de EPI</h3>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <Button variant="outline" size="sm" onClick={imprimir}>
                 Imprimir
               </Button>
               <Button

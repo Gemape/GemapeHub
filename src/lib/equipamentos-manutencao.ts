@@ -10,6 +10,14 @@ export type AcaoManutencaoEquipamento = { id: string; nome: string; subitens: Su
 export type TipoOcorrenciaEquipamento = { id: string; nome: string; descricao: string };
 export type ItemPlano = { acaoId: string; horas: number; meses: number };
 export type PlanoEquipamento = { equipamentoId: string; itens: ItemPlano[]; atualizadoEm: string };
+
+// Equipamentos do seletor do plano: os baixados/inativos ficam de fora (menos o do plano em edição) e os que já têm plano aparecem como ocupados.
+export function opcoesDePlano<E extends { id: string; status?: string }>(equipamentos: E[], planos: { equipamentoId: string }[], editando: string | null): { equipamento: E; ocupado: boolean }[] {
+  const comPlano = new Set(planos.map((p) => p.equipamentoId));
+  return equipamentos
+    .filter((e) => e.status !== "Baixado/Inativo" || e.id === editando)
+    .map((e) => ({ equipamento: e, ocupado: comPlano.has(e.id) && e.id !== editando }));
+}
 export type EntradaItemPlano = { acaoId: string; horas: string | number; meses: string | number };
 export type ManutencaoEquipamento = { acoes: AcaoManutencaoEquipamento[]; tiposOcorrencia: TipoOcorrenciaEquipamento[]; planos: PlanoEquipamento[] };
 

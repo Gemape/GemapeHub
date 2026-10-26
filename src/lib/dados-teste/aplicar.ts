@@ -9,7 +9,7 @@ import { sincronizarEstoqueEpis, TABELAS_EPI, TABELAS_UNIFORME } from "../epi-ca
 import { descricaoVeiculo } from "../descricao-veiculo.ts";
 import { hojeLocal } from "../empregados.ts";
 import { prepararCadastroFerramenta } from "../cadastro-ferramentas.ts";
-import { codigoCaixa } from "../caixas-habilitadas.ts";
+import { codigoCaixa, numeroDaCaixa } from "../caixas-habilitadas.ts";
 import { salvarCliente } from "../clientes-demo.ts";
 import { salvarEquipamento } from "../equipamentos-demo.ts";
 import { salvarFornecedor } from "../fornecedores-demo.ts";
@@ -62,6 +62,27 @@ function lerDados(storage: Armazenamento, base: Dados): Dados {
   const lido = lerJson(storage, CHAVE_DADOS);
   const inicial = JSON.parse(JSON.stringify(base)) as Dados;
   return ehLinha(lido) ? { ...inicial, ...(lido as Dados) } : inicial;
+}
+
+// A empresa GEMAPE de demonstração (a que o sistema trazia antes das empresas do grupo) e tudo o que é dela saem de quem ainda a tem no navegador:
+// os cadastros dela, o que foi registrado nesses itens e as caixas, ferramentas e compras ligadas a eles.
+const EMPRESA_ANTIGA = "empresa-demo";
+const CADASTROS_ANTIGOS = new Set(["emp-demo", "epi-demo", "uni-demo", "fer-demo", "vei-demo"]);
+export function removerEmpresaAntigaDeDemonstracao(dados: Dados): void {
+  const itens = new Set<string>(CADASTROS_ANTIGOS);
+  for (const l of Object.values(dados).flat()) if (l["empresa_id"] === EMPRESA_ANTIGA && ("codigo_sku" in l || "placa" in l)) itens.add(String(l["id"]));
+  const caixas = new Set((dados["caixas_ferramentas"] ?? []).filter((c) => c["empresa_id"] === EMPRESA_ANTIGA).map((c) => String(c["id"])));
+  for (const tabela of Object.keys(dados)) {
+    dados[tabela] = (dados[tabela] ?? []).filter((l) => {
+      if (tabela === "empresas") return l["id"] !== EMPRESA_ANTIGA;
+      if (tabela === "perfis") return true;
+      if (l["empresa_id"] === EMPRESA_ANTIGA || itens.has(String(l["id"]))) return false;
+      if (typeof l["item_id"] === "string" && itens.has(l["item_id"])) return false;
+      if (typeof l["empregado_id"] === "string" && itens.has(l["empregado_id"])) return false;
+      if (typeof l["caixa_id"] === "string" && caixas.has(l["caixa_id"])) return false;
+      return true;
+    });
+  }
 }
 
 // ---------- remover ----------
@@ -184,6 +205,11 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
 
   // ----- Dados do sistema -----
   const dados = lerDados(storage, base);
+  removerEmpresaAntigaDeDemonstracao(dados);
+  for (const [chave, campo, valor] of [["gemape-demo-portadores-caixa", "empresa_id", EMPRESA_ANTIGA], ["gemape-demo-abastecimentos", "veiculoId", "vei-demo"]] as const) {
+    const lido = lerJson(storage, chave);
+    if (Array.isArray(lido)) storage.setItem(chave, JSON.stringify(lido.filter((l) => !(ehLinha(l) && l[campo] === valor))));
+  }
   const tabela = (nome: string): Linha[] => (dados[nome] ??= []);
   const criadoEm = agora.toISOString();
   for (const e of EMPRESAS) tabela("empresas").push({ ...e, status: "Ativa", created_at: criadoEm });
@@ -335,13 +361,17 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   }
 
   // Caixas de ferramentas: habilita os números das caixas e cria uma caixa por ferramenta, aos cuidados de um empregado.
-  const habilitadas = [...new Set([...Gerais.lerParametros(storage).caixasHabilitadas, ...ferramentas.map((_, n) => n + 1)])];
+  // O número da caixa é único entre as empresas: as de teste pegam os primeiros números que as caixas da pessoa não usam.
   const caixasUsuario = tabela("caixas_ferramentas").filter((c) => !teste(c)).map((c) => ({ id: String(c["id"]), codigo: String(c["codigo"] ?? ""), codigo_num: Number(c["codigo_num"]) || null }));
+  const numerosDaPessoa = new Set(caixasUsuario.map((c) => numeroDaCaixa(c)));
+  const numerosDeTeste: number[] = [];
+  for (let numero = 1; numerosDeTeste.length < ferramentas.length; numero++) if (!numerosDaPessoa.has(numero)) numerosDeTeste.push(numero);
+  const habilitadas = [...new Set([...Gerais.lerParametros(storage).caixasHabilitadas, ...numerosDaPessoa, ...numerosDeTeste])].filter((n): n is number => n !== null);
   Gerais.salvarCaixasHabilitadas(habilitadas, caixasUsuario, storage);
   const portadores: Linha[] = [];
   ferramentas.forEach(({ f, id }, n) => {
     const caixaId = `${PREFIXO}caixa-${n + 1}`;
-    const numero = n + 1;
+    const numero = numerosDeTeste[n]!;
     tabela("caixas_ferramentas").push({
       id: caixaId, created_at: criadoEm, codigo: codigoCaixa(numero), codigo_num: numero, empresa_id: empresaIds[f.empresaIndice], nome: codigoCaixa(numero),
       descricao: `Caixa de ${f.grupo.toLocaleLowerCase("pt-BR")} da ${EMPRESAS[f.empresaIndice]!.nome_fantasia}`, localizacao: ["Oficina — bancada 1", "Almoxarifado — prateleira B", "Galpão — armário 3", "Oficina — bancada 4", "Expedição — armário 1"][n] ?? "Almoxarifado", status: "Ativa",

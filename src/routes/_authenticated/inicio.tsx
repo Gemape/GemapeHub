@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, Car, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Shirt, Truck, Users, Wrench } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Building2, Car, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import { ICONES } from "@/components/layout/AppSidebar";
 import { useAccess } from "@/lib/access-context";
 import { gruposDoInicio, type IconeInicio, type SecaoInicio, type SubitemInicio } from "@/lib/inicio";
+
+// Matriz de acessos por usuário (card Configurações): só no modo demonstração; na produção a condição é falsa na compilação e o código nem é gerado.
+const ConfiguracoesAcessos = import.meta.env.VITE_DEMO_MODE !== "false"
+  ? lazy(() => import("@/components/layout/ConfiguracoesAcessos").then((m) => ({ default: m.ConfiguracoesAcessos })))
+  : null;
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   head: () => ({ meta: [{ title: "Início | Patrimônio GEMAPE" }] }),
@@ -37,6 +42,7 @@ function AtalhoDoCartao({ sub }: { sub: SubitemInicio }) {
 function PaginaInicio() {
   const { isAdmin, podeVerCaminho } = useAccess();
   const [abertos, setAbertos] = useState<ReadonlySet<string>>(new Set());
+  const [configAberta, setConfigAberta] = useState(false);
   const alternar = (chave: string) =>
     setAbertos((a) => {
       const nova = new Set(a);
@@ -136,10 +142,29 @@ function PaginaInicio() {
                 </li>
               );
             })}
+            {/* Configurações é um cartão ao lado do Dashboard (só o Administrador, só no modo demonstração). */}
+            {ConfiguracoesAcessos && isAdmin && grupo.titulo === "Visão geral" && (
+              <li data-cartao className={larguraCartao}>
+                <button type="button" onClick={() => setConfigAberta(true)} className={`flex w-full flex-col text-left ${classeCartao} ${classeFoco}`}>
+                  <span className="flex h-36 items-center justify-center bg-gradient-to-br from-[oklch(0.9_0.05_255)] to-[oklch(0.965_0.025_255)] text-primary">
+                    <span className="medalhao-cartao" style={{ "--atraso": "-2.4s" } as React.CSSProperties}>
+                      <Settings aria-hidden="true" />
+                    </span>
+                  </span>
+                  <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
+                    <span className="font-medium">Configurações</span>
+                    <span className="text-xs text-muted-foreground">Acessos por usuário e por menu</span>
+                  </span>
+                </button>
+              </li>
+            )}
           </ul>
         </section>
       ))}
       </div>
+      {ConfiguracoesAcessos && isAdmin && configAberta && (
+        <Suspense fallback={null}><ConfiguracoesAcessos aberto={configAberta} onAberto={setConfigAberta} /></Suspense>
+      )}
     </div>
   );
 }

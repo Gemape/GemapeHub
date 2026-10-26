@@ -1544,3 +1544,28 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Na janela de associação (Parâmetros > Equipamentos > Check list de manutenção e de vistoria), o campo Equipamento fica habilitado também ao editar e lista todos os equipamentos cadastrados; os que já têm itens associados aparecem desabilitados ("· já tem itens associados"). Trocar o equipamento ao editar move a associação: a do equipamento antigo sai, com o grupo personalizado dele.
 - Ocorrências de equipamento aceitam fotos como as de veículo: até 6 por ocorrência, só imagens, anexadas ao registrar ou depois, enquanto a ocorrência está aberta. As fotos dos itens do check list (até 3 por item) já existiam na execução.
 - Tudo em modo demonstração (localStorage), sem Supabase.
+
+## 266. Padrão único de relatório impresso
+
+- Todo relatório, check list, termo e ficha gerado pelo sistema segue o layout do Relatório de Viagens: folha A4, cabeçalho com logomarca, título, subtítulos e empresa, linha azul (#0A007C), tabelas de cabeçalho azul, quadros de resumo cinza e rodapé "Emitido em" (com a numeração das páginas na impressão).
+- O padrão fica em `src/lib/relatorio-padrao.ts` (`paginaRelatorio`, `cabecalhoRelatorio`, `montarRelatorioTabelaHtml`, `CSS_TERMO`). Check lists de veículo e de equipamento, Frota, Manutenção, os cinco termos, a Ficha de EPI e o Termo de Encerramento passaram a usá-lo; o Relatório de Viagens, que tem paginação própria, é a referência visual.
+- O botão Imprimir dos relatórios de EPI e Uniformes (por empregado e de baixas) abre o relatório no padrão, em vez de imprimir a tela. Relatório novo deve usar o mesmo módulo.
+- Só texto e estilo gerados no navegador, em modo demonstração, sem Supabase.
+
+## 267. Número de caixa único entre as empresas
+
+- Duas caixas de ferramentas não podem ter o mesmo número, mesmo em empresas diferentes. As telas já conferiam; agora a base de demonstração também recusa o cadastro repetido ("Já existe a caixa CX-0003").
+- Os dados de teste pegam os primeiros números que as caixas cadastradas pela pessoa não usam, em vez de repetir o CX-0003 dela (versão 12 dos dados de teste). No banco real, o mesmo vale como restrição de unicidade do número (Fase 2).
+
+## 268. Configurações como cartão e acessos por menu
+
+- O botão Configurações saiu do cabeçalho e virou um cartão ao lado do Dashboard, na tela inicial (só o Administrador, só no modo demonstração). O cabeçalho mantém "Entrar como".
+- A matriz de acessos passou a ter uma linha para cada módulo e para cada menu do sistema (abas dos módulos e itens de Parâmetros), cada uma com Ver, Criar, Editar e Excluir. As linhas dos menus saem dos mesmos dados da tela inicial (`SUBTELAS`).
+- O menu herda o que o módulo tem; marcar ou desmarcar dá uma exceção só daquele menu (marcada com *), e só a exceção é guardada. Sem "Ver" no módulo, nenhum menu dele aparece. A rota vale pelo menu: `?aba=` ou `?de=` escolhe o menu e, sem eles, vale a primeira aba do módulo.
+- Menus e cartões sem acesso somem da tela inicial e do menu do topo; entrar pelo endereço mostra "Sem acesso a esta tela". A recusa de gravação continua por módulo (tabela), não por menu.
+- Só no navegador, em modo demonstração, sem Supabase; o código fica fora da produção.
+
+## 269. Sem a empresa GEMAPE de demonstração
+
+- O sistema de demonstração não traz mais a empresa "GEMAPE" (id `empresa-demo`) nem os cadastros dela (empregada, EPI, uniforme, ferramenta FER-0001 e veículo GEM-2026). As três empresas do grupo vêm dos dados de teste.
+- Quem já tinha a empresa antiga no navegador a perde ao aplicar os dados de teste (versão 13): saem a empresa, o que tinha o id dela, as movimentações, caixas e compras ligadas a esses itens, os portadores de caixa e os abastecimentos do veículo antigo.

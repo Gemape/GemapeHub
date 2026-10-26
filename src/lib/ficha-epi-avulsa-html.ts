@@ -2,6 +2,7 @@
 // escaparHtml, como nos demais termos.
 import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
+import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 
 type Texto = string | null | undefined;
 
@@ -29,13 +30,13 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
     .map((h) => {
       return `
       <tr>
-        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${formatarData(h.data)}</td>
-        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.quantidade}</td>
-        <td style="border: 1px solid #000; padding: 5px;">${escaparHtml(h.nome || "—")}${comTamanho(h.tamanho)}</td>
-        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${escaparHtml(h.ca || "—")}</td>
-        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${h.tipo === "Saida" ? (h.baixaMotivo ? `BAIXA (${escaparHtml(h.baixaMotivo)})` : "ENTREGA") : "DEVOLUÇÃO"}${h.tipo !== "Saida" && h.responsavel ? `<br/><span style="font-size: 8pt;">Resp.: ${escaparHtml(h.responsavel)}</span>` : ""}</td>
-        <td style="border: 1px solid #000; padding: 5px; text-align: center;">${escaparHtml(h.codigo || "—")}</td>
-        <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
+        <td style="text-align: center;">${formatarData(h.data)}</td>
+        <td style="text-align: center;">${h.quantidade}</td>
+        <td>${escaparHtml(h.nome || "—")}${comTamanho(h.tamanho)}</td>
+        <td style="text-align: center;">${escaparHtml(h.ca || "—")}</td>
+        <td style="text-align: center;">${h.tipo === "Saida" ? (h.baixaMotivo ? `BAIXA (${escaparHtml(h.baixaMotivo)})` : "ENTREGA") : "DEVOLUÇÃO"}${h.tipo !== "Saida" && h.responsavel ? `<br/><span style="font-size: 8pt;">Resp.: ${escaparHtml(h.responsavel)}</span>` : ""}</td>
+        <td style="text-align: center;">${escaparHtml(h.codigo || "—")}</td>
+        <td style="height: 30px;"></td>
       </tr>
     `;
     })
@@ -46,46 +47,24 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
     .map(
       () => `
     <tr>
-      <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
-      <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
-      <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
-      <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
-      <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
-      <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
-      <td style="border: 1px solid #000; padding: 5px; height: 30px;"></td>
+      <td style="height: 30px;"></td>
+      <td style="height: 30px;"></td>
+      <td style="height: 30px;"></td>
+      <td style="height: 30px;"></td>
+      <td style="height: 30px;"></td>
+      <td style="height: 30px;"></td>
+      <td style="height: 30px;"></td>
     </tr>
   `,
     )
     .join("");
 
-  return `
-    <html>
-      <head>
-        <title>Ficha de EPI - ${escaparHtml(empregado.nome)}</title>
-        <style>
-          body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.2; padding: 20px; }
-          .header-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          .header-table td { border: 1px solid #000; padding: 10px; }
-          .title { text-align: center; font-weight: bold; font-size: 14pt; }
-          .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          .info-table td { border: 1px solid #000; padding: 5px; }
-          .main-table { width: 100%; border-collapse: collapse; }
-          .main-table th { border: 1px solid #000; padding: 5px; background-color: #eee; }
-          .main-table td { border: 1px solid #000; padding: 5px; }
-          .footer { margin-top: 20px; font-size: 8pt; }
-          @media print { .no-print { display: none; } }
-        </style>
-      </head>
-      <body>
-        <table class="header-table">
-          <tr>
-            <td style="width: 20%; text-align: center;"><strong>LOGO</strong></td>
-            <td class="title">FICHA DE CONTROLE DE ENTREGA DE EPI</td>
-            <td style="width: 20%; text-align: center;">Rev. 00</td>
-          </tr>
-        </table>
-
-        <table class="info-table">
+  return paginaRelatorio({
+    titulo: `Ficha de EPI - ${empregado.nome ?? ""}`,
+    cabecalho: cabecalhoRelatorio({ titulo: "Ficha de Controle de Entrega de EPI", subtitulos: ["Rev. 00"], empresa: empresa.razao_social }),
+    css: CSS_TERMO,
+    corpo: `<div class="termo">
+<table>
           <tr>
             <td colspan="2"><strong>Empresa:</strong> ${escaparHtml(empresa.razao_social)}</td>
             <td><strong>CNPJ:</strong> ${escaparHtml(formatarCnpj(empresa.cnpj ?? ""))}</td>
@@ -101,11 +80,11 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
           </tr>
         </table>
 
-        <p style="font-size: 8pt; text-align: justify; margin-bottom: 15px;">
+        <p class="nota">
           Declaro que recebi da empresa os Equipamentos de Proteção Individual (EPI) adequados ao risco de minha atividade, em perfeitas condições de uso, e que fui treinado quanto ao seu uso correto. Comprometo-me a utilizá-los apenas para a finalidade a que se destinam e a devolvê-los quando solicitado ou no desligamento da empresa.
         </p>
 
-        <table class="main-table">
+        <table>
           <thead>
             <tr>
               <th style="width: 12%;">Data</th>
@@ -123,14 +102,10 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
           </tbody>
         </table>
 
-        <div class="footer">
+        <div class="nota">
           <p><strong>Norma Regulamentadora 06 (NR-06):</strong> Cabe ao empregado utilizar o EPI apenas para a finalidade a que se destina, responsabilizar-se pela guarda e conservação, e comunicar ao empregador qualquer alteração que o torne impróprio para uso.</p>
         </div>
-
-        <div class="no-print" style="margin-top: 30px; text-align: center;">
-          <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Imprimir Ficha</button>
-        </div>
-      </body>
-    </html>
-  `;
+      </div>`,
+    botao: BOTAO_IMPRIMIR("Imprimir Ficha"),
+  });
 }

@@ -3,6 +3,7 @@
 import { hojeLocal } from "./empregados.ts";
 import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
+import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 
 type Texto = string | null | undefined;
 
@@ -37,28 +38,11 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
     year: "numeric",
   });
 
-  return `
-      <html>
-        <head>
-          <title>Termo de Entrega de EPI</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; padding: 40px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .title { font-size: 20px; font-weight: bold; text-decoration: underline; margin-bottom: 20px; }
-            .content { margin-bottom: 30px; }
-            .table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            .footer { margin-top: 50px; }
-            .signatures { display: flex; justify-content: space-between; margin-top: 80px; }
-            .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px; }
-            @media print { .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h2>${escaparHtml(empresa.razao_social)}</h2>
-            <p>CNPJ: ${escaparHtml(formatarCnpj(empresa.cnpj ?? ""))}</p>
-            <div class="title">TERMO DE RESPONSABILIDADE E ENTREGA DE EPI</div>
-          </div>
+  return paginaRelatorio({
+    titulo: "Termo de Entrega de EPI",
+    cabecalho: cabecalhoRelatorio({ titulo: "Termo de Responsabilidade e Entrega de EPI", subtitulos: [`CNPJ: ${formatarCnpj(empresa.cnpj ?? "")}`], empresa: empresa.razao_social }),
+    css: CSS_TERMO,
+    corpo: `<div class="termo">
           <div class="content">
             <p>Declaro ter recebido da empresa <strong>${escaparHtml(empresa.razao_social)}</strong>, os Equipamentos de Proteção Individual (EPI) abaixo relacionados, novos e/ou em perfeitas condições de uso, obrigando-me a utilizá-los corretamente, zelar pela sua guarda e conservação, bem como devolvê-los quando solicitado ou no ato de minha rescisão contratual.</p>
 
@@ -67,14 +51,14 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
             <strong>Matrícula:</strong> ${escaparHtml(empregado.matricula || "—")}</p>
           </div>
 
-          <table class="table">
+          <table>
             <thead>
-              <tr style="background-color: #f2f2f2;">
-                <th style="border: 1px solid #ddd; padding: 8px;">Nº</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Descrição</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">CA</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Qtd</th>
-                <th style="border: 1px solid #ddd; padding: 8px;">Estado</th>
+              <tr>
+                <th>Nº</th>
+                <th>Descrição</th>
+                <th>CA</th>
+                <th>Qtd</th>
+                <th>Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -96,13 +80,9 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
               Assinatura do Responsável
             </div>
           </div>
-
-          <div class="no-print" style="margin-top: 50px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Imprimir Termo</button>
-          </div>
-        </body>
-      </html>
-  `;
+        </div>`,
+    botao: BOTAO_IMPRIMIR("Imprimir Termo"),
+  });
 }
 
 /** Observação gravada em cada saída do termo, com a data local (não a de UTC). */

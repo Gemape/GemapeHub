@@ -1,5 +1,6 @@
 // @ts-nocheck -- adaptador propositalmente genérico para emular a API de consulta no demo.
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
+import { codigoCaixa, numeroDaCaixa } from "../../lib/caixas-habilitadas.ts";
 import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
 import { TABELAS_EPI, TABELAS_UNIFORME, duplicadoNoCatalogo, editarEpiCatalogo, excluirEpiCatalogo, sincronizarEstoqueEpis, travasDoItem, type TabelasCatalogo } from "../../lib/epi-catalogo.ts";
 import { aplicarSeparacao, opcoesDaSeparacao } from "../../lib/epi-separar-tamanhos.ts";
@@ -20,15 +21,10 @@ const agora = new Date().toISOString();
 // Cada registro novo recebe um instante próprio e crescente: a ordenação por created_at não desempata pelo id aleatório.
 let ultimoInstante = 0;
 const instanteNovo = () => new Date((ultimoInstante = Math.max(Date.now(), ultimoInstante + 1))).toISOString();
-const empresa = { id: "empresa-demo", nome_fantasia: "GEMAPE", razao_social: "GEMAPE Demonstração", cnpj: "00.000.000/0001-00", rua: "Rua Exemplo", numero: "100", bairro: "Centro", cep: "01000-000", cidade: "São Paulo", estado: "SP", status: "Ativa", created_at: agora };
 const usuario = { id: "admin-demo", email: "admin@demo.local" };
+// O sistema começa sem empresas nem cadastros: as três empresas do grupo vêm dos dados de teste (modo demonstração) ou são cadastradas pela pessoa.
 export const dadosIniciais: Record<string, Linha[]> = {
-  perfis: [{ id: usuario.id, papel: "admin", ativo: true }], empresas: [empresa],
-  empregados: [{ id: "emp-demo", empresa_id: empresa.id, nome: "Maria da Silva", cpf: "000.000.000-00", cargo: "Técnica", matricula: "1001", ativo: true }],
-  epis: [{ id: "epi-demo", empresa_id: empresa.id, nome: "Capacete de segurança", codigo_sku: "EPI-0001", categoria: "Capacete", subcategoria_id: "sub-epi-capacete", ca: "12345", estoque_atual: 12, estoque_minimo: 5, status: "Ativo", preco_unitario: 85, created_at: agora }],
-  uniformes: [{ id: "uni-demo", empresa_id: empresa.id, nome: "Camisa operacional", codigo_sku: "UNI-0001", categoria: "Camisa", subcategoria_id: "sub-uniformes-camisa", tamanho: "M", estoque_atual: 20, estoque_minimo: 8, status: "Ativo", preco_unitario: 55, created_at: agora }],
-  ferramentas: [{ id: "fer-demo", empresa_id: empresa.id, nome: "Furadeira", codigo_sku: "FER-0001", categoria: "Elétrica", subcategoria_id: "sub-ferramentas-eletrica", estoque_atual: 3, estoque_minimo: 2, status: "Ativo", preco_unitario: 240, created_at: agora }],
-  veiculos: [{ id: "vei-demo", empresa_id: empresa.id, placa: "GEM-2026", marca: "Fiat", modelo: "Strada", quilometragem_atual: 25000, status: "Ativo", created_at: agora }],
+  perfis: [{ id: usuario.id, papel: "admin", ativo: true }], empresas: [], empregados: [], epis: [], uniformes: [], ferramentas: [], veiculos: [],
   movimentacoes: [], ocorrencias: [], compras_epis: [], compras_uniformes: [], caixas_ferramentas: [], caixa_ferramenta_itens: [], cadastros_auxiliares: [], auditoria: [],
   notas_fiscais_importadas: [],
 };
@@ -229,6 +225,11 @@ class Consulta {
       const novos = (Array.isArray(this.payload) ? this.payload : [this.payload]).map(l => ({ id: (l?.id as string) ?? id(), created_at: instanteNovo(), ...l }));
       if (this.tabela === "movimentacoes") { const erro = aplicarEstoque(novos); if (erro) return { data: null, error: erro }; }
       if (this.tabela in MODULO_DA_COMPRA) { const erro = registrarCompras(this.tabela, novos); if (erro) return { data: null, error: erro }; }
+      // O número da caixa é único entre as empresas (decisão 267): a base de teste recusa a segunda caixa com o mesmo número.
+      if (this.tabela === "caixas_ferramentas") {
+        const usados = new Set(linhas.map(l => numeroDaCaixa(l as never)));
+        for (const n of novos) { const num = numeroDaCaixa(n as never); if (num !== null && usados.has(num)) return { data: null, error: new Error(`Já existe a caixa ${codigoCaixa(num)}.`) }; usados.add(num); }
+      }
       if (this.tabela in CATALOGOS) { const erro = validarCatalogoEpi(CATALOGOS[this.tabela]!, novos); if (erro) return { data: null, error: erro }; }
       linhas.push(...novos); selecionadas = novos;
       if (this.tabela in CATALOGOS || this.tabela === "empresas") { sincronizarEpis(); sincronizarUniformes(); }

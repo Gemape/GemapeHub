@@ -125,3 +125,9 @@ test("o Termo de Entrega de Uniforme não mostra undefined em campos vazios", ()
   assert.equal(html.includes("undefined"), false);
   assert.equal(html.includes("null"), false);
 });
+
+test("o Termo de Entrega de EPI mantém a declaração de recebimento e as divs equilibradas", () => {
+  const html = montarTermoEntregaEpiHtml({ empresa, empregado, data: "2026-09-30", linhas: [] });
+  assert.ok(html.includes("Declaro ter recebido da empresa"), "declaração removida do termo");
+  assert.equal((html.match(/<div\b/g) ?? []).length, (html.match(/<\/div>/g) ?? []).length, "divs desequilibradas");
+});

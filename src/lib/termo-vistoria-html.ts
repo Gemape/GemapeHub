@@ -2,6 +2,7 @@
 // observação digitada, passa por escaparHtml, como nos termos de Encerramento e de Responsabilidade.
 import { escaparHtml } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
+import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 
 export interface DadosTermoVistoria {
   empresa: { razao_social: string; cnpj: string };
@@ -42,28 +43,11 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
     year: "numeric",
   });
 
-  return `
-      <html>
-        <head>
-          <title>Termo de Vistoria Periódica - Caixa ${escaparHtml(caixa?.codigo || "")}</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.3; padding: 25px; font-size: 10pt; }
-            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-            .title { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
-            .content { margin-bottom: 15px; }
-            .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            .signatures { display: flex; justify-content: space-between; margin-top: 50px; }
-            .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px; }
-            @media print { .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="title">RELATÓRIO DE VISTORIA PERIÓDICA DE FERRAMENTAS</div>
-            <strong>${escaparHtml(dados.empresa.razao_social)}</strong><br>
-            CNPJ: ${escaparHtml(formatarCnpj(dados.empresa.cnpj))}
-          </div>
-
+  return paginaRelatorio({
+    titulo: `Termo de Vistoria Periódica - Caixa ${caixa?.codigo || ""}`,
+    cabecalho: cabecalhoRelatorio({ titulo: "Relatório de Vistoria Periódica de Ferramentas", subtitulos: [`CNPJ: ${formatarCnpj(dados.empresa.cnpj)}`], empresa: dados.empresa.razao_social }),
+    css: CSS_TERMO,
+    corpo: `<div class="termo">
           <div class="info">
             <p><strong>DATA DA VISTORIA:</strong> ${dataFormatada}<br>
             <strong>CAIXA Nº:</strong> ${escaparHtml(caixa?.codigo || "N/A")}<br>
@@ -74,15 +58,15 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
             <p>A presente vistoria tem por objetivo verificar as condições de uso, conservação e limpeza das ferramentas e equipamentos que compõem a caixa acima identificada, visando a segurança do trabalho e a durabilidade do patrimônio da empresa.</p>
           </div>
 
-          <table class="table">
+          <table>
             <thead>
-              <tr style="background-color: #eee;">
-                <th style="border: 1px solid #000; padding: 6px;">Item</th>
-                <th style="border: 1px solid #000; padding: 6px;">Código</th>
-                <th style="border: 1px solid #000; padding: 6px;">Descrição</th>
-                <th style="border: 1px solid #000; padding: 6px;">Status</th>
-                <th style="border: 1px solid #000; padding: 6px;">Estado</th>
-                <th style="border: 1px solid #000; padding: 6px;">Observações/Ações</th>
+              <tr>
+                <th>Item</th>
+                <th>Código</th>
+                <th>Descrição</th>
+                <th>Status</th>
+                <th>Estado</th>
+                <th>Observações/Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -102,11 +86,7 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
               Assinatura do Empregado (Ciente)
             </div>
           </div>
-
-          <div class="no-print" style="margin-top: 40px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Imprimir Relatório</button>
-          </div>
-        </body>
-      </html>
-  `;
+        </div>`,
+    botao: BOTAO_IMPRIMIR("Imprimir Relatório"),
+  });
 }

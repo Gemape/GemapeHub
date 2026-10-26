@@ -157,3 +157,12 @@ test("ocorrência de equipamento guarda até 6 fotos (só imagens) e permite ane
   R.removerFotoOcorrenciaEq(o.id, 0, s);
   assert.equal(R.lerOcorrenciasEq(s)[0].fotos.length, 2);
 });
+
+test("o plano de manutenção lista os equipamentos não baixados, com os que já têm plano marcados como ocupados", async () => {
+  const { opcoesDePlano } = await import("../src/lib/equipamentos-manutencao.ts");
+  const eq = [{ id: "a", status: "Ativo" }, { id: "b", status: "Ativo" }, { id: "c", status: "Baixado/Inativo" }, { id: "d", status: "Baixado/Inativo" }];
+  const planos = [{ equipamentoId: "a" }, { equipamentoId: "d" }];
+  assert.deepEqual(opcoesDePlano(eq, planos, null).map((o) => [o.equipamento.id, o.ocupado]), [["a", true], ["b", false]], "baixado fora; com plano, ocupado");
+  assert.deepEqual(opcoesDePlano(eq, planos, "d").map((o) => [o.equipamento.id, o.ocupado]), [["a", true], ["b", false], ["d", false]], "o do plano em edição fica, livre");
+  assert.deepEqual(opcoesDePlano([], [], null), []);
+});

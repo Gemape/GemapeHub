@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { escaparHtml } from "@/lib/gemape";
+import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "@/lib/relatorio-padrao";
 import { capitalizarTexto, formatarCnpj } from "@/lib/formatacao-cadastral";
 import {
   useEmpresas,
@@ -213,12 +214,12 @@ export function FerramentasTermoEncerramento() {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return `
         <tr>
-          <td style="border: 1px solid #000; padding: 8px; text-align: center;">${index + 1}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${escaparHtml(itemInfo?.codigo_sku || "—")}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${escaparHtml(itemInfo?.nome || "—")}</td>
-          <td style="border: 1px solid #000; padding: 8px; text-align: center;">${it.quantidade}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${escaparHtml(it.estado)}</td>
-          <td style="border: 1px solid #000; padding: 8px;">${escaparHtml(it.observacao || "OK")}</td>
+          <td style="text-align: center;">${index + 1}</td>
+          <td>${escaparHtml(itemInfo?.codigo_sku || "—")}</td>
+          <td>${escaparHtml(itemInfo?.nome || "—")}</td>
+          <td style="text-align: center;">${it.quantidade}</td>
+          <td>${escaparHtml(it.estado)}</td>
+          <td>${escaparHtml(it.observacao || "OK")}</td>
         </tr>
       `;
       })
@@ -232,43 +233,26 @@ export function FerramentasTermoEncerramento() {
       year: "numeric",
     });
 
-    const html = `
-      <html>
-        <head>
-          <title>Termo de Encerramento de Responsabilidade - ${escaparHtml(empregado.nome)}</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.4; padding: 30px; font-size: 11pt; }
-            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-            .title { font-size: 16pt; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
-            .content { margin-bottom: 20px; text-align: justify; }
-            .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            .signatures { display: flex; justify-content: space-between; margin-top: 60px; }
-            .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px; }
-            @media print { .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="title">TERMO DE ENCERRAMENTO DE RESPONSABILIDADE</div>
-            <strong>${escaparHtml(empresa.razao_social)}</strong><br>
-            CNPJ: ${escaparHtml(formatarCnpj(empresa.cnpj))}
-          </div>
-          
+    const html = paginaRelatorio({
+      titulo: `Termo de Encerramento de Responsabilidade - ${empregado.nome}`,
+      cabecalho: cabecalhoRelatorio({ titulo: "Termo de Encerramento de Responsabilidade", subtitulos: [`CNPJ: ${formatarCnpj(empresa.cnpj)}`], empresa: empresa.razao_social }),
+      css: CSS_TERMO,
+      corpo: `<div class="termo">
           <div class="content">
             <p>Pelo presente instrumento, a empresa <strong>${escaparHtml(empresa.razao_social)}</strong> declara que o(a) empregado(a) <strong>${escaparHtml(empregado.nome)}</strong>, CPF <strong>${escaparHtml(empregado.cpf)}</strong>, efetuou nesta data a devolução das ferramentas e equipamentos abaixo relacionados, que estavam sob sua responsabilidade conforme termo assinado anteriormente.</p>
             
             <p>Após conferência, atesta-se que os itens foram devolvidos conforme o estado de conservação indicado na tabela abaixo, dando-se por encerrada a responsabilidade individual do referido empregado sobre os mesmos.</p>
           </div>
           
-          <table class="table">
+          <table>
             <thead>
-              <tr style="background-color: #eee;">
-                <th style="border: 1px solid #000; padding: 8px;">Item</th>
-                <th style="border: 1px solid #000; padding: 8px;">Código</th>
-                <th style="border: 1px solid #000; padding: 8px;">Descrição</th>
-                <th style="border: 1px solid #000; padding: 8px;">Qtd</th>
-                <th style="border: 1px solid #000; padding: 8px;">Estado</th>
-                <th style="border: 1px solid #000; padding: 8px;">Observações</th>
+              <tr>
+                <th>Item</th>
+                <th>Código</th>
+                <th>Descrição</th>
+                <th>Qtd</th>
+                <th>Estado</th>
+                <th>Observações</th>
               </tr>
             </thead>
             <tbody>
@@ -290,13 +274,9 @@ export function FerramentasTermoEncerramento() {
               Assinatura do Responsável
             </div>
           </div>
-          
-          <div class="no-print" style="margin-top: 50px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Imprimir Termo</button>
-          </div>
-        </body>
-      </html>
-    `;
+        </div>`,
+      botao: BOTAO_IMPRIMIR("Imprimir Termo"),
+    });
 
     abrirDocumento({
       titulo: "Termo de Encerramento",

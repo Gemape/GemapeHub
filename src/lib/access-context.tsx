@@ -1,7 +1,7 @@
 import { useRouterState } from "@tanstack/react-router";
 import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 
-import { assinarPermissoes, fotografiaPermissoes, pode, rotaSoAdministrador, telaDaRota, usuarioAtivo, type Acao, type TelaId } from "@/lib/permissoes-demo";
+import { assinarPermissoes, fotografiaPermissoes, pode, rotaSoAdministrador, telaDaRota, usuarioAtivo, type Acao } from "@/lib/permissoes-demo";
 
 export type Papel = "admin" | "gestor" | "operador";
 export type Perfil = { id: string; papel: Papel; ativo: boolean; empresa_id: string | null };
@@ -20,9 +20,11 @@ export function useAccess() {
   if (import.meta.env.VITE_DEMO_MODE !== "false") {
     // A condição é constante na compilação: os hooks sempre rodam na mesma ordem.
     const pathname = useRouterState({ select: (s) => s.location.pathname });
+    const search = useRouterState({ select: (s) => s.location.search }) as Record<string, unknown>;
     useSyncExternalStore(assinarPermissoes, () => fotografiaPermissoes(localStorage), () => "");
     const usuario = usuarioAtivo(localStorage);
-    const tela = telaDaRota(pathname);
+    // A tela é o menu da rota (aba ou item de Parâmetros) ou, sem menu próprio, o módulo.
+    const tela = telaDaRota(pathname, search);
     const administrador = ativo && usuario.perfil === "admin";
     const escreve = ativo && (tela ? pode(usuario, tela, "criar") || pode(usuario, tela, "editar") : administrador);
     return {
@@ -33,8 +35,8 @@ export function useAccess() {
       canDelete: ativo && pode(usuario, tela, "excluir"),
       // Tela fora das permissões do usuário (ou rotina só do Administrador): o layout mostra "sem acesso" no lugar do conteúdo.
       semAcesso: !administrador && (rotaSoAdministrador(pathname) || (tela !== null && !pode(usuario, tela, "ver"))),
-      podeVerCaminho: (caminho: string) => { const t = telaDaRota(caminho); return administrador || (!rotaSoAdministrador(caminho) && (t === null || pode(usuario, t, "ver"))); },
-      pode: (t: TelaId, acao: Acao) => pode(usuario, t, acao),
+      podeVerCaminho: (caminho: string, busca?: Record<string, string>) => { const t = telaDaRota(caminho, busca); return administrador || (!rotaSoAdministrador(caminho) && (t === null || pode(usuario, t, "ver"))); },
+      pode: (t: string, acao: Acao) => pode(usuario, t, acao),
     };
   }
   return {
@@ -44,7 +46,7 @@ export function useAccess() {
     canOperate: ativo,
     canDelete: ativo && perfil?.papel === "admin",
     semAcesso: false,
-    podeVerCaminho: (_caminho: string) => true,
-    pode: (_t: TelaId, _acao: Acao) => true,
+    podeVerCaminho: (_caminho: string, _busca?: Record<string, string>) => true,
+    pode: (_t: string, _acao: Acao) => true,
   };
 }

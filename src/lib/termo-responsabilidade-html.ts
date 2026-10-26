@@ -2,6 +2,7 @@
 // por escaparHtml, como no Termo de Encerramento.
 import { escaparHtml } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
+import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 
 export interface DadosTermoResponsabilidade {
   empresa: { razao_social: string; cnpj: string };
@@ -41,43 +42,26 @@ export function montarTermoResponsabilidadeHtml(dados: DadosTermoResponsabilidad
     year: "numeric",
   });
 
-  return `
-      <html>
-        <head>
-          <title>Termo de Responsabilidade Individual - ${escaparHtml(dados.empregado.nome)}</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.4; padding: 30px; font-size: 11pt; }
-            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-            .title { font-size: 16pt; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
-            .content { margin-bottom: 20px; text-align: justify; }
-            .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            .signatures { display: flex; justify-content: space-between; margin-top: 60px; }
-            .sig-box { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px; }
-            @media print { .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="title">TERMO DE RESPONSABILIDADE INDIVIDUAL DE FERRAMENTAS</div>
-            <strong>${escaparHtml(dados.empresa.razao_social)}</strong><br>
-            CNPJ: ${escaparHtml(formatarCnpj(dados.empresa.cnpj))}
-          </div>
-
+  return paginaRelatorio({
+    titulo: `Termo de Responsabilidade Individual - ${dados.empregado.nome}`,
+    cabecalho: cabecalhoRelatorio({ titulo: "Termo de Responsabilidade Individual de Ferramentas", subtitulos: [`CNPJ: ${formatarCnpj(dados.empresa.cnpj)}`], empresa: dados.empresa.razao_social }),
+    css: CSS_TERMO,
+    corpo: `<div class="termo">
           <div class="content">
             <p>Pelo presente instrumento, eu <strong>${escaparHtml(dados.empregado.nome)}</strong>, CPF <strong>${escaparHtml(dados.empregado.cpf)}</strong>, declaro que recebi da empresa supra citada, em perfeito estado de conservação e funcionamento, as ferramentas e equipamentos abaixo relacionados, componentes da <strong>CAIXA Nº ${escaparHtml(dados.caixaCodigo || "AVULSA")}</strong>, para uso exclusivo no desempenho de minhas atividades profissionais.</p>
 
             <p>Comprometo-me a zelar pela guarda, conservação e limpeza das mesmas, assumindo total responsabilidade pelo seu uso correto. Estou ciente de que, em caso de perda, extravio ou danos causados por mau uso ou negligência, poderei ser responsabilizado pelos custos de reparo ou reposição, conforme preceitua o Art. 462, § 1º da CLT.</p>
           </div>
 
-          <table class="table">
+          <table>
             <thead>
-              <tr style="background-color: #eee;">
-                <th style="border: 1px solid #000; padding: 8px;">Item</th>
-                <th style="border: 1px solid #000; padding: 8px;">Código</th>
-                <th style="border: 1px solid #000; padding: 8px;">Descrição</th>
-                <th style="border: 1px solid #000; padding: 8px;">Marca</th>
-                <th style="border: 1px solid #000; padding: 8px;">Qtd</th>
-                <th style="border: 1px solid #000; padding: 8px;">Estado</th>
+              <tr>
+                <th>Item</th>
+                <th>Código</th>
+                <th>Descrição</th>
+                <th>Marca</th>
+                <th>Qtd</th>
+                <th>Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -99,11 +83,7 @@ export function montarTermoResponsabilidadeHtml(dados: DadosTermoResponsabilidad
               Assinatura do Responsável
             </div>
           </div>
-
-          <div class="no-print" style="margin-top: 50px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Imprimir Termo</button>
-          </div>
-        </body>
-      </html>
-    `;
+        </div>`,
+    botao: BOTAO_IMPRIMIR("Imprimir Termo"),
+  });
 }
