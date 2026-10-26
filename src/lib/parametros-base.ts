@@ -79,7 +79,13 @@ export const CATEGORIAS_BASE: Record<string, string> = {
   "cat-uniformes": "Uniforme",
   "cat-ferramentas": "Ferramenta",
   "cat-veiculos": "Veículo",
+  "cat-equipamentos": "Equipamento",
+  "cat-checklist": "Check list",
 };
+
+// Categorias que existem só para ter linha em Código do produto (EQP e CHK): não têm subcategorias nem tamanhos, então ficam fora das telas de Categorias e de tamanhos.
+export const CATEGORIAS_SO_DE_CODIGO: readonly string[] = ["cat-equipamentos", "cat-checklist"];
+export const categoriasDeCadastro = <T extends { id: string }>(lista: T[]): T[] => lista.filter((c) => !CATEGORIAS_SO_DE_CODIGO.includes(c.id));
 
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
 
@@ -119,6 +125,8 @@ function padrao(): ParametrosBase {
     { id: "cat-uniformes", nome: "Uniformes" },
     { id: "cat-ferramentas", nome: "Ferramentas" },
     { id: "cat-veiculos", nome: "Veículos" },
+    { id: "cat-equipamentos", nome: "Equipamentos" },
+    { id: "cat-checklist", nome: "Check list" },
   ];
   // Listas que já existiam fixas no sistema. Ferramentas segue a especificação.
   const iniciais: Record<string, readonly string[]> = {
@@ -175,6 +183,8 @@ function padrao(): ParametrosBase {
       { categoriaId: "cat-uniformes", sigla: "UNI", inicial: "0001" },
       { categoriaId: "cat-ferramentas", sigla: "FER", inicial: "0001" },
       { categoriaId: "cat-veiculos", sigla: "VEI", inicial: "0001" },
+      { categoriaId: "cat-equipamentos", sigla: "EQP", inicial: "0001" },
+      { categoriaId: "cat-checklist", sigla: "CHK", inicial: "0001" },
     ],
     codigosFabrica: [],
     caixasHabilitadas: [],
@@ -272,6 +282,11 @@ function lerComEstado(storage: StorageLike | null): { dados: ParametrosBase; int
       ...r,
       inicial: completarDigitos(String(r.inicial ?? "")),
     }));
+    // Equipamentos (EQP-0001) e Check list (CHK-0001) passaram a ter código do produto: quem já tinha o cadastro ganha as duas categorias e as siglas, sem mexer no que existe.
+    for (const [id, nome, sigla] of [["cat-equipamentos", "Equipamentos", "EQP"], ["cat-checklist", "Check list", "CHK"]] as const) {
+      if (!base.categorias.some((c) => c.id === id)) base.categorias.push({ id, nome });
+      if (!base.regrasCodigo.some((r) => r.categoriaId === id) && !base.regrasCodigo.some((r) => r.sigla === sigla)) base.regrasCodigo.push({ categoriaId: id, sigla, inicial: "0001" });
+    }
     return { dados: base, integro: true };
   } catch {
     return { dados: base, integro: false };

@@ -5,6 +5,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dadosIniciais as base } from "../src/integrations/supabase/demo-client.ts";
 import { aplicarDadosDeTeste, CHAVE_CONTROLE, lerControle, pedirLimpar, pedirRestaurar, prepararDadosDeTeste } from "../src/lib/dados-teste/aplicar.ts";
 import { VERSAO_DADOS_TESTE } from "../src/lib/dados-teste/conjunto.ts";
+import * as P_GERAIS from "../src/lib/parametros-base.ts";
 import { cpfValido, emailValido, matriculaValida } from "../src/lib/empregados.ts";
 import { validarCep, validarCnpj, validarTelefone } from "../src/lib/formatacao-cadastral.ts";
 import { placaValida } from "../src/lib/veiculos.ts";
@@ -23,7 +24,7 @@ const prontos = () => {
 };
 const doTeste = (lista) => lista.filter((l) => String(l.id).startsWith("teste-"));
 const dados = (s) => json(s, "gemape-demo-dados");
-const LISTAS = ["gemape-demo-fornecedores", "gemape-demo-clientes", "gemape-demo-equipamentos", "gemape-demo-abastecimentos", "gemape-demo-portadores-caixa", "gemape-demo-respostas-despesas"];
+const LISTAS = ["gemape-demo-fornecedores", "gemape-demo-clientes", "gemape-demo-abastecimentos", "gemape-demo-portadores-caixa", "gemape-demo-respostas-despesas"];
 
 test("cinco registros em cada cadastro (cinco empregados por empresa); o sistema não traz mais a empresa GEMAPE de demonstração", () => {
   const s = prontos();
@@ -36,6 +37,8 @@ test("cinco registros em cada cadastro (cinco empregados por empresa); o sistema
   for (const e of doTeste(d.empresas)) assert.equal(doTeste(d.empregados).filter((x) => x.empresa_id === e.id).length, 5, `cinco empregados em ${e.nome_fantasia}`);
   assert.equal(d.empregados.length, 15);
   for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 5, k);
+  assert.equal(doTeste(json(s, "gemape-demo-equipamentos")).length, 40);
+  assert.equal(doTeste(json(s, "gemape-demo-equipamentos")).length, 40, "cinco equipamentos em cada um dos oito tipos");
   // EPIs e uniformes: três produtos (descrições), um registro de catálogo por tamanho.
   for (const t of ["epis_catalogo", "uniformes_catalogo"]) assert.equal(new Set(doTeste(d[t]).map((c) => c.nome)).size, 5, t);
   assert.ok(doTeste(d.epis_catalogo).length > 3, "tamanhos variados");
@@ -174,6 +177,7 @@ test("versão nova do conjunto troca só o que é de teste e mantém o que o usu
   assert.equal(depois.empregados.filter((e) => e.id.startsWith("teste-")).length, 15);
   assert.equal(lerControle(s).versao, VERSAO_DADOS_TESTE);
   for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 5, `${k} sem duplicar`);
+  assert.equal(doTeste(json(s, "gemape-demo-equipamentos")).length, 40, "equipamentos sem duplicar");
   const gerais = json(s, "gemape-demo-parametros-base");
   assert.equal(gerais.marcasFerramenta.filter((m) => ["Ferrotec", "Maxforça", "Duramax"].includes(m.nome)).length, 3, "marcas sem duplicar");
 });
@@ -190,7 +194,7 @@ test("Limpar tira só os dados de teste e não grava de novo; Restaurar repõe o
   for (const [tabela, linhas] of Object.entries(limpo)) assert.equal(doTeste(linhas).length, 0, tabela);
   assert.ok(limpo.empresas.some((e) => e.id === "empresa-do-usuario") && !limpo.empresas.some((e) => e.id === "empresa-demo"), "a empresa GEMAPE antiga não volta");
   assert.ok(!limpo.movimentacoes.some((m) => m.id === "mov-usuario"), "o que apontava para item de teste vai junto");
-  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, 0, k);
+  for (const k of [...LISTAS, "gemape-demo-equipamentos"]) assert.equal(doTeste(json(s, k)).length, 0, k);
   const gerais = json(s, "gemape-demo-parametros-base");
   assert.ok(!gerais.marcasFerramenta.some((m) => m.nome === "Ferrotec"));
   assert.ok(!json(s, "gemape-demo-questionario-despesas").perguntas.find((p) => p.id === "q-04").habilitados.some((h) => String(h.empregadoId).startsWith("teste-")));
@@ -362,7 +366,9 @@ test("cada um dos cinco veículos e dos cinco equipamentos de teste vem com dado
   assert.ok(lista("gemape-demo-checklists-veiculo").every((c) => c.status === "Concluído"));
   assert.ok(ocor.some((o) => o.tipoId === "checklist"), "itens NOK dos check lists geraram ocorrência");
   // Equipamentos: todos têm manutenção, ocorrência e check list.
-  for (const e of doTeste(json(s, "gemape-demo-equipamentos"))) {
+  // Equipamentos: os dez com dados (PAT-0006, 0007, 0009, 0014, 0019, 0024, 0029, 0033, 0038 e 0039) têm manutenção, ocorrência e check list; os outros trinta ficam só cadastrados.
+  const comDados = [5, 6, 8, 13, 18, 23, 28, 32, 37, 38].map((i) => `teste-equipamento-${i + 1}`);
+  for (const e of doTeste(json(s, "gemape-demo-equipamentos")).filter((x) => comDados.includes(x.id))) {
     for (const chave of ["gemape-demo-eq-manutencoes", "gemape-demo-eq-ocorrencias", "gemape-demo-eq-checklists-exec"]) {
       assert.ok(lista(chave).some((r) => r.equipamentoId === e.id), `${e.patrimonio}: ${chave}`);
     }
@@ -388,8 +394,8 @@ test("cada veículo e cada equipamento vem com cinco check lists periódicos e c
   assert.ok(veiculos.some((c) => c.itens.some((i) => i.avaliacao === "NOK")) && veiculos.some((c) => c.itens.every((i) => i.avaliacao === "OK")), "com e sem itens NOK");
   assert.equal(new Set(veiculos.map((c) => c.codigo)).size, veiculos.length, "códigos únicos");
   const equipamentos = json(s, "gemape-demo-eq-checklists-exec").filter((c) => String(c.equipamentoId).startsWith("teste-"));
-  assert.equal(equipamentos.length, 75);
-  assert.equal(new Set(equipamentos.map((c) => c.equipamentoId)).size, 5, "os cinco equipamentos");
+  assert.equal(equipamentos.length, 150);
+  assert.equal(new Set(equipamentos.map((c) => c.equipamentoId)).size, 10, "os dez equipamentos com dados");
   for (const e of new Set(equipamentos.map((c) => c.equipamentoId))) {
     const dele = equipamentos.filter((c) => c.equipamentoId === e);
     const contar = (finalidade) => dele.filter((c) => c.periodicidade && c.finalidade === finalidade).length;
@@ -416,7 +422,7 @@ test("em Parâmetros > Check list só ficam os grupos com uso: associados ou pre
   s.setItem("gemape-demo-dados-teste", JSON.stringify({ ...JSON.parse(s.getItem("gemape-demo-dados-teste")), versao: VERSAO_DADOS_TESTE - 1 }));
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
   assert.equal(json(s, "gemape-demo-checklists-veiculo").filter((c) => String(c.veiculoId).startsWith("teste-")).length, 50);
-  assert.equal(json(s, "gemape-demo-eq-checklists-exec").filter((c) => String(c.equipamentoId).startsWith("teste-")).length, 75);
+  assert.equal(json(s, "gemape-demo-eq-checklists-exec").filter((c) => String(c.equipamentoId).startsWith("teste-")).length, 150);
 });
 
 test("equipamento sem itens de check list associados (ex.: PAT-9001 Hidrante) sai com os registros dele; os de teste ficam", () => {
@@ -427,12 +433,12 @@ test("equipamento sem itens de check list associados (ex.: PAT-9001 Hidrante) sa
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
   const equipamentos = json(s, "gemape-demo-equipamentos");
   assert.ok(!equipamentos.some((e) => e.patrimonio === "PAT-9001"), "o hidrante sem associação saiu");
-  assert.equal(equipamentos.filter((e) => String(e.id).startsWith("teste-")).length, 5, "os cinco de teste ficam");
+  assert.equal(equipamentos.filter((e) => String(e.id).startsWith("teste-")).length, 40, "os quarenta de teste ficam");
   assert.ok(!json(s, "gemape-demo-eq-ocorrencias").some((o) => o.equipamentoId === "pat-9001"), "a ocorrência dele saiu");
   assert.ok(!json(s, "gemape-demo-equipamentos-manutencao").planos.some((p) => p.equipamentoId === "pat-9001"), "o plano dele saiu");
   // Todo equipamento que sobra tem associação nas duas finalidades.
   const eq = json(s, "gemape-demo-equipamentos-checklist");
-  for (const e of equipamentos) for (const f of ["manutencao", "vistoria"]) assert.ok(eq[f].associacoes.some((a) => a.equipamentoId === e.id), `${e.patrimonio}: ${f}`);
+  for (const i of [5, 6, 8, 13, 18, 23, 28, 32, 37, 38]) for (const f of ["manutencao", "vistoria"]) assert.ok(eq[f].associacoes.some((a) => a.equipamentoId === `teste-equipamento-${i + 1}`), `PAT-${String(i + 1).padStart(4, "0")}: ${f}`);
 });
 
 test("os check lists de teste entram nos indicadores do painel do mês: previstos, realizados no prazo, não realizados e a vencer", async () => {
@@ -500,16 +506,16 @@ test("o painel de equipamentos, em manutenção e em vistoria, usa a mesma lógi
   for (const finalidade of ["manutencao", "vistoria"]) {
     const chave = `gemape-demo-eq-previsoes-${finalidade}`;
     const associacoes = eq[finalidade].associacoes.filter((a) => String(a.equipamentoId).startsWith("teste-"));
-    assert.equal(associacoes.length, 5, finalidade);
+    assert.equal(associacoes.length, 10, finalidade);
     assert.ok(associacoes.every((a) => a.atualizadoEm.slice(0, 10) < "2026-09-01"), `${finalidade}: a associação vale desde antes dos check lists`);
     sincronizarPrevisoes({ veiculos: associacoes.map((a) => ({ veiculoId: a.equipamentoId, veiculoRotulo: a.equipamentoId, periodicidade: a.itens[0].periodicidade, responsavelNome: "", obrigatorio: true, desde: a.atualizadoEm.slice(0, 10) })), hoje }, s, { chave });
     const periodicos = execs.filter((c) => c.finalidade === finalidade && c.periodicidade).map((c) => ({ ...c, veiculoId: c.equipamentoId }));
-    assert.equal(periodicos.length, 25, finalidade);
+    assert.equal(periodicos.length, 50, finalidade);
     const todos = painelDoMes(null, lerPrevisoes(s, chave), periodicos, hoje);
-    assert.equal(todos.resumo.realizados, 25, `${finalidade}: os 25 periódicos contam como realizados no prazo`);
-    assert.ok(todos.resumo.previstos > 25 && todos.resumo.naoRealizados > 0 && todos.resumo.aVencer > 0, `${finalidade}: ${JSON.stringify(todos.resumo)}`);
+    assert.equal(todos.resumo.realizados, 50, `${finalidade}: os 50 periódicos contam como realizados no prazo`);
+    assert.ok(todos.resumo.previstos > 50 && todos.resumo.naoRealizados > 0 && todos.resumo.aVencer > 0, `${finalidade}: ${JSON.stringify(todos.resumo)}`);
     assert.equal(todos.resumo.pctNoPrazo + todos.resumo.pctNaoNoPrazo, 100);
-    assert.ok(painelDoMes("2026-10", lerPrevisoes(s, chave), periodicos, hoje).resumo.realizados < 25);
+    assert.ok(painelDoMes("2026-10", lerPrevisoes(s, chave), periodicos, hoje).resumo.realizados < 50);
   }
   // Os dois painéis (veículos e equipamentos) são o mesmo componente.
   assert.match(ler("components/modules/equipamento/ChecklistEquipamentoModulo.tsx"), /<ChecklistPainelMensal/);
@@ -580,4 +586,27 @@ test("os 15 empregados de teste (5 em cada empresa) têm histórico de movimenta
   for (const tabela of ["epis", "uniformes"]) {
     for (const linha of doTeste(d[tabela])) assert.ok(linha.estoque_atual >= 0, `${tabela} ${linha.codigo_sku}: ${linha.estoque_atual}`);
   }
+});
+
+test("aplicar de novo com marcas e ações já cadastradas em Gerais (de uma aplicação interrompida) não trava: o que já existe fica e não é apagado no Limpar", () => {
+  const s = memoria();
+  const Gerais = P_GERAIS;
+  Gerais.adicionarListaFerramenta("marcasFerramenta", "Ferrotec", s);
+  assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
+  assert.equal(doTeste(dados(s).ferramentas).length, 20, "o conjunto foi aplicado mesmo assim");
+  pedirLimpar(s);
+  assert.equal(prepararDadosDeTeste(s, base, AGORA), "limpo");
+  assert.ok(json(s, "gemape-demo-parametros-base").marcasFerramenta.some((m) => m.nome === "Ferrotec"), "a marca que já existia continua");
+});
+
+test("código de fábrica que já existe (de uma aplicação interrompida) não trava a aplicação dos dados de teste", () => {
+  const s = memoria();
+  assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
+  const antes = json(s, "gemape-demo-parametros-base");
+  // Estado de quem teve a aplicação interrompida: os códigos de fábrica ficaram gravados, mas o controle de versão voltou atrás.
+  s.setItem("gemape-demo-dados-teste", JSON.stringify({ ...JSON.parse(s.getItem("gemape-demo-dados-teste")), versao: VERSAO_DADOS_TESTE - 1, gerais: {} }));
+  assert.ok(antes.codigosFabrica.length > 0);
+  assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
+  assert.equal(doTeste(dados(s).equipamentos ?? []).length, 0);
+  assert.equal(doTeste(json(s, "gemape-demo-equipamentos")).length, 40);
 });

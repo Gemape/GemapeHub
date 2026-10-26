@@ -3,7 +3,7 @@
 // dados serem atualizados sozinhos no navegador.
 import { gerarCnpj, gerarCpf } from "./documentos.ts";
 
-export const VERSAO_DADOS_TESTE = 25;
+export const VERSAO_DADOS_TESTE = 27;
 
 // Prefixo dos ids escritos à mão: dá para reconhecer o que é de teste mesmo sem a lista de ids guardada.
 export const PREFIXO = "teste-";
@@ -220,3 +220,76 @@ export const EQUIPAMENTOS = [
     tecnico: { agente: "Pó PQS ABC", capacidade: "12", capacidadeUnidade: "kg", ultimaRecarga: "2025-10-02", vencimentoTesteHidrostatico: "2029-01-22" },
   },
 ] as const;
+
+// Equipamentos de teste para a associação de check list e os demais cadastros: completam cinco em cada um dos oito tipos (os cinco acima já cobrem parte deles).
+// Ficam sem associação, check list nem registros, para dar o que escolher na janela de Associar itens de check list a um equipamento.
+type TecnicoTeste = Record<string, string>;
+const MOTOR = (propulsao: string, carga: string, unidade: string, horas: string, consumo: string, tanque: string): TecnicoTeste => ({ propulsao, capacidadeCarga: carga, capacidadeCargaUnidade: unidade, horimetroInicial: horas, consumoEstimado: consumo, capacidadeTanque: tanque });
+const ELETRICO = (tensao: string, potencia: string, unidade: string, corrente: string, pressao = "0", vazao = "0"): TecnicoTeste => ({ tensao, potencia, potenciaUnidade: unidade, correnteNominal: corrente, pressaoTrabalho: pressao, pressaoTrabalhoUnidade: "PSI", vazaoAgua: vazao });
+const EXTINTOR = (agente: string, capacidade: string, unidade: string, recarga: string, teste: string): TecnicoTeste => ({ agente, capacidade, capacidadeUnidade: unidade, ultimaRecarga: recarga, vencimentoTesteHidrostatico: teste });
+const FAMILIAS_EXTRAS: readonly { tipoId: string; setor: string; itens: readonly { nome: string; marca: string; modelo: string; valor: string; tecnico: TecnicoTeste }[] }[] = [
+  { tipoId: "tipo-empilhadeiras", setor: "Almoxarifado Central", itens: [
+    { nome: "Empilhadeira a Diesel 3 t", marca: "Toyota", modelo: "8FD30", valor: "210.000,00", tecnico: MOTOR("Diesel", "3", "t", "240", "4", "70") },
+    { nome: "Empilhadeira Elétrica 1,6 t", marca: "Hyster", modelo: "E40XN", valor: "142.000,00", tecnico: MOTOR("Elétrico", "1,6", "t", "95", "5", "0") },
+    { nome: "Empilhadeira a Gás 2 t", marca: "Yale", modelo: "GLP20", valor: "158.000,00", tecnico: MOTOR("GLP/Gás", "2", "t", "130", "3", "13") },
+  ] },
+  { tipoId: "tipo-munck", setor: "Pátio de Cargas", itens: [
+    { nome: "Caminhão Munck 8 t", marca: "Volkswagen", modelo: "Constellation 24.280", valor: "560.000,00", tecnico: MOTOR("Diesel", "8", "t", "1.250", "9", "300") },
+    { nome: "Caminhão Munck 12 t", marca: "Mercedes-Benz", modelo: "Atego 2430", valor: "610.000,00", tecnico: MOTOR("Diesel", "12", "t", "980", "10", "320") },
+    { nome: "Munck Articulado 6 t", marca: "Madal", modelo: "MD 6000", valor: "280.000,00", tecnico: MOTOR("Diesel", "6", "t", "640", "7", "200") },
+    { nome: "Caminhão Munck 10 t", marca: "Iveco", modelo: "Tector 240E28", valor: "520.000,00", tecnico: MOTOR("Diesel", "10", "t", "1.480", "9", "280") },
+    { nome: "Munck Telescópico 15 t", marca: "Hiab", modelo: "XS 322", valor: "720.000,00", tecnico: MOTOR("Diesel", "15", "t", "310", "11", "340") },
+  ] },
+  { tipoId: "tipo-ponte-rolante", setor: "Galpão de Produção", itens: [
+    { nome: "Ponte Rolante 5 t", marca: "Konecranes", modelo: "CXT 5", valor: "180.000,00", tecnico: ELETRICO("380V", "10", "CV", "16") },
+    { nome: "Ponte Rolante 10 t", marca: "Demag", modelo: "EKDR 10", valor: "265.000,00", tecnico: ELETRICO("440V", "15", "CV", "22") },
+    { nome: "Ponte Rolante 3 t", marca: "Stahl", modelo: "SH 3", valor: "120.000,00", tecnico: ELETRICO("380V", "7,5", "CV", "12") },
+    { nome: "Ponte Rolante 20 t", marca: "Konecranes", modelo: "CXT 20", valor: "410.000,00", tecnico: ELETRICO("440V", "25", "CV", "34") },
+    { nome: "Ponte Rolante Monoviga 2 t", marca: "Demag", modelo: "KBK 2", valor: "95.000,00", tecnico: ELETRICO("220V Trifásico", "5", "CV", "10") },
+  ] },
+  { tipoId: "tipo-serra-de-corte", setor: "Oficina Mecânica", itens: [
+    { nome: "Serra de Fita Horizontal", marca: "Franho", modelo: "FM-300", valor: "18.500,00", tecnico: ELETRICO("220V Trifásico", "2", "CV", "6") },
+    { nome: "Serra Circular de Bancada", marca: "Bosch", modelo: "GTS 10", valor: "4.900,00", tecnico: ELETRICO("110V", "2", "HP", "14") },
+    { nome: "Serra de Disco Abrasivo", marca: "Makita", modelo: "2414NB", valor: "3.200,00", tecnico: ELETRICO("220V Monofásico", "2", "kW", "9") },
+    { nome: "Serra Mármore Industrial", marca: "DeWalt", modelo: "D28720", valor: "1.850,00", tecnico: ELETRICO("220V Monofásico", "1,5", "kW", "7") },
+    { nome: "Serra Sabre Industrial", marca: "Milwaukee", modelo: "2821", valor: "2.400,00", tecnico: ELETRICO("110V", "1,3", "kW", "12") },
+  ] },
+  { tipoId: "tipo-maquina-de-solda", setor: "Oficina de Solda", itens: [
+    { nome: "Máquina de Solda MIG 250 A", marca: "Esab", modelo: "Smashweld 257", valor: "14.800,00", tecnico: ELETRICO("220V Trifásico", "8", "kW", "28") },
+    { nome: "Máquina de Solda Inversora TIG", marca: "Lincoln", modelo: "Invertec 200", valor: "9.600,00", tecnico: ELETRICO("220V Monofásico", "6", "kW", "26") },
+    { nome: "Máquina de Solda Eletrodo 400 A", marca: "Bambozzi", modelo: "Master 400", valor: "11.200,00", tecnico: ELETRICO("380V", "12", "kW", "30") },
+    { nome: "Máquina de Solda MIG 180 A", marca: "Esab", modelo: "Origo Mig 180", valor: "7.900,00", tecnico: ELETRICO("220V Monofásico", "5", "kW", "22") },
+    { nome: "Máquina de Solda Plasma", marca: "Thermal Dynamics", modelo: "Cutmaster 60", valor: "21.300,00", tecnico: ELETRICO("380V", "9", "kW", "20") },
+  ] },
+  { tipoId: "tipo-compressor-de-ar", setor: "Oficina Mecânica", itens: [
+    { nome: "Compressor de Ar 10 Pés", marca: "Schulz", modelo: "CSL 10/100", valor: "6.800,00", tecnico: ELETRICO("220V Monofásico", "2", "HP", "10", "140") },
+    { nome: "Compressor de Ar Parafuso 30 HP", marca: "Atlas Copco", modelo: "GA 22", valor: "58.000,00", tecnico: ELETRICO("380V", "30", "HP", "45", "125") },
+    { nome: "Compressor de Ar 15 Pés", marca: "Chiaperini", modelo: "CJ 15", valor: "9.400,00", tecnico: ELETRICO("220V Trifásico", "3", "HP", "11", "175") },
+    { nome: "Compressor de Ar Portátil", marca: "Pressure", modelo: "Shulz 7.6", valor: "2.900,00", tecnico: ELETRICO("110V", "1", "HP", "9", "116") },
+  ] },
+  { tipoId: "tipo-jato-alta-pressao", setor: "Lavagem", itens: [
+    { nome: "Lavadora de Alta Pressão a Gasolina", marca: "Karcher", modelo: "HD 1050", valor: "7.500,00", tecnico: { ...MOTOR("Gasolina", "0", "kg", "60", "2", "8"), ...ELETRICO("110V", "5", "CV", "0", "3000", "13") } },
+    { nome: "Lavadora de Alta Pressão Elétrica", marca: "Karcher", modelo: "HD 585", valor: "4.200,00", tecnico: { ...MOTOR("Elétrico", "0", "kg", "45", "0", "0"), ...ELETRICO("220V Monofásico", "3", "kW", "13", "2175", "9") } },
+    { nome: "Lavadora de Alta Pressão a Diesel", marca: "Wap", modelo: "Industrial 6000", valor: "11.800,00", tecnico: { ...MOTOR("Diesel", "0", "kg", "120", "1,5", "12"), ...ELETRICO("220V Trifásico", "6", "CV", "0", "2500", "15") } },
+    { nome: "Lavadora de Alta Pressão Trifásica", marca: "Stihl", modelo: "RE 232", valor: "5.600,00", tecnico: { ...MOTOR("Elétrico", "0", "kg", "30", "0", "0"), ...ELETRICO("220V Trifásico", "4", "kW", "12", "2300", "11") } },
+    { nome: "Lavadora de Alta Pressão Compacta", marca: "Black+Decker", modelo: "PW 1700", valor: "1.350,00", tecnico: { ...MOTOR("Elétrico", "0", "kg", "20", "0", "0"), ...ELETRICO("110V", "2", "kW", "13", "1740", "6") } },
+  ] },
+  { tipoId: "tipo-extintores", setor: "Galpão de Estoque", itens: [
+    { nome: "Extintor de Incêndio CO2 6 kg", marca: "Kidde", modelo: "CO2-6", valor: "780,00", tecnico: EXTINTOR("CO2", "6", "kg", "2025-09-14", "2030-09-14") },
+    { nome: "Extintor de Incêndio Água 10 L", marca: "Resil", modelo: "AP-10", valor: "260,00", tecnico: EXTINTOR("Água", "10", "L", "2025-07-02", "2030-07-02") },
+    { nome: "Extintor de Incêndio Pó BC 4 kg", marca: "Kidde", modelo: "BC-4", valor: "190,00", tecnico: EXTINTOR("Pó PQS BC", "4", "kg", "2025-05-20", "2030-05-20") },
+  ] },
+];
+const EMPRESA_DOS_EXTRAS = [0, 1, 2] as const;
+// PAT-0006 em diante, em ordem; a empresa gira entre as três.
+export const EQUIPAMENTOS_CATALOGO = FAMILIAS_EXTRAS.flatMap((f) => f.itens.map((i) => ({ tipoId: f.tipoId, setor: f.setor, ...i }))).map((e, n) => ({
+  empresaIndice: EMPRESA_DOS_EXTRAS[n % 3]!,
+  patrimonio: `PAT-${String(EQUIPAMENTOS.length + n + 1).padStart(4, "0")}`,
+  nome: e.nome, tipoId: e.tipoId, marca: e.marca, modelo: e.modelo, numeroSerie: `SN-TESTE-EQ-${String(EQUIPAMENTOS.length + n + 1).padStart(3, "0")}`,
+  dataAquisicao: `${2019 + (n % 6)}-${String(1 + (n % 12)).padStart(2, "0")}-${String(3 + (n % 25)).padStart(2, "0")}`, valorCompra: e.valor, status: "Ativo", setor: e.setor, tecnico: e.tecnico,
+}));
+
+// Todos os equipamentos de teste na ordem do cadastro (PAT-0001 a PAT-0040) e os dez que levam registros (associação, plano, abastecimento, manutenção, ocorrência e
+// check lists): PAT-0006, 0007, 0009, 0014, 0019, 0024, 0029, 0033, 0038 e 0039, ao menos um de cada tipo. Os outros trinta ficam só cadastrados.
+export const EQUIPAMENTOS_DE_TESTE: readonly { tipoId: string; patrimonio: string; nome: string; tecnico: Record<string, string> }[] = [...EQUIPAMENTOS, ...EQUIPAMENTOS_CATALOGO];
+export const INDICES_COM_DADOS: readonly number[] = [5, 6, 8, 13, 18, 23, 28, 32, 37, 38];

@@ -196,3 +196,29 @@ test("celular: o último cartão de uma fileira de três ocupa a linha toda, sem
     assert.match(ler(arq), /grid grid-cols-2 gap-3/, `${arq}: duas colunas no celular`);
   }
 });
+
+test("Novo check list: o responsável da associação vale mesmo quando a associação foi criada depois de escolher o equipamento ou o veículo (janela ao lado)", () => {
+  for (const arq of ["components/modules/equipamento/ChecklistEquipamentoModulo.tsx", "components/modules/ChecklistVeiculoModulo.tsx"]) {
+    const tela = ler(arq);
+    assert.match(tela, /const idResponsavel = \(!avulsoNovo && responsavelDaAssociacaoAtivo && associacaoEscolhida\?\.responsavel\?\.id\) \|\| responsavelId;/, `${arq}: o responsável da associação vale`);
+    assert.match(tela, /responsavelId: idResponsavel,?/, `${arq}: o envio usa o responsável efetivo`);
+    // O campo só aparece quando a associação não define o responsável; nesse caso o estado local é o que vale.
+    assert.match(tela, /!avulsoNovo && tipoEscolhido && !responsavelDaAssociacaoAtivo/, `${arq}: o campo fica escondido só quando o responsável da associação pode responder`);
+  }
+});
+
+test("telas de check list menos poluídas: sem associação escondidos, primeiras linhas e Mostrar todas, mais recentes primeiro", () => {
+  for (const [arq, itens] of [["components/modules/equipamento/ChecklistEquipamentoModulo.tsx", "equipamentos"], ["components/modules/ChecklistVeiculoModulo.tsx", "veiculos"]]) {
+    const tela = ler(arq);
+    assert.match(tela, /const \[semAssociacao, setSemAssociacao\] = useState\(false\)/, `${arq}: sem associação começa escondido`);
+    assert.ok(tela.includes(`${itens}DaSituacao = ${itens}.filter((`), `${arq}: a situação só lista quem tem associação`);
+    assert.ok(tela.includes(`${itens}SemAssociacao > 0 && <Button`) && tela.includes("sem associação ({"), `${arq}: botão para mostrar os sem associação`);
+    assert.match(tela, /lista\.slice\(0, 10\)/, `${arq}: só as dez primeiras da lista`);
+    assert.match(tela, /Mostrar todos os \$\{lista\.length\} check lists/);
+  }
+  const painel = ler("components/modules/ChecklistPainelMensal.tsx");
+  assert.match(painel, /const LINHAS_VISIVEIS = 8/);
+  assert.match(painel, /ordenadas\.slice\(0, LINHAS_VISIVEIS\)/);
+  assert.match(painel, /const ordenadas = todos \? \[\.\.\.linhas\]\.sort\(\(a, b\) => b\.fim\.localeCompare\(a\.fim\) \|\| a\.veiculoRotulo\.localeCompare\(b\.veiculoRotulo\)\) : linhas/, "em todos os períodos, o prazo mais recente primeiro e o rótulo de A a Z");
+  assert.match(painel, /Mostrar todas as \$\{ordenadas\.length\} linhas/);
+});

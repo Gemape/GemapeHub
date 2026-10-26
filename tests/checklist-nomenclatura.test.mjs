@@ -153,7 +153,7 @@ test("Novo check list pergunta primeiro o veículo e depois o tipo, com as opç�
   assert.match(tela, /periodicidadesDe\(veiculoEscolhido\)\.map\(\(p\) => \(\s*<SelectItem key=\{p\} value=\{p\}>\s*\{opcaoDoChecklist\(/);
   assert.doesNotMatch(tela, /modoAvulso|periodicidadeEscolhida|<SelectItem value="periodico">/);
   // O responsável vem da associação; o campo só aparece quando a associação não tem responsável.
-  assert.match(tela, /!associacaoEscolhida\?\.responsavel && <div/);
+  assert.match(tela, /!responsavelDaAssociacaoAtivo && <div/);
 });
 
 test("Novo check list avisa para escolher o tipo quando o veículo já foi escolhido e o tipo não (revisão #205)", () => {

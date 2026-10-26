@@ -23,6 +23,8 @@ export const rotuloDoMes = (mes: string) => {
 };
 // Opção do seletor que soma todos os períodos (todos os meses), em vez de um mês só.
 const TODOS_OS_PERIODOS = "todos";
+// O painel mostra as primeiras linhas e deixa o resto atrás de "Mostrar todas", para a tela não virar uma lista enorme.
+const LINHAS_VISIVEIS = 8;
 const porcento = (n: number | null) => (n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
 
 // Painel do mês do Check list (decisão 80): os check lists previstos pela associação de cada veículo, com o
@@ -43,6 +45,7 @@ export function ChecklistPainelMensal({
   const meses = mesesDisponiveis(hoje);
   // Só guarda a escolha do usuário; sem escolha, o painel mostra todos os períodos.
   const [mesEscolhido, setMes] = useState<string | null>(null);
+  const [todasAsLinhas, setTodasAsLinhas] = useState(false);
   // Sem escolha, o painel soma todos os períodos: cada check list obrigatório previsto entra na contagem, não só os do mês de hoje.
   const mes = mesEscolhido ?? TODOS_OS_PERIODOS;
   const { linhas, resumo } = painelDoMes(
@@ -54,6 +57,9 @@ export function ChecklistPainelMensal({
   const todos = mes === TODOS_OS_PERIODOS;
   const atual = mes === mesDe(hoje);
   const desfechos = resumo.realizados + resumo.naoRealizados;
+  // Em todos os períodos, o mais recente primeiro (o período em aberto e os últimos feitos); em um mês, por prazo.
+  const ordenadas = todos ? [...linhas].sort((a, b) => b.fim.localeCompare(a.fim) || a.veiculoRotulo.localeCompare(b.veiculoRotulo)) : linhas;
+  const visiveis = todasAsLinhas ? ordenadas : ordenadas.slice(0, LINHAS_VISIVEIS);
 
   return (
     <section className="space-y-3" aria-label="Painel mensal do check list">
@@ -66,7 +72,7 @@ export function ChecklistPainelMensal({
         </div>
         <div className="ml-auto flex items-center gap-2">
           <Label htmlFor="painel_mes" className="text-xs">Período</Label>
-          <Select value={mes} onValueChange={setMes}>
+          <Select value={mes} onValueChange={(v) => { setMes(v); setTodasAsLinhas(false); }}>
             <SelectTrigger id="painel_mes" className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
@@ -109,7 +115,7 @@ export function ChecklistPainelMensal({
                 </TableCell>
               </TableRow>
             )}
-            {linhas.map((l) => (
+            {visiveis.map((l) => (
               <TableRow key={l.id}>
                 <TableCell className="whitespace-nowrap">
                   {l.inicio === l.fim ? formatarData(l.fim) : `${formatarData(l.inicio)} a ${formatarData(l.fim)}`}
@@ -130,6 +136,13 @@ export function ChecklistPainelMensal({
           </TableBody>
         </Table>
       </div>
+      {ordenadas.length > LINHAS_VISIVEIS && (
+        <div className="flex justify-center">
+          <Button variant="ghost" size="sm" onClick={() => setTodasAsLinhas((v) => !v)}>
+            {todasAsLinhas ? "Mostrar menos" : `Mostrar todas as ${ordenadas.length} linhas`}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }

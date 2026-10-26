@@ -28,8 +28,7 @@ import {
   salvarEnderecamentoCategoria,
   subcategoriasDa,
   type ListaFerramenta,
-  type Opcao,
-} from "@/lib/parametros-base";
+  type Opcao, categoriasDeCadastro } from "@/lib/parametros-base";
 import { SUBCATEGORIA_DAS_TABELAS } from "@/lib/subcategoria-referencia";
 import {
   descreverUso,
@@ -244,7 +243,7 @@ function Categorias() {
         <ListaEditavel
           titulo="Categorias"
           novo="Nova categoria"
-          itens={dados.categorias}
+          itens={categoriasDeCadastro(dados.categorias)}
           selecionado={categoria?.id}
           onSelecionar={setEscolhida}
           detalhe={(c) => <Badge variant="secondary">{subcategoriasDa(dados, c.id).length}</Badge>}

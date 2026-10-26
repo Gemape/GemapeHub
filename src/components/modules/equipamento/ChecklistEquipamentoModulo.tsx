@@ -78,6 +78,10 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
   const [tela, setTela] = useState<Tela>(null);
   const [visao, setVisao] = useState<"periodicos" | "avulsos">("periodicos");
   const [busca, setBusca] = useState("");
+  // A situação por equipamento mostra só quem tem check list associado; os sem associação (podem ser muitos) ficam escondidos até pedir.
+  const [semAssociacao, setSemAssociacao] = useState(false);
+  // A lista mostra as primeiras linhas do mês e deixa o resto atrás de "Mostrar todos".
+  const [todosOsChecklists, setTodosOsChecklists] = useState(false);
   // A lista mostra um mês de cada vez; sem escolha acompanha o mês de hoje (inclusive na virada do mês), e "todos" mostra tudo.
   const [mesEscolhidoLista, setMesLista] = useState<string | null>(null);
   const [soPendencias, setSoPendencias] = useState(false);
@@ -128,6 +132,10 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
   const naLista = checklists.filter(checklistVisivelNaListaEq);
   const avulsos = checklists.filter((c) => !checklistVisivelNaListaEq(c));
   const mesLista = mesEscolhidoLista ?? hoje.slice(0, 7);
+  // Sem associação mas com pendência NOK aberta (de um avulso) continua na situação: o contador de pendências do cabeçalho conta essa linha.
+  const noSituacao = (e: { id: string }) => periodicidadesDe(e.id).length > 0 || pendenciasAbertasEq(checklists, e.id).length > 0;
+  const equipamentosSemAssociacao = equipamentos.filter((e) => !noSituacao(e)).length;
+  const equipamentosDaSituacao = equipamentos.filter((e) => semAssociacao || noSituacao(e));
   const mesDaLista = mesLista === "todos" ? null : mesLista;
   const naListaDoMes = naLista.filter((c) => noMesDaLista(c, mesDaLista));
   const avulsosDoMes = avulsos.filter((c) => noMesDaLista(c, mesDaLista));
@@ -162,6 +170,9 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
     .filter((c) => !soPendencias || c.itens.some(pendenciaAbertaEq))
     .filter((c) => combinaBusca(busca, c.codigo, nomeDe(c), c.equipamentoRotulo, c.responsavelNome, c.tipoEquipamento, c.status, formatarData(c.data)))
     .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+  const listaVisivel = todosOsChecklists ? lista : lista.slice(0, 10);
+  // Mudou o mês, a visão, a busca ou o filtro de pendências: a lista volta às dez primeiras.
+  useEffect(() => { setTodosOsChecklists(false); }, [mesLista, visao, busca, soPendencias]);
 
   function abrirNovo(equipamento?: { id: string; empresaId: string }, periodicidade?: string) {
     setTipoEscolhido(periodicidade ?? "");
@@ -176,6 +187,9 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
     setTela({ tipo: "novo", avulso: true });
   }
 
+  // Responsável da associação que ainda pode responder (ativo e da empresa do equipamento): só então o campo fica escondido e vale o dele.
+  const responsavelDaAssociacaoAtivo = !!associacaoEscolhida?.responsavel && responsaveis.some((x) => x.id === associacaoEscolhida.responsavel?.id);
+
   function iniciar(e: React.FormEvent) {
     e.preventDefault();
     if (trava.current || !equipamentoEscolhido) {
@@ -183,15 +197,17 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
       return;
     }
     if (!tipoEscolhido) return void toast.error("Escolha o tipo de check list.");
+    // Com associação que define o responsável, o campo fica escondido e vale o dela, mesmo que a associação tenha sido criada depois de o equipamento ser escolhido (pela janela ao lado).
+    const idResponsavel = (!avulsoNovo && responsavelDaAssociacaoAtivo && associacaoEscolhida?.responsavel?.id) || responsavelId;
     // O responsável pré-preenchido pode ter sido desligado: o campo mostra vazio, então o envio também recusa.
-    if (responsavelId && !responsaveis.some((x) => x.id === responsavelId)) return void toast.error("Selecione o responsável: o anterior não está mais ativo.");
+    if (idResponsavel && !responsaveis.some((x) => x.id === idResponsavel)) return void toast.error("Selecione o responsável: o anterior não está mais ativo.");
     trava.current = true;
     let criado: ChecklistEquipamentoRegistro | undefined;
     const ok = executar(() => {
       const base = { equipamentoId: equipamentoEscolhido.id, equipamentoRotulo: rotuloDoEquipamento(equipamentoEscolhido), tipoEquipamento: nomeDoTipo(equipamentoEscolhido), finalidade, grupos: gruposDoEquipamento };
       criado = avulsoNovo
         ? iniciarChecklistAvulsoEq(base)
-        : iniciarChecklistEq({ ...base, periodicidade: tipoEscolhido, responsavelId, responsavelNome: empregadosAtivos.find((x) => x.id === responsavelId)?.nome ?? associacaoEscolhida?.responsavel?.nome ?? "" });
+        : iniciarChecklistEq({ ...base, periodicidade: tipoEscolhido, responsavelId: idResponsavel, responsavelNome: empregadosAtivos.find((x) => x.id === idResponsavel)?.nome ?? associacaoEscolhida?.responsavel?.nome ?? "" });
     }, avulsoNovo ? "Check list avulso iniciado" : "Check list iniciado");
     if (ok && criado) setTela({ tipo: "check", id: criado.id });
     window.setTimeout(() => { trava.current = false; }, 600);
@@ -240,6 +256,7 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold">Situação por equipamento</h2>
           <p className="text-xs text-muted-foreground">{pendencias.length} pendência(s) NOK aberta(s).</p>
+          { equipamentosSemAssociacao > 0 && <Button variant="ghost" size="sm" aria-pressed={semAssociacao} onClick={() => setSemAssociacao((v) => !v)}>{semAssociacao ? "Ocultar" : "Mostrar"} sem associação ({equipamentosSemAssociacao})</Button>}
           <Button requiresWrite="operar" className="ml-auto" onClick={() => abrirNovo()}>Novo check list</Button>
         </div>
         <div className="overflow-x-auto rounded-xl border">
@@ -248,8 +265,8 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
               <TableRow><TableHead>Equipamento</TableHead><TableHead>Tipo</TableHead><TableHead>Periodicidade</TableHead><TableHead>Situação</TableHead><TableHead className="text-right">Pendências</TableHead><TableHead /></TableRow>
             </TableHeader>
             <TableBody>
-              {equipamentos.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum equipamento cadastrado.</TableCell></TableRow>}
-              {equipamentos.flatMap((e) => {
+              {equipamentosDaSituacao.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{equipamentos.length === 0 ? "Nenhum equipamento cadastrado." : "Nenhum equipamento com check list associado."}</TableCell></TableRow>}
+              {equipamentosDaSituacao.flatMap((e) => {
                 // Uma linha por periodicidade do equipamento; sem associação, uma linha só.
                 const periodicidades: (Periodicidade | null)[] = periodicidadesDe(e.id).length > 0 ? periodicidadesDe(e.id) : [null];
                 return periodicidades.map((per) => {
@@ -309,7 +326,7 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
               {lista.length === 0 && (
                 <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{busca.trim() || soPendencias ? "Nenhum resultado para o filtro." : visao === "avulsos" ? "Nenhum check list avulso feito ainda." : "Nenhum check list feito ainda."}</TableCell></TableRow>
               )}
-              {lista.map((c) => {
+              {listaVisivel.map((c) => {
                 const r = resumoChecklist(c);
                 return (
                   <TableRow key={c.id} className="cursor-pointer" onClick={() => setTela({ tipo: "check", id: c.id })}>
@@ -325,6 +342,11 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
             </TableBody>
           </Table>
         </div>
+        {lista.length > 10 && (
+          <div className="flex justify-center">
+            <Button variant="ghost" size="sm" onClick={() => setTodosOsChecklists((v) => !v)}>{todosOsChecklists ? "Mostrar menos" : `Mostrar todos os ${lista.length} check lists`}</Button>
+          </div>
+        )}
       </section>
 
       <Dialog open={tela?.tipo === "novo"} onOpenChange={(a) => !a && setTela(null)}>
@@ -380,7 +402,7 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
                 </p>
               )}
             </div>
-            {!avulsoNovo && tipoEscolhido && !associacaoEscolhida?.responsavel && (
+            {!avulsoNovo && tipoEscolhido && !responsavelDaAssociacaoAtivo && (
               <div className="min-w-0 space-y-1.5">
                 <Label htmlFor="ck_resp">Responsável pelo check list</Label>
                 <Select value={responsavelId} onValueChange={setResponsavelId}>

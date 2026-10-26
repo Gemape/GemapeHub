@@ -19,7 +19,7 @@ const aplicado = () => { const s = memoria(); assert.equal(prepararDadosDeTeste(
 test("os dados de teste trazem registros de cada controle do módulo Equipamentos nos cinco equipamentos, ligados a equipamentos de teste", () => {
   const s = aplicado();
   const equipamentos = new Set(json(s, "gemape-demo-equipamentos").map((e) => e.id));
-  for (const [chave, quantidade] of [[R.CHAVE_ABASTECIMENTOS_EQ, 8], [R.CHAVE_MANUTENCOES_EQ, 6], [C.CHAVE_CHECKLISTS_EQ, 75]]) {
+  for (const [chave, quantidade] of [[R.CHAVE_ABASTECIMENTOS_EQ, 9], [R.CHAVE_MANUTENCOES_EQ, 20], [C.CHAVE_CHECKLISTS_EQ, 150]]) {
     const lista = json(s, chave);
     assert.equal(lista.length, quantidade, chave);
     for (const r of lista) assert.ok(r.id.startsWith("teste-") && equipamentos.has(r.equipamentoId), `${chave}: registro solto`);
@@ -31,8 +31,8 @@ test("os dados de teste trazem registros de cada controle do módulo Equipamento
   assert.ok(nok.length > 10 && nok.length < checklists.length, "parte dos check lists tem NOK");
   assert.ok(nok.every((i) => i.ocorrenciaId), "cada NOK gerou a sua ocorrência");
   assert.equal(ocorrencias.filter((o) => o.tipoId === "checklist-nok").length, nok.length);
-  assert.deepEqual([ocorrencias.filter((o) => o.status === "Aberta").length, ocorrencias.filter((o) => o.status === "Resolvida").length], [4 + nok.length, 2]);
-  assert.equal(ocorrencias.length, 6 + nok.length);
+  assert.deepEqual([ocorrencias.filter((o) => o.status === "Aberta").length, ocorrencias.filter((o) => o.status === "Resolvida").length], [6 + nok.length, 4]);
+  assert.equal(ocorrencias.length, 10 + nok.length);
   for (const r of ocorrencias) assert.ok(r.id.startsWith("teste-") && equipamentos.has(r.equipamentoId), "ocorrência solta");
   // Em cada equipamento, cinco periódicos de cada finalidade e cinco avulsos (sem periodicidade).
   for (const id of new Set(checklists.map((c) => c.equipamentoId))) {
