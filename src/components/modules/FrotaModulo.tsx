@@ -83,7 +83,7 @@ export function FrotaModulo() {
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
         <StatCard titulo="Ativos" valor={veiculos.filter((v) => v.status === "Ativo").length} icone={Car} />
         <StatCard titulo="Em manutenção" valor={veiculos.filter((v) => v.status === "Manutencao").length} icone={Wrench} />
         <StatCard titulo="Inativos" valor={veiculos.filter((v) => v.status === "Inativo").length} icone={CircleSlash} />

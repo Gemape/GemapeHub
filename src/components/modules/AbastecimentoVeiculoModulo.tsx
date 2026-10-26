@@ -153,7 +153,7 @@ export function AbastecimentoVeiculoModulo() {
       </div>
 
       {resumo && (
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Abastecimentos</p><p className="text-lg font-semibold">{linhas.length}</p></div>
           <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Litros</p><p className="text-lg font-semibold">{resumo.litros.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}</p></div>
           <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Total gasto</p><p className="text-lg font-semibold">{reais(resumo.gasto)}</p></div>

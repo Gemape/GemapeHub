@@ -122,7 +122,7 @@ export function EpiRelatorioFuncionario() {
 
       {empregado && (
         <>
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
             <div className="panel p-4 text-center bg-blue-50/50">
               <p className="text-xs text-muted-foreground uppercase font-bold">Entregues</p>
               <p className="text-2xl font-black">{totalEntregue}</p>

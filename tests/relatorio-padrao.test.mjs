@@ -175,3 +175,24 @@ test("celular: o cabeçalho da tela, as janelas e os relatórios se ajustam à t
   assert.match(CSS_RELATORIO, /@media screen and \(max-width: 640px\)[\s\S]*\.cabecalho \{ grid-template-columns: 1fr/);
   assert.match(CSS_RELATORIO, /table\.padrao, \.termo table \{ display: block; overflow-x: auto; \}/);
 });
+
+test("celular: indicadores em duas colunas, cartões menores e botões das janelas lado a lado", () => {
+  const stat = ler("components/StatCard.tsx");
+  assert.match(stat, /p-3 pt-3 sm:p-6 sm:pt-6/, "menos espaço interno no celular");
+  assert.match(stat, /text-xl font-bold sm:text-2xl/);
+  assert.match(stat, /hidden size-9 shrink-0 items-center justify-center sm:flex/, "o ícone some no celular, para sobrar largura ao texto");
+  for (const arq of ["components/modules/ChecklistPainelMensal.tsx", "routes/_authenticated/dashboard.tsx", "components/modules/DashboardModulo.tsx", "components/modules/AbastecimentoVeiculoModulo.tsx", "components/modules/equipamento/InventarioEquipamentoModulo.tsx", "components/modules/FrotaModulo.tsx"]) {
+    assert.match(ler(arq), /grid grid-cols-2 gap-3/, `${arq}: duas colunas no celular`);
+  }
+  assert.match(ler("components/ui/dialog.tsx"), /max-sm:flex-row-reverse max-sm:flex-wrap max-sm:\[&>\*\]:min-w-\[7rem\] max-sm:\[&>\*\]:flex-1/, "Salvar e Cancelar lado a lado");
+});
+
+test("celular: o último cartão de uma fileira de três ocupa a linha toda, sem meia linha vazia; o valor longo quebra dentro do cartão", () => {
+  for (const arq of ["components/modules/FrotaModulo.tsx", "components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
+    assert.match(ler(arq), /sm:grid-cols-3[^"]* max-sm:\[&>\*:last-child:nth-child\(odd\)\]:col-span-2/, arq);
+  }
+  assert.match(ler("components/StatCard.tsx"), /break-words font-display text-xl font-bold sm:text-2xl/);
+  for (const arq of ["components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/EpiRelatorioFuncionario.tsx", "components/modules/UniformesRelatorioFuncionario.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
+    assert.match(ler(arq), /grid grid-cols-2 gap-3/, `${arq}: duas colunas no celular`);
+  }
+});

@@ -1646,3 +1646,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 285. Celular
 
 - O cabeçalho (logo, menu da área, título, usuário, testes e empresa) empilha em uma coluna no celular, com os controles em duas colunas, e só fica fixo no topo a partir de md; antes a tela ficava com até três vezes a largura do celular. Toda janela (`DialogContent`) rola na tela pequena (máximo de 100dvh), com o rodapé de botões fixo embaixo. O visualizador de documentos e os relatórios impressos (`relatorio-padrao.ts`) empilham o cabeçalho e rolam as tabelas de lado em telas até 640 px; a impressão continua A4. Conferido em 390 px de largura nas telas inicial, Veículos, Equipamentos, Ferramentas e EPIs.
+
+## 286. Celular: indicadores compactos e botões lado a lado
+
+- Os quadros de indicadores (painel de check lists, dashboard, abastecimento, inventário de equipamentos, frota, relatórios de EPI e de uniformes) ficam em duas colunas no celular, com o cartão (`StatCard`) mais compacto (menos espaço interno, número menor e sem o ícone), em vez de uma coluna de cartões altos. O rodapé das janelas põe os botões lado a lado (Salvar e Cancelar) e ocupa metade da altura. Conferido em 360 px, sem rolagem lateral em 29 telas.
