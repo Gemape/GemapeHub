@@ -35,5 +35,5 @@ test("telas: troca de empresa limpa empregado e Valor Total usa o preço registr
   const ler = (f) => readFileSync(`src/components/modules/${f}.tsx`, "utf8");
   for (const f of ["EpiTermoEntrega", "UniformesTermoEntrega", "UniformesTermoBaixa"]) assert.match(ler(f), /setEmpregadoId\(""\)/, f);
   for (const f of ["EpiRelatorioBaixa", "UniformesRelatorioBaixa"]) assert.doesNotMatch(ler(f), /quantidade \* 0/, f);
-  assert.match(ler("ChecklistPainelMensal"), /mesEscolhido \?\? mesDe\(hoje\)/);
+  assert.match(ler("ChecklistPainelMensal"), /mesEscolhido \?\? TODOS_OS_PERIODOS/);
 });

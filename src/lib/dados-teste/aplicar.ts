@@ -18,9 +18,10 @@ import * as Gerais from "../parametros-base.ts";
 import { restaurarPermissoes } from "../permissoes-demo.ts";
 import { semearModuloEquipamentos } from "./equipamentos-modulo.ts";
 import { semearModuloVeiculos } from "./veiculos-modulo.ts";
+import { removerGruposDeChecklistSemUso } from "./enxugar-checklists.ts";
 import { semearViagens } from "./viagens.ts";
 import {
-  ACOES_MANUTENCAO_VEICULO, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
+  ACOES_MANUTENCAO_VEICULO, CAIXAS_TESTE, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
   TAMANHOS_AUTORIZADOS, TAMANHOS_GRUPO_FERRAMENTA, TIPOS_OCORRENCIA_VEICULO, UNIFORMES, VEICULOS, VERSAO_DADOS_TESTE, type ItemCatalogoTeste,
 } from "./conjunto.ts";
 
@@ -95,12 +96,15 @@ export function removerDadosDeTeste(storage: Armazenamento, base: Dados): void {
     const itensDeTeste = new Set(Object.values(dados).flat().filter((l) => teste(l) && ("codigo_sku" in l || "placa" in l)).map((l) => String(l["id"])));
     const catalogosDeTeste = new Set([...(dados["epis_catalogo"] ?? []), ...(dados["uniformes_catalogo"] ?? [])].filter(teste).map((l) => String(l["id"])));
     const empresasDeTeste = new Set((dados["empresas"] ?? []).filter(teste).map((l) => String(l["id"])));
+    const caixasDeTeste = new Set((dados["caixas_ferramentas"] ?? []).filter(teste).map((l) => String(l["id"])));
     for (const tabela of Object.keys(dados)) {
       dados[tabela] = (dados[tabela] ?? []).filter((l) => {
         if (teste(l)) return false;
         // O que o usuário registrou em cima de dados de teste vai junto: sem o item ou a empresa, a linha ficaria solta.
         if (typeof l["item_id"] === "string" && itensDeTeste.has(l["item_id"])) return false;
         if (typeof l["catalogo_id"] === "string" && catalogosDeTeste.has(l["catalogo_id"])) return false;
+        if (typeof l["caixa_id"] === "string" && caixasDeTeste.has(l["caixa_id"])) return false;
+        if (tabela === "caixa_ferramenta_itens" && typeof l["ferramenta_id"] === "string" && itensDeTeste.has(l["ferramenta_id"])) return false;
         if (tabela !== "empresas" && typeof l["empresa_id"] === "string" && empresasDeTeste.has(l["empresa_id"])) return false;
         return true;
       });
@@ -117,7 +121,9 @@ export function removerDadosDeTeste(storage: Armazenamento, base: Dados): void {
   if (Array.isArray(abastecimentos)) storage.setItem("gemape-demo-abastecimentos", JSON.stringify(abastecimentos.filter((a) => !(ehLinha(a) && typeof a["veiculoId"] === "string" && (a["veiculoId"] as string).startsWith(PREFIXO)))));
   // Registros do módulo Veículos (manutenções, ocorrências, check lists, planos e associações) dos veículos de teste: saem junto com eles.
   // A numeração dos check lists de veículo recomeça com os de teste removidos.
-  if (!lerJson(storage, "gemape-demo-checklists-veiculo") || (lerJson(storage, "gemape-demo-checklists-veiculo") as unknown[]).every((c) => ehLinha(c) && typeof c["veiculoId"] === "string" && (c["veiculoId"] as string).startsWith(PREFIXO))) storage.removeItem("gemape-demo-checklists-veiculo-sequencia");
+  if (!lerJson(storage, "gemape-demo-checklists-veiculo") || (lerJson(storage, "gemape-demo-checklists-veiculo") as unknown[]).every((c) => ehLinha(c) && typeof c["veiculoId"] === "string" && (c["veiculoId"] as string).startsWith(PREFIXO))) storage.removeItem?.("gemape-demo-checklists-veiculo-sequencia");
+  // O mesmo para os de equipamento.
+  { const lido = lerJson(storage, "gemape-demo-eq-checklists-exec") as unknown[] | null; if (!Array.isArray(lido) || lido.every((c) => ehLinha(c) && typeof c["equipamentoId"] === "string" && (c["equipamentoId"] as string).startsWith(PREFIXO))) storage.removeItem?.("gemape-demo-eq-checklists-sequencia"); }
   for (const chave of ["gemape-demo-manutencoes-veiculo", "gemape-demo-ocorrencias-veiculo", "gemape-demo-checklists-veiculo", "gemape-demo-planos-manutencao", "gemape-demo-associacoes-checklist-veiculo"]) {
     const lido = lerJson(storage, chave);
     if (Array.isArray(lido)) storage.setItem(chave, JSON.stringify(lido.filter((r) => !(ehLinha(r) && typeof r["veiculoId"] === "string" && (r["veiculoId"] as string).startsWith(PREFIXO)))));
@@ -214,6 +220,14 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   // ----- Dados do sistema -----
   const dados = lerDados(storage, base);
   removerEmpresaAntigaDeDemonstracao(dados);
+  // Cada ferramenta fica em uma caixa só: se alguma está em duas (registro antigo), vale a primeira.
+  const ferramentasEmCaixa = new Set<string>();
+  dados["caixa_ferramenta_itens"] = (dados["caixa_ferramenta_itens"] ?? []).filter((i) => {
+    const ferramentaId = String(i["ferramenta_id"]);
+    if (ferramentasEmCaixa.has(ferramentaId)) return false;
+    ferramentasEmCaixa.add(ferramentaId);
+    return true;
+  });
   for (const [chave, campo, valor] of [["gemape-demo-portadores-caixa", "empresa_id", EMPRESA_ANTIGA], ["gemape-demo-abastecimentos", "veiculoId", "vei-demo"]] as const) {
     const lido = lerJson(storage, chave);
     if (Array.isArray(lido)) storage.setItem(chave, JSON.stringify(lido.filter((l) => !(ehLinha(l) && l[campo] === valor))));
@@ -373,18 +387,21 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   const caixasUsuario = tabela("caixas_ferramentas").filter((c) => !teste(c)).map((c) => ({ id: String(c["id"]), codigo: String(c["codigo"] ?? ""), codigo_num: Number(c["codigo_num"]) || null }));
   const numerosDaPessoa = new Set(caixasUsuario.map((c) => numeroDaCaixa(c)));
   const numerosDeTeste: number[] = [];
-  for (let numero = 1; numerosDeTeste.length < ferramentas.length; numero++) if (!numerosDaPessoa.has(numero)) numerosDeTeste.push(numero);
+  for (let numero = 1; numerosDeTeste.length < CAIXAS_TESTE; numero++) if (!numerosDaPessoa.has(numero)) numerosDeTeste.push(numero);
   const habilitadas = [...new Set([...Gerais.lerParametros(storage).caixasHabilitadas, ...numerosDaPessoa, ...numerosDeTeste])].filter((n): n is number => n !== null);
   Gerais.salvarCaixasHabilitadas(habilitadas, caixasUsuario, storage);
   const portadores: Linha[] = [];
-  ferramentas.forEach(({ f, id }, n) => {
+  // Cinco caixas com quatro ferramentas cada (a de ordem n vai para a caixa n mod 5, da mesma empresa); cada ferramenta fica em uma caixa só.
+  ferramentas.slice(0, CAIXAS_TESTE).forEach(({ f }, n) => {
     const caixaId = `${PREFIXO}caixa-${n + 1}`;
     const numero = numerosDeTeste[n]!;
     tabela("caixas_ferramentas").push({
       id: caixaId, created_at: criadoEm, codigo: codigoCaixa(numero), codigo_num: numero, empresa_id: empresaIds[f.empresaIndice], nome: codigoCaixa(numero),
-      descricao: `Caixa de ${f.grupo.toLocaleLowerCase("pt-BR")} da ${EMPRESAS[f.empresaIndice]!.nome_fantasia}`, localizacao: ["Oficina — bancada 1", "Almoxarifado — prateleira B", "Galpão — armário 3", "Oficina — bancada 4", "Expedição — armário 1"][n] ?? "Almoxarifado", status: "Ativa",
+      descricao: `Caixa de ferramentas da ${EMPRESAS[f.empresaIndice]!.nome_fantasia}`, localizacao: ["Oficina — bancada 1", "Almoxarifado — prateleira B", "Galpão — armário 3", "Oficina — bancada 4", "Expedição — armário 1"][n] ?? "Almoxarifado", status: "Ativa",
     });
-    tabela("caixa_ferramenta_itens").push({ id: `${PREFIXO}caixa-item-${n + 1}`, caixa_id: caixaId, ferramenta_id: id, quantidade: 1, observacao: "Item de teste da caixa" });
+    ferramentas.filter((_, k) => k % CAIXAS_TESTE === n).forEach(({ id }, posicao) => {
+      tabela("caixa_ferramenta_itens").push({ id: `${PREFIXO}caixa-item-${n + 1}-${posicao + 1}`, caixa_id: caixaId, ferramenta_id: id, quantidade: 1, observacao: "Item de teste da caixa" });
+    });
     portadores.push({
       id: `${PREFIXO}portador-${n + 1}`, caixa_id: caixaId, caixa_codigo: codigoCaixa(numero), empresa_id: empresaIds[f.empresaIndice], empregado_id: EMPREGADOS[n]!.id,
       empregado_nome: EMPREGADOS[n]!.nome, status: "Ativa", observacao: "Portador de teste", data_inicio: dia(agora, 40), data_fim: null,
@@ -424,6 +441,9 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   semearModuloVeiculos(storage, agora);
 
   semearViagens(storage, agora);
+
+  // Só ficam os grupos de check list com uso (associados ou em check lists preenchidos); os do padrão sem uso saem.
+  try { removerGruposDeChecklistSemUso(storage); } catch { /* parâmetros ilegíveis: ficam como estão */ }
 
   const controle: Controle = { versao: VERSAO_DADOS_TESTE, estado: "aplicado", aplicadoEm: agora.toISOString(), gerais };
   storage.setItem(CHAVE_CONTROLE, JSON.stringify(controle));

@@ -19,19 +19,27 @@ const aplicado = () => { const s = memoria(); assert.equal(prepararDadosDeTeste(
 test("os dados de teste trazem registros de cada controle do módulo Equipamentos nos cinco equipamentos, ligados a equipamentos de teste", () => {
   const s = aplicado();
   const equipamentos = new Set(json(s, "gemape-demo-equipamentos").map((e) => e.id));
-  for (const [chave, quantidade] of [[R.CHAVE_ABASTECIMENTOS_EQ, 8], [R.CHAVE_MANUTENCOES_EQ, 6], [R.CHAVE_OCORRENCIAS_EQ, 9], [C.CHAVE_CHECKLISTS_EQ, 7]]) {
+  for (const [chave, quantidade] of [[R.CHAVE_ABASTECIMENTOS_EQ, 8], [R.CHAVE_MANUTENCOES_EQ, 6], [C.CHAVE_CHECKLISTS_EQ, 75]]) {
     const lista = json(s, chave);
     assert.equal(lista.length, quantidade, chave);
     for (const r of lista) assert.ok(r.id.startsWith("teste-") && equipamentos.has(r.equipamentoId), `${chave}: registro solto`);
   }
-  // Seis ocorrências lançadas (quatro abertas, duas resolvidas) e três geradas por itens NOK de check lists concluídos.
+  // Seis ocorrências lançadas (quatro abertas, duas resolvidas) e uma por item NOK dos check lists concluídos.
   const ocorrencias = json(s, R.CHAVE_OCORRENCIAS_EQ);
-  assert.deepEqual([ocorrencias.filter((o) => o.status === "Aberta").length, ocorrencias.filter((o) => o.status === "Resolvida").length], [7, 2]);
-  assert.equal(ocorrencias.filter((o) => o.tipoId === "checklist-nok").length, 3);
   const checklists = json(s, C.CHAVE_CHECKLISTS_EQ);
-  assert.deepEqual([checklists.filter((c) => c.finalidade === "manutencao").length, checklists.filter((c) => c.finalidade === "vistoria").length], [4, 3]);
+  const nok = checklists.flatMap((c) => c.itens).filter((i) => i.avaliacao === "NOK");
+  assert.ok(nok.length > 10 && nok.length < checklists.length, "parte dos check lists tem NOK");
+  assert.ok(nok.every((i) => i.ocorrenciaId), "cada NOK gerou a sua ocorrência");
+  assert.equal(ocorrencias.filter((o) => o.tipoId === "checklist-nok").length, nok.length);
+  assert.deepEqual([ocorrencias.filter((o) => o.status === "Aberta").length, ocorrencias.filter((o) => o.status === "Resolvida").length], [4 + nok.length, 2]);
+  assert.equal(ocorrencias.length, 6 + nok.length);
+  for (const r of ocorrencias) assert.ok(r.id.startsWith("teste-") && equipamentos.has(r.equipamentoId), "ocorrência solta");
+  // Em cada equipamento, cinco periódicos de cada finalidade e cinco avulsos (sem periodicidade).
+  for (const id of new Set(checklists.map((c) => c.equipamentoId))) {
+    const dele = checklists.filter((c) => c.equipamentoId === id);
+    assert.deepEqual([dele.filter((c) => c.periodicidade && c.finalidade === "manutencao").length, dele.filter((c) => c.periodicidade && c.finalidade === "vistoria").length, dele.filter((c) => !c.periodicidade).length], [5, 5, 5], id);
+  }
   assert.ok(checklists.every((c) => c.status === "Concluído" && c.itens.every((i) => i.avaliacao !== null)));
-  assert.equal(checklists.flatMap((c) => c.itens).filter((i) => i.avaliacao === "NOK" && i.ocorrenciaId).length, 3, "cada NOK gerou a sua ocorrência");
   // O horímetro só cresce nos equipamentos com abastecimento, entre abastecimentos e manutenção.
   const todos = json(s, R.CHAVE_ABASTECIMENTOS_EQ);
   for (const id of new Set(todos.map((a) => a.equipamentoId))) {

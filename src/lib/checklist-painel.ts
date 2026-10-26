@@ -105,6 +105,11 @@ export function sincronizarPrevisoes(
   if (typeof window !== "undefined") window.dispatchEvent(new Event(opcoes.evento ?? EVENTO_PREVISOES_CHECKLIST));
 }
 
+// Lista de check lists por mês (a lista mostra um mês de cada vez, para não poluir a tela): vale o dia em que o check list foi concluído (como no painel); o que ainda está em
+// andamento aparece sempre, em qualquer mês, para não ficar escondido. `mes` nulo mostra todos os meses.
+export const noMesDaLista = (c: { status: string; data: string; concluidoEm?: string | null }, mes: string | null): boolean =>
+  mes === null || c.status === "Em andamento" || mesDe(c.concluidoEm ? hojeBrasilia(new Date(c.concluidoEm)) : c.data) === mes;
+
 // ---------- Painel ----------
 
 export type SituacaoPrevisao = "realizado" | "nao_realizado" | "a_vencer" | "opcional";
@@ -131,14 +136,15 @@ const diaDaConclusao = (c: ChecklistDoPainel) => (c.concluidoEm ? hojeBrasilia(n
 // Realizado no prazo: há check list concluído do veículo, da mesma periodicidade (decisão 124), dentro do período. Não realizado no prazo: o prazo passou
 // sem isso. A vencer: o prazo ainda não passou. Os percentuais só contam o que já tem desfecho (realizado ou vencido),
 // por isso os dois somam 100%; sem nenhum desfecho ainda, ficam nulos.
+// `mes` nulo é o painel de todos os períodos: conta todas as previsões, de todos os meses, e não só as do mês escolhido.
 export function painelDoMes(
-  mes: string,
+  mes: string | null,
   previsoes: Previsao[],
   checklists: ChecklistDoPainel[],
   hoje: string,
 ): { linhas: LinhaPainel[]; resumo: ResumoPainel } {
   const linhas = previsoes
-    .filter((p) => mesDe(p.fim) === mes)
+    .filter((p) => mes === null || mesDe(p.fim) === mes)
     .sort((a, b) => a.fim.localeCompare(b.fim) || a.veiculoRotulo.localeCompare(b.veiculoRotulo))
     .map((p) => {
       const feito = checklists

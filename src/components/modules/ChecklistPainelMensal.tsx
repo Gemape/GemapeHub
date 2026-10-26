@@ -17,10 +17,12 @@ const SITUACAO: Record<SituacaoPrevisao, { rotulo: string; classe: string }> = {
   opcional: { rotulo: "Opcional", classe: "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300" },
 };
 
-const rotuloDoMes = (mes: string) => {
+export const rotuloDoMes = (mes: string) => {
   const texto = new Date(`${mes}-01T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 };
+// Opção do seletor que soma todos os períodos (todos os meses), em vez de um mês só.
+const TODOS_OS_PERIODOS = "todos";
 const porcento = (n: number | null) => (n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
 
 // Painel do mês do Check list (decisão 80): os check lists previstos pela associação de cada veículo, com o
@@ -39,15 +41,17 @@ export function ChecklistPainelMensal({
   textoVazio?: string;
 }) {
   const meses = mesesDisponiveis(hoje);
-  // Só guarda a escolha do usuário: sem escolha, o painel acompanha o mês de hoje (virada do mês com a tela aberta).
+  // Só guarda a escolha do usuário; sem escolha, o painel mostra todos os períodos.
   const [mesEscolhido, setMes] = useState<string | null>(null);
-  const mes = mesEscolhido ?? mesDe(hoje);
+  // Sem escolha, o painel soma todos os períodos: cada check list obrigatório previsto entra na contagem, não só os do mês de hoje.
+  const mes = mesEscolhido ?? TODOS_OS_PERIODOS;
   const { linhas, resumo } = painelDoMes(
-    mes,
+    mes === TODOS_OS_PERIODOS ? null : mes,
     previsoes.filter((p) => idsDosVeiculos.has(p.veiculoId)),
     checklists.filter((c) => idsDosVeiculos.has(c.veiculoId)),
     hoje,
   );
+  const todos = mes === TODOS_OS_PERIODOS;
   const atual = mes === mesDe(hoje);
   const desfechos = resumo.realizados + resumo.naoRealizados;
 
@@ -55,16 +59,17 @@ export function ChecklistPainelMensal({
     <section className="space-y-3" aria-label="Painel mensal do check list">
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <h2 className="text-sm font-semibold">Painel do mês</h2>
+          <h2 className="text-sm font-semibold">{todos ? "Painel de check lists" : "Painel do mês"}</h2>
           <p className="text-xs text-muted-foreground">
-            {atual ? "Check lists previstos para o mês corrente." : "Mês fechado: o resultado não muda mais."}
+            {todos ? "Todos os check lists obrigatórios previstos, de todos os meses." : atual ? "Check lists previstos para o mês corrente." : "Mês fechado: o resultado não muda mais."}
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Label htmlFor="painel_mes" className="text-xs">Mês</Label>
+          <Label htmlFor="painel_mes" className="text-xs">Período</Label>
           <Select value={mes} onValueChange={setMes}>
             <SelectTrigger id="painel_mes" className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
+              <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
               {meses.map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -84,7 +89,7 @@ export function ChecklistPainelMensal({
           detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"}
           icone={CircleX}
         />
-        <StatCard titulo="Previstos no mês" valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} />
+        <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} />
         <StatCard titulo="A vencer" valor={resumo.aVencer} icone={CalendarClock} />
       </div>
 
@@ -100,7 +105,7 @@ export function ChecklistPainelMensal({
             {linhas.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                  {atual ? textoVazio : "Nenhum check list previsto neste mês."}
+                  {atual || todos ? textoVazio : "Nenhum check list previsto neste mês."}
                 </TableCell>
               </TableRow>
             )}

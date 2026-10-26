@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { ChecklistPainelMensal } from "@/components/modules/ChecklistPainelMensal";
+import { ChecklistPainelMensal, rotuloDoMes } from "@/components/modules/ChecklistPainelMensal";
 import { DialogAssociarChecklistEquipamento, DialogItensChecklistEquipamento } from "@/components/modules/equipamento/DialogosChecklistEquipamento";
 import { EquipamentoDialog } from "@/components/parametros/EquipamentoDialog";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
@@ -22,7 +22,7 @@ import {
   iniciarChecklistEq, nomeDoChecklistEq, pendenciaAbertaEq, pendenciasAbertasEq, periodicidadeObrigatoriaEq, periodicidadesDaAssociacaoEq, removerFotoItemEq, resolverPendenciaEq,
   type ChecklistEquipamentoRegistro,
 } from "@/lib/checklist-equipamento-exec";
-import { sincronizarPrevisoes, lerPrevisoes, type Previsao, type VeiculoPrevisto } from "@/lib/checklist-painel";
+import { mesesDisponiveis, noMesDaLista, sincronizarPrevisoes, lerPrevisoes, type Previsao, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { AVALIACOES, hojeBrasilia, MAX_FOTOS_ITEM, resumoChecklist, situacaoPeriodica, type ItemChecklist, type Periodicidade, type SituacaoPeriodica } from "@/lib/checklist-veiculo";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
@@ -78,6 +78,8 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
   const [tela, setTela] = useState<Tela>(null);
   const [visao, setVisao] = useState<"periodicos" | "avulsos">("periodicos");
   const [busca, setBusca] = useState("");
+  // A lista mostra um mês de cada vez; sem escolha acompanha o mês de hoje (inclusive na virada do mês), e "todos" mostra tudo.
+  const [mesEscolhidoLista, setMesLista] = useState<string | null>(null);
   const [soPendencias, setSoPendencias] = useState(false);
   // Novo check list: primeiro o equipamento, depois o tipo de check list (uma das opções "Patrimônio >> Periodicidade >> Responsável" da associação ou Avulso).
   const [tipoEscolhido, setTipoEscolhido] = useState("");
@@ -125,6 +127,10 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
   // A lista só traz o que tem periodicidade ou responsável; o livre (sem os dois) fica na aba de avulsos.
   const naLista = checklists.filter(checklistVisivelNaListaEq);
   const avulsos = checklists.filter((c) => !checklistVisivelNaListaEq(c));
+  const mesLista = mesEscolhidoLista ?? hoje.slice(0, 7);
+  const mesDaLista = mesLista === "todos" ? null : mesLista;
+  const naListaDoMes = naLista.filter((c) => noMesDaLista(c, mesDaLista));
+  const avulsosDoMes = avulsos.filter((c) => noMesDaLista(c, mesDaLista));
   const avulsoNovo = tela?.tipo === "novo" && tipoEscolhido === "avulso";
   const atual = tela?.tipo === "check" ? (todosDaFinalidade.find((c) => c.id === tela.id) ?? null) : null;
   const equipamentosDoDialogo = equipamentos.filter((e) => e.status === "Ativo");
@@ -152,7 +158,7 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
     : gruposDoChecklistEq(associacaoEscolhida, parte.grupos, tipoEscolhido as Periodicidade);
   const itensDoEquipamento = gruposDoEquipamento.reduce((t, g) => t + g.itens.length, 0);
 
-  const lista = (visao === "avulsos" ? avulsos : naLista)
+  const lista = (visao === "avulsos" ? avulsosDoMes : naListaDoMes)
     .filter((c) => !soPendencias || c.itens.some(pendenciaAbertaEq))
     .filter((c) => combinaBusca(busca, c.codigo, nomeDe(c), c.equipamentoRotulo, c.responsavelNome, c.tipoEquipamento, c.status, formatarData(c.data)))
     .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
@@ -274,14 +280,24 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-sm font-semibold">Check lists</h2>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="mes_lista" className="text-xs">Mês</Label>
+            <Select value={mesLista} onValueChange={setMesLista}>
+              <SelectTrigger id="mes_lista" className="h-8 w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os meses</SelectItem>
+                {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-1" role="group" aria-label="Tipo de check list">
-            <Button size="sm" variant={visao === "periodicos" ? "default" : "outline"} aria-pressed={visao === "periodicos"} onClick={() => setVisao("periodicos")}>Periódicos ({naLista.length})</Button>
-            <Button size="sm" variant={visao === "avulsos" ? "default" : "outline"} aria-pressed={visao === "avulsos"} onClick={() => setVisao("avulsos")}>Avulsos ({avulsos.length})</Button>
+            <Button size="sm" variant={visao === "periodicos" ? "default" : "outline"} aria-pressed={visao === "periodicos"} onClick={() => setVisao("periodicos")}>Periódicos ({naListaDoMes.length})</Button>
+            <Button size="sm" variant={visao === "avulsos" ? "default" : "outline"} aria-pressed={visao === "avulsos"} onClick={() => setVisao("avulsos")}>Avulsos ({avulsosDoMes.length})</Button>
           </div>
           {visao === "avulsos" && <Button requiresWrite="operar" size="sm" onClick={abrirNovoAvulso}>Novo check list avulso</Button>}
           <Input aria-label="Buscar check list" placeholder="Buscar por código, equipamento ou responsável" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
           <Button variant={soPendencias ? "default" : "outline"} size="sm" onClick={() => setSoPendencias((v) => !v)}>
-            Com pendências abertas ({(visao === "avulsos" ? avulsos : naLista).filter((c) => c.itens.some(pendenciaAbertaEq)).length})
+            Com pendências abertas ({(visao === "avulsos" ? avulsosDoMes : naListaDoMes).filter((c) => c.itens.some(pendenciaAbertaEq)).length})
           </Button>
         </div>
         <div className="overflow-x-auto rounded-xl border">

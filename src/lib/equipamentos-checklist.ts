@@ -218,6 +218,9 @@ export function removerAssociacao(finalidade: string, equipamentoId: string, sto
 
 const PADRAO: Record<FinalidadeChecklist, readonly GrupoPadrao[]> = { manutencao: GRUPOS_PADRAO_MANUTENCAO, vistoria: GRUPOS_PADRAO_VISTORIA };
 
+// O grupo faz parte do padrão inicial (pelo nome)? Os que a pessoa criou não são do padrão.
+export const ehGrupoPadraoChecklist = (finalidade: FinalidadeChecklist, nome: string): boolean => PADRAO[finalidade].some((p) => chave(p.nome) === chave(nome));
+
 // "Cadastrar padrão": cria os grupos do padrão que ainda não existem (por nome); os que já existem, mesmo editados, ficam como estão.
 // Grupo de um tipo que não existe mais em Parâmetros Específicos não é criado (ficaria sem equipamento): conta em `semTipo`.
 export function cadastrarPadraoChecklist(finalidade: FinalidadeChecklist, storage: StorageLike = localStorage, aPartirDe = 0): { criados: number; semTipo: number } {

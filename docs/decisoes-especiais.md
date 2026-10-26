@@ -1590,3 +1590,47 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Em Módulos > Veículos > Abastecimento, o botão "Gerar PDF" abre, em tela cheia no visualizador, o relatório de abastecimento no padrão dos demais (decisão 266): resumo no topo (veículos, abastecimentos, litros, total gasto e, com um veículo só, a média de consumo) e um quadro por veículo, com data e hora, km, km rodados, litros, valor, R$/L e km/L, e o total e a média de cada um. O relatório segue os filtros da tela (empresa do cabeçalho, veículo escolhido e busca).
 - Só no navegador, em modo demonstração, sem Supabase.
+
+## 274. Relatório de abastecimento por equipamento
+
+- Em Módulos > Equipamentos > Abastecimento, o botão "Gerar PDF" abre, em tela cheia no visualizador, o relatório de abastecimento no mesmo formato do de Veículos (decisão 273): resumo no topo (equipamentos, abastecimentos, litros, total gasto e, com um equipamento só, o consumo médio em L/h) e um quadro por equipamento a combustão, com data e hora, horímetro, horas trabalhadas, litros, valor, R$/L e L/h, mais o total e o consumo médio de cada um. Segue os filtros da tela (empresa do cabeçalho, equipamento escolhido e busca).
+- Só no navegador, em modo demonstração, sem Supabase.
+
+## 275. Cinco check lists preenchidos de cada tipo nos dados de teste
+
+- Veículos: cinco check lists periódicos (um por veículo) e cinco avulsos (grupos "Avulso ·" do tipo do veículo), todos concluídos, com itens NOK em alguns para testar pendências e ocorrências.
+- Equipamentos: cinco periódicos de manutenção, cinco periódicos de vistoria e cinco avulsos (três de manutenção e dois de vistoria), todos concluídos, com NOK em seis deles.
+- Versão 15 dos dados de teste; a numeração dos check lists (CHK e CHE) recomeça quando os de teste são removidos. Só no navegador, em modo demonstração, sem Supabase.
+
+## 276. Só grupos de check list com uso nos dados de teste
+
+- Ao gerar os dados de teste (versão 18), em Parâmetros > Check list ficam só os grupos de itens que têm uso: ligados a uma associação (veículo ou equipamento) ou presentes em algum check list preenchido. Os grupos do padrão que ninguém usa saem (`enxugar-checklists.ts`); o Restaurar configurações iniciais traz de volta o padrão quando precisar, e o gerador refaz o padrão antes de semear, para sempre ter de onde escolher.
+- Associações e check lists de veículo ou equipamento que não existe mais (cadastro apagado) saem junto, e os check lists de teste dos veículos usam só grupos do padrão (não os criados pela pessoa nem os personalizados de outro veículo). Hoje: veículos com 6 grupos, equipamentos com 9 (manutenção) e 8 (vistoria). Só no navegador, em modo demonstração, sem Supabase.
+
+## 277. Cinco check lists periódicos e cinco avulsos em cada veículo e equipamento
+
+- Os dados de teste (versão 19) deixam gravados, em cada um dos cinco veículos, cinco check lists periódicos (semanais, um por semana) e cinco avulsos; e, em cada um dos cinco equipamentos, cinco periódicos de manutenção, cinco periódicos de vistoria e cinco avulsos (três de manutenção e dois de vistoria). São 50 em veículos e 75 em equipamentos, todos concluídos e preenchidos, com parte deles com item NOK (que gera ocorrência e pendência aberta) e parte só com OK.
+- Ocupa cerca de 600 KB do armazenamento do navegador. Substitui as contagens da decisão 275 (cinco de cada tipo no total). Só no navegador, em modo demonstração, sem Supabase.
+
+## 278. Check lists de teste nos indicadores do painel do mês e sem equipamento sem associação
+
+- O painel do mês só conta previsões desde o dia em que a associação passou a valer, e as de teste nasciam no dia de hoje: Previstos, Realizados, Não realizados e A vencer ficavam zerados. Agora a associação de cada veículo e de cada equipamento vale desde 56 a 175 dias atrás (`PLANOS_CHECKLIST_TESTE`), e os cinco check lists periódicos cobrem semanas, quinzenas ou meses de acordo com a periodicidade: uns feitos no prazo, outros sem check list (não realizados) e o mês em aberto (a vencer). Versão 21 dos dados de teste.
+- Equipamento que não tem itens de check list associados, em manutenção ou em vistoria (como o PAT-9001 Hidrante), sai do cadastro ao gerar os dados de teste, com os abastecimentos, manutenções, ocorrências, check lists e plano dele. Só no navegador, em modo demonstração, sem Supabase.
+
+## 279. Painel de check lists com todos os períodos
+
+- O painel de indicadores do Check list (Veículos e Equipamentos) só contava os check lists previstos para um mês, então os 25 periódicos concluídos em meses diferentes apareciam como 14 (ou menos). O seletor ganhou a opção "Todos os períodos", que agora é a escolha inicial: Realizados no prazo, Não realizados, Previstos e A vencer somam todas as previsões obrigatórias de todos os meses, e cada check list periódico concluído entra como realizado. Escolher um mês continua mostrando o resultado só daquele mês (o mês atual aberto, os anteriores fechados). Só no navegador, em modo demonstração, sem Supabase.
+
+## 280. Lista de check lists por mês
+
+- A lista de Check lists (Veículos e Equipamentos) mostra um mês de cada vez, para não poluir a tela: começa no mês de hoje e tem o seletor Mês, com os últimos 12 meses e "Todos os meses". Periódicos, Avulsos e "Com pendências abertas" contam só o mês escolhido (vale a data do check list); o que ainda está em andamento aparece sempre, em qualquer mês. O painel de indicadores continua com o seu próprio período (decisão 279) e a situação por veículo e por equipamento não muda. Só no navegador, em modo demonstração, sem Supabase.
+
+## 281. Painéis de check list de equipamentos iguais aos de veículos
+
+- Os indicadores do Check list de equipamentos, em manutenção e em vistoria, são o mesmo painel de Veículos (`ChecklistPainelMensal`): período "Todos os períodos" por padrão ou um mês, com previstos, realizados no prazo, não realizados e a vencer; os 25 check lists periódicos de teste de cada finalidade contam como realizados. Ajustes da revisão: a lista mensal acompanha o mês de hoje também na virada do mês e usa a data de conclusão do check list, como o painel; a limpeza dos dados de teste só apaga grupos de check list de veículo que são do padrão e não para numa falha.
+
+## 282. Ferramenta única em uma caixa só e 20 ferramentas de teste
+
+- Cada ferramenta é única e fica em uma caixa só. A base de demonstração recusa gravar uma caixa com ferramenta que já está em outra ("Esta ferramenta já está na caixa CX-0001..."), como já fazia a tela de Vincular ferramentas. A transferência agora tira a ferramenta da origem e depois a coloca no destino (se a entrada falhar, ela volta para a origem), em vez de ficar nas duas caixas no meio do caminho.
+- A repetição que aparecia (FER-0002 e FER-0003 nas caixas CX-0001 e CX-0002) vinha de linhas de transferências antigas que ficavam presas aos ids das caixas de teste ao reaplicar os dados: ao limpar, o que está ligado a caixa ou ferramenta de teste sai junto, e quem ainda tem ferramenta em duas caixas fica com a primeira.
+- Dados de teste (versão 23): 20 ferramentas (entradas de estoque, código de fábrica e fornecedor) distribuídas nas 5 caixas, quatro em cada, cada ferramenta na caixa da sua empresa. Só no navegador, em modo demonstração, sem Supabase.

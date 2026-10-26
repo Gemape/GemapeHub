@@ -569,7 +569,7 @@ export function DialogTransferirCaixa({
     }
     setExecutando(true);
     try {
-      // Primeiro entra no destino; só depois sai da origem, para a ferramenta nunca ficar sem caixa por falha.
+      // Cada ferramenta é única e fica em uma caixa só: sai da origem e depois entra no destino; se a entrada falhar, volta para a origem.
       const itemTransferido = { ferramenta_id: ferramentaId, quantidade: naOrigem.quantidade, observacao: naOrigem.observacao ?? "" };
       const codigoNovo = novoNumero !== null ? codigoCaixa(novoNumero) : null;
       const codigoDestino = codigoNovo ?? destino?.codigo ?? "";
@@ -586,20 +586,24 @@ export function DialogTransferirCaixa({
               status: "Ativa",
             };
       const itensDestinoAntes = destino && novoNumero === null ? itensDa(destino.id) : [];
-      const destinoReal = await salvar.mutateAsync({
-        ...(destino && novoNumero === null ? { id: destino.id } : {}),
-        valores: valoresDestino,
-        itens: [...itensDestinoAntes, itemTransferido],
+      const itensOrigemAntes = itensDa(caixa.id);
+      await salvar.mutateAsync({
+        id: caixa.id,
+        valores: valoresDe(caixa),
+        itens: itensOrigemAntes.filter((i) => i.ferramenta_id !== ferramentaId),
       });
+      let destinoReal: string;
       try {
-        await salvar.mutateAsync({
-          id: caixa.id,
-          valores: valoresDe(caixa),
-          itens: itensDa(caixa.id).filter((i) => i.ferramenta_id !== ferramentaId),
+        destinoReal = await salvar.mutateAsync({
+          ...(destino && novoNumero === null ? { id: destino.id } : {}),
+          valores: valoresDestino,
+          itens: [...itensDestinoAntes, itemTransferido],
         });
       } catch (erro) {
-        // A saída da origem falhou: desfaz a entrada no destino para a ferramenta não ficar nas duas caixas.
-        await salvar.mutateAsync({ id: destinoReal, valores: valoresDestino, itens: itensDestinoAntes }).catch(() => undefined);
+        // A entrada no destino falhou: a ferramenta volta para a origem, para não ficar sem caixa.
+        await salvar.mutateAsync({ id: caixa.id, valores: valoresDe(caixa), itens: itensOrigemAntes }).catch(() => {
+          alert(`Não foi possível devolver a ferramenta à caixa ${caixa.codigo}. Confira as caixas antes de tentar de novo.`);
+        });
         throw erro;
       }
       await registrar.mutateAsync([

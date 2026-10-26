@@ -318,6 +318,14 @@ export const demoSupabase = {
     if (codigo && dados.caixas_ferramentas.some(x => x.codigo === codigo && x.id !== args.p_id)) {
       return { data: null, error: new Error(`Já existe a caixa ${codigo}.`) };
     }
+    // Cada ferramenta é única: não entra numa caixa se já está em outra.
+    for (const item of (args.p_itens ?? []) as { ferramenta_id: string }[]) {
+      const outra = dados.caixa_ferramenta_itens.find(x => x.ferramenta_id === item.ferramenta_id && x.caixa_id !== args.p_id);
+      if (outra) {
+        const onde = dados.caixas_ferramentas.find(c => c.id === outra.caixa_id)?.codigo ?? "outra caixa";
+        return { data: null, error: new Error(`Esta ferramenta já está na caixa ${onde}: cada ferramenta fica em uma caixa só. Dê baixa ou transfira antes.`) };
+      }
+    }
     const caixa = args.p_id ? (dados.caixas_ferramentas.find(x => x.id === args.p_id) ?? {}) : { id: id(), created_at: instanteNovo() };
     Object.assign(caixa, args.p_valores); if (!args.p_id) dados.caixas_ferramentas.push(caixa);
     dados.caixa_ferramenta_itens = dados.caixa_ferramenta_itens.filter(x => x.caixa_id !== caixa.id);
