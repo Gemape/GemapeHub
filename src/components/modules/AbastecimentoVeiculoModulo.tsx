@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAccess } from "@/lib/access-context";
-import { useEmpresa } from "@/lib/empresa-context";
+import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { montarExtratoHtml } from "@/lib/extrato-html";
 import { historicoAbastecimentos, mediaKmPorLitro } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
@@ -16,6 +17,7 @@ import { combinaBusca } from "@/lib/parametros-base";
 import { removerAbastecimento } from "@/lib/registros-veiculo";
 import { useAbastecimentos } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 const TODOS = "todos";
@@ -29,7 +31,7 @@ const numero = (n: number) => n.toLocaleString("pt-BR");
 // reais. O histórico por veículo mostra o trecho rodado, o km/L e o R$/L de cada abastecimento.
 // Só modo demonstração; nada no Supabase.
 export function AbastecimentoVeiculoModulo() {
-  const { empresaId } = useEmpresa();
+  const { empresaId, empresas } = useEmpresa();
   const { isAdmin } = useAccess();
   const parametros = useParametrosBase();
   const { data: veiculos = [] } = useVeiculos(empresaId);
@@ -75,6 +77,52 @@ export function AbastecimentoVeiculoModulo() {
     setAberto(true);
   }
 
+  // Relatório de abastecimento por veículo, no padrão dos demais: um quadro por veículo (o trecho e o km/L só valem dentro dele), com os mesmos filtros da
+  // tela (veículo escolhido e busca), os totais de cada um e o resumo no topo. Abre direto no visualizador, em tela cheia, onde se gera o PDF.
+  function gerarRelatorio() {
+    const grupos = veiculos
+      .filter((v) => linhas.some((a) => a.veiculoId === v.id))
+      .map((v) => {
+        const dele = linhas.filter((a) => a.veiculoId === v.id);
+        const litros = dele.reduce((t, a) => t + a.litros, 0);
+        const gasto = dele.reduce((t, a) => t + (a.valor ?? 0), 0);
+        const media = mediaKmPorLitro(daEmpresa.filter((a) => a.veiculoId === v.id));
+        return { v, dele, litros, gasto, media };
+      });
+    const litrosTotal = grupos.reduce((t, g) => t + g.litros, 0);
+    const gastoTotal = grupos.reduce((t, g) => t + g.gasto, 0);
+    const fmtLitros = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+    const fmtMedia = (m: number | null) => (m === null ? "—" : `${m.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`);
+    const unico = grupos.length === 1 ? grupos[0]! : null;
+    const assunto = doFiltro ? rotuloDoVeiculo(parametros, doFiltro) : "Todos os veículos";
+    const html = montarExtratoHtml({
+      titulo: "Relatório de abastecimento",
+      assunto,
+      subtitulo: busca.trim() ? `Busca: ${busca.trim()}` : "Abastecimentos por veículo",
+      empresa: empresaId === TODAS ? "Todas as empresas" : (empresas.find((e) => e.id === empresaId)?.nome_fantasia ?? ""),
+      resumo: [
+        ...(unico ? [] : ([["Veículos", String(grupos.length)]] as [string, string][])),
+        ["Abastecimentos", String(linhas.length)],
+        ["Litros", fmtLitros(litrosTotal)],
+        ["Total gasto", reais(gastoTotal)],
+        ...(unico ? ([["Média de consumo", fmtMedia(unico.media)]] as [string, string][]) : []),
+      ],
+      tabelas: grupos.length === 0
+        ? [{ titulo: "Abastecimentos", vazio: busca.trim() ? "Nenhum resultado para a busca." : "Nenhum abastecimento registrado.", colunas: [{ titulo: "Data e hora" }], linhas: [] }]
+        : grupos.map((g) => ({
+            titulo: rotuloDoVeiculo(parametros, g.v),
+            vazio: "Nenhum abastecimento registrado.",
+            nota: `Total: ${g.dele.length} abastecimento(s) · ${fmtLitros(g.litros)} L · ${reais(g.gasto)} · média ${fmtMedia(g.media)}`,
+            colunas: [{ titulo: "Data e hora" }, { titulo: "Km", direita: true }, { titulo: "Km rodados", direita: true }, { titulo: "Litros", direita: true }, { titulo: "Valor", direita: true }, { titulo: "R$/L", direita: true }, { titulo: "Km/L", direita: true }],
+            linhas: g.dele.map((a) => [
+              `${formatarData(a.data)}${a.hora ? ` ${a.hora}` : ""}`, numero(a.km), a.kmRodados === null ? "—" : numero(a.kmRodados), a.litros.toLocaleString("pt-BR"),
+              reais(a.valor), reais(a.precoLitro), a.kmPorLitro === null ? "—" : a.kmPorLitro.toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
+            ]),
+          })),
+    });
+    abrirDocumento({ titulo: "Relatório de abastecimento", html, arquivo: nomeArquivoDocumento("Relatorio de abastecimento", assunto), telaCheia: true });
+  }
+
   function excluir(id: string) {
     if (!confirm("Excluir este abastecimento?")) return;
     executar(() => removerAbastecimento(id), "Abastecimento excluído");
@@ -100,7 +148,8 @@ export function AbastecimentoVeiculoModulo() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        <Button requiresWrite className="ml-auto" onClick={abrir}>Novo abastecimento</Button>
+        <Button variant="outline" className="ml-auto" onClick={gerarRelatorio}>Gerar PDF</Button>
+        <Button requiresWrite onClick={abrir}>Novo abastecimento</Button>
       </div>
 
       {resumo && (

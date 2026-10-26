@@ -41,6 +41,8 @@ export const CSS_RELATORIO = `
           table.padrao tr { page-break-inside: avoid; }
           table.padrao tr.geral td { font-weight: bold; background: #f1f5f9; }
           .valor, .num { text-align: right; white-space: nowrap; }
+          /* O cabeçalho da coluna numérica acompanha os valores (a regra th acima é mais específica que .num). */
+          table.padrao th.num, table.padrao th.valor, .termo th.num, .termo th.valor { text-align: right; }
           .centro { text-align: center; }
           .vazio { text-align: center; color: #64748b; font-style: italic; padding: 16px; }
           .assinaturas { display: grid; grid-template-columns: repeat(var(--colunas, 2), 1fr); gap: 14mm; margin-top: 18mm; page-break-inside: avoid; }
@@ -55,6 +57,14 @@ export const CSS_RELATORIO = `
             .folha { width: auto; min-height: 0; margin: 0; padding: 0; }
             .no-print { display: none; }
             * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }`;
+
+// Na tela, a folha ocupa toda a largura (consulta); ao imprimir continua A4.
+export const CSS_LARGO = `
+          @media screen {
+            body { background: #fff; }
+            .folha { width: auto; min-height: 100vh; margin: 0; padding: 8mm 12mm 12mm; }
+            .grade { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
           }`;
 
 export function cabecalhoRelatorio(c: { titulo: string; subtitulos?: (string | null | undefined)[]; empresa?: string | null | undefined; logoUrl?: string | undefined }): string {
@@ -77,12 +87,13 @@ export const assinaturaRelatorio = (papel: string, nome = "") => `<div class="as
 export const BOTAO_IMPRIMIR = (texto = "Imprimir ou salvar em PDF") => `<div class="no-print" style="margin: 16px 0 24px; text-align: center;"><button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">${escaparHtml(texto)}</button></div>`;
 
 // Monta o documento: cabeçalho, corpo e rodapé no padrão. `css` acrescenta só o que é próprio do relatório.
-export function paginaRelatorio(p: { titulo: string; cabecalho: string; corpo: string; css?: string; geradoEm?: Date | string; botao?: string }): string {
+export function paginaRelatorio(p: { titulo: string; cabecalho: string; corpo: string; css?: string; geradoEm?: Date | string; botao?: string; larga?: boolean }): string {
   return `
     <html>
       <head>
         <title>${escaparHtml(p.titulo)}</title>
         <style>${CSS_RELATORIO}
+${p.larga ? CSS_LARGO : ""}
 ${p.css ?? ""}
         </style>
       </head>

@@ -343,3 +343,33 @@ test("quem ainda tem a empresa GEMAPE antiga no navegador a perde com os cadastr
   assert.deepEqual(base.empresas, []);
   assert.ok(!JSON.stringify(base).includes("empresa-demo"));
 });
+
+test("cada um dos cinco veículos e dos cinco equipamentos de teste vem com dados em todas as seções dos relatórios", () => {
+  const s = prontos();
+  const lista = (k) => json(s, k) ?? [];
+  const veiculos = doTeste(dados(s).veiculos);
+  assert.equal(veiculos.length, 5);
+  for (const v of veiculos) {
+    for (const [chave, minimo] of [["gemape-demo-abastecimentos", 4], ["gemape-demo-manutencoes-veiculo", 2], ["gemape-demo-ocorrencias-veiculo", 1], ["gemape-demo-checklists-veiculo", 1], ["gemape-demo-planos-manutencao", 1], ["gemape-demo-associacoes-checklist-veiculo", 1]]) {
+      assert.ok(lista(chave).filter((r) => r.veiculoId === v.id).length >= minimo, `${v.placa}: ${chave}`);
+    }
+  }
+  const manut = lista("gemape-demo-manutencoes-veiculo");
+  assert.deepEqual([manut.filter((m) => m.tipo === "Preventiva").length, manut.filter((m) => m.tipo === "Corretiva").length], [5, 5]);
+  const ocor = lista("gemape-demo-ocorrencias-veiculo");
+  assert.ok(ocor.some((o) => o.status === "Aberta") && ocor.some((o) => o.status === "Em tratativa") && ocor.some((o) => o.status === "Encerrada"));
+  assert.ok(lista("gemape-demo-checklists-veiculo").every((c) => c.status === "Concluído"));
+  assert.ok(ocor.some((o) => o.tipoId === "checklist"), "itens NOK dos check lists geraram ocorrência");
+  // Equipamentos: todos têm manutenção, ocorrência e check list.
+  for (const e of doTeste(json(s, "gemape-demo-equipamentos"))) {
+    for (const chave of ["gemape-demo-eq-manutencoes", "gemape-demo-eq-ocorrencias", "gemape-demo-eq-checklists-exec"]) {
+      assert.ok(lista(chave).some((r) => r.equipamentoId === e.id), `${e.patrimonio}: ${chave}`);
+    }
+  }
+  // Limpar leva tudo isso junto.
+  pedirLimpar(s);
+  assert.equal(prepararDadosDeTeste(s, base, AGORA), "limpo");
+  for (const chave of ["gemape-demo-manutencoes-veiculo", "gemape-demo-ocorrencias-veiculo", "gemape-demo-checklists-veiculo", "gemape-demo-planos-manutencao", "gemape-demo-associacoes-checklist-veiculo", "gemape-demo-abastecimentos"]) {
+    assert.equal(lista(chave).filter((r) => String(r.veiculoId).startsWith("teste-")).length, 0, chave);
+  }
+});

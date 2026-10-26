@@ -47,7 +47,7 @@ test("check list, frota, termo e ficha saem no mesmo padrão do Relatório de Vi
 
 test("nenhum relatório, termo ou check list monta o próprio layout: todos usam o padrão", () => {
   for (const arq of [
-    "lib/checklist-veiculo-html.ts", "lib/frota-relatorio-html.ts", "lib/manutencao-relatorio-html.ts", "lib/ficha-epi-avulsa-html.ts",
+    "lib/checklist-veiculo-html.ts", "lib/extrato-html.ts", "lib/frota-relatorio-html.ts", "lib/manutencao-relatorio-html.ts", "lib/ficha-epi-avulsa-html.ts",
     "lib/termo-entrega-epi-html.ts", "lib/termo-baixa-uniforme-html.ts", "lib/termo-entrega-uniforme-html.ts", "lib/termo-responsabilidade-html.ts", "lib/termo-vistoria-html.ts",
     "components/modules/FerramentasTermoEncerramento.tsx",
   ]) {
@@ -85,4 +85,58 @@ test("todos os relatórios e termos saem com as <div> fechadas na ordem e o roda
     assert.ok(corpo.indexOf('class="rodape"') > corpo.indexOf('class="termo"'), "o rodapé vem depois do conteúdo");
     assert.match(h, /<div class="termo">[\s\S]*<\/div>\s*<div class="rodape">/, "o conteúdo fecha antes do rodapé");
   }
+});
+
+test("o extrato do veículo e o do equipamento abrem o relatório direto, em tela cheia, no padrão, com a situação colorida", async () => {
+  const { montarExtratoHtml } = await import("../src/lib/extrato-html.ts");
+  const html = montarExtratoHtml({
+    titulo: "Extrato do veículo", assunto: `TST1A23 ${perigoso}`, empresa: "Gemape Máquinas", resumo: [["Km atual", "50.000"], ["Média de consumo", "—"], ["Preventivas vencidas", "2", "vermelho"]],
+    tabelas: [
+      { titulo: "Manutenções realizadas", vazio: "Nenhuma.", colunas: [{ titulo: "Data" }, { titulo: "Km", direita: true }], linhas: [["26/10/2026", "50.000"]] },
+      { titulo: "Preventivas", vazio: "Nenhuma.", colunas: [{ titulo: "Ação" }, { titulo: "Situação" }], linhas: [["Óleo", { texto: "Vencida · Vencida por km", cor: "vermelho" }], ["Freios", { texto: "Sem registro", cor: "cinza" }]] },
+      { titulo: "Ocorrências", vazio: "Nenhuma ocorrência registrada.", colunas: [{ titulo: "Data" }], linhas: [], nota: "Nota." },
+    ],
+  });
+  noPadrao(html);
+  assert.ok(!html.includes(perigoso));
+  assert.match(html, /<div class="campo vermelho"><span class="rotulo">Preventivas vencidas<\/span><span class="conteudo">2<\/span>/);
+  assert.match(html, /<td class="num">50\.000<\/td>/);
+  assert.match(html, /<td><span class="ponto" style="background: #dc2626;"><\/span><span style="color: #dc2626; font-weight: bold;">Vencida · Vencida por km<\/span><\/td>/);
+  assert.match(html, /<span class="ponto" style="background: #64748b;"><\/span><span style="color: #64748b; ">Sem registro/);
+  assert.match(html, /<td colspan="1" class="vazio">Nenhuma ocorrência registrada\.<\/td>/);
+  assert.match(html, /@media screen \{[\s\S]*\.folha \{ width: auto; min-height: 100vh/, "na tela a folha ocupa a largura toda; ao imprimir segue A4");
+  // Ver extrato (veículo) e Extrato (equipamento) abrem o relatório na hora, em tela cheia, sem janela intermediária.
+  const veiculo = ler("components/modules/ExtratoVeiculo.tsx");
+  assert.match(veiculo, /abrirDocumento\(\{ titulo: "Extrato do veículo", html[^}]*telaCheia: true \}\)/);
+  assert.match(veiculo, /useEffect\(\(\) => \{\s*if \(!veiculo\) return;\s*abrirRelatorio\(veiculo\);\s*onFechar\(\);/);
+  assert.doesNotMatch(veiculo, /<Dialog/);
+  const equip = ler("components/modules/equipamento/InventarioEquipamentoModulo.tsx");
+  assert.match(equip, /onClick=\{\(\) => gerarRelatorio\(e\)\}>Extrato<\/Button>/);
+  assert.match(equip, /telaCheia: true/);
+  assert.doesNotMatch(equip, /<Dialog/);
+  for (const secao of ['"Abastecimentos"', '"Manutenções"', '"Ocorrências"', '"Check lists"']) assert.ok(equip.includes(`titulo: ${secao}`), secao);
+  for (const secao of ["preventivas sugeridas", "Manutenções realizadas", "Itens não realizados em atenção", "Histórico de abastecimentos", "Ocorrências"]) assert.ok(veiculo.split(`titulo: "`).some((t) => t.includes(secao)), secao);
+  // No visualizador em tela cheia o botão de imprimir se chama Gerar PDF.
+  const visualizador = ler("components/layout/VisualizadorDocumento.tsx");
+  assert.match(visualizador, /documento\?\.telaCheia \? "Gerar PDF" : "Imprimir"/);
+  assert.match(visualizador, /h-\[96vh\] w-\[98vw\] max-w-none/);
+});
+
+test("o título das colunas numéricas fica alinhado à direita, junto com os valores", async () => {
+  const { CSS_RELATORIO } = await import("../src/lib/relatorio-padrao.ts");
+  assert.match(CSS_RELATORIO, /table\.padrao th\.num[^{]*\{ text-align: right; \}/);
+  assert.match(CSS_RELATORIO, /\.valor, \.num \{ text-align: right/);
+  const html = montarRelatorioTabelaHtml({ titulo: "T", colunas: [{ titulo: "Nome" }, { titulo: "Km", direita: true }], linhas: [["a", "1"]], vazio: "" });
+  assert.match(html, /<th class="num">Km<\/th>/);
+  assert.match(html, /<td class="num">1<\/td>/);
+});
+
+test("Abastecimento de veículos tem o Gerar PDF: relatório por veículo, no padrão, com os mesmos filtros da tela", () => {
+  const tela = ler("components/modules/AbastecimentoVeiculoModulo.tsx");
+  assert.match(tela, /<Button variant="outline" className="ml-auto" onClick=\{gerarRelatorio\}>Gerar PDF<\/Button>/);
+  assert.match(tela, /montarExtratoHtml\(\{\s*titulo: "Relatório de abastecimento"/);
+  assert.match(tela, /telaCheia: true/);
+  assert.match(tela, /grupos\s*=\s*veiculos\s*\.filter\(\(v\) => linhas\.some/, "um quadro por veículo, só dos que têm abastecimento no filtro");
+  assert.match(tela, /Total: \$\{g\.dele\.length\} abastecimento\(s\)/);
+  for (const coluna of ["Data e hora", "Km rodados", "Litros", "Valor", "R$/L", "Km/L"]) assert.ok(tela.includes(`titulo: "${coluna}"`), coluna);
 });

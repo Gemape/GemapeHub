@@ -6,7 +6,7 @@ import {
 import { cadastrarPadraoAcoes, lerManutencaoEquipamento, salvarPlano, salvarTipoOcorrencia } from "../equipamentos-manutencao.ts";
 import { lerParametrosEquipamento } from "../equipamentos-parametros.ts";
 import { hojeLocal } from "../empregados.ts";
-import { nomeAcaoPadrao, ROTULOS_ACAO } from "../equipamentos-manutencao-padrao.ts";
+import { ACOES_PADRAO_EQUIPAMENTO, nomeAcaoPadrao, ROTULOS_ACAO } from "../equipamentos-manutencao-padrao.ts";
 import {
   CHAVE_ABASTECIMENTOS_EQ, CHAVE_MANUTENCOES_EQ, CHAVE_OCORRENCIAS_EQ, registrarAbastecimentoEq, registrarManutencaoEq, registrarOcorrenciaEq, resolverOcorrenciaEq,
 } from "../registros-equipamento.ts";
@@ -68,15 +68,23 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
     trocarId(storage, CHAVE_ABASTECIMENTOS_EQ, r.id, `${PREFIXO}eq-abastecimento-${i + 1}`);
   });
 
-  // Manutenções: cinco, em quatro equipamentos, preventivas e corretivas, na empresa ou em terceiro, com custos.
+  // Compressor a diesel (segundo): três abastecimentos antes da manutenção das 3.200 horas, com o horímetro sempre crescendo.
+  ([[58, "08:00", 3050, 22, 140], [44, "09:10", 3120, 24, 152], [26, "07:40", 3185, 21.5, 138]] as const).forEach(([atras, hora, horimetro, litros, valor], i) => {
+    const r = registrarAbastecimentoEq({ equipamentoId: idEquipamento(1), data: dia(agora, atras), hora, horimetro, litros, valor }, storage as Storage, agora);
+    trocarId(storage, CHAVE_ABASTECIMENTOS_EQ, r.id, `${PREFIXO}eq-abastecimento-compressor-${i + 1}`);
+  });
+
+  // Manutenções: seis, nos cinco equipamentos, preventivas e corretivas, na empresa ou em terceiro, com custos.
   const acoes = lerManutencaoEquipamento(storage).acoes;
   const acao = (nome: string, ...subitens: string[]) => { const a = acoes.find((x) => x.nome === nome); return a ? [{ acaoId: a.id, nome: a.nome, subitens }] : []; };
+  const extintor = ACOES_PADRAO_EQUIPAMENTO.find((a) => a.nome.startsWith("Extintores de incêndio"));
   const manutencoes = [
     { n: 3, atras: 35, tipo: "Preventiva", horimetro: 190, acoes: acao(LUB_EMPILHADEIRA, "Troca de óleo do motor", "Filtro de óleo"), local: "empresa", localNome: "", pecas: "320,00", mao: "180,00", parada: "6", obs: "Revisão das 190 horas." },
     { n: 0, atras: 30, tipo: "Corretiva", horimetro: 1480, acoes: acao(ELETRICO_EMPILHADEIRA, "Troca de bateria"), local: "terceiro", localNome: "Elétrica Industrial Triângulo", pecas: "1.450,00", mao: "600,00", parada: "24", obs: "Troca de células da bateria." },
     { n: 1, atras: 20, tipo: "Preventiva", horimetro: 3200, acoes: acao(LUB_COMPRESSOR, "Filtro de óleo"), local: "empresa", localNome: "", pecas: "85,00", mao: "120,00", parada: "4", obs: "Lubrificação do conjunto motor-compressor." },
     { n: 0, atras: 10, tipo: "Preventiva", horimetro: 1530, acoes: acao(SUSPENSAO_EMPILHADEIRA, "Amortecedores", "Molas"), local: "empresa", localNome: "", pecas: "0,00", mao: "150,00", parada: "3", obs: "Sem vazamentos." },
     { n: 2, atras: 60, tipo: "Preventiva", horimetro: 0, acoes: acao(TRANSMISSAO_COMPRESSOR, "Líquido de arrefecimento"), local: "terceiro", localNome: "Recarga Segura Extintores", pecas: "90,00", mao: "60,00", parada: "2", obs: "Inspeção anual do extintor." },
+    { n: 4, atras: 45, tipo: "Preventiva", horimetro: 0, acoes: extintor ? acao(extintor.nome, extintor.subitens[0]!) : [], local: "terceiro", localNome: "Recarga Segura Extintores", pecas: "45,00", mao: "70,00", parada: "1", obs: "Inspeção e recarga anual." },
   ];
   manutencoes.forEach((m, i) => {
     const r = registrarManutencaoEq({
@@ -98,7 +106,7 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
     ignorar(() => salvarPlano({ modo: "criar", equipamentoId: idEquipamento(n), itens: itens.filter(([nome]) => nomeAcao(nome)).map(([nome, horas, meses]) => ({ acaoId: nomeAcao(nome), horas, meses })) }, storage, agora));
   }
 
-  // Ocorrências: cinco, três abertas e duas resolvidas.
+  // Ocorrências: seis, quatro abertas e duas resolvidas.
   const tiposOcorrencia = lerManutencaoEquipamento(storage).tiposOcorrencia;
   const tipoDe = (nome: string) => tiposOcorrencia.find((t) => t.nome === nome);
   const ocorrencias = [
@@ -107,6 +115,7 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
     { n: 1, atras: 12, tipo: "Falha mecânica", texto: "Ruído forte no cabeçote ao atingir a pressão máxima.", solucao: "" },
     { n: 2, atras: 9, tipo: "Dano estrutural", texto: "Suporte de parede do extintor solto e com a pintura trincada.", solucao: "Suporte refixado com buchas novas." },
     { n: 3, atras: 3, tipo: "Incidente sem vítimas", texto: "Carga tombou levemente ao manobrar no corredor 4, sem feridos e sem danos ao mastro.", solucao: "" },
+    { n: 4, atras: 6, tipo: "Dano estrutural", texto: "Mangueira do extintor ressecada e com pequena trinca perto do bico difusor.", solucao: "" },
   ];
   ocorrencias.forEach((o, i) => {
     const tipo = tipoDe(o.tipo);
@@ -120,6 +129,7 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
   const checklists: { n: number; finalidade: FinalidadeChecklist; atras: number; problema: boolean }[] = [
     { n: 3, finalidade: "manutencao", atras: 34, problema: false }, { n: 0, finalidade: "manutencao", atras: 29, problema: true }, { n: 1, finalidade: "manutencao", atras: 19, problema: false },
     { n: 3, finalidade: "vistoria", atras: 7, problema: true }, { n: 2, finalidade: "vistoria", atras: 2, problema: false },
+    { n: 4, finalidade: "manutencao", atras: 12, problema: false }, { n: 4, finalidade: "vistoria", atras: 4, problema: true },
   ];
   checklists.forEach((c, i) => {
     const e = EQUIPAMENTOS[c.n]!;

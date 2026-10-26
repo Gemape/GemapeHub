@@ -1,6 +1,7 @@
 // Termos e fichas abrem na própria tela (pendência 3), não em aba nova: navegadores
 // com bloqueio de pop-up recusam a aba aberta depois da gravação, e o termo sumia.
-export type DocumentoAberto = { titulo: string; html: string; arquivo: string };
+// `telaCheia` abre o visualizador ocupando a tela toda (extratos, para consultar com folga).
+export type DocumentoAberto = { titulo: string; html: string; arquivo: string; telaCheia?: boolean };
 
 let atual: DocumentoAberto | null = null;
 const ouvintes = new Set<() => void>();
