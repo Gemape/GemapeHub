@@ -1628,3 +1628,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 281. Painéis de check list de equipamentos iguais aos de veículos
 
 - Os indicadores do Check list de equipamentos, em manutenção e em vistoria, são o mesmo painel de Veículos (`ChecklistPainelMensal`): período "Todos os períodos" por padrão ou um mês, com previstos, realizados no prazo, não realizados e a vencer; os 25 check lists periódicos de teste de cada finalidade contam como realizados. Ajustes da revisão: a lista mensal acompanha o mês de hoje também na virada do mês e usa a data de conclusão do check list, como o painel; a limpeza dos dados de teste só apaga grupos de check list de veículo que são do padrão e não para numa falha.
+
+## 282. Ferramenta única em uma caixa só e 20 ferramentas de teste
+
+- Cada ferramenta é única e fica em uma caixa só. A base de demonstração recusa gravar uma caixa com ferramenta que já está em outra ("Esta ferramenta já está na caixa CX-0001..."), como já fazia a tela de Vincular ferramentas. A transferência agora tira a ferramenta da origem e depois a coloca no destino (se a entrada falhar, ela volta para a origem), em vez de ficar nas duas caixas no meio do caminho.
+- A repetição que aparecia (FER-0002 e FER-0003 nas caixas CX-0001 e CX-0002) vinha de linhas de transferências antigas que ficavam presas aos ids das caixas de teste ao reaplicar os dados: ao limpar, o que está ligado a caixa ou ferramenta de teste sai junto, e quem ainda tem ferramenta em duas caixas fica com a primeira.
+- Dados de teste (versão 23): 20 ferramentas (entradas de estoque, código de fábrica e fornecedor) distribuídas nas 5 caixas, quatro em cada, cada ferramenta na caixa da sua empresa. Só no navegador, em modo demonstração, sem Supabase.

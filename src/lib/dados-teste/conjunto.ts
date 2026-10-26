@@ -3,7 +3,7 @@
 // dados serem atualizados sozinhos no navegador.
 import { gerarCnpj, gerarCpf } from "./documentos.ts";
 
-export const VERSAO_DADOS_TESTE = 21;
+export const VERSAO_DADOS_TESTE = 23;
 
 // Prefixo dos ids escritos à mão: dá para reconhecer o que é de teste mesmo sem a lista de ids guardada.
 export const PREFIXO = "teste-";
@@ -142,7 +142,25 @@ export const FERRAMENTAS = [
   { empresaIndice: 2, categoria: "Elétrica", grupo: "Diversos", qual: "Furadeira de Impacto", marca: "Duramax", modelo: "DX-650 650W", tamanho: "", minimo: 2, entrada: 4, fornecedor: 1 },
   { empresaIndice: 0, categoria: "Manual", grupo: "Chave L", qual: "", marca: "Duramax", modelo: "Cromada Reforçada", tamanho: "13", minimo: 4, entrada: 10, fornecedor: 4 },
   { empresaIndice: 1, categoria: "Manual", grupo: "Chave boca", qual: "", marca: "Ferrotec", modelo: "Aço Cromo-Vanádio", tamanho: "12-13", minimo: 3, entrada: 6, fornecedor: 4 },
+  // As outras quinze completam as vinte: a ferramenta de ordem n vai para a caixa n mod 5 (a quinta caixa leva a primeira, a sexta, a segunda...), então tem a
+  // mesma empresa dessa caixa. Cada ferramenta fica em uma caixa só.
+  { empresaIndice: 0, categoria: "Manual", grupo: "Combinada", qual: "", marca: "Ferrotec", modelo: "Aço Cromo-Vanádio", tamanho: "10", minimo: 3, entrada: 6, fornecedor: 1 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Meia lua", qual: "", marca: "Maxforça", modelo: "Forjada Cromada", tamanho: "14-16", minimo: 2, entrada: 5, fornecedor: 4 },
+  { empresaIndice: 2, categoria: "Manual", grupo: "Diversos", qual: "Martelo de Borracha", marca: "Duramax", modelo: "MB-500", tamanho: "", minimo: 2, entrada: 4, fornecedor: 1 },
+  { empresaIndice: 0, categoria: "Manual", grupo: "Alicates", qual: "", marca: "Duramax", modelo: "Corte Diagonal", tamanho: "6 pol", minimo: 3, entrada: 7, fornecedor: 1 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Chave Philips", qual: "", marca: "Ferrotec", modelo: "Ponta Imantada", tamanho: "", minimo: 3, entrada: 8, fornecedor: 4 },
+  { empresaIndice: 0, categoria: "Manual", grupo: "Chave estria", qual: "", marca: "Maxforça", modelo: "Cromo-Vanádio 12 Pontos", tamanho: "13-15", minimo: 2, entrada: 5, fornecedor: 4 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Canhão", qual: "", marca: "Duramax", modelo: "Longo Cromado", tamanho: "8", minimo: 3, entrada: 6, fornecedor: 1 },
+  { empresaIndice: 2, categoria: "Manual", grupo: "Diversos", qual: "Trena de Aço 5 m", marca: "Ferrotec", modelo: "TR-5000", tamanho: "", minimo: 2, entrada: 6, fornecedor: 4 },
+  { empresaIndice: 0, categoria: "Manual", grupo: "Lima", qual: "", marca: "Maxforça", modelo: "Murça Bastarda", tamanho: "Chata", minimo: 2, entrada: 5, fornecedor: 1 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Cachimbo", qual: "", marca: "Ferrotec", modelo: "Jogo Sextavado", tamanho: "17", minimo: 2, entrada: 4, fornecedor: 4 },
+  { empresaIndice: 0, categoria: "Manual", grupo: "Chave Allen", qual: "", marca: "Duramax", modelo: "Longa Cromada", tamanho: "6", minimo: 2, entrada: 6, fornecedor: 1 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Chave L", qual: "", marca: "Maxforça", modelo: "Cromada Reforçada", tamanho: "11", minimo: 3, entrada: 7, fornecedor: 4 },
+  { empresaIndice: 2, categoria: "Manual", grupo: "Diversos", qual: "Nível de Bolha 40 cm", marca: "Duramax", modelo: "NB-400", tamanho: "", minimo: 2, entrada: 4, fornecedor: 1 },
+  { empresaIndice: 0, categoria: "Manual", grupo: "Combinada", qual: "", marca: "Maxforça", modelo: "Aço Carbono", tamanho: "13", minimo: 3, entrada: 8, fornecedor: 4 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Alicates", qual: "", marca: "Ferrotec", modelo: "Bico Meia Cana", tamanho: "8 pol", minimo: 2, entrada: 5, fornecedor: 1 },
 ] as const;
+export const CAIXAS_TESTE = 5;
 
 // Tamanhos de alguns grupos de ferramenta, como na planilha de controle de ferramentas (entram em Gerais junto com os dados de teste).
 export const TAMANHOS_GRUPO_FERRAMENTA: Record<string, readonly string[]> = {

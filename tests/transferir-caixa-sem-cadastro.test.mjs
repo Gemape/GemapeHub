@@ -14,7 +14,7 @@ test("Transferir fica habilitado quando existe outra caixa cadastrada ou habilit
 test("a janela oferece as caixas sem cadastro e cria a caixa já com a ferramenta, registrando a transferência no destino", () => {
   assert.match(dialogo, /novas\.map\(\(n\) =>/);
   assert.match(dialogo, /\(ainda sem ferramentas\)/);
-  assert.match(dialogo, /const destinoReal = await salvar\.mutateAsync/);
+  assert.match(dialogo, /destinoReal = await salvar\.mutateAsync/);
   assert.match(dialogo, /caixa_id: destinoReal/);
   assert.match(dialogo, /tipo_movimentacao: "Transferencia"/);
 });

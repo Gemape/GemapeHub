@@ -3,7 +3,7 @@
 import { lerAssociacoes } from "../checklist-associacao-veiculo.ts";
 import { lerChecklists } from "../checklist-veiculo.ts";
 import { lerChecklistsEq } from "../checklist-equipamento-exec.ts";
-import { lerChecklistEquipamento, removerGrupoChecklist, FINALIDADES } from "../equipamentos-checklist.ts";
+import { ehGrupoPadraoChecklist, lerChecklistEquipamento, removerGrupoChecklist, FINALIDADES } from "../equipamentos-checklist.ts";
 import * as Gerais from "../parametros-base.ts";
 
 type Armazenamento = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -39,7 +39,7 @@ function removerOrfaos(storage: Armazenamento): void {
 // Equipamento que não tem itens de check list associados (em manutenção ou em vistoria) sai do cadastro, com tudo o que foi registrado nele: abastecimentos,
 // manutenções, ocorrências, check lists e plano. Os equipamentos de teste já nascem associados nos dois.
 const REGISTROS_DO_EQUIPAMENTO = [
-  "gemape-demo-eq-abastecimentos", "gemape-demo-eq-manutencoes", "gemape-demo-eq-ocorrencias", "gemape-demo-eq-checklists-exec", "gemape-demo-eq-checklists",
+  "gemape-demo-eq-abastecimentos", "gemape-demo-eq-manutencoes", "gemape-demo-eq-ocorrencias", "gemape-demo-eq-checklists-exec",
   "gemape-demo-eq-previsoes-manutencao", "gemape-demo-eq-previsoes-vistoria",
 ] as const;
 
@@ -57,7 +57,9 @@ function removerEquipamentosSemAssociacao(storage: Armazenamento): number {
   storage.setItem("gemape-demo-equipamentos", JSON.stringify(equipamentos.filter((e) => !sai.has(String(e["id"])))));
   for (const chave of REGISTROS_DO_EQUIPAMENTO) {
     const lista = lerLista(storage, chave);
-    if (lista.some((r) => sai.has(String(r["equipamentoId"])))) storage.setItem(chave, JSON.stringify(lista.filter((r) => !sai.has(String(r["equipamentoId"])))));
+    // As previsões do painel guardam o id do equipamento em `veiculoId`.
+    const dono = (r: Record<string, unknown>) => String(r["equipamentoId"] ?? r["veiculoId"]);
+    if (lista.some((r) => sai.has(dono(r)))) storage.setItem(chave, JSON.stringify(lista.filter((r) => !sai.has(dono(r)))));
   }
   try {
     const manut = JSON.parse(storage.getItem("gemape-demo-equipamentos-manutencao") ?? "null") as { planos?: { equipamentoId: string }[] } | null;
@@ -91,7 +93,8 @@ export function removerGruposDeChecklistSemUso(storage: Armazenamento): { veicul
       ...execucoes.filter((c) => c.finalidade === finalidade).flatMap((c) => gruposDosItens(c.itens)),
     ]);
     for (const g of parte.grupos) {
-      if (usados.has(g.id)) continue;
+      // Só os grupos do padrão (como em veículos): os que a pessoa criou não são mexidos.
+      if (usados.has(g.id) || !ehGrupoPadraoChecklist(finalidade, g.nome)) continue;
       try { removerGrupoChecklist(finalidade, g.id, st); equipamentos++; } catch { /* já excluído ou em uso */ }
     }
   }

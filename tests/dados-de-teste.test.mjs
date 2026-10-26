@@ -28,7 +28,8 @@ const LISTAS = ["gemape-demo-fornecedores", "gemape-demo-clientes", "gemape-demo
 test("cinco registros em cada cadastro (cinco empregados por empresa); o sistema não traz mais a empresa GEMAPE de demonstração", () => {
   const s = prontos();
   const d = dados(s);
-  for (const t of ["ferramentas", "veiculos", "caixas_ferramentas"]) assert.equal(doTeste(d[t]).length, 5, t);
+  for (const t of ["veiculos", "caixas_ferramentas"]) assert.equal(doTeste(d[t]).length, 5, t);
+  assert.equal(doTeste(d.ferramentas).length, 20, "vinte ferramentas, distribuídas nas cinco caixas");
   assert.equal(doTeste(d.empresas).length, 3, "as três empresas do grupo");
   assert.equal(d.empresas.length, 3, "só as três empresas do grupo");
   assert.equal(doTeste(d.empregados).length, 15);
@@ -513,4 +514,46 @@ test("o painel de equipamentos, em manutenção e em vistoria, usa a mesma lógi
   // Os dois painéis (veículos e equipamentos) são o mesmo componente.
   assert.match(ler("components/modules/equipamento/ChecklistEquipamentoModulo.tsx"), /<ChecklistPainelMensal/);
   assert.match(ler("components/modules/ChecklistVeiculoModulo.tsx"), /<ChecklistPainelMensal/);
+});
+
+test("as 20 ferramentas de teste ficam distribuídas nas cinco caixas, quatro em cada, e cada ferramenta está em uma caixa só", () => {
+  const s = prontos();
+  const d = dados(s);
+  const itens = doTeste(d.caixa_ferramenta_itens);
+  assert.equal(itens.length, 20);
+  const caixas = new Map(d.caixas_ferramentas.map((c) => [c.id, c]));
+  const ferramentas = new Map(d.ferramentas.map((f) => [f.id, f]));
+  assert.equal(new Set(itens.map((i) => i.ferramenta_id)).size, 20, "nenhuma ferramenta em duas caixas");
+  for (const c of doTeste(d.caixas_ferramentas)) assert.equal(itens.filter((i) => i.caixa_id === c.id).length, 4, c.codigo);
+  for (const i of itens) assert.equal(ferramentas.get(i.ferramenta_id)?.empresa_id, caixas.get(i.caixa_id)?.empresa_id, "a ferramenta é da empresa da caixa");
+  assert.equal(new Set(doTeste(d.ferramentas).map((f) => f.codigo_sku)).size, 20, "códigos únicos");
+  assert.equal(doTeste(d.movimentacoes).filter((m) => m.modulo === "ferramenta").length, 20, "uma entrada por ferramenta");
+});
+
+test("a base recusa gravar uma caixa com ferramenta que já está em outra caixa", async () => {
+  const { demoSupabase } = await import("../src/integrations/supabase/demo-client.ts");
+  const caixa = (n) => ({ codigo: `CX-${String(n).padStart(4, "0")}`, codigo_num: n, nome: `CX-${n}`, status: "Ativa" });
+  const itens = [{ ferramenta_id: "fer-unica-1", quantidade: 1, observacao: "" }];
+  const primeira = await demoSupabase.rpc("salvar_caixa", { p_id: null, p_valores: caixa(91), p_itens: itens });
+  assert.equal(primeira.error, null);
+  const segunda = await demoSupabase.rpc("salvar_caixa", { p_id: null, p_valores: caixa(92), p_itens: itens });
+  assert.match(segunda.error?.message ?? "", /já está na caixa CX-0091/);
+  // Regravar a mesma caixa com a mesma ferramenta é normal.
+  const igual = await demoSupabase.rpc("salvar_caixa", { p_id: primeira.data, p_valores: caixa(91), p_itens: itens });
+  assert.equal(igual.error, null);
+});
+
+test("limpar e reaplicar os dados de teste não deixa ferramenta repetida em caixa por causa de transferências antigas", () => {
+  const s = prontos();
+  const d = dados(s);
+  // Registro antigo: uma transferência deixou a ferramenta 2 também na caixa 1 (id aleatório, ligado à caixa de teste).
+  d.caixa_ferramenta_itens.push({ id: "item-solto", caixa_id: "teste-caixa-1", ferramenta_id: "teste-ferramenta-2", quantidade: 1, observacao: "" });
+  s.setItem("gemape-demo-dados", JSON.stringify(d));
+  s.setItem("gemape-demo-dados-teste", JSON.stringify({ ...JSON.parse(s.getItem("gemape-demo-dados-teste")), versao: VERSAO_DADOS_TESTE - 1 }));
+  assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
+  const itens = dados(s).caixa_ferramenta_itens;
+  assert.ok(!itens.some((i) => i.id === "item-solto"));
+  const por = new Map();
+  for (const i of itens) por.set(i.ferramenta_id, (por.get(i.ferramenta_id) ?? 0) + 1);
+  assert.ok([...por.values()].every((n) => n === 1), "cada ferramenta em uma caixa só");
 });
