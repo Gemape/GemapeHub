@@ -164,8 +164,9 @@ test("os formulários de cadastro abrem em tela inteira", () => {
 test("Cadastrar empregado, veículo e itens, de dentro da associação, abrem o formulário e voltam à associação sem fechá-la", () => {
   for (const [f, c] of [["components/modules/DialogCadastroEmpregados.tsx", "EmpregadosCadastroModulo"], ["components/modules/DialogCadastroVeiculos.tsx", "VeiculosCadastroModulo"]]) {
     assert.match(ler(f), new RegExp(`<${c} direto aoConcluir=`), f);
-    assert.match(ler(`components/modules/${c}.tsx`), /aoConcluir\?\.\(\)/, c);
+    assert.match(ler(`components/modules/${c}.tsx`), /useAbrirDireto\(direto, /, c);
   }
+  assert.match(ler("lib/use-abrir-direto.ts"), /aoConcluir\?\.\(\)/);
   const eq = ler("components/parametros/ChecklistEquipamento.tsx");
   assert.doesNotMatch(eq, /irParaItens/);
   assert.match(eq, /linkCadastro\("Cadastrar itens de check list", \(\) => setItensAberto\(true\)\)/);

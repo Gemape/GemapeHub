@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useAbrirDireto } from "@/lib/use-abrir-direto";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { descricaoVeiculo, validarAquisicao } from "@/lib/descricao-veiculo";
 import { dataBrasilia } from "@/lib/portadores-caixa";
@@ -192,20 +193,10 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
   // Novo veículo (na demonstração, já com um exemplo preenchido).
   function novoVeiculo() {
     return import.meta.env.VITE_DEMO_MODE !== "false"
-      ? todosVeiculos().then((todos) => abrirNovo(exemploVeiculo(todos, empresaPadrao, parametros.marcasVeiculo[0]?.nome ?? "Fiat") as unknown as VeiculoCadastro)).catch(() => abrirNovo())
+      ? todosVeiculos().then((todos) => exemploVeiculo(todos, empresaPadrao, parametros.marcasVeiculo[0]?.nome ?? "Fiat") as unknown as VeiculoCadastro, () => undefined).then((exemplo) => abrirNovo(exemplo))
       : abrirNovo();
   }
-  // Aberto de dentro de uma associação de check list: já abre o formulário de novo cadastro e avisa quando ele fecha (salvou ou cancelou), para voltar à associação.
-  const abriuDireto = useRef(false);
-  useEffect(() => {
-    if (direto && !abriuDireto.current) { abriuDireto.current = true; void novoVeiculo(); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const formularioVisto = useRef(false);
-  useEffect(() => {
-    if (!direto) return;
-    if (aberto) formularioVisto.current = true;
-    else if (formularioVisto.current) { formularioVisto.current = false; aoConcluir?.(); }
-  }, [aberto]); // eslint-disable-line react-hooks/exhaustive-deps
+  useAbrirDireto(direto, empresas.length > 0, aberto, novoVeiculo, aoConcluir);
   // Sem argumento abre o cadastro em branco; com um veículo, abre como novo já preenchido (Clonar):
   // placa, RENAVAM e quilometragem são copiados (decisão 138) e podem ser editados; o código é gerado ao salvar.
   async function abrirNovo(clonar: VeiculoCadastro | null = null) {
@@ -213,6 +204,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
       toast.error(
         "Cadastre antes a regra do código de veículo em Cadastros > Gerais > Código do Produto.",
       );
+      if (direto) aoConcluir?.(); // sem formulário para mostrar, devolve o usuário à associação em vez de deixar a janela vazia
       return;
     }
     destravar();
@@ -429,9 +421,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={() => void (import.meta.env.VITE_DEMO_MODE !== "false"
-            ? todosVeiculos().then((todos) => exemploVeiculo(todos, empresaPadrao, parametros.marcasVeiculo[0]?.nome ?? "Fiat") as unknown as VeiculoCadastro, () => undefined).then((exemplo) => abrirNovo(exemplo))
-            : abrirNovo())}>
+          <Button requiresWrite onClick={() => void novoVeiculo()}>
             Novo veículo
           </Button>
         </div>

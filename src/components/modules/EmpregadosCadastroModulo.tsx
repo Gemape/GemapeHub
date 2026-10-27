@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useAbrirDireto } from "@/lib/use-abrir-direto";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -55,17 +56,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
   const base = editando ?? modelo;
   const [empresaSel, setEmpresaSel] = useState("");
   const salvando = useRef(false);
-  // Aberto de dentro de uma associação de check list: já abre o formulário de novo cadastro e avisa quando ele fecha (salvou ou cancelou), para voltar à associação.
-  const abriuDireto = useRef(false);
-  useEffect(() => {
-    if (direto && !abriuDireto.current) { abriuDireto.current = true; void abrirNovo(); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const formularioVisto = useRef(false);
-  useEffect(() => {
-    if (!direto) return;
-    if (aberto) formularioVisto.current = true;
-    else if (formularioVisto.current) { formularioVisto.current = false; aoConcluir?.(); }
-  }, [aberto]); // eslint-disable-line react-hooks/exhaustive-deps
+  useAbrirDireto(direto, empresas.length > 0, aberto, abrirNovo, aoConcluir);
   const { data: lista = [], isLoading } = useEmpregados(empresaId);
   const empregados = lista as EmpregadoCadastro[];
   const { ativos, inativos } = separarEmpregados(empregados);
