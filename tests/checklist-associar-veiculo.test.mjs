@@ -171,7 +171,7 @@ test("a janela Associar abre itens, veículos e empregados por cima, ao lado do 
   assert.match(tela, /canWrite/);
   assert.match(tela, /invalidateQueries\(\{ queryKey: \["veiculos-checklist-assoc"\]/);
   assert.match(tela, /invalidateQueries\(\{ queryKey: \["empregados-checklist-assoc"\]/);
-  assert.match(lerSrc("components/modules/DialogCadastroEmpregados.tsx"), /<EmpregadosCadastroModulo \/>/);
+  assert.match(lerSrc("components/modules/DialogCadastroEmpregados.tsx"), /<EmpregadosCadastroModulo direto /);
   assert.match(lerSrc("routes/_authenticated/empregados.tsx"), /component: EmpregadosCadastroModulo/);
 });
 

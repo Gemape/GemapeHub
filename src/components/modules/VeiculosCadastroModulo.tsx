@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { descricaoVeiculo, validarAquisicao } from "@/lib/descricao-veiculo";
 import { dataBrasilia } from "@/lib/portadores-caixa";
@@ -106,7 +106,7 @@ async function todosVeiculos(): Promise<{ id: string; placa: string; codigo_sku?
 // subcategoria, placa, marca, modelo, ano de fabricação, cor, combustível,
 // empresa, RENAVAM, data de aquisição, custo, nota fiscal, quilometragem, situação, responsável e
 // observações. A descrição é montada sozinha (decisão 49).
-export function VeiculosCadastroModulo() {
+export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?: boolean; aoConcluir?: () => void } = {}) {
   const { empresas, empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   // Km mostrado e conferido como no extrato e na frota: vale o maior entre o cadastro e os registros do veículo.
@@ -189,6 +189,23 @@ export function VeiculosCadastroModulo() {
     setGerando(false);
   }
 
+  // Novo veículo (na demonstração, já com um exemplo preenchido).
+  function novoVeiculo() {
+    return import.meta.env.VITE_DEMO_MODE !== "false"
+      ? todosVeiculos().then((todos) => abrirNovo(exemploVeiculo(todos, empresaPadrao, parametros.marcasVeiculo[0]?.nome ?? "Fiat") as unknown as VeiculoCadastro)).catch(() => abrirNovo())
+      : abrirNovo();
+  }
+  // Aberto de dentro de uma associação de check list: já abre o formulário de novo cadastro e avisa quando ele fecha (salvou ou cancelou), para voltar à associação.
+  const abriuDireto = useRef(false);
+  useEffect(() => {
+    if (direto && !abriuDireto.current) { abriuDireto.current = true; void novoVeiculo(); }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const formularioVisto = useRef(false);
+  useEffect(() => {
+    if (!direto) return;
+    if (aberto) formularioVisto.current = true;
+    else if (formularioVisto.current) { formularioVisto.current = false; aoConcluir?.(); }
+  }, [aberto]); // eslint-disable-line react-hooks/exhaustive-deps
   // Sem argumento abre o cadastro em branco; com um veículo, abre como novo já preenchido (Clonar):
   // placa, RENAVAM e quilometragem são copiados (decisão 138) e podem ser editados; o código é gerado ao salvar.
   async function abrirNovo(clonar: VeiculoCadastro | null = null) {
@@ -505,7 +522,7 @@ export function VeiculosCadastroModulo() {
       </div>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {editando

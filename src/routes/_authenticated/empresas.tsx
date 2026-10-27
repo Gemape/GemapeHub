@@ -146,7 +146,7 @@ function PaginaEmpresas() {
       </div>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editando ? "Editar empresa" : modelo && !ehExemplo(modelo) ? "Clonar empresa" : "Nova empresa"}</DialogTitle>
             <DialogDescription>Dados cadastrais da unidade.</DialogDescription>

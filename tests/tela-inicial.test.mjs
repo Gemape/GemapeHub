@@ -140,3 +140,33 @@ test("o cartão com submenus é um botão que abre e fecha a lista de atalhos de
   assert.match(pagina, /<button[^>]*type="button"/);
   assert.match(pagina, /search=\{sub\.search/);
 });
+
+test("a página pública usa vidro e a logo brilhante animada da tela dos módulos", () => {
+  const pagina = ler("routes/index.tsx");
+  const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+  assert.match(pagina, /<LogoEntrada grande \/>/);
+  for (const c of ["fundo-vidro", "vidro-claro", "mancha-a", "mancha-b", "vidro-entra"]) assert.match(pagina, new RegExp(c), c);
+  assert.match(pagina, /<Link to="\/auth">Acessar o sistema<\/Link>/);
+  for (const c of ["fundo-vidro", "vidro-claro", "mancha-luz", "vidro-reflexo"]) assert.match(css, new RegExp(`@utility ${c} {`), c);
+  assert.match(css, /@utility vidro-entra \{(?:(?!@utility)[\s\S])*?prefers-reduced-motion/);
+});
+
+test("os formulários de cadastro abrem em tela inteira", () => {
+  assert.match(ler("components/ui/dialog.tsx"), /telaCheia && "[^"]*w-screen[^"]*h-\[100dvh\]|telaCheia && "[^"]*h-\[100dvh\][^"]*w-screen/);
+  for (const f of [
+    "components/modules/CadastroEpi.tsx", "components/modules/CadastroProduto.tsx", "components/modules/CadastroUniforme.tsx",
+    "components/modules/EmpregadosCadastroModulo.tsx", "components/modules/VeiculosCadastroModulo.tsx",
+    "components/parametros/ClienteDialog.tsx", "components/parametros/EquipamentoDialog.tsx", "components/parametros/FornecedorDialog.tsx",
+    "routes/_authenticated/empresas.tsx",
+  ]) assert.match(ler(f), /<DialogContent telaCheia /, f);
+});
+
+test("Cadastrar empregado, veículo e itens, de dentro da associação, abrem o formulário e voltam à associação sem fechá-la", () => {
+  for (const [f, c] of [["components/modules/DialogCadastroEmpregados.tsx", "EmpregadosCadastroModulo"], ["components/modules/DialogCadastroVeiculos.tsx", "VeiculosCadastroModulo"]]) {
+    assert.match(ler(f), new RegExp(`<${c} direto aoConcluir=`), f);
+    assert.match(ler(`components/modules/${c}.tsx`), /aoConcluir\?\.\(\)/, c);
+  }
+  const eq = ler("components/parametros/ChecklistEquipamento.tsx");
+  assert.doesNotMatch(eq, /irParaItens/);
+  assert.match(eq, /linkCadastro\("Cadastrar itens de check list", \(\) => setItensAberto\(true\)\)/);
+});

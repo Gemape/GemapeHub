@@ -1668,3 +1668,15 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 290. Ajustes da revisão dos check lists
 
 - Equipamentos e Check list (categorias só de código) ficam fora das telas de Categorias e de associar tamanhos; aparecem só em Código do produto. O responsável da associação só esconde o campo no Novo check list quando está ativo e é da empresa do equipamento ou veículo; senão o campo volta para escolher outro. A lista de check lists volta às dez primeiras ao mudar mês, visão, busca ou filtro. O painel em "todos os períodos" ordena pelo prazo mais recente e, no mesmo dia, pelo nome de A a Z. O equipamento de teste de motor elétrico parte do horímetro inicial nas manutenções. A aplicação dos dados de teste só ignora o que já existe (outro erro desfaz tudo) e a restauração não troca o erro original. Só no navegador, em modo demonstração, sem Supabase.
+
+## 291. Página inicial pública em vidro
+
+- A página de entrada usa fundo azul com manchas de luz que derivam devagar, cartões de vidro (desfoque, borda e reflexo ao passar o mouse) que sobem em sequência, e a mesma logomarca brilhante e animada do login e dos módulos, em tamanho grande. Os seis módulos aparecem em cartões de vidro. Quem já tem sessão continua indo para a tela inicial. Quem prefere menos movimento recebe tudo parado. Só visual, sem Supabase.
+
+## 292. Formulários de cadastro em tela inteira
+
+- Os formulários de Empregados, Veículos, Equipamentos, Empresas, Fornecedores, Clientes, EPIs, Uniformes e Produtos abrem ocupando a tela toda, com margens laterais no computador, para enxergar tudo sem rolar a janela. Vale também para a lista de Empregados e de Veículos aberta de dentro da associação de check list. As demais janelas (confirmações e avisos) continuam pequenas. Só visual, sem Supabase.
+
+## 293. Cadastrar a partir da associação e voltar
+
+- Nas telas de Associar itens de check list (Veículos e Equipamentos), Cadastrar empregado e Cadastrar veículo abrem direto o formulário de novo cadastro em tela inteira; ao salvar ou cancelar, a janela volta à associação com o que já estava preenchido. Cadastrar itens de check list (Equipamentos) deixou de fechar a associação: abre os grupos de itens numa janela ao lado, e ao fechar a associação continua de onde parou, como em Veículos. Só visual, sem Supabase.

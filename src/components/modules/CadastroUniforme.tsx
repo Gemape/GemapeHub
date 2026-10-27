@@ -339,7 +339,7 @@ function CatalogoUniforme() {
       )}
 
       <Dialog open={novoAberto} onOpenChange={setNovoAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{clonando && !ehExemplo(clonando) ? "Clonar uniforme" : "Novo uniforme"}</DialogTitle>
             <DialogDescription>
@@ -426,7 +426,7 @@ function CatalogoUniforme() {
       </Dialog>
 
       <Dialog open={editando !== null} onOpenChange={(aberto) => !aberto && setEditando(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Editar uniforme {editando?.codigo_sku}</DialogTitle>
             <DialogDescription>
