@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Gestão GEMAPE" },
       {
         property: "og:description",
-        content: "Gestão de EPIs, uniformes, ferramentas e veículos.",
+        content: "Gestão de EPIs, uniformes, ferramentas, veículos, equipamentos e viagens.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

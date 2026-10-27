@@ -61,7 +61,7 @@ export function ClienteDialog({ aberto, onAberto, editando, modelo, codigoPrevis
 
   return (
     <Dialog open={aberto} onOpenChange={onAberto}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{editando ? "Editar cliente" : modelo && !ehExemplo(modelo) ? "Clonar cliente" : "Novo cliente"}</DialogTitle>
           <DialogDescription>Só o nome é obrigatório.</DialogDescription>

@@ -182,7 +182,7 @@ export function EquipamentoDialog({ aberto, onAberto, editando, modelo, onSalvo 
 }) {
   return (
     <Dialog open={aberto} onOpenChange={onAberto}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{editando ? "Editar equipamento" : modelo && !ehExemplo(modelo) ? "Clonar equipamento" : "Cadastrar equipamento"}</DialogTitle>
           <DialogDescription>Escolha a subcategoria e o tipo para aparecerem só as especificações técnicas dele.</DialogDescription>

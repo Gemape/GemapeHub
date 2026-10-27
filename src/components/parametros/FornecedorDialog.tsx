@@ -75,7 +75,7 @@ export function FornecedorDialog({ aberto, onAberto, editando, modelo, codigoPre
 
   return (
       <Dialog open={aberto} onOpenChange={onAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editando ? "Editar fornecedor" : modelo && !ehExemplo(modelo) ? "Clonar fornecedor" : "Novo fornecedor"}</DialogTitle>
             <DialogDescription>Informações cadastrais do fornecedor.</DialogDescription>

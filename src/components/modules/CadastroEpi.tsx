@@ -309,7 +309,7 @@ function CatalogoEpi() {
       )}
 
       <Dialog open={novoAberto} onOpenChange={setNovoAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{clonando && !ehExemplo(clonando) ? "Clonar EPI" : "Novo EPI"}</DialogTitle>
             <DialogDescription>
@@ -396,7 +396,7 @@ function CatalogoEpi() {
       </Dialog>
 
       <Dialog open={editando !== null} onOpenChange={(aberto) => !aberto && setEditando(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Editar EPI {editando?.codigo_sku}</DialogTitle>
             <DialogDescription>

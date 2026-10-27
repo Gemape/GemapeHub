@@ -212,6 +212,7 @@ export function AssociarEquipamento({ finalidade, versao, aoMudar, abrirDireto }
   // Telas de cadastro abertas ao lado da janela, nunca dentro, para não perder o que já foi escolhido (decisão 120).
   const [equipamentosAberto, setEquipamentosAberto] = useState(false);
   const [empregadosAberto, setEmpregadosAberto] = useState(false);
+  const [itensAberto, setItensAberto] = useState(false);
 
   const porId = (id: string): Equipamento | undefined => equipamentos.find((e) => e.id === id);
   const rotulo = (e: Equipamento) => `${e.patrimonio} · ${e.nome}`;
@@ -243,8 +244,6 @@ export function AssociarEquipamento({ finalidade, versao, aoMudar, abrirDireto }
   const linkCadastro = (texto: string, abrirTela: () => void) => (canWrite ? (
     <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={abrirTela}>{texto}</button>
   ) : null);
-  // Os grupos de itens ficam na mesma tela, logo acima: o atalho fecha a janela e leva até eles.
-  const irParaItens = () => { setAberto(false); setTimeout(() => document.getElementById("itens-check-list-equipamento")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150); };
 
   // Trocar o equipamento mantém o responsável só se ele ainda pode responder por ele (ativo e da mesma empresa do novo equipamento).
   function trocarEquipamento(id: string) {
@@ -466,7 +465,7 @@ export function AssociarEquipamento({ finalidade, versao, aoMudar, abrirDireto }
             <fieldset className="space-y-2" data-testid="associar-itens">
               <legend className="text-sm font-medium">Itens que compõem o check list</legend>
               <p className="text-xs text-muted-foreground">Marque o grupo para trazer a lista de itens dele e escolha, item a item, os que compõem o check list. A periodicidade vale para todos os itens marcados.</p>
-              <p className="text-xs">{linkCadastro("Cadastrar itens de check list", irParaItens)}</p>
+              <p className="text-xs">{linkCadastro("Cadastrar itens de check list", () => setItensAberto(true))}</p>
               {!escolhido ? (
                 <p className="text-sm text-muted-foreground">Escolha o equipamento para ver os itens.</p>
               ) : aplicaveis.length === 0 ? (
@@ -526,6 +525,16 @@ export function AssociarEquipamento({ finalidade, versao, aoMudar, abrirDireto }
       {/* Ao lado da janela da associação, nunca dentro dela (decisão 120). */}
       <EquipamentoDialog aberto={equipamentosAberto} onAberto={aoFecharEquipamentos} editando={null} modelo={null} onSalvo={aoMudar} />
       <DialogCadastroEmpregados aberto={empregadosAberto} onAbrirMudou={aoFecharEmpregados} />
+      {/* Os grupos de itens numa janela ao lado: cadastra, fecha e a associação continua de onde parou. */}
+      <Dialog open={itensAberto} onOpenChange={setItensAberto}>
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Itens check list</DialogTitle>
+            <DialogDescription>Cadastra os grupos de itens do check list. Ao fechar, a associação continua de onde parou.</DialogDescription>
+          </DialogHeader>
+          {itensAberto && <ListaGrupos finalidade={finalidade} nomeFinalidade={FINALIDADES.find((f) => f.id === finalidade)?.nome ?? ""} versao={versao} aoMudar={aoMudar} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

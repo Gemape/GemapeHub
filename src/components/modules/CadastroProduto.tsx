@@ -561,7 +561,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       </div>
 
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {editando

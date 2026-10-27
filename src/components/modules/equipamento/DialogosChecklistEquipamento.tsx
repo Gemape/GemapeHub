@@ -40,7 +40,7 @@ export function DialogAssociarChecklistEquipamento({ aberto, onAbrirMudou, final
 export function DialogItensChecklistEquipamento({ aberto, onAbrirMudou, finalidade }: { aberto: boolean; onAbrirMudou: (aberto: boolean) => void; finalidade: FinalidadeChecklist }) {
   return (
     <Dialog open={aberto} onOpenChange={onAbrirMudou}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
+      <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader className="sr-only">
           <DialogTitle>Itens check list</DialogTitle>
           <DialogDescription>Cadastra os grupos de itens do check list por tipo de equipamento. Ao fechar, o check list continua de onde parou.</DialogDescription>

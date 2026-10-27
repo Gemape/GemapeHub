@@ -8,12 +8,12 @@ import { EmpregadosCadastroModulo } from "@/components/modules/EmpregadosCadastr
 export function DialogCadastroEmpregados({ aberto, onAbrirMudou }: { aberto: boolean; onAbrirMudou: (aberto: boolean) => void }) {
   return (
     <Dialog open={aberto} onOpenChange={onAbrirMudou}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
+      <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader className="sr-only">
           <DialogTitle>Empregados</DialogTitle>
           <DialogDescription>Cadastre ou ajuste o empregado e feche a janela: a associação continua de onde parou.</DialogDescription>
         </DialogHeader>
-        <EmpregadosCadastroModulo />
+        {aberto && <EmpregadosCadastroModulo direto aoConcluir={() => onAbrirMudou(false)} />}
       </DialogContent>
     </Dialog>
   );

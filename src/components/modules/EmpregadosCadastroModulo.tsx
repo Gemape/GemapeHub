@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +46,7 @@ const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 type EmpregadoCadastro = Empregado & { email?: string | null };
 
 
-export function EmpregadosCadastroModulo() {
+export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { direto?: boolean; aoConcluir?: () => void } = {}) {
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<EmpregadoCadastro | null>(null);
@@ -55,6 +55,17 @@ export function EmpregadosCadastroModulo() {
   const base = editando ?? modelo;
   const [empresaSel, setEmpresaSel] = useState("");
   const salvando = useRef(false);
+  // Aberto de dentro de uma associação de check list: já abre o formulário de novo cadastro e avisa quando ele fecha (salvou ou cancelou), para voltar à associação.
+  const abriuDireto = useRef(false);
+  useEffect(() => {
+    if (direto && !abriuDireto.current) { abriuDireto.current = true; void abrirNovo(); }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const formularioVisto = useRef(false);
+  useEffect(() => {
+    if (!direto) return;
+    if (aberto) formularioVisto.current = true;
+    else if (formularioVisto.current) { formularioVisto.current = false; aoConcluir?.(); }
+  }, [aberto]); // eslint-disable-line react-hooks/exhaustive-deps
   const { data: lista = [], isLoading } = useEmpregados(empresaId);
   const empregados = lista as EmpregadoCadastro[];
   const { ativos, inativos } = separarEmpregados(empregados);
@@ -197,7 +208,7 @@ export function EmpregadosCadastroModulo() {
       )}
 
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+        <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{editando ? "Editar empregado" : modelo && !ehExemplo(modelo) ? "Clonar empregado" : "Novo empregado"}</DialogTitle>
             <DialogDescription>Dados do empregado.</DialogDescription>

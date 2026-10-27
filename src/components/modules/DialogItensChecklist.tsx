@@ -9,7 +9,7 @@ import { ChecklistVeiculoLista } from "@/components/parametros/VeiculosListasPar
 export function DialogItensChecklist({ aberto, onAbrirMudou }: { aberto: boolean; onAbrirMudou: (aberto: boolean) => void }) {
   return (
     <Dialog open={aberto} onOpenChange={onAbrirMudou}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
+      <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader className="sr-only">
           <DialogTitle>Itens check list</DialogTitle>
           <DialogDescription>Cadastra os grupos de itens do check list por tipo de veículo. Ao fechar, o check list continua de onde parou.</DialogDescription>
