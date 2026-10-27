@@ -97,7 +97,7 @@ export function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { f
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div id="itens-check-list-equipamento" className="scroll-mt-24">
+        <div>
           <h2 className="text-xl font-bold">Itens check list</h2>
           <p className="mt-1 text-sm text-muted-foreground">Os grupos de itens do check list de {nomeFinalidade.toLowerCase()}, cada um para os tipos de equipamento a que se aplica.</p>
         </div>
