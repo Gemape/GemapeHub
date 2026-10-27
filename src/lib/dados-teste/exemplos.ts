@@ -94,9 +94,9 @@ export function exemploCatalogo(
 }
 
 // Ferramenta: o código sai da geração normal ao salvar (nunca repete); grupo e tamanho são os da planilha de controle de ferramentas.
-export function exemploFerramenta(categoria: string, marca: string) {
+export function exemploFerramenta(categoria: string, marca: string, grupo = "Chave L", tamanho = "") {
   return {
-    id: `${ID_EXEMPLO}ferramenta`, codigo_sku: "", categoria_ferramenta: categoria, grupo_ferramenta: "Chave L", marca, modelo: "Cromada Reforçada", tamanho: "13",
+    id: `${ID_EXEMPLO}ferramenta`, codigo_sku: "", categoria_ferramenta: categoria, grupo_ferramenta: grupo, marca, modelo: "Cromada Reforçada", tamanho,
     estoque_minimo: 3, unidade_medida: "Unidade", status: "Ativo", observacoes: "Ferramenta de exemplo para teste do cadastro.",
   };
 }

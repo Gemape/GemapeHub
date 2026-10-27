@@ -421,7 +421,9 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
           >
             Exportar CSV
           </Button>
-          <Button requiresWrite onClick={() => void novoVeiculo()}>
+          <Button requiresWrite onClick={() => void (import.meta.env.VITE_DEMO_MODE !== "false"
+            ? todosVeiculos().then((todos) => exemploVeiculo(todos, empresaPadrao, parametros.marcasVeiculo[0]?.nome ?? "Fiat") as unknown as VeiculoCadastro, () => undefined).then((exemplo) => abrirNovo(exemplo))
+            : abrirNovo())}>
             Novo veículo
           </Button>
         </div>
