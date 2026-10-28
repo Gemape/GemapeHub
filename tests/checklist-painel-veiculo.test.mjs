@@ -36,7 +36,7 @@ test("a tela principal do check list de veículos tem indicadores no topo, resul
   assert.match(modulo, /Check list avulso/);
   assert.doesNotMatch(modulo, /Situação por veículo/);
   const painel = ler("components/modules/ChecklistResultadosPainel.tsx");
-  assert.ok(painel.indexOf("Indicadores gerais de check list") < painel.indexOf("Resultados dos responsáveis"));
+  assert.ok(painel.indexOf("Indicadores gerais de check list") < painel.indexOf("Indicadores · {g}"));
 });
 
 test("as listas do periódico e do avulso têm as mesmas colunas, na mesma ordem, e as ações de cada situação", () => {
@@ -49,4 +49,35 @@ test("as listas do periódico e do avulso têm as mesmas colunas, na mesma ordem
   assert.match(listas, />Realizar</);
   assert.match(listas, /const aberto = l\.situacao === "a_vencer" \|\| \(l\.situacao === "opcional" && l\.fim >= hoje\)/);
   assert.match(listas, /<span className="text-muted-foreground">—<\/span>\}/);
+});
+
+import { resumoDeLinhas } from "../src/lib/checklist-painel.ts";
+import { GRUPOS_DE_AREA, grupoDeAreaPorNome } from "../src/lib/area-responsaveis.ts";
+
+test("o check list separa os indicadores de técnicos (Oficina) e PCM pela área de cada responsável (decisão 310)", () => {
+  // A lista de Veículos vale primeiro; quem não está nela vem da lista de Viagens; sem nenhuma, Sem área.
+  const grupoDe = grupoDeAreaPorNome([
+    [{ empregadoId: "e1", nome: "Ana Souza", area: "Oficina" }, { empregadoId: "e2", nome: "Bruno Lima", area: "PCM" }],
+    [{ empregadoId: "e2", nome: "Bruno Lima", area: "Oficina" }, { empregadoId: "e3", nome: "Carla Dias", area: "Administrativo" }],
+  ]);
+  assert.deepEqual(["Ana Souza", " bruno lima ", "Carla Dias", "Dora"].map(grupoDe), ["Técnicos", "PCM", "Administrativo", "Sem área"]);
+  assert.deepEqual([...GRUPOS_DE_AREA], ["Técnicos", "PCM", "Administrativo", "Sem área"]);
+
+  const hoje = "2026-10-20";
+  const previsoes = [
+    previsao("a", "2026-10-04", "Ana Souza"), previsao("b", "2026-10-11", "Ana Souza"), previsao("c", "2026-10-04", "Bruno Lima"), previsao("d", "2026-10-25", "Bruno Lima"),
+  ];
+  const feitos = [{ id: "k1", codigo: "CHK-1", veiculoId: "a", periodicidade: "Semanal", status: "Concluído", data: "2026-10-04", concluidoEm: "2026-10-04T15:00:00Z", responsavelNome: "Ana Souza" }];
+  const { linhas, resumo } = painelDoMes(null, previsoes, feitos, hoje);
+  const tecnicos = resumoDeLinhas(linhas.filter((l) => grupoDe(l.responsavelNome) === "Técnicos"));
+  const pcm = resumoDeLinhas(linhas.filter((l) => grupoDe(l.responsavelNome) === "PCM"));
+  assert.deepEqual([tecnicos.previstos, tecnicos.realizados, tecnicos.naoRealizados, tecnicos.pctNoPrazo], [2, 1, 1, 50]);
+  assert.deepEqual([pcm.previstos, pcm.realizados, pcm.naoRealizados, pcm.aVencer, pcm.pctNoPrazo], [2, 0, 1, 1, 0]);
+  // Os grupos somam o geral, e o geral continua igual ao do painel.
+  assert.equal(tecnicos.previstos + pcm.previstos, resumo.previstos);
+  assert.deepEqual(resumoDeLinhas(linhas), resumo);
+  const painelTela = ler("components/modules/ChecklistResultadosPainel.tsx");
+  assert.match(painelTela, /g === "Técnicos" \|\| g === "PCM" \|\| doGrupo\(g\)\.length > 0/);
+  assert.match(painelTela, /<Indicadores resumo=\{resumoDeLinhas\(dele\)\}/);
+  assert.match(painelTela, /<TabelaDeResponsaveis linhas=\{dele\} \/>/);
 });

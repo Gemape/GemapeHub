@@ -17,7 +17,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, limparPendencias, pendencias, semDestinosDaOpcao,
+  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, OPCAO_QUALQUER, aceitaDestinoPorOpcao, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, limparPendencias, pendencias, semDestinosDaOpcao,
 } from "@/lib/questionario-destinos";
 import { gravarSecao, inicioDaProximaSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
@@ -176,6 +176,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
           })}
         </div>
         <h2 className="pt-2 text-sm font-medium">2. Monte as perguntas de "{tipoAtual}"</h2>
+        <p className="text-xs text-muted-foreground">Toda pergunta pode ramificar: por resposta, quando tem opções escritas, ou depois da pergunta, para qualquer resposta. A pergunta de tipos de despesa é a escolha do card acima: cada tipo tem o seu próprio questionário.</p>
       </section>
 
       {dadosIlegiveis() && (
@@ -259,9 +260,9 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 {TIPOS_PERGUNTA.find((t) => t.valor === p.tipo)?.rotulo}{fixa ? " · pergunta inicial de todo questionário" : ""}
               </p>
               {estado.regras[tipoAtual]?.[id] && <p className="text-xs font-medium text-primary">{textoRegra(estado, estado.regras[tipoAtual][id] as Regra)}</p>}
-              {!fixa && aceitaDestino(p) && !(canWrite && !travada) && Object.keys(destinosDoTipo(estado, tipoAtual)[id] ?? {}).length > 0 && (
+              {!fixa && !canWrite && Object.keys(destinosDoTipo(estado, tipoAtual)[id] ?? {}).length > 0 && (
                 <ul className="text-xs font-medium text-primary">
-                  {Object.entries(destinosDoTipo(estado, tipoAtual)[id] ?? {}).map(([opcao, d]) => <li key={opcao}>"{opcao}": {textoDestino(estado, d, numeroDe)}</li>)}
+                  {Object.entries(destinosDoTipo(estado, tipoAtual)[id] ?? {}).map(([opcao, d]) => <li key={opcao}>{opcao === OPCAO_QUALQUER ? "Depois desta pergunta" : `"${opcao}"`}: {textoDestino(estado, d, numeroDe)}</li>)}
                 </ul>
               )}
               {fixa ? (
@@ -273,7 +274,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 <OpcoesDaPergunta
                   pergunta={p}
                   destinos={destinosDoTipo(estado, tipoAtual)[id] ?? {}}
-                  ramifica={aceitaDestino(p)}
+                  ramifica={aceitaDestinoPorOpcao(p)}
                   seguintes={ids.slice(ids.indexOf(id) + 1).filter((x) => x !== ID_TIPO_DESPESA).map((x) => ({ id: x, rotulo: `Ir para a pergunta ${numeroDe(x)} (${porId.get(x)?.titulo ?? x})` }))}
                   temProximaSecao={inicioDaProximaSecao(estado, tipoAtual, id) !== null}
                   onDestino={(opcao, valor) => mudarDestino(p, opcao, valor)}
@@ -281,6 +282,14 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 />
               ) : (
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
+              )}
+              {canWrite && !fixa && (travada || !aceitaDestinoPorOpcao(p) || destinosDoTipo(estado, tipoAtual)[id]?.[OPCAO_QUALQUER] !== undefined) && (
+                <DestinoDaPergunta
+                  atual={destinosDoTipo(estado, tipoAtual)[id]?.[OPCAO_QUALQUER] ?? SEM_DESTINO}
+                  seguintes={ids.slice(ids.indexOf(id) + 1).filter((x) => x !== ID_TIPO_DESPESA).map((x) => ({ id: x, rotulo: `Ir para a pergunta ${numeroDe(x)} (${porId.get(x)?.titulo ?? x})` }))}
+                  temProximaSecao={inicioDaProximaSecao(estado, tipoAtual, id) !== null}
+                  onDestino={(valor) => mudarDestino(p, OPCAO_QUALQUER, valor)}
+                />
               )}
               {(id === ID_HABILITADOS || id === ID_TECNICO_RESPONSAVEL) && (
                 <p className="text-xs text-muted-foreground" onClick={(e) => e.stopPropagation()}>
@@ -412,9 +421,6 @@ function OpcoesDaPergunta({ pergunta, destinos, ramifica, seguintes, temProximaS
       {pergunta.opcoes.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma resposta cadastrada ainda.</li>}
       {pergunta.opcoes.map((opcao) => {
         const atual = destinos[opcao] ?? SEM_DESTINO;
-        // O destino salvo que não está mais entre as opções (pergunta que saiu do questionário) continua visível, para corrigir.
-        const alvo = idDoDestino(atual);
-        const orfao = alvo !== null ? !seguintes.some((x) => x.id === alvo) : atual === DESTINO_PROXIMA_SECAO && !temProximaSecao;
         return (
           <li key={opcao} className="flex flex-wrap items-center gap-2 text-sm">
             <span aria-hidden="true" className="w-4 text-center text-muted-foreground">{marcador}</span>
@@ -423,11 +429,7 @@ function OpcoesDaPergunta({ pergunta, destinos, ramifica, seguintes, temProximaS
               <Select value={atual} onValueChange={(v) => { if (v) onDestino(opcao, v); }}>
                 <SelectTrigger aria-label={`Ramificação da resposta ${opcao}`} className="h-8 w-full sm:w-72"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={SEM_DESTINO}>Continuar para a próxima pergunta</SelectItem>
-                  {temProximaSecao && <SelectItem value={DESTINO_PROXIMA_SECAO}>Ir para a próxima seção</SelectItem>}
-                  <SelectItem value={DESTINO_ENCERRAR}>Encerrar o formulário</SelectItem>
-                  {seguintes.map((x) => <SelectItem key={x.id} value={destinoPergunta(x.id)}>{x.rotulo}</SelectItem>)}
-                  {orfao && <SelectItem value={atual} disabled>{alvo !== null ? "Pergunta que saiu do questionário (ação requerida)" : "Próxima seção que não existe mais (ação requerida)"}</SelectItem>}
+                  <ItensDeDestino atual={atual} seguintes={seguintes} temProximaSecao={temProximaSecao} />
                 </SelectContent>
               </Select>
             )}
@@ -438,6 +440,37 @@ function OpcoesDaPergunta({ pergunta, destinos, ramifica, seguintes, temProximaS
         );
       })}
     </ul>
+  );
+}
+
+// As escolhas de destino de uma ramificação (por resposta ou para qualquer resposta), com o destino órfão (pergunta que saiu do questionário ou seção que não existe mais) visível.
+function ItensDeDestino({ atual, seguintes, temProximaSecao }: { atual: string; seguintes: { id: string; rotulo: string }[]; temProximaSecao: boolean }) {
+  const alvo = idDoDestino(atual);
+  const orfao = alvo !== null ? !seguintes.some((x) => x.id === alvo) : atual === DESTINO_PROXIMA_SECAO && !temProximaSecao;
+  return (
+    <>
+      <SelectItem value={SEM_DESTINO}>Continuar para a próxima pergunta</SelectItem>
+      {temProximaSecao && <SelectItem value={DESTINO_PROXIMA_SECAO}>Ir para a próxima seção</SelectItem>}
+      <SelectItem value={DESTINO_ENCERRAR}>Encerrar o formulário</SelectItem>
+      {seguintes.map((x) => <SelectItem key={x.id} value={destinoPergunta(x.id)}>{x.rotulo}</SelectItem>)}
+      {orfao && <SelectItem value={atual} disabled>{alvo !== null ? "Pergunta que saiu do questionário (ação requerida)" : "Próxima seção que não existe mais (ação requerida)"}</SelectItem>}
+    </>
+  );
+}
+
+// Ramificação das perguntas que não ramificam por resposta (texto, data, hora, valor, imagem, listas de clientes, municípios ou empregados e as de várias marcações):
+// o destino vale depois da pergunta, seja qual for a resposta (decisão 311).
+function DestinoDaPergunta({ atual, seguintes, temProximaSecao, onDestino }: { atual: string; seguintes: { id: string; rotulo: string }[]; temProximaSecao: boolean; onDestino: (valor: string) => boolean }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm" onClick={(e) => e.stopPropagation()}>
+      <span className="text-xs font-medium text-muted-foreground">Depois desta pergunta</span>
+      <Select value={atual} onValueChange={(v) => { if (v) onDestino(v); }}>
+        <SelectTrigger aria-label="Ramificação depois desta pergunta" className="h-8 w-full sm:w-72"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <ItensDeDestino atual={atual} seguintes={seguintes} temProximaSecao={temProximaSecao} />
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
 

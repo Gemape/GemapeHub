@@ -1,7 +1,7 @@
 // Preenchimento do Questionário de Despesas: máscaras, condição se/então e validação das respostas (dec 169).
 // Etapa 2: só a tela "Testar questionário"; as respostas não são gravadas (o módulo Viagens vem depois).
 import { inicioDaProximaSecao } from "./questionario-secoes.ts";
-import { DESTINO_PROXIMA_SECAO, aceitaDestino, destinosDoTipo, idDoDestino, opcaoRespondida, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
+import { DESTINO_PROXIMA_SECAO, destinoDaResposta, destinosDoTipo, idDoDestino, DESTINO_ENCERRAR } from "./questionario-destinos.ts";
 import { ID_DATA_DESPESA, ID_DETALHAMENTO, ID_HABILITADOS, ID_JUSTIFICATIVA, ID_LITROS, ID_VALOR_DESPESA, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, MAX_ARQUIVOS, TIPOS_COM_CLASSIFICACAO, questionarioDoTipo, type Estado, type FormatoCurta, type Pergunta } from "./questionario-despesas.ts";
 
 // Resposta: texto, lista de textos (caixas, habilitados) ou nomes dos arquivos escolhidos (upload).
@@ -162,7 +162,7 @@ export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas)
     if (!visivel(e, tipo, id, respostas)) continue;
     mostradas.add(id);
     lista.push(p);
-    const destino = aceitaDestino(p) ? destinos[id]?.[opcaoRespondida(respostas[id]) ?? ""] : undefined;
+    const destino = destinoDaResposta(destinos[id], p, respostas[id]);
     if (destino === DESTINO_ENCERRAR) break;
     if (destino === DESTINO_PROXIMA_SECAO) {
       const inicio = inicioDaProximaSecao(e, tipo, id);
@@ -174,6 +174,22 @@ export function perguntasVisiveis(e: Estado, tipo: string, respostas: Respostas)
     if (alvo !== null && todos.includes(alvo) && todos.indexOf(alvo) > todos.indexOf(id)) salto = alvo;
   }
   return lista;
+}
+
+// Quando a resposta de uma pergunta esconde outra (condição "aparece só se", como Técnico que não lançou e Nome do empregado em PCM responde, ou um salto de
+// ramificação), a resposta que já estava digitada na pergunta escondida é descartada, para não ficar valor de um caminho que não vale mais (decisão 313).
+// Devolve o mesmo objeto quando nada some.
+export function podarOcultas(e: Estado, tipo: string, respostas: Respostas): Respostas {
+  const visiveis = new Set(perguntasVisiveis(e, tipo, respostas).map((p) => p.id));
+  const saida: Respostas = { ...respostas };
+  let mudou = false;
+  for (const p of e.perguntas) {
+    if (visiveis.has(p.id)) continue;
+    for (const chave of [p.id, chaveOutro(p.id)]) {
+      if (chave in saida) { delete saida[chave]; mudou = true; }
+    }
+  }
+  return mudou ? saida : respostas;
 }
 
 // Data de verdade (não aceita 30/02): confere indo e voltando pelo calendário.

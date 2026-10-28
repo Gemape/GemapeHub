@@ -6,6 +6,7 @@ import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { exemploFornecedor } from "@/lib/dados-teste/exemplos";
 import { FornecedorDialog } from "@/components/parametros/FornecedorDialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -15,7 +16,8 @@ import {
 } from "@/lib/fornecedores-demo";
 import { avisoExclusaoDoFornecedor, vinculosDoFornecedor } from "@/lib/codigo-fabrica-vinculos";
 import { nomeDoFornecedor } from "@/lib/compras-fornecedor";
-import { lerParametros, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
+import { camposDeBusca } from "@/lib/busca-cadastro";
+import { combinaBusca, lerParametros, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
 import { formatarCnpj, formatarTelefone } from "@/lib/formatacao-cadastral";
 
 export const Route = createFileRoute("/_authenticated/cadastros/fornecedores")({
@@ -25,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/fornecedores")({
 
 function PaginaFornecedores() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>(listarFornecedores);
+  const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Fornecedor | null>(null);
   // Clonar: dados do fornecedor de origem num cadastro NOVO (todos os campos copiados, código novo, decisão 138).
@@ -68,6 +71,8 @@ function PaginaFornecedores() {
     return <p>O cadastro de fornecedores será conectado ao banco após a aprovação da demonstração.</p>;
   }
 
+  const lista = fornecedores.filter((f) => combinaBusca(busca, ...camposDeBusca(f, [formatarCnpj(f.cnpj), formatarTelefone(f.telefone)])));
+
   return <div className="space-y-5">
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div>
@@ -78,6 +83,11 @@ function PaginaFornecedores() {
       <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploFornecedor(fornecedores), true) : abrir(null)}>Novo fornecedor</Button>
     </header>
 
+    <div className="flex flex-wrap items-center gap-3">
+      <Input aria-label="Buscar fornecedor por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
+      {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {fornecedores.length} fornecedor(es).</p>}
+    </div>
+
     <div className="panel overflow-x-auto">
       <Table>
         <TableHeader><TableRow>
@@ -86,8 +96,8 @@ function PaginaFornecedores() {
           <TableHead>Contato</TableHead><TableHead />
         </TableRow></TableHeader>
         <TableBody>
-          {fornecedores.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Nenhum fornecedor cadastrado.</TableCell></TableRow> :
-            fornecedores.map((fornecedor) => <TableRow key={fornecedor.id}>
+          {lista.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">{fornecedores.length === 0 ? "Nenhum fornecedor cadastrado." : "Nenhum fornecedor encontrado para a busca."}</TableCell></TableRow> :
+            lista.map((fornecedor) => <TableRow key={fornecedor.id}>
               <TableCell className="font-mono text-xs">{fornecedor.codigo}</TableCell>
               <TableCell className="font-medium">{fornecedor.nome_fantasia || "—"}</TableCell>
               <TableCell>{fornecedor.razao_social}</TableCell>
