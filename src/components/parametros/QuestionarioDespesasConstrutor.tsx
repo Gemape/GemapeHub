@@ -128,7 +128,10 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
 
   // Excluir uma resposta (decisão 299): sai da pergunta e leva as ramificações dela, em todos os questionários, para não sobrar ação requerida.
   function excluirOpcao(p: Pergunta, opcao: string) {
-    if (!confirm(`Excluir a resposta "${opcao}" da pergunta ${numeroDe(p.id)}?`)) return;
+    // Condições "se/então" que dependem desta resposta somem junto (limparRegras): o aviso diz quantas perguntas passam a aparecer sempre.
+    const condicoes = Object.values(estado.regras).reduce((n, porPergunta) => n + Object.values(porPergunta).filter((r) => r.origem === p.id && r.valor === opcao).length, 0);
+    const aviso = condicoes ? ` ${condicoes} condição(ões) que dependem dessa resposta também serão removidas.` : "";
+    if (!confirm(`Excluir a resposta "${opcao}" da pergunta ${numeroDe(p.id)}?${aviso}`)) return;
     executar(() => {
       let atual = estado;
       for (const t of tiposDeDespesa(estado)) {
@@ -479,7 +482,7 @@ function OpcoesDaPergunta({ pergunta, destinos, ramifica, seguintes, temProximaS
         const atual = destinos[opcao] ?? SEM_DESTINO;
         // O destino salvo que não está mais entre as opções (pergunta que saiu do questionário) continua visível, para corrigir.
         const alvo = idDoDestino(atual);
-        const orfao = alvo !== null && !seguintes.some((x) => x.id === alvo);
+        const orfao = alvo !== null ? !seguintes.some((x) => x.id === alvo) : atual === DESTINO_PROXIMA_SECAO && !temProximaSecao;
         return (
           <li key={opcao} className="flex flex-wrap items-center gap-2 text-sm">
             <span aria-hidden="true" className="w-4 text-center text-muted-foreground">{marcador}</span>
@@ -492,7 +495,7 @@ function OpcoesDaPergunta({ pergunta, destinos, ramifica, seguintes, temProximaS
                   {temProximaSecao && <SelectItem value={DESTINO_PROXIMA_SECAO}>Ir para a próxima seção</SelectItem>}
                   <SelectItem value={DESTINO_ENCERRAR}>Encerrar o formulário</SelectItem>
                   {seguintes.map((x) => <SelectItem key={x.id} value={destinoPergunta(x.id)}>{x.rotulo}</SelectItem>)}
-                  {orfao && <SelectItem value={atual} disabled>Pergunta que saiu do questionário (ação requerida)</SelectItem>}
+                  {orfao && <SelectItem value={atual} disabled>{alvo !== null ? "Pergunta que saiu do questionário (ação requerida)" : "Próxima seção que não existe mais (ação requerida)"}</SelectItem>}
                 </SelectContent>
               </Select>
             )}

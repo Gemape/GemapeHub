@@ -1708,3 +1708,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 300. Painel de Viagens: período nos resultados dos técnicos e sem valor total
 
 - A área Resultados dos técnicos ganhou o seletor de período (mês e ano), o mesmo dos indicadores: mudar em uma das duas áreas muda as duas. O valor total saiu do painel geral: não há mais o indicador Custo total nem a coluna Valor total na tabela dos técnicos. O valor de gastos do empregado só aparece ao clicar no nome dele, no extrato. O texto de "nenhum técnico habilitado" agora aponta para Parâmetros > Viagens > Parâmetros Específicos. Só visual, sem Supabase.
+
+## 301. Títulos de Veículos pelo nome da aba
+
+- Em Módulo > Veículos, o título grande da página é o nome da aba aberta (Frota, Abastecimento, Manutenção, Ocorrências ou Check list) no lugar de "Veículos". Nas páginas de Parâmetros de veículos (Manutenção, Check list, Plano de manutenções, Associar itens e as listas), o texto pequeno do alto deixou de dizer "Parâmetros > Veículos" e passou a dizer só "Parâmetros": o nome de cada página já é o título. Só visual, sem Supabase.

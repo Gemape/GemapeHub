@@ -84,3 +84,12 @@ test("o painel de Viagens tem o seletor de período também nos resultados dos t
   assert.match(painel, /setExtratoDe\(r\.nome\)/);
   assert.match(ler("components/modules/ViagensExtrato.tsx"), /Custo total/);
 });
+
+test("em Veículos, o título da página é o nome da aba e as páginas de Parâmetros não repetem o nome Veículos no alto (decisão 301)", () => {
+  const rota = ler("routes/_authenticated/veiculos.tsx");
+  assert.match(rota, /ABAS_VEICULO\.find\(\(a\) => a\.aba === abaValida\)\?\.titulo/);
+  assert.match(rota, /<h1 className="text-2xl font-bold">\{tituloDaAba\}<\/h1>/);
+  for (const f of ["AssociarChecklistVeiculo", "ChecklistParametros", "ManutencaoParametros", "PlanoManutencaoVeiculo", "VeiculosListasParametros"]) {
+    assert.doesNotMatch(ler(`components/parametros/${f}.tsx`), /text-eyebrow">Parâmetros &gt; Veículos|eyebrow = "Parâmetros > Veículos"/, f);
+  }
+});

@@ -200,6 +200,11 @@ export function ChecklistVeiculoModulo() {
       toast.error("Escolha o tipo de check list.");
       return;
     }
+    // A periodicidade escolhida pode ter saído da associação (Realizar numa linha antiga): sem ela o check list não seria periódico.
+    if (!avulsoNovo && !periodicidadeDoDialogo(veiculoEscolhido)) {
+      toast.error("Este veículo não tem mais esse check list periódico associado. Escolha outro tipo de check list.");
+      return;
+    }
     // Com associação que define o responsável, o campo fica escondido e vale o dela, mesmo que a associação tenha sido criada depois de o veículo ser escolhido (pela janela ao lado).
     const idResponsavel = (!avulsoNovo && responsavelDaAssociacaoAtivo && associacaoEscolhida?.responsavel?.id) || responsavelId;
     // O responsável pré-preenchido pode ter sido desligado: o campo mostra vazio, então o envio também recusa.

@@ -139,7 +139,7 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          {!secao && <p className="text-eyebrow">Parâmetros &gt; Veículos</p>}
+          {!secao && <p className="text-eyebrow">Parâmetros</p>}
           {secao ? <h2 className="text-xl font-bold">Cadastrar Plano de Manutenções</h2> : <h1 className="text-2xl font-bold">Cadastrar Plano de Manutenções</h1>}
           <p className="mt-1 text-sm text-muted-foreground">
             Para cada veículo, os grupos de ação habilitados e o limite de km e de tempo de cada um; vale o que vier primeiro.

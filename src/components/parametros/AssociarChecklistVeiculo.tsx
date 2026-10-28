@@ -285,7 +285,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          {!secao && <p className="text-eyebrow">Parâmetros &gt; Veículos</p>}
+          {!secao && <p className="text-eyebrow">Parâmetros</p>}
           {secao ? <h2 className="text-xl font-bold">Associar itens de check list a um veículo</h2> : <h1 className="text-2xl font-bold">Associar itens de check list a um veículo</h1>}
           <p className="mt-1 text-sm text-muted-foreground">
             Para cada veículo, escolha o responsável e a periodicidade do check list. Periódico é obrigatório e entra nos KPI; avulso não é obrigatório e não entra nos KPI.

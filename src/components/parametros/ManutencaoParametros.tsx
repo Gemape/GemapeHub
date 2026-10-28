@@ -7,7 +7,7 @@ export function ManutencaoParametros() {
   return (
     <div className="space-y-10">
       <header>
-        <p className="text-eyebrow">Parâmetros &gt; Veículos</p>
+        <p className="text-eyebrow">Parâmetros</p>
         <h1 className="text-2xl font-bold">Manutenção</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Permite revisar o painel de manutenções, redefinir seus itens e a organização deles. O que for salvo não poderá ser desfeito.

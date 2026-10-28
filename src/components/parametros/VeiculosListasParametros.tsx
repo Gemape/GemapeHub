@@ -57,7 +57,7 @@ type CampoExtra = "descricao" | "subitens" | "itens" | null;
 // ocorrência (nome e descrição). Clonar, Editar e Excluir seguem a decisão 45.
 // Também serve às listas de Parâmetros > Equipamentos (`eyebrow` troca o caminho no alto).
 export function ListaVeiculos({
-  eyebrow = "Parâmetros > Veículos",
+  eyebrow = "Parâmetros",
   catalogoItens,
   titulo,
   subtitulo,
