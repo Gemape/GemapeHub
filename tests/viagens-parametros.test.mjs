@@ -72,3 +72,15 @@ test("o card da pergunta mostra todas as respostas com ramificação e excluir, 
   assert.match(c, /gravarDestino\(estado, tipoAtual, p\.id, opcao, valor === SEM_DESTINO \? null : valor, rascunho\)/);
   assert.match(c, /Excluir a resposta "\$\{opcao\}"/);
 });
+
+test("o painel de Viagens tem o seletor de período também nos resultados dos técnicos e não mostra o valor total no painel geral", () => {
+  const painel = ler("components/modules/ViagensPainel.tsx");
+  assert.match(painel, /\{seletorPeriodo\("indicadores"\)\}/);
+  assert.match(painel, /\{seletorPeriodo\("tecnicos"\)\}/);
+  assert.doesNotMatch(painel, /Custo total/);
+  assert.doesNotMatch(painel, /formatarMoeda/);
+  assert.doesNotMatch(painel, /valorTotal/);
+  // O valor do empregado só aparece ao clicar no nome, no extrato.
+  assert.match(painel, /setExtratoDe\(r\.nome\)/);
+  assert.match(ler("components/modules/ViagensExtrato.tsx"), /Custo total/);
+});
