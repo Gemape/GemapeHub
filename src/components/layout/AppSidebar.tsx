@@ -15,6 +15,7 @@ import {
   MENU_GERAIS,
   MENU_UNIFORMES,
   MENU_VEICULOS,
+  MENU_VIAGENS,
   URLS_APOIO,
   URLS_GERAIS,
   type AbaMenu,
@@ -313,6 +314,17 @@ function MenuVeiculos({ pathname }: { pathname: string }) {
   );
 }
 
+// Parâmetros > Viagens: o Questionário de Despesas e os Parâmetros Específicos (decisão 299).
+function MenuViagens({ pathname }: { pathname: string }) {
+  return (
+    <GrupoRecolhivel titulo="Viagens" icone={<IconeViagens />} prefixos={MENU_VIAGENS.map((i) => i.url)} pathname={pathname}>
+      {MENU_VIAGENS.map((item) => (
+        <SubLink key={item.url} item={item} pathname={pathname} />
+      ))}
+    </GrupoRecolhivel>
+  );
+}
+
 // Parâmetros > Equipamentos: o cadastro dos equipamentos (os dados que o módulo Equipamentos vai usar).
 function MenuEquipamentos({ pathname }: { pathname: string }) {
   return (
@@ -392,6 +404,7 @@ export function AppSidebar() {
                     <MenuUniformes pathname={pathname} />
                     <MenuFerramentas pathname={pathname} />
                     <MenuVeiculos pathname={pathname} />
+                    <MenuViagens pathname={pathname} />
                     <MenuEquipamentos pathname={pathname} />
                   </>
                 )}

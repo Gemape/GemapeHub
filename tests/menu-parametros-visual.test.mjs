@@ -41,10 +41,11 @@ test("Parâmetros > EPI põe todos os submenus na mesma coluna de ícones, sem r
   assert.doesNotMatch(trecho, /mx-0 border-l-0 px-0|mx-0 ml-2 px-1\.5/);
 });
 
-test("em Parâmetros > Veículos, o Questionário de Despesas vem depois de Parâmetros Específicos (decisão 198)", () => {
-  const trecho = menuDados.slice(menuDados.indexOf("export const MENU_VEICULOS"));
-  const fim = trecho.indexOf("];");
-  const lista = trecho.slice(0, fim);
-  assert.ok(lista.indexOf('itemEspecificos("veiculos")') > 0);
-  assert.ok(lista.indexOf("Questionário de Despesas") > lista.indexOf('itemEspecificos("veiculos")'));
+test("o Questionário de Despesas saiu de Parâmetros > Veículos e está em Parâmetros > Viagens, com os Parâmetros Específicos (decisão 299)", () => {
+  const veiculos = menuDados.slice(menuDados.indexOf("export const MENU_VEICULOS"));
+  assert.ok(veiculos.slice(0, veiculos.indexOf("];")).indexOf('itemEspecificos("veiculos")') > 0);
+  assert.doesNotMatch(veiculos.slice(0, veiculos.indexOf("];")), /Questionário de Despesas/);
+  const viagens = menuDados.slice(menuDados.indexOf("export const MENU_VIAGENS"));
+  const lista = viagens.slice(0, viagens.indexOf("];"));
+  assert.ok(lista.indexOf("Questionário de Despesas") > 0 && lista.indexOf("Parâmetros Específicos") > lista.indexOf("Questionário de Despesas"));
 });

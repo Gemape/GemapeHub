@@ -488,13 +488,16 @@ test("a lista de check lists mostra um mês de cada vez (o de hoje por padrão),
   const periodicos = json(s, "gemape-demo-checklists-veiculo").filter((c) => String(c.veiculoId).startsWith("teste-") && c.periodicidade);
   const doMes = periodicos.filter((c) => noMesDaLista(c, "2026-10"));
   assert.ok(doMes.length > 0 && doMes.length < periodicos.length, `outubro tem ${doMes.length} dos ${periodicos.length}`);
-  for (const arq of ["components/modules/ChecklistVeiculoModulo.tsx", "components/modules/equipamento/ChecklistEquipamentoModulo.tsx"]) {
-    const tela = ler(arq);
-    assert.match(tela, /mesEscolhidoLista \?\? hoje\.slice\(0, 7\)/, `${arq}: sem escolha acompanha o mês de hoje`);
-    assert.match(tela, /avulsosDoMes/);
-    assert.match(tela, /Periódicos \(\{naListaDoMes\.length\}\)/);
-    assert.match(tela, /id="mes_lista"/);
-  }
+  const equip = ler("components/modules/equipamento/ChecklistEquipamentoModulo.tsx");
+  assert.match(equip, /mesEscolhidoLista \?\? hoje\.slice\(0, 7\)/, "equipamentos: sem escolha acompanha o mês de hoje");
+  assert.match(equip, /avulsosDoMes/);
+  assert.match(equip, /Periódicos \(\{naListaDoMes\.length\}\)/);
+  assert.match(equip, /id="mes_lista"/);
+  // Veículos (decisão 298): as listas do periódico e do avulso começam no mês de hoje, e o em andamento aparece sempre.
+  const listasVeiculo = ler("components/modules/ChecklistListasVeiculo.tsx");
+  assert.match(listasVeiculo, /const mes = escolhido \?\? mesDe\(hoje\);/);
+  assert.match(listasVeiculo, /noMesDaLista\(c, mes === TODOS_OS_MESES \? null : mes\)/);
+  assert.match(listasVeiculo, /id="lista_mes"/);
 });
 
 test("o painel de equipamentos, em manutenção e em vistoria, usa a mesma lógica do de veículos e controla todos os 25 check lists periódicos de cada finalidade", async () => {
@@ -519,7 +522,9 @@ test("o painel de equipamentos, em manutenção e em vistoria, usa a mesma lógi
   }
   // Os dois painéis (veículos e equipamentos) são o mesmo componente.
   assert.match(ler("components/modules/equipamento/ChecklistEquipamentoModulo.tsx"), /<ChecklistPainelMensal/);
-  assert.match(ler("components/modules/ChecklistVeiculoModulo.tsx"), /<ChecklistPainelMensal/);
+  // Veículos (decisão 298) tem o painel de resultados no modelo de Viagens, com a mesma conta (painelDoMes).
+  assert.match(ler("components/modules/ChecklistVeiculoModulo.tsx"), /<ChecklistResultadosPainel/);
+  assert.match(ler("components/modules/ChecklistResultadosPainel.tsx"), /painelDoMes\(/);
 });
 
 test("as 20 ferramentas de teste ficam distribuídas nas cinco caixas, quatro em cada, e cada ferramenta está em uma caixa só", () => {

@@ -19,7 +19,7 @@ import { descricoesFaixas, faixaDoIndice, lerFaixas, type Faixa } from "@/lib/fa
 import { lerPrazos, type PrazosViagens } from "@/lib/prazo-viagens";
 import { listarRespostas } from "@/lib/respostas-despesas";
 import {
-  MESES, dadosDoLancamento, formatarMoeda, formatarPercentual, indicadoresGlobais, periodoAtual, resultadosTecnicos, rotuloPeriodo,
+  MESES, dadosDoLancamento, formatarPercentual, indicadoresGlobais, periodoAtual, resultadosTecnicos, rotuloPeriodo,
 } from "@/lib/viagens";
 
 // Painel do módulo Viagens (decisões 176 e 177): botões dos questionários, indicadores globais e resultados dos técnicos do mês escolhido.
@@ -56,6 +56,31 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   const globais = indicadoresGlobais(lista, periodo, prazos);
   const resultados = resultadosTecnicos(lista, periodo, tecnicos, prazos);
   const noPeriodo = globais.quantidade;
+  // O mesmo período vale para os indicadores e para os resultados dos técnicos: o seletor aparece nas duas áreas (decisão 300).
+  const seletorPeriodo = (area: string) => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm"><CalendarDays className="mr-1 h-4 w-4" />{rotuloPeriodo(periodo)}</Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 space-y-3">
+        <p className="text-sm font-medium">Escolher outro período</p>
+        <div className="space-y-1">
+          <Label htmlFor={`periodo-mes-${area}`}>Mês</Label>
+          <Select value={String(periodo.mes)} onValueChange={(v) => { if (v) setPeriodo((p) => ({ ...p, mes: Number(v) })); }}>
+            <SelectTrigger id={`periodo-mes-${area}`} aria-label="Mês"><SelectValue /></SelectTrigger>
+            <SelectContent>{MESES.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor={`periodo-ano-${area}`}>Ano</Label>
+          <Select value={String(periodo.ano)} onValueChange={(v) => { if (v) setPeriodo((p) => ({ ...p, ano: Number(v) })); }}>
+            <SelectTrigger id={`periodo-ano-${area}`} aria-label="Ano"><SelectValue /></SelectTrigger>
+            <SelectContent>{anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <div className="space-y-8">
@@ -89,33 +114,11 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           <h2 id="viagens-indicadores" className="text-lg font-semibold">Indicadores globais de despesas</h2>
           <div className="flex flex-wrap items-center gap-2">
           <LegendaFaixas />
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm"><CalendarDays className="mr-1 h-4 w-4" />{rotuloPeriodo(periodo)}</Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 space-y-3">
-              <p className="text-sm font-medium">Escolher outro período</p>
-              <div className="space-y-1">
-                <Label htmlFor="periodo-mes">Mês</Label>
-                <Select value={String(periodo.mes)} onValueChange={(v) => { if (v) setPeriodo((p) => ({ ...p, mes: Number(v) })); }}>
-                  <SelectTrigger id="periodo-mes" aria-label="Mês"><SelectValue /></SelectTrigger>
-                  <SelectContent>{MESES.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="periodo-ano">Ano</Label>
-                <Select value={String(periodo.ano)} onValueChange={(v) => { if (v) setPeriodo((p) => ({ ...p, ano: Number(v) })); }}>
-                  <SelectTrigger id="periodo-ano" aria-label="Ano"><SelectValue /></SelectTrigger>
-                  <SelectContent>{anos.map((a) => <SelectItem key={a} value={String(a)}>{a}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </PopoverContent>
-          </Popover>
+          {seletorPeriodo("indicadores")}
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-3">
           <Indicador titulo="Despesas lançadas no mês" valor={String(globais.quantidade)} />
-          <Indicador titulo="Custo total" valor={formatarMoeda(globais.custoTotal)} />
           <Indicador
             titulo="Índice de conformidade de lançamento"
             valor={formatarPercentual(globais.icl)}
@@ -137,22 +140,24 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
       <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} />
 
       <section className="space-y-3" aria-labelledby="viagens-tecnicos">
-        <h2 id="viagens-tecnicos" className="text-lg font-semibold">Resultados dos técnicos</h2>
-        <p className="text-sm text-muted-foreground">{rotuloPeriodo(periodo)}{noPeriodo === 0 ? ": nenhuma despesa lançada neste período." : "."}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="viagens-tecnicos" className="text-lg font-semibold">Resultados dos técnicos</h2>
+          {seletorPeriodo("tecnicos")}
+        </div>
+        {noPeriodo === 0 && <p className="text-sm text-muted-foreground">Nenhuma despesa lançada em {rotuloPeriodo(periodo)}.</p>}
         <div className="panel overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="px-2 sm:px-4">Técnico</TableHead>
                 <TableHead className="px-2 text-right sm:px-4"><span className="sm:hidden">Lanç.</span><span className="hidden sm:inline">Lançamentos</span></TableHead>
-                <TableHead className="px-2 text-right sm:px-4">Valor<span className="hidden sm:inline"> total</span></TableHead>
                 <TableHead className="px-2 text-right sm:px-4"><span className="sm:hidden" title="Índice de conformidade de lançamento">ICL</span><span className="hidden sm:inline">Conformidade</span></TableHead>
                 <TableHead className="px-2 text-right text-purple-700 dark:text-purple-300 sm:px-4"><span className="sm:hidden" title="Índice de lançamento no prazo">Prazo</span><span className="hidden sm:inline">No prazo</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {resultados.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Nenhum técnico habilitado. Cadastre em Parâmetros &gt; Veículos &gt; Questionário de Despesas (pergunta 04).</TableCell></TableRow>
+                <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground">Nenhum técnico habilitado. Habilite em Parâmetros &gt; Viagens &gt; Parâmetros Específicos.</TableCell></TableRow>
               )}
               {resultados.map((r) => (
                 <TableRow key={r.nome}>
@@ -160,7 +165,6 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                     <button type="button" onClick={() => setExtratoDe(r.nome)} title="Abrir o extrato do técnico" className="text-left text-primary underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">{r.nome}</button>
                   </TableCell>
                   <TableCell className="px-2 text-right sm:px-4">{r.lancamentos}</TableCell>
-                  <TableCell className="whitespace-nowrap px-2 text-right sm:px-4">{formatarMoeda(r.valorTotal)}</TableCell>
                   <TableCell className="px-2 text-right sm:px-4"><ValorComFaixa valor={r.icl} /></TableCell>
                   <TableCell className="px-2 text-right font-medium sm:px-4"><ValorComFaixa valor={r.prazo} /></TableCell>
                 </TableRow>

@@ -2,7 +2,7 @@
 // atalhos; cartão sem submenu abre a tela direto. Os submenus saem dos mesmos dados do menu (menu-parametros.ts), sem lista paralela.
 import {
   ABAS_EPI, ABAS_EQUIPAMENTO, ABAS_FERRAMENTA, ABAS_UNIFORME, ABAS_VEICULO, ABAS_VIAGEM, MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES,
-  MENU_EQUIPAMENTOS, MENU_VEICULOS, type AbaMenu, type GrupoMenu, type ItemComFilhos, type ItemMenu, type NomeIcone,
+  MENU_EQUIPAMENTOS, MENU_VEICULOS, MENU_VIAGENS, type AbaMenu, type GrupoMenu, type ItemComFilhos, type ItemMenu, type NomeIcone,
 } from "./menu-parametros.ts";
 
 export type IconeInicio =
@@ -28,7 +28,7 @@ const doItem = (i: ItemMenu): SubitemInicio => {
 const dosItens = (itens: readonly (ItemComFilhos | GrupoMenu)[]): SubitemInicio[] =>
   itens.flatMap((i) => ("url" in i ? [doItem(i), ...(i.filhos ?? []).map(doItem)] : i.filhos.map(doItem)));
 
-// Cada área tem um cartão só, com os atalhos do módulo e os dos parâmetros dela (Viagens só tem módulo; Gerais só tem parâmetros).
+// Cada área tem um cartão só, com os atalhos do módulo e os dos parâmetros dela (Gerais só tem parâmetros).
 export const GRUPOS_INICIO: readonly GrupoInicio[] = [
   { titulo: "Visão geral", cartoes: [{ titulo: "Dashboard", url: "/dashboard", icone: "LayoutDashboard" }] },
   {
@@ -38,7 +38,7 @@ export const GRUPOS_INICIO: readonly GrupoInicio[] = [
       { titulo: "Uniformes", icone: "Shirt", itens: [...dasAbas("/uniformes", ABAS_UNIFORME), ...dosItens(MENU_UNIFORMES)] },
       { titulo: "Ferramentas", icone: "Wrench", itens: [...dasAbas("/ferramentas", ABAS_FERRAMENTA), ...dosItens(MENU_FERRAMENTAS)] },
       { titulo: "Veículos", icone: "Car", itens: [...dasAbas("/veiculos", ABAS_VEICULO), ...dosItens(MENU_VEICULOS)] },
-      { titulo: "Viagens", icone: "Luggage", itens: dasAbas("/viagens", ABAS_VIAGEM) },
+      { titulo: "Viagens", icone: "Luggage", itens: [...dasAbas("/viagens", ABAS_VIAGEM), ...dosItens(MENU_VIAGENS)] },
       {
         titulo: "Equipamentos", icone: "Forklift",
         itens: [...dasAbas("/equipamentos", ABAS_EQUIPAMENTO), ...dosItens(MENU_EQUIPAMENTOS)],

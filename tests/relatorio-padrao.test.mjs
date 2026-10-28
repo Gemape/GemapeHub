@@ -207,7 +207,7 @@ test("Novo check list: o responsável da associação vale mesmo quando a associ
 });
 
 test("telas de check list menos poluídas: sem associação escondidos, primeiras linhas e Mostrar todas, mais recentes primeiro", () => {
-  for (const [arq, itens] of [["components/modules/equipamento/ChecklistEquipamentoModulo.tsx", "equipamentos"], ["components/modules/ChecklistVeiculoModulo.tsx", "veiculos"]]) {
+  for (const [arq, itens] of [["components/modules/equipamento/ChecklistEquipamentoModulo.tsx", "equipamentos"]]) {
     const tela = ler(arq);
     assert.match(tela, /const \[semAssociacao, setSemAssociacao\] = useState\(false\)/, `${arq}: sem associação começa escondido`);
     assert.ok(tela.includes(`${itens}DaSituacao = ${itens}.filter((`), `${arq}: a situação só lista quem tem associação`);

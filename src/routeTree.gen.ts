@@ -53,6 +53,8 @@ import { Route as AuthenticatedCadastrosVeiculosPlanoManutencaoRouteImport } fro
 import { Route as AuthenticatedCadastrosVeiculosQuestionarioDespesasRouteImport } from './routes/_authenticated/cadastros/veiculos-questionario-despesas'
 import { Route as AuthenticatedCadastrosVeiculosTiposOcorrenciaRouteImport } from './routes/_authenticated/cadastros/veiculos-tipos-ocorrencia'
 import { Route as AuthenticatedCadastrosViagensRouteImport } from './routes/_authenticated/cadastros/viagens'
+import { Route as AuthenticatedCadastrosViagensEspecificosRouteImport } from './routes/_authenticated/cadastros/viagens-especificos'
+import { Route as AuthenticatedCadastrosViagensQuestionarioDespesasRouteImport } from './routes/_authenticated/cadastros/viagens-questionario-despesas'
 import { Route as AuthenticatedCadastrosGeraisIndexRouteImport } from './routes/_authenticated/cadastros/gerais/index'
 import { Route as AuthenticatedCadastrosGeraisAssociarTamanhosRouteImport } from './routes/_authenticated/cadastros/gerais/associar-tamanhos'
 import { Route as AuthenticatedCadastrosGeraisCaixasRouteImport } from './routes/_authenticated/cadastros/gerais/caixas'
@@ -311,6 +313,18 @@ const AuthenticatedCadastrosViagensRoute =
     path: '/cadastros/viagens',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCadastrosViagensEspecificosRoute =
+  AuthenticatedCadastrosViagensEspecificosRouteImport.update({
+    id: '/cadastros/viagens-especificos',
+    path: '/cadastros/viagens-especificos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCadastrosViagensQuestionarioDespesasRoute =
+  AuthenticatedCadastrosViagensQuestionarioDespesasRouteImport.update({
+    id: '/cadastros/viagens-questionario-despesas',
+    path: '/cadastros/viagens-questionario-despesas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCadastrosGeraisIndexRoute =
   AuthenticatedCadastrosGeraisIndexRouteImport.update({
     id: '/',
@@ -404,6 +418,8 @@ export interface FileRoutesByFullPath {
   '/cadastros/veiculos-questionario-despesas': typeof AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute
   '/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
   '/cadastros/viagens': typeof AuthenticatedCadastrosViagensRoute
+  '/cadastros/viagens-especificos': typeof AuthenticatedCadastrosViagensEspecificosRoute
+  '/cadastros/viagens-questionario-despesas': typeof AuthenticatedCadastrosViagensQuestionarioDespesasRoute
   '/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
   '/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
@@ -456,6 +472,8 @@ export interface FileRoutesByTo {
   '/cadastros/veiculos-questionario-despesas': typeof AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute
   '/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
   '/cadastros/viagens': typeof AuthenticatedCadastrosViagensRoute
+  '/cadastros/viagens-especificos': typeof AuthenticatedCadastrosViagensEspecificosRoute
+  '/cadastros/viagens-questionario-despesas': typeof AuthenticatedCadastrosViagensQuestionarioDespesasRoute
   '/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
   '/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
@@ -511,6 +529,8 @@ export interface FileRoutesById {
   '/_authenticated/cadastros/veiculos-questionario-despesas': typeof AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute
   '/_authenticated/cadastros/veiculos-tipos-ocorrencia': typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
   '/_authenticated/cadastros/viagens': typeof AuthenticatedCadastrosViagensRoute
+  '/_authenticated/cadastros/viagens-especificos': typeof AuthenticatedCadastrosViagensEspecificosRoute
+  '/_authenticated/cadastros/viagens-questionario-despesas': typeof AuthenticatedCadastrosViagensQuestionarioDespesasRoute
   '/_authenticated/cadastros/gerais/associar-tamanhos': typeof AuthenticatedCadastrosGeraisAssociarTamanhosRoute
   '/_authenticated/cadastros/gerais/caixas': typeof AuthenticatedCadastrosGeraisCaixasRoute
   '/_authenticated/cadastros/gerais/categorias': typeof AuthenticatedCadastrosGeraisCategoriasRoute
@@ -566,6 +586,8 @@ export interface FileRouteTypes {
     | '/cadastros/veiculos-questionario-despesas'
     | '/cadastros/veiculos-tipos-ocorrencia'
     | '/cadastros/viagens'
+    | '/cadastros/viagens-especificos'
+    | '/cadastros/viagens-questionario-despesas'
     | '/cadastros/gerais/associar-tamanhos'
     | '/cadastros/gerais/caixas'
     | '/cadastros/gerais/categorias'
@@ -618,6 +640,8 @@ export interface FileRouteTypes {
     | '/cadastros/veiculos-questionario-despesas'
     | '/cadastros/veiculos-tipos-ocorrencia'
     | '/cadastros/viagens'
+    | '/cadastros/viagens-especificos'
+    | '/cadastros/viagens-questionario-despesas'
     | '/cadastros/gerais/associar-tamanhos'
     | '/cadastros/gerais/caixas'
     | '/cadastros/gerais/categorias'
@@ -672,6 +696,8 @@ export interface FileRouteTypes {
     | '/_authenticated/cadastros/veiculos-questionario-despesas'
     | '/_authenticated/cadastros/veiculos-tipos-ocorrencia'
     | '/_authenticated/cadastros/viagens'
+    | '/_authenticated/cadastros/viagens-especificos'
+    | '/_authenticated/cadastros/viagens-questionario-despesas'
     | '/_authenticated/cadastros/gerais/associar-tamanhos'
     | '/_authenticated/cadastros/gerais/caixas'
     | '/_authenticated/cadastros/gerais/categorias'
@@ -998,6 +1024,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosViagensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cadastros/viagens-especificos': {
+      id: '/_authenticated/cadastros/viagens-especificos'
+      path: '/cadastros/viagens-especificos'
+      fullPath: '/cadastros/viagens-especificos'
+      preLoaderRoute: typeof AuthenticatedCadastrosViagensEspecificosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cadastros/viagens-questionario-despesas': {
+      id: '/_authenticated/cadastros/viagens-questionario-despesas'
+      path: '/cadastros/viagens-questionario-despesas'
+      fullPath: '/cadastros/viagens-questionario-despesas'
+      preLoaderRoute: typeof AuthenticatedCadastrosViagensQuestionarioDespesasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cadastros/gerais/': {
       id: '/_authenticated/cadastros/gerais/'
       path: '/'
@@ -1135,6 +1175,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute: typeof AuthenticatedCadastrosVeiculosQuestionarioDespesasRoute
   AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute: typeof AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute
   AuthenticatedCadastrosViagensRoute: typeof AuthenticatedCadastrosViagensRoute
+  AuthenticatedCadastrosViagensEspecificosRoute: typeof AuthenticatedCadastrosViagensEspecificosRoute
+  AuthenticatedCadastrosViagensQuestionarioDespesasRoute: typeof AuthenticatedCadastrosViagensQuestionarioDespesasRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1196,6 +1238,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute:
     AuthenticatedCadastrosVeiculosTiposOcorrenciaRoute,
   AuthenticatedCadastrosViagensRoute: AuthenticatedCadastrosViagensRoute,
+  AuthenticatedCadastrosViagensEspecificosRoute:
+    AuthenticatedCadastrosViagensEspecificosRoute,
+  AuthenticatedCadastrosViagensQuestionarioDespesasRoute:
+    AuthenticatedCadastrosViagensQuestionarioDespesasRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

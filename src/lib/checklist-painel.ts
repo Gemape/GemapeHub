@@ -177,3 +177,26 @@ export function painelDoMes(
     },
   };
 }
+
+// ---------- Resultados por responsável (decisão 298) ----------
+
+export type ResultadoResponsavel = { nome: string; previstos: number; realizados: number; naoRealizados: number; aVencer: number; pctNoPrazo: number | null };
+
+// Os mesmos números do painel, agrupados por responsável (quem fez o check list, ou o responsável da associação quando ainda não foi feito). Só os
+// obrigatórios contam, como no resumo; o percentual é só do que já tem desfecho (realizado ou vencido), e fica nulo sem nenhum. Ordem alfabética.
+export function resultadosPorResponsavel(linhas: LinhaPainel[]): ResultadoResponsavel[] {
+  const porNome = new Map<string, LinhaPainel[]>();
+  for (const l of linhas.filter((x) => x.obrigatorio !== false)) {
+    const nome = l.responsavelNome.trim() || "Não definido";
+    porNome.set(nome, [...(porNome.get(nome) ?? []), l]);
+  }
+  return [...porNome.entries()]
+    .map(([nome, dele]) => {
+      const conta = (s: SituacaoPrevisao) => dele.filter((l) => l.situacao === s).length;
+      const realizados = conta("realizado");
+      const naoRealizados = conta("nao_realizado");
+      const base = realizados + naoRealizados;
+      return { nome, previstos: dele.length, realizados, naoRealizados, aVencer: conta("a_vencer"), pctNoPrazo: base === 0 ? null : Math.round((realizados / base) * 1000) / 10 };
+    })
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}

@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { QuestionarioDespesasTela } from "@/components/parametros/QuestionarioDespesasTela";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-// Parâmetros > Veículos > Questionário de Despesas: uma tela só, o formulário com a montagem dentro (dec 173).
+// O Questionário de Despesas passou para Parâmetros > Viagens (decisão 299); o endereço antigo leva para lá.
 export const Route = createFileRoute("/_authenticated/cadastros/veiculos-questionario-despesas")({
-  head: () => ({ meta: [{ title: "Questionário de Despesas | Patrimônio GEMAPE" }] }),
-  component: QuestionarioDespesasTela,
+  beforeLoad: () => {
+    throw redirect({ to: "/cadastros/viagens-questionario-despesas" });
+  },
 });
