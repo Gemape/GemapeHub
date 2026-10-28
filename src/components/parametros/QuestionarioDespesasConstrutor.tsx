@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, GripHorizontal, Lock, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, GripHorizontal, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -17,9 +17,9 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinosDoTipo, idDoDestino, limparPendencias, pendencias,
+  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, limparPendencias, pendencias,
 } from "@/lib/questionario-destinos";
-import { gravarSecao, secoesDoTipo } from "@/lib/questionario-secoes";
+import { gravarSecao, inicioDaProximaSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
   AREAS_VIAGEM, ID_HABILITADOS, ID_TECNICO_RESPONSAVEL, ID_TIPO_DESPESA, TIPOS_PERGUNTA, perguntaTravada, aceitaCondicao, criarRascunho, dadosIlegiveis, estadoPadrao, excluirPergunta, gravarEstado, gravarQuestionario, habilitadosAtivos, habilitadosDaPergunta, lerEstado, moverId,
   proximoCodigoPergunta, publicarRascunho, questionarioDoTipo, salvarPergunta, tiposDeDespesa, tiposRemovidos, type AreaViagem, type Estado, type Habilitado, type Pergunta, type Regra,
@@ -125,6 +125,28 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
     [copia[de], copia[para]] = [copia[para] as string, copia[de] as string];
     return copia.filter((x) => x !== ID_TIPO_DESPESA);
   };
+
+  // Excluir uma resposta (decisão 299): sai da pergunta e leva as ramificações dela, em todos os questionários, para não sobrar ação requerida.
+  function excluirOpcao(p: Pergunta, opcao: string) {
+    if (!confirm(`Excluir a resposta "${opcao}" da pergunta ${numeroDe(p.id)}?`)) return;
+    executar(() => {
+      let atual = estado;
+      for (const t of tiposDeDespesa(estado)) {
+        if (!destinosDoTipo(atual, t)[p.id]?.[opcao]) continue;
+        try { atual = gravarDestino(atual, t, p.id, opcao, null, rascunho); } catch { /* a pergunta não está neste questionário: nada a limpar */ }
+      }
+      try {
+        return salvarPergunta(atual, { ...p, opcoes: p.opcoes.filter((o) => o !== opcao) }, rascunho);
+      } catch (erro) {
+        // A pergunta não aceitou a exclusão (ex.: era a última resposta): devolve ao rascunho as ramificações já tiradas.
+        gravarEstado(estado, rascunho);
+        throw erro;
+      }
+    }, "Resposta excluída.");
+  }
+  // Ramificação de uma resposta: continuar na próxima pergunta (sem destino), ir para a próxima seção, encerrar ou ir a uma pergunta mais adiante.
+  const mudarDestino = (p: Pergunta, opcao: string, valor: string) =>
+    executar(() => gravarDestino(estado, tipoAtual, p.id, opcao, valor === SEM_DESTINO ? null : valor, rascunho), "Ramificação salva.");
 
   function excluir(p: Pergunta) {
     const usos = Object.values(estado.questionarios).filter((l) => l.includes(p.id)).length;
@@ -245,7 +267,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 {TIPOS_PERGUNTA.find((t) => t.valor === p.tipo)?.rotulo}{fixa ? " · pergunta inicial de todo questionário" : ""}
               </p>
               {estado.regras[tipoAtual]?.[id] && <p className="text-xs font-medium text-primary">{textoRegra(estado, estado.regras[tipoAtual][id] as Regra)}</p>}
-              {!fixa && aceitaDestino(p) && Object.keys(destinosDoTipo(estado, tipoAtual)[id] ?? {}).length > 0 && (
+              {!fixa && aceitaDestino(p) && !(canWrite && !travada) && Object.keys(destinosDoTipo(estado, tipoAtual)[id] ?? {}).length > 0 && (
                 <ul className="text-xs font-medium text-primary">
                   {Object.entries(destinosDoTipo(estado, tipoAtual)[id] ?? {}).map(([opcao, d]) => <li key={opcao}>"{opcao}": {textoDestino(estado, d, numeroDe)}</li>)}
                 </ul>
@@ -255,6 +277,16 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                   <SelectTrigger aria-label="Tipo de despesa" onClick={(e) => e.stopPropagation()}><SelectValue /></SelectTrigger>
                   <SelectContent>{tipos.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
+              ) : canWrite && !travada && aceitaCondicao(p) ? (
+                <OpcoesDaPergunta
+                  pergunta={p}
+                  destinos={destinosDoTipo(estado, tipoAtual)[id] ?? {}}
+                  ramifica={aceitaDestino(p)}
+                  seguintes={ids.slice(ids.indexOf(id) + 1).filter((x) => x !== ID_TIPO_DESPESA).map((x) => ({ id: x, rotulo: `Ir para a pergunta ${numeroDe(x)} (${porId.get(x)?.titulo ?? x})` }))}
+                  temProximaSecao={inicioDaProximaSecao(estado, tipoAtual, id) !== null}
+                  onDestino={(opcao, valor) => mudarDestino(p, opcao, valor)}
+                  onExcluir={(opcao) => excluirOpcao(p, opcao)}
+                />
               ) : (
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
@@ -423,6 +455,54 @@ function AdicionarHabilitado({ ativos, jaIncluidos, areaFixa, onAdicionar }: {
         {termo && achados.length === 0 && <p className="text-xs text-muted-foreground">Nenhum empregado ativo encontrado.</p>}
       </div>
     </div>
+  );
+}
+
+const SEM_DESTINO = "__proxima";
+
+// Todas as respostas da pergunta (decisão 299), como no editor de formulários: cada uma com o seu destino (continuar, próxima seção, encerrar ou uma pergunta mais
+// adiante) e o botão de excluir. Pergunta que aceita mais de uma resposta não ramifica: só mostra as respostas e o excluir.
+function OpcoesDaPergunta({ pergunta, destinos, ramifica, seguintes, temProximaSecao, onDestino, onExcluir }: {
+  pergunta: Pergunta;
+  destinos: Record<string, string>;
+  ramifica: boolean;
+  seguintes: { id: string; rotulo: string }[];
+  temProximaSecao: boolean;
+  onDestino: (opcao: string, valor: string) => boolean;
+  onExcluir: (opcao: string) => void;
+}) {
+  const marcador = pergunta.tipo === "caixas" ? "☐" : pergunta.tipo === "lista" ? "▾" : "○";
+  return (
+    <ul className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+      {pergunta.opcoes.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma resposta cadastrada ainda.</li>}
+      {pergunta.opcoes.map((opcao) => {
+        const atual = destinos[opcao] ?? SEM_DESTINO;
+        // O destino salvo que não está mais entre as opções (pergunta que saiu do questionário) continua visível, para corrigir.
+        const alvo = idDoDestino(atual);
+        const orfao = alvo !== null && !seguintes.some((x) => x.id === alvo);
+        return (
+          <li key={opcao} className="flex flex-wrap items-center gap-2 text-sm">
+            <span aria-hidden="true" className="w-4 text-center text-muted-foreground">{marcador}</span>
+            <span className="min-w-0 flex-1 break-words">{opcao}</span>
+            {ramifica && (
+              <Select value={atual} onValueChange={(v) => { if (v) onDestino(opcao, v); }}>
+                <SelectTrigger aria-label={`Ramificação da resposta ${opcao}`} className="h-8 w-full sm:w-72"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SEM_DESTINO}>Continuar para a próxima pergunta</SelectItem>
+                  {temProximaSecao && <SelectItem value={DESTINO_PROXIMA_SECAO}>Ir para a próxima seção</SelectItem>}
+                  <SelectItem value={DESTINO_ENCERRAR}>Encerrar o formulário</SelectItem>
+                  {seguintes.map((x) => <SelectItem key={x.id} value={destinoPergunta(x.id)}>{x.rotulo}</SelectItem>)}
+                  {orfao && <SelectItem value={atual} disabled>Pergunta que saiu do questionário (ação requerida)</SelectItem>}
+                </SelectContent>
+              </Select>
+            )}
+            <Button type="button" variant="ghost" size="icon" aria-label={`Excluir a resposta ${opcao}`} title="Excluir esta resposta" onClick={() => onExcluir(opcao)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

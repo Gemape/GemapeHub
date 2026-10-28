@@ -1,3 +1,4 @@
+import { CalendarCheck, ClipboardList } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { gruposAvulsosDaAssociacao, gruposDaPeriodicidade, nomeDoChecklistAssociado } from "@/lib/checklist-associacao-veiculo";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
@@ -7,7 +8,8 @@ import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/
 import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
 import { DialogAssociarChecklist } from "@/components/modules/DialogAssociarChecklist";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
-import { ChecklistPainelMensal, rotuloDoMes } from "@/components/modules/ChecklistPainelMensal";
+import { ChecklistListaAvulsa, ChecklistListaPeriodica } from "@/components/modules/ChecklistListasVeiculo";
+import { ChecklistResultadosPainel } from "@/components/modules/ChecklistResultadosPainel";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -19,20 +21,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
 import {
   adicionarFotosItem, AVALIACOES, avaliarItem, concluirChecklist, ehPeriodicidade, excluirChecklistEmAndamento,
-  hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciaAberta, pendenciasAbertas, removerFotoItem,
-  PERIODICIDADES, periodicidadeObrigatoria, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, situacaoPeriodica, type ChecklistVeiculo, type ItemChecklist, type Periodicidade, type SituacaoPeriodica,
+  hojeBrasilia, iniciarChecklist, MAX_FOTOS_ITEM, pendenciasAbertas, removerFotoItem,
+  PERIODICIDADES, periodicidadeObrigatoria, periodicidadesDaAssociacao, checklistVisivelNaLista, nomeDoChecklist, gruposAssociadosDoVeiculo, gruposAplicaveis, iniciarChecklistAvulso, veiculosDoTipoChecklist, TIPOS_CHECKLIST, tipoChecklistDaSubcategoria, ehTipoChecklist, resolverPendencia, resumoChecklist, type ChecklistVeiculo, type ItemChecklist, type Periodicidade,
 } from "@/lib/checklist-veiculo";
-import { mesesDisponiveis, noMesDaLista, sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
+import { mesDe, noMesDaLista, sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
-import { combinaBusca } from "@/lib/parametros-base";
 import { resolverSubcategoria } from "@/lib/subcategoria-referencia";
 import { useAssociacoesChecklist, useChecklistsVeiculo, usePrevisoesChecklist } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
@@ -42,11 +42,6 @@ type VeiculoChecklist = Veiculo;
 
 const dataHoraBrasilia = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
-const SITUACAO: Record<SituacaoPeriodica, { rotulo: string; classe: string }> = {
-  em_dia: { rotulo: "Em dia", classe: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
-  em_andamento: { rotulo: "Em andamento", classe: "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200" },
-  pendente: { rotulo: "Pendente", classe: "border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" },
-};
 const COR_AVALIACAO: Record<string, string> = {
   OK: "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-600",
   NOK: "border-red-500 bg-red-600 text-white hover:bg-red-600",
@@ -80,15 +75,8 @@ export function ChecklistVeiculoModulo() {
   const { data: empregadosAtivos = [] } = useEmpregados(TODAS, true);
   const todos = useChecklistsVeiculo();
   const [tela, setTela] = useState<Tela>(null);
-  const [visao, setVisao] = useState<"periodicos" | "avulsos">("periodicos");
-  const [busca, setBusca] = useState("");
-  // A situação por veículo mostra só quem tem check list associado; os sem associação ficam escondidos até pedir.
-  const [semAssociacao, setSemAssociacao] = useState(false);
-  // A lista mostra as primeiras linhas do mês e deixa o resto atrás de "Mostrar todos".
-  const [todosOsChecklists, setTodosOsChecklists] = useState(false);
-  // A lista mostra um mês de cada vez; sem escolha acompanha o mês de hoje (inclusive na virada do mês), e "todos" mostra tudo.
-  const [mesEscolhidoLista, setMesLista] = useState<string | null>(null);
-  const [soPendencias, setSoPendencias] = useState(false);
+  // Tela principal (decisão 298): o painel com os indicadores e os resultados dos responsáveis, e as listas do check list periódico e do avulso, em botões separados.
+  const [aba, setAba] = useState<"painel" | "periodicos" | "avulsos">("painel");
   // Novo check list (decisão 157): primeiro o veículo, depois o tipo de check list, uma das opções "Placa >> Periodicidade >> Responsável"
   // da associação do veículo ou Avulso. Guarda a periodicidade escolhida, "avulso" ou vazio (ainda sem escolha).
   const [tipoEscolhido, setTipoEscolhido] = useState("");
@@ -143,18 +131,10 @@ export function ChecklistVeiculoModulo() {
   // Nome do check list (decisão 90): Placa >> Periodicidade >> Responsável.
   const nomeDe = (c: ChecklistVeiculo) =>
     nomeDoChecklist({ placa: veiculos.find((v) => v.id === c.veiculoId)?.placa ?? "", fallbackVeiculo: c.veiculoRotulo, periodicidade: c.periodicidade, responsavelNome: c.responsavelNome });
-  // A lista do módulo só traz o que tem periodicidade ou responsável; o livre (sem os dois) não aparece (decisão 116).
-  const naLista = checklists.filter(checklistVisivelNaLista);
   // O avulso (decisão 90) não tem periodicidade nem responsável: fica numa lista à parte e não entra no painel do mês nem na situação por veículo.
   const avulsos = checklists.filter((c) => !checklistVisivelNaLista(c));
-  const mesLista = mesEscolhidoLista ?? hoje.slice(0, 7);
-  // Sem associação mas com pendência NOK aberta (de um avulso) continua na situação: o contador de pendências do cabeçalho conta essa linha.
-  const noSituacao = (v: VeiculoChecklist) => periodicidadesDe(v).length > 0 || pendenciasAbertas(checklists, v.id).length > 0;
-  const veiculosSemAssociacao = veiculos.filter((v) => !noSituacao(v)).length;
-  const veiculosDaSituacao = veiculos.filter((v) => semAssociacao || noSituacao(v));
-  const mesDaLista = mesLista === "todos" ? null : mesLista;
-  const naListaDoMes = naLista.filter((c) => noMesDaLista(c, mesDaLista));
-  const avulsosDoMes = avulsos.filter((c) => noMesDaLista(c, mesDaLista));
+  const previstosDoMes = previsoes.filter((pv) => idsDaEmpresa.has(pv.veiculoId) && mesDe(pv.fim) === mesDe(hoje)).length;
+  const avulsosDoMesAtual = avulsos.filter((c) => noMesDaLista(c, mesDe(hoje))).length;
   const avulsoNovo = tela?.tipo === "novo" && tipoEscolhido === "avulso";
   const atual = tela?.tipo === "check" ? (todos.find((c) => c.id === tela.id) ?? null) : null;
   // No avulso não há campo de tipo de veículo (decisão 118): entram todos os veículos ativos que têm tipo de check list, e o tipo vem do veículo.
@@ -192,18 +172,6 @@ export function ChecklistVeiculoModulo() {
         : comoAssociacao(gruposAvulsosDaAssociacao(associacaoEscolhida)))
       : comoAssociacao(gruposDaPeriodicidade(associacaoEscolhida, periodicidadeDoDialogo(veiculoEscolhido) ?? ""));
   const itensDoVeiculo = gruposDoVeiculo.reduce((t, g) => t + g.itens.length, 0);
-
-  const lista = (visao === "avulsos" ? avulsosDoMes : naListaDoMes)
-    .filter((c) => !soPendencias || pendenciaDoChecklist(c) > 0)
-    .filter((c) => combinaBusca(busca, c.codigo, nomeDe(c), c.veiculoRotulo, c.responsavelNome, c.tipoVeiculo, c.status, formatarData(c.data)))
-    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
-  const listaVisivel = todosOsChecklists ? lista : lista.slice(0, 10);
-  // Mudou o mês, a visão, a busca ou o filtro de pendências: a lista volta às dez primeiras.
-  useEffect(() => { setTodosOsChecklists(false); }, [mesLista, visao, busca, soPendencias]);
-
-  function pendenciaDoChecklist(c: ChecklistVeiculo) {
-    return c.itens.filter(pendenciaAberta).length;
-  }
 
   function abrirNovoAvulso() {
     setTipoEscolhido("avulso");
@@ -293,118 +261,53 @@ export function ChecklistVeiculoModulo() {
 
   return (
     <div className="space-y-5">
-      <ChecklistPainelMensal
-        previsoes={previsoes}
-        checklists={todos.filter(checklistVisivelNaLista)}
-        idsDosVeiculos={idsDaEmpresa}
-        hoje={hoje}
-        onAbrirChecklist={(id) => setTela({ tipo: "check", id })}
-      />
+      {aba === "painel" && (
+        <>
+          <section className="space-y-3" aria-labelledby="checklist-tipos">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 id="checklist-tipos" className="text-lg font-semibold">Check lists</h2>
+              <p className="text-xs text-muted-foreground">{pendencias.length} pendência(s) NOK aberta(s).</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:max-w-2xl sm:grid-cols-2">
+              <button type="button" onClick={() => setAba("periodicos")} className="panel flex min-h-24 flex-col items-center justify-center gap-1 p-3 text-center font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+                <CalendarCheck className="h-7 w-7 text-primary" aria-hidden="true" />
+                <span>Check list periódico</span>
+                <span className="text-xs font-normal text-muted-foreground">{previstosDoMes} previsto(s) neste mês</span>
+              </button>
+              <button type="button" onClick={() => setAba("avulsos")} className="panel flex min-h-24 flex-col items-center justify-center gap-1 p-3 text-center font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+                <ClipboardList className="h-7 w-7 text-primary" aria-hidden="true" />
+                <span>Check list avulso</span>
+                <span className="text-xs font-normal text-muted-foreground">{avulsosDoMesAtual} neste mês</span>
+              </button>
+            </div>
+          </section>
+          <ChecklistResultadosPainel previsoes={previsoes} checklists={todos.filter(checklistVisivelNaLista)} idsDosVeiculos={idsDaEmpresa} hoje={hoje} />
+        </>
+      )}
 
-      <section className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold">Situação por veículo</h2>
-          <p className="text-xs text-muted-foreground">{pendencias.length} pendência(s) NOK aberta(s).</p>
-          { veiculosSemAssociacao > 0 && <Button variant="ghost" size="sm" aria-pressed={semAssociacao} onClick={() => setSemAssociacao((v) => !v)}>{semAssociacao ? "Ocultar" : "Mostrar"} sem associação ({veiculosSemAssociacao})</Button>}
-          <Button requiresWrite="operar" className="ml-auto" onClick={() => abrirNovo()}>Novo check list</Button>
-        </div>
-        <div className="overflow-x-auto rounded-xl border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Veículo</TableHead><TableHead>Tipo</TableHead><TableHead>Periodicidade</TableHead>
-                <TableHead>Situação</TableHead><TableHead className="text-right">Pendências</TableHead><TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {veiculosDaSituacao.length === 0 && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{veiculos.length === 0 ? "Nenhum veículo cadastrado." : "Nenhum veículo com check list associado."}</TableCell></TableRow>}
-              {veiculosDaSituacao.flatMap((v) => {
-                // Uma linha por periodicidade do veículo (decisão 123); sem associação, uma linha só.
-                const periodicidades: (Periodicidade | null)[] = periodicidadesDe(v).length > 0 ? periodicidadesDe(v) : [null];
-                return periodicidades.map((per) => {
-                  const doVeiculo = naLista.filter((c) => c.veiculoId === v.id && (per === null || c.periodicidade === per));
-                  const sit = per ? situacaoPeriodica(per, doVeiculo, hoje) : null;
-                  const aberto = doVeiculo.find((c) => c.status === "Em andamento");
-                  return (
-                    <TableRow key={`${v.id}-${per ?? "sem"}`}>
-                      <TableCell>{rotuloDe(v)}</TableCell>
-                      <TableCell>{tipoDe(v)?.nome ?? "—"}</TableCell>
-                      <TableCell>{per ?? "—"}</TableCell>
-                      <TableCell>{sit ? <Badge variant="outline" className={SITUACAO[sit].classe}>{SITUACAO[sit].rotulo}</Badge> : <span className="text-xs text-muted-foreground">Sem associação</span>}</TableCell>
-                      <TableCell className="text-right">{pendenciasAbertas(checklists, v.id).filter((p) => per === null || p.checklist.periodicidade === per).length}</TableCell>
-                      <TableCell className="text-right">
-                        {aberto ? (
-                          <Button requiresWrite="operar" variant="ghost" size="sm" onClick={() => setTela({ tipo: "check", id: aberto.id })}>Continuar</Button>
-                        ) : (
-                          <Button requiresWrite="operar" variant="ghost" size="sm" disabled={!per || v.status !== "Ativo" || !tipoCheckDe(v)} onClick={() => abrirNovo(v, per ?? undefined)}>Iniciar</Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                });
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </section>
+      {aba === "periodicos" && (
+        <ChecklistListaPeriodica
+          previsoes={previsoes}
+          checklists={checklists}
+          idsDosVeiculos={idsDaEmpresa}
+          hoje={hoje}
+          onVer={(id) => setTela({ tipo: "check", id })}
+          onRealizar={(idDoVeiculo, periodicidade) => abrirNovo(veiculos.find((v) => v.id === idDoVeiculo), periodicidade)}
+          onNovo={() => abrirNovo()}
+          onVoltar={() => setAba("painel")}
+        />
+      )}
 
-      <section className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-semibold">Check lists</h2>
-          <div className="flex items-center gap-1.5">
-            <Label htmlFor="mes_lista" className="text-xs">Mês</Label>
-            <Select value={mesLista} onValueChange={setMesLista}>
-              <SelectTrigger id="mes_lista" className="h-8 w-44"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os meses</SelectItem>
-                {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex gap-1" role="group" aria-label="Tipo de check list">
-            <Button size="sm" variant={visao === "periodicos" ? "default" : "outline"} aria-pressed={visao === "periodicos"} onClick={() => setVisao("periodicos")}>Periódicos ({naListaDoMes.length})</Button>
-            <Button size="sm" variant={visao === "avulsos" ? "default" : "outline"} aria-pressed={visao === "avulsos"} onClick={() => setVisao("avulsos")}>Avulsos ({avulsosDoMes.length})</Button>
-          </div>
-          {visao === "avulsos" && <Button requiresWrite="operar" size="sm" onClick={abrirNovoAvulso}>Novo check list avulso</Button>}
-          <Input aria-label="Buscar check list" placeholder="Buscar por código, veículo ou responsável" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
-          <Button variant={soPendencias ? "default" : "outline"} size="sm" onClick={() => setSoPendencias((v) => !v)}>
-            Com pendências abertas ({(visao === "avulsos" ? avulsosDoMes : naListaDoMes).filter((c) => pendenciaDoChecklist(c) > 0).length})
-          </Button>
-        </div>
-        <div className="overflow-x-auto rounded-xl border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Código</TableHead><TableHead>Check list</TableHead><TableHead>Data</TableHead>
-                <TableHead>Avaliação</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Pendências</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lista.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{busca.trim() || soPendencias ? "Nenhum resultado para o filtro." : visao === "avulsos" ? "Nenhum check list avulso feito ainda." : "Nenhum check list feito ainda."}</TableCell></TableRow>
-              )}
-              {listaVisivel.map((c) => {
-                const r = resumoChecklist(c);
-                return (
-                  <TableRow key={c.id} className="cursor-pointer" onClick={() => setTela({ tipo: "check", id: c.id })}>
-                    <TableCell className="font-mono text-xs">{c.codigo}</TableCell>
-                    <TableCell className="whitespace-nowrap font-medium">{nomeDe(c)}</TableCell>
-                    <TableCell>{formatarData(c.data)}</TableCell>
-                    <TableCell className="text-xs">{r.avaliados}/{r.total} · {r.ok} OK · {r.nok} NOK · {r.na} N.A.</TableCell>
-                    <TableCell><Badge variant={c.status === "Concluído" ? "secondary" : "outline"}>{c.status}</Badge></TableCell>
-                    <TableCell className="text-right">{r.pendenciasAbertas > 0 ? <span className="font-semibold text-red-700 dark:text-red-300">{r.pendenciasAbertas}</span> : 0}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-        {lista.length > 10 && (
-          <div className="flex justify-center">
-            <Button variant="ghost" size="sm" onClick={() => setTodosOsChecklists((v) => !v)}>{todosOsChecklists ? "Mostrar menos" : `Mostrar todos os ${lista.length} check lists`}</Button>
-          </div>
-        )}
-      </section>
+      {aba === "avulsos" && (
+        <ChecklistListaAvulsa
+          avulsos={avulsos}
+          hoje={hoje}
+          nomeDoVeiculo={(c) => rotuloDe(veiculos.find((v) => v.id === c.veiculoId) as VeiculoChecklist) || c.veiculoRotulo}
+          onVer={(id) => setTela({ tipo: "check", id })}
+          onNovo={abrirNovoAvulso}
+          onVoltar={() => setAba("painel")}
+        />
+      )}
 
       <Dialog open={tela?.tipo === "novo"} onOpenChange={(a) => !a && setTela(null)}>
         <DialogContent className="sm:max-w-lg">

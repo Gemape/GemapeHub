@@ -43,14 +43,13 @@ test("cartões com submenus se abrem no próprio cartão; os sem submenu abrem a
   }
 });
 
-test("cada cartão junta o módulo e os parâmetros da área, separados por seção; Viagens só tem módulo e Gerais só tem parâmetros", () => {
-  for (const t of ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Equipamentos"]) {
+test("cada cartão junta o módulo e os parâmetros da área, separados por seção; Gerais só tem parâmetros", () => {
+  for (const t of ["EPIs", "Uniformes", "Ferramentas", "Veículos", "Viagens", "Equipamentos"]) {
     const c = cartao(true, AREAS, t);
     assert.ok(daSecao(c, "Módulo").length > 0 && daSecao(c, "Parâmetros").length > 0, t);
     // Os do módulo vêm primeiro, depois os dos parâmetros.
     assert.deepEqual(c.itens.map((i) => i.secao), [...daSecao(c, "Módulo"), ...daSecao(c, "Parâmetros")].map((i) => i.secao), t);
   }
-  assert.equal(daSecao(cartao(true, AREAS, "Viagens"), "Parâmetros").length, 0);
   assert.equal(daSecao(cartao(true, "Cadastros", "Gerais"), "Módulo").length, 0);
   assert.equal(gruposDoInicio(true).flatMap((g) => g.cartoes).filter((c) => c.titulo === "Veículos").length, 1);
   assert.match(pagina, /SECOES/);

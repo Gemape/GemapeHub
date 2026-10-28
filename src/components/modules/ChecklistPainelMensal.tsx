@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { mesDe, mesesDisponiveis, painelDoMes, type ChecklistDoPainel, type Previsao, type SituacaoPrevisao } from "@/lib/checklist-painel";
 import { formatarData } from "@/lib/gemape";
 
-const SITUACAO: Record<SituacaoPrevisao, { rotulo: string; classe: string }> = {
+export const SITUACAO: Record<SituacaoPrevisao, { rotulo: string; classe: string }> = {
   realizado: { rotulo: "Realizado no prazo", classe: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
   nao_realizado: { rotulo: "Não realizado no prazo", classe: "border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" },
   a_vencer: { rotulo: "A vencer", classe: "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200" },

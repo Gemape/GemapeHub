@@ -195,11 +195,14 @@ test("lista com opções vazias não passa mesmo com dependência; questionarios
   assert.equal(dadosIlegiveis(memoria()), false);
 });
 
-test("o submenu fica em Parâmetros > Veículos e a rota existe", () => {
+test("o submenu fica em Parâmetros > Viagens, a rota existe e o endereço antigo de Veículos leva para ela (decisão 299)", () => {
   const menu = readFileSync(new URL("../src/lib/menu-parametros.ts", import.meta.url), "utf8");
-  assert.match(menu, /Questionário de Despesas", url: "\/cadastros\/veiculos-questionario-despesas"/);
-  const rota = readFileSync(new URL("../src/routes/_authenticated/cadastros/veiculos-questionario-despesas.tsx", import.meta.url), "utf8");
+  assert.match(menu, /Questionário de Despesas", url: "\/cadastros\/viagens-questionario-despesas"/);
+  assert.doesNotMatch(menu, /veiculos-questionario-despesas"/);
+  const rota = readFileSync(new URL("../src/routes/_authenticated/cadastros/viagens-questionario-despesas.tsx", import.meta.url), "utf8");
   assert.match(rota, /QuestionarioDespesasTela/);
+  const antiga = readFileSync(new URL("../src/routes/_authenticated/cadastros/veiculos-questionario-despesas.tsx", import.meta.url), "utf8");
+  assert.match(antiga, /redirect\(\{ to: "\/cadastros\/viagens-questionario-despesas" \}\)/);
 });
 
 test("Litros abastecidos só vem no Abastecimento, também nos dados salvos antes (ajuste único)", () => {

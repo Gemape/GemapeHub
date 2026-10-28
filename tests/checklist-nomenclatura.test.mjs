@@ -35,8 +35,8 @@ test("só o check list sem periodicidade E sem responsável fica fora da lista (
 
 test("o módulo mostra o nome na lista e filtra os que não podem ser nomeados", () => {
   const modulo = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
-  assert.match(modulo, /checklists\.filter\(checklistVisivelNaLista\)/);
-  assert.match(modulo, /nomeDe\(c\)/);
+  assert.match(modulo, /todos\.filter\(checklistVisivelNaLista\)/);
+  assert.match(modulo, /nomeDe\(atual\)/);
 });
 
 // ---------- Check list avulso (decisão 90) ----------
@@ -106,7 +106,6 @@ test("trocar a periodicidade na janela Novo check list não muda a situação po
   const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
   assert.match(tela, /const periodicidadeDoDialogo = /);
   assert.doesNotMatch(tela, /situacaoPeriodica\(periodicidadeDoDialogo/);
-  assert.match(tela, /periodicidades\.map\(\(per\) => \{/);
   assert.match(tela, /periodicidade: periodicidadeDoDialogo\(veiculoEscolhido\)/);
 });
 
@@ -138,12 +137,12 @@ test("cada periodicidade tem o seu check list periódico em andamento por veícu
   assert.equal(lerChecklists(s).length, 3);
 });
 
-test("a situação por veículo tem uma linha por periodicidade, com Iniciar e Continuar de cada uma (dec 123)", () => {
+test("o check list periódico tem uma linha por prazo e periodicidade, com Realizar e Continuar de cada uma (dec 123, revisada na 298)", () => {
   const tela = readFileSync(new URL("../src/components/modules/ChecklistVeiculoModulo.tsx", import.meta.url), "utf8");
-  assert.match(tela, /periodicidadesDe\(v\)\.length > 0 \? periodicidadesDe\(v\) : \[null\]/);
-  assert.match(tela, /c\.periodicidade === per/);
-  assert.match(tela, /abrirNovo\(v, per \?\? undefined\)/);
-  assert.match(tela, /<TableHead>Periodicidade<\/TableHead>/);
+  assert.match(tela, /onRealizar=\{\(idDoVeiculo, periodicidade\) => abrirNovo\(veiculos\.find\(\(v\) => v\.id === idDoVeiculo\), periodicidade\)\}/);
+  const listas = readFileSync(new URL("../src/components/modules/ChecklistListasVeiculo.tsx", import.meta.url), "utf8");
+  assert.match(listas, /c\.periodicidade === l\.periodicidade/);
+  assert.match(listas, /onRealizar\(l\.veiculoId, l\.periodicidade\)/);
 });
 
 test("Novo check list pergunta primeiro o veículo e depois o tipo, com as opções com o nome da associação do veículo: Placa >> Periodicidade >> Responsável (dec 157, revisada)", () => {
