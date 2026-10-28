@@ -222,9 +222,9 @@ test("Ações de manutenção não têm o botão Cadastrar padrão; as outras li
   const acoes = tela.slice(tela.indexOf("titulo=\"Ações de manutenção\""), tela.indexOf("export function TiposOcorrenciaVeiculoLista"));
   assert.doesNotMatch(acoes, /onPadrao/);
   assert.match(acoes, /RestaurarPadraoAcoes/);
-  assert.match(tela, /\{onPadrao && \(/); // o botão só aparece quando a lista pede
+  assert.match(tela, /\{padrao\}/); // o botão só aparece quando a lista pede
   const tipos = tela.slice(tela.indexOf("export function TiposOcorrenciaVeiculoLista"), tela.indexOf("const ROTULO_SITUACAO"));
-  assert.match(tipos, /onPadrao=/);
+  assert.match(tipos, /padrao=/);
 });
 
 test("restaurar configurações iniciais escolhendo pais e filhos: só os filhos marcados voltam, o resto fica (dec 142)", () => {

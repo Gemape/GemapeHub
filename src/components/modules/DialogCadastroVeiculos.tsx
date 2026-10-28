@@ -11,7 +11,7 @@ export function DialogCadastroVeiculos({ aberto, onAbrirMudou }: { aberto: boole
       <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader>
           <DialogTitle>Cadastro de Veículos</DialogTitle>
-          <DialogDescription>Cadastre ou ajuste o veículo e feche a janela: o check list continua de onde parou.</DialogDescription>
+          <DialogDescription>Preencha o novo veículo e salve ou cancele: o check list continua de onde parou.</DialogDescription>
         </DialogHeader>
         {aberto && <VeiculosCadastroModulo direto aoConcluir={() => onAbrirMudou(false)} />}
       </DialogContent>

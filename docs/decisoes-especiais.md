@@ -1680,3 +1680,19 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 293. Cadastrar a partir da associação e voltar
 
 - Nas telas de Associar itens de check list (Veículos e Equipamentos), Cadastrar empregado e Cadastrar veículo abrem direto o formulário de novo cadastro em tela inteira; ao salvar ou cancelar, a janela volta à associação com o que já estava preenchido. Cadastrar itens de check list (Equipamentos) deixou de fechar a associação: abre os grupos de itens numa janela ao lado, e ao fechar a associação continua de onde parou, como em Veículos. Só visual, sem Supabase.
+
+## 294. Cadastrar padrão só item a item e com confirmação
+
+- Em todos os botões "Cadastrar padrão" dos Parâmetros (subgrupos de ferramentas, tamanhos e medidas, marcas de veículos e tipos de ocorrência de veículos), o padrão não é mais implantado de uma vez: abre uma janela que lista só o que ainda falta, sem nada marcado, o responsável marca item a item e confirma antes de gravar. Não há "Marcar todos". O "Cadastrar padrão" dos tipos de ocorrência deixou de cadastrar também as ações de manutenção, que têm a sua própria restauração item a item. Só visual, sem Supabase.
+
+## 295. Botão Escolher arquivo em todo o sistema
+
+- Todo campo de arquivo (foto do comprovante, importação de NF-e XML e os demais) mostra o botão "Escolher arquivo" ou "Escolher arquivos", no estilo do "Tirar foto", com o nome do que foi escolhido ao lado ("Nenhum arquivo escolhido" enquanto não houver). O campo nativo fica escondido por trás do botão, então rótulo, foco por teclado e leitores de tela continuam funcionando. A mudança está no componente Input, por isso vale para qualquer tela que use type="file". Só visual, sem Supabase.
+
+## 296. Frota: ocorrências na lista e extrato com período e atalhos
+
+- A lista da Frota ganhou a coluna Ocorrências: "N vencida(s)" em vermelho quando há, senão "N em aberto" ou "Sem ocorrências abertas"; a mesma coluna sai no PDF da frota. Como a ocorrência não tem prazo cadastrado, vence a que continua Aberta ou Em tratativa mais de 7 dias depois do dia em que aconteceu (constante DIAS_PARA_VENCER em frota-ocorrencias.ts). Ao clicar no veículo, o extrato deixou de abrir direto: abre uma janela com Data início e Data fim (opcionais; início depois do fim é bloqueado) e os botões Manutenções sugeridas, Manutenções realizadas, Ocorrências e Extrato completo, cada um abrindo o relatório em tela cheia só com aquela parte. O período vale para manutenções realizadas, abastecimentos e ocorrências; as sugeridas e o km atual mostram sempre a situação de hoje. Ocorrência vencida sai sinalizada em vermelho no extrato. Só visual, sem Supabase.
+
+## 297. Manutenção de veículos: filtro por período
+
+- A lista de Módulo > Veículos > Manutenção ganhou Data início e Data fim (opcionais, as duas pontas valem), com o botão Limpar período, que somam à busca. Início depois do fim mostra o aviso e deixa a lista vazia. O contador "N manutenção(ões)" acompanha o filtro. Só visual, sem Supabase.

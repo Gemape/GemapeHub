@@ -5,6 +5,7 @@ import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { CadastrarPadraoSelecionado } from "@/components/parametros/CadastrarPadraoSelecionado";
 import { AlertaPainelManutencao } from "@/components/parametros/AlertaPainelManutencao";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +36,8 @@ import {
   subcategoriasDa,
   TODOS_OS_TIPOS,
   adicionarTipoOcorrenciaVeiculo,
-  cadastrarPadraoVeiculos,
+  cadastrarTiposOcorrenciaPadrao,
+  pendentesTiposOcorrenciaPadrao,
   editarAcaoManutencaoVeiculo,
   editarTipoOcorrenciaVeiculo,
   removerAcaoManutencaoVeiculo,
@@ -64,7 +66,7 @@ export function ListaVeiculos({
   campoExtra,
   onSalvar,
   onExcluir,
-  onPadrao,
+  padrao,
   opcoesTipos,
   acaoExtra,
   secao = false,
@@ -83,8 +85,8 @@ export function ListaVeiculos({
   campoExtra: CampoExtra;
   onSalvar: (id: string | null, nome: string, descricao: string, tipos: string[]) => boolean;
   onExcluir: (linha: Linha) => void;
-  // Sem onPadrao, a lista não tem o botão Cadastrar padrão (Ações de manutenção, decisão 140).
-  onPadrao?: () => void;
+  // Sem padrao, a lista não tem o botão Cadastrar padrão (Ações de manutenção, decisão 140). Vem pronto (CadastrarPadraoSelecionado): escolhe item a item e confirma.
+  padrao?: React.ReactNode;
   // Check list (decisão 63): tipos de veículo (subcategorias de Veículos) a que o grupo se aplica.
   opcoesTipos?: { id: string; nome: string }[];
   // Botão a mais ao lado de "Cadastrar" (Restaurar padrão inicial do check list, decisão 110).
@@ -152,11 +154,7 @@ export function ListaVeiculos({
           <p className="mt-1 text-sm text-muted-foreground">{subtitulo}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {onPadrao && (
-            <Button requiresWrite variant="outline" onClick={onPadrao}>
-              Cadastrar padrão
-            </Button>
-          )}
+          {padrao}
           {typeof acaoExtra === "function" ? acaoExtra((nomeInicial) => { abrir(null, false); setNome(capitalizarTexto(nomeInicial ?? "")); }) : acaoExtra}
           <Button requiresWrite onClick={() => abrir(null, false)}>
             Cadastrar {singular}
@@ -178,7 +176,7 @@ export function ListaVeiculos({
             {linhas.length === 0 && (
               <tr>
                 <td colSpan={(campoExtra ? 3 : 2) + (opcoesTipos ? 1 : 0)} className="px-3 py-4 text-muted-foreground">
-                  Nada cadastrado ainda. {onPadrao ? "Use “Cadastrar padrão” ou " : "Use "}“Cadastrar {singular}”.
+                  Nada cadastrado ainda. {padrao ? "Use “Cadastrar padrão” ou " : "Use "}“Cadastrar {singular}”.
                 </td>
               </tr>
             )}
@@ -310,11 +308,6 @@ export function ListaVeiculos({
   );
 }
 
-function mensagemPadraoToast(r: { acoes: number; tipos: number }): void {
-  const total = r.acoes + r.tipos;
-  toast.success(total === 0 ? "Os itens padrão já estão cadastrados." : `${total} itens padrão cadastrados.`);
-}
-
 export function AcoesManutencaoVeiculoLista({ secao = false }: { secao?: boolean } = {}) {
   const { acoesManutencaoVeiculo } = useParametrosBase();
   const subitensDe = (texto: string) => texto.split("\n");
@@ -358,7 +351,7 @@ export function TiposOcorrenciaVeiculoLista() {
         )
       }
       onExcluir={(l) => executar(() => removerTipoOcorrenciaVeiculo(l.id), "Tipo de ocorrência excluído.")}
-      onPadrao={() => executar(() => mensagemPadraoToast(cadastrarPadraoVeiculos()))}
+      padrao={<CadastrarPadraoSelecionado singular="tipo de ocorrência" plural="tipos de ocorrência" pendentes={pendentesTiposOcorrenciaPadrao} cadastrar={(nomes) => cadastrarTiposOcorrenciaPadrao(nomes)} />}
     />
   );
 }

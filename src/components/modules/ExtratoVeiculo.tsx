@@ -1,8 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ocorrenciaVencida } from "@/lib/frota-ocorrencias";
 import { hojeLocal } from "@/lib/empregados";
-import { montarExtratoHtml, type Celula, type Cor } from "@/lib/extrato-html";
+import { montarExtratoHtml, type Celula, type Cor, type TabelaExtrato } from "@/lib/extrato-html";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, pontosDeAtencao, sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { useEmpresas, useMovimentacoes, useOcorrencias, type Veiculo } from "@/lib/hooks-gemape";
@@ -24,9 +29,17 @@ const COR_OCORRENCIA: Record<string, Cor> = { Aberta: "vermelho", "Em tratativa"
 
 const numero = (n: number) => n.toLocaleString("pt-BR");
 
-// Extrato do veículo (decisão 57): ao clicar em Ver extrato, o relatório abre direto no visualizador, ocupando a tela toda, com abastecimentos e média km/L,
-// ocorrências, manutenções realizadas (preventivas e corretivas) e as preventivas sugeridas pelo plano, com as vencidas sinalizadas. Imprimir e baixar o PDF
+// Extrato do veículo (decisões 57 e 296): ao escolher o veículo na Frota, a janela pede o período (data início e fim, opcionais) e oferece o extrato completo e
+// os atalhos para as manutenções sugeridas, as manutenções realizadas e as ocorrências. Cada botão abre o relatório no visualizador, ocupando a tela toda, com
+// abastecimentos e média km/L, ocorrências, manutenções realizadas (preventivas e corretivas) e as preventivas sugeridas pelo plano, com as vencidas sinalizadas.
+// O período vale para o que aconteceu (manutenções, abastecimentos e ocorrências); as sugeridas sempre mostram a situação de hoje. Imprimir e baixar o PDF
 // ficam no próprio visualizador. Só leitura.
+type Secao = "completo" | "sugeridas" | "realizadas" | "ocorrencias";
+const TITULO: Record<Secao, string> = { completo: "Extrato do veículo", sugeridas: "Manutenções sugeridas do veículo", realizadas: "Manutenções realizadas do veículo", ocorrencias: "Ocorrências do veículo" };
+const ARQUIVO: Record<Secao, string> = { completo: "Extrato do veiculo", sugeridas: "Manutencoes sugeridas", realizadas: "Manutencoes realizadas", ocorrencias: "Ocorrencias do veiculo" };
+// Posição das tabelas do extrato (sugeridas, realizadas, itens em atenção, abastecimentos, ocorrências) que cada botão mostra.
+const SECOES: Record<Secao, number[]> = { completo: [0, 1, 2, 3, 4], sugeridas: [0], realizadas: [1, 2], ocorrencias: [4] };
+
 export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null; onFechar: () => void }) {
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
@@ -37,17 +50,24 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
   const { data: ocorrencias = [] } = useOcorrencias("", "veiculo");
   const ocorrenciasNovas = useOcorrenciasVeiculo();
   const { data: empresas = [] } = useEmpresas();
+  const [inicio, setInicio] = useState("");
+  const [fim, setFim] = useState("");
+  const periodoInvalido = !!inicio && !!fim && inicio > fim;
 
-  function abrirRelatorio(v: Veiculo) {
+  function abrirRelatorio(v: Veiculo, secao: Secao) {
+    // Período (AAAA-MM-DD, as duas pontas valem); vazio = sem limite daquele lado.
+    const noPeriodo = (data: string) => (!inicio || data.slice(0, 10) >= inicio) && (!fim || data.slice(0, 10) <= fim);
     const dele = <T extends { veiculoId: string }>(l: T[]) => l.filter((x) => x.veiculoId === v.id);
-    const abast = historicoAbastecimentos(dele(abastecimentos));
-    const manut = dele(manutencoes);
+    const manutTodas = dele(manutencoes);
+    const abast = historicoAbastecimentos(dele(abastecimentos).filter((a) => noPeriodo(a.data)));
+    const manut = manutTodas.filter((m) => noPeriodo(m.data));
     const media = mediaKmPorLitro(abast);
-    const kmAtual = kmAtualDoVeiculo(v.quilometragem_atual, abast, manut);
+    // Km atual e sugeridas olham todos os registros, não só o período: são a situação de hoje.
+    const kmAtual = kmAtualDoVeiculo(v.quilometragem_atual, dele(abastecimentos), manutTodas);
     const sugestoes = sugestoesPreventivas({
       plano: planos.find((p) => p.veiculoId === v.id) ?? null,
       acoes: parametros.acoesManutencaoVeiculo,
-      manutencoes: manut,
+      manutencoes: manutTodas,
       kmAtual,
       hoje: hojeLocal(),
     });
@@ -58,7 +78,7 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
     const linhasManutencao = [
       ...manut.map((m) => ({ data: m.data, km: m.km as number | null, tipo: m.tipo as string, servico: resumoManutencao(m, nomeAcao) })),
       ...movimentacoes
-        .filter((m) => m.veiculo_id === v.id && (m as { acao_manutencao?: string }).acao_manutencao)
+        .filter((m) => m.veiculo_id === v.id && (m as { acao_manutencao?: string }).acao_manutencao && noPeriodo(m.data_movimentacao))
         .map((m) => {
           const x = m as { acao_manutencao?: string; subitens_manutencao?: string[] };
           const subs = x.subitens_manutencao?.length ? `: ${x.subitens_manutencao.join(", ")}` : "";
@@ -69,21 +89,12 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
     const atencao = pontosDeAtencao(manut.map((m) => ({ id: m.id, data: m.data, km: m.km, grupos: gruposDaManutencao(m) })), nomeAcao);
     // Em demonstração valem as ocorrências da tela nova (decisão 60); fora dela, as da tabela antiga.
     const ocorrenciasDoVeiculo = (MODO_DEMO
-      ? ocorrenciasNovas.filter((o) => o.veiculoId === v.id).map((o) => ({ data: o.ocorridoEm.slice(0, 10), descricao: `${o.codigo} · ${o.tipoNome}: ${o.descricao}`, situacao: o.status as string }))
-      : ocorrencias.filter((o) => o.veiculo_id === v.id).map((o) => ({ data: o.data, descricao: o.descricao_ocorrencia, situacao: (o.responsavel_registro ?? "—") as string }))
+      ? ocorrenciasNovas.filter((o) => o.veiculoId === v.id && noPeriodo(o.ocorridoEm)).map((o) => ({ data: o.ocorridoEm.slice(0, 10), descricao: `${o.codigo} · ${o.tipoNome}: ${o.descricao}`, situacao: o.status as string, vencida: ocorrenciaVencida(o, hojeLocal()) }))
+      : ocorrencias.filter((o) => o.veiculo_id === v.id && noPeriodo(o.data)).map((o) => ({ data: o.data, descricao: o.descricao_ocorrencia, situacao: (o.responsavel_registro ?? "—") as string, vencida: false }))
     ).sort((a, b) => b.data.localeCompare(a.data));
 
     const rotulo = rotuloDoVeiculo(parametros, v);
-    const html = montarExtratoHtml({
-      titulo: "Extrato do veículo",
-      assunto: rotulo,
-      empresa: empresas.find((e) => e.id === v.empresa_id)?.nome_fantasia ?? "",
-      resumo: [
-        ["Km atual", numero(kmAtual)],
-        ["Média de consumo", media === null ? "— (precisa de dois abastecimentos)" : `${media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`],
-        vencidas > 0 ? ["Preventivas vencidas", String(vencidas), "vermelho"] : ["Preventivas vencidas", "0"],
-      ],
-      tabelas: [
+    const tabelas: TabelaExtrato[] = [
         {
           titulo: "Manutenções preventivas sugeridas", vazio: "Este veículo não tem plano de manutenções (Parâmetros > Veículos > Manutenção).",
           colunas: [{ titulo: "Ação" }, { titulo: "Periodicidade" }, { titulo: "Última vez" }, { titulo: "Próxima revisão" }, { titulo: "Situação" }],
@@ -117,20 +128,60 @@ export function ExtratoVeiculo({ veiculo, onFechar }: { veiculo: Veiculo | null;
         {
           titulo: "Ocorrências", vazio: "Nenhuma ocorrência registrada.",
           colunas: [{ titulo: "Data" }, { titulo: "Descrição" }, { titulo: MODO_DEMO ? "Status" : "Responsável" }],
-          linhas: ocorrenciasDoVeiculo.map((o): Celula[] => [formatarData(o.data), o.descricao, COR_OCORRENCIA[o.situacao] ? { texto: o.situacao, cor: COR_OCORRENCIA[o.situacao]! } : o.situacao]),
+          linhas: ocorrenciasDoVeiculo.map((o): Celula[] => [formatarData(o.data), o.descricao, o.vencida ? { texto: `${o.situacao} · vencida`, cor: "vermelho" } : COR_OCORRENCIA[o.situacao] ? { texto: o.situacao, cor: COR_OCORRENCIA[o.situacao]! } : o.situacao]),
         },
+    ];
+    const html = montarExtratoHtml({
+      titulo: TITULO[secao],
+      assunto: rotulo,
+      ...(inicio || fim ? { subtitulo: `Período: ${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` } : {}),
+      empresa: empresas.find((e) => e.id === v.empresa_id)?.nome_fantasia ?? "",
+      resumo: [
+        ["Km atual", numero(kmAtual)],
+        ["Média de consumo", media === null ? "— (precisa de dois abastecimentos)" : `${media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`],
+        vencidas > 0 ? ["Preventivas vencidas", String(vencidas), "vermelho"] : ["Preventivas vencidas", "0"],
       ],
+      tabelas: tabelas.filter((_, n) => SECOES[secao].includes(n)),
     });
-    abrirDocumento({ titulo: "Extrato do veículo", html, arquivo: nomeArquivoDocumento("Extrato do veiculo", rotulo), telaCheia: true });
+    abrirDocumento({ titulo: TITULO[secao], html, arquivo: nomeArquivoDocumento(ARQUIVO[secao], rotulo), telaCheia: true });
   }
 
-  // O clique em Ver extrato só escolhe o veículo: o relatório abre na hora, em tela cheia, e a escolha é desfeita para o próximo clique.
-  useEffect(() => {
-    if (!veiculo) return;
-    abrirRelatorio(veiculo);
-    onFechar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [veiculo]);
+  // Escolher outro veículo começa sem período.
+  useEffect(() => { setInicio(""); setFim(""); }, [veiculo?.id]);
 
-  return null;
+  const rotuloVeiculo = veiculo ? rotuloDoVeiculo(parametros, veiculo) : "";
+  const gerar = (secao: Secao) => { if (veiculo && !periodoInvalido) abrirRelatorio(veiculo, secao); };
+  return (
+    <Dialog open={!!veiculo} onOpenChange={(a) => { if (!a) onFechar(); }}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Extrato do veículo</DialogTitle>
+          <DialogDescription>{rotuloVeiculo}</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="extrato-inicio">Data início</Label>
+            <Input id="extrato-inicio" type="date" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="extrato-fim">Data fim</Label>
+            <Input id="extrato-fim" type="date" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
+          </div>
+        </div>
+        {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
+        <p className="text-xs text-muted-foreground">
+          O período vale para as manutenções realizadas, os abastecimentos e as ocorrências. As manutenções sugeridas mostram sempre a situação de hoje. Sem datas, vale todo o histórico.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" disabled={periodoInvalido} onClick={() => gerar("sugeridas")}>Manutenções sugeridas</Button>
+          <Button type="button" variant="outline" size="sm" disabled={periodoInvalido} onClick={() => gerar("realizadas")}>Manutenções realizadas</Button>
+          <Button type="button" variant="outline" size="sm" disabled={periodoInvalido} onClick={() => gerar("ocorrencias")}>Ocorrências</Button>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onFechar}>Fechar</Button>
+          <Button type="button" disabled={periodoInvalido} onClick={() => gerar("completo")}>Extrato completo</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

@@ -1,3 +1,4 @@
+import { CadastrarPadraoSelecionado } from "@/components/parametros/CadastrarPadraoSelecionado";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -15,6 +16,7 @@ import {
   adicionarCategoria,
   adicionarListaFerramenta,
   cadastrarMarcasPadraoVeiculos,
+  pendentesMarcasPadraoVeiculos,
   adicionarSubcategoria,
   alterarAtivo,
   enderecamentoDaCategoria,
@@ -378,19 +380,13 @@ function Categorias() {
           {categoria.id === "cat-uniformes" && <div className="max-w-3xl">{listaMarcas("marcasUniforme", "Marcas de uniformes", "Nova marca de uniforme", "uniforme")}</div>}
           {categoria.id === "cat-veiculos" && <div className="max-w-3xl space-y-2">
             {listaMarcas("marcasVeiculo", "Marcas de veículos", "Nova marca de veículo", "veículo")}
-            <Button
-              type="button"
-              variant="outline"
-              requiresWrite
-              onClick={() =>
-                executar(() => {
-                  const { marcas } = cadastrarMarcasPadraoVeiculos();
-                  toast.success(marcas ? `${marcas} ${marcas === 1 ? "marca padrão incluída" : "marcas padrão incluídas"}.` : "As marcas padrão já estão cadastradas.");
-                })
-              }
-            >
-              Cadastrar marcas padrão
-            </Button>
+            <CadastrarPadraoSelecionado
+              rotulo="Cadastrar marcas padrão"
+              singular="marca"
+              plural="marcas"
+              pendentes={pendentesMarcasPadraoVeiculos}
+              cadastrar={(nomes) => cadastrarMarcasPadraoVeiculos(undefined, nomes)}
+            />
           </div>}
           {categoria.id === "cat-veiculos" && <IndicadoresViagens />}
         </>

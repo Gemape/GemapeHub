@@ -482,11 +482,13 @@ export function removerTamanhoGrupoFerramenta(grupoId: string, tamanho: string, 
 }
 
 // Cadastra os grupos e tamanhos da planilha que ainda não existem; nada que já foi cadastrado é mudado nem apagado.
-export function cadastrarTamanhosPadraoFerramentas(storage = storagePadrao()): { grupos: number; tamanhos: number } {
+// `nomes` limita aos grupos escolhidos um a um na tela; sem ele, todos.
+export function cadastrarTamanhosPadraoFerramentas(storage = storagePadrao(), nomes?: string[]): { grupos: number; tamanhos: number } {
   return alterar(storage, (d) => {
     let grupos = 0;
     let tamanhos = 0;
     for (const padrao of TAMANHOS_FERRAMENTAS_PADRAO) {
+      if (nomes && !nomes.some((n) => mesmoNome(n, padrao.grupo))) continue;
       let grupo = d.gruposFerramenta.find((g) => mesmoNome(g.nome, padrao.grupo));
       if (!grupo) {
         grupo = { id: novoId(), nome: capitalizarCadastro(limparNome(padrao.grupo)) };
@@ -502,6 +504,17 @@ export function cadastrarTamanhosPadraoFerramentas(storage = storagePadrao()): {
       if (lista.length > 0) d.tamanhosGrupoFerramenta[grupo.id] = lista;
     }
     return { grupos, tamanhos };
+  });
+}
+
+// Grupos do padrão que ainda faltam (o grupo ou algum subgrupo), com só os subgrupos que faltam: é o que a tela oferece para escolher um a um.
+export function pendentesPadraoFerramentas(storage = storagePadrao()): { nome: string; itens: readonly string[] }[] {
+  const d = lerParametros(storage);
+  return TAMANHOS_FERRAMENTAS_PADRAO.flatMap((p) => {
+    const grupo = d.gruposFerramenta.find((g) => mesmoNome(g.nome, p.grupo));
+    const atuais = grupo ? (d.tamanhosGrupoFerramenta[grupo.id] ?? []) : [];
+    const faltam = p.tamanhos.filter((t) => !atuais.some((x) => mesmoNome(x, t)));
+    return !grupo || faltam.length > 0 ? [{ nome: p.grupo, itens: faltam }] : [];
   });
 }
 
@@ -852,15 +865,39 @@ export function cadastrarPadraoChecklistVeiculos(storage = storagePadrao()): { g
 
 // Inclui as marcas de veículos padrão que ainda não existem (mesmo nome, sem diferenciar
 // maiúsculas ou acentos). O que já está cadastrado não é repetido nem alterado.
-export function cadastrarMarcasPadraoVeiculos(storage = storagePadrao()): { marcas: number } {
+// `nomes` limita às marcas escolhidas uma a uma na tela; sem ele, todas.
+export function cadastrarMarcasPadraoVeiculos(storage = storagePadrao(), nomes?: string[]): { marcas: number } {
   return alterar(storage, (d) => {
     let marcas = 0;
     for (const nome of MARCAS_VEICULO_PADRAO) {
+      if (nomes && !nomes.some((n) => mesmoNome(n, nome))) continue;
       if (d.marcasVeiculo.some((m) => mesmoNome(m.nome, nome))) continue;
       d.marcasVeiculo.push({ id: novoId(), nome });
       marcas += 1;
     }
     return { marcas };
+  });
+}
+
+export function pendentesMarcasPadraoVeiculos(storage = storagePadrao()): { nome: string }[] {
+  const d = lerParametros(storage);
+  return MARCAS_VEICULO_PADRAO.filter((nome) => !d.marcasVeiculo.some((m) => mesmoNome(m.nome, nome))).map((nome) => ({ nome }));
+}
+
+// Tipos de ocorrência de veículo do padrão que ainda não existem, com a descrição de cada um, e o cadastro só dos escolhidos um a um na tela.
+export function pendentesTiposOcorrenciaPadrao(storage = storagePadrao()): { nome: string; itens: readonly string[] }[] {
+  const d = lerParametros(storage);
+  return TIPOS_OCORRENCIA_VEICULO_PADRAO.filter((t) => !d.tiposOcorrenciaVeiculo.some((x) => mesmoNome(x.nome, t.nome))).map((t) => ({ nome: t.nome, itens: [t.descricao] }));
+}
+export function cadastrarTiposOcorrenciaPadrao(nomes: string[], storage = storagePadrao()): number {
+  return alterar(storage, (d) => {
+    let tipos = 0;
+    for (const t of TIPOS_OCORRENCIA_VEICULO_PADRAO) {
+      if (!nomes.some((n) => mesmoNome(n, t.nome)) || d.tiposOcorrenciaVeiculo.some((x) => mesmoNome(x.nome, t.nome))) continue;
+      d.tiposOcorrenciaVeiculo.push({ id: novoId(), nome: capitalizarCadastro(t.nome), descricao: t.descricao });
+      tipos += 1;
+    }
+    return tipos;
   });
 }
 
@@ -1109,10 +1146,12 @@ export function adicionarOpcao(tipo: TipoOpcao, nome: string, storage = storageP
 // Cadastra todos os tamanhos e numerações padrão que ainda não existem, cada um na posição da
 // sequência. O que já está cadastrado (mesmo nome, sem diferenciar maiúsculas) não é repetido
 // nem alterado. Devolve quantos foram incluídos.
-export function cadastrarTamanhosPadrao(storage = storagePadrao()): number {
+// `nomes` limita aos tamanhos escolhidos um a um na tela; sem ele, todos.
+export function cadastrarTamanhosPadrao(storage = storagePadrao(), nomes?: string[]): number {
   return alterar(storage, (d) => {
     let incluidos = 0;
     for (const nome of TAMANHOS_PADRAO) {
+      if (nomes && !nomes.some((n) => mesmoNome(n, nome))) continue;
       if (d.tamanhos.some((t) => mesmoNome(t.nome, nome))) continue;
       // Id novo: um tamanho padrão excluído antes pode ainda estar citado em produtos antigos,
       // e reaproveitar o id antigo faria essa referência órfã voltar a valer.
@@ -1121,6 +1160,12 @@ export function cadastrarTamanhosPadrao(storage = storagePadrao()): number {
     }
     return incluidos;
   });
+}
+
+// Tamanhos e numerações do padrão que ainda não estão cadastrados.
+export function pendentesTamanhosPadrao(storage = storagePadrao()): { nome: string }[] {
+  const d = lerParametros(storage);
+  return TAMANHOS_PADRAO.filter((nome) => !d.tamanhos.some((t) => mesmoNome(t.nome, nome))).map((nome) => ({ nome }));
 }
 
 export function renomearOpcao(

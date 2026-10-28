@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { CadastrarPadraoSelecionado } from "@/components/parametros/CadastrarPadraoSelecionado";
 import { RestaurarPadraoInicial } from "@/components/parametros/VeiculosListasParametros";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  cadastrarTamanhosPadraoFerramentas, definirSubgruposGrupoFerramenta, restaurarPadroesFerramentas, situacoesPadraoFerramentas,
+  cadastrarTamanhosPadraoFerramentas, definirSubgruposGrupoFerramenta, pendentesPadraoFerramentas, restaurarPadroesFerramentas, situacoesPadraoFerramentas,
   type ParametrosBase,
 } from "@/lib/parametros-base";
 import { grupoTemTamanhos } from "@/lib/tamanhos-ferramentas-padrao";
@@ -87,23 +88,12 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            requiresWrite
-            onClick={() =>
-              executar(() => {
-                const { grupos: novos, tamanhos } = cadastrarTamanhosPadraoFerramentas();
-                toast.success(
-                  novos + tamanhos === 0
-                    ? "Os subgrupos padrão já estão cadastrados."
-                    : `${tamanhos} ${tamanhos === 1 ? "subgrupo incluído" : "subgrupos incluídos"} e ${novos} ${novos === 1 ? "grupo novo" : "grupos novos"}.`,
-                );
-              })
-            }
-          >
-            Cadastrar padrão
-          </Button>
+          <CadastrarPadraoSelecionado
+            singular="grupo"
+            plural="grupos"
+            pendentes={pendentesPadraoFerramentas}
+            cadastrar={(nomes) => cadastrarTamanhosPadraoFerramentas(undefined, nomes)}
+          />
           <RestaurarPadraoInicial
             singular="grupo"
             plural="grupos"

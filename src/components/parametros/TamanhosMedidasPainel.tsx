@@ -1,3 +1,4 @@
+import { CadastrarPadraoSelecionado } from "@/components/parametros/CadastrarPadraoSelecionado";
 import { useRef } from "react";
 import { toast } from "sonner";
 
@@ -10,6 +11,7 @@ import {
   adicionarOpcao,
   alterarAtivo,
   cadastrarTamanhosPadrao,
+  pendentesTamanhosPadrao,
   estaAtivo,
   moverOpcao,
   removerOpcao,
@@ -110,22 +112,13 @@ export function TamanhosMedidasPainel({ aninhado = false }: { aninhado?: boolean
         titulo="Cadastro de tamanhos e medidas"
         descricao="Cadastro base de todas as possibilidades de tamanho e numeração, na ordem em que devem aparecer, e das unidades de medida. Desativar tira a opção das listas de seleção; o que já usa continua com ela."
       >
-        <Button
-          requiresWrite
-          variant="outline"
-          onClick={() => {
-            executar(() => {
-              const incluidos = cadastrarTamanhosPadrao();
-              toast.success(
-                incluidos > 0
-                  ? `${incluidos} tamanho(s) e numeração(ões) cadastrados, em sequência.`
-                  : "Todos os tamanhos e numerações padrão já estão cadastrados.",
-              );
-            });
-          }}
-        >
-          Cadastrar tamanhos padrão
-        </Button>
+        <CadastrarPadraoSelecionado
+          rotulo="Cadastrar tamanhos padrão"
+          singular="tamanho ou numeração"
+          plural="tamanhos e numerações"
+          pendentes={pendentesTamanhosPadrao}
+          cadastrar={(nomes) => cadastrarTamanhosPadrao(undefined, nomes)}
+        />
       </Cabecalho>
       <div className="grid gap-5 lg:grid-cols-2">
         {lista("tamanhos", "Novo tamanho ou numeração (ex.: 45, XG)", true)}
