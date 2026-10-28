@@ -63,7 +63,7 @@ test('km do cadastro: lista mostra o maior entre cadastro e registros e a ediç�
 
 test('Habilitados do cadastro inicial (sem vínculo) não são oferecidos de novo pelo nome', () => {
   // Desde a decisão 299 quem escolhe os habilitados é a caixa dupla: o empregado já habilitado (por id ou pelo nome) não volta para a lista da esquerda.
-  const s = fonte('components/parametros/HabilitarEmpregadosViagens.tsx');
+  const s = fonte('components/parametros/CaixaDuplaEmpregados.tsx');
   assert.match(s, /jaHabilitado = new Set\(habilitados\.flatMap\(\(h\) => \[h\.empregadoId, normalizar\(h\.nome\)\]\)\)/);
 });
 

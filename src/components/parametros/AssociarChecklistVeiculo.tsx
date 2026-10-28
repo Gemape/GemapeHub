@@ -19,6 +19,7 @@ import { CHECKLIST_VEICULOS_PADRAO } from "@/lib/checklist-veiculos-padrao";
 import { adicionarGrupoChecklistVeiculo, editarGrupoChecklistVeiculo, removerGrupoChecklistVeiculo, TODOS_OS_TIPOS } from "@/lib/parametros-base";
 import { ehGrupoPersonalizado, ehPersonalizadoDe, nomeGrupoPersonalizado } from "@/lib/grupo-personalizado";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
+import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
 import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
 import { useAccess } from "@/lib/access-context";
@@ -121,10 +122,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
 
   const veiculoEscolhido = veiculoPorId(veiculoId);
   // Responsável: empregado ativo, da empresa do veículo (sem empresa no veículo, de qualquer empresa).
-  const elegiveis = empregados.filter((e) =>
+  // Só quem foi escolhido em Parâmetros > Veículos > Parâmetros Específicos (lista vazia = todos).
+  const elegiveis = soEmpregadosDeVeiculos(empregados.filter((e) =>
     empregadoElegivelPortador({ ativo: e.ativo ?? null, data_demissao: e.data_demissao ?? null } as never) &&
     (!veiculoEscolhido?.["empresa_id"] || e.empresa_id === veiculoEscolhido["empresa_id"]),
-  );
+  ));
   const responsavel = elegiveis.find((e) => e.id === responsavelId) ?? null;
   // Itens que se aplicam ao tipo do veículo e à periodicidade escolhida (Avulso traz só os grupos avulsos).
   const subcategoriaEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never) : null;

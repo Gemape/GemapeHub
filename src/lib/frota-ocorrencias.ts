@@ -5,18 +5,20 @@ import { hojeBrasilia } from "./checklist-veiculo.ts";
 import { lerPrazosOcorrencias, type PrazosOcorrencias } from "./prazo-ocorrencias.ts";
 import { diasEntre } from "./viagens.ts";
 
-export type OcorrenciaDoPrazo = { ocorridoEm: string; status: string; tratativa?: { registradaEm: string } | null };
+export type OcorrenciaDoPrazo = { ocorridoEm: string; status: string; tratativa?: { registradaEm: string } | null; renovacoes?: { em: string }[] };
 type Basica = OcorrenciaDoPrazo & { veiculoId: string };
 
 export const ocorrenciaAberta = (o: { status: string }): boolean => o.status !== "Encerrada";
 
-// Dias que já passaram e o limite do passo em que a ocorrência está. `hoje` é AAAA-MM-DD; a ocorrência vem com a hora (só o dia conta).
+// Dias que já passaram e o limite do passo em que a ocorrência está. `hoje` é AAAA-MM-DD; a ocorrência vem com a hora (só o dia conta). A contagem parte do início
+// do passo ou da última renovação do prazo (decisão 309), o que for mais recente.
 export function prazoDaOcorrencia(o: OcorrenciaDoPrazo, hoje: string, prazos: PrazosOcorrencias = lerPrazosOcorrencias()): { decorridos: number; limite: number } | null {
   if (!ocorrenciaAberta(o)) return null;
-  if (o.status === "Em tratativa" && o.tratativa?.registradaEm) {
-    return { decorridos: diasEntre(hojeBrasilia(new Date(o.tratativa.registradaEm)), hoje), limite: prazos.finalizar };
-  }
-  return { decorridos: diasEntre(o.ocorridoEm.slice(0, 10), hoje), limite: prazos.iniciar };
+  const emTratativa = o.status === "Em tratativa" && !!o.tratativa?.registradaEm;
+  const inicioDoPasso = emTratativa ? hojeBrasilia(new Date(o.tratativa!.registradaEm)) : o.ocorridoEm.slice(0, 10);
+  const ultimaRenovacao = (o.renovacoes ?? []).map((r) => hojeBrasilia(new Date(r.em))).sort().pop() ?? "";
+  const partida = ultimaRenovacao > inicioDoPasso ? ultimaRenovacao : inicioDoPasso;
+  return { decorridos: diasEntre(partida, hoje), limite: emTratativa ? prazos.finalizar : prazos.iniciar };
 }
 
 export function ocorrenciaVencida(o: OcorrenciaDoPrazo, hoje: string, prazos?: PrazosOcorrencias): boolean {

@@ -9,8 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { demoSupabase } from "@/integrations/supabase/demo-client";
 import { lerTodas } from "@/lib/ler-todas";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
+import { HabilitarEmpregadosVeiculos } from "@/components/parametros/HabilitarEmpregadosVeiculos";
 import { IndicadoresViagens } from "@/components/parametros/IndicadoresViagens";
 import { PrazosOcorrenciasVeiculo } from "@/components/parametros/PrazosOcorrenciasVeiculo";
+import { SupervisoresOcorrencias } from "@/components/parametros/SupervisoresOcorrencias";
 import { SubgruposFerramenta } from "@/components/parametros/SubgruposFerramenta";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
@@ -389,7 +391,9 @@ function Categorias() {
               cadastrar={(nomes) => cadastrarMarcasPadraoVeiculos(undefined, nomes)}
             />
           </div>}
+          {categoria.id === "cat-veiculos" && <HabilitarEmpregadosVeiculos />}
           {categoria.id === "cat-veiculos" && <PrazosOcorrenciasVeiculo />}
+          {categoria.id === "cat-veiculos" && <SupervisoresOcorrencias />}
           {categoria.id === "cat-veiculos" && <IndicadoresViagens />}
         </>
       ) : null}

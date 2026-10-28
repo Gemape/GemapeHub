@@ -22,11 +22,11 @@ test("o Questionário de Despesas e os Parâmetros Específicos estão em Parâm
 });
 
 test("a caixa dupla lista todos os empregados ativos à esquerda, move para a direita só quem for habilitado e só grava ao salvar", () => {
-  const tela = ler("components/parametros/HabilitarEmpregadosViagens.tsx");
+  const tela = ler("components/parametros/CaixaDuplaEmpregados.tsx");
+  assert.match(ler("components/parametros/HabilitarEmpregadosViagens.tsx"), /salvarPergunta\(estado, \{ \.\.\.q04, habilitados \}\)/);
   assert.match(tela, /empregados\.filter\(\(e\) => empregadoAtivo\(e\)\)/);
   assert.match(tela, /\.filter\(\(e\) => !jaHabilitado\.has\(e\.id\) && !jaHabilitado\.has\(normalizar\(e\.nome\)\)\)/);
   for (const rotulo of ["Habilitar os empregados marcados", "Habilitar todos os empregados da lista", "Tirar os habilitados marcados", "Tirar todos os habilitados da lista"]) assert.ok(tela.includes(rotulo), rotulo);
-  assert.match(tela, /salvarPergunta\(estado, \{ \.\.\.q04, habilitados \}\)/);
   assert.match(tela, /disabled=\{!alterado\}/);
   assert.match(tela, /AREAS_VIAGEM\.map/);
 });
@@ -99,7 +99,7 @@ test("em todos os módulos o título da página é o nome da aba aberta, e as p�
   for (const f of [
     "components/parametros/AssociarChecklistVeiculo.tsx", "components/parametros/ChecklistParametros.tsx", "components/parametros/ManutencaoParametros.tsx",
     "components/parametros/PlanoManutencaoVeiculo.tsx", "components/parametros/VeiculosListasParametros.tsx", "components/parametros/ChecklistEquipamento.tsx",
-    "components/parametros/EquipamentosEspecificos.tsx", "components/parametros/ManutencaoEquipamento.tsx", "components/parametros/HabilitarEmpregadosViagens.tsx",
+    "components/parametros/EquipamentosEspecificos.tsx", "components/parametros/ManutencaoEquipamento.tsx", "components/parametros/CaixaDuplaEmpregados.tsx",
     "routes/_authenticated/cadastros/equipamentos.tsx", "routes/_authenticated/cadastros/ferramentas.tsx", "routes/_authenticated/caixas-ferramentas.tsx",
     "routes/_authenticated/epi-cadastrar.tsx", "routes/_authenticated/epi-ficha.tsx", "routes/_authenticated/uniformes-cadastrar.tsx",
   ]) assert.doesNotMatch(ler(f), antigos, f);
@@ -122,7 +122,7 @@ test("a lista do check list periódico mostra, como Sem previsão, o que não ca
 });
 
 test("a caixa dupla compara os habilitados sem depender da ordem e o construtor do questionário não edita mais a lista", () => {
-  const caixa = ler("components/parametros/HabilitarEmpregadosViagens.tsx");
+  const caixa = ler("components/parametros/CaixaDuplaEmpregados.tsx");
   assert.match(caixa, /const assinatura = \(l: Habilitado\[\]\) => JSON\.stringify\(l\.map\(\(h\) => \[chaveDe\(h\), h\.area\]\)\.sort\(\)\)/);
   assert.doesNotMatch(ler("components/parametros/QuestionarioDespesasConstrutor.tsx"), /AdicionarHabilitado/);
 });
@@ -141,7 +141,31 @@ test("o texto pequeno do alto de toda página é o nome do card, por qualquer ca
   assert.equal(card("/cadastros/gerais/codigo-produto"), "Gerais");
   // Telas repetidas em mais de um card se resolvem pelo ?de=
   assert.equal(card("/cadastros/gerais/categorias", { de: "veiculos" }), "Veículos");
-  for (const f of ["components/modules/PaginaModulo.tsx", "routes/_authenticated/veiculos.tsx", "routes/_authenticated/equipamentos.tsx", "routes/_authenticated/viagens.tsx", "components/parametros/Cabecalho.tsx", "components/parametros/HabilitarEmpregadosViagens.tsx"]) {
+  for (const f of ["components/modules/PaginaModulo.tsx", "routes/_authenticated/veiculos.tsx", "routes/_authenticated/equipamentos.tsx", "routes/_authenticated/viagens.tsx", "components/parametros/Cabecalho.tsx", "components/parametros/CaixaDuplaEmpregados.tsx"]) {
     assert.match(ler(f), /<EyebrowDoCard fallback=/, f);
+  }
+});
+
+test("Parâmetros Específicos de Veículos tem a mesma caixa dupla de Viagens, com lista própria e a área de cada empregado (decisão 308)", async () => {
+  const { lerEmpregadosDeVeiculos, salvarEmpregadosDeVeiculos, soEmpregadosDeVeiculos } = await import("../src/lib/empregados-veiculos.ts");
+  const s = memoria();
+  assert.deepEqual(lerEmpregadosDeVeiculos(s), []);
+  const lista = [{ empregadoId: "e1", nome: "Ana", area: "Oficina" }, { empregadoId: null, nome: "Bruno", area: "PCM" }];
+  salvarEmpregadosDeVeiculos(lista, s);
+  assert.deepEqual(lerEmpregadosDeVeiculos(s), lista);
+  assert.throws(() => salvarEmpregadosDeVeiculos([{ empregadoId: "e2", nome: "Carlos", area: "Outra" }], s), /inválidos/);
+  s.setItem("gemape-demo-veiculos-empregados", "{ lixo");
+  assert.deepEqual(lerEmpregadosDeVeiculos(s), [], "ilegível volta à lista vazia");
+  // Lista vazia não restringe; com lista, só entram os escolhidos (pelo id ou, sem vínculo, pelo nome).
+  const todos = [{ id: "e1", nome: "Ana" }, { id: "e2", nome: "Bruno" }, { id: "e3", nome: "Carlos" }];
+  assert.equal(soEmpregadosDeVeiculos(todos, memoria()).length, 3);
+  salvarEmpregadosDeVeiculos(lista, s);
+  assert.deepEqual(soEmpregadosDeVeiculos(todos, s).map((e) => e.id), ["e1", "e2"]);
+  // A de Viagens é outra lista: guardada na pergunta do questionário, não nesta chave.
+  assert.doesNotMatch(ler("components/parametros/HabilitarEmpregadosViagens.tsx"), /empregados-veiculos/);
+  assert.match(ler("components/parametros/HabilitarEmpregadosVeiculos.tsx"), /<CaixaDuplaEmpregados[\s\S]*secao/);
+  assert.match(ler("routes/_authenticated/cadastros/gerais/categorias.tsx"), /categoria\.id === "cat-veiculos" && <HabilitarEmpregadosVeiculos \/>/);
+  for (const f of ["components/modules/ChecklistVeiculoModulo.tsx", "components/parametros/AssociarChecklistVeiculo.tsx", "components/modules/OcorrenciasVeiculoModulo.tsx", "components/modules/VeiculosCadastroModulo.tsx"]) {
+    assert.match(ler(f), /soEmpregadosDeVeiculos\(/, f);
   }
 });
