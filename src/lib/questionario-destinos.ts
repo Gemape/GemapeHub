@@ -13,8 +13,21 @@ export const prefixoPergunta = "pergunta:";
 export const destinoPergunta = (id: string): string => `${prefixoPergunta}${id}`;
 export const idDoDestino = (destino: string): string | null => (destino.startsWith(prefixoPergunta) ? destino.slice(prefixoPergunta.length) : null);
 
-// Só pergunta de uma única resposta, com opções escritas nela, ramifica (caixas com mais de uma marcação não tem destino único).
-export const aceitaDestino = (p: Pergunta): boolean => aceitaCondicao(p) && !p.multiplas;
+// Toda pergunta pode ramificar (decisão 311), menos a de tipos de despesa, cujo "destino" é o próprio questionário de cada tipo. Há dois jeitos:
+// - por resposta: só pergunta de uma única resposta, com opções escritas nela (caixas com mais de uma marcação não tem destino único);
+// - para qualquer resposta (OPCAO_QUALQUER): o destino vale depois da pergunta, seja qual for a resposta; é o jeito das perguntas sem opções escritas
+//   (texto, data, hora, valor, imagem, lista de clientes, municípios ou empregados) e das de várias marcações. Quando a pergunta também ramifica por resposta,
+//   o destino da resposta vale primeiro e o de qualquer resposta cobre as demais.
+export const OPCAO_QUALQUER = "*";
+export const aceitaDestinoPorOpcao = (p: Pergunta): boolean => aceitaCondicao(p) && !p.multiplas;
+export const aceitaDestino = (p: Pergunta): boolean => p.id !== ID_TIPO_DESPESA;
+
+// Destino que vale para a resposta dada: o da opção marcada (nas perguntas que ramificam por resposta) ou, na falta dele, o de qualquer resposta.
+export function destinoDaResposta(destinosDaPergunta: Record<string, string> | undefined, p: Pergunta, resposta: string | string[] | undefined): string | undefined {
+  if (!destinosDaPergunta) return undefined;
+  const daOpcao = aceitaDestinoPorOpcao(p) ? destinosDaPergunta[opcaoRespondida(resposta) ?? ""] : undefined;
+  return daOpcao ?? destinosDaPergunta[OPCAO_QUALQUER];
+}
 
 export const destinosDoTipo = (e: Estado, tipo: string): Record<string, Record<string, string>> => e.destinos?.[tipo] ?? {};
 
@@ -32,13 +45,15 @@ export function pendencias(e: Estado, tipo: string): Pendencia[] {
     const origem = e.perguntas.find((p) => p.id === perguntaId);
     if (!origem || !ids.includes(perguntaId)) continue;
     if (!aceitaDestino(origem)) {
-      lista.push({ perguntaId, opcao: Object.keys(porOpcao).join(", "), motivo: "A pergunta não aceita mais ramificação (mais de uma resposta ou sem opções escritas)." });
+      lista.push({ perguntaId, opcao: Object.keys(porOpcao).join(", "), motivo: "A pergunta não aceita ramificação." });
       continue;
     }
     for (const [opcao, destino] of Object.entries(porOpcao)) {
       const alvo = idDoDestino(destino);
-      if (destino === DESTINO_PROXIMA_SECAO && inicioDaProximaSecao(e, tipo, perguntaId) === null) lista.push({ perguntaId, opcao, motivo: "Não há seção depois desta pergunta." });
-      else if (!origem.opcoes.includes(opcao)) lista.push({ perguntaId, opcao, motivo: "A opção não existe mais." });
+      const porResposta = opcao !== OPCAO_QUALQUER;
+      if (porResposta && !aceitaDestinoPorOpcao(origem)) lista.push({ perguntaId, opcao, motivo: "A pergunta não ramifica mais por resposta (mais de uma resposta ou sem opções escritas)." });
+      else if (destino === DESTINO_PROXIMA_SECAO && inicioDaProximaSecao(e, tipo, perguntaId) === null) lista.push({ perguntaId, opcao, motivo: "Não há seção depois desta pergunta." });
+      else if (porResposta && !origem.opcoes.includes(opcao)) lista.push({ perguntaId, opcao, motivo: "A opção não existe mais." });
       else if (alvo !== null && !ids.includes(alvo)) lista.push({ perguntaId, opcao, motivo: "A pergunta de destino saiu do questionário." });
     }
   }
@@ -56,7 +71,7 @@ export function limparPendencias(e: Estado, tipo: string, storage: StorageLike =
     if (!atual) continue;
     const origem = e.perguntas.find((p) => p.id === a.perguntaId);
     if (!origem || !aceitaDestino(origem)) { delete porPergunta[a.perguntaId]; continue; }
-    const { [a.opcao]: _removida, ...resto } = atual;
+    const resto = Object.fromEntries(Object.entries(atual).filter(([o]) => o !== a.opcao));
     if (Object.keys(resto).length) porPergunta[a.perguntaId] = resto;
     else delete porPergunta[a.perguntaId];
   }
@@ -111,7 +126,10 @@ export function gravarDestino(e: Estado, tipo: string, perguntaId: string, opcao
   const ids = questionarioDoTipo(e, tipo);
   const origem = e.perguntas.find((p) => p.id === perguntaId);
   if (perguntaId === ID_TIPO_DESPESA || !origem || !ids.includes(perguntaId) || !aceitaDestino(origem)) throw new Error("Esta pergunta não ramifica.");
-  if (!origem.opcoes.includes(opcao)) throw new Error("Escolha uma opção da pergunta.");
+  if (opcao !== OPCAO_QUALQUER) {
+    if (!aceitaDestinoPorOpcao(origem)) throw new Error("Esta pergunta não ramifica por resposta: use o destino para qualquer resposta.");
+    if (!origem.opcoes.includes(opcao)) throw new Error("Escolha uma opção da pergunta.");
+  }
   const { [opcao]: _antigo, ...resto } = e.destinos?.[tipo]?.[perguntaId] ?? {};
   if (destino !== null && destino !== DESTINO_ENCERRAR && destino !== DESTINO_PROXIMA_SECAO) {
     const alvo = idDoDestino(destino);

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { aceitaDestino, destinoPergunta, destinosDoTipo, gravarDestino, pendencias, semDestinosDaOpcao } from "../src/lib/questionario-destinos.ts";
+import { OPCAO_QUALQUER, aceitaDestino, aceitaDestinoPorOpcao, destinoDaResposta, destinoPergunta, destinosDoTipo, gravarDestino, pendencias, semDestinosDaOpcao } from "../src/lib/questionario-destinos.ts";
 import { ID_HABILITADOS, estadoPadrao, gravarEstado, lerEstado, questionarioDoTipo, salvarPergunta, tiposDeDespesa } from "../src/lib/questionario-despesas.ts";
 
 const ler = (f) => readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
@@ -168,4 +168,96 @@ test("Parâmetros Específicos de Veículos tem a mesma caixa dupla de Viagens, 
   for (const f of ["components/modules/ChecklistVeiculoModulo.tsx", "components/parametros/AssociarChecklistVeiculo.tsx", "components/modules/OcorrenciasVeiculoModulo.tsx", "components/modules/VeiculosCadastroModulo.tsx"]) {
     assert.match(ler(f), /soEmpregadosDeVeiculos\(/, f);
   }
+});
+
+import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
+
+test("toda pergunta pode ramificar, menos a de tipos de despesa: por resposta quando há opções, ou depois da pergunta para qualquer resposta (decisão 311)", () => {
+  const e = estadoPadrao();
+  const semTipo = e.perguntas.filter((p) => p.id !== "q-03");
+  assert.ok(semTipo.length > 10);
+  assert.ok(semTipo.every((p) => aceitaDestino(p)), "todas as outras perguntas ramificam");
+  assert.equal(aceitaDestino(e.perguntas.find((p) => p.id === "q-03")), false);
+  // Há perguntas de todos os tipos que não ramificam por resposta: elas usam o destino para qualquer resposta.
+  const semOpcoes = semTipo.filter((p) => !aceitaDestinoPorOpcao(p));
+  assert.ok(semOpcoes.length > 0 && semOpcoes.some((p) => p.tipo === "upload") && semOpcoes.some((p) => p.tipo === "data"));
+  // O destino da resposta vale primeiro; o de qualquer resposta cobre as demais respostas (e as perguntas sem opções).
+  const lista = e.perguntas.find((p) => aceitaDestinoPorOpcao(p));
+  const opcao = lista.opcoes[0];
+  const destinos = { [opcao]: "encerrar", [OPCAO_QUALQUER]: "pergunta:q-x" };
+  assert.equal(destinoDaResposta(destinos, lista, opcao), "encerrar");
+  assert.equal(destinoDaResposta(destinos, lista, "outra"), "pergunta:q-x");
+  assert.equal(destinoDaResposta({ [OPCAO_QUALQUER]: "encerrar" }, semOpcoes[0], "qualquer coisa"), "encerrar");
+  assert.equal(destinoDaResposta(undefined, lista, opcao), undefined);
+});
+
+test("o destino para qualquer resposta é gravado, não gera ação requerida e muda o fluxo do formulário", () => {
+  const s = memoria();
+  gravarEstado(estadoPadrao(), s);
+  let e = lerEstado(s);
+  const tipo = tiposDeDespesa(e)[0];
+  const ids = questionarioDoTipo(e, tipo);
+  const semOpcoes = ids.map((id) => e.perguntas.find((p) => p.id === id)).filter((p) => p.id !== "q-03" && !aceitaDestinoPorOpcao(p));
+  assert.ok(semOpcoes.length > 0);
+  const origem = semOpcoes[0];
+  const pos = ids.indexOf(origem.id);
+  assert.ok(pos >= 0 && pos < ids.length - 1);
+  e = gravarDestino(e, tipo, origem.id, OPCAO_QUALQUER, "encerrar", s);
+  assert.equal(destinosDoTipo(e, tipo)[origem.id][OPCAO_QUALQUER], "encerrar");
+  assert.deepEqual(pendencias(e, tipo), [], "qualquer resposta não depende de opção existente");
+  // Encerra o formulário logo depois da pergunta, seja qual for a resposta.
+  const visiveis = perguntasVisiveis(e, tipo, {}).map((p) => p.id);
+  assert.equal(visiveis.at(-1), origem.id);
+  // Por resposta continua exigindo uma pergunta com opções escritas.
+  assert.throws(() => gravarDestino(e, tipo, origem.id, "Sim", "encerrar", s), /não ramifica por resposta/);
+  assert.throws(() => gravarDestino(e, tipo, "q-03", OPCAO_QUALQUER, "encerrar", s), /não ramifica/);
+  // Tirar o destino volta ao fluxo normal.
+  e = gravarDestino(e, tipo, origem.id, OPCAO_QUALQUER, null, s);
+  assert.equal(destinosDoTipo(e, tipo)[origem.id], undefined);
+  assert.ok(perguntasVisiveis(e, tipo, {}).length > visiveis.length);
+});
+
+test("o card de toda pergunta tem a ramificação: por resposta ou Depois desta pergunta", () => {
+  const c = ler("components/parametros/QuestionarioDespesasConstrutor.tsx");
+  assert.match(c, /canWrite && !fixa && \(travada \|\| !aceitaDestinoPorOpcao\(p\) \|\| destinosDoTipo\(estado, tipoAtual\)\[id\]\?\.\[OPCAO_QUALQUER\] !== undefined\) && \(\s*<DestinoDaPergunta/);
+  assert.match(c, /onDestino=\{\(valor\) => mudarDestino\(p, OPCAO_QUALQUER, valor\)\}/);
+  assert.match(c, /ramifica=\{aceitaDestinoPorOpcao\(p\)\}/);
+  assert.match(c, /Depois desta pergunta/);
+  assert.match(c, /cada tipo tem o seu próprio questionário/);
+});
+
+import { podarOcultas, chaveOutro } from "../src/lib/questionario-respostas.ts";
+import { ID_NOME_EMPREGADO, ID_PCM_RESPONDE, ID_TECNICO_RESPONSAVEL, OPCAO_AVULSO, OPCAO_NAO_CONFORMIDADE } from "../src/lib/questionario-despesas.ts";
+
+test("PCM responde decide qual pergunta aparece: Técnico que não lançou (não conformidade) ou Nome do empregado (avulso); a escondida perde a resposta (decisão 313)", () => {
+  const e = estadoPadrao();
+  const tipo = "Alimentação";
+  const ID_NAO_LANCOU = ID_TECNICO_RESPONSAVEL; // "Técnico que não lançou a despesa" (q-14) só abre pela não conformidade
+  // Quem lança pelo PCM (pergunta 04 = área PCM) abre PCM responde.
+  const base = { "q-04": "Fulano de Tal (PCM)" };
+  const visiveis = (r) => perguntasVisiveis(e, tipo, r).map((p) => p.id);
+  const semResposta = visiveis(base);
+  assert.ok(!semResposta.includes(ID_NOME_EMPREGADO) && !semResposta.includes(ID_NAO_LANCOU), "sem escolher em PCM responde nenhuma das duas aparece");
+  const naoConformidade = visiveis({ ...base, [ID_PCM_RESPONDE]: OPCAO_NAO_CONFORMIDADE });
+  assert.ok(naoConformidade.includes(ID_NAO_LANCOU) && !naoConformidade.includes(ID_NOME_EMPREGADO));
+  const avulso = visiveis({ ...base, [ID_PCM_RESPONDE]: OPCAO_AVULSO });
+  assert.ok(avulso.includes(ID_NOME_EMPREGADO) && !avulso.includes(ID_NAO_LANCOU));
+
+  // Trocar a opção limpa a resposta da pergunta que ficou escondida (inclusive o texto do "Outro"), sem mexer no resto.
+  const antes = { ...base, [ID_PCM_RESPONDE]: OPCAO_AVULSO, [ID_NOME_EMPREGADO]: "Maria", [ID_NAO_LANCOU]: ["Roberto"], [chaveOutro(ID_NAO_LANCOU)]: "texto" };
+  const depois = podarOcultas(e, tipo, antes);
+  assert.equal(depois[ID_NOME_EMPREGADO], "Maria");
+  assert.equal(depois[ID_NAO_LANCOU], undefined);
+  assert.equal(depois[chaveOutro(ID_NAO_LANCOU)], undefined);
+  assert.equal(depois[ID_PCM_RESPONDE], OPCAO_AVULSO);
+  const virou = podarOcultas(e, tipo, { ...depois, [ID_PCM_RESPONDE]: OPCAO_NAO_CONFORMIDADE });
+  assert.equal(virou[ID_NOME_EMPREGADO], undefined, "ao virar não conformidade, o nome do empregado do avulso some");
+  // Sem nada a podar, devolve o mesmo objeto (o formulário não entra em ciclo de atualização).
+  assert.equal(podarOcultas(e, tipo, depois), depois);
+});
+
+test("a Unidade da Federação, que é travada e tem opções, também tem a ramificação Depois desta pergunta", () => {
+  const c = ler("components/parametros/QuestionarioDespesasConstrutor.tsx");
+  assert.match(c, /\(travada \|\| !aceitaDestinoPorOpcao\(p\) \|\|/);
+  assert.match(ler("components/parametros/QuestionarioFormulario.tsx"), /setRespostas\(\(r\) => podarOcultas\(estado, tipo, r\)\)/);
 });

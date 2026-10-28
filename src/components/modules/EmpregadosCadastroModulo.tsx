@@ -33,7 +33,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
 import { exportarCsv, formatarData } from "@/lib/gemape";
+import { camposDeBusca } from "@/lib/busca-cadastro";
 import { empregadoAtivo, mascararCpf, prepararEmpregado, separarEmpregados } from "@/lib/empregados";
+import { combinaBusca } from "@/lib/parametros-base";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 import { lerTodas } from "@/lib/ler-todas";
@@ -59,7 +61,13 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
   useAbrirDireto(direto, empresas.length > 0, aberto, abrirNovo, aoConcluir);
   const { data: lista = [], isLoading } = useEmpregados(empresaId);
   const empregados = lista as EmpregadoCadastro[];
-  const { ativos, inativos } = separarEmpregados(empregados);
+  // Busca por palavra-chave em todos os campos (decisão 312), nos dois blocos: ativos e demitidos / inativos.
+  const [busca, setBusca] = useState("");
+  const empresaDe = (id: string | null) => empresas.find((x) => x.id === id)?.nome_fantasia ?? "";
+  const encontrados = empregados.filter((e) =>
+    combinaBusca(busca, ...camposDeBusca(e, [empresaDe(e.empresa_id), formatarData(e.data_admissao), formatarData(e.data_demissao), empregadoAtivo(e) ? "Ativo" : "Inativo Demitido", mascararCpf(e.cpf)])),
+  );
+  const { ativos, inativos } = separarEmpregados(encontrados);
   const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
   // Empregado antigo sem empresa: a empresa precisa ser escolhida, não é preenchida sozinha.
   const empresaForm = empresaSel || (base ? "" : empresaPadrao);
@@ -169,6 +177,11 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
         </div>
       </header>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <Input aria-label="Buscar empregado por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        {busca.trim() && <p className="text-sm text-muted-foreground">{encontrados.length} de {empregados.length} empregado(s).</p>}
+      </div>
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : (
@@ -176,7 +189,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
           <BlocoEmpregados
             titulo={`Ativos (${ativos.length})`}
             lista={ativos}
-            vazio="Nenhum empregado ativo."
+            vazio={busca.trim() ? "Nenhum empregado ativo encontrado para a busca." : "Nenhum empregado ativo."}
             nomeEmpresa={nomeEmpresa}
             onClonar={(e) => abrir(e, true)}
             onEditar={(e) => abrir(e)}
@@ -187,7 +200,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
           <BlocoEmpregados
             titulo={`Demitidos / inativos (${inativos.length})`}
             lista={inativos}
-            vazio="Nenhum empregado inativo."
+            vazio={busca.trim() ? "Nenhum empregado inativo encontrado para a busca." : "Nenhum empregado inativo."}
             nomeEmpresa={nomeEmpresa}
             onClonar={(e) => abrir(e, true)}
             onEditar={(e) => abrir(e)}

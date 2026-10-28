@@ -33,7 +33,7 @@ import {
 import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { paginasDoPreenchimento } from "@/lib/questionario-secoes";
 import { SEM_CLIENTE_VINCULADO } from "@/lib/viagens";
-import { aplicarFormato, chaveAbastecimento, chaveJustificativaPedida, chaveManutencao, chaveOutro, marcouOutro, perguntasVisiveis, trazerAbastecimento, trazerManutencao, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
+import { aplicarFormato, chaveAbastecimento, chaveJustificativaPedida, chaveManutencao, chaveOutro, marcouOutro, perguntasVisiveis, podarOcultas, trazerAbastecimento, trazerManutencao, validarRespostas, type Resposta, type Respostas } from "@/lib/questionario-respostas";
 import {
   atualizarResposta, despesaEmRelatorio, listarRespostas, registrarResposta, removerResposta, respostasParaEdicao, resumoDaResposta, tipoEscolhido, type RespostaRegistrada,
 } from "@/lib/respostas-despesas";
@@ -78,6 +78,14 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
     const inicial = estado.perguntas.find((p) => p.id === ID_TIPO_DESPESA);
     return inicial ? [inicial] : [];
   }, [estado, tipo, tipos, respostas]);
+  // Pergunta que ficou oculta por uma condição ou ramificação perde a resposta digitada (decisão 313); sem nada a podar, o estado não muda e não há novo ciclo.
+  useEffect(() => {
+    if (!tipo || !tipos.includes(tipo)) return;
+    setRespostas((r) => podarOcultas(estado, tipo, r));
+    // As imagens anexadas numa pergunta de upload escondida saem junto com a resposta (senão voltam à tela sem resposta ou seguem no envio).
+    const ids = new Set(visiveis.map((p) => p.id));
+    setImagens((x) => (Object.keys(x).every((id) => ids.has(id)) ? x : Object.fromEntries(Object.entries(x).filter(([id]) => ids.has(id)))));
+  }, [estado, tipo, tipos, respostas, visiveis]);
   // Erro de pergunta que saiu da tela (troca de tipo, condição) não fica pendurado.
   const errosVisiveis = Object.fromEntries(Object.entries(erros).filter(([id]) => visiveis.some((p) => p.id === id)));
   // Aberto por um card de Viagens (dec 183): o tipo já vem do card, então a pergunta de tipos de despesa não aparece (a resposta segue valendo).

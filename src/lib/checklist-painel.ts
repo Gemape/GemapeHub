@@ -160,7 +160,12 @@ export function painelDoMes(
         concluidoEm: feito?.concluidoEm ?? null,
       };
     });
-  // Só os obrigatórios entram na contagem e nos percentuais; o opcional aparece na lista (decisão 125).
+  return { linhas, resumo: resumoDeLinhas(linhas) };
+}
+
+// Os números do painel para qualquer conjunto de linhas (todas, ou só as de um grupo de responsáveis, como técnicos e PCM; decisão 310).
+// Só os obrigatórios entram na contagem e nos percentuais; o opcional aparece na lista (decisão 125).
+export function resumoDeLinhas(linhas: LinhaPainel[]): ResumoPainel {
   const obrigatorias = linhas.filter((l) => l.obrigatorio !== false);
   const conta = (s: SituacaoPrevisao) => obrigatorias.filter((l) => l.situacao === s).length;
   const realizados = conta("realizado");
@@ -169,12 +174,9 @@ export function painelDoMes(
   // Em décimos de ponto; o não realizado é o que falta para 100%, assim os dois somam sempre 100%.
   const decimosNoPrazo = base === 0 ? null : Math.round((realizados / base) * 1000);
   return {
-    linhas,
-    resumo: {
-      previstos: obrigatorias.length, opcionais: linhas.length - obrigatorias.length, realizados, naoRealizados, aVencer: conta("a_vencer"),
-      pctNoPrazo: decimosNoPrazo === null ? null : decimosNoPrazo / 10,
-      pctNaoNoPrazo: decimosNoPrazo === null ? null : (1000 - decimosNoPrazo) / 10,
-    },
+    previstos: obrigatorias.length, opcionais: linhas.length - obrigatorias.length, realizados, naoRealizados, aVencer: conta("a_vencer"),
+    pctNoPrazo: decimosNoPrazo === null ? null : decimosNoPrazo / 10,
+    pctNaoNoPrazo: decimosNoPrazo === null ? null : (1000 - decimosNoPrazo) / 10,
   };
 }
 
