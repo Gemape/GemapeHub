@@ -171,3 +171,15 @@ test("Cadastrar empregado, veículo e itens, de dentro da associação, abrem o 
   assert.doesNotMatch(eq, /irParaItens/);
   assert.match(eq, /linkCadastro\("Cadastrar itens de check list", \(\) => setItensAberto\(true\)\)/);
 });
+
+test("todo campo de arquivo mostra o botão Escolher arquivo(s) no lugar do campo nativo", () => {
+  const campo = ler("components/ui/input.tsx");
+  assert.match(campo, /if \(type === "file"\) return <CampoArquivo/);
+  assert.match(campo, /Escolher arquivos/);
+  assert.match(campo, /Nenhum arquivo escolhido/);
+  assert.match(campo, /className="sr-only"/);
+  // Todo <Input type="file"> do sistema passa por esse campo: nenhum <input type="file"> visível fora dos botões de câmera e anexo (hidden).
+  for (const f of ["components/modules/ImportarNfeXml.tsx", "components/parametros/ImportarNfeCodigoFabrica.tsx", "components/parametros/QuestionarioFormulario.tsx"]) {
+    assert.match(ler(f), /<Input[^>]*\n?\s*(ref=\{arquivo\}\s*)?type="file"/s, f);
+  }
+});

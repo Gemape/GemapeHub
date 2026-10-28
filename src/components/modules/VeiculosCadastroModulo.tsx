@@ -193,7 +193,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
   // Novo veículo (na demonstração, já com um exemplo preenchido).
   function novoVeiculo() {
     return import.meta.env.VITE_DEMO_MODE !== "false"
-      ? todosVeiculos().then((todos) => exemploVeiculo(todos, empresaPadrao, parametros.marcasVeiculo[0]?.nome ?? "Fiat") as unknown as VeiculoCadastro, () => undefined).then((exemplo) => abrirNovo(exemplo))
+      ? todosVeiculos().then((todos) => { try { return exemploVeiculo(todos, empresaPadrao, parametros.marcasVeiculo[0]?.nome ?? "Fiat") as unknown as VeiculoCadastro; } catch { return undefined; } }, () => undefined).then((exemplo) => abrirNovo(exemplo))
       : abrirNovo();
   }
   useAbrirDireto(direto, empresas.length > 0, aberto, novoVeiculo, aoConcluir);

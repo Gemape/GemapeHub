@@ -10,13 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hojeBrasilia } from "@/lib/checklist-veiculo";
 import { hojeLocal } from "@/lib/empregados";
+import { resumoOcorrenciasDoVeiculo, textoOcorrenciasDaFrota } from "@/lib/frota-ocorrencias";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { kmAtualDoVeiculo, sugestoesPreventivas } from "@/lib/extrato-veiculo";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
 import { montarFrotaHtml } from "@/lib/frota-relatorio-html";
 import { combinaBusca } from "@/lib/parametros-base";
 import { normalizarPlaca } from "@/lib/veiculos";
-import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
+import { useAbastecimentos, useManutencoesVeiculo, useOcorrenciasVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
@@ -33,6 +34,7 @@ export function FrotaModulo() {
   const abastecimentos = useAbastecimentos();
   const manutencoes = useManutencoesVeiculo();
   const planos = usePlanosVeiculo();
+  const ocorrencias = useOcorrenciasVeiculo();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState<string | null>(null);
   const hoje = hojeLocal();
@@ -53,6 +55,8 @@ export function FrotaModulo() {
     }).filter((s) => s.status === "vencida").length;
   };
 
+  const ocorrenciasDo = (id: string) => resumoOcorrenciasDoVeiculo(ocorrencias, id, hoje);
+
   const kmDo = (v: (typeof veiculos)[number]) =>
     kmAtualDoVeiculo(
       v.quilometragem_atual,
@@ -69,13 +73,18 @@ export function FrotaModulo() {
         empresa,
         geradoEm: new Date().toISOString(),
         busca: busca.trim(),
-        linhas: lista.map((v) => ({
-          veiculo: rotuloDoVeiculo(parametros, v),
-          responsavel: nomeResponsavel(v.empregado_responsavel_id),
-          situacao: STATUS[v.status] ?? v.status,
-          km: kmDo(v),
-          vencidas: vencidasDo(v.id),
-        })),
+        linhas: lista.map((v) => {
+          const oc = ocorrenciasDo(v.id);
+          return {
+            veiculo: rotuloDoVeiculo(parametros, v),
+            responsavel: nomeResponsavel(v.empregado_responsavel_id),
+            situacao: STATUS[v.status] ?? v.status,
+            km: kmDo(v),
+            vencidas: vencidasDo(v.id),
+            ocorrenciasAbertas: oc.abertas,
+            ocorrenciasVencidas: oc.vencidas,
+          };
+        }),
       }),
       arquivo: nomeArquivoDocumento("Relatorio da frota", empresa, hojeBrasilia()),
     });
@@ -109,17 +118,19 @@ export function FrotaModulo() {
               <TableHead>Situação</TableHead>
               <TableHead className="text-right">Km atual</TableHead>
               <TableHead>Preventivas</TableHead>
+              <TableHead>Ocorrências</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Carregando...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Carregando...</TableCell></TableRow>}
             {!isLoading && lista.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum veículo encontrado.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Nenhum veículo encontrado.</TableCell></TableRow>
             )}
             {lista.map((v) => {
               const vencidas = vencidasDo(v.id);
               const km = kmDo(v);
+              const oc = ocorrenciasDo(v.id);
               return (
                 <TableRow key={v.id} className="cursor-pointer" onClick={() => setAberto(v.id)}>
                   <TableCell className="font-medium">{rotuloDoVeiculo(parametros, v)}</TableCell>
@@ -128,6 +139,9 @@ export function FrotaModulo() {
                   <TableCell className="text-right">{km.toLocaleString("pt-BR")}</TableCell>
                   <TableCell className={vencidas > 0 ? "font-medium text-destructive" : "text-muted-foreground"}>
                     {vencidas > 0 ? `🔴 ${vencidas} vencida(s)` : "Sem vencidas"}
+                  </TableCell>
+                  <TableCell className={oc.vencidas > 0 ? "font-medium text-destructive" : oc.abertas > 0 ? "font-medium" : "text-muted-foreground"}>
+                    {oc.vencidas > 0 ? "🔴 " : ""}{textoOcorrenciasDaFrota(oc)}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setAberto(v.id); }}>Ver extrato</Button>

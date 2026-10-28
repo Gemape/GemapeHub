@@ -105,11 +105,10 @@ test("o extrato do veículo e o do equipamento abrem o relatório direto, em tel
   assert.match(html, /<span class="ponto" style="background: #64748b;"><\/span><span style="color: #64748b; ">Sem registro/);
   assert.match(html, /<td colspan="1" class="vazio">Nenhuma ocorrência registrada\.<\/td>/);
   assert.match(html, /@media screen \{[\s\S]*\.folha \{ width: auto; min-height: 100vh/, "na tela a folha ocupa a largura toda; ao imprimir segue A4");
-  // Ver extrato (veículo) e Extrato (equipamento) abrem o relatório na hora, em tela cheia, sem janela intermediária.
+  // Extrato (equipamento) abre o relatório na hora, em tela cheia. O do veículo passa por uma janela com período e atalhos (decisão 296) e abre o relatório em tela cheia.
   const veiculo = ler("components/modules/ExtratoVeiculo.tsx");
-  assert.match(veiculo, /abrirDocumento\(\{ titulo: "Extrato do veículo", html[^}]*telaCheia: true \}\)/);
-  assert.match(veiculo, /useEffect\(\(\) => \{\s*if \(!veiculo\) return;\s*abrirRelatorio\(veiculo\);\s*onFechar\(\);/);
-  assert.doesNotMatch(veiculo, /<Dialog/);
+  assert.match(veiculo, /abrirDocumento\(\{ titulo: TITULO\[secao\], html[^}]*telaCheia: true \}\)/);
+  assert.match(veiculo, /<Dialog open=\{!!veiculo\}/);
   const equip = ler("components/modules/equipamento/InventarioEquipamentoModulo.tsx");
   assert.match(equip, /onClick=\{\(\) => gerarRelatorio\(e\)\}>Extrato<\/Button>/);
   assert.match(equip, /telaCheia: true/);

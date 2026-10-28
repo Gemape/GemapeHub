@@ -11,7 +11,7 @@ export function DialogCadastroEmpregados({ aberto, onAbrirMudou }: { aberto: boo
       <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
         <DialogHeader className="sr-only">
           <DialogTitle>Empregados</DialogTitle>
-          <DialogDescription>Cadastre ou ajuste o empregado e feche a janela: a associação continua de onde parou.</DialogDescription>
+          <DialogDescription>Preencha o novo empregado e salve ou cancele: a associação continua de onde parou.</DialogDescription>
         </DialogHeader>
         {aberto && <EmpregadosCadastroModulo direto aoConcluir={() => onAbrirMudou(false)} />}
       </DialogContent>

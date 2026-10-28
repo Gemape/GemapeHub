@@ -5,6 +5,7 @@ import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAccess } from "@/lib/access-context";
 import { combinaBusca } from "@/lib/parametros-base";
@@ -34,12 +35,17 @@ export function ManutencaoVeiculoModulo() {
   // Manutenção em edição; null é o cadastro de uma nova.
   const [editando, setEditando] = useState<ManutencaoVeiculo | null>(null);
   const [busca, setBusca] = useState("");
+  // Período da lista (AAAA-MM-DD, as duas pontas valem); vazio = sem limite daquele lado.
+  const [inicio, setInicio] = useState("");
+  const [fim, setFim] = useState("");
+  const periodoInvalido = !!inicio && !!fim && inicio > fim;
 
   const acoes = parametros.acoesManutencaoVeiculo;
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const servicoDe = (m: (typeof todas)[number]) => resumoManutencao(m, (id) => acoes.find((a) => a.id === id)?.nome);
   const lista = todas
     .filter((m) => idsDaEmpresa.has(m.veiculoId))
+    .filter((m) => !periodoInvalido && (!inicio || m.data >= inicio) && (!fim || m.data <= fim))
     .filter((m) => {
       const v = veiculos.find((x) => x.id === m.veiculoId);
       return combinaBusca(busca, v ? rotuloDoVeiculo(parametros, v) : "", m.tipo, servicoDe(m), formatarData(m.data), String(m.km));
@@ -85,9 +91,19 @@ export function ManutencaoVeiculoModulo() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
+        <div className="flex items-center gap-2">
+          <Label htmlFor="manutencao-inicio" className="text-sm">Data início</Label>
+          <Input id="manutencao-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="manutencao-fim" className="text-sm">Data fim</Label>
+          <Input id="manutencao-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
+        </div>
+        {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
         <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
         <Button requiresWrite className="ml-auto" onClick={() => abrir()}>Cadastrar nova manutenção</Button>
       </div>
+      {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
       <div className="overflow-x-auto rounded-xl border">
         <Table>
           <TableHeader>
@@ -104,7 +120,7 @@ export function ManutencaoVeiculoModulo() {
           </TableHeader>
           <TableBody>
             {lista.length === 0 && (
-              <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma manutenção registrada."}</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">{busca.trim() || inicio || fim ? "Nenhum resultado para a busca e o período." : "Nenhuma manutenção registrada."}</TableCell></TableRow>
             )}
             {lista.map((m) => {
               const v = veiculos.find((x) => x.id === m.veiculoId);

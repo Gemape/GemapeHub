@@ -6,7 +6,11 @@ export function useAbrirDireto(direto: boolean, pronto: boolean, formularioAbert
   const abriu = useRef(false);
   const visto = useRef(false);
   useEffect(() => {
-    if (direto && pronto && !abriu.current) { abriu.current = true; void abrir(); }
+    if (direto && pronto && !abriu.current) {
+      abriu.current = true;
+      // Se abrir falhar, devolve o usuário à associação em vez de deixar a janela sem formulário e sem aviso.
+      Promise.resolve().then(abrir).catch((erro) => { console.error(erro); aoConcluir?.(); });
+    }
   }, [direto, pronto]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!direto) return;

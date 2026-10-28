@@ -80,7 +80,7 @@ test("a tela de Parâmetros Específicos de Ferramentas mostra os subgrupos de c
   assert.match(rota, /Grupos de ferramentas/); // a lista dos grupos (pais) continua na mesma página
   const tela = readFileSync("src/components/parametros/SubgruposFerramenta.tsx", "utf8");
   assert.match(tela, /Cadastrar subgrupos/);
-  assert.match(tela, /Cadastrar padrão/);
+  assert.match(tela, /<CadastrarPadraoSelecionado/);
   assert.match(tela, /<RestaurarPadraoInicial/);
   assert.match(tela, /<AcoesLinha rotulo=\{g\.nome\} onEditar=\{\(\) => abrir\("editar", g\)\} onExcluir=\{\(\) => excluir\(g\)\}/);
   assert.doesNotMatch(tela, /onClonar|clonar/i); // só Editar e Excluir em cada linha
