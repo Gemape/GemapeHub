@@ -31,6 +31,7 @@ import {
 import { mesDe, noMesDaLista, sincronizarPrevisoes, type VeiculoPrevisto } from "@/lib/checklist-painel";
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { formatarData } from "@/lib/gemape";
 import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
 import { resolverSubcategoria } from "@/lib/subcategoria-referencia";
@@ -141,7 +142,8 @@ export function ChecklistVeiculoModulo() {
   const veiculosDoDialogo = veiculos.filter((v) => v.status === "Ativo" && tipoCheckDe(v) !== null);
   const veiculoEscolhido = veiculosDoDialogo.find((v) => v.id === veiculoId);
   // O responsável é da mesma empresa do veículo (a lista de empregados traz todas as empresas).
-  const responsaveisDoVeiculo = veiculoEscolhido?.empresa_id ? empregadosAtivos.filter((e) => e.empresa_id === veiculoEscolhido.empresa_id) : empregadosAtivos;
+  // Só quem foi escolhido em Parâmetros > Veículos > Parâmetros Específicos (lista vazia = todos).
+  const responsaveisDoVeiculo = soEmpregadosDeVeiculos(veiculoEscolhido?.empresa_id ? empregadosAtivos.filter((e) => e.empresa_id === veiculoEscolhido.empresa_id) : empregadosAtivos);
   const tipoCheckNome = TIPOS_CHECKLIST.find((t) => t.id === (veiculoEscolhido ? tipoCheckDe(veiculoEscolhido) : null))?.nome ?? "";
   // Opção do tipo de check list: o nome do check list como está na associação do veículo (Parâmetros > Veículos > Check list):
   // Placa >> Periodicidade >> Responsável; o avulso é "Não definida" na periodicidade.

@@ -1,3 +1,4 @@
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
 import { EstoqueModulo } from "@/components/modules/EstoqueModulo";
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
@@ -18,17 +19,15 @@ import { FerramentasTermoEncerramento } from "@/components/modules/FerramentasTe
 import { FerramentasTermoVistoria } from "@/components/modules/FerramentasTermoVistoria";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { abaDoModulo } from "@/lib/menu-parametros";
+import { abaDoModulo, tituloDaAba } from "@/lib/menu-parametros";
 import type { Modulo } from "@/lib/gemape";
 
 export function PaginaModulo({
   modulo,
-  titulo,
   descricao,
   aba,
 }: {
   modulo: Extract<Modulo, 'epi' | 'uniforme' | 'ferramenta'>;
-  titulo: string;
   descricao: string;
   aba?: string | undefined;
 }) {
@@ -36,8 +35,8 @@ export function PaginaModulo({
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Módulo</p>
-        <h1 className="text-2xl font-bold">{titulo}</h1>
+        <EyebrowDoCard fallback="Módulo" />
+        <h1 className="text-2xl font-bold">{tituloDaAba(modulo, aba)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
       </header>
 

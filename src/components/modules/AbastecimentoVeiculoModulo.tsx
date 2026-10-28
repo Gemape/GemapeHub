@@ -39,6 +39,10 @@ export function AbastecimentoVeiculoModulo() {
   const [aberto, setAberto] = useState(false);
   const [filtro, setFiltro] = useState(TODOS);
   const [busca, setBusca] = useState("");
+  // Período da lista e do PDF (AAAA-MM-DD, as duas pontas valem); vazio = sem limite daquele lado (decisão 306).
+  const [inicio, setInicio] = useState("");
+  const [fim, setFim] = useState("");
+  const periodoInvalido = !!inicio && !!fim && inicio > fim;
 
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const daEmpresa = todos.filter((a) => idsDaEmpresa.has(a.veiculoId));
@@ -51,13 +55,15 @@ export function AbastecimentoVeiculoModulo() {
       veiculos
         .filter((v) => filtroValido === TODOS || v.id === filtroValido)
         .flatMap((v) => historicoAbastecimentos(daEmpresa.filter((a) => a.veiculoId === v.id)))
+        // O período corta depois de montar o histórico: o trecho e o km/L de cada abastecimento continuam contando com o anterior, mesmo fora do período.
+        .filter((a) => !periodoInvalido && (!inicio || a.data >= inicio) && (!fim || a.data <= fim))
         .filter((a) => {
           const v = veiculos.find((x) => x.id === a.veiculoId);
           return combinaBusca(busca, v ? rotuloDoVeiculo(parametros, v) : "", formatarData(a.data), a.hora, String(a.km), numero(a.km), String(a.litros), a.litros.toLocaleString("pt-BR"), a.valor ? `${a.valor} ${reais(a.valor)}` : "");
         })
         .sort((a, b) => `${b.data}T${b.hora ?? "00:00"}`.localeCompare(`${a.data}T${a.hora ?? "00:00"}`) || b.km - a.km),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [veiculos, todos, filtroValido, busca, parametros],
+    [veiculos, todos, filtroValido, busca, parametros, inicio, fim, periodoInvalido],
   );
   const doFiltro = filtroValido === TODOS ? null : veiculo(filtroValido);
   const resumo = doFiltro
@@ -98,7 +104,7 @@ export function AbastecimentoVeiculoModulo() {
     const html = montarExtratoHtml({
       titulo: "Relatório de abastecimento",
       assunto,
-      subtitulo: busca.trim() ? `Busca: ${busca.trim()}` : "Abastecimentos por veículo",
+      subtitulo: [busca.trim() ? `Busca: ${busca.trim()}` : "", inicio || fim ? `Período: ${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : ""].filter(Boolean).join(" · ") || "Abastecimentos por veículo",
       empresa: empresaId === TODAS ? "Todas as empresas" : (empresas.find((e) => e.id === empresaId)?.nome_fantasia ?? ""),
       resumo: [
         ...(unico ? [] : ([["Veículos", String(grupos.length)]] as [string, string][])),
@@ -108,7 +114,7 @@ export function AbastecimentoVeiculoModulo() {
         ...(unico ? ([["Média de consumo", fmtMedia(unico.media)]] as [string, string][]) : []),
       ],
       tabelas: grupos.length === 0
-        ? [{ titulo: "Abastecimentos", vazio: busca.trim() ? "Nenhum resultado para a busca." : "Nenhum abastecimento registrado.", colunas: [{ titulo: "Data e hora" }], linhas: [] }]
+        ? [{ titulo: "Abastecimentos", vazio: busca.trim() || inicio || fim ? "Nenhum resultado para a busca e o período." : "Nenhum abastecimento registrado.", colunas: [{ titulo: "Data e hora" }], linhas: [] }]
         : grupos.map((g) => ({
             titulo: rotuloDoVeiculo(parametros, g.v),
             vazio: "Nenhum abastecimento registrado.",
@@ -148,7 +154,16 @@ export function AbastecimentoVeiculoModulo() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        <Button variant="outline" className="ml-auto" onClick={gerarRelatorio}>Gerar PDF</Button>
+        <div className="space-y-1.5">
+          <Label htmlFor="abastecimento-inicio">Data início</Label>
+          <Input id="abastecimento-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="abastecimento-fim">Data fim</Label>
+          <Input id="abastecimento-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
+        </div>
+        {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
+        <Button variant="outline" className="ml-auto" onClick={gerarRelatorio} disabled={periodoInvalido}>Gerar PDF</Button>
         <Button requiresWrite onClick={abrir}>Novo abastecimento</Button>
       </div>
 
@@ -178,7 +193,7 @@ export function AbastecimentoVeiculoModulo() {
           </TableHeader>
           <TableBody>
             {linhas.length === 0 && (
-              <TableRow><TableCell colSpan={doFiltro ? 8 : 9} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhum abastecimento registrado."}</TableCell></TableRow>
+              <TableRow><TableCell colSpan={doFiltro ? 8 : 9} className="py-6 text-center text-muted-foreground">{busca.trim() || inicio || fim ? "Nenhum resultado para a busca e o período." : "Nenhum abastecimento registrado."}</TableCell></TableRow>
             )}
             {linhas.map((a) => {
               const v = veiculo(a.veiculoId);

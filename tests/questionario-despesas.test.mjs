@@ -359,8 +359,10 @@ test("dec 208: adicionar habilitado no card entra na pergunta 04 e o técnico re
   const nomes = habilitadosDaPergunta(atual, tecnico).map((h) => h.nome);
   assert.ok(nomes.includes("Fulano Oficina") && !nomes.includes("Fulano PCM"));
   const c = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
-  assert.match(c, /<AdicionarHabilitado/);
+  // Decisão 299: um editor só para os habilitados (a caixa dupla em Parâmetros > Viagens); o card do questionário aponta para ela.
+  assert.doesNotMatch(c, /AdicionarHabilitado/);
   assert.match(c, /id === ID_HABILITADOS \|\| id === ID_TECNICO_RESPONSAVEL/);
+  assert.match(c, /to="\/cadastros\/viagens-especificos"/);
 });
 
 test("dec 207: UF, Município, Data, Valor, Foto do comprovante e Detalhamento são perguntas travadas", () => {

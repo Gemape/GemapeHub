@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
+import { RenovarPrazoOcorrencia } from "@/components/modules/RenovarPrazoOcorrencia";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -21,7 +22,10 @@ import { useAccess } from "@/lib/access-context";
 import { horaBrasilia, hojeLocal } from "@/lib/empregados";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
-import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
+import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
+import { useEmpregados, useEmpresas, useVeiculos } from "@/lib/hooks-gemape";
+import { montarOcorrenciaHtml } from "@/lib/ocorrencia-relatorio-html";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import {
   adicionarFotosOcorrencia, contarPorStatus, registrarOcorrenciaVeiculo, removerFotoOcorrencia, salvarTratativa,
   STATUS_OCORRENCIA, type OcorrenciaVeiculo, type StatusOcorrencia,
@@ -55,7 +59,9 @@ export function OcorrenciasVeiculoModulo() {
   const { isAdmin, canWrite } = useAccess();
   const parametros = useParametrosBase();
   const { data: veiculos = [] } = useVeiculos(empresaId);
-  const { data: empregadosAtivos = [] } = useEmpregados(TODAS, true);
+  const { data: empregadosAtivosTodos = [] } = useEmpregados(TODAS, true);
+  // Só quem foi escolhido em Parâmetros > Veículos > Parâmetros Específicos (lista vazia = todos).
+  const empregadosAtivos = soEmpregadosDeVeiculos(empregadosAtivosTodos);
   const { data: todosEmpregados = [] } = useEmpregados(TODAS);
   const todas = useOcorrenciasVeiculo();
   const [tela, setTela] = useState<Tela>(null);
@@ -63,6 +69,10 @@ export function OcorrenciasVeiculoModulo() {
   const [busca, setBusca] = useState("");
   const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
   const [confirmandoEncerrar, setConfirmandoEncerrar] = useState(false);
+  // Renovar o prazo da tratativa (supervisor valida) e o convite para gerar o PDF logo depois de encerrar (decisão 309): guardam o id da ocorrência.
+  const [renovando, setRenovando] = useState<string | null>(null);
+  const [relatorioPara, setRelatorioPara] = useState<string | null>(null);
+  const { data: empresas = [] } = useEmpresas();
   const trava = useRef(false);
 
   // Formulário de nova ocorrência
@@ -147,7 +157,41 @@ export function OcorrenciasVeiculoModulo() {
     );
     soltarTrava(ok);
     setConfirmandoEncerrar(false);
-    if (ok) setTela(null);
+    if (ok) {
+      setTela(null);
+      if (encerrar) setRelatorioPara(atual.id);
+    }
+  }
+
+  // Relatório em PDF da ocorrência (no visualizador do sistema, em tela cheia): dados, tratativa e renovações de prazo.
+  function gerarRelatorio(o: OcorrenciaVeiculo) {
+    const t = o.tratativa;
+    const v = veiculo(o.veiculoId);
+    abrirDocumento({
+      titulo: `Relatório da ocorrência ${o.codigo}`,
+      html: montarOcorrenciaHtml({
+        codigo: o.codigo,
+        empresa: empresas.find((e) => e.id === v?.empresa_id)?.nome_fantasia ?? "",
+        veiculo: rotuloVeiculo(o.veiculoId),
+        tipo: o.tipoNome,
+        status: o.status,
+        cadastradaEm: dataHoraBrasilia(o.cadastradaEm),
+        ocorridoEm: dataHoraLocal(o.ocorridoEm),
+        local: o.local,
+        condutor: nomeEmpregado(o.condutorId),
+        danos: [o.danoEmpresa && "Veículo da empresa", o.danoTerceiros && "Veículo de terceiros"].filter(Boolean).join(" e ") || "Sem danos informados",
+        descricao: o.descricao,
+        fotos: o.fotos.length,
+        tratativa: t ? {
+          registradaEm: dataHoraBrasilia(t.registradaEm), atualizadaEm: dataHoraBrasilia(t.atualizadaEm), encerradaEm: o.encerradaEm ? dataHoraBrasilia(o.encerradaEm) : null,
+          responsavel: nomeEmpregado(t.responsavelId), custoEmpresa: reais(t.custoEmpresa), descricaoEmpresa: t.descricaoEmpresa, descricaoTerceiros: t.descricaoTerceiros,
+          pagamentoTerceiros: t.pagamentoTerceiros, seguradora: t.seguradora ? "Sim" : "Não",
+        } : null,
+        renovacoes: (o.renovacoes ?? []).map((r) => ({ em: dataHoraBrasilia(r.em), passo: r.passo === "iniciar" ? "Iniciar a tratativa" : "Finalizar a tratativa", autorizadoPor: r.autorizadoPorNome, registradoPor: r.registradoPorNome })),
+      }),
+      arquivo: nomeArquivoDocumento("Ocorrencia", o.codigo, rotuloVeiculo(o.veiculoId)),
+      telaCheia: true,
+    });
   }
 
   function anexarFotos(fotos: string[]) {
@@ -358,9 +402,20 @@ export function OcorrenciasVeiculoModulo() {
                     {atual.encerradaEm && <div><dt className="text-xs text-muted-foreground">Encerrada em</dt><dd>{dataHoraBrasilia(atual.encerradaEm)}</dd></div>}
                   </dl>
                 )}
+                {(atual.renovacoes ?? []).length > 0 && (
+                  <div className="space-y-1 border-t pt-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground">Renovações de prazo</h4>
+                    <ul className="text-sm">
+                      {(atual.renovacoes ?? []).map((r, n) => (
+                        <li key={n}>{dataHoraBrasilia(r.em)}: prazo para {r.passo === "iniciar" ? "iniciar" : "finalizar"} a tratativa renovado, autorizado por {r.autorizadoPorNome}.</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </section>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setTela(null)}>Fechar</Button>
+                {atual.status === "Encerrada" && <Button variant="outline" onClick={() => gerarRelatorio(atual)}>Relatório (PDF)</Button>}
                 {podeTratar(atual) && (
                   <Button onClick={() => abrirTratativa(atual)}>{atual.status === "Encerrada" ? "Editar tratativa" : "Tratativa"}</Button>
                 )}
@@ -387,7 +442,7 @@ export function OcorrenciasVeiculoModulo() {
                   <Label htmlFor="tr_resp">Responsável pela tratativa</Label>
                   <Select value={responsavelId} onValueChange={setResponsavelId}>
                     <SelectTrigger id="tr_resp"><SelectValue placeholder="Selecione o responsável" /></SelectTrigger>
-                    <SelectContent>{empregadosAtivos.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                    <SelectContent>{(!responsavelId || empregadosAtivos.some((e) => e.id === responsavelId) ? empregadosAtivos : [...empregadosAtivos, ...todosEmpregados.filter((e) => e.id === responsavelId)]).map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 {atual.danoEmpresa && (
@@ -420,6 +475,9 @@ export function OcorrenciasVeiculoModulo() {
                 <DialogFooter className="sm:col-span-2">
                   <Button type="button" variant="outline" onClick={() => setTela(null)}>Cancelar</Button>
                   <Button type="submit">Salvar</Button>
+                  {atual.status !== "Encerrada" && import.meta.env.VITE_DEMO_MODE !== "false" && (
+                    <Button type="button" variant="outline" onClick={() => setRenovando(atual.id)}>Renovar prazo</Button>
+                  )}
                   {atual.status !== "Encerrada" && (
                     <Button type="button" variant="destructive" onClick={() => setConfirmandoEncerrar(true)}>Encerrar tratativa</Button>
                   )}
@@ -441,6 +499,21 @@ export function OcorrenciasVeiculoModulo() {
           <AlertDialogFooter>
             <AlertDialogCancel>Voltar</AlertDialogCancel>
             <AlertDialogAction onClick={() => gravarTratativa(true)}>Sim, encerrar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <RenovarPrazoOcorrencia ocorrencia={renovando ? (todas.find((o) => o.id === renovando) ?? null) : null} onFechar={() => setRenovando(null)} />
+
+      <AlertDialog open={relatorioPara !== null} onOpenChange={(a) => { if (!a) setRelatorioPara(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tratativa encerrada</AlertDialogTitle>
+            <AlertDialogDescription>Quer gerar o relatório da ocorrência em PDF? Ele também fica disponível depois, nos dados da ocorrência encerrada.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Agora não</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { const o = todas.find((x) => x.id === relatorioPara); if (o) gerarRelatorio(o); }}>Gerar relatório (PDF)</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

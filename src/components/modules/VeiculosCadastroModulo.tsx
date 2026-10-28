@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { useAbrirDireto } from "@/lib/use-abrir-direto";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { descricaoVeiculo, validarAquisicao } from "@/lib/descricao-veiculo";
@@ -136,7 +137,9 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
   const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
   const empresaForm = empresaSel || base?.empresa_id || empresaPadrao;
   // Responsável: empregados ativos da empresa do veículo; os nomes da lista vêm de todos.
-  const { data: empregadosEmpresa = [] } = useEmpregados(empresaForm || TODAS, true);
+  const { data: empregadosEmpresaTodos = [] } = useEmpregados(empresaForm || TODAS, true);
+  // Só quem foi escolhido em Parâmetros > Veículos > Parâmetros Específicos (lista vazia = todos).
+  const empregadosEmpresa = soEmpregadosDeVeiculos(empregadosEmpresaTodos);
   const { data: empregados = [] } = useEmpregados(TODAS);
   const responsavelAtual = base?.empregado_responsavel_id
     ? empregados.find((e) => e.id === base.empregado_responsavel_id)

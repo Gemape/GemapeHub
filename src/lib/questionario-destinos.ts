@@ -128,6 +128,20 @@ export function gravarDestino(e: Estado, tipo: string, perguntaId: string, opcao
   return gravarEstado(candidato, storage);
 }
 
+// Tira, de todos os questionários, as ramificações de uma resposta (a que vai ser excluída), mesmo as de um questionário que já não tem a pergunta.
+// Só devolve o estado novo; quem chama grava junto com a exclusão da resposta, para uma falha não deixar o meio caminho gravado.
+export function semDestinosDaOpcao(e: Estado, perguntaId: string, opcao: string): Estado {
+  if (!e.destinos) return e;
+  const destinos = Object.fromEntries(Object.entries(e.destinos).flatMap(([tipo, porPergunta]) => {
+    const { [perguntaId]: daPergunta, ...resto } = porPergunta;
+    if (!daPergunta) return [[tipo, porPergunta] as const];
+    const { [opcao]: _tirada, ...demais } = daPergunta;
+    const novo = Object.keys(demais).length ? { ...resto, [perguntaId]: demais } : resto;
+    return Object.keys(novo).length ? [[tipo, novo] as const] : [];
+  }));
+  return { ...e, destinos };
+}
+
 // Antes de gravar uma nova ordem: reordenar não pode criar um fluxo que volte a uma pergunta já visitada.
 export function conferirOrdem(e: Estado, tipo: string, ids: string[]): void {
   const candidato: Estado = { ...e, questionarios: { ...e.questionarios, [tipo]: ids.filter((id) => id !== ID_TIPO_DESPESA) } };

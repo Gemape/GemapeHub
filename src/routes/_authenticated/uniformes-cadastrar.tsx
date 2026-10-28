@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { CadastroUniforme } from "@/components/modules/CadastroUniforme";
 
 export const Route = createFileRoute("/_authenticated/uniformes-cadastrar")({
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/uniformes-cadastrar")({
   component: () => (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Parâmetros · Uniformes</p>
+        <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-2xl font-bold">Cadastrar Uniforme</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Demonstração: um cadastro por descrição e tamanho, com código automático e estoque mínimo.

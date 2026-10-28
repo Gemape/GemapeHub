@@ -28,7 +28,6 @@ function Pagina() {
     <PaginaModulo
       aba={aba}
       modulo="epi"
-      titulo="EPIs"
       descricao="Equipamentos de proteção individual, com Certificado de Aprovação (CA), entrega por empregado e alerta automático de reposição."
     />
   );

@@ -108,7 +108,7 @@ test("o extrato do veículo e o do equipamento abrem o relatório direto, em tel
   // Extrato (equipamento) abre o relatório na hora, em tela cheia. O do veículo passa por uma janela com período e atalhos (decisão 296) e abre o relatório em tela cheia.
   const veiculo = ler("components/modules/ExtratoVeiculo.tsx");
   assert.match(veiculo, /abrirDocumento\(\{ titulo: TITULO\[secao\], html[^}]*telaCheia: true \}\)/);
-  assert.match(veiculo, /<Dialog open=\{!!veiculo\}/);
+  assert.match(veiculo, /<Dialog open=\{!!veiculo && !secao\}/);
   const equip = ler("components/modules/equipamento/InventarioEquipamentoModulo.tsx");
   assert.match(equip, /onClick=\{\(\) => gerarRelatorio\(e\)\}>Extrato<\/Button>/);
   assert.match(equip, /telaCheia: true/);
@@ -132,7 +132,7 @@ test("o título das colunas numéricas fica alinhado à direita, junto com os va
 
 test("Abastecimento de veículos tem o Gerar PDF: relatório por veículo, no padrão, com os mesmos filtros da tela", () => {
   const tela = ler("components/modules/AbastecimentoVeiculoModulo.tsx");
-  assert.match(tela, /<Button variant="outline" className="ml-auto" onClick=\{gerarRelatorio\}>Gerar PDF<\/Button>/);
+  assert.match(tela, /<Button variant="outline" className="ml-auto" onClick=\{gerarRelatorio\}[^>]*>Gerar PDF<\/Button>/);
   assert.match(tela, /montarExtratoHtml\(\{\s*titulo: "Relatório de abastecimento"/);
   assert.match(tela, /telaCheia: true/);
   assert.match(tela, /grupos\s*=\s*veiculos\s*\.filter\(\(v\) => linhas\.some/, "um quadro por veículo, só dos que têm abastecimento no filtro");

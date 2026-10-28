@@ -212,9 +212,9 @@ test("Ações de manutenção e Plano de manutenções ficam numa só página, M
   assert.match(nova, /component: ManutencaoParametros/);
   // Em seção, as duas listas trocam o h1 por h2 e o caminho fica só no cabeçalho da página.
   const lista = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
-  assert.match(lista, /\{!secao && <p className="text-eyebrow">/);
+  assert.match(lista, /\{!secao && <EyebrowDoCard /);
   const plano = readFileSync("src/components/parametros/PlanoManutencaoVeiculo.tsx", "utf8");
-  assert.match(plano, /\{!secao && <p className="text-eyebrow">/);
+  assert.match(plano, /\{!secao && <EyebrowDoCard /);
 });
 
 test("Ações de manutenção não têm o botão Cadastrar padrão; as outras listas de Veículos mantêm (dec 140)", () => {

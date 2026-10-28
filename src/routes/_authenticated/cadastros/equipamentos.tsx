@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { exemploEquipamento } from "@/lib/dados-teste/exemplos";
 import { EquipamentoDialog } from "@/components/parametros/EquipamentoDialog";
@@ -57,7 +58,7 @@ function PaginaEquipamentos() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">Parâmetros &gt; Equipamentos</p>
+          <EyebrowDoCard fallback="Parâmetros" />
           <h1 className="text-2xl font-bold">Cadastrar equipamento</h1>
           <p className="mt-1 text-sm text-muted-foreground">Dados gerais e especificações técnicas por categoria. O módulo Equipamentos usa estes cadastros.</p>
         </div>

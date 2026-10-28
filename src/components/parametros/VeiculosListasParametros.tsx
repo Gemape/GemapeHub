@@ -1,3 +1,4 @@
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { Table } from "@/components/ui/table";
 import { Fragment, useRef, useState } from "react";
 import { useAccess } from "@/lib/access-context";
@@ -149,7 +150,7 @@ export function ListaVeiculos({
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          {!secao && <p className="text-eyebrow">{eyebrow}</p>}
+          {!secao && <EyebrowDoCard fallback={eyebrow} />}
           {secao ? <h2 className="text-xl font-bold">{titulo}</h2> : <h1 className="text-2xl font-bold">{titulo}</h1>}
           <p className="mt-1 text-sm text-muted-foreground">{subtitulo}</p>
         </div>

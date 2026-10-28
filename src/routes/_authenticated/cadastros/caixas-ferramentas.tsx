@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { CaixasFerramentasModulo } from "@/components/modules/CaixasFerramentasModulo";
 
 export const Route = createFileRoute("/_authenticated/cadastros/caixas-ferramentas")({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/caixas-ferrament
   component: () => (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Cadastros</p>
+        <EyebrowDoCard fallback="Cadastros" />
         <h1 className="text-2xl font-bold">Caixas de Ferramentas</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Gerenciamento de kits e caixas de ferramentas com vinculação individual de itens.

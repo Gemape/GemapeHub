@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { EnderecamentoEquipamentos } from "@/components/parametros/EnderecamentoEquipamentos";
 import { IndicadoresEquipamentoParametros } from "@/components/parametros/IndicadoresEquipamentoParametros";
 import { toast } from "sonner";
@@ -134,7 +135,7 @@ export function EquipamentosEspecificos() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">Parâmetros &gt; Equipamentos</p>
+          <EyebrowDoCard fallback="Parâmetros" />
           <h1 className="text-2xl font-bold">Parâmetros Específicos</h1>
           <p className="mt-1 text-sm text-muted-foreground">Cadastro em pai e filho: a subcategoria é o pai e o tipo de equipamento é o filho, sempre debaixo de uma subcategoria.</p>
         </div>

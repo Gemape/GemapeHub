@@ -1,3 +1,4 @@
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { Table } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -18,6 +19,7 @@ import { CHECKLIST_VEICULOS_PADRAO } from "@/lib/checklist-veiculos-padrao";
 import { adicionarGrupoChecklistVeiculo, editarGrupoChecklistVeiculo, removerGrupoChecklistVeiculo, TODOS_OS_TIPOS } from "@/lib/parametros-base";
 import { ehGrupoPersonalizado, ehPersonalizadoDe, nomeGrupoPersonalizado } from "@/lib/grupo-personalizado";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
+import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
 import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
 import { useAccess } from "@/lib/access-context";
@@ -120,10 +122,11 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
 
   const veiculoEscolhido = veiculoPorId(veiculoId);
   // Responsável: empregado ativo, da empresa do veículo (sem empresa no veículo, de qualquer empresa).
-  const elegiveis = empregados.filter((e) =>
+  // Só quem foi escolhido em Parâmetros > Veículos > Parâmetros Específicos (lista vazia = todos).
+  const elegiveis = soEmpregadosDeVeiculos(empregados.filter((e) =>
     empregadoElegivelPortador({ ativo: e.ativo ?? null, data_demissao: e.data_demissao ?? null } as never) &&
     (!veiculoEscolhido?.["empresa_id"] || e.empresa_id === veiculoEscolhido["empresa_id"]),
-  );
+  ));
   const responsavel = elegiveis.find((e) => e.id === responsavelId) ?? null;
   // Itens que se aplicam ao tipo do veículo e à periodicidade escolhida (Avulso traz só os grupos avulsos).
   const subcategoriaEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never) : null;
@@ -285,7 +288,7 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          {!secao && <p className="text-eyebrow">Parâmetros</p>}
+          {!secao && <EyebrowDoCard fallback="Parâmetros" />}
           {secao ? <h2 className="text-xl font-bold">Associar itens de check list a um veículo</h2> : <h1 className="text-2xl font-bold">Associar itens de check list a um veículo</h1>}
           <p className="mt-1 text-sm text-muted-foreground">
             Para cada veículo, escolha o responsável e a periodicidade do check list. Periódico é obrigatório e entra nos KPI; avulso não é obrigatório e não entra nos KPI.

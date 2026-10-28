@@ -23,6 +23,10 @@ export type Tratativa = {
   atualizadaEm: string;
 };
 
+// Renovação do prazo da tratativa (decisão 309): recomeça a contagem do prazo do passo em que a ocorrência está (iniciar ou finalizar), a partir do dia da renovação.
+// Guarda quem autorizou (o supervisor) e quem registrou.
+export type RenovacaoPrazo = { em: string; passo: "iniciar" | "finalizar"; autorizadoPorId: string; autorizadoPorNome: string; registradoPorNome: string };
+
 export type OcorrenciaVeiculo = {
   id: string;
   codigo: string;
@@ -40,6 +44,7 @@ export type OcorrenciaVeiculo = {
   status: StatusOcorrencia;
   tratativa: Tratativa | null;
   encerradaEm: string | null;
+  renovacoes?: RenovacaoPrazo[];
 };
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
@@ -202,6 +207,20 @@ export function salvarTratativa(
     };
     const encerra = o.status === "Encerrada" || opcoes.encerrar;
     return { ...o, tratativa, status: encerra ? "Encerrada" : "Em tratativa", encerradaEm: encerra ? (o.encerradaEm ?? iso) : null };
+  });
+}
+
+// Renovar o prazo: só vale para ocorrência que ainda não foi encerrada. Quem chama já conferiu a autorização do supervisor (supervisores-ocorrencias.ts).
+export function renovarPrazoTratativa(
+  id: string,
+  quem: { autorizadoPorId: string; autorizadoPorNome: string; registradoPorNome: string },
+  storage = storagePadrao(),
+  agora = new Date(),
+): OcorrenciaVeiculo {
+  return mudar(id, storage, (o) => {
+    if (o.status === "Encerrada") throw new Error("Esta ocorrência está encerrada: não há prazo para renovar.");
+    const renovacao: RenovacaoPrazo = { em: agora.toISOString(), passo: o.status === "Aberta" ? "iniciar" : "finalizar", ...quem };
+    return { ...o, renovacoes: [...(o.renovacoes ?? []), renovacao] };
   });
 }
 
