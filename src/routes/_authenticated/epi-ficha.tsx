@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { CampoBusca, type OpcaoBusca } from "@/components/CampoBusca";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { NovoTamanhoRapido } from "@/components/parametros/NovoTamanhoRapido";
@@ -165,7 +166,7 @@ function FichaEpiPagina() {
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Parâmetros · EPI</p>
+        <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-2xl font-bold">Cadastrar Ficha de EPI</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Orientações de uso de cada EPI: setores, riscos, uso, verificação, higienização, descarte

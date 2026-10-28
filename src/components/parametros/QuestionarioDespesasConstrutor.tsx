@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, GripHorizontal, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useBlocker } from "@tanstack/react-router";
+import { Link, useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,7 +17,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, limparPendencias, pendencias,
+  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, aceitaDestino, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, limparPendencias, pendencias, semDestinosDaOpcao,
 } from "@/lib/questionario-destinos";
 import { gravarSecao, inicioDaProximaSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
@@ -132,20 +132,9 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
     const condicoes = Object.values(estado.regras).reduce((n, porPergunta) => n + Object.values(porPergunta).filter((r) => r.origem === p.id && r.valor === opcao).length, 0);
     const aviso = condicoes ? ` ${condicoes} condição(ões) que dependem dessa resposta também serão removidas.` : "";
     if (!confirm(`Excluir a resposta "${opcao}" da pergunta ${numeroDe(p.id)}?${aviso}`)) return;
-    executar(() => {
-      let atual = estado;
-      for (const t of tiposDeDespesa(estado)) {
-        if (!destinosDoTipo(atual, t)[p.id]?.[opcao]) continue;
-        try { atual = gravarDestino(atual, t, p.id, opcao, null, rascunho); } catch { /* a pergunta não está neste questionário: nada a limpar */ }
-      }
-      try {
-        return salvarPergunta(atual, { ...p, opcoes: p.opcoes.filter((o) => o !== opcao) }, rascunho);
-      } catch (erro) {
-        // A pergunta não aceitou a exclusão (ex.: era a última resposta): devolve ao rascunho as ramificações já tiradas.
-        gravarEstado(estado, rascunho);
-        throw erro;
-      }
-    }, "Resposta excluída.");
+    // As ramificações saem junto, de todos os questionários (inclusive de um que já não tem a pergunta), e só se grava tudo de uma vez: se a pergunta não aceitar a
+    // exclusão (ex.: era a última resposta), nada muda.
+    executar(() => salvarPergunta(semDestinosDaOpcao(estado, p.id, opcao), { ...p, opcoes: p.opcoes.filter((o) => o !== opcao) }, rascunho), "Resposta excluída.");
   }
   // Ramificação de uma resposta: continuar na próxima pergunta (sem destino), ir para a próxima seção, encerrar ou ir a uma pergunta mais adiante.
   const mudarDestino = (p: Pergunta, opcao: string, valor: string) =>
@@ -293,16 +282,10 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
               ) : (
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
-              {canWrite && (id === ID_HABILITADOS || id === ID_TECNICO_RESPONSAVEL) && (
-                <AdicionarHabilitado
-                  ativos={empregados.filter((e) => empregadoAtivo(e)).map((e) => ({ id: e.id, nome: e.nome }))}
-                  jaIncluidos={new Set((porId.get(ID_HABILITADOS)?.habilitados ?? []).flatMap((h) => [h.empregadoId, h.nome.trim().toLocaleLowerCase("pt-BR")]))}
-                  areaFixa={id === ID_TECNICO_RESPONSAVEL ? "Oficina" : null}
-                  onAdicionar={(h) => {
-                    const q04 = porId.get(ID_HABILITADOS);
-                    return !!q04 && executar(() => salvarPergunta(estado, { ...q04, habilitados: [...(q04.habilitados ?? []), h] }, rascunho), "Habilitado adicionado.");
-                  }}
-                />
+              {(id === ID_HABILITADOS || id === ID_TECNICO_RESPONSAVEL) && (
+                <p className="text-xs text-muted-foreground" onClick={(e) => e.stopPropagation()}>
+                  Quem fica habilitado se escolhe em <Link to="/cadastros/viagens-especificos" className="font-medium text-primary underline underline-offset-2">Parâmetros &gt; Viagens &gt; Parâmetros Específicos</Link>.
+                </p>
               )}
               {canWrite && !fixa && !travada && aceitaCondicao(p) && (
                 <AdicionarOpcao onAdicionar={(texto) => executar(() => salvarPergunta(estado, { ...p, opcoes: [...p.opcoes, texto] }, rascunho), "Opção adicionada.")} />
@@ -409,57 +392,6 @@ const textoRegra = (e: Estado, r: Regra): string => {
   const origem = e.perguntas.find((p) => p.id === r.origem);
   return `Aparece só se "${origem?.titulo ?? "?"}" ${r.operador === "igual" ? "for" : "não for"} "${r.valor}"`;
 };
-
-// Adicionar habilitado direto no card (dec 208): busca o empregado ativo pelo nome e escolhe a área. No card do técnico responsável
-// a pessoa entra na mesma lista de habilitados (pergunta 04) com a área Oficina, que é de onde essa pergunta tira as opções.
-function AdicionarHabilitado({ ativos, jaIncluidos, areaFixa, onAdicionar }: {
-  ativos: { id: string; nome: string }[];
-  jaIncluidos: ReadonlySet<string | null>;
-  areaFixa: AreaViagem | null;
-  onAdicionar: (h: Habilitado) => boolean;
-}) {
-  const [aberto, setAberto] = useState(false);
-  const [busca, setBusca] = useState("");
-  const [area, setArea] = useState<AreaViagem>("Oficina");
-  const fechar = () => { setAberto(false); setBusca(""); };
-  if (!aberto) {
-    return <Button type="button" variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setAberto(true); }}><Plus className="mr-1 h-4 w-4" />Adicionar opção</Button>;
-  }
-  const termo = busca.trim().toLocaleLowerCase("pt-BR");
-  const achados = termo ? ativos.filter((e) => !jaIncluidos.has(e.id) && !jaIncluidos.has(e.nome.trim().toLocaleLowerCase("pt-BR")) && e.nome.toLocaleLowerCase("pt-BR").includes(termo)).slice(0, 8) : [];
-  return (
-    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          autoFocus
-          aria-label="Buscar empregado"
-          placeholder="Digite parte do nome do empregado"
-          className="w-64"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Escape") fechar(); }}
-        />
-        {areaFixa === null ? (
-          <Select value={area} onValueChange={(v) => { if (v) setArea(v as AreaViagem); }}>
-            <SelectTrigger aria-label="Área do novo habilitado" className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>{AREAS_VIAGEM.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
-          </Select>
-        ) : (
-          <span className="text-xs text-muted-foreground">Área: {areaFixa}</span>
-        )}
-        <Button type="button" variant="ghost" size="sm" onClick={fechar}>Cancelar</Button>
-      </div>
-      <div className="flex flex-wrap gap-1">
-        {achados.map((e) => (
-          <Button key={e.id} type="button" variant="outline" size="sm" onClick={() => { if (onAdicionar({ empregadoId: e.id, nome: e.nome, area: areaFixa ?? area })) fechar(); }}>
-            <Plus className="mr-1 h-3 w-3" />{e.nome}
-          </Button>
-        ))}
-        {termo && achados.length === 0 && <p className="text-xs text-muted-foreground">Nenhum empregado ativo encontrado.</p>}
-      </div>
-    </div>
-  );
-}
 
 const SEM_DESTINO = "__proxima";
 

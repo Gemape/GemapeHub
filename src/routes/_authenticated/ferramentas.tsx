@@ -28,7 +28,6 @@ function Pagina() {
     <PaginaModulo
       aba={aba}
       modulo="ferramenta"
-      titulo="Ferramentas"
       descricao="Número de série, vistorias (inicial, periódica, reposição e final), ocorrências e histórico de quem estava com cada ferramenta."
     />
   );

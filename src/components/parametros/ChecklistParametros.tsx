@@ -1,3 +1,4 @@
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { AssociarChecklistVeiculo } from "@/components/parametros/AssociarChecklistVeiculo";
 import { ChecklistVeiculoLista } from "@/components/parametros/VeiculosListasParametros";
 
@@ -7,7 +8,7 @@ export function ChecklistParametros() {
   return (
     <div className="space-y-10">
       <header>
-        <p className="text-eyebrow">Parâmetros</p>
+        <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-2xl font-bold">Check list</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Os itens do check list, separados por tipo de veículo, e a associação deles a cada veículo, na mesma página: primeiro os itens, depois a associação aos veículos.

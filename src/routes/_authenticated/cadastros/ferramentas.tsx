@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { ItensModulo } from "@/components/modules/ItensModulo";
 
 export const Route = createFileRoute("/_authenticated/cadastros/ferramentas")({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/ferramentas")({
   component: () => (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Parâmetros · Ferramentas</p>
+        <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-2xl font-bold">Cadastrar Ferramenta</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Cadastro das ferramentas por grupo, modelo e marca, com estoque mínimo.

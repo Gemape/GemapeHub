@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { CaixasHabilitadasPainel } from "@/components/parametros/CaixasHabilitadasPainel";
 import { useAccess } from "@/lib/access-context";
 
@@ -25,7 +26,7 @@ function PaginaCaixas() {
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Parâmetros · Ferramentas</p>
+        <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-2xl font-bold">Cadastrar Caixa</h1>
         <p className="mt-1 text-sm text-muted-foreground">Habilitação das caixas numeradas de ferramentas.</p>
       </header>

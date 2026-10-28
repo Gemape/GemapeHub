@@ -173,7 +173,15 @@ export const MENU_EPI: readonly ItemComFilhos[] = [
 ];
 
 // Aba aberta de um módulo: a pedida em ?aba= se existir nele, senão a primeira.
-export function abaDoModulo(modulo: "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem" | "equipamento", aba: string | undefined): string {
-  const abas = { epi: ABAS_EPI, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO }[modulo];
+type ModuloComAbas = "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem" | "equipamento";
+const ABAS_DO_MODULO = (modulo: ModuloComAbas): readonly AbaMenu[] =>
+  ({ epi: ABAS_EPI, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
+export function abaDoModulo(modulo: ModuloComAbas, aba: string | undefined): string {
+  const abas = ABAS_DO_MODULO(modulo);
   return abas.find((a) => a.aba === aba)?.aba ?? abas[0]!.aba;
+}
+// Nome da aba aberta (Frota, Painel, Estoque...): é o título grande da página do módulo (decisão 301), no lugar do nome do módulo.
+export function tituloDaAba(modulo: ModuloComAbas, aba: string | undefined): string {
+  const abas = ABAS_DO_MODULO(modulo);
+  return (abas.find((a) => a.aba === aba) ?? abas[0]!).titulo;
 }

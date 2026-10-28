@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { AbastecimentoVeiculoModulo } from "@/components/modules/AbastecimentoVeiculoModulo";
 import { ChecklistVeiculoModulo } from "@/components/modules/ChecklistVeiculoModulo";
@@ -7,7 +8,7 @@ import { ManutencaoVeiculoModulo } from "@/components/modules/ManutencaoVeiculoM
 import { OcorrenciasVeiculoModulo } from "@/components/modules/OcorrenciasVeiculoModulo";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { ABAS_VEICULO, abaDoModulo } from "@/lib/menu-parametros";
+import { abaDoModulo, tituloDaAba } from "@/lib/menu-parametros";
 
 export const Route = createFileRoute("/_authenticated/veiculos")({
   validateSearch: (search: Record<string, unknown>): { aba?: string } =>
@@ -32,14 +33,12 @@ export const Route = createFileRoute("/_authenticated/veiculos")({
 function PaginaVeiculos() {
   const { aba } = Route.useSearch();
   const abaValida = abaDoModulo("veiculo", aba);
-  // O título da página é o nome da aba aberta (Frota, Abastecimento, Manutenção...), não o nome do módulo (decisão 301).
-  const tituloDaAba = ABAS_VEICULO.find((a) => a.aba === abaValida)?.titulo ?? "Veículos";
 
   return (
     <div className="space-y-5">
       <header>
-        <p className="text-eyebrow">Módulo</p>
-        <h1 className="text-2xl font-bold">{tituloDaAba}</h1>
+        <EyebrowDoCard fallback="Módulo" />
+        <h1 className="text-2xl font-bold">{tituloDaAba("veiculo", aba)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Frota da empresa com extrato por veículo, abastecimentos, manutenções e ocorrências. O cadastro fica em Parâmetros &gt; Veículos.
         </p>

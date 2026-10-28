@@ -1,21 +1,38 @@
-// Ocorrências de veículo na tela da Frota: quantas estão em aberto e quantas estão vencidas. Não há prazo cadastrado na ocorrência:
-// vence a que continua Aberta ou Em tratativa depois de DIAS_PARA_VENCER dias do dia em que aconteceu (decisão 296).
+// Ocorrências de veículo na tela da Frota: quantas estão em aberto e quantas estão vencidas (decisões 296 e 307). O prazo vem de Parâmetros > Veículos >
+// Parâmetros Específicos: a ocorrência Aberta (tratativa ainda não iniciada) vence passados `iniciar` dias do dia em que aconteceu; a Em tratativa vence passados
+// `finalizar` dias do início da tratativa; a Encerrada nunca vence.
+import { hojeBrasilia } from "./checklist-veiculo.ts";
+import { lerPrazosOcorrencias, type PrazosOcorrencias } from "./prazo-ocorrencias.ts";
 import { diasEntre } from "./viagens.ts";
 
-export const DIAS_PARA_VENCER = 7;
-
-type Basica = { veiculoId: string; ocorridoEm: string; status: string };
+export type OcorrenciaDoPrazo = { ocorridoEm: string; status: string; tratativa?: { registradaEm: string } | null };
+type Basica = OcorrenciaDoPrazo & { veiculoId: string };
 
 export const ocorrenciaAberta = (o: { status: string }): boolean => o.status !== "Encerrada";
 
-// `hoje` e a data da ocorrência são AAAA-MM-DD (a ocorrência vem com a hora: só o dia conta).
-export function ocorrenciaVencida(o: { ocorridoEm: string; status: string }, hoje: string): boolean {
-  return ocorrenciaAberta(o) && diasEntre(o.ocorridoEm.slice(0, 10), hoje) > DIAS_PARA_VENCER;
+// Dias que já passaram e o limite do passo em que a ocorrência está. `hoje` é AAAA-MM-DD; a ocorrência vem com a hora (só o dia conta).
+export function prazoDaOcorrencia(o: OcorrenciaDoPrazo, hoje: string, prazos: PrazosOcorrencias = lerPrazosOcorrencias()): { decorridos: number; limite: number } | null {
+  if (!ocorrenciaAberta(o)) return null;
+  if (o.status === "Em tratativa" && o.tratativa?.registradaEm) {
+    return { decorridos: diasEntre(hojeBrasilia(new Date(o.tratativa.registradaEm)), hoje), limite: prazos.finalizar };
+  }
+  return { decorridos: diasEntre(o.ocorridoEm.slice(0, 10), hoje), limite: prazos.iniciar };
 }
 
-export function resumoOcorrenciasDoVeiculo(lista: Basica[], veiculoId: string, hoje: string): { abertas: number; vencidas: number } {
+export function ocorrenciaVencida(o: OcorrenciaDoPrazo, hoje: string, prazos?: PrazosOcorrencias): boolean {
+  const p = prazoDaOcorrencia(o, hoje, prazos);
+  return p !== null && p.decorridos > p.limite;
+}
+
+// Vencimento próximo: ainda no prazo, mas o prazo acaba em até dois dias.
+export function ocorrenciaProxima(o: OcorrenciaDoPrazo, hoje: string, prazos?: PrazosOcorrencias): boolean {
+  const p = prazoDaOcorrencia(o, hoje, prazos);
+  return p !== null && p.decorridos <= p.limite && p.limite - p.decorridos <= 2;
+}
+
+export function resumoOcorrenciasDoVeiculo(lista: Basica[], veiculoId: string, hoje: string, prazos: PrazosOcorrencias = lerPrazosOcorrencias()): { abertas: number; vencidas: number } {
   const dele = lista.filter((o) => o.veiculoId === veiculoId && ocorrenciaAberta(o));
-  return { abertas: dele.length, vencidas: dele.filter((o) => ocorrenciaVencida(o, hoje)).length };
+  return { abertas: dele.length, vencidas: dele.filter((o) => ocorrenciaVencida(o, hoje, prazos)).length };
 }
 
 export function textoOcorrenciasDaFrota(r: { abertas: number; vencidas: number }): string {

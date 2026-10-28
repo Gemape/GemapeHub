@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { pendenciaAberta, type ChecklistVeiculo } from "@/lib/checklist-veiculo";
+import { checklistVisivelNaLista, pendenciaAberta, type ChecklistVeiculo } from "@/lib/checklist-veiculo";
 import { mesDe, mesesDisponiveis, noMesDaLista, painelDoMes, type Previsao } from "@/lib/checklist-painel";
 import { formatarData } from "@/lib/gemape";
 import { combinaBusca } from "@/lib/parametros-base";
@@ -70,6 +70,16 @@ export function ChecklistListaPeriodica({
     hoje,
   );
   const filtradas = linhas.filter((l) => combinaBusca(busca, l.veiculoRotulo, l.responsavelNome, l.periodicidade));
+  // Check list periódico que não casa com nenhuma linha de previsão (feito antes da associação, de periodicidade que saiu dela, o segundo do mesmo prazo ou de veículo
+  // que ficou inativo) não pode sumir: as pendências dele continuam valendo. Aparece depois das previsões, como Sem previsão.
+  // Todas as previsões, de todos os meses: o prazo que atravessa a virada do mês fica na linha do mês em que termina, e o check list feito antes da virada não é "sem previsão".
+  const todasLinhas = mes === TODOS_OS_MESES ? linhas : painelDoMes(null, previsoes.filter((p) => idsDosVeiculos.has(p.veiculoId)), checklists.filter((c) => idsDosVeiculos.has(c.veiculoId)), hoje).linhas;
+  const usados = new Set(todasLinhas.flatMap((l) => (l.checklistId ? [l.checklistId] : [])));
+  const semPrevisao = checklists
+    .filter((c) => idsDosVeiculos.has(c.veiculoId) && checklistVisivelNaLista(c) && noMesDaLista(c, mes === TODOS_OS_MESES ? null : mes) && !usados.has(c.id))
+    .filter((c) => !(c.status === "Em andamento" && todasLinhas.some((l) => l.veiculoId === c.veiculoId && l.periodicidade === c.periodicidade && c.data >= l.inicio && c.data <= l.fim)))
+    .filter((c) => combinaBusca(busca, c.veiculoRotulo, c.responsavelNome, c.periodicidade ?? ""))
+    .sort((a, b) => a.data.localeCompare(b.data));
 
   return (
     <section className="space-y-3" aria-label="Check list periódico">
@@ -78,7 +88,7 @@ export function ChecklistListaPeriodica({
         acao={<Button requiresWrite="operar" size="sm" onClick={onNovo}>Novo check list</Button>}
       />
       <p className="text-xs text-muted-foreground">
-        {mes === TODOS_OS_MESES ? "Todos os meses" : rotuloDoMes(mes)}: {filtradas.length} {filtradas.length === 1 ? "check list previsto" : "check lists previstos"}.
+        {mes === TODOS_OS_MESES ? "Todos os meses" : rotuloDoMes(mes)}: {filtradas.length} {filtradas.length === 1 ? "check list previsto" : "check lists previstos"}{semPrevisao.length > 0 ? `, mais ${semPrevisao.length} sem previsão` : ""}.
       </p>
       <div className="overflow-x-auto rounded-xl border">
         <Table>
@@ -86,7 +96,7 @@ export function ChecklistListaPeriodica({
             <TableRow>{CABECALHO.map((t, n) => <TableHead key={n} className={t === "Pendências" ? "text-right" : undefined}>{t}</TableHead>)}</TableRow>
           </TableHeader>
           <TableBody>
-            {filtradas.length === 0 && (
+            {filtradas.length === 0 && semPrevisao.length === 0 && (
               <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhum resultado para a busca." : "Nenhum check list previsto neste mês."}</TableCell></TableRow>
             )}
             {filtradas.map((l) => {
@@ -114,6 +124,21 @@ export function ChecklistListaPeriodica({
                 </TableRow>
               );
             })}
+            {semPrevisao.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell className="whitespace-nowrap">{formatarData(c.data)}</TableCell>
+                <TableCell>{c.veiculoRotulo}</TableCell>
+                <TableCell>{c.periodicidade ?? "—"}</TableCell>
+                <TableCell>{c.responsavelNome || "—"}</TableCell>
+                <TableCell><Badge variant="outline" className={SITUACAO.opcional.classe}>Sem previsão</Badge></TableCell>
+                <TableCell className="text-right"><CelulaPendencias n={pendenciasDe(c)} /></TableCell>
+                <TableCell className="whitespace-nowrap text-right">
+                  {c.status === "Em andamento"
+                    ? <Button requiresWrite="operar" variant="link" size="sm" className="h-auto p-0" onClick={() => onVer(c.id)}>Continuar</Button>
+                    : <Button variant="link" size="sm" className="h-auto p-0" onClick={() => onVer(c.id)}>Ver check list</Button>}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>

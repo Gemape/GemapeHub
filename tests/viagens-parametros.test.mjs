@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { aceitaDestino, destinoPergunta, destinosDoTipo, gravarDestino, pendencias } from "../src/lib/questionario-destinos.ts";
+import { aceitaDestino, destinoPergunta, destinosDoTipo, gravarDestino, pendencias, semDestinosDaOpcao } from "../src/lib/questionario-destinos.ts";
 import { ID_HABILITADOS, estadoPadrao, gravarEstado, lerEstado, questionarioDoTipo, salvarPergunta, tiposDeDespesa } from "../src/lib/questionario-despesas.ts";
 
 const ler = (f) => readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
@@ -85,11 +85,63 @@ test("o painel de Viagens tem o seletor de período também nos resultados dos t
   assert.match(ler("components/modules/ViagensExtrato.tsx"), /Custo total/);
 });
 
-test("em Veículos, o título da página é o nome da aba e as páginas de Parâmetros não repetem o nome Veículos no alto (decisão 301)", () => {
-  const rota = ler("routes/_authenticated/veiculos.tsx");
-  assert.match(rota, /ABAS_VEICULO\.find\(\(a\) => a\.aba === abaValida\)\?\.titulo/);
-  assert.match(rota, /<h1 className="text-2xl font-bold">\{tituloDaAba\}<\/h1>/);
-  for (const f of ["AssociarChecklistVeiculo", "ChecklistParametros", "ManutencaoParametros", "PlanoManutencaoVeiculo", "VeiculosListasParametros"]) {
-    assert.doesNotMatch(ler(`components/parametros/${f}.tsx`), /text-eyebrow">Parâmetros &gt; Veículos|eyebrow = "Parâmetros > Veículos"/, f);
+test("em todos os módulos o título da página é o nome da aba aberta, e as páginas de Parâmetros não repetem o nome do módulo no alto (decisão 301)", async () => {
+  const { tituloDaAba } = await import("../src/lib/menu-parametros.ts");
+  assert.equal(tituloDaAba("veiculo", "frota"), "Frota");
+  assert.equal(tituloDaAba("veiculo", "checklist"), "Check list");
+  assert.equal(tituloDaAba("viagem", "relatorio"), "Relatório");
+  assert.equal(tituloDaAba("equipamento", "indicadores"), "Indicadores");
+  assert.equal(tituloDaAba("veiculo", "aba-que-nao-existe"), "Frota", "aba inválida: vale a primeira");
+  for (const f of ["routes/_authenticated/veiculos.tsx", "routes/_authenticated/equipamentos.tsx", "routes/_authenticated/viagens.tsx", "components/modules/PaginaModulo.tsx"]) {
+    assert.match(ler(f), /<h1 className="text-2xl font-bold">\{tituloDaAba\(/, f);
+  }
+  const antigos = /text-eyebrow">Parâmetros (&gt;|·) |eyebrow = "Parâmetros > |const CAMINHO = "Parâmetros >/;
+  for (const f of [
+    "components/parametros/AssociarChecklistVeiculo.tsx", "components/parametros/ChecklistParametros.tsx", "components/parametros/ManutencaoParametros.tsx",
+    "components/parametros/PlanoManutencaoVeiculo.tsx", "components/parametros/VeiculosListasParametros.tsx", "components/parametros/ChecklistEquipamento.tsx",
+    "components/parametros/EquipamentosEspecificos.tsx", "components/parametros/ManutencaoEquipamento.tsx", "components/parametros/HabilitarEmpregadosViagens.tsx",
+    "routes/_authenticated/cadastros/equipamentos.tsx", "routes/_authenticated/cadastros/ferramentas.tsx", "routes/_authenticated/caixas-ferramentas.tsx",
+    "routes/_authenticated/epi-cadastrar.tsx", "routes/_authenticated/epi-ficha.tsx", "routes/_authenticated/uniformes-cadastrar.tsx",
+  ]) assert.doesNotMatch(ler(f), antigos, f);
+});
+
+test("excluir uma resposta tira a ramificação dela de todos os questionários, até do que já não tem a pergunta, sem gravar nada no meio", () => {
+  const e = { ...estadoPadrao(), destinos: { "Tipo A": { "q-x": { "Sim": "encerrar", "Não": "pergunta:q-y" } }, "Tipo B": { "q-x": { "Sim": "encerrar" }, "q-z": { "Ok": "encerrar" } } } };
+  const novo = semDestinosDaOpcao(e, "q-x", "Sim");
+  assert.deepEqual(novo.destinos, { "Tipo A": { "q-x": { "Não": "pergunta:q-y" } }, "Tipo B": { "q-z": { "Ok": "encerrar" } } });
+  assert.equal(e.destinos["Tipo B"]["q-x"]["Sim"], "encerrar", "o estado de entrada não muda");
+  assert.equal(semDestinosDaOpcao(estadoPadrao(), "q-x", "Sim").destinos, estadoPadrao().destinos);
+  assert.match(ler("components/parametros/QuestionarioDespesasConstrutor.tsx"), /salvarPergunta\(semDestinosDaOpcao\(estado, p\.id, opcao\)/);
+});
+
+test("a lista do check list periódico mostra, como Sem previsão, o que não casa com nenhuma previsão", () => {
+  const listas = ler("components/modules/ChecklistListasVeiculo.tsx");
+  assert.match(listas, /const semPrevisao = checklists/);
+  assert.match(listas, /!usados\.has\(c\.id\)/);
+  assert.match(listas, />Sem previsão</);
+});
+
+test("a caixa dupla compara os habilitados sem depender da ordem e o construtor do questionário não edita mais a lista", () => {
+  const caixa = ler("components/parametros/HabilitarEmpregadosViagens.tsx");
+  assert.match(caixa, /const assinatura = \(l: Habilitado\[\]\) => JSON\.stringify\(l\.map\(\(h\) => \[chaveDe\(h\), h\.area\]\)\.sort\(\)\)/);
+  assert.doesNotMatch(ler("components/parametros/QuestionarioDespesasConstrutor.tsx"), /AdicionarHabilitado/);
+});
+
+test("o texto pequeno do alto de toda página é o nome do card, por qualquer caminho de acesso (decisão 303)", async () => {
+  const { areaDaRota } = await import("../src/lib/inicio.ts");
+  const card = (url, search = {}) => areaDaRota(url, search, true)?.cartao.titulo;
+  assert.equal(card("/uniformes", { aba: "estoque" }), "Uniformes");
+  assert.equal(card("/veiculos", { aba: "frota" }), "Veículos");
+  assert.equal(card("/cadastros/veiculos-manutencao"), "Veículos");
+  assert.equal(card("/viagens", { aba: "painel" }), "Viagens");
+  assert.equal(card("/cadastros/viagens-especificos"), "Viagens");
+  assert.equal(card("/equipamentos", { aba: "indicadores" }), "Equipamentos");
+  assert.equal(card("/cadastros/equipamentos"), "Equipamentos");
+  assert.equal(card("/epi-cadastrar"), "EPIs");
+  assert.equal(card("/cadastros/gerais/codigo-produto"), "Gerais");
+  // Telas repetidas em mais de um card se resolvem pelo ?de=
+  assert.equal(card("/cadastros/gerais/categorias", { de: "veiculos" }), "Veículos");
+  for (const f of ["components/modules/PaginaModulo.tsx", "routes/_authenticated/veiculos.tsx", "routes/_authenticated/equipamentos.tsx", "routes/_authenticated/viagens.tsx", "components/parametros/Cabecalho.tsx", "components/parametros/HabilitarEmpregadosViagens.tsx"]) {
+    assert.match(ler(f), /<EyebrowDoCard fallback=/, f);
   }
 });

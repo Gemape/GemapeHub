@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-r
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,9 @@ export function HabilitarEmpregadosViagens() {
   const aDireita = habilitados
     .filter((h) => normalizar(h.nome).includes(normalizar(buscaDir)))
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  const alterado = JSON.stringify(habilitados) !== JSON.stringify(salvos);
+  // Tirar e recolocar o mesmo empregado muda a ordem da lista sem mudar nada: a comparação ignora a ordem.
+  const assinatura = (l: Habilitado[]) => JSON.stringify(l.map((h) => [chaveDe(h), h.area]).sort());
+  const alterado = assinatura(habilitados) !== assinatura(salvos);
 
   const alternar = (lista: string[], chave: string) => (lista.includes(chave) ? lista.filter((c) => c !== chave) : [...lista, chave]);
   const habilitar = (ids: string[]) => {
@@ -75,7 +78,7 @@ export function HabilitarEmpregadosViagens() {
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-4">
       <header>
-        <p className="text-eyebrow">Parâmetros &gt; Viagens</p>
+        <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-xl font-semibold">Parâmetros Específicos</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Escolha, entre todos os empregados ativos, quem fica habilitado a lançar despesas no questionário de despesas. Marque à esquerda e passe para a direita; a área de cada

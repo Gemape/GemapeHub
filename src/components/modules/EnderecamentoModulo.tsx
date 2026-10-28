@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { CampoBusca } from "@/components/CampoBusca";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
@@ -200,7 +201,7 @@ export function EnderecamentoModulo() {
   return <div className="space-y-5">
     <header className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <p className="text-eyebrow">Cadastros · Gerais</p>
+        <EyebrowDoCard fallback="Cadastros · Gerais" />
         <h1 className="text-2xl font-bold">Endereçamento de estoque</h1>
         <p className="mt-1 text-sm text-muted-foreground">Onde cada produto deve ser guardado no almoxarifado depois da entrada da nota fiscal: rua (corredor), número (estante) e apartamento (nível da prateleira, contado de cima para baixo).</p>
       </div>

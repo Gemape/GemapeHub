@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { RestaurarAcoesEquipamento, TEXTO_ALERTA_EQUIPAMENTO } from "@/components/parametros/RestaurarAcoesEquipamento";
 import { ListaVeiculos } from "@/components/parametros/VeiculosListasParametros";
@@ -19,7 +20,7 @@ import { useVersaoArmazenamento } from "@/lib/use-versao-armazenamento";
 
 // Parâmetros > Equipamentos > Manutenção (ações de manutenção e plano de manutenção por equipamento) e Tipos de ocorrência: as mesmas telas e
 // regras de Parâmetros > Veículos, com horas de uso no lugar de km. Só modo demonstração (navegador).
-const CAMINHO = "Parâmetros > Equipamentos";
+const CAMINHO = "Parâmetros";
 const dataBr = (iso: string) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
 const erroDe = (e: unknown, padrao: string) => (e instanceof Error ? e.message : padrao);
 
@@ -131,7 +132,7 @@ export function PlanoManutencaoEquipamento({ secao = false, versao, aoMudar }: {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          {!secao && <p className="text-eyebrow">{CAMINHO}</p>}
+          {!secao && <EyebrowDoCard fallback={CAMINHO} />}
           {secao ? <h2 className="text-xl font-bold">Cadastrar Plano de Manutenções</h2> : <h1 className="text-2xl font-bold">Cadastrar Plano de Manutenções</h1>}
           <p className="mt-1 text-sm text-muted-foreground">Para cada equipamento, as ações habilitadas e o limite de horas de uso e de tempo de cada uma; vale o que vier primeiro.</p>
         </div>
@@ -247,7 +248,7 @@ export function ManutencaoEquipamentoPagina() {
   return (
     <div className="space-y-10">
       <header>
-        <p className="text-eyebrow">{CAMINHO}</p>
+        <EyebrowDoCard fallback={CAMINHO} />
         <h1 className="text-2xl font-bold">Manutenção</h1>
         <p className="mt-1 text-sm text-muted-foreground">As ações de manutenção (grupos e subitens) e o plano de manutenções de cada equipamento, que usa essas ações: primeiro as ações, depois o plano.</p>
       </header>

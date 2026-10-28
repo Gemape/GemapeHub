@@ -1712,3 +1712,27 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 301. Títulos de Veículos pelo nome da aba
 
 - Em Módulo > Veículos, o título grande da página é o nome da aba aberta (Frota, Abastecimento, Manutenção, Ocorrências ou Check list) no lugar de "Veículos". Nas páginas de Parâmetros de veículos (Manutenção, Check list, Plano de manutenções, Associar itens e as listas), o texto pequeno do alto deixou de dizer "Parâmetros > Veículos" e passou a dizer só "Parâmetros": o nome de cada página já é o título. Só visual, sem Supabase.
+
+## 302. Títulos pelo nome da aba em todos os módulos e correções pendentes da revisão
+
+- O padrão da decisão 301 vale para todos os módulos: o título grande de EPIs, Uniformes, Ferramentas, Viagens, Equipamentos e Veículos é o nome da aba aberta, e o texto pequeno do alto das páginas de Parâmetros (de todos os módulos) diz só "Parâmetros". Também: check list periódico que não casa com nenhuma previsão aparece na lista como Sem previsão, com Ver check list ou Continuar, para as pendências dele não ficarem inalcançáveis; excluir uma resposta do questionário tira a ramificação dela de todos os questionários, até do que já não tem a pergunta, e grava tudo de uma vez; os habilitados passam a ser editados só pela caixa dupla (o card do questionário aponta para ela) e a caixa dupla ignora a ordem ao decidir se há alterações. Só visual, sem Supabase.
+
+## 303. Nome do card em cima e nome da aba embaixo, em toda a navegação
+
+- Em toda página (módulo e Parâmetros, por qualquer caminho: menu lateral, menu do topo ou card da tela inicial), o texto pequeno do alto é o nome do card a que ela pertence (EPIs, Uniformes, Ferramentas, Veículos, Viagens, Equipamentos, Gerais) e o título grande é o nome da aba ou do menu aberto. O nome do card sai do mesmo cálculo do menu do topo (areaDaRota), então não há lista paralela; as telas compartilhadas, como Parâmetros Específicos, usam o ?de= para saber de qual card vieram. Página que não é de nenhum card com submenu (Empresas, Clientes...) mantém o texto que tinha. Só visual, sem Supabase.
+
+## 304. Frota: coluna Check list, bolinhas de vencimento e links no extrato
+
+- A lista da Frota passa a ter as colunas Veículo, Responsável, Situação, Km atual, Preventivas, Ocorrências, Check list e Ver extrato. Preventivas, Ocorrências e Check list mostram uma bolinha e uma etiqueta: amarela "Vencimento próximo", vermelha "Vencida" ou verde "Em dia", com a quantidade entre parênteses quando há vencidas ou próximas; coluna que não se aplica ao veículo (sem plano de manutenções ou sem check list periódico associado) mostra um traço. Preventivas segue as sugestões do plano (vencida, atenção, em dia). Ocorrências: vencida passou de 7 dias aberta, vencimento próximo vence em até dois dias, sem ocorrência aberta está em dia. Check list: vencida é um prazo obrigatório dos últimos 30 dias que passou sem o check list; vencimento próximo é um prazo que acaba em até dois dias e ainda não foi feito; o opcional não conta. O mesmo aparece no PDF da frota. A janela do extrato do veículo ganhou os links Realizar manutenção, Tratar ocorrências e Realizar check list, que abrem a aba correspondente de Veículos. Só visual, sem Supabase.
+
+## 305. Frota: bolinhas clicáveis e colunas alinhadas
+
+- Na lista da Frota, a bolinha com a etiqueta de Preventivas, Ocorrências e Check list virou um botão que abre direto, em tela cheia, a informação que ela resume, sem passar pela janela do período e sem abrir o extrato da linha: Preventivas abre as manutenções sugeridas, Ocorrências abre as ocorrências em aberto do veículo (as vencidas em vermelho) e Check list abre os check lists periódicos do veículo, com prazo, periodicidade, responsável, situação, pendências e o código do realizado (prazos dos últimos 30 dias em diante). O extrato completo passa a ter também essa tabela de check lists. As colunas da lista têm largura fixa e o texto de cada coluna começa exatamente sob o título dela; Km atual alinha à direita com folga antes de Preventivas. Só visual, sem Supabase.
+
+## 306. Abastecimento de veículos: busca por período
+
+- A lista de Módulo > Veículos > Abastecimento ganhou Data início e Data fim (opcionais, as duas pontas valem), com Limpar período, somando ao veículo escolhido e à busca. O período corta a lista depois de montar o histórico de cada veículo, então os km rodados e o km/L de um abastecimento continuam contando com o anterior mesmo que ele esteja fora do período. Início depois do fim mostra o aviso, deixa a lista vazia e desativa o Gerar PDF. O PDF do abastecimento usa os mesmos filtros e escreve o período no cabeçalho. Só visual, sem Supabase.
+
+## 307. Prazos das ocorrências de veículo em Parâmetros Específicos
+
+- Em Parâmetros > Veículos > Parâmetros Específicos há o cartão Prazos das ocorrências, com o nº de dias para iniciar a tratativa (depois do dia da ocorrência; padrão 2) e o nº de dias para finalizar a tratativa (depois do início da tratativa; padrão 5), inteiros de 0 a 365, com Salvar prazos. A Frota passa a usar esses prazos no lugar dos 7 dias fixos da decisão 296: a ocorrência Aberta vence passados os dias de iniciar; a Em tratativa, passados os dias de finalizar contados do início da tratativa; a Encerrada nunca vence; vencimento próximo é o que vence em até dois dias. Só visual, sem Supabase.

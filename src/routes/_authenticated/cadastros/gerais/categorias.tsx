@@ -10,6 +10,7 @@ import { demoSupabase } from "@/integrations/supabase/demo-client";
 import { lerTodas } from "@/lib/ler-todas";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { IndicadoresViagens } from "@/components/parametros/IndicadoresViagens";
+import { PrazosOcorrenciasVeiculo } from "@/components/parametros/PrazosOcorrenciasVeiculo";
 import { SubgruposFerramenta } from "@/components/parametros/SubgruposFerramenta";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
@@ -388,6 +389,7 @@ function Categorias() {
               cadastrar={(nomes) => cadastrarMarcasPadraoVeiculos(undefined, nomes)}
             />
           </div>}
+          {categoria.id === "cat-veiculos" && <PrazosOcorrenciasVeiculo />}
           {categoria.id === "cat-veiculos" && <IndicadoresViagens />}
         </>
       ) : null}

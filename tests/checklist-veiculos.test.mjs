@@ -261,7 +261,7 @@ test("a página Check list junta Itens check list e Associar itens, com redireci
   const lista = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
   assert.match(lista, /secoes=\{separarPorTipoVeiculo\(itensChecklistVeiculo, tiposDeVeiculo\)/);
   const assoc = readFileSync("src/components/parametros/AssociarChecklistVeiculo.tsx", "utf8");
-  assert.match(assoc, /\{!secao && <p className="text-eyebrow">/);
+  assert.match(assoc, /\{!secao && <EyebrowDoCard /);
 });
 
 test("grupos Avulso · ...: ehGrupoAvulso e gruposAplicaveis separam o avulso do periódico (dec 130)", async () => {

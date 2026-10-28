@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -549,7 +550,7 @@ export function ChecklistEquipamento({ finalidade, aoEscolher }: { finalidade: F
     return (
       <div className="space-y-5">
         <header>
-          <p className="text-eyebrow">Parâmetros &gt; Equipamentos</p>
+          <EyebrowDoCard fallback="Parâmetros" />
           <h1 className="text-2xl font-bold">Check list</h1>
           <p className="mt-1 text-sm text-muted-foreground">Escolha o check list: manutenção ou vistoria. Cada um tem os seus itens e as suas associações aos equipamentos.</p>
         </header>
@@ -567,7 +568,7 @@ export function ChecklistEquipamento({ finalidade, aoEscolher }: { finalidade: F
   return (
     <div className="space-y-10">
       <header>
-        <p className="text-eyebrow">Parâmetros &gt; Equipamentos &gt; Check list</p>
+        <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-2xl font-bold">Check list de {atual.nome.toLowerCase()}</h1>
         <p className="mt-1 text-sm text-muted-foreground">Primeiro os itens do check list, por tipo de equipamento; depois a associação deles a cada equipamento.</p>
         <div className="mt-3 flex gap-2">
