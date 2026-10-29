@@ -2,11 +2,13 @@ import { CalendarCheck, CalendarClock, CircleCheck, CircleX } from "lucide-react
 import { useState } from "react";
 
 import { rotuloDoMes } from "@/components/modules/ChecklistPainelMensal";
+import { GraficosChecklist } from "@/components/modules/GraficosVeiculos";
 import { StatCard } from "@/components/StatCard";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { GRUPOS_DE_AREA, grupoDeAreaPorNome, type GrupoDeArea } from "@/lib/area-responsaveis";
+import { GRUPOS_DE_AREA, grupoDaLinha, grupoDeAreaPorNome, type GrupoDeArea } from "@/lib/area-responsaveis";
+import { faixaDoIndice } from "@/lib/faixas-desempenho";
 import { mesesDisponiveis, painelDoMes, resultadosPorResponsavel, resumoDeLinhas, type ChecklistDoPainel, type LinhaPainel, type Previsao, type ResumoPainel } from "@/lib/checklist-painel";
 
 const TODOS_OS_PERIODOS = "todos";
@@ -17,8 +19,8 @@ function Indicadores({ resumo, todos }: { resumo: ResumoPainel; todos: boolean }
   const desfechos = resumo.realizados + resumo.naoRealizados;
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-      <StatCard titulo="Realizados no prazo" valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} />
-      <StatCard titulo="Não realizados no prazo" valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} />
+      <StatCard titulo="Realizados no prazo" pct={resumo.pctNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} />
+      <StatCard titulo="Não realizados no prazo" pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} />
       <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} />
       <StatCard titulo="A vencer" valor={resumo.aVencer} icone={CalendarClock} />
     </div>
@@ -79,7 +81,7 @@ export function ChecklistResultadosPainel({
     hoje,
   );
   const grupoDe = grupoDeAreaPorNome();
-  const doGrupo = (g: GrupoDeArea) => linhas.filter((l) => grupoDe(l.responsavelNome) === g);
+  const doGrupo = (g: GrupoDeArea) => linhas.filter((l) => grupoDaLinha(l, grupoDe) === g);
   // Técnicos e PCM sempre aparecem (mesmo vazios, para ficar claro que não há nada previsto); os outros grupos só quando têm linhas.
   const grupos = GRUPOS_DE_AREA.filter((g) => g === "Técnicos" || g === "PCM" || doGrupo(g).length > 0);
   const todos = mes === TODOS_OS_PERIODOS;
@@ -118,6 +120,8 @@ export function ChecklistResultadosPainel({
           </section>
         );
       })}
+
+      <GraficosChecklist linhas={linhas} grupoDe={grupoDe} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
 import { CartoesOcorrencias } from "@/components/modules/CartoesOcorrencias";
+import { GraficosOcorrencias } from "@/components/modules/GraficosVeiculos";
 import { RenovarPrazoOcorrencia } from "@/components/modules/RenovarPrazoOcorrencia";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
@@ -51,6 +52,11 @@ const COR_STATUS: Record<StatusOcorrencia, string> = {
 const StatusBadge = ({ status }: { status: StatusOcorrencia }) => (
   <Badge variant="outline" className={COR_STATUS[status]}>{status}</Badge>
 );
+
+// Botões da lista (decisão 321): cada um mostra as ocorrências da situação; Todas mostra tudo.
+const BOTOES_FILTRO: { filtro: StatusOcorrencia | "todas"; rotulo: string }[] = [
+  { filtro: "todas", rotulo: "Todas" }, { filtro: "Aberta", rotulo: "Abertas" }, { filtro: "Em tratativa", rotulo: "Em tratativa" }, { filtro: "Encerrada", rotulo: "Encerradas" },
+];
 
 type Tela = { tipo: "nova" } | { tipo: "detalhe" | "tratativa"; id: string } | null;
 
@@ -208,7 +214,8 @@ export function OcorrenciasVeiculoModulo() {
 
   return (
     <div className="space-y-4">
-      <CartoesOcorrencias contagem={contagem} filtro={filtro} aoFiltrar={setFiltro} indicadores={indicadores} />
+      <CartoesOcorrencias indicadores={indicadores} />
+      <GraficosOcorrencias ocorrencias={daEmpresa} hoje={hojeLocal()} />
       <div className="flex flex-wrap items-center gap-2">
         <Input
           aria-label="Buscar ocorrência"
@@ -217,7 +224,13 @@ export function OcorrenciasVeiculoModulo() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        {filtro !== "todas" && <Button type="button" variant="ghost" size="sm" onClick={() => setFiltro("todas")}>Limpar filtro ({filtro})</Button>}
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Ocorrências por situação">
+          {BOTOES_FILTRO.map(({ filtro: f, rotulo }) => (
+            <Button key={f} type="button" size="sm" variant={filtro === f ? "default" : "outline"} aria-pressed={filtro === f} onClick={() => setFiltro(f)}>
+              {rotulo} ({f === "todas" ? daEmpresa.length : contagem[f]})
+            </Button>
+          ))}
+        </div>
         <Button requiresWrite="operar" className="ml-auto" onClick={abrirNova}>Nova ocorrência</Button>
       </div>
 

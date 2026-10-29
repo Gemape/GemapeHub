@@ -93,7 +93,7 @@ test("em todos os módulos o título da página é o nome da aba aberta, e as p�
   assert.equal(tituloDaAba("equipamento", "indicadores"), "Indicadores");
   assert.equal(tituloDaAba("veiculo", "aba-que-nao-existe"), "Frota", "aba inválida: vale a primeira");
   for (const f of ["routes/_authenticated/veiculos.tsx", "routes/_authenticated/equipamentos.tsx", "routes/_authenticated/viagens.tsx", "components/modules/PaginaModulo.tsx"]) {
-    assert.match(ler(f), /<h1 className="text-2xl font-bold">\{tituloDaAba\(/, f);
+    assert.match(ler(f), /<h1 className="text-2xl font-bold">\{(tituloTrocado \?\? )?tituloDaAba\(/, f);
   }
   const antigos = /text-eyebrow">Parâmetros (&gt;|·) |eyebrow = "Parâmetros > |const CAMINHO = "Parâmetros >/;
   for (const f of [

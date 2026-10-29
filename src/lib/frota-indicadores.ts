@@ -5,7 +5,7 @@ import type { StatusSugestao } from "./extrato-veiculo.ts";
 import { faixaDoIndice, type ConfigFaixas, type Faixa } from "./faixas-desempenho.ts";
 import { ocorrenciaAberta, ocorrenciaVencida, type OcorrenciaDoPrazo } from "./frota-ocorrencias.ts";
 import type { PrazosOcorrencias } from "./prazo-ocorrencias.ts";
-import type { GrupoDeArea } from "./area-responsaveis.ts";
+import { grupoDaLinha, type GrupoDeArea } from "./area-responsaveis.ts";
 
 export type IndicadorDaFrota = { pct: number | null; faixa: Faixa | null; detalhe: string };
 
@@ -44,7 +44,7 @@ export function indicadoresDaFrota(entrada: {
   const ocorrencias = indicador(abertas.length === 0 ? 100 : pct(abertas.length - vencidas, abertas.length), abertas.length ? `${abertas.length - vencidas} de ${abertas.length} abertas no prazo` : "Nenhuma ocorrência aberta", faixas);
 
   // Check list: realizados no prazo entre os que já têm desfecho, separados por grupo do responsável (PCM e Técnicos).
-  const doGrupo = (g: GrupoDeArea) => resumoDeLinhas(entrada.linhasDoChecklist.filter((l) => entrada.grupoDe(l.responsavelNome) === g));
+  const doGrupo = (g: GrupoDeArea) => resumoDeLinhas(entrada.linhasDoChecklist.filter((l) => grupoDaLinha(l, entrada.grupoDe) === g));
   const pcmResumo = doGrupo("PCM");
   const desfechosPcm = pcmResumo.realizados + pcmResumo.naoRealizados;
   const checklistPcm = indicador(pcmResumo.pctNoPrazo, desfechosPcm ? `${pcmResumo.realizados} de ${desfechosPcm} no prazo` : "Sem check list do PCM com prazo vencido", faixas);

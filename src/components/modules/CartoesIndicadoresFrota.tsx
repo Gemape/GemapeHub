@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ArrowDown, ArrowLeftRight, ArrowUp, Minus, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,23 +23,24 @@ const ESTILO: Record<Faixa, { cartao: string; texto: string; seta: string; barra
   },
 };
 
-// Com `valor`, o número grande é ele (uma contagem, em vez do percentual) e o card é neutro, com o `icone` dado; a barra segue o percentual.
-export function Cartao({ titulo, indicador, valor, icone }: { titulo: string; indicador: IndicadorDaFrota; valor?: string; icone?: LucideIcon }) {
+// O card padrão de todos os indicadores do sistema (decisão 324). Com `valor`, o número grande é ele (uma contagem, em vez do percentual) e o card é neutro, com o `icone` dado; a barra
+// segue o percentual e some quando não há percentual nem faixa. `extra` é um complemento ao lado do título (por exemplo, o ícone de explicação) e `classe` ajusta a moldura.
+export function Cartao({ titulo, indicador, valor, icone, extra, classe = "" }: { titulo: string; indicador: IndicadorDaFrota; valor?: string; icone?: LucideIcon | undefined; extra?: ReactNode; classe?: string }) {
   const estilo = indicador.faixa ? ESTILO[indicador.faixa] : null;
   const Icone = estilo?.Icone ?? icone ?? Minus;
   const largura = indicador.pct === null ? 0 : Math.max(0, Math.min(100, indicador.pct));
   return (
     <div
-      className={`flex h-full flex-col justify-between gap-3 rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md ${estilo?.cartao ?? "border-border bg-card"}`}
+      className={`flex h-full flex-col justify-between gap-3 rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${estilo?.cartao ?? "border-border bg-card"} ${classe}`}
       data-faixa={indicador.faixa ?? "sem-dado"}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-eyebrow">{titulo}</p>
-          <p className={`mt-1.5 font-display text-3xl font-bold leading-none tracking-tight ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}>{valor ?? porcento(indicador.pct)}</p>
+          <div className="flex items-center gap-1.5"><p className="text-eyebrow">{titulo}</p>{extra}</div>
+          <p className={`mt-1.5 break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}>{valor ?? porcento(indicador.pct)}</p>
         </div>
         <span
-          className={`flex size-10 shrink-0 items-center justify-center rounded-full shadow-md ring-4 ring-white/70 dark:ring-white/10 ${estilo?.seta ?? (valor ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground shadow-none")}`}
+          className={`flex size-8 shrink-0 items-center justify-center rounded-full shadow-md ring-4 sm:size-10 ring-white/70 dark:ring-white/10 ${estilo?.seta ?? (valor ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground shadow-none")}`}
           title={estilo ? `Faixa ${estilo.rotulo.toLowerCase()}` : "Sem dados"}
         >
           <Icone className="size-5" aria-hidden="true" />
@@ -47,10 +48,12 @@ export function Cartao({ titulo, indicador, valor, icone }: { titulo: string; in
         </span>
       </div>
       <div className="space-y-1.5">
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/15" role="presentation">
-          <div className={`h-full rounded-full ${estilo?.barra ?? (valor ? "bg-primary" : "bg-transparent")}`} style={{ width: `${largura}%` }} />
-        </div>
-        <p className="text-xs text-muted-foreground">{indicador.detalhe}</p>
+        {(indicador.pct !== null || !valor) && (
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/15" role="presentation">
+            <div className={`h-full rounded-full ${estilo?.barra ?? (valor ? "bg-primary" : "bg-transparent")}`} style={{ width: `${largura}%` }} />
+          </div>
+        )}
+        {indicador.detalhe && <p className="text-xs text-muted-foreground">{indicador.detalhe}</p>}
       </div>
     </div>
   );

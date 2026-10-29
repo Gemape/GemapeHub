@@ -176,10 +176,12 @@ test("celular: o cabeçalho da tela, as janelas e os relatórios se ajustam à t
 });
 
 test("celular: indicadores em duas colunas, cartões menores e botões das janelas lado a lado", () => {
-  const stat = ler("components/StatCard.tsx");
-  assert.match(stat, /p-3 pt-3 sm:p-6 sm:pt-6/, "menos espaço interno no celular");
-  assert.match(stat, /text-xl font-bold sm:text-2xl/);
-  assert.match(stat, /hidden size-9 shrink-0 items-center justify-center sm:flex/, "o ícone some no celular, para sobrar largura ao texto");
+  // O card de indicador é o mesmo em todo o sistema (decisão 324): o StatCard usa o Cartao da Frota, menor no celular.
+  assert.match(ler("components/StatCard.tsx"), /<Cartao titulo=\{titulo\}/);
+  const cartao = ler("components/modules/CartoesIndicadoresFrota.tsx");
+  assert.match(cartao, /p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4/, "menos espaço interno no celular");
+  assert.match(cartao, /break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl/);
+  assert.match(cartao, /size-8 shrink-0 items-center justify-center rounded-full shadow-md ring-4 sm:size-10/, "o ícone é menor no celular, para sobrar largura ao texto");
   for (const arq of ["components/modules/ChecklistPainelMensal.tsx", "routes/_authenticated/dashboard.tsx", "components/modules/DashboardModulo.tsx", "components/modules/AbastecimentoVeiculoModulo.tsx", "components/modules/equipamento/InventarioEquipamentoModulo.tsx"]) {
     assert.match(ler(arq), /grid grid-cols-2 gap-3/, `${arq}: duas colunas no celular`);
   }
@@ -190,7 +192,7 @@ test("celular: o último cartão de uma fileira de três ocupa a linha toda, sem
   for (const arq of ["components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
     assert.match(ler(arq), /sm:grid-cols-3[^"]* max-sm:\[&>\*:last-child:nth-child\(odd\)\]:col-span-2/, arq);
   }
-  assert.match(ler("components/StatCard.tsx"), /break-words font-display text-xl font-bold sm:text-2xl/);
+  assert.match(ler("components/modules/CartoesIndicadoresFrota.tsx"), /break-words font-display text-2xl font-bold/);
   for (const arq of ["components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/EpiRelatorioFuncionario.tsx", "components/modules/UniformesRelatorioFuncionario.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
     assert.match(ler(arq), /grid grid-cols-2 gap-3/, `${arq}: duas colunas no celular`);
   }

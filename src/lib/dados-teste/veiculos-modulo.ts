@@ -101,20 +101,21 @@ export function semearModuloVeiculos(storage: Armazenamento, agora: Date): void 
   VEICULOS.forEach((v, n) => {
     const periodicos = escolher(gruposAplicaveis(grupos, v.subId, false));
     const avulsos = escolher(gruposAplicaveis(grupos, v.subId, true));
-    const responsavel = EMPREGADOS[n]!;
-    const plano = PLANOS_CHECKLIST_TESTE[n]!;
+    // Os dois últimos veículos têm responsável do PCM (Thiago e Camila, os empregados 7 e 8, da mesma empresa de cada veículo, para o responsável da associação valer), para os indicadores do PCM do check list terem dados; os outros três são da Oficina.
+    const responsavel = EMPREGADOS[n < 3 ? n : n + 3]!;
+    const plano = PLANOS_CHECKLIST_TESTE[n < 3 ? n : n - 2]!;
     const rotulo = `${v.placa.slice(0, 3)}-${v.placa.slice(3)} · ${v.marca} ${v.modelo}`;
     if (periodicos.length > 0) {
       ignorar(() => criarAssociacao(v.id, { id: responsavel.id, nome: responsavel.nome }, periodicos.map((g) => ({ grupoId: g.id, tipo: "periodico", periodicidade: plano.periodicidade })), st, em(agora, plano.desde)));
       plano.dias.forEach((dias, k) => {
         const quando = em(agora, dias);
-        ignorar(() => preencher(iniciarChecklist({ veiculoId: v.id, veiculoRotulo: rotulo, tipoVeiculo: v.tipo, periodicidade: plano.periodicidade, responsavelId: responsavel.id, responsavelNome: responsavel.nome, grupos: periodicos }, st, quando), (n + k) % 4 === 1, quando));
+        ignorar(() => preencher(iniciarChecklist({ veiculoId: v.id, veiculoRotulo: rotulo, tipoVeiculo: v.tipo, periodicidade: plano.periodicidade, responsavelId: responsavel.id, responsavelNome: responsavel.nome, grupos: periodicos, grupoChecklist: n < 3 ? "Técnicos" : "PCM" }, st, quando), (n + k) % 4 === 1, quando));
       });
     }
     if (avulsos.length > 0) {
       for (let k = 0; k < 5; k++) {
         const quando = em(agora, 1 + k * 3);
-        ignorar(() => preencher(iniciarChecklistAvulso({ veiculoId: v.id, veiculoRotulo: rotulo, tipoVeiculo: v.tipo, grupos: avulsos }, st, quando), (n + k) % 3 === 0, quando));
+        ignorar(() => preencher(iniciarChecklistAvulso({ veiculoId: v.id, veiculoRotulo: rotulo, tipoVeiculo: v.tipo, grupos: avulsos, grupoChecklist: n < 3 ? "Técnicos" : "PCM" }, st, quando), (n + k) % 3 === 0, quando));
       }
     }
   });

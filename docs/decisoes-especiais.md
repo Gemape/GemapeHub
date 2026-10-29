@@ -1789,12 +1789,48 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 319. Manutenção: cards e lista de revisões
 
 - O alto de Manutenção ganhou cards no modelo da Frota: Preventivas e Corretivas (quantidade registrada e parte do total) e, das revisões do plano de cada veículo, Realizadas no prazo e Não realizadas no prazo (cor e seta da faixa; sem registro não conta; a cor dos não realizados é a dos realizados no prazo).
-- A lista passou a mostrar as revisões do plano: veículo, serviço, periodicidade, última realizada, próxima revisão, situação (pílula colorida: vencida, vencimento próximo, em dia ou sem registro) e dois links, Sugeridas e Realizadas. A revisão vence pelo que vier primeiro, o km atual do veículo ou a data: a situação diz o motivo (Vencida por km, por tempo...) e a próxima revisão mostra o km atual para a conta ficar visível, que abrem o relatório do veículo. Os registros de manutenção (relatório, editar, excluir, período) continuam no botão "Manutenções registradas".
+- A lista passou a mostrar as revisões do plano: veículo, serviço, periodicidade, última realizada, próxima revisão, situação (pílula colorida: vencida, vencimento próximo, em dia ou sem registro). Os dois links (Sugeridas e Realizadas) que ficavam numa última coluna foram retirados. A revisão vence pelo que vier primeiro, o km atual do veículo ou a data: a situação diz o motivo (Vencida por km, por tempo...) e a próxima revisão mostra o km atual para a conta ficar visível, que abrem o relatório do veículo. Os registros de manutenção (relatório, editar, excluir, período) continuam nos botões Preventivas e Corretivas (decisão 319, atualização).
 
-- Atualização: os cards de Manutenção ficam separados por dois botões, como na Frota: "Manutenções" (Preventivas, Corretivas) e "Indicadores" (Realizadas no prazo, Não realizadas no prazo, Previstas). Previstas = revisões do plano dos veículos.
+- (Substituída pela atualização seguinte.) Os cards de Manutenção ficavam separados por dois botões, como na Frota: "Manutenções" (Preventivas, Corretivas) e "Indicadores" (Realizadas no prazo, Não realizadas no prazo, Previstas). Previstas = revisões do plano dos veículos.
 
 ## 320. Ocorrências: cards, indicadores e prorrogação
 
 - O alto de Ocorrências ganhou cards no modelo da Frota, separados por dois botões: "Ocorrências" (Abertas, Em tratativa, Encerradas e Todas, com a quantidade e a parte do total; clicar num card filtra a lista) e "Indicadores" (Realizadas no prazo e Não realizadas no prazo, com cor e seta da faixa). Os botões de filtro por status que ficavam ao lado da busca saíram, porque os cards fazem esse papel.
-- Realizada no prazo é a ocorrência encerrada até a data limite da finalização (início da tratativa mais os dias de finalizar, ou a data da última renovação, se houver). Não realizada no prazo é a encerrada depois disso ou a ainda aberta que já venceu; a que está dentro do prazo não entra na conta.
+- Realizada no prazo é a ocorrência encerrada que cumpriu os dois prazos: a tratativa começou até o dia da ocorrência mais os dias de iniciar e terminou até o início da tratativa mais os dias de finalizar (em cada passo, a data da última renovação vale no lugar da padrão). Não realizada no prazo é a encerrada que perdeu algum dos dois prazos ou a ainda aberta que já venceu; a que está dentro do prazo não entra na conta.
 - Parâmetros > Veículos > Parâmetros Específicos, cartão Prazos das ocorrências: além dos dias para iniciar e para finalizar a tratativa, o novo bloco "Prorrogar a tratativa" liga ou desliga o botão Renovar prazo da ocorrência e define quantos dias a nova data limite sugere (antes sugeria os dias do prazo do passo).
+
+- Atualização: em Manutenção os cards são só os indicadores (Realizadas no prazo, Não realizadas no prazo e Previstas). Preventivas e Corretivas viraram botões ao lado de Revisões do plano: cada um mostra, no lugar da lista de revisões, os registros de manutenção do tipo (com período, relatório, editar e excluir).
+
+## 321. Ocorrências: situações em botões, indicadores nos cards
+
+- Em Ocorrências, os cards do alto são só os indicadores (Realizadas no prazo e Não realizadas no prazo). Abertas, Em tratativa, Encerradas e Todas viraram botões padrão do sistema, com a quantidade, ao lado da busca: cada um mostra na lista as ocorrências da situação. Substitui os cards clicáveis da decisão 320 (os botões "Ocorrências" e "Indicadores" que alternavam os cards saíram).
+
+## 322. Dados de teste do PCM e atalho da associação no Novo check list
+
+- Dados de teste: do sexto empregado de teste em diante (Patrícia Souza Nogueira e os outros) entram na lista de habilitados de Viagens com a área PCM, e os dois últimos veículos (TST4D56 e TST5E67) passam a ter como responsável do check list o Thiago e a Camila (da mesma empresa de cada veículo, para a associação valer), com os planos quinzenal e mensal (que têm lacunas). Assim os indicadores do PCM do Check list têm realizados no prazo, não realizados, previstos e a vencer. A versão dos dados de teste subiu para 29, para o navegador regravar sozinho.
+- Novo check list: logo abaixo do campo Tipo de check list há sempre o link Associar itens de check list a um veículo. Ele abre a janela da associação ao lado, sem perder o que foi preenchido, e ao fechar volta ao Novo check list. O link deixou de se repetir nos avisos de sem itens e sem periodicidade.
+
+## 323. Check list: campo "Check list de" (Técnicos ou PCM)
+
+- O Novo check list ganhou o campo "Check list de", com Técnicos ou PCM, abaixo do tipo de check list (periódico e avulso). O padrão vem do último check list do veículo; sem nenhum, da área do responsável (PCM) ou Técnicos. O valor fica guardado no check list.
+- Os indicadores (painel do Check list e Frota) separam técnicos e PCM por esse campo, e não mais pela área do responsável. A linha do painel ainda sem check list feito usa o grupo do último check list do veículo e da periodicidade; sem nenhum, ou em check list antigo sem o campo, vale a área do responsável como antes.
+- Dados de teste: os três primeiros veículos têm check lists de Técnicos e os dois últimos de PCM (versão 30).
+
+## 324. Todos os cards no padrão da Frota
+
+- O card de indicador do sistema é um só, o da Frota: título, número grande, barra, detalhe e o ícone em círculo (com cor e seta da faixa quando há percentual). O StatCard (Check list, Estoque, Dashboard) e os indicadores de Viagens passaram a usá-lo; no Check list os percentuais ganharam a cor da faixa e a barra. No celular o card é menor (espaço interno, número e ícone).
+
+## 325. Relatórios gráficos abaixo dos cards (Veículos)
+
+- Abaixo dos cards de cada tela de Veículos há um bloco Comparativos, em gráficos no estilo de painel de BI: Frota (PCM x técnicos contra a meta de 90
+## 324. Todos os cards no padrão da Frota
+
+- O card de indicador do sistema é um só, o da Frota: título, número grande, barra, detalhe e o ícone em círculo (com cor e seta da faixa quando há percentual). O StatCard (Check list, Estoque, Dashboard) e os indicadores de Viagens passaram a usá-lo; no Check list os percentuais ganharam a cor da faixa e a barra. No celular o card é menor (espaço interno, número e ícone).
+
+## 325. Relatórios gráficos abaixo dos cards (Veículos)
+
+- Abaixo dos cards de cada tela de Veículos há um bloco Comparativos, em gráficos no estilo de painel de BI: Frota (PCM x técnicos contra a meta de 90%, e média km/L por veículo), Manutenção (revisões por veículo por situação, e preventivas x corretivas por mês), Ocorrências (rosca por situação, ocorrências por mês e situação por tipo) e Check list (técnicos x PCM, e percentual no prazo por responsável). Feitos com recharts, que já estava no projeto.
+
+## 326. Título da página acompanha a lista do Check list
+
+- No Check list de veículos, o título grande da página passa a ser Check list periódico ou Check list avulso quando uma dessas listas está aberta (e volta a Check list no painel). O mesmo texto que ficava ao lado do botão Voltar ao painel fica só para leitores de tela, para não repetir.

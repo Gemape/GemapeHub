@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { CartoesIndicadoresFrota } from "@/components/modules/CartoesIndicadoresFrota";
+import { GraficosFrota } from "@/components/modules/GraficosVeiculos";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,6 +149,7 @@ export function FrotaModulo() {
   return (
     <div className="space-y-5">
       <CartoesIndicadoresFrota indicadores={indicadores} />
+      <GraficosFrota indicadores={indicadores} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />
       <div className="flex flex-wrap items-center gap-3">
         <Input
           aria-label="Buscar veículo por descrição ou responsável"
