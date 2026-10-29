@@ -1,9 +1,9 @@
-import { Car, CircleSlash, Printer, Wrench } from "lucide-react";
+import { Printer } from "lucide-react";
 import { useState } from "react";
 
 import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
-import { StatCard } from "@/components/StatCard";
+import { CartoesIndicadoresFrota } from "@/components/modules/CartoesIndicadoresFrota";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,11 @@ import { hojeBrasilia } from "@/lib/checklist-veiculo";
 import { hojeLocal } from "@/lib/empregados";
 import { rotuloDaSituacao, situacaoChecklistDoVeiculo, situacaoOcorrenciasDoVeiculo, situacaoPreventivas, type SituacaoColuna, type Vencimento } from "@/lib/frota-situacao";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { kmAtualDoVeiculo, sugestoesPreventivas } from "@/lib/extrato-veiculo";
+import { grupoDeAreaPorNome } from "@/lib/area-responsaveis";
+import { painelDoMes } from "@/lib/checklist-painel";
+import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas } from "@/lib/extrato-veiculo";
+import { indicadoresDaFrota } from "@/lib/frota-indicadores";
+import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
 import { montarFrotaHtml } from "@/lib/frota-relatorio-html";
 import { combinaBusca } from "@/lib/parametros-base";
@@ -24,30 +28,31 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 const STATUS: Record<string, string> = { Ativo: "Ativo", Manutencao: "Em manutenção", Inativo: "Inativo" };
 
 const COR_VENCIMENTO: Record<Vencimento, { ponto: string; etiqueta: string }> = {
-  vencida: { ponto: "bg-red-500", etiqueta: "border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" },
-  proximo: { ponto: "bg-amber-400", etiqueta: "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200" },
-  em_dia: { ponto: "bg-emerald-500", etiqueta: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
+  vencida: { ponto: "bg-red-500", etiqueta: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-200" },
+  proximo: { ponto: "bg-amber-400", etiqueta: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200" },
+  em_dia: { ponto: "bg-emerald-500", etiqueta: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
 };
 
-// Bolinha e etiqueta de uma coluna de vencimento; coluna que não se aplica ao veículo (sem plano, sem check list associado) mostra um traço.
-// Com `aoClicar`, a bolinha e a etiqueta são um botão que abre a informação que elas resumem (decisão 305), sem abrir o extrato da linha.
+// Etiqueta de uma coluna de vencimento: uma pílula só, com a bolinha da cor dentro e todas do mesmo tamanho; coluna que não se aplica ao veículo (sem plano, sem check list associado) mostra um traço.
+// Com `aoClicar`, a pílula é um botão que abre a informação que ela resume (decisão 305), sem abrir o extrato da linha.
 function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; dica?: string; aoClicar?: () => void }) {
   if (!valor) return <span className="text-muted-foreground">—</span>;
   const cor = COR_VENCIMENTO[valor.situacao];
+  const classes = `mx-auto flex h-8 w-full max-w-[12rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.etiqueta}`;
   const conteudo = (
     <>
-      <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ${cor.ponto}`} />
-      <Badge variant="outline" className={cor.etiqueta}>{rotuloDaSituacao(valor)}</Badge>
+      <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ring-2 ring-white/80 dark:ring-black/30 ${cor.ponto}`} />
+      {rotuloDaSituacao(valor)}
     </>
   );
-  if (!aoClicar) return <span className="inline-flex items-center gap-2 whitespace-nowrap">{conteudo}</span>;
+  if (!aoClicar) return <span className={classes}>{conteudo}</span>;
   return (
     <button
       type="button"
       title={dica}
       aria-label={`${dica ?? "Ver detalhes"}: ${rotuloDaSituacao(valor)}`}
       onClick={(e) => { e.stopPropagation(); aoClicar(); }}
-      className="inline-flex items-center gap-2 whitespace-nowrap rounded-md hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+      className={`${classes} transition hover:-translate-y-px hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary`}
     >
       {conteudo}
     </button>
@@ -77,20 +82,37 @@ export function FrotaModulo() {
     combinaBusca(busca.replace(/-/g, ""), rotuloDoVeiculo(parametros, v), normalizarPlaca(v.placa ?? ""), v.marca, v.modelo, nomeResponsavel(v.empregado_responsavel_id), STATUS[v.status] ?? v.status),
   );
   // Cada coluna de vencimento (decisão 304): bolinha e etiqueta amarela (vencimento próximo), vermelha (vencida) ou verde (em dia).
-  const preventivasDo = (id: string): SituacaoColuna => {
+  const statusPreventivasDo = (id: string) => {
     const abast = abastecimentos.filter((a) => a.veiculoId === id);
     const manut = manutencoes.filter((m) => m.veiculoId === id);
     const v = veiculos.find((x) => x.id === id);
-    return situacaoPreventivas(sugestoesPreventivas({
+    return sugestoesPreventivas({
       plano: planos.find((p) => p.veiculoId === id) ?? null,
       acoes: parametros.acoesManutencaoVeiculo,
       manutencoes: manut,
       kmAtual: kmAtualDoVeiculo(v?.quilometragem_atual ?? 0, abast, manut),
       hoje,
-    }).map((s) => s.status));
+    }).map((s) => s.status);
   };
+  // Calculado uma vez por veículo: serve às linhas da lista e aos indicadores do alto.
+  const statusPorVeiculo = new Map(veiculos.map((v) => [v.id, statusPreventivasDo(v.id)] as const));
+  const preventivasDo = (id: string): SituacaoColuna => situacaoPreventivas(statusPorVeiculo.get(id) ?? []);
   const ocorrenciasDo = (id: string) => situacaoOcorrenciasDoVeiculo(ocorrencias, id, hoje);
   const checklistDo = (id: string) => situacaoChecklistDoVeiculo(previsoes, checklists, id, hoje);
+
+  // Indicadores do alto (decisão 317): PCM (manutenções, check list do PCM, ocorrências, conformidade geral) e técnicos (check list), da frota da empresa escolhida.
+  const idsDaFrota = new Set(veiculos.map((v) => v.id));
+  const indicadores = indicadoresDaFrota({
+    statusPreventivas: [...statusPorVeiculo.values()].flat(),
+    ocorrencias: ocorrencias.filter((o) => idsDaFrota.has(o.veiculoId)),
+    linhasDoChecklist: painelDoMes(null, previsoes.filter((p) => idsDaFrota.has(p.veiculoId)), checklists.filter((c) => idsDaFrota.has(c.veiculoId)), hoje).linhas,
+    grupoDe: grupoDeAreaPorNome(),
+    hoje,
+    prazos: lerPrazosOcorrencias(),
+  });
+  // Média de consumo do veículo (km/L), do histórico de abastecimentos dele (Módulo > Veículos > Abastecimento); precisa de dois abastecimentos.
+  const mediaDo = (id: string): number | null => mediaKmPorLitro(historicoAbastecimentos(abastecimentos.filter((a) => a.veiculoId === id)));
+  const textoMedia = (m: number | null) => (m === null ? "—" : m.toLocaleString("pt-BR", { maximumFractionDigits: 1 }));
 
   const kmDo = (v: (typeof veiculos)[number]) =>
     kmAtualDoVeiculo(
@@ -113,6 +135,7 @@ export function FrotaModulo() {
           responsavel: nomeResponsavel(v.empregado_responsavel_id),
           situacao: STATUS[v.status] ?? v.status,
           km: kmDo(v),
+          mediaKmL: mediaDo(v.id),
           preventivas: preventivasDo(v.id),
           ocorrencias: ocorrenciasDo(v.id),
           checklist: checklistDo(v.id),
@@ -124,11 +147,7 @@ export function FrotaModulo() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
-        <StatCard titulo="Ativos" valor={veiculos.filter((v) => v.status === "Ativo").length} icone={Car} />
-        <StatCard titulo="Em manutenção" valor={veiculos.filter((v) => v.status === "Manutencao").length} icone={Wrench} />
-        <StatCard titulo="Inativos" valor={veiculos.filter((v) => v.status === "Inativo").length} icone={CircleSlash} />
-      </div>
+      <CartoesIndicadoresFrota indicadores={indicadores} />
       <div className="flex flex-wrap items-center gap-3">
         <Input
           aria-label="Buscar veículo por descrição ou responsável"
@@ -142,23 +161,24 @@ export function FrotaModulo() {
         </Button>
       </div>
       <div className="overflow-x-auto rounded-xl border">
-        <Table className="min-w-[1180px] table-fixed">
+        <Table className="min-w-[1440px] table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead>Veículo</TableHead>
-              <TableHead className="w-48">Responsável</TableHead>
-              <TableHead className="w-28">Situação</TableHead>
-              <TableHead className="w-28 pr-6 text-right">Km atual</TableHead>
-              <TableHead className="w-52">Preventivas</TableHead>
-              <TableHead className="w-52">Ocorrências</TableHead>
-              <TableHead className="w-52">Check list</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-[16%]">Veículo</TableHead>
+              <TableHead className="w-[12%]">Responsável</TableHead>
+              <TableHead className="w-[7%]">Situação</TableHead>
+              <TableHead className="w-[7%] pr-6 text-right">Km atual</TableHead>
+              <TableHead className="w-[8%] whitespace-nowrap pr-6 text-right">Média km/L</TableHead>
+              <TableHead className="w-[14%] text-center">Preventivas</TableHead>
+              <TableHead className="w-[14%] text-center">Ocorrências</TableHead>
+              <TableHead className="w-[14%] text-center">Check list</TableHead>
+              <TableHead className="w-[8%]" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">Carregando...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Carregando...</TableCell></TableRow>}
             {!isLoading && lista.length === 0 && (
-              <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">Nenhum veículo encontrado.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Nenhum veículo encontrado.</TableCell></TableRow>
             )}
             {lista.map((v) => {
               const km = kmDo(v);
@@ -168,11 +188,12 @@ export function FrotaModulo() {
                   <TableCell className="truncate">{nomeResponsavel(v.empregado_responsavel_id) || "—"}</TableCell>
                   <TableCell><Badge variant="outline">{STATUS[v.status] ?? v.status}</Badge></TableCell>
                   <TableCell className="pr-6 text-right tabular-nums">{km.toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="pr-6 text-right tabular-nums">{textoMedia(mediaDo(v.id))}</TableCell>
                   <TableCell><EtiquetaVencimento valor={preventivasDo(v.id)} dica="Ver as manutenções sugeridas" aoClicar={() => setAberto({ id: v.id, secao: "sugeridas" })} /></TableCell>
                   <TableCell><EtiquetaVencimento valor={ocorrenciasDo(v.id)} dica="Ver as ocorrências em aberto" aoClicar={() => setAberto({ id: v.id, secao: "ocorrenciasAbertas" })} /></TableCell>
                   <TableCell><EtiquetaVencimento valor={checklistDo(v.id)} dica="Ver os check lists" aoClicar={() => setAberto({ id: v.id, secao: "checklists" })} /></TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setAberto({ id: v.id, secao: null }); }}>Ver extrato</Button>
+                    <Button variant="outline" size="sm" className="rounded-full" onClick={(e) => { e.stopPropagation(); setAberto({ id: v.id, secao: null }); }}>Ver extrato</Button>
                   </TableCell>
                 </TableRow>
               );
