@@ -32,7 +32,7 @@ export function SupervisoresOcorrencias() {
       <div>
         <h2 id="supervisores-ocorrencias" className="text-lg font-semibold">Supervisores das ocorrências</h2>
         <p className="text-sm text-muted-foreground">
-          Usuários que validam a renovação do prazo da tratativa. Quem já é supervisor renova sem senha; os outros escolhem um supervisor e digitam a senha de login dele.
+          Usuários que validam a renovação do prazo da tratativa. Toda renovação pede a senha de login do supervisor que autoriza, escolhido numa lista, mesmo de quem já é supervisor.
           {lerSupervisoresSalvos() === null ? " Enquanto nada for salvo, valem os usuários do perfil Administrador." : ""}
         </p>
       </div>

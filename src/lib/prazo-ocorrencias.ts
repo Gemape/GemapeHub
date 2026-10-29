@@ -29,6 +29,12 @@ export function lerPrazosOcorrencias(storage?: StorageLike): PrazosOcorrencias {
   }
 }
 
+// Data limite sugerida ao renovar: hoje mais os dias do prazo do passo (AAAA-MM-DD, em UTC para não depender do fuso do navegador).
+export function dataLimiteSugerida(hoje: string, dias: number): string {
+  const [a, m, d] = hoje.split("-").map(Number) as [number, number, number];
+  return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10);
+}
+
 export function salvarPrazosOcorrencias(prazos: PrazosOcorrencias, storage?: StorageLike): void {
   if (!prazoOcorrenciaValido(prazos.iniciar) || !prazoOcorrenciaValido(prazos.finalizar)) {
     throw new Error(`Informe números inteiros de dias entre 0 e ${PRAZO_OCORRENCIA_MAXIMO_DIAS}.`);

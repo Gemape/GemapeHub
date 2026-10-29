@@ -26,7 +26,7 @@ export type DadosRelatorioOcorrencia = {
     pagamentoTerceiros: string;
     seguradora: string;
   };
-  renovacoes: { em: string; passo: string; autorizadoPor: string; registradoPor: string }[];
+  renovacoes: { em: string; passo: string; ate: string; autorizadoPor: string; registradoPor: string }[];
 };
 
 const linha = (campo: string, valor: string): Celula[] => [campo, valor || "—"];
@@ -51,8 +51,8 @@ export function montarOcorrenciaHtml(d: DadosRelatorioOcorrencia, geradoEm: Date
     },
     {
       titulo: "Renovações de prazo", vazio: "O prazo da tratativa não foi renovado.",
-      colunas: [{ titulo: "Renovado em" }, { titulo: "Prazo" }, { titulo: "Autorizado por" }, { titulo: "Registrado por" }],
-      linhas: d.renovacoes.map((r): Celula[] => [r.em, r.passo, r.autorizadoPor, r.registradoPor]),
+      colunas: [{ titulo: "Renovado em" }, { titulo: "Prazo" }, { titulo: "Nova data" }, { titulo: "Autorizado por" }, { titulo: "Registrado por" }],
+      linhas: d.renovacoes.map((r): Celula[] => [r.em, r.passo, r.ate, r.autorizadoPor, r.registradoPor]),
     },
   ];
   return montarExtratoHtml({

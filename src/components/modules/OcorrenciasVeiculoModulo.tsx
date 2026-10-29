@@ -187,7 +187,7 @@ export function OcorrenciasVeiculoModulo() {
           responsavel: nomeEmpregado(t.responsavelId), custoEmpresa: reais(t.custoEmpresa), descricaoEmpresa: t.descricaoEmpresa, descricaoTerceiros: t.descricaoTerceiros,
           pagamentoTerceiros: t.pagamentoTerceiros, seguradora: t.seguradora ? "Sim" : "Não",
         } : null,
-        renovacoes: (o.renovacoes ?? []).map((r) => ({ em: dataHoraBrasilia(r.em), passo: r.passo === "iniciar" ? "Iniciar a tratativa" : "Finalizar a tratativa", autorizadoPor: r.autorizadoPorNome, registradoPor: r.registradoPorNome })),
+        renovacoes: (o.renovacoes ?? []).map((r) => ({ em: dataHoraBrasilia(r.em), passo: r.passo === "iniciar" ? "Iniciar a tratativa" : "Finalizar a tratativa", ate: formatarData(r.ate), autorizadoPor: r.autorizadoPorNome, registradoPor: r.registradoPorNome })),
       }),
       arquivo: nomeArquivoDocumento("Ocorrencia", o.codigo, rotuloVeiculo(o.veiculoId)),
       telaCheia: true,
@@ -407,7 +407,7 @@ export function OcorrenciasVeiculoModulo() {
                     <h4 className="text-xs font-semibold text-muted-foreground">Renovações de prazo</h4>
                     <ul className="text-sm">
                       {(atual.renovacoes ?? []).map((r, n) => (
-                        <li key={n}>{dataHoraBrasilia(r.em)}: prazo para {r.passo === "iniciar" ? "iniciar" : "finalizar"} a tratativa renovado, autorizado por {r.autorizadoPorNome}.</li>
+                        <li key={n}>{dataHoraBrasilia(r.em)}: prazo para {r.passo === "iniciar" ? "iniciar" : "finalizar"} a tratativa renovado{r.ate ? ` até ${formatarData(r.ate)}` : ""}, autorizado por {r.autorizadoPorNome}.</li>
                       ))}
                     </ul>
                   </div>

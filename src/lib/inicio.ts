@@ -69,6 +69,10 @@ export function gruposDoInicio(isAdmin: boolean, podeVer: (url: string, search?:
   })).filter((g) => g.cartoes.length > 0);
 }
 
+// Caminho mostrado no alto de toda página (decisão 314): o card e, depois, se a tela é do Módulo ou dos Parâmetros dele; o título grande da página é o menu aberto.
+// Ex.: "Veículos › Parâmetros" sobre "Tipos de ocorrência", ou "Veículos › Módulo" sobre "Frota".
+export const caminhoDoCard = (card: string, secao: SecaoInicio): string => `${card} › ${secao}`;
+
 // Área (cartão) a que uma tela pertence, para o menu do topo levar às outras rotinas dela sem voltar ao início. Telas repetidas
 // em mais de uma área (como Parâmetros Específicos) se resolvem pelo ?de= ou ?aba= do atalho; sem cartão com submenu, devolve null.
 export function areaDaRota(pathname: string, search: Record<string, unknown>, isAdmin: boolean, podeVer: (url: string, search?: Record<string, string>) => boolean = () => true): { cartao: CartaoInicio; atual: SubitemInicio } | null {

@@ -23,9 +23,10 @@ export type Tratativa = {
   atualizadaEm: string;
 };
 
-// Renovação do prazo da tratativa (decisão 309): recomeça a contagem do prazo do passo em que a ocorrência está (iniciar ou finalizar), a partir do dia da renovação.
+// Renovação do prazo da tratativa (decisões 309 e 316): vale para o passo em que a ocorrência está (iniciar ou finalizar) e fixa a nova data limite (`ate`).
 // Guarda quem autorizou (o supervisor) e quem registrou.
-export type RenovacaoPrazo = { em: string; passo: "iniciar" | "finalizar"; autorizadoPorId: string; autorizadoPorNome: string; registradoPorNome: string };
+// `ate` (AAAA-MM-DD) é a nova data limite escolhida na renovação (decisão 316); renovações antigas, sem ela, só recomeçam a contagem a partir do dia.
+export type RenovacaoPrazo = { em: string; passo: "iniciar" | "finalizar"; ate?: string; autorizadoPorId: string; autorizadoPorNome: string; registradoPorNome: string };
 
 export type OcorrenciaVeiculo = {
   id: string;
@@ -211,14 +212,19 @@ export function salvarTratativa(
 }
 
 // Renovar o prazo: só vale para ocorrência que ainda não foi encerrada. Quem chama já conferiu a autorização do supervisor (supervisores-ocorrencias.ts).
+// A nova data limite é obrigatória, tem de ser uma data de verdade e não pode ser anterior ao dia da renovação.
 export function renovarPrazoTratativa(
   id: string,
-  quem: { autorizadoPorId: string; autorizadoPorNome: string; registradoPorNome: string },
+  quem: { autorizadoPorId: string; autorizadoPorNome: string; registradoPorNome: string; ate: string },
   storage = storagePadrao(),
   agora = new Date(),
 ): OcorrenciaVeiculo {
   return mudar(id, storage, (o) => {
     if (o.status === "Encerrada") throw new Error("Esta ocorrência está encerrada: não há prazo para renovar.");
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(quem.ate ?? "");
+    const real = m ? new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))) : null;
+    if (!m || !real || real.getUTCFullYear() !== Number(m[1]) || real.getUTCMonth() !== Number(m[2]) - 1 || real.getUTCDate() !== Number(m[3])) throw new Error("Informe a data para a renovação da tratativa.");
+    if (quem.ate < hojeLocal(agora)) throw new Error("A nova data da tratativa não pode ser anterior a hoje.");
     const renovacao: RenovacaoPrazo = { em: agora.toISOString(), passo: o.status === "Aberta" ? "iniciar" : "finalizar", ...quem };
     return { ...o, renovacoes: [...(o.renovacoes ?? []), renovacao] };
   });

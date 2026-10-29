@@ -3,6 +3,7 @@ import { Link, useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { iconeDoTipo } from "@/components/modules/icones-viagens";
 import { PerguntaDialog, type ModoPergunta } from "@/components/parametros/PerguntaDialog";
 import { SecaoDialog, type DadosSecao } from "@/components/parametros/SecaoDialog";
@@ -148,7 +149,10 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 p-4">
-      <h1 className="text-xl font-semibold">Configuração Formulário de Despesas</h1>
+      <header>
+        <EyebrowDoCard fallback="Parâmetros" />
+        <h1 className="text-xl font-semibold">Configuração Formulário de Despesas</h1>
+      </header>
 
       <section className="space-y-2" aria-labelledby="escolher-card">
         <div className="flex flex-wrap items-center justify-between gap-2">
