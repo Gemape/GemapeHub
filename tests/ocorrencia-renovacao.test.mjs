@@ -30,18 +30,15 @@ test("os supervisores são os escolhidos; sem escolha salva, os administradores"
   assert.deepEqual(supervisoresEfetivos(USUARIOS, s), [], "lista salva vazia = ninguém é supervisor");
 });
 
-test("quem já é supervisor renova sem senha; os outros precisam do supervisor e da senha dele", () => {
+test("toda renovação exige o supervisor escolhido e a senha de login dele, mesmo de quem já é supervisor (decisão 315)", () => {
   const supervisores = [USUARIOS[0], USUARIOS[1]];
-  // supervisor: não pede nada
-  assert.equal(autorizarRenovacao({ usuario: USUARIOS[1], supervisorId: "", senha: "" }, supervisores).id, "u2");
-  // não supervisor: exige supervisor, senha e senha certa
-  assert.throws(() => autorizarRenovacao({ usuario: USUARIOS[2], supervisorId: "", senha: SENHA_DEMONSTRACAO }, supervisores), /Escolha o supervisor/);
-  assert.throws(() => autorizarRenovacao({ usuario: USUARIOS[2], supervisorId: "u1", senha: "" }, supervisores), /Digite a senha/);
-  assert.throws(() => autorizarRenovacao({ usuario: USUARIOS[2], supervisorId: "u1", senha: "errada" }, supervisores), /Senha incorreta/);
-  assert.throws(() => autorizarRenovacao({ usuario: USUARIOS[2], supervisorId: "u3", senha: SENHA_DEMONSTRACAO }, supervisores), /Escolha o supervisor/, "só vale quem está na lista");
-  assert.equal(autorizarRenovacao({ usuario: USUARIOS[2], supervisorId: "u1", senha: SENHA_DEMONSTRACAO }, supervisores).id, "u1");
+  assert.throws(() => autorizarRenovacao({ supervisorId: "", senha: SENHA_DEMONSTRACAO }, supervisores), /Escolha o supervisor/);
+  assert.throws(() => autorizarRenovacao({ supervisorId: "u1", senha: "" }, supervisores), /Digite a senha/, "o supervisor também digita a senha");
+  assert.throws(() => autorizarRenovacao({ supervisorId: "u1", senha: "errada" }, supervisores), /Senha incorreta/);
+  assert.throws(() => autorizarRenovacao({ supervisorId: "u3", senha: SENHA_DEMONSTRACAO }, supervisores), /Escolha o supervisor/, "só vale quem está na lista");
+  assert.equal(autorizarRenovacao({ supervisorId: "u1", senha: SENHA_DEMONSTRACAO }, supervisores).id, "u1");
   // a verificação de senha é trocável (Fase 2: login do Supabase)
-  assert.equal(autorizarRenovacao({ usuario: USUARIOS[2], supervisorId: "u2", senha: "outra" }, supervisores, (id, senha) => id === "u2" && senha === "outra").id, "u2");
+  assert.equal(autorizarRenovacao({ supervisorId: "u2", senha: "outra" }, supervisores, (id, senha) => id === "u2" && senha === "outra").id, "u2");
 });
 
 test("renovar o prazo recomeça a contagem e registra quem autorizou; encerrada não renova", () => {
@@ -90,7 +87,8 @@ test("a tela da ocorrência tem Renovar prazo, o convite do PDF ao encerrar e o 
   assert.match(tela, /if \(encerrar\) setRelatorioPara\(atual\.id\)/);
   assert.match(tela, /atual\.status === "Encerrada" && <Button variant="outline" onClick=\{\(\) => gerarRelatorio\(atual\)\}>Relatório \(PDF\)<\/Button>/);
   const dialogo = ler("components/modules/RenovarPrazoOcorrencia.tsx");
-  assert.match(dialogo, /jaSupervisor \? \(/);
+  assert.doesNotMatch(dialogo, /jaSupervisor|sem digitar a senha/);
+  assert.match(dialogo, /const supervisorId = escolhido \?\? proprio;/);
   assert.match(dialogo, /type="password"/);
   assert.match(dialogo, /supervisores\.map\(\(s\) => <SelectItem/);
   assert.match(ler("routes/_authenticated/cadastros/gerais/categorias.tsx"), /categoria\.id === "cat-veiculos" && <SupervisoresOcorrencias \/>/);
