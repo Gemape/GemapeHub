@@ -1760,3 +1760,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 313. Questionário de despesas: ramificação em todas as perguntas e resposta limpa ao esconder a pergunta
 
 - Fecha a decisão 311: a Unidade da Federação, que é travada e tem opções, ficava sem nenhum seletor de ramificação; agora também tem o Depois desta pergunta (as outras perguntas travadas já tinham). Toda pergunta, menos a de tipos de despesa, tem ramificação. As condições "aparece só se" de PCM responde continuam valendo: Técnico que não lançou a despesa só aparece com "Não conformidade – técnico monitorado não preencheu" e Nome do empregado só com "Avulso – técnico não monitorado". Agora, quando a escolha em PCM responde (ou uma ramificação) esconde uma pergunta, a resposta que já estava digitada nela é descartada na hora, inclusive o texto de "Outro", e não vai no envio. Só visual, sem Supabase.
+
+## 314. Caminho no alto de toda página
+
+- O texto pequeno do alto de toda página passa a ser o caminho até ela: o nome do card e, depois, se a tela é do Módulo ou dos Parâmetros dele, separados por ›. Ex.: "Veículos › Parâmetros" sobre o título "Tipos de ocorrência", e "Veículos › Módulo" sobre "Frota". Isso distingue a rotina do módulo do cadastro de parâmetros que tem o mesmo nome, em todo o sistema (módulos, Parâmetros e Gerais, por menu lateral, menu do topo ou card). Páginas que não são de nenhum card com submenu (Empresas, Empregados, Clientes, Fornecedores) mostram "Cadastros". Só visual, sem Supabase.

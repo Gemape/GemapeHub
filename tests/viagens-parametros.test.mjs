@@ -261,3 +261,20 @@ test("a Unidade da Federação, que é travada e tem opções, também tem a ram
   assert.match(c, /\(travada \|\| !aceitaDestinoPorOpcao\(p\) \|\|/);
   assert.match(ler("components/parametros/QuestionarioFormulario.tsx"), /setRespostas\(\(r\) => podarOcultas\(estado, tipo, r\)\)/);
 });
+
+test("o alto de toda página mostra o caminho: card, depois Módulo ou Parâmetros (decisão 314)", async () => {
+  const { areaDaRota, caminhoDoCard } = await import("../src/lib/inicio.ts");
+  const caminho = (url, search = {}) => { const a = areaDaRota(url, search, true); return a ? caminhoDoCard(a.cartao.titulo, a.atual.secao) : null; };
+  assert.equal(caminho("/veiculos", { aba: "frota" }), "Veículos › Módulo");
+  assert.equal(caminho("/cadastros/veiculos-tipos-ocorrencia"), "Veículos › Parâmetros");
+  assert.equal(caminho("/viagens", { aba: "painel" }), "Viagens › Módulo");
+  assert.equal(caminho("/cadastros/viagens-especificos"), "Viagens › Parâmetros");
+  assert.equal(caminho("/equipamentos", { aba: "inventario" }), "Equipamentos › Módulo");
+  assert.equal(caminho("/cadastros/equipamentos"), "Equipamentos › Parâmetros");
+  assert.equal(caminho("/epi", { aba: "dashboard" }), "EPIs › Módulo");
+  assert.equal(caminho("/epi-cadastrar"), "EPIs › Parâmetros");
+  assert.equal(caminho("/cadastros/gerais/codigo-produto"), "Gerais › Parâmetros");
+  // Tela repetida em dois cards se resolve pelo ?de=.
+  assert.equal(caminho("/cadastros/gerais/categorias", { de: "uniformes" }), "Uniformes › Parâmetros");
+  assert.match(ler("components/layout/EyebrowDoCard.tsx"), /caminhoDoCard\(area\.cartao\.titulo, area\.atual\.secao\)/);
+});
