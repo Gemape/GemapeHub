@@ -29,6 +29,32 @@ export function lerPrazosOcorrencias(storage?: StorageLike): PrazosOcorrencias {
   }
 }
 
+// Prorrogação da tratativa (decisão 320), também em Parâmetros Específicos: se o botão de prorrogar (Renovar prazo) aparece na ocorrência e quantos dias a nova data limite
+// sugere a partir de hoje (quem prorroga ainda pode escolher outra data).
+const CHAVE_PRORROGACAO = "gemape-demo-ocorrencias-veiculo-prorrogacao";
+export type ProrrogacaoOcorrencias = { permitir: boolean; dias: number };
+export const PRORROGACAO_PADRAO: ProrrogacaoOcorrencias = { permitir: true, dias: 2 };
+
+export function lerProrrogacaoOcorrencias(storage?: StorageLike): ProrrogacaoOcorrencias {
+  try {
+    const bruto = (storage ?? localStorage).getItem(CHAVE_PRORROGACAO);
+    const obj: unknown = bruto === null ? null : JSON.parse(bruto);
+    const o = obj && typeof obj === "object" ? (obj as Record<string, unknown>) : {};
+    return { permitir: typeof o["permitir"] === "boolean" ? o["permitir"] : PRORROGACAO_PADRAO.permitir, dias: diasDe(o["dias"]) ?? PRORROGACAO_PADRAO.dias };
+  } catch {
+    return { ...PRORROGACAO_PADRAO };
+  }
+}
+
+export function salvarProrrogacaoOcorrencias(p: ProrrogacaoOcorrencias, storage?: StorageLike): void {
+  if (typeof p.permitir !== "boolean" || !prazoOcorrenciaValido(p.dias)) throw new Error(`Informe números inteiros de dias entre 0 e ${PRAZO_OCORRENCIA_MAXIMO_DIAS}.`);
+  try {
+    (storage ?? localStorage).setItem(CHAVE_PRORROGACAO, JSON.stringify({ permitir: p.permitir, dias: p.dias }));
+  } catch {
+    throw new Error("Não foi possível guardar a prorrogação neste navegador.");
+  }
+}
+
 // Data limite sugerida ao renovar: hoje mais os dias do prazo do passo (AAAA-MM-DD, em UTC para não depender do fuso do navegador).
 export function dataLimiteSugerida(hoje: string, dias: number): string {
   const [a, m, d] = hoje.split("-").map(Number) as [number, number, number];

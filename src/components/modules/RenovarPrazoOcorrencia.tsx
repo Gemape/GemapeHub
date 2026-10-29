@@ -10,7 +10,7 @@ import { renovarPrazoTratativa, type OcorrenciaVeiculo } from "@/lib/ocorrencias
 import { lerPermissoes, usuarioAtivo } from "@/lib/permissoes-demo";
 import { hojeBrasilia } from "@/lib/checklist-veiculo";
 import { formatarData } from "@/lib/gemape";
-import { dataLimiteSugerida, lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
+import { dataLimiteSugerida, lerProrrogacaoOcorrencias } from "@/lib/prazo-ocorrencias";
 import { SENHA_DEMONSTRACAO, autorizarRenovacao, supervisoresEfetivos } from "@/lib/supervisores-ocorrencias";
 
 // Renovar o prazo da tratativa (decisões 309, 315 e 316): o supervisor valida, sempre com a senha de login dele. Quem está renovando escolhe o supervisor na lista (o próprio
@@ -27,8 +27,8 @@ export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: O
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const passo = ocorrencia?.status === "Aberta" ? "iniciar" : "finalizar";
-  const dias = lerPrazosOcorrencias()[passo];
-  // Data limite da renovação: sugere hoje mais os dias do prazo; quem renova pode escolher outra (decisão 316).
+  const { dias, permitir } = lerProrrogacaoOcorrencias();
+  // Data limite da renovação: sugere hoje mais os dias da prorrogação (Parâmetros Específicos); quem renova pode escolher outra (decisão 316).
   const hoje = hojeBrasilia();
   const [dataEscolhida, setData] = useState<string | null>(null);
   const ate = dataEscolhida ?? dataLimiteSugerida(hoje, dias);
@@ -45,6 +45,8 @@ export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: O
     e.preventDefault();
     if (!ocorrencia) return;
     try {
+      // A prorrogação desligada em Parâmetros Específicos vale também aqui, não só no botão da ocorrência.
+      if (!permitir) throw new Error("A prorrogação da tratativa está desligada em Parâmetros Específicos.");
       const autorizou = autorizarRenovacao({ supervisorId, senha }, supervisores);
       renovarPrazoTratativa(ocorrencia.id, { autorizadoPorId: autorizou.id, autorizadoPorNome: autorizou.nome, registradoPorNome: quem.nome, ate });
       toast.success(`Prazo renovado: a tratativa pode ${passo === "iniciar" ? "começar" : "terminar"} até ${formatarData(ate)}.`);

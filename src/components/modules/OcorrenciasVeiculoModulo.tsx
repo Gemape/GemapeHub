@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
+import { CartoesOcorrencias } from "@/components/modules/CartoesOcorrencias";
 import { RenovarPrazoOcorrencia } from "@/components/modules/RenovarPrazoOcorrencia";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
@@ -24,11 +25,13 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { useEmpregados, useEmpresas, useVeiculos } from "@/lib/hooks-gemape";
+import { indicadoresDeOcorrencias } from "@/lib/ocorrencias-indicadores";
+import { lerPrazosOcorrencias, lerProrrogacaoOcorrencias } from "@/lib/prazo-ocorrencias";
 import { montarOcorrenciaHtml } from "@/lib/ocorrencia-relatorio-html";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import {
   adicionarFotosOcorrencia, contarPorStatus, registrarOcorrenciaVeiculo, removerFotoOcorrencia, salvarTratativa,
-  STATUS_OCORRENCIA, type OcorrenciaVeiculo, type StatusOcorrencia,
+  type OcorrenciaVeiculo, type StatusOcorrencia,
 } from "@/lib/ocorrencias-veiculo";
 import { combinaBusca } from "@/lib/parametros-base";
 import { useOcorrenciasVeiculo } from "@/lib/use-registros-veiculo";
@@ -93,6 +96,7 @@ export function OcorrenciasVeiculoModulo() {
   const veiculo = (id: string) => veiculos.find((v) => v.id === id);
   const rotuloVeiculo = (id: string) => { const v = veiculo(id); return v ? rotuloDoVeiculo(parametros, v) : "—"; };
   const contagem = contarPorStatus(daEmpresa);
+  const indicadores = indicadoresDeOcorrencias({ ocorrencias: daEmpresa, hoje: hojeLocal(), prazos: lerPrazosOcorrencias() });
   const lista = daEmpresa
     .filter((o) => filtro === "todas" || o.status === filtro)
     .filter((o) => combinaBusca(busca, o.codigo, rotuloVeiculo(o.veiculoId), o.tipoNome, nomeEmpregado(o.condutorId), o.local, o.descricao, o.status, dataHoraLocal(o.ocorridoEm)))
@@ -204,6 +208,7 @@ export function OcorrenciasVeiculoModulo() {
 
   return (
     <div className="space-y-4">
+      <CartoesOcorrencias contagem={contagem} filtro={filtro} aoFiltrar={setFiltro} indicadores={indicadores} />
       <div className="flex flex-wrap items-center gap-2">
         <Input
           aria-label="Buscar ocorrência"
@@ -212,20 +217,7 @@ export function OcorrenciasVeiculoModulo() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por status">
-          <Button type="button" size="sm" variant={filtro === "todas" ? "default" : "outline"} onClick={() => setFiltro("todas")}>
-            Todas ({daEmpresa.length})
-          </Button>
-          {STATUS_OCORRENCIA.map((s) => (
-            <Button
-              key={s} type="button" size="sm" variant="outline"
-              className={`${COR_STATUS[s]} ${filtro === s ? "ring-2 ring-ring" : ""}`}
-              onClick={() => setFiltro(filtro === s ? "todas" : s)}
-            >
-              {s} ({contagem[s]})
-            </Button>
-          ))}
-        </div>
+        {filtro !== "todas" && <Button type="button" variant="ghost" size="sm" onClick={() => setFiltro("todas")}>Limpar filtro ({filtro})</Button>}
         <Button requiresWrite="operar" className="ml-auto" onClick={abrirNova}>Nova ocorrência</Button>
       </div>
 
@@ -475,7 +467,7 @@ export function OcorrenciasVeiculoModulo() {
                 <DialogFooter className="sm:col-span-2">
                   <Button type="button" variant="outline" onClick={() => setTela(null)}>Cancelar</Button>
                   <Button type="submit">Salvar</Button>
-                  {atual.status !== "Encerrada" && import.meta.env.VITE_DEMO_MODE !== "false" && (
+                  {atual.status !== "Encerrada" && import.meta.env.VITE_DEMO_MODE !== "false" && lerProrrogacaoOcorrencias().permitir && (
                     <Button type="button" variant="outline" onClick={() => setRenovando(atual.id)}>Renovar prazo</Button>
                   )}
                   {atual.status !== "Encerrada" && (

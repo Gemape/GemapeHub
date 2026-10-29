@@ -68,13 +68,14 @@ export function ManutencaoVeiculoModulo() {
   const revisoes = veiculos.flatMap((v) => {
     const abast = abastecimentos.filter((a) => a.veiculoId === v.id);
     const manut = todas.filter((m) => m.veiculoId === v.id);
+    const kmAtual = kmAtualDoVeiculo(v.quilometragem_atual ?? 0, abast, manut);
     return sugestoesPreventivas({
       plano: planos.find((p) => p.veiculoId === v.id) ?? null,
       acoes,
       manutencoes: manut,
-      kmAtual: kmAtualDoVeiculo(v.quilometragem_atual ?? 0, abast, manut),
+      kmAtual,
       hoje,
-    }).map((sugestao) => ({ veiculoId: v.id, veiculo: rotuloDoVeiculo(parametros, v), sugestao }));
+    }).map((sugestao) => ({ veiculoId: v.id, veiculo: rotuloDoVeiculo(parametros, v), kmAtual, sugestao }));
   });
   const indicadores = indicadoresDaManutencao({ tipos: todas.filter((m) => idsDaEmpresa.has(m.veiculoId)).map((m) => m.tipo), statusRevisoes: revisoes.map((r) => r.sugestao.status) });
   const revisoesDaBusca = revisoes.filter((r) => combinaBusca(busca, r.veiculo, r.sugestao.nome));

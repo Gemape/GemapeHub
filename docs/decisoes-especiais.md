@@ -1789,6 +1789,12 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 319. Manutenção: cards e lista de revisões
 
 - O alto de Manutenção ganhou cards no modelo da Frota: Preventivas e Corretivas (quantidade registrada e parte do total) e, das revisões do plano de cada veículo, Realizadas no prazo e Não realizadas no prazo (cor e seta da faixa; sem registro não conta; a cor dos não realizados é a dos realizados no prazo).
-- A lista passou a mostrar as revisões do plano: veículo, serviço, periodicidade, última realizada, próxima revisão, situação (pílula colorida: vencida, vencimento próximo, em dia ou sem registro) e dois links, Sugeridas e Realizadas, que abrem o relatório do veículo. Os registros de manutenção (relatório, editar, excluir, período) continuam no botão "Manutenções registradas".
+- A lista passou a mostrar as revisões do plano: veículo, serviço, periodicidade, última realizada, próxima revisão, situação (pílula colorida: vencida, vencimento próximo, em dia ou sem registro) e dois links, Sugeridas e Realizadas. A revisão vence pelo que vier primeiro, o km atual do veículo ou a data: a situação diz o motivo (Vencida por km, por tempo...) e a próxima revisão mostra o km atual para a conta ficar visível, que abrem o relatório do veículo. Os registros de manutenção (relatório, editar, excluir, período) continuam no botão "Manutenções registradas".
 
 - Atualização: os cards de Manutenção ficam separados por dois botões, como na Frota: "Manutenções" (Preventivas, Corretivas) e "Indicadores" (Realizadas no prazo, Não realizadas no prazo, Previstas). Previstas = revisões do plano dos veículos.
+
+## 320. Ocorrências: cards, indicadores e prorrogação
+
+- O alto de Ocorrências ganhou cards no modelo da Frota, separados por dois botões: "Ocorrências" (Abertas, Em tratativa, Encerradas e Todas, com a quantidade e a parte do total; clicar num card filtra a lista) e "Indicadores" (Realizadas no prazo e Não realizadas no prazo, com cor e seta da faixa). Os botões de filtro por status que ficavam ao lado da busca saíram, porque os cards fazem esse papel.
+- Realizada no prazo é a ocorrência encerrada até a data limite da finalização (início da tratativa mais os dias de finalizar, ou a data da última renovação, se houver). Não realizada no prazo é a encerrada depois disso ou a ainda aberta que já venceu; a que está dentro do prazo não entra na conta.
+- Parâmetros > Veículos > Parâmetros Específicos, cartão Prazos das ocorrências: além dos dias para iniciar e para finalizar a tratativa, o novo bloco "Prorrogar a tratativa" liga ou desliga o botão Renovar prazo da ocorrência e define quantos dias a nova data limite sugere (antes sugeria os dias do prazo do passo).

@@ -4,7 +4,7 @@ import type { SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
 import type { StatusSugestao, Sugestao } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 
-export type RevisaoDoVeiculo = { veiculoId: string; veiculo: string; sugestao: Sugestao };
+export type RevisaoDoVeiculo = { veiculoId: string; veiculo: string; kmAtual: number; sugestao: Sugestao };
 
 const COR: Record<StatusSugestao, { ponto: string; pilula: string }> = {
   vencida: { ponto: "bg-red-500", pilula: "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-200" },
@@ -18,7 +18,8 @@ const ROTULO: Record<StatusSugestao, string> = { vencida: "Vencida", atencao: "V
 const km = (n: number) => `${n.toLocaleString("pt-BR")} km`;
 
 // Lista das revisões do plano de cada veículo (decisão 319): serviço, periodicidade, última realizada, próxima revisão (com a cor da situação) e os links para as manutenções
-// sugeridas e para as realizadas, que abrem o relatório do veículo.
+// sugeridas e para as realizadas, que abrem o relatório do veículo. A revisão vence pelo que vier primeiro, o km atual do veículo ou a data (por isso a situação diz o motivo
+// e a próxima revisão mostra o km atual).
 export function ManutencaoRevisoes({ revisoes, aoAbrir }: { revisoes: RevisaoDoVeiculo[]; aoAbrir: (veiculoId: string, secao: SecaoExtrato) => void }) {
   return (
     <div className="overflow-x-auto rounded-xl border">
@@ -36,7 +37,7 @@ export function ManutencaoRevisoes({ revisoes, aoAbrir }: { revisoes: RevisaoDoV
         </TableHeader>
         <TableBody>
           {revisoes.length === 0 && <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Nenhuma revisão encontrada. O plano de cada veículo fica em Parâmetros &gt; Veículos.</TableCell></TableRow>}
-          {revisoes.map(({ veiculoId, veiculo, sugestao: s }) => {
+          {revisoes.map(({ veiculoId, veiculo, kmAtual, sugestao: s }) => {
             const cor = COR[s.status];
             return (
               <TableRow key={`${veiculoId}-${s.acaoId}`}>
@@ -47,12 +48,12 @@ export function ManutencaoRevisoes({ revisoes, aoAbrir }: { revisoes: RevisaoDoV
                   {s.ultima ? <>{formatarData(s.ultima.data)}<span className="block text-xs text-muted-foreground">{km(s.ultima.km)}</span></> : <span className="text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell>
-                  {s.proximaData && s.proximoKm !== null ? <>{formatarData(s.proximaData)}<span className="block text-xs text-muted-foreground">{km(s.proximoKm)}</span></> : <span className="text-muted-foreground">—</span>}
+                  {s.proximaData && s.proximoKm !== null ? <>{formatarData(s.proximaData)}<span className="block text-xs text-muted-foreground">{km(s.proximoKm)}</span><span className="block text-xs text-muted-foreground">Km atual: {km(kmAtual)}</span></> : <span className="text-muted-foreground">—</span>}
                 </TableCell>
                 <TableCell>
-                  <span title={s.motivo} className={`mx-auto flex h-8 w-full max-w-[12rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.pilula}`}>
+                  <span title={s.motivo} className={`mx-auto flex h-8 w-full max-w-[15rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.pilula}`}>
                     <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ring-2 ring-white/80 dark:ring-black/30 ${cor.ponto}`} />
-                    {ROTULO[s.status]}
+                    {s.status === "vencida" || s.status === "atencao" ? s.motivo : ROTULO[s.status]}
                   </span>
                 </TableCell>
                 <TableCell>
