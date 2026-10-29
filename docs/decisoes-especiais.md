@@ -1772,3 +1772,29 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 316. Renovar prazo com a data da tratativa
 
 - O formulário de Renovar prazo da tratativa ganhou o campo "Nova data da tratativa": até quando a tratativa pode ser iniciada (ocorrência Aberta) ou finalizada (Em tratativa). A data vem sugerida (hoje mais os dias do prazo dos Parâmetros Específicos), pode ser trocada, é obrigatória, tem de ser uma data de verdade e não pode ser anterior a hoje. Passa a valer como limite: a ocorrência fica vencida só depois dessa data, e em vencimento próximo nos dois dias anteriores. A data fica registrada na renovação (nos dados da ocorrência e no relatório em PDF, coluna Nova data); a renovação do passo anterior deixa de valer quando a tratativa muda de passo, e renovações antigas, sem data, só recomeçam a contagem no dia delas. A senha do supervisor continua sendo pedida (decisão 315). Só visual, sem Supabase.
+
+## 317. Frota: cards do PCM e dos técnicos e média de consumo
+
+- O alto da Frota trocou os três contadores de situação (ativos, em manutenção e inativos; a situação continua em cada linha da lista) pelos indicadores do PCM, em cards: Manutenções (das preventivas com registro, a parte que não está vencida), Check list PCM (check lists dos responsáveis da área PCM realizados no prazo), Ocorrências (das abertas, as dentro do prazo da tratativa; sem aberta, 100%) e Conformidade geral (média dos indicadores do PCM que têm valor). Em outro grupo (botão próprio, ver decisão 318), os indicadores dos técnicos (responsáveis da área Oficina), só de check list: realizados no prazo e não realizados. Cada card tem o percentual, a cor da faixa e a seta da faixa: verde com seta para cima, amarelo com setas nos dois sentidos e vermelho com seta para baixo. As faixas são as mesmas de Parâmetros Específicos (padrão: verde a partir de 90%, amarelo a partir de 70%); a cor dos não realizados segue a dos realizados no prazo (poucos não realizados é verde). A área de cada responsável vem das caixas duplas. A lista ganhou a coluna Média km/L, do histórico de abastecimentos do veículo (precisa de dois abastecimentos), que também sai no PDF da frota. Só visual, sem Supabase.
+
+## 318. Frota: cards e colunas melhor distribuídos
+
+- Os cards do alto da Frota (primeira versão; a grade mudou na atualização abaixo, com dois botões e quatro colunas): PCM em 8 colunas de 12 e técnicos em 4, com a mesma altura nos dois blocos; no celular, uma coluna. Cada card ganhou cantos mais redondos, percentual maior, barra colorida com o percentual e a seta da faixa.
+- A lista de veículos e o PDF do relatório usam colunas com largura proporcional (tabela fixa): o veículo ganha mais espaço, os números ficam à direita com folga e as colunas de vencimento ficam do mesmo tamanho. O PDF passa a usar a folha larga.
+
+- Atualização: os indicadores do PCM e dos técnicos agora são separados por dois botões (aparece um grupo por vez; PCM em 4 colunas, técnicos em 2), e as etiquetas de vencimento da lista têm todas a mesma largura.
+
+- Atualização: os cards dos técnicos têm o mesmo tamanho dos do PCM (grade de 4 colunas); as etiquetas de vencimento viraram uma pílula só, com a bolinha dentro e a mesma largura, e o "Ver extrato" virou botão com contorno.
+
+## 319. Manutenção: cards e lista de revisões
+
+- O alto de Manutenção ganhou cards no modelo da Frota: Preventivas e Corretivas (quantidade registrada e parte do total) e, das revisões do plano de cada veículo, Realizadas no prazo e Não realizadas no prazo (cor e seta da faixa; sem registro não conta; a cor dos não realizados é a dos realizados no prazo).
+- A lista passou a mostrar as revisões do plano: veículo, serviço, periodicidade, última realizada, próxima revisão, situação (pílula colorida: vencida, vencimento próximo, em dia ou sem registro) e dois links, Sugeridas e Realizadas. A revisão vence pelo que vier primeiro, o km atual do veículo ou a data: a situação diz o motivo (Vencida por km, por tempo...) e a próxima revisão mostra o km atual para a conta ficar visível, que abrem o relatório do veículo. Os registros de manutenção (relatório, editar, excluir, período) continuam no botão "Manutenções registradas".
+
+- Atualização: os cards de Manutenção ficam separados por dois botões, como na Frota: "Manutenções" (Preventivas, Corretivas) e "Indicadores" (Realizadas no prazo, Não realizadas no prazo, Previstas). Previstas = revisões do plano dos veículos.
+
+## 320. Ocorrências: cards, indicadores e prorrogação
+
+- O alto de Ocorrências ganhou cards no modelo da Frota, separados por dois botões: "Ocorrências" (Abertas, Em tratativa, Encerradas e Todas, com a quantidade e a parte do total; clicar num card filtra a lista) e "Indicadores" (Realizadas no prazo e Não realizadas no prazo, com cor e seta da faixa). Os botões de filtro por status que ficavam ao lado da busca saíram, porque os cards fazem esse papel.
+- Realizada no prazo é a ocorrência encerrada até a data limite da finalização (início da tratativa mais os dias de finalizar, ou a data da última renovação, se houver). Não realizada no prazo é a encerrada depois disso ou a ainda aberta que já venceu; a que está dentro do prazo não entra na conta.
+- Parâmetros > Veículos > Parâmetros Específicos, cartão Prazos das ocorrências: além dos dias para iniciar e para finalizar a tratativa, o novo bloco "Prorrogar a tratativa" liga ou desliga o botão Renovar prazo da ocorrência e define quantos dias a nova data limite sugere (antes sugeria os dias do prazo do passo).

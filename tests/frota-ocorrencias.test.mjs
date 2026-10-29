@@ -62,7 +62,7 @@ test("o relatório e a tela da Frota têm a coluna Ocorrências", () => {
   const html = montarFrotaHtml({ empresa: "GEMAPE", geradoEm: "2026-10-07T13:00:00Z", busca: "", linhas: [{ veiculo: "A", responsavel: "", situacao: "Ativo", km: 1, preventivas: null, ocorrencias: { situacao: "vencida", quantidade: 1 }, checklist: null }] });
   assert.ok(html.includes("<th>Ocorrências</th>"));
   assert.ok(html.includes("Vencida (1)"));
-  assert.match(ler("components/modules/FrotaModulo.tsx"), /<TableHead className="w-52">Ocorrências<\/TableHead>/);
+  assert.match(ler("components/modules/FrotaModulo.tsx"), /<TableHead className="w-\[14%\] text-center">Ocorrências<\/TableHead>/);
 });
 
 test("o extrato do veículo tem período, atalhos para sugeridas, realizadas e ocorrências, e bloqueia período invertido", () => {

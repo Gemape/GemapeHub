@@ -44,7 +44,7 @@ test("o rótulo mostra a etiqueta e quantos itens, e traço quando não se aplic
 test("a Frota tem as colunas na ordem pedida, com bolinha e etiqueta, e o extrato tem os links para as rotinas", () => {
   const frota = ler("components/modules/FrotaModulo.tsx");
   const cabecalho = [...frota.matchAll(/<TableHead[^>]*>([^<]*)<\/TableHead>/g)].map((m) => m[1]);
-  assert.deepEqual(cabecalho, ["Veículo", "Responsável", "Situação", "Km atual", "Preventivas", "Ocorrências", "Check list"]);
+  assert.deepEqual(cabecalho, ["Veículo", "Responsável", "Situação", "Km atual", "Média km/L", "Preventivas", "Ocorrências", "Check list"]);
   assert.match(frota, /<EtiquetaVencimento valor=\{checklistDo\(v\.id\)\}/);
   // Cada bolinha abre a informação que resume (decisão 305), sem abrir o extrato da linha.
   assert.match(frota, /aoClicar=\{\(\) => setAberto\(\{ id: v\.id, secao: "sugeridas" \}\)\}/);

@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import { CartoesManutencao } from "@/components/modules/CartoesManutencao";
+import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
+import { ManutencaoRevisoes } from "@/components/modules/ManutencaoRevisoes";
 import { NovaManutencaoDialog } from "@/components/modules/NovaManutencaoDialog";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Badge } from "@/components/ui/badge";
@@ -8,13 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAccess } from "@/lib/access-context";
+import { hojeLocal } from "@/lib/empregados";
+import { kmAtualDoVeiculo, sugestoesPreventivas } from "@/lib/extrato-veiculo";
+import { indicadoresDaManutencao } from "@/lib/manutencao-indicadores";
 import { combinaBusca } from "@/lib/parametros-base";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { montarManutencaoHtml } from "@/lib/manutencao-relatorio-html";
 import { useVeiculos } from "@/lib/hooks-gemape";
 import { gruposDaManutencao, locaisDaManutencao, removerManutencao, resumoManutencao, rotuloDoLocal, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
-import { useManutencoesVeiculo } from "@/lib/use-registros-veiculo";
+import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
@@ -31,6 +37,11 @@ export function ManutencaoVeiculoModulo() {
   const parametros = useParametrosBase();
   const { data: veiculos = [] } = useVeiculos(empresaId);
   const todas = useManutencoesVeiculo();
+  const abastecimentos = useAbastecimentos();
+  const planos = usePlanosVeiculo();
+  // Visão da lista: as revisões do plano de cada veículo (padrão) ou os registros de manutenção (com relatório, edição e exclusão).
+  const [visao, setVisao] = useState<"revisoes" | "registros">("revisoes");
+  const [extrato, setExtrato] = useState<{ id: string; secao: SecaoExtrato } | null>(null);
   const [aberto, setAberto] = useState(false);
   // Manutenção em edição; null é o cadastro de uma nova.
   const [editando, setEditando] = useState<ManutencaoVeiculo | null>(null);
@@ -51,6 +62,23 @@ export function ManutencaoVeiculoModulo() {
       return combinaBusca(busca, v ? rotuloDoVeiculo(parametros, v) : "", m.tipo, servicoDe(m), formatarData(m.data), String(m.km));
     })
     .sort((a, b) => b.data.localeCompare(a.data) || b.km - a.km);
+
+  // Revisões do plano de cada veículo da empresa (mesma conta das sugestões do extrato) e os indicadores do alto (decisão 319).
+  const hoje = hojeLocal();
+  const revisoes = veiculos.flatMap((v) => {
+    const abast = abastecimentos.filter((a) => a.veiculoId === v.id);
+    const manut = todas.filter((m) => m.veiculoId === v.id);
+    const kmAtual = kmAtualDoVeiculo(v.quilometragem_atual ?? 0, abast, manut);
+    return sugestoesPreventivas({
+      plano: planos.find((p) => p.veiculoId === v.id) ?? null,
+      acoes,
+      manutencoes: manut,
+      kmAtual,
+      hoje,
+    }).map((sugestao) => ({ veiculoId: v.id, veiculo: rotuloDoVeiculo(parametros, v), kmAtual, sugestao }));
+  });
+  const indicadores = indicadoresDaManutencao({ tipos: todas.filter((m) => idsDaEmpresa.has(m.veiculoId)).map((m) => m.tipo), statusRevisoes: revisoes.map((r) => r.sugestao.status) });
+  const revisoesDaBusca = revisoes.filter((r) => combinaBusca(busca, r.veiculo, r.sugestao.nome));
 
   if (!MODO_DEMO) {
     return <p className="text-sm text-muted-foreground">A manutenção de veículos estará disponível após a Fase 2 (banco real).</p>;
@@ -83,7 +111,12 @@ export function ManutencaoVeiculoModulo() {
 
   return (
     <div className="space-y-4">
+      <CartoesManutencao indicadores={indicadores} />
       <div className="flex flex-wrap items-center gap-2">
+        <div className="flex gap-2" role="group" aria-label="Visão da lista">
+          <Button type="button" size="sm" variant={visao === "revisoes" ? "default" : "outline"} aria-pressed={visao === "revisoes"} onClick={() => setVisao("revisoes")}>Revisões do plano</Button>
+          <Button type="button" size="sm" variant={visao === "registros" ? "default" : "outline"} aria-pressed={visao === "registros"} onClick={() => setVisao("registros")}>Manutenções registradas</Button>
+        </div>
         <Input
           aria-label="Buscar manutenção"
           placeholder="Buscar por veículo, serviço ou tipo"
@@ -91,6 +124,7 @@ export function ManutencaoVeiculoModulo() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
+        {visao === "registros" && <>
         <div className="flex items-center gap-2">
           <Label htmlFor="manutencao-inicio" className="text-sm">Data início</Label>
           <Input id="manutencao-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
@@ -101,10 +135,12 @@ export function ManutencaoVeiculoModulo() {
         </div>
         {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
         <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
+        </>}
         <Button requiresWrite className="ml-auto" onClick={() => abrir()}>Cadastrar nova manutenção</Button>
       </div>
-      {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
-      <div className="overflow-x-auto rounded-xl border">
+      {visao === "revisoes" && <ManutencaoRevisoes revisoes={revisoesDaBusca} aoAbrir={(id, secao) => setExtrato({ id, secao })} />}
+      {visao === "registros" && periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
+      {visao === "registros" && <div className="overflow-x-auto rounded-xl border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -179,8 +215,9 @@ export function ManutencaoVeiculoModulo() {
             })}
           </TableBody>
         </Table>
-      </div>
+      </div>}
 
+      <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} onFechar={() => setExtrato(null)} />
       <NovaManutencaoDialog
         aberto={aberto}
         aoMudar={setAberto}
