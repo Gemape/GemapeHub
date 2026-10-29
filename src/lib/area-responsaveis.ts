@@ -7,6 +7,9 @@ export type GrupoDeArea = "Técnicos" | "PCM" | "Administrativo" | "Sem área";
 export const GRUPOS_DE_AREA: readonly GrupoDeArea[] = ["Técnicos", "PCM", "Administrativo", "Sem área"];
 const GRUPO_DA_AREA: Record<AreaViagem, GrupoDeArea> = { Oficina: "Técnicos", PCM: "PCM", Administrativo: "Administrativo" };
 
+// O grupo de uma linha do painel: o do check list (Técnicos ou PCM, campo do Novo check list) e, sem ele (dado antigo), a área do responsável.
+export const grupoDaLinha = (l: { grupo?: "Técnicos" | "PCM" | undefined; responsavelNome: string }, grupoDe: (nome: string) => GrupoDeArea): GrupoDeArea => l.grupo ?? grupoDe(l.responsavelNome);
+
 const normalizar = (nome: string) => nome.trim().toLocaleLowerCase("pt-BR");
 
 // Devolve a função que diz a que grupo pertence um responsável pelo nome (o check list guarda o nome).

@@ -2,7 +2,7 @@
 // A "previsão" é o check list esperado de um veículo num período (dia, semana, quinzena ou mês, conforme a
 // periodicidade da associação, decisão 75). Cada previsão é gravada ao entrar em vigor e, depois que o
 // prazo passa, nunca mais muda: o resultado dos meses anteriores é imutável, mesmo que a associação mude.
-import { hojeBrasilia, periodoAtual, type ChecklistVeiculo, type Periodicidade } from "./checklist-veiculo.ts";
+import { hojeBrasilia, periodoAtual, type ChecklistVeiculo, type GrupoChecklist, type Periodicidade } from "./checklist-veiculo.ts";
 import { lerLista, type StorageLike } from "./registros-veiculo.ts";
 
 const CHAVE = "gemape-demo-checklist-previsoes";
@@ -114,6 +114,8 @@ export const noMesDaLista = (c: { status: string; data: string; concluidoEm?: st
 
 export type SituacaoPrevisao = "realizado" | "nao_realizado" | "a_vencer" | "opcional";
 export type LinhaPainel = Previsao & {
+  // De quem é o check list (Técnicos ou PCM), do check list feito ou do último do veículo e da periodicidade; sem ele, vale a área do responsável (decisão 323).
+  grupo?: GrupoChecklist;
   situacao: SituacaoPrevisao;
   checklistId: string | null;
   checklistCodigo: string | null;
@@ -129,7 +131,7 @@ export type ResumoPainel = {
   pctNaoNoPrazo: number | null;
 };
 
-export type ChecklistDoPainel = Pick<ChecklistVeiculo, "id" | "codigo" | "veiculoId" | "periodicidade" | "status" | "data" | "concluidoEm" | "responsavelNome">;
+export type ChecklistDoPainel = Pick<ChecklistVeiculo, "id" | "codigo" | "veiculoId" | "periodicidade" | "status" | "data" | "concluidoEm" | "responsavelNome" | "grupo">;
 
 const diaDaConclusao = (c: ChecklistDoPainel) => (c.concluidoEm ? hojeBrasilia(new Date(c.concluidoEm)) : c.data);
 
@@ -143,6 +145,9 @@ export function painelDoMes(
   checklists: ChecklistDoPainel[],
   hoje: string,
 ): { linhas: LinhaPainel[]; resumo: ResumoPainel } {
+  // O grupo do último check list do veículo e da periodicidade (com grupo) vale para as linhas ainda sem check list feito.
+  const ultimoGrupo = new Map<string, GrupoChecklist>();
+  for (const c of [...checklists].sort((a, b) => a.data.localeCompare(b.data))) if (c.grupo) ultimoGrupo.set(`${c.veiculoId}|${c.periodicidade}`, c.grupo);
   const linhas = previsoes
     .filter((p) => mes === null || mesDe(p.fim) === mes)
     .sort((a, b) => a.fim.localeCompare(b.fim) || a.veiculoRotulo.localeCompare(b.veiculoRotulo))
@@ -151,8 +156,10 @@ export function painelDoMes(
         .filter((c) => c.veiculoId === p.veiculoId && c.periodicidade === p.periodicidade && c.status === "Concluído" && diaDaConclusao(c) >= p.inicio && diaDaConclusao(c) <= p.fim)
         .sort((a, b) => (a.concluidoEm ?? "").localeCompare(b.concluidoEm ?? ""))[0];
       const situacao: SituacaoPrevisao = feito ? "realizado" : p.obrigatorio === false ? "opcional" : p.fim < hoje ? "nao_realizado" : "a_vencer";
+      const grupo = feito?.grupo ?? ultimoGrupo.get(`${p.veiculoId}|${p.periodicidade}`);
       return {
         ...p,
+        ...(grupo ? { grupo } : {}),
         responsavelNome: feito?.responsavelNome ?? p.responsavelNome,
         situacao,
         checklistId: feito?.id ?? null,

@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { CartoesManutencao } from "@/components/modules/CartoesManutencao";
-import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
+import { GraficosManutencao } from "@/components/modules/GraficosVeiculos";
 import { ManutencaoRevisoes } from "@/components/modules/ManutencaoRevisoes";
 import { NovaManutencaoDialog } from "@/components/modules/NovaManutencaoDialog";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
@@ -39,9 +39,8 @@ export function ManutencaoVeiculoModulo() {
   const todas = useManutencoesVeiculo();
   const abastecimentos = useAbastecimentos();
   const planos = usePlanosVeiculo();
-  // Visão da lista: as revisões do plano de cada veículo (padrão) ou os registros de manutenção (com relatório, edição e exclusão).
-  const [visao, setVisao] = useState<"revisoes" | "registros">("revisoes");
-  const [extrato, setExtrato] = useState<{ id: string; secao: SecaoExtrato } | null>(null);
+  // Visão da lista (decisão 319): as revisões do plano de cada veículo (padrão) ou os registros de manutenção preventivas ou corretivas (com relatório, edição e exclusão).
+  const [visao, setVisao] = useState<"revisoes" | "Preventiva" | "Corretiva">("revisoes");
   const [aberto, setAberto] = useState(false);
   // Manutenção em edição; null é o cadastro de uma nova.
   const [editando, setEditando] = useState<ManutencaoVeiculo | null>(null);
@@ -56,6 +55,7 @@ export function ManutencaoVeiculoModulo() {
   const servicoDe = (m: (typeof todas)[number]) => resumoManutencao(m, (id) => acoes.find((a) => a.id === id)?.nome);
   const lista = todas
     .filter((m) => idsDaEmpresa.has(m.veiculoId))
+    .filter((m) => visao === "revisoes" || m.tipo === visao)
     .filter((m) => !periodoInvalido && (!inicio || m.data >= inicio) && (!fim || m.data <= fim))
     .filter((m) => {
       const v = veiculos.find((x) => x.id === m.veiculoId);
@@ -112,10 +112,12 @@ export function ManutencaoVeiculoModulo() {
   return (
     <div className="space-y-4">
       <CartoesManutencao indicadores={indicadores} />
+      <GraficosManutencao revisoes={revisoes} manutencoes={todas.filter((m) => idsDaEmpresa.has(m.veiculoId))} hoje={hoje} />
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex gap-2" role="group" aria-label="Visão da lista">
           <Button type="button" size="sm" variant={visao === "revisoes" ? "default" : "outline"} aria-pressed={visao === "revisoes"} onClick={() => setVisao("revisoes")}>Revisões do plano</Button>
-          <Button type="button" size="sm" variant={visao === "registros" ? "default" : "outline"} aria-pressed={visao === "registros"} onClick={() => setVisao("registros")}>Manutenções registradas</Button>
+          <Button type="button" size="sm" variant={visao === "Preventiva" ? "default" : "outline"} aria-pressed={visao === "Preventiva"} onClick={() => setVisao("Preventiva")}>Preventivas ({indicadores.preventivas.qtd})</Button>
+          <Button type="button" size="sm" variant={visao === "Corretiva" ? "default" : "outline"} aria-pressed={visao === "Corretiva"} onClick={() => setVisao("Corretiva")}>Corretivas ({indicadores.corretivas.qtd})</Button>
         </div>
         <Input
           aria-label="Buscar manutenção"
@@ -124,7 +126,7 @@ export function ManutencaoVeiculoModulo() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        {visao === "registros" && <>
+        {visao !== "revisoes" && <>
         <div className="flex items-center gap-2">
           <Label htmlFor="manutencao-inicio" className="text-sm">Data início</Label>
           <Input id="manutencao-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
@@ -138,9 +140,9 @@ export function ManutencaoVeiculoModulo() {
         </>}
         <Button requiresWrite className="ml-auto" onClick={() => abrir()}>Cadastrar nova manutenção</Button>
       </div>
-      {visao === "revisoes" && <ManutencaoRevisoes revisoes={revisoesDaBusca} aoAbrir={(id, secao) => setExtrato({ id, secao })} />}
-      {visao === "registros" && periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
-      {visao === "registros" && <div className="overflow-x-auto rounded-xl border">
+      {visao === "revisoes" && <ManutencaoRevisoes revisoes={revisoesDaBusca} />}
+      {visao !== "revisoes" && periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
+      {visao !== "revisoes" && <div className="overflow-x-auto rounded-xl border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -217,7 +219,6 @@ export function ManutencaoVeiculoModulo() {
         </Table>
       </div>}
 
-      <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} onFechar={() => setExtrato(null)} />
       <NovaManutencaoDialog
         aberto={aberto}
         aoMudar={setAberto}

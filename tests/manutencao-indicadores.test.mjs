@@ -27,12 +27,12 @@ test("a tela de Manutenção traz os cards e a lista de revisões com serviço, 
   const modulo = ler("components/modules/ManutencaoVeiculoModulo.tsx");
   assert.match(modulo, /<CartoesManutencao indicadores=\{indicadores\} \/>/);
   assert.match(modulo, /<ManutencaoRevisoes revisoes=\{revisoesDaBusca\}/);
-  assert.match(modulo, /aria-pressed=\{visao === "registros"\}/, "os registros (editar, relatório, excluir) continuam numa visão da lista");
+  assert.match(modulo, /aria-pressed=\{visao === "Preventiva"\}/, "os registros preventivos (editar, relatório, excluir) abrem pelo botão Preventivas");
+  assert.match(modulo, /aria-pressed=\{visao === "Corretiva"\}/, "e os corretivos pelo botão Corretivas");
   const lista = ler("components/modules/ManutencaoRevisoes.tsx");
-  for (const t of ["Veículo", "Serviço", "Periodicidade", "Última realizada", "Próxima revisão", "Situação", "Sugeridas", "Realizadas"]) assert.ok(lista.includes(t), t);
-  assert.match(lista, /aoAbrir\(veiculoId, "sugeridas"\)/);
-  assert.match(lista, /aoAbrir\(veiculoId, "realizadas"\)/);
+  for (const t of ["Veículo", "Serviço", "Periodicidade", "Última realizada", "Próxima revisão", "Situação"]) assert.ok(lista.includes(t), t);
+  assert.ok(!lista.includes("Sugeridas") && !lista.includes("Realizadas"), "sem a coluna Manutenções com os links");
   const cartoes = ler("components/modules/CartoesManutencao.tsx");
-  assert.match(cartoes, /aria-pressed=\{grupo === g\.id\}/, "dois botões separam os cards de manutenção dos indicadores");
-  for (const t of ["Previstas", "Preventivas", "Corretivas", "Realizadas no prazo", "Não realizadas no prazo"]) assert.ok(cartoes.includes(t), t);
+  assert.ok(!cartoes.includes("aria-pressed"), "os cards são só os indicadores; Preventivas e Corretivas são botões da lista");
+  for (const t of ["Previstas", "Realizadas no prazo", "Não realizadas no prazo"]) assert.ok(cartoes.includes(t), t);
 });

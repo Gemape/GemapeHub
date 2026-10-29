@@ -9,6 +9,7 @@ import { OcorrenciasVeiculoModulo } from "@/components/modules/OcorrenciasVeicul
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { abaDoModulo, tituloDaAba } from "@/lib/menu-parametros";
+import { useTituloDaPagina } from "@/lib/titulo-pagina";
 
 export const Route = createFileRoute("/_authenticated/veiculos")({
   validateSearch: (search: Record<string, unknown>): { aba?: string } =>
@@ -33,12 +34,14 @@ export const Route = createFileRoute("/_authenticated/veiculos")({
 function PaginaVeiculos() {
   const { aba } = Route.useSearch();
   const abaValida = abaDoModulo("veiculo", aba);
+  // Uma tela interna pode trocar o título (Check list periódico e avulso).
+  const tituloTrocado = useTituloDaPagina();
 
   return (
     <div className="space-y-5">
       <header>
         <EyebrowDoCard fallback="Módulo" />
-        <h1 className="text-2xl font-bold">{tituloDaAba("veiculo", aba)}</h1>
+        <h1 className="text-2xl font-bold">{tituloTrocado ?? tituloDaAba("veiculo", aba)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Frota da empresa com extrato por veículo, abastecimentos, manutenções e ocorrências. O cadastro fica em Parâmetros &gt; Veículos.
         </p>

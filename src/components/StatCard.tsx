@@ -1,32 +1,24 @@
 import type { LucideIcon } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Cartao } from "@/components/modules/CartoesIndicadoresFrota";
+import type { Faixa } from "@/lib/faixas-desempenho";
 
+// O card de indicador de todo o sistema é o mesmo da Frota (decisão 324): título, valor, barra, detalhe e o ícone em círculo. Com `pct`, a barra e o texto seguem o percentual e,
+// com `faixa`, a cor e a seta da faixa (verde, amarelo ou vermelho); sem eles, o card é neutro.
 export function StatCard({
   titulo,
   valor,
   detalhe,
-  icone: Icone,
+  icone,
+  pct = null,
+  faixa = null,
 }: {
   titulo: string;
   valor: string | number;
   detalhe?: string;
   icone?: LucideIcon;
+  pct?: number | null;
+  faixa?: Faixa | null;
 }) {
-  return (
-    <Card>
-      <CardContent className="flex items-start justify-between gap-3 p-3 pt-3 sm:p-6 sm:pt-6">
-        <div className="min-w-0">
-          <p className="text-eyebrow">{titulo}</p>
-          <p className="mt-1 break-words font-display text-xl font-bold sm:text-2xl">{valor}</p>
-          {detalhe ? <p className="mt-1 text-xs text-muted-foreground">{detalhe}</p> : null}
-        </div>
-        {Icone ? (
-          <span className="hidden size-9 shrink-0 items-center justify-center sm:flex rounded-md bg-primary/10 text-primary">
-            <Icone className="size-5" />
-          </span>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
+  return <Cartao titulo={titulo} valor={String(valor)} icone={icone} indicador={{ pct, faixa, detalhe: detalhe ?? "" }} />;
 }

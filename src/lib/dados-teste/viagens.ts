@@ -9,8 +9,10 @@ type Armazenamento = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 // Imagem mínima do comprovante (1×1 pixel): a despesa exige foto, e o teste não precisa de um documento de verdade.
 const COMPROVANTE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-// Todos na Oficina: técnico da Oficina lança a própria despesa; PCM e Administrativo só lançam pelo técnico, com perguntas a mais.
+// Os cinco primeiros empregados de teste (os das viagens) ficam na Oficina: técnico da Oficina lança a própria despesa; PCM e Administrativo só lançam pelo técnico, com perguntas a mais.
+// Do sexto em diante entram como PCM, para os check lists de teste do PCM (decisão 322) terem responsáveis dessa área nos indicadores.
 const AREA: AreaViagem = "Oficina";
+export const PRIMEIRO_PCM_DE_TESTE = 5;
 const DESTINOS = [
   { uf: "Minas Gerais - MG", municipio: "Passos", cliente: "Agropecuária Vale Verde Ltda" },
   { uf: "São Paulo - SP", municipio: "Rio Claro", cliente: "Usina Rio Claro Açúcar e Álcool S.A." },
@@ -24,7 +26,7 @@ export function semearViagens(storage: Armazenamento, agora: Date): void {
   let estado = lerEstado(storage);
   const pergunta = estado.perguntas.find((p) => p.id === ID_HABILITADOS);
   if (!pergunta) throw new Error("O questionário de despesas não tem a pergunta de técnico responsável.");
-  const novos = EMPREGADOS.map((e, i) => ({ empregadoId: e.id, nome: e.nome, area: AREA }));
+  const novos = EMPREGADOS.map((e, i) => ({ empregadoId: e.id, nome: e.nome, area: i >= PRIMEIRO_PCM_DE_TESTE ? "PCM" as AreaViagem : AREA }));
   estado = salvarPergunta(estado, { ...pergunta, habilitados: [...(pergunta.habilitados ?? []).filter((h) => !h.empregadoId?.startsWith(PREFIXO)), ...novos] }, storage);
 
   const cartoes = estado.perguntas.find((p) => p.id === "q-02")?.opcoes ?? [];

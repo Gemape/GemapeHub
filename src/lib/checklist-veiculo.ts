@@ -32,6 +32,11 @@ export type ItemChecklist = {
   resolucao: { descricao: string; resolvidaEm: string } | null;
 };
 
+// De quem é o check list (decisão 323): campo do Novo check list que separa os indicadores dos técnicos e do PCM. Check lists antigos, sem o campo, seguem a área do responsável.
+export type GrupoChecklist = "Técnicos" | "PCM";
+export const GRUPOS_CHECKLIST: readonly GrupoChecklist[] = ["Técnicos", "PCM"];
+export const ehGrupoChecklist = (v: unknown): v is GrupoChecklist => v === "Técnicos" || v === "PCM";
+
 export type ChecklistVeiculo = {
   id: string;
   codigo: string;
@@ -41,6 +46,7 @@ export type ChecklistVeiculo = {
   periodicidade: Periodicidade | ""; // vazio no check list avulso (decisão 90)
   responsavelId: string;
   responsavelNome: string;
+  grupo?: GrupoChecklist;
   criadoEm: string;
   data: string; // AAAA-MM-DD, horário local
   status: StatusChecklist;
@@ -232,10 +238,12 @@ export type EntradaChecklist = {
   responsavelId: string;
   responsavelNome: string;
   grupos: GrupoChecklistVeiculo[]; // já filtrados por gruposAplicaveis
+  grupoChecklist?: GrupoChecklist | undefined; // de quem é o check list: Técnicos ou PCM (decisão 323)
 };
 
 export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
+  if (entrada.grupoChecklist !== undefined && !ehGrupoChecklist(entrada.grupoChecklist)) throw new Error("Escolha de quem é o check list: Técnicos ou PCM.");
   if (!ehPeriodicidade(entrada.periodicidade)) {
     throw new Error("Este veículo não tem periodicidade: associe itens de check list a ele em Parâmetros > Veículos > Check list.");
   }
@@ -245,10 +253,11 @@ export function iniciarChecklist(entrada: EntradaChecklist, storage = storagePad
 
 // Check list avulso (decisão 90): sem periodicidade e sem responsável, com os grupos que a janela mandar. Fica fora
 // da lista principal, do painel do mês e da situação por veículo; gera ocorrência dos itens NOK como qualquer outro.
-export type EntradaChecklistAvulso = Pick<EntradaChecklist, "veiculoId" | "veiculoRotulo" | "tipoVeiculo" | "grupos">;
+export type EntradaChecklistAvulso = Pick<EntradaChecklist, "veiculoId" | "veiculoRotulo" | "tipoVeiculo" | "grupos" | "grupoChecklist">;
 
 export function iniciarChecklistAvulso(entrada: EntradaChecklistAvulso, storage = storagePadrao(), agora = new Date()): ChecklistVeiculo {
   if (!entrada.veiculoId) throw new Error("Selecione o veículo.");
+  if (entrada.grupoChecklist !== undefined && !ehGrupoChecklist(entrada.grupoChecklist)) throw new Error("Escolha de quem é o check list: Técnicos ou PCM.");
   return gravarNovoChecklist({ ...entrada, periodicidade: "", responsavelId: "", responsavelNome: "" }, true, storage, agora);
 }
 
@@ -288,6 +297,7 @@ function gravarNovoChecklist(entrada: Omit<EntradaChecklist, "periodicidade"> & 
         periodicidade: entrada.periodicidade,
         responsavelId: entrada.responsavelId,
         responsavelNome: limpar(entrada.responsavelNome, 120),
+        ...(ehGrupoChecklist(entrada.grupoChecklist) ? { grupo: entrada.grupoChecklist } : {}),
         criadoEm: agora.toISOString(),
         data: hojeBrasilia(agora),
         status: "Em andamento",

@@ -4,6 +4,7 @@ import { ViagensLista } from "./ViagensLista";
 import { iconeDoTipo } from "./icones-viagens";
 import { useMemo, useState } from "react";
 
+import { Cartao } from "@/components/modules/CartoesIndicadoresFrota";
 import { QuestionarioFormulario } from "@/components/parametros/QuestionarioFormulario";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -122,6 +123,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           <Indicador
             titulo="Índice de conformidade de lançamento"
             valor={formatarPercentual(globais.icl)}
+            pct={globais.icl}
             faixa={faixaDoIndice(globais.icl)?.faixa}
             detalhe={globais.noIndice ? `${globais.noIndice - globais.naoConformes} de ${globais.noIndice} lançadas pelo próprio técnico` : "Sem lançamentos no índice neste mês"}
             explicacao={<ExplicacaoIcl />}
@@ -129,6 +131,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           <Indicador
             titulo="Índice de lançamento no prazo"
             valor={formatarPercentual(globais.prazo)}
+            pct={globais.prazo}
             faixa={faixaDoIndice(globais.prazo)?.faixa}
             detalhe={prazos.mecanicoAplica === false ? "Indicador desligado em Parâmetros" : globais.medidosNoPrazo ? `${globais.noPrazo} de ${globais.medidosNoPrazo} lançadas no prazo` : "Sem lançamentos do técnico mecânico neste mês"}
             explicacao={<ExplicacaoPrazo prazos={prazos} />}
@@ -179,18 +182,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   );
 }
 
-function Indicador({ titulo, valor, detalhe, explicacao, roxo, faixa }: { titulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean; faixa?: Faixa | undefined }) {
-  return (
-    <div className={`panel space-y-1 p-4 ${roxo ? "border-l-4 border-l-purple-600" : ""}`}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm text-muted-foreground">{titulo}</p>
-        {explicacao}
-      </div>
-      <p className={`text-2xl font-bold ${faixa ? COR_TEXTO[faixa] : ""}`}>{valor}</p>
-      {faixa && <ChipFaixa faixa={faixa} />}
-      {detalhe && <p className="text-xs text-muted-foreground">{detalhe}</p>}
-    </div>
-  );
+function Indicador({ titulo, valor, detalhe, explicacao, roxo, faixa, pct }: { titulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean; faixa?: Faixa | undefined; pct?: number | null | undefined }) {
+  return <Cartao titulo={titulo} valor={valor} indicador={{ pct: pct ?? null, faixa: faixa ?? null, detalhe: detalhe ?? "" }} extra={explicacao} classe={roxo ? "border-l-4 border-l-purple-600" : ""} />;
 }
 
 function ExplicacaoIcl() {

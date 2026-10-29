@@ -25,7 +25,7 @@ function BarraDaLista({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" variant="outline" size="sm" onClick={onVoltar}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
-      <h2 className="text-lg font-semibold">{titulo}</h2>
+      <h2 className="sr-only">{titulo}</h2>
       <div className="flex items-center gap-1.5">
         <Label htmlFor="lista_mes" className="text-xs">Mês</Label>
         <Select value={mes} onValueChange={onMes}>
