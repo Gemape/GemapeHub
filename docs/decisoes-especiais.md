@@ -1768,3 +1768,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 315. Renovar o prazo sempre pede a senha do supervisor
 
 - A renovação do prazo da tratativa de uma ocorrência agora sempre pede a senha de login do usuário definido como autorização: o supervisor escolhido na lista dos supervisores habilitados. Mesmo quem já é supervisor digita a senha (a tela só deixa o próprio nome escolhido); a isenção de senha da decisão 309 foi retirada. Senha vazia, supervisor fora da lista ou senha errada não renovam. Na demonstração a senha de todos é "demo"; na Fase 2 vale a do login do Supabase. Só visual, sem Supabase.
+
+## 316. Renovar prazo com a data da tratativa
+
+- O formulário de Renovar prazo da tratativa ganhou o campo "Nova data da tratativa": até quando a tratativa pode ser iniciada (ocorrência Aberta) ou finalizada (Em tratativa). A data vem sugerida (hoje mais os dias do prazo dos Parâmetros Específicos), pode ser trocada, é obrigatória, tem de ser uma data de verdade e não pode ser anterior a hoje. Passa a valer como limite: a ocorrência fica vencida só depois dessa data, e em vencimento próximo nos dois dias anteriores. A data fica registrada na renovação (nos dados da ocorrência e no relatório em PDF, coluna Nova data); a renovação do passo anterior deixa de valer quando a tratativa muda de passo, e renovações antigas, sem data, só recomeçam a contagem no dia delas. A senha do supervisor continua sendo pedida (decisão 315). Só visual, sem Supabase.

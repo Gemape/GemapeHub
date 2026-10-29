@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { renovarPrazoTratativa, type OcorrenciaVeiculo } from "@/lib/ocorrencias-veiculo";
 import { lerPermissoes, usuarioAtivo } from "@/lib/permissoes-demo";
-import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
+import { hojeBrasilia } from "@/lib/checklist-veiculo";
+import { formatarData } from "@/lib/gemape";
+import { dataLimiteSugerida, lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
 import { SENHA_DEMONSTRACAO, autorizarRenovacao, supervisoresEfetivos } from "@/lib/supervisores-ocorrencias";
 
-// Renovar o prazo da tratativa (decisões 309 e 315): o supervisor valida, sempre com a senha de login dele. Quem está renovando escolhe o supervisor na lista (o próprio
-// nome já vem escolhido quando é supervisor) e digita a senha. A renovação recomeça a contagem do prazo do passo em que a ocorrência está (iniciar ou finalizar a
-// tratativa), a partir de hoje.
+// Renovar o prazo da tratativa (decisões 309, 315 e 316): o supervisor valida, sempre com a senha de login dele. Quem está renovando escolhe o supervisor na lista (o próprio
+// nome já vem escolhido quando é supervisor) e digita a senha. A renovação vale para o passo em que a ocorrência está (iniciar ou finalizar a
+// tratativa) e define a nova data limite, sugerida como hoje mais os dias do prazo.
 export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: OcorrenciaVeiculo | null; onFechar: () => void }) {
   const usuarios = lerPermissoes(localStorage).usuarios;
   const quem = usuarioAtivo(localStorage);
@@ -26,9 +28,14 @@ export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: O
   const [erro, setErro] = useState("");
   const passo = ocorrencia?.status === "Aberta" ? "iniciar" : "finalizar";
   const dias = lerPrazosOcorrencias()[passo];
+  // Data limite da renovação: sugere hoje mais os dias do prazo; quem renova pode escolher outra (decisão 316).
+  const hoje = hojeBrasilia();
+  const [dataEscolhida, setData] = useState<string | null>(null);
+  const ate = dataEscolhida ?? dataLimiteSugerida(hoje, dias);
 
   function fechar() {
     setEscolhido(null);
+    setData(null);
     setSenha("");
     setErro("");
     onFechar();
@@ -39,8 +46,8 @@ export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: O
     if (!ocorrencia) return;
     try {
       const autorizou = autorizarRenovacao({ supervisorId, senha }, supervisores);
-      renovarPrazoTratativa(ocorrencia.id, { autorizadoPorId: autorizou.id, autorizadoPorNome: autorizou.nome, registradoPorNome: quem.nome });
-      toast.success(`Prazo renovado: mais ${dias} dia(s) para ${passo === "iniciar" ? "iniciar" : "finalizar"} a tratativa.`);
+      renovarPrazoTratativa(ocorrencia.id, { autorizadoPorId: autorizou.id, autorizadoPorNome: autorizou.nome, registradoPorNome: quem.nome, ate });
+      toast.success(`Prazo renovado: a tratativa pode ${passo === "iniciar" ? "começar" : "terminar"} até ${formatarData(ate)}.`);
       fechar();
     } catch (falha) {
       // A senha errada não vaza pelo texto do erro e o campo é limpo para digitar de novo.
@@ -55,10 +62,15 @@ export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: O
         <DialogHeader>
           <DialogTitle>Renovar prazo da tratativa</DialogTitle>
           <DialogDescription>
-            {ocorrencia?.codigo}: o prazo para {passo === "iniciar" ? "iniciar" : "finalizar"} a tratativa ({dias} dia(s)) recomeça a contar hoje. A renovação precisa da validação de um supervisor.
+            {ocorrencia?.codigo}: escolha até quando a tratativa pode {passo === "iniciar" ? "ser iniciada" : "ser finalizada"}. A renovação precisa da validação de um supervisor.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={renovar} className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="renovar_data">Nova data da tratativa</Label>
+            <Input id="renovar_data" type="date" min={hoje} value={ate} onChange={(e) => { setData(e.target.value); setErro(""); }} />
+            <p className="text-xs text-muted-foreground">Prazo para {passo === "iniciar" ? "iniciar" : "finalizar"} a tratativa até esta data. Sugerida: hoje mais {dias} dia(s), conforme os Parâmetros Específicos.</p>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="renovar_supervisor">Supervisor que autoriza</Label>
             <Select value={supervisorId} onValueChange={(v) => { setEscolhido(v); setErro(""); }}>
@@ -75,7 +87,7 @@ export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: O
           {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={fechar}>Cancelar</Button>
-            <Button type="submit" disabled={supervisores.length === 0 || !supervisorId || !senha}>Validar e renovar</Button>
+            <Button type="submit" disabled={supervisores.length === 0 || !supervisorId || !senha || !ate}>Validar e renovar</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { ocorrenciaVencida } from "../src/lib/frota-ocorrencias.ts";
+import { ocorrenciaProxima, ocorrenciaVencida } from "../src/lib/frota-ocorrencias.ts";
+import { dataLimiteSugerida } from "../src/lib/prazo-ocorrencias.ts";
 import { montarOcorrenciaHtml } from "../src/lib/ocorrencia-relatorio-html.ts";
 import { registrarOcorrenciaVeiculo, renovarPrazoTratativa, salvarTratativa } from "../src/lib/ocorrencias-veiculo.ts";
 import { SENHA_DEMONSTRACAO, autorizarRenovacao, lerSupervisoresSalvos, salvarSupervisores, supervisoresEfetivos } from "../src/lib/supervisores-ocorrencias.ts";
@@ -41,7 +42,7 @@ test("toda renovação exige o supervisor escolhido e a senha de login dele, mes
   assert.equal(autorizarRenovacao({ supervisorId: "u2", senha: "outra" }, supervisores, (id, senha) => id === "u2" && senha === "outra").id, "u2");
 });
 
-test("renovar o prazo recomeça a contagem e registra quem autorizou; encerrada não renova", () => {
+test("renovar o prazo exige a nova data, que passa a ser o limite da tratativa; encerrada não renova (decisão 316)", () => {
   const s = memoria();
   const tipos = [{ id: "t1", nome: "Colisão" }];
   const criada = registrarOcorrenciaVeiculo(
@@ -49,22 +50,48 @@ test("renovar o prazo recomeça a contagem e registra quem autorizou; encerrada 
     s, new Date("2026-10-02T15:00:00-03:00"), tipos,
   );
   const prazos = { iniciar: 2, finalizar: 5 };
+  const quem = { autorizadoPorId: "u1", autorizadoPorNome: "Administrador Demo", registradoPorNome: "Paulo Mendes (Padrão)" };
   assert.equal(ocorrenciaVencida(criada, "2026-10-10", prazos), true);
-  const renovada = renovarPrazoTratativa(criada.id, { autorizadoPorId: "u1", autorizadoPorNome: "Administrador Demo", registradoPorNome: "Paulo Mendes (Padrão)" }, s, new Date("2026-10-10T12:00:00-03:00"));
+  // A nova data é obrigatória, tem de ser uma data de verdade e não pode ser anterior ao dia da renovação.
+  const agora = new Date("2026-10-10T12:00:00-03:00");
+  assert.throws(() => renovarPrazoTratativa(criada.id, { ...quem, ate: "" }, s, agora), /Informe a data/);
+  assert.throws(() => renovarPrazoTratativa(criada.id, { ...quem, ate: "2026-02-30" }, s, agora), /Informe a data/);
+  assert.throws(() => renovarPrazoTratativa(criada.id, { ...quem, ate: "2026-10-09" }, s, agora), /anterior a hoje/);
+  const renovada = renovarPrazoTratativa(criada.id, { ...quem, ate: "2026-10-15" }, s, agora);
   assert.equal(renovada.renovacoes.length, 1);
-  assert.deepEqual([renovada.renovacoes[0].passo, renovada.renovacoes[0].autorizadoPorNome], ["iniciar", "Administrador Demo"]);
-  assert.equal(ocorrenciaVencida(renovada, "2026-10-10", prazos), false, "a contagem recomeça no dia da renovação");
-  assert.equal(ocorrenciaVencida(renovada, "2026-10-12", prazos), false);
-  assert.equal(ocorrenciaVencida(renovada, "2026-10-13", prazos), true);
-  // Em tratativa: renova o passo de finalizar.
-  const emTratativa = salvarTratativa(criada.id, { responsavelId: "e1", descricaoEmpresa: "", descricaoTerceiros: "", custoEmpresa: "0", pagamentoTerceiros: "", seguradora: "nao" }, { encerrar: false, isAdmin: true }, s, new Date("2026-10-11T10:00:00-03:00"));
-  const segunda = renovarPrazoTratativa(emTratativa.id, { autorizadoPorId: "u1", autorizadoPorNome: "Administrador Demo", registradoPorNome: "Administrador Demo" }, s, new Date("2026-10-14T10:00:00-03:00"));
+  assert.deepEqual([renovada.renovacoes[0].passo, renovada.renovacoes[0].ate, renovada.renovacoes[0].autorizadoPorNome], ["iniciar", "2026-10-15", "Administrador Demo"]);
+  // Vale a data escolhida: até ela não vence; passada, vence. Faltando até dois dias, é vencimento próximo.
+  assert.equal(ocorrenciaVencida(renovada, "2026-10-10", prazos), false);
+  assert.equal(ocorrenciaVencida(renovada, "2026-10-15", prazos), false, "no próprio dia limite ainda vale");
+  assert.equal(ocorrenciaVencida(renovada, "2026-10-16", prazos), true);
+  assert.equal(ocorrenciaProxima(renovada, "2026-10-13", prazos), true);
+  assert.equal(ocorrenciaProxima(renovada, "2026-10-11", prazos), false);
+  // Renovação antiga, sem data, só recomeça a contagem no dia dela.
+  const antiga = { ...criada, renovacoes: [{ em: "2026-10-10T12:00:00-03:00" }] };
+  assert.equal(ocorrenciaVencida(antiga, "2026-10-12", prazos), false);
+  assert.equal(ocorrenciaVencida(antiga, "2026-10-13", prazos), true);
+  // Em tratativa: renova o passo de finalizar, e a renovação do passo anterior deixa de valer.
+  const emTratativa = salvarTratativa(criada.id, { responsavelId: "e1", descricaoEmpresa: "", descricaoTerceiros: "", custoEmpresa: "0", pagamentoTerceiros: "", seguradora: "nao" }, { encerrar: false, isAdmin: true }, s, new Date("2026-10-18T10:00:00-03:00"));
+  assert.equal(ocorrenciaVencida(emTratativa, "2026-10-20", prazos), false, "a data do passo anterior (15/10) não vale mais: o prazo é o de finalizar a partir de 18/10");
+  // Renovação do passo anterior feita horas antes da tratativa começar, no mesmo dia, também não vale.
+  const mesmoDia = { ...emTratativa, renovacoes: [{ em: "2026-10-18T08:00:00-03:00", ate: "2026-11-30" }] };
+  assert.equal(ocorrenciaVencida(mesmoDia, "2026-10-24", prazos), true);
+  const segunda = renovarPrazoTratativa(emTratativa.id, { ...quem, ate: "2026-10-30" }, s, new Date("2026-10-19T10:00:00-03:00"));
   assert.equal(segunda.renovacoes.at(-1).passo, "finalizar");
-  assert.equal(ocorrenciaVencida(segunda, "2026-10-19", prazos), false);
-  assert.equal(ocorrenciaVencida(segunda, "2026-10-20", prazos), true);
+  assert.equal(ocorrenciaVencida(segunda, "2026-10-30", prazos), false);
+  assert.equal(ocorrenciaVencida(segunda, "2026-10-31", prazos), true);
   // Encerrada: sem prazo, sem renovação.
   salvarTratativa(criada.id, { responsavelId: "e1", descricaoEmpresa: "", descricaoTerceiros: "", custoEmpresa: "0", pagamentoTerceiros: "", seguradora: "nao" }, { encerrar: true, isAdmin: true }, s);
-  assert.throws(() => renovarPrazoTratativa(criada.id, { autorizadoPorId: "u1", autorizadoPorNome: "A", registradoPorNome: "A" }, s), /encerrada/);
+  assert.throws(() => renovarPrazoTratativa(criada.id, { ...quem, ate: "2026-12-01" }, s), /encerrada/);
+});
+
+test("a sugestão da data é hoje mais os dias do prazo, e o formulário tem o campo da nova data", () => {
+  assert.equal(dataLimiteSugerida("2026-10-29", 2), "2026-10-31");
+  assert.equal(dataLimiteSugerida("2026-12-30", 5), "2027-01-04");
+  assert.equal(dataLimiteSugerida("2026-10-29", 0), "2026-10-29");
+  const form = ler("components/modules/RenovarPrazoOcorrencia.tsx");
+  assert.match(form, /<Input id="renovar_data" type="date" min=\{hoje\} value=\{ate\}/);
+  assert.match(form, /renovarPrazoTratativa\(ocorrencia\.id, \{[^}]*ate \}\)/);
 });
 
 test("o relatório da ocorrência traz dados, tratativa e renovações e escapa os textos", () => {
@@ -72,9 +99,9 @@ test("o relatório da ocorrência traz dados, tratativa e renovações e escapa 
     codigo: "OCO-0001", empresa: "Gemape", veiculo: "ABC1D23 <b>x</b>", tipo: "Colisão", status: "Encerrada", cadastradaEm: "02/10/2026 15:00", ocorridoEm: "01/10/2026 08:00",
     local: "BR-116", condutor: "Ana", danos: "Veículo da empresa", descricao: "<script>alert(1)</script>", fotos: 2,
     tratativa: { registradaEm: "03/10/2026 09:00", atualizadaEm: "04/10/2026 10:00", encerradaEm: "04/10/2026 10:00", responsavel: "Bruno", custoEmpresa: "R$ 1.500,00", descricaoEmpresa: "Funilaria", descricaoTerceiros: "", pagamentoTerceiros: "", seguradora: "Não" },
-    renovacoes: [{ em: "10/10/2026 12:00", passo: "Iniciar a tratativa", autorizadoPor: "Administrador Demo", registradoPor: "Paulo" }],
+    renovacoes: [{ em: "10/10/2026 12:00", passo: "Iniciar a tratativa", ate: "15/10/2026", autorizadoPor: "Administrador Demo", registradoPor: "Paulo" }],
   }, new Date("2026-10-05T12:00:00Z"));
-  for (const t of ["Relatório da ocorrência", "OCO-0001", "Dados da ocorrência", "Tratativa", "Renovações de prazo", "R$ 1.500,00", "Administrador Demo", "Encerrada"]) assert.ok(html.includes(t), t);
+  for (const t of ["Relatório da ocorrência", "OCO-0001", "Dados da ocorrência", "Tratativa", "Renovações de prazo", "Nova data", "15/10/2026", "R$ 1.500,00", "Administrador Demo", "Encerrada"]) assert.ok(html.includes(t), t);
   assert.equal(html.includes("<script>"), false);
   assert.equal(html.includes("<b>x</b>"), false);
   const semTratativa = montarOcorrenciaHtml({ codigo: "OCO-2", empresa: "", veiculo: "V", tipo: "T", status: "Aberta", cadastradaEm: "", ocorridoEm: "", local: "", condutor: "", danos: "", descricao: "", fotos: 0, tratativa: null, renovacoes: [] });
