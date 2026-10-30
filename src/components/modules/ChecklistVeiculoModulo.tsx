@@ -1,3 +1,4 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { CalendarCheck, ClipboardList } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { gruposAvulsosDaAssociacao, gruposDaPeriodicidade, nomeDoChecklistAssociado } from "@/lib/checklist-associacao-veiculo";
@@ -182,6 +183,17 @@ export function ChecklistVeiculoModulo() {
         : comoAssociacao(gruposAvulsosDaAssociacao(associacaoEscolhida)))
       : comoAssociacao(gruposDaPeriodicidade(associacaoEscolhida, periodicidadeDoDialogo(veiculoEscolhido) ?? ""));
   const itensDoVeiculo = gruposDoVeiculo.reduce((t, g) => t + g.itens.length, 0);
+
+  // Vindo do extrato do veículo (?veiculo=), abre o Novo check list desse veículo uma vez e tira o parâmetro do endereço (decisão 331).
+  const { veiculo: veiculoPedido } = useSearch({ from: "/_authenticated/veiculos" });
+  const navegar = useNavigate();
+  useEffect(() => {
+    if (!veiculoPedido || !veiculosCarregados) return;
+    const v = (veiculosTodasLista as VeiculoChecklist[]).find((x) => x.id === veiculoPedido);
+    if (v) abrirNovo(v);
+    void navegar({ to: "/veiculos", search: { aba: "checklist" }, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [veiculoPedido, veiculosCarregados]);
 
   function abrirNovoAvulso() {
     setTipoEscolhido("avulso");

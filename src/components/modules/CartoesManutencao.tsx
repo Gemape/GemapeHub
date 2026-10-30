@@ -7,10 +7,18 @@ import type { IndicadoresDaManutencao } from "@/lib/manutencao-indicadores";
 // (com a cor e a seta da faixa) e as previstas (quantidade). As manutenções preventivas e corretivas são botões da lista, no módulo.
 export function CartoesManutencao({ indicadores }: { indicadores: IndicadoresDaManutencao }) {
   return (
-    <section className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Indicadores de manutenção">
+    <section
+      className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      aria-label="Indicadores de manutenção"
+    >
       <Cartao titulo="Realizadas no prazo" indicador={indicadores.noPrazo} />
       <Cartao titulo="Não realizadas no prazo" indicador={indicadores.naoRealizadas} />
-      <Cartao titulo="Previstas" valor={String(indicadores.previstas.qtd)} icone={CalendarClock} indicador={indicadores.previstas.indicador} />
+      <Cartao
+        titulo="Previstas"
+        valor={String(indicadores.previstas.qtd)}
+        icone={CalendarClock}
+        indicador={indicadores.previstas.indicador}
+      />
     </section>
   );
 }

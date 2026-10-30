@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
@@ -74,6 +75,9 @@ export function OcorrenciasVeiculoModulo() {
   const { data: todosEmpregados = [] } = useEmpregados(TODAS);
   const todas = useOcorrenciasVeiculo();
   const [tela, setTela] = useState<Tela>(null);
+  // Vindo do extrato do veículo (?ocorrencia=), abre a tratativa dessa ocorrência uma vez e tira o parâmetro do endereço (decisão 331).
+  const { ocorrencia: ocorrenciaPedida } = useSearch({ from: "/_authenticated/veiculos" });
+  const navegar = useNavigate();
   const [filtro, setFiltro] = useState<StatusOcorrencia | "todas">("todas");
   const [busca, setBusca] = useState("");
   const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
@@ -115,6 +119,15 @@ export function OcorrenciasVeiculoModulo() {
     setDanoEmpresa(false); setDanoTerceiros(false); setFotosNovas([]);
     setTela({ tipo: "nova" });
   }
+
+  useEffect(() => {
+    if (!ocorrenciaPedida) return;
+    const o = todas.find((x) => x.id === ocorrenciaPedida);
+    if (!o) return;
+    abrirTratativa(o);
+    void navegar({ to: "/veiculos", search: { aba: "ocorrencias" }, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ocorrenciaPedida, todas.length]);
 
   function abrirTratativa(o: OcorrenciaVeiculo) {
     setResponsavelId(o.tratativa?.responsavelId ?? "");

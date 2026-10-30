@@ -9,15 +9,34 @@ export function mesesRecentes(hoje: string, n = 6): string[] {
   });
 }
 
-const ABREVIACOES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"] as const;
+const ABREVIACOES = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+] as const;
 // "2026-10" -> "out/26"
-export const rotuloMesCurto = (mes: string): string => `${ABREVIACOES[Number(mes.slice(5, 7)) - 1] ?? mes}/${mes.slice(2, 4)}`;
+export const rotuloMesCurto = (mes: string): string =>
+  `${ABREVIACOES[Number(mes.slice(5, 7)) - 1] ?? mes}/${mes.slice(2, 4)}`;
 
 // Uma linha por mês recente com a quantidade de datas (AAAA-MM-DD, com ou sem hora) de cada série, para gráficos de colunas lado a lado.
-export function contagemPorMes(series: Record<string, string[]>, hoje: string, n = 6): ({ mes: string; rotulo: string } & Record<string, number | string>)[] {
+export function contagemPorMes(
+  series: Record<string, string[]>,
+  hoje: string,
+  n = 6,
+): ({ mes: string; rotulo: string } & Record<string, number | string>)[] {
   return mesesRecentes(hoje, n).map((mes) => {
     const linha: Record<string, number | string> = { mes, rotulo: rotuloMesCurto(mes) };
-    for (const [nome, datas] of Object.entries(series)) linha[nome] = datas.filter((d) => d.slice(0, 7) === mes).length;
+    for (const [nome, datas] of Object.entries(series))
+      linha[nome] = datas.filter((d) => d.slice(0, 7) === mes).length;
     return linha as { mes: string; rotulo: string } & Record<string, number | string>;
   });
 }
