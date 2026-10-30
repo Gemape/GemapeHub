@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { useEmpregados } from "@/lib/hooks-gemape";
-import { listarRelatorios, registrarRelatorio, relatorioPorDespesa, type RelatorioSalvo } from "@/lib/relatorios-viagens";
+import { registrarRelatorio, relatorioPorDespesa, type RelatorioSalvo } from "@/lib/relatorios-viagens";
 import type { RespostaRegistrada } from "@/lib/respostas-despesas";
 import { formatarMoeda, rotuloPeriodo, type PeriodoMes } from "@/lib/viagens";
 import {
@@ -37,13 +37,14 @@ function abrirRelatorioSalvo(rel: RelatorioSalvo, lista: readonly RespostaRegist
 }
 
 // Lista das despesas do mês do painel (dec 186): filtros, detalhe de cada despesa e geração do relatório das marcadas.
-export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
+export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente, relatorios, aoGerarRelatorio }: {
   lista: readonly RespostaRegistrada[]; periodo: PeriodoMes; tipos: readonly string[]; tecnicos: readonly string[]; emitente: string;
+  // Os relatórios gerados vivem no painel (que também mede o fechamento no prazo); a lista só os mostra e avisa quando gera um novo.
+  relatorios: readonly RelatorioSalvo[]; aoGerarRelatorio: () => void;
 }) {
   const { empresaId, empresas } = useEmpresa();
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   const [filtro, setFiltro] = useState<FiltroLista>(FILTRO_VAZIO);
-  const [relatorios, setRelatorios] = useState(listarRelatorios);
   const [marcadas, setMarcadas] = useState<Set<string>>(new Set());
   const [aberta, setAberta] = useState<LinhaDespesa | null>(null);
   const [confirmando, setConfirmando] = useState(false);
@@ -74,7 +75,7 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente }: {
         supervisor: supervisor === NENHUM ? "" : supervisor, diretor: diretor === NENHUM ? "" : diretor,
         despesas: selecionadas.map((l) => ({ id: l.id, data: l.data, responsavel: l.responsavel })),
       });
-      setRelatorios(listarRelatorios());
+      aoGerarRelatorio();
       setMarcadas(new Set());
       setErro("");
       setConfirmando(false);

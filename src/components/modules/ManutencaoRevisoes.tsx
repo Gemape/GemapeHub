@@ -53,15 +53,15 @@ const km = (n: number) => `${n.toLocaleString("pt-BR")} km`;
 export function ManutencaoRevisoes({ revisoes }: { revisoes: RevisaoDoVeiculo[] }) {
   return (
     <div className="overflow-x-auto rounded-xl border">
-      <Table className="min-w-[1000px] table-fixed">
+      <Table className="min-w-[1200px] table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[26%]">Veículo</TableHead>
-            <TableHead className="w-[18%]">Serviço</TableHead>
-            <TableHead className="w-[16%]">Periodicidade</TableHead>
-            <TableHead className="w-[14%]">Última realizada</TableHead>
-            <TableHead className="w-[12%]">Próxima revisão</TableHead>
-            <TableHead className="w-[14%] text-center">Situação</TableHead>
+            <TableHead className="w-[19%]">Veículo</TableHead>
+            <TableHead className="w-[19%]">Serviço</TableHead>
+            <TableHead className="w-[17%]">Periodicidade</TableHead>
+            <TableHead className="w-[15%]">Última realizada</TableHead>
+            <TableHead className="w-[15%]">Próxima revisão</TableHead>
+            <TableHead className="w-[15%] text-center">Situação</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -109,7 +109,7 @@ export function ManutencaoRevisoes({ revisoes }: { revisoes: RevisaoDoVeiculo[] 
                 <TableCell>
                   <span
                     title={s.motivo}
-                    className={`mx-auto flex h-8 w-full max-w-[15rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.pilula}`}
+                    className={`mx-auto flex h-8 w-full max-w-[12rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.pilula}`}
                   >
                     <span
                       aria-hidden="true"

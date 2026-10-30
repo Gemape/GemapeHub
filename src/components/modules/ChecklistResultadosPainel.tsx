@@ -1,5 +1,5 @@
 import { CalendarCheck, CalendarClock, CircleCheck, CircleX } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { rotuloDoMes } from "@/components/modules/ChecklistPainelMensal";
 import { GraficosChecklist } from "@/components/modules/GraficosVeiculos";
@@ -15,45 +15,61 @@ const TODOS_OS_PERIODOS = "todos";
 const porcento = (n: number | null) => (n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
 
 // Os quatro indicadores do painel para um conjunto de linhas (todas, ou as de um grupo de responsáveis).
-function Indicadores({ resumo, todos, duasColunas = false }: { resumo: ResumoPainel; todos: boolean; duasColunas?: boolean }) {
+function Indicadores({ resumo, todos }: { resumo: ResumoPainel; todos: boolean }) {
   const desfechos = resumo.realizados + resumo.naoRealizados;
   return (
-    <div className={`grid grid-cols-2 gap-3 ${duasColunas ? "" : "sm:gap-4 lg:grid-cols-4"}`}>
-      <StatCard titulo="Realizados no prazo" pct={resumo.pctNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} />
-      <StatCard titulo="Não realizados no prazo" pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} />
-      <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} />
-      <StatCard titulo="A vencer" valor={resumo.aVencer} icone={CalendarClock} />
+    <div className="grid grid-cols-2 gap-2">
+      <StatCard titulo="Realizados no prazo" pct={resumo.pctNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} compacto />
+      <StatCard titulo="Não realizados no prazo" pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} compacto />
+      <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} compacto />
+      <StatCard titulo="A vencer" valor={resumo.aVencer} detalhe="Ainda dentro do prazo" icone={CalendarClock} compacto />
     </div>
+  );
+}
+
+const COR_PONTO = { verde: "bg-green-600", amarelo: "bg-amber-500", vermelho: "bg-red-600" } as const;
+const COR_TEXTO = { verde: "text-green-700 dark:text-green-400", amarelo: "text-amber-700 dark:text-amber-400", vermelho: "text-red-700 dark:text-red-400" } as const;
+
+// O percentual de cada responsável com a bolinha da faixa (mesmas faixas e cores de Viagens); a cor nunca vai sozinha: o nome da faixa fica no title e para leitor de tela.
+function PercentualComFaixa({ valor }: { valor: number | null }) {
+  const f = faixaDoIndice(valor);
+  if (!f) return <>{porcento(valor)}</>;
+  return (
+    <span className={`inline-flex items-center justify-end gap-1.5 ${COR_TEXTO[f.faixa]}`} title={`${f.cor}: ${f.classificacao}`}>
+      <span className={`inline-block h-2.5 w-2.5 rounded-full ${COR_PONTO[f.faixa]}`} aria-hidden="true" />
+      <span>{porcento(valor)}</span>
+      <span className="sr-only">{f.cor}, {f.classificacao}</span>
+    </span>
   );
 }
 
 function TabelaDeResponsaveis({ linhas }: { linhas: LinhaPainel[] }) {
   const resultados = resultadosPorResponsavel(linhas);
   return (
-    <div className="panel overflow-x-auto">
-      <Table>
+    <div className="panel max-h-[32vh] overflow-auto">
+      <Table className="whitespace-nowrap text-sm">
         <TableHeader>
           <TableRow>
-            <TableHead className="px-2 sm:px-4">Responsável</TableHead>
-            <TableHead className="px-2 text-right sm:px-4">Previstos</TableHead>
-            <TableHead className="px-2 text-right sm:px-4"><span className="sm:hidden">Feitos</span><span className="hidden sm:inline">Realizados no prazo</span></TableHead>
-            <TableHead className="px-2 text-right sm:px-4"><span className="sm:hidden">Não feitos</span><span className="hidden sm:inline">Não realizados</span></TableHead>
-            <TableHead className="px-2 text-right sm:px-4">A vencer</TableHead>
-            <TableHead className="px-2 text-right sm:px-4">No prazo</TableHead>
+            <TableHead className="h-8 px-2">Responsável</TableHead>
+            <TableHead className="h-8 px-2 text-right">Previstos</TableHead>
+            <TableHead className="h-8 px-2 text-right" title="Realizados no prazo">Feitos</TableHead>
+            <TableHead className="h-8 px-2 text-right" title="Não realizados">Não feitos</TableHead>
+            <TableHead className="h-8 px-2 text-right">A vencer</TableHead>
+            <TableHead className="h-8 px-2 text-right">No prazo</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {resultados.length === 0 && (
-            <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum responsável com check list previsto neste período.</TableCell></TableRow>
+            <TableRow><TableCell colSpan={6} className="py-3 text-center text-muted-foreground">Nenhum responsável com check list previsto neste período.</TableCell></TableRow>
           )}
           {resultados.map((r) => (
             <TableRow key={r.nome}>
-              <TableCell className="px-2 font-medium sm:px-4">{r.nome}</TableCell>
-              <TableCell className="px-2 text-right sm:px-4">{r.previstos}</TableCell>
-              <TableCell className="px-2 text-right sm:px-4">{r.realizados}</TableCell>
-              <TableCell className="px-2 text-right sm:px-4">{r.naoRealizados}</TableCell>
-              <TableCell className="px-2 text-right sm:px-4">{r.aVencer}</TableCell>
-              <TableCell className="px-2 text-right font-medium sm:px-4">{porcento(r.pctNoPrazo)}</TableCell>
+              <TableCell className="max-w-[10rem] truncate px-2 py-1 font-medium" title={r.nome}>{r.nome}</TableCell>
+              <TableCell className="px-2 py-1 text-right">{r.previstos}</TableCell>
+              <TableCell className="px-2 py-1 text-right">{r.realizados}</TableCell>
+              <TableCell className="px-2 py-1 text-right">{r.naoRealizados}</TableCell>
+              <TableCell className="px-2 py-1 text-right">{r.aVencer}</TableCell>
+              <TableCell className="px-2 py-1 text-right font-medium"><PercentualComFaixa valor={r.pctNoPrazo} /></TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -66,12 +82,14 @@ function TabelaDeResponsaveis({ linhas }: { linhas: LinhaPainel[] }) {
 // indicadores e os resultados de cada responsável separados por grupo, Técnicos (área Oficina) e PCM. Administrativo e Sem área só aparecem se houver check list
 // previsto para quem é dessa área. A área vem das caixas duplas de Parâmetros Específicos. Só conta o check list obrigatório (periódico).
 export function ChecklistResultadosPainel({
-  previsoes, checklists, idsDosVeiculos, hoje,
+  previsoes, checklists, idsDosVeiculos, hoje, acoes,
 }: {
   previsoes: Previsao[];
   checklists: ChecklistDoPainel[];
   idsDosVeiculos: Set<string>;
   hoje: string;
+  // Os botões dos tipos de check list: ficam na mesma linha do período, à direita.
+  acoes?: ReactNode;
 }) {
   const [mes, setMes] = useState(TODOS_OS_PERIODOS);
   const { linhas, resumo } = painelDoMes(
@@ -88,54 +106,53 @@ export function ChecklistResultadosPainel({
   const periodo = todos ? "Todos os períodos" : rotuloDoMes(mes);
 
   return (
-    <div className="space-y-4">
-      {/* Geral, Técnicos e PCM lado a lado (decisão 332): os resultados cabem numa tela, sem rolar. */}
-      <div className={`grid items-start gap-4 ${grupos.length === 2 ? "lg:grid-cols-3" : "lg:grid-cols-2 xl:grid-cols-4"}`}>
-        <section className="space-y-2" aria-labelledby="checklist-indicadores">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 id="checklist-indicadores" className="text-lg font-semibold">Indicadores gerais de check list</h2>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="resultados_mes" className="text-xs">Período</Label>
-              <Select value={mes} onValueChange={setMes}>
-                <SelectTrigger id="resultados_mes" className="w-48"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
-                  {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <Indicadores resumo={resumo} todos={todos} duasColunas />
-        </section>
-      {grupos.map((g) => {
-        const dele = doGrupo(g);
-        const id = `checklist-grupo-${g.toLowerCase().replace(/[^a-z]/g, "")}`;
-        return (
-          <section key={g} className="space-y-2" aria-labelledby={id}>
-            <div>
-              <h2 id={id} className="text-lg font-semibold">Indicadores · {g}</h2>
-              <p className="text-sm text-muted-foreground">{periodo}{dele.length === 0 ? `: nenhum check list previsto para ${g === "Técnicos" ? "os técnicos" : g === "PCM" ? "o PCM" : g.toLowerCase()} neste período.` : "."}</p>
-            </div>
-            <Indicadores resumo={resumoDeLinhas(dele)} todos={todos} duasColunas />
-          </section>
-        );
-      })}
+    <div className="space-y-3">
+      {/* O período vale para tudo o que está abaixo: fica no alto, à esquerda, na linha dos botões dos tipos de check list. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Label htmlFor="resultados_mes" className="text-xs">Período</Label>
+          <Select value={mes} onValueChange={setMes}>
+            <SelectTrigger id="resultados_mes" className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
+              {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {acoes}
       </div>
-
-      {/* As tabelas por responsável ficam logo abaixo dos indicadores, na largura toda (decisão 332). */}
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      {/* Tudo numa tela, sem rolar (decisão 332): uma coluna para o geral, com os gráficos, e uma para cada grupo, com os indicadores e a tabela dos responsáveis. */}
+      <div className={`grid items-start gap-3 ${grupos.length === 2 ? "lg:grid-cols-3" : "lg:grid-cols-2 xl:grid-cols-4"}`}>
+        <div className="space-y-3">
+          <section className="space-y-1.5" aria-labelledby="checklist-indicadores">
+            <div>
+              <h2 id="checklist-indicadores" className="text-base font-semibold leading-tight">Indicadores gerais de check list</h2>
+              <p className="text-xs text-muted-foreground">{periodo}.</p>
+            </div>
+            <Indicadores resumo={resumo} todos={todos} />
+          </section>
+          <GraficosChecklist linhas={linhas} grupoDe={grupoDe} compacto />
+        </div>
         {grupos.map((g) => {
           const dele = doGrupo(g);
+          const id = `checklist-grupo-${g.toLowerCase().replace(/[^a-z]/g, "")}`;
           return (
-            <section key={g} className="space-y-2" aria-label={`Responsáveis · ${g}`}>
-              <h3 className="text-sm font-semibold">Responsáveis · {g}</h3>
-              <TabelaDeResponsaveis linhas={dele} />
-            </section>
+            <div key={g} className="space-y-3">
+              <section className="space-y-1.5" aria-labelledby={id}>
+                <div>
+                  <h2 id={id} className="text-base font-semibold leading-tight">Indicadores · {g}</h2>
+                  <p className="text-xs text-muted-foreground">{periodo}{dele.length === 0 ? `: nenhum check list previsto para ${g === "Técnicos" ? "os técnicos" : g === "PCM" ? "o PCM" : g.toLowerCase()} neste período.` : "."}</p>
+                </div>
+                <Indicadores resumo={resumoDeLinhas(dele)} todos={todos} />
+              </section>
+              <section className="space-y-1.5" aria-label={`Responsáveis · ${g}`}>
+                <h3 className="text-sm font-semibold">Responsáveis · {g}</h3>
+                <TabelaDeResponsaveis linhas={dele} />
+              </section>
+            </div>
           );
         })}
       </div>
-
-      <GraficosChecklist linhas={linhas} grupoDe={grupoDe} />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { ArrowLeft, CalendarCheck, ClipboardCheck } from "lucide-react";
 import { useState } from "react";
 
 import { CartoesManutencao } from "@/components/modules/CartoesManutencao";
@@ -5,7 +6,6 @@ import { GraficosManutencao } from "@/components/modules/GraficosVeiculos";
 import { ManutencaoRevisoes } from "@/components/modules/ManutencaoRevisoes";
 import { NovaManutencaoDialog } from "@/components/modules/NovaManutencaoDialog";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,22 @@ const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 // corretiva descreve o que acontece), grupos de ações (pai, quantos a manutenção abranger), ações de
 // cada grupo (filhos) com observação livre cada uma, local (empresa ou terceiro) e custo de peças e de mão de obra. A última
 // preventiva de cada grupo alimenta as sugestões do extrato. Só modo demonstração.
+// Altura das listas: ocupam o que sobra da janela e rolam por dentro, para a página não rolar.
+const ALTURA_LISTA = "max-h-[calc(100dvh-19rem)]";
+// Tipo da manutenção em pílula, no desenho das etiquetas da Frota: preventiva em verde, corretiva em âmbar.
+const COR_TIPO = {
+  Preventiva: { etiqueta: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200", ponto: "bg-emerald-500" },
+  Corretiva: { etiqueta: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200", ponto: "bg-amber-400" },
+} as const;
+function EtiquetaTipo({ tipo }: { tipo: ManutencaoVeiculo["tipo"] }) {
+  const cor = COR_TIPO[tipo];
+  return (
+    <span className={`mx-auto flex h-8 w-full max-w-[9rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.etiqueta}`}>
+      <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ring-2 ring-white/80 dark:ring-black/30 ${cor.ponto}`} />
+      {tipo}
+    </span>
+  );
+}
 const moeda = (n: number | undefined) => (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 export function ManutencaoVeiculoModulo() {
   const { empresaId, empresas } = useEmpresa();
@@ -39,8 +55,10 @@ export function ManutencaoVeiculoModulo() {
   const todas = useManutencoesVeiculo();
   const abastecimentos = useAbastecimentos();
   const planos = usePlanosVeiculo();
-  // Visão da lista (decisão 319): as revisões do plano de cada veículo (padrão) ou os registros de manutenção preventivas ou corretivas (com relatório, edição e exclusão).
-  const [visao, setVisao] = useState<"revisoes" | "Preventiva" | "Corretiva">("revisoes");
+  // Tela (decisão 319): o painel com indicadores e gráficos; ao clicar num dos dois botões azuis do alto, a lista das manutenções planejadas (revisões do plano de cada
+  // veículo) ou a das realizadas (registros preventivos e corretivos, com relatório, edição e exclusão), cada uma com o botão de voltar ao painel.
+  const [aba, setAba] = useState<"painel" | "planejadas" | "realizadas">("painel");
+  const [tipo, setTipo] = useState<"todas" | "Preventiva" | "Corretiva">("todas");
   const [aberto, setAberto] = useState(false);
   // Manutenção em edição; null é o cadastro de uma nova.
   const [editando, setEditando] = useState<ManutencaoVeiculo | null>(null);
@@ -49,13 +67,17 @@ export function ManutencaoVeiculoModulo() {
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const periodoInvalido = !!inicio && !!fim && inicio > fim;
+  // As planejadas têm o período delas, sobre a data da próxima revisão: não herdam o das realizadas.
+  const [inicioPlan, setInicioPlan] = useState("");
+  const [fimPlan, setFimPlan] = useState("");
+  const periodoPlanInvalido = !!inicioPlan && !!fimPlan && inicioPlan > fimPlan;
 
   const acoes = parametros.acoesManutencaoVeiculo;
   const idsDaEmpresa = new Set(veiculos.map((v) => v.id));
   const servicoDe = (m: (typeof todas)[number]) => resumoManutencao(m, (id) => acoes.find((a) => a.id === id)?.nome);
   const lista = todas
     .filter((m) => idsDaEmpresa.has(m.veiculoId))
-    .filter((m) => visao === "revisoes" || m.tipo === visao)
+    .filter((m) => tipo === "todas" || m.tipo === tipo)
     .filter((m) => !periodoInvalido && (!inicio || m.data >= inicio) && (!fim || m.data <= fim))
     .filter((m) => {
       const v = veiculos.find((x) => x.id === m.veiculoId);
@@ -78,7 +100,11 @@ export function ManutencaoVeiculoModulo() {
     }).map((sugestao) => ({ veiculoId: v.id, veiculo: rotuloDoVeiculo(parametros, v), kmAtual, sugestao }));
   });
   const indicadores = indicadoresDaManutencao({ tipos: todas.filter((m) => idsDaEmpresa.has(m.veiculoId)).map((m) => m.tipo), statusRevisoes: revisoes.map((r) => r.sugestao.status) });
-  const revisoesDaBusca = revisoes.filter((r) => combinaBusca(busca, r.veiculo, r.sugestao.nome));
+  // O período das planejadas vale para a data da próxima revisão: com período escolhido, revisão sem data prevista (sem registro) fica de fora.
+  const noPeriodoPlanejado = (proxima: string | null) => (!inicioPlan && !fimPlan) || (!!proxima && (!inicioPlan || proxima.slice(0, 10) >= inicioPlan) && (!fimPlan || proxima.slice(0, 10) <= fimPlan));
+  const revisoesDaBusca = revisoes
+    .filter((r) => !periodoPlanInvalido && noPeriodoPlanejado(r.sugestao.proximaData))
+    .filter((r) => combinaBusca(busca, r.veiculo, r.sugestao.nome));
 
   if (!MODO_DEMO) {
     return <p className="text-sm text-muted-foreground">A manutenção de veículos estará disponível após a Fase 2 (banco real).</p>;
@@ -109,51 +135,94 @@ export function ManutencaoVeiculoModulo() {
     executar(() => removerManutencao(id), "Manutenção excluída");
   }
 
-  return (
-    <div className="space-y-4">
-      <CartoesManutencao indicadores={indicadores} />
-      <GraficosManutencao revisoes={revisoes} manutencoes={todas.filter((m) => idsDaEmpresa.has(m.veiculoId))} hoje={hoje} />
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex gap-2" role="group" aria-label="Visão da lista">
-          <Button type="button" size="sm" variant={visao === "revisoes" ? "default" : "outline"} aria-pressed={visao === "revisoes"} onClick={() => setVisao("revisoes")}>Revisões do plano</Button>
-          <Button type="button" size="sm" variant={visao === "Preventiva" ? "default" : "outline"} aria-pressed={visao === "Preventiva"} onClick={() => setVisao("Preventiva")}>Preventivas ({indicadores.preventivas.qtd})</Button>
-          <Button type="button" size="sm" variant={visao === "Corretiva" ? "default" : "outline"} aria-pressed={visao === "Corretiva"} onClick={() => setVisao("Corretiva")}>Corretivas ({indicadores.corretivas.qtd})</Button>
-        </div>
-        <Input
-          aria-label="Buscar manutenção"
-          placeholder="Buscar por veículo, serviço ou tipo"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-        {visao !== "revisoes" && <>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="manutencao-inicio" className="text-sm">Data início</Label>
-          <Input id="manutencao-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
-        </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="manutencao-fim" className="text-sm">Data fim</Label>
-          <Input id="manutencao-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
-        </div>
-        {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
-        <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
-        </>}
-        <Button requiresWrite className="ml-auto" onClick={() => abrir()}>Cadastrar nova manutenção</Button>
+  // Filtro de período das duas listas (as pontas valem): nas planejadas, a data da próxima revisão; nas realizadas, a data da manutenção.
+  const camposDoPeriodo = (ini: string, defIni: (v: string) => void, f: string, defFim: (v: string) => void, prefixo: string, dica: string) => (
+    <>
+      <div className="flex items-center gap-2" title={dica}>
+        <Label htmlFor={`${prefixo}-inicio`} className="text-sm">Data início</Label>
+        <Input id={`${prefixo}-inicio`} type="date" className="w-40" value={ini} max={f || undefined} onChange={(e) => defIni(e.target.value)} />
       </div>
-      {visao === "revisoes" && <ManutencaoRevisoes revisoes={revisoesDaBusca} />}
-      {visao !== "revisoes" && periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
-      {visao !== "revisoes" && <div className="overflow-x-auto rounded-xl border">
-        <Table>
+      <div className="flex items-center gap-2" title={dica}>
+        <Label htmlFor={`${prefixo}-fim`} className="text-sm">Data fim</Label>
+        <Input id={`${prefixo}-fim`} type="date" className="w-40" value={f} min={ini || undefined} onChange={(e) => defFim(e.target.value)} />
+      </div>
+      {(ini || f) && <Button type="button" variant="ghost" size="sm" onClick={() => { defIni(""); defFim(""); }}>Limpar período</Button>}
+    </>
+  );
+  const filtroPeriodo = camposDoPeriodo(inicio, setInicio, fim, setFim, "manutencao", "Data da manutenção");
+  const filtroPeriodoPlan = camposDoPeriodo(inicioPlan, setInicioPlan, fimPlan, setFimPlan, "planejadas", "Data da próxima revisão: revisões sem data prevista não aparecem quando há período");
+
+  const botaoCadastrar = <Button requiresWrite variant="outline" onClick={() => abrir()}>Cadastrar nova manutenção</Button>;
+  const voltar = (
+    <Button type="button" variant="outline" size="sm" onClick={() => setAba("painel")}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+  );
+
+  return (
+    <div className="space-y-3">
+      {aba === "painel" && (
+        <>
+          {/* Os dois botões azuis ficam no alto, à direita, no mesmo padrão do Check list; a contagem de cada um vai dentro do botão. */}
+          <section className="flex flex-wrap items-center justify-between gap-2" aria-label="Listas de manutenção">
+            {botaoCadastrar}
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" onClick={() => setAba("planejadas")}>
+                <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Manutenções planejadas
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{revisoes.length} no plano</span>
+              </Button>
+              <Button type="button" onClick={() => setAba("realizadas")}>
+                <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Manutenções realizadas
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{indicadores.preventivas.qtd + indicadores.corretivas.qtd} registradas</span>
+              </Button>
+            </div>
+          </section>
+          <CartoesManutencao indicadores={indicadores} />
+          <GraficosManutencao revisoes={revisoes} manutencoes={todas.filter((m) => idsDaEmpresa.has(m.veiculoId))} hoje={hoje} />
+        </>
+      )}
+
+      {aba === "planejadas" && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            {voltar}
+            <Input aria-label="Buscar manutenção" placeholder="Buscar por veículo ou serviço" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            {filtroPeriodoPlan}
+            <p className="text-sm text-muted-foreground">{revisoesDaBusca.length} manutenção(ões) planejada(s){inicioPlan || fimPlan ? ", pela data da próxima revisão" : ""}.</p>
+            <div className="ml-auto">{botaoCadastrar}</div>
+          </div>
+          {periodoPlanInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
+          <div className={`${ALTURA_LISTA} overflow-y-auto`}>
+            <ManutencaoRevisoes revisoes={revisoesDaBusca} />
+          </div>
+        </>
+      )}
+
+      {aba === "realizadas" && (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            {voltar}
+            <div className="flex gap-2" role="group" aria-label="Tipo de manutenção">
+              <Button type="button" size="sm" variant={tipo === "todas" ? "default" : "outline"} aria-pressed={tipo === "todas"} onClick={() => setTipo("todas")}>Todas</Button>
+              <Button type="button" size="sm" variant={tipo === "Preventiva" ? "default" : "outline"} aria-pressed={tipo === "Preventiva"} onClick={() => setTipo("Preventiva")}>Preventivas ({indicadores.preventivas.qtd})</Button>
+              <Button type="button" size="sm" variant={tipo === "Corretiva" ? "default" : "outline"} aria-pressed={tipo === "Corretiva"} onClick={() => setTipo("Corretiva")}>Corretivas ({indicadores.corretivas.qtd})</Button>
+            </div>
+            <Input aria-label="Buscar manutenção" placeholder="Buscar por veículo, serviço ou tipo" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            {filtroPeriodo}
+            <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
+            <div className="ml-auto">{botaoCadastrar}</div>
+          </div>
+          {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
+      <div className={`${ALTURA_LISTA} overflow-auto rounded-xl border`}>
+        <Table className="min-w-[1250px] table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Veículo</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Serviço</TableHead>
-              <TableHead>Local</TableHead>
-              <TableHead className="text-right">Custo total</TableHead>
-              <TableHead className="text-right">Km</TableHead>
-              <TableHead />
+              <TableHead className="w-[8%]">Data</TableHead>
+              <TableHead className="w-[19%]">Veículo</TableHead>
+              <TableHead className="w-[10%] text-center">Tipo</TableHead>
+              <TableHead className="w-[18%]">Serviço</TableHead>
+              <TableHead className="w-[11%]">Local</TableHead>
+              <TableHead className="w-[9%] pr-6 text-right">Custo total</TableHead>
+              <TableHead className="w-[7%] pr-6 text-right">Km</TableHead>
+              <TableHead className="w-[18%]" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -166,8 +235,8 @@ export function ManutencaoVeiculoModulo() {
               return (
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data)}</TableCell>
-                  <TableCell>{v ? rotuloDoVeiculo(parametros, v) : "—"}</TableCell>
-                  <TableCell><Badge variant={m.tipo === "Preventiva" ? "secondary" : "outline"}>{m.tipo}</Badge></TableCell>
+                  <TableCell className="font-medium">{v ? rotuloDoVeiculo(parametros, v) : "—"}</TableCell>
+                  <TableCell><EtiquetaTipo tipo={m.tipo} /></TableCell>
                   <TableCell>
                     {gruposDaManutencao(m).length === 0 ? servico : (
                       <div className="space-y-1">
@@ -194,7 +263,7 @@ export function ManutencaoVeiculoModulo() {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="text-right" title={m.custoTotal === undefined ? undefined : `Peças ${moeda(m.custoPecas)} + mão de obra ${moeda(m.custoMaoDeObra)}`}>
+                  <TableCell className="pr-6 text-right tabular-nums" title={m.custoTotal === undefined ? undefined : `Peças ${moeda(m.custoPecas)} + mão de obra ${moeda(m.custoMaoDeObra)}`}>
                     {m.custoTotal === undefined ? "—" : moeda(m.custoTotal)}
                     {locaisDaManutencao(m).length > 1 && (
                       <div className="mt-1 space-y-0.5 text-xs font-normal text-muted-foreground">
@@ -202,12 +271,12 @@ export function ManutencaoVeiculoModulo() {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">{m.km.toLocaleString("pt-BR")}</TableCell>
-                  <TableCell className="whitespace-nowrap text-right">
-                    <Button variant="ghost" size="sm" aria-label="Relatório da manutenção" onClick={() => gerarRelatorio(m)}>Relatório</Button>
-                    <Button requiresWrite variant="ghost" size="sm" aria-label="Editar manutenção" onClick={() => abrir(m)}>Editar</Button>
+                  <TableCell className="pr-6 text-right tabular-nums">{m.km.toLocaleString("pt-BR")}</TableCell>
+                  <TableCell className="space-x-1 whitespace-nowrap text-right">
+                    <Button variant="outline" size="sm" className="rounded-full" aria-label="Relatório da manutenção" onClick={() => gerarRelatorio(m)}>Relatório</Button>
+                    <Button requiresWrite variant="outline" size="sm" className="rounded-full" aria-label="Editar manutenção" onClick={() => abrir(m)}>Editar</Button>
                     {isAdmin && (
-                      <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir manutenção" className="text-destructive hover:text-destructive" onClick={() => excluir(m.id)}>
+                      <Button requiresWrite variant="outline" size="sm" aria-label="Excluir manutenção" className="rounded-full text-destructive hover:text-destructive" onClick={() => excluir(m.id)}>
                         Excluir
                       </Button>
                     )}
@@ -217,7 +286,9 @@ export function ManutencaoVeiculoModulo() {
             })}
           </TableBody>
         </Table>
-      </div>}
+      </div>
+        </>
+      )}
 
       <NovaManutencaoDialog
         aberto={aberto}

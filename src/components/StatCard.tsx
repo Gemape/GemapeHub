@@ -12,6 +12,7 @@ export function StatCard({
   icone,
   pct = null,
   faixa = null,
+  compacto = false,
 }: {
   titulo: string;
   valor: string | number;
@@ -19,6 +20,7 @@ export function StatCard({
   icone?: LucideIcon;
   pct?: number | null;
   faixa?: Faixa | null;
+  compacto?: boolean;
 }) {
-  return <Cartao titulo={titulo} valor={String(valor)} icone={icone} indicador={{ pct, faixa, detalhe: detalhe ?? "" }} />;
+  return <Cartao titulo={titulo} valor={String(valor)} icone={icone} compacto={compacto} indicador={{ pct, faixa, detalhe: detalhe ?? "" }} />;
 }

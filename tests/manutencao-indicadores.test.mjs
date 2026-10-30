@@ -53,14 +53,18 @@ test("a tela de Manutenção traz os cards e a lista de revisões com serviço, 
   assert.match(modulo, /<ManutencaoRevisoes revisoes=\{revisoesDaBusca\}/);
   assert.match(
     modulo,
-    /aria-pressed=\{visao === "Preventiva"\}/,
-    "os registros preventivos (editar, relatório, excluir) abrem pelo botão Preventivas",
+    /aria-pressed=\{tipo === "Preventiva"\}/,
+    "na lista das realizadas, os registros preventivos (editar, relatório, excluir) têm o filtro Preventivas",
   );
   assert.match(
     modulo,
-    /aria-pressed=\{visao === "Corretiva"\}/,
-    "e os corretivos pelo botão Corretivas",
+    /aria-pressed=\{tipo === "Corretiva"\}/,
+    "e os corretivos, o filtro Corretivas",
   );
+  // Mesmo padrão do Check list: dois botões azuis no alto abrem as listas, cada uma com o botão de voltar ao painel.
+  assert.match(modulo, /setAba\("planejadas"\)[\s\S]*Manutenções planejadas/);
+  assert.match(modulo, /setAba\("realizadas"\)[\s\S]*Manutenções realizadas/);
+  assert.match(modulo, /Voltar ao painel/);
   const lista = ler("components/modules/ManutencaoRevisoes.tsx");
   for (const t of [
     "Veículo",

@@ -29,7 +29,7 @@ export function SupervisoresOcorrencias() {
 
   return (
     <section className="space-y-3" aria-labelledby="supervisores-ocorrencias">
-      <div>
+      <div className="max-w-3xl">
         <h2 id="supervisores-ocorrencias" className="text-lg font-semibold">Supervisores das ocorrências</h2>
         <p className="text-sm text-muted-foreground">
           Usuários que validam a renovação do prazo da tratativa. Toda renovação pede a senha de login do supervisor que autoriza, escolhido numa lista, mesmo de quem já é supervisor.

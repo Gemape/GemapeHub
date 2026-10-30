@@ -300,18 +300,25 @@ export function ChecklistVeiculoModulo() {
     <div className="space-y-5">
       {aba === "painel" && (
         <>
-          {/* Os dois tipos de check list são botões azuis no canto superior direito; a contagem de cada um vai dentro do botão. */}
-          <section className="flex flex-wrap justify-end gap-2" aria-label="Tipos de check list">
-            <Button type="button" onClick={() => setAba("periodicos")}>
-              <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Check list periódico
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{previstosDoMes} previsto(s) neste mês</span>
-            </Button>
-            <Button type="button" onClick={() => setAba("avulsos")}>
-              <ClipboardList className="h-4 w-4" aria-hidden="true" /> Check list avulso
-              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{avulsosDoMesAtual} neste mês</span>
-            </Button>
-          </section>
-          <ChecklistResultadosPainel previsoes={previsoes} checklists={todos.filter(checklistVisivelNaLista)} idsDosVeiculos={idsDaEmpresa} hoje={hoje} />
+          {/* Os dois tipos de check list são botões azuis no canto superior direito, na linha do período; a contagem de cada um vai dentro do botão. */}
+          <ChecklistResultadosPainel
+            previsoes={previsoes}
+            checklists={todos.filter(checklistVisivelNaLista)}
+            idsDosVeiculos={idsDaEmpresa}
+            hoje={hoje}
+            acoes={
+              <section className="flex flex-wrap justify-end gap-2" aria-label="Tipos de check list">
+                <Button type="button" onClick={() => setAba("periodicos")}>
+                  <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Check list periódico
+                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{previstosDoMes} previsto(s) neste mês</span>
+                </Button>
+                <Button type="button" onClick={() => setAba("avulsos")}>
+                  <ClipboardList className="h-4 w-4" aria-hidden="true" /> Check list avulso
+                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{avulsosDoMesAtual} neste mês</span>
+                </Button>
+              </section>
+            }
+          />
         </>
       )}
 
