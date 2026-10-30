@@ -19,13 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-type ModuloEstoque = 'epi' | 'uniforme' | 'ferramenta';
+// O EPI tem a sua tela de Estoque (EstoqueEpiModulo, decisão 329): esta é a dos uniformes e das ferramentas.
+type ModuloEstoque = 'uniforme' | 'ferramenta';
 
 export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const [itemId, setItemId] = useState<string | null>(null);
-  const tabela = modulo === 'epi' ? 'epis' : modulo === 'uniforme' ? 'uniformes' : 'ferramentas';
+  const tabela = modulo === 'uniforme' ? 'uniformes' : 'ferramentas';
   const salvar = useSalvar(tabela, ['estoque-modulo']);
   const { data: itens = [], isLoading, isError, error } = useQuery({
     queryKey: ['estoque-modulo', modulo, empresaId],

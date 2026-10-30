@@ -8,12 +8,12 @@ import { hojeLocal } from "@/lib/empregados";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { useEmpresas, useItens, useMovimentacoes } from "@/lib/hooks-gemape";
 
-// Aba Estoque dos EPIs e dos Uniformes > Controle de estoque e consumo, como o REL_ESTOQUE da planilha: estoque crítico e atual, últimas e penúltimas entradas e saídas,
+// Aba Estoque dos Uniformes > Controle de estoque e consumo, como o REL_ESTOQUE da planilha: estoque crítico e atual, últimas e penúltimas entradas e saídas,
 // médias de consumo (mensal, trimestral, semestral e anual) e cobertura em dias (estoque atual ÷ média diária do último ano).
 const numero = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 const data = (d: string | null) => (d ? formatarData(d) : "—");
 
-export function ControleEstoqueModulo({ modulo }: { modulo: "epi" | "uniforme" }) {
+export function ControleEstoqueModulo({ modulo }: { modulo: "uniforme" }) {
   const { empresaId } = useEmpresa();
   const { data: itens = [], isLoading: carregandoItens } = useItens(modulo, empresaId);
   const { data: movimentos = [], isLoading: carregandoMov } = useMovimentacoes(modulo, empresaId);
@@ -75,7 +75,7 @@ export function ControleEstoqueModulo({ modulo }: { modulo: "epi" | "uniforme" }
           </TableHeader>
           <TableBody>
             {carregando ? <TableRow><TableCell colSpan={13}>Carregando…</TableCell></TableRow>
-              : linhas.length === 0 ? <TableRow><TableCell colSpan={13}>{modulo === "epi" ? "Nenhum EPI cadastrado." : "Nenhum uniforme cadastrado."}</TableCell></TableRow>
+              : linhas.length === 0 ? <TableRow><TableCell colSpan={13}>Nenhum uniforme cadastrado.</TableCell></TableRow>
                 : linhas.map((l) => (
                   <TableRow key={l.itemId}>
                     <TableCell>{l.nome}</TableCell>

@@ -13,7 +13,12 @@ export function definirTituloDaPagina(titulo: string | null): void {
 
 export function useTituloDaPagina(): string | null {
   return useSyncExternalStore(
-    (f) => { ouvintes.add(f); return () => { ouvintes.delete(f); }; },
+    (f) => {
+      ouvintes.add(f);
+      return () => {
+        ouvintes.delete(f);
+      };
+    },
     () => atual,
     () => null,
   );

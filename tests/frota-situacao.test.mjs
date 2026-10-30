@@ -55,7 +55,7 @@ test("a Frota tem as colunas na ordem pedida, com bolinha e etiqueta, e o extrat
   const ext = ler("components/modules/ExtratoVeiculo.tsx");
   // A bolinha abre o extrato interativo já na tabela que ela resume, sem gerar PDF (decisão 331).
   assert.match(ext, /if \(!veiculo \|\| !secao\) return;[\s\S]*extrato-tabela-\$\{TABELA_DA_SECAO\[secao\]\}/);
-  assert.match(ext, /ocorrenciasAbertas: \[4\], checklists: \[5\]/);
+  assert.match(ext, /ocorrenciasAbertas: 4, checklists: 5/);
   assert.match(ext, /!soAbertas \|\| o\.status !== "Encerrada"/);
   for (const cor of ["bg-red-500", "bg-amber-400", "bg-emerald-500"]) assert.ok(frota.includes(cor), cor);
   const extrato = ler("components/modules/ExtratoVeiculo.tsx");

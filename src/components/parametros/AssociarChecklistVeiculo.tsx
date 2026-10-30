@@ -19,7 +19,8 @@ import { CHECKLIST_VEICULOS_PADRAO } from "@/lib/checklist-veiculos-padrao";
 import { adicionarGrupoChecklistVeiculo, editarGrupoChecklistVeiculo, removerGrupoChecklistVeiculo, TODOS_OS_TIPOS } from "@/lib/parametros-base";
 import { ehGrupoPersonalizado, ehPersonalizadoDe, nomeGrupoPersonalizado } from "@/lib/grupo-personalizado";
 import { DialogCadastroEmpregados } from "@/components/modules/DialogCadastroEmpregados";
-import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
+import { grupoDeAreaPorNome } from "@/lib/area-responsaveis";
+import { lerEmpregadosDeVeiculos, soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
 import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist";
 import { useAccess } from "@/lib/access-context";
@@ -123,10 +124,19 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
   const veiculoEscolhido = veiculoPorId(veiculoId);
   // Responsável: empregado ativo, da empresa do veículo (sem empresa no veículo, de qualquer empresa).
   // Só quem foi escolhido em Parâmetros > Veículos > Parâmetros Específicos (lista vazia = todos).
+  // O responsável é um técnico ou do PCM: quem a lista marcou como Administrativo ou ficou sem área não entra (lista vazia = todos).
+  const grupoPorNome = grupoDeAreaPorNome();
+  const listaVeiculos = lerEmpregadosDeVeiculos();
+  const listaRestrita = listaVeiculos.length > 0;
+  // Quem tem vínculo na lista vale pelo id (o nome gravado pode ter mudado); os demais, pelo nome.
+  const grupoDe = (e: { id: string; nome: string }) => {
+    const h = listaVeiculos.find((x) => x.empregadoId === e.id);
+    return h ? grupoDeAreaPorNome([[h]])(h.nome) : grupoPorNome(e.nome);
+  };
   const elegiveis = soEmpregadosDeVeiculos(empregados.filter((e) =>
     empregadoElegivelPortador({ ativo: e.ativo ?? null, data_demissao: e.data_demissao ?? null } as never) &&
     (!veiculoEscolhido?.["empresa_id"] || e.empresa_id === veiculoEscolhido["empresa_id"]),
-  ));
+  )).filter((e) => !listaRestrita || ["Técnicos", "PCM"].includes(grupoDe(e)));
   const responsavel = elegiveis.find((e) => e.id === responsavelId) ?? null;
   // Itens que se aplicam ao tipo do veículo e à periodicidade escolhida (Avulso traz só os grupos avulsos).
   const subcategoriaEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never) : null;
@@ -280,9 +290,15 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
 
   // O responsável salvo pode ser de alguém que deixou de ser elegível; continua aparecendo para não sumir do campo.
   const salvoNaEdicao = editando || clonandoDe ? associacoes.find((a) => a.veiculoId === (editando ?? clonandoDe))?.responsavel : null;
-  const opcoesResponsavel = salvoNaEdicao && !elegiveis.some((e) => e.id === salvoNaEdicao.id)
-    ? [...elegiveis.map((e) => ({ id: e.id, rotulo: e.nome })), { id: salvoNaEdicao.id, rotulo: `${salvoNaEdicao.nome} (atual)` }]
-    : elegiveis.map((e) => ({ id: e.id, rotulo: e.matricula ? `${e.nome} · ${e.matricula}` : e.nome }));
+  const rotuloDoResponsavel = (e: (typeof elegiveis)[number]) => {
+    const area = grupoDe(e);
+    const base = e.matricula ? `${e.nome} · ${e.matricula}` : e.nome;
+    return area === "Sem área" ? base : `${base} · ${area === "Técnicos" ? "Técnico" : area}`;
+  };
+  const opcoesResponsavel = [
+    ...elegiveis.map((e) => ({ id: e.id, rotulo: rotuloDoResponsavel(e) })),
+    ...(salvoNaEdicao && !elegiveis.some((e) => e.id === salvoNaEdicao.id) ? [{ id: salvoNaEdicao.id, rotulo: `${salvoNaEdicao.nome} (atual)` }] : []),
+  ];
 
   return (
     <div className="space-y-5">

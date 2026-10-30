@@ -19,21 +19,44 @@ export type OcorrenciaParaIndicador = {
 const arredondar = (n: number) => Math.round(n * 10) / 10;
 
 // null quando a ocorrência não está encerrada (ainda não há como dizer se foi no prazo).
-export function encerradaNoPrazo(o: OcorrenciaParaIndicador, prazos: PrazosOcorrencias): boolean | null {
+export function encerradaNoPrazo(
+  o: OcorrenciaParaIndicador,
+  prazos: PrazosOcorrencias,
+): boolean | null {
   if (o.status !== "Encerrada" || !o.encerradaEm) return null;
   const dia = o.ocorridoEm.slice(0, 10);
   const inicio = o.tratativa?.registradaEm ? hojeBrasilia(new Date(o.tratativa.registradaEm)) : dia;
   // Como na ocorrência aberta (frota-ocorrencias.ts), a renovação com data limite é quem manda, mesmo que a data seja antes da padrão.
-  const renovada = (passo: string) => (o.renovacoes ?? []).filter((r) => r.passo === passo && r.ate).sort((a, b) => Date.parse(a.em) - Date.parse(b.em)).at(-1)?.ate;
+  const renovada = (passo: string) =>
+    (o.renovacoes ?? [])
+      .filter((r) => r.passo === passo && r.ate)
+      .sort((a, b) => Date.parse(a.em) - Date.parse(b.em))
+      .at(-1)?.ate;
   // Prazo de início: só confere quando a ocorrência tem tratativa registrada (sem ela não há dia de início).
-  if (o.tratativa?.registradaEm && inicio > (renovada("iniciar") ?? dataLimiteSugerida(dia, prazos.iniciar))) return false;
-  return hojeBrasilia(new Date(o.encerradaEm)) <= (renovada("finalizar") ?? dataLimiteSugerida(inicio, prazos.finalizar));
+  if (
+    o.tratativa?.registradaEm &&
+    inicio > (renovada("iniciar") ?? dataLimiteSugerida(dia, prazos.iniciar))
+  )
+    return false;
+  return (
+    hojeBrasilia(new Date(o.encerradaEm)) <=
+    (renovada("finalizar") ?? dataLimiteSugerida(inicio, prazos.finalizar))
+  );
 }
 
-export function indicadoresDeOcorrencias(entrada: { ocorrencias: OcorrenciaParaIndicador[]; hoje: string; prazos: PrazosOcorrencias; faixas?: ConfigFaixas }): { noPrazo: IndicadorDaFrota; naoRealizadas: IndicadorDaFrota } {
+export function indicadoresDeOcorrencias(entrada: {
+  ocorrencias: OcorrenciaParaIndicador[];
+  hoje: string;
+  prazos: PrazosOcorrencias;
+  faixas?: ConfigFaixas;
+}): { noPrazo: IndicadorDaFrota; naoRealizadas: IndicadorDaFrota } {
   const { ocorrencias, hoje, prazos } = entrada;
   const noPrazo = ocorrencias.filter((o) => encerradaNoPrazo(o, prazos) === true).length;
-  const fora = ocorrencias.filter((o) => encerradaNoPrazo(o, prazos) === false || (o.status !== "Encerrada" && ocorrenciaVencida(o, hoje, prazos))).length;
+  const fora = ocorrencias.filter(
+    (o) =>
+      encerradaNoPrazo(o, prazos) === false ||
+      (o.status !== "Encerrada" && ocorrenciaVencida(o, hoje, prazos)),
+  ).length;
   const total = noPrazo + fora;
   const valor = total === 0 ? null : arredondar((noPrazo / total) * 100);
   const faixa = faixaDoIndice(valor, entrada.faixas)?.faixa ?? null;
@@ -41,6 +64,10 @@ export function indicadoresDeOcorrencias(entrada: { ocorrencias: OcorrenciaParaI
   return {
     noPrazo: { pct: valor, faixa, detalhe: total ? `${noPrazo} de ${total} no prazo` : vazio },
     // A cor dos não realizados é a dos realizados no prazo (o complemento): poucos não realizados é verde.
-    naoRealizadas: { pct: valor === null ? null : arredondar(100 - valor), faixa, detalhe: total ? `${fora} de ${total} fora do prazo` : vazio },
+    naoRealizadas: {
+      pct: valor === null ? null : arredondar(100 - valor),
+      faixa,
+      detalhe: total ? `${fora} de ${total} fora do prazo` : vazio,
+    },
   };
 }

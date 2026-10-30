@@ -9,7 +9,13 @@ const CHAVE_BAIXA = "gemape-demo-epi-motivos-baixa";
 const CHAVE_DEVOLUCAO = "gemape-demo-epi-motivos-devolucao";
 
 export const MOTIVOS_BAIXA_PADRAO: readonly string[] = MOTIVOS_BAIXA;
-export const MOTIVOS_DEVOLUCAO_PADRAO: readonly string[] = ["Fim do uso", "Troca de tamanho", "Troca por desgaste", "Desligamento do empregado", "Mudança de função"];
+export const MOTIVOS_DEVOLUCAO_PADRAO: readonly string[] = [
+  "Fim do uso",
+  "Troca de tamanho",
+  "Troca por desgaste",
+  "Desligamento do empregado",
+  "Mudança de função",
+];
 export const MAX_MOTIVOS = 30;
 
 const limpar = (t: string) => t.trim().replace(/\s+/g, " ").slice(0, 60);
@@ -19,7 +25,14 @@ function lerLista(chave: string, padrao: readonly string[], storage?: StorageLik
     const bruto = (storage ?? localStorage).getItem(chave);
     const lido: unknown = bruto === null ? null : JSON.parse(bruto);
     if (!Array.isArray(lido)) return [...padrao];
-    const lista = [...new Set(lido.filter((m): m is string => typeof m === "string").map(limpar).filter(Boolean))];
+    const lista = [
+      ...new Set(
+        lido
+          .filter((m): m is string => typeof m === "string")
+          .map(limpar)
+          .filter(Boolean),
+      ),
+    ];
     // Lista guardada vazia ou sem texto aproveitável volta à padrão: sem motivo a devolução não poderia ser registrada.
     return lista.length > 0 ? lista : [...padrao];
   } catch {
@@ -39,10 +52,14 @@ function salvarLista(chave: string, motivos: string[], storage?: StorageLike): s
   return lista;
 }
 
-export const lerMotivosBaixaEpi = (storage?: StorageLike) => lerLista(CHAVE_BAIXA, MOTIVOS_BAIXA_PADRAO, storage);
-export const salvarMotivosBaixaEpi = (motivos: string[], storage?: StorageLike) => salvarLista(CHAVE_BAIXA, motivos, storage);
-export const lerMotivosDevolucaoEpi = (storage?: StorageLike) => lerLista(CHAVE_DEVOLUCAO, MOTIVOS_DEVOLUCAO_PADRAO, storage);
-export const salvarMotivosDevolucaoEpi = (motivos: string[], storage?: StorageLike) => salvarLista(CHAVE_DEVOLUCAO, motivos, storage);
+export const lerMotivosBaixaEpi = (storage?: StorageLike) =>
+  lerLista(CHAVE_BAIXA, MOTIVOS_BAIXA_PADRAO, storage);
+export const salvarMotivosBaixaEpi = (motivos: string[], storage?: StorageLike) =>
+  salvarLista(CHAVE_BAIXA, motivos, storage);
+export const lerMotivosDevolucaoEpi = (storage?: StorageLike) =>
+  lerLista(CHAVE_DEVOLUCAO, MOTIVOS_DEVOLUCAO_PADRAO, storage);
+export const salvarMotivosDevolucaoEpi = (motivos: string[], storage?: StorageLike) =>
+  salvarLista(CHAVE_DEVOLUCAO, motivos, storage);
 
 // ---------- Sugestão de compra ----------
 
@@ -55,12 +72,20 @@ export type ParametrosCompraEpi = {
   diasPlanejamento: number; // Planejar vai até TR + planejamento
   limiteExcesso: number; // acima disso a cobertura é excesso
 };
-export const PARAMETROS_COMPRA_PADRAO: ParametrosCompraEpi = { metodo: "cobertura", diasCobertura: 120, prazoReposicao: 30, diasSeguranca: 15, diasPlanejamento: 30, limiteExcesso: 90 };
+export const PARAMETROS_COMPRA_PADRAO: ParametrosCompraEpi = {
+  metodo: "cobertura",
+  diasCobertura: 120,
+  prazoReposicao: 30,
+  diasSeguranca: 15,
+  diasPlanejamento: 30,
+  limiteExcesso: 90,
+};
 export const MAX_DIAS = 730;
 
 export const diasValidos = (n: number): boolean => Number.isInteger(n) && n >= 0 && n <= MAX_DIAS;
 
-const dias = (v: unknown, padrao: number): number => (typeof v === "number" && diasValidos(v) ? v : padrao);
+const dias = (v: unknown, padrao: number): number =>
+  typeof v === "number" && diasValidos(v) ? v : padrao;
 
 export function lerParametrosCompraEpi(storage?: StorageLike): ParametrosCompraEpi {
   try {
@@ -82,10 +107,22 @@ export function lerParametrosCompraEpi(storage?: StorageLike): ParametrosCompraE
 }
 
 export function salvarParametrosCompraEpi(p: ParametrosCompraEpi, storage?: StorageLike): void {
-  if (p.metodo !== "minimo" && p.metodo !== "cobertura") throw new Error("Escolha o método: estoque mínimo ou tempo de cobertura.");
-  if (![p.diasCobertura, p.prazoReposicao, p.diasSeguranca, p.diasPlanejamento, p.limiteExcesso].every(diasValidos)) throw new Error(`Informe números inteiros de dias entre 0 e ${MAX_DIAS}.`);
-  if (p.metodo === "cobertura" && p.diasCobertura < 1) throw new Error("A meta de cobertura precisa de pelo menos 1 dia.");
-  if (p.diasPlanejamento < p.diasSeguranca) throw new Error("O planejamento não pode ser menor que a segurança.");
+  if (p.metodo !== "minimo" && p.metodo !== "cobertura")
+    throw new Error("Escolha o método: estoque mínimo ou tempo de cobertura.");
+  if (
+    ![
+      p.diasCobertura,
+      p.prazoReposicao,
+      p.diasSeguranca,
+      p.diasPlanejamento,
+      p.limiteExcesso,
+    ].every(diasValidos)
+  )
+    throw new Error(`Informe números inteiros de dias entre 0 e ${MAX_DIAS}.`);
+  if (p.metodo === "cobertura" && p.diasCobertura < 1)
+    throw new Error("A meta de cobertura precisa de pelo menos 1 dia.");
+  if (p.diasPlanejamento < p.diasSeguranca)
+    throw new Error("O planejamento não pode ser menor que a segurança.");
   try {
     (storage ?? localStorage).setItem(CHAVE_COMPRA, JSON.stringify(p));
   } catch {
@@ -96,12 +133,35 @@ export function salvarParametrosCompraEpi(p: ParametrosCompraEpi, storage?: Stor
 // ---------- Tabela de criticidade (tudo em dias) ----------
 // TC é o tempo de cobertura do estoque e TR o prazo de reposição do fornecedor. O ponto de pedido é TR + segurança.
 export type StatusCriticidade = "ruptura" | "comprar_ja" | "planejar" | "estavel" | "excesso";
-export const STATUS_CRITICIDADE: Record<StatusCriticidade, { rotulo: string; criticidade: string; significado: string }> = {
-  ruptura: { rotulo: "Ruptura", criticidade: "Crítica", significado: "O estoque vai zerar antes do produto chegar." },
-  comprar_ja: { rotulo: "Comprar já", criticidade: "Alta", significado: "Estoque de segurança acionado: o pedido precisa ser feito hoje." },
-  planejar: { rotulo: "Planejar", criticidade: "Média", significado: "Janela de compra: o item entra na próxima rodada de cotações." },
-  estavel: { rotulo: "Estável", criticidade: "Baixa", significado: "Cobertura confortável: nenhuma ação necessária." },
-  excesso: { rotulo: "Excesso", criticidade: "Nenhuma", significado: "Estoque acima do necessário: risco de capital parado." },
+export const STATUS_CRITICIDADE: Record<
+  StatusCriticidade,
+  { rotulo: string; criticidade: string; significado: string }
+> = {
+  ruptura: {
+    rotulo: "Ruptura",
+    criticidade: "Crítica",
+    significado: "O estoque vai zerar antes do produto chegar.",
+  },
+  comprar_ja: {
+    rotulo: "Comprar já",
+    criticidade: "Alta",
+    significado: "Estoque de segurança acionado: o pedido precisa ser feito hoje.",
+  },
+  planejar: {
+    rotulo: "Planejar",
+    criticidade: "Média",
+    significado: "Janela de compra: o item entra na próxima rodada de cotações.",
+  },
+  estavel: {
+    rotulo: "Estável",
+    criticidade: "Baixa",
+    significado: "Cobertura confortável: nenhuma ação necessária.",
+  },
+  excesso: {
+    rotulo: "Excesso",
+    criticidade: "Nenhuma",
+    significado: "Estoque acima do necessário: risco de capital parado.",
+  },
 };
 
 export function statusDeCriticidade(tc: number, p: ParametrosCompraEpi): StatusCriticidade {

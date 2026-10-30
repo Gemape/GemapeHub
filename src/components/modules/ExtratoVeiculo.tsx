@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { NovaManutencaoDialog } from "@/components/modules/NovaManutencaoDialog";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
@@ -43,16 +43,16 @@ const numero = (n: number) => n.toLocaleString("pt-BR");
 // (o extrato completo, ou a seção). Clicar numa bolinha da Frota abre o extrato já na tabela que ela resume (decisão 305).
 export type SecaoExtrato = "completo" | "sugeridas" | "realizadas" | "ocorrencias" | "ocorrenciasAbertas" | "checklists";
 type Secao = SecaoExtrato;
-const TITULO: Record<Secao, string> = {
-  completo: "Extrato do veículo", sugeridas: "Manutenções sugeridas do veículo", realizadas: "Manutenções realizadas do veículo", ocorrencias: "Ocorrências do veículo",
-  ocorrenciasAbertas: "Ocorrências em aberto do veículo", checklists: "Check lists do veículo",
+// Os PDFs possíveis (decisão 331); "ocorrenciasAbertas" só existe como entrada da Frota, para abrir a tela na tabela das ocorrências (o PDF das abertas sai com Só em aberto).
+type SecaoPdf = Exclude<Secao, "ocorrenciasAbertas">;
+const TITULO: Record<SecaoPdf, string> = {
+  completo: "Extrato do veículo", sugeridas: "Manutenções sugeridas do veículo", realizadas: "Manutenções realizadas do veículo", ocorrencias: "Ocorrências do veículo", checklists: "Check lists do veículo",
 };
-const ARQUIVO: Record<Secao, string> = {
-  completo: "Extrato do veiculo", sugeridas: "Manutencoes sugeridas", realizadas: "Manutencoes realizadas", ocorrencias: "Ocorrencias do veiculo",
-  ocorrenciasAbertas: "Ocorrencias em aberto", checklists: "Check lists do veiculo",
+const ARQUIVO: Record<SecaoPdf, string> = {
+  completo: "Extrato do veiculo", sugeridas: "Manutencoes sugeridas", realizadas: "Manutencoes realizadas", ocorrencias: "Ocorrencias do veiculo", checklists: "Check lists do veiculo",
 };
 // Posição das tabelas do extrato (sugeridas, realizadas, itens em atenção, abastecimentos, ocorrências, check lists) que cada botão mostra.
-const SECOES: Record<Secao, number[]> = { completo: [0, 1, 2, 3, 4, 5], sugeridas: [0], realizadas: [1, 2], ocorrencias: [4], ocorrenciasAbertas: [4], checklists: [5] };
+const SECOES: Record<SecaoPdf, number[]> = { completo: [0, 1, 2, 3, 4, 5], sugeridas: [0], realizadas: [1, 2], ocorrencias: [4], checklists: [5] };
 const SITUACAO_CHECKLIST: Record<SituacaoPrevisao, { rotulo: string; cor: Cor }> = {
   realizado: { rotulo: "Realizado no prazo", cor: "verde" },
   nao_realizado: { rotulo: "Não realizado no prazo", cor: "vermelho" },
@@ -193,15 +193,14 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
   }
 
   // O PDF só sai quando a pessoa clica em Gerar PDF (decisão 331): o extrato é a tela; o mesmo cálculo vira o relatório no visualizador, de tela cheia.
-  function gerarPdf(v: Veiculo, secaoPedida: Secao) {
-    const secao: Secao = !MODO_DEMO && secaoPedida === "ocorrenciasAbertas" ? "ocorrencias" : secaoPedida;
-    // O PDF das ocorrências sai como a tela: com "Só em aberto" marcado, só as abertas (e com o título delas).
+  function gerarPdf(v: Veiculo, secao: SecaoPdf) {
+    // O PDF das ocorrências sai como a tela: com "Só em aberto" marcado, só as abertas.
     const abertas = MODO_DEMO && soAbertas && (secao === "ocorrencias" || secao === "completo");
-    const d = montarDados(v, secao === "ocorrenciasAbertas" || abertas);
+    const d = montarDados(v, abertas);
     const html = montarExtratoHtml({
       titulo: TITULO[secao],
       assunto: d.rotulo,
-      ...(inicio || fim ? { subtitulo: `Período: ${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` } : {}),
+      ...(inicio || fim || abertas ? { subtitulo: [inicio || fim ? `Período: ${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : "", abertas ? "Só ocorrências em aberto" : ""].filter(Boolean).join(" · ") } : {}),
       empresa: d.empresa,
       resumo: resumoDo(d),
       tabelas: d.tabelas.filter((_, n) => SECOES[secao].includes(n)),
@@ -221,10 +220,15 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
     return () => window.clearTimeout(t);
   }, [veiculo?.id, secao]);
 
-  const dados = veiculo && !periodoInvalido ? montarDados(veiculo, soAbertas && MODO_DEMO) : null;
+  // O extrato é calculado de novo só quando muda o veículo, o período, o filtro ou os dados (e não a cada clique da tela).
+  const dados = useMemo(
+    () => (veiculo && !periodoInvalido ? montarDados(veiculo, soAbertas && MODO_DEMO) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [veiculo, periodoInvalido, inicio, fim, soAbertas, abastecimentos, manutencoes, planos, movimentacoes, ocorrencias, ocorrenciasNovas, checklists, previsoes, parametros, empresas],
+  );
   const rotuloVeiculo = veiculo ? rotuloDoVeiculo(parametros, veiculo) : "";
   // Qual PDF cada tabela gera, para o botão Gerar PDF de cada seção; o do topo gera o extrato completo.
-  const PDF_DA_TABELA: Partial<Record<number, Secao>> = { 0: "sugeridas", 1: "realizadas", 4: "ocorrencias", 5: "checklists" };
+  const PDF_DA_TABELA: Partial<Record<number, SecaoPdf>> = { 0: "sugeridas", 1: "realizadas", 4: "ocorrencias", 5: "checklists" };
   return (
     <Dialog open={!!veiculo} onOpenChange={(a) => { if (!a) onFechar(); }}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-6xl">
@@ -324,7 +328,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
           <Button type="button" variant="outline" onClick={onFechar}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
-      {veiculo && <NovaManutencaoDialog aberto={registrando} aoMudar={setRegistrando} veiculoInicial={veiculo.id} aoSalvar={() => undefined} />}
+      {veiculo && registrando && <NovaManutencaoDialog aberto={registrando} aoMudar={setRegistrando} veiculoInicial={veiculo.id} aoSalvar={() => undefined} />}
     </Dialog>
   );
 }
