@@ -33,16 +33,19 @@ export const COR_DA_FAIXA = {
 export function PainelGraficos({
   titulo = "Comparativos",
   colunas = 2,
+  compacto = false,
   children,
 }: {
   titulo?: string;
   colunas?: 2 | 3;
+  // Dentro de uma coluna estreita: um gráfico embaixo do outro e só lado a lado quando a tela é larga (xl).
+  compacto?: boolean;
   children: ReactNode;
 }) {
   return (
     <section aria-label={titulo}>
       <h2 className="sr-only">{titulo}</h2>
-      <div className={`grid gap-3 ${colunas === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
+      <div className={`grid gap-3 ${compacto ? "xl:grid-cols-2" : colunas === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
         {children}
       </div>
     </section>
@@ -54,12 +57,14 @@ export function QuadroGrafico({
   descricao,
   vazio,
   larga = false,
+  altura = "h-[clamp(9rem,24vh,15rem)]",
   children,
 }: {
   titulo: string;
   descricao?: string;
   vazio?: boolean;
   larga?: boolean;
+  altura?: string;
   children: ReactNode;
 }) {
   return (
@@ -71,7 +76,7 @@ export function QuadroGrafico({
       {vazio ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Sem dados para comparar.</p>
       ) : (
-        <div className="h-[clamp(9rem,24vh,15rem)] w-full">{children}</div>
+        <div className={`${altura} w-full`}>{children}</div>
       )}
     </figure>
   );

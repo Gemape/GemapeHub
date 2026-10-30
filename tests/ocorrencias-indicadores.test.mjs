@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { encerradaNoPrazo, indicadoresDeOcorrencias } from "../src/lib/ocorrencias-indicadores.ts";
+import { ocorrenciasNoPeriodo, periodoDeOcorrenciasInvalido } from "../src/lib/ocorrencias-veiculo.ts";
 import {
   PRORROGACAO_PADRAO,
   lerProrrogacaoOcorrencias,
@@ -130,7 +131,7 @@ test("prorrogação: padrão permitida com 2 dias, guarda e recusa valor inváli
 
 test("a tela traz os cards por botões, filtra pelo card, e Parâmetros Específicos tem a prorrogação que liga o botão Renovar prazo", () => {
   const cartoes = ler("components/modules/CartoesOcorrencias.tsx");
-  for (const t of ["Realizadas no prazo", "Não realizadas no prazo"])
+  for (const t of ["Tratadas no prazo", "Não tratadas"])
     assert.ok(cartoes.includes(t), t);
   assert.ok(
     !cartoes.includes("aria-pressed"),
@@ -140,9 +141,10 @@ test("a tela traz os cards por botões, filtra pelo card, e Parâmetros Específ
   assert.match(modulo, /<CartoesOcorrencias indicadores=\{indicadores\} \/>/);
   assert.match(
     modulo,
-    /aria-pressed=\{filtro === f\}/,
-    "botões Todas, Abertas, Em tratativa e Encerradas filtram a lista",
+    /onClick=\{\(\) => \{ setFiltro\(f\); setBusca\(""\); setInicio\(""\); setFim\(""\); setVerLista\(true\); \}\}/,
+    "botões Todas, Abertas, Em tratativa e Encerradas abrem a lista da situação em outra tela do módulo",
   );
+  assert.match(modulo, /setVerLista\(false\)[\s\S]*Voltar ao painel/, "e a lista tem o botão de voltar ao painel");
   for (const t of ["Abertas", "Em tratativa", "Encerradas", "Todas"])
     assert.ok(modulo.includes(`rotulo: "${t}"`), t);
   assert.match(modulo, /lerProrrogacaoOcorrencias\(\)\.permitir/);
@@ -158,4 +160,19 @@ test("a tela traz os cards por botões, filtra pelo card, e Parâmetros Específ
     "Permitir prorrogar a tratativa",
   ])
     assert.ok(param.includes(t), t);
+});
+
+test("período da lista de ocorrências: as duas pontas valem, ponta vazia não limita e início depois do fim não vale", () => {
+  const lista = [
+    { id: "a", ocorridoEm: "2026-10-01T08:00" },
+    { id: "b", ocorridoEm: "2026-10-15T23:59" },
+    { id: "c", ocorridoEm: "2026-10-31T00:00" },
+  ];
+  const ids = (l) => l.map((o) => o.id);
+  assert.deepEqual(ids(ocorrenciasNoPeriodo(lista, "", "")), ["a", "b", "c"]);
+  assert.deepEqual(ids(ocorrenciasNoPeriodo(lista, "2026-10-15", "2026-10-31")), ["b", "c"], "início e fim valem, com qualquer hora do dia");
+  assert.deepEqual(ids(ocorrenciasNoPeriodo(lista, "2026-10-02", "")), ["b", "c"], "sem fim, não há limite do lado do fim");
+  assert.deepEqual(ids(ocorrenciasNoPeriodo(lista, "", "2026-10-01")), ["a"], "o dia do fim entra inteiro");
+  assert.equal(periodoDeOcorrenciasInvalido("2026-10-20", "2026-10-10"), true);
+  assert.deepEqual(ocorrenciasNoPeriodo(lista, "2026-10-20", "2026-10-10"), [], "início depois do fim deixa a lista vazia, e a tela avisa");
 });

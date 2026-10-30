@@ -25,7 +25,9 @@ test("a caixa dupla lista todos os empregados ativos à esquerda, move para a di
   const tela = ler("components/parametros/CaixaDuplaEmpregados.tsx");
   assert.match(ler("components/parametros/HabilitarEmpregadosViagens.tsx"), /salvarPergunta\(estado, \{ \.\.\.q04, habilitados \}\)/);
   assert.match(tela, /empregados\.filter\(\(e\) => empregadoAtivo\(e\)\)/);
-  assert.match(tela, /\.filter\(\(e\) => !jaHabilitado\.has\(e\.id\) && !jaHabilitado\.has\(normalizar\(e\.nome\)\)\)/);
+  // A esquerda mantém todos; quem já foi incluído fica marcado e travado, e só os não incluídos vão pelo ">>".
+  assert.match(tela, /const incluido = \(e: \{ id: string; nome: string \}\) => jaHabilitado\.has\(e\.id\) \|\| jaHabilitado\.has\(normalizar\(e\.nome\)\)/);
+  assert.match(tela, /const aIncluir = aEsquerda\.filter\(\(e\) => !incluido\(e\)\)/);
   for (const rotulo of ["Habilitar os empregados marcados", "Habilitar todos os empregados da lista", "Tirar os habilitados marcados", "Tirar todos os habilitados da lista"]) assert.ok(tela.includes(rotulo), rotulo);
   assert.match(tela, /disabled=\{!alterado\}/);
   assert.match(tela, /AREAS_VIAGEM\.map/);

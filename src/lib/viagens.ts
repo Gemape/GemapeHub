@@ -111,6 +111,30 @@ export function lancadaNoPrazo(r: RespostaRegistrada, prazos: PrazosViagens | nu
 }
 export const indicePrazo = (noPrazo: number, total: number): number | null => (total > 0 ? (noPrazo / total) * 100 : null);
 
+// Índice de fechamento do relatório no prazo (dec 199): o relatório de despesas é gerado até N dias depois do lançamento de cada despesa, com N o prazo do PCM
+// em Parâmetros. Entram as despesas já finalizadas em relatório e as ainda abertas cujo prazo já passou (contam como fora do prazo); as abertas dentro do
+// prazo ainda não entram. O dia do lançamento é o do registro (`r.data`) e o do fechamento, o da criação do relatório (horário de Brasília).
+export type FechamentoNoPrazo = { noPrazo: number; medidos: number; indice: number | null };
+export function fechamentoDoRelatorio(
+  lista: readonly RespostaRegistrada[], p: PeriodoMes, prazos: PrazosViagens, criadoEmDe: ReadonlyMap<string, string>, hoje = hojeLocal(), responsavel?: string,
+): FechamentoNoPrazo {
+  if (prazos.pcmAplica === false) return { noPrazo: 0, medidos: 0, indice: null };
+  let noPrazo = 0;
+  let medidos = 0;
+  for (const r of lancamentosDoPeriodo(lista, p)) {
+    if (responsavel !== undefined && dadosDoLancamento(r).responsavel !== responsavel) continue;
+    const criado = criadoEmDe.get(r.id);
+    const dias = diasEntre(r.data, criado ? hojeLocal(new Date(criado)) : hoje);
+    if (criado) {
+      medidos += 1;
+      if (dias <= prazos.pcm) noPrazo += 1;
+    } else if (dias > prazos.pcm) {
+      medidos += 1;
+    }
+  }
+  return { noPrazo, medidos, indice: indicePrazo(noPrazo, medidos) };
+}
+
 // Índice de conformidade de lançamento: lançadas pelo técnico / total do técnico (técnico + gestor) x 100; nulo sem lançamentos no índice.
 export const indiceConformidade = (conformes: number, total: number): number | null => (total > 0 ? (conformes / total) * 100 : null);
 export const formatarPercentual = (v: number | null): string => (v === null ? "—" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);

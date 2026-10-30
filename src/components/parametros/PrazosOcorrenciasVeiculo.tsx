@@ -55,7 +55,7 @@ export function PrazosOcorrenciasVeiculo() {
 
   return (
     <section className="space-y-3" aria-labelledby="prazos-ocorrencias">
-      <div>
+      <div className="max-w-3xl">
         <h2 id="prazos-ocorrencias" className="text-lg font-semibold">Prazos das ocorrências</h2>
         <p className="text-sm text-muted-foreground">Dias para iniciar e para finalizar a tratativa das ocorrências de veículos e a prorrogação da tratativa. Passado o prazo, a ocorrência aparece como vencida na Frota.</p>
       </div>

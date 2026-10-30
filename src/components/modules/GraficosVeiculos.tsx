@@ -209,12 +209,17 @@ export function GraficosOcorrencias({
 }
 
 // Check list: técnicos contra PCM (realizados, não realizados e a vencer) e o percentual no prazo de cada responsável.
+const ALTURA_COMPACTA = "h-[clamp(6rem,17vh,9.5rem)]";
+
 export function GraficosChecklist({
   linhas,
   grupoDe,
+  compacto = false,
 }: {
   linhas: LinhaPainel[];
   grupoDe: (nome: string) => GrupoDeArea;
+  // Na coluna do painel do Check list: os dois gráficos lado a lado, mais baixos e sem o texto de apoio, para tudo caber na tela.
+  compacto?: boolean;
 }) {
   const grupos = (["Técnicos", "PCM"] as const).map((g) => {
     const r = resumoDeLinhas(linhas.filter((l) => grupoDaLinha(l, grupoDe) === g));
@@ -227,10 +232,10 @@ export function GraficosChecklist({
   });
   const responsaveis = resultadosPorResponsavel(linhas).filter((r) => r.pctNoPrazo !== null);
   return (
-    <PainelGraficos>
+    <PainelGraficos compacto={compacto}>
       <QuadroGrafico
         titulo="Técnicos x PCM"
-        descricao="Check lists realizados no prazo, não realizados e a vencer de cada grupo."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Check lists realizados no prazo, não realizados e a vencer de cada grupo." })}
         vazio={grupos.every((g) => g.realizados + g.naoRealizados + g.aVencer === 0)}
       >
         <GraficoBarras
@@ -245,7 +250,7 @@ export function GraficosChecklist({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="No prazo por responsável (%)"
-        descricao="Cada responsável contra a meta de 90%."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Cada responsável contra a meta de 90%." })}
         vazio={responsaveis.length === 0}
       >
         <GraficoBarras

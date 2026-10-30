@@ -17,7 +17,7 @@ const AREA_PADRAO: AreaViagem = "Oficina";
 const normalizar = (t: string) => t.trim().toLocaleLowerCase("pt-BR");
 
 // Caixa dupla de empregados (decisões 299 e 308), usada em Parâmetros > Viagens e em Parâmetros > Veículos > Parâmetros Específicos. À esquerda, todos os empregados
-// ativos que ainda não foram escolhidos; à direita, os escolhidos, cada um com a sua área (Oficina, PCM ou Administrativo). Mover entre as caixas só vale ao Salvar.
+// ativos (quem já foi incluído continua nela, marcado como habilitado); a inclusão vai da esquerda para a direita; à direita, os escolhidos, cada um com a sua área (Oficina, PCM ou Administrativo). Mover entre as caixas só vale ao Salvar.
 // Quem guarda a lista é quem usa o componente (`carregar` e `gravar`): as duas telas têm listas independentes.
 export type PropsCaixaDupla = {
   idBase: string;
@@ -45,10 +45,12 @@ export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita,
   const chaveDe = (h: Habilitado) => h.empregadoId ?? `nome:${normalizar(h.nome)}`;
   const jaHabilitado = new Set(habilitados.flatMap((h) => [h.empregadoId, normalizar(h.nome)]));
   const idsAtivos = new Set(ativos.map((e) => e.id));
+  const incluido = (e: { id: string; nome: string }) => jaHabilitado.has(e.id) || jaHabilitado.has(normalizar(e.nome));
+  // A esquerda lista todos os empregados ativos; quem já foi incluído continua nela, sem poder ser marcado de novo.
   const aEsquerda = ativos
-    .filter((e) => !jaHabilitado.has(e.id) && !jaHabilitado.has(normalizar(e.nome)))
     .filter((e) => normalizar(e.nome).includes(normalizar(buscaEsq)))
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  const aIncluir = aEsquerda.filter((e) => !incluido(e));
   const aDireita = habilitados
     .filter((h) => normalizar(h.nome).includes(normalizar(buscaDir)))
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
@@ -103,23 +105,27 @@ export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita,
         <section className="panel flex min-h-80 flex-col gap-2 p-3" aria-labelledby={`${idBase}-todos`}>
           <h3 id={`${idBase}-todos`} className="text-sm font-semibold">Todos os empregados <span className="font-normal text-muted-foreground">({aEsquerda.length})</span></h3>
           <Input aria-label="Buscar entre todos os empregados" placeholder="Buscar pelo nome" value={buscaEsq} onChange={(e) => setBuscaEsq(e.target.value)} />
-          <ul className="max-h-96 flex-1 space-y-0.5 overflow-y-auto rounded-md border p-1" aria-label="Empregados que ainda não estão habilitados">
+          <ul className="max-h-96 flex-1 space-y-0.5 overflow-y-auto rounded-md border p-1" aria-label="Todos os empregados ativos">
             {isLoading && <li className="p-2 text-sm text-muted-foreground">Carregando...</li>}
-            {!isLoading && aEsquerda.length === 0 && <li className="p-2 text-sm text-muted-foreground">{buscaEsq.trim() ? "Nenhum empregado encontrado." : "Todos os empregados ativos já estão habilitados."}</li>}
-            {aEsquerda.map((e) => (
-              <li key={e.id} onDoubleClick={() => canWrite && habilitar([e.id])}>
-                <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
-                  <Checkbox checked={marcadosEsq.includes(e.id)} disabled={!canWrite} onCheckedChange={() => setMarcadosEsq((m) => alternar(m, e.id))} />
-                  <span className="min-w-0 flex-1 truncate">{e.nome}</span>
-                </label>
-              </li>
-            ))}
+            {!isLoading && aEsquerda.length === 0 && <li className="p-2 text-sm text-muted-foreground">{buscaEsq.trim() ? "Nenhum empregado encontrado." : "Nenhum empregado ativo."}</li>}
+            {aEsquerda.map((e) => {
+              const ja = incluido(e);
+              return (
+                <li key={e.id} onDoubleClick={() => canWrite && !ja && habilitar([e.id])}>
+                  <label className={`flex items-center gap-2 rounded px-2 py-1.5 text-sm ${ja ? "text-muted-foreground" : "cursor-pointer hover:bg-muted/60"}`}>
+                    <Checkbox checked={ja || marcadosEsq.includes(e.id)} disabled={!canWrite || ja} onCheckedChange={() => setMarcadosEsq((m) => alternar(m, e.id))} />
+                    <span className="min-w-0 flex-1 truncate">{e.nome}</span>
+                    {ja && <span className="text-xs">já habilitado</span>}
+                  </label>
+                </li>
+              );
+            })}
           </ul>
         </section>
 
         <div className="flex flex-row items-center justify-center gap-2 md:flex-col" role="group" aria-label="Mover empregados entre as caixas">
           <Button type="button" variant="outline" size="icon" aria-label="Habilitar os empregados marcados" title="Habilitar os marcados" disabled={!canWrite || marcadosEsq.length === 0} onClick={() => habilitar(marcadosEsq)}><ChevronRight className="h-4 w-4" /></Button>
-          <Button type="button" variant="outline" size="icon" aria-label="Habilitar todos os empregados da lista" title="Habilitar todos os que aparecem na lista" disabled={!canWrite || aEsquerda.length === 0} onClick={() => habilitar(aEsquerda.map((e) => e.id))}><ChevronsRight className="h-4 w-4" /></Button>
+          <Button type="button" variant="outline" size="icon" aria-label="Habilitar todos os empregados da lista" title="Habilitar todos os que aparecem na lista" disabled={!canWrite || aIncluir.length === 0} onClick={() => habilitar(aIncluir.map((e) => e.id))}><ChevronsRight className="h-4 w-4" /></Button>
           <Button type="button" variant="outline" size="icon" aria-label="Tirar os habilitados marcados" title="Tirar os marcados" disabled={!canWrite || marcadosDir.length === 0} onClick={() => desabilitar(marcadosDir)}><ChevronLeft className="h-4 w-4" /></Button>
           <Button type="button" variant="outline" size="icon" aria-label="Tirar todos os habilitados da lista" title="Tirar todos os que aparecem na lista" disabled={!canWrite || aDireita.length === 0} onClick={() => desabilitar(aDireita.map(chaveDe))}><ChevronsLeft className="h-4 w-4" /></Button>
         </div>

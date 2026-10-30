@@ -88,7 +88,7 @@ function PrazosIndicadores() {
         )}
         {indicador(
           "pcm", "Nº de dias para fechar o relatório de despesas",
-          "Dias após o lançamento. Fica configurado aqui; o índice de fechamento do relatório será medido em Viagens quando for pedido.",
+          "Dias após o lançamento da despesa. Mede o índice de fechamento do relatório no prazo, em Viagens: despesa sem relatório gerado e com o prazo vencido conta como fora do prazo.",
           "Aplicável ao PCM", pcmAplica, setPcmAplica, pcm, setPcm, validoPcm, "Dias após o lançamento",
         )}
       </div>
@@ -126,7 +126,7 @@ function FaixasDesempenho() {
     <div className="panel max-w-3xl space-y-3 p-4">
       <div>
         <h3 className="text-sm font-semibold">Faixas de desempenho</h3>
-        <p className="text-xs text-muted-foreground">Valem para o índice de conformidade de lançamento e para o índice de lançamento no prazo. O amarelo vai do seu limite até logo abaixo do limite do verde; abaixo do limite do amarelo é vermelho.</p>
+        <p className="text-xs text-muted-foreground">Valem para o índice de conformidade de lançamento, o de lançamento no prazo e o de fechamento do relatório no prazo. O amarelo vai do seu limite até logo abaixo do limite do verde; abaixo do limite do amarelo é vermelho.</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">

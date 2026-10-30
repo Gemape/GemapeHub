@@ -58,6 +58,7 @@ export function Cartao({
   icone,
   extra,
   classe = "",
+  compacto = false,
 }: {
   titulo: string;
   indicador: IndicadorDaFrota;
@@ -65,13 +66,15 @@ export function Cartao({
   icone?: LucideIcon | undefined;
   extra?: ReactNode;
   classe?: string;
+  // Telas que mostram muitos indicadores de uma vez (Check list): menos folga, número e ícone menores, detalhe em uma linha.
+  compacto?: boolean;
 }) {
   const estilo = indicador.faixa ? ESTILO[indicador.faixa] : null;
   const Icone = estilo?.Icone ?? icone ?? Minus;
   const largura = indicador.pct === null ? 0 : Math.max(0, Math.min(100, indicador.pct));
   return (
     <div
-      className={`flex h-full flex-col justify-between gap-3 rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4 [@media(max-height:820px)]:sm:p-3 ${estilo?.cartao ?? "border-border bg-card"} ${classe}`}
+      className={`${compacto ? "flex h-full flex-col justify-between gap-1.5 rounded-2xl border p-2.5 shadow-sm transition-shadow hover:shadow-md" : "flex h-full flex-col justify-between gap-3 rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4 [@media(max-height:820px)]:sm:p-3"} ${estilo?.cartao ?? "border-border bg-card"} ${classe}`}
       data-faixa={indicador.faixa ?? "sem-dado"}
     >
       <div className="flex items-start justify-between gap-3">
@@ -81,13 +84,13 @@ export function Cartao({
             {extra}
           </div>
           <p
-            className={`mt-1.5 break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl [@media(max-height:820px)]:sm:text-2xl ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}
+            className={`${compacto ? "mt-1 break-words font-display text-xl font-bold leading-none tracking-tight" : "mt-1.5 break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl [@media(max-height:820px)]:sm:text-2xl"} ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}
           >
             {valor ?? porcento(indicador.pct)}
           </p>
         </div>
         <span
-          className={`flex size-8 shrink-0 items-center justify-center rounded-full shadow-md ring-4 sm:size-10 ring-white/70 dark:ring-white/10 ${estilo?.seta ?? (valor ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground shadow-none")}`}
+          className={`${compacto ? "flex size-8 shrink-0 items-center justify-center rounded-full shadow-md ring-4" : "flex size-8 shrink-0 items-center justify-center rounded-full shadow-md ring-4 sm:size-10"} ring-white/70 dark:ring-white/10 ${estilo?.seta ?? (valor ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground shadow-none")}`}
           title={estilo ? `Faixa ${estilo.rotulo.toLowerCase()}` : "Sem dados"}
         >
           <Icone className="size-5" aria-hidden="true" />
@@ -108,7 +111,11 @@ export function Cartao({
             />
           </div>
         )}
-        {indicador.detalhe && <p className="text-xs text-muted-foreground">{indicador.detalhe}</p>}
+        {indicador.detalhe && (
+          <p className={`text-xs text-muted-foreground ${compacto ? "truncate" : ""}`} title={compacto ? indicador.detalhe : undefined}>
+            {indicador.detalhe}
+          </p>
+        )}
       </div>
     </div>
   );

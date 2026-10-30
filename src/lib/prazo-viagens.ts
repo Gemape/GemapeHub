@@ -1,7 +1,7 @@
 // Indicadores de prazo de Viagens (decs 190, 193 e 199), definidos em Parâmetros > Veículos > Parâmetros Específicos:
 // `mecanico` é o nº de dias após a data da despesa para o técnico mecânico (Oficina) lançar, e é o que mede o índice de
-// lançamento no prazo; `pcm` é o nº de dias para o PCM fechar o relatório de despesas, após o lançamento (só parametrizado
-// por enquanto). Cada um tem a caixa "aplicável": desmarcada, o indicador não é medido.
+// lançamento no prazo; `pcm` é o nº de dias para o PCM fechar o relatório de despesas, após o lançamento, e mede o índice de
+// fechamento do relatório no prazo. Cada um tem a caixa "aplicável": desmarcada, o indicador não é medido.
 // Fase 1: fica só no navegador, em modo demonstração; na Fase 2 vira configuração por empresa (`empresa_id`).
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-viagens-prazos";

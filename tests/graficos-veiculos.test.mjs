@@ -63,7 +63,7 @@ test("as telas de Veículos têm os gráficos comparativos abaixo dos cards, e t
   );
   assert.match(
     ler("components/modules/ChecklistResultadosPainel.tsx"),
-    /<GraficosChecklist linhas=\{linhas\} grupoDe=\{grupoDe\} \/>/,
+    /<GraficosChecklist linhas=\{linhas\} grupoDe=\{grupoDe\} compacto \/>/,
   );
   assert.match(ler("components/StatCard.tsx"), /<Cartao titulo=\{titulo\}/);
   assert.match(ler("components/modules/ViagensPainel.tsx"), /return <Cartao titulo=\{titulo\}/);

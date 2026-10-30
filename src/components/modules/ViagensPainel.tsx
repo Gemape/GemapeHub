@@ -18,9 +18,10 @@ import { questionarioPublicado } from "@/lib/questionario-destinos";
 import { ID_TECNICO_RESPONSAVEL, habilitadosAtivos, habilitadosDaPergunta, lerEstado, tiposDeDespesa } from "@/lib/questionario-despesas";
 import { descricoesFaixas, faixaDoIndice, lerFaixas, type Faixa } from "@/lib/faixas-desempenho";
 import { lerPrazos, type PrazosViagens } from "@/lib/prazo-viagens";
+import { listarRelatorios } from "@/lib/relatorios-viagens";
 import { listarRespostas } from "@/lib/respostas-despesas";
 import {
-  MESES, dadosDoLancamento, formatarPercentual, indicadoresGlobais, periodoAtual, resultadosTecnicos, rotuloPeriodo,
+  MESES, dadosDoLancamento, fechamentoDoRelatorio, formatarPercentual, indicadoresGlobais, periodoAtual, resultadosTecnicos, rotuloPeriodo,
 } from "@/lib/viagens";
 
 // Painel do módulo Viagens (decisões 176 e 177): botões dos questionários, indicadores globais e resultados dos técnicos do mês escolhido.
@@ -33,6 +34,9 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   const [extratoDe, setExtratoDe] = useState<string | null>(null);
   // Relê os lançamentos sempre que volta do formulário, para o que acabou de ser enviado entrar na conta.
   const lista = useMemo(() => listarRespostas(), [tipo]);
+  // Relatórios gerados na lista: o dia de cada um mede o índice de fechamento do relatório no prazo.
+  const [relatorios, setRelatorios] = useState(listarRelatorios);
+  const criadoEmDe = useMemo(() => new Map(relatorios.flatMap((r) => r.despesaIds.map((id) => [id, r.criadoEm] as const))), [relatorios]);
   const { data: empregados = [], isSuccess: empregadosLidos } = useEmpregados(TODAS);
   const idsAtivos = useMemo(() => new Set(empregados.filter((e) => empregadoAtivo(e)).map((e) => e.id)), [empregados]);
   const tecnicos = useMemo(() => {
@@ -40,6 +44,11 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
     const habilitados = q14 ? (habilitadosDaPergunta(estado, q14) ?? []) : [];
     return (empregadosLidos ? habilitadosAtivos(habilitados, idsAtivos) : habilitados).map((h) => h.nome);
   }, [estado, empregadosLidos, idsAtivos]);
+  // O índice de fechamento de cada técnico é calculado uma vez por mudança de lista, período, prazo ou relatório, e não a cada render.
+  const fechamentoDosTecnicos = useMemo(
+    () => new Map(tecnicos.map((nome) => [nome, fechamentoDoRelatorio(lista, periodo, prazos, criadoEmDe, undefined, nome).indice] as const)),
+    [tecnicos, lista, periodo, prazos, criadoEmDe],
+  );
   // O filtro de técnico da lista também traz os empregados Avulso lançados (dec 220); os resultados seguem só com os técnicos cadastrados.
   const responsaveisDaLista = useMemo(() => {
     const avulsos = lista.map(dadosDoLancamento).filter((d) => d.avulso && d.responsavel).map((d) => d.responsavel as string);
@@ -56,6 +65,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
 
   const globais = indicadoresGlobais(lista, periodo, prazos);
   const resultados = resultadosTecnicos(lista, periodo, tecnicos, prazos);
+  const fechamentoGlobal = fechamentoDoRelatorio(lista, periodo, prazos, criadoEmDe);
+  const fechamentoDe = fechamentoDosTecnicos;
   const noPeriodo = globais.quantidade;
   // O mesmo período vale para os indicadores e para os resultados dos técnicos: o seletor aparece nas duas áreas (decisão 300).
   const seletorPeriodo = (area: string) => (
@@ -118,7 +129,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           {seletorPeriodo("indicadores")}
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Indicador titulo="Despesas lançadas no mês" valor={String(globais.quantidade)} />
           <Indicador
             titulo="Índice de conformidade de lançamento"
@@ -137,10 +148,19 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             explicacao={<ExplicacaoPrazo prazos={prazos} />}
             roxo
           />
+          <Indicador
+            titulo="Índice de fechamento do relatório no prazo"
+            valor={formatarPercentual(fechamentoGlobal.indice)}
+            pct={fechamentoGlobal.indice}
+            faixa={faixaDoIndice(fechamentoGlobal.indice)?.faixa}
+            detalhe={prazos.pcmAplica === false ? "Indicador desligado em Parâmetros" : fechamentoGlobal.medidos ? `${fechamentoGlobal.noPrazo} de ${fechamentoGlobal.medidos} fechadas no prazo` : "Sem despesas para fechar neste mês"}
+            explicacao={<ExplicacaoFechamento prazos={prazos} />}
+            roxo
+          />
         </div>
       </section>
 
-      <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} />
+      <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} />
 
       <section className="space-y-3" aria-labelledby="viagens-tecnicos">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -156,11 +176,12 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                 <TableHead className="px-2 text-right sm:px-4"><span className="sm:hidden">Lanç.</span><span className="hidden sm:inline">Lançamentos</span></TableHead>
                 <TableHead className="px-2 text-right sm:px-4"><span className="sm:hidden" title="Índice de conformidade de lançamento">ICL</span><span className="hidden sm:inline">Conformidade</span></TableHead>
                 <TableHead className="px-2 text-right text-purple-700 dark:text-purple-300 sm:px-4"><span className="sm:hidden" title="Índice de lançamento no prazo">Prazo</span><span className="hidden sm:inline">No prazo</span></TableHead>
+                <TableHead className="px-2 text-right text-purple-700 dark:text-purple-300 sm:px-4"><span className="sm:hidden" title="Índice de fechamento do relatório no prazo">Fech.</span><span className="hidden sm:inline">Fechamento</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {resultados.length === 0 && (
-                <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground">Nenhum técnico habilitado. Habilite em Parâmetros &gt; Viagens &gt; Parâmetros Específicos.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Nenhum técnico habilitado. Habilite em Parâmetros &gt; Viagens &gt; Parâmetros Específicos.</TableCell></TableRow>
               )}
               {resultados.map((r) => (
                 <TableRow key={r.nome}>
@@ -170,6 +191,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                   <TableCell className="px-2 text-right sm:px-4">{r.lancamentos}</TableCell>
                   <TableCell className="px-2 text-right sm:px-4"><ValorComFaixa valor={r.icl} /></TableCell>
                   <TableCell className="px-2 text-right font-medium sm:px-4"><ValorComFaixa valor={r.prazo} /></TableCell>
+                  <TableCell className="px-2 text-right font-medium sm:px-4"><ValorComFaixa valor={fechamentoDe.get(r.nome) ?? null} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -255,6 +277,29 @@ function ValorComFaixa({ valor }: { valor: number | null }) {
   );
 }
 
+function ExplicacaoFechamento({ prazos }: { prazos: PrazosViagens }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" aria-label="Como é calculado o índice de fechamento do relatório no prazo" className="shrink-0 text-muted-foreground hover:text-primary">
+          <Info className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 space-y-2 text-sm">
+        <p className="font-semibold">Índice de fechamento do relatório no prazo</p>
+        <p>Índice = (despesas cujo relatório foi gerado dentro do prazo ÷ despesas já fechadas em relatório ou com o prazo vencido) × 100.</p>
+        <p>Exemplo: 10 despesas com prazo vencido; 8 entraram em relatório até o último dia do prazo. Índice = 8 ÷ 10 × 100 = 80%.</p>
+        <p>
+          {prazos.pcmAplica === false
+            ? "O indicador está desligado para o PCM em Parâmetros, então o índice não é calculado."
+            : `Prazo de hoje para o PCM fechar o relatório: ${dias(prazos.pcm)} depois do lançamento. Despesa ainda sem relatório e com o prazo vencido conta como fora do prazo.`}
+        </p>
+        <p className="text-muted-foreground">O prazo e as faixas se configuram em Parâmetros &gt; Veículos &gt; Parâmetros Específicos. Conta a diferença entre o dia em que a despesa foi lançada no sistema (não a data da despesa) e o dia em que o relatório foi gerado.</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function LegendaFaixas() {
   return (
     <Popover>
@@ -263,7 +308,7 @@ function LegendaFaixas() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[22rem] max-w-[90vw] space-y-3 text-sm">
         <p className="font-semibold">Faixas de desempenho</p>
-        <p className="text-muted-foreground">Valem para o índice de conformidade de lançamento e para o índice de lançamento no prazo.</p>
+        <p className="text-muted-foreground">Valem para o índice de conformidade de lançamento, o de lançamento no prazo e o de fechamento do relatório no prazo.</p>
         <ul className="space-y-3">
           {descricoesFaixas(lerFaixas()).map((f) => (
             <li key={f.faixa} className="space-y-0.5">

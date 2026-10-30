@@ -11,12 +11,13 @@ export function CartoesManutencao({ indicadores }: { indicadores: IndicadoresDaM
       className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3"
       aria-label="Indicadores de manutenção"
     >
-      <Cartao titulo="Realizadas no prazo" indicador={indicadores.noPrazo} />
-      <Cartao titulo="Não realizadas no prazo" indicador={indicadores.naoRealizadas} />
+      <Cartao titulo="Realizadas no prazo" indicador={indicadores.noPrazo} compacto />
+      <Cartao titulo="Não realizadas no prazo" indicador={indicadores.naoRealizadas} compacto />
       <Cartao
         titulo="Previstas"
         valor={String(indicadores.previstas.qtd)}
         icone={CalendarClock}
+        compacto
         indicador={indicadores.previstas.indicador}
       />
     </section>
