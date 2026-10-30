@@ -1,6 +1,7 @@
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { SugestaoComprasModulo } from "@/components/modules/SugestaoComprasModulo";
+import { DevolucaoEpiDialog } from "@/components/modules/DevolucaoEpiDialog";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
 import { pedeTamanho, SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
@@ -31,11 +32,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
 import {
   useComprasEpis,
+  useEmpregados,
   useEmpresas,
   useItens,
   useSalvar,
@@ -64,6 +67,9 @@ export function EpiComprasModulo() {
   const [empresaCompra, setEmpresaCompra] = useState("");
   const [tamanho, setTamanho] = useState("");
   const [fornecedorId, setFornecedorId] = useState("");
+  // CA da compra (decisão 327): vem preenchido com o do cadastro do EPI, mas é conferido e obrigatório.
+  const [ca, setCa] = useState("");
+  const [devolucaoAberta, setDevolucaoAberta] = useState(false);
   const parametros = useParametrosBase();
 
   const { data: compras = [], isLoading } = useComprasEpis(empresaId, busca);
@@ -80,6 +86,7 @@ export function EpiComprasModulo() {
     setItemSel("");
     setTamanho("");
     setFornecedorId("");
+    setCa("");
     setEmpresaCompra(empresasParaEscolha(empresas).some((e) => e.id === empresaId) ? empresaId : "");
     setAberto(true);
   }
@@ -89,6 +96,9 @@ export function EpiComprasModulo() {
     const f = new FormData(e.currentTarget);
     const itemId = String(f.get("item_id"));
     const quantidadeCompra = Number(f.get("quantidade"));
+    // Compra é de produto novo (decisão 327): todos os dados são obrigatórios.
+    if (!String(f.get("nota_fiscal") ?? "").trim()) { alert("Informe a nota fiscal."); return; }
+    if (!ca.trim()) { alert("Informe o CA do EPI."); return; }
     if (TAMANHO_DISPONIVEL) {
       const erro = validarLinhasTamanho(
         [{ item_id: itemId, quantidade: quantidadeCompra, tamanho }],
@@ -120,7 +130,9 @@ export function EpiComprasModulo() {
       empresa_id: String(f.get("empresa_id")),
       item_id: itemId,
       fornecedor,
-      nota_fiscal: String(f.get("nota_fiscal") || ""),
+      nota_fiscal: String(f.get("nota_fiscal") || "").trim(),
+      // Colunas só do modo demonstração: o banco real (compras_epis) ainda não tem ca nem condicao.
+      ...(MODO_DEMO ? { ca: ca.trim(), condicao: "novo" } : {}),
       data_compra: String(f.get("data_compra")),
       quantidade: quantidadeCompra,
       valor_unitario: Number(f.get("valor_unitario")),
@@ -137,7 +149,6 @@ export function EpiComprasModulo() {
 
   return (
     <div className="space-y-4">
-      <SugestaoComprasModulo modulo="epi" />
       <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Buscar por fornecedor ou NF"
@@ -169,6 +180,7 @@ export function EpiComprasModulo() {
           </Button>
           <ImportarNfeXml />
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
+          <Button requiresWrite variant="outline" onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
         </div>
       </div>
 
@@ -182,6 +194,7 @@ export function EpiComprasModulo() {
               <TableHead>Tamanho</TableHead>
               <TableHead>Fornecedor</TableHead>
               <TableHead>NF</TableHead>
+              <TableHead>CA</TableHead>
               <TableHead className="text-right">Qtd</TableHead>
               <TableHead className="text-right">Unitário</TableHead>
               <TableHead className="text-right">Total</TableHead>
@@ -191,7 +204,7 @@ export function EpiComprasModulo() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center">
+                <TableCell colSpan={11} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
@@ -212,6 +225,7 @@ export function EpiComprasModulo() {
                   <TableCell>{nomeTamanhoGravado(parametros, c.tamanho_id) || "—"}</TableCell>
                   <TableCell>{c.fornecedor}</TableCell>
                   <TableCell>{c.nota_fiscal || "—"}</TableCell>
+                  <TableCell>{String((c as { ca?: string | null }).ca ?? "") || "—"}</TableCell>
                   <TableCell className="text-right">{c.quantidade}</TableCell>
                   <TableCell className="text-right">{formatarMoeda(c.valor_unitario)}</TableCell>
                   <TableCell className="text-right font-bold">
@@ -241,13 +255,16 @@ export function EpiComprasModulo() {
         </Table>
       </div>
 
+      <EntradasDeUsados empresaId={empresaId} itens={itens} empresas={empresas} />
+      <DevolucaoEpiDialog aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />
+
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Registrar Compra de EPI</DialogTitle>
             <DialogDescription>
-              Os dados da compra atualizarão automaticamente o estoque e gerarão uma movimentação de
-              entrada.
+              Compra de produto novo: informe todos os dados (empresa, EPI, fornecedor, nota fiscal, CA, data, quantidade e valor unitário). Eles atualizam o estoque e geram uma
+              movimentação de entrada. Para EPI que volta de um funcionário, use Devolução.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
@@ -285,6 +302,7 @@ export function EpiComprasModulo() {
                 onValueChange={(v) => {
                   setItemSel(v);
                   setTamanho("");
+                  setCa(itens.find((i) => i.id === v)?.ca ?? "");
                 }}
               >
                 <SelectTrigger id="item_id">
@@ -298,6 +316,16 @@ export function EpiComprasModulo() {
                   ))}
                 </SelectContent>
               </Select>
+              {/* Código, descrição e tamanho do EPI escolhido, e o atalho para cadastrar um EPI que ainda não existe (abre em outra aba, sem perder o que foi preenchido). */}
+              {itemSel && (
+                <p className="text-xs text-muted-foreground">
+                  Código {itens.find((i) => i.id === itemSel)?.codigo_sku} · {itens.find((i) => i.id === itemSel)?.nome} · Tamanho {tamanho ? nomeTamanhoGravado(parametros, tamanhoParaGravar(tamanho)) || "—" : "—"}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                EPI não está na lista?{" "}
+                <a href="/cadastros/epi" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Cadastrar EPI</a>
+              </p>
             </div>
             {pedeTamanho(
               parametros,
@@ -320,7 +348,11 @@ export function EpiComprasModulo() {
             <SeletorFornecedorCompra categoriaId="cat-epi" valor={fornecedorId} onChange={setFornecedorId} />
             <div className="space-y-1.5">
               <Label htmlFor="nota_fiscal">Nota Fiscal</Label>
-              <Input id="nota_fiscal" name="nota_fiscal" placeholder="Número da NF" />
+              <Input id="nota_fiscal" name="nota_fiscal" required placeholder="Número da NF" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ca_compra">CA</Label>
+              <Input id="ca_compra" required value={ca} onChange={(e) => setCa(e.target.value)} placeholder="Certificado de Aprovação" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="data_compra">Data da Compra</Label>
@@ -379,5 +411,66 @@ export function EpiComprasModulo() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Entradas de EPI usado (decisão 327): as devoluções registradas em Devolução, cada uma com os dados da compra original que ela mantém.
+type MovimentoUsado = {
+  id: string; data_movimentacao: string; empresa_id: string; item_id: string | null; quantidade: number; tamanho_id?: string | null; empregado_id?: string | null;
+  codigo_movimentacao?: string | null; condicao?: string | null; motivo_devolucao?: string | null; data_compra_origem?: string | null; nota_fiscal_origem?: string | null; fornecedor_origem?: string | null; ca_origem?: string | null;
+};
+function EntradasDeUsados({ empresaId, itens, empresas }: { empresaId: string; itens: { id: string; nome: string; codigo_sku: string }[]; empresas: { id: string; nome_fantasia: string }[] }) {
+  const parametros = useParametrosBase();
+  const { data: empregados = [] } = useEmpregados(TODAS);
+  const { data: movimentos = [] } = useQuery({
+    queryKey: ["epi-entradas-usados", empresaId],
+    queryFn: async () => {
+      let q = supabase.from("movimentacoes").select("*").eq("modulo", "epi").eq("tipo_movimentacao", "Devolucao");
+      if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
+      const { data } = await q;
+      return ((data ?? []) as MovimentoUsado[]).filter((m) => m.condicao === "usado").sort((a, b) => b.data_movimentacao.localeCompare(a.data_movimentacao));
+    },
+  });
+  if (movimentos.length === 0) return null;
+  return (
+    <section className="space-y-2" aria-labelledby="entradas-usados">
+      <h2 id="entradas-usados" className="text-lg font-semibold">Entradas de usados (devoluções)</h2>
+      <div className="panel overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Devolução</TableHead>
+              <TableHead>Funcionário</TableHead>
+              <TableHead>Empresa</TableHead>
+              <TableHead>EPI</TableHead>
+              <TableHead>Tamanho</TableHead>
+              <TableHead className="text-right">Qtd</TableHead>
+              <TableHead>Motivo</TableHead>
+              <TableHead>Compra original</TableHead>
+              <TableHead>NF</TableHead>
+              <TableHead>Fornecedor</TableHead>
+              <TableHead>CA</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {movimentos.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell>{formatarData(m.data_movimentacao)}{m.codigo_movimentacao ? ` · ${m.codigo_movimentacao}` : ""}</TableCell>
+                <TableCell>{empregados.find((e) => e.id === m.empregado_id)?.nome ?? "—"}</TableCell>
+                <TableCell>{empresas.find((e) => e.id === m.empresa_id)?.nome_fantasia ?? "—"}</TableCell>
+                <TableCell>{itens.find((i) => i.id === m.item_id) ? `${itens.find((i) => i.id === m.item_id)?.codigo_sku} · ${itens.find((i) => i.id === m.item_id)?.nome}` : "—"}</TableCell>
+                <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) || "—"}</TableCell>
+                <TableCell className="text-right">{m.quantidade}</TableCell>
+                <TableCell>{m.motivo_devolucao || "—"}</TableCell>
+                <TableCell>{m.data_compra_origem ? formatarData(m.data_compra_origem) : "—"}</TableCell>
+                <TableCell>{m.nota_fiscal_origem || "—"}</TableCell>
+                <TableCell>{m.fornecedor_origem || "—"}</TableCell>
+                <TableCell>{m.ca_origem || "—"}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </section>
   );
 }

@@ -288,6 +288,8 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
           id: novaCompra(), created_at: criadoEm, empresa_id: empresaId, item_id: estoque["id"], fornecedor: fornecedor.nome_fantasia, fornecedor_id: fornecedor.id,
           nota_fiscal: `NF-${String(1200 + n * 3 + e).padStart(5, "0")}`, data_compra: dia(agora, diasAtras + e * 2), quantidade, valor_unitario: valorUnitario,
           valor_total: Math.round(quantidade * valorUnitario * 100) / 100, observacao: "Reposição de estoque", tamanho_id: item.tamanhos[indice] ?? null,
+          // CA de teste da compra de EPI (a compra de produto novo exige o CA, decisão 327): um por item do catálogo.
+          ...(tabelaCompra === "compras_epis" ? { ca: String(31000 + n * 211) } : {}),
         });
         mov({ modulo, tipo_movimentacao: "Entrada", quantidade, data_movimentacao: dia(agora, diasAtras + e * 2), item_id: estoque["id"], empresa_id: empresaId, tamanho_id: item.tamanhos[indice] ?? null, observacao: `Compra: NF ${String(1200 + n * 3 + e).padStart(5, "0")} / ${fornecedor.nome_fantasia}` });
       });

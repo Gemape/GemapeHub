@@ -87,7 +87,9 @@ test("meta de cobertura: 30, 60, 90, 120 ou 180 dias; padrão 120; lixo salvo vo
 
 test("as telas: estoque detalhado na aba Estoque e sugestão de compras na aba Compras, nos módulos de EPIs e de Uniformes", () => {
   assert.match(ler("components/modules/EstoqueModulo.tsx"), /modulo !== 'ferramenta' && <ControleEstoqueModulo modulo=\{modulo\}/);
-  assert.match(ler("components/modules/EpiComprasModulo.tsx"), /<SugestaoComprasModulo modulo="epi"/);
+  // No EPI a sugestão de compras é uma rotina própria, fora da Entrada no Estoque (decisão 327).
+  assert.match(ler("components/modules/PaginaModulo.tsx"), /<TabsContent value="sugestao-compras"[^>]*>\s*<SugestaoComprasModulo modulo="epi" \/>/);
+  assert.doesNotMatch(ler("components/modules/EpiComprasModulo.tsx"), /SugestaoComprasModulo/);
   assert.match(ler("components/modules/UniformesComprasModulo.tsx"), /<SugestaoComprasModulo modulo="uniforme"/);
   const tela = ler("components/modules/ControleEstoqueModulo.tsx");
   for (const t of ["Média mensal", "Média trimestral", "Média semestral", "Média anual", "Última entrada", "Penúltima entrada", "Última saída", "Penúltima saída", "Cobertura \\(dias\\)"]) assert.match(tela, new RegExp(t));
@@ -99,9 +101,12 @@ test("as telas: estoque detalhado na aba Estoque e sugestão de compras na aba C
 test("Uniformes segue o EPI: mesmos nomes de submenu, aba Entrega Uniforme, e a entrega serve aos dois módulos", async () => {
   const { ABAS_EPI, ABAS_UNIFORME } = await import("../src/lib/menu-parametros.ts");
   const titulos = (abas) => abas.map((a) => a.titulo);
-  for (const t of ["Dashboard", "Estoque", "Compras", "Histórico do empregado", "Baixar Definitivas", "Termo de Entrega", "Ocorrências"]) {
+  for (const t of ["Dashboard", "Estoque", "Histórico do empregado", "Baixar Definitivas", "Termo de Entrega", "Ocorrências"]) {
     assert.ok(titulos(ABAS_EPI).includes(t) && titulos(ABAS_UNIFORME).includes(t), t);
   }
+  // No EPI, Compras virou Entrada no Estoque e a Sugestão de Compras ganhou a sua aba (decisão 327); os uniformes seguem com Compras.
+  assert.ok(titulos(ABAS_EPI).includes("Entrada no Estoque") && titulos(ABAS_EPI).includes("Sugestão de Compras") && !titulos(ABAS_EPI).includes("Compras"));
+  assert.ok(titulos(ABAS_UNIFORME).includes("Compras"));
   assert.ok(titulos(ABAS_EPI).includes("Entrega EPI") && titulos(ABAS_UNIFORME).includes("Entrega Uniforme"));
   assert.ok(titulos(ABAS_UNIFORME).includes("Movimentações"), "Movimentações continua nos uniformes");
   const pagina = ler("components/modules/PaginaModulo.tsx");

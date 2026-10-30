@@ -2,6 +2,8 @@
 // deduzidas dos valores da planilha, cujas macros não vieram no arquivo (docs/ANALISE_PLANILHA_EPI.md): onde há dúvida, está marcado.
 // Funções puras: recebem os itens e as movimentações já lidos, e a data de hoje (AAAA-MM-DD, Brasília).
 
+import { statusDeCriticidade, STATUS_CRITICIDADE, type ParametrosCompraEpi, type StatusCriticidade } from "./epi-parametros.ts";
+
 export type ItemControle = { id: string; nome: string; estoque_atual?: number | null; estoque_minimo?: number | null; status?: string | null; empresa_id?: string | null };
 export type MovimentoControle = { item_id: string | null; tipo_movimentacao: string; quantidade: number | null; data_movimentacao: string };
 
@@ -95,6 +97,31 @@ export function sugestoesDeCompra(linhas: LinhaControle[], meta: number): Sugest
       percentualDaMeta === null ? "Sem consumo no último ano." : abaixoMeta ? `Cobertura abaixo da meta (${percentualDaMeta}%).` : "",
     ].filter(Boolean);
     return [{ ...l, quantidade, prioridade, observacao: partes.join(" "), percentualDaMeta }];
+  }).sort((a, b) => a.prioridade.localeCompare(b.prioridade) || a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
+// Sugestão de compra do EPI pelos parâmetros de Parâmetros Específicos (decisão 328). Com o método do tempo de cobertura, o item entra pela tabela de criticidade (TC contra o prazo de
+// reposição TR): Ruptura, Comprar já e Planejar; com o do estoque mínimo, entra quando o estoque está no mínimo ou abaixo dele. A quantidade cobre o consumo do prazo de reposição
+// mais a meta (cobertura) ou o estoque mínimo, o que for maior, menos o que já há.
+export type SugestaoEpi = SugestaoCompra & { status: StatusCriticidade | null };
+
+export function sugestoesDeCompraEpi(linhas: LinhaControle[], p: ParametrosCompraEpi): SugestaoEpi[] {
+  return linhas.flatMap((l): SugestaoEpi[] => {
+    const porDia = l.consumoAnual / 30;
+    const status = l.cobertura === null ? null : statusDeCriticidade(l.cobertura, p);
+    const abaixoCritico = l.estoqueAtual < l.estoqueCritico;
+    const noMinimo = l.estoqueCritico > 0 && l.estoqueAtual === l.estoqueCritico;
+    let prioridade: Prioridade | null = null;
+    if (p.metodo === "minimo") prioridade = abaixoCritico ? "1-URGENTE" : noMinimo ? "2-ALTA" : null;
+    else if (abaixoCritico || status === "ruptura") prioridade = "1-URGENTE";
+    else if (status === "comprar_ja") prioridade = "2-ALTA";
+    else if (status === "planejar") prioridade = "3-MÉDIA";
+    if (!prioridade) return [];
+    const alvo = p.metodo === "minimo" ? l.estoqueCritico + porDia * p.prazoReposicao : Math.max(porDia * (p.diasCobertura + p.prazoReposicao), l.estoqueCritico);
+    const quantidade = Math.max(1, Math.ceil(Math.round((alvo - l.estoqueAtual) * 1e6) / 1e6));
+    const partes = [abaixoCritico ? "Abaixo do estoque mínimo." : noMinimo ? "No estoque mínimo." : "", // O significado só entra quando explica por que o item foi sugerido (estável e excesso não pedem compra).
+      status === null ? "Sem consumo no último ano." : ["ruptura", "comprar_ja", "planejar"].includes(status) ? STATUS_CRITICIDADE[status].significado : ""].filter(Boolean);
+    return [{ ...l, quantidade, prioridade, observacao: partes.join(" "), percentualDaMeta: l.cobertura === null || p.diasCobertura < 1 ? null : Math.round((l.cobertura / p.diasCobertura) * 100), status }];
   }).sort((a, b) => a.prioridade.localeCompare(b.prioridade) || a.nome.localeCompare(b.nome, "pt-BR"));
 }
 

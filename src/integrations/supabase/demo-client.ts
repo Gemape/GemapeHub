@@ -91,12 +91,15 @@ const TABELA_DO_MODULO: Record<string, string> = { epi: "epis", uniforme: "unifo
 const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
   const saldos = new Map<Linha, number>();
   const porTamanho = new Map<Linha, Record<string, number>>();
+  // Devolução como entrada de usado (decisão 327): soma no estoque e também no estoque de usados do produto.
+  const usados = new Map<Linha, number>();
   let parametros: ReturnType<typeof lerParametros> | null = null;
   for (const m of movimentacoes) {
     const item = (dados[TABELA_DO_MODULO[m.modulo as string]] ?? []).find(i => i.id === m.item_id);
     const quantidade = Number(m.quantidade) || 0;
     const delta = m.tipo_movimentacao === "Entrada" || m.tipo_movimentacao === "Devolucao" ? quantidade : m.tipo_movimentacao === "Saida" ? -quantidade : 0;
     if (!item) continue;
+    if (m.condicao === "usado" && delta > 0) usados.set(item, (usados.get(item) ?? 0) + delta);
     if (controlaModulo(m.modulo as string)) {
       parametros ??= lerParametros();
       const modulo = m.modulo as "epi" | "uniforme";
@@ -122,6 +125,7 @@ const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
     if (saldo < 0) return new Error("Estoque insuficiente");
     saldos.set(item, saldo);
   }
+  usados.forEach((q, item) => { item.estoque_usado = (Number(item.estoque_usado) || 0) + q; });
   saldos.forEach((saldo, item) => {
     item.estoque_atual = saldo;
     // Produto que deixou de controlar tamanho: o mapa antigo (só "Sem tamanho" ou tamanhos

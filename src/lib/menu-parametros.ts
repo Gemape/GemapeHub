@@ -41,7 +41,8 @@ export type GrupoMenu = { titulo: string; filhos: readonly ItemMenu[] };
 export const ABAS_EPI: readonly AbaMenu[] = [
   { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
-  { aba: "compras", titulo: "Compras", icone: "ShoppingCart" },
+  { aba: "compras", titulo: "Entrada no Estoque", icone: "ShoppingCart" },
+  { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
   { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
   { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
   { aba: "entrega", titulo: "Entrega EPI", icone: "PackageCheck" },
