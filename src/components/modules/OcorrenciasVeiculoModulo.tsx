@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
@@ -32,7 +33,7 @@ import { lerPrazosOcorrencias, lerProrrogacaoOcorrencias } from "@/lib/prazo-oco
 import { montarOcorrenciaHtml } from "@/lib/ocorrencia-relatorio-html";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import {
-  adicionarFotosOcorrencia, contarPorStatus, registrarOcorrenciaVeiculo, removerFotoOcorrencia, salvarTratativa,
+  adicionarFotosOcorrencia, contarPorStatus, ocorrenciasNoPeriodo, periodoDeOcorrenciasInvalido, registrarOcorrenciaVeiculo, removerFotoOcorrencia, salvarTratativa,
   type OcorrenciaVeiculo, type StatusOcorrencia,
 } from "@/lib/ocorrencias-veiculo";
 import { combinaBusca } from "@/lib/parametros-base";
@@ -79,7 +80,12 @@ export function OcorrenciasVeiculoModulo() {
   const { ocorrencia: ocorrenciaPedida } = useSearch({ from: "/_authenticated/veiculos" });
   const navegar = useNavigate();
   const [filtro, setFiltro] = useState<StatusOcorrencia | "todas">("todas");
+  // Tela do módulo: o painel (botões, indicadores e gráficos) ou, ao clicar num botão de situação, a lista daquela situação (com o botão de voltar ao painel).
+  const [verLista, setVerLista] = useState(false);
   const [busca, setBusca] = useState("");
+  // Período da lista (AAAA-MM-DD, as duas pontas valem), pela data em que a ocorrência aconteceu; vazio = sem limite daquele lado.
+  const [inicio, setInicio] = useState("");
+  const [fim, setFim] = useState("");
   const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
   const [confirmandoEncerrar, setConfirmandoEncerrar] = useState(false);
   // Renovar o prazo da tratativa (supervisor valida) e o convite para gerar o PDF logo depois de encerrar (decisão 309): guardam o id da ocorrência.
@@ -105,9 +111,12 @@ export function OcorrenciasVeiculoModulo() {
   const nomeEmpregado = (id: string | null | undefined) => todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
   const veiculo = (id: string) => veiculos.find((v) => v.id === id);
   const rotuloVeiculo = (id: string) => { const v = veiculo(id); return v ? rotuloDoVeiculo(parametros, v) : "—"; };
+  const periodoInvalido = periodoDeOcorrenciasInvalido(inicio, fim);
+  // Só a lista segue o período (a busca e o período começam vazios a cada botão aberto); os botões de situação, os cards e os gráficos continuam com o total.
+  const noPeriodo = ocorrenciasNoPeriodo(daEmpresa, inicio, fim);
   const contagem = contarPorStatus(daEmpresa);
   const indicadores = indicadoresDeOcorrencias({ ocorrencias: daEmpresa, hoje: hojeLocal(), prazos: lerPrazosOcorrencias() });
-  const lista = daEmpresa
+  const lista = noPeriodo
     .filter((o) => filtro === "todas" || o.status === filtro)
     .filter((o) => combinaBusca(busca, o.codigo, rotuloVeiculo(o.veiculoId), o.tipoNome, nomeEmpregado(o.condutorId), o.local, o.descricao, o.status, dataHoraLocal(o.ocorridoEm)))
     .sort((a, b) => b.cadastradaEm.localeCompare(a.cadastradaEm));
@@ -227,67 +236,91 @@ export function OcorrenciasVeiculoModulo() {
 
   return (
     <div className="space-y-4">
-      <CartoesOcorrencias indicadores={indicadores} />
-      <GraficosOcorrencias ocorrencias={daEmpresa} hoje={hojeLocal()} />
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          aria-label="Buscar ocorrência"
-          placeholder="Buscar por código, veículo, tipo ou condutor"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Ocorrências por situação">
-          {BOTOES_FILTRO.map(({ filtro: f, rotulo }) => (
-            <Button key={f} type="button" size="sm" variant={filtro === f ? "default" : "outline"} aria-pressed={filtro === f} onClick={() => setFiltro(f)}>
-              {rotulo} ({f === "todas" ? daEmpresa.length : contagem[f]})
-            </Button>
-          ))}
-        </div>
-        <Button requiresWrite="operar" className="ml-auto" onClick={abrirNova}>Nova ocorrência</Button>
-      </div>
-
-      <div className="overflow-x-auto rounded-xl border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Código</TableHead>
-              <TableHead>Ocorrido em</TableHead>
-              <TableHead>Veículo</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Condutor</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lista.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                  {busca.trim() || filtro !== "todas" ? "Nenhum resultado para a busca." : "Nenhuma ocorrência registrada."}
-                </TableCell>
-              </TableRow>
-            )}
-            {lista.map((o) => (
-              <TableRow key={o.id} className="cursor-pointer" onClick={() => setTela({ tipo: "detalhe", id: o.id })}>
-                <TableCell className="font-mono text-xs">{o.codigo}</TableCell>
-                <TableCell>{dataHoraLocal(o.ocorridoEm)}</TableCell>
-                <TableCell>{rotuloVeiculo(o.veiculoId)}</TableCell>
-                <TableCell>{o.tipoNome}</TableCell>
-                <TableCell>{nomeEmpregado(o.condutorId)}</TableCell>
-                <TableCell><StatusBadge status={o.status} /></TableCell>
-                <TableCell className="text-right">
-                  {podeTratar(o) && (
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); abrirTratativa(o); }}>
-                      {o.status === "Encerrada" ? "Editar tratativa" : "Tratativa"}
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {!verLista ? (
+        <>
+          {/* Os botões de situação ficam no topo, no padrão azul do Check list; cada um abre a lista daquela situação em outra tela do módulo. */}
+          <section className="flex flex-wrap items-center justify-between gap-2" aria-label="Ocorrências por situação">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Abrir a lista por situação">
+              {BOTOES_FILTRO.map(({ filtro: f, rotulo }) => (
+                <Button key={f} type="button" aria-label={`${rotulo}: ${f === "todas" ? daEmpresa.length : contagem[f]} ocorrência(s). Abrir a lista`} onClick={() => { setFiltro(f); setBusca(""); setInicio(""); setFim(""); setVerLista(true); }}>
+                  {rotulo}
+                  <span aria-hidden="true" className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{f === "todas" ? daEmpresa.length : contagem[f]}</span>
+                </Button>
+              ))}
+            </div>
+            <Button requiresWrite="operar" onClick={abrirNova}>Nova ocorrência</Button>
+          </section>
+          <CartoesOcorrencias indicadores={indicadores} />
+          <GraficosOcorrencias ocorrencias={daEmpresa} hoje={hojeLocal()} />
+        </>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+            <h2 className="text-base font-semibold">{BOTOES_FILTRO.find((b) => b.filtro === filtro)?.rotulo ?? "Ocorrências"}</h2>
+            <Input
+              aria-label="Buscar ocorrência"
+              placeholder="Buscar por código, veículo, tipo ou condutor"
+              className="max-w-xs"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+            <div className="flex items-center gap-2" title="Data em que a ocorrência aconteceu">
+              <Label htmlFor="ocorrencias-inicio" className="text-sm">Data início</Label>
+              <Input id="ocorrencias-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
+            </div>
+            <div className="flex items-center gap-2" title="Data em que a ocorrência aconteceu">
+              <Label htmlFor="ocorrencias-fim" className="text-sm">Data fim</Label>
+              <Input id="ocorrencias-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
+            </div>
+            {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
+            <p className="text-sm text-muted-foreground">{lista.length} ocorrência(s).</p>
+            <Button requiresWrite="operar" className="ml-auto" onClick={abrirNova}>Nova ocorrência</Button>
+          </div>
+          {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
+          <div className="max-h-[max(12rem,calc(100dvh-20rem))] overflow-auto rounded-xl border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Ocorrido em</TableHead>
+                  <TableHead>Veículo</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Condutor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lista.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
+                      {busca.trim() || inicio || fim ? "Nenhum resultado para a busca e o período." : filtro === "todas" ? "Nenhuma ocorrência registrada." : `Nenhuma ocorrência ${BOTOES_FILTRO.find((b) => b.filtro === filtro)?.rotulo.toLowerCase() ?? ""}.`}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {lista.map((o) => (
+                  <TableRow key={o.id} className="cursor-pointer" onClick={() => setTela({ tipo: "detalhe", id: o.id })}>
+                    <TableCell className="font-mono text-xs">{o.codigo}</TableCell>
+                    <TableCell>{dataHoraLocal(o.ocorridoEm)}</TableCell>
+                    <TableCell>{rotuloVeiculo(o.veiculoId)}</TableCell>
+                    <TableCell>{o.tipoNome}</TableCell>
+                    <TableCell>{nomeEmpregado(o.condutorId)}</TableCell>
+                    <TableCell><StatusBadge status={o.status} /></TableCell>
+                    <TableCell className="text-right">
+                      {podeTratar(o) && (
+                        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); abrirTratativa(o); }}>
+                          {o.status === "Encerrada" ? "Editar tratativa" : "Tratativa"}
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
 
       {/* Nova ocorrência */}
       <Dialog open={tela?.tipo === "nova"} onOpenChange={(a) => !a && setTela(null)}>

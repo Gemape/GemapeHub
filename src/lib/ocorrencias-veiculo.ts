@@ -300,3 +300,14 @@ export function removerOcorrenciasPorId(ids: string[], storage = storagePadrao()
   if (ids.length === 0) return;
   alterarLista<OcorrenciaVeiculo>(CHAVE, storage, (lista) => lista.filter((o) => !ids.includes(o.id)));
 }
+
+// Período da lista de ocorrências (AAAA-MM-DD, as duas pontas valem): vale a data em que a ocorrência aconteceu; vazio = sem limite daquele lado.
+// Início depois do fim não é um período: a lista fica vazia e a tela avisa.
+export const periodoDeOcorrenciasInvalido = (inicio: string, fim: string): boolean => !!inicio && !!fim && inicio > fim;
+export function ocorrenciasNoPeriodo<T extends { ocorridoEm: string }>(lista: readonly T[], inicio: string, fim: string): T[] {
+  if (periodoDeOcorrenciasInvalido(inicio, fim)) return [];
+  return lista.filter((o) => {
+    const dia = o.ocorridoEm.slice(0, 10);
+    return (!inicio || dia >= inicio) && (!fim || dia <= fim);
+  });
+}
