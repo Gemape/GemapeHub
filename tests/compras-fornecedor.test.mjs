@@ -50,7 +50,7 @@ test("as compras de EPI e Uniforme usam o fornecedor do cadastro no demo e grava
   }
   const seletor = ler("SeletorFornecedorCompra.tsx");
   assert.match(seletor, /MODO_DEMO/);
-  assert.match(seletor, /Cadastros &gt; Fornecedores/);
+  assert.match(seletor, /href="\/cadastros\/fornecedores"[^>]*>Cadastrar fornecedor/, "link para cadastrar o fornecedor que não existe (decisão 327)");
 });
 
 test("fornecedor sem nome no cadastro é recusado", () => {

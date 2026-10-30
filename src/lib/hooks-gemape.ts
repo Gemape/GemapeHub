@@ -28,6 +28,8 @@ export interface Item {
   unidade_medida: string | null;
   estoque_minimo: number;
   estoque_atual: number;
+  // Só no modo demonstração (decisão 327): quantas unidades do estoque são usadas, vindas de devolução.
+  estoque_usado?: number;
   fornecedor: string | null;
   data_validade: string | null;
   data_aquisicao?: string | null;

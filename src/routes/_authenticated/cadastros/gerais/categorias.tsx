@@ -11,6 +11,7 @@ import { lerTodas } from "@/lib/ler-todas";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { HabilitarEmpregadosVeiculos } from "@/components/parametros/HabilitarEmpregadosVeiculos";
 import { IndicadoresViagens } from "@/components/parametros/IndicadoresViagens";
+import { ParametrosEpi } from "@/components/parametros/ParametrosEpi";
 import { PrazosOcorrenciasVeiculo } from "@/components/parametros/PrazosOcorrenciasVeiculo";
 import { SupervisoresOcorrencias } from "@/components/parametros/SupervisoresOcorrencias";
 import { SubgruposFerramenta } from "@/components/parametros/SubgruposFerramenta";
@@ -391,6 +392,7 @@ function Categorias() {
               cadastrar={(nomes) => cadastrarMarcasPadraoVeiculos(undefined, nomes)}
             />
           </div>}
+          {categoria.id === "cat-epi" && <ParametrosEpi />}
           {categoria.id === "cat-veiculos" && <HabilitarEmpregadosVeiculos />}
           {categoria.id === "cat-veiculos" && <PrazosOcorrenciasVeiculo />}
           {categoria.id === "cat-veiculos" && <SupervisoresOcorrencias />}

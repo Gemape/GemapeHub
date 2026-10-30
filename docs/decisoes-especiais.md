@@ -1834,3 +1834,15 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 326. Título da página acompanha a lista do Check list
 
 - No Check list de veículos, o título grande da página passa a ser Check list periódico ou Check list avulso quando uma dessas listas está aberta (e volta a Check list no painel). O mesmo texto que ficava ao lado do botão Voltar ao painel fica só para leitores de tela, para não repetir.
+
+## 327. EPI: Entrada no Estoque, Devolução e Sugestão de Compras própria
+
+- No módulo EPI, a aba Compras passou a se chamar Entrada no Estoque. A Sugestão de Compras saiu dela e virou uma aba própria (Sugestão de Compras), logo abaixo. Os uniformes continuam com Compras.
+- Registrar Compra é compra de produto novo e exige todos os dados: empresa, EPI, fornecedor, nota fiscal, CA, data da compra, quantidade e valor unitário. O CA vem preenchido com o do cadastro do EPI, mas é conferido. Na escolha do EPI aparecem código, descrição e tamanho, com o link Cadastrar EPI (abre em outra aba) e, no fornecedor, o link Cadastrar fornecedor; a lista de fornecedores se atualiza quando a pessoa volta à aba.
+- O botão Devolução fica ao lado de Registrar Compra. A primeira pergunta é o funcionário; dele sai a lista dos EPIs em posse (por EPI e tamanho) e a pessoa marca o que devolve, a quantidade (até o que está em posse) e o motivo. A devolução soma no estoque como produto usado (o estoque de usados do produto também aumenta) e a movimentação mantém os dados da compra original: data da compra, nota fiscal, fornecedor, tamanho e CA. Como a entrega não guarda de qual compra saiu cada unidade, vale a compra mais antiga do EPI no tamanho. Só o Administrador registra a devolução, como já era. As devoluções aparecem na tabela Entradas de usados.
+
+## 328. EPI: Parâmetros Específicos (motivos e sugestão de compra)
+
+- Em Parâmetros > EPI > Parâmetros Específicos há o cartão Parâmetros do EPI: os motivos de baixa definitiva (filtro do relatório de baixas), os motivos de devolução ao estoque (pedidos na Devolução) e os parâmetros da sugestão de compra.
+- Sugestão de compra: escolher entre trabalhar com o estoque mínimo ou com o tempo de cobertura em dias (com os dias de cobertura desejados), mais o prazo de reposição do fornecedor (TR), os dias de segurança (15), a janela de planejamento (30) e o limite de excesso (90).
+- A tabela de criticidade, tudo em dias, com TC o tempo de cobertura: Ruptura (TC < TR), Comprar já (TR a TR + segurança), Planejar (até TR + planejamento), Estável (até o limite de excesso) e Excesso (acima). No método do tempo de cobertura entram na sugestão Ruptura (prioridade urgente), Comprar já (alta) e Planejar (média); no do estoque mínimo, o item no mínimo ou abaixo dele. A quantidade cobre o consumo do prazo de reposição mais a cobertura desejada (ou o mínimo).

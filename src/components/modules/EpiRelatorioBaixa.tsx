@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { lerMotivosBaixaEpi } from "@/lib/epi-parametros";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
 import { ehBaixa } from "@/lib/historico-movimentacoes";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
@@ -107,13 +108,8 @@ export function EpiRelatorioBaixa() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={TODAS}>Todos os motivos</SelectItem>
-              <SelectItem value="Fornecimento ao Empregado">Fornecimento ao Empregado</SelectItem>
-              <SelectItem value="Desligamento">Desligamento</SelectItem>
-              <SelectItem value="Desgaste Natural">Desgaste Natural</SelectItem>
-              <SelectItem value="Quebra">Quebra</SelectItem>
-              <SelectItem value="Desaparecimento">Desaparecimento</SelectItem>
-              <SelectItem value="Perda">Perda</SelectItem>
-              <SelectItem value="Mau Uso">Mau Uso</SelectItem>
+              {/* Os motivos de Parâmetros Específicos (decisão 328), mais os de baixas antigas que não estão mais na lista. */}
+              {[...new Set([...lerMotivosBaixaEpi(), ...movimentacoes.map((m) => m.motivo_baixa ?? "").filter(Boolean)])].map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

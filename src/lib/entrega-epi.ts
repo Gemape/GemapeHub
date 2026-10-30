@@ -3,6 +3,7 @@
 // Os saldos continuam sendo contados pelo gatilho de movimentações (no demo, demo-client.ts); aqui ficam
 // as conferências antes de gravar, a gravação de tudo de uma vez e a leitura do histórico completo.
 // Colunas codigo_movimentacao e responsavel_nome existem só no modo demonstração (Fase 2: ver pendencias-fase2.md).
+import type { OrigemDaDevolucao } from "./devolucao-estoque-epi.ts";
 import { capitalizarTexto } from "./formatacao-cadastral.ts";
 import { bloqueioPorDemissao } from "./empregados.ts";
 import { ehBaixa } from "./historico-movimentacoes.ts";
@@ -24,7 +25,8 @@ export const SIGLA_DEVOLUCAO = "DEV";
 export type ClienteEntrega = { from: (tabela: string) => any };
 
 export type EmpregadoEntrega = { id: string; nome: string; data_demissao: string | null; ativo?: boolean | null };
-export type LinhaEntrega = { item_id: string; quantidade: number; tamanho_id?: string | null };
+// `origem`: só na devolução como entrada de usado (decisão 327), os dados da compra original que a movimentação mantém.
+export type LinhaEntrega = { item_id: string; quantidade: number; tamanho_id?: string | null; origem?: OrigemDaDevolucao | null; motivo_devolucao?: string | null };
 export type ItemEpiEntrega = {
   id: string; nome: string; estoque_atual: number | null; estoque_minimo?: number | null; status?: string | null;
   [campo: string]: unknown;
@@ -139,6 +141,9 @@ async function gravar(cliente: ClienteEntrega, entrada: EntradaBase, tipo: "Said
       modulo, tipo_movimentacao: tipo, quantidade: l.quantidade, data_movimentacao: entrada.data,
       item_id: l.item_id, empresa_id: entrada.empresaId, empregado_id: entrada.empregado.id, observacao,
       ...(l.tamanho_id !== undefined ? { tamanho_id: l.tamanho_id } : {}),
+      // Colunas só do modo demonstração, como o código da movimentação: o banco real ainda não as tem.
+      ...(comCodigo && tipo === "Devolucao" && l.origem !== undefined ? { condicao: "usado", ...(l.origem ?? {}) } : {}),
+      ...(comCodigo && tipo === "Devolucao" && l.motivo_devolucao ? { motivo_devolucao: l.motivo_devolucao } : {}),
       ...(comCodigo ? { codigo_movimentacao: codigo, ...(responsavel ? { responsavel_nome: responsavel } : {}) } : {}),
     };
   });

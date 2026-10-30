@@ -8,6 +8,7 @@ import { UniformesRelatorioBaixa } from "@/components/modules/UniformesRelatorio
 import { UniformesTermoEntrega } from "@/components/modules/UniformesTermoEntrega";
 import { UniformesTermoBaixa } from "@/components/modules/UniformesTermoBaixa";
 import { EpiComprasModulo } from "@/components/modules/EpiComprasModulo";
+import { SugestaoComprasModulo } from "@/components/modules/SugestaoComprasModulo";
 import { EpiRelatorioFuncionario } from "@/components/modules/EpiRelatorioFuncionario";
 import { EpiRelatorioBaixa } from "@/components/modules/EpiRelatorioBaixa";
 import { EpiEntrega, UniformesEntrega } from "@/components/modules/EpiEntrega";
@@ -85,6 +86,9 @@ export function PaginaModulo({
           <>
             <TabsContent value="compras" className="mt-5">
               <EpiComprasModulo />
+            </TabsContent>
+            <TabsContent value="sugestao-compras" className="mt-5">
+              <SugestaoComprasModulo modulo="epi" />
             </TabsContent>
             <TabsContent value="historico" className="mt-5">
               <EpiRelatorioFuncionario />

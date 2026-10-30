@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +18,17 @@ export function SeletorFornecedorCompra({
   valor: string;
   onChange: (id: string) => void;
 }) {
-  // Lê de novo a cada vez que o formulário monta, para pegar o que acabou de ser cadastrado.
+  // Lê de novo a cada vez que o formulário monta e quando a pessoa volta da aba onde cadastrou o fornecedor (decisão 327).
+  const [versao, setVersao] = useState(0);
+  useEffect(() => {
+    const aoVoltar = () => setVersao((v) => v + 1);
+    window.addEventListener("focus", aoVoltar);
+    return () => window.removeEventListener("focus", aoVoltar);
+  }, []);
   const fornecedores = useMemo(
     () => (MODO_DEMO ? fornecedoresDaCategoria(listarFornecedores(), categoriaId) : []),
-    [categoriaId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [categoriaId, versao],
   );
 
   if (!MODO_DEMO) {
@@ -47,11 +54,11 @@ export function SeletorFornecedorCompra({
           ))}
         </SelectContent>
       </Select>
-      {fornecedores.length === 0 && (
-        <p className="text-xs text-muted-foreground">
-          Nenhum fornecedor cadastrado. Cadastre em Cadastros &gt; Fornecedores.
-        </p>
-      )}
+      {fornecedores.length === 0 && <p className="text-xs text-muted-foreground">Nenhum fornecedor cadastrado.</p>}
+      <p className="text-xs text-muted-foreground">
+        Fornecedor não está na lista?{" "}
+        <a href="/cadastros/fornecedores" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Cadastrar fornecedor</a>
+      </p>
     </div>
   );
 }
