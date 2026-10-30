@@ -31,13 +31,13 @@ export function Cartao({ titulo, indicador, valor, icone, extra, classe = "" }: 
   const largura = indicador.pct === null ? 0 : Math.max(0, Math.min(100, indicador.pct));
   return (
     <div
-      className={`flex h-full flex-col justify-between gap-3 rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${estilo?.cartao ?? "border-border bg-card"} ${classe}`}
+      className={`flex h-full flex-col justify-between gap-3 rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4 [@media(max-height:820px)]:sm:p-3 ${estilo?.cartao ?? "border-border bg-card"} ${classe}`}
       data-faixa={indicador.faixa ?? "sem-dado"}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5"><p className="text-eyebrow">{titulo}</p>{extra}</div>
-          <p className={`mt-1.5 break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}>{valor ?? porcento(indicador.pct)}</p>
+          <p className={`mt-1.5 break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl [@media(max-height:820px)]:sm:text-2xl ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}>{valor ?? porcento(indicador.pct)}</p>
         </div>
         <span
           className={`flex size-8 shrink-0 items-center justify-center rounded-full shadow-md ring-4 sm:size-10 ring-white/70 dark:ring-white/10 ${estilo?.seta ?? (valor ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground shadow-none")}`}

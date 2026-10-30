@@ -65,10 +65,10 @@ test("o relatório e a tela da Frota têm a coluna Ocorrências", () => {
   assert.match(ler("components/modules/FrotaModulo.tsx"), /<TableHead className="w-\[14%\] text-center">Ocorrências<\/TableHead>/);
 });
 
-test("o extrato do veículo tem período, atalhos para sugeridas, realizadas e ocorrências, e bloqueia período invertido", () => {
+test("o extrato do veículo é uma tela com período, as tabelas de sugeridas, realizadas e ocorrências, PDF por seção, e bloqueia período invertido", () => {
   const extrato = ler("components/modules/ExtratoVeiculo.tsx");
-  for (const t of ["Data início", "Data fim", "Manutenções sugeridas", "Manutenções realizadas", "Extrato completo"]) assert.ok(extrato.includes(t), t);
-  assert.match(extrato, /gerar\("ocorrencias"\)/);
+  for (const t of ["Data início", "Data fim", "Gerar PDF desta seção", "Gerar PDF"]) assert.ok(extrato.includes(t), t);
+  assert.match(extrato, /PDF_DA_TABELA[^=]*= \{ 0: "sugeridas", 1: "realizadas", 4: "ocorrencias", 5: "checklists" \}/);
   assert.match(extrato, /const periodoInvalido = !!inicio && !!fim && inicio > fim;/);
   assert.match(extrato, /noPeriodo\(/);
 });

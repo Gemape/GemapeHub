@@ -345,6 +345,24 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       if (k === 4) entrega("epi", "epis", epiDe("Capacete", 0).id, empresa, 1, diaBase - 6, null, { ...quem, responsavel_nome: `Almoxarifado ${EMPRESAS[empresa]!.nome_fantasia}`, observacao: "Devolução por troca de função" }, "Devolucao");
     }
   }
+  // Consumo de um ano de alguns EPIs, para a Sugestão de Compras mostrar Ruptura, Comprar já e Planejar (decisão 330): uma compra anterior e as entregas dela, em seis parcelas de 40 a 215
+  // dias atrás, deixam o estoque como está e dão ao EPI a média de consumo que leva ao tempo de cobertura pedido (com o prazo de reposição padrão de 30 dias).
+  const consumoDoAno = (nome: string, indice: number, empresaIndice: number, tamanho: string | null, coberturaDias: number) => {
+    const estoque = estoqueDe("epis", epiDe(nome, indice).id, empresaIds[empresaIndice]!);
+    const saldo = movimentosDe.filter((m) => m["item_id"] === estoque["id"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? -Number(m["quantidade"]) : Number(m["quantidade"])), 0);
+    // O consumo do ano já tem as entregas e devoluções acima: a nova compra completa o que falta para a média pedida.
+    const jaConsumido = movimentosDe.filter((m) => m["item_id"] === estoque["id"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? Number(m["quantidade"]) : m["tipo_movimentacao"] === "Devolucao" ? -Number(m["quantidade"]) : 0), 0);
+    const total = Math.max(6, Math.ceil((360 * saldo) / coberturaDias) - jaConsumido);
+    mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade: total, data_movimentacao: dia(agora, 300), item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: tamanho, observacao: "Compra anterior: reposição do ano" });
+    const parcela = Math.floor(total / 6);
+    [40, 75, 110, 145, 180, 215].forEach((dias, k) => entrega("epi", "epis", epiDe(nome, indice).id, empresaIndice, k === 0 ? total - parcela * 5 : parcela, dias, tamanho));
+  };
+  consumoDoAno("Botina", 0, 0, "tam-38", 15); // Ruptura
+  consumoDoAno("Luva", 2, 1, "tam-g", 25); // Ruptura
+  consumoDoAno("Luva", 1, 0, "tam-m", 38); // Comprar já
+  consumoDoAno("Capacete", 0, 2, null, 40); // Comprar já
+  consumoDoAno("Capacete", 0, 0, null, 52); // Planejar
+  consumoDoAno("Botina", 2, 1, "tam-42", 55); // Planejar
   // Uniformes.
   entrega("uniforme", "uniformes", uniDe("Camisa", 1).id, 0, 2, 27, "tam-m");
   entrega("uniforme", "uniformes", uniDe("Calça", 1).id, 0, 2, 27, "tam-42");

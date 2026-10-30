@@ -7,23 +7,24 @@ export const COR_GRAFICO = {
 } as const;
 export const COR_DA_FAIXA = { verde: COR_GRAFICO.verde, amarelo: COR_GRAFICO.amarelo, vermelho: COR_GRAFICO.vermelho } as const;
 
-export function PainelGraficos({ titulo = "Comparativos", children }: { titulo?: string; children: ReactNode }) {
+// Os resultados cabem numa tela só, sem rolar (decisão 332): o título fica só para leitor de tela, os quadros são baixos e a altura dos gráficos acompanha a da janela.
+export function PainelGraficos({ titulo = "Comparativos", colunas = 2, children }: { titulo?: string; colunas?: 2 | 3; children: ReactNode }) {
   return (
-    <section className="space-y-3" aria-label={titulo}>
-      <h2 className="text-lg font-semibold">{titulo}</h2>
-      <div className="grid gap-4 lg:grid-cols-2">{children}</div>
+    <section aria-label={titulo}>
+      <h2 className="sr-only">{titulo}</h2>
+      <div className={`grid gap-3 ${colunas === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>{children}</div>
     </section>
   );
 }
 
 export function QuadroGrafico({ titulo, descricao, vazio, larga = false, children }: { titulo: string; descricao?: string; vazio?: boolean; larga?: boolean; children: ReactNode }) {
   return (
-    <figure className={`panel space-y-2 p-4 ${larga ? "lg:col-span-2" : ""}`}>
+    <figure className={`panel space-y-1 p-3 ${larga ? "lg:col-span-2" : ""}`}>
       <figcaption>
         <p className="text-sm font-semibold">{titulo}</p>
         {descricao && <p className="text-xs text-muted-foreground">{descricao}</p>}
       </figcaption>
-      {vazio ? <p className="py-10 text-center text-sm text-muted-foreground">Sem dados para comparar.</p> : <div className="h-64 w-full">{children}</div>}
+      {vazio ? <p className="py-8 text-center text-sm text-muted-foreground">Sem dados para comparar.</p> : <div className="h-[clamp(9rem,24vh,15rem)] w-full">{children}</div>}
     </figure>
   );
 }

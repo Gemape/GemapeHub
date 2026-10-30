@@ -88,7 +88,7 @@ test("meta de cobertura: 30, 60, 90, 120 ou 180 dias; padrão 120; lixo salvo vo
 test("as telas: estoque detalhado na aba Estoque e sugestão de compras na aba Compras, nos módulos de EPIs e de Uniformes", () => {
   assert.match(ler("components/modules/EstoqueModulo.tsx"), /modulo !== 'ferramenta' && <ControleEstoqueModulo modulo=\{modulo\}/);
   // No EPI a sugestão de compras é uma rotina própria, fora da Entrada no Estoque (decisão 327).
-  assert.match(ler("components/modules/PaginaModulo.tsx"), /<TabsContent value="sugestao-compras"[^>]*>\s*<SugestaoComprasModulo modulo="epi" \/>/);
+  assert.match(ler("components/modules/PaginaModulo.tsx"), /<TabsContent value="sugestao-compras"[^>]*>\s*<SugestaoComprasEpi \/>/);
   assert.doesNotMatch(ler("components/modules/EpiComprasModulo.tsx"), /SugestaoComprasModulo/);
   assert.match(ler("components/modules/UniformesComprasModulo.tsx"), /<SugestaoComprasModulo modulo="uniforme"/);
   const tela = ler("components/modules/ControleEstoqueModulo.tsx");

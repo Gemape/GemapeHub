@@ -1,5 +1,6 @@
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
+import { EstoqueEpiModulo } from "@/components/modules/EstoqueEpiModulo";
 import { EstoqueModulo } from "@/components/modules/EstoqueModulo";
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { UniformesComprasModulo } from "@/components/modules/UniformesComprasModulo";
@@ -8,7 +9,7 @@ import { UniformesRelatorioBaixa } from "@/components/modules/UniformesRelatorio
 import { UniformesTermoEntrega } from "@/components/modules/UniformesTermoEntrega";
 import { UniformesTermoBaixa } from "@/components/modules/UniformesTermoBaixa";
 import { EpiComprasModulo } from "@/components/modules/EpiComprasModulo";
-import { SugestaoComprasModulo } from "@/components/modules/SugestaoComprasModulo";
+import { SugestaoComprasEpi } from "@/components/modules/SugestaoComprasEpi";
 import { EpiRelatorioFuncionario } from "@/components/modules/EpiRelatorioFuncionario";
 import { EpiRelatorioBaixa } from "@/components/modules/EpiRelatorioBaixa";
 import { EpiEntrega, UniformesEntrega } from "@/components/modules/EpiEntrega";
@@ -47,7 +48,8 @@ export function PaginaModulo({
           <DashboardModulo modulo={modulo} />
         </TabsContent>
         <TabsContent value="estoque" className="mt-5">
-          <EstoqueModulo modulo={modulo} />
+          {/* No EPI o Estoque é só consulta (decisão 329): novos e usados, com os filtros e a compra de origem. */}
+          {modulo === "epi" ? <EstoqueEpiModulo /> : <EstoqueModulo modulo={modulo} />}
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />
@@ -88,7 +90,7 @@ export function PaginaModulo({
               <EpiComprasModulo />
             </TabsContent>
             <TabsContent value="sugestao-compras" className="mt-5">
-              <SugestaoComprasModulo modulo="epi" />
+              <SugestaoComprasEpi />
             </TabsContent>
             <TabsContent value="historico" className="mt-5">
               <EpiRelatorioFuncionario />

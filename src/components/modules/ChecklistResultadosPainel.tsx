@@ -15,10 +15,10 @@ const TODOS_OS_PERIODOS = "todos";
 const porcento = (n: number | null) => (n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
 
 // Os quatro indicadores do painel para um conjunto de linhas (todas, ou as de um grupo de responsáveis).
-function Indicadores({ resumo, todos }: { resumo: ResumoPainel; todos: boolean }) {
+function Indicadores({ resumo, todos, duasColunas = false }: { resumo: ResumoPainel; todos: boolean; duasColunas?: boolean }) {
   const desfechos = resumo.realizados + resumo.naoRealizados;
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <div className={`grid grid-cols-2 gap-3 ${duasColunas ? "" : "sm:gap-4 lg:grid-cols-4"}`}>
       <StatCard titulo="Realizados no prazo" pct={resumo.pctNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} />
       <StatCard titulo="Não realizados no prazo" pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} />
       <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} />
@@ -88,38 +88,52 @@ export function ChecklistResultadosPainel({
   const periodo = todos ? "Todos os períodos" : rotuloDoMes(mes);
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-3" aria-labelledby="checklist-indicadores">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="checklist-indicadores" className="text-lg font-semibold">Indicadores gerais de check list</h2>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="resultados_mes" className="text-xs">Período</Label>
-            <Select value={mes} onValueChange={setMes}>
-              <SelectTrigger id="resultados_mes" className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
-                {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
-              </SelectContent>
-            </Select>
+    <div className="space-y-4">
+      {/* Geral, Técnicos e PCM lado a lado (decisão 332): os resultados cabem numa tela, sem rolar. */}
+      <div className={`grid items-start gap-4 ${grupos.length === 2 ? "lg:grid-cols-3" : "lg:grid-cols-2 xl:grid-cols-4"}`}>
+        <section className="space-y-2" aria-labelledby="checklist-indicadores">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="checklist-indicadores" className="text-lg font-semibold">Indicadores gerais de check list</h2>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="resultados_mes" className="text-xs">Período</Label>
+              <Select value={mes} onValueChange={setMes}>
+                <SelectTrigger id="resultados_mes" className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
+                  {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
-        <Indicadores resumo={resumo} todos={todos} />
-      </section>
-
+          <Indicadores resumo={resumo} todos={todos} duasColunas />
+        </section>
       {grupos.map((g) => {
         const dele = doGrupo(g);
         const id = `checklist-grupo-${g.toLowerCase().replace(/[^a-z]/g, "")}`;
         return (
-          <section key={g} className="space-y-3" aria-labelledby={id}>
+          <section key={g} className="space-y-2" aria-labelledby={id}>
             <div>
               <h2 id={id} className="text-lg font-semibold">Indicadores · {g}</h2>
               <p className="text-sm text-muted-foreground">{periodo}{dele.length === 0 ? `: nenhum check list previsto para ${g === "Técnicos" ? "os técnicos" : g === "PCM" ? "o PCM" : g.toLowerCase()} neste período.` : "."}</p>
             </div>
-            <Indicadores resumo={resumoDeLinhas(dele)} todos={todos} />
-            <TabelaDeResponsaveis linhas={dele} />
+            <Indicadores resumo={resumoDeLinhas(dele)} todos={todos} duasColunas />
           </section>
         );
       })}
+      </div>
+
+      {/* As tabelas por responsável ficam logo abaixo dos indicadores, na largura toda (decisão 332). */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        {grupos.map((g) => {
+          const dele = doGrupo(g);
+          return (
+            <section key={g} className="space-y-2" aria-label={`Responsáveis · ${g}`}>
+              <h3 className="text-sm font-semibold">Responsáveis · {g}</h3>
+              <TabelaDeResponsaveis linhas={dele} />
+            </section>
+          );
+        })}
+      </div>
 
       <GraficosChecklist linhas={linhas} grupoDe={grupoDe} />
     </div>

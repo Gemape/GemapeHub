@@ -53,13 +53,14 @@ test("a Frota tem as colunas na ordem pedida, com bolinha e etiqueta, e o extrat
   assert.match(frota, /e\.stopPropagation\(\); aoClicar\(\)/);
   assert.match(frota, /table-fixed/);
   const ext = ler("components/modules/ExtratoVeiculo.tsx");
-  assert.match(ext, /if \(!veiculo \|\| !secao\) return;\s*abrirRelatorio\(veiculo, secao\);\s*onFechar\(\);/);
+  // A bolinha abre o extrato interativo já na tabela que ela resume, sem gerar PDF (decisão 331).
+  assert.match(ext, /if \(!veiculo \|\| !secao\) return;[\s\S]*extrato-tabela-\$\{TABELA_DA_SECAO\[secao\]\}/);
   assert.match(ext, /ocorrenciasAbertas: \[4\], checklists: \[5\]/);
-  assert.match(ext, /secao !== "ocorrenciasAbertas" \|\| o\.status !== "Encerrada"/);
+  assert.match(ext, /!soAbertas \|\| o\.status !== "Encerrada"/);
   for (const cor of ["bg-red-500", "bg-amber-400", "bg-emerald-500"]) assert.ok(frota.includes(cor), cor);
   const extrato = ler("components/modules/ExtratoVeiculo.tsx");
   for (const [texto, aba] of [["Realizar manutenção", "manutencao"], ["Tratar ocorrências", "ocorrencias"], ["Realizar check list", "checklist"]]) {
-    assert.ok(extrato.includes(`search={{ aba: "${aba}" }}>${texto}</Link>`), texto);
+    assert.match(extrato, new RegExp(`search=\\{\\{ aba: "${aba}"[^}]*\\}\\}>${texto}</Link>|onClick=\\{\\(\\) => setRegistrando\\(true\\)\\}>${texto}</Button>`), texto);
   }
 });
 

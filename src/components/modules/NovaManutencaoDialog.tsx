@@ -58,11 +58,13 @@ function totalGeral(locais: LocalForm[], totalDoLocal: (l: LocalForm) => number 
 }
 
 export function NovaManutencaoDialog({
-  aberto, aoMudar, editando = null, aoSalvar, tipoFixo,
+  aberto, aoMudar, editando = null, aoSalvar, tipoFixo, veiculoInicial,
 }: {
   aberto: boolean; aoMudar: (aberto: boolean) => void; editando?: ManutencaoVeiculo | null; aoSalvar: (registro: ManutencaoVeiculo, editou: boolean) => void;
   // Vindo de uma despesa de manutenção: abre neste tipo e o campo Tipo fica travado (a despesa é sempre Corretiva).
   tipoFixo?: string;
+  // Aberta pelo extrato do veículo (decisão 331): o veículo já vem escolhido.
+  veiculoInicial?: string;
 }) {
   const { empresaId } = useEmpresa();
   const { canWrite } = useAccess();
@@ -88,7 +90,7 @@ export function NovaManutencaoDialog({
     if (!aberto) return;
     const m = editando ?? undefined;
     guardados.current = {};
-    setVeiculoId(m?.veiculoId ?? "");
+    setVeiculoId(m?.veiculoId ?? veiculoInicial ?? "");
     setTipo(m?.tipo ?? tipoFixo ?? "Preventiva");
     setMarcados(
       Object.fromEntries(

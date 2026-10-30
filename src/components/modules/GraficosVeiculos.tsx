@@ -73,14 +73,14 @@ export function GraficosOcorrencias({ ocorrencias, hoje }: { ocorrencias: { tipo
   }));
   const meses = contagemPorMes({ ocorrencias: ocorrencias.map((o) => o.ocorridoEm) }, hoje);
   return (
-    <PainelGraficos>
+    <PainelGraficos colunas={3}>
       <QuadroGrafico titulo="Ocorrências por situação" descricao="Parte de cada situação no total." vazio={rosca.length === 0}>
         <GraficoRosca dados={rosca} />
       </QuadroGrafico>
       <QuadroGrafico titulo="Ocorrências por mês" descricao="Registradas nos últimos seis meses.">
         <GraficoBarras dados={meses} categoria="rotulo" series={[{ chave: "ocorrencias", nome: "Ocorrências", cor: COR_GRAFICO.azul }]} />
       </QuadroGrafico>
-      <QuadroGrafico titulo="Situação por tipo de ocorrência" descricao="Quantas de cada tipo estão abertas, em tratativa ou encerradas." vazio={tipos.length === 0} larga>
+      <QuadroGrafico titulo="Situação por tipo de ocorrência" descricao="Quantas de cada tipo estão abertas, em tratativa ou encerradas." vazio={tipos.length === 0}>
         <GraficoBarras
           dados={tipos} categoria="tipo" empilhado
           series={[{ chave: "abertas", nome: "Abertas", cor: COR_GRAFICO.vermelho }, { chave: "emTratativa", nome: "Em tratativa", cor: COR_GRAFICO.amarelo }, { chave: "encerradas", nome: "Encerradas", cor: COR_GRAFICO.verde }]}

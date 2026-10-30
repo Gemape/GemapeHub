@@ -12,8 +12,12 @@ import { abaDoModulo, tituloDaAba } from "@/lib/menu-parametros";
 import { useTituloDaPagina } from "@/lib/titulo-pagina";
 
 export const Route = createFileRoute("/_authenticated/veiculos")({
-  validateSearch: (search: Record<string, unknown>): { aba?: string } =>
-    typeof search["aba"] === "string" ? { aba: search["aba"] } : {},
+  // `ocorrencia` e `veiculo` vêm do extrato do veículo (decisão 331): abrem a tratativa da ocorrência ou o Novo check list do veículo.
+  validateSearch: (search: Record<string, unknown>): { aba?: string; ocorrencia?: string; veiculo?: string } => ({
+    ...(typeof search["aba"] === "string" ? { aba: search["aba"] } : {}),
+    ...(typeof search["ocorrencia"] === "string" ? { ocorrencia: search["ocorrencia"] } : {}),
+    ...(typeof search["veiculo"] === "string" ? { veiculo: search["veiculo"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Veículos | Patrimônio GEMAPE" },

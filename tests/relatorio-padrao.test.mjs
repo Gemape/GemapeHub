@@ -108,7 +108,7 @@ test("o extrato do veículo e o do equipamento abrem o relatório direto, em tel
   // Extrato (equipamento) abre o relatório na hora, em tela cheia. O do veículo passa por uma janela com período e atalhos (decisão 296) e abre o relatório em tela cheia.
   const veiculo = ler("components/modules/ExtratoVeiculo.tsx");
   assert.match(veiculo, /abrirDocumento\(\{ titulo: TITULO\[secao\], html[^}]*telaCheia: true \}\)/);
-  assert.match(veiculo, /<Dialog open=\{!!veiculo && !secao\}/);
+  assert.match(veiculo, /<Dialog open=\{!!veiculo\} onOpenChange/, "o extrato do veículo é uma tela, que só vira PDF no botão Gerar PDF (decisão 331)");
   const equip = ler("components/modules/equipamento/InventarioEquipamentoModulo.tsx");
   assert.match(equip, /onClick=\{\(\) => gerarRelatorio\(e\)\}>Extrato<\/Button>/);
   assert.match(equip, /telaCheia: true/);
