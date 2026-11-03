@@ -1954,3 +1954,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Vai e volta: check list (periódico ou avulso) e tratativa de ocorrência abertos pelo extrato levam a pessoa à rotina e, ao fechar a tela dela (finalizar, salvar, cancelar ou fechar), de volta ao extrato do mesmo veículo. Registrar manutenção e abastecimento já abrem por cima do extrato, que continua atrás. A ida leva o veículo em `voltar` no endereço; a volta abre a Frota com `extrato`.
 - O PDF do extrato: o botão Gerar PDF abre a escolha das seções (Manutenções, Abastecimentos, Ocorrências e Check lists, com Marcar todos e Desmarcar todos) e, ao confirmar, abre direto a janela de impressão (Salvar como PDF), sem o visualizador no meio: o PDF se gera uma vez só.
 - O cabeçalho do relatório sempre informa o período ("Período: dd/mm/aaaa a dd/mm/aaaa", com "desde o início" ou "hoje" numa ponta aberta, ou "todo o histórico" sem período).
+
+## 347. Check list: indicadores gerais no alto e técnicos e PCM lado a lado
+
+- Na tela principal de Veículos › Módulo › Check list, os indicadores gerais ficam no alto, com os cards (à esquerda) e os gráficos (à direita) ocupando toda a largura. Abaixo, a tela se divide ao meio: os indicadores e a tabela de responsáveis dos técnicos de um lado e os do PCM do outro. Tudo cabe numa tela, sem rolar a página; a tabela de responsáveis usa o que sobra da janela e rola por dentro. Os gráficos do Check list ficaram mais baixos (decisão 332).

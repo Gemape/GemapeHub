@@ -252,6 +252,8 @@ export function GraficosOcorrencias({
 
 // Check list: técnicos contra PCM (realizados, não realizados e a vencer) e o percentual no prazo de cada responsável.
 const ALTURA_COMPACTA = "h-[clamp(6rem,17vh,9.5rem)]";
+// No painel do Check list os gráficos ficam ainda mais baixos, para o geral, os dois grupos e as tabelas caberem numa tela (decisão 347).
+const ALTURA_CHECKLIST = "h-[clamp(5.5rem,14vh,8.5rem)]";
 
 export function GraficosChecklist({
   linhas,
@@ -277,7 +279,7 @@ export function GraficosChecklist({
     <PainelGraficos compacto={compacto}>
       <QuadroGrafico
         titulo="Técnicos x PCM"
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Check lists realizados no prazo, não realizados e a vencer de cada grupo." })}
+        {...(compacto ? { altura: ALTURA_CHECKLIST } : { descricao: "Check lists realizados no prazo, não realizados e a vencer de cada grupo." })}
         vazio={grupos.every((g) => g.realizados + g.naoRealizados + g.aVencer === 0)}
       >
         <GraficoBarras
@@ -292,7 +294,7 @@ export function GraficosChecklist({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="No prazo por responsável (%)"
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Cada responsável contra a meta de 90%." })}
+        {...(compacto ? { altura: ALTURA_CHECKLIST } : { descricao: "Cada responsável contra a meta de 90%." })}
         vazio={responsaveis.length === 0}
       >
         <GraficoBarras
