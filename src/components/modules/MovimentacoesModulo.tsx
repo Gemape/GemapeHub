@@ -54,6 +54,7 @@ import {
   useVeiculos,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
 import {
   alvoHistorico,
   linhaCsvHistorico,
@@ -106,21 +107,27 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
 
   const ehVeiculo = modulo === "veiculo";
   const [busca, setBusca] = useState("");
+  // A busca por palavra-chave existe em Veículos e, por ordem do responsável, em Ferramentas; EPI e uniformes seguem como estavam.
+  const comBusca = ehVeiculo || modulo === "ferramenta";
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
-  // Busca (só Veículos): veículo, empregado, tipo, manutenção, motivo, ônus e data.
+  // Busca: veículo (ou código e descrição do item), empregado, tipo, manutenção, motivo, ônus, vistoria, ocorrência e data.
   const visiveis =
-    ehVeiculo && busca.trim()
+    comBusca && busca.trim()
       ? movimentacoes.filter((m) =>
           combinaBusca(
             busca,
+            alvoHistorico(m, itens, veiculos).codigo,
             alvoHistorico(m, itens, veiculos).descricao,
+            comTamanho ? nomeTamanhoGravado(parametros, m.tamanho_id) : null,
             naturezaMovimentacao(m),
             nomeEmpregado(m.empregado_id),
             textoManutencao(m),
             m.motivo_baixa,
             m.onus_baixa,
+            m.tipo_vistoria,
+            m.sinalizar_ocorrencia ? m.tipo_ocorrencia : null,
             m.observacao,
             formatarData(m.data_movimentacao),
           ),
@@ -258,10 +265,10 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           </Button>
         </div>
         <BarraDeFiltros>
-          {ehVeiculo && (
+          {comBusca && (
             <Input
               aria-label="Buscar movimentação"
-              placeholder="Buscar por veículo, empregado ou manutenção"
+              placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
               className="max-w-xs"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
@@ -308,7 +315,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
                   className="text-center text-muted-foreground"
                 >
-                  {ehVeiculo && busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
+                  {comBusca && busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
                 </TableCell>
               </TableRow>
             ) : (
@@ -492,7 +499,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NENHUM}>Sem empregado</SelectItem>
-                  {empregados.map((e) => (
+                  {(modulo === "uniforme" ? soEmpregadosDeUniforme(empregados) : empregados).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome}
                     </SelectItem>

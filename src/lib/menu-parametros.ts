@@ -56,13 +56,18 @@ export const ABAS_EPI_RELATORIOS: readonly AbaMenu[] = [
   { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
 ];
 
+// Uniformes > Relatórios (decisão 364): como no EPI, Histórico do empregado e Baixar Definitivas saem da lista do Módulo e ficam só aqui, com os mesmos endereços de sempre
+// (?aba=historico e baixas). Os Uniformes não têm Sugestão de Compras.
+export const ABAS_UNIFORME_RELATORIOS: readonly AbaMenu[] = [
+  { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
+  { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
+];
+
 export const ABAS_UNIFORME: readonly AbaMenu[] = [
   { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
   { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
   { aba: "compras", titulo: "Compras", icone: "ShoppingCart" },
-  { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
-  { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
   { aba: "entrega", titulo: "Entrega Uniforme", icone: "PackageCheck" },
   { aba: "termo-entrega", titulo: "Termo de Entrega", icone: "FileSignature" },
   { aba: "termo-baixa", titulo: "Termo de Baixa", icone: "FileMinus" },
@@ -184,8 +189,9 @@ export const MENU_EPI: readonly ItemComFilhos[] = [
 // Aba aberta de um módulo: a pedida em ?aba= se existir nele, senão a primeira.
 type ModuloComAbas = "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem" | "equipamento";
 const ABAS_EPI_COM_RELATORIOS: readonly AbaMenu[] = [...ABAS_EPI, ...ABAS_EPI_RELATORIOS];
+const ABAS_UNIFORME_COM_RELATORIOS: readonly AbaMenu[] = [...ABAS_UNIFORME, ...ABAS_UNIFORME_RELATORIOS];
 const ABAS_DO_MODULO = (modulo: ModuloComAbas): readonly AbaMenu[] =>
-  ({ epi: ABAS_EPI_COM_RELATORIOS, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
+  ({ epi: ABAS_EPI_COM_RELATORIOS, uniforme: ABAS_UNIFORME_COM_RELATORIOS, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
 export function abaDoModulo(modulo: ModuloComAbas, aba: string | undefined): string {
   const abas = ABAS_DO_MODULO(modulo);
   return abas.find((a) => a.aba === aba)?.aba ?? abas[0]!.aba;

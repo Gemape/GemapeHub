@@ -1,7 +1,7 @@
 // Tela inicial (Início): o menu em cartões. Só dados: a tela desenha. Cartão com submenus se abre no próprio cartão e mostra os
 // atalhos; cartão sem submenu abre a tela direto. Os submenus saem dos mesmos dados do menu (menu-parametros.ts), sem lista paralela.
 import {
-  ABAS_EPI, ABAS_EPI_RELATORIOS, ABAS_EQUIPAMENTO, ABAS_FERRAMENTA, ABAS_UNIFORME, ABAS_VEICULO, ABAS_VIAGEM, MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES,
+  ABAS_EPI, ABAS_EPI_RELATORIOS, ABAS_EQUIPAMENTO, ABAS_FERRAMENTA, ABAS_UNIFORME, ABAS_UNIFORME_RELATORIOS, ABAS_VEICULO, ABAS_VIAGEM, MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES,
   MENU_EQUIPAMENTOS, MENU_VEICULOS, MENU_VIAGENS, type AbaMenu, type GrupoMenu, type ItemComFilhos, type ItemMenu, type NomeIcone,
 } from "./menu-parametros.ts";
 
@@ -35,7 +35,7 @@ export const GRUPOS_INICIO: readonly GrupoInicio[] = [
     titulo: "Módulos",
     cartoes: [
       { titulo: "EPIs", icone: "HardHat", itens: [...dasAbas("/epi", ABAS_EPI), ...dasAbas("/epi", ABAS_EPI_RELATORIOS, "Relatórios"), ...dosItens(MENU_EPI)] },
-      { titulo: "Uniformes", icone: "Shirt", itens: [...dasAbas("/uniformes", ABAS_UNIFORME), ...dosItens(MENU_UNIFORMES)] },
+      { titulo: "Uniformes", icone: "Shirt", itens: [...dasAbas("/uniformes", ABAS_UNIFORME), ...dasAbas("/uniformes", ABAS_UNIFORME_RELATORIOS, "Relatórios"), ...dosItens(MENU_UNIFORMES)] },
       { titulo: "Ferramentas", icone: "Wrench", itens: [...dasAbas("/ferramentas", ABAS_FERRAMENTA), ...dosItens(MENU_FERRAMENTAS)] },
       { titulo: "Veículos", icone: "Car", itens: [...dasAbas("/veiculos", ABAS_VEICULO), ...dosItens(MENU_VEICULOS)] },
       { titulo: "Viagens", icone: "Luggage", itens: [...dasAbas("/viagens", ABAS_VIAGEM), ...dosItens(MENU_VIAGENS)] },

@@ -198,3 +198,6 @@ components/parametros/ParametrosEpi.tsx | novo motivo, nova área (CartaoDeMotiv
 routes/_authenticated/epi-ordem-servico.tsx | função, setor | nenhum | texto como digitado (siglas)
 routes/_authenticated/epi-ordem-servico.tsx | objetivo, atividades, riscos, EPIs, condutas, procedimentos, treinamentos (Textarea) | nenhum | texto como digitado (siglas FISPQ, LOTO, NR-26)
 routes/_authenticated/epi-ordem-servico.tsx | busca | nenhum | busca
+components/modules/UniformesRelatorioFuncionario.tsx | buscar no histórico | nenhum | busca
+components/modules/UniformesRelatorioFuncionario.tsx | início, fim | nenhum | data
+components/parametros/ParametrosUniforme.tsx | nova área (CartaoDeMotivos) | texto | áreas da oficina dos uniformes
