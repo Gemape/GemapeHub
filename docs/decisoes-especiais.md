@@ -2006,3 +2006,11 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Em Parâmetros › EPI › Parâmetros Específicos há a área "Textos dos documentos", com três campos: a declaração do Termo de Entrega de EPI (antes da lista de EPIs), a ciência do termo (depois da lista) e a declaração da Ficha de Controle de Entrega de EPI. Os textos padrão são os do pedido. Salvar Textos e Restaurar texto padrão ficam abaixo.
 - `{empresa}` no texto vira a razão social da empresa, em negrito, na hora de gerar o documento (no termo ela já vinha assim; na ficha, o texto padrão não cita a empresa, mas o marcador também vale). O texto é sempre escapado e as quebras de linha são mantidas. Os três textos são obrigatórios (até 1500 caracteres cada). Mudar o texto vale para os próximos documentos; os já impressos não mudam. Fase 1: fica só no navegador, no modo demonstração.
+
+## 342. EPI: seção Relatórios, com cópias das três rotinas de consulta
+
+- No menu de EPIs (o seletor do topo e o cartão EPIs da tela Início) entra a seção **Relatórios**, entre Módulo e Parâmetros, com **Sugestão de Compras**, **Histórico do empregado** e **Baixar Definitivas**.
+- Ordem do responsável: **clonar, não mover**. As três rotinas continuam na lista principal (seção Módulo) e as cópias abrem a mesma tela. Cada cópia tem a sua aba (`relatorio-sugestao-compras`, `relatorio-historico`, `relatorio-baixas`), para o menu marcar só a que está aberta; os endereços antigos (`?aba=sugestao-compras`, `historico`, `baixas`) não mudam.
+- O cabeçalho da página mostra "EPIs › Relatórios" quando a tela vem da cópia.
+- **Vai e volta com os Parâmetros Específicos:** o link "Parâmetros Específicos" da Sugestão de Compras abre a tela de configuração e o botão "Voltar para Sugestão de Compras" (e o salvar dos parâmetros da sugestão) devolve à tela de onde a pessoa saiu, na lista principal ou em Relatórios.
+- Só modo demonstração; nada no Supabase.

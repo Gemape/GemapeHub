@@ -214,7 +214,7 @@ test("a tela: Entrada no Estoque com Devolução ao lado de Registrar Compra, ca
   );
   assert.match(
     ler("routes/_authenticated/cadastros/gerais/categorias.tsx"),
-    /categoria\.id === "cat-epi" && <ParametrosEpi voltarParaSugestao=\{voltar === "sugestao-compras"\} \/>/,
+    /categoria\.id === "cat-epi" && <ParametrosEpi voltarParaSugestao=\{voltar !== undefined\}/,
   );
   assert.match(ler("integrations/supabase/demo-client.ts"), /m\.condicao === "usado" && delta > 0/);
 });
