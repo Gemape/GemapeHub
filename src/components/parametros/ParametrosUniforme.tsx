@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { CartaoDeMotivos } from "@/components/parametros/CartaoDeMotivos";
 import { HabilitarEmpregadosUniforme } from "@/components/parametros/HabilitarEmpregadosUniforme";
-import { lerAreasUniforme, salvarAreasUniforme } from "@/lib/empregados-uniforme";
+import { lerAreasUniforme, MAX_AREAS_UNIFORME, salvarAreasUniforme } from "@/lib/empregados-uniforme";
 
 // Parâmetros Específicos dos Uniformes: as áreas da oficina e os empregados habilitados a entregar e receber uniformes (mesma lógica do EPI, decisão 357, com listas próprias).
 export function ParametrosUniforme() {
@@ -23,6 +23,7 @@ export function ParametrosUniforme() {
             ajuda="As áreas de atuação que aparecem ao lado do nome de cada empregado habilitado. Dá para acrescentar novas; uma área em uso por um habilitado só sai depois de mudar a área dele."
             inicial={areas}
             singular="área"
+            max={MAX_AREAS_UNIFORME}
             salvos="Áreas da oficina salvas."
             salvar={(lista) => {
               const gravadas = salvarAreasUniforme(lista);

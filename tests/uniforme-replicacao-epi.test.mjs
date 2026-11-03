@@ -114,3 +114,11 @@ test("Parâmetros > Uniformes > Parâmetros Específicos mostra as áreas e a ca
   assert.match(le("components/parametros/HabilitarEmpregadosUniforme.tsx"), /CaixaDuplaEmpregados/);
   assert.match(le("components/parametros/ParametrosEpi.tsx"), /import \{ CartaoDeMotivos \}/);
 });
+
+test("o limite de áreas da tela é o da lista de áreas, não o dos motivos", () => {
+  const cartao = le("components/parametros/CartaoDeMotivos.tsx");
+  assert.match(cartao, /max = MAX_MOTIVOS/);
+  assert.match(cartao, /lista\.length >= max/);
+  assert.match(le("components/parametros/ParametrosUniforme.tsx"), /max=\{MAX_AREAS_UNIFORME\}/);
+  assert.match(le("components/parametros/ParametrosEpi.tsx"), /max=\{MAX_AREAS_EPI\}/);
+});

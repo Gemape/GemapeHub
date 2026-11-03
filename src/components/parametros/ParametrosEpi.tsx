@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { lerAreasEpi, salvarAreasEpi } from "@/lib/empregados-epi";
+import { lerAreasEpi, MAX_AREAS_EPI, salvarAreasEpi } from "@/lib/empregados-epi";
 import {
   condicaoDoStatus,
   diasValidos,
@@ -191,6 +191,7 @@ export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugest
             ajuda="As áreas de atuação que aparecem ao lado do nome de cada empregado habilitado. Dá para acrescentar novas; uma área em uso por um habilitado só sai depois de mudar a área dele."
             inicial={areas}
             singular="área"
+            max={MAX_AREAS_EPI}
             salvos="Áreas da oficina salvas."
             salvar={(lista) => {
               const gravadas = salvarAreasEpi(lista);

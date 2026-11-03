@@ -16,7 +16,10 @@ export function CartaoDeMotivos({
   salvar,
   singular = "motivo",
   salvos: mensagemSalvos,
+  max = MAX_MOTIVOS,
 }: {
+  // Limite de itens da lista: o da própria lista (motivos ou áreas), para a tela avisar antes de a gravação recusar.
+  max?: number;
   singular?: string;
   salvos?: string;
   id: string;
@@ -37,8 +40,8 @@ export function CartaoDeMotivos({
       toast.error(`Este ${singular} já está na lista.`);
       return;
     }
-    if (lista.length >= MAX_MOTIVOS) {
-      toast.error(`No máximo ${MAX_MOTIVOS} ${singular === "motivo" ? "motivos" : "áreas"}.`);
+    if (lista.length >= max) {
+      toast.error(`No máximo ${max} ${singular === "motivo" ? "motivos" : "áreas"}.`);
       return;
     }
     setLista([...lista, texto]);
