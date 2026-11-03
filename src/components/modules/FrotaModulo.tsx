@@ -17,7 +17,9 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { grupoDeAreaPorNome } from "@/lib/area-responsaveis";
 import { painelDoMes } from "@/lib/checklist-painel";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas } from "@/lib/extrato-veiculo";
-import { custoPorKm, custoPorKmPorMes, indicadoresDaFrota, proporcaoPreventiva } from "@/lib/frota-indicadores";
+import { custoPorKm, custoPorKmPorMes, indicadoresDaFrota, proporcaoPreventiva, proporcaoPreventivaPorMes } from "@/lib/frota-indicadores";
+import { interpretacoesDaFrota } from "@/lib/frota-interpretacao";
+import { InterpretacaoFrota } from "@/components/modules/InterpretacaoFrota";
 import { locaisDaManutencao } from "@/lib/registros-veiculo";
 import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
@@ -66,6 +68,12 @@ function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; 
 // Módulos > Veículos > Frota (decisão 57): página inicial com a lista de veículos da empresa.
 // Clicar num veículo abre o extrato. O cadastro continua em Parâmetros > Veículos.
 const TODAS_AS_SUBCATEGORIAS = "__todas__";
+
+// Custo da manutenção: a soma dos locais; registro sem locais usa o custo total (ou peças + mão de obra) do próprio registro.
+const custoDaManutencao = (m: Parameters<typeof locaisDaManutencao>[0]): number => {
+  const locais = locaisDaManutencao(m);
+  return locais.length ? locais.reduce((t, l) => t + l.custoTotal, 0) : (m.custoTotal ?? (m.custoPecas ?? 0) + (m.custoMaoDeObra ?? 0));
+};
 
 export function FrotaModulo() {
   const { empresaId, empresas } = useEmpresa();
@@ -124,11 +132,12 @@ export function FrotaModulo() {
     hoje,
     prazos: lerPrazosOcorrencias(),
   });
-  const custosDeManutencao = manutencoes.map((m) => ({ veiculoId: m.veiculoId, data: m.data, km: m.km, tipo: m.tipo, custo: locaisDaManutencao(m).reduce((t, l) => t + l.custoTotal, 0) }));
+  const custosDeManutencao = manutencoes.map((m) => ({ veiculoId: m.veiculoId, data: m.data, km: m.km, tipo: m.tipo, custo: custoDaManutencao(m) }));
   const idsDeCusto = [...idsDaFrota];
   const cpk = custoPorKm(idsDeCusto, abastecimentos, custosDeManutencao);
   const custoPreventivo = proporcaoPreventiva(idsDeCusto, custosDeManutencao);
   const cpkMensal = custoPorKmPorMes(idsDeCusto, abastecimentos, custosDeManutencao, hoje);
+  const preventivoMensal = proporcaoPreventivaPorMes(idsDeCusto, custosDeManutencao, hoje);
   // Média de consumo do veículo (km/L), do histórico de abastecimentos dele (Módulo > Veículos > Abastecimento); precisa de dois abastecimentos.
   const mediaDo = (id: string): number | null => mediaKmPorLitro(historicoAbastecimentos(abastecimentos.filter((a) => a.veiculoId === id)));
   const textoMedia = (m: number | null) => (m === null ? "—" : m.toLocaleString("pt-BR", { maximumFractionDigits: 1 }));
@@ -171,7 +180,7 @@ export function FrotaModulo() {
         indicadores={indicadores}
         cpk={cpk}
         custoPreventivo={custoPreventivo}
-        graficos={<GraficosFrota compacto indicadores={indicadores} cpkMensal={cpkMensal} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
+        graficos={<GraficosFrota compacto indicadores={indicadores} cpkMensal={cpkMensal} preventivoMensal={preventivoMensal} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
         filtros={
           <>
             <Select value={filtroSubcategoria} onValueChange={setSubcategoria}>
@@ -194,9 +203,12 @@ export function FrotaModulo() {
           </>
         }
         acoes={
-          <Button type="button" variant="outline" size="sm" onClick={imprimir} disabled={isLoading}>
-            <Printer className="h-4 w-4" /> Imprimir relatório (PDF)
-          </Button>
+          <>
+            <Button type="button" variant="outline" size="sm" onClick={imprimir} disabled={isLoading}>
+              <Printer className="h-4 w-4" /> Imprimir relatório (PDF)
+            </Button>
+            <InterpretacaoFrota itens={interpretacoesDaFrota(indicadores, cpk, custoPreventivo, cpkMensal)} />
+          </>
         }
       />
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}

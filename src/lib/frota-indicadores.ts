@@ -3,14 +3,27 @@
 import { resumoDeLinhas, type LinhaPainel } from "./checklist-painel.ts";
 import type { StatusSugestao } from "./extrato-veiculo.ts";
 import { faixaDoIndice, type ConfigFaixas, type Faixa } from "./faixas-desempenho.ts";
-import {
-  ocorrenciaAberta,
-  ocorrenciaVencida,
-  type OcorrenciaDoPrazo,
-} from "./frota-ocorrencias.ts";
+import { hojeBrasilia } from "./checklist-veiculo.ts";
+import { ocorrenciaVencida, type OcorrenciaDoPrazo } from "./frota-ocorrencias.ts";
 import type { PrazosOcorrencias } from "./prazo-ocorrencias.ts";
+import { diasEntre } from "./viagens.ts";
 import { grupoDaLinha, type GrupoDeArea } from "./area-responsaveis.ts";
 import { mesesRecentes, rotuloMesCurto } from "./graficos-veiculos.ts";
+
+export type OcorrenciaTratada = OcorrenciaDoPrazo & { encerradaEm?: string | null };
+
+// Resultado da ocorrência para o índice de ocorrências tratadas no prazo (decisão 345): "no prazo" quando a tratativa começou até `iniciar` dias depois da ocorrência e, se já acabou,
+// foi encerrada até `finalizar` dias depois de começar (ou, se ainda corre, o prazo de finalizar não estourou); "fora do prazo" no contrário e também quando a ocorrência segue aberta,
+// sem tratativa, com o prazo de iniciar vencido. Aberta ainda no prazo não conta (ainda não há o que medir). As renovações de prazo não entram nesta conta.
+export function resultadoDaOcorrencia(o: OcorrenciaTratada, hoje: string, prazos: PrazosOcorrencias): "no_prazo" | "fora_do_prazo" | null {
+  const dia = (iso: string) => hojeBrasilia(new Date(iso));
+  const inicio = o.tratativa?.registradaEm ?? (o.status === "Encerrada" ? o.encerradaEm : null);
+  if (!inicio) return ocorrenciaVencida(o, hoje, prazos) ? "fora_do_prazo" : null;
+  const comecou = dia(inicio);
+  if (diasEntre(o.ocorridoEm.slice(0, 10), comecou) > prazos.iniciar) return "fora_do_prazo";
+  const fim = o.status === "Encerrada" && o.encerradaEm ? dia(o.encerradaEm) : hoje;
+  return diasEntre(comecou, fim) > prazos.finalizar ? "fora_do_prazo" : "no_prazo";
+}
 
 export type IndicadorDaFrota = { pct: number | null; faixa: Faixa | null; detalhe: string };
 
@@ -38,7 +51,7 @@ export type IndicadoresDaFrota = {
 
 export function indicadoresDaFrota(entrada: {
   statusPreventivas: StatusSugestao[];
-  ocorrencias: OcorrenciaDoPrazo[];
+  ocorrencias: OcorrenciaTratada[];
   linhasDoChecklist: LinhaPainel[];
   grupoDe: (responsavel: string) => GrupoDeArea;
   hoje: string;
@@ -58,14 +71,13 @@ export function indicadoresDaFrota(entrada: {
     faixas,
   );
 
-  // Ocorrências: das que estão abertas, quantas ainda estão dentro do prazo da tratativa. Sem nenhuma aberta, 100%.
-  const abertas = entrada.ocorrencias.filter(ocorrenciaAberta);
-  const vencidas = abertas.filter((o) => ocorrenciaVencida(o, entrada.hoje, entrada.prazos)).length;
+  // Ocorrências tratadas no prazo (decisão 345): das que já têm resultado (tratadas ou com o prazo vencido), as tratadas dentro do prazo. Sem nenhuma com resultado, sem valor.
+  const resultados = entrada.ocorrencias.map((o) => resultadoDaOcorrencia(o, entrada.hoje, entrada.prazos));
+  const ocNoPrazo = resultados.filter((r) => r === "no_prazo").length;
+  const ocComResultado = resultados.filter((r) => r !== null).length;
   const ocorrencias = indicador(
-    abertas.length === 0 ? 100 : pct(abertas.length - vencidas, abertas.length),
-    abertas.length
-      ? `${abertas.length - vencidas} de ${abertas.length} abertas no prazo`
-      : "Nenhuma ocorrência aberta",
+    pct(ocNoPrazo, ocComResultado),
+    ocComResultado ? `${ocNoPrazo} de ${ocComResultado} tratadas no prazo` : "Nenhuma ocorrência tratada ou vencida",
     faixas,
   );
 
@@ -101,10 +113,10 @@ export function indicadoresDaFrota(entrada: {
   };
 
   // Conformidade geral (decisão 343): SLA de resolução de tarefas, tudo junto: concluídas no prazo ÷ tarefas atribuídas que já têm desfecho. As tarefas são as preventivas com
-  // registro, os check lists obrigatórios (PCM, técnicos e sem área) realizados ou não e as ocorrências abertas (no prazo ou vencidas).
+  // registro, os check lists obrigatórios (PCM, técnicos e sem área) realizados ou não e as ocorrências tratadas no prazo ou fora dele.
   const todos = resumoDeLinhas(entrada.linhasDoChecklist);
-  const noPrazo = emDia + todos.realizados + (abertas.length - vencidas);
-  const total = contadas.length + todos.realizados + todos.naoRealizados + abertas.length;
+  const noPrazo = emDia + todos.realizados + ocNoPrazo;
+  const total = contadas.length + todos.realizados + todos.naoRealizados + ocComResultado;
   const conformidadeGeral = indicador(
     pct(noPrazo, total),
     total ? `${noPrazo} de ${total} tarefas no prazo` : "Sem tarefas para calcular",
@@ -206,4 +218,22 @@ export function proporcaoPreventiva(veiculoIds: string[], manutencoes: Manutenca
     faixa: valor === null ? null : valor >= META_PREVENTIVA ? "verde" : valor >= LIMITE_REATIVO ? "amarelo" : "vermelho",
     detalhe: total ? `${reais(preventivo)} preventiva de ${reais(total)} em manutenção` : "Sem custo de manutenção registrado",
   };
+}
+
+// Proporção do custo preventivo mês a mês (gráfico de barras empilhadas 100%, decisão 345): em cada um dos `n` meses recentes, a parte preventiva e a corretiva do gasto de manutenção, que somam 100%;
+// mês sem gasto fica com as duas em zero.
+export function proporcaoPreventivaPorMes(
+  veiculoIds: string[],
+  manutencoes: ManutencaoDeCusto[],
+  hoje: string,
+  n = 6,
+): { mes: string; rotulo: string; preventiva: number; corretiva: number }[] {
+  const ids = new Set(veiculoIds);
+  const daFrota = manutencoes.filter((m) => ids.has(m.veiculoId));
+  return mesesRecentes(hoje, n).map((mes) => {
+    const doMes = daFrota.filter((m) => m.data.slice(0, 7) === mes);
+    const total = soma(doMes.map((m) => m.custo));
+    const prev = total > 0 ? Math.round((soma(doMes.filter((m) => m.tipo === "Preventiva").map((m) => m.custo)) / total) * 1000) / 10 : 0;
+    return { mes, rotulo: rotuloMesCurto(mes), preventiva: prev, corretiva: total > 0 ? Math.round((100 - prev) * 10) / 10 : 0 };
+  });
 }

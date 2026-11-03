@@ -23,12 +23,15 @@ export function GraficosFrota({
   indicadores,
   medias,
   cpkMensal,
+  preventivoMensal,
   compacto = false,
 }: {
   indicadores: IndicadoresDaFrota;
   medias: { veiculo: string; media: number | null }[];
   // CPK da frota de cada mês recente (decisão 344), para acompanhar a evolução dos custos.
   cpkMensal: { rotulo: string; cpk: number | null }[];
+  // Parte preventiva e corretiva do gasto de manutenção de cada mês, somando 100% (decisão 345).
+  preventivoMensal: { rotulo: string; preventiva: number; corretiva: number }[];
   // Na Frota os gráficos dividem a tela com os cards e a lista: mais baixos e sem o texto de apoio (decisão 337).
   compacto?: boolean;
 }) {
@@ -81,8 +84,7 @@ export function GraficosFrota({
           series={[{ chave: "media", nome: "km/L", cor: COR_GRAFICO.azul }]}
         />
       </QuadroGrafico>
-      <div className="xl:col-span-2">
-        <QuadroGrafico
+      <QuadroGrafico
           titulo="CPK da frota mês a mês (R$/km)"
           {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Custo por km rodado (abastecimento + manutenção) de cada mês, para acompanhar a evolução dos custos." })}
           vazio={cpkMensal.every((m) => m.cpk === null)}
@@ -96,7 +98,23 @@ export function GraficosFrota({
             formatar={(n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
           />
         </QuadroGrafico>
-      </div>
+      <QuadroGrafico
+        titulo="Custo preventivo x corretivo por mês (100%)"
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quanto do gasto de manutenção de cada mês foi preventivo (verde) e corretivo (vermelho). A meta é 80% ou mais de preventivo." })}
+        vazio={preventivoMensal.every((m) => m.preventiva + m.corretiva === 0)}
+      >
+        <GraficoBarras
+          dados={preventivoMensal}
+          categoria="rotulo"
+          series={[
+            { chave: "preventiva", nome: "Preventiva", cor: COR_GRAFICO.verde },
+            { chave: "corretiva", nome: "Corretiva", cor: COR_GRAFICO.vermelho },
+          ]}
+          empilhado
+          meta={{ valor: 80, rotulo: "Meta 80%" }}
+          sufixo="%"
+        />
+      </QuadroGrafico>
     </PainelGraficos>
   );
 }

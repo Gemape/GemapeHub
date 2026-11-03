@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { ConsultaChecklist, ConsultaOcorrencia } from "@/components/modules/ConsultasDoExtrato";
 import { NovaManutencaoDialog } from "@/components/modules/NovaManutencaoDialog";
+import { NovoAbastecimentoDialog } from "@/components/modules/NovoAbastecimentoDialog";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,6 +67,14 @@ const resumoDo = (d: DadosDoExtrato): [string, string, Cor?][] => [
 // Cor da bolinha das situações na tela, as mesmas do relatório.
 const PONTO_TELA: Record<Cor, string> = { vermelho: "bg-red-500", amarelo: "bg-amber-400", verde: "bg-emerald-500", cinza: "bg-slate-400" };
 const TEXTO_TELA: Record<Cor, string> = { vermelho: "font-semibold text-red-700", amarelo: "font-semibold text-amber-700", verde: "text-emerald-700", cinza: "text-muted-foreground" };
+// As quatro seções do extrato (decisão 345), cada uma com o título grande numa faixa colorida, e as tabelas (pelo número em `tabelas`) que ela reúne: Manutenções (sugeridas, realizadas e itens em
+// atenção), Abastecimentos, Ocorrências e Check lists.
+const SECOES_DO_EXTRATO = [
+  { titulo: "Manutenções", tabelas: [0, 1, 2], faixa: "from-blue-800 to-blue-600" },
+  { titulo: "Abastecimentos", tabelas: [3], faixa: "from-emerald-800 to-emerald-600" },
+  { titulo: "Ocorrências", tabelas: [4], faixa: "from-amber-700 to-amber-500" },
+  { titulo: "Check lists", tabelas: [5], faixa: "from-violet-800 to-violet-600" },
+] as const;
 // Que tabela cada seção da Frota (bolinhas) mostra primeiro quando o extrato abre.
 const TABELA_DA_SECAO: Record<Secao, number> = { completo: 0, sugeridas: 0, realizadas: 1, ocorrencias: 4, ocorrenciasAbertas: 4, checklists: 5 };
 
@@ -189,7 +198,6 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
     return {
       rotulo, kmAtual, media, vencidas, tabelas, ligacoes,
       empresa: empresas.find((e) => e.id === v.empresa_id)?.nome_fantasia ?? "",
-      ocorrenciasAbertas: ocorrenciasDoVeiculo.filter((o) => o.id && o.aberta) as { id: string; descricao: string }[],
     };
   }
 
@@ -214,6 +222,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
   // Vindo de uma bolinha da Frota, o extrato abre na tabela que ela resume (e, nas ocorrências em aberto, só com as abertas).
   const [soAbertas, setSoAbertas] = useState(false);
   const [registrando, setRegistrando] = useState(false);
+  const [registrandoAbastecimento, setRegistrandoAbastecimento] = useState(false);
   // Personalizar o PDF do extrato (decisão 340): o botão Gerar PDF do alto abre a escolha das seções; começam todas marcadas.
   const [personalizando, setPersonalizando] = useState(false);
   const [marcadas, setMarcadas] = useState<number[]>(TODAS_AS_TABELAS);
@@ -267,64 +276,70 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
               ))}
             </div>
 
-            {/* Os atalhos para as rotinas do veículo: a manutenção abre aqui mesmo; a tratativa e o check list levam à rotina, já no que foi escolhido (decisão 331). */}
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border p-3">
-              <p className="mr-2 text-sm font-medium">Rotinas do veículo</p>
-              <Button type="button" variant="outline" size="sm" onClick={() => setRegistrando(true)}>Realizar manutenção</Button>
-              <Button asChild variant="outline" size="sm"><Link to="/veiculos" search={{ aba: "ocorrencias" }}>Tratar ocorrências</Link></Button>
-              <Button asChild variant="outline" size="sm"><Link to="/veiculos" search={{ aba: "checklist", veiculo: veiculo.id }}>Realizar check list</Link></Button>
-            </div>
-
-            {dados.tabelas.map((t, n) => (
-              <section key={t.titulo} id={`extrato-tabela-${n}`} className="scroll-mt-4 space-y-2" aria-label={t.titulo}>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-base font-semibold">{t.titulo}</h3>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {n === 4 && MODO_DEMO && (
-                      <label className="flex items-center gap-1.5 text-xs">
-                        <Checkbox checked={soAbertas} onCheckedChange={(v) => setSoAbertas(v === true)} aria-label="Só as ocorrências em aberto" /> Só em aberto
+            {SECOES_DO_EXTRATO.map((secaoDoExtrato) => (
+              <section key={secaoDoExtrato.titulo} className="space-y-3" aria-label={secaoDoExtrato.titulo}>
+                <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gradient-to-r ${secaoDoExtrato.faixa} px-4 py-2.5 text-white shadow-sm`}>
+                  <h3 className="text-xl font-bold tracking-tight">{secaoDoExtrato.titulo}</h3>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {secaoDoExtrato.titulo === "Ocorrências" && MODO_DEMO && (
+                      <label className="flex items-center gap-1.5 text-xs font-medium">
+                        <Checkbox checked={soAbertas} onCheckedChange={(v) => setSoAbertas(v === true)} aria-label="Só as ocorrências em aberto" className="border-white bg-white/90 data-[state=checked]:bg-white data-[state=checked]:text-foreground" /> Só em aberto
                       </label>
                     )}
+                    {secaoDoExtrato.titulo === "Manutenções" && <Button type="button" variant="secondary" size="sm" onClick={() => setRegistrando(true)}>Registrar manutenção</Button>}
+                    {secaoDoExtrato.titulo === "Abastecimentos" && <Button type="button" variant="secondary" size="sm" onClick={() => setRegistrandoAbastecimento(true)}>Registrar abastecimento</Button>}
+                    {secaoDoExtrato.titulo === "Check lists" && <Button asChild variant="secondary" size="sm"><Link to="/veiculos" search={{ aba: "checklist", veiculo: veiculo.id }}>Realizar check list</Link></Button>}
                   </div>
                 </div>
-                <div className="overflow-x-auto rounded-xl border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>{t.colunas.map((c) => <TableHead key={c.titulo} className={c.direita ? "text-right" : ""}>{c.titulo}</TableHead>)}</TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {t.linhas.length === 0
-                        ? <TableRow><TableCell colSpan={t.colunas.length} className="py-5 text-center text-muted-foreground">{t.vazio}</TableCell></TableRow>
-                        : t.linhas.map((l, k) => (
-                          <TableRow key={k}>
-                            {l.map((c, m) => (
-                              <TableCell key={m} className={t.colunas[m]?.direita ? "text-right tabular-nums" : ""}>
-                                {typeof c === "string" && dados.ligacoes[`${n}:${k}`]?.coluna === m ? (
-                                  <ConsultarCodigo texto={c} ligacao={dados.ligacoes[`${n}:${k}`]!} aoConsultar={(l) => setConsulta({ tipo: l.tipo, id: l.id })} />
-                                ) : typeof c === "string" ? c : (
-                                  <span className="inline-flex items-center gap-2">
-                                    <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ${PONTO_TELA[c.cor]}`} />
-                                    <span className={TEXTO_TELA[c.cor]}>{c.texto}</span>
-                                  </span>
-                                )}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {t.nota && <p className="text-xs text-muted-foreground">{t.nota}</p>}
-                {n === 4 && dados.ocorrenciasAbertas.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Tratar:</span>
-                    {dados.ocorrenciasAbertas.map((o) => (
-                      <Button key={o.id} asChild variant="outline" size="sm">
-                        <Link to="/veiculos" search={{ aba: "ocorrencias", ocorrencia: o.id }}>{o.descricao.split(" · ")[0]}</Link>
-                      </Button>
-                    ))}
-                  </div>
-                )}
+                {secaoDoExtrato.tabelas.map((n) => {
+                  const t = dados.tabelas[n]!;
+                  const comTratativa = n === TABELA_DAS_OCORRENCIAS && MODO_DEMO;
+                  return (
+                    <div key={t.titulo} id={`extrato-tabela-${n}`} className="scroll-mt-4 space-y-2">
+                      <h4 className="text-base font-semibold">{t.titulo}</h4>
+                      <div className="overflow-x-auto rounded-xl border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              {t.colunas.map((c) => <TableHead key={c.titulo} className={c.direita ? "text-right" : ""}>{c.titulo}</TableHead>)}
+                              {comTratativa && <TableHead className="text-right">Tratativa</TableHead>}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {t.linhas.length === 0
+                              ? <TableRow><TableCell colSpan={t.colunas.length + (comTratativa ? 1 : 0)} className="py-5 text-center text-muted-foreground">{t.vazio}</TableCell></TableRow>
+                              : t.linhas.map((l, k) => (
+                                <TableRow key={k}>
+                                  {l.map((c, m) => (
+                                    <TableCell key={m} className={t.colunas[m]?.direita ? "text-right tabular-nums" : ""}>
+                                      {typeof c === "string" && dados.ligacoes[`${n}:${k}`]?.coluna === m ? (
+                                        <ConsultarCodigo texto={c} ligacao={dados.ligacoes[`${n}:${k}`]!} aoConsultar={(l) => setConsulta({ tipo: l.tipo, id: l.id })} />
+                                      ) : typeof c === "string" ? c : (
+                                        <span className="inline-flex items-center gap-2">
+                                          <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ${PONTO_TELA[c.cor]}`} />
+                                          <span className={TEXTO_TELA[c.cor]}>{c.texto}</span>
+                                        </span>
+                                      )}
+                                    </TableCell>
+                                  ))}
+                                  {comTratativa && (
+                                    <TableCell className="text-right">
+                                      {dados.ligacoes[`${n}:${k}`] && (
+                                        <Button asChild variant="outline" size="sm">
+                                          <Link to="/veiculos" search={{ aba: "ocorrencias", ocorrencia: dados.ligacoes[`${n}:${k}`]!.id }}>Tratativa</Link>
+                                        </Button>
+                                      )}
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      {t.nota && <p className="text-xs text-muted-foreground">{t.nota}</p>}
+                    </div>
+                  );
+                })}
               </section>
             ))}
           </div>
@@ -369,6 +384,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
           </DialogContent>
         </Dialog>
       )}
+      {veiculo && registrandoAbastecimento && <NovoAbastecimentoDialog aberto={registrandoAbastecimento} aoMudar={setRegistrandoAbastecimento} veiculoInicial={veiculo.id} aoSalvar={() => undefined} />}
       {veiculo && registrando && <NovaManutencaoDialog aberto={registrando} aoMudar={setRegistrando} veiculoInicial={veiculo.id} aoSalvar={() => undefined} />}
     </Dialog>
   );

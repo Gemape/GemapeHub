@@ -151,7 +151,7 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
         <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Cartao
             titulo="Frota · Conformidade geral (SLA)"
-            subtitulo="Tarefas concluídas no prazo ÷ tarefas atribuídas: preventivas, check lists e ocorrências juntos."
+            subtitulo="Tarefas no prazo ÷ tarefas atribuídas: preventivas, check lists e ocorrências."
             indicador={indicadores.conformidadeGeral}
             compacto
           />
@@ -171,32 +171,32 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
             compacto
           />
           <Cartao
-            titulo="PCM · Preventivas em dia"
-            subtitulo="Preventivas não vencidas ÷ preventivas com registro, em todos os veículos."
+            titulo="PCM · Índice de manutenções preventivas em dia"
+            subtitulo="Preventivas não vencidas ÷ preventivas com registro."
             indicador={indicadores.manutencoes}
             compacto
           />
           <Cartao
-            titulo="PCM · Check list no prazo"
-            subtitulo="Check lists do PCM realizados no prazo ÷ os que já venceram (realizados + não realizados)."
+            titulo="PCM · Índice de check lists realizados no prazo"
+            subtitulo="Realizados no prazo ÷ os que já venceram (feitos + não feitos)."
             indicador={indicadores.checklistPcm}
             compacto
           />
           <Cartao
-            titulo="PCM · Ocorrências no prazo"
-            subtitulo="Abertas dentro do prazo da tratativa ÷ todas as abertas. Sem ocorrência aberta: 100%."
+            titulo="PCM · Índice de ocorrências tratadas no prazo"
+            subtitulo="Tratadas no prazo ÷ tratadas + vencidas sem tratativa."
             indicador={indicadores.ocorrencias}
             compacto
           />
           <Cartao
-            titulo="Técnicos · Check list no prazo"
-            subtitulo="Check lists dos técnicos realizados no prazo ÷ os que já venceram (realizados + não realizados)."
+            titulo="Técnicos · Índice de check lists realizados no prazo"
+            subtitulo="Realizados no prazo ÷ os que já venceram (feitos + não feitos)."
             indicador={indicadores.tecnicosNoPrazo}
             compacto
           />
           <Cartao
-            titulo="Técnicos · Check list atrasado"
-            subtitulo="Não realizados no prazo ÷ os que já venceram (o complemento do indicador ao lado, com a mesma cor)."
+            titulo="Técnicos · Índice de check lists atrasados"
+            subtitulo="Não feitos no prazo ÷ os que já venceram (o oposto do ao lado)."
             indicador={indicadores.tecnicosNaoRealizados}
             compacto
           />

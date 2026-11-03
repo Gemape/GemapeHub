@@ -55,23 +55,24 @@ test("manutenções: das preventivas com registro, a parte que não está vencid
   assert.deepEqual([vazio.pct, vazio.faixa], [null, null]);
 });
 
-test("ocorrências: das abertas, as que estão no prazo da tratativa; sem aberta, 100%", () => {
-  const aberta = (ocorridoEm) => ({ ocorridoEm, status: "Aberta" });
+test("ocorrências tratadas no prazo: tratativa iniciada até 2 dias e encerrada até 5 dias depois; aberta vencida sem tratativa conta como fora; aberta no prazo ainda não conta", () => {
+  const trat = (ocorridoEm, registradaEm, status = "Em tratativa", encerradaEm = null) => ({ ocorridoEm, status, tratativa: { registradaEm }, encerradaEm });
   const i = indicadoresDaFrota({
     ...base,
     ocorrencias: [
-      aberta("2026-10-01T10:00"),
-      aberta("2026-10-19T10:00"),
-      aberta("2026-10-19T11:00"),
-      { ocorridoEm: "2026-09-01T10:00", status: "Encerrada" },
+      trat("2026-10-16T10:00", "2026-10-17T12:00:00-03:00"), // iniciou em 1 dia, ainda no prazo de finalizar: no prazo
+      trat("2026-10-01T10:00", "2026-10-02T12:00:00-03:00", "Encerrada", "2026-10-04T12:00:00-03:00"), // no prazo
+      trat("2026-10-01T10:00", "2026-10-08T12:00:00-03:00"), // iniciou em 7 dias: fora
+      { ocorridoEm: "2026-10-01T10:00", status: "Aberta" }, // aberta vencida sem tratativa: fora
+      { ocorridoEm: "2026-10-19T10:00", status: "Aberta" }, // aberta no prazo: ainda não conta
     ],
   });
-  assert.equal(i.ocorrencias.pct, 66.7);
+  assert.equal(i.ocorrencias.pct, 50);
   assert.equal(i.ocorrencias.faixa, "vermelho");
-  assert.deepEqual(
-    [indicadoresDaFrota(base).ocorrencias.pct, indicadoresDaFrota(base).ocorrencias.faixa],
-    [100, "verde"],
-  );
+  assert.match(i.ocorrencias.detalhe, /2 de 4 tratadas no prazo/);
+  const encerradaTarde = indicadoresDaFrota({ ...base, ocorrencias: [trat("2026-10-01T10:00", "2026-10-02T12:00:00-03:00", "Encerrada", "2026-10-15T12:00:00-03:00")] });
+  assert.equal(encerradaTarde.ocorrencias.pct, 0, "encerrada depois do prazo de finalizar: fora");
+  assert.deepEqual([indicadoresDaFrota(base).ocorrencias.pct, indicadoresDaFrota(base).ocorrencias.faixa], [null, null]);
 });
 
 test("check list: o PCM e os técnicos separados pelo grupo do responsável; não realizados leva a cor dos realizados no prazo", () => {
@@ -112,7 +113,7 @@ test("conformidade geral (SLA): tarefas concluídas no prazo ÷ tarefas atribuí
   const i = indicadoresDaFrota({
     ...base,
     statusPreventivas: ["em_dia", "em_dia", "em_dia", "vencida"], // 3 de 4
-    ocorrencias: [{ ocorridoEm: "2026-10-19T10:00", status: "Aberta" }, { ocorridoEm: "2026-10-01T10:00", status: "Aberta" }], // 1 de 2
+    ocorrencias: [{ ocorridoEm: "2026-10-16T10:00", status: "Em tratativa", tratativa: { registradaEm: "2026-10-17T12:00:00-03:00" } }, { ocorridoEm: "2026-10-01T10:00", status: "Aberta" }], // 1 de 2
     linhasDoChecklist: [linha("1", "PCM Ana", "realizado"), linha("2", "Tec Bruno", "nao_realizado"), linha("3", "Fulano", "realizado"), linha("4", "Tec Bruno", "a_vencer")], // 2 de 3
   });
   assert.equal(i.conformidadeGeral.pct, 66.7); // 6 de 9
@@ -165,14 +166,14 @@ test("a Frota mostra os cards do PCM e dos técnicos com seta e cor por faixa, e
   const cartoes = ler("components/modules/CartoesIndicadoresFrota.tsx");
   // Decisão 342: os sete cartões sempre à vista; o título diz de quem é (PCM, Técnicos ou Geral da frota) e o subtítulo, como é calculado.
   for (const t of [
-    "PCM · Preventivas em dia",
-    "PCM · Check list no prazo",
-    "PCM · Ocorrências no prazo",
+    "PCM · Índice de manutenções preventivas em dia",
+    "PCM · Índice de check lists realizados no prazo",
+    "PCM · Índice de ocorrências tratadas no prazo",
     "Frota · Conformidade geral (SLA)",
     "Frota · Custo por km rodado (CPK)",
     "Frota · Custo preventivo (meta 80%)",
-    "Técnicos · Check list no prazo",
-    "Técnicos · Check list atrasado",
+    "Técnicos · Índice de check lists realizados no prazo",
+    "Técnicos · Índice de check lists atrasados",
   ])
     assert.ok(cartoes.includes(t), t);
   assert.equal((cartoes.match(/subtitulo="/g) ?? []).length, 8, "cada cartão explica como é calculado");
