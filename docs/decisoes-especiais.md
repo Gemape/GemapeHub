@@ -2007,7 +2007,13 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Em Parâmetros › EPI › Parâmetros Específicos há a área "Textos dos documentos", com três campos: a declaração do Termo de Entrega de EPI (antes da lista de EPIs), a ciência do termo (depois da lista) e a declaração da Ficha de Controle de Entrega de EPI. Os textos padrão são os do pedido. Salvar Textos e Restaurar texto padrão ficam abaixo.
 - `{empresa}` no texto vira a razão social da empresa, em negrito, na hora de gerar o documento (no termo ela já vinha assim; na ficha, o texto padrão não cita a empresa, mas o marcador também vale). O texto é sempre escapado e as quebras de linha são mantidas. Os três textos são obrigatórios (até 1500 caracteres cada). Mudar o texto vale para os próximos documentos; os já impressos não mudam. Fase 1: fica só no navegador, no modo demonstração.
 
-## 342. EPI: seção Relatórios, com cópias das três rotinas de consulta
+## 357. EPI: empregados habilitados e áreas da oficina
+
+- Em Parâmetros > EPI > Parâmetros Específicos entram o cartão **Áreas da oficina** (Mecânico/montador, Ajudante/lavador, Pintor, Serralheiro/soldador e Auxiliar de serviços gerais, com novas áreas à vontade) e a caixa dupla **Empregados das rotinas de EPI**: à esquerda todos os empregados ativos, à direita os habilitados para entrega e recebimento de EPI, cada um com a sua área. Nada vale até clicar em Salvar.
+- Nas telas de EPI em que se informa o empregado (Entrega, Termo de entrega, Ficha de EPI avulsa e Devolução ao estoque) só aparecem os habilitados.
+- **Escolhas do Claude:** (a) lista vazia oferece todos os empregados ativos, como em Veículos (decisão 308); (b) relatórios e filtros de histórico continuam mostrando todos; (c) a área é só uma informação ao lado do nome; (d) uma área em uso não sai da lista antes de mudar a área do habilitado, e sempre sobra ao menos uma; (e) a lista de EPI é independente das de Veículos e Viagens. Só modo demonstração; nada no Supabase.
+
+## 358. EPI: seção Relatórios, com cópias das três rotinas de consulta (substituída pela 359: mover, não clonar)
 
 - No menu de EPIs (o seletor do topo e o cartão EPIs da tela Início) entra a seção **Relatórios**, entre Módulo e Parâmetros, com **Sugestão de Compras**, **Histórico do empregado** e **Baixar Definitivas**.
 - Ordem do responsável: **clonar, não mover**. As três rotinas continuam na lista principal (seção Módulo) e as cópias abrem a mesma tela. Cada cópia tem a sua aba (`relatorio-sugestao-compras`, `relatorio-historico`, `relatorio-baixas`), para o menu marcar só a que está aberta; os endereços antigos (`?aba=sugestao-compras`, `historico`, `baixas`) não mudam.
@@ -2015,25 +2021,25 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - **Vai e volta com os Parâmetros Específicos:** o link "Parâmetros Específicos" da Sugestão de Compras abre a tela de configuração e o botão "Voltar para Sugestão de Compras" (e o salvar dos parâmetros da sugestão) devolve à tela de onde a pessoa saiu, na lista principal ou em Relatórios.
 - Só modo demonstração; nada no Supabase.
 
-## 343. EPI: as rotinas de consulta se movem para Relatórios
+## 359. EPI: as rotinas de consulta se movem para Relatórios
 
-- Ordem do responsável, corrigindo a decisão 342 ("clonar"): **mover**. Sugestão de Compras, Histórico do empregado e Baixar Definitivas saem da seção Módulo do menu de EPIs e ficam **só** na seção Relatórios (menu do topo e cartão EPIs da tela Início).
+- Ordem do responsável, corrigindo a decisão 358 ("clonar"): **mover**. Sugestão de Compras, Histórico do empregado e Baixar Definitivas saem da seção Módulo do menu de EPIs e ficam **só** na seção Relatórios (menu do topo e cartão EPIs da tela Início).
 - As abas mantêm os endereços de sempre (`?aba=sugestao-compras`, `historico`, `baixas`), então links e favoritos antigos abrem as mesmas telas. As abas de cópia (`relatorio-*`) deixam de existir.
 - O vai e volta da Sugestão de Compras com os Parâmetros Específicos volta ao funcionamento simples: leva sempre à Sugestão de Compras.
 - A matriz de acessos do modo demonstração passa a ter essas três rotinas na seção Relatórios; exceção de acesso já guardada para o nome antigo (seção Módulo) deixa de valer. Só modo demonstração; nada no Supabase.
 
-## 344. EPI: responsável pela entrega no Termo de Entrega e confirmação na Ficha avulsa
+## 360. EPI: responsável pela entrega no Termo de Entrega e confirmação na Ficha avulsa
 
-- **Termo de Entrega (Módulo > EPI):** novo campo obrigatório **Responsável pela entrega**. O termo sai com o nome completo de quem entrega (linha "Entregue por" e sob a assinatura do responsável) e de quem recebe (sob a assinatura do empregado). **Escolhas do Claude:** (a) o responsável é um empregado ativo, entre os habilitados do EPI (decisão 341; lista vazia oferece todos), e não pode ser quem recebe; (b) o nome fica só no documento impresso, não nas movimentações gravadas, porque gravar exigiria coluna nova no banco real; (c) os termos de outras telas (Entrega EPI) saem como antes.
+- **Termo de Entrega (Módulo > EPI):** novo campo obrigatório **Responsável pela entrega**. O termo sai com o nome completo de quem entrega (linha "Entregue por" e sob a assinatura do responsável) e de quem recebe (sob a assinatura do empregado). **Escolhas do Claude:** (a) o responsável é um empregado ativo, entre os habilitados do EPI (decisão 357; lista vazia oferece todos), e não pode ser quem recebe; (b) o nome fica só no documento impresso, não nas movimentações gravadas, porque gravar exigiria coluna nova no banco real; (c) os termos de outras telas (Entrega EPI) saem como antes.
 - **Ficha de EPI Avulsa:** gerar a ficha abre uma confirmação com o texto do responsável (a ficha serve a itens de consumo corriqueiro, como máscaras e luvas; botinas, capacetes e óculos vão pelo Termo de Entrega) e a pergunta "Deseja confirmar a geração da Ficha avulsa de entrega de EPI?". O caminho "EPIs >> módulo >> termo de entrega" é um link que abre o Termo de Entrega e fecha a janela. **Sim** gera a ficha; **Não** volta sem gerar.
 - Só modo demonstração; nada no Supabase.
 
-## 345. EPI: responsável pela entrega gravado no histórico
+## 361. EPI: responsável pela entrega gravado no histórico
 
-- Ordem do responsável, completando a decisão 344: o nome de quem entrega passa a ser gravado também no histórico. Cada saída do Termo de Entrega sai com a observação "Entrega de EPI - Termo Gerado em DD/MM/AAAA - Entregue por Nome Completo", que aparece no Histórico do empregado (tabela, busca, CSV e PDF).
+- Ordem do responsável, completando a decisão 360: o nome de quem entrega passa a ser gravado também no histórico. Cada saída do Termo de Entrega sai com a observação "Entrega de EPI - Termo Gerado em DD/MM/AAAA - Entregue por Nome Completo", que aparece no Histórico do empregado (tabela, busca, CSV e PDF).
 - **Escolha do Claude:** o nome vai na observação e não numa coluna nova, porque o banco real não tem coluna de responsável nas movimentações e criar uma exigiria ordem explícita (CLAUDE.md). Se o responsável preferir uma coluna própria, vira migração à parte. No Histórico do empregado, a observação passa a quebrar linha (com o texto inteiro em dica) em vez de cortar. Movimentações antigas ficam como estão. Só modo demonstração; nada no Supabase.
 
-## 346. EPI: Cadastrar Ordem de Serviço
+## 362. EPI: Cadastrar Ordem de Serviço
 
 - Em Parâmetros > EPI entra **Cadastrar Ordem de Serviço**, ao lado de Cadastrar Ficha de EPI (as duas ficam dentro de Cadastrar EPI). Cada ordem tem nove tópicos, todos obrigatórios: **Função, Setor, Objetivo, Descrição das atividades, Riscos ocupacionais, Equipamentos de proteção individual, Condutas proibidas, Procedimentos de segurança críticos e Treinamentos e autorizações** (modelo enviado pelo responsável: Mecânico / montador, Oficina mecânica).
 - A tela tem lista com busca por qualquer palavra (ignora acento e maiúsculas), Exportar CSV, Nova ordem de serviço, e por linha Clonar, Editar e Excluir.
