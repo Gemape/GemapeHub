@@ -21,7 +21,7 @@ import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPr
 import { custoPorKm, custoPorKmPorMes, indicadoresDaFrota, proporcaoPreventiva, proporcaoPreventivaPorMes } from "@/lib/frota-indicadores";
 import { interpretacoesDaFrota } from "@/lib/frota-interpretacao";
 import { InterpretacaoFrota } from "@/components/modules/InterpretacaoFrota";
-import { locaisDaManutencao } from "@/lib/registros-veiculo";
+import { custoDaManutencao } from "@/lib/registros-veiculo";
 import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
 import { montarFrotaHtml } from "@/lib/frota-relatorio-html";
@@ -69,12 +69,6 @@ export function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoC
 // Módulos > Veículos > Frota (decisão 57): página inicial com a lista de veículos da empresa.
 // Clicar num veículo abre o extrato. O cadastro continua em Parâmetros > Veículos.
 const TODAS_AS_SUBCATEGORIAS = "__todas__";
-
-// Custo da manutenção: a soma dos locais; registro sem locais usa o custo total (ou peças + mão de obra) do próprio registro.
-export const custoDaManutencao = (m: Parameters<typeof locaisDaManutencao>[0]): number => {
-  const locais = locaisDaManutencao(m);
-  return locais.length ? locais.reduce((t, l) => t + l.custoTotal, 0) : (m.custoTotal ?? (m.custoPecas ?? 0) + (m.custoMaoDeObra ?? 0));
-};
 
 export function FrotaModulo() {
   const { empresaId, empresas } = useEmpresa();

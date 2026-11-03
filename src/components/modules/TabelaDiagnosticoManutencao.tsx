@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Faixa } from "@/lib/faixas-desempenho";
 import type { SituacaoColuna } from "@/lib/frota-situacao";
-import { formatarData } from "@/lib/gemape";
+import { formatarData, formatarMoeda } from "@/lib/gemape";
 
 // Diagnóstico de manutenção de cada veículo (decisão 348): a tabela da Frota, só com os dados de manutenção. Clicar na linha ou em Ver extrato abre o extrato do veículo.
 export type LinhaDiagnostico = {
@@ -19,7 +19,6 @@ export type LinhaDiagnostico = {
   faixaPreventivo: Faixa | null;
 };
 
-const moeda = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const COR_FAIXA: Record<Faixa, string> = { verde: "text-emerald-700", amarelo: "font-semibold text-amber-700", vermelho: "font-semibold text-red-700" };
 
 export function TabelaDiagnosticoManutencao({ linhas, aoAbrir }: { linhas: LinhaDiagnostico[]; aoAbrir: (id: string, secao: "sugeridas" | null) => void }) {
@@ -50,7 +49,7 @@ export function TabelaDiagnosticoManutencao({ linhas, aoAbrir }: { linhas: Linha
                 <TableCell><EtiquetaVencimento valor={l.preventivas} dica="Ver as manutenções sugeridas" aoClicar={() => aoAbrir(l.id, "sugeridas")} /></TableCell>
                 <TableCell className="pr-6 text-right tabular-nums">{l.realizadas}</TableCell>
                 <TableCell className="pr-6 text-right tabular-nums">{l.corretivas}</TableCell>
-                <TableCell className="pr-6 text-right tabular-nums">{moeda(l.custo)}</TableCell>
+                <TableCell className="pr-6 text-right tabular-nums">{formatarMoeda(l.custo)}</TableCell>
                 <TableCell className={`pr-6 text-right tabular-nums ${l.faixaPreventivo ? COR_FAIXA[l.faixaPreventivo] : "text-muted-foreground"}`}>
                   {l.pctPreventivo === null ? "—" : `${l.pctPreventivo.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`}
                 </TableCell>

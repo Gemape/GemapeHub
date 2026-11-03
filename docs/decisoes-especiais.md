@@ -1963,3 +1963,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Em Veículos › Módulo › Manutenção, o botão "Cadastrar nova manutenção" ficou azul, à direita, acima dos botões "Manutenções planejadas" e "Manutenções realizadas".
 - Depois dos gráficos (agora mais baixos, para caber na tela) vem a tabela da Frota só com dados de manutenção, um veículo por linha: km atual, última manutenção, situação das preventivas, quantidade de manutenções realizadas e de corretivas, custo total e % preventivo (parte do gasto que é preventiva, com a cor da faixa de 80%/70% da decisão 344). Clicar na linha, na etiqueta de preventivas ou em Ver extrato abre o extrato do veículo.
+
+## 349. Ocorrências: Nova ocorrência azul, Ver ocorrências e tabela de diagnóstico
+
+- Em Veículos › Módulo › Ocorrências, o botão "Nova ocorrência" fica azul, à direita, acima do botão "Ver ocorrências". Os quatro botões de situação saíram da tela inicial.
+- "Ver ocorrências" abre outra tela do módulo, com a lista e os filtros: situação (Todas, Abertas, Em tratativa e Encerradas, com a contagem), palavra-chave e período (data início e fim), mais o botão de voltar ao painel.
+- Depois dos gráficos (mais baixos, para caber na tela) vem a tabela da Frota só com dados de ocorrências, um veículo por linha: última ocorrência, total, abertas, em tratativa, encerradas, situação dos prazos (a etiqueta da Frota), custo da empresa informado nas tratativas e Ver extrato. Clicar na linha ou em Ver extrato abre o extrato do veículo; a etiqueta de prazos abre direto as ocorrências em aberto.

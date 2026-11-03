@@ -429,6 +429,12 @@ export function locaisDaManutencao(m: Pick<ManutencaoVeiculo, "locais" | "local"
   return [{ local: m.local, nome: m.localNome ?? "", descricao: "", condicaoPagamento: "", custoPecas: pecas, custoMaoDeObra: mao, custoTotal: m.custoTotal ?? pecas + mao }];
 }
 
+// Custo da manutenção: a soma dos locais; registro sem locais usa o custo total (ou peças + mão de obra) do próprio registro.
+export const custoDaManutencao = (m: Parameters<typeof locaisDaManutencao>[0]): number => {
+  const locais = locaisDaManutencao(m);
+  return locais.length ? locais.reduce((t, l) => t + l.custoTotal, 0) : (m.custoTotal ?? (m.custoPecas ?? 0) + (m.custoMaoDeObra ?? 0));
+};
+
 export const rotuloDoLocal = (l: Pick<LocalServicoManutencao, "local" | "nome">): string =>
   l.local === "terceiro" ? (l.nome ? `Terceiro: ${l.nome}` : "Terceiro") : "Na própria empresa";
 

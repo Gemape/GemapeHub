@@ -4,7 +4,6 @@ import { useState } from "react";
 
 import { CartoesManutencao } from "@/components/modules/CartoesManutencao";
 import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
-import { custoDaManutencao } from "@/components/modules/FrotaModulo";
 import { TabelaDiagnosticoManutencao } from "@/components/modules/TabelaDiagnosticoManutencao";
 import { GraficosManutencao } from "@/components/modules/GraficosVeiculos";
 import { ManutencaoRevisoes } from "@/components/modules/ManutencaoRevisoes";
@@ -25,7 +24,7 @@ import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { montarManutencaoHtml } from "@/lib/manutencao-relatorio-html";
 import { useVeiculos } from "@/lib/hooks-gemape";
-import { gruposDaManutencao, locaisDaManutencao, removerManutencao, resumoManutencao, rotuloDoLocal, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
+import { custoDaManutencao, gruposDaManutencao, locaisDaManutencao, removerManutencao, resumoManutencao, rotuloDoLocal, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
 import { useFocoDaTela } from "@/lib/use-foco-da-tela";
 import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";

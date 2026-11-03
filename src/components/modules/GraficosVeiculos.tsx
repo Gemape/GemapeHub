@@ -199,9 +199,12 @@ export function GraficosManutencao({
 export function GraficosOcorrencias({
   ocorrencias,
   hoje,
+  compacto = false,
 }: {
   ocorrencias: { tipoNome: string; status: StatusOcorrencia; ocorridoEm: string }[];
   hoje: string;
+  // Com a tabela de diagnóstico embaixo (decisão 349): gráficos mais baixos e sem o texto de apoio, para tudo caber na tela.
+  compacto?: boolean;
 }) {
   const contar = (s: StatusOcorrencia) => ocorrencias.filter((o) => o.status === s).length;
   const rosca = [
@@ -221,12 +224,12 @@ export function GraficosOcorrencias({
     <PainelGraficos colunas={3}>
       <QuadroGrafico
         titulo="Ocorrências por situação"
-        descricao="Parte de cada situação no total."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Parte de cada situação no total." })}
         vazio={rosca.length === 0}
       >
         <GraficoRosca dados={rosca} />
       </QuadroGrafico>
-      <QuadroGrafico titulo="Ocorrências por mês" descricao="Registradas nos últimos seis meses.">
+      <QuadroGrafico titulo="Ocorrências por mês" {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Registradas nos últimos seis meses." })}>
         <GraficoBarras
           dados={meses}
           categoria="rotulo"
@@ -235,7 +238,7 @@ export function GraficosOcorrencias({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="Situação por tipo de ocorrência"
-        descricao="Quantas de cada tipo estão abertas, em tratativa ou encerradas."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quantas de cada tipo estão abertas, em tratativa ou encerradas." })}
         vazio={tipos.length === 0}
       >
         <GraficoBarras
