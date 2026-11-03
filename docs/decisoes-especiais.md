@@ -1982,3 +1982,8 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Em Registrar Compra, depois de escolher a empresa, há um campo de busca por palavra-chave (código, descrição, tamanho ou CA) e, logo abaixo, a lista dos EPIs daquela empresa. Cada EPI aparece como código + descrição + tamanho, uma linha por tamanho autorizado (EPI sem tamanho, uma linha só). Clicar na linha define o EPI e o tamanho da compra (o CA do cadastro vem preenchido). Sem a empresa escolhida a lista pede a empresa; sem EPI escolhido a compra não é registrada.
 - O botão Devolução da tela inicial ficou azul, como o Registrar Compra.
 - O motivo da devolução para o estoque continua vindo de Parâmetros › EPI › Parâmetros Específicos (lista de motivos de devolução).
+
+## 352. EPI, compras: código do produto e estoque alimentado
+
+- Toda compra de EPI mostra o código do produto comprado e qual estoque ela alimentou (Gemape, GMP ou Lapa, a empresa do item). A lista de compras ganhou a coluna Código e a coluna Estoque (antes "Empresa"); o Exportar CSV leva as duas. No Registrar Compra, o campo da empresa passou a se chamar "Estoque a alimentar (empresa)" e, ao escolher o EPI, a janela diz qual estoque a compra alimenta e o saldo do item hoje e com a compra.
+- O item existe uma única vez em cada estoque e o saldo é um só: compras de fornecedores diferentes não geram estoques diferentes, elas se somam no saldo do mesmo item (o fornecedor fica só no registro da compra).

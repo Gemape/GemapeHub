@@ -161,7 +161,8 @@ export function EpiComprasModulo() {
                 "compras_epis",
                 compras.map((c) => ({
                   Data: formatarData(c.data_compra),
-                  Empresa: empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia,
+                  "Estoque alimentado": empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia,
+                  Código: itens.find((i) => i.id === c.item_id)?.codigo_sku,
                   EPI: itens.find((i) => i.id === c.item_id)?.nome,
                   Tamanho: nomeTamanhoGravado(parametros, c.tamanho_id),
                   Fornecedor: c.fornecedor,
@@ -194,7 +195,8 @@ export function EpiComprasModulo() {
           <TableHeader>
             <TableRow>
               <TableHead>Data</TableHead>
-              <TableHead>Empresa</TableHead>
+              <TableHead title="Estoque que a compra alimentou (a empresa do item)">Estoque</TableHead>
+              <TableHead>Código</TableHead>
               <TableHead>EPI</TableHead>
               <TableHead>Tamanho</TableHead>
               <TableHead>Fornecedor</TableHead>
@@ -209,13 +211,13 @@ export function EpiComprasModulo() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center">
+                <TableCell colSpan={12} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : compras.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center">
+                <TableCell colSpan={12} className="text-center">
                   Nenhuma compra registrada.
                 </TableCell>
               </TableRow>
@@ -226,6 +228,7 @@ export function EpiComprasModulo() {
                   <TableCell>
                     {empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia}
                   </TableCell>
+                  <TableCell className="font-mono text-xs">{itens.find((i) => i.id === c.item_id)?.codigo_sku ?? "—"}</TableCell>
                   <TableCell>{itens.find((i) => i.id === c.item_id)?.nome}</TableCell>
                   <TableCell>{nomeTamanhoGravado(parametros, c.tamanho_id) || "—"}</TableCell>
                   <TableCell>{c.fornecedor}</TableCell>
@@ -274,7 +277,7 @@ export function EpiComprasModulo() {
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="empresa_id">Empresa</Label>
+              <Label htmlFor="empresa_id">Estoque a alimentar (empresa)</Label>
               <Select
                 name="empresa_id"
                 required
@@ -287,7 +290,7 @@ export function EpiComprasModulo() {
                 }}
               >
                 <SelectTrigger id="empresa_id">
-                  <SelectValue placeholder="Selecione a empresa" />
+                  <SelectValue placeholder="Selecione o estoque" />
                 </SelectTrigger>
                 <SelectContent>
                   {empresasParaEscolha(empresas).map((e) => (
@@ -320,6 +323,12 @@ export function EpiComprasModulo() {
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground">Nenhum EPI escolhido: clique numa linha da lista.</p>
+              )}
+              {itemSel && (
+                <p className="text-xs text-muted-foreground">
+                  Esta compra alimenta o estoque {empresas.find((e) => e.id === empresaCompra)?.nome_fantasia}, onde o item existe uma vez só: compras de qualquer fornecedor somam no mesmo saldo (hoje, {itens.find((i) => i.id === itemSel)?.estoque_atual ?? 0}
+                  {quantidade > 0 ? `; com esta compra, ${(itens.find((i) => i.id === itemSel)?.estoque_atual ?? 0) + quantidade}` : ""}).
+                </p>
               )}
               <p className="text-xs text-muted-foreground">
                 EPI não está na lista?{" "}

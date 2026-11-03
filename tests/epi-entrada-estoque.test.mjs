@@ -230,3 +230,15 @@ test("Registrar Compra: depois da empresa, busca por palavra-chave do EPI, em c�
   assert.match(devolucao, /lerMotivosDevolucaoEpi\(\)/);
   assert.match(readFileSync(new URL("../src/components/parametros/ParametrosEpi.tsx", import.meta.url), "utf8"), /salvarMotivosDevolucaoEpi/);
 });
+
+test("a compra informa o código do produto e o estoque alimentado; compras de fornecedores diferentes somam num estoque só do item (decisão 352)", () => {
+  const compras = readFileSync(new URL("../src/components/modules/EpiComprasModulo.tsx", import.meta.url), "utf8");
+  assert.match(compras, /<TableHead title="Estoque que a compra alimentou[^"]*">Estoque<\/TableHead>\s*<TableHead>Código<\/TableHead>/);
+  assert.match(compras, /Esta compra alimenta o estoque[\s\S]*compras de qualquer fornecedor somam no mesmo saldo/);
+  assert.match(compras, /Estoque a alimentar \(empresa\)/);
+  assert.match(compras, /Código: itens\.find\(\(i\) => i\.id === c\.item_id\)\?\.codigo_sku/, "o CSV também leva o código");
+  // O estoque é do item (e da empresa), não do fornecedor: o demo soma toda compra na entrada do item, qualquer que seja o fornecedor.
+  const demo = readFileSync(new URL("../src/integrations/supabase/demo-client.ts", import.meta.url), "utf8");
+  assert.match(demo, /item_id: c\.item_id, empresa_id: c\.empresa_id/);
+  assert.doesNotMatch(demo.slice(demo.indexOf("const registrarCompras"), demo.indexOf("const importarNotaFiscal")), /fornecedor_id|c\.fornecedor\b[^ ]*\s*===/);
+});
