@@ -1976,3 +1976,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - As faixas de desempenho (limites de verde e amarelo, classificação e significado) agora são duas configurações independentes: a de Parâmetros › Viagens › Parâmetros Específicos vale para os índices de Viagens (conformidade de lançamento, lançamento no prazo e fechamento do relatório no prazo), e a cópia de Parâmetros › Veículos › Parâmetros Específicos vale para todos os indicadores de veículos (Frota, Check list, Manutenção e Ocorrências). Mudar uma não muda a outra.
 - Enquanto Veículos não tem a sua gravada, vale uma cópia da de Viagens (o que já estava configurado não se perde); depois do primeiro Salvar ou Restaurar padrão, as duas seguem separadas.
 - O índice "Custo preventivo" (decisão 344) segue com os limites fixos de 80% e 70%.
+
+## 351. EPI, Entrada no Estoque: busca do EPI na compra e Devolução azul
+
+- Em Registrar Compra, depois de escolher a empresa, há um campo de busca por palavra-chave (código, descrição, tamanho ou CA) e, logo abaixo, a lista dos EPIs daquela empresa. Cada EPI aparece como código + descrição + tamanho, uma linha por tamanho autorizado (EPI sem tamanho, uma linha só). Clicar na linha define o EPI e o tamanho da compra (o CA do cadastro vem preenchido). Sem a empresa escolhida a lista pede a empresa; sem EPI escolhido a compra não é registrada.
+- O botão Devolução da tela inicial ficou azul, como o Registrar Compra.
+- O motivo da devolução para o estoque continua vindo de Parâmetros › EPI › Parâmetros Específicos (lista de motivos de devolução).

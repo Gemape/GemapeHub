@@ -195,7 +195,7 @@ test("a tela: Entrada no Estoque com Devolução ao lado de Registrar Compra, ca
   const compras = ler("components/modules/EpiComprasModulo.tsx");
   assert.match(
     compras,
-    /Registrar Compra<\/Button>\s*<Button requiresWrite variant="outline" onClick=\{\(\) => setDevolucaoAberta\(true\)\}>Devolução<\/Button>/,
+    /Registrar Compra<\/Button>\s*<Button requiresWrite onClick=\{\(\) => setDevolucaoAberta\(true\)\}>Devolução<\/Button>/,
   );
   assert.match(compras, /Informe a nota fiscal\./);
   assert.match(compras, /Informe o CA do EPI\./);
@@ -217,4 +217,16 @@ test("a tela: Entrada no Estoque com Devolução ao lado de Registrar Compra, ca
     /categoria\.id === "cat-epi" && <ParametrosEpi \/>/,
   );
   assert.match(ler("integrations/supabase/demo-client.ts"), /m\.condicao === "usado" && delta > 0/);
+});
+
+test("Registrar Compra: depois da empresa, busca por palavra-chave do EPI, em código + descrição + tamanho (decisão 351); o motivo da devolução vem de Parâmetros > EPI", () => {
+  const compras = readFileSync(new URL("../src/components/modules/EpiComprasModulo.tsx", import.meta.url), "utf8");
+  assert.match(compras, /<BuscaEpiCompra[\s\S]*itens=\{itens\.filter\(\(i\) => i\.empresa_id === empresaCompra\)\}/, "a lista é só dos EPIs da empresa escolhida");
+  assert.match(compras, /<input type="hidden" name="item_id" value=\{itemSel\} \/>/);
+  const busca = readFileSync(new URL("../src/components/modules/BuscaEpiCompra.tsx", import.meta.url), "utf8");
+  assert.match(busca, /combinaBusca\(busca, o\.codigo, o\.descricao, o\.rotuloTamanho, o\.ca\)/);
+  assert.match(busca, /opcoesTamanhoEntrada\(parametros, "epi", i\)/, "uma linha por tamanho autorizado");
+  const devolucao = readFileSync(new URL("../src/components/modules/DevolucaoEpiDialog.tsx", import.meta.url), "utf8");
+  assert.match(devolucao, /lerMotivosDevolucaoEpi\(\)/);
+  assert.match(readFileSync(new URL("../src/components/parametros/ParametrosEpi.tsx", import.meta.url), "utf8"), /salvarMotivosDevolucaoEpi/);
 });
