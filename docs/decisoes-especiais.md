@@ -1991,3 +1991,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 353. EPI, Estoque: Novos e Usados azuis no topo à direita
 
 - Em EPI › Módulo › Estoque, os botões Novos e Usados são azuis e ficam no topo da página, à direita (decisão 339). O escolhido leva um anel de destaque e o outro fica mais claro; a contagem de cada um segue dentro do botão.
+
+## 354. EPI, Sugestão de Compras: legenda e balão nos status
+
+- Acima da tabela há uma legenda sempre visível, com cada status de criticidade (Ruptura, Comprar já, Planejar, Estável e Excesso), a criticidade e o significado, mais o "Sem consumo". Na tabela, passar o mouse (ou focar com o teclado) sobre a palavra do status abre um balão com a mesma explicação. Vale também para os status da lista de itens do relatório de cotação. Os textos vêm do significado de cada status em Parâmetros Específicos de EPI.
