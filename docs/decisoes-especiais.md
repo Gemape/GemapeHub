@@ -1885,3 +1885,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Em Parâmetros > Viagens > Parâmetros Específicos, abaixo da caixa dupla de empregados habilitados, há o cartão com o nº de dias para lançar a despesa (técnico mecânico) e o nº de dias para fechar o relatório de despesas (PCM), cada um com a caixa "aplicável". Os valores são os mesmos que já mediam os índices de Viagens (lançamento no prazo e fechamento do relatório no prazo); o que mudou foi o lugar.
 - Em Parâmetros > Veículos > Parâmetros Específicos ficou só o cartão Faixas de desempenho (verde, amarelo e vermelho), que vale para Viagens, Check list e Frota, com o link para os prazos. Isso altera a decisão 199, que tinha levado os prazos para Veículos.
+
+## 335. Faixas de desempenho também em Viagens > Parâmetros > Parâmetros Específicos
+
+- O cartão Faixas de desempenho (limites do verde e do amarelo, classificação e significado de cada faixa) foi clonado de Parâmetros > Veículos > Parâmetros Específicos para Parâmetros > Viagens > Parâmetros Específicos, abaixo dos prazos de lançamento e de fechamento. É o mesmo componente e a mesma configuração: salvar numa tela vale na outra, porque as faixas também classificam os índices do Check list e da Frota. Continua em Veículos.
