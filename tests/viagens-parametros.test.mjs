@@ -30,7 +30,8 @@ test("a caixa dupla lista todos os empregados ativos à esquerda, move para a di
   assert.match(tela, /const aIncluir = aEsquerda\.filter\(\(e\) => !incluido\(e\)\)/);
   for (const rotulo of ["Habilitar os empregados marcados", "Habilitar todos os empregados da lista", "Tirar os habilitados marcados", "Tirar todos os habilitados da lista"]) assert.ok(tela.includes(rotulo), rotulo);
   assert.match(tela, /disabled=\{!alterado\}/);
-  assert.match(tela, /AREAS_VIAGEM\.map/);
+  assert.match(tela, /areas = AREAS_VIAGEM/); // sem a propriedade areas, valem as de Viagens e Veículos
+  assert.match(tela, /\.\.\.areas, h\.area\]\)\.map/);
 });
 
 test("salvar a pergunta de quem está lançando com a lista habilitada guarda os empregados e as áreas", () => {
@@ -125,7 +126,7 @@ test("a lista do check list periódico mostra, como Sem previsão, o que não ca
 
 test("a caixa dupla compara os habilitados sem depender da ordem e o construtor do questionário não edita mais a lista", () => {
   const caixa = ler("components/parametros/CaixaDuplaEmpregados.tsx");
-  assert.match(caixa, /const assinatura = \(l: Habilitado\[\]\) => JSON\.stringify\(l\.map\(\(h\) => \[chaveDe\(h\), h\.area\]\)\.sort\(\)\)/);
+  assert.match(caixa, /const assinatura = \(l: HabilitadoDe<A>\[\]\) => JSON\.stringify\(l\.map\(\(h\) => \[chaveDe\(h\), h\.area\]\)\.sort\(\)\)/);
   assert.doesNotMatch(ler("components/parametros/QuestionarioDespesasConstrutor.tsx"), /AdicionarHabilitado/);
 });
 

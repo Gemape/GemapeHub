@@ -16,6 +16,7 @@ import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { emPosseEpi, lerHistoricoEpiPorItem, mensagemSoAdmin, registrarDevolucaoEpi, registrarEntregaEpi, type CalculoAlerta, type ModuloEntrega } from "@/lib/entrega-epi";
 import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { exportarCsv, formatarData } from "@/lib/gemape";
+import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
 import { useEmpregados, useEmpresas, useItens } from "@/lib/hooks-gemape";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { montarTermoEntregaEpiHtml } from "@/lib/termo-entrega-epi-html";
@@ -208,7 +209,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
             <Select value={empregadoId} onValueChange={(v) => { setEmpregadoId(v); setLinhas([]); }}>
               <SelectTrigger><SelectValue placeholder="Selecione o empregado" /></SelectTrigger>
               <SelectContent>
-                {empregados.filter((e) => e.ativo !== false).map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}
+                {soEmpregadosDeEpi(empregados.filter((e) => e.ativo !== false)).map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
