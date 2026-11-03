@@ -167,13 +167,16 @@ export const MENU_EQUIPAMENTOS: readonly ItemMenu[] = [
 // URLs de Gerais, para o destaque do grupo.
 export const URLS_GERAIS: readonly string[] = MENU_GERAIS.flatMap((i) => ("filhos" in i ? i.filhos.map((f) => f.url) : [i.url]));
 
-// Parâmetros > EPI (decisão 37): "Cadastrar Ficha de EPI" fica dentro de "Cadastrar EPI".
+// Parâmetros > EPI (decisão 37): "Cadastrar Ficha de EPI" e, depois, "Cadastrar Ordem de Serviço" ficam dentro de "Cadastrar EPI".
 export const MENU_EPI: readonly ItemComFilhos[] = [
   {
     titulo: "Cadastrar EPI",
     url: "/epi-cadastrar",
     icone: "Tags",
-    filhos: [{ titulo: "Cadastrar Ficha de EPI", url: "/epi-ficha", icone: "ClipboardList" }],
+    filhos: [
+      { titulo: "Cadastrar Ficha de EPI", url: "/epi-ficha", icone: "ClipboardList" },
+      { titulo: "Cadastrar Ordem de Serviço", url: "/epi-ordem-servico", icone: "FileText" },
+    ],
   },
   ...itensApoio("epi"),
 ];

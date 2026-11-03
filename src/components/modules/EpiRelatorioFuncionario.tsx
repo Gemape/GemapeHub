@@ -249,7 +249,7 @@ export function EpiRelatorioFuncionario() {
                       <TableCell>
                         {situacaoDe(h)}
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">{h.observacao || "—"}</TableCell>
+                      <TableCell className="max-w-xs whitespace-normal" title={h.observacao ?? undefined}>{h.observacao || "—"}</TableCell>
                     </TableRow>
                   ))
                 )}

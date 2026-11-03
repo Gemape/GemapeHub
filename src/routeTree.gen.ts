@@ -20,6 +20,7 @@ import { Route as AuthenticatedEnderecamentoRouteImport } from './routes/_authen
 import { Route as AuthenticatedEpiRouteImport } from './routes/_authenticated/epi'
 import { Route as AuthenticatedEpiCadastrarRouteImport } from './routes/_authenticated/epi-cadastrar'
 import { Route as AuthenticatedEpiFichaRouteImport } from './routes/_authenticated/epi-ficha'
+import { Route as AuthenticatedEpiOrdemServicoRouteImport } from './routes/_authenticated/epi-ordem-servico'
 import { Route as AuthenticatedEquipamentosRouteImport } from './routes/_authenticated/equipamentos'
 import { Route as AuthenticatedFerramentasRouteImport } from './routes/_authenticated/ferramentas'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
@@ -121,6 +122,12 @@ const AuthenticatedEpiFichaRoute = AuthenticatedEpiFichaRouteImport.update({
   path: '/epi-ficha',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEpiOrdemServicoRoute =
+  AuthenticatedEpiOrdemServicoRouteImport.update({
+    id: '/epi-ordem-servico',
+    path: '/epi-ordem-servico',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEquipamentosRoute =
   AuthenticatedEquipamentosRouteImport.update({
     id: '/equipamentos',
@@ -385,6 +392,7 @@ export interface FileRoutesByFullPath {
   '/epi': typeof AuthenticatedEpiRoute
   '/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
   '/epi-ficha': typeof AuthenticatedEpiFichaRoute
+  '/epi-ordem-servico': typeof AuthenticatedEpiOrdemServicoRoute
   '/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/inicio': typeof AuthenticatedInicioRoute
@@ -440,6 +448,7 @@ export interface FileRoutesByTo {
   '/epi': typeof AuthenticatedEpiRoute
   '/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
   '/epi-ficha': typeof AuthenticatedEpiFichaRoute
+  '/epi-ordem-servico': typeof AuthenticatedEpiOrdemServicoRoute
   '/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/ferramentas': typeof AuthenticatedFerramentasRoute
   '/inicio': typeof AuthenticatedInicioRoute
@@ -496,6 +505,7 @@ export interface FileRoutesById {
   '/_authenticated/epi': typeof AuthenticatedEpiRoute
   '/_authenticated/epi-cadastrar': typeof AuthenticatedEpiCadastrarRoute
   '/_authenticated/epi-ficha': typeof AuthenticatedEpiFichaRoute
+  '/_authenticated/epi-ordem-servico': typeof AuthenticatedEpiOrdemServicoRoute
   '/_authenticated/equipamentos': typeof AuthenticatedEquipamentosRoute
   '/_authenticated/ferramentas': typeof AuthenticatedFerramentasRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/epi'
     | '/epi-cadastrar'
     | '/epi-ficha'
+    | '/epi-ordem-servico'
     | '/equipamentos'
     | '/ferramentas'
     | '/inicio'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/epi'
     | '/epi-cadastrar'
     | '/epi-ficha'
+    | '/epi-ordem-servico'
     | '/equipamentos'
     | '/ferramentas'
     | '/inicio'
@@ -663,6 +675,7 @@ export interface FileRouteTypes {
     | '/_authenticated/epi'
     | '/_authenticated/epi-cadastrar'
     | '/_authenticated/epi-ficha'
+    | '/_authenticated/epi-ordem-servico'
     | '/_authenticated/equipamentos'
     | '/_authenticated/ferramentas'
     | '/_authenticated/inicio'
@@ -791,6 +804,13 @@ declare module '@tanstack/react-router' {
       path: '/epi-ficha'
       fullPath: '/epi-ficha'
       preLoaderRoute: typeof AuthenticatedEpiFichaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/epi-ordem-servico': {
+      id: '/_authenticated/epi-ordem-servico'
+      path: '/epi-ordem-servico'
+      fullPath: '/epi-ordem-servico'
+      preLoaderRoute: typeof AuthenticatedEpiOrdemServicoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/equipamentos': {
@@ -1142,6 +1162,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEpiRoute: typeof AuthenticatedEpiRoute
   AuthenticatedEpiCadastrarRoute: typeof AuthenticatedEpiCadastrarRoute
   AuthenticatedEpiFichaRoute: typeof AuthenticatedEpiFichaRoute
+  AuthenticatedEpiOrdemServicoRoute: typeof AuthenticatedEpiOrdemServicoRoute
   AuthenticatedEquipamentosRoute: typeof AuthenticatedEquipamentosRoute
   AuthenticatedFerramentasRoute: typeof AuthenticatedFerramentasRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
@@ -1188,6 +1209,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEpiRoute: AuthenticatedEpiRoute,
   AuthenticatedEpiCadastrarRoute: AuthenticatedEpiCadastrarRoute,
   AuthenticatedEpiFichaRoute: AuthenticatedEpiFichaRoute,
+  AuthenticatedEpiOrdemServicoRoute: AuthenticatedEpiOrdemServicoRoute,
   AuthenticatedEquipamentosRoute: AuthenticatedEquipamentosRoute,
   AuthenticatedFerramentasRoute: AuthenticatedFerramentasRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,

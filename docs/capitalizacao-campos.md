@@ -195,3 +195,6 @@ components/modules/FerramentasCaixasModulo.tsx | buscaCaixa | nenhum | filtro
 components/modules/EpiRelatorioFuncionario.tsx | buscar no histórico | nenhum | busca
 components/modules/EpiRelatorioFuncionario.tsx | início, fim | nenhum | data
 components/parametros/ParametrosEpi.tsx | novo motivo, nova área (CartaoDeMotivos) | texto | motivos de baixa e devolução e áreas da oficina
+routes/_authenticated/epi-ordem-servico.tsx | função, setor | nenhum | texto como digitado (siglas)
+routes/_authenticated/epi-ordem-servico.tsx | objetivo, atividades, riscos, EPIs, condutas, procedimentos, treinamentos (Textarea) | nenhum | texto como digitado (siglas FISPQ, LOTO, NR-26)
+routes/_authenticated/epi-ordem-servico.tsx | busca | nenhum | busca

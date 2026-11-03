@@ -136,7 +136,7 @@ export function EpiTermoEntrega() {
       item_id: item.item_id,
       empresa_id: empresaSel,
       empregado_id: empregadoId,
-      observacao: observacaoEntregaEpi(),
+      observacao: observacaoEntregaEpi(new Date(), responsavel.nome),
       ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
     }));
 

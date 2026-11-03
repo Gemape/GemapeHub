@@ -77,3 +77,17 @@ test("trocar o empregado para quem já era o responsável limpa o responsável, 
   assert.match(tela, /if \(v === responsavelId\) setResponsavelId\(""\)/);
   assert.match(tela, /Nenhum outro empregado habilitado para entregar EPI/);
 });
+
+test("a observação gravada na entrega traz o nome de quem entregou, para o histórico do empregado mostrar", () => {
+  const agora = new Date("2026-10-01T10:00:00-03:00");
+  assert.equal(observacaoEntregaEpi(agora, "  Carlos   Eduardo Menezes "), "Entrega de EPI - Termo Gerado em 01/10/2026 - Entregue por Carlos Eduardo Menezes");
+  assert.equal(observacaoEntregaEpi(agora, ""), "Entrega de EPI - Termo Gerado em 01/10/2026");
+  assert.equal(observacaoEntregaEpi(agora, null), "Entrega de EPI - Termo Gerado em 01/10/2026");
+});
+
+test("a tela do termo grava o responsável na observação de cada saída, sem coluna nova no banco", async () => {
+  const { readFileSync } = await import("node:fs");
+  const tela = readFileSync(new URL("../src/components/modules/EpiTermoEntrega.tsx", import.meta.url), "utf8");
+  assert.match(tela, /observacao: observacaoEntregaEpi\(new Date\(\), responsavel\.nome\)/);
+  assert.doesNotMatch(tela, /responsavel_nome/, "responsavel_nome só existe no modo demonstração");
+});

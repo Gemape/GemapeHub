@@ -95,7 +95,7 @@ test("o menu EPI é de Parâmetros: Cadastrar Ficha de EPI fica dentro de Cadast
   assert.deepEqual(MENU_EPI.filter((i) => !i.de).map((i) => i.titulo), ["Cadastrar EPI"]);
   const cadastrar = MENU_EPI[0];
   assert.equal(cadastrar.url, "/epi-cadastrar");
-  assert.deepEqual(cadastrar.filhos?.map((f) => [f.titulo, f.url]), [["Cadastrar Ficha de EPI", "/epi-ficha"]]);
+  assert.deepEqual(cadastrar.filhos?.map((f) => [f.titulo, f.url]), [["Cadastrar Ficha de EPI", "/epi-ficha"], ["Cadastrar Ordem de Serviço", "/epi-ordem-servico"]]);
 });
 
 test("Em Módulos, EPIs é um item simples; o menu EPI fica em Parâmetros", () => {
