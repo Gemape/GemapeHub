@@ -37,3 +37,36 @@ test("a entrega de EPI não passa do estoque disponível", () => {
     "A entrega de 3 unidade(s) de Capacete passa do estoque disponível (2).",
   );
 });
+
+const { montarTermoEntregaEpiHtml: montarTermo } = await import("../src/lib/termo-entrega-epi-html.ts");
+const baseTermo = { empresa: { razao_social: "Gemape Máquinas Ltda", cnpj: "1", nome_fantasia: "Gemape" }, empregado: { nome: "Ana Paula Souza", cpf: "1" }, data: "2026-10-01", linhas: [], textos: { termoDeclaracao: "d", termoCiencia: "c" } };
+
+test("o termo sai com o nome completo de quem entrega e de quem recebe", () => {
+  const html = montarTermo({ ...baseTermo, responsavel: { nome: "Carlos Eduardo Menezes" } });
+  assert.match(html, /Entregue por:<\/strong> Carlos Eduardo Menezes/);
+  assert.match(html, /Empregado:<\/strong> Ana Paula Souza/);
+  // O nome de cada um aparece também sob a sua linha de assinatura.
+  assert.match(html, /Assinatura do Empregado<br><strong>Ana Paula Souza<\/strong>/);
+  assert.match(html, /Assinatura do Responsável<br><strong>Carlos Eduardo Menezes<\/strong>/);
+});
+
+test("o nome do responsável pela entrega é escapado", () => {
+  const html = montarTermo({ ...baseTermo, responsavel: { nome: "<script>x</script> & Cia" } });
+  assert.doesNotMatch(html, /<script>x/);
+  assert.match(html, /&lt;script&gt;x&lt;\/script&gt; &amp; Cia/);
+});
+
+test("sem responsável informado (outras telas), o termo continua como antes, sem a linha Entregue por", () => {
+  const html = montarTermo(baseTermo);
+  assert.doesNotMatch(html, /Entregue por/);
+  assert.match(html, /Assinatura do Responsável/);
+});
+
+test("a tela do Termo de Entrega pede o responsável, exige que seja outra pessoa e o leva ao termo", async () => {
+  const { readFileSync } = await import("node:fs");
+  const tela = readFileSync(new URL("../src/components/modules/EpiTermoEntrega.tsx", import.meta.url), "utf8");
+  assert.match(tela, /Responsável pela entrega/);
+  assert.match(tela, /Informe o responsável pela entrega/);
+  assert.match(tela, /responsavel: \{ nome: responsavel\.nome \}/);
+  assert.match(tela, /quem entrega não pode ser quem recebe/i);
+});

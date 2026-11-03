@@ -11,6 +11,8 @@ type Texto = string | null | undefined;
 export interface DadosTermoEntregaEpi {
   empresa: { razao_social: Texto; cnpj: Texto; nome_fantasia: Texto };
   empregado: { nome: Texto; cpf: Texto; matricula?: Texto };
+  // Quem entrega o EPI (Termo de Entrega do módulo EPI): o nome completo sai no termo e sob a assinatura do responsável. Sem ele, o termo sai como antes.
+  responsavel?: { nome: Texto };
   data: string;
   linhas: { nome?: Texto; ca?: Texto; tamanho?: Texto; quantidade: number; estado: string }[];
   // Os textos vêm de Parâmetros > EPI > Parâmetros Específicos (decisão 356); sem eles valem os guardados no navegador, ou os padrão.
@@ -52,7 +54,8 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
 
             <p><strong>Empregado:</strong> ${escaparHtml(empregado.nome)}<br>
             <strong>CPF:</strong> ${escaparHtml(empregado.cpf)}<br>
-            <strong>Matrícula:</strong> ${escaparHtml(empregado.matricula || "—")}</p>
+            <strong>Matrícula:</strong> ${escaparHtml(empregado.matricula || "—")}${dados.responsavel?.nome ? `<br>
+            <strong>Entregue por:</strong> ${escaparHtml(dados.responsavel.nome)}` : ""}</p>
           </div>
 
           <table>
@@ -78,10 +81,10 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
 
           <div class="signatures">
             <div class="sig-box">
-              Assinatura do Empregado
+              Assinatura do Empregado${empregado.nome ? `<br><strong>${escaparHtml(empregado.nome)}</strong>` : ""}
             </div>
             <div class="sig-box">
-              Assinatura do Responsável
+              Assinatura do Responsável${dados.responsavel?.nome ? `<br><strong>${escaparHtml(dados.responsavel.nome)}</strong>` : ""}
             </div>
           </div>
         </div>`,
