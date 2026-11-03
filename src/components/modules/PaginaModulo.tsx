@@ -98,7 +98,7 @@ export function PaginaModulo({
             <TabsContent value="baixas" className="mt-5">
               <EpiRelatorioBaixa />
             </TabsContent>
-            {/* EPI > Relatórios: as mesmas telas, abertas pelo grupo Relatórios do menu lateral. */}
+            {/* EPI > Relatórios: as mesmas telas, abertas pela seção Relatórios do menu do topo e da tela Início. */}
             <TabsContent value="relatorio-sugestao-compras" className="mt-5">
               <SugestaoComprasEpi aba="relatorio-sugestao-compras" />
             </TabsContent>

@@ -60,6 +60,6 @@ test("vai e volta: o link dos Parâmetros Específicos volta para a aba de onde 
   assert.match(rota, /search\["voltar"\] === "relatorio-sugestao-compras"/);
   assert.match(rota, /abaDeVolta: voltar/);
   const parametros = le("components/parametros/ParametrosEpi.tsx");
-  assert.match(parametros, /search: \{ aba: abaDeVolta \}/);
+  assert.match(parametros, /search: \{ aba: abaDeVolta \?\? "sugestao-compras" \}/);
   assert.match(parametros, /if \(voltarParaSugestao\) voltar\(\)/);
 });

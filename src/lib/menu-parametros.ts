@@ -183,8 +183,9 @@ export const MENU_EPI: readonly ItemComFilhos[] = [
 
 // Aba aberta de um módulo: a pedida em ?aba= se existir nele, senão a primeira.
 type ModuloComAbas = "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem" | "equipamento";
+const ABAS_EPI_COM_RELATORIOS: readonly AbaMenu[] = [...ABAS_EPI, ...ABAS_EPI_RELATORIOS];
 const ABAS_DO_MODULO = (modulo: ModuloComAbas): readonly AbaMenu[] =>
-  ({ epi: [...ABAS_EPI, ...ABAS_EPI_RELATORIOS], uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
+  ({ epi: ABAS_EPI_COM_RELATORIOS, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
 export function abaDoModulo(modulo: ModuloComAbas, aba: string | undefined): string {
   const abas = ABAS_DO_MODULO(modulo);
   return abas.find((a) => a.aba === aba)?.aba ?? abas[0]!.aba;

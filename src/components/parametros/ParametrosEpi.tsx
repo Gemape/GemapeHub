@@ -182,11 +182,12 @@ function TextosDosDocumentos() {
   );
 }
 
-// `voltarParaSugestao`: aberto pelo link da Sugestão de Compras (decisão 355); o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela.
-// `abaDeVolta`: a aba da Sugestão de Compras de onde a pessoa veio (a lista principal ou a cópia em Relatórios); o vai e volta devolve a ela.
-export function ParametrosEpi({ voltarParaSugestao = false, abaDeVolta = "sugestao-compras" }: { voltarParaSugestao?: boolean; abaDeVolta?: AbaDeVolta }) {
+// `abaDeVolta`: aberto pelo link da Sugestão de Compras (decisão 355), traz a aba de onde a pessoa veio (a lista principal ou a cópia em Relatórios);
+// o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela. Sem a propriedade, a tela abre normal, sem o vai e volta.
+export function ParametrosEpi({ abaDeVolta }: { abaDeVolta?: AbaDeVolta }) {
+  const voltarParaSugestao = abaDeVolta !== undefined;
   const navegar = useNavigate();
-  const voltar = () => void navegar({ to: "/epi", search: { aba: abaDeVolta } });
+  const voltar = () => void navegar({ to: "/epi", search: { aba: abaDeVolta ?? "sugestao-compras" } });
   const [areas, setAreas] = useState(lerAreasEpi);
   const [salvo, setSalvo] = useState(lerParametrosCompraEpi);
   const [metodo, setMetodo] = useState<MetodoReposicao>(salvo.metodo);

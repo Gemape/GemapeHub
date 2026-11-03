@@ -395,7 +395,7 @@ function Categorias() {
               cadastrar={(nomes) => cadastrarMarcasPadraoVeiculos(undefined, nomes)}
             />
           </div>}
-          {categoria.id === "cat-epi" && <ParametrosEpi voltarParaSugestao={voltar !== undefined} {...(voltar ? { abaDeVolta: voltar } : {})} />}
+          {categoria.id === "cat-epi" && <ParametrosEpi {...(voltar ? { abaDeVolta: voltar } : {})} />}
           {categoria.id === "cat-veiculos" && <HabilitarEmpregadosVeiculos />}
           {categoria.id === "cat-veiculos" && <PrazosOcorrenciasVeiculo />}
           {categoria.id === "cat-veiculos" && <SupervisoresOcorrencias />}
