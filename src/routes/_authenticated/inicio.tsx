@@ -25,7 +25,7 @@ const classeCartao =
 const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 // Três cartões por linha no desktop; a última linha, se incompleta, fica centralizada.
 const larguraCartao = "w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]";
-const SECOES: readonly SecaoInicio[] = ["Módulo", "Parâmetros"];
+const SECOES: readonly SecaoInicio[] = ["Módulo", "Relatórios", "Parâmetros"];
 
 function AtalhoDoCartao({ sub }: { sub: SubitemInicio }) {
   const IconeSub = ICONES[sub.icone];

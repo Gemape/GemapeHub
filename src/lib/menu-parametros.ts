@@ -51,6 +51,14 @@ export const ABAS_EPI: readonly AbaMenu[] = [
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
+// EPI > Relatórios: cópias das três rotinas de consulta que continuam na lista principal (Sugestão de Compras, Histórico do empregado e Baixar Definitivas).
+// Cada cópia tem a sua aba, para o menu marcar só a que a pessoa abriu; a tela é a mesma da rotina original.
+export const ABAS_EPI_RELATORIOS: readonly AbaMenu[] = [
+  { aba: "relatorio-sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
+  { aba: "relatorio-historico", titulo: "Histórico do empregado", icone: "History" },
+  { aba: "relatorio-baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
+];
+
 export const ABAS_UNIFORME: readonly AbaMenu[] = [
   { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
@@ -175,8 +183,9 @@ export const MENU_EPI: readonly ItemComFilhos[] = [
 
 // Aba aberta de um módulo: a pedida em ?aba= se existir nele, senão a primeira.
 type ModuloComAbas = "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem" | "equipamento";
+const ABAS_EPI_COM_RELATORIOS: readonly AbaMenu[] = [...ABAS_EPI, ...ABAS_EPI_RELATORIOS];
 const ABAS_DO_MODULO = (modulo: ModuloComAbas): readonly AbaMenu[] =>
-  ({ epi: ABAS_EPI, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
+  ({ epi: ABAS_EPI_COM_RELATORIOS, uniforme: ABAS_UNIFORME, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
 export function abaDoModulo(modulo: ModuloComAbas, aba: string | undefined): string {
   const abas = ABAS_DO_MODULO(modulo);
   return abas.find((a) => a.aba === aba)?.aba ?? abas[0]!.aba;

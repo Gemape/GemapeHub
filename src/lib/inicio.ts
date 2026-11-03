@@ -1,7 +1,7 @@
 // Tela inicial (Início): o menu em cartões. Só dados: a tela desenha. Cartão com submenus se abre no próprio cartão e mostra os
 // atalhos; cartão sem submenu abre a tela direto. Os submenus saem dos mesmos dados do menu (menu-parametros.ts), sem lista paralela.
 import {
-  ABAS_EPI, ABAS_EQUIPAMENTO, ABAS_FERRAMENTA, ABAS_UNIFORME, ABAS_VEICULO, ABAS_VIAGEM, MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES,
+  ABAS_EPI, ABAS_EPI_RELATORIOS, ABAS_EQUIPAMENTO, ABAS_FERRAMENTA, ABAS_UNIFORME, ABAS_VEICULO, ABAS_VIAGEM, MENU_EPI, MENU_FERRAMENTAS, MENU_GERAIS, MENU_UNIFORMES,
   MENU_EQUIPAMENTOS, MENU_VEICULOS, MENU_VIAGENS, type AbaMenu, type GrupoMenu, type ItemComFilhos, type ItemMenu, type NomeIcone,
 } from "./menu-parametros.ts";
 
@@ -10,15 +10,15 @@ export type IconeInicio =
   | "FolderCog" | "Building2" | "Users" | "Truck" | "Handshake";
 
 // Cada atalho é do módulo (a rotina do dia a dia) ou dos parâmetros (o cadastro que a alimenta); o cartão mostra os dois separados.
-export type SecaoInicio = "Módulo" | "Parâmetros";
+export type SecaoInicio = "Módulo" | "Relatórios" | "Parâmetros";
 // Atalho dentro de um cartão: a tela, com ?aba= ou ?de= quando o menu lateral também levava (decisões 43 e 86).
 export type SubitemInicio = { titulo: string; url: string; icone: NomeIcone; secao: SecaoInicio; search?: Record<string, string>; soAdmin?: boolean };
 // Ou `url` (abre a tela direto) ou `itens` (abre a lista de atalhos no cartão).
 export type CartaoInicio = { titulo: string; icone: IconeInicio; soAdmin?: boolean; url?: string; itens?: readonly SubitemInicio[] };
 export type GrupoInicio = { titulo: string; cartoes: readonly CartaoInicio[] };
 
-const dasAbas = (url: string, abas: readonly AbaMenu[]): SubitemInicio[] =>
-  abas.map((a) => ({ titulo: a.titulo, url, icone: a.icone, secao: "Módulo", search: { aba: a.aba }, ...(a.soAdmin ? { soAdmin: true } : {}) }));
+const dasAbas = (url: string, abas: readonly AbaMenu[], secao: SecaoInicio = "Módulo"): SubitemInicio[] =>
+  abas.map((a) => ({ titulo: a.titulo, url, icone: a.icone, secao, search: { aba: a.aba }, ...(a.soAdmin ? { soAdmin: true } : {}) }));
 
 const doItem = (i: ItemMenu): SubitemInicio => {
   const search = i.search ?? (i.de ? { de: i.de } : undefined);
@@ -34,7 +34,7 @@ export const GRUPOS_INICIO: readonly GrupoInicio[] = [
   {
     titulo: "Módulos",
     cartoes: [
-      { titulo: "EPIs", icone: "HardHat", itens: [...dasAbas("/epi", ABAS_EPI), ...dosItens(MENU_EPI)] },
+      { titulo: "EPIs", icone: "HardHat", itens: [...dasAbas("/epi", ABAS_EPI), ...dasAbas("/epi", ABAS_EPI_RELATORIOS, "Relatórios"), ...dosItens(MENU_EPI)] },
       { titulo: "Uniformes", icone: "Shirt", itens: [...dasAbas("/uniformes", ABAS_UNIFORME), ...dosItens(MENU_UNIFORMES)] },
       { titulo: "Ferramentas", icone: "Wrench", itens: [...dasAbas("/ferramentas", ABAS_FERRAMENTA), ...dosItens(MENU_FERRAMENTAS)] },
       { titulo: "Veículos", icone: "Car", itens: [...dasAbas("/veiculos", ABAS_VEICULO), ...dosItens(MENU_VEICULOS)] },

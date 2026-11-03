@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useAccess } from "@/lib/access-context";
 import { areaDaRota, type SecaoInicio } from "@/lib/inicio";
 
-const SECOES: readonly SecaoInicio[] = ["Módulo", "Parâmetros"];
+const SECOES: readonly SecaoInicio[] = ["Módulo", "Relatórios", "Parâmetros"];
 
 // Topo, ao lado do Voltar ao início: as outras rotinas do mesmo cartão da tela inicial (módulo e parâmetros), para trocar de rotina
 // sem voltar ao início. Telas que não pertencem a um cartão com submenu (Dashboard, Empresas...) não mostram o menu.
