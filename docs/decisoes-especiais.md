@@ -1995,3 +1995,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 354. EPI, Sugestão de Compras: legenda e balão nos status
 
 - Acima da tabela há uma legenda sempre visível, com cada status de criticidade (Ruptura, Comprar já, Planejar, Estável e Excesso), a criticidade e o significado, mais o "Sem consumo". Na tabela, passar o mouse (ou focar com o teclado) sobre a palavra do status abre um balão com a mesma explicação. Vale também para os status da lista de itens do relatório de cotação. Os textos vêm do significado de cada status em Parâmetros Específicos de EPI.
+
+## 355. EPI: condição lógica de cada status por método e vai e volta com a Sugestão de Compras
+
+- Em Parâmetros › EPI › Parâmetros Específicos, a tabela de status da sugestão de compra mostra, ao lado da tag colorida: criticidade, condição lógica (o gatilho, com a fórmula e com os dias configurados) e o significado prático. A explicação muda conforme o método escolhido, mesmo antes de salvar. Com o tempo de cobertura (TC, em dias): Ruptura TC < TR; Comprar já TC ≥ TR e TC ≤ TR + segurança; Planejar até TR + planejamento; Estável até o limite de excesso; Excesso acima dele; o ponto de pedido é TR + dias de segurança. Com o estoque mínimo: Ruptura estoque total = 0; Comprar já abaixo do mínimo; Planejar exatamente no mínimo; Estável acima do mínimo com cobertura até o limite de excesso; Excesso acima dele.
+- A legenda e os balões da Sugestão de Compras (decisão 354) usam a mesma condição, do método em uso.
+- O link Parâmetros Específicos da Sugestão de Compras abre essa tela com um botão "Voltar para Sugestão de Compras" e, ao salvar os parâmetros da sugestão, volta a ela sozinho.

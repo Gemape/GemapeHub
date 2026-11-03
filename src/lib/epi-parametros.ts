@@ -172,3 +172,38 @@ export function statusDeCriticidade(tc: number, p: ParametrosCompraEpi): StatusC
   if (tc <= Math.max(p.limiteExcesso, tr + p.diasPlanejamento)) return "estavel";
   return "excesso";
 }
+
+// Condição lógica (gatilho) e significado de cada status conforme o método da sugestão de compra (decisão 355). Com o tempo de cobertura (TC, em dias) a condição compara TC com o prazo de reposição
+// (TR) e a segurança, o planejamento e o excesso; com o estoque mínimo, compara o estoque total com o mínimo do EPI. `formula` usa as letras da tabela e `calculo`, os dias configurados.
+export type CondicaoDoStatus = { formula: string; calculo: string; significado: string };
+
+export function condicaoDoStatus(status: StatusCriticidade, p: ParametrosCompraEpi): CondicaoDoStatus {
+  if (p.metodo === "minimo") {
+    const minimo = {
+      ruptura: { formula: "Estoque total = 0", calculo: "Sem nenhuma unidade (novos + usados).", significado: "Sem estoque: o item acabou." },
+      comprar_ja: { formula: "0 < Estoque total < Mínimo", calculo: "Abaixo do estoque mínimo cadastrado no EPI.", significado: "Abaixo do estoque mínimo: o pedido precisa ser feito hoje." },
+      planejar: { formula: "Estoque total = Mínimo (Mínimo > 0)", calculo: "Exatamente no estoque mínimo do EPI.", significado: "No limite do mínimo: o item entra na próxima rodada de cotações." },
+      estavel: { formula: `Estoque total > Mínimo e TC ≤ ${p.limiteExcesso}`, calculo: `Acima do mínimo e com cobertura de até ${p.limiteExcesso} dias (ou sem consumo).`, significado: "Acima do mínimo: nenhuma ação necessária." },
+      excesso: { formula: `Estoque total > Mínimo e TC > ${p.limiteExcesso}`, calculo: `Acima do mínimo e com cobertura de mais de ${p.limiteExcesso} dias.`, significado: "Estoque acima do necessário: risco de capital parado." },
+    } satisfies Record<StatusCriticidade, CondicaoDoStatus>;
+    return minimo[status];
+  }
+  const tr = p.prazoReposicao;
+  const seguranca = tr + p.diasSeguranca;
+  const planejamento = tr + p.diasPlanejamento;
+  const excesso = Math.max(p.limiteExcesso, planejamento);
+  const cobertura = {
+    ruptura: { formula: "TC < TR", calculo: `TC < ${tr} dias`, significado: STATUS_CRITICIDADE.ruptura.significado },
+    comprar_ja: { formula: "TC ≥ TR e TC ≤ TR + segurança", calculo: `TC ≥ ${tr} e TC ≤ ${seguranca} dias`, significado: STATUS_CRITICIDADE.comprar_ja.significado },
+    planejar: { formula: "TC > TR + segurança e TC ≤ TR + planejamento", calculo: `TC > ${seguranca} e TC ≤ ${planejamento} dias`, significado: STATUS_CRITICIDADE.planejar.significado },
+    estavel: { formula: "TC > TR + planejamento e TC ≤ limite de excesso", calculo: `TC > ${planejamento} e TC ≤ ${excesso} dias`, significado: STATUS_CRITICIDADE.estavel.significado },
+    excesso: { formula: "TC > limite de excesso", calculo: `TC > ${excesso} dias`, significado: STATUS_CRITICIDADE.excesso.significado },
+  } satisfies Record<StatusCriticidade, CondicaoDoStatus>;
+  return cobertura[status];
+}
+
+// O ponto de pedido (gatilho de compra) do método escolhido, em uma frase.
+export const textoDoPontoDePedido = (p: ParametrosCompraEpi): string =>
+  p.metodo === "minimo"
+    ? "Ponto de pedido: o estoque mínimo do EPI. Abaixo dele a compra é sugerida."
+    : `Ponto de pedido: TR (prazo de reposição, ${p.prazoReposicao} dias) + ${p.diasSeguranca} dias de segurança = ${p.prazoReposicao + p.diasSeguranca} dias de cobertura. TC é o tempo de cobertura: estoque total ÷ consumo médio por dia.`;

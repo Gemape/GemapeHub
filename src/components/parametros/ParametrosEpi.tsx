@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  condicaoDoStatus,
   diasValidos,
   lerMotivosBaixaEpi,
   lerMotivosDevolucaoEpi,
@@ -16,6 +18,7 @@ import {
   salvarMotivosDevolucaoEpi,
   salvarParametrosCompraEpi,
   STATUS_CRITICIDADE,
+  textoDoPontoDePedido,
   type MetodoReposicao,
   type StatusCriticidade,
 } from "@/lib/epi-parametros";
@@ -125,7 +128,10 @@ const CLASSE_STATUS: Record<StatusCriticidade, string> = {
 };
 
 // Parâmetros Específicos do EPI (decisão 328): motivos de baixa definitiva, motivos de devolução ao estoque e os parâmetros da sugestão de compra.
-export function ParametrosEpi() {
+// `voltarParaSugestao`: aberto pelo link da Sugestão de Compras (decisão 355); o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela.
+export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugestao?: boolean }) {
+  const navegar = useNavigate();
+  const voltar = () => void navegar({ to: "/epi", search: { aba: "sugestao-compras" } });
   const [salvo, setSalvo] = useState(lerParametrosCompraEpi);
   const [metodo, setMetodo] = useState<MetodoReposicao>(salvo.metodo);
   const [cobertura, setCobertura] = useState(String(salvo.diasCobertura));
@@ -156,6 +162,7 @@ export function ParametrosEpi() {
       salvarParametrosCompraEpi(novo);
       setSalvo(novo);
       toast.success("Parâmetros da sugestão de compra salvos.");
+      if (voltarParaSugestao) voltar();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar os parâmetros.");
     }
@@ -186,8 +193,15 @@ export function ParametrosEpi() {
     </div>
   );
 
+  // A tabela mostra a condição do status para o que está na tela (mesmo sem salvar); se os dias digitados não valem, vale o que está salvo.
+  const emUso = valido ? novo : salvo;
   return (
     <section className="space-y-3" aria-labelledby="parametros-epi">
+      {voltarParaSugestao && (
+        <Button type="button" variant="outline" size="sm" onClick={voltar}>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Sugestão de Compras
+        </Button>
+      )}
       <div>
         <h2 id="parametros-epi" className="text-lg font-semibold">
           Parâmetros do EPI
@@ -290,20 +304,39 @@ export function ParametrosEpi() {
             </p>
           )}
 
-          <div className="space-y-1">
-            <p className="text-sm font-medium">
-              Tabela de criticidade (TC = tempo de cobertura, em dias)
-            </p>
-            <ul className="grid gap-1 text-xs sm:grid-cols-2">
-              {(Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[]).map((s) => (
-                <li key={s} className="flex items-center gap-2">
-                  <span className={`rounded px-2 py-0.5 font-medium ${CLASSE_STATUS[s]}`}>
-                    {STATUS_CRITICIDADE[s].rotulo}
-                  </span>
-                  <span className="text-muted-foreground">{STATUS_CRITICIDADE[s].significado}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Tabela de status de criticidade (TC = tempo de cobertura, em dias)</p>
+            <p className="text-xs text-muted-foreground">{textoDoPontoDePedido(emUso)}</p>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-left text-xs" aria-label="Condição lógica de cada status">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="px-2 py-1.5 font-medium">Status</th>
+                    <th className="px-2 py-1.5 font-medium">Criticidade</th>
+                    <th className="px-2 py-1.5 font-medium">Condição lógica (gatilho)</th>
+                    <th className="px-2 py-1.5 font-medium">Significado prático</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[]).map((st) => {
+                    const c = condicaoDoStatus(st, emUso);
+                    return (
+                      <tr key={st} className="border-t align-top">
+                        <td className="px-2 py-1.5">
+                          <span className={`whitespace-nowrap rounded px-2 py-0.5 font-medium ${CLASSE_STATUS[st]}`}>{STATUS_CRITICIDADE[st].rotulo}</span>
+                        </td>
+                        <td className="px-2 py-1.5">{STATUS_CRITICIDADE[st].criticidade}</td>
+                        <td className="px-2 py-1.5">
+                          <code className="rounded bg-muted px-1.5 py-0.5">{c.formula}</code>
+                          <span className="mt-0.5 block text-muted-foreground">{c.calculo}</span>
+                        </td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{c.significado}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
           <Button requiresWrite disabled={!valido || igual} onClick={salvarCompra}>
             Salvar parâmetros da sugestão

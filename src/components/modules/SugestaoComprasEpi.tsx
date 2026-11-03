@@ -196,7 +196,7 @@ export function SugestaoComprasEpi() {
           Para comprar, o estoque de novos e de usados é um só. O status vem dos parâmetros de{" "}
           <Link
             to="/cadastros/gerais/categorias"
-            search={{ de: "epi" }}
+            search={{ de: "epi", voltar: "sugestao-compras" }}
             className="font-medium text-primary underline underline-offset-2"
           >
             Parâmetros Específicos
@@ -264,7 +264,7 @@ export function SugestaoComprasEpi() {
         </div>
       </div>
 
-      <LegendaStatusCompra />
+      <LegendaStatusCompra parametros={parametrosCompra} />
 
       <div className="panel overflow-x-auto">
         <Table>
@@ -309,7 +309,7 @@ export function SugestaoComprasEpi() {
                     {l.cobertura === null ? "Sem consumo" : l.cobertura.toLocaleString("pt-BR")}
                   </TableCell>
                   <TableCell>
-                    <EtiquetaStatusCompra status={l.status} />
+                    <EtiquetaStatusCompra status={l.status} parametros={parametrosCompra} />
                   </TableCell>
                 </TableRow>
               ))
@@ -438,7 +438,7 @@ export function SugestaoComprasEpi() {
                           <TableCell>{nomeDaEmpresa(l.empresaId)}</TableCell>
                           <TableCell className="text-right">{l.total}</TableCell>
                           <TableCell>
-                            <EtiquetaStatusCompra status={l.status} />
+                            <EtiquetaStatusCompra status={l.status} parametros={parametrosCompra} />
                           </TableCell>
                           <TableCell>
                             <Input
