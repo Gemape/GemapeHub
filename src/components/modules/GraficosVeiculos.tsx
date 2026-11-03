@@ -11,7 +11,7 @@ import type { RevisaoDoVeiculo } from "@/components/modules/ManutencaoRevisoes";
 import type { GrupoDeArea } from "@/lib/area-responsaveis";
 import { grupoDaLinha } from "@/lib/area-responsaveis";
 import { resultadosPorResponsavel, resumoDeLinhas, type LinhaPainel } from "@/lib/checklist-painel";
-import { faixaDoIndice } from "@/lib/faixas-desempenho";
+import { faixaDoIndiceDeVeiculos } from "@/lib/faixas-desempenho";
 import type { IndicadoresDaFrota } from "@/lib/frota-indicadores";
 import { contagemPorMes, placaDoRotulo } from "@/lib/graficos-veiculos";
 import type { StatusOcorrencia } from "@/lib/ocorrencias-veiculo";
@@ -311,7 +311,7 @@ export function GraficosChecklist({
           categoria="nome"
           series={[{ chave: "valor", nome: "No prazo", cor: COR_GRAFICO.azul }]}
           cores={responsaveis.map((r) => {
-            const f = faixaDoIndice(r.pctNoPrazo)?.faixa;
+            const f = faixaDoIndiceDeVeiculos(r.pctNoPrazo)?.faixa;
             return f ? COR_DA_FAIXA[f] : COR_GRAFICO.cinza;
           })}
           meta={{ valor: 90, rotulo: "Meta 90%" }}

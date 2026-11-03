@@ -3,7 +3,7 @@
 // finalização (início da tratativa mais os dias de finalizar). Em cada passo, a data da última renovação, se houver, vale no lugar da padrão. Não tratada é a encerrada
 // que perdeu algum dos dois prazos ou a ainda aberta que já venceu. A ocorrência que ainda está dentro do prazo não entra na conta. A faixa vem dos limites da Frota.
 import { hojeBrasilia } from "./checklist-veiculo.ts";
-import { faixaDoIndice, type ConfigFaixas } from "./faixas-desempenho.ts";
+import { faixaDoIndice, lerFaixasDeVeiculos, type ConfigFaixas } from "./faixas-desempenho.ts";
 import type { IndicadorDaFrota } from "./frota-indicadores.ts";
 import { ocorrenciaVencida } from "./frota-ocorrencias.ts";
 import { dataLimiteSugerida, type PrazosOcorrencias } from "./prazo-ocorrencias.ts";
@@ -59,7 +59,7 @@ export function indicadoresDeOcorrencias(entrada: {
   ).length;
   const total = noPrazo + fora;
   const valor = total === 0 ? null : arredondar((noPrazo / total) * 100);
-  const faixa = faixaDoIndice(valor, entrada.faixas)?.faixa ?? null;
+  const faixa = faixaDoIndice(valor, entrada.faixas ?? lerFaixasDeVeiculos())?.faixa ?? null;
   const vazio = "Nenhuma ocorrência encerrada ou vencida";
   return {
     noPrazo: { pct: valor, faixa, detalhe: total ? `${noPrazo} de ${total} tratadas no prazo` : vazio },

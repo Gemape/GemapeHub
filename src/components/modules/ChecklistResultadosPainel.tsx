@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GRUPOS_DE_AREA, grupoDaLinha, grupoDeAreaPorNome, type GrupoDeArea } from "@/lib/area-responsaveis";
-import { faixaDoIndice } from "@/lib/faixas-desempenho";
+import { faixaDoIndiceDeVeiculos } from "@/lib/faixas-desempenho";
 import { mesesDisponiveis, painelDoMes, resultadosPorResponsavel, resumoDeLinhas, type ChecklistDoPainel, type LinhaPainel, type Previsao, type ResumoPainel } from "@/lib/checklist-painel";
 
 const TODOS_OS_PERIODOS = "todos";
@@ -20,8 +20,8 @@ function Indicadores({ resumo, todos, classe = "grid-cols-2" }: { resumo: Resumo
   const desfechos = resumo.realizados + resumo.naoRealizados;
   return (
     <div className={`grid gap-2 ${classe}`}>
-      <StatCard titulo="Realizados no prazo" pct={resumo.pctNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} compacto />
-      <StatCard titulo="Não realizados no prazo" pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} compacto />
+      <StatCard titulo="Realizados no prazo" pct={resumo.pctNoPrazo} faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} compacto />
+      <StatCard titulo="Não realizados no prazo" pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} compacto />
       <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} compacto />
       <StatCard titulo="A vencer" valor={resumo.aVencer} detalhe="Ainda dentro do prazo" icone={CalendarClock} compacto />
     </div>
@@ -33,7 +33,7 @@ const COR_TEXTO = { verde: "text-green-700 dark:text-green-400", amarelo: "text-
 
 // O percentual de cada responsável com a bolinha da faixa (mesmas faixas e cores de Viagens); a cor nunca vai sozinha: o nome da faixa fica no title e para leitor de tela.
 function PercentualComFaixa({ valor }: { valor: number | null }) {
-  const f = faixaDoIndice(valor);
+  const f = faixaDoIndiceDeVeiculos(valor);
   if (!f) return <>{porcento(valor)}</>;
   return (
     <span className={`inline-flex items-center justify-end gap-1.5 ${COR_TEXTO[f.faixa]}`} title={`${f.cor}: ${f.classificacao}`}>

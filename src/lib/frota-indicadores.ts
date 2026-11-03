@@ -2,7 +2,7 @@
 // um percentual, e a faixa (verde, amarelo ou vermelho) vem dos limites de Parâmetros > Veículos > Parâmetros Específicos, os mesmos dos índices de Viagens.
 import { resumoDeLinhas, type LinhaPainel } from "./checklist-painel.ts";
 import type { StatusSugestao } from "./extrato-veiculo.ts";
-import { faixaDoIndice, type ConfigFaixas, type Faixa } from "./faixas-desempenho.ts";
+import { faixaDoIndice, lerFaixasDeVeiculos, type ConfigFaixas, type Faixa } from "./faixas-desempenho.ts";
 import { hojeBrasilia } from "./checklist-veiculo.ts";
 import { ocorrenciaVencida, type OcorrenciaDoPrazo } from "./frota-ocorrencias.ts";
 import type { PrazosOcorrencias } from "./prazo-ocorrencias.ts";
@@ -36,7 +36,7 @@ const indicador = (
   config?: ConfigFaixas,
 ): IndicadorDaFrota => ({
   pct: valor,
-  faixa: faixaDoIndice(valor, config)?.faixa ?? null,
+  faixa: faixaDoIndice(valor, config ?? lerFaixasDeVeiculos())?.faixa ?? null,
   detalhe,
 });
 
