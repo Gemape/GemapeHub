@@ -28,7 +28,6 @@ import {
   useEmpregados,
   useRegistrarMovimentacoesLote,
 } from "@/lib/hooks-gemape";
-import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
@@ -195,7 +194,7 @@ export function UniformesTermoBaixa() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={TODAS}>Nenhum / Empresa</SelectItem>
-                {soEmpregadosDeUniforme(empregados).map((e) => (
+                {empregados.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                   </SelectItem>
