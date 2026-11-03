@@ -70,3 +70,10 @@ test("a tela do Termo de Entrega pede o responsável, exige que seja outra pesso
   assert.match(tela, /responsavel: \{ nome: responsavel\.nome \}/);
   assert.match(tela, /quem entrega não pode ser quem recebe/i);
 });
+
+test("trocar o empregado para quem já era o responsável limpa o responsável, e a lista vazia avisa o motivo", async () => {
+  const { readFileSync } = await import("node:fs");
+  const tela = readFileSync(new URL("../src/components/modules/EpiTermoEntrega.tsx", import.meta.url), "utf8");
+  assert.match(tela, /if \(v === responsavelId\) setResponsavelId\(""\)/);
+  assert.match(tela, /Nenhum outro empregado habilitado para entregar EPI/);
+});

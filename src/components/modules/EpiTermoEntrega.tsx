@@ -54,6 +54,8 @@ export function EpiTermoEntrega() {
   }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("epi", empresaSel || TODAS);
+  // Quem pode entregar: empregado ativo, entre os habilitados do EPI, que não seja quem recebe.
+  const responsaveis = soEmpregadosDeEpi(empregados.filter((e) => empregadoAtivo(e) && e.id !== empregadoId));
 
   const parametros = useParametrosBase();
   const registrarLote = useRegistrarMovimentacoesLote(["movimentacoes", "epis"]);
@@ -196,7 +198,7 @@ export function EpiTermoEntrega() {
           </div>
           <div className="space-y-1.5">
             <Label>Empregado</Label>
-            <Select value={empregadoId} onValueChange={setEmpregadoId}>
+            <Select value={empregadoId} onValueChange={(v) => { setEmpregadoId(v); if (v === responsavelId) setResponsavelId(""); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o empregado" />
               </SelectTrigger>
@@ -216,13 +218,16 @@ export function EpiTermoEntrega() {
                 <SelectValue placeholder="Selecione quem entrega" />
               </SelectTrigger>
               <SelectContent>
-                {soEmpregadosDeEpi(empregados.filter((e) => empregadoAtivo(e) && e.id !== empregadoId)).map((e) => (
+                {responsaveis.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {empresaSel && empregadoId && responsaveis.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum outro empregado habilitado para entregar EPI. Habilite em Parâmetros &gt; EPI &gt; Parâmetros Específicos.</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Data da Entrega</Label>
