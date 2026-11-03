@@ -1,11 +1,10 @@
 // Interpretação dos indicadores da Frota para o gestor (decisão 345): para cada indicador, o valor, a faixa e uma leitura em linguagem simples do que o resultado quer dizer e do que fazer.
 import type { Faixa } from "./faixas-desempenho.ts";
-import type { CustoPorKm, IndicadorDaFrota, IndicadoresDaFrota } from "./frota-indicadores.ts";
+import { reais, type CustoPorKm, type IndicadorDaFrota, type IndicadoresDaFrota } from "./frota-indicadores.ts";
 
 export type Interpretacao = { titulo: string; valor: string; faixa: Faixa | null; leitura: string };
 
 const porcento = (n: number | null) => (n === null ? "sem dados" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
-const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 // Três leituras por indicador, uma por faixa (verde, amarelo, vermelho); sem valor, a de "sem dados".
 const TEXTOS: Record<string, { semDados: string; verde: string; amarelo: string; vermelho: string }> = {
@@ -77,6 +76,6 @@ export function interpretacoesDaFrota(
     item("PCM · Índice de check lists realizados no prazo", ind.checklistPcm, "checklist"),
     item("PCM · Índice de ocorrências tratadas no prazo", ind.ocorrencias, "ocorrencias"),
     item("Técnicos · Índice de check lists realizados no prazo", ind.tecnicosNoPrazo, "tecnicos"),
-    item("Técnicos · Índice de check lists atrasados", { ...ind.tecnicosNaoRealizados }, "tecnicos"),
+    item("Técnicos · Índice de check lists atrasados", ind.tecnicosNaoRealizados, "tecnicos"),
   ];
 }

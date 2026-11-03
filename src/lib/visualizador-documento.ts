@@ -18,14 +18,21 @@ export function abrirDocumento(documento: DocumentoAberto) {
 export function imprimirDocumento(html: string) {
   const quadro = document.createElement("iframe");
   quadro.setAttribute("aria-hidden", "true");
+  // Mesmo isolamento do visualizador: sem scripts do documento; só imprimir (allow-modals) e ler o quadro (allow-same-origin).
+  quadro.setAttribute("sandbox", "allow-same-origin allow-modals");
   quadro.style.cssText = "position: fixed; right: 0; bottom: 0; width: 0; height: 0; border: 0;";
+  // O quadro sai quando a impressão acaba; em navegador que não avisa, a rede de segurança é o prazo longo (a janela de impressão pode ficar aberta por minutos).
+  const remover = () => quadro.remove();
   quadro.onload = () => {
-    quadro.contentWindow?.focus();
-    quadro.contentWindow?.print();
+    const janela = quadro.contentWindow;
+    if (!janela) return remover();
+    janela.addEventListener("afterprint", remover);
+    janela.focus();
+    janela.print();
   };
   quadro.srcdoc = html;
   document.body.appendChild(quadro);
-  window.setTimeout(() => quadro.remove(), 120000);
+  window.setTimeout(remover, 600000);
 }
 
 export function fecharDocumento() {

@@ -3,9 +3,8 @@ import type { ReactNode } from "react";
 import { AlertTriangle, ArrowDown, ArrowLeftRight, ArrowUp, Coins, Minus, type LucideIcon } from "lucide-react";
 
 import type { Faixa } from "@/lib/faixas-desempenho";
-import { LIMITE_REATIVO, type CustoPorKm, type IndicadorDaFrota, type IndicadoresDaFrota } from "@/lib/frota-indicadores";
+import { LIMITE_REATIVO, reais, type CustoPorKm, type IndicadorDaFrota, type IndicadoresDaFrota } from "@/lib/frota-indicadores";
 
-const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const porcento = (n: number | null) =>
   n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 

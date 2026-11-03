@@ -113,6 +113,7 @@ export function GraficosFrota({
           empilhado
           meta={{ valor: 80, rotulo: "Meta 80%" }}
           sufixo="%"
+          maximo={100}
         />
       </QuadroGrafico>
     </PainelGraficos>

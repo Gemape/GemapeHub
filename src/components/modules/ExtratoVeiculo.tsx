@@ -194,13 +194,15 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
     ];
     // Quais células viram link para consultar o registro (decisão 338): o código do check list (tabela 5) e o da ocorrência (tabela 4, no começo da descrição). Só na tela: o PDF não muda.
     const ligacoes: Record<string, Ligacao> = {};
-    if (MODO_DEMO) ocorrenciasDoVeiculo.forEach((o, k) => { if (o.id) ligacoes[`4:${k}`] = { coluna: 1, tipo: "ocorrencia", id: o.id }; });
+    // O botão Tratativa só aparece nas ocorrências em aberto: a encerrada só o Administrador altera, e o módulo já bloqueia (não vale oferecer o atalho).
+    const tratativas: Record<string, boolean> = {};
+    if (MODO_DEMO) ocorrenciasDoVeiculo.forEach((o, k) => { if (o.id) { ligacoes[`4:${k}`] = { coluna: 1, tipo: "ocorrencia", id: o.id }; if (o.aberta) tratativas[`4:${k}`] = true; } });
     // Check lists periódicos previstos que ainda não foram feitos: cada linha ganha o botão Realizar check list, com a periodicidade dela.
     const realizaveis: Record<number, string> = {};
     linhasChecklist.forEach((l, k) => { if (!l.checklistId) realizaveis[k] = l.periodicidade; });
     linhasChecklist.forEach((l, k) => { if (l.checklistId && l.checklistCodigo) ligacoes[`5:${k}`] = { coluna: 5, tipo: "checklist", id: l.checklistId }; });
     return {
-      rotulo, kmAtual, media, vencidas, tabelas, ligacoes, realizaveis,
+      rotulo, kmAtual, media, vencidas, tabelas, ligacoes, tratativas, realizaveis,
       empresa: empresas.find((e) => e.id === v.empresa_id)?.nome_fantasia ?? "",
     };
   }
@@ -340,7 +342,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
                                   )}
                                   {comTratativa && (
                                     <TableCell className="text-right">
-                                      {dados.ligacoes[`${n}:${k}`] && (
+                                      {dados.tratativas[`${n}:${k}`] && dados.ligacoes[`${n}:${k}`] && (
                                         <Button asChild variant="outline" size="sm">
                                           <Link to="/veiculos" search={{ aba: "ocorrencias", ocorrencia: dados.ligacoes[`${n}:${k}`]!.id, voltar: veiculo.id }}>Tratativa</Link>
                                         </Button>

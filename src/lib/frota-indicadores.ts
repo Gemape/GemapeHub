@@ -204,6 +204,7 @@ export function custoPorKmPorMes(
 
 // Proporção do gasto de manutenção que é preventivo (decisão 344): preventivo ÷ total de manutenção. Referência de mercado 80/20: verde a partir de 80%, amarelo de 70% a 79,9% e vermelho abaixo de
 // 70%, quando a frota está no modo reativo (o corretivo custa mais). Os limites são fixos, não os das faixas de Parâmetros, que valem para os índices de prazo.
+export const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 export const META_PREVENTIVA = 80;
 export const LIMITE_REATIVO = 70;
 export function proporcaoPreventiva(veiculoIds: string[], manutencoes: ManutencaoDeCusto[]): IndicadorDaFrota {
@@ -212,7 +213,7 @@ export function proporcaoPreventiva(veiculoIds: string[], manutencoes: Manutenca
   const total = soma(daFrota.map((m) => m.custo));
   const preventivo = soma(daFrota.filter((m) => m.tipo === "Preventiva").map((m) => m.custo));
   const valor = pct(preventivo, total);
-  const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
   return {
     pct: valor,
     faixa: valor === null ? null : valor >= META_PREVENTIVA ? "verde" : valor >= LIMITE_REATIVO ? "amarelo" : "vermelho",
