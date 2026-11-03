@@ -35,6 +35,7 @@ import { hojeLocal } from "@/lib/empregados";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { useEmpresa } from "@/lib/empresa-context";
 import { controleDeEstoque } from "@/lib/epi-controle-estoque";
+import { CLASSE_STATUS, EtiquetaStatusCompra, LegendaStatusCompra } from "@/components/modules/LegendaStatusCompra";
 import { STATUS_CRITICIDADE, type StatusCriticidade } from "@/lib/epi-parametros";
 import {
   linhasDeEstoqueEpi,
@@ -64,13 +65,6 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 
 const TODOS = "todos";
 const NIVEIS = Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[];
-const CLASSE_STATUS: Record<StatusCriticidade, string> = {
-  ruptura: "bg-destructive text-destructive-foreground",
-  comprar_ja: "bg-accent text-accent-foreground",
-  planejar: "bg-warning text-warning-foreground",
-  estavel: "bg-success text-success-foreground",
-  excesso: "bg-info text-info-foreground",
-};
 
 // Módulo EPI > Sugestão de Compras (decisão 330): estoque de novos e usados como um só, filtros por empresa e palavra-chave, status de criticidade dos Parâmetros Específicos e o botão
 // Gerar relatório, que monta a Cotação de preços (PDF ou Excel) pela subcategoria e pelos níveis de criticidade escolhidos.
@@ -202,7 +196,7 @@ export function SugestaoComprasEpi() {
           Para comprar, o estoque de novos e de usados é um só. O status vem dos parâmetros de{" "}
           <Link
             to="/cadastros/gerais/categorias"
-            search={{ de: "epi" }}
+            search={{ de: "epi", voltar: "sugestao-compras" }}
             className="font-medium text-primary underline underline-offset-2"
           >
             Parâmetros Específicos
@@ -270,6 +264,8 @@ export function SugestaoComprasEpi() {
         </div>
       </div>
 
+      <LegendaStatusCompra parametros={parametrosCompra} />
+
       <div className="panel overflow-x-auto">
         <Table>
           <TableHeader>
@@ -313,15 +309,7 @@ export function SugestaoComprasEpi() {
                     {l.cobertura === null ? "Sem consumo" : l.cobertura.toLocaleString("pt-BR")}
                   </TableCell>
                   <TableCell>
-                    {l.status ? (
-                      <span
-                        className={`rounded px-2 py-0.5 text-xs font-medium ${CLASSE_STATUS[l.status]}`}
-                      >
-                        {rotuloDoStatus(l.status)}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">Sem consumo</span>
-                    )}
+                    <EtiquetaStatusCompra status={l.status} parametros={parametrosCompra} />
                   </TableCell>
                 </TableRow>
               ))
@@ -450,11 +438,7 @@ export function SugestaoComprasEpi() {
                           <TableCell>{nomeDaEmpresa(l.empresaId)}</TableCell>
                           <TableCell className="text-right">{l.total}</TableCell>
                           <TableCell>
-                            <span
-                              className={`rounded px-2 py-0.5 text-xs font-medium ${l.status ? CLASSE_STATUS[l.status] : ""}`}
-                            >
-                              {rotuloDoStatus(l.status)}
-                            </span>
+                            <EtiquetaStatusCompra status={l.status} parametros={parametrosCompra} />
                           </TableCell>
                           <TableCell>
                             <Input

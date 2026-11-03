@@ -1,9 +1,12 @@
 // Faixas de desempenho dos índices do módulo Viagens (decs 192 e 199): por padrão, verde de 90% a 100%, amarelo de 70% a
 // 89,9% e vermelho abaixo de 70%, valendo para o índice de conformidade de lançamento e para o de lançamento no prazo.
-// Os limites e os textos se definem em Parâmetros > Veículos > Parâmetros Específicos; ficam só no navegador (modo demonstração).
+// Os limites e os textos se definem em Parâmetros > Viagens e Parâmetros > Veículos > Parâmetros Específicos (um conjunto para cada domínio); ficam só no navegador (modo demonstração).
 export type Faixa = "verde" | "amarelo" | "vermelho";
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
-const CHAVE = "gemape-demo-faixas-desempenho";
+// Duas configurações independentes (decisão 350): as faixas dos indicadores de Viagens (Parâmetros > Viagens > Parâmetros Específicos) e as dos indicadores de Veículos (Parâmetros > Veículos >
+// Parâmetros Específicos). Enquanto Veículos não tem a sua gravada, vale uma cópia da de Viagens; depois de salvar, as duas seguem separadas.
+export type DominioFaixas = "viagens" | "veiculos";
+const CHAVES: Record<DominioFaixas, string> = { viagens: "gemape-demo-faixas-desempenho", veiculos: "gemape-demo-faixas-desempenho-veiculos" };
 
 export type TextosFaixa = { classificacao: string; significado: string };
 export type ConfigFaixas = { limiteVerde: number; limiteAmarelo: number; verde: TextosFaixa; amarelo: TextosFaixa; vermelho: TextosFaixa };
@@ -56,9 +59,10 @@ const textosDe = (bruto: unknown, padrao: TextosFaixa): TextosFaixa => {
 };
 
 // Valor ausente, inválido ou armazenamento bloqueado voltam ao padrão.
-export function lerFaixas(storage?: StorageLike): ConfigFaixas {
+export function lerFaixas(storage?: StorageLike, dominio: DominioFaixas = "viagens"): ConfigFaixas {
   try {
-    const bruto = (storage ?? localStorage).getItem(CHAVE);
+    const armazenamento = storage ?? localStorage;
+    const bruto = armazenamento.getItem(CHAVES[dominio]) ?? (dominio === "veiculos" ? armazenamento.getItem(CHAVES.viagens) : null);
     const obj: unknown = bruto === null ? null : JSON.parse(bruto);
     const o = obj && typeof obj === "object" ? (obj as Record<string, unknown>) : {};
     const lida: ConfigFaixas = {
@@ -74,12 +78,12 @@ export function lerFaixas(storage?: StorageLike): ConfigFaixas {
   }
 }
 
-export function salvarFaixas(c: ConfigFaixas, storage?: StorageLike): void {
+export function salvarFaixas(c: ConfigFaixas, storage?: StorageLike, dominio: DominioFaixas = "viagens"): void {
   const erro = validarFaixas(c);
   if (erro) throw new Error(erro);
   const limpo = (t: TextosFaixa): TextosFaixa => ({ classificacao: t.classificacao.trim(), significado: t.significado.trim() });
   try {
-    (storage ?? localStorage).setItem(CHAVE, JSON.stringify({ ...c, verde: limpo(c.verde), amarelo: limpo(c.amarelo), vermelho: limpo(c.vermelho) }));
+    (storage ?? localStorage).setItem(CHAVES[dominio], JSON.stringify({ ...c, verde: limpo(c.verde), amarelo: limpo(c.amarelo), vermelho: limpo(c.vermelho) }));
   } catch {
     throw new Error("Não foi possível guardar as faixas neste navegador.");
   }
@@ -91,4 +95,17 @@ export function faixaDoIndice(indice: number | null, config: ConfigFaixas = lerF
   const arredondado = Math.round(indice * 10) / 10;
   const faixa: Faixa = arredondado >= config.limiteVerde ? "verde" : arredondado >= config.limiteAmarelo ? "amarelo" : "vermelho";
   return descricoesFaixas(config).find((f) => f.faixa === faixa)!;
+}
+
+// Os indicadores de Veículos (Frota, Check list, Manutenção e Ocorrências) usam as faixas de Parâmetros > Veículos > Parâmetros Específicos; os de Viagens, as de Viagens (o padrão de `faixaDoIndice`).
+export const lerFaixasDeVeiculos = (storage?: StorageLike): ConfigFaixas => lerFaixas(storage, "veiculos");
+export const faixaDoIndiceDeVeiculos = (indice: number | null): DescricaoFaixa | null => faixaDoIndice(indice, lerFaixasDeVeiculos());
+
+// Veículos mostra a cópia de Viagens até gravar as suas (decisão 350): sem as próprias, o Salvar fica liberado para a pessoa poder separar a cópia sem mudar nenhum valor.
+export function temFaixasProprias(dominio: DominioFaixas, storage?: StorageLike): boolean {
+  try {
+    return (storage ?? localStorage).getItem(CHAVES[dominio]) !== null;
+  } catch {
+    return false;
+  }
 }

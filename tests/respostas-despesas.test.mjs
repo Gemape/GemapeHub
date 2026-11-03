@@ -480,7 +480,7 @@ test("revisão: abastecimento sem litros apaga os litros antigos, e trocar a moe
 
 test("revisão: a janela Novo abastecimento recomeça vazia a cada abertura e as janelas de Veículos só montam nos cards que as usam", () => {
   const dialogo = readFileSync(new URL("../src/components/modules/NovoAbastecimentoDialog.tsx", import.meta.url), "utf8");
-  assert.match(dialogo, /useEffect\(\(\) => \{\s*if \(aberto\) \{ setVeiculoId\(""\); setKm\(""\); \}/);
+  assert.match(dialogo, /useEffect\(\(\) => \{\s*if \(!aberto\) return;\s*setVeiculoId\(veiculoInicial \?\? ""\);/);
   const form = readFileSync(new URL("../src/components/parametros/QuestionarioFormulario.tsx", import.meta.url), "utf8");
   assert.match(form, /\{tipo === TIPO_ABASTECIMENTO && \(\s*<>\s*<NovoAbastecimentoDialog/);
   assert.match(form, /\{tipo === TIPO_MANUTENCAO && \(\s*<>\s*<NovaManutencaoDialog/);

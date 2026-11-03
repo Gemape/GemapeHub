@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,13 +76,15 @@ export function FerramentasCaixasModulo() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Filtrar por número da caixa..."
-          className="max-w-xs"
-          value={buscaCaixa}
-          onChange={(e) => setBuscaCaixa(e.target.value)}
-        />
+      <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Filtrar por número da caixa"
+            placeholder="Filtrar por número da caixa..."
+            value={buscaCaixa}
+            onChange={(e) => setBuscaCaixa(e.target.value)}
+          />
+        </BarraDeFiltros>
       </div>
 
       <div className="space-y-8">

@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
@@ -26,6 +27,7 @@ import {
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { Cabecalho } from "@/components/parametros/Cabecalho";
 import { useEmpresa } from "@/lib/empresa-context";
+import { exportarCsv } from "@/lib/gemape";
 import { formatarCnpj } from "@/lib/formatacao-cadastral";
 import { FornecedorDialog } from "@/components/parametros/FornecedorDialog";
 import { listarFornecedores, proximoCodigoFornecedor, type Fornecedor } from "@/lib/fornecedores-demo";
@@ -227,15 +229,38 @@ function CodigoFabricaPagina() {
         titulo="Código de fábrica"
         descricao="Associa o código do produto na nota fiscal do fornecedor ao código interno da GEMAPE. Na entrada da nota, o sistema saberá a qual produto somar o estoque."
       >
+        <Button
+          variant="outline"
+          disabled={linhas.length === 0}
+          onClick={() =>
+            exportarCsv(
+              "codigo-de-fabrica",
+              linhas.map((c) => ({
+                "Código GEMAPE": c.codigo_produto,
+                Produto: `${c.nome_produto} (${ROTULO_TABELA[c.tabela]})`,
+                Fornecedor: c.fornecedor_nome,
+                "Código na nota": c.codigo_fornecedor,
+                CA: c.ca ?? "",
+                Empresa: nomeEmpresa(c.empresa_id),
+              })),
+            )
+          }
+        >
+          Exportar CSV
+        </Button>
         <Button onClick={() => abrir(null)}>Nova associação</Button>
       </Cabecalho>
 
-      <Input
-        className="max-w-sm"
-        placeholder="Buscar por produto, fornecedor, código ou CA"
-        value={busca}
-        onChange={(e) => setBusca(e.target.value)}
-      />
+      <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar por produto, fornecedor, código ou CA"
+            placeholder="Buscar por produto, fornecedor, código ou CA"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
+      </div>
 
       <div className="panel overflow-x-auto">
         <Table>

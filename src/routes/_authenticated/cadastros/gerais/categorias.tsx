@@ -62,15 +62,18 @@ async function lerRegistros(montar: () => any): Promise<{ data: Record<string, u
 }
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
-  validateSearch: (search: Record<string, unknown>): { de?: De } =>
-    DE.includes(search["de"] as De) ? { de: search["de"] as De } : {},
+  // `voltar` (decisão 355): aberto pelo link da Sugestão de Compras de EPI, mostra o botão e volta a ela depois de salvar os parâmetros da sugestão.
+  validateSearch: (search: Record<string, unknown>): { de?: De; voltar?: "sugestao-compras" } => ({
+    ...(DE.includes(search["de"] as De) ? { de: search["de"] as De } : {}),
+    ...(search["voltar"] === "sugestao-compras" ? { voltar: "sugestao-compras" as const } : {}),
+  }),
   head: () => ({ meta: [{ title: "Parâmetros Específicos | Patrimônio GEMAPE" }] }),
   component: Categorias,
 });
 
 function Categorias() {
   const dados = useParametrosBase();
-  const { de } = Route.useSearch();
+  const { de, voltar } = Route.useSearch();
   const [escolhidaLivre, setEscolhida] = useState("");
   const escolhida = de ? CATEGORIA_DO_MENU[de] : escolhidaLivre;
   const categoria = dados.categorias.find((c) => c.id === escolhida);
@@ -392,7 +395,7 @@ function Categorias() {
               cadastrar={(nomes) => cadastrarMarcasPadraoVeiculos(undefined, nomes)}
             />
           </div>}
-          {categoria.id === "cat-epi" && <ParametrosEpi />}
+          {categoria.id === "cat-epi" && <ParametrosEpi voltarParaSugestao={voltar === "sugestao-compras"} />}
           {categoria.id === "cat-veiculos" && <HabilitarEmpregadosVeiculos />}
           {categoria.id === "cat-veiculos" && <PrazosOcorrenciasVeiculo />}
           {categoria.id === "cat-veiculos" && <SupervisoresOcorrencias />}

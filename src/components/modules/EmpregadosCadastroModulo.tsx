@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useRef, useState } from "react";
 import { useAbrirDireto } from "@/lib/use-abrir-direto";
 import { toast } from "sonner";
@@ -178,8 +179,10 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
       </header>
 
       <div className="flex flex-wrap items-end gap-2">
-        <Input aria-label="Buscar empregado por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        {busca.trim() && <p className="text-sm text-muted-foreground">{encontrados.length} de {empregados.length} empregado(s).</p>}
+        <BarraDeFiltros>
+          <Input aria-label="Buscar empregado por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {busca.trim() && <p className="text-sm text-muted-foreground">{encontrados.length} de {empregados.length} empregado(s).</p>}
+        </BarraDeFiltros>
       </div>
 
       {isLoading ? (

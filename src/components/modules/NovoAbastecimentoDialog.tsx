@@ -21,8 +21,8 @@ const numero = (n: number) => n.toLocaleString("pt-BR");
 // abastecimento), informa data, hora, km (nunca menor que o anterior), litros e valor em reais. É usada na tela do módulo e no card
 // Abastecimento de Viagens (dec 223), que aproveita a data, o valor e os litros do registro gravado. Só modo demonstração; nada no Supabase.
 export function NovoAbastecimentoDialog({
-  aberto, aoMudar, aoSalvar,
-}: { aberto: boolean; aoMudar: (aberto: boolean) => void; aoSalvar: (registro: Abastecimento) => void }) {
+  aberto, aoMudar, aoSalvar, veiculoInicial,
+}: { aberto: boolean; aoMudar: (aberto: boolean) => void; aoSalvar: (registro: Abastecimento) => void; veiculoInicial?: string }) {
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const { data: veiculos = [] } = useVeiculos(empresaId);
@@ -36,9 +36,14 @@ export function NovoAbastecimentoDialog({
   const ultimo = veiculoId ? ultimoAbastecimentoDoVeiculo(daEmpresa, veiculoId) : null;
 
   // Cada abertura recomeça vazia (quem controla `aberto` é o pai, então o Dialog não avisa a abertura).
+  // Vindo do extrato de um veículo (`veiculoInicial`), já abre com ele escolhido e com o km do último abastecimento.
   useEffect(() => {
-    if (aberto) { setVeiculoId(""); setKm(""); }
-  }, [aberto]);
+    if (!aberto) return;
+    setVeiculoId(veiculoInicial ?? "");
+    const anterior = veiculoInicial ? ultimoAbastecimentoDoVeiculo(daEmpresa, veiculoInicial) : null;
+    setKm(anterior ? String(anterior.km) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto, veiculoInicial]);
 
   // Ao escolher o veículo, o km já vem com o do último abastecimento informado.
   function escolherVeiculo(id: string) {

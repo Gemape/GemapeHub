@@ -69,7 +69,9 @@ test("o extrato do veículo é uma tela com período, as tabelas de sugeridas, r
   const extrato = ler("components/modules/ExtratoVeiculo.tsx");
   for (const x of ["Data início", "Data fim", "Gerar PDF", "Personalizar o relatório", "Marcar todos", "Desmarcar todos"]) assert.ok(extrato.includes(x), x);
   assert.ok(!extrato.includes("Gerar PDF desta seção"), "os botões Gerar PDF desta seção saíram (decisão 340)");
-  assert.match(extrato, /gerarPdf\(veiculo, marcadas\)/, "o PDF sai com as seções marcadas");
+  assert.match(extrato, /gerarPdf\(veiculo, marcadas\.flatMap\(/, "o PDF sai com as seções marcadas");
+  assert.match(extrato, /imprimirDocumento\(html\)/, "o PDF abre direto a impressão, sem o visualizador no meio (decisão 346)");
+  assert.match(extrato, /todo o histórico/, "o cabeçalho sempre informa o período");
   assert.match(extrato, /const periodoInvalido = !!inicio && !!fim && inicio > fim;/);
   assert.match(extrato, /noPeriodo\(/);
 });

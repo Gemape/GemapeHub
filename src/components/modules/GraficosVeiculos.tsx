@@ -2,6 +2,7 @@ import {
   COR_DA_FAIXA,
   COR_GRAFICO,
   GraficoBarras,
+  GraficoLinha,
   GraficoRosca,
   PainelGraficos,
   QuadroGrafico,
@@ -10,7 +11,7 @@ import type { RevisaoDoVeiculo } from "@/components/modules/ManutencaoRevisoes";
 import type { GrupoDeArea } from "@/lib/area-responsaveis";
 import { grupoDaLinha } from "@/lib/area-responsaveis";
 import { resultadosPorResponsavel, resumoDeLinhas, type LinhaPainel } from "@/lib/checklist-painel";
-import { faixaDoIndice } from "@/lib/faixas-desempenho";
+import { faixaDoIndiceDeVeiculos } from "@/lib/faixas-desempenho";
 import type { IndicadoresDaFrota } from "@/lib/frota-indicadores";
 import { contagemPorMes, placaDoRotulo } from "@/lib/graficos-veiculos";
 import type { StatusOcorrencia } from "@/lib/ocorrencias-veiculo";
@@ -21,23 +22,29 @@ import type { StatusOcorrencia } from "@/lib/ocorrencias-veiculo";
 export function GraficosFrota({
   indicadores,
   medias,
+  cpkMensal,
+  preventivoMensal,
   compacto = false,
 }: {
   indicadores: IndicadoresDaFrota;
   medias: { veiculo: string; media: number | null }[];
+  // CPK da frota de cada mês recente (decisão 344), para acompanhar a evolução dos custos.
+  cpkMensal: { rotulo: string; cpk: number | null }[];
+  // Parte preventiva e corretiva do gasto de manutenção de cada mês, somando 100% (decisão 345).
+  preventivoMensal: { rotulo: string; preventiva: number; corretiva: number }[];
   // Na Frota os gráficos dividem a tela com os cards e a lista: mais baixos e sem o texto de apoio (decisão 337).
   compacto?: boolean;
 }) {
   const barras = [
-    { nome: "Manutenções", pct: indicadores.manutencoes.pct, faixa: indicadores.manutencoes.faixa },
+    { nome: "Manut.", pct: indicadores.manutencoes.pct, faixa: indicadores.manutencoes.faixa },
     {
-      nome: "Check list PCM",
+      nome: "Check PCM",
       pct: indicadores.checklistPcm.pct,
       faixa: indicadores.checklistPcm.faixa,
     },
-    { nome: "Ocorrências", pct: indicadores.ocorrencias.pct, faixa: indicadores.ocorrencias.faixa },
+    { nome: "Ocorr.", pct: indicadores.ocorrencias.pct, faixa: indicadores.ocorrencias.faixa },
     {
-      nome: "Conformidade",
+      nome: "Conform.",
       pct: indicadores.conformidadeGeral.pct,
       faixa: indicadores.conformidadeGeral.faixa,
     },
@@ -77,6 +84,38 @@ export function GraficosFrota({
           series={[{ chave: "media", nome: "km/L", cor: COR_GRAFICO.azul }]}
         />
       </QuadroGrafico>
+      <QuadroGrafico
+          titulo="CPK da frota mês a mês (R$/km)"
+          {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Custo por km rodado (abastecimento + manutenção) de cada mês, para acompanhar a evolução dos custos." })}
+          vazio={cpkMensal.every((m) => m.cpk === null)}
+        >
+          <GraficoLinha
+            dados={cpkMensal}
+            categoria="rotulo"
+            chave="cpk"
+            nome="CPK"
+            cor={COR_GRAFICO.roxo}
+            formatar={(n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+          />
+        </QuadroGrafico>
+      <QuadroGrafico
+        titulo="Custo preventivo x corretivo por mês (100%)"
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quanto do gasto de manutenção de cada mês foi preventivo (verde) e corretivo (vermelho). A meta é 80% ou mais de preventivo." })}
+        vazio={preventivoMensal.every((m) => m.preventiva + m.corretiva === 0)}
+      >
+        <GraficoBarras
+          dados={preventivoMensal}
+          categoria="rotulo"
+          series={[
+            { chave: "preventiva", nome: "Preventiva", cor: COR_GRAFICO.verde },
+            { chave: "corretiva", nome: "Corretiva", cor: COR_GRAFICO.vermelho },
+          ]}
+          empilhado
+          meta={{ valor: 80, rotulo: "Meta 80%" }}
+          sufixo="%"
+          maximo={100}
+        />
+      </QuadroGrafico>
     </PainelGraficos>
   );
 }
@@ -86,10 +125,13 @@ export function GraficosManutencao({
   revisoes,
   manutencoes,
   hoje,
+  compacto = false,
 }: {
   revisoes: RevisaoDoVeiculo[];
   manutencoes: { tipo: string; data: string }[];
   hoje: string;
+  // Com a tabela de diagnóstico embaixo (decisão 348): gráficos mais baixos e sem o texto de apoio, para tudo caber na tela.
+  compacto?: boolean;
 }) {
   const porVeiculo = new Map<
     string,
@@ -121,7 +163,7 @@ export function GraficosManutencao({
     <PainelGraficos>
       <QuadroGrafico
         titulo="Revisões por veículo"
-        descricao="Situação das revisões do plano de cada veículo."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Situação das revisões do plano de cada veículo." })}
         vazio={porVeiculo.size === 0}
       >
         <GraficoBarras
@@ -138,7 +180,7 @@ export function GraficosManutencao({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="Preventivas x corretivas por mês"
-        descricao="Manutenções registradas nos últimos seis meses."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Manutenções registradas nos últimos seis meses." })}
       >
         <GraficoBarras
           dados={meses}
@@ -157,9 +199,12 @@ export function GraficosManutencao({
 export function GraficosOcorrencias({
   ocorrencias,
   hoje,
+  compacto = false,
 }: {
   ocorrencias: { tipoNome: string; status: StatusOcorrencia; ocorridoEm: string }[];
   hoje: string;
+  // Com a tabela de diagnóstico embaixo (decisão 349): gráficos mais baixos e sem o texto de apoio, para tudo caber na tela.
+  compacto?: boolean;
 }) {
   const contar = (s: StatusOcorrencia) => ocorrencias.filter((o) => o.status === s).length;
   const rosca = [
@@ -179,12 +224,12 @@ export function GraficosOcorrencias({
     <PainelGraficos colunas={3}>
       <QuadroGrafico
         titulo="Ocorrências por situação"
-        descricao="Parte de cada situação no total."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Parte de cada situação no total." })}
         vazio={rosca.length === 0}
       >
         <GraficoRosca dados={rosca} />
       </QuadroGrafico>
-      <QuadroGrafico titulo="Ocorrências por mês" descricao="Registradas nos últimos seis meses.">
+      <QuadroGrafico titulo="Ocorrências por mês" {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Registradas nos últimos seis meses." })}>
         <GraficoBarras
           dados={meses}
           categoria="rotulo"
@@ -193,7 +238,7 @@ export function GraficosOcorrencias({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="Situação por tipo de ocorrência"
-        descricao="Quantas de cada tipo estão abertas, em tratativa ou encerradas."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quantas de cada tipo estão abertas, em tratativa ou encerradas." })}
         vazio={tipos.length === 0}
       >
         <GraficoBarras
@@ -213,6 +258,8 @@ export function GraficosOcorrencias({
 
 // Check list: técnicos contra PCM (realizados, não realizados e a vencer) e o percentual no prazo de cada responsável.
 const ALTURA_COMPACTA = "h-[clamp(6rem,17vh,9.5rem)]";
+// No painel do Check list os gráficos ficam ainda mais baixos, para o geral, os dois grupos e as tabelas caberem numa tela (decisão 347).
+const ALTURA_CHECKLIST = "h-[clamp(5.5rem,14vh,8.5rem)]";
 
 export function GraficosChecklist({
   linhas,
@@ -238,7 +285,7 @@ export function GraficosChecklist({
     <PainelGraficos compacto={compacto}>
       <QuadroGrafico
         titulo="Técnicos x PCM"
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Check lists realizados no prazo, não realizados e a vencer de cada grupo." })}
+        {...(compacto ? { altura: ALTURA_CHECKLIST } : { descricao: "Check lists realizados no prazo, não realizados e a vencer de cada grupo." })}
         vazio={grupos.every((g) => g.realizados + g.naoRealizados + g.aVencer === 0)}
       >
         <GraficoBarras
@@ -253,7 +300,7 @@ export function GraficosChecklist({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="No prazo por responsável (%)"
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Cada responsável contra a meta de 90%." })}
+        {...(compacto ? { altura: ALTURA_CHECKLIST } : { descricao: "Cada responsável contra a meta de 90%." })}
         vazio={responsaveis.length === 0}
       >
         <GraficoBarras
@@ -264,7 +311,7 @@ export function GraficosChecklist({
           categoria="nome"
           series={[{ chave: "valor", nome: "No prazo", cor: COR_GRAFICO.azul }]}
           cores={responsaveis.map((r) => {
-            const f = faixaDoIndice(r.pctNoPrazo)?.faixa;
+            const f = faixaDoIndiceDeVeiculos(r.pctNoPrazo)?.faixa;
             return f ? COR_DA_FAIXA[f] : COR_GRAFICO.cinza;
           })}
           meta={{ valor: 90, rotulo: "Meta 90%" }}

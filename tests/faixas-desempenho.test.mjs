@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { FAIXAS, FAIXAS_PADRAO, descricoesFaixas, faixaDoIndice, lerFaixas, salvarFaixas, validarFaixas } from "../src/lib/faixas-desempenho.ts";
+import { FAIXAS, FAIXAS_PADRAO, descricoesFaixas, faixaDoIndice, faixaDoIndiceDeVeiculos, lerFaixas, lerFaixasDeVeiculos, salvarFaixas, temFaixasProprias, validarFaixas } from "../src/lib/faixas-desempenho.ts";
 
 const faixa = (v) => faixaDoIndice(v)?.faixa ?? null;
 
@@ -103,4 +103,39 @@ test("com a caixa desmarcada, o dias digitado no campo travado não impede salva
   assert.match(tela, /const validoPcm = !pcmAplica \|\| prazoValido\(digitadoPcm\)/);
   const painel = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
   assert.match(painel, /Indicador desligado em Parâmetros/);
+});
+
+test("as faixas de Viagens e as de Veículos são independentes; Veículos começa como cópia da de Viagens (decisão 350)", () => {
+  const s = memoria();
+  const viagens = { ...FAIXAS_PADRAO, limiteVerde: 95, limiteAmarelo: 80 };
+  salvarFaixas(viagens, s);
+  assert.deepEqual(lerFaixasDeVeiculos(s), viagens, "sem a sua própria, Veículos usa uma cópia da de Viagens");
+  const veiculos = { ...FAIXAS_PADRAO, limiteVerde: 85, limiteAmarelo: 60 };
+  salvarFaixas(veiculos, s, "veiculos");
+  assert.deepEqual(lerFaixas(s), viagens, "salvar as de Veículos não muda as de Viagens");
+  assert.deepEqual(lerFaixasDeVeiculos(s), veiculos);
+  salvarFaixas({ ...FAIXAS_PADRAO, limiteVerde: 99, limiteAmarelo: 90 }, s);
+  assert.deepEqual(lerFaixasDeVeiculos(s), veiculos, "e salvar as de Viagens não muda as de Veículos");
+  assert.equal(faixaDoIndice(88, veiculos).faixa, "verde");
+  assert.equal(faixaDoIndice(88, viagens).faixa, "amarelo");
+});
+
+test("os indicadores de veículos leem as faixas de Veículos e os de Viagens, as de Viagens", () => {
+  for (const f of ["components/modules/ChecklistPainelMensal.tsx", "components/modules/ChecklistResultadosPainel.tsx", "components/modules/GraficosVeiculos.tsx"]) {
+    const t = readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
+    assert.match(t, /faixaDoIndiceDeVeiculos\(/, f);
+    assert.doesNotMatch(t, /[^a-zA-Z]faixaDoIndice\(/, f);
+  }
+  for (const f of ["lib/frota-indicadores.ts", "lib/manutencao-indicadores.ts", "lib/ocorrencias-indicadores.ts"]) assert.match(readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8"), /lerFaixasDeVeiculos\(\)/, f);
+  const viagens = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(viagens, /DeVeiculos/, "Viagens segue com as faixas de Viagens");
+});
+
+test("sem faixas próprias gravadas, o Salvar de Veículos fica liberado para gravar a cópia (decisão 350)", () => {
+  const s = memoria();
+  assert.equal(temFaixasProprias("veiculos", s), false);
+  salvarFaixas(FAIXAS_PADRAO, s, "veiculos");
+  assert.equal(temFaixasProprias("veiculos", s), true);
+  assert.equal(temFaixasProprias("viagens", s), false);
+  assert.match(readFileSync(new URL("../src/components/parametros/IndicadoresViagens.tsx", import.meta.url), "utf8"), /const igual = propria && JSON\.stringify\(config\) === JSON\.stringify\(salva\)/);
 });

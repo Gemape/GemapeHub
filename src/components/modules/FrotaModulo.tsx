@@ -1,5 +1,6 @@
 import { Printer } from "lucide-react";
-import { useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
@@ -8,6 +9,7 @@ import { GraficosFrota } from "@/components/modules/GraficosVeiculos";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hojeBrasilia } from "@/lib/checklist-veiculo";
 import { hojeLocal } from "@/lib/empregados";
@@ -16,11 +18,15 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { grupoDeAreaPorNome } from "@/lib/area-responsaveis";
 import { painelDoMes } from "@/lib/checklist-painel";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas } from "@/lib/extrato-veiculo";
-import { indicadoresDaFrota } from "@/lib/frota-indicadores";
+import { custoPorKm, custoPorKmPorMes, indicadoresDaFrota, proporcaoPreventiva, proporcaoPreventivaPorMes } from "@/lib/frota-indicadores";
+import { interpretacoesDaFrota } from "@/lib/frota-interpretacao";
+import { InterpretacaoFrota } from "@/components/modules/InterpretacaoFrota";
+import { custoDaManutencao } from "@/lib/registros-veiculo";
 import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
 import { montarFrotaHtml } from "@/lib/frota-relatorio-html";
-import { combinaBusca } from "@/lib/parametros-base";
+import { combinaBusca, subcategoriasAtivasDa } from "@/lib/parametros-base";
+import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
 import { normalizarPlaca } from "@/lib/veiculos";
 import { useAbastecimentos, useChecklistsVeiculo, useManutencoesVeiculo, useOcorrenciasVeiculo, usePlanosVeiculo, usePrevisoesChecklist } from "@/lib/use-registros-veiculo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -36,7 +42,7 @@ const COR_VENCIMENTO: Record<Vencimento, { ponto: string; etiqueta: string }> = 
 
 // Etiqueta de uma coluna de vencimento: uma pílula só, com a bolinha da cor dentro e todas do mesmo tamanho; coluna que não se aplica ao veículo (sem plano, sem check list associado) mostra um traço.
 // Com `aoClicar`, a pílula é um botão que abre a informação que ela resume (decisão 305), sem abrir o extrato da linha.
-function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; dica?: string; aoClicar?: () => void }) {
+export function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; dica?: string; aoClicar?: () => void }) {
   if (!valor) return <span className="text-muted-foreground">—</span>;
   const cor = COR_VENCIMENTO[valor.situacao];
   const classes = `mx-auto flex h-8 w-full max-w-[12rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.etiqueta}`;
@@ -62,6 +68,8 @@ function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; 
 
 // Módulos > Veículos > Frota (decisão 57): página inicial com a lista de veículos da empresa.
 // Clicar num veículo abre o extrato. O cadastro continua em Parâmetros > Veículos.
+const TODAS_AS_SUBCATEGORIAS = "__todas__";
+
 export function FrotaModulo() {
   const { empresaId, empresas } = useEmpresa();
   const parametros = useParametrosBase();
@@ -75,11 +83,28 @@ export function FrotaModulo() {
   const checklists = useChecklistsVeiculo();
   const previsoes = usePrevisoesChecklist();
   const [busca, setBusca] = useState("");
+  // Filtro por subcategoria do veículo (utilitário, caminhão, carro...), ao lado da busca (decisão 342): vale para a lista e para o relatório; os indicadores seguem sendo da frota toda.
+  const [subcategoria, setSubcategoria] = useState(TODAS_AS_SUBCATEGORIAS);
+  // Opções: as subcategorias ativas e também as que os veículos ainda usam (desativadas ou antigas), para nenhum veículo ficar sem como ser filtrado.
+  const nomesDeSubcategoria = [...new Set([...subcategoriasAtivasDa(parametros, "cat-veiculos").map((s) => s.nome), ...veiculos.map((v) => nomeSubcategoria(parametros, "cat-veiculos", v as never))].filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  // Subcategoria escolhida que deixou de existir (desativada ou renomeada) volta a "todas", em vez de esvaziar a lista.
+  const filtroSubcategoria = nomesDeSubcategoria.includes(subcategoria) ? subcategoria : TODAS_AS_SUBCATEGORIAS;
   // Veículo escolhido e, se veio de uma bolinha, a seção do extrato que ela resume (sem seção, abre a janela do extrato).
   const [aberto, setAberto] = useState<{ id: string; secao: SecaoExtrato | null } | null>(null);
+  // De volta de uma rotina aberta pelo extrato (?extrato=, decisão 346): reabre o extrato desse veículo uma vez e tira o parâmetro do endereço.
+  const { extrato: extratoPedido } = useSearch({ from: "/_authenticated/veiculos" });
+  const navegar = useNavigate();
+  useEffect(() => {
+    if (!extratoPedido || isLoading) return;
+    if (veiculos.some((v) => v.id === extratoPedido)) setAberto({ id: extratoPedido, secao: null });
+    void navegar({ to: "/veiculos", search: { aba: "frota" }, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extratoPedido, isLoading]);
   const hoje = hojeLocal();
 
-  const lista = veiculos.filter((v) =>
+  const lista = veiculos
+    .filter((v) => filtroSubcategoria === TODAS_AS_SUBCATEGORIAS || nomeSubcategoria(parametros, "cat-veiculos", v as never) === filtroSubcategoria)
+    .filter((v) =>
     combinaBusca(busca.replace(/-/g, ""), rotuloDoVeiculo(parametros, v), normalizarPlaca(v.placa ?? ""), v.marca, v.modelo, nomeResponsavel(v.empregado_responsavel_id), STATUS[v.status] ?? v.status),
   );
   // Cada coluna de vencimento (decisão 304): bolinha e etiqueta amarela (vencimento próximo), vermelha (vencida) ou verde (em dia).
@@ -111,6 +136,12 @@ export function FrotaModulo() {
     hoje,
     prazos: lerPrazosOcorrencias(),
   });
+  const custosDeManutencao = manutencoes.map((m) => ({ veiculoId: m.veiculoId, data: m.data, km: m.km, tipo: m.tipo, custo: custoDaManutencao(m) }));
+  const idsDeCusto = [...idsDaFrota];
+  const cpk = custoPorKm(idsDeCusto, abastecimentos, custosDeManutencao);
+  const custoPreventivo = proporcaoPreventiva(idsDeCusto, custosDeManutencao);
+  const cpkMensal = custoPorKmPorMes(idsDeCusto, abastecimentos, custosDeManutencao, hoje);
+  const preventivoMensal = proporcaoPreventivaPorMes(idsDeCusto, custosDeManutencao, hoje);
   // Média de consumo do veículo (km/L), do histórico de abastecimentos dele (Módulo > Veículos > Abastecimento); precisa de dois abastecimentos.
   const mediaDo = (id: string): number | null => mediaKmPorLitro(historicoAbastecimentos(abastecimentos.filter((a) => a.veiculoId === id)));
   const textoMedia = (m: number | null) => (m === null ? "—" : m.toLocaleString("pt-BR", { maximumFractionDigits: 1 }));
@@ -131,6 +162,7 @@ export function FrotaModulo() {
         empresa,
         geradoEm: new Date().toISOString(),
         busca: busca.trim(),
+        ...(filtroSubcategoria !== TODAS_AS_SUBCATEGORIAS ? { subcategoria: filtroSubcategoria } : {}),
         linhas: lista.map((v) => ({
           veiculo: rotuloDoVeiculo(parametros, v),
           responsavel: nomeResponsavel(v.empregado_responsavel_id),
@@ -150,24 +182,41 @@ export function FrotaModulo() {
     <div className="space-y-3">
       <CartoesIndicadoresFrota
         indicadores={indicadores}
-        graficos={<GraficosFrota compacto indicadores={indicadores} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
+        cpk={cpk}
+        custoPreventivo={custoPreventivo}
+        graficos={<GraficosFrota compacto indicadores={indicadores} cpkMensal={cpkMensal} preventivoMensal={preventivoMensal} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
         filtros={
-          <Input
-            aria-label="Buscar veículo por descrição ou responsável"
-            placeholder="Buscar por descrição ou responsável"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="h-9"
-          />
+          <>
+            <Select value={filtroSubcategoria} onValueChange={setSubcategoria}>
+              <SelectTrigger aria-label="Filtrar por subcategoria do veículo" className="h-9 w-56">
+                <SelectValue placeholder="Todas as subcategorias" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODAS_AS_SUBCATEGORIAS}>Todas as subcategorias</SelectItem>
+                {nomesDeSubcategoria.map((nome) => (
+                  <SelectItem key={nome} value={nome}>{nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              aria-label="Buscar veículo por descrição ou responsável"
+              placeholder="Buscar por descrição ou responsável"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </>
         }
         acoes={
-          <Button type="button" variant="outline" size="sm" onClick={imprimir} disabled={isLoading}>
-            <Printer className="h-4 w-4" /> Imprimir relatório (PDF)
-          </Button>
+          <>
+            <Button type="button" variant="outline" size="sm" onClick={imprimir} disabled={isLoading}>
+              <Printer className="h-4 w-4" /> Imprimir relatório (PDF)
+            </Button>
+            <InterpretacaoFrota itens={interpretacoesDaFrota(indicadores, cpk, custoPreventivo, cpkMensal)} />
+          </>
         }
       />
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
-      <div className="max-h-[max(12rem,calc(100dvh-34rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="max-h-[max(8rem,calc(100dvh-46rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1440px] table-fixed">
           <TableHeader>
             <TableRow>

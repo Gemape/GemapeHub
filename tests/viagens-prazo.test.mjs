@@ -137,7 +137,7 @@ test("os dois prazos com as caixas ficam em Parâmetros Específicos de Viagens 
   assert.match(categorias, /categoria\.id === "cat-veiculos" && <IndicadoresViagens \/>/);
   const viagens = readFileSync("src/components/parametros/HabilitarEmpregadosViagens.tsx", "utf8");
   assert.match(viagens, /<PrazosIndicadores \/>/, "Viagens > Parâmetros Específicos mostra os prazos");
-  assert.match(viagens, /<FaixasDesempenho \/>/, "e as faixas de desempenho, clonadas de Veículos (decisão 335)");
+  assert.match(viagens, /<FaixasDesempenho dominio="viagens" \/>/, "e as faixas de desempenho de Viagens, independentes da cópia de Veículos (decisão 350)");
   assert.match(viagens, /import \{ FaixasDesempenho, PrazosIndicadores \} from "@\/components\/parametros\/IndicadoresViagens"/, "do mesmo arquivo de Veículos, sem cópia do componente");
   assert.match(viagens, /aria-labelledby="faixas-viagens"[\s\S]*id="faixas-viagens"/, "com título para leitor de tela");
   assert.doesNotMatch(viagens, /podeVerCaminho|<Link /, "o link antigo para as faixas em Veículos saiu, porque elas estão na própria tela");
@@ -152,6 +152,6 @@ test("os dois prazos com as caixas ficam em Parâmetros Específicos de Viagens 
   assert.match(tela, /Faixas de desempenho/);
   const veiculos = tela.slice(tela.indexOf("export function IndicadoresViagens"), tela.indexOf("export function PrazosIndicadores"));
   assert.doesNotMatch(veiculos, /<PrazosIndicadores/, "Veículos não repete os prazos");
-  assert.match(veiculos, /to="\/cadastros\/viagens-especificos"/, "e leva a eles por um link");
+  assert.match(veiculos, /<FaixasDesempenho dominio="veiculos" \/>/, "Veículos mantém a sua cópia das faixas (decisão 350)");
   assert.match(readFileSync("src/lib/menu-parametros.ts", "utf8"), /Questionário de Despesas/);
 });

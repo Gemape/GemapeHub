@@ -3,6 +3,8 @@ import { ArrowLeft, CalendarCheck, ClipboardCheck } from "lucide-react";
 import { useState } from "react";
 
 import { CartoesManutencao } from "@/components/modules/CartoesManutencao";
+import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
+import { TabelaDiagnosticoManutencao } from "@/components/modules/TabelaDiagnosticoManutencao";
 import { GraficosManutencao } from "@/components/modules/GraficosVeiculos";
 import { ManutencaoRevisoes } from "@/components/modules/ManutencaoRevisoes";
 import { NovaManutencaoDialog } from "@/components/modules/NovaManutencaoDialog";
@@ -14,13 +16,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAccess } from "@/lib/access-context";
 import { hojeLocal } from "@/lib/empregados";
 import { kmAtualDoVeiculo, sugestoesPreventivas } from "@/lib/extrato-veiculo";
+import { proporcaoPreventiva } from "@/lib/frota-indicadores";
+import { situacaoPreventivas } from "@/lib/frota-situacao";
 import { indicadoresDaManutencao } from "@/lib/manutencao-indicadores";
 import { combinaBusca } from "@/lib/parametros-base";
 import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { montarManutencaoHtml } from "@/lib/manutencao-relatorio-html";
 import { useVeiculos } from "@/lib/hooks-gemape";
-import { gruposDaManutencao, locaisDaManutencao, removerManutencao, resumoManutencao, rotuloDoLocal, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
+import { custoDaManutencao, gruposDaManutencao, locaisDaManutencao, removerManutencao, resumoManutencao, rotuloDoLocal, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
 import { useFocoDaTela } from "@/lib/use-foco-da-tela";
 import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
@@ -64,6 +68,8 @@ export function ManutencaoVeiculoModulo() {
   // Foco do teclado ao trocar de tela (decisão 333): abrir uma lista leva o foco ao botão de voltar; voltar ao painel o devolve ao botão da lista que estava aberta.
   const { voltarRef, botaoDaTela } = useFocoDaTela(aba, "painel");
   const [aberto, setAberto] = useState(false);
+  // Extrato aberto a partir da tabela de diagnóstico (decisão 348).
+  const [extrato, setExtrato] = useState<{ id: string; secao: SecaoExtrato | null } | null>(null);
   // Manutenção em edição; null é o cadastro de uma nova.
   const [editando, setEditando] = useState<ManutencaoVeiculo | null>(null);
   const [busca, setBusca] = useState("");
@@ -109,6 +115,26 @@ export function ManutencaoVeiculoModulo() {
   const revisoesDaBusca = revisoes
     .filter((r) => !periodoPlanInvalido && noPeriodoPlanejado(r.sugestao.proximaData))
     .filter((r) => combinaBusca(busca, r.veiculo, r.sugestao.nome));
+
+  // Diagnóstico de manutenção de cada veículo da empresa (decisão 348), a tabela da Frota só com os dados de manutenção.
+  const custosDaFrota = todas.filter((m) => idsDaEmpresa.has(m.veiculoId)).map((m) => ({ veiculoId: m.veiculoId, data: m.data, km: m.km, tipo: m.tipo as string, custo: custoDaManutencao(m) }));
+  const diagnostico = veiculos.map((v) => {
+    const dele = todas.filter((m) => m.veiculoId === v.id).sort((a, b) => b.data.localeCompare(a.data) || b.km - a.km);
+    const custos = custosDaFrota.filter((c) => c.veiculoId === v.id);
+    const preventivo = proporcaoPreventiva([v.id], custos);
+    return {
+      id: v.id,
+      veiculo: rotuloDoVeiculo(parametros, v),
+      km: kmAtualDoVeiculo(v.quilometragem_atual ?? 0, abastecimentos.filter((a) => a.veiculoId === v.id), dele),
+      ultima: dele[0] ? { data: dele[0].data, tipo: dele[0].tipo as string } : null,
+      preventivas: situacaoPreventivas(revisoes.filter((r) => r.veiculoId === v.id).map((r) => r.sugestao.status)),
+      realizadas: dele.length,
+      corretivas: dele.filter((m) => m.tipo === "Corretiva").length,
+      custo: custos.reduce((t, c) => t + c.custo, 0),
+      pctPreventivo: preventivo.pct,
+      faixaPreventivo: preventivo.faixa,
+    };
+  });
 
   if (!MODO_DEMO) {
     return <p className="text-sm text-muted-foreground">A manutenção de veículos estará disponível após a Fase 2 (banco real).</p>;
@@ -156,7 +182,7 @@ export function ManutencaoVeiculoModulo() {
   const filtroPeriodo = camposDoPeriodo(inicio, setInicio, fim, setFim, "manutencao", "Data da manutenção");
   const filtroPeriodoPlan = camposDoPeriodo(inicioPlan, setInicioPlan, fimPlan, setFimPlan, "planejadas", "Data da próxima revisão: revisões sem data prevista não aparecem quando há período");
 
-  const botaoCadastrar = <Button requiresWrite variant="outline" onClick={() => abrir()}>Cadastrar nova manutenção</Button>;
+  const botaoCadastrar = <Button requiresWrite onClick={() => abrir()}>Cadastrar nova manutenção</Button>;
   const voltar = (
     <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={() => setAba("painel")}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
   );
@@ -166,7 +192,7 @@ export function ManutencaoVeiculoModulo() {
       {aba === "painel" && (
         <>
           {/* Os dois botões azuis ficam no alto, à direita, no mesmo padrão do Check list; a contagem de cada um vai dentro do botão. */}
-          <section className="flex flex-wrap items-center justify-between gap-2" aria-label="Listas de manutenção">
+          <section className="flex flex-col items-end gap-2" aria-label="Listas de manutenção">
             {botaoCadastrar}
             <div className="flex flex-wrap justify-end gap-2">
               <Button ref={botaoDaTela("planejadas")} type="button" onClick={() => setAba("planejadas")}>
@@ -180,7 +206,9 @@ export function ManutencaoVeiculoModulo() {
             </div>
           </section>
           <CartoesManutencao indicadores={indicadores} />
-          <GraficosManutencao revisoes={revisoes} manutencoes={todas.filter((m) => idsDaEmpresa.has(m.veiculoId))} hoje={hoje} />
+          <GraficosManutencao compacto revisoes={revisoes} manutencoes={todas.filter((m) => idsDaEmpresa.has(m.veiculoId))} hoje={hoje} />
+          <TabelaDiagnosticoManutencao linhas={diagnostico} aoAbrir={(id, secao) => setExtrato({ id, secao })} />
+          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} onFechar={() => setExtrato(null)} />
         </>
       )}
 

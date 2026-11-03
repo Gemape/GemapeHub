@@ -1,25 +1,34 @@
-import { X } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { HabilitarEmpregadosEpi } from "@/components/parametros/HabilitarEmpregadosEpi";
+import { CLASSE_STATUS } from "@/components/modules/LegendaStatusCompra";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { lerAreasEpi, salvarAreasEpi } from "@/lib/empregados-epi";
+import { Textarea } from "@/components/ui/textarea";
 import {
+  condicaoDoStatus,
   diasValidos,
   lerMotivosBaixaEpi,
   lerMotivosDevolucaoEpi,
   lerParametrosCompraEpi,
+  lerTextosDocumentosEpi,
+  MARCADOR_EMPRESA,
   MAX_DIAS,
+  MAX_TEXTO_DOCUMENTO,
   MAX_MOTIVOS,
   salvarMotivosBaixaEpi,
   salvarMotivosDevolucaoEpi,
   salvarParametrosCompraEpi,
+  salvarTextosDocumentosEpi,
   STATUS_CRITICIDADE,
+  TEXTOS_DOCUMENTOS_PADRAO,
+  textoDoPontoDePedido,
   type MetodoReposicao,
   type StatusCriticidade,
+  type TextosDocumentosEpi,
 } from "@/lib/epi-parametros";
 
 const numeroDe = (texto: string): number => (texto.trim() === "" ? Number.NaN : Number(texto));
@@ -123,17 +132,56 @@ function CartaoDeMotivos({
   );
 }
 
-const CLASSE_STATUS: Record<StatusCriticidade, string> = {
-  ruptura: "bg-destructive text-destructive-foreground",
-  comprar_ja: "bg-accent text-accent-foreground",
-  planejar: "bg-warning text-warning-foreground",
-  estavel: "bg-success text-success-foreground",
-  excesso: "bg-info text-info-foreground",
-};
-
 // Parâmetros Específicos do EPI (decisão 328): motivos de baixa definitiva, motivos de devolução ao estoque e os parâmetros da sugestão de compra.
-export function ParametrosEpi() {
-  const [areas, setAreas] = useState(lerAreasEpi);
+// Textos do Termo de Entrega de EPI e da Ficha de Controle de Entrega de EPI (decisão 356): digitados aqui, valem nos documentos que o sistema gera. `{empresa}` vira o nome da empresa.
+const CAMPOS_TEXTO: { chave: keyof TextosDocumentosEpi; id: string; rotulo: string; ajuda: string }[] = [
+  { chave: "termoDeclaracao", id: "termo-declaracao", rotulo: "Termo de entrega de EPI: declaração", ajuda: `Sai antes da lista de EPIs. Use ${MARCADOR_EMPRESA} onde o nome da empresa deve aparecer.` },
+  { chave: "termoCiencia", id: "termo-ciencia", rotulo: "Termo de entrega de EPI: ciência", ajuda: "Sai depois da lista de EPIs, acima das assinaturas." },
+  { chave: "fichaDeclaracao", id: "ficha-declaracao", rotulo: "Ficha de controle de entrega de EPI: declaração", ajuda: `Sai acima da tabela de entregas da ficha. ${MARCADOR_EMPRESA} também vale aqui.` },
+];
+
+function TextosDosDocumentos() {
+  const [salvos, setSalvos] = useState(lerTextosDocumentosEpi);
+  const [rascunho, setRascunho] = useState<TextosDocumentosEpi>(salvos);
+  const vazio = CAMPOS_TEXTO.some((c) => !rascunho[c.chave].trim());
+  const igual = CAMPOS_TEXTO.every((c) => rascunho[c.chave].trim() === salvos[c.chave]);
+  const padrao = CAMPOS_TEXTO.every((c) => rascunho[c.chave].trim() === TEXTOS_DOCUMENTOS_PADRAO[c.chave]) && CAMPOS_TEXTO.every((c) => salvos[c.chave] === TEXTOS_DOCUMENTOS_PADRAO[c.chave]);
+  function gravar(novos: TextosDocumentosEpi, mensagem: string) {
+    try {
+      const gravados = salvarTextosDocumentosEpi(novos);
+      setSalvos(gravados);
+      setRascunho(gravados);
+      toast.success(mensagem);
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar os textos.");
+    }
+  }
+  return (
+    <div className="space-y-3 rounded-lg border p-3">
+      <div>
+        <h3 className="text-sm font-semibold">Textos dos documentos</h3>
+        <p className="text-xs text-muted-foreground">O texto do termo de entrega de EPI e o da ficha de controle de entrega. Mudou o texto, é só editar aqui: os próximos documentos já saem com ele; os já impressos não mudam.</p>
+      </div>
+      {CAMPOS_TEXTO.map((c) => (
+        <div key={c.chave} className="space-y-1">
+          <Label htmlFor={`epi-texto-${c.id}`}>{c.rotulo}</Label>
+          <Textarea id={`epi-texto-${c.id}`} rows={4} maxLength={MAX_TEXTO_DOCUMENTO} value={rascunho[c.chave]} onChange={(e) => setRascunho((r) => ({ ...r, [c.chave]: e.target.value }))} />
+          <p className="text-xs text-muted-foreground">{c.ajuda}</p>
+        </div>
+      ))}
+      {vazio && <p role="alert" className="text-sm text-destructive">Preencha os três textos.</p>}
+      <div className="flex flex-wrap gap-2">
+        <Button requiresWrite disabled={vazio || igual} onClick={() => gravar(rascunho, "Textos dos documentos salvos.")}>Salvar textos</Button>
+        <Button requiresWrite variant="outline" disabled={padrao} onClick={() => gravar(TEXTOS_DOCUMENTOS_PADRAO, "Textos restaurados ao padrão.")}>Restaurar texto padrão</Button>
+      </div>
+    </div>
+  );
+}
+
+// `voltarParaSugestao`: aberto pelo link da Sugestão de Compras (decisão 355); o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela.
+export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugestao?: boolean }) {
+  const navegar = useNavigate();
+  const voltar = () => void navegar({ to: "/epi", search: { aba: "sugestao-compras" } });
   const [salvo, setSalvo] = useState(lerParametrosCompraEpi);
   const [metodo, setMetodo] = useState<MetodoReposicao>(salvo.metodo);
   const [cobertura, setCobertura] = useState(String(salvo.diasCobertura));
@@ -164,6 +212,7 @@ export function ParametrosEpi() {
       salvarParametrosCompraEpi(novo);
       setSalvo(novo);
       toast.success("Parâmetros da sugestão de compra salvos.");
+      if (voltarParaSugestao) voltar();
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar os parâmetros.");
     }
@@ -194,15 +243,22 @@ export function ParametrosEpi() {
     </div>
   );
 
+  // A tabela mostra a condição do status para o que está na tela (mesmo sem salvar); se os dias digitados não valem, vale o que está salvo.
+  const emUso = valido ? novo : salvo;
   return (
     <section className="space-y-3" aria-labelledby="parametros-epi">
+      {voltarParaSugestao && (
+        <Button type="button" variant="outline" size="sm" onClick={voltar}>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Sugestão de Compras
+        </Button>
+      )}
       <div>
         <h2 id="parametros-epi" className="text-lg font-semibold">
           Parâmetros do EPI
         </h2>
         <p className="text-sm text-muted-foreground">
-          Motivos de baixa definitiva e de devolução ao estoque, empregados habilitados e áreas da oficina,
-          e como a sugestão de compra é calculada.
+          Motivos de baixa definitiva e de devolução ao estoque, como a sugestão de compra é
+          calculada e os textos do termo de entrega e da ficha de controle de EPI.
         </p>
       </div>
       <div className="panel max-w-4xl space-y-4 p-4">
@@ -315,25 +371,46 @@ export function ParametrosEpi() {
             </p>
           )}
 
-          <div className="space-y-1">
-            <p className="text-sm font-medium">
-              Tabela de criticidade (TC = tempo de cobertura, em dias)
-            </p>
-            <ul className="grid gap-1 text-xs sm:grid-cols-2">
-              {(Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[]).map((s) => (
-                <li key={s} className="flex items-center gap-2">
-                  <span className={`rounded px-2 py-0.5 font-medium ${CLASSE_STATUS[s]}`}>
-                    {STATUS_CRITICIDADE[s].rotulo}
-                  </span>
-                  <span className="text-muted-foreground">{STATUS_CRITICIDADE[s].significado}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Tabela de status de criticidade (TC = tempo de cobertura, em dias)</p>
+            <p className="text-xs text-muted-foreground">{textoDoPontoDePedido(emUso)}</p>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-left text-xs" aria-label="Condição lógica de cada status">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="px-2 py-1.5 font-medium">Status</th>
+                    <th className="px-2 py-1.5 font-medium">Criticidade</th>
+                    <th className="px-2 py-1.5 font-medium">Condição lógica (gatilho)</th>
+                    <th className="px-2 py-1.5 font-medium">Significado prático</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[]).map((st) => {
+                    const c = condicaoDoStatus(st, emUso);
+                    return (
+                      <tr key={st} className="border-t align-top">
+                        <td className="px-2 py-1.5">
+                          <span className={`whitespace-nowrap rounded px-2 py-0.5 font-medium ${CLASSE_STATUS[st]}`}>{STATUS_CRITICIDADE[st].rotulo}</span>
+                        </td>
+                        <td className="px-2 py-1.5">{STATUS_CRITICIDADE[st].criticidade}</td>
+                        <td className="px-2 py-1.5">
+                          <code className="rounded bg-muted px-1.5 py-0.5">{c.formula}</code>
+                          <span className="mt-0.5 block text-muted-foreground">{c.calculo}</span>
+                        </td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{c.significado}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
           <Button requiresWrite disabled={!valido || igual} onClick={salvarCompra}>
             Salvar parâmetros da sugestão
           </Button>
         </div>
+
+        <TextosDosDocumentos />
       </div>
     </section>
   );

@@ -38,8 +38,8 @@ export function HabilitarEmpregadosViagens() {
       </section>
       <section className="mx-auto max-w-5xl space-y-3 px-4 pb-6" aria-labelledby="faixas-viagens">
         <h2 id="faixas-viagens" className="sr-only">Faixas de desempenho</h2>
-        {/* A mesma configuração de Parâmetros > Veículos > Parâmetros Específicos: editar aqui ou lá dá no mesmo. */}
-        <FaixasDesempenho />
+        {/* As faixas dos índices de Viagens (decisão 350): independentes da cópia de Parâmetros > Veículos > Parâmetros Específicos, que vale para os indicadores de veículos. */}
+        <FaixasDesempenho dominio="viagens" />
       </section>
     </>
   );

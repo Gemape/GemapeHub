@@ -1,7 +1,8 @@
 // HTML do Termo de Entrega de EPI. Todo texto informado passa por escaparHtml, como nos
 // termos de Encerramento, Responsabilidade, Baixa e Vistoria.
 import { hojeLocal } from "./empregados.ts";
-import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
+import { comTamanho, escaparHtml, formatarData, textoDeDocumentoHtml } from "./gemape.ts";
+import { lerTextosDocumentosEpi, type TextosDocumentosEpi } from "./epi-parametros.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
 import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 
@@ -12,10 +13,13 @@ export interface DadosTermoEntregaEpi {
   empregado: { nome: Texto; cpf: Texto; matricula?: Texto };
   data: string;
   linhas: { nome?: Texto; ca?: Texto; tamanho?: Texto; quantidade: number; estado: string }[];
+  // Os textos vêm de Parâmetros > EPI > Parâmetros Específicos (decisão 356); sem eles valem os guardados no navegador, ou os padrão.
+  textos?: Pick<TextosDocumentosEpi, "termoDeclaracao" | "termoCiencia">;
 }
 
 export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
   const { empresa, empregado } = dados;
+  const textos = dados.textos ?? lerTextosDocumentosEpi();
   const itensHtml = dados.linhas
     .map(
       (it, index) => `
@@ -44,7 +48,7 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
     css: CSS_TERMO,
     corpo: `<div class="termo">
           <div class="content">
-            <p>Declaro ter recebido da empresa <strong>${escaparHtml(empresa.razao_social)}</strong>, os Equipamentos de Proteção Individual (EPI) abaixo relacionados, novos e/ou em perfeitas condições de uso, obrigando-me a utilizá-los corretamente, zelar pela sua guarda e conservação, bem como devolvê-los quando solicitado ou no ato de minha rescisão contratual.</p>
+            <p>${textoDeDocumentoHtml(textos.termoDeclaracao, empresa.razao_social)}</p>
 
             <p><strong>Empregado:</strong> ${escaparHtml(empregado.nome)}<br>
             <strong>CPF:</strong> ${escaparHtml(empregado.cpf)}<br>
@@ -67,7 +71,7 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
           </table>
 
           <div class="content">
-            <p>Estou ciente de que o uso do EPI é obrigatório e que a sua não utilização poderá acarretar sanções disciplinares conforme a legislação vigente.</p>
+            <p>${textoDeDocumentoHtml(textos.termoCiencia, empresa.razao_social)}</p>
           </div>
 
           <p style="text-align: right;">${escaparHtml(empresa.nome_fantasia)}, ${dataFormatada}</p>

@@ -1,12 +1,15 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { useVoltarAoExtrato } from "@/lib/use-voltar-ao-extrato";
+import { ArrowLeft, ClipboardList } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
 import { CartoesOcorrencias } from "@/components/modules/CartoesOcorrencias";
+import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
 import { GraficosOcorrencias } from "@/components/modules/GraficosVeiculos";
+import { TabelaDiagnosticoOcorrencias } from "@/components/modules/TabelaDiagnosticoOcorrencias";
 import { RenovarPrazoOcorrencia } from "@/components/modules/RenovarPrazoOcorrencia";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
@@ -29,6 +32,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { dataHoraBrasilia, dataHoraLocal, formatarData } from "@/lib/gemape";
 import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { useEmpregados, useEmpresas, useVeiculos } from "@/lib/hooks-gemape";
+import { situacaoOcorrenciasDoVeiculo } from "@/lib/frota-situacao";
 import { indicadoresDeOcorrencias } from "@/lib/ocorrencias-indicadores";
 import { lerPrazosOcorrencias, lerProrrogacaoOcorrencias } from "@/lib/prazo-ocorrencias";
 import { montarOcorrenciaHtml } from "@/lib/ocorrencia-relatorio-html";
@@ -77,14 +81,18 @@ export function OcorrenciasVeiculoModulo() {
   const todas = useOcorrenciasVeiculo();
   const [tela, setTela] = useState<Tela>(null);
   // Vindo do extrato do veículo (?ocorrencia=), abre a tratativa dessa ocorrência uma vez e tira o parâmetro do endereço (decisão 331).
-  const { ocorrencia: ocorrenciaPedida } = useSearch({ from: "/_authenticated/veiculos" });
+  const { ocorrencia: ocorrenciaPedida, voltar } = useSearch({ from: "/_authenticated/veiculos" });
   const navegar = useNavigate();
+  // Vindo do extrato (decisão 346), ao fechar a tela da tratativa a pessoa volta ao extrato do veículo.
+  useVoltarAoExtrato(tela !== null, voltar);
   const [filtro, setFiltro] = useState<StatusOcorrencia | "todas">("todas");
   // Tela do módulo: o painel (botões, indicadores e gráficos) ou, ao clicar num botão de situação, a lista daquela situação (com o botão de voltar ao painel).
   const [verLista, setVerLista] = useState(false);
   // Foco do teclado ao trocar de tela (decisão 333): abrir a lista leva o foco ao botão de voltar; voltar ao painel o devolve ao botão que abriu a lista.
-  const { voltarRef, botaoDaTela } = useFocoDaTela<StatusOcorrencia | "todas" | "painel">(verLista ? filtro : "painel", "painel");
+  const { voltarRef, botaoDaTela } = useFocoDaTela<"lista" | "painel">(verLista ? "lista" : "painel", "painel");
   const [busca, setBusca] = useState("");
+  // Extrato aberto a partir da tabela de diagnóstico (decisão 349).
+  const [extrato, setExtrato] = useState<{ id: string; secao: SecaoExtrato | null } | null>(null);
   // Período da lista (AAAA-MM-DD, as duas pontas valem), pela data em que a ocorrência aconteceu; vazio = sem limite daquele lado.
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
@@ -117,12 +125,28 @@ export function OcorrenciasVeiculoModulo() {
   // Só a lista segue o período (a busca e o período começam vazios a cada botão aberto); os botões de situação, os cards e os gráficos continuam com o total.
   const noPeriodo = ocorrenciasNoPeriodo(daEmpresa, inicio, fim);
   const contagem = contarPorStatus(daEmpresa);
-  const indicadores = indicadoresDeOcorrencias({ ocorrencias: daEmpresa, hoje: hojeLocal(), prazos: lerPrazosOcorrencias() });
+  const prazosDeOcorrencia = lerPrazosOcorrencias();
+  const indicadores = indicadoresDeOcorrencias({ ocorrencias: daEmpresa, hoje: hojeLocal(), prazos: prazosDeOcorrencia });
   const lista = noPeriodo
     .filter((o) => filtro === "todas" || o.status === filtro)
     .filter((o) => combinaBusca(busca, o.codigo, rotuloVeiculo(o.veiculoId), o.tipoNome, nomeEmpregado(o.condutorId), o.local, o.descricao, o.status, dataHoraLocal(o.ocorridoEm)))
     .sort((a, b) => b.cadastradaEm.localeCompare(a.cadastradaEm));
   const atual = tela && tela.tipo !== "nova" ? (todas.find((o) => o.id === tela.id) ?? null) : null;
+  // Diagnóstico de ocorrências de cada veículo da empresa (decisão 349), a tabela da Frota só com os dados de ocorrências.
+  const diagnostico = veiculos.map((v) => {
+    const dele = daEmpresa.filter((o) => o.veiculoId === v.id).sort((a, b) => b.ocorridoEm.localeCompare(a.ocorridoEm));
+    return {
+      id: v.id,
+      veiculo: rotuloVeiculo(v.id),
+      ultima: dele[0] ? { data: dele[0].ocorridoEm.slice(0, 10), tipo: dele[0].tipoNome } : null,
+      total: dele.length,
+      abertas: dele.filter((o) => o.status === "Aberta").length,
+      emTratativa: dele.filter((o) => o.status === "Em tratativa").length,
+      encerradas: dele.filter((o) => o.status === "Encerrada").length,
+      prazos: situacaoOcorrenciasDoVeiculo(daEmpresa, v.id, hojeLocal(), prazosDeOcorrencia),
+      custo: dele.reduce((t, o) => t + (o.tratativa?.custoEmpresa ?? 0), 0),
+    };
+  });
   const podeTratar = (o: OcorrenciaVeiculo) => canWrite && (o.status !== "Encerrada" || isAdmin);
 
   function abrirNova() {
@@ -135,6 +159,8 @@ export function OcorrenciasVeiculoModulo() {
     if (!ocorrenciaPedida) return;
     const o = todas.find((x) => x.id === ocorrenciaPedida);
     if (!o) return;
+    // O extrato aberto pela tabela de diagnóstico fecha: a tratativa abre sozinha, e ao terminar a pessoa volta ao extrato pela Frota (decisão 346).
+    setExtrato(null);
     abrirTratativa(o);
     void navegar({ to: "/veiculos", search: { aba: "ocorrencias" }, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,20 +266,18 @@ export function OcorrenciasVeiculoModulo() {
     <div className="space-y-4">
       {!verLista ? (
         <>
-          {/* Os botões de situação ficam no topo, no padrão azul do Check list; cada um abre a lista daquela situação em outra tela do módulo. */}
-          <section className="flex flex-wrap items-center justify-between gap-2" aria-label="Ocorrências por situação">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Abrir a lista por situação">
-              {BOTOES_FILTRO.map(({ filtro: f, rotulo }) => (
-                <Button key={f} ref={botaoDaTela(f)} type="button" aria-label={`${rotulo}: ${f === "todas" ? daEmpresa.length : contagem[f]} ocorrência(s). Abrir a lista`} onClick={() => { setFiltro(f); setBusca(""); setInicio(""); setFim(""); setVerLista(true); }}>
-                  {rotulo}
-                  <span aria-hidden="true" className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{f === "todas" ? daEmpresa.length : contagem[f]}</span>
-                </Button>
-              ))}
-            </div>
+          {/* Nova ocorrência (azul) à direita, acima do botão Ver ocorrências, que abre a lista em outra tela do módulo (decisão 349). */}
+          <section className="flex flex-col items-end gap-2" aria-label="Ocorrências">
             <Button requiresWrite="operar" onClick={abrirNova}>Nova ocorrência</Button>
+            <Button ref={botaoDaTela("lista")} type="button" aria-label={`Ver ocorrências: ${daEmpresa.length} registrada(s). Abrir a lista`} onClick={() => { setFiltro("todas"); setBusca(""); setInicio(""); setFim(""); setVerLista(true); }}>
+              <ClipboardList className="h-4 w-4" aria-hidden="true" /> Ver ocorrências
+              <span aria-hidden="true" className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{daEmpresa.length} registradas</span>
+            </Button>
           </section>
           <CartoesOcorrencias indicadores={indicadores} />
-          <GraficosOcorrencias ocorrencias={daEmpresa} hoje={hojeLocal()} />
+          <GraficosOcorrencias compacto ocorrencias={daEmpresa} hoje={hojeLocal()} />
+          <TabelaDiagnosticoOcorrencias linhas={diagnostico} aoAbrir={(id, secao) => setExtrato({ id, secao })} />
+          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} onFechar={() => setExtrato(null)} />
         </>
       ) : (
         <>
@@ -261,6 +285,13 @@ export function OcorrenciasVeiculoModulo() {
             <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
             <h2 className="text-base font-semibold">{BOTOES_FILTRO.find((b) => b.filtro === filtro)?.rotulo ?? "Ocorrências"}</h2>
             <Button requiresWrite="operar" onClick={abrirNova}>Nova ocorrência</Button>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por situação">
+              {BOTOES_FILTRO.map(({ filtro: f, rotulo }) => (
+                <Button key={f} type="button" size="sm" variant={filtro === f ? "default" : "outline"} aria-pressed={filtro === f} onClick={() => setFiltro(f)}>
+                  {rotulo} ({f === "todas" ? daEmpresa.length : contagem[f]})
+                </Button>
+              ))}
+            </div>
             <BarraDeFiltros>
               <Input
                 aria-label="Buscar ocorrência"
