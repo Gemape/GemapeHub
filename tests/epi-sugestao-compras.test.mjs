@@ -69,3 +69,10 @@ test("os textos do termo e da ficha de EPI se editam em Parâmetros Específicos
   // Sem textos passados (e sem armazenamento no teste) os documentos saem com os padrão.
   assert.match(montarTermoEntregaEpiHtml({ empresa: { razao_social: "Acme", cnpj: "", nome_fantasia: "Acme" }, empregado: { nome: "Ana", cpf: "x" }, data: "2026-10-01", linhas: [] }), /Declaro ter recebido da empresa <strong>Acme<\/strong>, os Equipamentos/);
 });
+
+test("a busca do EPI na compra não envia o formulário com Enter e a legenda só mostra Sem consumo no método por cobertura", () => {
+  const busca = readFileSync(new URL("../src/components/modules/BuscaEpiCompra.tsx", import.meta.url), "utf8");
+  assert.match(busca, /e\.key === "Enter"\) e\.preventDefault\(\)/);
+  const legenda = readFileSync(new URL("../src/components/modules/LegendaStatusCompra.tsx", import.meta.url), "utf8");
+  assert.match(legenda, /parametros\?\.metodo !== "minimo" &&/);
+});

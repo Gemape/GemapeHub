@@ -9,14 +9,19 @@ export const CLASSE_STATUS: Record<StatusCriticidade, string> = {
   estavel: "bg-success text-success-foreground",
   excesso: "bg-info text-info-foreground",
 };
-const SEM_CONSUMO = "Sem consumo registrado: sem média de consumo não dá para calcular a cobertura nem o status.";
+const SEM_CONSUMO = "Sem consumo registrado: sem média de consumo não dá para calcular a cobertura nem o status (se o estoque estiver abaixo do mínimo, o status é Ruptura).";
+// "Cálculo. Significado." numa frase só: o cálculo por cobertura vem sem ponto final, o do estoque mínimo vem com.
+const descricaoDoStatus = (n: StatusCriticidade, parametros?: ParametrosCompraEpi) => {
+  if (!parametros) return STATUS_CRITICIDADE[n].significado;
+  const c = condicaoDoStatus(n, parametros);
+  return `${c.calculo.replace(/\.$/, "")}. ${c.significado}`;
+};
 const NIVEIS = Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[];
 
 // A etiqueta do status com o balão. `status` nulo é o item sem consumo.
 export function EtiquetaStatusCompra({ status, parametros }: { status: StatusCriticidade | null; parametros?: ParametrosCompraEpi }) {
   const info = status ? STATUS_CRITICIDADE[status] : null;
-  const cond = status && parametros ? condicaoDoStatus(status, parametros) : null;
-  const texto = info ? `${info.rotulo} (criticidade ${info.criticidade.toLowerCase()}): ${cond ? `${cond.calculo} ${cond.significado}` : info.significado}` : SEM_CONSUMO;
+  const texto = status && info ? `${info.rotulo} (criticidade ${info.criticidade.toLowerCase()}): ${descricaoDoStatus(status, parametros)}` : SEM_CONSUMO;
   return (
     <TooltipProvider delayDuration={100}>
       <Tooltip>
@@ -41,14 +46,17 @@ export function LegendaStatusCompra({ parametros }: { parametros?: ParametrosCom
             <span className={`mt-px shrink-0 rounded px-2 py-0.5 font-medium ${CLASSE_STATUS[n]}`}>{STATUS_CRITICIDADE[n].rotulo}</span>
             <span className="text-muted-foreground">
               <strong className="font-medium text-foreground">Criticidade {STATUS_CRITICIDADE[n].criticidade.toLowerCase()}.</strong>{" "}
-              {parametros ? `${condicaoDoStatus(n, parametros).calculo} ${condicaoDoStatus(n, parametros).significado}` : STATUS_CRITICIDADE[n].significado}
+              {descricaoDoStatus(n, parametros)}
             </span>
           </li>
         ))}
-        <li className="flex items-start gap-2">
-          <span className="mt-px shrink-0 rounded px-2 py-0.5 font-medium text-muted-foreground underline decoration-dotted">Sem consumo</span>
-          <span className="text-muted-foreground">{SEM_CONSUMO}</span>
-        </li>
+        {/* Com o estoque mínimo todo item tem status; "Sem consumo" só existe no método por tempo de cobertura. */}
+        {parametros?.metodo !== "minimo" && (
+          <li className="flex items-start gap-2">
+            <span className="mt-px shrink-0 rounded px-2 py-0.5 font-medium text-muted-foreground underline decoration-dotted">Sem consumo</span>
+            <span className="text-muted-foreground">{SEM_CONSUMO}</span>
+          </li>
+        )}
       </ul>
     </section>
   );

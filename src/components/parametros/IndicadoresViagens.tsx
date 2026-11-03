@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FAIXAS_PADRAO, descricoesFaixas, lerFaixas, salvarFaixas, validarFaixas, type ConfigFaixas, type DominioFaixas, type Faixa } from "@/lib/faixas-desempenho";
+import { FAIXAS_PADRAO, descricoesFaixas, lerFaixas, salvarFaixas, temFaixasProprias, validarFaixas, type ConfigFaixas, type DominioFaixas, type Faixa } from "@/lib/faixas-desempenho";
 import { PRAZO_MAXIMO_DIAS, lerPrazos, prazoValido, salvarPrazos } from "@/lib/prazo-viagens";
 
 const numeroDe = (texto: string): number => (texto.trim() === "" ? Number.NaN : Number(texto));
@@ -111,13 +111,16 @@ export function FaixasDesempenho({ dominio }: { dominio: DominioFaixas }) {
   const [rascunho, setRascunho] = useState(() => rascunhoDe(salva));
   const config = configDe(rascunho);
   const erro = validarFaixas(config);
-  const igual = JSON.stringify(config) === JSON.stringify(salva);
+  // Sem faixas próprias gravadas (Veículos, que mostra a cópia de Viagens), Salvar fica liberado mesmo sem mudar valor, para gravar a cópia.
+  const [propria, setPropria] = useState(() => temFaixasProprias(dominio));
+  const igual = propria && JSON.stringify(config) === JSON.stringify(salva);
   const faixas = erro ? descricoesFaixas(salva) : descricoesFaixas(config);
   const textos = (faixa: Faixa, campo: "classificacao" | "significado", valor: string) => setRascunho((r) => ({ ...r, [faixa]: { ...r[faixa], [campo]: valor } }));
 
   function gravar(nova: ConfigFaixas, mensagem: string) {
     try {
       salvarFaixas(nova, undefined, dominio);
+      setPropria(true);
       setSalva(nova);
       setRascunho(rascunhoDe(nova));
       toast.success(mensagem);

@@ -44,15 +44,17 @@ export function BuscaEpiCompra({
   return (
     <div className="space-y-1.5 sm:col-span-2">
       <Label htmlFor="busca_epi">EPI</Label>
-      <Input id="busca_epi" type="search" placeholder="Buscar por código, descrição ou tamanho" value={busca} onChange={(e) => setBusca(e.target.value)} />
-      <ul role="listbox" aria-label="EPIs da empresa" className="max-h-44 overflow-y-auto rounded-md border">
+      {/* Enter na busca não pode enviar o formulário da compra. */}
+      <Input id="busca_epi" type="search" placeholder="Buscar por código, descrição ou tamanho" value={busca} onChange={(e) => setBusca(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }} />
+      <ul aria-label="EPIs da empresa" className="max-h-44 overflow-y-auto rounded-md border">
         {filtradas.length === 0 && <li className="px-3 py-3 text-sm text-muted-foreground">{!empresaEscolhida ? "Escolha a empresa para ver os EPIs dela." : opcoes.length === 0 ? "Esta empresa não tem EPI cadastrado." : "Nenhum EPI encontrado para a busca."}</li>}
         {filtradas.map((o) => {
           const escolhida = o.itemId === itemId && o.tamanho === tamanho;
           return (
-            <li key={o.chave} role="option" aria-selected={escolhida}>
+            <li key={o.chave}>
               <button
                 type="button"
+                aria-pressed={escolhida}
                 onClick={() => aoEscolher(o)}
                 className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-muted ${escolhida ? "bg-primary/10 font-medium" : ""}`}
               >

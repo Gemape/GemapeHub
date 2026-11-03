@@ -1,6 +1,6 @@
 // Faixas de desempenho dos índices do módulo Viagens (decs 192 e 199): por padrão, verde de 90% a 100%, amarelo de 70% a
 // 89,9% e vermelho abaixo de 70%, valendo para o índice de conformidade de lançamento e para o de lançamento no prazo.
-// Os limites e os textos se definem em Parâmetros > Veículos > Parâmetros Específicos; ficam só no navegador (modo demonstração).
+// Os limites e os textos se definem em Parâmetros > Viagens e Parâmetros > Veículos > Parâmetros Específicos (um conjunto para cada domínio); ficam só no navegador (modo demonstração).
 export type Faixa = "verde" | "amarelo" | "vermelho";
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 // Duas configurações independentes (decisão 350): as faixas dos indicadores de Viagens (Parâmetros > Viagens > Parâmetros Específicos) e as dos indicadores de Veículos (Parâmetros > Veículos >
@@ -100,3 +100,12 @@ export function faixaDoIndice(indice: number | null, config: ConfigFaixas = lerF
 // Os indicadores de Veículos (Frota, Check list, Manutenção e Ocorrências) usam as faixas de Parâmetros > Veículos > Parâmetros Específicos; os de Viagens, as de Viagens (o padrão de `faixaDoIndice`).
 export const lerFaixasDeVeiculos = (storage?: StorageLike): ConfigFaixas => lerFaixas(storage, "veiculos");
 export const faixaDoIndiceDeVeiculos = (indice: number | null): DescricaoFaixa | null => faixaDoIndice(indice, lerFaixasDeVeiculos());
+
+// Veículos mostra a cópia de Viagens até gravar as suas (decisão 350): sem as próprias, o Salvar fica liberado para a pessoa poder separar a cópia sem mudar nenhum valor.
+export function temFaixasProprias(dominio: DominioFaixas, storage?: StorageLike): boolean {
+  try {
+    return (storage ?? localStorage).getItem(CHAVES[dominio]) !== null;
+  } catch {
+    return false;
+  }
+}

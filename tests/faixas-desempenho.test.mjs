@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { FAIXAS, FAIXAS_PADRAO, descricoesFaixas, faixaDoIndice, faixaDoIndiceDeVeiculos, lerFaixas, lerFaixasDeVeiculos, salvarFaixas, validarFaixas } from "../src/lib/faixas-desempenho.ts";
+import { FAIXAS, FAIXAS_PADRAO, descricoesFaixas, faixaDoIndice, faixaDoIndiceDeVeiculos, lerFaixas, lerFaixasDeVeiculos, salvarFaixas, temFaixasProprias, validarFaixas } from "../src/lib/faixas-desempenho.ts";
 
 const faixa = (v) => faixaDoIndice(v)?.faixa ?? null;
 
@@ -129,4 +129,13 @@ test("os indicadores de veículos leem as faixas de Veículos e os de Viagens, a
   for (const f of ["lib/frota-indicadores.ts", "lib/manutencao-indicadores.ts", "lib/ocorrencias-indicadores.ts"]) assert.match(readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8"), /lerFaixasDeVeiculos\(\)/, f);
   const viagens = readFileSync(new URL("../src/components/modules/ViagensPainel.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(viagens, /DeVeiculos/, "Viagens segue com as faixas de Viagens");
+});
+
+test("sem faixas próprias gravadas, o Salvar de Veículos fica liberado para gravar a cópia (decisão 350)", () => {
+  const s = memoria();
+  assert.equal(temFaixasProprias("veiculos", s), false);
+  salvarFaixas(FAIXAS_PADRAO, s, "veiculos");
+  assert.equal(temFaixasProprias("veiculos", s), true);
+  assert.equal(temFaixasProprias("viagens", s), false);
+  assert.match(readFileSync(new URL("../src/components/parametros/IndicadoresViagens.tsx", import.meta.url), "utf8"), /const igual = propria && JSON\.stringify\(config\) === JSON\.stringify\(salva\)/);
 });

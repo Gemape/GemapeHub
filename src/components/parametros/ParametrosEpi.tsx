@@ -3,6 +3,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { CLASSE_STATUS } from "@/components/modules/LegendaStatusCompra";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -125,14 +126,6 @@ function CartaoDeMotivos({
     </div>
   );
 }
-
-const CLASSE_STATUS: Record<StatusCriticidade, string> = {
-  ruptura: "bg-destructive text-destructive-foreground",
-  comprar_ja: "bg-accent text-accent-foreground",
-  planejar: "bg-warning text-warning-foreground",
-  estavel: "bg-success text-success-foreground",
-  excesso: "bg-info text-info-foreground",
-};
 
 // Parâmetros Específicos do EPI (decisão 328): motivos de baixa definitiva, motivos de devolução ao estoque e os parâmetros da sugestão de compra.
 // Textos do Termo de Entrega de EPI e da Ficha de Controle de Entrega de EPI (decisão 356): digitados aqui, valem nos documentos que o sistema gera. `{empresa}` vira o nome da empresa.
