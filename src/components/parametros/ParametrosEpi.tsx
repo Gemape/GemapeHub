@@ -4,10 +4,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { CLASSE_STATUS } from "@/components/modules/LegendaStatusCompra";
+import { HabilitarEmpregadosEpi } from "@/components/parametros/HabilitarEmpregadosEpi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { lerAreasEpi, salvarAreasEpi } from "@/lib/empregados-epi";
 import {
   condicaoDoStatus,
   diasValidos,
@@ -182,6 +184,7 @@ function TextosDosDocumentos() {
 export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugestao?: boolean }) {
   const navegar = useNavigate();
   const voltar = () => void navegar({ to: "/epi", search: { aba: "sugestao-compras" } });
+  const [areas, setAreas] = useState(lerAreasEpi);
   const [salvo, setSalvo] = useState(lerParametrosCompraEpi);
   const [metodo, setMetodo] = useState<MetodoReposicao>(salvo.metodo);
   const [cobertura, setCobertura] = useState(String(salvo.diasCobertura));
@@ -257,8 +260,8 @@ export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugest
           Parâmetros do EPI
         </h2>
         <p className="text-sm text-muted-foreground">
-          Motivos de baixa definitiva e de devolução ao estoque, como a sugestão de compra é
-          calculada e os textos do termo de entrega e da ficha de controle de EPI.
+          Motivos de baixa definitiva e de devolução ao estoque, áreas da oficina e empregados
+          habilitados, como a sugestão de compra é calculada e os textos do termo de entrega e da ficha de controle de EPI.
         </p>
       </div>
       <div className="panel max-w-4xl space-y-4 p-4">

@@ -192,3 +192,6 @@ components/modules/OcorrenciasModulo.tsx | tipoOcorrencia (módulo) | nenhum | r
 components/modules/OcorrenciasModulo.tsx | responsavel_registro | nome | pessoa; salvo com capitalizarNomePessoa
 components/modules/OcorrenciasModulo.tsx | descricao_ocorrencia (Textarea) | texto | descrição; salvo com capitalizarTexto
 components/modules/FerramentasCaixasModulo.tsx | buscaCaixa | nenhum | filtro
+components/modules/EpiRelatorioFuncionario.tsx | buscar no histórico | nenhum | busca
+components/modules/EpiRelatorioFuncionario.tsx | início, fim | nenhum | data
+components/parametros/ParametrosEpi.tsx | novo motivo, nova área (CartaoDeMotivos) | texto | motivos de baixa e devolução e áreas da oficina
