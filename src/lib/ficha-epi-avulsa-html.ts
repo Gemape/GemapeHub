@@ -1,12 +1,15 @@
 // HTML da Ficha de Controle de Entrega de EPI (avulsa). Todo texto informado passa por
 // escaparHtml, como nos demais termos.
-import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
+import { comTamanho, escaparHtml, formatarData, textoDeDocumentoHtml } from "./gemape.ts";
+import { lerTextosDocumentosEpi } from "./epi-parametros.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
 import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 
 type Texto = string | null | undefined;
 
+// `textos` vem de Parâmetros > EPI > Parâmetros Específicos (decisão 356); sem ele valem os guardados no navegador, ou os padrão.
 export interface DadosFichaEpiAvulsa {
+  textos?: { fichaDeclaracao: string };
   empresa: { razao_social: Texto; cnpj: Texto };
   empregado: { nome: Texto; cpf: Texto; matricula?: Texto; data_admissao?: Texto };
   linhas: {
@@ -26,6 +29,7 @@ export interface DadosFichaEpiAvulsa {
 
 export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
   const { empresa, empregado } = dados;
+  const textos = dados.textos ?? lerTextosDocumentosEpi();
   const linhasHtml = dados.linhas
     .map((h) => {
       return `
@@ -81,7 +85,7 @@ export function montarFichaEpiAvulsaHtml(dados: DadosFichaEpiAvulsa): string {
         </table>
 
         <p class="nota">
-          Declaro que recebi da empresa os Equipamentos de Proteção Individual (EPI) adequados ao risco de minha atividade, em perfeitas condições de uso, e que fui treinado quanto ao seu uso correto. Comprometo-me a utilizá-los apenas para a finalidade a que se destinam e a devolvê-los quando solicitado ou no desligamento da empresa.
+          ${textoDeDocumentoHtml(textos.fichaDeclaracao, empresa.razao_social)}
         </p>
 
         <table>

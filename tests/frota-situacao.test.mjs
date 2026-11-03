@@ -59,9 +59,18 @@ test("a Frota tem as colunas na ordem pedida, com bolinha e etiqueta, e o extrat
   assert.match(ext, /!soAbertas \|\| o\.status !== "Encerrada"/);
   for (const cor of ["bg-red-500", "bg-amber-400", "bg-emerald-500"]) assert.ok(frota.includes(cor), cor);
   const extrato = ler("components/modules/ExtratoVeiculo.tsx");
-  for (const [texto, aba] of [["Realizar manutenção", "manutencao"], ["Tratar ocorrências", "ocorrencias"], ["Realizar check list", "checklist"]]) {
-    assert.match(extrato, new RegExp(`search=\\{\\{ aba: "${aba}"[^}]*\\}\\}>${texto}</Link>|onClick=\\{\\(\\) => setRegistrando\\(true\\)\\}>${texto}</Button>`), texto);
-  }
+  // O extrato tem quatro seções com título grande em faixa colorida e os botões de cada uma (decisão 345).
+  for (const titulo of ["Manutenções", "Abastecimentos", "Ocorrências", "Check lists"]) assert.ok(extrato.includes(`titulo: "${titulo}", tabelas:`), titulo);
+  assert.match(extrato, /text-xl font-bold[^"]*">\{secaoDoExtrato\.titulo\}/);
+  assert.match(extrato, /bg-gradient-to-r \$\{secaoDoExtrato\.faixa\}/);
+  assert.match(extrato, /setRegistrando\(true\)\}>Registrar manutenção<\/Button>/);
+  assert.match(extrato, /setRegistrandoAbastecimento\(true\)\}>Registrar abastecimento<\/Button>/);
+  assert.match(extrato, /search=\{\{ aba: "ocorrencias", ocorrencia: dados\.ligacoes\[`\$\{n\}:\$\{k\}`\]!\.id, voltar: veiculo\.id \}\}>Tratativa<\/Link>/, "um botão Tratativa em cada linha de ocorrência");
+  assert.match(extrato, /search=\{\{ aba: "checklist", veiculo: veiculo\.id, avulso: "sim", voltar: veiculo\.id \}\}>Registrar check list avulso<\/Link>/);
+  assert.match(extrato, /periodicidade: dados\.realizaveis\[k\]!, voltar: veiculo\.id \}\}>Realizar check list<\/Link>/, "cada check list periódico previsto tem o botão Realizar check list");
+  assert.match(ler("components/modules/ChecklistVeiculoModulo.tsx"), /useVoltarAoExtrato\(tela !== null, voltar\)/, "ao fechar o check list, volta ao extrato (decisão 346)");
+  assert.match(ler("components/modules/OcorrenciasVeiculoModulo.tsx"), /useVoltarAoExtrato\(tela !== null, voltar\)/, "ao fechar a tratativa, volta ao extrato (decisão 346)");
+  assert.match(frota, /setAberto\(\{ id: extratoPedido, secao: null \}\)/, "de volta, a Frota reabre o extrato");
 });
 
 test("o abastecimento de veículos filtra por data início e fim depois de montar o histórico, bloqueia período invertido e leva o período ao PDF", () => {

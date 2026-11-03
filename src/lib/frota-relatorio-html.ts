@@ -24,8 +24,8 @@ const celulaSituacao = (s: SituacaoColuna): string =>
     ? "<td>—</td>"
     : `<td><span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; background: ${COR_PONTO[s.situacao]};"></span><span${s.situacao === "vencida" ? ' style="color: #b91c1c; font-weight: bold;"' : ""}>${escaparHtml(rotuloDaSituacao(s))}</span></td>`;
 
-export function montarFrotaHtml(dados: { empresa: string; geradoEm: string; busca: string; linhas: LinhaFrota[] }): string {
-  const { empresa, geradoEm, busca, linhas } = dados;
+export function montarFrotaHtml(dados: { empresa: string; geradoEm: string; busca: string; subcategoria?: string; linhas: LinhaFrota[] }): string {
+  const { empresa, geradoEm, busca, subcategoria, linhas } = dados;
   const conta = (s: string) => linhas.filter((l) => l.situacao === s).length;
   const corpo = linhas.length === 0
     ? `<tr><td colspan="8" class="vazio">Nenhum veículo para listar.</td></tr>`
@@ -48,7 +48,7 @@ export function montarFrotaHtml(dados: { empresa: string; geradoEm: string; busc
     larga: true,
     // Colunas com largura própria (tabela fixa): a descrição do veículo ganha mais espaço e as etiquetas de situação cabem em até duas linhas; os números ficam à direita, com folga.
     css: "table.frota { table-layout: fixed; } table.frota td, table.frota th { overflow-wrap: anywhere; } table.frota th.num, table.frota td.num { padding-right: 12px; white-space: nowrap; } table.frota td { vertical-align: middle; line-height: 1.35; }",
-    cabecalho: cabecalhoRelatorio({ titulo: "Relatório da frota", subtitulos: busca ? [`Busca: ${busca}`] : [], empresa }),
+    cabecalho: cabecalhoRelatorio({ titulo: "Relatório da frota", subtitulos: [...(subcategoria ? [`Subcategoria: ${subcategoria}`] : []), ...(busca ? [`Busca: ${busca}`] : [])], empresa }),
     corpo: `
         <div class="resumo"><strong>Total:</strong> ${linhas.length} veículo(s): ${conta("Ativo")} ativo(s), ${conta("Em manutenção")} em manutenção, ${conta("Inativo")} inativo(s).</div>
         <table class="padrao frota">

@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState, useEffect } from "react";
 import { exemploCaixa } from "@/lib/dados-teste/exemplos";
 import { useQuery } from "@tanstack/react-query";
@@ -289,15 +290,18 @@ export function CaixasFerramentasModulo() {
         </div>
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <div className="relative max-w-xs flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por número da caixa"
-            className="pl-9"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
+        <BarraDeFiltros>
+          <div className="relative w-96 max-w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              aria-label="Buscar caixa por número"
+              placeholder="Buscar por número da caixa"
+              className="pl-9"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
+        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useRef, useState } from "react";
 import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { useAbrirDireto } from "@/lib/use-abrir-direto";
@@ -424,12 +425,15 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
         </div>
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <Input
-          placeholder="Buscar por código, placa ou descrição"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar por código, placa ou descrição"
+            placeholder="Buscar por código, placa ou descrição"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

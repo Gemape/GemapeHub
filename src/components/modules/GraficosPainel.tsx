@@ -5,6 +5,8 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ReferenceLine,
@@ -94,6 +96,7 @@ export function GraficoBarras({
   cores,
   meta,
   sufixo = "",
+  maximo,
 }: {
   dados: Record<string, string | number>[];
   categoria: string;
@@ -102,13 +105,15 @@ export function GraficoBarras({
   cores?: string[];
   meta?: { valor: number; rotulo: string };
   sufixo?: string;
+  // Teto fixo do eixo (gráfico de 100%): sem ele o eixo se estica além dos 100%.
+  maximo?: number;
 }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={dados} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.35} />
         <XAxis dataKey={categoria} tick={eixo} interval={0} tickLine={false} />
-        <YAxis tick={eixo} tickLine={false} axisLine={false} allowDecimals={false} unit={sufixo} />
+        <YAxis tick={eixo} tickLine={false} axisLine={false} allowDecimals={false} unit={sufixo} {...(maximo !== undefined ? { domain: [0, maximo] as [number, number] } : {})} />
         <Tooltip
           formatter={(v) => `${Number(v).toLocaleString("pt-BR")}${sufixo}`}
           cursor={{ opacity: 0.12 }}
@@ -144,6 +149,35 @@ export function GraficoBarras({
           </Bar>
         ))}
       </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+// Linha no tempo (tendência): um valor por categoria (mês); `formatar` escreve o valor no eixo e na dica; categoria sem valor deixa a linha com um vão.
+export function GraficoLinha({
+  dados,
+  categoria,
+  chave,
+  nome,
+  cor,
+  formatar,
+}: {
+  dados: Record<string, string | number | null>[];
+  categoria: string;
+  chave: string;
+  nome: string;
+  cor: string;
+  formatar: (n: number) => string;
+}) {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={dados} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.35} />
+        <XAxis dataKey={categoria} tick={eixo} interval={0} tickLine={false} />
+        <YAxis tick={eixo} tickLine={false} axisLine={false} width={52} tickFormatter={formatar} />
+        <Tooltip formatter={(v) => formatar(Number(v))} />
+        <Line type="monotone" dataKey={chave} name={nome} stroke={cor} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+      </LineChart>
     </ResponsiveContainer>
   );
 }

@@ -172,3 +172,83 @@ export function statusDeCriticidade(tc: number, p: ParametrosCompraEpi): StatusC
   if (tc <= Math.max(p.limiteExcesso, tr + p.diasPlanejamento)) return "estavel";
   return "excesso";
 }
+
+// Condição lógica (gatilho) e significado de cada status conforme o método da sugestão de compra (decisão 355). Com o tempo de cobertura (TC, em dias) a condição compara TC com o prazo de reposição
+// (TR) e a segurança, o planejamento e o excesso; com o estoque mínimo, compara o estoque total com o mínimo do EPI. `formula` usa as letras da tabela e `calculo`, os dias configurados.
+export type CondicaoDoStatus = { formula: string; calculo: string; significado: string };
+
+export function condicaoDoStatus(status: StatusCriticidade, p: ParametrosCompraEpi): CondicaoDoStatus {
+  if (p.metodo === "minimo") {
+    const minimo = {
+      ruptura: { formula: "Estoque total = 0", calculo: "Sem nenhuma unidade (novos + usados).", significado: "Sem estoque: o item acabou." },
+      comprar_ja: { formula: "0 < Estoque total < Mínimo", calculo: "Abaixo do estoque mínimo cadastrado no EPI.", significado: "Abaixo do estoque mínimo: o pedido precisa ser feito hoje." },
+      planejar: { formula: "Estoque total = Mínimo (Mínimo > 0)", calculo: "Exatamente no estoque mínimo do EPI.", significado: "No limite do mínimo: o item entra na próxima rodada de cotações." },
+      estavel: { formula: `Estoque total > Mínimo e TC ≤ ${p.limiteExcesso}`, calculo: `Acima do mínimo e com cobertura de até ${p.limiteExcesso} dias (ou sem consumo).`, significado: "Acima do mínimo: nenhuma ação necessária." },
+      excesso: { formula: `Estoque total > Mínimo e TC > ${p.limiteExcesso}`, calculo: `Acima do mínimo e com cobertura de mais de ${p.limiteExcesso} dias.`, significado: "Estoque acima do necessário: risco de capital parado." },
+    } satisfies Record<StatusCriticidade, CondicaoDoStatus>;
+    return minimo[status];
+  }
+  const tr = p.prazoReposicao;
+  const seguranca = tr + p.diasSeguranca;
+  const planejamento = tr + p.diasPlanejamento;
+  const excesso = Math.max(p.limiteExcesso, planejamento);
+  const cobertura = {
+    ruptura: { formula: "TC < TR", calculo: `TC < ${tr} dias`, significado: STATUS_CRITICIDADE.ruptura.significado },
+    comprar_ja: { formula: "TC ≥ TR e TC ≤ TR + segurança", calculo: `TC ≥ ${tr} e TC ≤ ${seguranca} dias`, significado: STATUS_CRITICIDADE.comprar_ja.significado },
+    planejar: { formula: "TC > TR + segurança e TC ≤ TR + planejamento", calculo: `TC > ${seguranca} e TC ≤ ${planejamento} dias`, significado: STATUS_CRITICIDADE.planejar.significado },
+    estavel: { formula: "TC > TR + planejamento e TC ≤ limite de excesso", calculo: `TC > ${planejamento} e TC ≤ ${excesso} dias`, significado: STATUS_CRITICIDADE.estavel.significado },
+    excesso: { formula: "TC > limite de excesso", calculo: `TC > ${excesso} dias`, significado: STATUS_CRITICIDADE.excesso.significado },
+  } satisfies Record<StatusCriticidade, CondicaoDoStatus>;
+  return cobertura[status];
+}
+
+// O ponto de pedido (gatilho de compra) do método escolhido, em uma frase.
+export const textoDoPontoDePedido = (p: ParametrosCompraEpi): string =>
+  p.metodo === "minimo"
+    ? "Ponto de pedido: o estoque mínimo do EPI. Abaixo dele a compra é sugerida."
+    : `Ponto de pedido: TR (prazo de reposição, ${p.prazoReposicao} dias) + ${p.diasSeguranca} dias de segurança = ${p.prazoReposicao + p.diasSeguranca} dias de cobertura. TC é o tempo de cobertura: estoque total ÷ consumo médio por dia.`;
+
+// ---------- Textos dos documentos (decisão 356) ----------
+// Os textos do Termo de Entrega de EPI (a declaração antes da tabela e a ciência depois dela) e da Ficha de Controle de Entrega de EPI se digitam em Parâmetros > EPI > Parâmetros Específicos.
+// `{empresa}` é trocado pela razão social da empresa na hora de montar o documento. Sem texto guardado (ou com armazenamento bloqueado) valem os textos padrão.
+export type TextosDocumentosEpi = { termoDeclaracao: string; termoCiencia: string; fichaDeclaracao: string };
+const CHAVE_TEXTOS = "gemape-demo-epi-textos-documentos";
+export const MAX_TEXTO_DOCUMENTO = 1500;
+export const MARCADOR_EMPRESA = "{empresa}";
+export const TEXTOS_DOCUMENTOS_PADRAO: TextosDocumentosEpi = {
+  termoDeclaracao:
+    "Declaro ter recebido da empresa {empresa}, os Equipamentos de Proteção Individual (EPI) abaixo relacionados, novos e/ou em perfeitas condições de uso, obrigando-me a utilizá-los corretamente, zelar pela sua guarda e conservação, bem como devolvê-los quando solicitado ou no ato de minha rescisão contratual.",
+  termoCiencia:
+    "Estou ciente de que o uso do EPI é obrigatório e que a sua não utilização poderá acarretar sanções disciplinares conforme a legislação vigente.",
+  fichaDeclaracao:
+    "Declaro que recebi da empresa os Equipamentos de Proteção Individual (EPI) adequados ao risco de minha atividade, em perfeitas condições de uso, e que fui treinado quanto ao seu uso correto. Comprometo-me a utilizá-los apenas para a finalidade a que se destinam e a devolvê-los quando solicitado ou no desligamento da empresa.",
+};
+
+const CAMPOS_TEXTOS = ["termoDeclaracao", "termoCiencia", "fichaDeclaracao"] as const;
+const textoValido = (t: unknown): t is string => typeof t === "string" && t.trim().length > 0 && t.length <= MAX_TEXTO_DOCUMENTO;
+
+export function lerTextosDocumentosEpi(storage?: StorageLike): TextosDocumentosEpi {
+  try {
+    const bruto = (storage ?? localStorage).getItem(CHAVE_TEXTOS);
+    const o: Record<string, unknown> = bruto ? (JSON.parse(bruto) as Record<string, unknown>) : {};
+    const lido = { ...TEXTOS_DOCUMENTOS_PADRAO };
+    for (const c of CAMPOS_TEXTOS) if (textoValido(o[c])) lido[c] = (o[c] as string).trim();
+    return lido;
+  } catch {
+    return { ...TEXTOS_DOCUMENTOS_PADRAO };
+  }
+}
+
+export function salvarTextosDocumentosEpi(t: TextosDocumentosEpi, storage?: StorageLike): TextosDocumentosEpi {
+  for (const c of CAMPOS_TEXTOS) {
+    if (!t[c].trim()) throw new Error("Preencha os três textos.");
+    if (t[c].length > MAX_TEXTO_DOCUMENTO) throw new Error(`Cada texto aceita até ${MAX_TEXTO_DOCUMENTO} caracteres.`);
+  }
+  const limpo: TextosDocumentosEpi = { termoDeclaracao: t.termoDeclaracao.trim(), termoCiencia: t.termoCiencia.trim(), fichaDeclaracao: t.fichaDeclaracao.trim() };
+  try {
+    (storage ?? localStorage).setItem(CHAVE_TEXTOS, JSON.stringify(limpo));
+  } catch {
+    throw new Error("Não foi possível guardar os textos neste navegador.");
+  }
+  return limpo;
+}

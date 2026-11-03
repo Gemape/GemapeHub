@@ -216,3 +216,11 @@ export const escaparHtml = (v: unknown) =>
 
 /** Tamanho ao lado da descrição nos documentos (decisão 23), já escapado; vazio sem tamanho. */
 export const comTamanho = (tamanho: unknown) => (tamanho ? ` (tam. ${escaparHtml(tamanho)})` : "");
+
+// Texto de documento digitado em Parâmetros (decisão 356) em HTML seguro: tudo escapado, quebras de linha viram <br> e `{empresa}` vira o nome da empresa em negrito.
+export function textoDeDocumentoHtml(texto: string, empresa: string | null | undefined): string {
+  return texto
+    .split("{empresa}")
+    .map((parte) => escaparHtml(parte).replace(/\r?\n/g, "<br>"))
+    .join(`<strong>${escaparHtml(empresa)}</strong>`);
+}

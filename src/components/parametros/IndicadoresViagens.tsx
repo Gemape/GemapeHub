@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -7,34 +6,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAccess } from "@/lib/access-context";
-import { FAIXAS_PADRAO, descricoesFaixas, lerFaixas, salvarFaixas, validarFaixas, type ConfigFaixas, type Faixa } from "@/lib/faixas-desempenho";
+import { FAIXAS_PADRAO, descricoesFaixas, lerFaixas, salvarFaixas, temFaixasProprias, validarFaixas, type ConfigFaixas, type DominioFaixas, type Faixa } from "@/lib/faixas-desempenho";
 import { PRAZO_MAXIMO_DIAS, lerPrazos, prazoValido, salvarPrazos } from "@/lib/prazo-viagens";
 
 const numeroDe = (texto: string): number => (texto.trim() === "" ? Number.NaN : Number(texto));
 const COR_PONTO: Record<Faixa, string> = { verde: "bg-green-600", amarelo: "bg-amber-500", vermelho: "bg-red-600" };
 
-// Faixas de desempenho em Parâmetros > Veículos > Parâmetros Específicos (decisão 199): valem para os índices de Viagens, do Check list e da Frota. Só parametriza: os índices aparecem
-// nos módulos. Os dois prazos (lançar a despesa e fechar o relatório) ficam em Parâmetros > Viagens > Parâmetros Específicos (decisão 334) e usam o `PrazosIndicadores` daqui.
+// Faixas de desempenho em Parâmetros > Veículos > Parâmetros Específicos (decisões 199 e 350): valem para os indicadores de veículos (Frota, Check list, Manutenção e Ocorrências). É uma cópia
+// independente da de Parâmetros > Viagens > Parâmetros Específicos, que vale para os índices de Viagens. Só parametriza: os índices aparecem nos módulos.
 export function IndicadoresViagens() {
-  const { podeVerCaminho } = useAccess();
-  // O link só aparece para quem pode abrir a tela de destino; sem acesso, o caminho fica como texto.
-  const caminhoDosPrazos = "Parâmetros > Viagens > Parâmetros Específicos";
   return (
     <section className="space-y-5" aria-labelledby="indicadores-viagens">
       <div className="max-w-3xl">
         <h2 id="indicadores-viagens" className="text-lg font-semibold">Indicadores</h2>
         <p className="text-sm text-muted-foreground">
-          As faixas de desempenho valem para os índices de Viagens, do Check list e da Frota, e também se editam em Parâmetros &gt; Viagens &gt; Parâmetros Específicos (é a mesma configuração); os índices aparecem nos módulos. Os prazos para lançar a despesa e para fechar o relatório de despesas ficam em{" "}
-          {podeVerCaminho("/cadastros/viagens-especificos") ? (
-            <Link to="/cadastros/viagens-especificos" className="font-medium text-primary underline underline-offset-2">{caminhoDosPrazos}</Link>
-          ) : (
-            caminhoDosPrazos
-          )}
-          .
+          As faixas de desempenho daqui valem para os indicadores de veículos: Frota, Check list, Manutenção e Ocorrências. Os índices de Viagens têm as suas, em Parâmetros &gt; Viagens &gt; Parâmetros Específicos, e mudar uma não muda a outra.
         </p>
       </div>
-      <FaixasDesempenho />
+      <FaixasDesempenho dominio="veiculos" />
     </section>
   );
 }
@@ -115,19 +104,23 @@ type Rascunho = { limiteVerde: string; limiteAmarelo: string } & Pick<ConfigFaix
 const rascunhoDe = (c: ConfigFaixas): Rascunho => ({ ...c, limiteVerde: String(c.limiteVerde), limiteAmarelo: String(c.limiteAmarelo) });
 const configDe = (r: Rascunho): ConfigFaixas => ({ ...r, limiteVerde: numeroDe(r.limiteVerde), limiteAmarelo: numeroDe(r.limiteAmarelo) });
 
-// As faixas de desempenho (verde, amarelo e vermelho): uma configuração só, mostrada em Parâmetros > Veículos e em Parâmetros > Viagens > Parâmetros Específicos (decisão 335).
-export function FaixasDesempenho() {
-  const [salva, setSalva] = useState(lerFaixas);
+// As faixas de desempenho (verde, amarelo e vermelho) de um domínio: Viagens (Parâmetros > Viagens > Parâmetros Específicos) ou Veículos (Parâmetros > Veículos > Parâmetros Específicos). São duas
+// configurações independentes (decisão 350).
+export function FaixasDesempenho({ dominio }: { dominio: DominioFaixas }) {
+  const [salva, setSalva] = useState(() => lerFaixas(undefined, dominio));
   const [rascunho, setRascunho] = useState(() => rascunhoDe(salva));
   const config = configDe(rascunho);
   const erro = validarFaixas(config);
-  const igual = JSON.stringify(config) === JSON.stringify(salva);
+  // Sem faixas próprias gravadas (Veículos, que mostra a cópia de Viagens), Salvar fica liberado mesmo sem mudar valor, para gravar a cópia.
+  const [propria, setPropria] = useState(() => temFaixasProprias(dominio));
+  const igual = propria && JSON.stringify(config) === JSON.stringify(salva);
   const faixas = erro ? descricoesFaixas(salva) : descricoesFaixas(config);
   const textos = (faixa: Faixa, campo: "classificacao" | "significado", valor: string) => setRascunho((r) => ({ ...r, [faixa]: { ...r[faixa], [campo]: valor } }));
 
   function gravar(nova: ConfigFaixas, mensagem: string) {
     try {
-      salvarFaixas(nova);
+      salvarFaixas(nova, undefined, dominio);
+      setPropria(true);
       setSalva(nova);
       setRascunho(rascunhoDe(nova));
       toast.success(mensagem);
@@ -140,7 +133,7 @@ export function FaixasDesempenho() {
     <div className="panel max-w-3xl space-y-3 p-4">
       <div>
         <h3 className="text-sm font-semibold">Faixas de desempenho</h3>
-        <p className="text-xs text-muted-foreground">Valem para o índice de conformidade de lançamento, o de lançamento no prazo e o de fechamento do relatório no prazo, e também para o Check list e a Frota. É a mesma configuração em Parâmetros &gt; Veículos e em Parâmetros &gt; Viagens. O amarelo vai do seu limite até logo abaixo do limite do verde; abaixo do limite do amarelo é vermelho.</p>
+        <p className="text-xs text-muted-foreground">{dominio === "viagens" ? "Valem para o índice de conformidade de lançamento, o de lançamento no prazo e o de fechamento do relatório no prazo, de Viagens. Há uma cópia em Parâmetros > Veículos > Parâmetros Específicos, para os indicadores de veículos, e mudar uma não muda a outra." : "Valem para os indicadores de veículos: Frota, Check list, Manutenção e Ocorrências. Começam como cópia das de Viagens, mas são independentes: mudar uma não muda a outra."} O amarelo vai do seu limite até logo abaixo do limite do verde; abaixo do limite do amarelo é vermelho.</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
