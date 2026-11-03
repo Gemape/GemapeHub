@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { custoPorKm, indicadoresDaFrota } from "../src/lib/frota-indicadores.ts";
+import { custoPorKm, custoPorKmPorMes, indicadoresDaFrota, proporcaoPreventiva } from "../src/lib/frota-indicadores.ts";
 
 const ler = (f) => readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
 const HOJE = "2026-10-20";
@@ -121,40 +121,66 @@ test("conformidade geral (SLA): tarefas concluídas no prazo ÷ tarefas atribuí
   assert.deepEqual([indicadoresDaFrota(base).conformidadeGeral.pct, indicadoresDaFrota(base).conformidadeGeral.faixa], [null, null]);
 });
 
-test("CPK: (abastecimento + manutenção) ÷ km rodados; os gastos só entram dos veículos com km rodados", () => {
+test("CPK: (abastecimento + manutenção) ÷ km rodados; o abastecimento do km de partida e os veículos sem km rodados ficam de fora", () => {
   const c = custoPorKm(
     ["a", "b", "c"],
     [
-      { veiculoId: "a", km: 1000, valor: 300 },
-      { veiculoId: "a", km: 1400, valor: 200 },
-      { veiculoId: "b", km: 500, valor: 999 }, // um km só: sem rodados, não entra
-      { veiculoId: "c", km: 0, valor: null },
+      { veiculoId: "a", data: "2026-09-01", km: 1000, valor: 300 }, // km de partida: não entra
+      { veiculoId: "a", data: "2026-09-20", km: 1400, valor: 200 },
+      { veiculoId: "b", data: "2026-09-01", km: 500, valor: 999 }, // um km só: sem rodados, não entra
+      { veiculoId: "c", data: "2026-09-01", km: 0, valor: null },
     ],
-    [{ veiculoId: "a", km: 1200, custo: 500 }],
+    [{ veiculoId: "a", data: "2026-09-10", km: 1200, tipo: "Corretiva", custo: 500 }],
   );
-  assert.deepEqual(c, { valor: 2.5, abastecimento: 500, manutencao: 500, km: 400 });
+  assert.deepEqual(c, { valor: 1.75, abastecimento: 200, manutencao: 500, km: 400 });
   assert.equal(custoPorKm([], [], []).valor, null);
+});
+
+test("CPK mês a mês: km do mês a partir do maior km anterior; mês sem km rodados fica sem valor", () => {
+  const meses = custoPorKmPorMes(
+    ["a"],
+    [
+      { veiculoId: "a", data: "2026-08-10", km: 1000, valor: 100 },
+      { veiculoId: "a", data: "2026-09-10", km: 1200, valor: 100 },
+      { veiculoId: "a", data: "2026-10-05", km: 1500, valor: 150 },
+    ],
+    [{ veiculoId: "a", data: "2026-10-08", km: 1600, tipo: "Preventiva", custo: 250 }],
+    "2026-10-20",
+    3,
+  );
+  assert.deepEqual(meses.map((m) => [m.mes, m.cpk]), [["2026-08", null], ["2026-09", 0.5], ["2026-10", 1]]); // ago: um km só; set: 100/200; out: (150+250)/400
+});
+
+test("proporção preventiva: gasto preventivo ÷ gasto de manutenção, verde de 80%, amarelo de 70%, vermelho abaixo (modo reativo)", () => {
+  const m = (tipo, custo) => ({ veiculoId: "a", data: "2026-10-01", km: 1, tipo, custo });
+  const faixa = (prev, corr) => proporcaoPreventiva(["a"], [m("Preventiva", prev), m("Corretiva", corr)]);
+  assert.deepEqual([faixa(80, 20).pct, faixa(80, 20).faixa], [80, "verde"]);
+  assert.deepEqual([faixa(75, 25).pct, faixa(75, 25).faixa], [75, "amarelo"]);
+  assert.deepEqual([faixa(69, 31).pct, faixa(69, 31).faixa], [69, "vermelho"]);
+  assert.deepEqual([proporcaoPreventiva(["a"], []).pct, proporcaoPreventiva(["a"], []).faixa], [null, null]);
+  assert.equal(proporcaoPreventiva(["outro"], [m("Corretiva", 10)]).pct, null, "só a frota listada");
 });
 
 test("a Frota mostra os cards do PCM e dos técnicos com seta e cor por faixa, e a coluna de média km/L", () => {
   const cartoes = ler("components/modules/CartoesIndicadoresFrota.tsx");
-  // Decisão 342: os seis indicadores sempre à vista; o título diz de quem é (PCM, Técnicos ou Geral da frota) e o subtítulo, como é calculado.
+  // Decisão 342: os sete cartões sempre à vista; o título diz de quem é (PCM, Técnicos ou Geral da frota) e o subtítulo, como é calculado.
   for (const t of [
     "PCM · Preventivas em dia",
     "PCM · Check list no prazo",
     "PCM · Ocorrências no prazo",
     "Frota · Conformidade geral (SLA)",
     "Frota · Custo por km rodado (CPK)",
+    "Frota · Custo preventivo (meta 80%)",
     "Técnicos · Check list no prazo",
     "Técnicos · Check list atrasado",
   ])
     assert.ok(cartoes.includes(t), t);
-  assert.equal((cartoes.match(/subtitulo="/g) ?? []).length, 7, "cada cartão explica como é calculado");
+  assert.equal((cartoes.match(/subtitulo="/g) ?? []).length, 8, "cada cartão explica como é calculado");
   assert.ok(!cartoes.includes("aria-pressed"), "sem botões para alternar entre PCM e técnicos");
   assert.match(cartoes, /verde: \{[^}]*Icone: ArrowUp/);
   assert.match(cartoes, /amarelo: \{[^}]*Icone: ArrowLeftRight/);
   assert.match(cartoes, /vermelho: \{[^}]*Icone: ArrowDown/);
-  assert.match(cartoes, /sm:grid-cols-2 lg:grid-cols-4/, "sete cartões estreitos, quatro por linha (dois no celular)");
+  assert.match(cartoes, /sm:grid-cols-2 lg:grid-cols-4/, "oito cartões estreitos, quatro por linha (dois no celular)");
   const frota = ler("components/modules/FrotaModulo.tsx");
   assert.match(frota, /<CartoesIndicadoresFrota\s+indicadores=\{indicadores\}/);
   assert.match(
@@ -172,7 +198,9 @@ test("a Frota filtra a lista por subcategoria do veículo, ao lado da busca por 
   const frota = ler("components/modules/FrotaModulo.tsx");
   assert.match(frota, /aria-label="Filtrar por subcategoria do veículo"/);
   assert.match(frota, /subcategoriasAtivasDa\(parametros, "cat-veiculos"\)/, "as opções são as subcategorias ativas de veículos");
-  assert.match(frota, /nomeSubcategoria\(parametros, "cat-veiculos", v as never\) === subcategoria/, "o filtro compara com a subcategoria do veículo");
+  assert.match(frota, /nomeSubcategoria\(parametros, "cat-veiculos", v as never\) === filtroSubcategoria/, "o filtro compara com a subcategoria do veículo");
+  assert.match(frota, /nomesDeSubcategoria\.includes\(subcategoria\) \? subcategoria : TODAS_AS_SUBCATEGORIAS/, "subcategoria que sumiu volta a todas, sem esvaziar a lista");
+  assert.match(frota, /\.\.\.veiculos\.map\(\(v\) => nomeSubcategoria/, "as subcategorias que os veículos ainda usam também são opções");
   const filtros = frota.slice(frota.indexOf("filtros={"), frota.indexOf("acoes={"));
   assert.ok(filtros.indexOf("<Select") < filtros.indexOf("<Input"), "a seleção fica ao lado da busca, antes dela");
 });

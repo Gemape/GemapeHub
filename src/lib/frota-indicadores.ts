@@ -10,6 +10,7 @@ import {
 } from "./frota-ocorrencias.ts";
 import type { PrazosOcorrencias } from "./prazo-ocorrencias.ts";
 import { grupoDaLinha, type GrupoDeArea } from "./area-responsaveis.ts";
+import { mesesRecentes, rotuloMesCurto } from "./graficos-veiculos.ts";
 
 export type IndicadorDaFrota = { pct: number | null; faixa: Faixa | null; detalhe: string };
 
@@ -121,26 +122,88 @@ export function indicadoresDaFrota(entrada: {
 }
 
 // Custo por quilômetro rodado da frota (CPK, decisão 343): (abastecimento + manutenção) ÷ km rodados. Sem filtro de período, vale todo o histórico registrado. Os km rodados de um veículo são a
-// diferença entre o maior e o menor km dos registros dele (precisa de dois km diferentes); os gastos só entram dos veículos que têm km rodados, para o custo e o km serem da mesma base.
+// diferença entre o maior e o menor km dos registros dele (precisa de dois km diferentes, e registro sem km válido fica de fora). O abastecimento feito no km de partida abasteceu o que rodou
+// antes dele, então só entram os seguintes; os gastos só entram dos veículos que têm km rodados, para o custo e o km serem da mesma base.
 export type CustoPorKm = { valor: number | null; abastecimento: number; manutencao: number; km: number };
+export type AbastecimentoDeCusto = { veiculoId: string; data: string; km: number; valor?: number | null | undefined };
+export type ManutencaoDeCusto = { veiculoId: string; data: string; km: number; tipo: string; custo: number };
 
-export function custoPorKm(
-  veiculoIds: string[],
-  abastecimentos: { veiculoId: string; km: number; valor?: number | null | undefined }[],
-  manutencoes: { veiculoId: string; km: number; custo: number }[],
-): CustoPorKm {
+const kmValido = (n: number) => Number.isFinite(n) && n > 0;
+const porVeiculo = <T extends { veiculoId: string }>(lista: T[]): Map<string, T[]> => {
+  const mapa = new Map<string, T[]>();
+  for (const x of lista) {
+    const l = mapa.get(x.veiculoId);
+    if (l) l.push(x);
+    else mapa.set(x.veiculoId, [x]);
+  }
+  return mapa;
+};
+const extremos = (kms: number[]) => kms.reduce((r, n) => ({ max: Math.max(r.max, n), min: Math.min(r.min, n) }), { max: -Infinity, min: Infinity });
+const soma = (valores: (number | null | undefined)[]) => valores.reduce<number>((t, v) => t + (v ?? 0), 0);
+
+export function custoPorKm(veiculoIds: string[], abastecimentos: AbastecimentoDeCusto[], manutencoes: ManutencaoDeCusto[]): CustoPorKm {
+  const ab = porVeiculo(abastecimentos);
+  const ma = porVeiculo(manutencoes);
   let abastecimento = 0;
   let manutencao = 0;
   let km = 0;
   for (const id of veiculoIds) {
-    const a = abastecimentos.filter((x) => x.veiculoId === id);
-    const m = manutencoes.filter((x) => x.veiculoId === id);
-    const kms = [...a.map((x) => x.km), ...m.map((x) => x.km)].filter((n) => Number.isFinite(n) && n > 0);
-    const rodados = kms.length ? Math.max(...kms) - Math.min(...kms) : 0;
-    if (rodados <= 0) continue;
-    km += rodados;
-    abastecimento += a.reduce((t, x) => t + (x.valor ?? 0), 0);
-    manutencao += m.reduce((t, x) => t + x.custo, 0);
+    const a = (ab.get(id) ?? []).filter((x) => kmValido(x.km));
+    const m = (ma.get(id) ?? []).filter((x) => kmValido(x.km));
+    const { max, min } = extremos([...a, ...m].map((x) => x.km));
+    if (!(max - min > 0)) continue;
+    km += max - min;
+    abastecimento += soma(a.filter((x) => x.km > min).map((x) => x.valor));
+    manutencao += soma(m.map((x) => x.custo));
   }
   return { valor: km > 0 ? (abastecimento + manutencao) / km : null, abastecimento, manutencao, km };
+}
+
+// CPK de cada um dos `n` meses mais recentes (gráfico de linha). Os km do mês vão do maior km registrado até o mês anterior (ou, sem registro antes, do menor do mês) até o maior do mês; mês sem
+// km rodados fica sem valor.
+export function custoPorKmPorMes(
+  veiculoIds: string[],
+  abastecimentos: AbastecimentoDeCusto[],
+  manutencoes: ManutencaoDeCusto[],
+  hoje: string,
+  n = 6,
+): { mes: string; rotulo: string; cpk: number | null }[] {
+  const ab = porVeiculo(abastecimentos);
+  const ma = porVeiculo(manutencoes);
+  return mesesRecentes(hoje, n).map((mes) => {
+    let custo = 0;
+    let km = 0;
+    for (const id of veiculoIds) {
+      const a = (ab.get(id) ?? []).filter((x) => kmValido(x.km));
+      const m = (ma.get(id) ?? []).filter((x) => kmValido(x.km));
+      const doMes = (x: { data: string }) => x.data.slice(0, 7) === mes;
+      const kmsDoMes = [...a.filter(doMes), ...m.filter(doMes)].map((x) => x.km);
+      if (!kmsDoMes.length) continue;
+      const antes = [...a, ...m].filter((x) => x.data.slice(0, 7) < mes).map((x) => x.km);
+      const { max, min } = extremos(kmsDoMes);
+      const inicio = antes.length ? extremos(antes).max : min;
+      if (!(max - inicio > 0)) continue;
+      km += max - inicio;
+      custo += soma(a.filter(doMes).filter((x) => antes.length > 0 || x.km > inicio).map((x) => x.valor)) + soma(m.filter(doMes).map((x) => x.custo));
+    }
+    return { mes, rotulo: rotuloMesCurto(mes), cpk: km > 0 ? Math.round((custo / km) * 100) / 100 : null };
+  });
+}
+
+// Proporção do gasto de manutenção que é preventivo (decisão 344): preventivo ÷ total de manutenção. Referência de mercado 80/20: verde a partir de 80%, amarelo de 70% a 79,9% e vermelho abaixo de
+// 70%, quando a frota está no modo reativo (o corretivo custa mais). Os limites são fixos, não os das faixas de Parâmetros, que valem para os índices de prazo.
+export const META_PREVENTIVA = 80;
+export const LIMITE_REATIVO = 70;
+export function proporcaoPreventiva(veiculoIds: string[], manutencoes: ManutencaoDeCusto[]): IndicadorDaFrota {
+  const ids = new Set(veiculoIds);
+  const daFrota = manutencoes.filter((m) => ids.has(m.veiculoId));
+  const total = soma(daFrota.map((m) => m.custo));
+  const preventivo = soma(daFrota.filter((m) => m.tipo === "Preventiva").map((m) => m.custo));
+  const valor = pct(preventivo, total);
+  const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return {
+    pct: valor,
+    faixa: valor === null ? null : valor >= META_PREVENTIVA ? "verde" : valor >= LIMITE_REATIVO ? "amarelo" : "vermelho",
+    detalhe: total ? `${reais(preventivo)} preventiva de ${reais(total)} em manutenção` : "Sem custo de manutenção registrado",
+  };
 }

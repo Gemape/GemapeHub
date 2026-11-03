@@ -1,9 +1,9 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import type { ReactNode } from "react";
-import { ArrowDown, ArrowLeftRight, ArrowUp, Coins, Minus, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowLeftRight, ArrowUp, Coins, Minus, type LucideIcon } from "lucide-react";
 
 import type { Faixa } from "@/lib/faixas-desempenho";
-import type { CustoPorKm, IndicadorDaFrota, IndicadoresDaFrota } from "@/lib/frota-indicadores";
+import { LIMITE_REATIVO, type CustoPorKm, type IndicadorDaFrota, type IndicadoresDaFrota } from "@/lib/frota-indicadores";
 
 const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const porcento = (n: number | null) =>
@@ -59,6 +59,7 @@ export function Cartao({
   valor,
   icone,
   extra,
+  alerta,
   classe = "",
   compacto = false,
 }: {
@@ -69,6 +70,8 @@ export function Cartao({
   valor?: string;
   icone?: LucideIcon | undefined;
   extra?: ReactNode;
+  // Aviso em vermelho no pé do card (decisão 344), para o gestor não deixar passar.
+  alerta?: string;
   classe?: string;
   // Telas que mostram muitos indicadores de uma vez (Check list): menos folga, número e ícone menores, detalhe em uma linha.
   compacto?: boolean;
@@ -121,15 +124,21 @@ export function Cartao({
             {indicador.detalhe}
           </p>
         )}
+        {alerta && (
+          <p role="alert" className="flex items-start gap-1 text-xs font-semibold text-red-700 dark:text-red-300">
+            <AlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+            {alerta}
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-// Alto da Frota (decisão 342): os seis indicadores sempre à vista, sem alternar botões. Cada título diz de quem é o indicador (PCM, Técnicos ou Geral da frota) e o subtítulo explica como ele
+// Alto da Frota (decisão 342): os sete cartões sempre à vista, sem alternar botões. Cada título diz de quem é o indicador (PCM, Técnicos ou Geral da frota) e o subtítulo explica como ele
 // é calculado. `acoes` e `filtros` são o que a tela põe na linha de cima: as ações à esquerda e os filtros (subcategoria e busca) à direita, na barra padrão (decisão 339); `graficos` são os
 // gráficos, que em tela larga ficam ao lado dos cartões, na mesma faixa, para cartões, gráficos e a lista caberem numa tela só.
-export function CartoesIndicadoresFrota({ indicadores, cpk, acoes, filtros, graficos }: { indicadores: IndicadoresDaFrota; cpk: CustoPorKm; acoes?: ReactNode; filtros?: ReactNode; graficos?: ReactNode }) {
+export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, acoes, filtros, graficos }: { indicadores: IndicadoresDaFrota; cpk: CustoPorKm; custoPreventivo: IndicadorDaFrota; acoes?: ReactNode; filtros?: ReactNode; graficos?: ReactNode }) {
   return (
     <section className="space-y-2" aria-label="Indicadores da frota">
       {(acoes || filtros) && (
@@ -152,6 +161,13 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, acoes, filtros, graf
             indicador={{ pct: null, faixa: null, detalhe: cpk.valor === null ? "Sem km rodados para calcular" : `${reais(cpk.abastecimento)} abast. + ${reais(cpk.manutencao)} manut. em ${cpk.km.toLocaleString("pt-BR")} km` }}
             valor={cpk.valor === null ? "—" : `${reais(cpk.valor)}/km`}
             icone={Coins}
+            compacto
+          />
+          <Cartao
+            titulo="Frota · Custo preventivo (meta 80%)"
+            subtitulo="Gasto preventivo ÷ gasto total de manutenção. Referência 80/20."
+            indicador={custoPreventivo}
+            {...(custoPreventivo.pct !== null && custoPreventivo.pct < LIMITE_REATIVO ? { alerta: `Abaixo de ${LIMITE_REATIVO}%: modo reativo.` } : {})}
             compacto
           />
           <Cartao
@@ -183,7 +199,6 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, acoes, filtros, graf
             subtitulo="Não realizados no prazo ÷ os que já venceram (o complemento do indicador ao lado, com a mesma cor)."
             indicador={indicadores.tecnicosNaoRealizados}
             compacto
-            classe="lg:col-span-2"
           />
         </div>
         {graficos}

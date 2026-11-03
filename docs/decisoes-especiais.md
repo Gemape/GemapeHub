@@ -1922,9 +1922,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Todas as telas de cadastro passam a ter o mesmo trio: busca por palavra-chave, Exportar CSV (com o que está filtrado na tela; desligado quando a lista está vazia; a exceção é Empregados, que exporta sempre a lista inteira, como definido antes) e o botão de novo. Empresas ganhou a busca (nome fantasia, razão social, CNPJ, endereço e status) e o Exportar CSV; Fornecedores, Clientes, EPI, Uniformes, Equipamentos (que também ganhou a busca), ficha de EPI, endereçamento e código de fábrica ganharam o Exportar CSV. A posição é a da decisão 339: botões no alto, à direita; busca logo abaixo, à direita.
 
-## 342. Frota: seis indicadores sempre à vista e filtro por subcategoria
+## 342. Frota: indicadores sempre à vista e filtro por subcategoria
 
-- Em Veículos › Módulo › Frota os indicadores de PCM e de técnicos aparecem juntos, sem botões para alternar. Os cartões ficaram mais estreitos (três por linha) para caber com os gráficos e a lista numa tela só (decisão 337).
+- Em Veículos › Módulo › Frota os indicadores de PCM e de técnicos aparecem juntos, sem botões para alternar. Os cartões ficaram mais estreitos (quatro por linha, ver decisão 343) para caber com os gráficos e a lista numa tela só (decisão 337).
 - O título de cada cartão diz de quem é o indicador: "PCM ·", "Técnicos ·" ou "Frota ·" (geral). O subtítulo explica como ele é calculado.
 - Ao lado da busca por palavra-chave há o filtro por subcategoria do veículo (utilitário, caminhão, carro...), com as subcategorias ativas de Parâmetros. Ele vale para a lista e para o relatório impresso; os indicadores e gráficos seguem sendo da frota toda.
 
@@ -1933,3 +1933,10 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - A Conformidade geral é o primeiro cartão e mede o SLA de resolução de tarefas: tarefas concluídas no prazo ÷ tarefas atribuídas, em percentual. As tarefas são as preventivas com registro (no prazo = não vencidas), os check lists obrigatórios (realizado no prazo ou não realizado, de PCM, técnicos e sem área) e as ocorrências abertas (no prazo ou vencidas). Substitui a média simples dos três indicadores do PCM.
 - O segundo cartão é o Custo por km rodado (CPK): (total de abastecimento + total de manutenção) ÷ km rodados, em R$/km. Sem filtro de período, vale todo o histórico registrado. Os km rodados de cada veículo são o maior menos o menor km dos registros dele; os gastos só entram dos veículos que têm km rodados. É um valor em reais, sem faixa de cor.
 - São sete cartões, quatro por linha.
+
+## 344. Frota: tendência do CPK, proporção do custo preventivo e correções do code review
+
+- Gráfico de linha "CPK da frota mês a mês (R$/km)" nos gráficos da Frota, com os seis meses mais recentes, para acompanhar a evolução dos custos. Os km do mês vão do maior km registrado até o mês anterior até o maior do mês; mês sem km rodados fica com vão na linha.
+- Cartão "Frota · Custo preventivo (meta 80%)": gasto com manutenção preventiva ÷ gasto total com manutenção. Referência de mercado 80/20: verde a partir de 80%, amarelo de 70% a 79,9% e vermelho abaixo de 70%. Abaixo de 70% o cartão mostra o alerta "modo reativo". Os limites são fixos, não os das faixas de Parâmetros (que valem para os índices de prazo). São oito cartões, quatro por linha.
+- CPK: o abastecimento feito no km de partida do veículo não entra (abasteceu o que rodou antes); registros sem km válido ficam de fora do custo e do km.
+- Filtro de subcategoria: as opções incluem as subcategorias que os veículos ainda usam (desativadas ou antigas); se a escolhida deixar de existir, volta a "Todas". O relatório impresso informa a subcategoria filtrada.

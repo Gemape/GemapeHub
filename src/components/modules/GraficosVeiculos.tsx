@@ -2,6 +2,7 @@ import {
   COR_DA_FAIXA,
   COR_GRAFICO,
   GraficoBarras,
+  GraficoLinha,
   GraficoRosca,
   PainelGraficos,
   QuadroGrafico,
@@ -21,10 +22,13 @@ import type { StatusOcorrencia } from "@/lib/ocorrencias-veiculo";
 export function GraficosFrota({
   indicadores,
   medias,
+  cpkMensal,
   compacto = false,
 }: {
   indicadores: IndicadoresDaFrota;
   medias: { veiculo: string; media: number | null }[];
+  // CPK da frota de cada mês recente (decisão 344), para acompanhar a evolução dos custos.
+  cpkMensal: { rotulo: string; cpk: number | null }[];
   // Na Frota os gráficos dividem a tela com os cards e a lista: mais baixos e sem o texto de apoio (decisão 337).
   compacto?: boolean;
 }) {
@@ -77,6 +81,22 @@ export function GraficosFrota({
           series={[{ chave: "media", nome: "km/L", cor: COR_GRAFICO.azul }]}
         />
       </QuadroGrafico>
+      <div className="xl:col-span-2">
+        <QuadroGrafico
+          titulo="CPK da frota mês a mês (R$/km)"
+          {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Custo por km rodado (abastecimento + manutenção) de cada mês, para acompanhar a evolução dos custos." })}
+          vazio={cpkMensal.every((m) => m.cpk === null)}
+        >
+          <GraficoLinha
+            dados={cpkMensal}
+            categoria="rotulo"
+            chave="cpk"
+            nome="CPK"
+            cor={COR_GRAFICO.roxo}
+            formatar={(n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+          />
+        </QuadroGrafico>
+      </div>
     </PainelGraficos>
   );
 }

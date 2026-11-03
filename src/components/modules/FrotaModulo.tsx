@@ -17,7 +17,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { grupoDeAreaPorNome } from "@/lib/area-responsaveis";
 import { painelDoMes } from "@/lib/checklist-painel";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas } from "@/lib/extrato-veiculo";
-import { custoPorKm, indicadoresDaFrota } from "@/lib/frota-indicadores";
+import { custoPorKm, custoPorKmPorMes, indicadoresDaFrota, proporcaoPreventiva } from "@/lib/frota-indicadores";
 import { locaisDaManutencao } from "@/lib/registros-veiculo";
 import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
@@ -82,13 +82,16 @@ export function FrotaModulo() {
   const [busca, setBusca] = useState("");
   // Filtro por subcategoria do veículo (utilitário, caminhão, carro...), ao lado da busca (decisão 342): vale para a lista e para o relatório; os indicadores seguem sendo da frota toda.
   const [subcategoria, setSubcategoria] = useState(TODAS_AS_SUBCATEGORIAS);
-  const subcategorias = subcategoriasAtivasDa(parametros, "cat-veiculos");
+  // Opções: as subcategorias ativas e também as que os veículos ainda usam (desativadas ou antigas), para nenhum veículo ficar sem como ser filtrado.
+  const nomesDeSubcategoria = [...new Set([...subcategoriasAtivasDa(parametros, "cat-veiculos").map((s) => s.nome), ...veiculos.map((v) => nomeSubcategoria(parametros, "cat-veiculos", v as never))].filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  // Subcategoria escolhida que deixou de existir (desativada ou renomeada) volta a "todas", em vez de esvaziar a lista.
+  const filtroSubcategoria = nomesDeSubcategoria.includes(subcategoria) ? subcategoria : TODAS_AS_SUBCATEGORIAS;
   // Veículo escolhido e, se veio de uma bolinha, a seção do extrato que ela resume (sem seção, abre a janela do extrato).
   const [aberto, setAberto] = useState<{ id: string; secao: SecaoExtrato | null } | null>(null);
   const hoje = hojeLocal();
 
   const lista = veiculos
-    .filter((v) => subcategoria === TODAS_AS_SUBCATEGORIAS || nomeSubcategoria(parametros, "cat-veiculos", v as never) === subcategoria)
+    .filter((v) => filtroSubcategoria === TODAS_AS_SUBCATEGORIAS || nomeSubcategoria(parametros, "cat-veiculos", v as never) === filtroSubcategoria)
     .filter((v) =>
     combinaBusca(busca.replace(/-/g, ""), rotuloDoVeiculo(parametros, v), normalizarPlaca(v.placa ?? ""), v.marca, v.modelo, nomeResponsavel(v.empregado_responsavel_id), STATUS[v.status] ?? v.status),
   );
@@ -121,11 +124,11 @@ export function FrotaModulo() {
     hoje,
     prazos: lerPrazosOcorrencias(),
   });
-  const cpk = custoPorKm(
-    [...idsDaFrota],
-    abastecimentos,
-    manutencoes.map((m) => ({ veiculoId: m.veiculoId, km: m.km, custo: locaisDaManutencao(m).reduce((t, l) => t + l.custoTotal, 0) })),
-  );
+  const custosDeManutencao = manutencoes.map((m) => ({ veiculoId: m.veiculoId, data: m.data, km: m.km, tipo: m.tipo, custo: locaisDaManutencao(m).reduce((t, l) => t + l.custoTotal, 0) }));
+  const idsDeCusto = [...idsDaFrota];
+  const cpk = custoPorKm(idsDeCusto, abastecimentos, custosDeManutencao);
+  const custoPreventivo = proporcaoPreventiva(idsDeCusto, custosDeManutencao);
+  const cpkMensal = custoPorKmPorMes(idsDeCusto, abastecimentos, custosDeManutencao, hoje);
   // Média de consumo do veículo (km/L), do histórico de abastecimentos dele (Módulo > Veículos > Abastecimento); precisa de dois abastecimentos.
   const mediaDo = (id: string): number | null => mediaKmPorLitro(historicoAbastecimentos(abastecimentos.filter((a) => a.veiculoId === id)));
   const textoMedia = (m: number | null) => (m === null ? "—" : m.toLocaleString("pt-BR", { maximumFractionDigits: 1 }));
@@ -146,6 +149,7 @@ export function FrotaModulo() {
         empresa,
         geradoEm: new Date().toISOString(),
         busca: busca.trim(),
+        ...(filtroSubcategoria !== TODAS_AS_SUBCATEGORIAS ? { subcategoria: filtroSubcategoria } : {}),
         linhas: lista.map((v) => ({
           veiculo: rotuloDoVeiculo(parametros, v),
           responsavel: nomeResponsavel(v.empregado_responsavel_id),
@@ -166,17 +170,18 @@ export function FrotaModulo() {
       <CartoesIndicadoresFrota
         indicadores={indicadores}
         cpk={cpk}
-        graficos={<GraficosFrota compacto indicadores={indicadores} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
+        custoPreventivo={custoPreventivo}
+        graficos={<GraficosFrota compacto indicadores={indicadores} cpkMensal={cpkMensal} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
         filtros={
           <>
-            <Select value={subcategoria} onValueChange={setSubcategoria}>
+            <Select value={filtroSubcategoria} onValueChange={setSubcategoria}>
               <SelectTrigger aria-label="Filtrar por subcategoria do veículo" className="h-9 w-56">
                 <SelectValue placeholder="Todas as subcategorias" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={TODAS_AS_SUBCATEGORIAS}>Todas as subcategorias</SelectItem>
-                {subcategorias.map((s) => (
-                  <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
+                {nomesDeSubcategoria.map((nome) => (
+                  <SelectItem key={nome} value={nome}>{nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -195,7 +200,7 @@ export function FrotaModulo() {
         }
       />
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
-      <div className="max-h-[max(10rem,calc(100dvh-40rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="max-h-[max(8rem,calc(100dvh-46rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1440px] table-fixed">
           <TableHeader>
             <TableRow>
