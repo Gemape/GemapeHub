@@ -76,12 +76,12 @@ test("os submenus de módulo são as abas do módulo, as mesmas do menu lateral,
 test("os submenus de parâmetros são os itens do menu de cada grupo, com Cadastrar Ficha de EPI dentro de EPI", () => {
   const par = (t) => titulos(daSecao(cartao(true, AREAS, t), "Parâmetros"));
   assert.deepEqual(titulos(daSecao(cartao(true, "Cadastros", "Gerais"), "Parâmetros")), titulos(MENU_GERAIS));
-  assert.deepEqual(par("EPIs"), ["Cadastrar EPI", "Cadastrar Ficha de EPI", "Parâmetros Específicos", "Tamanho e Medidas de Produto"]);
+  assert.deepEqual(par("EPIs"), ["Cadastrar EPI", "Cadastrar Ficha de EPI", "Cadastrar Ordem de Serviço", "Parâmetros Específicos", "Tamanho e Medidas de Produto"]);
   assert.deepEqual(par("Uniformes"), titulos(MENU_UNIFORMES));
   assert.deepEqual(par("Ferramentas"), titulos(MENU_FERRAMENTAS));
   assert.deepEqual(par("Veículos"), titulos(MENU_VEICULOS));
   assert.deepEqual(par("Equipamentos"), titulos(MENU_EQUIPAMENTOS));
-  assert.deepEqual(MENU_EPI.flatMap((i) => i.filhos ?? []).map((f) => f.titulo), ["Cadastrar Ficha de EPI"]);
+  assert.deepEqual(MENU_EPI.flatMap((i) => i.filhos ?? []).map((f) => f.titulo), ["Cadastrar Ficha de EPI", "Cadastrar Ordem de Serviço"]);
 });
 
 test("itens de tela repetida levam o ?de= do menu de origem, e Cadastrar Caixa só aparece para o Administrador", () => {
