@@ -20,11 +20,11 @@ const CelulaPendencias = ({ n }: { n: number | null }) =>
 
 // Cabeçalho comum das duas listas: Voltar ao painel, o mês, a busca e o botão de novo check list.
 function BarraDaLista({
-  titulo, mes, onMes, hoje, busca, onBusca, onVoltar, acao,
-}: { titulo: string; mes: string; onMes: (m: string) => void; hoje: string; busca: string; onBusca: (b: string) => void; onVoltar: () => void; acao: React.ReactNode }) {
+  titulo, mes, onMes, hoje, busca, onBusca, onVoltar, voltarRef, acao,
+}: { titulo: string; mes: string; onMes: (m: string) => void; hoje: string; busca: string; onBusca: (b: string) => void; onVoltar: () => void; voltarRef?: React.Ref<HTMLButtonElement> | undefined; acao: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button type="button" variant="outline" size="sm" onClick={onVoltar}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+      <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={onVoltar}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
       <h2 className="sr-only">{titulo}</h2>
       <div className="flex items-center gap-1.5">
         <Label htmlFor="lista_mes" className="text-xs">Mês</Label>
@@ -48,7 +48,7 @@ const CABECALHO = ["Prazo", "Veículo", "Periodicidade", "Responsável", "Situa�
 // Pendências e o link da ação: a vencer leva a Realizar (ou Continuar, se já foi iniciado); não realizado no prazo não tem ação, porque não pode mais ser feito;
 // realizado leva a Ver o check list realizado.
 export function ChecklistListaPeriodica({
-  previsoes, checklists, idsDosVeiculos, hoje, onVer, onRealizar, onNovo, onVoltar,
+  previsoes, checklists, idsDosVeiculos, hoje, onVer, onRealizar, onNovo, onVoltar, voltarRef,
 }: {
   previsoes: Previsao[];
   checklists: ChecklistVeiculo[];
@@ -57,7 +57,7 @@ export function ChecklistListaPeriodica({
   onVer: (checklistId: string) => void;
   onRealizar: (veiculoId: string, periodicidade: string) => void;
   onNovo: () => void;
-  onVoltar: () => void;
+  onVoltar: () => void; voltarRef?: React.Ref<HTMLButtonElement>;
 }) {
   // Sem escolha, o mês acompanha o dia de hoje (inclusive na virada do mês).
   const [escolhido, setMes] = useState<string | null>(null);
@@ -84,7 +84,7 @@ export function ChecklistListaPeriodica({
   return (
     <section className="space-y-3" aria-label="Check list periódico">
       <BarraDaLista
-        titulo="Check list periódico" mes={mes} onMes={setMes} hoje={hoje} busca={busca} onBusca={setBusca} onVoltar={onVoltar}
+        titulo="Check list periódico" mes={mes} onMes={setMes} hoje={hoje} busca={busca} onBusca={setBusca} onVoltar={onVoltar} voltarRef={voltarRef}
         acao={<Button requiresWrite="operar" size="sm" onClick={onNovo}>Novo check list</Button>}
       />
       <p className="text-xs text-muted-foreground">
@@ -154,14 +154,14 @@ const SITUACAO_AVULSO: Record<string, { rotulo: string; classe: string }> = {
 // Check list avulso (decisão 298): as mesmas colunas, na mesma ordem. O avulso não tem prazo nem periodicidade: o prazo é o dia do check list e a periodicidade
 // é "Avulso"; o responsável vem em branco quando ninguém foi definido.
 export function ChecklistListaAvulsa({
-  avulsos, hoje, nomeDoVeiculo, onVer, onNovo, onVoltar,
+  avulsos, hoje, nomeDoVeiculo, onVer, onNovo, onVoltar, voltarRef,
 }: {
   avulsos: ChecklistVeiculo[];
   hoje: string;
   nomeDoVeiculo: (c: ChecklistVeiculo) => string;
   onVer: (checklistId: string) => void;
   onNovo: () => void;
-  onVoltar: () => void;
+  onVoltar: () => void; voltarRef?: React.Ref<HTMLButtonElement>;
 }) {
   // Sem escolha, o mês acompanha o dia de hoje (inclusive na virada do mês).
   const [escolhido, setMes] = useState<string | null>(null);
@@ -175,7 +175,7 @@ export function ChecklistListaAvulsa({
   return (
     <section className="space-y-3" aria-label="Check list avulso">
       <BarraDaLista
-        titulo="Check list avulso" mes={mes} onMes={setMes} hoje={hoje} busca={busca} onBusca={setBusca} onVoltar={onVoltar}
+        titulo="Check list avulso" mes={mes} onMes={setMes} hoje={hoje} busca={busca} onBusca={setBusca} onVoltar={onVoltar} voltarRef={voltarRef}
         acao={<Button requiresWrite="operar" size="sm" onClick={onNovo}>Novo check list avulso</Button>}
       />
       <p className="text-xs text-muted-foreground">

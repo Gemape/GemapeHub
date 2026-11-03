@@ -1,6 +1,6 @@
-// Indicadores do alto de Ocorrências (decisão 320): ocorrências realizadas no prazo e não realizadas no prazo. Realizada no prazo é a encerrada que cumpriu os dois prazos de
+// Indicadores do alto de Ocorrências (decisão 320): ocorrências tratadas no prazo e não tratadas. Tratada no prazo é a encerrada que cumpriu os dois prazos de
 // Parâmetros > Veículos > Parâmetros Específicos: a tratativa começou até a data limite do início (dia da ocorrência mais os dias de iniciar) e terminou até a data limite da
-// finalização (início da tratativa mais os dias de finalizar). Em cada passo, a data da última renovação, se houver, vale no lugar da padrão. Não realizada no prazo é a encerrada
+// finalização (início da tratativa mais os dias de finalizar). Em cada passo, a data da última renovação, se houver, vale no lugar da padrão. Não tratada é a encerrada
 // que perdeu algum dos dois prazos ou a ainda aberta que já venceu. A ocorrência que ainda está dentro do prazo não entra na conta. A faixa vem dos limites da Frota.
 import { hojeBrasilia } from "./checklist-veiculo.ts";
 import { faixaDoIndice, type ConfigFaixas } from "./faixas-desempenho.ts";
@@ -49,7 +49,7 @@ export function indicadoresDeOcorrencias(entrada: {
   hoje: string;
   prazos: PrazosOcorrencias;
   faixas?: ConfigFaixas;
-}): { noPrazo: IndicadorDaFrota; naoRealizadas: IndicadorDaFrota } {
+}): { noPrazo: IndicadorDaFrota; naoTratadas: IndicadorDaFrota } {
   const { ocorrencias, hoje, prazos } = entrada;
   const noPrazo = ocorrencias.filter((o) => encerradaNoPrazo(o, prazos) === true).length;
   const fora = ocorrencias.filter(
@@ -62,12 +62,12 @@ export function indicadoresDeOcorrencias(entrada: {
   const faixa = faixaDoIndice(valor, entrada.faixas)?.faixa ?? null;
   const vazio = "Nenhuma ocorrência encerrada ou vencida";
   return {
-    noPrazo: { pct: valor, faixa, detalhe: total ? `${noPrazo} de ${total} no prazo` : vazio },
-    // A cor dos não realizados é a dos realizados no prazo (o complemento): poucos não realizados é verde.
-    naoRealizadas: {
+    noPrazo: { pct: valor, faixa, detalhe: total ? `${noPrazo} de ${total} tratadas no prazo` : vazio },
+    // A cor das não tratadas é a das tratadas no prazo (o complemento): poucas não tratadas é verde.
+    naoTratadas: {
       pct: valor === null ? null : arredondar(100 - valor),
       faixa,
-      detalhe: total ? `${fora} de ${total} fora do prazo` : vazio,
+      detalhe: total ? `${fora} de ${total} não tratadas` : vazio,
     },
   };
 }

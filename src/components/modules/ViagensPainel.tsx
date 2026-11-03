@@ -245,7 +245,7 @@ function ExplicacaoPrazo({ prazos }: { prazos: PrazosViagens }) {
             ? "O indicador está desligado para o técnico mecânico em Parâmetros, então o índice não é calculado."
             : `Prazo de hoje para o técnico mecânico lançar: ${dias(prazos.mecanico)}. Despesas lançadas pelo PCM ou pelo Administrativo não entram neste índice.`}
         </p>
-        <p className="text-muted-foreground">O prazo e as faixas se configuram em Parâmetros &gt; Veículos &gt; Parâmetros Específicos. Conta a diferença entre a data da despesa e o dia em que o formulário foi enviado.</p>
+        <p className="text-muted-foreground">O prazo se configura em Parâmetros &gt; Viagens &gt; Parâmetros Específicos e as faixas, em Parâmetros &gt; Veículos &gt; Parâmetros Específicos. Conta a diferença entre a data da despesa e o dia em que o formulário foi enviado.</p>
       </PopoverContent>
     </Popover>
   );
@@ -294,7 +294,7 @@ function ExplicacaoFechamento({ prazos }: { prazos: PrazosViagens }) {
             ? "O indicador está desligado para o PCM em Parâmetros, então o índice não é calculado."
             : `Prazo de hoje para o PCM fechar o relatório: ${dias(prazos.pcm)} depois do lançamento. Despesa ainda sem relatório e com o prazo vencido conta como fora do prazo.`}
         </p>
-        <p className="text-muted-foreground">O prazo e as faixas se configuram em Parâmetros &gt; Veículos &gt; Parâmetros Específicos. Conta a diferença entre o dia em que a despesa foi lançada no sistema (não a data da despesa) e o dia em que o relatório foi gerado.</p>
+        <p className="text-muted-foreground">O prazo se configura em Parâmetros &gt; Viagens &gt; Parâmetros Específicos e as faixas, em Parâmetros &gt; Veículos &gt; Parâmetros Específicos. Conta a diferença entre o dia em que a despesa foi lançada no sistema (não a data da despesa) e o dia em que o relatório foi gerado.</p>
       </PopoverContent>
     </Popover>
   );

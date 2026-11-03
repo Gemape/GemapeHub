@@ -6,7 +6,7 @@ import type { IndicadorDaFrota } from "@/lib/frota-indicadores";
 export function CartoesOcorrencias({
   indicadores,
 }: {
-  indicadores: { noPrazo: IndicadorDaFrota; naoRealizadas: IndicadorDaFrota };
+  indicadores: { noPrazo: IndicadorDaFrota; naoTratadas: IndicadorDaFrota };
 }) {
   return (
     <section
@@ -14,7 +14,7 @@ export function CartoesOcorrencias({
       aria-label="Indicadores de ocorrências"
     >
       <Cartao titulo="Tratadas no prazo" indicador={indicadores.noPrazo} />
-      <Cartao titulo="Não tratadas" indicador={indicadores.naoRealizadas} />
+      <Cartao titulo="Não tratadas" indicador={indicadores.naoTratadas} />
     </section>
   );
 }

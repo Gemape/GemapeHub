@@ -37,6 +37,7 @@ import {
   type OcorrenciaVeiculo, type StatusOcorrencia,
 } from "@/lib/ocorrencias-veiculo";
 import { combinaBusca } from "@/lib/parametros-base";
+import { useFocoDaTela } from "@/lib/use-foco-da-tela";
 import { useOcorrenciasVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -82,6 +83,8 @@ export function OcorrenciasVeiculoModulo() {
   const [filtro, setFiltro] = useState<StatusOcorrencia | "todas">("todas");
   // Tela do módulo: o painel (botões, indicadores e gráficos) ou, ao clicar num botão de situação, a lista daquela situação (com o botão de voltar ao painel).
   const [verLista, setVerLista] = useState(false);
+  // Foco do teclado ao trocar de tela (decisão 333): abrir a lista leva o foco ao botão de voltar; voltar ao painel o devolve ao botão que abriu a lista.
+  const { voltarRef, botaoDaTela } = useFocoDaTela<StatusOcorrencia | "todas" | "painel">(verLista ? filtro : "painel", "painel");
   const [busca, setBusca] = useState("");
   // Período da lista (AAAA-MM-DD, as duas pontas valem), pela data em que a ocorrência aconteceu; vazio = sem limite daquele lado.
   const [inicio, setInicio] = useState("");
@@ -242,7 +245,7 @@ export function OcorrenciasVeiculoModulo() {
           <section className="flex flex-wrap items-center justify-between gap-2" aria-label="Ocorrências por situação">
             <div className="flex flex-wrap gap-2" role="group" aria-label="Abrir a lista por situação">
               {BOTOES_FILTRO.map(({ filtro: f, rotulo }) => (
-                <Button key={f} type="button" aria-label={`${rotulo}: ${f === "todas" ? daEmpresa.length : contagem[f]} ocorrência(s). Abrir a lista`} onClick={() => { setFiltro(f); setBusca(""); setInicio(""); setFim(""); setVerLista(true); }}>
+                <Button key={f} ref={botaoDaTela(f)} type="button" aria-label={`${rotulo}: ${f === "todas" ? daEmpresa.length : contagem[f]} ocorrência(s). Abrir a lista`} onClick={() => { setFiltro(f); setBusca(""); setInicio(""); setFim(""); setVerLista(true); }}>
                   {rotulo}
                   <span aria-hidden="true" className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{f === "todas" ? daEmpresa.length : contagem[f]}</span>
                 </Button>
@@ -256,7 +259,7 @@ export function OcorrenciasVeiculoModulo() {
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+            <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
             <h2 className="text-base font-semibold">{BOTOES_FILTRO.find((b) => b.filtro === filtro)?.rotulo ?? "Ocorrências"}</h2>
             <Input
               aria-label="Buscar ocorrência"

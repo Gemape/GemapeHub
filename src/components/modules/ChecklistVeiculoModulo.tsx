@@ -10,6 +10,7 @@ import { DialogItensChecklist } from "@/components/modules/DialogItensChecklist"
 import { DialogAssociarChecklist } from "@/components/modules/DialogAssociarChecklist";
 import { DialogCadastroVeiculos } from "@/components/modules/DialogCadastroVeiculos";
 import { ChecklistListaAvulsa, ChecklistListaPeriodica } from "@/components/modules/ChecklistListasVeiculo";
+import { useFocoDaTela } from "@/lib/use-foco-da-tela";
 import { ChecklistResultadosPainel } from "@/components/modules/ChecklistResultadosPainel";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import {
@@ -81,6 +82,8 @@ export function ChecklistVeiculoModulo() {
   const [tela, setTela] = useState<Tela>(null);
   // Tela principal (decisão 298): o painel com os indicadores e os resultados dos responsáveis, e as listas do check list periódico e do avulso, em botões separados.
   const [aba, setAba] = useState<"painel" | "periodicos" | "avulsos">("painel");
+  // Foco do teclado ao trocar de tela (decisão 333).
+  const { voltarRef, botaoDaTela } = useFocoDaTela(aba, "painel");
   // O título grande da página acompanha a lista aberta: Check list periódico ou Check list avulso (decisão 326); no painel volta a ser o nome da aba.
   useEffect(() => {
     definirTituloDaPagina(aba === "periodicos" ? "Check list periódico" : aba === "avulsos" ? "Check list avulso" : null);
@@ -308,11 +311,11 @@ export function ChecklistVeiculoModulo() {
             hoje={hoje}
             acoes={
               <section className="flex flex-wrap justify-end gap-2" aria-label="Tipos de check list">
-                <Button type="button" onClick={() => setAba("periodicos")}>
+                <Button ref={botaoDaTela("periodicos")} type="button" onClick={() => setAba("periodicos")}>
                   <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Check list periódico
                   <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{previstosDoMes} previsto(s) neste mês</span>
                 </Button>
-                <Button type="button" onClick={() => setAba("avulsos")}>
+                <Button ref={botaoDaTela("avulsos")} type="button" onClick={() => setAba("avulsos")}>
                   <ClipboardList className="h-4 w-4" aria-hidden="true" /> Check list avulso
                   <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{avulsosDoMesAtual} neste mês</span>
                 </Button>
@@ -332,6 +335,7 @@ export function ChecklistVeiculoModulo() {
           onRealizar={(idDoVeiculo, periodicidade) => abrirNovo(veiculos.find((v) => v.id === idDoVeiculo), periodicidade)}
           onNovo={() => abrirNovo()}
           onVoltar={() => setAba("painel")}
+          voltarRef={voltarRef}
         />
       )}
 
@@ -343,6 +347,7 @@ export function ChecklistVeiculoModulo() {
           onVer={(id) => setTela({ tipo: "check", id })}
           onNovo={abrirNovoAvulso}
           onVoltar={() => setAba("painel")}
+          voltarRef={voltarRef}
         />
       )}
 
