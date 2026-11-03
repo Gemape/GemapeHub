@@ -1,4 +1,4 @@
-// Indicadores do alto da Frota (decisão 317): cards do PCM (manutenções, check list do PCM, ocorrências e conformidade geral) e cards dos técnicos (só check list). Cada um é
+// Indicadores do alto da Frota (decisão 317): cards do PCM (manutenções, check list do PCM e ocorrências), da frota (conformidade geral, SLA de tarefas, e custo por km) e cards dos técnicos (só check list). Cada um é
 // um percentual, e a faixa (verde, amarelo ou vermelho) vem dos limites de Parâmetros > Veículos > Parâmetros Específicos, os mesmos dos índices de Viagens.
 import { resumoDeLinhas, type LinhaPainel } from "./checklist-painel.ts";
 import type { StatusSugestao } from "./extrato-veiculo.ts";
@@ -99,18 +99,14 @@ export function indicadoresDaFrota(entrada: {
       : "Sem check list dos técnicos com prazo vencido",
   };
 
-  // Conformidade geral do PCM: média simples dos indicadores do PCM que têm valor.
-  const valores = [manutencoes.pct, checklistPcm.pct, ocorrencias.pct].filter(
-    (v): v is number => v !== null,
-  );
-  const media = valores.length
-    ? arredondar(valores.reduce((a, b) => a + b, 0) / valores.length)
-    : null;
+  // Conformidade geral (decisão 343): SLA de resolução de tarefas, tudo junto: concluídas no prazo ÷ tarefas atribuídas que já têm desfecho. As tarefas são as preventivas com
+  // registro, os check lists obrigatórios (PCM, técnicos e sem área) realizados ou não e as ocorrências abertas (no prazo ou vencidas).
+  const todos = resumoDeLinhas(entrada.linhasDoChecklist);
+  const noPrazo = emDia + todos.realizados + (abertas.length - vencidas);
+  const total = contadas.length + todos.realizados + todos.naoRealizados + abertas.length;
   const conformidadeGeral = indicador(
-    media,
-    valores.length
-      ? `Média de ${valores.length} indicador(es) do PCM`
-      : "Sem indicadores para calcular",
+    pct(noPrazo, total),
+    total ? `${noPrazo} de ${total} tarefas no prazo` : "Sem tarefas para calcular",
     faixas,
   );
 
@@ -122,4 +118,29 @@ export function indicadoresDaFrota(entrada: {
     tecnicosNoPrazo,
     tecnicosNaoRealizados,
   };
+}
+
+// Custo por quilômetro rodado da frota (CPK, decisão 343): (abastecimento + manutenção) ÷ km rodados. Sem filtro de período, vale todo o histórico registrado. Os km rodados de um veículo são a
+// diferença entre o maior e o menor km dos registros dele (precisa de dois km diferentes); os gastos só entram dos veículos que têm km rodados, para o custo e o km serem da mesma base.
+export type CustoPorKm = { valor: number | null; abastecimento: number; manutencao: number; km: number };
+
+export function custoPorKm(
+  veiculoIds: string[],
+  abastecimentos: { veiculoId: string; km: number; valor?: number | null | undefined }[],
+  manutencoes: { veiculoId: string; km: number; custo: number }[],
+): CustoPorKm {
+  let abastecimento = 0;
+  let manutencao = 0;
+  let km = 0;
+  for (const id of veiculoIds) {
+    const a = abastecimentos.filter((x) => x.veiculoId === id);
+    const m = manutencoes.filter((x) => x.veiculoId === id);
+    const kms = [...a.map((x) => x.km), ...m.map((x) => x.km)].filter((n) => Number.isFinite(n) && n > 0);
+    const rodados = kms.length ? Math.max(...kms) - Math.min(...kms) : 0;
+    if (rodados <= 0) continue;
+    km += rodados;
+    abastecimento += a.reduce((t, x) => t + (x.valor ?? 0), 0);
+    manutencao += m.reduce((t, x) => t + x.custo, 0);
+  }
+  return { valor: km > 0 ? (abastecimento + manutencao) / km : null, abastecimento, manutencao, km };
 }

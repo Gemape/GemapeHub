@@ -1927,3 +1927,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Em Veículos › Módulo › Frota os indicadores de PCM e de técnicos aparecem juntos, sem botões para alternar. Os cartões ficaram mais estreitos (três por linha) para caber com os gráficos e a lista numa tela só (decisão 337).
 - O título de cada cartão diz de quem é o indicador: "PCM ·", "Técnicos ·" ou "Frota ·" (geral). O subtítulo explica como ele é calculado.
 - Ao lado da busca por palavra-chave há o filtro por subcategoria do veículo (utilitário, caminhão, carro...), com as subcategorias ativas de Parâmetros. Ele vale para a lista e para o relatório impresso; os indicadores e gráficos seguem sendo da frota toda.
+
+## 343. Frota: conformidade geral é o SLA de tarefas, e o CPK entra como indicador da frota
+
+- A Conformidade geral é o primeiro cartão e mede o SLA de resolução de tarefas: tarefas concluídas no prazo ÷ tarefas atribuídas, em percentual. As tarefas são as preventivas com registro (no prazo = não vencidas), os check lists obrigatórios (realizado no prazo ou não realizado, de PCM, técnicos e sem área) e as ocorrências abertas (no prazo ou vencidas). Substitui a média simples dos três indicadores do PCM.
+- O segundo cartão é o Custo por km rodado (CPK): (total de abastecimento + total de manutenção) ÷ km rodados, em R$/km. Sem filtro de período, vale todo o histórico registrado. Os km rodados de cada veículo são o maior menos o menor km dos registros dele; os gastos só entram dos veículos que têm km rodados. É um valor em reais, sem faixa de cor.
+- São sete cartões, quatro por linha.

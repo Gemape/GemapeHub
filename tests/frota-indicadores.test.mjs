@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { indicadoresDaFrota } from "../src/lib/frota-indicadores.ts";
+import { custoPorKm, indicadoresDaFrota } from "../src/lib/frota-indicadores.ts";
 
 const ler = (f) => readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
 const HOJE = "2026-10-20";
@@ -108,20 +108,32 @@ test("check list: o PCM e os técnicos separados pelo grupo do responsável; nã
   );
 });
 
-test("conformidade geral: média simples dos indicadores do PCM que têm valor", () => {
+test("conformidade geral (SLA): tarefas concluídas no prazo ÷ tarefas atribuídas, preventivas, check lists e ocorrências juntos", () => {
   const i = indicadoresDaFrota({
     ...base,
-    statusPreventivas: ["em_dia", "em_dia", "em_dia", "vencida"], // 75
-    ocorrencias: [], // 100
-    linhasDoChecklist: [linha("1", "PCM Ana", "realizado"), linha("2", "PCM Ana", "nao_realizado")], // 50
+    statusPreventivas: ["em_dia", "em_dia", "em_dia", "vencida"], // 3 de 4
+    ocorrencias: [{ ocorridoEm: "2026-10-19T10:00", status: "Aberta" }, { ocorridoEm: "2026-10-01T10:00", status: "Aberta" }], // 1 de 2
+    linhasDoChecklist: [linha("1", "PCM Ana", "realizado"), linha("2", "Tec Bruno", "nao_realizado"), linha("3", "Fulano", "realizado"), linha("4", "Tec Bruno", "a_vencer")], // 2 de 3
   });
-  assert.equal(i.conformidadeGeral.pct, 75);
-  assert.equal(i.conformidadeGeral.faixa, "amarelo");
-  // Sem check list do PCM, a média fica só com os outros dois.
-  const sem = indicadoresDaFrota({ ...base, statusPreventivas: ["em_dia", "vencida"] });
-  assert.equal(sem.conformidadeGeral.pct, 75);
-  assert.match(sem.conformidadeGeral.detalhe, /2 indicador/);
-  assert.equal(indicadoresDaFrota({ ...base, ocorrencias: [] }).conformidadeGeral.pct, 100);
+  assert.equal(i.conformidadeGeral.pct, 66.7); // 6 de 9
+  assert.equal(i.conformidadeGeral.faixa, "vermelho");
+  assert.match(i.conformidadeGeral.detalhe, /6 de 9 tarefas no prazo/);
+  assert.deepEqual([indicadoresDaFrota(base).conformidadeGeral.pct, indicadoresDaFrota(base).conformidadeGeral.faixa], [null, null]);
+});
+
+test("CPK: (abastecimento + manutenção) ÷ km rodados; os gastos só entram dos veículos com km rodados", () => {
+  const c = custoPorKm(
+    ["a", "b", "c"],
+    [
+      { veiculoId: "a", km: 1000, valor: 300 },
+      { veiculoId: "a", km: 1400, valor: 200 },
+      { veiculoId: "b", km: 500, valor: 999 }, // um km só: sem rodados, não entra
+      { veiculoId: "c", km: 0, valor: null },
+    ],
+    [{ veiculoId: "a", km: 1200, custo: 500 }],
+  );
+  assert.deepEqual(c, { valor: 2.5, abastecimento: 500, manutencao: 500, km: 400 });
+  assert.equal(custoPorKm([], [], []).valor, null);
 });
 
 test("a Frota mostra os cards do PCM e dos técnicos com seta e cor por faixa, e a coluna de média km/L", () => {
@@ -131,17 +143,18 @@ test("a Frota mostra os cards do PCM e dos técnicos com seta e cor por faixa, e
     "PCM · Preventivas em dia",
     "PCM · Check list no prazo",
     "PCM · Ocorrências no prazo",
-    "Frota · Conformidade geral",
+    "Frota · Conformidade geral (SLA)",
+    "Frota · Custo por km rodado (CPK)",
     "Técnicos · Check list no prazo",
     "Técnicos · Check list atrasado",
   ])
     assert.ok(cartoes.includes(t), t);
-  assert.equal((cartoes.match(/subtitulo="/g) ?? []).length, 6, "cada cartão explica como é calculado");
+  assert.equal((cartoes.match(/subtitulo="/g) ?? []).length, 7, "cada cartão explica como é calculado");
   assert.ok(!cartoes.includes("aria-pressed"), "sem botões para alternar entre PCM e técnicos");
   assert.match(cartoes, /verde: \{[^}]*Icone: ArrowUp/);
   assert.match(cartoes, /amarelo: \{[^}]*Icone: ArrowLeftRight/);
   assert.match(cartoes, /vermelho: \{[^}]*Icone: ArrowDown/);
-  assert.match(cartoes, /sm:grid-cols-2 lg:grid-cols-3/, "seis cartões estreitos, três por linha (dois no celular)");
+  assert.match(cartoes, /sm:grid-cols-2 lg:grid-cols-4/, "sete cartões estreitos, quatro por linha (dois no celular)");
   const frota = ler("components/modules/FrotaModulo.tsx");
   assert.match(frota, /<CartoesIndicadoresFrota\s+indicadores=\{indicadores\}/);
   assert.match(

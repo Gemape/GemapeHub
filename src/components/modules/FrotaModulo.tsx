@@ -17,7 +17,8 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { grupoDeAreaPorNome } from "@/lib/area-responsaveis";
 import { painelDoMes } from "@/lib/checklist-painel";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas } from "@/lib/extrato-veiculo";
-import { indicadoresDaFrota } from "@/lib/frota-indicadores";
+import { custoPorKm, indicadoresDaFrota } from "@/lib/frota-indicadores";
+import { locaisDaManutencao } from "@/lib/registros-veiculo";
 import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
 import { montarFrotaHtml } from "@/lib/frota-relatorio-html";
@@ -120,6 +121,11 @@ export function FrotaModulo() {
     hoje,
     prazos: lerPrazosOcorrencias(),
   });
+  const cpk = custoPorKm(
+    [...idsDaFrota],
+    abastecimentos,
+    manutencoes.map((m) => ({ veiculoId: m.veiculoId, km: m.km, custo: locaisDaManutencao(m).reduce((t, l) => t + l.custoTotal, 0) })),
+  );
   // Média de consumo do veículo (km/L), do histórico de abastecimentos dele (Módulo > Veículos > Abastecimento); precisa de dois abastecimentos.
   const mediaDo = (id: string): number | null => mediaKmPorLitro(historicoAbastecimentos(abastecimentos.filter((a) => a.veiculoId === id)));
   const textoMedia = (m: number | null) => (m === null ? "—" : m.toLocaleString("pt-BR", { maximumFractionDigits: 1 }));
@@ -159,6 +165,7 @@ export function FrotaModulo() {
     <div className="space-y-3">
       <CartoesIndicadoresFrota
         indicadores={indicadores}
+        cpk={cpk}
         graficos={<GraficosFrota compacto indicadores={indicadores} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
         filtros={
           <>

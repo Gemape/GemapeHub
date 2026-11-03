@@ -1,10 +1,11 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import type { ReactNode } from "react";
-import { ArrowDown, ArrowLeftRight, ArrowUp, Minus, type LucideIcon } from "lucide-react";
+import { ArrowDown, ArrowLeftRight, ArrowUp, Coins, Minus, type LucideIcon } from "lucide-react";
 
 import type { Faixa } from "@/lib/faixas-desempenho";
-import type { IndicadorDaFrota, IndicadoresDaFrota } from "@/lib/frota-indicadores";
+import type { CustoPorKm, IndicadorDaFrota, IndicadoresDaFrota } from "@/lib/frota-indicadores";
 
+const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const porcento = (n: number | null) =>
   n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 
@@ -128,7 +129,7 @@ export function Cartao({
 // Alto da Frota (decisão 342): os seis indicadores sempre à vista, sem alternar botões. Cada título diz de quem é o indicador (PCM, Técnicos ou Geral da frota) e o subtítulo explica como ele
 // é calculado. `acoes` e `filtros` são o que a tela põe na linha de cima: as ações à esquerda e os filtros (subcategoria e busca) à direita, na barra padrão (decisão 339); `graficos` são os
 // gráficos, que em tela larga ficam ao lado dos cartões, na mesma faixa, para cartões, gráficos e a lista caberem numa tela só.
-export function CartoesIndicadoresFrota({ indicadores, acoes, filtros, graficos }: { indicadores: IndicadoresDaFrota; acoes?: ReactNode; filtros?: ReactNode; graficos?: ReactNode }) {
+export function CartoesIndicadoresFrota({ indicadores, cpk, acoes, filtros, graficos }: { indicadores: IndicadoresDaFrota; cpk: CustoPorKm; acoes?: ReactNode; filtros?: ReactNode; graficos?: ReactNode }) {
   return (
     <section className="space-y-2" aria-label="Indicadores da frota">
       {(acoes || filtros) && (
@@ -138,7 +139,21 @@ export function CartoesIndicadoresFrota({ indicadores, acoes, filtros, graficos 
         </div>
       )}
       <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Cartao
+            titulo="Frota · Conformidade geral (SLA)"
+            subtitulo="Tarefas concluídas no prazo ÷ tarefas atribuídas: preventivas, check lists e ocorrências juntos."
+            indicador={indicadores.conformidadeGeral}
+            compacto
+          />
+          <Cartao
+            titulo="Frota · Custo por km rodado (CPK)"
+            subtitulo="(Abastecimento + manutenção) ÷ km rodados, em todo o histórico registrado."
+            indicador={{ pct: null, faixa: null, detalhe: cpk.valor === null ? "Sem km rodados para calcular" : `${reais(cpk.abastecimento)} abast. + ${reais(cpk.manutencao)} manut. em ${cpk.km.toLocaleString("pt-BR")} km` }}
+            valor={cpk.valor === null ? "—" : `${reais(cpk.valor)}/km`}
+            icone={Coins}
+            compacto
+          />
           <Cartao
             titulo="PCM · Preventivas em dia"
             subtitulo="Preventivas não vencidas ÷ preventivas com registro, em todos os veículos."
@@ -158,12 +173,6 @@ export function CartoesIndicadoresFrota({ indicadores, acoes, filtros, graficos 
             compacto
           />
           <Cartao
-            titulo="Frota · Conformidade geral"
-            subtitulo="Média simples dos três indicadores do PCM ao lado (manutenções, check list e ocorrências)."
-            indicador={indicadores.conformidadeGeral}
-            compacto
-          />
-          <Cartao
             titulo="Técnicos · Check list no prazo"
             subtitulo="Check lists dos técnicos realizados no prazo ÷ os que já venceram (realizados + não realizados)."
             indicador={indicadores.tecnicosNoPrazo}
@@ -174,6 +183,7 @@ export function CartoesIndicadoresFrota({ indicadores, acoes, filtros, graficos 
             subtitulo="Não realizados no prazo ÷ os que já venceram (o complemento do indicador ao lado, com a mesma cor)."
             indicador={indicadores.tecnicosNaoRealizados}
             compacto
+            classe="lg:col-span-2"
           />
         </div>
         {graficos}
