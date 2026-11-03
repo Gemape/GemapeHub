@@ -10,11 +10,23 @@ test("Frota, Manutenção, Movimentações e Ocorrências de Veículos têm camp
   assert.match(fonte("components/modules/AbastecimentoVeiculoModulo.tsx"), /combinaBusca\(busca/);
   assert.match(fonte("components/modules/ManutencaoVeiculoModulo.tsx"), /combinaBusca\(busca/);
   const mov = fonte("components/modules/MovimentacoesModulo.tsx");
-  assert.match(mov, /ehVeiculo && busca\.trim\(\)/);
+  assert.match(mov, /comBusca && busca\.trim\(\)/);
   assert.match(mov, /visiveis\.map\(/);
   assert.match(fonte("components/modules/OcorrenciasModulo.tsx"), /Buscar por descrição ou responsável/);
 });
 
-test("a busca de Movimentações aparece só em Veículos, sem mudar EPI, uniforme e ferramenta", () => {
-  assert.match(fonte("components/modules/MovimentacoesModulo.tsx"), /\{ehVeiculo && \(\s*<Input\s+aria-label="Buscar movimentação"/);
+test("a busca de Movimentações aparece em Veículos e em Ferramentas, sem mudar o uniforme", () => {
+  const mov = fonte("components/modules/MovimentacoesModulo.tsx");
+  assert.match(mov, /const comBusca = ehVeiculo \|\| modulo === "ferramenta";/);
+  assert.match(mov, /\{comBusca && \(\s*<Input\s+aria-label="Buscar movimentação"/);
+});
+
+test("a busca de Movimentações de Ferramentas olha código, item, empregado, tipo, motivo, ônus, vistoria, ocorrência, observação e data", () => {
+  const mov = fonte("components/modules/MovimentacoesModulo.tsx");
+  for (const campo of ["alvoHistorico(m, itens, veiculos).codigo", "alvoHistorico(m, itens, veiculos).descricao", "naturezaMovimentacao(m)", "nomeEmpregado(m.empregado_id)", "m.motivo_baixa", "m.onus_baixa", "m.tipo_vistoria", "m.tipo_ocorrencia", "m.observacao", "formatarData(m.data_movimentacao)"]) {
+    assert.ok(mov.includes(campo), campo);
+  }
+  assert.match(mov, /Buscar por item, código, empregado ou motivo/);
+  // O Exportar CSV segue exportando todas as movimentações, não só as filtradas.
+  assert.match(mov, /movimentacoes\.map\(\(m\) =>\s*linhaCsvHistorico/);
 });

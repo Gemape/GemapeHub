@@ -2045,3 +2045,8 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - A tela tem lista com busca por qualquer palavra (ignora acento e maiúsculas), Exportar CSV, Nova ordem de serviço, e por linha Clonar, Editar e Excluir.
 - **Escolhas do Claude:** (a) cada ordem é identificada por **Função + Setor**, sem repetir (mesma função em outro setor é outra ordem); (b) o texto fica **como digitado**, sem capitalização automática, porque siglas como FISPQ, LOTO e NR-26 seriam estragadas (mesmo critério das decisões 62 e 84 para listas técnicas); (c) nas listas (riscos, EPIs, condutas, procedimentos, treinamentos) escreve-se um item por linha, com ● ou como preferir; (d) Clonar copia o texto e deixa Função e Setor em branco; (e) texto até 4000 caracteres por tópico e 80 em Função e Setor; (f) a ordem ainda não é impressa nem entregue ao empregado: a emissão do documento fica à espera de ordem.
 - Só modo demonstração, salvo no navegador; nada no Supabase (na Fase 2 vira tabela, como a ficha de EPI).
+
+## 363. Ferramentas, Movimentações: campo de busca por palavra-chave
+
+- Ordem do responsável: em Ferramentas > Movimentações entra o campo de busca no canto superior direito, ao lado do contador, no mesmo padrão de Veículos (decisão 339). A busca ignora acento e maiúsculas, aceita as palavras em qualquer ordem e procura em código e descrição do item, tamanho, tipo, empregado, motivo da baixa, ônus, tipo de vistoria, tipo de ocorrência, observação e data.
+- O Exportar CSV continua exportando todas as movimentações, não só as filtradas. EPI não tem essa tela; Uniformes seguem como estavam (a decisão sobre Uniformes é à parte). Só ajuste de tela; nada no Supabase.
