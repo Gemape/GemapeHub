@@ -1987,3 +1987,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Toda compra de EPI mostra o código do produto comprado e qual estoque ela alimentou (Gemape, GMP ou Lapa, a empresa do item). A lista de compras ganhou a coluna Código e a coluna Estoque (antes "Empresa"); o Exportar CSV leva as duas. No Registrar Compra, o campo da empresa passou a se chamar "Estoque a alimentar (empresa)" e, ao escolher o EPI, a janela diz qual estoque a compra alimenta e o saldo do item hoje e com a compra.
 - O item existe uma única vez em cada estoque e o saldo é um só: compras de fornecedores diferentes não geram estoques diferentes, elas se somam no saldo do mesmo item (o fornecedor fica só no registro da compra).
+
+## 353. EPI, Estoque: Novos e Usados azuis no topo à direita
+
+- Em EPI › Módulo › Estoque, os botões Novos e Usados são azuis e ficam no topo da página, à direita (decisão 339). O escolhido leva um anel de destaque e o outro fica mais claro; a contagem de cada um segue dentro do botão.
