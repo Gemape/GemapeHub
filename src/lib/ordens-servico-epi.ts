@@ -29,6 +29,9 @@ export type OrdemServicoEpi = ConteudoOs & { id: string; atualizadaEm: string };
 
 const storagePadrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
 
+// Data de uma ordem (guardada em UTC) no fuso de Brasília.
+export const dataDaOrdem = (iso: string): string => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
+
 export const ordemVazia = (): ConteudoOs => Object.fromEntries(CAMPOS_OS.map((c) => [c.chave, ""])) as ConteudoOs;
 
 const chaveDe = (t: string) => t.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -62,10 +65,11 @@ function alterar(storage: StorageLike | null, mudanca: (ordens: OrdemServicoEpi[
   if (!storage) throw new Error("Armazenamento do navegador indisponível.");
   const { ordens, integro } = lerComEstado(storage);
   if (!integro) throw new Error("As ordens de serviço salvas neste navegador não puderam ser lidas. Nada foi alterado, para não apagá-las.");
+  // A mudança (e as validações dela) roda fora do try: só a gravação em si vira a mensagem de armazenamento.
+  const novas = mudanca(ordens);
   try {
-    storage.setItem(CHAVE, JSON.stringify(mudanca(ordens)));
-  } catch (erro) {
-    if (erro instanceof Error && !/Storage|quota/i.test(erro.name + erro.message)) throw erro;
+    storage.setItem(CHAVE, JSON.stringify(novas));
+  } catch {
     throw new Error("Não foi possível guardar a ordem de serviço neste navegador.");
   }
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_ORDENS));

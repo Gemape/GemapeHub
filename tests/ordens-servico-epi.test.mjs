@@ -120,3 +120,16 @@ test("a tela cobre as telas e a permissão do EPI, pelo prefixo /epi-", async ()
   const { telaDaRota } = await import("../src/lib/permissoes-demo.ts");
   assert.equal(telaDaRota("/epi-ordem-servico", {}).startsWith("epi"), true);
 });
+
+test("o aviso de repetição aparece mesmo quando o setor tem a palavra Storage ou Quota", () => {
+  const s = memoria();
+  salvarOrdem(completa({ setor: "Quota de peças" }), {}, s);
+  assert.throws(() => salvarOrdem(completa({ setor: "quota de peças" }), {}, s), /Já existe uma ordem de serviço/);
+});
+
+test("a data da ordem sai no fuso de Brasília, não no do navegador", async () => {
+  const { dataDaOrdem } = await import("../src/lib/ordens-servico-epi.ts");
+  // 01h UTC de 4/11 ainda é 3/11 em Brasília.
+  assert.equal(dataDaOrdem("2026-11-04T01:00:00.000Z"), "03/11/2026");
+  assert.equal(dataDaOrdem(""), "—");
+});

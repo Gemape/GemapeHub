@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { exportarCsv } from "@/lib/gemape";
-import { CAMPOS_OS, MAX_LINHA_OS, MAX_TEXTO_OS, ordemVazia, removerOrdem, salvarOrdem, type ConteudoOs, type OrdemServicoEpi } from "@/lib/ordens-servico-epi";
+import { CAMPOS_OS, dataDaOrdem, MAX_LINHA_OS, MAX_TEXTO_OS, ordemVazia, removerOrdem, salvarOrdem, type ConteudoOs, type OrdemServicoEpi } from "@/lib/ordens-servico-epi";
 import { combinaBusca } from "@/lib/parametros-base";
 import { useOrdensServicoEpi } from "@/lib/use-ordens-servico-epi";
 import { executar } from "@/lib/use-parametros-base";
@@ -77,7 +77,7 @@ function OrdemServicoEpiPagina() {
               "ordens-de-servico-epi",
               linhas.map((o) => ({
                 ...Object.fromEntries(CAMPOS_OS.map((c) => [c.rotulo, o[c.chave]])),
-                "Atualizada em": o.atualizadaEm ? new Date(o.atualizadaEm).toLocaleDateString("pt-BR") : "",
+                "Atualizada em": o.atualizadaEm ? dataDaOrdem(o.atualizadaEm) : "",
               })),
             )
           }
@@ -124,7 +124,7 @@ function OrdemServicoEpiPagina() {
                   <TableCell className="font-medium">{o.funcao}</TableCell>
                   <TableCell>{o.setor}</TableCell>
                   <TableCell className="max-w-md truncate" title={o.objetivo}>{o.objetivo}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{o.atualizadaEm ? new Date(o.atualizadaEm).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{dataDaOrdem(o.atualizadaEm)}</TableCell>
                   <TableCell className="whitespace-nowrap text-right">
                     <AcoesLinha
                       rotulo={`ordem de serviço de ${o.funcao}`}
