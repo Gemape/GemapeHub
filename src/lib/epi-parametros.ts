@@ -207,3 +207,48 @@ export const textoDoPontoDePedido = (p: ParametrosCompraEpi): string =>
   p.metodo === "minimo"
     ? "Ponto de pedido: o estoque mínimo do EPI. Abaixo dele a compra é sugerida."
     : `Ponto de pedido: TR (prazo de reposição, ${p.prazoReposicao} dias) + ${p.diasSeguranca} dias de segurança = ${p.prazoReposicao + p.diasSeguranca} dias de cobertura. TC é o tempo de cobertura: estoque total ÷ consumo médio por dia.`;
+
+// ---------- Textos dos documentos (decisão 356) ----------
+// Os textos do Termo de Entrega de EPI (a declaração antes da tabela e a ciência depois dela) e da Ficha de Controle de Entrega de EPI se digitam em Parâmetros > EPI > Parâmetros Específicos.
+// `{empresa}` é trocado pela razão social da empresa na hora de montar o documento. Sem texto guardado (ou com armazenamento bloqueado) valem os textos padrão.
+export type TextosDocumentosEpi = { termoDeclaracao: string; termoCiencia: string; fichaDeclaracao: string };
+const CHAVE_TEXTOS = "gemape-demo-epi-textos-documentos";
+export const MAX_TEXTO_DOCUMENTO = 1500;
+export const MARCADOR_EMPRESA = "{empresa}";
+export const TEXTOS_DOCUMENTOS_PADRAO: TextosDocumentosEpi = {
+  termoDeclaracao:
+    "Declaro ter recebido da empresa {empresa}, os Equipamentos de Proteção Individual (EPI) abaixo relacionados, novos e/ou em perfeitas condições de uso, obrigando-me a utilizá-los corretamente, zelar pela sua guarda e conservação, bem como devolvê-los quando solicitado ou no ato de minha rescisão contratual.",
+  termoCiencia:
+    "Estou ciente de que o uso do EPI é obrigatório e que a sua não utilização poderá acarretar sanções disciplinares conforme a legislação vigente.",
+  fichaDeclaracao:
+    "Declaro que recebi da empresa os Equipamentos de Proteção Individual (EPI) adequados ao risco de minha atividade, em perfeitas condições de uso, e que fui treinado quanto ao seu uso correto. Comprometo-me a utilizá-los apenas para a finalidade a que se destinam e a devolvê-los quando solicitado ou no desligamento da empresa.",
+};
+
+const CAMPOS_TEXTOS = ["termoDeclaracao", "termoCiencia", "fichaDeclaracao"] as const;
+const textoValido = (t: unknown): t is string => typeof t === "string" && t.trim().length > 0 && t.length <= MAX_TEXTO_DOCUMENTO;
+
+export function lerTextosDocumentosEpi(storage?: StorageLike): TextosDocumentosEpi {
+  try {
+    const bruto = (storage ?? localStorage).getItem(CHAVE_TEXTOS);
+    const o: Record<string, unknown> = bruto ? (JSON.parse(bruto) as Record<string, unknown>) : {};
+    const lido = { ...TEXTOS_DOCUMENTOS_PADRAO };
+    for (const c of CAMPOS_TEXTOS) if (textoValido(o[c])) lido[c] = (o[c] as string).trim();
+    return lido;
+  } catch {
+    return { ...TEXTOS_DOCUMENTOS_PADRAO };
+  }
+}
+
+export function salvarTextosDocumentosEpi(t: TextosDocumentosEpi, storage?: StorageLike): TextosDocumentosEpi {
+  for (const c of CAMPOS_TEXTOS) {
+    if (!t[c].trim()) throw new Error("Preencha os três textos.");
+    if (t[c].length > MAX_TEXTO_DOCUMENTO) throw new Error(`Cada texto aceita até ${MAX_TEXTO_DOCUMENTO} caracteres.`);
+  }
+  const limpo: TextosDocumentosEpi = { termoDeclaracao: t.termoDeclaracao.trim(), termoCiencia: t.termoCiencia.trim(), fichaDeclaracao: t.fichaDeclaracao.trim() };
+  try {
+    (storage ?? localStorage).setItem(CHAVE_TEXTOS, JSON.stringify(limpo));
+  } catch {
+    throw new Error("Não foi possível guardar os textos neste navegador.");
+  }
+  return limpo;
+}

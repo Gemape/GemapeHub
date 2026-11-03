@@ -39,3 +39,33 @@ test("Parâmetros Específicos de EPI: tabela com a condição lógica ao lado d
   assert.match(tela, /if \(voltarParaSugestao\) voltar\(\)/, "salvar os parâmetros da sugestão volta a ela");
   assert.match(readFileSync(new URL("../src/components/modules/SugestaoComprasEpi.tsx", import.meta.url), "utf8"), /search=\{\{ de: "epi", voltar: "sugestao-compras" \}\}/);
 });
+
+const memoriaTextos = () => {
+  const m = new Map();
+  return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v) };
+};
+
+test("os textos do termo e da ficha de EPI se editam em Parâmetros Específicos e saem nos documentos (decisão 356)", async () => {
+  const { lerTextosDocumentosEpi, salvarTextosDocumentosEpi, TEXTOS_DOCUMENTOS_PADRAO } = await import("../src/lib/epi-parametros.ts");
+  const { montarTermoEntregaEpiHtml } = await import("../src/lib/termo-entrega-epi-html.ts");
+  const { montarFichaEpiAvulsaHtml } = await import("../src/lib/ficha-epi-avulsa-html.ts");
+  // Sem nada guardado valem os textos padrão, que são os do pedido.
+  assert.deepEqual(lerTextosDocumentosEpi(memoriaTextos()), TEXTOS_DOCUMENTOS_PADRAO);
+  assert.match(TEXTOS_DOCUMENTOS_PADRAO.termoDeclaracao, /^Declaro ter recebido da empresa \{empresa\}, os Equipamentos de Proteção Individual/);
+  assert.match(TEXTOS_DOCUMENTOS_PADRAO.fichaDeclaracao, /^Declaro que recebi da empresa os Equipamentos/);
+  const s = memoriaTextos();
+  salvarTextosDocumentosEpi({ termoDeclaracao: "  Recebi de {empresa} os EPIs <b>.  ", termoCiencia: "Ciente.", fichaDeclaracao: "Ficha nova." }, s);
+  assert.equal(lerTextosDocumentosEpi(s).termoDeclaracao, "Recebi de {empresa} os EPIs <b>.");
+  assert.throws(() => salvarTextosDocumentosEpi({ ...TEXTOS_DOCUMENTOS_PADRAO, termoCiencia: "  " }, s), /Preencha os três textos/);
+  assert.throws(() => salvarTextosDocumentosEpi({ ...TEXTOS_DOCUMENTOS_PADRAO, fichaDeclaracao: "x".repeat(1501) }, s), /até 1500/);
+  assert.deepEqual(lerTextosDocumentosEpi({ getItem: () => "{ruim", setItem() {} }), TEXTOS_DOCUMENTOS_PADRAO, "texto guardado ilegível volta ao padrão");
+  const textos = lerTextosDocumentosEpi(s);
+  const termo = montarTermoEntregaEpiHtml({ empresa: { razao_social: "Gemape & Cia", cnpj: "", nome_fantasia: "Gemape" }, empregado: { nome: "Ana", cpf: "x" }, data: "2026-10-01", linhas: [], textos });
+  assert.match(termo, /Recebi de <strong>Gemape &amp; Cia<\/strong> os EPIs &lt;b&gt;\./, "{empresa} vira o nome em negrito e o resto é escapado");
+  assert.match(termo, /Ciente\./);
+  assert.doesNotMatch(termo, /Declaro ter recebido/);
+  const ficha = montarFichaEpiAvulsaHtml({ empresa: { razao_social: "Gemape", cnpj: "" }, empregado: { nome: "Ana", cpf: "x" }, linhas: [], textos });
+  assert.match(ficha, /Ficha nova\./);
+  // Sem textos passados (e sem armazenamento no teste) os documentos saem com os padrão.
+  assert.match(montarTermoEntregaEpiHtml({ empresa: { razao_social: "Acme", cnpj: "", nome_fantasia: "Acme" }, empregado: { nome: "Ana", cpf: "x" }, data: "2026-10-01", linhas: [] }), /Declaro ter recebido da empresa <strong>Acme<\/strong>, os Equipamentos/);
+});

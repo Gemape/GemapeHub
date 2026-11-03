@@ -6,21 +6,28 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   condicaoDoStatus,
   diasValidos,
   lerMotivosBaixaEpi,
   lerMotivosDevolucaoEpi,
   lerParametrosCompraEpi,
+  lerTextosDocumentosEpi,
+  MARCADOR_EMPRESA,
   MAX_DIAS,
+  MAX_TEXTO_DOCUMENTO,
   MAX_MOTIVOS,
   salvarMotivosBaixaEpi,
   salvarMotivosDevolucaoEpi,
   salvarParametrosCompraEpi,
+  salvarTextosDocumentosEpi,
   STATUS_CRITICIDADE,
+  TEXTOS_DOCUMENTOS_PADRAO,
   textoDoPontoDePedido,
   type MetodoReposicao,
   type StatusCriticidade,
+  type TextosDocumentosEpi,
 } from "@/lib/epi-parametros";
 
 const numeroDe = (texto: string): number => (texto.trim() === "" ? Number.NaN : Number(texto));
@@ -128,6 +135,51 @@ const CLASSE_STATUS: Record<StatusCriticidade, string> = {
 };
 
 // Parâmetros Específicos do EPI (decisão 328): motivos de baixa definitiva, motivos de devolução ao estoque e os parâmetros da sugestão de compra.
+// Textos do Termo de Entrega de EPI e da Ficha de Controle de Entrega de EPI (decisão 356): digitados aqui, valem nos documentos que o sistema gera. `{empresa}` vira o nome da empresa.
+const CAMPOS_TEXTO: { chave: keyof TextosDocumentosEpi; id: string; rotulo: string; ajuda: string }[] = [
+  { chave: "termoDeclaracao", id: "termo-declaracao", rotulo: "Termo de entrega de EPI: declaração", ajuda: `Sai antes da lista de EPIs. Use ${MARCADOR_EMPRESA} onde o nome da empresa deve aparecer.` },
+  { chave: "termoCiencia", id: "termo-ciencia", rotulo: "Termo de entrega de EPI: ciência", ajuda: "Sai depois da lista de EPIs, acima das assinaturas." },
+  { chave: "fichaDeclaracao", id: "ficha-declaracao", rotulo: "Ficha de controle de entrega de EPI: declaração", ajuda: `Sai acima da tabela de entregas da ficha. ${MARCADOR_EMPRESA} também vale aqui.` },
+];
+
+function TextosDosDocumentos() {
+  const [salvos, setSalvos] = useState(lerTextosDocumentosEpi);
+  const [rascunho, setRascunho] = useState<TextosDocumentosEpi>(salvos);
+  const vazio = CAMPOS_TEXTO.some((c) => !rascunho[c.chave].trim());
+  const igual = CAMPOS_TEXTO.every((c) => rascunho[c.chave].trim() === salvos[c.chave]);
+  const padrao = CAMPOS_TEXTO.every((c) => rascunho[c.chave].trim() === TEXTOS_DOCUMENTOS_PADRAO[c.chave]) && CAMPOS_TEXTO.every((c) => salvos[c.chave] === TEXTOS_DOCUMENTOS_PADRAO[c.chave]);
+  function gravar(novos: TextosDocumentosEpi, mensagem: string) {
+    try {
+      const gravados = salvarTextosDocumentosEpi(novos);
+      setSalvos(gravados);
+      setRascunho(gravados);
+      toast.success(mensagem);
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar os textos.");
+    }
+  }
+  return (
+    <div className="space-y-3 rounded-lg border p-3">
+      <div>
+        <h3 className="text-sm font-semibold">Textos dos documentos</h3>
+        <p className="text-xs text-muted-foreground">O texto do termo de entrega de EPI e o da ficha de controle de entrega. Mudou o texto, é só editar aqui: os próximos documentos já saem com ele; os já impressos não mudam.</p>
+      </div>
+      {CAMPOS_TEXTO.map((c) => (
+        <div key={c.chave} className="space-y-1">
+          <Label htmlFor={`epi-texto-${c.id}`}>{c.rotulo}</Label>
+          <Textarea id={`epi-texto-${c.id}`} rows={4} maxLength={MAX_TEXTO_DOCUMENTO} value={rascunho[c.chave]} onChange={(e) => setRascunho((r) => ({ ...r, [c.chave]: e.target.value }))} />
+          <p className="text-xs text-muted-foreground">{c.ajuda}</p>
+        </div>
+      ))}
+      {vazio && <p role="alert" className="text-sm text-destructive">Preencha os três textos.</p>}
+      <div className="flex flex-wrap gap-2">
+        <Button requiresWrite disabled={vazio || igual} onClick={() => gravar(rascunho, "Textos dos documentos salvos.")}>Salvar textos</Button>
+        <Button requiresWrite variant="outline" disabled={padrao} onClick={() => gravar(TEXTOS_DOCUMENTOS_PADRAO, "Textos restaurados ao padrão.")}>Restaurar texto padrão</Button>
+      </div>
+    </div>
+  );
+}
+
 // `voltarParaSugestao`: aberto pelo link da Sugestão de Compras (decisão 355); o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela.
 export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugestao?: boolean }) {
   const navegar = useNavigate();
@@ -207,8 +259,8 @@ export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugest
           Parâmetros do EPI
         </h2>
         <p className="text-sm text-muted-foreground">
-          Motivos de baixa definitiva e de devolução ao estoque, e como a sugestão de compra é
-          calculada.
+          Motivos de baixa definitiva e de devolução ao estoque, como a sugestão de compra é
+          calculada e os textos do termo de entrega e da ficha de controle de EPI.
         </p>
       </div>
       <div className="panel max-w-4xl space-y-4 p-4">
@@ -342,6 +394,8 @@ export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugest
             Salvar parâmetros da sugestão
           </Button>
         </div>
+
+        <TextosDosDocumentos />
       </div>
     </section>
   );
