@@ -11,15 +11,14 @@ import { useAccess } from "@/lib/access-context";
 import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
-import { AREAS_VIAGEM, type AreaViagem, type Habilitado } from "@/lib/questionario-despesas";
+import { AREAS_VIAGEM, type AreaViagem } from "@/lib/questionario-despesas";
 
-const AREA_PADRAO: AreaViagem = "Oficina";
 const normalizar = (t: string) => t.trim().toLocaleLowerCase("pt-BR");
 
 // Caixa dupla de empregados (decisões 299 e 308), usada em Parâmetros > Viagens e em Parâmetros > Veículos > Parâmetros Específicos. À esquerda, todos os empregados
 // ativos (quem já foi incluído continua nela, marcado como habilitado); a inclusão vai da esquerda para a direita; à direita, os escolhidos, cada um com a sua área (Oficina, PCM ou Administrativo). Mover entre as caixas só vale ao Salvar.
 // Quem guarda a lista é quem usa o componente (`carregar` e `gravar`): as duas telas têm listas independentes.
-export type PropsCaixaDupla = {
+export type PropsCaixaDupla<A extends string = AreaViagem> = {
   idBase: string;
   titulo: string;
   descricao: string;
@@ -31,22 +30,25 @@ export type PropsCaixaDupla = {
   semCabecalho?: boolean;
   // Quem hospeda a caixa (a janela do questionário) é avisado de que há alteração ainda não salva, para pedir confirmação antes de fechar.
   aoMudarAlterado?: (alterado: boolean) => void;
-  carregar: () => Habilitado[];
-  gravar: (lista: Habilitado[]) => void;
+  // Áreas oferecidas ao lado de cada nome; sem esta propriedade valem as de Viagens e Veículos. A primeira é a que o empregado recebe ao ser habilitado.
+  areas?: readonly A[];
+  carregar: () => HabilitadoDe<A>[];
+  gravar: (lista: HabilitadoDe<A>[]) => void;
 };
+type HabilitadoDe<A extends string> = { empregadoId: string | null; nome: string; area: A };
 
-export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita, mensagemSalvo, secao = false, semCabecalho = false, aoMudarAlterado, carregar, gravar }: PropsCaixaDupla) {
+export function CaixaDuplaEmpregados<A extends string = AreaViagem>({ idBase, titulo, descricao, tituloDireita, mensagemSalvo, secao = false, semCabecalho = false, aoMudarAlterado, areas = AREAS_VIAGEM as unknown as readonly A[], carregar, gravar }: PropsCaixaDupla<A>) {
   const { canWrite } = useAccess();
   const { data: empregados = [], isLoading } = useEmpregados(TODAS);
   const ativos = useMemo(() => empregados.filter((e) => empregadoAtivo(e)), [empregados]);
-  const [salvos, setSalvos] = useState<Habilitado[]>(carregar);
-  const [habilitados, setHabilitados] = useState<Habilitado[]>(salvos);
+  const [salvos, setSalvos] = useState<HabilitadoDe<A>[]>(carregar);
+  const [habilitados, setHabilitados] = useState<HabilitadoDe<A>[]>(salvos);
   const [buscaEsq, setBuscaEsq] = useState("");
   const [buscaDir, setBuscaDir] = useState("");
   const [marcadosEsq, setMarcadosEsq] = useState<string[]>([]);
   const [marcadosDir, setMarcadosDir] = useState<string[]>([]);
 
-  const chaveDe = (h: Habilitado) => h.empregadoId ?? `nome:${normalizar(h.nome)}`;
+  const chaveDe = (h: HabilitadoDe<A>) => h.empregadoId ?? `nome:${normalizar(h.nome)}`;
   const jaHabilitado = new Set(habilitados.flatMap((h) => [h.empregadoId, normalizar(h.nome)]));
   const idsAtivos = new Set(ativos.map((e) => e.id));
   const incluido = (e: { id: string; nome: string }) => jaHabilitado.has(e.id) || jaHabilitado.has(normalizar(e.nome));
@@ -59,13 +61,13 @@ export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita,
     .filter((h) => normalizar(h.nome).includes(normalizar(buscaDir)))
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   // Tirar e recolocar o mesmo empregado muda a ordem da lista sem mudar nada: a comparação ignora a ordem.
-  const assinatura = (l: Habilitado[]) => JSON.stringify(l.map((h) => [chaveDe(h), h.area]).sort());
+  const assinatura = (l: HabilitadoDe<A>[]) => JSON.stringify(l.map((h) => [chaveDe(h), h.area]).sort());
   const alterado = assinatura(habilitados) !== assinatura(salvos);
   useEffect(() => { aoMudarAlterado?.(alterado); }, [alterado, aoMudarAlterado]);
 
   const alternar = (lista: string[], chave: string) => (lista.includes(chave) ? lista.filter((c) => c !== chave) : [...lista, chave]);
   const habilitar = (ids: string[]) => {
-    const novos = ativos.filter((e) => ids.includes(e.id)).map((e): Habilitado => ({ empregadoId: e.id, nome: e.nome, area: AREA_PADRAO }));
+    const novos = ativos.filter((e) => ids.includes(e.id)).map((e): HabilitadoDe<A> => ({ empregadoId: e.id, nome: e.nome, area: areas[0] as A }));
     if (novos.length === 0) return;
     setHabilitados((atual) => [...atual, ...novos]);
     setMarcadosEsq((m) => m.filter((id) => !ids.includes(id)));
@@ -74,7 +76,7 @@ export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita,
     setHabilitados((atual) => atual.filter((h) => !chaves.includes(chaveDe(h))));
     setMarcadosDir((m) => m.filter((c) => !chaves.includes(c)));
   };
-  const mudarArea = (chave: string, area: AreaViagem) => setHabilitados((atual) => atual.map((h) => (chaveDe(h) === chave ? { ...h, area } : h)));
+  const mudarArea = (chave: string, area: A) => setHabilitados((atual) => atual.map((h) => (chaveDe(h) === chave ? { ...h, area } : h)));
 
   function salvar() {
     try {
@@ -149,9 +151,9 @@ export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita,
                     <Checkbox checked={marcadosDir.includes(chave)} disabled={!canWrite} onCheckedChange={() => setMarcadosDir((m) => alternar(m, chave))} />
                     <span className="min-w-0 flex-1 truncate">{h.nome}{inativo && <span className="ml-1 text-xs text-muted-foreground">(inativo: não aparece no formulário)</span>}</span>
                   </label>
-                  <Select value={h.area} disabled={!canWrite} onValueChange={(v) => { if (v) mudarArea(chave, v as AreaViagem); }}>
-                    <SelectTrigger aria-label={`Área de ${h.nome}`} className="h-8 w-36"><SelectValue /></SelectTrigger>
-                    <SelectContent>{AREAS_VIAGEM.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
+                  <Select value={h.area} disabled={!canWrite} onValueChange={(v) => { if (v) mudarArea(chave, v as A); }}>
+                    <SelectTrigger aria-label={`Área de ${h.nome}`} className="h-8 w-44"><SelectValue /></SelectTrigger>
+                    <SelectContent>{(areas.includes(h.area) ? areas : [...areas, h.area]).map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}</SelectContent>
                   </Select>
                 </li>
               );

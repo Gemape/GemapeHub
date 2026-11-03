@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccess } from "@/lib/access-context";
 import { compraDeOrigem, origemDaDevolucao, posseDoEmpregado } from "@/lib/devolucao-estoque-epi";
+import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { lerMotivosDevolucaoEpi } from "@/lib/epi-parametros";
 import { lerHistoricoEpiPorItem, mensagemSoAdmin, registrarDevolucaoEpi } from "@/lib/entrega-epi";
@@ -205,7 +206,7 @@ export function DevolucaoEpiDialog({
                 <SelectValue placeholder="Selecione o funcionário" />
               </SelectTrigger>
               <SelectContent>
-                {empregados.map((e) => (
+                {soEmpregadosDeEpi(empregados).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                     {empresas.find((x) => x.id === e.empresa_id)

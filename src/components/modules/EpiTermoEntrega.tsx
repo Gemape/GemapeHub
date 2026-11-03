@@ -21,6 +21,7 @@ import {
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
+import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { montarTermoEntregaEpiHtml, observacaoEntregaEpi } from "@/lib/termo-entrega-epi-html";
 import { validarSaidaDeEpis } from "@/lib/termos-atomicos";
@@ -188,7 +189,7 @@ export function EpiTermoEntrega() {
                 <SelectValue placeholder="Selecione o empregado" />
               </SelectTrigger>
               <SelectContent>
-                {empregados.map((e) => (
+                {soEmpregadosDeEpi(empregados).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                   </SelectItem>

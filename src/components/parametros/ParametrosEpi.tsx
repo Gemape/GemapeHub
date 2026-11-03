@@ -2,9 +2,11 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { HabilitarEmpregadosEpi } from "@/components/parametros/HabilitarEmpregadosEpi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { lerAreasEpi, salvarAreasEpi } from "@/lib/empregados-epi";
 import {
   diasValidos,
   lerMotivosBaixaEpi,
@@ -29,7 +31,11 @@ function CartaoDeMotivos({
   ajuda,
   inicial,
   salvar,
+  singular = "motivo",
+  salvos: mensagemSalvos,
 }: {
+  singular?: string;
+  salvos?: string;
   id: string;
   titulo: string;
   ajuda: string;
@@ -45,11 +51,11 @@ function CartaoDeMotivos({
     const texto = novo.trim().replace(/\s+/g, " ");
     if (!texto) return;
     if (lista.some((m) => m.toLocaleLowerCase("pt-BR") === texto.toLocaleLowerCase("pt-BR"))) {
-      toast.error("Este motivo já está na lista.");
+      toast.error(`Este ${singular} já está na lista.`);
       return;
     }
     if (lista.length >= MAX_MOTIVOS) {
-      toast.error(`No máximo ${MAX_MOTIVOS} motivos.`);
+      toast.error(`No máximo ${MAX_MOTIVOS} ${singular === "motivo" ? "motivos" : "áreas"}.`);
       return;
     }
     setLista([...lista, texto]);
@@ -60,7 +66,7 @@ function CartaoDeMotivos({
       const gravada = salvar(lista);
       setSalvos(gravada);
       setLista(gravada);
-      toast.success(`${titulo} salvos.`);
+      toast.success(mensagemSalvos ?? `${titulo} salvos.`);
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar.");
     }
@@ -91,11 +97,12 @@ function CartaoDeMotivos({
       </ul>
       <div className="flex items-end gap-2">
         <div className="min-w-0 flex-1 space-y-1">
-          <Label htmlFor={`${id}-novo`}>Novo motivo</Label>
+          <Label htmlFor={`${id}-novo`}>{singular === "motivo" ? "Novo motivo" : `Nova ${singular}`}</Label>
           <Input
             id={`${id}-novo`}
             value={novo}
             maxLength={60}
+            capitalizar="texto"
             onChange={(e) => setNovo(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -126,6 +133,7 @@ const CLASSE_STATUS: Record<StatusCriticidade, string> = {
 
 // Parâmetros Específicos do EPI (decisão 328): motivos de baixa definitiva, motivos de devolução ao estoque e os parâmetros da sugestão de compra.
 export function ParametrosEpi() {
+  const [areas, setAreas] = useState(lerAreasEpi);
   const [salvo, setSalvo] = useState(lerParametrosCompraEpi);
   const [metodo, setMetodo] = useState<MetodoReposicao>(salvo.metodo);
   const [cobertura, setCobertura] = useState(String(salvo.diasCobertura));
@@ -193,8 +201,8 @@ export function ParametrosEpi() {
           Parâmetros do EPI
         </h2>
         <p className="text-sm text-muted-foreground">
-          Motivos de baixa definitiva e de devolução ao estoque, e como a sugestão de compra é
-          calculada.
+          Motivos de baixa definitiva e de devolução ao estoque, empregados habilitados e áreas da oficina,
+          e como a sugestão de compra é calculada.
         </p>
       </div>
       <div className="panel max-w-4xl space-y-4 p-4">
@@ -213,6 +221,23 @@ export function ParametrosEpi() {
             inicial={lerMotivosDevolucaoEpi()}
             salvar={salvarMotivosDevolucaoEpi}
           />
+        </div>
+
+        <div className="space-y-3 rounded-lg border p-3">
+          <CartaoDeMotivos
+            id="areas-oficina"
+            titulo="Áreas da oficina"
+            ajuda="As áreas de atuação que aparecem ao lado do nome de cada empregado habilitado. Dá para acrescentar novas; uma área em uso por um habilitado só sai depois de mudar a área dele."
+            inicial={areas}
+            singular="área"
+            salvos="Áreas da oficina salvas."
+            salvar={(lista) => {
+              const gravadas = salvarAreasEpi(lista);
+              setAreas(gravadas);
+              return gravadas;
+            }}
+          />
+          <HabilitarEmpregadosEpi areas={areas} />
         </div>
 
         <div className="space-y-3 rounded-lg border p-3">

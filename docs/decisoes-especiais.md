@@ -1917,3 +1917,10 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 340. PDF do extrato do veículo personalizado por seções
 
 - Em Veículos › Frota, no extrato do veículo, o botão Gerar PDF abre a janela Personalizar o relatório: uma caixa de marcar para cada seção (manutenções preventivas sugeridas, manutenções realizadas, itens não realizados em atenção, histórico de abastecimentos, ocorrências e check lists periódicos), com os botões Marcar todos e Desmarcar todos; Gerar PDF fica desligado sem nenhuma seção marcada. O resumo do veículo sai sempre; o período e o "Só em aberto" valem como na tela. Os botões Gerar PDF desta seção, que havia em cada tabela, foram retirados.
+
+## 341. EPI: empregados habilitados e áreas da oficina
+
+- Em Parâmetros > EPI > Parâmetros Específicos entram duas coisas. A primeira é o cartão **Áreas da oficina**, com as opções Mecânico/montador, Ajudante/lavador, Pintor, Serralheiro/soldador e Auxiliar de serviços gerais; dá para acrescentar novas áreas, no mesmo desenho dos motivos de baixa. A segunda é a caixa dupla **Empregados das rotinas de EPI**: à esquerda todos os empregados ativos, à direita os habilitados para entrega e recebimento de EPI, cada um com uma lista suspensa das áreas. Nada vale até clicar em Salvar.
+- Nas telas de EPI em que se informa o empregado (Entrega, Termo de entrega, Ficha de EPI avulsa e Devolução ao estoque) só aparecem os habilitados.
+- **Escolhas do Claude** (a ordem não definiu): (a) com a lista vazia aparecem todos os empregados ativos, como em Veículos (decisão 308), para a tela não ficar sem ninguém; (b) relatórios (Relatório por funcionário, Relatório de baixa) e os filtros de histórico continuam mostrando todos, para quem foi desabilitado seguir consultável; (c) a área é só uma informação ao lado do nome, não filtra nem sugere EPI; (d) uma área em uso por um habilitado não pode ser tirada da lista antes de mudar a área dele, e sempre sobra pelo menos uma área; (e) a lista de EPI é independente das de Veículos e de Viagens; (f) as áreas seguem a regra de capitalização da decisão 84.
+- Só modo demonstração, salvo no navegador; nada no Supabase.
