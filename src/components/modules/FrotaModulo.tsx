@@ -147,33 +147,38 @@ export function FrotaModulo() {
   }
 
   return (
-    <div className="space-y-5">
-      <CartoesIndicadoresFrota indicadores={indicadores} />
-      <GraficosFrota indicadores={indicadores} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />
-      <div className="flex flex-wrap items-center gap-3">
-        <Input
-          aria-label="Buscar veículo por descrição ou responsável"
-          placeholder="Buscar por descrição ou responsável"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="max-w-md"
-        />
-        <Button type="button" variant="outline" onClick={imprimir} disabled={isLoading}>
-          <Printer className="h-4 w-4" /> Imprimir relatório (PDF)
-        </Button>
-      </div>
-      <div className="overflow-x-auto rounded-xl border">
+    <div className="space-y-3">
+      <CartoesIndicadoresFrota
+        indicadores={indicadores}
+        graficos={<GraficosFrota compacto indicadores={indicadores} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
+        filtros={
+          <Input
+            aria-label="Buscar veículo por descrição ou responsável"
+            placeholder="Buscar por descrição ou responsável"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="h-9"
+          />
+        }
+        acoes={
+          <Button type="button" variant="outline" size="sm" onClick={imprimir} disabled={isLoading}>
+            <Printer className="h-4 w-4" /> Imprimir relatório (PDF)
+          </Button>
+        }
+      />
+      {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
+      <div className="max-h-[max(12rem,calc(100dvh-34rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1440px] table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[16%]">Veículo</TableHead>
-              <TableHead className="w-[12%]">Responsável</TableHead>
-              <TableHead className="w-[7%]">Situação</TableHead>
-              <TableHead className="w-[7%] pr-6 text-right">Km atual</TableHead>
+              <TableHead className="w-[31%]">Veículo</TableHead>
+              <TableHead className="w-[11%]">Responsável</TableHead>
+              <TableHead className="w-[6%]">Situação</TableHead>
+              <TableHead className="w-[6%] pr-6 text-right">Km atual</TableHead>
               <TableHead className="w-[8%] whitespace-nowrap pr-6 text-right">Média km/L</TableHead>
-              <TableHead className="w-[14%] text-center">Preventivas</TableHead>
-              <TableHead className="w-[14%] text-center">Ocorrências</TableHead>
-              <TableHead className="w-[14%] text-center">Check list</TableHead>
+              <TableHead className="w-[10%] text-center">Preventivas</TableHead>
+              <TableHead className="w-[10%] text-center">Ocorrências</TableHead>
+              <TableHead className="w-[10%] text-center">Check list</TableHead>
               <TableHead className="w-[8%]" />
             </TableRow>
           </TableHeader>

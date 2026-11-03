@@ -404,14 +404,8 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Buscar por código ou descrição"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-        <div className="ml-auto flex gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={() =>
@@ -433,6 +427,14 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             Novo {config.nome}
           </Button>
         </div>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <Input
+          placeholder="Buscar por código ou descrição"
+          className="max-w-xs"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
       </div>
 
       <div className="panel overflow-x-auto">

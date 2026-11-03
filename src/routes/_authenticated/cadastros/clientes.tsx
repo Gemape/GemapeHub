@@ -65,7 +65,7 @@ function PaginaClientes() {
       <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploCliente(clientes), true) : abrir(null)}>Novo cliente</Button>
     </header>
 
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-end gap-2">
       <Input aria-label="Buscar cliente por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
       {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {clientes.length} cliente(s).</p>}
     </div>

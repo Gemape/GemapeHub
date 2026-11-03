@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
@@ -221,22 +222,8 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {ehVeiculo && (
-          <Input
-            aria-label="Buscar movimentação"
-            placeholder="Buscar por veículo, empregado ou manutenção"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        )}
-        <p className="text-sm text-muted-foreground">
-          {visiveis.length === movimentacoes.length
-            ? `Últimas ${movimentacoes.length} movimentações registradas.`
-            : `${visiveis.length} de ${movimentacoes.length} movimentações.`}
-        </p>
-        <div className="ml-auto flex gap-2">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={() =>
@@ -270,6 +257,22 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             Nova movimentação
           </Button>
         </div>
+        <BarraDeFiltros>
+          {ehVeiculo && (
+            <Input
+              aria-label="Buscar movimentação"
+              placeholder="Buscar por veículo, empregado ou manutenção"
+              className="max-w-xs"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          )}
+          <p className="text-sm text-muted-foreground">
+            {visiveis.length === movimentacoes.length
+              ? `Últimas ${movimentacoes.length} movimentações registradas.`
+              : `${visiveis.length} de ${movimentacoes.length} movimentações.`}
+          </p>
+        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

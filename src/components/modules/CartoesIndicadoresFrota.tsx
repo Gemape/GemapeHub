@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState, type ReactNode } from "react";
 import { ArrowDown, ArrowLeftRight, ArrowUp, Minus, type LucideIcon } from "lucide-react";
 
@@ -128,37 +129,46 @@ const GRUPOS = [
   { id: "tecnicos", rotulo: "Indicadores dos técnicos · check list" },
 ] as const;
 
-export function CartoesIndicadoresFrota({ indicadores }: { indicadores: IndicadoresDaFrota }) {
+// `acoes` e `filtros` são o que a tela põe na mesma linha dos botões: as ações ao lado deles e os filtros (a busca) à direita, na barra padrão (decisão 339), e `graficos` são os gráficos, que em tela larga ficam ao lado dos cards, na mesma faixa:
+// assim cards, gráficos e a lista da frota cabem numa tela só (decisão 337).
+export function CartoesIndicadoresFrota({ indicadores, acoes, filtros, graficos }: { indicadores: IndicadoresDaFrota; acoes?: ReactNode; filtros?: ReactNode; graficos?: ReactNode }) {
   const [grupo, setGrupo] = useState<(typeof GRUPOS)[number]["id"]>("pcm");
   return (
-    <section className="space-y-3" aria-label="Indicadores da frota">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Grupo de indicadores">
-        {GRUPOS.map((g) => (
-          <Button
-            key={g.id}
-            type="button"
-            size="sm"
-            variant={grupo === g.id ? "default" : "outline"}
-            aria-pressed={grupo === g.id}
-            onClick={() => setGrupo(g.id)}
-          >
-            {g.rotulo}
-          </Button>
-        ))}
+    <section className="space-y-2" aria-label="Indicadores da frota">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Grupo de indicadores">
+          {GRUPOS.map((g) => (
+            <Button
+              key={g.id}
+              type="button"
+              size="sm"
+              variant={grupo === g.id ? "default" : "outline"}
+              aria-pressed={grupo === g.id}
+              onClick={() => setGrupo(g.id)}
+            >
+              {g.rotulo}
+            </Button>
+          ))}
+        </div>
+        {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
+        {filtros && <BarraDeFiltros>{filtros}</BarraDeFiltros>}
       </div>
-      {grupo === "pcm" ? (
-        <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Cartao titulo="Manutenções" indicador={indicadores.manutencoes} />
-          <Cartao titulo="Check list PCM" indicador={indicadores.checklistPcm} />
-          <Cartao titulo="Ocorrências" indicador={indicadores.ocorrencias} />
-          <Cartao titulo="Conformidade geral" indicador={indicadores.conformidadeGeral} />
-        </div>
-      ) : (
-        <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Cartao titulo="Técnicos: no prazo" indicador={indicadores.tecnicosNoPrazo} />
-          <Cartao titulo="Técnicos: não realizados" indicador={indicadores.tecnicosNaoRealizados} />
-        </div>
-      )}
+      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        {grupo === "pcm" ? (
+          <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2">
+            <Cartao titulo="Manutenções" indicador={indicadores.manutencoes} compacto />
+            <Cartao titulo="Check list PCM" indicador={indicadores.checklistPcm} compacto />
+            <Cartao titulo="Ocorrências" indicador={indicadores.ocorrencias} compacto />
+            <Cartao titulo="Conformidade geral" indicador={indicadores.conformidadeGeral} compacto />
+          </div>
+        ) : (
+          <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2">
+            <Cartao titulo="Técnicos: no prazo" indicador={indicadores.tecnicosNoPrazo} compacto />
+            <Cartao titulo="Técnicos: não realizados" indicador={indicadores.tecnicosNaoRealizados} compacto />
+          </div>
+        )}
+        {graficos}
+      </div>
     </section>
   );
 }

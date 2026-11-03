@@ -266,17 +266,8 @@ export function CaixasFerramentasModulo() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative max-w-xs flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por número da caixa"
-            className="pl-9"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-        <div className="ml-auto flex gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={() =>
@@ -295,6 +286,17 @@ export function CaixasFerramentasModulo() {
             Exportar CSV
           </Button>
           <Button requiresWrite onClick={abrirNovo}>Nova caixa</Button>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="relative max-w-xs flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por número da caixa"
+            className="pl-9"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
         </div>
       </div>
 

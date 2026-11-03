@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useState } from "react";
 import { SugestaoComprasModulo } from "@/components/modules/SugestaoComprasModulo";
@@ -138,14 +139,8 @@ export function UniformesComprasModulo() {
   return (
     <div className="space-y-4">
       <SugestaoComprasModulo modulo="uniforme" />
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Buscar por fornecedor ou NF"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-        <div className="ml-auto flex gap-2">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={() =>
@@ -170,6 +165,14 @@ export function UniformesComprasModulo() {
           <ImportarNfeXml />
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
         </div>
+        <BarraDeFiltros>
+          <Input
+            placeholder="Buscar por fornecedor ou NF"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

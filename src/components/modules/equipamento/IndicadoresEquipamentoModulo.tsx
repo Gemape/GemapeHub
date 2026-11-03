@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -64,17 +65,19 @@ export function IndicadoresEquipamentoModulo() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="periodo_kpi">Período</Label>
-          <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger id="periodo_kpi" className="w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {[["30", "Últimos 30 dias"], ["90", "Últimos 90 dias"], ["180", "Últimos 180 dias"], ["365", "Últimos 12 meses"]].map(([v, r]) => <SelectItem key={v} value={v!}>{r}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex flex-wrap items-end gap-2">
         <p className="pb-2 text-xs text-muted-foreground">De {formatarData(inicio)} a {formatarData(hoje())} · {frota.total} equipamento{frota.total === 1 ? "" : "s"} · {frota.prontos} pronto{frota.prontos === 1 ? "" : "s"} para trabalhar agora</p>
+        <BarraDeFiltros>
+          <div className="space-y-1.5">
+            <Label htmlFor="periodo_kpi">Período</Label>
+            <Select value={periodo} onValueChange={setPeriodo}>
+              <SelectTrigger id="periodo_kpi" className="w-56"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[["30", "Últimos 30 dias"], ["90", "Últimos 90 dias"], ["180", "Últimos 180 dias"], ["365", "Últimos 12 meses"]].map(([v, r]) => <SelectItem key={v} value={v!}>{r}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </BarraDeFiltros>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">

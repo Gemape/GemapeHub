@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -44,25 +45,27 @@ export function OcorrenciasEquipamentoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro_eq_ocor">Equipamento</Label>
-          <Select value={filtroValido} onValueChange={setFiltro}>
-            <SelectTrigger id="filtro_eq_ocor" className="w-80 max-w-full"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS}>Todos os equipamentos</SelectItem>
-              {equipamentos.map((e) => <SelectItem key={e.id} value={e.id}>{rotuloDoEquipamento(e)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro_eq_status">Situação</Label>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger id="filtro_eq_status" className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value={TODOS}>Todas</SelectItem><SelectItem value="Aberta">Abertas</SelectItem><SelectItem value="Resolvida">Resolvidas</SelectItem></SelectContent>
-          </Select>
-        </div>
-        <Input aria-label="Buscar ocorrência" placeholder="Buscar por equipamento, tipo ou descrição" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        <Button requiresWrite="operar" className="ml-auto" onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova ocorrência</Button>
+        <Button requiresWrite="operar" onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova ocorrência</Button>
+        <BarraDeFiltros>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro_eq_ocor">Equipamento</Label>
+            <Select value={filtroValido} onValueChange={setFiltro}>
+              <SelectTrigger id="filtro_eq_ocor" className="w-80 max-w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS}>Todos os equipamentos</SelectItem>
+                {equipamentos.map((e) => <SelectItem key={e.id} value={e.id}>{rotuloDoEquipamento(e)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro_eq_status">Situação</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger id="filtro_eq_status" className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value={TODOS}>Todas</SelectItem><SelectItem value="Aberta">Abertas</SelectItem><SelectItem value="Resolvida">Resolvidas</SelectItem></SelectContent>
+            </Select>
+          </div>
+          <Input aria-label="Buscar ocorrência" placeholder="Buscar por equipamento, tipo ou descrição" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </BarraDeFiltros>
       </div>
 
       <div className="overflow-x-auto rounded-xl border">

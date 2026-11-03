@@ -216,14 +216,8 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Buscar por código ou descrição"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-        <div className="ml-auto flex gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={() =>
@@ -247,6 +241,14 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
           </Button>
           <Button requiresWrite onClick={() => void abrirNovo(import.meta.env.VITE_DEMO_MODE !== "false" && modulo === "ferramenta" ? (exemploFerramenta(parametrosSelecao.categoriasFerramenta[0]?.nome ?? "", parametrosSelecao.marcasFerramenta[0]?.nome ?? "", grupoExemplo?.nome, grupoExemplo ? (tamanhosDoGrupoFerramenta(parametros, grupoExemplo.nome)[0] ?? "") : "") as unknown as Item) : undefined)}>Novo item</Button>
         </div>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <Input
+          placeholder="Buscar por código ou descrição"
+          className="max-w-xs"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
       </div>
 
       <div className="panel overflow-x-auto">

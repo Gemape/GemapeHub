@@ -1,3 +1,5 @@
+import { PackageCheck, PackageX, Undo2, UserCheck } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { lerEmpregadosRelatorio, lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
@@ -123,22 +125,10 @@ export function EpiRelatorioFuncionario() {
       {empregado && (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-            <div className="panel p-4 text-center bg-blue-50/50">
-              <p className="text-xs text-muted-foreground uppercase font-bold">Entregues</p>
-              <p className="text-2xl font-black">{totalEntregue}</p>
-            </div>
-            <div className="panel p-4 text-center bg-green-50/50">
-              <p className="text-xs text-muted-foreground uppercase font-bold">Devolvidos</p>
-              <p className="text-2xl font-black">{totalDevolvido}</p>
-            </div>
-            <div className="panel p-4 text-center bg-red-50/50">
-              <p className="text-xs text-muted-foreground uppercase font-bold">Baixados</p>
-              <p className="text-2xl font-black">{totalBaixado}</p>
-            </div>
-            <div className="panel p-4 text-center bg-primary/10 border-primary/20">
-              <p className="text-xs text-primary uppercase font-bold">Em Posse</p>
-              <p className="text-2xl font-black text-primary">{emPosse}</p>
-            </div>
+            <StatCard titulo="Entregues" valor={totalEntregue} icone={PackageCheck} compacto />
+            <StatCard titulo="Devolvidos" valor={totalDevolvido} icone={Undo2} compacto />
+            <StatCard titulo="Baixados" valor={totalBaixado} icone={PackageX} compacto />
+            <StatCard titulo="Em Posse" valor={emPosse} icone={UserCheck} compacto />
           </div>
 
           <div className="flex justify-between items-center">

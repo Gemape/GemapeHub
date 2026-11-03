@@ -207,9 +207,11 @@ export function EnderecamentoModulo() {
       </div>
     </header>
 
-    <div className="flex flex-wrap items-center gap-3">
-      <Input className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
+    </div>
+    <div className="flex flex-wrap items-end gap-2">
+      <Input className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
     </div>
 
     <div className="panel overflow-x-auto">

@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { CalendarCheck, CalendarClock, CircleCheck, CircleX } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
@@ -107,19 +108,21 @@ export function ChecklistResultadosPainel({
 
   return (
     <div className="space-y-3">
-      {/* O período vale para tudo o que está abaixo: fica no alto, à esquerda, na linha dos botões dos tipos de check list. */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Label htmlFor="resultados_mes" className="text-xs">Período</Label>
-          <Select value={mes} onValueChange={setMes}>
-            <SelectTrigger id="resultados_mes" className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
-              {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* O período vale para tudo o que está abaixo: fica no alto, à direita (decisão 339), na linha dos botões dos tipos de check list. */}
+      <div className="flex flex-wrap items-end gap-2">
         {acoes}
+        <BarraDeFiltros>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="resultados_mes" className="text-xs">Período</Label>
+            <Select value={mes} onValueChange={setMes}>
+              <SelectTrigger id="resultados_mes" className="w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
+                {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </BarraDeFiltros>
       </div>
       {/* Tudo numa tela, sem rolar (decisão 332): uma coluna para o geral, com os gráficos, e uma para cada grupo, com os indicadores e a tabela dos responsáveis. */}
       <div className={`grid items-start gap-3 ${grupos.length === 2 ? "lg:grid-cols-3" : "lg:grid-cols-2 xl:grid-cols-4"}`}>

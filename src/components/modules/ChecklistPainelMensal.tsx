@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { CalendarCheck, CalendarClock, CircleCheck, CircleX } from "lucide-react";
 import { useState } from "react";
 
@@ -71,16 +72,18 @@ export function ChecklistPainelMensal({
             {todos ? "Todos os check lists obrigatórios previstos, de todos os meses." : atual ? "Check lists previstos para o mês corrente." : "Mês fechado: o resultado não muda mais."}
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Label htmlFor="painel_mes" className="text-xs">Período</Label>
-          <Select value={mes} onValueChange={(v) => { setMes(v); setTodasAsLinhas(false); }}>
-            <SelectTrigger id="painel_mes" className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
-              {meses.map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+        <BarraDeFiltros>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="painel_mes" className="text-xs">Período</Label>
+            <Select value={mes} onValueChange={(v) => { setMes(v); setTodasAsLinhas(false); }}>
+              <SelectTrigger id="painel_mes" className="w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS_OS_PERIODOS}>Todos os períodos</SelectItem>
+                {meses.map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </BarraDeFiltros>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

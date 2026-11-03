@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -27,7 +28,7 @@ import { AVALIACOES, hojeBrasilia, MAX_FOTOS_ITEM, resumoChecklist, situacaoPeri
 import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import type { FinalidadeChecklist } from "@/lib/equipamentos-checklist";
-import { formatarData } from "@/lib/gemape";
+import { dataHoraBrasilia, formatarData } from "@/lib/gemape";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import { combinaBusca } from "@/lib/parametros-base";
@@ -37,7 +38,6 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 import { nomeDoTipo, rotuloDoEquipamento, useChecklistParametros, useChecklistsEq, useEquipamentosDaEmpresa, useEquipamentosTodos, useLeitura } from "./comum";
 
 const TITULO: Record<FinalidadeChecklist, string> = { manutencao: "Check list de manutenção", vistoria: "Check list de vistoria" };
-const dataHoraBrasilia = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 const SITUACAO: Record<SituacaoPeriodica, { rotulo: string; classe: string }> = {
   em_dia: { rotulo: "Em dia", classe: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200" },
   em_andamento: { rotulo: "Em andamento", classe: "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200" },
@@ -295,27 +295,29 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
       </section>
 
       <section className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <h2 className="text-sm font-semibold">Check lists</h2>
-          <div className="flex items-center gap-1.5">
-            <Label htmlFor="mes_lista" className="text-xs">Mês</Label>
-            <Select value={mesLista} onValueChange={setMesLista}>
-              <SelectTrigger id="mes_lista" className="h-8 w-44"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os meses</SelectItem>
-                {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
           <div className="flex gap-1" role="group" aria-label="Tipo de check list">
             <Button size="sm" variant={visao === "periodicos" ? "default" : "outline"} aria-pressed={visao === "periodicos"} onClick={() => setVisao("periodicos")}>Periódicos ({naListaDoMes.length})</Button>
             <Button size="sm" variant={visao === "avulsos" ? "default" : "outline"} aria-pressed={visao === "avulsos"} onClick={() => setVisao("avulsos")}>Avulsos ({avulsosDoMes.length})</Button>
           </div>
           {visao === "avulsos" && <Button requiresWrite="operar" size="sm" onClick={abrirNovoAvulso}>Novo check list avulso</Button>}
-          <Input aria-label="Buscar check list" placeholder="Buscar por código, equipamento ou responsável" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
           <Button variant={soPendencias ? "default" : "outline"} size="sm" onClick={() => setSoPendencias((v) => !v)}>
             Com pendências abertas ({(visao === "avulsos" ? avulsosDoMes : naListaDoMes).filter((c) => c.itens.some(pendenciaAbertaEq)).length})
           </Button>
+          <BarraDeFiltros>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="mes_lista" className="text-xs">Mês</Label>
+              <Select value={mesLista} onValueChange={setMesLista}>
+                <SelectTrigger id="mes_lista" className="h-8 w-44"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os meses</SelectItem>
+                  {mesesDisponiveis(hoje).map((m) => <SelectItem key={m} value={m}>{rotuloDoMes(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Input aria-label="Buscar check list" placeholder="Buscar por código, equipamento ou responsável" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          </BarraDeFiltros>
         </div>
         <div className="overflow-x-auto rounded-xl border">
           <Table>

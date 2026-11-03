@@ -1,3 +1,6 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { Banknote, Droplets, Fuel } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -97,29 +100,32 @@ export function AbastecimentoEquipamentoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro_equipamento">Histórico por equipamento</Label>
-          <Select value={filtroValido} onValueChange={setFiltro}>
-            <SelectTrigger id="filtro_equipamento" className="w-80 max-w-full"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS}>Todos os equipamentos a combustão</SelectItem>
-              {equipamentos.map((e) => <SelectItem key={e.id} value={e.id}>{rotuloDoEquipamento(e)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <Input aria-label="Buscar abastecimento" placeholder="Buscar por equipamento, data ou horímetro" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        <Button variant="outline" className="ml-auto" onClick={gerarRelatorio} disabled={equipamentos.length === 0}>Gerar PDF</Button>
+        <Button variant="outline" onClick={gerarRelatorio} disabled={equipamentos.length === 0}>Gerar PDF</Button>
         <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Novo abastecimento</Button>
+        <BarraDeFiltros>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro_equipamento">Histórico por equipamento</Label>
+            <Select value={filtroValido} onValueChange={setFiltro}>
+              <SelectTrigger id="filtro_equipamento" className="w-80 max-w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS}>Todos os equipamentos a combustão</SelectItem>
+                {equipamentos.map((e) => <SelectItem key={e.id} value={e.id}>{rotuloDoEquipamento(e)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Input aria-label="Buscar abastecimento" placeholder="Buscar por equipamento, data ou horímetro" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </BarraDeFiltros>
       </div>
       {equipamentos.length === 0 && <p className="text-sm text-muted-foreground">Nenhum equipamento com motor a combustão cadastrado. Cadastre em Parâmetros &gt; Equipamentos com propulsão a diesel, gasolina ou gás.</p>}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Abastecimentos</p><p className="text-lg font-semibold">{linhas.length}</p></div>
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Litros</p><p className="text-lg font-semibold">{numero(resumo.litros)}</p></div>
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Total gasto</p><p className="text-lg font-semibold">{reais(resumo.gasto)}</p></div>
+        <StatCard titulo="Abastecimentos" valor={linhas.length} icone={Fuel} compacto />
+        <StatCard titulo="Litros" valor={numero(resumo.litros)} icone={Droplets} compacto />
+        <StatCard titulo="Total gasto" valor={reais(resumo.gasto)} icone={Banknote} compacto />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
+      <div className="max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table>
           <TableHeader>
             <TableRow>

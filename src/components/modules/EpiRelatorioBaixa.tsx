@@ -1,3 +1,5 @@
+import { Banknote, ClipboardList, Package } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
@@ -142,21 +144,12 @@ export function EpiRelatorioBaixa() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
-        <div className="panel p-4 text-center">
-          <p className="text-sm text-muted-foreground">Total de Baixas</p>
-          <p className="text-2xl font-black">{baixas.length}</p>
-        </div>
-        <div className="panel p-4 text-center">
-          <p className="text-sm text-muted-foreground">Total de Peças</p>
-          <p className="text-2xl font-black">{totalQuantidade}</p>
-        </div>
-        <div className="panel p-4 text-center border-l-4 border-l-red-500">
-          <p className="text-sm text-muted-foreground">Valor Total</p>
-          <p className="text-2xl font-black text-red-600">{formatarMoeda(totalValor)}</p>
-        </div>
+        <StatCard titulo="Total de Baixas" valor={baixas.length} icone={ClipboardList} compacto />
+        <StatCard titulo="Total de Peças" valor={totalQuantidade} icone={Package} compacto />
+        <StatCard titulo="Valor Total" valor={formatarMoeda(totalValor)} icone={Banknote} compacto />
       </div>
 
-      <div className="panel overflow-x-auto print:border-none print:shadow-none">
+      <div className="panel max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card print:max-h-none print:overflow-visible print:border-none print:shadow-none">
         <Table>
           <TableHeader>
             <TableRow>

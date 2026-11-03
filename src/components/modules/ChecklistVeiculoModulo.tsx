@@ -35,7 +35,7 @@ import { montarChecklistHtml } from "@/lib/checklist-veiculo-html";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { grupoDeAreaPorNome } from "@/lib/area-responsaveis";
 import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
-import { formatarData } from "@/lib/gemape";
+import { dataHoraBrasilia, formatarData } from "@/lib/gemape";
 import { definirTituloDaPagina } from "@/lib/titulo-pagina";
 import { useEmpregados, useVeiculos, type Veiculo } from "@/lib/hooks-gemape";
 import { resolverSubcategoria } from "@/lib/subcategoria-referencia";
@@ -45,7 +45,6 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 
 type VeiculoChecklist = Veiculo;
 
-const dataHoraBrasilia = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 const COR_AVALIACAO: Record<string, string> = {
   OK: "border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-600",
