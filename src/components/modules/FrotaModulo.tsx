@@ -42,7 +42,7 @@ const COR_VENCIMENTO: Record<Vencimento, { ponto: string; etiqueta: string }> = 
 
 // Etiqueta de uma coluna de vencimento: uma pílula só, com a bolinha da cor dentro e todas do mesmo tamanho; coluna que não se aplica ao veículo (sem plano, sem check list associado) mostra um traço.
 // Com `aoClicar`, a pílula é um botão que abre a informação que ela resume (decisão 305), sem abrir o extrato da linha.
-function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; dica?: string; aoClicar?: () => void }) {
+export function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; dica?: string; aoClicar?: () => void }) {
   if (!valor) return <span className="text-muted-foreground">—</span>;
   const cor = COR_VENCIMENTO[valor.situacao];
   const classes = `mx-auto flex h-8 w-full max-w-[12rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.etiqueta}`;
@@ -71,7 +71,7 @@ function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; 
 const TODAS_AS_SUBCATEGORIAS = "__todas__";
 
 // Custo da manutenção: a soma dos locais; registro sem locais usa o custo total (ou peças + mão de obra) do próprio registro.
-const custoDaManutencao = (m: Parameters<typeof locaisDaManutencao>[0]): number => {
+export const custoDaManutencao = (m: Parameters<typeof locaisDaManutencao>[0]): number => {
   const locais = locaisDaManutencao(m);
   return locais.length ? locais.reduce((t, l) => t + l.custoTotal, 0) : (m.custoTotal ?? (m.custoPecas ?? 0) + (m.custoMaoDeObra ?? 0));
 };

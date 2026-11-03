@@ -125,10 +125,13 @@ export function GraficosManutencao({
   revisoes,
   manutencoes,
   hoje,
+  compacto = false,
 }: {
   revisoes: RevisaoDoVeiculo[];
   manutencoes: { tipo: string; data: string }[];
   hoje: string;
+  // Com a tabela de diagnóstico embaixo (decisão 348): gráficos mais baixos e sem o texto de apoio, para tudo caber na tela.
+  compacto?: boolean;
 }) {
   const porVeiculo = new Map<
     string,
@@ -160,7 +163,7 @@ export function GraficosManutencao({
     <PainelGraficos>
       <QuadroGrafico
         titulo="Revisões por veículo"
-        descricao="Situação das revisões do plano de cada veículo."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Situação das revisões do plano de cada veículo." })}
         vazio={porVeiculo.size === 0}
       >
         <GraficoBarras
@@ -177,7 +180,7 @@ export function GraficosManutencao({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="Preventivas x corretivas por mês"
-        descricao="Manutenções registradas nos últimos seis meses."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Manutenções registradas nos últimos seis meses." })}
       >
         <GraficoBarras
           dados={meses}

@@ -1958,3 +1958,8 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 347. Check list: indicadores gerais no alto e técnicos e PCM lado a lado
 
 - Na tela principal de Veículos › Módulo › Check list, os indicadores gerais ficam no alto, com os cards (à esquerda) e os gráficos (à direita) ocupando toda a largura. Abaixo, a tela se divide ao meio: os indicadores e a tabela de responsáveis dos técnicos de um lado e os do PCM do outro. Tudo cabe numa tela, sem rolar a página; a tabela de responsáveis usa o que sobra da janela e rola por dentro. Os gráficos do Check list ficaram mais baixos (decisão 332).
+
+## 348. Manutenção: botão azul à direita e tabela de diagnóstico
+
+- Em Veículos › Módulo › Manutenção, o botão "Cadastrar nova manutenção" ficou azul, à direita, acima dos botões "Manutenções planejadas" e "Manutenções realizadas".
+- Depois dos gráficos (agora mais baixos, para caber na tela) vem a tabela da Frota só com dados de manutenção, um veículo por linha: km atual, última manutenção, situação das preventivas, quantidade de manutenções realizadas e de corretivas, custo total e % preventivo (parte do gasto que é preventiva, com a cor da faixa de 80%/70% da decisão 344). Clicar na linha, na etiqueta de preventivas ou em Ver extrato abre o extrato do veículo.
