@@ -6,7 +6,7 @@ import { ABAS_EPI, ABAS_EPI_RELATORIOS, abaDoModulo, tituloDaAba } from "../src/
 
 const le = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 
-test("EPI > Relatórios traz Sugestão de Compras, Histórico do empregado e Baixar Definitivas (decisão 343)", () => {
+test("EPI > Relatórios traz Sugestão de Compras, Histórico do empregado e Baixar Definitivas (decisão 359)", () => {
   assert.deepEqual(ABAS_EPI_RELATORIOS.map((a) => a.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]);
 });
 

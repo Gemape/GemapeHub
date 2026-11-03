@@ -48,7 +48,7 @@ export const ABAS_EPI: readonly AbaMenu[] = [
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
-// EPI > Relatórios (decisão 343): as três rotinas de consulta saíram da lista do Módulo e ficam só aqui. As abas mantêm os endereços de sempre
+// EPI > Relatórios (decisão 359): as três rotinas de consulta saíram da lista do Módulo e ficam só aqui. As abas mantêm os endereços de sempre
 // (?aba=sugestao-compras, historico e baixas), então links e favoritos antigos continuam abrindo as mesmas telas.
 export const ABAS_EPI_RELATORIOS: readonly AbaMenu[] = [
   { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
