@@ -1,3 +1,5 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { exportarCsv } from "@/lib/gemape";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -62,12 +64,24 @@ function PaginaClientes() {
         <h1 className="text-2xl font-bold">Clientes</h1>
         <p className="mt-1 text-sm text-muted-foreground">Clientes atendidos pela equipe em viagens e saídas externas.</p>
       </div>
-      <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploCliente(clientes), true) : abrir(null)}>Novo cliente</Button>
+      <div className="flex gap-2">
+        <Button variant="outline" disabled={lista.length === 0} onClick={() => exportarCsv("clientes", lista.map((x) => ({
+          Código: x.codigo,
+          Nome: x.nome,
+          CPF: x.cpf ?? "",
+          CNPJ: x.cnpj ?? "",
+          Contato: x.contato ?? "",
+          Telefone: formatarTelefone(x.telefone) ?? "",
+        })))}>Exportar CSV</Button>
+        <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploCliente(clientes), true) : abrir(null)}>Novo cliente</Button>
+      </div>
     </header>
 
     <div className="flex flex-wrap items-end gap-2">
-      <Input aria-label="Buscar cliente por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
-      {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {clientes.length} cliente(s).</p>}
+      <BarraDeFiltros>
+        <Input aria-label="Buscar cliente por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {clientes.length} cliente(s).</p>}
+      </BarraDeFiltros>
     </div>
 
     <div className="panel overflow-x-auto">

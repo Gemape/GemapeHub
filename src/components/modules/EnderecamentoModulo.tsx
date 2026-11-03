@@ -1,3 +1,5 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { exportarCsv } from "@/lib/gemape";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -208,10 +210,31 @@ export function EnderecamentoModulo() {
     </header>
 
     <div className="flex flex-wrap items-center justify-end gap-2">
+      <Button
+        variant="outline"
+        disabled={linhas.length === 0}
+        onClick={() =>
+          exportarCsv(
+            "enderecamento",
+            linhas.map(({ produto, endereco: e }) => ({
+              "Código do produto": produto.codigo_sku,
+              Produto: produto.nome,
+              Rua: e?.rua ?? "",
+              Número: e?.prateleira ?? "",
+              Apartamento: e?.apartamento ?? "",
+              Empresa: nomeEmpresa(produto.empresa_id ?? ""),
+            })),
+          )
+        }
+      >
+        Exportar CSV
+      </Button>
       <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
     </div>
     <div className="flex flex-wrap items-end gap-2">
-      <Input className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
+      <BarraDeFiltros>
+        <Input aria-label="Buscar por código, produto ou endereço" className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
+      </BarraDeFiltros>
     </div>
 
     <div className="panel overflow-x-auto">

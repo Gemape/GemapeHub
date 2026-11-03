@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -429,12 +430,15 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
         </div>
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <Input
-          placeholder="Buscar por código ou descrição"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar por código ou descrição"
+            placeholder="Buscar por código ou descrição"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

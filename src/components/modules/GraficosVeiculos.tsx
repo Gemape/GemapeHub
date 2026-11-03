@@ -29,15 +29,15 @@ export function GraficosFrota({
   compacto?: boolean;
 }) {
   const barras = [
-    { nome: "Manutenções", pct: indicadores.manutencoes.pct, faixa: indicadores.manutencoes.faixa },
+    { nome: "Manut.", pct: indicadores.manutencoes.pct, faixa: indicadores.manutencoes.faixa },
     {
-      nome: "Check list PCM",
+      nome: "Check PCM",
       pct: indicadores.checklistPcm.pct,
       faixa: indicadores.checklistPcm.faixa,
     },
-    { nome: "Ocorrências", pct: indicadores.ocorrencias.pct, faixa: indicadores.ocorrencias.faixa },
+    { nome: "Ocorr.", pct: indicadores.ocorrencias.pct, faixa: indicadores.ocorrencias.faixa },
     {
-      nome: "Conformidade",
+      nome: "Conform.",
       pct: indicadores.conformidadeGeral.pct,
       faixa: indicadores.conformidadeGeral.faixa,
     },

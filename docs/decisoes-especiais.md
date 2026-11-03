@@ -1910,10 +1910,20 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Toda tela com busca ou filtro usa a `BarraDeFiltros`: os filtros (busca, seleções, datas, limpar período, contagem) ficam à direita da linha de cima da página, e os botões de ação (Novo, Gerar PDF, Voltar, os botões azuis das listas) à esquerda da mesma linha. O botão que abre ou filtra uma lista por situação fica entre os de ação, e o título da lista fica à esquerda.
 - Isso muda posições decididas antes: o Período do Check list (decisão 332) passa para a direita e os botões Check list periódico e avulso para a esquerda; em Equipamentos o Inventário passa a ter os filtros acima dos cards.
-- Exceção, decidida depois: nas telas de cadastro (Empresas, Empregados, Fornecedores, Clientes e o cadastro de cada módulo: veículos, equipamentos, EPI, uniformes, itens de ferramentas, caixas de ferramentas e a ficha de EPI) os botões de ação (Exportar CSV, Novo...) ficam no alto, à direita, e a busca vem logo abaixo, à esquerda, e não na barra de filtros. As telas de parâmetros Check list e Questionário de Despesas têm layout próprio e não mudaram.
+- Nas telas de cadastro (Empresas, Empregados, Fornecedores, Clientes e o cadastro de cada módulo: veículos, equipamentos, EPI, uniformes, itens de ferramentas, caixas de ferramentas, ficha de EPI, endereçamento e código de fábrica) os botões de ação (Exportar CSV, Novo...) ficam numa linha no alto, à direita, e a busca vem logo abaixo, também à direita, na mesma barra de filtros das outras telas (decisão 341). As telas de parâmetros Check list e Questionário de Despesas têm layout próprio e não mudaram; as buscas dentro das caixas duplas de empregados e das janelas são internas e ficaram onde estão.
 - Listas com altura limitada à janela têm um rolador só (o da própria tabela), com o cabeçalho fixo e a barra horizontal sempre à vista; os campos de busca da barra têm a mesma largura em todas as telas.
 - Fora do padrão por enquanto: a lista de despesas de Viagens (os filtros estão no alto de uma seção que fica abaixo dos indicadores, porque a página reúne painel, lista e resultados).
 
 ## 340. PDF do extrato do veículo personalizado por seções
 
 - Em Veículos › Frota, no extrato do veículo, o botão Gerar PDF abre a janela Personalizar o relatório: uma caixa de marcar para cada seção (manutenções preventivas sugeridas, manutenções realizadas, itens não realizados em atenção, histórico de abastecimentos, ocorrências e check lists periódicos), com os botões Marcar todos e Desmarcar todos; Gerar PDF fica desligado sem nenhuma seção marcada. O resumo do veículo sai sempre; o período e o "Só em aberto" valem como na tela. Os botões Gerar PDF desta seção, que havia em cada tabela, foram retirados.
+
+## 341. Todo cadastro tem busca, Exportar CSV e o botão de novo
+
+- Todas as telas de cadastro passam a ter o mesmo trio: busca por palavra-chave, Exportar CSV (com o que está filtrado na tela; desligado quando a lista está vazia; a exceção é Empregados, que exporta sempre a lista inteira, como definido antes) e o botão de novo. Empresas ganhou a busca (nome fantasia, razão social, CNPJ, endereço e status) e o Exportar CSV; Fornecedores, Clientes, EPI, Uniformes, Equipamentos (que também ganhou a busca), ficha de EPI, endereçamento e código de fábrica ganharam o Exportar CSV. A posição é a da decisão 339: botões no alto, à direita; busca logo abaixo, à direita.
+
+## 342. Frota: seis indicadores sempre à vista e filtro por subcategoria
+
+- Em Veículos › Módulo › Frota os indicadores de PCM e de técnicos aparecem juntos, sem botões para alternar. Os cartões ficaram mais estreitos (três por linha) para caber com os gráficos e a lista numa tela só (decisão 337).
+- O título de cada cartão diz de quem é o indicador: "PCM ·", "Técnicos ·" ou "Frota ·" (geral). O subtítulo explica como ele é calculado.
+- Ao lado da busca por palavra-chave há o filtro por subcategoria do veículo (utilitário, caminhão, carro...), com as subcategorias ativas de Parâmetros. Ele vale para a lista e para o relatório impresso; os indicadores e gráficos seguem sendo da frota toda.

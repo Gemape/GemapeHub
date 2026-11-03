@@ -1,3 +1,5 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { exportarCsv } from "@/lib/gemape";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -268,18 +270,41 @@ function CatalogoUniforme() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button
+          variant="outline"
+          disabled={grupos.length === 0}
+          onClick={() =>
+            exportarCsv(
+              "uniformes",
+              grupos.flatMap((g) =>
+                g.itens.map((item) => ({
+                  Uniforme: g.nome,
+                  Categoria: g.categoria,
+                  Unidade: g.unidade_medida ?? "",
+                  Código: item.codigo_sku,
+                  Tamanho: rotuloTamanho(item.tamanho_id) || "Sem tamanho",
+                  "Estoque mínimo": item.estoque_minimo,
+                })),
+              ),
+            )
+          }
+        >
+          Exportar CSV
+        </Button>
         <Button requiresWrite onClick={abrirNovo}>
           Novo uniforme
         </Button>
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <Input
-          aria-label="Buscar uniforme por código, descrição, subcategoria ou tamanho"
-          placeholder="Buscar por código, descrição, subcategoria ou tamanho"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="max-w-md"
-        />
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar uniforme por código, descrição, subcategoria ou tamanho"
+            placeholder="Buscar por código, descrição, subcategoria ou tamanho"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="max-w-md"
+          />
+        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

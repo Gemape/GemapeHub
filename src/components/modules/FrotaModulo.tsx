@@ -8,6 +8,7 @@ import { GraficosFrota } from "@/components/modules/GraficosVeiculos";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hojeBrasilia } from "@/lib/checklist-veiculo";
 import { hojeLocal } from "@/lib/empregados";
@@ -20,7 +21,8 @@ import { indicadoresDaFrota } from "@/lib/frota-indicadores";
 import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
 import { useEmpregados, useVeiculos } from "@/lib/hooks-gemape";
 import { montarFrotaHtml } from "@/lib/frota-relatorio-html";
-import { combinaBusca } from "@/lib/parametros-base";
+import { combinaBusca, subcategoriasAtivasDa } from "@/lib/parametros-base";
+import { nomeSubcategoria } from "@/lib/subcategoria-referencia";
 import { normalizarPlaca } from "@/lib/veiculos";
 import { useAbastecimentos, useChecklistsVeiculo, useManutencoesVeiculo, useOcorrenciasVeiculo, usePlanosVeiculo, usePrevisoesChecklist } from "@/lib/use-registros-veiculo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -62,6 +64,8 @@ function EtiquetaVencimento({ valor, dica, aoClicar }: { valor: SituacaoColuna; 
 
 // Módulos > Veículos > Frota (decisão 57): página inicial com a lista de veículos da empresa.
 // Clicar num veículo abre o extrato. O cadastro continua em Parâmetros > Veículos.
+const TODAS_AS_SUBCATEGORIAS = "__todas__";
+
 export function FrotaModulo() {
   const { empresaId, empresas } = useEmpresa();
   const parametros = useParametrosBase();
@@ -75,11 +79,16 @@ export function FrotaModulo() {
   const checklists = useChecklistsVeiculo();
   const previsoes = usePrevisoesChecklist();
   const [busca, setBusca] = useState("");
+  // Filtro por subcategoria do veículo (utilitário, caminhão, carro...), ao lado da busca (decisão 342): vale para a lista e para o relatório; os indicadores seguem sendo da frota toda.
+  const [subcategoria, setSubcategoria] = useState(TODAS_AS_SUBCATEGORIAS);
+  const subcategorias = subcategoriasAtivasDa(parametros, "cat-veiculos");
   // Veículo escolhido e, se veio de uma bolinha, a seção do extrato que ela resume (sem seção, abre a janela do extrato).
   const [aberto, setAberto] = useState<{ id: string; secao: SecaoExtrato | null } | null>(null);
   const hoje = hojeLocal();
 
-  const lista = veiculos.filter((v) =>
+  const lista = veiculos
+    .filter((v) => subcategoria === TODAS_AS_SUBCATEGORIAS || nomeSubcategoria(parametros, "cat-veiculos", v as never) === subcategoria)
+    .filter((v) =>
     combinaBusca(busca.replace(/-/g, ""), rotuloDoVeiculo(parametros, v), normalizarPlaca(v.placa ?? ""), v.marca, v.modelo, nomeResponsavel(v.empregado_responsavel_id), STATUS[v.status] ?? v.status),
   );
   // Cada coluna de vencimento (decisão 304): bolinha e etiqueta amarela (vencimento próximo), vermelha (vencida) ou verde (em dia).
@@ -152,13 +161,25 @@ export function FrotaModulo() {
         indicadores={indicadores}
         graficos={<GraficosFrota compacto indicadores={indicadores} medias={veiculos.map((v) => ({ veiculo: rotuloDoVeiculo(parametros, v), media: mediaDo(v.id) }))} />}
         filtros={
-          <Input
-            aria-label="Buscar veículo por descrição ou responsável"
-            placeholder="Buscar por descrição ou responsável"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="h-9"
-          />
+          <>
+            <Select value={subcategoria} onValueChange={setSubcategoria}>
+              <SelectTrigger aria-label="Filtrar por subcategoria do veículo" className="h-9 w-56">
+                <SelectValue placeholder="Todas as subcategorias" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODAS_AS_SUBCATEGORIAS}>Todas as subcategorias</SelectItem>
+                {subcategorias.map((s) => (
+                  <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              aria-label="Buscar veículo por descrição ou responsável"
+              placeholder="Buscar por descrição ou responsável"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </>
         }
         acoes={
           <Button type="button" variant="outline" size="sm" onClick={imprimir} disabled={isLoading}>
@@ -167,7 +188,7 @@ export function FrotaModulo() {
         }
       />
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
-      <div className="max-h-[max(12rem,calc(100dvh-34rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="max-h-[max(10rem,calc(100dvh-40rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1440px] table-fixed">
           <TableHeader>
             <TableRow>

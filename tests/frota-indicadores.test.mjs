@@ -126,23 +126,22 @@ test("conformidade geral: média simples dos indicadores do PCM que têm valor",
 
 test("a Frota mostra os cards do PCM e dos técnicos com seta e cor por faixa, e a coluna de média km/L", () => {
   const cartoes = ler("components/modules/CartoesIndicadoresFrota.tsx");
+  // Decisão 342: os seis indicadores sempre à vista; o título diz de quem é (PCM, Técnicos ou Geral da frota) e o subtítulo, como é calculado.
   for (const t of [
-    "Manutenções",
-    "Check list PCM",
-    "Ocorrências",
-    "Conformidade geral",
-    "Técnicos: no prazo",
-    "Técnicos: não realizados",
+    "PCM · Preventivas em dia",
+    "PCM · Check list no prazo",
+    "PCM · Ocorrências no prazo",
+    "Frota · Conformidade geral",
+    "Técnicos · Check list no prazo",
+    "Técnicos · Check list atrasado",
   ])
     assert.ok(cartoes.includes(t), t);
+  assert.equal((cartoes.match(/subtitulo="/g) ?? []).length, 6, "cada cartão explica como é calculado");
+  assert.ok(!cartoes.includes("aria-pressed"), "sem botões para alternar entre PCM e técnicos");
   assert.match(cartoes, /verde: \{[^}]*Icone: ArrowUp/);
   assert.match(cartoes, /amarelo: \{[^}]*Icone: ArrowLeftRight/);
   assert.match(cartoes, /vermelho: \{[^}]*Icone: ArrowDown/);
-  assert.match(
-    cartoes,
-    /aria-pressed=\{grupo === g\.id\}[\s\S]*sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2[\s\S]*sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2"/,
-    "botões PCM/técnicos; PCM em 4 colunas (2x2 ao lado dos gráficos em tela larga), técnicos no mesmo tamanho, uma coluna no celular",
-  );
+  assert.match(cartoes, /sm:grid-cols-2 lg:grid-cols-3/, "seis cartões estreitos, três por linha (dois no celular)");
   const frota = ler("components/modules/FrotaModulo.tsx");
   assert.match(frota, /<CartoesIndicadoresFrota\s+indicadores=\{indicadores\}/);
   assert.match(
@@ -154,4 +153,13 @@ test("a Frota mostra os cards do PCM e dos técnicos com seta e cor por faixa, e
     /<TableHead className="w-\[8%\] whitespace-nowrap pr-6 text-right">Média km\/L<\/TableHead>/,
   );
   assert.match(ler("lib/frota-relatorio-html.ts"), /<th class="num">Média km\/L<\/th>/);
+});
+
+test("a Frota filtra a lista por subcategoria do veículo, ao lado da busca por palavra-chave (decisão 342)", () => {
+  const frota = ler("components/modules/FrotaModulo.tsx");
+  assert.match(frota, /aria-label="Filtrar por subcategoria do veículo"/);
+  assert.match(frota, /subcategoriasAtivasDa\(parametros, "cat-veiculos"\)/, "as opções são as subcategorias ativas de veículos");
+  assert.match(frota, /nomeSubcategoria\(parametros, "cat-veiculos", v as never\) === subcategoria/, "o filtro compara com a subcategoria do veículo");
+  const filtros = frota.slice(frota.indexOf("filtros={"), frota.indexOf("acoes={"));
+  assert.ok(filtros.indexOf("<Select") < filtros.indexOf("<Input"), "a seleção fica ao lado da busca, antes dela");
 });

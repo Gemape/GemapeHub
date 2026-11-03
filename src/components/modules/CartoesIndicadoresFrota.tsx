@@ -1,8 +1,7 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ArrowDown, ArrowLeftRight, ArrowUp, Minus, type LucideIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import type { Faixa } from "@/lib/faixas-desempenho";
 import type { IndicadorDaFrota, IndicadoresDaFrota } from "@/lib/frota-indicadores";
 
@@ -54,6 +53,7 @@ const ESTILO: Record<
 // segue o percentual e some quando não há percentual nem faixa. `extra` é um complemento ao lado do título (por exemplo, o ícone de explicação) e `classe` ajusta a moldura.
 export function Cartao({
   titulo,
+  subtitulo,
   indicador,
   valor,
   icone,
@@ -62,6 +62,8 @@ export function Cartao({
   compacto = false,
 }: {
   titulo: string;
+  // Uma linha que explica como o indicador é calculado (decisão 342), logo abaixo do título.
+  subtitulo?: string;
   indicador: IndicadorDaFrota;
   valor?: string;
   icone?: LucideIcon | undefined;
@@ -84,6 +86,7 @@ export function Cartao({
             <p className="text-eyebrow">{titulo}</p>
             {extra}
           </div>
+          {subtitulo && <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{subtitulo}</p>}
           <p
             className={`${compacto ? "mt-1 break-words font-display text-xl font-bold leading-none tracking-tight" : "mt-1.5 break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl [@media(max-height:820px)]:sm:text-2xl"} ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}
           >
@@ -122,51 +125,57 @@ export function Cartao({
   );
 }
 
-// Alto da Frota: dois botões escolhem o grupo de indicadores mostrado, o do PCM (manutenções, check list do PCM, ocorrências e conformidade geral) ou o dos técnicos
-// (só check list), para a tela ficar mais limpa. Cada card tem percentual, barra, cor da faixa e a seta da faixa.
-const GRUPOS = [
-  { id: "pcm", rotulo: "Indicadores do PCM" },
-  { id: "tecnicos", rotulo: "Indicadores dos técnicos · check list" },
-] as const;
-
-// `acoes` e `filtros` são o que a tela põe na mesma linha dos botões: as ações ao lado deles e os filtros (a busca) à direita, na barra padrão (decisão 339), e `graficos` são os gráficos, que em tela larga ficam ao lado dos cards, na mesma faixa:
-// assim cards, gráficos e a lista da frota cabem numa tela só (decisão 337).
+// Alto da Frota (decisão 342): os seis indicadores sempre à vista, sem alternar botões. Cada título diz de quem é o indicador (PCM, Técnicos ou Geral da frota) e o subtítulo explica como ele
+// é calculado. `acoes` e `filtros` são o que a tela põe na linha de cima: as ações à esquerda e os filtros (subcategoria e busca) à direita, na barra padrão (decisão 339); `graficos` são os
+// gráficos, que em tela larga ficam ao lado dos cartões, na mesma faixa, para cartões, gráficos e a lista caberem numa tela só.
 export function CartoesIndicadoresFrota({ indicadores, acoes, filtros, graficos }: { indicadores: IndicadoresDaFrota; acoes?: ReactNode; filtros?: ReactNode; graficos?: ReactNode }) {
-  const [grupo, setGrupo] = useState<(typeof GRUPOS)[number]["id"]>("pcm");
   return (
     <section className="space-y-2" aria-label="Indicadores da frota">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Grupo de indicadores">
-          {GRUPOS.map((g) => (
-            <Button
-              key={g.id}
-              type="button"
-              size="sm"
-              variant={grupo === g.id ? "default" : "outline"}
-              aria-pressed={grupo === g.id}
-              onClick={() => setGrupo(g.id)}
-            >
-              {g.rotulo}
-            </Button>
-          ))}
+      {(acoes || filtros) && (
+        <div className="flex flex-wrap items-end gap-2">
+          {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
+          {filtros && <BarraDeFiltros>{filtros}</BarraDeFiltros>}
         </div>
-        {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
-        {filtros && <BarraDeFiltros>{filtros}</BarraDeFiltros>}
-      </div>
-      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        {grupo === "pcm" ? (
-          <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2">
-            <Cartao titulo="Manutenções" indicador={indicadores.manutencoes} compacto />
-            <Cartao titulo="Check list PCM" indicador={indicadores.checklistPcm} compacto />
-            <Cartao titulo="Ocorrências" indicador={indicadores.ocorrencias} compacto />
-            <Cartao titulo="Conformidade geral" indicador={indicadores.conformidadeGeral} compacto />
-          </div>
-        ) : (
-          <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2">
-            <Cartao titulo="Técnicos: no prazo" indicador={indicadores.tecnicosNoPrazo} compacto />
-            <Cartao titulo="Técnicos: não realizados" indicador={indicadores.tecnicosNaoRealizados} compacto />
-          </div>
-        )}
+      )}
+      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Cartao
+            titulo="PCM · Preventivas em dia"
+            subtitulo="Preventivas não vencidas ÷ preventivas com registro, em todos os veículos."
+            indicador={indicadores.manutencoes}
+            compacto
+          />
+          <Cartao
+            titulo="PCM · Check list no prazo"
+            subtitulo="Check lists do PCM realizados no prazo ÷ os que já venceram (realizados + não realizados)."
+            indicador={indicadores.checklistPcm}
+            compacto
+          />
+          <Cartao
+            titulo="PCM · Ocorrências no prazo"
+            subtitulo="Abertas dentro do prazo da tratativa ÷ todas as abertas. Sem ocorrência aberta: 100%."
+            indicador={indicadores.ocorrencias}
+            compacto
+          />
+          <Cartao
+            titulo="Frota · Conformidade geral"
+            subtitulo="Média simples dos três indicadores do PCM ao lado (manutenções, check list e ocorrências)."
+            indicador={indicadores.conformidadeGeral}
+            compacto
+          />
+          <Cartao
+            titulo="Técnicos · Check list no prazo"
+            subtitulo="Check lists dos técnicos realizados no prazo ÷ os que já venceram (realizados + não realizados)."
+            indicador={indicadores.tecnicosNoPrazo}
+            compacto
+          />
+          <Cartao
+            titulo="Técnicos · Check list atrasado"
+            subtitulo="Não realizados no prazo ÷ os que já venceram (o complemento do indicador ao lado, com a mesma cor)."
+            indicador={indicadores.tecnicosNaoRealizados}
+            compacto
+          />
+        </div>
         {graficos}
       </div>
     </section>
