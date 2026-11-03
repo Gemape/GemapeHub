@@ -1,3 +1,7 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
 
 test("o status de criticidade tem legenda sempre visível e balão ao passar o mouse (decisão 354)", () => {
   const tela = readFileSync(new URL("../src/components/modules/SugestaoComprasEpi.tsx", import.meta.url), "utf8");
