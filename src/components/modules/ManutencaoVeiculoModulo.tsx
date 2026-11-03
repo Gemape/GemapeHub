@@ -20,6 +20,7 @@ import { formatarData } from "@/lib/gemape";
 import { montarManutencaoHtml } from "@/lib/manutencao-relatorio-html";
 import { useVeiculos } from "@/lib/hooks-gemape";
 import { gruposDaManutencao, locaisDaManutencao, removerManutencao, resumoManutencao, rotuloDoLocal, type ManutencaoVeiculo } from "@/lib/registros-veiculo";
+import { useFocoDaTela } from "@/lib/use-foco-da-tela";
 import { useAbastecimentos, useManutencoesVeiculo, usePlanosVeiculo } from "@/lib/use-registros-veiculo";
 import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
@@ -59,6 +60,8 @@ export function ManutencaoVeiculoModulo() {
   // veículo) ou a das realizadas (registros preventivos e corretivos, com relatório, edição e exclusão), cada uma com o botão de voltar ao painel.
   const [aba, setAba] = useState<"painel" | "planejadas" | "realizadas">("painel");
   const [tipo, setTipo] = useState<"todas" | "Preventiva" | "Corretiva">("todas");
+  // Foco do teclado ao trocar de tela (decisão 333): abrir uma lista leva o foco ao botão de voltar; voltar ao painel o devolve ao botão da lista que estava aberta.
+  const { voltarRef, botaoDaTela } = useFocoDaTela(aba, "painel");
   const [aberto, setAberto] = useState(false);
   // Manutenção em edição; null é o cadastro de uma nova.
   const [editando, setEditando] = useState<ManutencaoVeiculo | null>(null);
@@ -154,7 +157,7 @@ export function ManutencaoVeiculoModulo() {
 
   const botaoCadastrar = <Button requiresWrite variant="outline" onClick={() => abrir()}>Cadastrar nova manutenção</Button>;
   const voltar = (
-    <Button type="button" variant="outline" size="sm" onClick={() => setAba("painel")}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+    <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={() => setAba("painel")}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
   );
 
   return (
@@ -165,11 +168,11 @@ export function ManutencaoVeiculoModulo() {
           <section className="flex flex-wrap items-center justify-between gap-2" aria-label="Listas de manutenção">
             {botaoCadastrar}
             <div className="flex flex-wrap justify-end gap-2">
-              <Button type="button" onClick={() => setAba("planejadas")}>
+              <Button ref={botaoDaTela("planejadas")} type="button" onClick={() => setAba("planejadas")}>
                 <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Manutenções planejadas
                 <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{revisoes.length} no plano</span>
               </Button>
-              <Button type="button" onClick={() => setAba("realizadas")}>
+              <Button ref={botaoDaTela("realizadas")} type="button" onClick={() => setAba("realizadas")}>
                 <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Manutenções realizadas
                 <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{indicadores.preventivas.qtd + indicadores.corretivas.qtd} registradas</span>
               </Button>

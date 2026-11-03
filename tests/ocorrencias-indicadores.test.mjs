@@ -103,16 +103,17 @@ test("indicadores: no prazo contra fora do prazo (encerrada atrasada ou aberta v
     hoje: "2026-10-20",
     prazos: PRAZOS,
   });
-  assert.deepEqual([i.noPrazo.pct, i.naoRealizadas.pct], [50, 50]);
-  assert.match(i.noPrazo.detalhe, /2 de 4 no prazo/);
-  assert.equal(i.naoRealizadas.faixa, i.noPrazo.faixa);
+  assert.deepEqual([i.noPrazo.pct, i.naoTratadas.pct], [50, 50]);
+  assert.match(i.noPrazo.detalhe, /2 de 4 tratadas no prazo/);
+  assert.match(i.naoTratadas.detalhe, /2 de 4 não tratadas/);
+  assert.equal(i.naoTratadas.faixa, i.noPrazo.faixa);
   const vazio = indicadoresDeOcorrencias({
     ocorrencias: [abertaNoPrazo],
     hoje: "2026-10-20",
     prazos: PRAZOS,
   });
   assert.deepEqual(
-    [vazio.noPrazo.pct, vazio.naoRealizadas.pct, vazio.noPrazo.faixa],
+    [vazio.noPrazo.pct, vazio.naoTratadas.pct, vazio.noPrazo.faixa],
     [null, null, null],
   );
 });
