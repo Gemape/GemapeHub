@@ -123,3 +123,9 @@ test("o limite de áreas da tela é o da lista de áreas, não o dos motivos", (
   assert.match(le("components/parametros/ParametrosUniforme.tsx"), /max=\{MAX_AREAS_UNIFORME\}/);
   assert.match(le("components/parametros/ParametrosEpi.tsx"), /max=\{MAX_AREAS_EPI\}/);
 });
+
+test("o texto da tela de habilitados dos Uniformes diz onde o filtro vale e onde todos aparecem", () => {
+  const t = le("components/parametros/HabilitarEmpregadosUniforme.tsx");
+  assert.match(t, /Na Entrega Uniforme, no Termo de Entrega e na devolução só aparecem os habilitados/);
+  assert.match(t, /O Termo de Baixa, as Movimentações e os relatórios mostram todos/);
+});
