@@ -9,6 +9,8 @@ type Texto = string | null | undefined;
 export interface DadosTermoEntregaUniforme {
   empresa: { razao_social: Texto; cnpj: Texto; nome_fantasia: Texto } | undefined;
   empregado: { nome: Texto; cpf: Texto } | undefined;
+  // Quem entrega o uniforme (Termo de Entrega do módulo Uniformes): o nome completo sai no termo e sob a assinatura do responsável. Sem ele, o termo sai como antes.
+  responsavel?: { nome: Texto };
   data: string;
   linhas: {
     nome?: Texto;
@@ -18,6 +20,13 @@ export interface DadosTermoEntregaUniforme {
     quantidade: number;
     estado: string;
   }[];
+}
+
+/** Observação gravada em cada saída do termo: o estado do uniforme e, se informado, o nome de quem entregou (assim o histórico do empregado mostra o responsável). */
+export function observacaoEntregaUniforme(estado: string, responsavel?: string | null): string {
+  const base = `Entrega de uniforme via termo - Estado: ${estado}`;
+  const nome = responsavel?.trim().replace(/\s+/g, " ");
+  return nome ? `${base} - Entregue por ${nome}` : base;
 }
 
 export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme): string {
@@ -43,6 +52,7 @@ export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme)
         <div class="content">
           <p>Declaramos que nesta data, <strong>${formatarData(dados.data)}</strong>, entregamos ao colaborador(a)
           <strong>${escaparHtml(empregado?.nome)}</strong>, CPF nº <strong>${escaparHtml(empregado?.cpf)}</strong>, os seguintes itens de uniforme:</p>
+          ${dados.responsavel?.nome ? `<p><strong>Entregue por:</strong> ${escaparHtml(dados.responsavel.nome)}</p>` : ""}
 
           <table>
             <thead>
@@ -67,7 +77,7 @@ export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme)
             <strong>${escaparHtml(empregado?.nome)}</strong><br>Empregado(a)
           </div>
           <div class="sig-box">
-            <strong>Responsável</strong><br>${escaparHtml(empresa?.nome_fantasia)}
+            ${dados.responsavel?.nome ? `<strong>${escaparHtml(dados.responsavel.nome)}</strong><br>Responsável pela entrega<br>` : "<strong>Responsável</strong><br>"}${escaparHtml(empresa?.nome_fantasia)}
           </div>
         </div>
         </div>`,

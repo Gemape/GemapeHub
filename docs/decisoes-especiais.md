@@ -2050,3 +2050,12 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Ordem do responsável: em Ferramentas > Movimentações entra o campo de busca no canto superior direito, ao lado do contador, no mesmo padrão de Veículos (decisão 339). A busca ignora acento e maiúsculas, aceita as palavras em qualquer ordem e procura em código e descrição do item, tamanho, tipo, empregado, motivo da baixa, ônus, tipo de vistoria, tipo de ocorrência, observação e data.
 - O Exportar CSV continua exportando todas as movimentações, não só as filtradas. EPI não tem essa tela; Uniformes seguem como estavam (a decisão sobre Uniformes é à parte). Só ajuste de tela; nada no Supabase.
+
+## 364. Uniformes: replica o que o EPI ganhou (habilitados, Relatórios, responsável pela entrega e busca no histórico)
+
+- Ordem do responsável: as mudanças recentes do EPI valem também para Uniformes, respeitando o que é próprio deles.
+- **Parâmetros > Uniformes > Parâmetros Específicos** (decisão 357): cartão **Áreas da oficina** e caixa dupla **Empregados das rotinas de uniformes**. As listas são **próprias dos Uniformes** (habilitar alguém no EPI não habilita nos Uniformes) e as áreas partem das mesmas cinco da oficina. Só os habilitados aparecem em Entrega Uniforme, Termo de Entrega, Termo de Baixa e na Nova movimentação; com a lista vazia aparecem todos. Relatórios e filtros de histórico continuam mostrando todos.
+- **Uniformes > Relatórios** (decisão 359): **Histórico do empregado** e **Baixar Definitivas** saem da seção Módulo e ficam só em Relatórios, com os mesmos endereços de antes (`?aba=historico` e `baixas`).
+- **Histórico do empregado** (busca e período): campo de busca por palavra-chave e datas de Início e Fim, valendo para tabela, CSV e PDF; os cartões seguem contando o histórico inteiro. A observação quebra linha em vez de cortar.
+- **Termo de Entrega** (decisão 360): campo obrigatório **Responsável pela entrega** (empregado ativo, habilitado dos Uniformes, diferente de quem recebe); o termo sai com o nome completo de quem entrega e de quem recebe, e a observação de cada saída grava "Entregue por Nome" (decisão 361), sem coluna nova no banco real.
+- **Sem equivalente nos Uniformes, por isso não replicado:** Sugestão de Compras, Ficha de EPI Avulsa (e a confirmação ao gerar) e Cadastrar Ordem de Serviço, que é sobre os EPIs de cada função. A busca nas Movimentações (decisão 363) é de Ferramentas e não foi estendida aos Uniformes. Só modo demonstração; nada no Supabase.

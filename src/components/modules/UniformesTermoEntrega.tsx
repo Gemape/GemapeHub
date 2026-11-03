@@ -20,14 +20,15 @@ import {
 } from "@/components/ui/table";
 import { TODAS } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
-import { montarTermoEntregaUniformeHtml } from "@/lib/termo-entrega-uniforme-html";
+import { montarTermoEntregaUniformeHtml, observacaoEntregaUniforme } from "@/lib/termo-entrega-uniforme-html";
 import {
   useEmpresas,
   useItens,
   useEmpregados,
   useRegistrarMovimentacoesLote,
 } from "@/lib/hooks-gemape";
-import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
+import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
 import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -44,6 +45,8 @@ interface ItemTermo {
 export function UniformesTermoEntrega() {
   const [empresaId, setEmpresaId] = useState("");
   const [empregadoId, setEmpregadoId] = useState("");
+  // Quem entrega o uniforme: o nome completo sai no termo e na observação do histórico, ao lado do de quem recebe.
+  const [responsavelId, setResponsavelId] = useState("");
   const [dataEntrega, setDataEntrega] = useState(hojeLocal());
   const [itensEntrega, setItensEntrega] = useState<ItemTermo[]>([]);
 
@@ -59,6 +62,8 @@ export function UniformesTermoEntrega() {
 
   const empresa = empresas.find((e) => e.id === empresaId);
   const empregado = empregados.find((e) => e.id === empregadoId);
+  // Quem pode entregar: empregado ativo, entre os habilitados dos uniformes, que não seja quem recebe.
+  const responsaveis = soEmpregadosDeUniforme(empregados.filter((e) => empregadoAtivo(e) && e.id !== empregadoId));
 
   function adicionarItem() {
     setItensEntrega([...itensEntrega, { item_id: "", quantidade: 1, estado: "Novo", tamanho: "" }]);
@@ -87,6 +92,15 @@ export function UniformesTermoEntrega() {
     }
     if (!dataEntrega) {
       alert("Informe a data da entrega.");
+      return;
+    }
+    const responsavel = empregados.find((e) => e.id === responsavelId);
+    if (!responsavel) {
+      alert("Informe o responsável pela entrega.");
+      return;
+    }
+    if (responsavel.id === empregadoId) {
+      alert("Quem entrega não pode ser quem recebe: escolha outro responsável pela entrega.");
       return;
     }
     const bloqueio = bloqueioPorDemissao(
@@ -124,7 +138,7 @@ export function UniformesTermoEntrega() {
           quantidade: item.quantidade,
           ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
           data_movimentacao: dataEntrega,
-          observacao: `Entrega de uniforme via termo - Estado: ${item.estado}`,
+          observacao: observacaoEntregaUniforme(item.estado, responsavel.nome),
         })),
       );
     } catch {
@@ -140,6 +154,7 @@ export function UniformesTermoEntrega() {
     const html = montarTermoEntregaUniformeHtml({
       empresa,
       empregado,
+      responsavel: { nome: responsavel.nome },
       data: dataEntrega,
       linhas: itensDoTermo.map((i) => {
         const u = uniformes.find((uni) => uni.id === i.item_id);
@@ -163,10 +178,10 @@ export function UniformesTermoEntrega() {
   return (
     <div className="space-y-6">
       <div className="panel p-6 space-y-6">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label>Empresa</Label>
-            <Select value={empresaId} onValueChange={(v) => { if (!v) return; setEmpresaId(v); setEmpregadoId(""); setItensEntrega([]); }}>
+            <Select value={empresaId} onValueChange={(v) => { if (!v) return; setEmpresaId(v); setEmpregadoId(""); setResponsavelId(""); setItensEntrega([]); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
@@ -181,18 +196,36 @@ export function UniformesTermoEntrega() {
           </div>
           <div className="space-y-1.5">
             <Label>Empregado</Label>
-            <Select value={empregadoId} onValueChange={setEmpregadoId}>
+            <Select value={empregadoId} onValueChange={(v) => { setEmpregadoId(v); if (v === responsavelId) setResponsavelId(""); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o empregado" />
               </SelectTrigger>
               <SelectContent>
-                {empregados.map((e) => (
+                {soEmpregadosDeUniforme(empregados).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Responsável pela entrega</Label>
+            <Select value={responsavelId} onValueChange={setResponsavelId}>
+              <SelectTrigger aria-label="Responsável pela entrega">
+                <SelectValue placeholder="Selecione quem entrega" />
+              </SelectTrigger>
+              <SelectContent>
+                {responsaveis.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {empresaId && empregadoId && responsaveis.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum outro empregado habilitado para entregar uniformes. Habilite em Parâmetros &gt; Uniformes &gt; Parâmetros Específicos.</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Data da Entrega</Label>

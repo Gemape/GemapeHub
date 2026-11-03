@@ -54,6 +54,7 @@ import {
   useVeiculos,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
 import {
   alvoHistorico,
   linhaCsvHistorico,
@@ -498,7 +499,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={NENHUM}>Sem empregado</SelectItem>
-                  {empregados.map((e) => (
+                  {(modulo === "uniforme" ? soEmpregadosDeUniforme(empregados) : empregados).map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome}
                     </SelectItem>
