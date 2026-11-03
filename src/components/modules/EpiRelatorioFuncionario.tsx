@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { lerEmpregadosRelatorio, lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { useState } from "react";
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -24,6 +26,7 @@ import {
 import { TODAS } from "@/lib/empresa-context";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
+import { filtrarHistoricoPorBuscaEPeriodo, periodoInvalido } from "@/lib/historico-busca";
 import { ehBaixa } from "@/lib/historico-movimentacoes";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens } from "@/lib/hooks-gemape";
@@ -33,6 +36,9 @@ import { montarRelatorioTabelaHtml } from "@/lib/relatorio-padrao";
 export function EpiRelatorioFuncionario() {
   const [empresaSel, setEmpresaSel] = useState(TODAS);
   const [empregadoId, setEmpregadoId] = useState("");
+  const [palavra, setPalavra] = useState("");
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
   const parametros = useParametrosBase();
   const tamanhoDe = (m: { tamanho_id?: string | null }) =>
     nomeTamanhoGravado(parametros, m.tamanho_id);
@@ -60,25 +66,41 @@ export function EpiRelatorioFuncionario() {
     .reduce((acc, m) => acc + m.quantidade, 0);
   const emPosse = totalEntregue - totalDevolvido - totalBaixado;
 
+  // Os cartões acima contam o histórico inteiro (o que está em posse não depende do período); a busca e o período filtram só a tabela, o CSV e o PDF.
+  const situacaoDe = (h: (typeof historico)[number]) =>
+    h.tipo_movimentacao === "Devolucao" ? "Devolvido" : ehBaixa(h) ? `Baixado: ${h.motivo_baixa ?? "—"}` : "Em posse";
+  const nomeDoEpi = (id: string | null) => itens.find((i) => i.id === id)?.nome;
+  const comTexto = historico.map((h) => ({
+    ...h,
+    texto: [nomeDoEpi(h.item_id), tamanhoDe(h), h.tipo_movimentacao, String(h.quantidade), situacaoDe(h), h.observacao, formatarData(h.data_movimentacao)].filter(Boolean).join(" "),
+  }));
+  const periodoErrado = periodoInvalido(dataInicio, dataFim);
+  const visiveis = filtrarHistoricoPorBuscaEPeriodo(comTexto, { palavra, dataInicio, dataFim });
+  const comFiltro = palavra.trim() !== "" || dataInicio !== "" || dataFim !== "";
+  const descricaoFiltro = [
+    palavra.trim() && `Busca: ${palavra.trim()}`,
+    (dataInicio || dataFim) && `Período: ${dataInicio && dataFim ? `${formatarData(dataInicio)} a ${formatarData(dataFim)}` : dataInicio ? `a partir de ${formatarData(dataInicio)}` : `até ${formatarData(dataFim)}`}`,
+  ].filter(Boolean) as string[];
+
   const imprimir = () =>
     abrirDocumento({
       titulo: "Histórico de movimentações de EPI",
       html: montarRelatorioTabelaHtml({
         titulo: "Histórico de movimentações de EPI",
-        subtitulos: [empregado?.nome],
+        subtitulos: [empregado?.nome, ...descricaoFiltro],
         empresa: empresas.find((e) => e.id === empregado?.empresa_id)?.nome_fantasia,
         resumo: [["Entregues", String(totalEntregue)], ["Devolvidos", String(totalDevolvido)], ["Baixados", String(totalBaixado)], ["Em posse", String(emPosse)]],
         colunas: [{ titulo: "Data" }, { titulo: "EPI" }, { titulo: "Tamanho" }, { titulo: "Tipo" }, { titulo: "Qtd", direita: true }, { titulo: "Status/Motivo" }, { titulo: "Observação" }],
-        linhas: historico.map((h) => [
+        linhas: visiveis.map((h) => [
           formatarData(h.data_movimentacao),
-          itens.find((i) => i.id === h.item_id)?.nome ?? "—",
+          nomeDoEpi(h.item_id) ?? "—",
           tamanhoDe(h) || "—",
           h.tipo_movimentacao,
           String(h.quantidade),
-          h.tipo_movimentacao === "Devolucao" ? "Devolvido" : ehBaixa(h) ? `Baixado: ${h.motivo_baixa ?? "—"}` : "Em posse",
+          situacaoDe(h),
           h.observacao || "—",
         ]),
-        vazio: "Nenhuma movimentação para este empregado.",
+        vazio: comFiltro ? "Nenhuma movimentação encontrada para a busca." : "Nenhuma movimentação para este empregado.",
       }),
       arquivo: nomeArquivoDocumento("Histórico de movimentações de EPI", empregado?.nome),
     });
@@ -131,8 +153,44 @@ export function EpiRelatorioFuncionario() {
             <StatCard titulo="Em Posse" valor={emPosse} icone={UserCheck} compacto />
           </div>
 
-          <div className="flex justify-between items-center">
+          <div className="flex flex-wrap items-end justify-between gap-2">
             <h3 className="text-lg font-bold">Histórico de Movimentações de EPI</h3>
+            <BarraDeFiltros>
+              <div className="space-y-1">
+                <Label htmlFor="hist-busca">Buscar</Label>
+                <Input
+                  id="hist-busca"
+                  aria-label="Buscar no histórico"
+                  type="search"
+                  placeholder="Buscar por EPI, tamanho, tipo, motivo ou observação"
+                  value={palavra}
+                  onChange={(e) => setPalavra(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="hist-inicio">Início</Label>
+                <Input id="hist-inicio" type="date" value={dataInicio} max={dataFim || undefined} onChange={(e) => setDataInicio(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="hist-fim">Fim</Label>
+                <Input id="hist-fim" type="date" value={dataFim} min={dataInicio || undefined} onChange={(e) => setDataFim(e.target.value)} />
+              </div>
+              {comFiltro && (
+                <Button type="button" variant="ghost" onClick={() => { setPalavra(""); setDataInicio(""); setDataFim(""); }}>
+                  Limpar filtros
+                </Button>
+              )}
+            </BarraDeFiltros>
+          </div>
+          {periodoErrado && (
+            <p role="alert" className="text-sm text-destructive">A data de início não pode ser depois da data de fim.</p>
+          )}
+          {comFiltro && !periodoErrado && (
+            <p role="status" className="text-sm text-muted-foreground">
+              {visiveis.length} de {historico.length} movimentações.
+            </p>
+          )}
+          <div className="flex justify-end">
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={imprimir}>
                 Imprimir
@@ -143,9 +201,9 @@ export function EpiRelatorioFuncionario() {
                 onClick={() =>
                   exportarCsv(
                     `historico-epi-${empregado.nome}`,
-                    historico.map((h) => ({
+                    visiveis.map((h) => ({
                       Data: formatarData(h.data_movimentacao),
-                      EPI: itens.find((i) => i.id === h.item_id)?.nome,
+                      EPI: nomeDoEpi(h.item_id),
                       Tamanho: tamanhoDe(h),
                       Tipo: h.tipo_movimentacao,
                       Qtd: h.quantidade,
@@ -174,26 +232,22 @@ export function EpiRelatorioFuncionario() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {historico.length === 0 ? (
+                {visiveis.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center">
-                      Nenhuma movimentação para este empregado.
+                      {comFiltro ? "Nenhuma movimentação encontrada para a busca." : "Nenhuma movimentação para este empregado."}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  historico.map((h) => (
+                  visiveis.map((h) => (
                     <TableRow key={h.id}>
                       <TableCell>{formatarData(h.data_movimentacao)}</TableCell>
-                      <TableCell>{itens.find((i) => i.id === h.item_id)?.nome}</TableCell>
+                      <TableCell>{nomeDoEpi(h.item_id)}</TableCell>
                       <TableCell>{tamanhoDe(h) || "—"}</TableCell>
                       <TableCell>{h.tipo_movimentacao}</TableCell>
                       <TableCell className="text-right">{h.quantidade}</TableCell>
                       <TableCell>
-                        {h.tipo_movimentacao === "Devolucao"
-                          ? "Devolvido"
-                          : ehBaixa(h)
-                            ? `Baixado: ${h.motivo_baixa}`
-                            : "Em posse"}
+                        {situacaoDe(h)}
                       </TableCell>
                       <TableCell className="max-w-xs truncate">{h.observacao || "—"}</TableCell>
                     </TableRow>
