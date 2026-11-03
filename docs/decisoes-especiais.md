@@ -2014,3 +2014,10 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - O cabeçalho da página mostra "EPIs › Relatórios" quando a tela vem da cópia.
 - **Vai e volta com os Parâmetros Específicos:** o link "Parâmetros Específicos" da Sugestão de Compras abre a tela de configuração e o botão "Voltar para Sugestão de Compras" (e o salvar dos parâmetros da sugestão) devolve à tela de onde a pessoa saiu, na lista principal ou em Relatórios.
 - Só modo demonstração; nada no Supabase.
+
+## 343. EPI: as rotinas de consulta se movem para Relatórios
+
+- Ordem do responsável, corrigindo a decisão 342 ("clonar"): **mover**. Sugestão de Compras, Histórico do empregado e Baixar Definitivas saem da seção Módulo do menu de EPIs e ficam **só** na seção Relatórios (menu do topo e cartão EPIs da tela Início).
+- As abas mantêm os endereços de sempre (`?aba=sugestao-compras`, `historico`, `baixas`), então links e favoritos antigos abrem as mesmas telas. As abas de cópia (`relatorio-*`) deixam de existir.
+- O vai e volta da Sugestão de Compras com os Parâmetros Específicos volta ao funcionamento simples: leva sempre à Sugestão de Compras.
+- A matriz de acessos do modo demonstração passa a ter essas três rotinas na seção Relatórios; exceção de acesso já guardada para o nome antigo (seção Módulo) deixa de valer. Só modo demonstração; nada no Supabase.

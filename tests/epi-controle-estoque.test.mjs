@@ -99,7 +99,9 @@ test("as telas: estoque detalhado na aba Estoque e sugestão de compras na aba C
 });
 
 test("Uniformes segue o EPI: mesmos nomes de submenu, aba Entrega Uniforme, e a entrega serve aos dois módulos", async () => {
-  const { ABAS_EPI, ABAS_UNIFORME } = await import("../src/lib/menu-parametros.ts");
+  const { ABAS_EPI: SO_MODULO, ABAS_EPI_RELATORIOS, ABAS_UNIFORME } = await import("../src/lib/menu-parametros.ts");
+  // No EPI, Histórico do empregado, Baixar Definitivas e Sugestão de Compras ficam em Relatórios (decisão 343).
+  const ABAS_EPI = [...SO_MODULO, ...ABAS_EPI_RELATORIOS];
   const titulos = (abas) => abas.map((a) => a.titulo);
   for (const t of ["Dashboard", "Estoque", "Histórico do empregado", "Baixar Definitivas", "Termo de Entrega", "Ocorrências"]) {
     assert.ok(titulos(ABAS_EPI).includes(t) && titulos(ABAS_UNIFORME).includes(t), t);
