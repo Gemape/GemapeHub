@@ -1,7 +1,7 @@
 // Indicadores do alto de Manutenção (decisão 319): quantas manutenções preventivas e corretivas foram registradas e, das revisões do plano de cada veículo, quantas estão no
 // prazo e quantas não foram feitas no prazo (vencidas). A faixa (verde, amarelo, vermelho) vem dos mesmos limites da Frota (Parâmetros > Veículos > Parâmetros Específicos).
 import type { StatusSugestao } from "./extrato-veiculo.ts";
-import { faixaDoIndice, type ConfigFaixas } from "./faixas-desempenho.ts";
+import { faixaDoIndice, lerFaixasDeVeiculos, type ConfigFaixas } from "./faixas-desempenho.ts";
 import type { IndicadorDaFrota } from "./frota-indicadores.ts";
 
 const arredondar = (n: number) => Math.round(n * 10) / 10;
@@ -36,7 +36,7 @@ export function indicadoresDaManutencao(entrada: {
   const contadas = entrada.statusRevisoes.filter((s) => s !== "sem_registro");
   const vencidas = contadas.filter((s) => s === "vencida").length;
   const valor = pct(contadas.length - vencidas, contadas.length);
-  const faixa = faixaDoIndice(valor, entrada.faixas)?.faixa ?? null;
+  const faixa = faixaDoIndice(valor, entrada.faixas ?? lerFaixasDeVeiculos())?.faixa ?? null;
   const vazio = "Nenhuma revisão com registro";
   // Previstas: todas as revisões do plano dos veículos; a barra mostra quantas já têm alguma realização registrada.
   const totalPrevistas = entrada.statusRevisoes.length;

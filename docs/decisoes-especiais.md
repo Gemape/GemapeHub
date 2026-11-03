@@ -1910,10 +1910,99 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Toda tela com busca ou filtro usa a `BarraDeFiltros`: os filtros (busca, seleções, datas, limpar período, contagem) ficam à direita da linha de cima da página, e os botões de ação (Novo, Gerar PDF, Voltar, os botões azuis das listas) à esquerda da mesma linha. O botão que abre ou filtra uma lista por situação fica entre os de ação, e o título da lista fica à esquerda.
 - Isso muda posições decididas antes: o Período do Check list (decisão 332) passa para a direita e os botões Check list periódico e avulso para a esquerda; em Equipamentos o Inventário passa a ter os filtros acima dos cards.
-- Exceção, decidida depois: nas telas de cadastro (Empresas, Empregados, Fornecedores, Clientes e o cadastro de cada módulo: veículos, equipamentos, EPI, uniformes, itens de ferramentas, caixas de ferramentas e a ficha de EPI) os botões de ação (Exportar CSV, Novo...) ficam no alto, à direita, e a busca vem logo abaixo, à esquerda, e não na barra de filtros. As telas de parâmetros Check list e Questionário de Despesas têm layout próprio e não mudaram.
+- Nas telas de cadastro (Empresas, Empregados, Fornecedores, Clientes e o cadastro de cada módulo: veículos, equipamentos, EPI, uniformes, itens de ferramentas, caixas de ferramentas, ficha de EPI, endereçamento e código de fábrica) os botões de ação (Exportar CSV, Novo...) ficam numa linha no alto, à direita, e a busca vem logo abaixo, também à direita, na mesma barra de filtros das outras telas (decisão 341). As telas de parâmetros Check list e Questionário de Despesas têm layout próprio e não mudaram; as buscas dentro das caixas duplas de empregados e das janelas são internas e ficaram onde estão.
 - Listas com altura limitada à janela têm um rolador só (o da própria tabela), com o cabeçalho fixo e a barra horizontal sempre à vista; os campos de busca da barra têm a mesma largura em todas as telas.
 - Fora do padrão por enquanto: a lista de despesas de Viagens (os filtros estão no alto de uma seção que fica abaixo dos indicadores, porque a página reúne painel, lista e resultados).
 
 ## 340. PDF do extrato do veículo personalizado por seções
 
 - Em Veículos › Frota, no extrato do veículo, o botão Gerar PDF abre a janela Personalizar o relatório: uma caixa de marcar para cada seção (manutenções preventivas sugeridas, manutenções realizadas, itens não realizados em atenção, histórico de abastecimentos, ocorrências e check lists periódicos), com os botões Marcar todos e Desmarcar todos; Gerar PDF fica desligado sem nenhuma seção marcada. O resumo do veículo sai sempre; o período e o "Só em aberto" valem como na tela. Os botões Gerar PDF desta seção, que havia em cada tabela, foram retirados.
+
+## 341. Todo cadastro tem busca, Exportar CSV e o botão de novo
+
+- Todas as telas de cadastro passam a ter o mesmo trio: busca por palavra-chave, Exportar CSV (com o que está filtrado na tela; desligado quando a lista está vazia; a exceção é Empregados, que exporta sempre a lista inteira, como definido antes) e o botão de novo. Empresas ganhou a busca (nome fantasia, razão social, CNPJ, endereço e status) e o Exportar CSV; Fornecedores, Clientes, EPI, Uniformes, Equipamentos (que também ganhou a busca), ficha de EPI, endereçamento e código de fábrica ganharam o Exportar CSV. A posição é a da decisão 339: botões no alto, à direita; busca logo abaixo, à direita.
+
+## 342. Frota: indicadores sempre à vista e filtro por subcategoria
+
+- Em Veículos › Módulo › Frota os indicadores de PCM e de técnicos aparecem juntos, sem botões para alternar. Os cartões ficaram mais estreitos (quatro por linha, ver decisão 343) para caber com os gráficos e a lista numa tela só (decisão 337).
+- O título de cada cartão diz de quem é o indicador: "PCM ·", "Técnicos ·" ou "Frota ·" (geral). O subtítulo explica como ele é calculado.
+- Ao lado da busca por palavra-chave há o filtro por subcategoria do veículo (utilitário, caminhão, carro...), com as subcategorias ativas de Parâmetros. Ele vale para a lista e para o relatório impresso; os indicadores e gráficos seguem sendo da frota toda.
+
+## 343. Frota: conformidade geral é o SLA de tarefas, e o CPK entra como indicador da frota
+
+- A Conformidade geral é o primeiro cartão e mede o SLA de resolução de tarefas: tarefas concluídas no prazo ÷ tarefas atribuídas, em percentual. As tarefas são as preventivas com registro (no prazo = não vencidas), os check lists obrigatórios (realizado no prazo ou não realizado, de PCM, técnicos e sem área) e as ocorrências abertas (no prazo ou vencidas). Substitui a média simples dos três indicadores do PCM.
+- O segundo cartão é o Custo por km rodado (CPK): (total de abastecimento + total de manutenção) ÷ km rodados, em R$/km. Sem filtro de período, vale todo o histórico registrado. Os km rodados de cada veículo são o maior menos o menor km dos registros dele; os gastos só entram dos veículos que têm km rodados. É um valor em reais, sem faixa de cor.
+- São sete cartões, quatro por linha.
+
+## 344. Frota: tendência do CPK, proporção do custo preventivo e correções do code review
+
+- Gráfico de linha "CPK da frota mês a mês (R$/km)" nos gráficos da Frota, com os seis meses mais recentes, para acompanhar a evolução dos custos. Os km do mês vão do maior km registrado até o mês anterior até o maior do mês; mês sem km rodados fica com vão na linha.
+- Cartão "Frota · Custo preventivo (meta 80%)": gasto com manutenção preventiva ÷ gasto total com manutenção. Referência de mercado 80/20: verde a partir de 80%, amarelo de 70% a 79,9% e vermelho abaixo de 70%. Abaixo de 70% o cartão mostra o alerta "modo reativo". Os limites são fixos, não os das faixas de Parâmetros (que valem para os índices de prazo). São oito cartões, quatro por linha.
+- CPK: o abastecimento feito no km de partida do veículo não entra (abasteceu o que rodou antes); registros sem km válido ficam de fora do custo e do km.
+- Filtro de subcategoria: as opções incluem as subcategorias que os veículos ainda usam (desativadas ou antigas); se a escolhida deixar de existir, volta a "Todas". O relatório impresso informa a subcategoria filtrada.
+
+## 345. Frota: ocorrências tratadas no prazo, interpretação, gráfico 100% e extrato em quatro seções
+
+- Os indicadores do PCM levam "Índice de" no título: "Índice de manutenções preventivas em dia", "Índice de check lists realizados no prazo" e "Índice de ocorrências tratadas no prazo". O índice de ocorrências deixou de medir as abertas no prazo e passou a medir as tratadas no prazo: a tratativa começou até `iniciar` dias depois da ocorrência e, se já acabou, foi encerrada até `finalizar` dias depois de começar (ou, se ainda corre, o prazo de finalizar não estourou). Fora do prazo: o contrário, e a ocorrência aberta sem tratativa com o prazo de iniciar vencido. Aberta ainda no prazo não entra na conta. As renovações de prazo não entram. A conformidade geral (SLA) usa as mesmas contagens.
+- Botão "Interpretar indicadores" na Frota: abre a leitura de cada indicador em linguagem simples (o que o resultado quer dizer e o que fazer), pela faixa em que ele está; o CPK traz a tendência contra o mês anterior.
+- Gráfico de barras empilhadas 100% "Custo preventivo x corretivo por mês": seis meses, cada barra vai a 100% e se divide entre preventiva (verde) e corretiva (vermelho), com a linha da meta de 80%. O gráfico de linha do CPK ficou ao lado dele.
+- Extrato do veículo em quatro seções, cada uma com o título grande numa faixa colorida: Manutenções (sugeridas, realizadas e itens em atenção), Abastecimentos, Ocorrências e Check lists. Manutenções tem o botão "Registrar manutenção" e Abastecimentos o "Registrar abastecimento", no canto direito (os dois abrem a janela de registro já com o veículo escolhido). Cada linha de ocorrência tem o botão "Tratativa", que leva à tratativa dela. O botão "Realizar check list" ficou na faixa de Check lists. O PDF não muda.
+
+## 346. Extrato do veículo: vai e volta das rotinas e PDF gerado uma vez só
+
+- Na seção Check lists do extrato, o botão do canto direito passou a ser "Registrar check list avulso" e cada check list periódico previsto que ainda não foi feito tem o botão "Realizar check list" (já na periodicidade da linha).
+- Vai e volta: check list (periódico ou avulso) e tratativa de ocorrência abertos pelo extrato levam a pessoa à rotina e, ao fechar a tela dela (finalizar, salvar, cancelar ou fechar), de volta ao extrato do mesmo veículo. Registrar manutenção e abastecimento já abrem por cima do extrato, que continua atrás. A ida leva o veículo em `voltar` no endereço; a volta abre a Frota com `extrato`.
+- O PDF do extrato: o botão Gerar PDF abre a escolha das seções (Manutenções, Abastecimentos, Ocorrências e Check lists, com Marcar todos e Desmarcar todos) e, ao confirmar, abre direto a janela de impressão (Salvar como PDF), sem o visualizador no meio: o PDF se gera uma vez só.
+- O cabeçalho do relatório sempre informa o período ("Período: dd/mm/aaaa a dd/mm/aaaa", com "desde o início" ou "hoje" numa ponta aberta, ou "todo o histórico" sem período).
+
+## 347. Check list: indicadores gerais no alto e técnicos e PCM lado a lado
+
+- Na tela principal de Veículos › Módulo › Check list, os indicadores gerais ficam no alto, com os cards (à esquerda) e os gráficos (à direita) ocupando toda a largura. Abaixo, a tela se divide ao meio: os indicadores e a tabela de responsáveis dos técnicos de um lado e os do PCM do outro. Tudo cabe numa tela, sem rolar a página; a tabela de responsáveis usa o que sobra da janela e rola por dentro. Os gráficos do Check list ficaram mais baixos (decisão 332).
+
+## 348. Manutenção: botão azul à direita e tabela de diagnóstico
+
+- Em Veículos › Módulo › Manutenção, o botão "Cadastrar nova manutenção" ficou azul, à direita, acima dos botões "Manutenções planejadas" e "Manutenções realizadas".
+- Depois dos gráficos (agora mais baixos, para caber na tela) vem a tabela da Frota só com dados de manutenção, um veículo por linha: km atual, última manutenção, situação das preventivas, quantidade de manutenções realizadas e de corretivas, custo total e % preventivo (parte do gasto que é preventiva, com a cor da faixa de 80%/70% da decisão 344). Clicar na linha, na etiqueta de preventivas ou em Ver extrato abre o extrato do veículo.
+
+## 349. Ocorrências: Nova ocorrência azul, Ver ocorrências e tabela de diagnóstico
+
+- Em Veículos › Módulo › Ocorrências, o botão "Nova ocorrência" fica azul, à direita, acima do botão "Ver ocorrências". Os quatro botões de situação saíram da tela inicial.
+- "Ver ocorrências" abre outra tela do módulo, com a lista e os filtros: situação (Todas, Abertas, Em tratativa e Encerradas, com a contagem), palavra-chave e período (data início e fim), mais o botão de voltar ao painel.
+- Depois dos gráficos (mais baixos, para caber na tela) vem a tabela da Frota só com dados de ocorrências, um veículo por linha: última ocorrência, total, abertas, em tratativa, encerradas, situação dos prazos (a etiqueta da Frota), custo da empresa informado nas tratativas e Ver extrato. Clicar na linha ou em Ver extrato abre o extrato do veículo; a etiqueta de prazos abre direto as ocorrências em aberto.
+
+## 350. Faixas de desempenho separadas por domínio: Viagens e Veículos
+
+- Os prazos (dias para lançar a despesa e dias para fechar o relatório de despesas) ficam só em Parâmetros › Viagens › Parâmetros Específicos; em Veículos › Parâmetros Específicos não há mais nenhuma menção a eles.
+- As faixas de desempenho (limites de verde e amarelo, classificação e significado) agora são duas configurações independentes: a de Parâmetros › Viagens › Parâmetros Específicos vale para os índices de Viagens (conformidade de lançamento, lançamento no prazo e fechamento do relatório no prazo), e a cópia de Parâmetros › Veículos › Parâmetros Específicos vale para todos os indicadores de veículos (Frota, Check list, Manutenção e Ocorrências). Mudar uma não muda a outra.
+- Enquanto Veículos não tem a sua gravada, vale uma cópia da de Viagens (o que já estava configurado não se perde); depois do primeiro Salvar ou Restaurar padrão, as duas seguem separadas.
+- O índice "Custo preventivo" (decisão 344) segue com os limites fixos de 80% e 70%.
+
+## 351. EPI, Entrada no Estoque: busca do EPI na compra e Devolução azul
+
+- Em Registrar Compra, depois de escolher a empresa, há um campo de busca por palavra-chave (código, descrição, tamanho ou CA) e, logo abaixo, a lista dos EPIs daquela empresa. Cada EPI aparece como código + descrição + tamanho, uma linha por tamanho autorizado (EPI sem tamanho, uma linha só). Clicar na linha define o EPI e o tamanho da compra (o CA do cadastro vem preenchido). Sem a empresa escolhida a lista pede a empresa; sem EPI escolhido a compra não é registrada.
+- O botão Devolução da tela inicial ficou azul, como o Registrar Compra.
+- O motivo da devolução para o estoque continua vindo de Parâmetros › EPI › Parâmetros Específicos (lista de motivos de devolução).
+
+## 352. EPI, compras: código do produto e estoque alimentado
+
+- Toda compra de EPI mostra o código do produto comprado e qual estoque ela alimentou (Gemape, GMP ou Lapa, a empresa do item). A lista de compras ganhou a coluna Código e a coluna Estoque (antes "Empresa"); o Exportar CSV leva as duas. No Registrar Compra, o campo da empresa passou a se chamar "Estoque a alimentar (empresa)" e, ao escolher o EPI, a janela diz qual estoque a compra alimenta e o saldo do item hoje e com a compra.
+- O item existe uma única vez em cada estoque e o saldo é um só: compras de fornecedores diferentes não geram estoques diferentes, elas se somam no saldo do mesmo item (o fornecedor fica só no registro da compra).
+
+## 353. EPI, Estoque: Novos e Usados azuis no topo à direita
+
+- Em EPI › Módulo › Estoque, os botões Novos e Usados são azuis e ficam no topo da página, à direita (decisão 339). O escolhido leva um anel de destaque e o outro fica mais claro; a contagem de cada um segue dentro do botão.
+
+## 354. EPI, Sugestão de Compras: legenda e balão nos status
+
+- Acima da tabela há uma legenda sempre visível, com cada status de criticidade (Ruptura, Comprar já, Planejar, Estável e Excesso), a criticidade e o significado, mais o "Sem consumo". Na tabela, passar o mouse (ou focar com o teclado) sobre a palavra do status abre um balão com a mesma explicação. Vale também para os status da lista de itens do relatório de cotação. Os textos vêm do significado de cada status em Parâmetros Específicos de EPI.
+
+## 355. EPI: condição lógica de cada status por método e vai e volta com a Sugestão de Compras
+
+- Em Parâmetros › EPI › Parâmetros Específicos, a tabela de status da sugestão de compra mostra, ao lado da tag colorida: criticidade, condição lógica (o gatilho, com a fórmula e com os dias configurados) e o significado prático. A explicação muda conforme o método escolhido, mesmo antes de salvar. Com o tempo de cobertura (TC, em dias): Ruptura TC < TR; Comprar já TC ≥ TR e TC ≤ TR + segurança; Planejar até TR + planejamento; Estável até o limite de excesso; Excesso acima dele; o ponto de pedido é TR + dias de segurança. Com o estoque mínimo: Ruptura estoque total = 0; Comprar já abaixo do mínimo; Planejar exatamente no mínimo; Estável acima do mínimo com cobertura até o limite de excesso; Excesso acima dele.
+- A legenda e os balões da Sugestão de Compras (decisão 354) usam a mesma condição, do método em uso.
+- O link Parâmetros Específicos da Sugestão de Compras abre essa tela com um botão "Voltar para Sugestão de Compras" e, ao salvar os parâmetros da sugestão, volta a ela sozinho.
+
+## 356. EPI: textos do termo de entrega e da ficha de controle editáveis
+
+- Em Parâmetros › EPI › Parâmetros Específicos há a área "Textos dos documentos", com três campos: a declaração do Termo de Entrega de EPI (antes da lista de EPIs), a ciência do termo (depois da lista) e a declaração da Ficha de Controle de Entrega de EPI. Os textos padrão são os do pedido. Salvar Textos e Restaurar texto padrão ficam abaixo.
+- `{empresa}` no texto vira a razão social da empresa, em negrito, na hora de gerar o documento (no termo ela já vinha assim; na ficha, o texto padrão não cita a empresa, mas o marcador também vale). O texto é sempre escapado e as quebras de linha são mantidas. Os três textos são obrigatórios (até 1500 caracteres cada). Mudar o texto vale para os próximos documentos; os já impressos não mudam. Fase 1: fica só no navegador, no modo demonstração.

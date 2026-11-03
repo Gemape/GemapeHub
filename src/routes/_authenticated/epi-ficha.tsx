@@ -1,3 +1,5 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { exportarCsv } from "@/lib/gemape";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -175,17 +177,38 @@ function FichaEpiPagina() {
       </header>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button
+          variant="outline"
+          disabled={linhas.length === 0}
+          onClick={() =>
+            exportarCsv(
+              "fichas-epi",
+              linhas.map(({ ficha, epi }) => ({
+                Código: epi.codigo_sku,
+                EPI: epi.nome,
+                "Setores aplicáveis": ficha.setores,
+                Empresa: nomeEmpresa(epi.empresa_id),
+                "Atualizada em": ficha.atualizadaEm ? new Date(ficha.atualizadaEm).toLocaleDateString("pt-BR") : "",
+              })),
+            )
+          }
+        >
+          Exportar CSV
+        </Button>
         <Button requiresWrite onClick={() => abrir(null)}>
           Nova ficha
         </Button>
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <Input
-          placeholder="Buscar por código, descrição ou setor"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar ficha por código, descrição ou setor"
+            placeholder="Buscar por código, descrição ou setor"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

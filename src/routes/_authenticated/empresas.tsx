@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEmpresa, type Empresa } from "@/lib/empresa-context";
+import { exportarCsv } from "@/lib/gemape";
+import { combinaBusca } from "@/lib/parametros-base";
 import {
   CAMPOS_ENDERECO_EMPRESA,
   STATUS_EMPRESA,
@@ -59,6 +62,9 @@ export const Route = createFileRoute("/_authenticated/empresas")({
 
 function PaginaEmpresas() {
   const { empresas } = useEmpresa();
+  // Busca por palavra-chave (decisão 341): nome fantasia, razão social, CNPJ, endereço e status.
+  const [busca, setBusca] = useState("");
+  const lista = empresas.filter((e) => combinaBusca(busca, e.nome_fantasia, e.razao_social, formatarCnpj(e.cnpj), e.cnpj, MODO_DEMO ? enderecoResumido(e) : "", MODO_DEMO ? statusDaEmpresa(e) : ""));
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Empresa | null>(null);
   // Clonar: dados da empresa de origem num cadastro NOVO (todos os campos copiados, decisão 138).
@@ -89,17 +95,49 @@ function PaginaEmpresas() {
             Unidades do grupo usadas para filtrar todos os módulos.
           </p>
         </div>
-        <Button requiresWrite
-          onClick={() => {
-            setEditando(null);
-            // Demonstração (2.8): o cadastro novo abre já preenchido com uma empresa fictícia, que só é gravada se a pessoa salvar.
-            setModelo(import.meta.env.VITE_DEMO_MODE !== "false" ? exemploEmpresa(empresas) : null);
-            setAberto(true);
-          }}
-        >
-          Nova empresa
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() =>
+              exportarCsv(
+                "empresas",
+                lista.map((e) => ({
+                  "Nome fantasia": e.nome_fantasia,
+                  "Razão social": e.razao_social,
+                  CNPJ: formatarCnpj(e.cnpj),
+                  ...(MODO_DEMO ? { Endereço: enderecoResumido(e), Status: statusDaEmpresa(e) } : {}),
+                })),
+              )
+            }
+            disabled={lista.length === 0}
+          >
+            Exportar CSV
+          </Button>
+          <Button requiresWrite
+            onClick={() => {
+              setEditando(null);
+              // Demonstração (2.8): o cadastro novo abre já preenchido com uma empresa fictícia, que só é gravada se a pessoa salvar.
+              setModelo(import.meta.env.VITE_DEMO_MODE !== "false" ? exemploEmpresa(empresas) : null);
+              setAberto(true);
+            }}
+          >
+            Nova empresa
+          </Button>
+        </div>
       </header>
+
+      <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar empresa por palavra-chave"
+            placeholder="Buscar por palavra-chave"
+            className="max-w-md"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {empresas.length} empresa(s).</p>}
+        </BarraDeFiltros>
+      </div>
 
       <div className="panel overflow-x-auto">
         <Table>
@@ -114,7 +152,10 @@ function PaginaEmpresas() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {empresas.map((empresa) => (
+            {lista.length === 0 && (
+              <TableRow><TableCell colSpan={MODO_DEMO ? 6 : 4} className="py-6 text-center text-muted-foreground">{busca.trim() ? "Nenhuma empresa para a busca." : "Nenhuma empresa cadastrada."}</TableCell></TableRow>
+            )}
+            {lista.map((empresa) => (
               <TableRow key={empresa.id}>
                 <TableCell className="font-medium">{empresa.nome_fantasia}</TableCell>
                 <TableCell>{empresa.razao_social}</TableCell>

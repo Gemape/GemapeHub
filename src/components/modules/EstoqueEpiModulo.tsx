@@ -107,12 +107,13 @@ export function EstoqueEpiModulo() {
 
   return (
     <section className="space-y-4" aria-label="Estoque de EPIs">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
+      {/* Novos e Usados: botões azuis no topo, à direita; o escolhido leva um anel e o outro fica mais claro (decisão 353). */}
+      <div className="flex flex-wrap justify-end gap-2" role="group" aria-label="Novos ou usados">
         {(["novo", "usado"] as const).map((c) => (
           <Button
             key={c}
             type="button"
-            variant={condicao === c ? "default" : "outline"}
+            className={condicao === c ? "ring-2 ring-primary ring-offset-2" : "opacity-70"}
             aria-pressed={condicao === c}
             onClick={() => setCondicao(c)}
           >

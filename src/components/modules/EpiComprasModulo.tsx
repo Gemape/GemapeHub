@@ -2,10 +2,11 @@ import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { BuscaEpiCompra } from "@/components/modules/BuscaEpiCompra";
 import { DevolucaoEpiDialog } from "@/components/modules/DevolucaoEpiDialog";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
-import { pedeTamanho, SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -95,7 +96,8 @@ export function EpiComprasModulo() {
   function enviar(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const itemId = String(f.get("item_id"));
+    const itemId = String(f.get("item_id") ?? "");
+    if (!itemId) { alert("Escolha o EPI na lista."); return; }
     const quantidadeCompra = Number(f.get("quantidade"));
     // Compra é de produto novo (decisão 327): todos os dados são obrigatórios.
     if (!String(f.get("nota_fiscal") ?? "").trim()) { alert("Informe a nota fiscal."); return; }
@@ -159,7 +161,8 @@ export function EpiComprasModulo() {
                 "compras_epis",
                 compras.map((c) => ({
                   Data: formatarData(c.data_compra),
-                  Empresa: empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia,
+                  "Estoque alimentado": empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia,
+                  Código: itens.find((i) => i.id === c.item_id)?.codigo_sku,
                   EPI: itens.find((i) => i.id === c.item_id)?.nome,
                   Tamanho: nomeTamanhoGravado(parametros, c.tamanho_id),
                   Fornecedor: c.fornecedor,
@@ -175,7 +178,7 @@ export function EpiComprasModulo() {
           </Button>
           <ImportarNfeXml />
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
-          <Button requiresWrite variant="outline" onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
+          <Button requiresWrite onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
         </div>
         <BarraDeFiltros>
           <Input
@@ -192,7 +195,8 @@ export function EpiComprasModulo() {
           <TableHeader>
             <TableRow>
               <TableHead>Data</TableHead>
-              <TableHead>Empresa</TableHead>
+              <TableHead title="Estoque que a compra alimentou (a empresa do item)">Estoque</TableHead>
+              <TableHead>Código</TableHead>
               <TableHead>EPI</TableHead>
               <TableHead>Tamanho</TableHead>
               <TableHead>Fornecedor</TableHead>
@@ -207,13 +211,13 @@ export function EpiComprasModulo() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center">
+                <TableCell colSpan={12} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : compras.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center">
+                <TableCell colSpan={12} className="text-center">
                   Nenhuma compra registrada.
                 </TableCell>
               </TableRow>
@@ -224,6 +228,7 @@ export function EpiComprasModulo() {
                   <TableCell>
                     {empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia}
                   </TableCell>
+                  <TableCell className="font-mono text-xs">{itens.find((i) => i.id === c.item_id)?.codigo_sku ?? "—"}</TableCell>
                   <TableCell>{itens.find((i) => i.id === c.item_id)?.nome}</TableCell>
                   <TableCell>{nomeTamanhoGravado(parametros, c.tamanho_id) || "—"}</TableCell>
                   <TableCell>{c.fornecedor}</TableCell>
@@ -272,7 +277,7 @@ export function EpiComprasModulo() {
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="empresa_id">Empresa</Label>
+              <Label htmlFor="empresa_id">Estoque a alimentar (empresa)</Label>
               <Select
                 name="empresa_id"
                 required
@@ -285,7 +290,7 @@ export function EpiComprasModulo() {
                 }}
               >
                 <SelectTrigger id="empresa_id">
-                  <SelectValue placeholder="Selecione a empresa" />
+                  <SelectValue placeholder="Selecione o estoque" />
                 </SelectTrigger>
                 <SelectContent>
                   {empresasParaEscolha(empresas).map((e) => (
@@ -296,33 +301,33 @@ export function EpiComprasModulo() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="item_id">EPI</Label>
-              <Select
-                name="item_id"
-                required
-                value={itemSel}
-                onValueChange={(v) => {
-                  setItemSel(v);
-                  setTamanho("");
-                  setCa(itens.find((i) => i.id === v)?.ca ?? "");
-                }}
-              >
-                <SelectTrigger id="item_id">
-                  <SelectValue placeholder="Selecione o EPI" />
-                </SelectTrigger>
-                <SelectContent>
-                  {itens.filter((i) => i.empresa_id === empresaCompra).map((i) => (
-                    <SelectItem key={i.id} value={i.id}>
-                      {i.codigo_sku} · {i.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {/* Código, descrição e tamanho do EPI escolhido, e o atalho para cadastrar um EPI que ainda não existe (abre em outra aba, sem perder o que foi preenchido). */}
+            {/* EPI: busca por palavra-chave e lista no formato código + descrição + tamanho; escolher a linha define o EPI e o tamanho (decisão 351). */}
+            <BuscaEpiCompra
+              itens={itens.filter((i) => i.empresa_id === empresaCompra)}
+              parametros={parametros}
+              itemId={itemSel}
+              tamanho={tamanho}
+              empresaEscolhida={!!empresaCompra}
+              aoEscolher={(o) => {
+                setItemSel(o.itemId);
+                setTamanho(o.tamanho);
+                setCa(o.ca);
+              }}
+            />
+            <input type="hidden" name="item_id" value={itemSel} />
+            <div className="space-y-1 sm:col-span-2">
+              {itemSel ? (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Escolhido: </span>
+                  Código {itens.find((i) => i.id === itemSel)?.codigo_sku} · {itens.find((i) => i.id === itemSel)?.nome} · Tamanho {tamanho ? nomeTamanhoGravado(parametros, tamanhoParaGravar(tamanho)) || "—" : "—"}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum EPI escolhido: clique numa linha da lista.</p>
+              )}
               {itemSel && (
                 <p className="text-xs text-muted-foreground">
-                  Código {itens.find((i) => i.id === itemSel)?.codigo_sku} · {itens.find((i) => i.id === itemSel)?.nome} · Tamanho {tamanho ? nomeTamanhoGravado(parametros, tamanhoParaGravar(tamanho)) || "—" : "—"}
+                  Esta compra alimenta o estoque {empresas.find((e) => e.id === empresaCompra)?.nome_fantasia}, onde o item existe uma vez só: compras de qualquer fornecedor somam no mesmo saldo (hoje, {itens.find((i) => i.id === itemSel)?.estoque_atual ?? 0}
+                  {quantidade > 0 ? `; com esta compra, ${(itens.find((i) => i.id === itemSel)?.estoque_atual ?? 0) + quantidade}` : ""}).
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
@@ -330,24 +335,6 @@ export function EpiComprasModulo() {
                 <a href="/cadastros/epi" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Cadastrar EPI</a>
               </p>
             </div>
-            {pedeTamanho(
-              parametros,
-              "epi",
-              itens.find((i) => i.id === itemSel),
-            ) && (
-              <div className="space-y-1.5">
-                <Label htmlFor="tamanho_compra">Tamanho</Label>
-                <SeletorTamanho
-                  id="tamanho_compra"
-                  parametros={parametros}
-                  modulo="epi"
-                  produto={itens.find((i) => i.id === itemSel)}
-                  uso="entrada"
-                  valor={tamanho}
-                  onChange={setTamanho}
-                />
-              </div>
-            )}
             <SeletorFornecedorCompra categoriaId="cat-epi" valor={fornecedorId} onChange={setFornecedorId} />
             <div className="space-y-1.5">
               <Label htmlFor="nota_fiscal">Nota Fiscal</Label>

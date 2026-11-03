@@ -1,3 +1,5 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { exportarCsv } from "@/lib/gemape";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -80,12 +82,24 @@ function PaginaFornecedores() {
         <h1 className="text-2xl font-bold">Fornecedores</h1>
         <p className="mt-1 text-sm text-muted-foreground">Dados cadastrais dos fornecedores.</p>
       </div>
-      <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploFornecedor(fornecedores), true) : abrir(null)}>Novo fornecedor</Button>
+      <div className="flex gap-2">
+        <Button variant="outline" disabled={lista.length === 0} onClick={() => exportarCsv("fornecedores", lista.map((x) => ({
+          Código: x.codigo,
+          "Nome fantasia": x.nome_fantasia ?? "",
+          "Razão social": x.razao_social,
+          CNPJ: formatarCnpj(x.cnpj),
+          "Cidade/Estado": [x.cidade, x.estado].filter(Boolean).join("/"),
+          Contato: x.contato || formatarTelefone(x.telefone) || "",
+        })))}>Exportar CSV</Button>
+        <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploFornecedor(fornecedores), true) : abrir(null)}>Novo fornecedor</Button>
+      </div>
     </header>
 
     <div className="flex flex-wrap items-end gap-2">
-      <Input aria-label="Buscar fornecedor por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
-      {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {fornecedores.length} fornecedor(es).</p>}
+      <BarraDeFiltros>
+        <Input aria-label="Buscar fornecedor por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {fornecedores.length} fornecedor(es).</p>}
+      </BarraDeFiltros>
     </div>
 
     <div className="panel overflow-x-auto">

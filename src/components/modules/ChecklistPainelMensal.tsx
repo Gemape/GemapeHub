@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { faixaDoIndice } from "@/lib/faixas-desempenho";
+import { faixaDoIndiceDeVeiculos } from "@/lib/faixas-desempenho";
 import { mesDe, mesesDisponiveis, painelDoMes, type ChecklistDoPainel, type Previsao, type SituacaoPrevisao } from "@/lib/checklist-painel";
 import { formatarData } from "@/lib/gemape";
 
@@ -90,7 +90,7 @@ export function ChecklistPainelMensal({
         <StatCard
           titulo="Realizados no prazo"
           pct={resumo.pctNoPrazo}
-          faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null}
+          faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null}
           valor={porcento(resumo.pctNoPrazo)}
           detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"}
           icone={CircleCheck}
@@ -98,7 +98,7 @@ export function ChecklistPainelMensal({
         <StatCard
           titulo="Não realizados no prazo"
           pct={resumo.pctNaoNoPrazo}
-          faixa={faixaDoIndice(resumo.pctNoPrazo)?.faixa ?? null}
+          faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null}
           valor={porcento(resumo.pctNaoNoPrazo)}
           detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"}
           icone={CircleX}

@@ -142,9 +142,11 @@ test("a tela traz os cards por botões, filtra pelo card, e Parâmetros Específ
   assert.match(modulo, /<CartoesOcorrencias indicadores=\{indicadores\} \/>/);
   assert.match(
     modulo,
-    /onClick=\{\(\) => \{ setFiltro\(f\); setBusca\(""\); setInicio\(""\); setFim\(""\); setVerLista\(true\); \}\}/,
-    "botões Todas, Abertas, Em tratativa e Encerradas abrem a lista da situação em outra tela do módulo",
+    /onClick=\{\(\) => \{ setFiltro\("todas"\); setBusca\(""\); setInicio\(""\); setFim\(""\); setVerLista\(true\); \}\}>\s*<ClipboardList[^>]*\/> Ver ocorrências/,
+    "o botão Ver ocorrências abre a lista em outra tela do módulo (decisão 349)",
   );
+  assert.match(modulo, /aria-label="Filtrar por situação"[\s\S]*aria-pressed=\{filtro === f\}[\s\S]*onClick=\{\(\) => setFiltro\(f\)\}/, "a lista filtra por todas, abertas, em tratativa e encerradas");
+  assert.match(modulo, /<TabelaDiagnosticoOcorrencias linhas=\{diagnostico\}/, "a tabela de diagnóstico vem depois dos gráficos");
   assert.match(modulo, /setVerLista\(false\)[\s\S]*Voltar ao painel/, "e a lista tem o botão de voltar ao painel");
   for (const t of ["Abertas", "Em tratativa", "Encerradas", "Todas"])
     assert.ok(modulo.includes(`rotulo: "${t}"`), t);
