@@ -2014,3 +2014,16 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - O cabeçalho da página mostra "EPIs › Relatórios" quando a tela vem da cópia.
 - **Vai e volta com os Parâmetros Específicos:** o link "Parâmetros Específicos" da Sugestão de Compras abre a tela de configuração e o botão "Voltar para Sugestão de Compras" (e o salvar dos parâmetros da sugestão) devolve à tela de onde a pessoa saiu, na lista principal ou em Relatórios.
 - Só modo demonstração; nada no Supabase.
+
+## 343. EPI: as rotinas de consulta se movem para Relatórios
+
+- Ordem do responsável, corrigindo a decisão 342 ("clonar"): **mover**. Sugestão de Compras, Histórico do empregado e Baixar Definitivas saem da seção Módulo do menu de EPIs e ficam **só** na seção Relatórios (menu do topo e cartão EPIs da tela Início).
+- As abas mantêm os endereços de sempre (`?aba=sugestao-compras`, `historico`, `baixas`), então links e favoritos antigos abrem as mesmas telas. As abas de cópia (`relatorio-*`) deixam de existir.
+- O vai e volta da Sugestão de Compras com os Parâmetros Específicos volta ao funcionamento simples: leva sempre à Sugestão de Compras.
+- A matriz de acessos do modo demonstração passa a ter essas três rotinas na seção Relatórios; exceção de acesso já guardada para o nome antigo (seção Módulo) deixa de valer. Só modo demonstração; nada no Supabase.
+
+## 344. EPI: responsável pela entrega no Termo de Entrega e confirmação na Ficha avulsa
+
+- **Termo de Entrega (Módulo > EPI):** novo campo obrigatório **Responsável pela entrega**. O termo sai com o nome completo de quem entrega (linha "Entregue por" e sob a assinatura do responsável) e de quem recebe (sob a assinatura do empregado). **Escolhas do Claude:** (a) o responsável é um empregado ativo, entre os habilitados do EPI (decisão 341; lista vazia oferece todos), e não pode ser quem recebe; (b) o nome fica só no documento impresso, não nas movimentações gravadas, porque gravar exigiria coluna nova no banco real; (c) os termos de outras telas (Entrega EPI) saem como antes.
+- **Ficha de EPI Avulsa:** gerar a ficha abre uma confirmação com o texto do responsável (a ficha serve a itens de consumo corriqueiro, como máscaras e luvas; botinas, capacetes e óculos vão pelo Termo de Entrega) e a pergunta "Deseja confirmar a geração da Ficha avulsa de entrega de EPI?". O caminho "EPIs >> módulo >> termo de entrega" é um link que abre o Termo de Entrega e fecha a janela. **Sim** gera a ficha; **Não** volta sem gerar.
+- Só modo demonstração; nada no Supabase.

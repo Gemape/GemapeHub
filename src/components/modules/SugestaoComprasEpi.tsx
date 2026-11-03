@@ -68,8 +68,7 @@ const NIVEIS = Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[];
 
 // Módulo EPI > Sugestão de Compras (decisão 330): estoque de novos e usados como um só, filtros por empresa e palavra-chave, status de criticidade dos Parâmetros Específicos e o botão
 // Gerar relatório, que monta a Cotação de preços (PDF ou Excel) pela subcategoria e pelos níveis de criticidade escolhidos.
-// `aba`: a aba em que a tela está aberta (a lista principal ou a cópia em Relatórios); o link dos Parâmetros Específicos volta para ela.
-export function SugestaoComprasEpi({ aba = "sugestao-compras" }: { aba?: "sugestao-compras" | "relatorio-sugestao-compras" }) {
+export function SugestaoComprasEpi() {
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const parametrosCompra = useParametrosCompraEpi();
@@ -197,7 +196,7 @@ export function SugestaoComprasEpi({ aba = "sugestao-compras" }: { aba?: "sugest
           Para comprar, o estoque de novos e de usados é um só. O status vem dos parâmetros de{" "}
           <Link
             to="/cadastros/gerais/categorias"
-            search={{ de: "epi", voltar: aba }}
+            search={{ de: "epi", voltar: "sugestao-compras" }}
             className="font-medium text-primary underline underline-offset-2"
           >
             Parâmetros Específicos

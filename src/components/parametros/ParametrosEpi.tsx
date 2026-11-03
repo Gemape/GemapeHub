@@ -33,8 +33,6 @@ import {
   type TextosDocumentosEpi,
 } from "@/lib/epi-parametros";
 
-export type AbaDeVolta = "sugestao-compras" | "relatorio-sugestao-compras";
-
 const numeroDe = (texto: string): number => (texto.trim() === "" ? Number.NaN : Number(texto));
 
 // Lista de motivos que a pessoa cadastra: acrescentar, tirar e salvar.
@@ -182,12 +180,10 @@ function TextosDosDocumentos() {
   );
 }
 
-// `abaDeVolta`: aberto pelo link da Sugestão de Compras (decisão 355), traz a aba de onde a pessoa veio (a lista principal ou a cópia em Relatórios);
-// o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela. Sem a propriedade, a tela abre normal, sem o vai e volta.
-export function ParametrosEpi({ abaDeVolta }: { abaDeVolta?: AbaDeVolta }) {
-  const voltarParaSugestao = abaDeVolta !== undefined;
+// `voltarParaSugestao`: aberto pelo link da Sugestão de Compras (decisão 355); o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela.
+export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugestao?: boolean }) {
   const navegar = useNavigate();
-  const voltar = () => void navegar({ to: "/epi", search: { aba: abaDeVolta ?? "sugestao-compras" } });
+  const voltar = () => void navegar({ to: "/epi", search: { aba: "sugestao-compras" } });
   const [areas, setAreas] = useState(lerAreasEpi);
   const [salvo, setSalvo] = useState(lerParametrosCompraEpi);
   const [metodo, setMetodo] = useState<MetodoReposicao>(salvo.metodo);

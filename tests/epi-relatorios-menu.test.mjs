@@ -6,60 +6,44 @@ import { ABAS_EPI, ABAS_EPI_RELATORIOS, abaDoModulo, tituloDaAba } from "../src/
 
 const le = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 
-test("EPI > Relatórios traz cópias de Sugestão de Compras, Histórico do empregado e Baixar Definitivas", () => {
+test("EPI > Relatórios traz Sugestão de Compras, Histórico do empregado e Baixar Definitivas (decisão 343)", () => {
   assert.deepEqual(ABAS_EPI_RELATORIOS.map((a) => a.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]);
-  assert.equal(new Set(ABAS_EPI_RELATORIOS.map((a) => a.aba)).size, 3);
 });
 
-test("as três rotinas continuam na lista principal do EPI (clonar, não mover)", () => {
-  const abas = ABAS_EPI.map((a) => a.aba);
-  for (const a of ["sugestao-compras", "historico", "baixas"]) assert.ok(abas.includes(a), a);
-  for (const r of ABAS_EPI_RELATORIOS) assert.ok(!abas.includes(r.aba), `${r.aba} não pode repetir a aba da lista principal`);
+test("as três rotinas foram movidas: saem da lista do Módulo e não se repetem", () => {
+  const modulo = ABAS_EPI.map((a) => a.aba);
+  for (const a of ["sugestao-compras", "historico", "baixas"]) assert.ok(!modulo.includes(a), `${a} não pode mais estar no Módulo`);
+  const titulos = ABAS_EPI.map((a) => a.titulo);
+  for (const t of ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]) assert.ok(!titulos.includes(t), t);
+  assert.equal(new Set([...modulo, ...ABAS_EPI_RELATORIOS.map((a) => a.aba)]).size, modulo.length + 3);
 });
 
-test("cada cópia usa o mesmo ícone da rotina original e abre uma aba válida do EPI", () => {
-  const original = { "relatorio-sugestao-compras": "sugestao-compras", "relatorio-historico": "historico", "relatorio-baixas": "baixas" };
-  for (const r of ABAS_EPI_RELATORIOS) {
-    const o = ABAS_EPI.find((a) => a.aba === original[r.aba]);
-    assert.equal(r.icone, o.icone, r.aba);
-    assert.equal(r.titulo, o.titulo, r.aba);
-    assert.equal(abaDoModulo("epi", r.aba), r.aba);
-    assert.equal(tituloDaAba("epi", r.aba), o.titulo);
+test("os endereços de sempre continuam abrindo as mesmas telas, agora pela seção Relatórios", () => {
+  for (const a of ["sugestao-compras", "historico", "baixas"]) {
+    assert.equal(abaDoModulo("epi", a), a);
   }
-});
-
-test("a página do módulo mostra a mesma tela nas cópias", () => {
+  assert.equal(tituloDaAba("epi", "historico"), "Histórico do empregado");
   const p = le("components/modules/PaginaModulo.tsx");
-  for (const [aba, tela] of [["relatorio-sugestao-compras", "SugestaoComprasEpi aba=\"relatorio-sugestao-compras\""], ["relatorio-historico", "EpiRelatorioFuncionario"], ["relatorio-baixas", "EpiRelatorioBaixa"]]) {
+  for (const [aba, tela] of [["sugestao-compras", "SugestaoComprasEpi"], ["historico", "EpiRelatorioFuncionario"], ["baixas", "EpiRelatorioBaixa"]]) {
     assert.match(p, new RegExp(`value="${aba}"[^>]*>\\s*<${tela} />`), aba);
   }
+  assert.doesNotMatch(p, /relatorio-(sugestao|historico|baixas)/, "não sobra aba de cópia");
 });
 
-test("o cartão EPIs do menu do topo e da tela Início traz a seção Relatórios entre Módulo e Parâmetros", async () => {
+test("o cartão EPIs do menu do topo e da tela Início traz a seção Relatórios entre Módulo e Parâmetros, sem repetir no Módulo", async () => {
   const { GRUPOS_INICIO, areaDaRota } = await import("../src/lib/inicio.ts");
   const epi = GRUPOS_INICIO.flatMap((g) => g.cartoes).find((c) => c.titulo === "EPIs");
   const rel = epi.itens.filter((i) => i.secao === "Relatórios");
   assert.deepEqual(rel.map((i) => i.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]);
-  assert.deepEqual(rel.map((i) => i.search.aba), ["relatorio-sugestao-compras", "relatorio-historico", "relatorio-baixas"]);
-  // As três rotinas continuam também na seção Módulo.
+  assert.deepEqual(rel.map((i) => i.search.aba), ["sugestao-compras", "historico", "baixas"]);
   const modulo = epi.itens.filter((i) => i.secao === "Módulo").map((i) => i.titulo);
-  for (const t of ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]) assert.ok(modulo.includes(t), t);
-  // Cada cópia é a tela atual da sua aba, e a da lista principal continua a dela.
-  const a = areaDaRota("/epi", { aba: "relatorio-historico" }, true);
-  assert.equal(a.atual.secao, "Relatórios");
-  assert.equal(areaDaRota("/epi", { aba: "historico" }, true).atual.secao, "Módulo");
+  for (const t of ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]) assert.ok(!modulo.includes(t), t);
+  assert.equal(areaDaRota("/epi", { aba: "historico" }, true).atual.secao, "Relatórios");
+  assert.equal(areaDaRota("/epi", { aba: "entrega" }, true).atual.secao, "Módulo");
   for (const f of ["components/layout/MenuDaArea.tsx", "routes/_authenticated/inicio.tsx"]) assert.match(le(f), /\["Módulo", "Relatórios", "Parâmetros"\]/, f);
 });
 
-test("vai e volta: o link dos Parâmetros Específicos volta para a aba de onde a pessoa saiu, na lista principal ou em Relatórios", () => {
-  const sugestao = le("components/modules/SugestaoComprasEpi.tsx");
-  assert.match(sugestao, /voltar: aba/);
-  assert.match(sugestao, /aba = "sugestao-compras"/);
-  assert.match(le("components/modules/PaginaModulo.tsx"), /<SugestaoComprasEpi aba="relatorio-sugestao-compras" \/>/);
-  const rota = le("routes/_authenticated/cadastros/gerais/categorias.tsx");
-  assert.match(rota, /search\["voltar"\] === "relatorio-sugestao-compras"/);
-  assert.match(rota, /abaDeVolta: voltar/);
-  const parametros = le("components/parametros/ParametrosEpi.tsx");
-  assert.match(parametros, /search: \{ aba: abaDeVolta \?\? "sugestao-compras" \}/);
-  assert.match(parametros, /if \(voltarParaSugestao\) voltar\(\)/);
+test("o vai e volta dos Parâmetros Específicos continua levando à Sugestão de Compras, agora em Relatórios", () => {
+  assert.match(le("components/modules/SugestaoComprasEpi.tsx"), /voltar: "sugestao-compras"/);
+  assert.match(le("components/parametros/ParametrosEpi.tsx"), /search: \{ aba: "sugestao-compras" \}/);
 });

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
+import { ConfirmarFichaAvulsa } from "@/components/modules/ConfirmarFichaAvulsa";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,6 +26,7 @@ export function EpiFichaEpiAvulsa() {
   const { empresaId } = useEmpresa();
   const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
   const [empregadoId, setEmpregadoId] = useState("");
+  const [confirmando, setConfirmando] = useState(false);
 
   const { data: empresas = [] } = useEmpresas();
   // Empresa inativa não é escolhida: se o cabeçalho está nela, a escolha começa vazia.
@@ -114,10 +116,18 @@ export function EpiFichaEpiAvulsa() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button onClick={gerarFicha} disabled={!empregadoId} className="w-full sm:w-auto">
+          <Button onClick={() => setConfirmando(true)} disabled={!empregadoId} className="w-full sm:w-auto">
             Gerar Ficha para Impressão
           </Button>
         </div>
+        <ConfirmarFichaAvulsa
+          aberto={confirmando}
+          onNao={() => setConfirmando(false)}
+          onSim={() => {
+            setConfirmando(false);
+            void gerarFicha();
+          }}
+        />
       </div>
     </div>
   );

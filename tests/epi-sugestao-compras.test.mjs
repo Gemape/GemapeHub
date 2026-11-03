@@ -37,7 +37,7 @@ test("Parâmetros Específicos de EPI: tabela com a condição lógica ao lado d
   assert.match(tela, /condicaoDoStatus\(st, emUso\)/, "a tabela segue o método e os dias que estão na tela");
   assert.match(tela, /Voltar para Sugestão de Compras/);
   assert.match(tela, /if \(voltarParaSugestao\) voltar\(\)/, "salvar os parâmetros da sugestão volta a ela");
-  assert.match(readFileSync(new URL("../src/components/modules/SugestaoComprasEpi.tsx", import.meta.url), "utf8"), /search=\{\{ de: "epi", voltar: aba \}\}/);
+  assert.match(readFileSync(new URL("../src/components/modules/SugestaoComprasEpi.tsx", import.meta.url), "utf8"), /search=\{\{ de: "epi", voltar: "sugestao-compras" \}\}/);
 });
 
 const memoriaTextos = () => {

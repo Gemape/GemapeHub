@@ -42,21 +42,18 @@ export const ABAS_EPI: readonly AbaMenu[] = [
   { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
   { aba: "compras", titulo: "Entrada no Estoque", icone: "ShoppingCart" },
-  { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
-  { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
-  { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
   { aba: "entrega", titulo: "Entrega EPI", icone: "PackageCheck" },
   { aba: "termo-entrega", titulo: "Termo de Entrega", icone: "FileSignature" },
   { aba: "ficha-avulsa", titulo: "Ficha de EPI Avulsa", icone: "ClipboardList" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
-// EPI > Relatórios: cópias das três rotinas de consulta que continuam na lista principal (Sugestão de Compras, Histórico do empregado e Baixar Definitivas).
-// Cada cópia tem a sua aba, para o menu marcar só a que a pessoa abriu; a tela é a mesma da rotina original.
+// EPI > Relatórios (decisão 343): as três rotinas de consulta saíram da lista do Módulo e ficam só aqui. As abas mantêm os endereços de sempre
+// (?aba=sugestao-compras, historico e baixas), então links e favoritos antigos continuam abrindo as mesmas telas.
 export const ABAS_EPI_RELATORIOS: readonly AbaMenu[] = [
-  { aba: "relatorio-sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
-  { aba: "relatorio-historico", titulo: "Histórico do empregado", icone: "History" },
-  { aba: "relatorio-baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
+  { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
+  { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
+  { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
 ];
 
 export const ABAS_UNIFORME: readonly AbaMenu[] = [

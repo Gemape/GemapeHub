@@ -185,9 +185,9 @@ test("parâmetros do EPI: padrão, gravação, validação e as listas de motivo
 });
 
 test("a tela: Entrada no Estoque com Devolução ao lado de Registrar Compra, campos obrigatórios, links de cadastro e Sugestão de Compras fora dela", async () => {
-  const { ABAS_EPI } = await import("../src/lib/menu-parametros.ts");
+  const { ABAS_EPI, ABAS_EPI_RELATORIOS } = await import("../src/lib/menu-parametros.ts");
   assert.deepEqual(
-    ABAS_EPI.filter((a) => a.aba === "compras" || a.aba === "sugestao-compras").map(
+    [...ABAS_EPI, ...ABAS_EPI_RELATORIOS].filter((a) => a.aba === "compras" || a.aba === "sugestao-compras").map(
       (a) => a.titulo,
     ),
     ["Entrada no Estoque", "Sugestão de Compras"],
@@ -214,7 +214,7 @@ test("a tela: Entrada no Estoque com Devolução ao lado de Registrar Compra, ca
   );
   assert.match(
     ler("routes/_authenticated/cadastros/gerais/categorias.tsx"),
-    /categoria\.id === "cat-epi" && <ParametrosEpi \{\.\.\.\(voltar \? \{ abaDeVolta: voltar \} : \{\}\)\} \/>/,
+    /categoria\.id === "cat-epi" && <ParametrosEpi voltarParaSugestao=\{voltar === "sugestao-compras"\} \/>/,
   );
   assert.match(ler("integrations/supabase/demo-client.ts"), /m\.condicao === "usado" && delta > 0/);
 });

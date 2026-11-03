@@ -22,7 +22,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
 import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
-import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
 import { montarTermoEntregaEpiHtml, observacaoEntregaEpi } from "@/lib/termo-entrega-epi-html";
 import { validarSaidaDeEpis } from "@/lib/termos-atomicos";
 import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
@@ -42,6 +42,8 @@ export function EpiTermoEntrega() {
   const { empresaId } = useEmpresa();
   const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
   const [empregadoId, setEmpregadoId] = useState("");
+  // Quem entrega o EPI: o nome completo sai no termo, ao lado do de quem recebe.
+  const [responsavelId, setResponsavelId] = useState("");
   const [dataEntrega, setDataEntrega] = useState(hojeLocal());
   const [itensTermo, setItensTermo] = useState<ItemTermo[]>([]);
 
@@ -52,6 +54,8 @@ export function EpiTermoEntrega() {
   }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("epi", empresaSel || TODAS);
+  // Quem pode entregar: empregado ativo, entre os habilitados do EPI, que não seja quem recebe.
+  const responsaveis = soEmpregadosDeEpi(empregados.filter((e) => empregadoAtivo(e) && e.id !== empregadoId));
 
   const parametros = useParametrosBase();
   const registrarLote = useRegistrarMovimentacoesLote(["movimentacoes", "epis"]);
@@ -86,6 +90,15 @@ export function EpiTermoEntrega() {
     }
     if (!dataEntrega) {
       alert("Informe a data da entrega.");
+      return;
+    }
+    const responsavel = empregados.find((e) => e.id === responsavelId);
+    if (!responsavel) {
+      alert("Informe o responsável pela entrega.");
+      return;
+    }
+    if (responsavel.id === empregadoId) {
+      alert("Quem entrega não pode ser quem recebe: escolha outro responsável pela entrega.");
       return;
     }
 
@@ -143,6 +156,7 @@ export function EpiTermoEntrega() {
     const html = montarTermoEntregaEpiHtml({
       empresa,
       empregado,
+      responsavel: { nome: responsavel.nome },
       data: dataEntrega,
       linhas: itensDoTermo.map((it) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
@@ -166,10 +180,10 @@ export function EpiTermoEntrega() {
   return (
     <div className="space-y-6">
       <div className="panel p-6 space-y-4">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label>Empresa</Label>
-            <Select value={empresaSel} onValueChange={(v) => { if (!v) return; setEmpresaSel(v); setEmpregadoId(""); setItensTermo([]); }}>
+            <Select value={empresaSel} onValueChange={(v) => { if (!v) return; setEmpresaSel(v); setEmpregadoId(""); setResponsavelId(""); setItensTermo([]); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a empresa" />
               </SelectTrigger>
@@ -184,7 +198,7 @@ export function EpiTermoEntrega() {
           </div>
           <div className="space-y-1.5">
             <Label>Empregado</Label>
-            <Select value={empregadoId} onValueChange={setEmpregadoId}>
+            <Select value={empregadoId} onValueChange={(v) => { setEmpregadoId(v); if (v === responsavelId) setResponsavelId(""); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o empregado" />
               </SelectTrigger>
@@ -196,6 +210,24 @@ export function EpiTermoEntrega() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Responsável pela entrega</Label>
+            <Select value={responsavelId} onValueChange={setResponsavelId}>
+              <SelectTrigger aria-label="Responsável pela entrega">
+                <SelectValue placeholder="Selecione quem entrega" />
+              </SelectTrigger>
+              <SelectContent>
+                {responsaveis.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {empresaSel && empregadoId && responsaveis.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum outro empregado habilitado para entregar EPI. Habilite em Parâmetros &gt; EPI &gt; Parâmetros Específicos.</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label>Data da Entrega</Label>
