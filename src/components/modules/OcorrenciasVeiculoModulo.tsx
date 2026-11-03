@@ -1,5 +1,6 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useVoltarAoExtrato } from "@/lib/use-voltar-ao-extrato";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -77,8 +78,10 @@ export function OcorrenciasVeiculoModulo() {
   const todas = useOcorrenciasVeiculo();
   const [tela, setTela] = useState<Tela>(null);
   // Vindo do extrato do veículo (?ocorrencia=), abre a tratativa dessa ocorrência uma vez e tira o parâmetro do endereço (decisão 331).
-  const { ocorrencia: ocorrenciaPedida } = useSearch({ from: "/_authenticated/veiculos" });
+  const { ocorrencia: ocorrenciaPedida, voltar } = useSearch({ from: "/_authenticated/veiculos" });
   const navegar = useNavigate();
+  // Vindo do extrato (decisão 346), ao fechar a tela da tratativa a pessoa volta ao extrato do veículo.
+  useVoltarAoExtrato(tela !== null, voltar);
   const [filtro, setFiltro] = useState<StatusOcorrencia | "todas">("todas");
   // Tela do módulo: o painel (botões, indicadores e gráficos) ou, ao clicar num botão de situação, a lista daquela situação (com o botão de voltar ao painel).
   const [verLista, setVerLista] = useState(false);

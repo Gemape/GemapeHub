@@ -13,10 +13,15 @@ import { useTituloDaPagina } from "@/lib/titulo-pagina";
 
 export const Route = createFileRoute("/_authenticated/veiculos")({
   // `ocorrencia` e `veiculo` vêm do extrato do veículo (decisão 331): abrem a tratativa da ocorrência ou o Novo check list do veículo.
-  validateSearch: (search: Record<string, unknown>): { aba?: string; ocorrencia?: string; veiculo?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { aba?: string; ocorrencia?: string; veiculo?: string; periodicidade?: string; avulso?: string; voltar?: string; extrato?: string } => ({
     ...(typeof search["aba"] === "string" ? { aba: search["aba"] } : {}),
     ...(typeof search["ocorrencia"] === "string" ? { ocorrencia: search["ocorrencia"] } : {}),
     ...(typeof search["veiculo"] === "string" ? { veiculo: search["veiculo"] } : {}),
+    // Vai e volta do extrato (decisão 346): `periodicidade` e `avulso` dizem que check list abrir; `voltar` é o veículo do extrato a que a rotina volta; `extrato` reabre o extrato desse veículo na Frota.
+    ...(typeof search["periodicidade"] === "string" ? { periodicidade: search["periodicidade"] } : {}),
+    ...(typeof search["avulso"] === "string" ? { avulso: search["avulso"] } : {}),
+    ...(typeof search["voltar"] === "string" ? { voltar: search["voltar"] } : {}),
+    ...(typeof search["extrato"] === "string" ? { extrato: search["extrato"] } : {}),
   }),
   head: () => ({
     meta: [

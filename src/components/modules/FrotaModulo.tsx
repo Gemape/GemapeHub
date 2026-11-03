@@ -1,5 +1,6 @@
 import { Printer } from "lucide-react";
-import { useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
@@ -96,6 +97,15 @@ export function FrotaModulo() {
   const filtroSubcategoria = nomesDeSubcategoria.includes(subcategoria) ? subcategoria : TODAS_AS_SUBCATEGORIAS;
   // Veículo escolhido e, se veio de uma bolinha, a seção do extrato que ela resume (sem seção, abre a janela do extrato).
   const [aberto, setAberto] = useState<{ id: string; secao: SecaoExtrato | null } | null>(null);
+  // De volta de uma rotina aberta pelo extrato (?extrato=, decisão 346): reabre o extrato desse veículo uma vez e tira o parâmetro do endereço.
+  const { extrato: extratoPedido } = useSearch({ from: "/_authenticated/veiculos" });
+  const navegar = useNavigate();
+  useEffect(() => {
+    if (!extratoPedido || isLoading) return;
+    if (veiculos.some((v) => v.id === extratoPedido)) setAberto({ id: extratoPedido, secao: null });
+    void navegar({ to: "/veiculos", search: { aba: "frota" }, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extratoPedido, isLoading]);
   const hoje = hojeLocal();
 
   const lista = veiculos

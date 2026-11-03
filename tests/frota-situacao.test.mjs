@@ -65,8 +65,12 @@ test("a Frota tem as colunas na ordem pedida, com bolinha e etiqueta, e o extrat
   assert.match(extrato, /bg-gradient-to-r \$\{secaoDoExtrato\.faixa\}/);
   assert.match(extrato, /setRegistrando\(true\)\}>Registrar manutenção<\/Button>/);
   assert.match(extrato, /setRegistrandoAbastecimento\(true\)\}>Registrar abastecimento<\/Button>/);
-  assert.match(extrato, /search=\{\{ aba: "ocorrencias", ocorrencia: dados\.ligacoes\[`\$\{n\}:\$\{k\}`\]!\.id \}\}>Tratativa<\/Link>/, "um botão Tratativa em cada linha de ocorrência");
-  assert.match(extrato, /search=\{\{ aba: "checklist", veiculo: veiculo\.id \}\}>Realizar check list<\/Link>/);
+  assert.match(extrato, /search=\{\{ aba: "ocorrencias", ocorrencia: dados\.ligacoes\[`\$\{n\}:\$\{k\}`\]!\.id, voltar: veiculo\.id \}\}>Tratativa<\/Link>/, "um botão Tratativa em cada linha de ocorrência");
+  assert.match(extrato, /search=\{\{ aba: "checklist", veiculo: veiculo\.id, avulso: "sim", voltar: veiculo\.id \}\}>Registrar check list avulso<\/Link>/);
+  assert.match(extrato, /periodicidade: dados\.realizaveis\[k\]!, voltar: veiculo\.id \}\}>Realizar check list<\/Link>/, "cada check list periódico previsto tem o botão Realizar check list");
+  assert.match(ler("components/modules/ChecklistVeiculoModulo.tsx"), /useVoltarAoExtrato\(tela !== null, voltar\)/, "ao fechar o check list, volta ao extrato (decisão 346)");
+  assert.match(ler("components/modules/OcorrenciasVeiculoModulo.tsx"), /useVoltarAoExtrato\(tela !== null, voltar\)/, "ao fechar a tratativa, volta ao extrato (decisão 346)");
+  assert.match(frota, /setAberto\(\{ id: extratoPedido, secao: null \}\)/, "de volta, a Frota reabre o extrato");
 });
 
 test("o abastecimento de veículos filtra por data início e fim depois de montar o histórico, bloqueia período invertido e leva o período ao PDF", () => {

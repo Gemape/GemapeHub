@@ -1,4 +1,5 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useVoltarAoExtrato } from "@/lib/use-voltar-ao-extrato";
 import { CalendarCheck, ClipboardList } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { gruposAvulsosDaAssociacao, gruposDaPeriodicidade, nomeDoChecklistAssociado } from "@/lib/checklist-associacao-veiculo";
@@ -187,15 +188,23 @@ export function ChecklistVeiculoModulo() {
   const itensDoVeiculo = gruposDoVeiculo.reduce((t, g) => t + g.itens.length, 0);
 
   // Vindo do extrato do veículo (?veiculo=), abre o Novo check list desse veículo uma vez e tira o parâmetro do endereço (decisão 331).
-  const { veiculo: veiculoPedido } = useSearch({ from: "/_authenticated/veiculos" });
+  const { veiculo: veiculoPedido, avulso: avulsoPedido, periodicidade: periodicidadePedida, voltar } = useSearch({ from: "/_authenticated/veiculos" });
   const navegar = useNavigate();
   useEffect(() => {
     if (!veiculoPedido || !veiculosCarregados) return;
     const v = (veiculosTodasLista as VeiculoChecklist[]).find((x) => x.id === veiculoPedido);
-    if (v) abrirNovo(v);
+    if (v) {
+      if (avulsoPedido) {
+        abrirNovoAvulso();
+        setVeiculoId(v.id);
+      } else abrirNovo(v, periodicidadePedida);
+    }
     void navegar({ to: "/veiculos", search: { aba: "checklist" }, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [veiculoPedido, veiculosCarregados]);
+
+  // Vindo do extrato (decisão 346), ao fechar a tela do check list a pessoa volta ao extrato do veículo.
+  useVoltarAoExtrato(tela !== null, voltar);
 
   function abrirNovoAvulso() {
     setTipoEscolhido("avulso");

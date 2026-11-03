@@ -26,7 +26,7 @@ import { useAbastecimentos, useChecklistsVeiculo, useManutencoesVeiculo, useOcor
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresa } from "@/lib/empresa-context";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
+import { imprimirDocumento } from "@/lib/visualizador-documento";
 
 // No relatório a situação sai com o ponto colorido, como nos indicadores da tela.
 const SITUACAO: Record<StatusSugestao, { rotulo: string; cor: Cor }> = {
@@ -49,8 +49,9 @@ type Secao = SecaoExtrato;
 type Ligacao = { coluna: number; tipo: "checklist" | "ocorrencia"; id: string };
 // O PDF é um só: o extrato com as seções que a pessoa marcou em Personalizar o relatório (decisão 340). As seções são as tabelas do extrato (sugeridas, realizadas, itens em atenção,
 // abastecimentos, ocorrências e check lists, nesta ordem); "ocorrenciasAbertas" só existe como entrada da Frota, para abrir a tela na tabela das ocorrências.
-const TODAS_AS_TABELAS = [0, 1, 2, 3, 4, 5];
+const TODAS_AS_SECOES = [0, 1, 2, 3];
 const TABELA_DAS_OCORRENCIAS = 4;
+const TABELA_DOS_CHECKLISTS = 5;
 const SITUACAO_CHECKLIST: Record<SituacaoPrevisao, { rotulo: string; cor: Cor }> = {
   realizado: { rotulo: "Realizado no prazo", cor: "verde" },
   nao_realizado: { rotulo: "Não realizado no prazo", cor: "vermelho" },
@@ -194,9 +195,12 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
     // Quais células viram link para consultar o registro (decisão 338): o código do check list (tabela 5) e o da ocorrência (tabela 4, no começo da descrição). Só na tela: o PDF não muda.
     const ligacoes: Record<string, Ligacao> = {};
     if (MODO_DEMO) ocorrenciasDoVeiculo.forEach((o, k) => { if (o.id) ligacoes[`4:${k}`] = { coluna: 1, tipo: "ocorrencia", id: o.id }; });
+    // Check lists periódicos previstos que ainda não foram feitos: cada linha ganha o botão Realizar check list, com a periodicidade dela.
+    const realizaveis: Record<number, string> = {};
+    linhasChecklist.forEach((l, k) => { if (!l.checklistId) realizaveis[k] = l.periodicidade; });
     linhasChecklist.forEach((l, k) => { if (l.checklistId && l.checklistCodigo) ligacoes[`5:${k}`] = { coluna: 5, tipo: "checklist", id: l.checklistId }; });
     return {
-      rotulo, kmAtual, media, vencidas, tabelas, ligacoes,
+      rotulo, kmAtual, media, vencidas, tabelas, ligacoes, realizaveis,
       empresa: empresas.find((e) => e.id === v.empresa_id)?.nome_fantasia ?? "",
     };
   }
@@ -209,12 +213,13 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
     const html = montarExtratoHtml({
       titulo: "Extrato do veículo",
       assunto: d.rotulo,
-      ...(inicio || fim || abertas ? { subtitulo: [inicio || fim ? `Período: ${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : "", abertas ? "Só ocorrências em aberto" : ""].filter(Boolean).join(" · ") } : {}),
+      subtitulo: [`Período: ${inicio || fim ? `${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : "todo o histórico"}`, abertas ? "Só ocorrências em aberto" : ""].filter(Boolean).join(" · "),
       empresa: d.empresa,
       resumo: resumoDo(d),
       tabelas: d.tabelas.filter((_, n) => tabelasEscolhidas.includes(n)),
     });
-    abrirDocumento({ titulo: "Extrato do veículo", html, arquivo: nomeArquivoDocumento("Extrato do veiculo", d.rotulo), telaCheia: true });
+    // Abre direto a janela de impressão (Salvar como PDF): o PDF se gera uma vez só, sem o visualizador no meio (decisão 346).
+    imprimirDocumento(html);
   }
 
   // Escolher outro veículo começa sem período.
@@ -225,7 +230,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
   const [registrandoAbastecimento, setRegistrandoAbastecimento] = useState(false);
   // Personalizar o PDF do extrato (decisão 340): o botão Gerar PDF do alto abre a escolha das seções; começam todas marcadas.
   const [personalizando, setPersonalizando] = useState(false);
-  const [marcadas, setMarcadas] = useState<number[]>(TODAS_AS_TABELAS);
+  const [marcadas, setMarcadas] = useState<number[]>(TODAS_AS_SECOES);
   // Consulta aberta por cima do extrato: o código do check list ou da ocorrência; fechar volta ao extrato (decisão 338).
   const [consulta, setConsulta] = useState<{ tipo: "checklist" | "ocorrencia"; id: string } | null>(null);
   useEffect(() => { setConsulta(null); }, [veiculo?.id]);
@@ -288,12 +293,13 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
                     )}
                     {secaoDoExtrato.titulo === "Manutenções" && <Button type="button" variant="secondary" size="sm" onClick={() => setRegistrando(true)}>Registrar manutenção</Button>}
                     {secaoDoExtrato.titulo === "Abastecimentos" && <Button type="button" variant="secondary" size="sm" onClick={() => setRegistrandoAbastecimento(true)}>Registrar abastecimento</Button>}
-                    {secaoDoExtrato.titulo === "Check lists" && <Button asChild variant="secondary" size="sm"><Link to="/veiculos" search={{ aba: "checklist", veiculo: veiculo.id }}>Realizar check list</Link></Button>}
+                    {secaoDoExtrato.titulo === "Check lists" && <Button asChild variant="secondary" size="sm"><Link to="/veiculos" search={{ aba: "checklist", veiculo: veiculo.id, avulso: "sim", voltar: veiculo.id }}>Registrar check list avulso</Link></Button>}
                   </div>
                 </div>
                 {secaoDoExtrato.tabelas.map((n) => {
                   const t = dados.tabelas[n]!;
                   const comTratativa = n === TABELA_DAS_OCORRENCIAS && MODO_DEMO;
+                  const comRealizar = n === TABELA_DOS_CHECKLISTS;
                   return (
                     <div key={t.titulo} id={`extrato-tabela-${n}`} className="scroll-mt-4 space-y-2">
                       <h4 className="text-base font-semibold">{t.titulo}</h4>
@@ -303,11 +309,12 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
                             <TableRow>
                               {t.colunas.map((c) => <TableHead key={c.titulo} className={c.direita ? "text-right" : ""}>{c.titulo}</TableHead>)}
                               {comTratativa && <TableHead className="text-right">Tratativa</TableHead>}
+                              {comRealizar && <TableHead className="text-right">Realizar</TableHead>}
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {t.linhas.length === 0
-                              ? <TableRow><TableCell colSpan={t.colunas.length + (comTratativa ? 1 : 0)} className="py-5 text-center text-muted-foreground">{t.vazio}</TableCell></TableRow>
+                              ? <TableRow><TableCell colSpan={t.colunas.length + (comTratativa || comRealizar ? 1 : 0)} className="py-5 text-center text-muted-foreground">{t.vazio}</TableCell></TableRow>
                               : t.linhas.map((l, k) => (
                                 <TableRow key={k}>
                                   {l.map((c, m) => (
@@ -322,11 +329,20 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
                                       )}
                                     </TableCell>
                                   ))}
+                                  {comRealizar && (
+                                    <TableCell className="text-right">
+                                      {dados.realizaveis[k] !== undefined && (
+                                        <Button asChild variant="outline" size="sm">
+                                          <Link to="/veiculos" search={{ aba: "checklist", veiculo: veiculo.id, periodicidade: dados.realizaveis[k]!, voltar: veiculo.id }}>Realizar check list</Link>
+                                        </Button>
+                                      )}
+                                    </TableCell>
+                                  )}
                                   {comTratativa && (
                                     <TableCell className="text-right">
                                       {dados.ligacoes[`${n}:${k}`] && (
                                         <Button asChild variant="outline" size="sm">
-                                          <Link to="/veiculos" search={{ aba: "ocorrencias", ocorrencia: dados.ligacoes[`${n}:${k}`]!.id }}>Tratativa</Link>
+                                          <Link to="/veiculos" search={{ aba: "ocorrencias", ocorrencia: dados.ligacoes[`${n}:${k}`]!.id, voltar: veiculo.id }}>Tratativa</Link>
                                         </Button>
                                       )}
                                     </TableCell>
@@ -363,23 +379,23 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
               <DialogDescription>Marque as seções que entram no PDF do extrato. O resumo do veículo (km atual, média e preventivas vencidas) sai sempre.</DialogDescription>
             </DialogHeader>
             <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(dados.tabelas.map((_, n) => n))}>Marcar todos</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(TODAS_AS_SECOES)}>Marcar todos</Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas([])}>Desmarcar todos</Button>
-              <span className="ml-auto text-xs text-muted-foreground">{marcadas.length} de {dados.tabelas.length} seções</span>
+              <span className="ml-auto text-xs text-muted-foreground">{marcadas.length} de {SECOES_DO_EXTRATO.length} seções</span>
             </div>
             <ul className="space-y-1.5" aria-label="Seções do relatório">
-              {dados.tabelas.map((t, n) => (
-                <li key={t.titulo}>
+              {SECOES_DO_EXTRATO.map((secaoDoExtrato, n) => (
+                <li key={secaoDoExtrato.titulo}>
                   <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
                     <Checkbox checked={marcadas.includes(n)} onCheckedChange={(v) => setMarcadas((m) => (v === true ? [...m.filter((x) => x !== n), n].sort((a, b) => a - b) : m.filter((x) => x !== n)))} />
-                    {t.titulo}
+                    {secaoDoExtrato.titulo}
                   </label>
                 </li>
               ))}
             </ul>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setPersonalizando(false)}>Cancelar</Button>
-              <Button type="button" disabled={marcadas.length === 0} onClick={() => { setPersonalizando(false); gerarPdf(veiculo, marcadas); }}>Gerar PDF</Button>
+              <Button type="button" disabled={marcadas.length === 0} onClick={() => { setPersonalizando(false); gerarPdf(veiculo, marcadas.flatMap((n) => [...SECOES_DO_EXTRATO[n]!.tabelas])); }}>Gerar PDF</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

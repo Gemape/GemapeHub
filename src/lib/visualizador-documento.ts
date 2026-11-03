@@ -14,6 +14,20 @@ export function abrirDocumento(documento: DocumentoAberto) {
   avisar();
 }
 
+/** Abre direto a janela de impressão (onde se escolhe "Salvar como PDF") do documento, sem passar pelo visualizador: o PDF se gera uma vez só. */
+export function imprimirDocumento(html: string) {
+  const quadro = document.createElement("iframe");
+  quadro.setAttribute("aria-hidden", "true");
+  quadro.style.cssText = "position: fixed; right: 0; bottom: 0; width: 0; height: 0; border: 0;";
+  quadro.onload = () => {
+    quadro.contentWindow?.focus();
+    quadro.contentWindow?.print();
+  };
+  quadro.srcdoc = html;
+  document.body.appendChild(quadro);
+  window.setTimeout(() => quadro.remove(), 120000);
+}
+
 export function fecharDocumento() {
   atual = null;
   avisar();
