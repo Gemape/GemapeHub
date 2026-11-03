@@ -83,7 +83,7 @@ function PaginaFornecedores() {
       <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploFornecedor(fornecedores), true) : abrir(null)}>Novo fornecedor</Button>
     </header>
 
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-end gap-2">
       <Input aria-label="Buscar fornecedor por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
       {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {fornecedores.length} fornecedor(es).</p>}
     </div>

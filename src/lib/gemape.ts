@@ -166,6 +166,10 @@ export function valorTotalEmEstoque(
   return centavos / 100;
 }
 
+// Data e hora de um instante ISO no horário de Brasília (qualquer que seja o fuso do aparelho) e de uma hora local "AAAA-MM-DDTHH:MM", como as telas de Ocorrências e Check list mostram.
+export const dataHoraBrasilia = (iso: string): string => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+export const dataHoraLocal = (local: string): string => `${formatarData(local.slice(0, 10))} ${local.slice(11, 16)}`;
+
 export function formatarData(data: string | null | undefined): string {
   if (!data) return "—";
   // Data com hora (timestamp em UTC) sai no dia de Brasília; data pura (AAAA-MM-DD) não muda.

@@ -140,11 +140,11 @@ test("a Frota mostra os cards do PCM e dos técnicos com seta e cor por faixa, e
   assert.match(cartoes, /vermelho: \{[^}]*Icone: ArrowDown/);
   assert.match(
     cartoes,
-    /aria-pressed=\{grupo === g\.id\}[\s\S]*sm:grid-cols-2 lg:grid-cols-4[\s\S]*sm:grid-cols-2 lg:grid-cols-4"/,
-    "botões PCM/técnicos; PCM em 4 colunas, técnicos no mesmo tamanho, uma coluna no celular",
+    /aria-pressed=\{grupo === g\.id\}[\s\S]*sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2[\s\S]*sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2"/,
+    "botões PCM/técnicos; PCM em 4 colunas (2x2 ao lado dos gráficos em tela larga), técnicos no mesmo tamanho, uma coluna no celular",
   );
   const frota = ler("components/modules/FrotaModulo.tsx");
-  assert.match(frota, /<CartoesIndicadoresFrota indicadores=\{indicadores\} \/>/);
+  assert.match(frota, /<CartoesIndicadoresFrota\s+indicadores=\{indicadores\}/);
   assert.match(
     frota,
     /mediaKmPorLitro\(historicoAbastecimentos\(abastecimentos\.filter\(\(a\) => a\.veiculoId === id\)\)\)/,

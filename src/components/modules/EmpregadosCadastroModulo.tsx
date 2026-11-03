@@ -177,7 +177,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
         </div>
       </header>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-end gap-2">
         <Input aria-label="Buscar empregado por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
         {busca.trim() && <p className="text-sm text-muted-foreground">{encontrados.length} de {empregados.length} empregado(s).</p>}
       </div>

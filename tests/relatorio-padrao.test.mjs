@@ -107,7 +107,7 @@ test("o extrato do veículo e o do equipamento abrem o relatório direto, em tel
   assert.match(html, /@media screen \{[\s\S]*\.folha \{ width: auto; min-height: 100vh/, "na tela a folha ocupa a largura toda; ao imprimir segue A4");
   // Extrato (equipamento) abre o relatório na hora, em tela cheia. O do veículo passa por uma janela com período e atalhos (decisão 296) e abre o relatório em tela cheia.
   const veiculo = ler("components/modules/ExtratoVeiculo.tsx");
-  assert.match(veiculo, /abrirDocumento\(\{ titulo: TITULO\[secao\], html[^}]*telaCheia: true \}\)/);
+  assert.match(veiculo, /abrirDocumento\(\{ titulo: "Extrato do veículo", html[^}]*telaCheia: true \}\)/);
   assert.match(veiculo, /<Dialog open=\{!!veiculo\} onOpenChange/, "o extrato do veículo é uma tela, que só vira PDF no botão Gerar PDF (decisão 331)");
   const equip = ler("components/modules/equipamento/InventarioEquipamentoModulo.tsx");
   assert.match(equip, /onClick=\{\(\) => gerarRelatorio\(e\)\}>Extrato<\/Button>/);
@@ -132,7 +132,7 @@ test("o título das colunas numéricas fica alinhado à direita, junto com os va
 
 test("Abastecimento de veículos tem o Gerar PDF: relatório por veículo, no padrão, com os mesmos filtros da tela", () => {
   const tela = ler("components/modules/AbastecimentoVeiculoModulo.tsx");
-  assert.match(tela, /<Button variant="outline" className="ml-auto" onClick=\{gerarRelatorio\}[^>]*>Gerar PDF<\/Button>/);
+  assert.match(tela, /<Button variant="outline" onClick=\{gerarRelatorio\}[^>]*>Gerar PDF<\/Button>/);
   assert.match(tela, /montarExtratoHtml\(\{\s*titulo: "Relatório de abastecimento"/);
   assert.match(tela, /telaCheia: true/);
   assert.match(tela, /grupos\s*=\s*veiculos\s*\.filter\(\(v\) => linhas\.some/, "um quadro por veículo, só dos que têm abastecimento no filtro");
@@ -142,7 +142,7 @@ test("Abastecimento de veículos tem o Gerar PDF: relatório por veículo, no pa
 
 test("Abastecimento de equipamentos tem o mesmo Gerar PDF: relatório por equipamento, no padrão, com os filtros da tela", () => {
   const tela = ler("components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx");
-  assert.match(tela, /<Button variant="outline" className="ml-auto" onClick=\{gerarRelatorio\}[^>]*>Gerar PDF<\/Button>/);
+  assert.match(tela, /<Button variant="outline" onClick=\{gerarRelatorio\}[^>]*>Gerar PDF<\/Button>/);
   assert.match(tela, /montarExtratoHtml\(\{\s*titulo: "Relatório de abastecimento"/);
   assert.match(tela, /telaCheia: true/);
   assert.match(tela, /equipamentos\s*\.filter\(\(e\) => linhas\.some/, "um quadro por equipamento, só dos que têm abastecimento no filtro");

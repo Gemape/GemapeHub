@@ -1,3 +1,6 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { Banknote, ListChecks, Wrench } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -42,36 +45,39 @@ export function ManutencaoEquipamentoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro_eq_manut">Histórico por equipamento</Label>
-          <Select value={filtroValido} onValueChange={setFiltro}>
-            <SelectTrigger id="filtro_eq_manut" className="w-80 max-w-full"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS}>Todos os equipamentos</SelectItem>
-              {equipamentos.map((e) => <SelectItem key={e.id} value={e.id}>{rotuloDoEquipamento(e)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro_eq_tipo">Tipo</Label>
-          <Select value={tipo} onValueChange={setTipo}>
-            <SelectTrigger id="filtro_eq_tipo" className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS}>Todos</SelectItem><SelectItem value="Preventiva">Preventiva</SelectItem><SelectItem value="Corretiva">Corretiva</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Input aria-label="Buscar manutenção" placeholder="Buscar por equipamento, ação ou local" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        <Button requiresWrite className="ml-auto" onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova manutenção</Button>
+        <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova manutenção</Button>
+        <BarraDeFiltros>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro_eq_manut">Histórico por equipamento</Label>
+            <Select value={filtroValido} onValueChange={setFiltro}>
+              <SelectTrigger id="filtro_eq_manut" className="w-80 max-w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS}>Todos os equipamentos</SelectItem>
+                {equipamentos.map((e) => <SelectItem key={e.id} value={e.id}>{rotuloDoEquipamento(e)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro_eq_tipo">Tipo</Label>
+            <Select value={tipo} onValueChange={setTipo}>
+              <SelectTrigger id="filtro_eq_tipo" className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS}>Todos</SelectItem><SelectItem value="Preventiva">Preventiva</SelectItem><SelectItem value="Corretiva">Corretiva</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Input aria-label="Buscar manutenção" placeholder="Buscar por equipamento, ação ou local" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        </BarraDeFiltros>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Manutenções</p><p className="text-lg font-semibold">{linhas.length}</p></div>
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Preventivas / corretivas</p><p className="text-lg font-semibold">{linhas.filter((m) => m.tipo === "Preventiva").length} / {linhas.filter((m) => m.tipo === "Corretiva").length}</p></div>
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Custo total</p><p className="text-lg font-semibold">{reais(custo)}</p></div>
+        <StatCard titulo="Manutenções" valor={linhas.length} icone={Wrench} compacto />
+        <StatCard titulo="Preventivas / corretivas" valor={`${linhas.filter((m) => m.tipo === "Preventiva").length} / ${linhas.filter((m) => m.tipo === "Corretiva").length}`} icone={ListChecks} compacto />
+        <StatCard titulo="Custo total" valor={reais(custo)} icone={Banknote} compacto />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
+      <div className="max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table>
           <TableHeader>
             <TableRow>

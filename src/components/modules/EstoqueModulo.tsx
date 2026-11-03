@@ -10,8 +10,9 @@ import { lerItensEstoque } from '@/lib/itens-estoque-modulo';
 import { prepararEstoqueFerramenta, prepararMinimoUnico, prepararMinimosEstoque, tamanhosConfiguraveisNoModulo } from '@/lib/estoque-configuracao';
 import { controlaTamanho, estadoEstoqueModulo, nomeTamanho, preservarMinimosNaoSelecionados, tamanhosAutorizadosDoProduto, tamanhosDisponiveisDoProduto } from '@/lib/estoque-tamanho';
 import { useEmpresas, useSalvar } from '@/lib/hooks-gemape';
-import { estaAtivo } from '@/lib/parametros-base';
+import { combinaBusca, estaAtivo } from '@/lib/parametros-base';
 import { useParametrosBase } from '@/lib/use-parametros-base';
+import { BarraDeFiltros } from '@/components/layout/BarraDeFiltros';
 import { ControleEstoqueModulo } from '@/components/modules/ControleEstoqueModulo';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -26,6 +27,8 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const [itemId, setItemId] = useState<string | null>(null);
+  // Busca por palavra-chave (decisão 339): código, nome do item ou empresa, sem acento e sem diferenciar maiúscula.
+  const [busca, setBusca] = useState('');
   const tabela = modulo === 'uniforme' ? 'uniformes' : 'ferramentas';
   const salvar = useSalvar(tabela, ['estoque-modulo']);
   const { data: itens = [], isLoading, isError, error } = useQuery({
@@ -35,7 +38,9 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
   const { data: empresas = [] } = useEmpresas();
   // Dec 238: o estoque é por empresa; cada linha diz de qual empresa é, para o mesmo código não parecer repetido.
   const nomeDaEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome_fantasia ?? '—';
-  const linhas = itens.map((item) => ({ item, estado: estadoEstoqueModulo(parametros, modulo, item) }));
+  const linhas = itens
+    .filter((item) => combinaBusca(busca, item.codigo_sku, item.nome, nomeDaEmpresa(item.empresa_id)))
+    .map((item) => ({ item, estado: estadoEstoqueModulo(parametros, modulo, item) }));
   const itemEditado = itens.find((item) => item.id === itemId);
   const porTamanho = Boolean(itemEditado && MODO_DEMO && modulo !== 'ferramenta' && (
     controlaTamanho(parametros, modulo, itemEditado)
@@ -85,9 +90,9 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">Estoque</h2>
-        <Button variant="outline" disabled={isLoading || itens.length === 0} onClick={() =>
+      {/* Sem o título "Estoque" (a página já tem o dela): o Exportar CSV no alto, à direita, acima da busca (decisão 339). */}
+      <div className="flex flex-col items-end gap-2">
+        <Button variant="outline" disabled={isLoading || linhas.length === 0} onClick={() =>
           exportarCsv(`estoque-${modulo}`, linhas.map(({ item, estado }) => ({
             Código: item.codigo_sku,
             Empresa: nomeDaEmpresa(item.empresa_id),
@@ -100,6 +105,14 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             Alerta: estado.alerta ? `Abaixo do mínimo${estado.detalheAlerta ? `: ${estado.detalheAlerta}` : ''}` : '',
           })))
         }>Exportar CSV</Button>
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar item do estoque"
+            placeholder="Buscar por código, item ou empresa"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
       </div>
       <div className="panel overflow-x-auto">
         <Table>
@@ -111,7 +124,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
           </TableRow></TableHeader>
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={7}>Carregando estoque…</TableCell></TableRow>
-              : linhas.length === 0 ? <TableRow><TableCell colSpan={7}>Nenhum item cadastrado.</TableCell></TableRow>
+              : linhas.length === 0 ? <TableRow><TableCell colSpan={7}>{busca.trim() ? 'Nenhum item para a busca.' : 'Nenhum item cadastrado.'}</TableCell></TableRow>
                 : linhas.map(({ item, estado }) => <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell>{item.nome}</TableCell>

@@ -1,3 +1,6 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { Banknote, Droplets, Fuel, Gauge } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
 import { useMemo, useState } from "react";
 
 import { NovoAbastecimentoDialog } from "@/components/modules/NovoAbastecimentoDialog";
@@ -137,46 +140,49 @@ export function AbastecimentoVeiculoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="filtro_veiculo">Histórico por veículo</Label>
-          <Select value={filtroValido} onValueChange={setFiltro}>
-            <SelectTrigger id="filtro_veiculo" className="w-80 max-w-full"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS}>Todos os veículos</SelectItem>
-              {veiculos.map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDoVeiculo(parametros, v)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <Input
-          aria-label="Buscar abastecimento"
-          placeholder="Buscar por veículo, data ou km"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-        <div className="space-y-1.5">
-          <Label htmlFor="abastecimento-inicio">Data início</Label>
-          <Input id="abastecimento-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="abastecimento-fim">Data fim</Label>
-          <Input id="abastecimento-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
-        </div>
-        {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
-        <Button variant="outline" className="ml-auto" onClick={gerarRelatorio} disabled={periodoInvalido}>Gerar PDF</Button>
+        <Button variant="outline" onClick={gerarRelatorio} disabled={periodoInvalido}>Gerar PDF</Button>
         <Button requiresWrite onClick={abrir}>Novo abastecimento</Button>
+        <BarraDeFiltros>
+          <div className="space-y-1.5">
+            <Label htmlFor="filtro_veiculo">Histórico por veículo</Label>
+            <Select value={filtroValido} onValueChange={setFiltro}>
+              <SelectTrigger id="filtro_veiculo" className="w-80 max-w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS}>Todos os veículos</SelectItem>
+                {veiculos.map((v) => <SelectItem key={v.id} value={v.id}>{rotuloDoVeiculo(parametros, v)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Input
+            aria-label="Buscar abastecimento"
+            placeholder="Buscar por veículo, data ou km"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          <div className="space-y-1.5">
+            <Label htmlFor="abastecimento-inicio">Data início</Label>
+            <Input id="abastecimento-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="abastecimento-fim">Data fim</Label>
+            <Input id="abastecimento-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
+          </div>
+          {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
+        </BarraDeFiltros>
       </div>
 
       {resumo && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Abastecimentos</p><p className="text-lg font-semibold">{linhas.length}</p></div>
-          <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Litros</p><p className="text-lg font-semibold">{resumo.litros.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}</p></div>
-          <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Total gasto</p><p className="text-lg font-semibold">{reais(resumo.gasto)}</p></div>
-          <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Média de consumo</p><p className="text-lg font-semibold">{resumo.media === null ? "—" : `${resumo.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`}</p></div>
+          <StatCard titulo="Abastecimentos" valor={linhas.length} icone={Fuel} compacto />
+          <StatCard titulo="Litros" valor={resumo.litros.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} icone={Droplets} compacto />
+          <StatCard titulo="Total gasto" valor={reais(resumo.gasto)} icone={Banknote} compacto />
+          <StatCard titulo="Média de consumo" valor={resumo.media === null ? "—" : `${resumo.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`} icone={Gauge} compacto />
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border">
+      {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
+      <div className={`${resumo ? "max-h-[max(12rem,calc(100dvh-27rem))]" : "max-h-[max(12rem,calc(100dvh-18rem))]"} flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card`}>
         <Table>
           <TableHeader>
             <TableRow>

@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -25,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
 import { horaBrasilia, hojeLocal } from "@/lib/empregados";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { formatarData } from "@/lib/gemape";
+import { dataHoraBrasilia, dataHoraLocal, formatarData } from "@/lib/gemape";
 import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { useEmpregados, useEmpresas, useVeiculos } from "@/lib/hooks-gemape";
 import { indicadoresDeOcorrencias } from "@/lib/ocorrencias-indicadores";
@@ -43,8 +44,6 @@ import { executar, useParametrosBase } from "@/lib/use-parametros-base";
 
 const reais = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const horaAgora = () => horaBrasilia();
-const dataHoraLocal = (ocorridoEm: string) => `${formatarData(ocorridoEm.slice(0, 10))} ${ocorridoEm.slice(11, 16)}`;
-const dataHoraBrasilia = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 // Cores dos status: aberta em vermelho, em tratativa em amarelo, encerrada em verde.
 const COR_STATUS: Record<StatusOcorrencia, string> = {
@@ -258,30 +257,32 @@ export function OcorrenciasVeiculoModulo() {
         </>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-end gap-2">
             <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
             <h2 className="text-base font-semibold">{BOTOES_FILTRO.find((b) => b.filtro === filtro)?.rotulo ?? "Ocorrências"}</h2>
-            <Input
-              aria-label="Buscar ocorrência"
-              placeholder="Buscar por código, veículo, tipo ou condutor"
-              className="max-w-xs"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-            <div className="flex items-center gap-2" title="Data em que a ocorrência aconteceu">
-              <Label htmlFor="ocorrencias-inicio" className="text-sm">Data início</Label>
-              <Input id="ocorrencias-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
-            </div>
-            <div className="flex items-center gap-2" title="Data em que a ocorrência aconteceu">
-              <Label htmlFor="ocorrencias-fim" className="text-sm">Data fim</Label>
-              <Input id="ocorrencias-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
-            </div>
-            {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
-            <p className="text-sm text-muted-foreground">{lista.length} ocorrência(s).</p>
-            <Button requiresWrite="operar" className="ml-auto" onClick={abrirNova}>Nova ocorrência</Button>
+            <Button requiresWrite="operar" onClick={abrirNova}>Nova ocorrência</Button>
+            <BarraDeFiltros>
+              <Input
+                aria-label="Buscar ocorrência"
+                placeholder="Buscar por código, veículo, tipo ou condutor"
+                className="max-w-xs"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+              />
+              <div className="flex items-center gap-2" title="Data em que a ocorrência aconteceu">
+                <Label htmlFor="ocorrencias-inicio" className="text-sm">Data início</Label>
+                <Input id="ocorrencias-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
+              </div>
+              <div className="flex items-center gap-2" title="Data em que a ocorrência aconteceu">
+                <Label htmlFor="ocorrencias-fim" className="text-sm">Data fim</Label>
+                <Input id="ocorrencias-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
+              </div>
+              {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
+              <p className="text-sm text-muted-foreground">{lista.length} ocorrência(s).</p>
+            </BarraDeFiltros>
           </div>
           {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
-          <div className="max-h-[max(12rem,calc(100dvh-20rem))] overflow-auto rounded-xl border">
+          <div className="max-h-[max(12rem,calc(100dvh-20rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
             <Table>
               <TableHeader>
                 <TableRow>

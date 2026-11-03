@@ -1,3 +1,6 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { Banknote, Forklift, TriangleAlert, Wrench } from "lucide-react";
+import { StatCard } from "@/components/StatCard";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -88,25 +91,29 @@ export function InventarioEquipamentoModulo() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Equipamentos</p><p className="text-lg font-semibold">{equipamentos.length}</p></div>
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Em manutenção</p><p className="text-lg font-semibold">{equipamentos.filter((e) => e.status === "Em manutenção").length}</p></div>
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Ocorrências abertas</p><p className="text-lg font-semibold">{abertasTotal}</p></div>
-        <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Custo de manutenção</p><p className="text-lg font-semibold">{reais(custoTotal)}</p></div>
-      </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <Input aria-label="Buscar equipamento" placeholder="Buscar por patrimônio, nome, tipo, marca ou setor" className="max-w-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        <div className="space-y-1.5">
-          <Label htmlFor="status_inventario">Situação</Label>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger id="status_inventario" className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value={TODOS}>Todas</SelectItem>{STATUS_EQUIPAMENTO.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
+        <BarraDeFiltros>
+          <Input aria-label="Buscar equipamento" placeholder="Buscar por patrimônio, nome, tipo, marca ou setor" className="max-w-sm" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <div className="space-y-1.5">
+            <Label htmlFor="status_inventario">Situação</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger id="status_inventario" className="w-48"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value={TODOS}>Todas</SelectItem>{STATUS_EQUIPAMENTO.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        </BarraDeFiltros>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard titulo="Equipamentos" valor={equipamentos.length} icone={Forklift} compacto />
+        <StatCard titulo="Em manutenção" valor={equipamentos.filter((e) => e.status === "Em manutenção").length} icone={Wrench} compacto />
+        <StatCard titulo="Ocorrências abertas" valor={abertasTotal} icone={TriangleAlert} compacto />
+        <StatCard titulo="Custo de manutenção" valor={reais(custoTotal)} icone={Banknote} compacto />
+      </div>
+
+      {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
+      <div className="max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table>
           <TableHeader>
             <TableRow>

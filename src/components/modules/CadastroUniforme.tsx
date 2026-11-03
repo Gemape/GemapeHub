@@ -267,7 +267,12 @@ function CatalogoUniforme() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button requiresWrite onClick={abrirNovo}>
+          Novo uniforme
+        </Button>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
         <Input
           aria-label="Buscar uniforme por código, descrição, subcategoria ou tamanho"
           placeholder="Buscar por código, descrição, subcategoria ou tamanho"
@@ -275,9 +280,6 @@ function CatalogoUniforme() {
           onChange={(e) => setBusca(e.target.value)}
           className="max-w-md"
         />
-        <Button requiresWrite onClick={abrirNovo} className="ml-auto">
-          Novo uniforme
-        </Button>
       </div>
 
       <div className="panel overflow-x-auto">

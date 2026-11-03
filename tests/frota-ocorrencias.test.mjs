@@ -62,13 +62,14 @@ test("o relatório e a tela da Frota têm a coluna Ocorrências", () => {
   const html = montarFrotaHtml({ empresa: "GEMAPE", geradoEm: "2026-10-07T13:00:00Z", busca: "", linhas: [{ veiculo: "A", responsavel: "", situacao: "Ativo", km: 1, preventivas: null, ocorrencias: { situacao: "vencida", quantidade: 1 }, checklist: null }] });
   assert.ok(html.includes("<th>Ocorrências</th>"));
   assert.ok(html.includes("Vencida (1)"));
-  assert.match(ler("components/modules/FrotaModulo.tsx"), /<TableHead className="w-\[14%\] text-center">Ocorrências<\/TableHead>/);
+  assert.match(ler("components/modules/FrotaModulo.tsx"), /<TableHead className="w-\[10%\] text-center">Ocorrências<\/TableHead>/);
 });
 
-test("o extrato do veículo é uma tela com período, as tabelas de sugeridas, realizadas e ocorrências, PDF por seção, e bloqueia período invertido", () => {
+test("o extrato do veículo é uma tela com período, as tabelas de sugeridas, realizadas e ocorrências, PDF personalizado por seções marcadas, e bloqueia período invertido", () => {
   const extrato = ler("components/modules/ExtratoVeiculo.tsx");
-  for (const t of ["Data início", "Data fim", "Gerar PDF desta seção", "Gerar PDF"]) assert.ok(extrato.includes(t), t);
-  assert.match(extrato, /PDF_DA_TABELA[^=]*= \{ 0: "sugeridas", 1: "realizadas", 4: "ocorrencias", 5: "checklists" \}/);
+  for (const x of ["Data início", "Data fim", "Gerar PDF", "Personalizar o relatório", "Marcar todos", "Desmarcar todos"]) assert.ok(extrato.includes(x), x);
+  assert.ok(!extrato.includes("Gerar PDF desta seção"), "os botões Gerar PDF desta seção saíram (decisão 340)");
+  assert.match(extrato, /gerarPdf\(veiculo, marcadas\)/, "o PDF sai com as seções marcadas");
   assert.match(extrato, /const periodoInvalido = !!inicio && !!fim && inicio > fim;/);
   assert.match(extrato, /noPeriodo\(/);
 });

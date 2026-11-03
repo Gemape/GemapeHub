@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Download, FileText } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
@@ -91,7 +92,7 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente, relato
     <div className="space-y-1">
       <Label>{rotulo}</Label>
       <Select value={valor} onValueChange={(v) => { if (v) aoMudar(v); }}>
-        <SelectTrigger aria-label={rotulo}><SelectValue /></SelectTrigger>
+        <SelectTrigger aria-label={rotulo} className="w-44"><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem value={TODOS}>{todos}</SelectItem>
           {itens.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
@@ -102,20 +103,22 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente, relato
 
   return (
     <section className="space-y-3" aria-labelledby="viagens-lista">
+      <div className="flex flex-wrap items-end gap-2">
       <h2 id="viagens-lista" className="text-lg font-semibold">Despesas de {rotuloPeriodo(periodo)}</h2>
-      <div className="panel grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <BarraDeFiltros>
         {seletor("Tipo", filtro.tipo ?? TODOS, (v) => mudar({ tipo: v === TODOS ? null : v }), "Todos os tipos", tipos)}
         {seletor("Técnico", filtro.tecnico ?? TODOS, (v) => mudar({ tecnico: v === TODOS ? null : v }), "Todos os técnicos", tecnicos)}
         <div className="space-y-1">
           <Label htmlFor="lista-de">Data inicial</Label>
-          <Input id="lista-de" name="lista-de" type="date" value={filtro.de} onChange={(e) => mudar({ de: e.target.value })} />
+          <Input id="lista-de" name="lista-de" type="date" className="w-40" value={filtro.de} onChange={(e) => mudar({ de: e.target.value })} />
         </div>
         <div className="space-y-1">
           <Label htmlFor="lista-ate">Data final</Label>
-          <Input id="lista-ate" name="lista-ate" type="date" value={filtro.ate} onChange={(e) => mudar({ ate: e.target.value })} />
+          <Input id="lista-ate" name="lista-ate" type="date" className="w-40" value={filtro.ate} onChange={(e) => mudar({ ate: e.target.value })} />
         </div>
-        {!valido && <p role="alert" className="text-sm text-destructive sm:col-span-2 lg:col-span-4">A data inicial não pode ser depois da final.</p>}
+      </BarraDeFiltros>
       </div>
+      {!valido && <p role="alert" className="text-sm text-destructive">A data inicial não pode ser depois da final.</p>}
 
       <div className="panel overflow-x-auto">
         <Table>

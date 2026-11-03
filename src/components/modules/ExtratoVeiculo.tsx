@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
+import { ConsultaChecklist, ConsultaOcorrencia } from "@/components/modules/ConsultasDoExtrato";
 import { NovaManutencaoDialog } from "@/components/modules/NovaManutencaoDialog";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Button } from "@/components/ui/button";
@@ -43,16 +44,12 @@ const numero = (n: number) => n.toLocaleString("pt-BR");
 // (o extrato completo, ou a seção). Clicar numa bolinha da Frota abre o extrato já na tabela que ela resume (decisão 305).
 export type SecaoExtrato = "completo" | "sugeridas" | "realizadas" | "ocorrencias" | "ocorrenciasAbertas" | "checklists";
 type Secao = SecaoExtrato;
-// Os PDFs possíveis (decisão 331); "ocorrenciasAbertas" só existe como entrada da Frota, para abrir a tela na tabela das ocorrências (o PDF das abertas sai com Só em aberto).
-type SecaoPdf = Exclude<Secao, "ocorrenciasAbertas">;
-const TITULO: Record<SecaoPdf, string> = {
-  completo: "Extrato do veículo", sugeridas: "Manutenções sugeridas do veículo", realizadas: "Manutenções realizadas do veículo", ocorrencias: "Ocorrências do veículo", checklists: "Check lists do veículo",
-};
-const ARQUIVO: Record<SecaoPdf, string> = {
-  completo: "Extrato do veiculo", sugeridas: "Manutencoes sugeridas", realizadas: "Manutencoes realizadas", ocorrencias: "Ocorrencias do veiculo", checklists: "Check lists do veiculo",
-};
-// Posição das tabelas do extrato (sugeridas, realizadas, itens em atenção, abastecimentos, ocorrências, check lists) que cada botão mostra.
-const SECOES: Record<SecaoPdf, number[]> = { completo: [0, 1, 2, 3, 4, 5], sugeridas: [0], realizadas: [1, 2], ocorrencias: [4], checklists: [5] };
+// Uma célula do extrato que abre a consulta do registro: a coluna do código, o que ele é e o id (decisão 338).
+type Ligacao = { coluna: number; tipo: "checklist" | "ocorrencia"; id: string };
+// O PDF é um só: o extrato com as seções que a pessoa marcou em Personalizar o relatório (decisão 340). As seções são as tabelas do extrato (sugeridas, realizadas, itens em atenção,
+// abastecimentos, ocorrências e check lists, nesta ordem); "ocorrenciasAbertas" só existe como entrada da Frota, para abrir a tela na tabela das ocorrências.
+const TODAS_AS_TABELAS = [0, 1, 2, 3, 4, 5];
+const TABELA_DAS_OCORRENCIAS = 4;
 const SITUACAO_CHECKLIST: Record<SituacaoPrevisao, { rotulo: string; cor: Cor }> = {
   realizado: { rotulo: "Realizado no prazo", cor: "verde" },
   nao_realizado: { rotulo: "Não realizado no prazo", cor: "vermelho" },
@@ -185,27 +182,31 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
           }),
         },
     ];
+    // Quais células viram link para consultar o registro (decisão 338): o código do check list (tabela 5) e o da ocorrência (tabela 4, no começo da descrição). Só na tela: o PDF não muda.
+    const ligacoes: Record<string, Ligacao> = {};
+    if (MODO_DEMO) ocorrenciasDoVeiculo.forEach((o, k) => { if (o.id) ligacoes[`4:${k}`] = { coluna: 1, tipo: "ocorrencia", id: o.id }; });
+    linhasChecklist.forEach((l, k) => { if (l.checklistId && l.checklistCodigo) ligacoes[`5:${k}`] = { coluna: 5, tipo: "checklist", id: l.checklistId }; });
     return {
-      rotulo, kmAtual, media, vencidas, tabelas,
+      rotulo, kmAtual, media, vencidas, tabelas, ligacoes,
       empresa: empresas.find((e) => e.id === v.empresa_id)?.nome_fantasia ?? "",
       ocorrenciasAbertas: ocorrenciasDoVeiculo.filter((o) => o.id && o.aberta) as { id: string; descricao: string }[],
     };
   }
 
   // O PDF só sai quando a pessoa clica em Gerar PDF (decisão 331): o extrato é a tela; o mesmo cálculo vira o relatório no visualizador, de tela cheia.
-  function gerarPdf(v: Veiculo, secao: SecaoPdf) {
+  function gerarPdf(v: Veiculo, tabelasEscolhidas: number[]) {
     // O PDF das ocorrências sai como a tela: com "Só em aberto" marcado, só as abertas.
-    const abertas = MODO_DEMO && soAbertas && (secao === "ocorrencias" || secao === "completo");
+    const abertas = MODO_DEMO && soAbertas && tabelasEscolhidas.includes(TABELA_DAS_OCORRENCIAS);
     const d = montarDados(v, abertas);
     const html = montarExtratoHtml({
-      titulo: TITULO[secao],
+      titulo: "Extrato do veículo",
       assunto: d.rotulo,
       ...(inicio || fim || abertas ? { subtitulo: [inicio || fim ? `Período: ${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : "", abertas ? "Só ocorrências em aberto" : ""].filter(Boolean).join(" · ") } : {}),
       empresa: d.empresa,
       resumo: resumoDo(d),
-      tabelas: d.tabelas.filter((_, n) => SECOES[secao].includes(n)),
+      tabelas: d.tabelas.filter((_, n) => tabelasEscolhidas.includes(n)),
     });
-    abrirDocumento({ titulo: TITULO[secao], html, arquivo: nomeArquivoDocumento(ARQUIVO[secao], d.rotulo), telaCheia: true });
+    abrirDocumento({ titulo: "Extrato do veículo", html, arquivo: nomeArquivoDocumento("Extrato do veiculo", d.rotulo), telaCheia: true });
   }
 
   // Escolher outro veículo começa sem período.
@@ -213,6 +214,12 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
   // Vindo de uma bolinha da Frota, o extrato abre na tabela que ela resume (e, nas ocorrências em aberto, só com as abertas).
   const [soAbertas, setSoAbertas] = useState(false);
   const [registrando, setRegistrando] = useState(false);
+  // Personalizar o PDF do extrato (decisão 340): o botão Gerar PDF do alto abre a escolha das seções; começam todas marcadas.
+  const [personalizando, setPersonalizando] = useState(false);
+  const [marcadas, setMarcadas] = useState<number[]>(TODAS_AS_TABELAS);
+  // Consulta aberta por cima do extrato: o código do check list ou da ocorrência; fechar volta ao extrato (decisão 338).
+  const [consulta, setConsulta] = useState<{ tipo: "checklist" | "ocorrencia"; id: string } | null>(null);
+  useEffect(() => { setConsulta(null); }, [veiculo?.id]);
   useEffect(() => {
     setSoAbertas(secao === "ocorrenciasAbertas");
     if (!veiculo || !secao) return;
@@ -227,8 +234,6 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
     [veiculo, periodoInvalido, inicio, fim, soAbertas, abastecimentos, manutencoes, planos, movimentacoes, ocorrencias, ocorrenciasNovas, checklists, previsoes, parametros, empresas],
   );
   const rotuloVeiculo = veiculo ? rotuloDoVeiculo(parametros, veiculo) : "";
-  // Qual PDF cada tabela gera, para o botão Gerar PDF de cada seção; o do topo gera o extrato completo.
-  const PDF_DA_TABELA: Partial<Record<number, SecaoPdf>> = { 0: "sugeridas", 1: "realizadas", 4: "ocorrencias", 5: "checklists" };
   return (
     <Dialog open={!!veiculo} onOpenChange={(a) => { if (!a) onFechar(); }}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-6xl">
@@ -247,7 +252,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
             <Input id="extrato-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
           </div>
           <p className="max-w-md text-xs text-muted-foreground">O período vale para as manutenções realizadas, os abastecimentos e as ocorrências. As sugeridas mostram sempre a situação de hoje.</p>
-          <Button type="button" className="ml-auto" disabled={periodoInvalido || !veiculo} onClick={() => veiculo && gerarPdf(veiculo, "completo")}>Gerar PDF</Button>
+          <Button type="button" className="ml-auto" disabled={periodoInvalido || !veiculo} onClick={() => setPersonalizando(true)}>Gerar PDF</Button>
         </div>
         {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
 
@@ -280,7 +285,6 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
                         <Checkbox checked={soAbertas} onCheckedChange={(v) => setSoAbertas(v === true)} aria-label="Só as ocorrências em aberto" /> Só em aberto
                       </label>
                     )}
-                    {PDF_DA_TABELA[n] && <Button type="button" variant="ghost" size="sm" disabled={periodoInvalido} onClick={() => gerarPdf(veiculo, PDF_DA_TABELA[n]!)}>Gerar PDF desta seção</Button>}
                   </div>
                 </div>
                 <div className="overflow-x-auto rounded-xl border">
@@ -295,7 +299,9 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
                           <TableRow key={k}>
                             {l.map((c, m) => (
                               <TableCell key={m} className={t.colunas[m]?.direita ? "text-right tabular-nums" : ""}>
-                                {typeof c === "string" ? c : (
+                                {typeof c === "string" && dados.ligacoes[`${n}:${k}`]?.coluna === m ? (
+                                  <ConsultarCodigo texto={c} ligacao={dados.ligacoes[`${n}:${k}`]!} aoConsultar={(l) => setConsulta({ tipo: l.tipo, id: l.id })} />
+                                ) : typeof c === "string" ? c : (
                                   <span className="inline-flex items-center gap-2">
                                     <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ${PONTO_TELA[c.cor]}`} />
                                     <span className={TEXTO_TELA[c.cor]}>{c.texto}</span>
@@ -328,7 +334,60 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
           <Button type="button" variant="outline" onClick={onFechar}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
+      {veiculo && (
+        <ConsultaChecklist checklist={consulta?.tipo === "checklist" ? (checklists.find((c) => c.id === consulta.id) ?? null) : null} onFechar={() => setConsulta(null)} />
+      )}
+      {veiculo && consulta?.tipo === "ocorrencia" && (
+        <ConsultaOcorrencia ocorrencia={ocorrenciasNovas.find((o) => o.id === consulta.id) ?? null} veiculo={rotuloVeiculo} onFechar={() => setConsulta(null)} />
+      )}
+      {veiculo && dados && (
+        <Dialog open={personalizando} onOpenChange={setPersonalizando}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Personalizar o relatório</DialogTitle>
+              <DialogDescription>Marque as seções que entram no PDF do extrato. O resumo do veículo (km atual, média e preventivas vencidas) sai sempre.</DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(dados.tabelas.map((_, n) => n))}>Marcar todos</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas([])}>Desmarcar todos</Button>
+              <span className="ml-auto text-xs text-muted-foreground">{marcadas.length} de {dados.tabelas.length} seções</span>
+            </div>
+            <ul className="space-y-1.5" aria-label="Seções do relatório">
+              {dados.tabelas.map((t, n) => (
+                <li key={t.titulo}>
+                  <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
+                    <Checkbox checked={marcadas.includes(n)} onCheckedChange={(v) => setMarcadas((m) => (v === true ? [...m.filter((x) => x !== n), n].sort((a, b) => a - b) : m.filter((x) => x !== n)))} />
+                    {t.titulo}
+                  </label>
+                </li>
+              ))}
+            </ul>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setPersonalizando(false)}>Cancelar</Button>
+              <Button type="button" disabled={marcadas.length === 0} onClick={() => { setPersonalizando(false); gerarPdf(veiculo, marcadas); }}>Gerar PDF</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
       {veiculo && registrando && <NovaManutencaoDialog aberto={registrando} aoMudar={setRegistrando} veiculoInicial={veiculo.id} aoSalvar={() => undefined} />}
     </Dialog>
+  );
+}
+
+// O código do registro como link: na ocorrência o texto é "OCO-0001 · tipo: descrição" e só o código é o botão; no check list a célula é o próprio código.
+function ConsultarCodigo({ texto, ligacao, aoConsultar }: { texto: string; ligacao: Ligacao; aoConsultar: (l: Ligacao) => void }) {
+  const codigo = ligacao.tipo === "ocorrencia" ? (texto.split(" · ")[0] ?? texto) : texto;
+  return (
+    <>
+      <button
+        type="button"
+        title={ligacao.tipo === "checklist" ? "Consultar o check list" : "Consultar a ocorrência"}
+        className="font-medium text-primary underline underline-offset-2"
+        onClick={() => aoConsultar(ligacao)}
+      >
+        {codigo}
+      </button>
+      {texto.slice(codigo.length)}
+    </>
   );
 }

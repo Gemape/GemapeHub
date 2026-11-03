@@ -21,9 +21,12 @@ import type { StatusOcorrencia } from "@/lib/ocorrencias-veiculo";
 export function GraficosFrota({
   indicadores,
   medias,
+  compacto = false,
 }: {
   indicadores: IndicadoresDaFrota;
   medias: { veiculo: string; media: number | null }[];
+  // Na Frota os gráficos dividem a tela com os cards e a lista: mais baixos e sem o texto de apoio (decisão 337).
+  compacto?: boolean;
 }) {
   const barras = [
     { nome: "Manutenções", pct: indicadores.manutencoes.pct, faixa: indicadores.manutencoes.faixa },
@@ -52,7 +55,7 @@ export function GraficosFrota({
     <PainelGraficos>
       <QuadroGrafico
         titulo="PCM x técnicos (%)"
-        descricao="Cada indicador contra a meta de 90% (faixa verde)."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Cada indicador contra a meta de 90% (faixa verde)." })}
       >
         <GraficoBarras
           dados={barras.map((b) => ({ nome: b.nome, valor: b.pct ?? 0 }))}
@@ -65,7 +68,7 @@ export function GraficosFrota({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="Média de consumo por veículo (km/L)"
-        descricao="Quanto cada veículo roda por litro, do maior para o menor."
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quanto cada veículo roda por litro, do maior para o menor." })}
         vazio={consumo.length === 0}
       >
         <GraficoBarras

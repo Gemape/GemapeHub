@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { ArrowLeft, CalendarCheck, ClipboardCheck } from "lucide-react";
 import { useState } from "react";
 
@@ -185,12 +186,14 @@ export function ManutencaoVeiculoModulo() {
 
       {aba === "planejadas" && (
         <>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-end gap-2">
             {voltar}
-            <Input aria-label="Buscar manutenção" placeholder="Buscar por veículo ou serviço" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
-            {filtroPeriodoPlan}
-            <p className="text-sm text-muted-foreground">{revisoesDaBusca.length} manutenção(ões) planejada(s){inicioPlan || fimPlan ? ", pela data da próxima revisão" : ""}.</p>
-            <div className="ml-auto">{botaoCadastrar}</div>
+            <div>{botaoCadastrar}</div>
+            <BarraDeFiltros>
+              <Input aria-label="Buscar manutenção" placeholder="Buscar por veículo ou serviço" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+              {filtroPeriodoPlan}
+              <p className="text-sm text-muted-foreground">{revisoesDaBusca.length} manutenção(ões) planejada(s){inicioPlan || fimPlan ? ", pela data da próxima revisão" : ""}.</p>
+            </BarraDeFiltros>
           </div>
           {periodoPlanInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
           <div className={`${ALTURA_LISTA} overflow-y-auto`}>
@@ -201,20 +204,22 @@ export function ManutencaoVeiculoModulo() {
 
       {aba === "realizadas" && (
         <>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-end gap-2">
             {voltar}
-            <div className="flex gap-2" role="group" aria-label="Tipo de manutenção">
-              <Button type="button" size="sm" variant={tipo === "todas" ? "default" : "outline"} aria-pressed={tipo === "todas"} onClick={() => setTipo("todas")}>Todas</Button>
-              <Button type="button" size="sm" variant={tipo === "Preventiva" ? "default" : "outline"} aria-pressed={tipo === "Preventiva"} onClick={() => setTipo("Preventiva")}>Preventivas ({indicadores.preventivas.qtd})</Button>
-              <Button type="button" size="sm" variant={tipo === "Corretiva" ? "default" : "outline"} aria-pressed={tipo === "Corretiva"} onClick={() => setTipo("Corretiva")}>Corretivas ({indicadores.corretivas.qtd})</Button>
-            </div>
-            <Input aria-label="Buscar manutenção" placeholder="Buscar por veículo, serviço ou tipo" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
-            {filtroPeriodo}
-            <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
-            <div className="ml-auto">{botaoCadastrar}</div>
+            <div>{botaoCadastrar}</div>
+            <BarraDeFiltros>
+              <div className="flex gap-2" role="group" aria-label="Tipo de manutenção">
+                <Button type="button" size="sm" variant={tipo === "todas" ? "default" : "outline"} aria-pressed={tipo === "todas"} onClick={() => setTipo("todas")}>Todas</Button>
+                <Button type="button" size="sm" variant={tipo === "Preventiva" ? "default" : "outline"} aria-pressed={tipo === "Preventiva"} onClick={() => setTipo("Preventiva")}>Preventivas ({indicadores.preventivas.qtd})</Button>
+                <Button type="button" size="sm" variant={tipo === "Corretiva" ? "default" : "outline"} aria-pressed={tipo === "Corretiva"} onClick={() => setTipo("Corretiva")}>Corretivas ({indicadores.corretivas.qtd})</Button>
+              </div>
+              <Input aria-label="Buscar manutenção" placeholder="Buscar por veículo, serviço ou tipo" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+              {filtroPeriodo}
+              <p className="text-sm text-muted-foreground">{lista.length} manutenção(ões).</p>
+            </BarraDeFiltros>
           </div>
           {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
-      <div className={`${ALTURA_LISTA} overflow-auto rounded-xl border`}>
+      <div className={`${ALTURA_LISTA} flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card`}>
         <Table className="min-w-[1250px] table-fixed">
           <TableHeader>
             <TableRow>

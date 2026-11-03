@@ -174,16 +174,18 @@ function FichaEpiPagina() {
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button requiresWrite onClick={() => abrir(null)}>
+          Nova ficha
+        </Button>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
         <Input
           placeholder="Buscar por código, descrição ou setor"
           className="max-w-xs"
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
-        <Button requiresWrite className="ml-auto" onClick={() => abrir(null)}>
-          Nova ficha
-        </Button>
       </div>
 
       <div className="panel overflow-x-auto">

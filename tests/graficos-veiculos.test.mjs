@@ -51,7 +51,7 @@ test("placa do rótulo do veículo", () => {
 test("as telas de Veículos têm os gráficos comparativos abaixo dos cards, e todo indicador usa o mesmo card (decisões 324 e 325)", () => {
   assert.match(
     ler("components/modules/FrotaModulo.tsx"),
-    /<CartoesIndicadoresFrota indicadores=\{indicadores\} \/>\s*<GraficosFrota /,
+    /<CartoesIndicadoresFrota\s+indicadores=\{indicadores\}\s+graficos=\{<GraficosFrota compacto /,
   );
   assert.match(
     ler("components/modules/ManutencaoVeiculoModulo.tsx"),

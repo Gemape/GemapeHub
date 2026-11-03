@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,14 +110,8 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Buscar por descrição ou responsável"
-          className="max-w-xs"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-        <div className="ml-auto flex gap-2">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={() =>
@@ -146,6 +141,14 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
             Nova Ocorrência
           </Button>
         </div>
+        <BarraDeFiltros>
+          <Input
+            placeholder="Buscar por descrição ou responsável"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

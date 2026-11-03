@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -131,9 +132,11 @@ export function PortadoresCaixaModulo() {
       </form>
 
       <section className="panel space-y-3 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div><h2 className="font-semibold">Histórico de portadores</h2><p className="text-sm text-muted-foreground">Todos os registros das caixas desta empresa, inclusive caixas não habilitadas atualmente.</p></div>
-          <Input className="max-w-xs" value={buscaHistorico} onChange={(e) => setBuscaHistorico(e.target.value)} placeholder="Buscar caixa ou empregado" />
+          <BarraDeFiltros>
+            <Input className="max-w-xs" value={buscaHistorico} onChange={(e) => setBuscaHistorico(e.target.value)} placeholder="Buscar caixa ou empregado" />
+          </BarraDeFiltros>
         </div>
         <div className="overflow-x-auto"><Table>
           <TableHeader><TableRow><TableHead>Caixa</TableHead><TableHead>Empresa</TableHead><TableHead>Empregado</TableHead><TableHead>Início</TableHead><TableHead>Fim</TableHead><TableHead>Status</TableHead><TableHead>Observação</TableHead></TableRow></TableHeader>

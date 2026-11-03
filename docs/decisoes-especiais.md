@@ -1864,7 +1864,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 331. Frota: o extrato do veículo é uma tela interativa
 
 - Ao escolher o veículo na Frota (Ver extrato), abre a tela do extrato, e não mais um PDF. Ela tem o período (data início e fim), o resumo (km atual, média de consumo, preventivas vencidas), as tabelas (manutenções preventivas sugeridas, realizadas, itens não realizados em atenção, abastecimentos, ocorrências e check lists periódicos) e os atalhos das rotinas do veículo: Realizar manutenção (abre o formulário aqui mesmo, com o veículo escolhido), Tratar ocorrências (e um botão por ocorrência em aberto, que abre a tratativa dela) e Realizar check list (abre o Novo check list do veículo).
-- O PDF só sai quando a pessoa clica em Gerar PDF (o extrato completo) ou em Gerar PDF desta seção (sugeridas, realizadas, ocorrências e check lists). As bolinhas da Frota (Preventivas, Ocorrências e Check list) abrem a mesma tela já na tabela que elas resumem; nas ocorrências em aberto, só com as abertas (há a opção Só em aberto).
+- O PDF só sai quando a pessoa clica em Gerar PDF e escolhe as seções (decisão 340; os botões Gerar PDF desta seção saíram). As bolinhas da Frota (Preventivas, Ocorrências e Check list) abrem a mesma tela já na tabela que elas resumem; nas ocorrências em aberto, só com as abertas (há a opção Só em aberto).
 - Para isso a rota de Veículos aceita ocorrencia e veiculo no endereço: a rotina abre a tratativa ou o Novo check list uma vez e tira o parâmetro do endereço.
 
 ## 332. Indicadores numa tela só, sem rolar
@@ -1894,3 +1894,26 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Toda pergunta do Questionário de Despesas tem como ramificar (decisão 311), menos a de tipo de despesa, que o módulo esconde quando o tipo vem do cartão. Fecha-se uma brecha: a pergunta de lista sem nenhuma opção escrita não mostrava controle algum e passa a ter o destino "Depois desta pergunta". Uma regra só (`ramificacaoDaPergunta`: por resposta, depois da pergunta ou nunca) decide o que cada card mostra, e um teste garante que toda pergunta, menos a de tipo, tenha uma forma de ramificar.
 - O link "Parâmetros > Viagens > Parâmetros Específicos" dos cards das perguntas de empregados habilitados abre uma janela com a mesma caixa dupla, sem sair do formulário (sair da página descartaria o rascunho em montagem). A janela salva direto, como a tela de Parâmetros Específicos, e a lista do rascunho acompanha para o Salvar Formulário não desfazer o que foi salvo; ela carrega a lista do rascunho (que pode diferir da publicada depois de Restaurar configurações iniciais). Fechar com alteração não salva pede confirmação; fechar volta ao questionário no mesmo ponto.
+
+## 337. Cards de indicadores no mesmo desenho e a lista cabendo na tela
+
+- Todo resumo de números do sistema usa o card padrão compacto (`StatCard`/`Cartao` com `compacto`): Abastecimento de Veículos, Inventário, Abastecimento e Manutenção de Equipamentos e os relatórios de baixa e de funcionário de EPI e Uniformes trocaram as caixas simples por ele, com ícone.
+- Na Frota, os cards (2x2) e os dois gráficos ficam na mesma faixa em tela larga, e a busca e a impressão sobem para a linha dos botões PCM e técnicos; a lista dos veículos usa o que sobra da janela e rola por dentro, então cards, gráficos, busca e as cinco linhas cabem sem rolar a página (1900x823 e 1536x864). Em notebook menor (1366x768 e 1440x800) sobram cerca de 15 px de rolagem, porque o cabeçalho do sistema já ocupa 230 px.
+- As listas com cards em cima (Equipamentos, Abastecimento, relatórios de baixa) têm altura limitada à janela e rolam por dentro.
+- Ainda não passam para uma tela só: Dashboard, Viagens (painel, lista de despesas e resultados), as abas de EPI e Uniformes e a aba Indicadores de Equipamentos, que tem cards grandes com o texto de cálculo aberto.
+
+## 338. Consultar check list e ocorrência a partir do extrato do veículo
+
+- No extrato do veículo, o código do check list (tabela Check lists periódicos) e o da ocorrência (tabela Ocorrências) são links. Clicar abre o registro só para ler, numa janela por cima do extrato (conteúdo das telas Check list e Ocorrências, sem os botões de editar ou tratar); "Voltar ao extrato" ou Esc fecha e devolve ao extrato no mesmo ponto. O PDF não muda. Mudar de veículo fecha a consulta.
+
+## 339. Filtros e buscas sempre no topo, à direita
+
+- Toda tela com busca ou filtro usa a `BarraDeFiltros`: os filtros (busca, seleções, datas, limpar período, contagem) ficam à direita da linha de cima da página, e os botões de ação (Novo, Gerar PDF, Voltar, os botões azuis das listas) à esquerda da mesma linha. O botão que abre ou filtra uma lista por situação fica entre os de ação, e o título da lista fica à esquerda.
+- Isso muda posições decididas antes: o Período do Check list (decisão 332) passa para a direita e os botões Check list periódico e avulso para a esquerda; em Equipamentos o Inventário passa a ter os filtros acima dos cards.
+- Exceção, decidida depois: nas telas de cadastro (Empresas, Empregados, Fornecedores, Clientes e o cadastro de cada módulo: veículos, equipamentos, EPI, uniformes, itens de ferramentas, caixas de ferramentas e a ficha de EPI) os botões de ação (Exportar CSV, Novo...) ficam no alto, à direita, e a busca vem logo abaixo, à esquerda, e não na barra de filtros. As telas de parâmetros Check list e Questionário de Despesas têm layout próprio e não mudaram.
+- Listas com altura limitada à janela têm um rolador só (o da própria tabela), com o cabeçalho fixo e a barra horizontal sempre à vista; os campos de busca da barra têm a mesma largura em todas as telas.
+- Fora do padrão por enquanto: a lista de despesas de Viagens (os filtros estão no alto de uma seção que fica abaixo dos indicadores, porque a página reúne painel, lista e resultados).
+
+## 340. PDF do extrato do veículo personalizado por seções
+
+- Em Veículos › Frota, no extrato do veículo, o botão Gerar PDF abre a janela Personalizar o relatório: uma caixa de marcar para cada seção (manutenções preventivas sugeridas, manutenções realizadas, itens não realizados em atenção, histórico de abastecimentos, ocorrências e check lists periódicos), com os botões Marcar todos e Desmarcar todos; Gerar PDF fica desligado sem nenhuma seção marcada. O resumo do veículo sai sempre; o período e o "Só em aberto" valem como na tela. Os botões Gerar PDF desta seção, que havia em cada tabela, foram retirados.
