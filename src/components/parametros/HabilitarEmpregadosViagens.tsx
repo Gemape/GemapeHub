@@ -1,5 +1,7 @@
 import { CaixaDuplaEmpregados } from "@/components/parametros/CaixaDuplaEmpregados";
+import { useState } from "react";
 import { FaixasDesempenho, PrazosIndicadores } from "@/components/parametros/IndicadoresViagens";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ID_HABILITADOS, lerEstado, salvarPergunta, type Habilitado } from "@/lib/questionario-despesas";
 
 // Parâmetros > Viagens > Parâmetros Específicos (decisões 299, 334 e 335): os empregados habilitados a lançar despesas no questionário de despesas e, abaixo, os dois prazos (dias para lançar
@@ -40,5 +42,51 @@ export function HabilitarEmpregadosViagens() {
         <FaixasDesempenho />
       </section>
     </>
+  );
+}
+
+// A mesma caixa dupla numa janela sobre o Questionário de Despesas (decisão 336): o link do card da pergunta abre este preenchimento sem sair do formulário em montagem (sair da página
+// descartaria o rascunho). Salva direto, como a tela de Parâmetros Específicos, e avisa o questionário (`aoSalvar`) para a lista do rascunho acompanhar. Fechar volta ao questionário.
+export function DialogHabilitarEmpregadosViagens({ aberto, onAbrirMudou, carregarDoQuestionario, aoSalvar }: {
+  aberto: boolean;
+  onAbrirMudou: (aberto: boolean) => void;
+  // A lista que o questionário mostra agora (a do rascunho, que pode diferir da publicada depois de "Restaurar configurações iniciais"); sem ela, vale a publicada.
+  carregarDoQuestionario?: () => Habilitado[];
+  aoSalvar: (habilitados: Habilitado[]) => void;
+}) {
+  const [pendente, setPendente] = useState(false);
+  // Fechar com mover/área ainda sem salvar perde a alteração: pergunta antes (Esc, clique fora e X passam por aqui).
+  const aoMudar = (abrir: boolean) => {
+    if (!abrir && pendente && !confirm("Há alterações nos empregados habilitados que ainda não foram salvas. Fechar e perdê-las?")) return;
+    if (!abrir) setPendente(false);
+    onAbrirMudou(abrir);
+  };
+  return (
+    <Dialog open={aberto} onOpenChange={aoMudar}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>Empregados habilitados a lançar despesas</DialogTitle>
+          <DialogDescription>
+            Parâmetros &gt; Viagens &gt; Parâmetros Específicos. Marque à esquerda e passe para a direita; a área de cada habilitado define o que ele vê no formulário. Nada vale até clicar em Salvar. Ao fechar
+            esta janela você volta ao questionário, no ponto em que estava.
+          </DialogDescription>
+        </DialogHeader>
+        <CaixaDuplaEmpregados
+          secao
+          semCabecalho
+          aoMudarAlterado={setPendente}
+          idBase="viagens-janela"
+          titulo="Habilitados"
+          descricao=""
+          tituloDireita="Habilitados para o questionário de despesas"
+          mensagemSalvo="Empregados habilitados salvos."
+          carregar={carregarDoQuestionario ?? carregar}
+          gravar={(habilitados) => {
+            gravar(habilitados);
+            aoSalvar(habilitados);
+          }}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }

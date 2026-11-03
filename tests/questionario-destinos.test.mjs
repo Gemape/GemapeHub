@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { estadoPadrao as estadoNovo, excluirPergunta, gravarQuestionario, lerEstado, questionarioDoTipo, salvarPergunta } from "../src/lib/questionario-despesas.ts";
 import { legado } from "./estado-legado.mjs";
 const estadoDeFabrica = () => legado(estadoNovo());
-import { conferirOrdem, destinoPergunta, encontrarCiclo, gravarDestino, limparPendencias, pendencias, questionarioPublicado } from "../src/lib/questionario-destinos.ts";
+import { conferirOrdem, destinoPergunta, encontrarCiclo, gravarDestino, limparPendencias, pendencias, questionarioPublicado, ramificacaoDaPergunta } from "../src/lib/questionario-destinos.ts";
 import { perguntasVisiveis } from "../src/lib/questionario-respostas.ts";
 import { registrarResposta } from "../src/lib/respostas-despesas.ts";
 
@@ -158,4 +158,19 @@ test("dec 210: limparPendencias tira só as ramificações com problema e deixa 
   assert.equal(limparPendencias(limpo, T, s), limpo);
   const c = readFileSync("src/components/parametros/QuestionarioDespesasConstrutor.tsx", "utf8");
   assert.match(c, /Remover as ramificações com problema/);
+});
+
+test("toda pergunta tem como ramificar, menos a de tipo de despesa (que o módulo esconde); lista sem opção ramifica depois da pergunta", () => {
+  const e = estadoPadrao();
+  for (const p of e.perguntas) {
+    if (p.id === "q-03") assert.equal(ramificacaoDaPergunta(p), null, "a de tipo de despesa não ramifica");
+    else assert.ok(ramificacaoDaPergunta(p) !== null, `${p.id} (${p.titulo}) sem ramificação`);
+  }
+  const lista = e.perguntas.find((p) => p.tipo === "lista" && p.fonte === "propria" && !p.habilitados && !p.multiplas && p.id !== "q-03");
+  assert.ok(lista, "o questionário de fábrica tem uma lista de resposta única");
+  assert.equal(ramificacaoDaPergunta(lista), "por-resposta", "com opções escritas ramifica por resposta");
+  assert.equal(ramificacaoDaPergunta({ ...lista, opcoes: [] }), "depois-da-pergunta", "sem nenhuma opção ainda ramifica depois da pergunta, e não fica sem ramificação");
+  assert.equal(ramificacaoDaPergunta({ ...lista, multiplas: true }), "depois-da-pergunta", "várias marcações ramificam depois da pergunta");
+  const construtor = readFileSync("src/components/parametros/QuestionarioDespesasConstrutor.tsx", "utf8");
+  assert.match(construtor, /ramificacaoDaPergunta\(p\) === "depois-da-pergunta"/, "o construtor mostra o destino depois da pergunta sempre que a pergunta não ramifica por resposta");
 });

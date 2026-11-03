@@ -221,9 +221,9 @@ test("o destino para qualquer resposta é gravado, não gera ação requerida e 
 
 test("o card de toda pergunta tem a ramificação: por resposta ou Depois desta pergunta", () => {
   const c = ler("components/parametros/QuestionarioDespesasConstrutor.tsx");
-  assert.match(c, /canWrite && !fixa && \(travada \|\| !aceitaDestinoPorOpcao\(p\) \|\| destinosDoTipo\(estado, tipoAtual\)\[id\]\?\.\[OPCAO_QUALQUER\] !== undefined\) && \(\s*<DestinoDaPergunta/);
+  assert.match(c, /canWrite && !fixa && \(travada \|\| ramificacaoDaPergunta\(p\) === "depois-da-pergunta" \|\| destinosDoTipo\(estado, tipoAtual\)\[id\]\?\.\[OPCAO_QUALQUER\] !== undefined\) && \(\s*<DestinoDaPergunta/);
   assert.match(c, /onDestino=\{\(valor\) => mudarDestino\(p, OPCAO_QUALQUER, valor\)\}/);
-  assert.match(c, /ramifica=\{aceitaDestinoPorOpcao\(p\)\}/);
+  assert.match(c, /ramifica=\{ramificacaoDaPergunta\(p\) === "por-resposta"\}/, "uma regra só decide se ramifica por resposta");
   assert.match(c, /Depois desta pergunta/);
   assert.match(c, /cada tipo tem o seu próprio questionário/);
 });
@@ -260,7 +260,7 @@ test("PCM responde decide qual pergunta aparece: Técnico que não lançou (não
 
 test("a Unidade da Federação, que é travada e tem opções, também tem a ramificação Depois desta pergunta", () => {
   const c = ler("components/parametros/QuestionarioDespesasConstrutor.tsx");
-  assert.match(c, /\(travada \|\| !aceitaDestinoPorOpcao\(p\) \|\|/);
+  assert.match(c, /\(travada \|\| ramificacaoDaPergunta\(p\) === "depois-da-pergunta" \|\|/);
   assert.match(ler("components/parametros/QuestionarioFormulario.tsx"), /setRespostas\(\(r\) => podarOcultas\(estado, tipo, r\)\)/);
 });
 
@@ -279,4 +279,24 @@ test("o alto de toda página mostra o caminho: card, depois Módulo ou Parâmetr
   // Tela repetida em dois cards se resolve pelo ?de=.
   assert.equal(caminho("/cadastros/gerais/categorias", { de: "uniformes" }), "Uniformes › Parâmetros");
   assert.match(ler("components/layout/EyebrowDoCard.tsx"), /caminhoDoCard\(area\.cartao\.titulo, area\.atual\.secao\)/);
+});
+
+test("decisão 336: a janela dos habilitados salva direto e atualiza o rascunho do questionário, e fechar volta ao questionário", () => {
+  const janela = ler("components/parametros/HabilitarEmpregadosViagens.tsx");
+  assert.match(janela, /export function DialogHabilitarEmpregadosViagens/);
+  assert.match(janela, /gravar=\{\(habilitados\) => \{\s*gravar\(habilitados\);\s*aoSalvar\(habilitados\);/, "grava de verdade e avisa o questionário");
+  assert.match(janela, /<CaixaDuplaEmpregados\s+secao/, "a mesma caixa dupla, em modo de seção");
+  const construtor = ler("components/parametros/QuestionarioDespesasConstrutor.tsx");
+  assert.match(construtor, /setEstado\(salvarPergunta\(estado, \{ \.\.\.q04, habilitados \}, rascunho\)\)/, "a lista do rascunho acompanha, para o Salvar Formulário não desfazer");
+  assert.doesNotMatch(construtor, /import \{ Link/, "o construtor não navega mais para essa tela");
+});
+
+test("decisão 336: a janela dos habilitados carrega a lista do rascunho, pede confirmação ao fechar com alteração e não repete título nem texto", () => {
+  const janela = ler("components/parametros/HabilitarEmpregadosViagens.tsx");
+  assert.match(janela, /carregar=\{carregarDoQuestionario \?\? carregar\}/, "carrega a do questionário, com a publicada como padrão");
+  assert.match(janela, /if \(!abrir && pendente && !confirm\(/, "Esc, clique fora e X pedem confirmação quando há alteração");
+  assert.match(janela, /semCabecalho/, "sem o cabeçalho repetido da caixa dupla");
+  const caixa = ler("components/parametros/CaixaDuplaEmpregados.tsx");
+  assert.match(caixa, /useEffect\(\(\) => \{ aoMudarAlterado\?\.\(alterado\); \}, \[alterado, aoMudarAlterado\]\)/);
+  assert.match(ler("components/parametros/QuestionarioDespesasConstrutor.tsx"), /carregarDoQuestionario=\{\(\) => estado\.perguntas\.find\(\(q\) => q\.id === ID_HABILITADOS\)\?\.habilitados \?\? \[\]\}/);
 });

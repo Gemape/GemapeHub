@@ -22,6 +22,14 @@ export const OPCAO_QUALQUER = "*";
 export const aceitaDestinoPorOpcao = (p: Pergunta): boolean => aceitaCondicao(p) && !p.multiplas;
 export const aceitaDestino = (p: Pergunta): boolean => p.id !== ID_TIPO_DESPESA;
 
+// Como a pergunta ramifica (decisão 311): por resposta (lista com opções escritas e uma marcação só), depois da pergunta, para qualquer resposta (todas as outras, inclusive a
+// lista que ainda não tem nenhuma opção escrita, que não teria onde ramificar por resposta) ou nunca (só a de tipo de despesa, que o módulo esconde porque o tipo vem do cartão).
+export type Ramificacao = "por-resposta" | "depois-da-pergunta" | null;
+export function ramificacaoDaPergunta(p: Pergunta): Ramificacao {
+  if (!aceitaDestino(p)) return null;
+  return aceitaDestinoPorOpcao(p) && p.opcoes.length > 0 ? "por-resposta" : "depois-da-pergunta";
+}
+
 // Destino que vale para a resposta dada: o da opção marcada (nas perguntas que ramificam por resposta) ou, na falta dele, o de qualquer resposta.
 export function destinoDaResposta(destinosDaPergunta: Record<string, string> | undefined, p: Pergunta, resposta: string | string[] | undefined): string | undefined {
   if (!destinosDaPergunta) return undefined;
