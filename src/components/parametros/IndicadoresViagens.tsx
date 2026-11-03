@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -6,28 +7,40 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAccess } from "@/lib/access-context";
 import { FAIXAS_PADRAO, descricoesFaixas, lerFaixas, salvarFaixas, validarFaixas, type ConfigFaixas, type Faixa } from "@/lib/faixas-desempenho";
 import { PRAZO_MAXIMO_DIAS, lerPrazos, prazoValido, salvarPrazos } from "@/lib/prazo-viagens";
 
 const numeroDe = (texto: string): number => (texto.trim() === "" ? Number.NaN : Number(texto));
 const COR_PONTO: Record<Faixa, string> = { verde: "bg-green-600", amarelo: "bg-amber-500", vermelho: "bg-red-600" };
 
-// Indicadores de Viagens em Parâmetros > Veículos > Parâmetros Específicos (decisão 199). Só parametriza: o painel do módulo
-// Viagens lê estes valores. Prazo de lançar (técnico mecânico), prazo de fechar o relatório (PCM) e as faixas de desempenho.
+// Faixas de desempenho em Parâmetros > Veículos > Parâmetros Específicos (decisão 199): valem para os índices de Viagens, do Check list e da Frota. Só parametriza: os índices aparecem
+// nos módulos. Os dois prazos (lançar a despesa e fechar o relatório) ficam em Parâmetros > Viagens > Parâmetros Específicos (decisão 334) e usam o `PrazosIndicadores` daqui.
 export function IndicadoresViagens() {
+  const { podeVerCaminho } = useAccess();
+  // O link só aparece para quem pode abrir a tela de destino; sem acesso, o caminho fica como texto.
+  const caminhoDosPrazos = "Parâmetros > Viagens > Parâmetros Específicos";
   return (
     <section className="space-y-5" aria-labelledby="indicadores-viagens">
-      <div>
+      <div className="max-w-3xl">
         <h2 id="indicadores-viagens" className="text-lg font-semibold">Indicadores</h2>
-        <p className="text-sm text-muted-foreground">Prazos e faixas de desempenho usados no módulo Viagens. Aqui só se configura; os índices aparecem em Viagens.</p>
+        <p className="text-sm text-muted-foreground">
+          As faixas de desempenho valem para os índices de Viagens, do Check list e da Frota; os índices aparecem nos módulos. Os prazos para lançar a despesa e para fechar o relatório de despesas ficam em{" "}
+          {podeVerCaminho("/cadastros/viagens-especificos") ? (
+            <Link to="/cadastros/viagens-especificos" className="font-medium text-primary underline underline-offset-2">{caminhoDosPrazos}</Link>
+          ) : (
+            caminhoDosPrazos
+          )}
+          .
+        </p>
       </div>
-      <PrazosIndicadores />
       <FaixasDesempenho />
     </section>
   );
 }
 
-function PrazosIndicadores() {
+// Os dois prazos de Viagens: nº de dias para lançar a despesa (técnico mecânico) e nº de dias para fechar o relatório de despesas (PCM), cada um com a caixa "aplicável".
+export function PrazosIndicadores() {
   const [salvo, setSalvo] = useState(lerPrazos);
   const [mecanico, setMecanico] = useState(String(salvo.mecanico));
   const [pcm, setPcm] = useState(String(salvo.pcm));
@@ -54,9 +67,9 @@ function PrazosIndicadores() {
       setSalvo(novo);
       setMecanico(String(novo.mecanico));
       setPcm(String(novo.pcm));
-      toast.success("Indicadores salvos.");
+      toast.success("Prazos salvos.");
     } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar os indicadores.");
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar os prazos.");
     }
   }
 
@@ -93,7 +106,7 @@ function PrazosIndicadores() {
         )}
       </div>
       {!valido && <p role="alert" className="text-sm text-destructive">Informe números inteiros de dias entre 0 e {PRAZO_MAXIMO_DIAS}.</p>}
-      <Button requiresWrite disabled={!valido || igual} onClick={salvar}>Salvar indicadores</Button>
+      <Button requiresWrite disabled={!valido || igual} onClick={salvar}>Salvar prazos</Button>
     </div>
   );
 }

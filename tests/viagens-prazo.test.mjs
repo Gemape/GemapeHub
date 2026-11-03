@@ -132,15 +132,21 @@ test("a tela de Parâmetros > Viagens saiu do menu e o painel mostra o índice n
   assert.match(painel, /purple-/);
 });
 
-test("Parâmetros Específicos de Veículos tem os Indicadores: os dois prazos com as caixas e as faixas; o questionário continua em Veículos", () => {
+test("os dois prazos com as caixas ficam em Parâmetros Específicos de Viagens (decisão 334); em Veículos ficam as faixas; o questionário continua em Parâmetros", () => {
   const categorias = readFileSync("src/routes/_authenticated/cadastros/gerais/categorias.tsx", "utf8");
   assert.match(categorias, /categoria\.id === "cat-veiculos" && <IndicadoresViagens \/>/);
+  const viagens = readFileSync("src/components/parametros/HabilitarEmpregadosViagens.tsx", "utf8");
+  assert.match(viagens, /<PrazosIndicadores \/>/, "Viagens > Parâmetros Específicos mostra os prazos");
   const tela = readFileSync("src/components/parametros/IndicadoresViagens.tsx", "utf8");
+  assert.match(tela, /export function PrazosIndicadores/);
   assert.match(tela, /Nº de dias para lançar despesas/);
   assert.match(tela, /Aplicável ao técnico mecânico/);
   assert.match(tela, /Nº de dias para fechar o relatório de despesas/);
   assert.match(tela, /Aplicável ao PCM/);
   assert.match(tela, /Dias após o lançamento/);
   assert.match(tela, /Faixas de desempenho/);
+  const veiculos = tela.slice(tela.indexOf("export function IndicadoresViagens"), tela.indexOf("export function PrazosIndicadores"));
+  assert.doesNotMatch(veiculos, /<PrazosIndicadores/, "Veículos não repete os prazos");
+  assert.match(veiculos, /to="\/cadastros\/viagens-especificos"/, "e leva a eles por um link");
   assert.match(readFileSync("src/lib/menu-parametros.ts", "utf8"), /Questionário de Despesas/);
 });
