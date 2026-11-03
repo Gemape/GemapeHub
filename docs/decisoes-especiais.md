@@ -1885,3 +1885,12 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Em Parâmetros > Viagens > Parâmetros Específicos, abaixo da caixa dupla de empregados habilitados, há o cartão com o nº de dias para lançar a despesa (técnico mecânico) e o nº de dias para fechar o relatório de despesas (PCM), cada um com a caixa "aplicável". Os valores são os mesmos que já mediam os índices de Viagens (lançamento no prazo e fechamento do relatório no prazo); o que mudou foi o lugar.
 - Em Parâmetros > Veículos > Parâmetros Específicos ficou só o cartão Faixas de desempenho (verde, amarelo e vermelho), que vale para Viagens, Check list e Frota, com o link para os prazos. Isso altera a decisão 199, que tinha levado os prazos para Veículos.
+
+## 335. Faixas de desempenho também em Viagens > Parâmetros > Parâmetros Específicos
+
+- O cartão Faixas de desempenho (limites do verde e do amarelo, classificação e significado de cada faixa) foi clonado de Parâmetros > Veículos > Parâmetros Específicos para Parâmetros > Viagens > Parâmetros Específicos, abaixo dos prazos de lançamento e de fechamento. É o mesmo componente e a mesma configuração: salvar numa tela vale na outra, porque as faixas também classificam os índices do Check list e da Frota. Continua em Veículos.
+
+## 336. Questionário de despesas: toda pergunta ramifica e o link dos habilitados abre uma janela
+
+- Toda pergunta do Questionário de Despesas tem como ramificar (decisão 311), menos a de tipo de despesa, que o módulo esconde quando o tipo vem do cartão. Fecha-se uma brecha: a pergunta de lista sem nenhuma opção escrita não mostrava controle algum e passa a ter o destino "Depois desta pergunta". Uma regra só (`ramificacaoDaPergunta`: por resposta, depois da pergunta ou nunca) decide o que cada card mostra, e um teste garante que toda pergunta, menos a de tipo, tenha uma forma de ramificar.
+- O link "Parâmetros > Viagens > Parâmetros Específicos" dos cards das perguntas de empregados habilitados abre uma janela com a mesma caixa dupla, sem sair do formulário (sair da página descartaria o rascunho em montagem). A janela salva direto, como a tela de Parâmetros Específicos, e a lista do rascunho acompanha para o Salvar Formulário não desfazer o que foi salvo; ela carrega a lista do rascunho (que pode diferir da publicada depois de Restaurar configurações iniciais). Fechar com alteração não salva pede confirmação; fechar volta ao questionário no mesmo ponto.

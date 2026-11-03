@@ -362,7 +362,10 @@ test("dec 208: adicionar habilitado no card entra na pergunta 04 e o técnico re
   // Decisão 299: um editor só para os habilitados (a caixa dupla em Parâmetros > Viagens); o card do questionário aponta para ela.
   assert.doesNotMatch(c, /AdicionarHabilitado/);
   assert.match(c, /id === ID_HABILITADOS \|\| id === ID_TECNICO_RESPONSAVEL/);
-  assert.match(c, /to="\/cadastros\/viagens-especificos"/);
+  // Decisão 336: o link do card abre os habilitados numa janela, sem sair do formulário (sair descartaria o rascunho).
+  assert.match(c, /onClick=\{\(\) => setHabilitando\(true\)\}>Parâmetros &gt; Viagens &gt; Parâmetros Específicos<\/button>/);
+  assert.match(c, /<DialogHabilitarEmpregadosViagens/);
+  assert.doesNotMatch(c, /to="\/cadastros\/viagens-especificos"/, "o link não leva mais para outra página");
 });
 
 test("dec 207: UF, Município, Data, Valor, Foto do comprovante e Detalhamento são perguntas travadas", () => {

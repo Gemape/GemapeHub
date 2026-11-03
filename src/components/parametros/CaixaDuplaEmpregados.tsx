@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
@@ -27,11 +27,15 @@ export type PropsCaixaDupla = {
   mensagemSalvo: string;
   // Dentro de uma página que já tem cabeçalho (Parâmetros Específicos de Veículos): só o título da seção, sem o texto pequeno do card.
   secao?: boolean;
+  // Numa janela que já tem título e texto: sem cabeçalho próprio.
+  semCabecalho?: boolean;
+  // Quem hospeda a caixa (a janela do questionário) é avisado de que há alteração ainda não salva, para pedir confirmação antes de fechar.
+  aoMudarAlterado?: (alterado: boolean) => void;
   carregar: () => Habilitado[];
   gravar: (lista: Habilitado[]) => void;
 };
 
-export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita, mensagemSalvo, secao = false, carregar, gravar }: PropsCaixaDupla) {
+export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita, mensagemSalvo, secao = false, semCabecalho = false, aoMudarAlterado, carregar, gravar }: PropsCaixaDupla) {
   const { canWrite } = useAccess();
   const { data: empregados = [], isLoading } = useEmpregados(TODAS);
   const ativos = useMemo(() => empregados.filter((e) => empregadoAtivo(e)), [empregados]);
@@ -57,6 +61,7 @@ export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita,
   // Tirar e recolocar o mesmo empregado muda a ordem da lista sem mudar nada: a comparação ignora a ordem.
   const assinatura = (l: Habilitado[]) => JSON.stringify(l.map((h) => [chaveDe(h), h.area]).sort());
   const alterado = assinatura(habilitados) !== assinatura(salvos);
+  useEffect(() => { aoMudarAlterado?.(alterado); }, [alterado, aoMudarAlterado]);
 
   const alternar = (lista: string[], chave: string) => (lista.includes(chave) ? lista.filter((c) => c !== chave) : [...lista, chave]);
   const habilitar = (ids: string[]) => {
@@ -88,7 +93,7 @@ export function CaixaDuplaEmpregados({ idBase, titulo, descricao, tituloDireita,
 
   return (
     <div className={secao ? "max-w-5xl space-y-4" : "mx-auto max-w-5xl space-y-4 p-4"}>
-      {secao ? (
+      {semCabecalho ? null : secao ? (
         <header>
           <h2 id={`${idBase}-titulo`} className="text-lg font-semibold">{titulo}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>

@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, GripHorizontal, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
-import { Link, useBlocker } from "@tanstack/react-router";
+import { useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -7,6 +7,7 @@ import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { iconeDoTipo } from "@/components/modules/icones-viagens";
 import { PerguntaDialog, type ModoPergunta } from "@/components/parametros/PerguntaDialog";
 import { SecaoDialog, type DadosSecao } from "@/components/parametros/SecaoDialog";
+import { DialogHabilitarEmpregadosViagens } from "@/components/parametros/HabilitarEmpregadosViagens";
 import { PerguntaPrevia } from "@/components/parametros/PerguntaPrevia";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ import { TODAS } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpregados } from "@/lib/hooks-gemape";
 import {
-  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, OPCAO_QUALQUER, aceitaDestinoPorOpcao, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, limparPendencias, pendencias, semDestinosDaOpcao,
+  DESTINO_ENCERRAR, DESTINO_PROXIMA_SECAO, OPCAO_QUALQUER, aceitaDestinoPorOpcao, ramificacaoDaPergunta, conferirOrdem, destinoPergunta, destinosDoTipo, gravarDestino, idDoDestino, limparPendencias, pendencias, semDestinosDaOpcao,
 } from "@/lib/questionario-destinos";
 import { gravarSecao, inicioDaProximaSecao, secoesDoTipo } from "@/lib/questionario-secoes";
 import {
@@ -43,6 +44,8 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   const [dialogo, setDialogo] = useState<{ modo: ModoPergunta; inicial: Pergunta | null } | null>(null);
   // Janela de seção: `inicio` null = criar questionário novo (com nome); senão a seção que começa naquela pergunta.
   const [dialogoSecao, setDialogoSecao] = useState<{ inicio: string | null; inicial: DadosSecao } | null>(null);
+  // Janela dos empregados habilitados (decisão 336): o link do card das perguntas de habilitados abre o preenchimento sem sair do formulário.
+  const [habilitando, setHabilitando] = useState(false);
   const { data: empregados = [], isSuccess: empregadosLidos } = useEmpregados(TODAS);
   const idsAtivos = useMemo(() => new Set(empregados.filter((e) => empregadoAtivo(e)).map((e) => e.id)), [empregados]);
 
@@ -278,7 +281,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 <OpcoesDaPergunta
                   pergunta={p}
                   destinos={destinosDoTipo(estado, tipoAtual)[id] ?? {}}
-                  ramifica={aceitaDestinoPorOpcao(p)}
+                  ramifica={ramificacaoDaPergunta(p) === "por-resposta"}
                   seguintes={ids.slice(ids.indexOf(id) + 1).filter((x) => x !== ID_TIPO_DESPESA).map((x) => ({ id: x, rotulo: `Ir para a pergunta ${numeroDe(x)} (${porId.get(x)?.titulo ?? x})` }))}
                   temProximaSecao={inicioDaProximaSecao(estado, tipoAtual, id) !== null}
                   onDestino={(opcao, valor) => mudarDestino(p, opcao, valor)}
@@ -287,7 +290,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
               ) : (
                 <PerguntaPrevia pergunta={p} habilitadosVisiveis={habilitadosPrevia(p)} />
               )}
-              {canWrite && !fixa && (travada || !aceitaDestinoPorOpcao(p) || destinosDoTipo(estado, tipoAtual)[id]?.[OPCAO_QUALQUER] !== undefined) && (
+              {canWrite && !fixa && (travada || ramificacaoDaPergunta(p) === "depois-da-pergunta" || destinosDoTipo(estado, tipoAtual)[id]?.[OPCAO_QUALQUER] !== undefined) && (
                 <DestinoDaPergunta
                   atual={destinosDoTipo(estado, tipoAtual)[id]?.[OPCAO_QUALQUER] ?? SEM_DESTINO}
                   seguintes={ids.slice(ids.indexOf(id) + 1).filter((x) => x !== ID_TIPO_DESPESA).map((x) => ({ id: x, rotulo: `Ir para a pergunta ${numeroDe(x)} (${porId.get(x)?.titulo ?? x})` }))}
@@ -297,7 +300,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
               )}
               {(id === ID_HABILITADOS || id === ID_TECNICO_RESPONSAVEL) && (
                 <p className="text-xs text-muted-foreground" onClick={(e) => e.stopPropagation()}>
-                  Quem fica habilitado se escolhe em <Link to="/cadastros/viagens-especificos" className="font-medium text-primary underline underline-offset-2">Parâmetros &gt; Viagens &gt; Parâmetros Específicos</Link>.
+                  Quem fica habilitado se escolhe em <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setHabilitando(true)}>Parâmetros &gt; Viagens &gt; Parâmetros Específicos</button>.
                 </p>
               )}
               {canWrite && !fixa && !travada && aceitaCondicao(p) && (
@@ -366,6 +369,22 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         inicial={dialogoSecao?.inicial ?? { titulo: "", subtitulo: "" }}
         onSalvar={salvarSecao}
         onFechar={() => setDialogoSecao(null)}
+      />
+
+      <DialogHabilitarEmpregadosViagens
+        aberto={habilitando}
+        onAbrirMudou={setHabilitando}
+        carregarDoQuestionario={() => estado.perguntas.find((q) => q.id === ID_HABILITADOS)?.habilitados ?? []}
+        aoSalvar={(habilitados) => {
+          // Já foi gravada de verdade; a lista do rascunho acompanha para o Salvar Formulário não desfazer o que acabou de ser salvo.
+          // Se o rascunho não aceitar a pergunta, o erro não pode subir: a janela mostraria "não foi possível salvar" para algo que já foi gravado.
+          try {
+            const q04 = estado.perguntas.find((q) => q.id === ID_HABILITADOS);
+            if (q04) setEstado(salvarPergunta(estado, { ...q04, habilitados }, rascunho));
+          } catch (erro) {
+            toast.error(erro instanceof Error ? `Habilitados salvos, mas o rascunho não acompanhou: ${erro.message}` : "Habilitados salvos, mas o rascunho não acompanhou.");
+          }
+        }}
       />
 
       <PerguntaDialog

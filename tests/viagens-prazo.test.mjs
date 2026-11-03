@@ -137,8 +137,13 @@ test("os dois prazos com as caixas ficam em Parâmetros Específicos de Viagens 
   assert.match(categorias, /categoria\.id === "cat-veiculos" && <IndicadoresViagens \/>/);
   const viagens = readFileSync("src/components/parametros/HabilitarEmpregadosViagens.tsx", "utf8");
   assert.match(viagens, /<PrazosIndicadores \/>/, "Viagens > Parâmetros Específicos mostra os prazos");
+  assert.match(viagens, /<FaixasDesempenho \/>/, "e as faixas de desempenho, clonadas de Veículos (decisão 335)");
+  assert.match(viagens, /import \{ FaixasDesempenho, PrazosIndicadores \} from "@\/components\/parametros\/IndicadoresViagens"/, "do mesmo arquivo de Veículos, sem cópia do componente");
+  assert.match(viagens, /aria-labelledby="faixas-viagens"[\s\S]*id="faixas-viagens"/, "com título para leitor de tela");
+  assert.doesNotMatch(viagens, /podeVerCaminho|<Link /, "o link antigo para as faixas em Veículos saiu, porque elas estão na própria tela");
   const tela = readFileSync("src/components/parametros/IndicadoresViagens.tsx", "utf8");
   assert.match(tela, /export function PrazosIndicadores/);
+  assert.match(tela, /export function FaixasDesempenho/);
   assert.match(tela, /Nº de dias para lançar despesas/);
   assert.match(tela, /Aplicável ao técnico mecânico/);
   assert.match(tela, /Nº de dias para fechar o relatório de despesas/);

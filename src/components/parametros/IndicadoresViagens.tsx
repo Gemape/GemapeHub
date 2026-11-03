@@ -25,7 +25,7 @@ export function IndicadoresViagens() {
       <div className="max-w-3xl">
         <h2 id="indicadores-viagens" className="text-lg font-semibold">Indicadores</h2>
         <p className="text-sm text-muted-foreground">
-          As faixas de desempenho valem para os índices de Viagens, do Check list e da Frota; os índices aparecem nos módulos. Os prazos para lançar a despesa e para fechar o relatório de despesas ficam em{" "}
+          As faixas de desempenho valem para os índices de Viagens, do Check list e da Frota, e também se editam em Parâmetros &gt; Viagens &gt; Parâmetros Específicos (é a mesma configuração); os índices aparecem nos módulos. Os prazos para lançar a despesa e para fechar o relatório de despesas ficam em{" "}
           {podeVerCaminho("/cadastros/viagens-especificos") ? (
             <Link to="/cadastros/viagens-especificos" className="font-medium text-primary underline underline-offset-2">{caminhoDosPrazos}</Link>
           ) : (
@@ -115,7 +115,8 @@ type Rascunho = { limiteVerde: string; limiteAmarelo: string } & Pick<ConfigFaix
 const rascunhoDe = (c: ConfigFaixas): Rascunho => ({ ...c, limiteVerde: String(c.limiteVerde), limiteAmarelo: String(c.limiteAmarelo) });
 const configDe = (r: Rascunho): ConfigFaixas => ({ ...r, limiteVerde: numeroDe(r.limiteVerde), limiteAmarelo: numeroDe(r.limiteAmarelo) });
 
-function FaixasDesempenho() {
+// As faixas de desempenho (verde, amarelo e vermelho): uma configuração só, mostrada em Parâmetros > Veículos e em Parâmetros > Viagens > Parâmetros Específicos (decisão 335).
+export function FaixasDesempenho() {
   const [salva, setSalva] = useState(lerFaixas);
   const [rascunho, setRascunho] = useState(() => rascunhoDe(salva));
   const config = configDe(rascunho);
@@ -139,7 +140,7 @@ function FaixasDesempenho() {
     <div className="panel max-w-3xl space-y-3 p-4">
       <div>
         <h3 className="text-sm font-semibold">Faixas de desempenho</h3>
-        <p className="text-xs text-muted-foreground">Valem para o índice de conformidade de lançamento, o de lançamento no prazo e o de fechamento do relatório no prazo. O amarelo vai do seu limite até logo abaixo do limite do verde; abaixo do limite do amarelo é vermelho.</p>
+        <p className="text-xs text-muted-foreground">Valem para o índice de conformidade de lançamento, o de lançamento no prazo e o de fechamento do relatório no prazo, e também para o Check list e a Frota. É a mesma configuração em Parâmetros &gt; Veículos e em Parâmetros &gt; Viagens. O amarelo vai do seu limite até logo abaixo do limite do verde; abaixo do limite do amarelo é vermelho.</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
