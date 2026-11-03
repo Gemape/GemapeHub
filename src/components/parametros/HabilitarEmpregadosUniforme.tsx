@@ -9,7 +9,7 @@ export function HabilitarEmpregadosUniforme({ areas }: { areas: readonly string[
       idBase="uniforme"
       secao
       titulo="Empregados das rotinas de uniformes"
-      descricao="Escolha, entre todos os empregados ativos, quem entrega e recebe uniformes: marque à esquerda e passe para a direita, com a área de cada um. Nas rotinas de uniformes só aparecem os habilitados; com a lista vazia, todos os empregados ativos aparecem. Nada vale até clicar em Salvar."
+      descricao="Escolha, entre todos os empregados ativos, quem entrega e recebe uniformes: marque à esquerda e passe para a direita, com a área de cada um. Na Entrega Uniforme, no Termo de Entrega e na devolução só aparecem os habilitados; com a lista vazia, todos os empregados ativos aparecem. O Termo de Baixa, as Movimentações e os relatórios mostram todos. Nada vale até clicar em Salvar."
       tituloDireita="Habilitados para entrega e recebimento de uniformes"
       mensagemSalvo="Empregados das rotinas de uniformes salvos."
       areas={areas}
