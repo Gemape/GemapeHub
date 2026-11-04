@@ -14,6 +14,7 @@ import { EpiRelatorioFuncionario } from "@/components/modules/EpiRelatorioFuncio
 import { EpiRelatorioBaixa } from "@/components/modules/EpiRelatorioBaixa";
 import { EpiEntrega, UniformesEntrega } from "@/components/modules/EpiEntrega";
 import { EpiTermoEntrega } from "@/components/modules/EpiTermoEntrega";
+import { EpiOrdemServico } from "@/components/modules/EpiOrdemServico";
 import { EpiFichaEpiAvulsa } from "@/components/modules/EpiFichaEpiAvulsa";
 import { FerramentasCaixasModulo } from "@/components/modules/FerramentasCaixasModulo";
 import { FerramentasTermoResponsabilidade } from "@/components/modules/FerramentasTermoResponsabilidade";
@@ -106,6 +107,9 @@ export function PaginaModulo({
             </TabsContent>
             <TabsContent value="ficha-avulsa" className="mt-5">
               <EpiFichaEpiAvulsa />
+            </TabsContent>
+            <TabsContent value="ordem-servico" className="mt-5">
+              <EpiOrdemServico />
             </TabsContent>
           </>
         )}
