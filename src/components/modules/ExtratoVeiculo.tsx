@@ -293,6 +293,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
                         <Checkbox checked={soAbertas} onCheckedChange={(v) => setSoAbertas(v === true)} aria-label="Só as ocorrências em aberto" className="border-white bg-white/90 data-[state=checked]:bg-white data-[state=checked]:text-foreground" /> Só em aberto
                       </label>
                     )}
+                    {secaoDoExtrato.titulo === "Ocorrências" && MODO_DEMO && <Button asChild variant="secondary" size="sm"><Link to="/veiculos" search={{ aba: "ocorrencias", veiculo: veiculo.id, nova: "sim", voltar: veiculo.id }}>Registrar ocorrência</Link></Button>}
                     {secaoDoExtrato.titulo === "Manutenções" && <Button type="button" variant="secondary" size="sm" onClick={() => setRegistrando(true)}>Registrar manutenção</Button>}
                     {secaoDoExtrato.titulo === "Abastecimentos" && <Button type="button" variant="secondary" size="sm" onClick={() => setRegistrandoAbastecimento(true)}>Registrar abastecimento</Button>}
                     {secaoDoExtrato.titulo === "Check lists" && <Button asChild variant="secondary" size="sm"><Link to="/veiculos" search={{ aba: "checklist", veiculo: veiculo.id, avulso: "sim", voltar: veiculo.id }}>Registrar check list avulso</Link></Button>}

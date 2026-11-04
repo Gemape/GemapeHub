@@ -81,7 +81,7 @@ export function OcorrenciasVeiculoModulo() {
   const todas = useOcorrenciasVeiculo();
   const [tela, setTela] = useState<Tela>(null);
   // Vindo do extrato do veículo (?ocorrencia=), abre a tratativa dessa ocorrência uma vez e tira o parâmetro do endereço (decisão 331).
-  const { ocorrencia: ocorrenciaPedida, voltar } = useSearch({ from: "/_authenticated/veiculos" });
+  const { ocorrencia: ocorrenciaPedida, voltar, veiculo: veiculoPedido, nova: novaPedida } = useSearch({ from: "/_authenticated/veiculos" });
   const navegar = useNavigate();
   // Vindo do extrato (decisão 346), ao fechar a tela da tratativa a pessoa volta ao extrato do veículo.
   useVoltarAoExtrato(tela !== null, voltar);
@@ -165,6 +165,16 @@ export function OcorrenciasVeiculoModulo() {
     void navegar({ to: "/veiculos", search: { aba: "ocorrencias" }, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ocorrenciaPedida, todas.length]);
+
+  // Botão Registrar ocorrência do extrato (?nova=sim&veiculo=): abre a Nova ocorrência já com o veículo do extrato, uma vez, e tira os parâmetros do endereço.
+  // Ao fechar a tela (salvar ou cancelar), useVoltarAoExtrato leva a pessoa de volta ao extrato desse veículo.
+  useEffect(() => {
+    if (!novaPedida || veiculos.length === 0) return;
+    abrirNova();
+    if (veiculoPedido && veiculos.some((v) => v.id === veiculoPedido)) setVeiculoId(veiculoPedido);
+    void navegar({ to: "/veiculos", search: { aba: "ocorrencias" }, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [novaPedida, veiculos.length]);
 
   function abrirTratativa(o: OcorrenciaVeiculo) {
     setResponsavelId(o.tratativa?.responsavelId ?? "");

@@ -2070,3 +2070,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Achado no code review: a tela de Ocorrências (que serve EPI, Uniformes, Ferramentas e Veículos) ainda oferecia todos os empregados ativos, apesar da ordem de que **toda rotina de EPI que informa o empregado** só mostre os habilitados (decisão 357). Passa a valer em **EPI > Ocorrências** e, como os Uniformes seguem o EPI (decisão 364), em **Uniformes > Ocorrências**. Ferramentas e Veículos seguem oferecendo todos os ativos.
 - **Escolha do Claude:** ao editar uma ocorrência, o empregado já vinculado continua na lista, marcado como "inativo" ou "não habilitado", para a edição não apagar o vínculo.
 - O EPI passa a ter filtro em: Entrega EPI, Termo de Entrega, Ficha avulsa, Devolução e Ocorrências; Relatórios e Baixar Definitivas mostram todos. Os textos das telas de habilitados do EPI e dos Uniformes dizem isso. Só modo demonstração; nada no Supabase.
+
+## 367. Extrato do veículo: botão Registrar ocorrência
+
+- Ordem do responsável: na faixa **Ocorrências** do extrato do veículo entra o botão **Registrar ocorrência**, ao lado de "Só em aberto" e no mesmo desenho de Registrar manutenção, Registrar abastecimento e Registrar check list avulso. Ele abre Veículos > Ocorrências com a **Nova ocorrência já com o veículo do extrato** e, ao salvar ou cancelar, devolve a pessoa ao extrato desse veículo (vai e volta da decisão 346). Só no modo demonstração, como a lista de ocorrências do extrato; nada no Supabase.
