@@ -191,6 +191,7 @@ export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugest
             ajuda="As áreas de atuação que aparecem ao lado do nome de cada empregado habilitado. Dá para acrescentar novas; uma área em uso por um habilitado só sai depois de mudar a área dele."
             inicial={areas}
             singular="área"
+            feminino
             max={MAX_AREAS_EPI}
             salvos="Áreas da oficina salvas."
             salvar={(lista) => {

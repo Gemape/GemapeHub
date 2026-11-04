@@ -9,7 +9,7 @@ export function HabilitarEmpregadosEpi({ areas }: { areas: readonly string[] }) 
       idBase="epi"
       secao
       titulo="Empregados das rotinas de EPI"
-      descricao="Escolha, entre todos os empregados ativos, quem entrega e recebe EPI: marque à esquerda e passe para a direita, com a área de cada um na oficina. Nas rotinas de EPI só aparecem os habilitados; com a lista vazia, todos os empregados ativos aparecem. Nada vale até clicar em Salvar."
+      descricao="Escolha, entre todos os empregados ativos, quem entrega e recebe EPI: marque à esquerda e passe para a direita, com a área de cada um na oficina. Na Entrega EPI, no Termo de Entrega, na Ficha avulsa, na devolução e nas Ocorrências só aparecem os habilitados; com a lista vazia, todos os empregados ativos aparecem. Os relatórios e a baixa definitiva mostram todos. Nada vale até clicar em Salvar."
       tituloDireita="Habilitados para entrega e recebimento de EPI"
       mensagemSalvo="Empregados das rotinas de EPI salvos."
       areas={areas}

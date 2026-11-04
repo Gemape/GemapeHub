@@ -32,6 +32,8 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { exportarCsv, formatarData, type Modulo } from "@/lib/gemape";
 import { capitalizarNomePessoa, capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { hojeLocal } from "@/lib/empregados";
+import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
+import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
 import {
   useEmpregados,
   useExcluir,
@@ -65,9 +67,13 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
 
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
+  // EPI e Uniformes só oferecem os empregados habilitados (decisões 357 e 364); Ferramentas e Veículos oferecem todos os ativos.
+  const elegiveis =
+    modulo === "epi" ? soEmpregadosDeEpi(empregados) : modulo === "uniforme" ? soEmpregadosDeUniforme(empregados) : empregados;
+  // O empregado já vinculado à ocorrência que se edita continua na lista, mesmo inativo ou fora dos habilitados.
   const empregadoFora = editando?.empregado_id
     ? todosEmpregados.find(
-        (e) => e.id === editando.empregado_id && !empregados.some((a) => a.id === e.id),
+        (e) => e.id === editando.empregado_id && !elegiveis.some((a) => a.id === e.id),
       )
     : undefined;
 
@@ -259,9 +265,9 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
                 <SelectContent>
                   <SelectItem value={NENHUM}>Sem empregado específico</SelectItem>
                   {empregadoFora && (
-                    <SelectItem value={empregadoFora.id}>{empregadoFora.nome} (inativo)</SelectItem>
+                    <SelectItem value={empregadoFora.id}>{empregadoFora.nome} ({empregados.some((a) => a.id === empregadoFora.id) ? "não habilitado" : "inativo"})</SelectItem>
                   )}
-                  {empregados.map((e) => (
+                  {elegiveis.map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome}
                     </SelectItem>

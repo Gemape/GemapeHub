@@ -2064,3 +2064,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 365. Uniformes: Termo de Baixa e Nova movimentação oferecem todos os empregados
 
 - Ordem do responsável, ajustando a decisão 364 ("faça igual ao EPI"): só **Entrega Uniforme, Termo de Entrega e a devolução** oferecem apenas os empregados habilitados dos Uniformes, como Entrega, Termo de Entrega, Ficha avulsa e Devolução no EPI. O **Termo de Baixa** e a **Nova movimentação** dos Uniformes voltam a oferecer todos os empregados ativos, como a baixa definitiva do EPI e os relatórios, que nunca filtraram. Assim, quem já recebeu uniforme e não está habilitado continua podendo ter a baixa registrada. Só ajuste de tela; nada no Supabase.
+
+## 366. EPI e Uniformes: as Ocorrências também só oferecem os habilitados
+
+- Achado no code review: a tela de Ocorrências (que serve EPI, Uniformes, Ferramentas e Veículos) ainda oferecia todos os empregados ativos, apesar da ordem de que **toda rotina de EPI que informa o empregado** só mostre os habilitados (decisão 357). Passa a valer em **EPI > Ocorrências** e, como os Uniformes seguem o EPI (decisão 364), em **Uniformes > Ocorrências**. Ferramentas e Veículos seguem oferecendo todos os ativos.
+- **Escolha do Claude:** ao editar uma ocorrência, o empregado já vinculado continua na lista, marcado como "inativo" ou "não habilitado", para a edição não apagar o vínculo.
+- O EPI passa a ter filtro em: Entrega EPI, Termo de Entrega, Ficha avulsa, Devolução e Ocorrências; Relatórios e Baixar Definitivas mostram todos. Os textos das telas de habilitados do EPI e dos Uniformes dizem isso. Só modo demonstração; nada no Supabase.

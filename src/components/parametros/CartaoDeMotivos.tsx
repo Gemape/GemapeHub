@@ -17,7 +17,10 @@ export function CartaoDeMotivos({
   singular = "motivo",
   salvos: mensagemSalvos,
   max = MAX_MOTIVOS,
+  feminino = false,
 }: {
+  // Concordância do aviso de repetição: "Este motivo" ou "Esta área".
+  feminino?: boolean;
   // Limite de itens da lista: o da própria lista (motivos ou áreas), para a tela avisar antes de a gravação recusar.
   max?: number;
   singular?: string;
@@ -37,7 +40,7 @@ export function CartaoDeMotivos({
     const texto = novo.trim().replace(/\s+/g, " ");
     if (!texto) return;
     if (lista.some((m) => m.toLocaleLowerCase("pt-BR") === texto.toLocaleLowerCase("pt-BR"))) {
-      toast.error(`Este ${singular} já está na lista.`);
+      toast.error(`${feminino ? "Esta" : "Este"} ${singular} já está na lista.`);
       return;
     }
     if (lista.length >= max) {
