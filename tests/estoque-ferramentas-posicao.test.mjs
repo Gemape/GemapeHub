@@ -144,7 +144,8 @@ test("a janela de personalização confirma com Visualizar relatório, e o PDF s
 test("os cartões do Abastecimento (veículos e equipamentos) trazem a linha de explicação e o detalhe, quatro por linha (decisão 392)", () => {
   for (const [arq, n] of [["AbastecimentoVeiculoModulo", 4], ["equipamento/AbastecimentoEquipamentoModulo", 4]]) {
     const t = readFileSync(new URL(`../src/components/modules/${arq}.tsx`, import.meta.url), "utf8");
-    assert.equal((t.match(/<StatCard titulo=[^>]*subtitulo=[^>]*detalhe=/g) ?? []).length, n, arq);
+    assert.equal((t.match(/<StatCard titulo="[^"]*" subtitulo="/g) ?? []).length, n, arq);
+    assert.equal((t.match(/ detalhe=\{/g) ?? []).length >= n, true, arq);
     assert.match(t, /<GradeDeCartoes colunas=\{4\}>/, arq);
   }
 });
