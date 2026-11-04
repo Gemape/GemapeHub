@@ -123,7 +123,7 @@ test("nos relatórios de histórico e de baixas, os botões ficam à esquerda e 
   for (const arq of ["EpiRelatorioBaixa", "UniformesRelatorioBaixa", "EpiRelatorioFuncionario", "UniformesRelatorioFuncionario"]) {
     const t = readFileSync(new URL(`../src/components/modules/${arq}.tsx`, import.meta.url), "utf8");
     assert.ok(t.indexOf("Relatório\n") < t.indexOf("<BarraDeFiltros>"), `${arq}: os botões vêm antes da barra de filtros`);
-    assert.match(t, /<div className="flex flex-wrap items-end gap-2">\s*<div className="flex gap-2">/, arq);
+    assert.match(t, /<div className="flex flex-wrap items-end gap-2">\s*<div className="flex (?:flex-wrap )?gap-2">/, arq);
   }
 });
 

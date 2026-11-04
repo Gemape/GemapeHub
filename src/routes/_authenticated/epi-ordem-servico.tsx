@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
@@ -17,6 +18,15 @@ import { useOrdensServicoEpi } from "@/lib/use-ordens-servico-epi";
 import { executar } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/epi-ordem-servico")({
+  // `voltar` (decisão 388): aberta pelo link da tela EPI > Ordem de Serviço, mostra o botão de volta, já abre o cadastro com a função do empregado (`funcao`) e, depois de salvar, volta
+  // à tela com o empregado de antes (`empresa` e `empregado`) e a ordem recém-cadastrada.
+  validateSearch: (search: Record<string, unknown>): { voltar?: "ordem-servico"; nova?: "sim"; empresa?: string; empregado?: string; funcao?: string } => ({
+    ...(search["voltar"] === "ordem-servico" ? { voltar: "ordem-servico" as const } : {}),
+    ...(search["nova"] === "sim" ? { nova: "sim" as const } : {}),
+    ...(typeof search["empresa"] === "string" && search["empresa"] ? { empresa: search["empresa"] } : {}),
+    ...(typeof search["empregado"] === "string" && search["empregado"] ? { empregado: search["empregado"] } : {}),
+    ...(typeof search["funcao"] === "string" && search["funcao"] ? { funcao: search["funcao"] } : {}),
+  }),
   head: () => ({ meta: [{ title: "Cadastrar Ordem de Serviço | Patrimônio GEMAPE" }] }),
   component: OrdemServicoEpiPagina,
 });
@@ -25,6 +35,10 @@ const textoDe = (o: OrdemServicoEpi) => CAMPOS_OS.map((c) => o[c.chave]).join(" 
 
 // Parâmetros > EPI > Cadastrar Ordem de Serviço: por função e setor, os riscos, os EPIs, as condutas proibidas e os treinamentos. Mesmo desenho do Cadastrar Ficha de EPI.
 function OrdemServicoEpiPagina() {
+  const { voltar, nova, empresa, empregado, funcao } = Route.useSearch();
+  const navegar = useNavigate();
+  const volta = (ordemId?: string) =>
+    void navegar({ to: "/epi", search: { aba: "ordem-servico", ...(empresa ? { empresa } : {}), ...(empregado ? { empregado } : {}), ...(ordemId ? { ordem: ordemId } : {}) } });
   const ordens = useOrdensServicoEpi();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
@@ -34,6 +48,18 @@ function OrdemServicoEpiPagina() {
   const linhas = ordens
     .filter((o) => combinaBusca(busca, textoDe(o)))
     .sort((a, b) => a.funcao.localeCompare(b.funcao, "pt-BR") || a.setor.localeCompare(b.setor, "pt-BR"));
+
+  // Vindo do link da Ordem de Serviço do empregado, o cadastro já abre, com a função dele (uma vez só).
+  useEffect(() => {
+    if (nova === "sim") {
+      setEditandoId(null);
+      setConteudo({ ...ordemVazia(), ...(funcao ? { funcao } : {}) });
+      setAberto(true);
+      // Tira o "nova" do endereço: recarregar a página não abre a janela de novo.
+      void navegar({ to: "/epi-ordem-servico", search: { voltar: "ordem-servico", ...(empresa ? { empresa } : {}), ...(empregado ? { empregado } : {}), ...(funcao ? { funcao } : {}) }, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function abrir(ordem?: OrdemServicoEpi) {
     setEditandoId(ordem?.id ?? null);
@@ -54,12 +80,20 @@ function OrdemServicoEpiPagina() {
 
   function salvar(e: React.FormEvent) {
     e.preventDefault();
-    const salvou = executar(() => salvarOrdem(conteudo, editandoId ? { id: editandoId } : {}), "Ordem de serviço salva");
-    if (salvou) setAberto(false);
+    let salva: OrdemServicoEpi | undefined;
+    const salvou = executar(() => { salva = salvarOrdem(conteudo, editandoId ? { id: editandoId } : {}); }, "Ordem de serviço salva");
+    if (!salvou) return;
+    setAberto(false);
+    if (voltar === "ordem-servico") volta(salva?.id);
   }
 
   return (
     <div className="space-y-5">
+      {voltar === "ordem-servico" && (
+        <Button type="button" variant="outline" size="sm" onClick={() => volta()}>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Ordem de Serviço
+        </Button>
+      )}
       <header>
         <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-2xl font-bold">Cadastrar Ordem de Serviço</h1>

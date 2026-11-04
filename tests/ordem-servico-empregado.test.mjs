@@ -27,7 +27,7 @@ test("o documento traz os nove tópicos, os dados do empregado, a ciência e as 
   assert.match(html, /Evitar acidentes &lt;b&gt;/);
   assert.match(html, /<li>Ruído<\/li><li>Esmagamento<\/li>/);
   assert.match(html, /Declaro ter recebido esta Ordem de Serviço/);
-  assert.match(html, /Responsável pela segurança/);
+  assert.match(html, /Responsável pela empresa/);
   assert.doesNotMatch(html, /undefined/);
 });
 
@@ -48,4 +48,23 @@ test("o texto de abertura dos Parâmetros de EPI e de Uniformes quebra na largur
     const t = readFileSync(new URL(`../src/components/parametros/${arq}.tsx`, import.meta.url), "utf8");
     assert.match(t, /<div className="max-w-4xl">\s*<h2 id="parametros-/, arq);
   }
+});
+
+test("vai e volta (decisão 388): o link leva ao cadastro com a função do empregado e a volta devolve a escolha e a ordem nova", () => {
+  const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  const tela = ler("components/modules/EpiOrdemServico.tsx");
+  assert.match(tela, /search=\{\{ voltar: "ordem-servico", nova: "sim"/);
+  assert.match(tela, /useState\(volta\.empregado \?\? ""\)/);
+  assert.match(tela, /useState\(volta\.ordem \?\? ""\)/);
+  const cadastro = ler("routes/_authenticated/epi-ordem-servico.tsx");
+  assert.match(cadastro, /voltar === "ordem-servico" && \(\s*<Button[^>]*onClick=\{\(\) => volta\(\)\}/);
+  assert.match(cadastro, /if \(voltar === "ordem-servico"\) volta\(salva\?\.id\)/);
+  assert.match(cadastro, /aba: "ordem-servico"[\s\S]*ordemId \? \{ ordem: ordemId \}/);
+  assert.match(ler("routes/_authenticated/epi.tsx"), /empresa\?: string; empregado\?: string; ordem\?: string/);
+});
+
+test("a escolha da Ordem de Serviço fica no endereço e o cadastro não reabre a janela ao recarregar", () => {
+  const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  assert.match(ler("components/modules/EpiOrdemServico.tsx"), /replace: true/);
+  assert.match(ler("routes/_authenticated/epi-ordem-servico.tsx"), /Tira o "nova" do endereço/);
 });

@@ -160,7 +160,7 @@ export function EpiRelatorioFuncionario() {
 
           <h3 className="text-lg font-bold">Histórico de Movimentações de EPI</h3>
           <div className="flex flex-wrap items-end gap-2">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={imprimir}>
                 Relatório
               </Button>
