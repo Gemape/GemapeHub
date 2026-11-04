@@ -36,3 +36,13 @@ test("a preventiva do equipamento fala em horas (não em km) e o extrato mantém
   assert.match(t, /Custo de manutenção no período/);
   assert.doesNotMatch(t, /const (PONTO_TELA|TEXTO_TELA|SITUACAO)\b/, "as cores vêm do extrato do veículo");
 });
+
+test("Ocorrências do equipamento: o equipamento da lista abre o extrato só com as ocorrências (decisão 395)", () => {
+  const m = ler("OcorrenciasEquipamentoModulo.tsx");
+  assert.match(m, /<ExtratoEquipamento equipamento=\{equipamentos\.find\(\(e\) => e\.id === extratoDe\) \?\? null\} foco="ocorrencias"/);
+  assert.match(m, /setExtratoDe\(o\.equipamentoId\)/);
+  const t = ler("ExtratoEquipamento.tsx");
+  assert.match(t, /Ocorrências do equipamento/);
+  assert.match(t, /secoesVisiveis\.map/);
+  assert.match(t, /foco && equipamento \? gerarPdf\(equipamento, FOCOS\[foco\]\.tabelas\)/);
+});

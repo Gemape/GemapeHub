@@ -16,6 +16,7 @@ import { combinaBusca } from "@/lib/parametros-base";
 import { adicionarFotosOcorrenciaEq, registrarOcorrenciaEq, removerFotoOcorrenciaEq, removerOcorrenciaEq, resolverOcorrenciaEq } from "@/lib/registros-equipamento";
 import { BotaoAnexarFotos, GaleriaFotos, VisorFoto } from "@/components/modules/FotosOcorrencia";
 import { executar } from "@/lib/use-parametros-base";
+import { ExtratoEquipamento } from "./ExtratoEquipamento";
 import { hoje, rotuloDoEquipamento, TODOS, useEquipamentosDaEmpresa, useOcorrenciasEq } from "./comum";
 
 // Módulos > Equipamentos > Ocorrências: registra o que aconteceu com o equipamento (tipos de Parâmetros > Equipamentos > Tipos de ocorrência) e
@@ -25,6 +26,8 @@ export function OcorrenciasEquipamentoModulo() {
   const equipamentos = useEquipamentosDaEmpresa();
   const todas = useOcorrenciasEq();
   const [aberto, setAberto] = useState(false);
+  // O equipamento da lista abre só as informações de ocorrências dele (decisão 395), como o veículo em Veículos > Ocorrências.
+  const [extratoDe, setExtratoDe] = useState<string | null>(null);
   const [resolvendo, setResolvendo] = useState<string | null>(null);
   const [visor, setVisor] = useState<{ foto: string; titulo: string } | null>(null);
   const [filtro, setFiltro] = useState(TODOS);
@@ -78,7 +81,7 @@ export function OcorrenciasEquipamentoModulo() {
             {linhas.map((o) => (
               <TableRow key={o.id}>
                 <TableCell>{formatarData(o.data)}</TableCell>
-                <TableCell>{rotulos.get(o.equipamentoId)}</TableCell>
+                <TableCell><Button variant="link" size="sm" className="h-auto p-0 text-left font-normal" aria-label={`Ocorrências de ${rotulos.get(o.equipamentoId) ?? ""}`} onClick={() => setExtratoDe(o.equipamentoId)}>{rotulos.get(o.equipamentoId)}</Button></TableCell>
                 <TableCell>{o.tipoNome}</TableCell>
                 <TableCell className="max-w-sm text-sm">{o.descricao}{(o.fotos?.length ?? 0) > 0 || o.status === "Aberta" ? (
                   <span className="mt-2 block space-y-1">
@@ -97,6 +100,7 @@ export function OcorrenciasEquipamentoModulo() {
           </TableBody>
         </Table>
       </div>
+      <ExtratoEquipamento equipamento={equipamentos.find((e) => e.id === extratoDe) ?? null} foco="ocorrencias" onFechar={() => setExtratoDe(null)} />
       <NovaOcorrencia aberto={aberto} aoMudar={setAberto} equipamentos={equipamentos} />
       <VisorFoto foto={visor?.foto ?? null} titulo={visor?.titulo ?? ""} onFechar={() => setVisor(null)} />
       <Dialog open={resolvendo !== null} onOpenChange={(v) => { if (!v) setResolvendo(null); }}>
