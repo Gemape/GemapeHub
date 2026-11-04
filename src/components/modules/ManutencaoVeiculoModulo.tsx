@@ -310,7 +310,7 @@ export function ManutencaoVeiculoModulo() {
                     <Button variant="outline" size="sm" className="rounded-full" aria-label="Relatório da manutenção" onClick={() => gerarRelatorio(m)}>Relatório</Button>
                     <Button requiresWrite variant="outline" size="sm" className="rounded-full" aria-label="Editar manutenção" onClick={() => abrir(m)}>Editar</Button>
                     {isAdmin && (
-                      <Button requiresWrite variant="outline" size="sm" aria-label="Excluir manutenção" className="rounded-full text-destructive hover:text-destructive" onClick={() => excluir(m.id)}>
+                      <Button requiresWrite variant="destructive" size="sm" aria-label="Excluir manutenção" className="rounded-full" onClick={() => excluir(m.id)}>
                         Excluir
                       </Button>
                     )}

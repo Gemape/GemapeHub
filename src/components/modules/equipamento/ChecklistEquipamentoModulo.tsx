@@ -494,7 +494,7 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
               <DialogFooter className="gap-2">
                 {andamento ? (
                   <>
-                    <Button type="button" variant="outline" className="text-destructive" onClick={() => setConfirmando("descartar")}>Descartar</Button>
+                    <Button type="button" variant="destructive" onClick={() => setConfirmando("descartar")}>Descartar</Button>
                     <Button type="button" variant="outline" onClick={() => setTela(null)}>Continuar depois</Button>
                     <Button type="button" onClick={() => setConfirmando("concluir")}>Concluir check list</Button>
                   </>
