@@ -4,6 +4,7 @@ import { ViagensLista } from "./ViagensLista";
 import { iconeDoTipo } from "./icones-viagens";
 import { useMemo, useState } from "react";
 
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { Cartao } from "@/components/modules/CartoesIndicadoresFrota";
 import { QuestionarioFormulario } from "@/components/parametros/QuestionarioFormulario";
 import { Button } from "@/components/ui/button";
@@ -129,7 +130,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           {seletorPeriodo("indicadores")}
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <GradeDeCartoes colunas={4}>
           <Indicador titulo="Despesas lançadas no mês" valor={String(globais.quantidade)} />
           <Indicador
             titulo="Índice de conformidade de lançamento"
@@ -157,7 +158,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             explicacao={<ExplicacaoFechamento prazos={prazos} />}
             roxo
           />
-        </div>
+        </GradeDeCartoes>
       </section>
 
       <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} />
@@ -205,7 +206,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
 }
 
 function Indicador({ titulo, valor, detalhe, explicacao, roxo, faixa, pct }: { titulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean; faixa?: Faixa | undefined; pct?: number | null | undefined }) {
-  return <Cartao titulo={titulo} valor={valor} indicador={{ pct: pct ?? null, faixa: faixa ?? null, detalhe: detalhe ?? "" }} extra={explicacao} classe={roxo ? "border-l-4 border-l-purple-600" : ""} />;
+  return <Cartao titulo={titulo} valor={valor} indicador={{ pct: pct ?? null, faixa: faixa ?? null, detalhe: detalhe ?? "" }} extra={explicacao} classe={roxo ? "border-l-4 border-l-purple-600" : ""} compacto />;
 }
 
 function ExplicacaoIcl() {

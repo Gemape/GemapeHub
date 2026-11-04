@@ -1,3 +1,4 @@
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, ListChecks, Wrench } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
@@ -70,11 +71,11 @@ export function ManutencaoEquipamentoModulo() {
         </BarraDeFiltros>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
+      <GradeDeCartoes colunas={3}>
         <StatCard titulo="Manutenções" valor={linhas.length} icone={Wrench} compacto />
         <StatCard titulo="Preventivas / corretivas" valor={`${linhas.filter((m) => m.tipo === "Preventiva").length} / ${linhas.filter((m) => m.tipo === "Corretiva").length}`} icone={ListChecks} compacto />
         <StatCard titulo="Custo total" valor={reais(custo)} icone={Banknote} compacto />
-      </div>
+      </GradeDeCartoes>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
       <div className="max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">

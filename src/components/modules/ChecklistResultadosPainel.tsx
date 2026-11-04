@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 
 import { rotuloDoMes } from "@/components/modules/ChecklistPainelMensal";
 import { GraficosChecklist } from "@/components/modules/GraficosVeiculos";
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { StatCard } from "@/components/StatCard";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,15 +17,15 @@ const TODOS_OS_PERIODOS = "todos";
 const porcento = (n: number | null) => (n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
 
 // Os quatro indicadores do painel para um conjunto de linhas (todas, ou as de um grupo de responsáveis).
-function Indicadores({ resumo, todos, classe = "grid-cols-2" }: { resumo: ResumoPainel; todos: boolean; classe?: string }) {
+function Indicadores({ resumo, todos, colunas = 4 }: { resumo: ResumoPainel; todos: boolean; colunas?: 2 | 4 }) {
   const desfechos = resumo.realizados + resumo.naoRealizados;
   return (
-    <div className={`grid gap-2 ${classe}`}>
+    <GradeDeCartoes colunas={colunas}>
       <StatCard titulo="Realizados no prazo" pct={resumo.pctNoPrazo} faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} compacto />
       <StatCard titulo="Não realizados no prazo" pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} compacto />
       <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} compacto />
       <StatCard titulo="A vencer" valor={resumo.aVencer} detalhe="Ainda dentro do prazo" icone={CalendarClock} compacto />
-    </div>
+    </GradeDeCartoes>
   );
 }
 
@@ -132,7 +133,7 @@ export function ChecklistResultadosPainel({
           <p className="text-xs text-muted-foreground">{periodo}.</p>
         </div>
         <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <Indicadores resumo={resumo} todos={todos} classe="grid-cols-2 2xl:grid-cols-4" />
+          <Indicadores resumo={resumo} todos={todos} />
           <GraficosChecklist linhas={linhas} grupoDe={grupoDe} compacto />
         </div>
       </section>
@@ -147,7 +148,7 @@ export function ChecklistResultadosPainel({
                   <h2 id={id} className="text-base font-semibold leading-tight">Indicadores · {g}</h2>
                   <p className="text-xs text-muted-foreground">{periodo}{dele.length === 0 ? `: nenhum check list previsto para ${g === "Técnicos" ? "os técnicos" : g === "PCM" ? "o PCM" : g.toLowerCase()} neste período.` : "."}</p>
                 </div>
-                <Indicadores resumo={resumoDeLinhas(dele)} todos={todos} classe="grid-cols-2 xl:grid-cols-4" />
+                <Indicadores resumo={resumoDeLinhas(dele)} todos={todos} />
               </section>
               <section className="space-y-1.5" aria-label={`Responsáveis · ${g}`}>
                 <h3 className="text-sm font-semibold">Responsáveis · {g}</h3>

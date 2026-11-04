@@ -2109,3 +2109,9 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - **Entrega de uniforme:** continua dando baixa no saldo (por tamanho). A **devolução** feita na Entrega Uniforme agora entra no estoque como **usada**, com a compra mais antiga do uniforme no tamanho (data, nota fiscal e fornecedor) e o motivo.
 - **Compras (Uniformes):** ganhou o botão **Devolução** ao lado de Registrar Compra (mesmo diálogo do EPI: escolhe o funcionário, vê o que ele tem em posse e devolve com motivo) e a lista **Entradas de usados (devoluções)**. A aba segue chamada "Compras" nos Uniformes; os motivos de devolução são os do EPI, pois os Uniformes não têm cadastro próprio deles.
 - **Dados de teste (versão 34):** as devoluções de uniforme dos dados de teste entram como usadas, para a aba Usados ter o que mostrar.
+
+## 375. Cartões e KPIs: uma grade padrão em todas as telas
+
+- Todo cartão e KPI usa o card da Frota (compacto) e vive numa só grade, `GradeDeCartoes`, logo abaixo da barra de ações e filtros: mesmo espaçamento, mesma altura em cada fileira, duas colunas no celular e até 3, 4 ou 5 em tela larga.
+- A grade vale para Dashboard, Dashboard do módulo, relatórios de EPI e Uniformes, Abastecimento, Check list, Manutenção e Ocorrências de Veículos, Viagens e Equipamentos.
+- Em **Equipamentos > Indicadores** o card próprio (colorido, com a lista de cálculo aberta) passou ao card padrão; o "Como é calculado" abre no ícone de informação ao lado do título, e a pergunta e a meta ficam no subtítulo.

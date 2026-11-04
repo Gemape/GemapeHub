@@ -1,6 +1,11 @@
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 
+import { Info } from "lucide-react";
+import { Cartao as CartaoPadrao } from "@/components/modules/CartoesIndicadoresFrota";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { Faixa } from "@/lib/faixas-desempenho";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,20 +27,22 @@ const COR: Record<Semaforo, string> = {
 const ROTULO: Record<Semaforo, string> = { verde: "Dentro da meta", amarelo: "Atenção", vermelho: "Fora da meta", neutro: "Sem dados" };
 const pct = (v: number | null) => (v === null ? "—" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
 
-function Cartao({ pergunta, titulo, valor, detalhe, meta, semaforo, calculo }: { pergunta: string; titulo: string; valor: string; detalhe: string; meta: string; semaforo: Semaforo; calculo: string[] }) {
-  return (
-    <div className={`rounded-xl border p-4 ${COR[semaforo]}`} data-semaforo={semaforo}>
-      <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{titulo}</p>
-      <p className="mt-1 text-3xl font-bold">{valor}</p>
-      <p className="mt-1 text-sm">{detalhe}</p>
-      <p className="mt-2 text-xs opacity-80">{pergunta}</p>
-      <p className="mt-1 text-xs font-medium">{ROTULO[semaforo]} · {meta}</p>
-      <div className="mt-3 border-t border-current/20 pt-2">
-        <p className="text-xs font-semibold">Como é calculado</p>
-        <ul className="mt-1 list-disc space-y-1 pl-4 text-xs leading-snug opacity-90">{calculo.map((c) => <li key={c}>{c}</li>)}</ul>
-      </div>
-    </div>
+const FAIXA: Record<Semaforo, Faixa | null> = { verde: "verde", amarelo: "amarelo", vermelho: "vermelho", neutro: null };
+
+// O card é o padrão do sistema (decisão 375): a pergunta e a meta vão no subtítulo e o cálculo abre no ícone de informação, ao lado do título.
+function Cartao({ pergunta, titulo, valor, detalhe, meta, semaforo, pctBarra, calculo }: { pergunta: string; titulo: string; valor: string; detalhe: string; meta: string; semaforo: Semaforo; pctBarra: number | null; calculo: string[] }) {
+  const explicacao = (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" aria-label={`Como é calculado: ${titulo}`} className="shrink-0 text-muted-foreground hover:text-primary"><Info className="h-4 w-4" /></button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-96 space-y-1 text-sm">
+        <p className="font-semibold">Como é calculado</p>
+        <ul className="list-disc space-y-1 pl-4 text-xs leading-snug">{calculo.map((c) => <li key={c}>{c}</li>)}</ul>
+      </PopoverContent>
+    </Popover>
   );
+  return <CartaoPadrao titulo={titulo} subtitulo={`${pergunta} ${ROTULO[semaforo]} · ${meta}`} valor={valor} indicador={{ pct: pctBarra, faixa: FAIXA[semaforo], detalhe }} extra={explicacao} compacto />;
 }
 const Celula = ({ semaforo, children }: { semaforo: Semaforo; children: React.ReactNode }) => <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${COR[semaforo]}`}>{children}</span>;
 
@@ -80,8 +87,8 @@ export function IndicadoresEquipamentoModulo() {
         </BarraDeFiltros>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Cartao titulo="Disponibilidade" pergunta="Meu equipamento está pronto para trabalhar?" valor={pct(frota.disponibilidade)} detalhe={`${frota.prontos} de ${frota.total} prontos agora`}
+      <GradeDeCartoes colunas={5}>
+        <Cartao titulo="Disponibilidade" pergunta="Meu equipamento está pronto para trabalhar?" valor={pct(frota.disponibilidade)} pctBarra={frota.disponibilidade} detalhe={`${frota.prontos} de ${frota.total} prontos agora`}
           meta={`meta ≥ ${META.disponibilidade.verde}%`} semaforo={semaforoPct(frota.disponibilidade, META.disponibilidade)}
           calculo={[
             `Horas programadas = dias úteis do período × ${cfg.jornadaHoras} h, por equipamento.`,
@@ -90,7 +97,7 @@ export function IndicadoresEquipamentoModulo() {
             `Verde a partir de ${META.disponibilidade.verde}%, amarelo a partir de ${META.disponibilidade.amarelo}%, vermelho abaixo.`,
             `\"Pronto agora\" exige status Ativo ou Reserva${cfg.prontoOcorrenciaAberta ? ", nenhuma ocorrência aberta" : ""}${cfg.prontoVistoriaNok ? " e a última vistoria sem item não conforme pendente" : ""}.`,
           ]} />
-        <Cartao titulo="Custo de manutenção por hora" pergunta="Esse equipamento está me custando caro demais?" valor={frota.custoPorHora === null ? "—" : reais(frota.custoPorHora)}
+        <Cartao titulo="Custo de manutenção por hora" pergunta="Esse equipamento está me custando caro demais?" valor={frota.custoPorHora === null ? "—" : reais(frota.custoPorHora)} pctBarra={null}
           detalhe={`${reais(frota.custo)} em ${numero(frota.horasTrabalhadas)} h trabalhadas`} meta="cada equipamento é comparado à média da frota" semaforo="neutro"
           calculo={[
             "Custo = peças + mão de obra das manutenções do período.",
@@ -98,14 +105,14 @@ export function IndicadoresEquipamentoModulo() {
             "Custo por hora = custo ÷ horas trabalhadas; sem leitura de horímetro no período não há valor.",
             `Cada equipamento é comparado à média da frota: verde até a média, amarelo até ${String(cfg.custoFatorAmarelo).replace(".", ",")}×, vermelho acima.`,
           ]} />
-        <Cartao titulo="Razão preventiva/corretiva" pergunta="Estou apagando incêndio ou prevenindo?" valor={pct(frota.razaoPreventiva)}
+        <Cartao titulo="Razão preventiva/corretiva" pergunta="Estou apagando incêndio ou prevenindo?" valor={pct(frota.razaoPreventiva)} pctBarra={frota.razaoPreventiva}
           detalhe={`${frota.preventivas} preventiva${frota.preventivas === 1 ? "" : "s"} e ${frota.corretivas} corretiva${frota.corretivas === 1 ? "" : "s"}`} meta={`meta ≥ ${META.preventiva.verde}% preventiva`} semaforo={semaforoPct(frota.razaoPreventiva, META.preventiva)}
           calculo={[
             "Conta as manutenções do período por tipo.",
             "Razão = preventivas ÷ (preventivas + corretivas).",
             `Verde a partir de ${META.preventiva.verde}%, amarelo a partir de ${META.preventiva.amarelo}%, vermelho abaixo: se a maioria é corretiva, o problema é de gestão, não da máquina.`,
           ]} />
-        <Cartao titulo="Aderência ao plano" pergunta="A preventiva está sendo feita mesmo?" valor={pct(frota.aderencia)} detalhe={`${frota.itensEmDia} de ${frota.itensTotal} itens do plano em dia`}
+        <Cartao titulo="Aderência ao plano" pergunta="A preventiva está sendo feita mesmo?" valor={pct(frota.aderencia)} pctBarra={frota.aderencia} detalhe={`${frota.itensEmDia} de ${frota.itensTotal} itens do plano em dia`}
           meta={`meta ≥ ${META.aderencia.verde}%`} semaforo={semaforoPct(frota.aderencia, META.aderencia)}
           calculo={[
             "Cada ação do plano do equipamento (limite de horas e de meses) é um item.",
@@ -113,7 +120,7 @@ export function IndicadoresEquipamentoModulo() {
             "Aderência = itens em dia ÷ itens dos planos. Equipamento sem plano não entra.",
             `Verde a partir de ${META.aderencia.verde}%, amarelo a partir de ${META.aderencia.amarelo}%.`,
           ]} />
-        <Cartao titulo="Conformidade legal" pergunta="Estou exposto a risco de multa ou acidente?" valor={pct(frota.conformidade)} detalhe={`${frota.comPendencia} equipamento${frota.comPendencia === 1 ? "" : "s"} com pendência`}
+        <Cartao titulo="Conformidade legal" pergunta="Estou exposto a risco de multa ou acidente?" valor={pct(frota.conformidade)} pctBarra={frota.conformidade} detalhe={`${frota.comPendencia} equipamento${frota.comPendencia === 1 ? "" : "s"} com pendência`}
           meta={`meta ${META.conformidade.verde}%`} semaforo={semaforoPct(frota.conformidade, META.conformidade)}
           calculo={[
             `Todos: vistoria periódica em dia, conforme a periodicidade do check list de vistoria associado (diária ${cfg.prazoVistoriaDias["Diária"]} d, semanal ${cfg.prazoVistoriaDias["Semanal"]} d, quinzenal ${cfg.prazoVistoriaDias["Quinzenal"]} d, mensal ${cfg.prazoVistoriaDias["Mensal"]} d).`,
@@ -122,7 +129,7 @@ export function IndicadoresEquipamentoModulo() {
             ...(cfg.exigirSemOcorrenciaAberta ? ["Empilhadeiras e máquinas: nenhuma ocorrência de segurança aberta."] : []),
             `Conformidade = requisitos atendidos ÷ requisitos de todos os equipamentos; meta ${META.conformidade.verde}%, amarelo a partir de ${META.conformidade.amarelo}%.`,
           ]} />
-      </div>
+      </GradeDeCartoes>
 
       <div className="overflow-x-auto rounded-xl border">
         <Table>

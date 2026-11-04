@@ -1,3 +1,4 @@
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { CalendarCheck, CalendarClock, CircleCheck, CircleX } from "lucide-react";
 import { useState } from "react";
@@ -86,7 +87,7 @@ export function ChecklistPainelMensal({
         </BarraDeFiltros>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <GradeDeCartoes colunas={4}>
         <StatCard
           titulo="Realizados no prazo"
           pct={resumo.pctNoPrazo}
@@ -94,6 +95,7 @@ export function ChecklistPainelMensal({
           valor={porcento(resumo.pctNoPrazo)}
           detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"}
           icone={CircleCheck}
+          compacto
         />
         <StatCard
           titulo="Não realizados no prazo"
@@ -102,10 +104,11 @@ export function ChecklistPainelMensal({
           valor={porcento(resumo.pctNaoNoPrazo)}
           detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"}
           icone={CircleX}
+          compacto
         />
-        <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} />
-        <StatCard titulo="A vencer" valor={resumo.aVencer} icone={CalendarClock} />
-      </div>
+        <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} compacto />
+        <StatCard titulo="A vencer" valor={resumo.aVencer} icone={CalendarClock} compacto />
+      </GradeDeCartoes>
 
       <div className="overflow-x-auto rounded-xl border">
         <Table>

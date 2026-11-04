@@ -1,4 +1,5 @@
 import { PackageCheck, PackageX, Undo2, UserCheck } from "lucide-react";
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { StatCard } from "@/components/StatCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -146,12 +147,12 @@ export function UniformesRelatorioFuncionario() {
 
       {empregado && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          <GradeDeCartoes colunas={4}>
             <StatCard titulo="Entregues" valor={totalEntregue} icone={PackageCheck} compacto />
             <StatCard titulo="Devolvidos" valor={totalDevolvido} icone={Undo2} compacto />
             <StatCard titulo="Baixados" valor={totalBaixado} icone={PackageX} compacto />
             <StatCard titulo="Em Posse" valor={emPosse} icone={UserCheck} compacto />
-          </div>
+          </GradeDeCartoes>
 
           <div className="flex flex-wrap items-end justify-between gap-2">
             <h3 className="text-lg font-bold">Histórico de Movimentações</h3>

@@ -1,4 +1,5 @@
 import { Banknote, ClipboardList, Package } from "lucide-react";
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { StatCard } from "@/components/StatCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,11 +145,11 @@ export function EpiRelatorioBaixa() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2">
+      <GradeDeCartoes colunas={3}>
         <StatCard titulo="Total de Baixas" valor={baixas.length} icone={ClipboardList} compacto />
         <StatCard titulo="Total de Peças" valor={totalQuantidade} icone={Package} compacto />
         <StatCard titulo="Valor Total" valor={formatarMoeda(totalValor)} icone={Banknote} compacto />
-      </div>
+      </GradeDeCartoes>
 
       <div className="panel max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card print:max-h-none print:overflow-visible print:border-none print:shadow-none">
         <Table>

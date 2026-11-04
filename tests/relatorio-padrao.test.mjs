@@ -183,18 +183,20 @@ test("celular: indicadores em duas colunas, cartões menores e botões das janel
   assert.match(cartao, /break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl/);
   assert.match(cartao, /size-8 shrink-0 items-center justify-center rounded-full shadow-md ring-4 sm:size-10/, "o ícone é menor no celular, para sobrar largura ao texto");
   for (const arq of ["components/modules/ChecklistPainelMensal.tsx", "routes/_authenticated/dashboard.tsx", "components/modules/DashboardModulo.tsx", "components/modules/AbastecimentoVeiculoModulo.tsx", "components/modules/equipamento/InventarioEquipamentoModulo.tsx"]) {
-    assert.match(ler(arq), /grid grid-cols-2 gap-3/, `${arq}: duas colunas no celular`);
+    assert.match(ler(arq), /<GradeDeCartoes/, `${arq}: a grade padrão de cartões`);
   }
+  assert.match(ler("components/GradeDeCartoes.tsx"), /4: "grid-cols-2 lg:grid-cols-4"/, "duas colunas no celular");
   assert.match(ler("components/ui/dialog.tsx"), /max-sm:flex-row-reverse max-sm:flex-wrap max-sm:\[&>\*\]:min-w-\[7rem\] max-sm:\[&>\*\]:flex-1/, "Salvar e Cancelar lado a lado");
 });
 
 test("celular: o último cartão de uma fileira de três ocupa a linha toda, sem meia linha vazia; o valor longo quebra dentro do cartão", () => {
   for (const arq of ["components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
-    assert.match(ler(arq), /sm:grid-cols-3[^"]* max-sm:\[&>\*:last-child:nth-child\(odd\)\]:col-span-2/, arq);
+    assert.match(ler(arq), /<GradeDeCartoes colunas=\{3\}>/, arq);
   }
+  assert.match(ler("components/GradeDeCartoes.tsx"), /sm:grid-cols-3 max-sm:\[&>\*:last-child:nth-child\(odd\)\]:col-span-2/);
   assert.match(ler("components/modules/CartoesIndicadoresFrota.tsx"), /break-words font-display text-2xl font-bold/);
   for (const arq of ["components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/EpiRelatorioFuncionario.tsx", "components/modules/UniformesRelatorioFuncionario.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
-    assert.match(ler(arq), /grid grid-cols-2 gap-3/, `${arq}: duas colunas no celular`);
+    assert.match(ler(arq), /<GradeDeCartoes/, `${arq}: a grade padrão de cartões`);
   }
 });
 
