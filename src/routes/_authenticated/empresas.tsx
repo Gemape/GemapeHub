@@ -98,7 +98,7 @@ function PaginaEmpresas() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           <p className="text-eyebrow">Cadastros</p>
           <h1 className="text-2xl font-bold">Empresas</h1>
@@ -106,39 +106,41 @@ function PaginaEmpresas() {
             Unidades do grupo usadas para filtrar todos os módulos.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              exportarCsv(
-                "empresas",
-                lista.map((e) => ({
-                  "Nome fantasia": e.nome_fantasia,
-                  "Razão social": e.razao_social,
-                  CNPJ: formatarCnpj(e.cnpj),
-                  ...(MODO_DEMO ? { Endereço: enderecoResumido(e), Status: statusDaEmpresa(e) } : {}),
-                })),
-              )
-            }
-            disabled={lista.length === 0}
-          >
-            Exportar CSV
-          </Button>
-          <RelatorioCadastro nome="empresas" campos={camposRelatorio} linhas={lista} filtro={busca.trim()} />
-          <Button requiresWrite
-            onClick={() => {
-              setEditando(null);
-              // Demonstração (2.8): o cadastro novo abre já preenchido com uma empresa fictícia, que só é gravada se a pessoa salvar.
-              setModelo(import.meta.env.VITE_DEMO_MODE !== "false" ? exemploEmpresa(empresas) : null);
-              setAberto(true);
-            }}
-          >
-            Nova empresa
-          </Button>
-        </div>
       </header>
 
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() =>
+                exportarCsv(
+                  "empresas",
+                  lista.map((e) => ({
+                    "Nome fantasia": e.nome_fantasia,
+                    "Razão social": e.razao_social,
+                    CNPJ: formatarCnpj(e.cnpj),
+                    ...(MODO_DEMO ? { Endereço: enderecoResumido(e), Status: statusDaEmpresa(e) } : {}),
+                  })),
+                )
+              }
+              disabled={lista.length === 0}
+            >
+              Exportar CSV
+            </Button>
+            <RelatorioCadastro nome="empresas" campos={camposRelatorio} linhas={lista} filtro={busca.trim()} />
+            <Button requiresWrite
+              onClick={() => {
+                setEditando(null);
+                // Demonstração (2.8): o cadastro novo abre já preenchido com uma empresa fictícia, que só é gravada se a pessoa salvar.
+                setModelo(import.meta.env.VITE_DEMO_MODE !== "false" ? exemploEmpresa(empresas) : null);
+                setAberto(true);
+              }}
+            >
+              Nova empresa
+            </Button>
+          </div>
+        </div>
         <BarraDeFiltros>
           <Input
             aria-label="Buscar empresa por palavra-chave"

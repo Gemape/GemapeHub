@@ -101,27 +101,29 @@ function PaginaFornecedores() {
   const lista = fornecedores.filter((f) => combinaBusca(busca, ...camposDeBusca(f, [formatarCnpj(f.cnpj), formatarTelefone(f.telefone)])));
 
   return <div className="space-y-5">
-    <header className="flex flex-wrap items-end justify-between gap-3">
+    <header className="flex flex-col items-start gap-3">
       <div>
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Fornecedores</h1>
         <p className="mt-1 text-sm text-muted-foreground">Dados cadastrais dos fornecedores.</p>
       </div>
-      <div className="flex gap-2">
-        <Button variant="outline" disabled={lista.length === 0} onClick={() => exportarCsv("fornecedores", lista.map((x) => ({
-          Código: x.codigo,
-          "Nome fantasia": x.nome_fantasia ?? "",
-          "Razão social": x.razao_social,
-          CNPJ: formatarCnpj(x.cnpj),
-          "Cidade/Estado": [x.cidade, x.estado].filter(Boolean).join("/"),
-          Contato: x.contato || formatarTelefone(x.telefone) || "",
-        })))}>Exportar CSV</Button>
-        <RelatorioCadastro nome="fornecedores" campos={CAMPOS_RELATORIO} linhas={lista} filtro={busca.trim()} />
-        <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploFornecedor(fornecedores), true) : abrir(null)}>Novo fornecedor</Button>
-      </div>
     </header>
 
     <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex gap-2">
+          <Button variant="outline" disabled={lista.length === 0} onClick={() => exportarCsv("fornecedores", lista.map((x) => ({
+            Código: x.codigo,
+            "Nome fantasia": x.nome_fantasia ?? "",
+            "Razão social": x.razao_social,
+            CNPJ: formatarCnpj(x.cnpj),
+            "Cidade/Estado": [x.cidade, x.estado].filter(Boolean).join("/"),
+            Contato: x.contato || formatarTelefone(x.telefone) || "",
+          })))}>Exportar CSV</Button>
+          <RelatorioCadastro nome="fornecedores" campos={CAMPOS_RELATORIO} linhas={lista} filtro={busca.trim()} />
+          <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploFornecedor(fornecedores), true) : abrir(null)}>Novo fornecedor</Button>
+        </div>
+      </div>
       <BarraDeFiltros>
         <Input aria-label="Buscar fornecedor por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
         {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {fornecedores.length} fornecedor(es).</p>}

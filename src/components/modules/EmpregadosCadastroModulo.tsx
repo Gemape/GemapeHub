@@ -145,7 +145,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           <p className="text-eyebrow">Cadastros</p>
           <h1 className="text-2xl font-bold">Empregados</h1>
@@ -153,49 +153,51 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             Colaboradores vinculados às movimentações de patrimônio.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              exportarCsv(
-                "empregados",
-                empregados.map((e) => ({
-                  Nome: e.nome,
-                  CPF: e.cpf,
-                  Empresa: nomeEmpresa(e.empresa_id),
-                  Matricula: e.matricula,
-                  "E-mail": e.email ?? "",
-                  Admissao: formatarData(e.data_admissao),
-                  Demissao: formatarData(e.data_demissao),
-                  Situacao: empregadoAtivo(e) ? "Ativo" : "Inativo",
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
-          <RelatorioCadastro
-            nome="empregados"
-            filtro={busca.trim()}
-            linhas={[...ativos, ...inativos]}
-            campos={[
-              { id: "nome", rotulo: "Nome completo", valor: (e) => e.nome },
-              { id: "cpf", rotulo: "CPF", valor: (e) => (e.cpf.replace(/\D/g, "").length > 11 ? e.cpf : mascararCpf(e.cpf)) },
-              { id: "matricula", rotulo: "Matrícula", valor: (e) => e.matricula },
-              { id: "empresa", rotulo: "Empresa", valor: (e) => nomeEmpresa(e.empresa_id) },
-              { id: "email", rotulo: "E-mail", valor: (e) => e.email ?? "" },
-              { id: "admissao", rotulo: "Admissão", valor: (e) => formatarData(e.data_admissao) },
-              { id: "demissao", rotulo: "Demissão", valor: (e) => formatarData(e.data_demissao) },
-              { id: "situacao", rotulo: "Situação", valor: (e) => (empregadoAtivo(e) ? "Ativo" : "Inativo") },
-            ] satisfies CampoRelatorio<EmpregadoCadastro>[]}
-          />
-          <Button requiresWrite onClick={() => void abrirNovo()}>
-            Novo empregado
-          </Button>
-        </div>
       </header>
 
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() =>
+                exportarCsv(
+                  "empregados",
+                  empregados.map((e) => ({
+                    Nome: e.nome,
+                    CPF: e.cpf,
+                    Empresa: nomeEmpresa(e.empresa_id),
+                    Matricula: e.matricula,
+                    "E-mail": e.email ?? "",
+                    Admissao: formatarData(e.data_admissao),
+                    Demissao: formatarData(e.data_demissao),
+                    Situacao: empregadoAtivo(e) ? "Ativo" : "Inativo",
+                  })),
+                )
+              }
+            >
+              Exportar CSV
+            </Button>
+            <RelatorioCadastro
+              nome="empregados"
+              filtro={busca.trim()}
+              linhas={[...ativos, ...inativos]}
+              campos={[
+                { id: "nome", rotulo: "Nome completo", valor: (e) => e.nome },
+                { id: "cpf", rotulo: "CPF", valor: (e) => (e.cpf.replace(/\D/g, "").length > 11 ? e.cpf : mascararCpf(e.cpf)) },
+                { id: "matricula", rotulo: "Matrícula", valor: (e) => e.matricula },
+                { id: "empresa", rotulo: "Empresa", valor: (e) => nomeEmpresa(e.empresa_id) },
+                { id: "email", rotulo: "E-mail", valor: (e) => e.email ?? "" },
+                { id: "admissao", rotulo: "Admissão", valor: (e) => formatarData(e.data_admissao) },
+                { id: "demissao", rotulo: "Demissão", valor: (e) => formatarData(e.data_demissao) },
+                { id: "situacao", rotulo: "Situação", valor: (e) => (empregadoAtivo(e) ? "Ativo" : "Inativo") },
+              ] satisfies CampoRelatorio<EmpregadoCadastro>[]}
+            />
+            <Button requiresWrite onClick={() => void abrirNovo()}>
+              Novo empregado
+            </Button>
+          </div>
+        </div>
         <BarraDeFiltros>
           <Input aria-label="Buscar empregado por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
           {busca.trim() && <p className="text-sm text-muted-foreground">{encontrados.length} de {empregados.length} empregado(s).</p>}

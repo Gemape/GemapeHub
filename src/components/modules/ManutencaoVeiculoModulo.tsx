@@ -191,8 +191,8 @@ export function ManutencaoVeiculoModulo() {
     <div className="space-y-3">
       {aba === "painel" && (
         <>
-          {/* Os dois botões azuis ficam no alto, à direita, no mesmo padrão do Check list; a contagem de cada um vai dentro do botão. */}
-          <section className="flex flex-wrap items-center justify-end gap-2" aria-label="Listas de manutenção">
+          {/* Os dois botões azuis ficam no alto, à esquerda, no mesmo padrão do Check list; a contagem de cada um vai dentro do botão. */}
+          <section className="flex flex-wrap items-center gap-2" aria-label="Listas de manutenção">
             <Button ref={botaoDaTela("planejadas")} type="button" size="sm" className="rounded-full px-4" onClick={() => setAba("planejadas")}>
               <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Manutenções planejadas
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{revisoes.length} no plano</span>

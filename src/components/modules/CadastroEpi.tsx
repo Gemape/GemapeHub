@@ -253,32 +253,32 @@ function CatalogoEpi() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          disabled={grupos.length === 0}
-          onClick={() =>
-            exportarCsv(
-              "epis",
-              grupos.flatMap((g) =>
-                g.itens.map((item) => ({
-                  Código: item.codigo_sku,
-                  Descrição: g.nome,
-                  Tamanho: rotuloTamanho(item.tamanho_id) || "Sem tamanho",
-                  Unidade: item.unidade_medida || "Sem unidade",
-                  "Estoque mínimo": item.estoque_minimo,
-                })),
-              ),
-            )
-          }
-        >
-          Exportar CSV
-        </Button>
-        <Button requiresWrite onClick={abrirNovo}>
-          Novo EPI
-        </Button>
-      </div>
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={grupos.length === 0}
+            onClick={() =>
+              exportarCsv(
+                "epis",
+                grupos.flatMap((g) =>
+                  g.itens.map((item) => ({
+                    Código: item.codigo_sku,
+                    Descrição: g.nome,
+                    Tamanho: rotuloTamanho(item.tamanho_id) || "Sem tamanho",
+                    Unidade: item.unidade_medida || "Sem unidade",
+                    "Estoque mínimo": item.estoque_minimo,
+                  })),
+                ),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+          <Button requiresWrite onClick={abrirNovo}>
+            Novo EPI
+          </Button>
+        </div>
         <BarraDeFiltros>
           <Input
             aria-label="Buscar EPI por código, descrição, subcategoria ou tamanho"

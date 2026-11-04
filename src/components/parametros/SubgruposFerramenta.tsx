@@ -80,7 +80,7 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
 
   return (
     <section className="space-y-5" data-testid="subgrupos-ferramenta">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           <h2 className="text-xl font-bold">Subgrupos por grupo de ferramenta</h2>
           <p className="mt-1 text-sm text-muted-foreground">

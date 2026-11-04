@@ -17,7 +17,7 @@ export function Cabecalho({
 }) {
   const secao = nivel === "secao";
   return (
-    <header className="flex flex-wrap items-end justify-between gap-3">
+    <header className="flex flex-col items-start gap-3">
       <div>
         {!secao && <EyebrowDoCard fallback={topo} />}
         {secao ? <h2 className="text-lg font-semibold">{titulo}</h2> : <h1 className="text-2xl font-bold">{titulo}</h1>}

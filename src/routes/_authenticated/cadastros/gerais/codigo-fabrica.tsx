@@ -228,7 +228,10 @@ function CodigoFabricaPagina() {
       <Cabecalho
         titulo="Código de fábrica"
         descricao="Associa o código do produto na nota fiscal do fornecedor ao código interno da GEMAPE. Na entrada da nota, o sistema saberá a qual produto somar o estoque."
-      >
+      />
+
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="outline"
           disabled={linhas.length === 0}
@@ -249,9 +252,7 @@ function CodigoFabricaPagina() {
           Exportar CSV
         </Button>
         <Button onClick={() => abrir(null)}>Nova associação</Button>
-      </Cabecalho>
-
-      <div className="flex flex-wrap items-end gap-2">
+        </div>
         <BarraDeFiltros>
           <Input
             aria-label="Buscar por produto, fornecedor, código ou CA"

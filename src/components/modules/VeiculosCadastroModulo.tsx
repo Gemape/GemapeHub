@@ -383,48 +383,48 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              exportarCsv(
-                "veiculos",
-                veiculos.map((v) => ({
-                  Código: v.codigo_sku ?? "",
-                  Subcategoria: subcategoriaDe(v),
-                  Descrição: descricaoDe(v),
-                  Placa: formatarPlaca(v.placa) || "—",
-                  Marca: v.marca,
-                  Modelo: v.modelo,
-                  "Ano de fabricação": v.ano ?? "",
-                  Cor: v.cor ?? "",
-                  Combustível: v.combustivel ?? "",
-                  Empresa: nomeEmpresa(v.empresa_id),
-                  RENAVAM: v.renavam ?? "",
-                  ...(MODO_DEMO
-                    ? {
-                        "Data de aquisição": v.data_aquisicao ?? "",
-                        Custo: v.custo ?? "",
-                        "Nota fiscal": v.numero_nota_fiscal ?? "",
-                      }
-                    : {}),
-                  Km: kmAtualDe(v),
-                  Situação: STATUS_VEICULO_LABEL[v.status] ?? v.status,
-                  Responsável: nomeEmpregado(v.empregado_responsavel_id),
-                  Observações: v.observacoes ?? "",
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
-          <Button requiresWrite onClick={() => void novoVeiculo()}>
-            Novo veículo
-          </Button>
-        </div>
-      </div>
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() =>
+                exportarCsv(
+                  "veiculos",
+                  veiculos.map((v) => ({
+                    Código: v.codigo_sku ?? "",
+                    Subcategoria: subcategoriaDe(v),
+                    Descrição: descricaoDe(v),
+                    Placa: formatarPlaca(v.placa) || "—",
+                    Marca: v.marca,
+                    Modelo: v.modelo,
+                    "Ano de fabricação": v.ano ?? "",
+                    Cor: v.cor ?? "",
+                    Combustível: v.combustivel ?? "",
+                    Empresa: nomeEmpresa(v.empresa_id),
+                    RENAVAM: v.renavam ?? "",
+                    ...(MODO_DEMO
+                      ? {
+                          "Data de aquisição": v.data_aquisicao ?? "",
+                          Custo: v.custo ?? "",
+                          "Nota fiscal": v.numero_nota_fiscal ?? "",
+                        }
+                      : {}),
+                    Km: kmAtualDe(v),
+                    Situação: STATUS_VEICULO_LABEL[v.status] ?? v.status,
+                    Responsável: nomeEmpregado(v.empregado_responsavel_id),
+                    Observações: v.observacoes ?? "",
+                  })),
+                )
+              }
+            >
+              Exportar CSV
+            </Button>
+            <Button requiresWrite onClick={() => void novoVeiculo()}>
+              Novo veículo
+            </Button>
+          </div>
+        </div>
         <BarraDeFiltros>
           <Input
             aria-label="Buscar por código, placa ou descrição"

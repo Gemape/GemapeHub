@@ -176,30 +176,30 @@ function FichaEpiPagina() {
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          disabled={linhas.length === 0}
-          onClick={() =>
-            exportarCsv(
-              "fichas-epi",
-              linhas.map(({ ficha, epi }) => ({
-                Código: epi.codigo_sku,
-                EPI: epi.nome,
-                "Setores aplicáveis": ficha.setores,
-                Empresa: nomeEmpresa(epi.empresa_id),
-                "Atualizada em": ficha.atualizadaEm ? new Date(ficha.atualizadaEm).toLocaleDateString("pt-BR") : "",
-              })),
-            )
-          }
-        >
-          Exportar CSV
-        </Button>
-        <Button requiresWrite onClick={() => abrir(null)}>
-          Nova ficha
-        </Button>
-      </div>
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={linhas.length === 0}
+            onClick={() =>
+              exportarCsv(
+                "fichas-epi",
+                linhas.map(({ ficha, epi }) => ({
+                  Código: epi.codigo_sku,
+                  EPI: epi.nome,
+                  "Setores aplicáveis": ficha.setores,
+                  Empresa: nomeEmpresa(epi.empresa_id),
+                  "Atualizada em": ficha.atualizadaEm ? new Date(ficha.atualizadaEm).toLocaleDateString("pt-BR") : "",
+                })),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+          <Button requiresWrite onClick={() => abrir(null)}>
+            Nova ficha
+          </Button>
+        </div>
         <BarraDeFiltros>
           <Input
             aria-label="Buscar ficha por código, descrição ou setor"

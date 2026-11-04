@@ -267,29 +267,29 @@ export function CaixasFerramentasModulo() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() =>
-              exportarCsv(
-                "caixas-ferramentas",
-                caixas.map((c) => ({
-                  Codigo: c.codigo,
-                  PortadorAtivo: nomePortador(c.id),
-                  Localizacao: c.localizacao ?? "—",
-                  Status: c.status,
-                  DataCadastro: formatarData(c.created_at),
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
-          <Button requiresWrite onClick={abrirNovo}>Nova caixa</Button>
-        </div>
-      </div>
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() =>
+                exportarCsv(
+                  "caixas-ferramentas",
+                  caixas.map((c) => ({
+                    Codigo: c.codigo,
+                    PortadorAtivo: nomePortador(c.id),
+                    Localizacao: c.localizacao ?? "—",
+                    Status: c.status,
+                    DataCadastro: formatarData(c.created_at),
+                  })),
+                )
+              }
+            >
+              Exportar CSV
+            </Button>
+            <Button requiresWrite onClick={abrirNovo}>Nova caixa</Button>
+          </div>
+        </div>
         <BarraDeFiltros>
           <div className="relative w-96 max-w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

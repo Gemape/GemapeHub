@@ -203,7 +203,7 @@ export function EnderecamentoModulo() {
   }
 
   return <div className="space-y-5">
-    <header className="flex flex-wrap items-end justify-between gap-3">
+    <header className="flex flex-col items-start gap-3">
       <div>
         <EyebrowDoCard fallback="Cadastros · Gerais" />
         <h1 className="text-2xl font-bold">Endereçamento de estoque</h1>
@@ -211,29 +211,29 @@ export function EnderecamentoModulo() {
       </div>
     </header>
 
-    <div className="flex flex-wrap items-center justify-end gap-2">
-      <Button
-        variant="outline"
-        disabled={linhas.length === 0}
-        onClick={() =>
-          exportarCsv(
-            "enderecamento",
-            linhas.map(({ produto, endereco: e }) => ({
-              "Código do produto": produto.codigo_sku,
-              Produto: produto.nome,
-              Rua: e?.rua ?? "",
-              Número: e?.prateleira ?? "",
-              Apartamento: e?.apartamento ?? "",
-              Empresa: nomeEmpresa(produto.empresa_id ?? ""),
-            })),
-          )
-        }
-      >
-        Exportar CSV
-      </Button>
-      <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
-    </div>
     <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          disabled={linhas.length === 0}
+          onClick={() =>
+            exportarCsv(
+              "enderecamento",
+              linhas.map(({ produto, endereco: e }) => ({
+                "Código do produto": produto.codigo_sku,
+                Produto: produto.nome,
+                Rua: e?.rua ?? "",
+                Número: e?.prateleira ?? "",
+                Apartamento: e?.apartamento ?? "",
+                Empresa: nomeEmpresa(produto.empresa_id ?? ""),
+              })),
+            )
+          }
+        >
+          Exportar CSV
+        </Button>
+        <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
+      </div>
       <BarraDeFiltros>
         <Input aria-label="Buscar por código, produto ou endereço" className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
       </BarraDeFiltros>

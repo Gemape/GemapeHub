@@ -148,7 +148,7 @@ export function ListaVeiculos({
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           {!secao && <EyebrowDoCard fallback={eyebrow} />}
           {secao ? <h2 className="text-xl font-bold">{titulo}</h2> : <h1 className="text-2xl font-bold">{titulo}</h1>}

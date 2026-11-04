@@ -14,13 +14,13 @@ test("os cards de Manutenção e de Ocorrências usam a grade padrão de cartõe
   assert.equal((le("CartoesOcorrencias.tsx").match(/compacto/g) ?? []).length, 2);
 });
 
-test("os botões azuis de Manutenção e de Ocorrências são compactos, arredondados e ficam numa linha só, à direita", () => {
+test("os botões azuis de Manutenção e de Ocorrências são compactos, arredondados e ficam numa linha só, à esquerda", () => {
   const m = le("ManutencaoVeiculoModulo.tsx");
-  assert.match(m, /<section className="flex flex-wrap items-center justify-end gap-2" aria-label="Listas de manutenção">/);
+  assert.match(m, /<section className="flex flex-wrap items-center gap-2" aria-label="Listas de manutenção">/);
   assert.match(m, /const botaoCadastrar = <Button requiresWrite size="sm" className="rounded-full px-4"/);
   assert.equal((m.match(/size="sm" className="rounded-full px-4"/g) ?? []).length >= 3, true);
   const o = le("OcorrenciasVeiculoModulo.tsx");
-  assert.match(o, /<section className="flex flex-wrap items-center justify-end gap-2" aria-label="Ocorrências">/);
+  assert.match(o, /<section className="flex flex-wrap items-center gap-2" aria-label="Ocorrências">/);
   assert.match(o, /size="sm" className="rounded-full px-4" aria-label/);
   assert.match(o, /<Button requiresWrite="operar" size="sm" className="rounded-full px-4" onClick=\{abrirNova\}>Nova ocorrência<\/Button>/);
   // Os botões não voltam a empilhar em coluna.
