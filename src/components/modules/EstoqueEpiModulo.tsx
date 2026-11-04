@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -111,6 +112,8 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
   return (
     <section className="space-y-4" aria-label={modulo === "epi" ? "Estoque de EPIs" : "Estoque de uniformes"}>
       {/* Novos e Usados: botões azuis no topo, à esquerda; o escolhido leva um anel e o outro fica mais claro (decisão 353). */}
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
         {(["novo", "usado"] as const).map((c) => (
           <Button
@@ -125,97 +128,6 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           </Button>
         ))}
       </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-1">
-          <Label htmlFor="est-empresa">Empresa</Label>
-          <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
-            <SelectTrigger id="est-empresa">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS}>Todas as empresas</SelectItem>
-              {empresasParaEscolha(empresas).map((e) => (
-                <SelectItem key={e.id} value={e.id}>
-                  {e.nome_fantasia}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="est-palavra">Palavra-chave</Label>
-          <Input
-            id="est-palavra"
-            placeholder="Código, descrição, tamanho…"
-            value={palavra}
-            onChange={(e) => setPalavra(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="est-fornecedor">Fornecedor</Label>
-          <Select value={fornecedor} onValueChange={setFornecedor}>
-            <SelectTrigger id="est-fornecedor">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS}>Todos os fornecedores</SelectItem>
-              {fornecedores.map((f) => (
-                <SelectItem key={f} value={f}>
-                  {f}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className={modulo === "epi" ? "grid grid-cols-2 gap-2" : "space-y-1"}>
-          {modulo === "epi" && (
-            <div className="space-y-1">
-              <Label htmlFor="est-ca">CA</Label>
-              <Input id="est-ca" value={ca} onChange={(e) => setCa(e.target.value)} />
-            </div>
-          )}
-          <div className="space-y-1">
-            <Label htmlFor="est-nf">NF</Label>
-            <Input id="est-nf" value={nf} onChange={(e) => setNf(e.target.value)} />
-          </div>
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="est-inicio">Data da compra, de</Label>
-          <Input
-            id="est-inicio"
-            type="date"
-            value={dataInicio}
-            max={dataFim || undefined}
-            onChange={(e) => setDataInicio(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="est-fim">Data da compra, até</Label>
-          <Input
-            id="est-fim"
-            type="date"
-            value={dataFim}
-            min={dataInicio || undefined}
-            onChange={(e) => setDataFim(e.target.value)}
-          />
-        </div>
-        <div className="flex items-end gap-2 lg:col-span-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setEmpresaFiltro(TODOS);
-              setPalavra("");
-              setDataInicio("");
-              setDataFim("");
-              setFornecedor(TODOS);
-              setCa("");
-              setNf("");
-            }}
-          >
-            Limpar filtros
-          </Button>
           <Button
             type="button"
             variant="outline"
@@ -242,7 +154,97 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           >
             Exportar CSV
           </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setEmpresaFiltro(TODOS);
+              setPalavra("");
+              setDataInicio("");
+              setDataFim("");
+              setFornecedor(TODOS);
+              setCa("");
+              setNf("");
+            }}
+          >
+            Limpar filtros
+          </Button>
         </div>
+        <BarraDeFiltros>
+        <div className="w-44 space-y-1">
+          <Label htmlFor="est-empresa">Empresa</Label>
+          <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
+            <SelectTrigger id="est-empresa">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS}>Todas as empresas</SelectItem>
+              {empresasParaEscolha(empresas).map((e) => (
+                <SelectItem key={e.id} value={e.id}>
+                  {e.nome_fantasia}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-44 space-y-1">
+          <Label htmlFor="est-palavra">Palavra-chave</Label>
+          <Input
+            id="est-palavra"
+            placeholder="Código, descrição, tamanho…"
+            value={palavra}
+            onChange={(e) => setPalavra(e.target.value)}
+          />
+        </div>
+        <div className="w-44 space-y-1">
+          <Label htmlFor="est-fornecedor">Fornecedor</Label>
+          <Select value={fornecedor} onValueChange={setFornecedor}>
+            <SelectTrigger id="est-fornecedor">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS}>Todos os fornecedores</SelectItem>
+              {fornecedores.map((f) => (
+                <SelectItem key={f} value={f}>
+                  {f}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className={modulo === "epi" ? "grid grid-cols-2 gap-2" : "space-y-1"}>
+          {modulo === "epi" && (
+            <div className="w-44 space-y-1">
+              <Label htmlFor="est-ca">CA</Label>
+              <Input id="est-ca" className="w-24" value={ca} onChange={(e) => setCa(e.target.value)} />
+            </div>
+          )}
+          <div className="space-y-1">
+            <Label htmlFor="est-nf">NF</Label>
+            <Input id="est-nf" className="w-24" value={nf} onChange={(e) => setNf(e.target.value)} />
+          </div>
+        </div>
+        <div className="w-44 space-y-1">
+          <Label htmlFor="est-inicio">Data da compra, de</Label>
+          <Input
+            id="est-inicio"
+            type="date"
+            value={dataInicio}
+            max={dataFim || undefined}
+            onChange={(e) => setDataInicio(e.target.value)}
+          />
+        </div>
+        <div className="w-44 space-y-1">
+          <Label htmlFor="est-fim">Data da compra, até</Label>
+          <Input
+            id="est-fim"
+            type="date"
+            value={dataFim}
+            min={dataInicio || undefined}
+            onChange={(e) => setDataFim(e.target.value)}
+          />
+        </div>
+        </BarraDeFiltros>
       </div>
       {periodoInvalido && (
         <p className="text-sm text-destructive">
