@@ -31,10 +31,6 @@ const reais = (n: number | null | undefined) =>
   n === null || n === undefined ? "—" : n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const numero = (n: number) => n.toLocaleString("pt-BR");
 
-// Módulos > Veículos > Abastecimento (decisão 58): escolhe o veículo (a tela já traz o km do
-// último abastecimento), informa data, hora, km (nunca menor que o anterior), litros e valor em
-// reais. O histórico por veículo mostra o trecho rodado, o km/L e o R$/L de cada abastecimento.
-// Só modo demonstração; nada no Supabase.
 // Colunas do Relatório (decisão 378), na ordem da tabela da tela; o usuário escolhe quais saem.
 type LinhaDoRelatorio = { data: string; hora?: string | null; km: number; kmRodados: number | null; litros: number; valor?: number | null; precoLitro?: number | null; kmPorLitro: number | null };
 const COLUNAS_RELATORIO: { id: string; titulo: string; direita?: boolean; valor: (a: LinhaDoRelatorio) => string }[] = [
@@ -51,6 +47,10 @@ const OPCOES_RELATORIO = [
   { id: "totais", rotulo: "Total de cada veículo abaixo da tabela" },
 ];
 
+// Módulos > Veículos > Abastecimento (decisão 58): escolhe o veículo (a tela já traz o km do
+// último abastecimento), informa data, hora, km (nunca menor que o anterior), litros e valor em
+// reais. O histórico por veículo mostra o trecho rodado, o km/L e o R$/L de cada abastecimento.
+// Só modo demonstração; nada no Supabase.
 export function AbastecimentoVeiculoModulo() {
   const { empresaId, empresas } = useEmpresa();
   const { isAdmin } = useAccess();

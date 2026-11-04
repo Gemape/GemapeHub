@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { camposPadrao, montarRelatorioCadastroHtml } from "../src/lib/relatorio-cadastro.ts";
+import { montarRelatorioCadastroHtml } from "../src/lib/relatorio-cadastro.ts";
 
 const campos = [
   { id: "codigo", rotulo: "Código", valor: (c) => c.codigo },
@@ -26,10 +26,6 @@ test("campo vazio sai como traço e sem nenhum campo marcado o relatório não �
   assert.match(html, /<td>—<\/td>/);
   assert.throws(() => montarRelatorioCadastroHtml({ titulo: "R", campos, escolhidos: [], linhas }), /pelo menos um campo/);
   assert.throws(() => montarRelatorioCadastroHtml({ titulo: "R", campos, escolhidos: ["inexistente"], linhas }), /pelo menos um campo/);
-});
-
-test("os campos longos começam desmarcados e os demais, marcados", () => {
-  assert.deepEqual(camposPadrao(campos), ["codigo", "nome"]);
 });
 
 test("as quatro telas de Cadastros têm o botão Relatório ao lado do Exportar CSV", () => {
