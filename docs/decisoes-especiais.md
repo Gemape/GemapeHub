@@ -2115,3 +2115,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Todo cartão e KPI usa o card da Frota (compacto) e vive numa só grade, `GradeDeCartoes`, logo abaixo da barra de ações e filtros: mesmo espaçamento, mesma altura em cada fileira, duas colunas no celular e até 3, 4 ou 5 em tela larga.
 - A grade vale para Dashboard, Dashboard do módulo, relatórios de EPI e Uniformes, Abastecimento, Check list, Manutenção e Ocorrências de Veículos, Viagens e Equipamentos.
 - Em **Equipamentos > Indicadores** o card próprio (colorido, com a lista de cálculo aberta) passou ao card padrão; o "Como é calculado" abre no ícone de informação ao lado do título, e a pergunta e a meta ficam no subtítulo.
+
+## 376. Movimentações: busca por palavra-chave em todos os módulos
+
+Em Uniformes (e em qualquer módulo que use a tela de Movimentações), o campo **Buscar movimentação** passa a existir, como já existia em Veículos e Ferramentas. Acha por item, código, tamanho, tipo, empregado, motivo da baixa, ônus, ocorrência, observação e data, sem diferenciar acento e maiúsculas, com as palavras em qualquer ordem. O Exportar CSV continua exportando todas as movimentações.

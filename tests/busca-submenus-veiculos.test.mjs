@@ -17,7 +17,7 @@ test("Frota, Manutenção, Movimentações e Ocorrências de Veículos têm camp
 
 test("a busca de Movimentações aparece em Veículos e em Ferramentas, sem mudar o uniforme", () => {
   const mov = fonte("components/modules/MovimentacoesModulo.tsx");
-  assert.match(mov, /const comBusca = ehVeiculo \|\| modulo === "ferramenta";/);
+  assert.match(mov, /const comBusca = true;/);
   assert.match(mov, /\{comBusca && \(\s*<Input\s+aria-label="Buscar movimentação"/);
 });
 

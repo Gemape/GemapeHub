@@ -106,8 +106,8 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
 
   const ehVeiculo = modulo === "veiculo";
   const [busca, setBusca] = useState("");
-  // A busca por palavra-chave existe em Veículos e, por ordem do responsável, em Ferramentas; EPI e uniformes seguem como estavam.
-  const comBusca = ehVeiculo || modulo === "ferramenta";
+  // A busca por palavra-chave existe em todas as Movimentações (decisão 376).
+  const comBusca = true;
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
@@ -268,7 +268,6 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             <Input
               aria-label="Buscar movimentação"
               placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
-              className="max-w-xs"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
             />
