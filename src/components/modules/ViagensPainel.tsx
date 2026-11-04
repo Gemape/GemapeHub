@@ -205,9 +205,9 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                 onClick={() => setTipo(t)}
                 disabled={acaoRequerida}
                 title={acaoRequerida ? "Ação requerida: corrija as ramificações em Parâmetros antes de publicar" : undefined}
-                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-11 items-center justify-center gap-3 px-3 py-1 text-left text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
-                <Icone className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
+                <Icone className="h-6 w-6 text-primary" aria-hidden="true" />
                 <span className="break-words">{t}</span>
                 {acaoRequerida && <span className="text-xs font-semibold text-destructive">Ação requerida</span>}
               </button>

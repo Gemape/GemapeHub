@@ -32,3 +32,10 @@ test("os cartões de indicadores seguem o desenho da Frota: escopo no título, e
   assert.equal((p.match(/subtitulo="/g) ?? []).length, 4);
   assert.match(p, /grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:w-7\/12/, "os questionários têm a mesma largura dos cartões");
 });
+
+test("os botões de questionário seguem o padrão do cartão de Parâmetros: ícone em cima, nome embaixo (decisão 399)", () => {
+  const p = ler("ViagensPainel.tsx");
+  assert.match(p, /flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium/);
+  const param = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
+  assert.match(param, /flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium/);
+});
