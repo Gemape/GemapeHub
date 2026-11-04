@@ -163,11 +163,11 @@ export function AbastecimentoEquipamentoModulo() {
   );
 }
 
-function NovoAbastecimento({ aberto, aoMudar, equipamentos, aoSalvar }: { aberto: boolean; aoMudar: (v: boolean) => void; equipamentos: { id: string; patrimonio: string; nome: string }[]; aoSalvar: (id: string) => void }) {
-  const [equipamentoId, setEquipamentoId] = useState("");
+export function NovoAbastecimento({ aberto, aoMudar, equipamentos, aoSalvar, equipamentoInicial = "" }: { aberto: boolean; aoMudar: (v: boolean) => void; equipamentos: { id: string; patrimonio: string; nome: string }[]; aoSalvar: (id: string) => void; equipamentoInicial?: string }) {
+  const [equipamentoId, setEquipamentoId] = useState(equipamentoInicial);
   const sugestao = equipamentoId ? ultimoHorimetro(equipamentoId) : null;
   // Fechar (cancelar ou salvar) limpa o equipamento escolhido.
-  const fechar = (v: boolean) => { if (!v) setEquipamentoId(""); aoMudar(v); };
+  const fechar = (v: boolean) => { if (!v) setEquipamentoId(equipamentoInicial); aoMudar(v); };
   return (
     <Dialog open={aberto} onOpenChange={fechar}>
       <DialogContent>

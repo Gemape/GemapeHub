@@ -119,14 +119,14 @@ export function OcorrenciasEquipamentoModulo() {
   );
 }
 
-function NovaOcorrencia({ aberto, aoMudar, equipamentos }: { aberto: boolean; aoMudar: (v: boolean) => void; equipamentos: { id: string; patrimonio: string; nome: string }[] }) {
+export function NovaOcorrencia({ aberto, aoMudar, equipamentos, equipamentoInicial = "" }: { aberto: boolean; aoMudar: (v: boolean) => void; equipamentos: { id: string; patrimonio: string; nome: string }[]; equipamentoInicial?: string }) {
   const tipos = lerManutencaoEquipamento().tiposOcorrencia;
-  const [equipamentoId, setEquipamentoId] = useState("");
+  const [equipamentoId, setEquipamentoId] = useState(equipamentoInicial);
   const [tipoId, setTipoId] = useState("");
   const [fotos, setFotos] = useState<string[]>([]);
   const [visorNova, setVisorNova] = useState<string | null>(null);
   // Fechar (cancelar ou salvar) limpa o que foi escolhido.
-  const fechar = (v: boolean) => { if (!v) { setEquipamentoId(""); setTipoId(""); setFotos([]); } aoMudar(v); };
+  const fechar = (v: boolean) => { if (!v) { setEquipamentoId(equipamentoInicial); setTipoId(""); setFotos([]); } aoMudar(v); };
   return (
     <>
     <Dialog open={aberto} onOpenChange={fechar}>

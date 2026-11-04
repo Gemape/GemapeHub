@@ -109,11 +109,13 @@ test("o extrato do veículo e o do equipamento abrem o relatório direto, em tel
   const veiculo = ler("components/modules/ExtratoVeiculo.tsx");
   assert.match(veiculo, /imprimirDocumento\(html\)/);
   assert.match(veiculo, /<Dialog open=\{!!veiculo\} onOpenChange/, "o extrato do veículo é uma tela, que só vira PDF no botão Gerar PDF (decisão 331)");
+  // O Extrato do equipamento é uma tela como a do veículo (decisão 394): o PDF só sai no botão Gerar PDF.
   const equip = ler("components/modules/equipamento/InventarioEquipamentoModulo.tsx");
-  assert.match(equip, /onClick=\{\(\) => gerarRelatorio\(e\)\}>Extrato<\/Button>/);
-  assert.match(equip, /telaCheia: true/);
-  assert.doesNotMatch(equip, /<Dialog/);
-  for (const secao of ['"Abastecimentos"', '"Manutenções"', '"Ocorrências"', '"Check lists"']) assert.ok(equip.includes(`titulo: ${secao}`), secao);
+  assert.match(equip, /onClick=\{\(\) => setExtratoDe\(e\)\}>Extrato<\/Button>/);
+  const extratoEq = ler("components/modules/equipamento/ExtratoEquipamento.tsx");
+  assert.match(extratoEq, /imprimirDocumento\(html\)/);
+  assert.match(extratoEq, /<Dialog open=\{!!equipamento\} onOpenChange/);
+  for (const secao of ['"Abastecimentos"', '"Manutenções"', '"Ocorrências"', '"Check lists"']) assert.ok(extratoEq.includes(`titulo: ${secao}`), secao);
   for (const secao of ["preventivas sugeridas", "Manutenções realizadas", "Itens não realizados em atenção", "Histórico de abastecimentos", "Ocorrências"]) assert.ok(veiculo.split(`titulo: "`).some((t) => t.includes(secao)), secao);
   // No visualizador em tela cheia o botão de imprimir se chama Gerar PDF.
   const visualizador = ler("components/layout/VisualizadorDocumento.tsx");
