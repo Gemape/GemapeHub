@@ -23,7 +23,8 @@ export function Cabecalho({
         {secao ? <h2 className="text-lg font-semibold">{titulo}</h2> : <h1 className="text-2xl font-bold">{titulo}</h1>}
         <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
       </div>
-      {children}
+      {/* Os botões ficam juntos, à direita, e não espalhados pela linha. */}
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </header>
   );
 }
