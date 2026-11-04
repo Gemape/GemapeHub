@@ -28,7 +28,8 @@ import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
 import { ehBaixa } from "@/lib/historico-movimentacoes";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
-import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
+import { useComprasEpis, useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
+import { valorDaBaixa } from "@/lib/preco-da-baixa";
 import { hojeLocal } from "@/lib/empregados";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { montarRelatorioTabelaHtml } from "@/lib/relatorio-padrao";
@@ -51,6 +52,8 @@ export function EpiRelatorioBaixa() {
   const { data: itens = [] } = useItens("epi", TODAS);
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(TODAS);
+  // Compras dos EPIs, para dar preço à baixa que não o traz (decisão 373).
+  const { data: compras = [] } = useComprasEpis(TODAS);
 
   const baixas = movimentacoes.filter(
     (m) =>
@@ -61,9 +64,7 @@ export function EpiRelatorioBaixa() {
   );
 
   const totalQuantidade = baixas.reduce((acc, b) => acc + b.quantidade, 0);
-  const totalValor = baixas.reduce((acc, b) => {
-    return acc + b.quantidade * (b.preco_unitario_registrado ?? 0);
-  }, 0);
+  const totalValor = baixas.reduce((acc, b) => acc + valorDaBaixa(compras, b), 0);
 
   const imprimir = () =>
     abrirDocumento({
@@ -82,7 +83,7 @@ export function EpiRelatorioBaixa() {
           tamanhoDe(b) || "—",
           b.motivo_baixa ?? "—",
           String(b.quantidade),
-          formatarMoeda(b.quantidade * (b.preco_unitario_registrado ?? 0)),
+          formatarMoeda(valorDaBaixa(compras, b)),
         ]),
         vazio: "Nenhuma baixa no período.",
       }),
@@ -133,7 +134,7 @@ export function EpiRelatorioBaixa() {
                   Tamanho: tamanhoDe(b),
                   Motivo: b.motivo_baixa,
                   Qtd: b.quantidade,
-                  Valor: formatarMoeda(b.quantidade * (b.preco_unitario_registrado ?? 0)),
+                  Valor: formatarMoeda(valorDaBaixa(compras, b)),
                 })),
               )
             }
@@ -179,7 +180,7 @@ export function EpiRelatorioBaixa() {
             ) : (
               baixas.map((b) => {
                 const item = itens.find((i) => i.id === b.item_id);
-                const valorB = b.quantidade * (b.preco_unitario_registrado ?? 0);
+                const valorB = valorDaBaixa(compras, b);
                 return (
                   <TableRow key={b.id}>
                     <TableCell>{formatarData(b.data_movimentacao)}</TableCell>
