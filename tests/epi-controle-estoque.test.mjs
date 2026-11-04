@@ -199,3 +199,27 @@ test("editor de itens: apagar o único item mantém a linha, há limite de taman
   const entrega = ler("lib/entrega-epi.ts");
   assert.doesNotMatch(entrega, /artigo|MENSAGEM_SO_ADMIN/);
 });
+
+test("média mensal da Sugestão e do Estoque: o consumo de 365 dias ÷ os meses realmente observados (1 a 12), não sempre ÷ 12", () => {
+  // Dois meses de histórico (primeira entrada há 60 dias) e 6 unidades entregues: 3 por mês, não 0,5.
+  const a = controleDeEstoque([item("a", "Bota", 4, 0)], [mov("a", "Entrada", 10, "2026-02-09"), mov("a", "Saida", 6, "2026-03-20")], HOJE);
+  assert.equal(a[0].mediaMensal, 3);
+  assert.equal(a[0].consumoAnual, 0.5, "a média anual da planilha segue como era");
+  // Menos de um mês de histórico vale um mês (a média não explode com uma entrega de ontem).
+  const b = controleDeEstoque([item("b", "Luva", 4, 0)], [mov("b", "Saida", 2, "2026-04-09")], HOJE);
+  assert.equal(b[0].mediaMensal, 2);
+  // Um ano de histórico (ou mais) volta a ser consumo ÷ 12, igual ao anual.
+  const c = controleDeEstoque([item("c", "Capacete", 4, 0)], [mov("c", "Entrada", 50, "2025-01-01"), mov("c", "Saida", 12, "2026-01-10")], HOJE);
+  assert.equal(c[0].mediaMensal, 1);
+  assert.equal(c[0].mediaMensal, c[0].consumoAnual);
+  // A devolução da mesma janela sai do consumo e a primeira devolução também conta como histórico.
+  const d = controleDeEstoque([item("d", "Óculos", 4, 0)], [mov("d", "Saida", 6, "2026-03-20"), mov("d", "Devolucao", 2, "2026-03-25"), mov("d", "Entrada", 10, "2026-02-09")], HOJE);
+  assert.equal(d[0].mediaMensal, 2);
+  // Sem nenhuma movimentação, sem consumo.
+  assert.equal(controleDeEstoque([item("e", "Máscara", 4, 0)], [], HOJE)[0].mediaMensal, 0);
+});
+
+test("a Sugestão de Compras e o Estoque usam a mesma média mensal", () => {
+  assert.match(ler("lib/sugestao-epi.ts"), /const mediaMensal = c\.mediaMensal \?\? c\.consumoAnual;/);
+  assert.match(ler("components/modules/EstoqueEpiModulo.tsx"), /\.map\(\(l\) => \[l\.itemId, l\.mediaMensal\]\)/);
+});

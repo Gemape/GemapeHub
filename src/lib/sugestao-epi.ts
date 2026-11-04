@@ -95,7 +95,8 @@ export function linhasDaSugestaoEpi(e: {
       const total = Math.max(0, e.totalDe ? e.totalDe(item) : Number(item.estoque_atual) || 0);
       const usados = Math.min(total, Math.max(0, e.usadosDe?.(item) ?? 0));
       const minimo = Math.max(0, e.minimoDe ? e.minimoDe(item) : Number(item.estoque_minimo) || 0);
-      const mediaMensal = c.consumoAnual;
+      // A média do período observado (decisão 372); linhas de controle antigas, sem ela, usam a anual.
+      const mediaMensal = c.mediaMensal ?? c.consumoAnual;
       // Do total mostrado (que pode diferir do estoque gravado do item), não do estoque do controle.
       const cobertura = mediaMensal > 0 ? Math.round(total / (mediaMensal / 30)) : null;
       const status = statusDoItemEpi({ total, minimo, cobertura }, e.parametros);

@@ -63,12 +63,16 @@ const itens = [
     estoque_minimo: 1,
   }, // sem consumo
 ];
-const movs = ["a", "b", "c"].map((id) => ({
-  item_id: id,
-  tipo_movimentacao: "Saida",
-  quantidade: 360,
-  data_movimentacao: "2026-06-01",
-}));
+const movs = [
+  // Os EPIs têm um ano de histórico (a primeira entrada é de um ano antes), então a média mensal é o consumo de 365 dias ÷ 12.
+  ...["a", "b", "c"].map((id) => ({ item_id: id, tipo_movimentacao: "Entrada", quantidade: 400, data_movimentacao: "2025-10-01" })),
+  ...["a", "b", "c"].map((id) => ({
+    item_id: id,
+    tipo_movimentacao: "Saida",
+    quantidade: 360,
+    data_movimentacao: "2026-06-01",
+  })),
+];
 // Os usados vêm de fora (da mesma conta da aba Estoque): aqui, 5 unidades usadas da luva.
 const linhas = linhasDaSugestaoEpi({
   itens,
