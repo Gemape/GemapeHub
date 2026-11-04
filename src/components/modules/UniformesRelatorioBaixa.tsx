@@ -132,7 +132,7 @@ export function UniformesRelatorioBaixa() {
         <div className="space-y-1.5">
           <Label>Motivo de Baixa</Label>
           <Select value={motivoFiltro} onValueChange={setMotivoFiltro}>
-            <SelectTrigger className="w-56">
+            <SelectTrigger className="w-56 max-w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

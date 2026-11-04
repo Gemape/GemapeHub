@@ -1,7 +1,7 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { BuscaEpiCompra } from "@/components/modules/BuscaEpiCompra";
 import { DevolucaoEpiDialog } from "@/components/modules/DevolucaoEpiDialog";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
@@ -423,10 +423,13 @@ export function EntradasDeUsados({ empresaId, itens, empresas, modulo = "epi", m
     },
   });
   // Busca por palavra-chave (decisão 382): data, código da devolução, funcionário, empresa, item, tamanho, motivo, compra original, NF, fornecedor e CA; sem acento e com as palavras em qualquer ordem.
-  const nomeDoItem = (id: string | null) => { const i = itens.find((x) => x.id === id); return i ? `${i.codigo_sku} · ${i.nome}` : ""; };
-  const visiveis = busca.trim()
-    ? movimentos.filter((m) => combinaBusca(busca, formatarData(m.data_movimentacao), m.codigo_movimentacao, empregados.find((e) => e.id === m.empregado_id)?.nome, empresas.find((e) => e.id === m.empresa_id)?.nome_fantasia, nomeDoItem(m.item_id), nomeTamanhoGravado(parametros, m.tamanho_id), m.motivo_devolucao, m.data_compra_origem ? formatarData(m.data_compra_origem) : "", m.nota_fiscal_origem, m.fornecedor_origem, modulo === "epi" ? m.ca_origem : ""))
-    : movimentos;
+  const visiveis = useMemo(() => {
+    if (!busca.trim()) return movimentos;
+    const nomes = new Map(empregados.map((e) => [e.id, e.nome]));
+    const fantasias = new Map(empresas.map((e) => [e.id, e.nome_fantasia]));
+    const rotulos = new Map(itens.map((i) => [i.id, `${i.codigo_sku} · ${i.nome}`]));
+    return movimentos.filter((m) => combinaBusca(busca, formatarData(m.data_movimentacao), m.codigo_movimentacao, nomes.get(m.empregado_id ?? ""), fantasias.get(m.empresa_id), rotulos.get(m.item_id ?? ""), nomeTamanhoGravado(parametros, m.tamanho_id), m.motivo_devolucao, m.data_compra_origem ? formatarData(m.data_compra_origem) : "", m.nota_fiscal_origem, m.fornecedor_origem, modulo === "epi" ? m.ca_origem : ""));
+  }, [busca, movimentos, empregados, empresas, itens, parametros, modulo]);
   if (movimentos.length === 0) return mostrarVazio ? <p className="panel p-4 text-sm text-muted-foreground">Nenhuma devolução registrada. Use o botão Devolução para registrar.</p> : null;
   return (
     <section className="space-y-2" aria-labelledby="entradas-usados">
