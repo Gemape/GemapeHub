@@ -194,10 +194,11 @@ export function AbastecimentoVeiculoModulo() {
 
       {resumo && (
         <GradeDeCartoes colunas={4}>
-          <StatCard titulo="Abastecimentos" valor={linhas.length} icone={Fuel} compacto />
-          <StatCard titulo="Litros" valor={resumo.litros.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} icone={Droplets} compacto />
-          <StatCard titulo="Total gasto" valor={reais(resumo.gasto)} icone={Banknote} compacto />
-          <StatCard titulo="Média de consumo" valor={resumo.media === null ? "—" : `${resumo.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`} icone={Gauge} compacto />
+          {/* Cartões no modelo da Frota (decisão 392): título, o que o número mostra, o valor e um detalhe. */}
+          <StatCard titulo="Abastecimentos" subtitulo="Registros do veículo, no período e na busca escolhidos." valor={linhas.length} detalhe={linhas[0] ? `Último em ${formatarData(linhas[0].data)}` : "Nenhum no filtro"} icone={Fuel} compacto />
+          <StatCard titulo="Litros" subtitulo="Soma dos litros abastecidos nos registros da tela." valor={resumo.litros.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} detalhe={resumo.litros > 0 ? `Preço médio de ${reais(resumo.gasto / resumo.litros)} por litro` : "Sem litros no filtro"} icone={Droplets} compacto />
+          <StatCard titulo="Total gasto" subtitulo="Soma dos valores pagos nos abastecimentos da tela." valor={reais(resumo.gasto)} detalhe={`${linhas.length} abastecimento${linhas.length === 1 ? "" : "s"}`} icone={Banknote} compacto />
+          <StatCard titulo="Média de consumo" subtitulo="Km rodados ÷ litros, em todo o histórico do veículo." valor={resumo.media === null ? "—" : `${resumo.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`} detalhe={resumo.media === null ? "Precisa de pelo menos dois abastecimentos" : "Não muda com a busca nem com o período"} icone={Gauge} compacto />
         </GradeDeCartoes>
       )}
 

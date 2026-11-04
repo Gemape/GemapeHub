@@ -2191,3 +2191,7 @@ No **Registrar Compra** de EPI e de uniforme, o link **Cadastrar fornecedor** de
 ## 391. Relatório com personalização: "Visualizar relatório" e depois "Gerar PDF"
 
 Na janela de personalização dos relatórios (Abastecimento de veículos e Cadastros), o botão de confirmar passou de **Gerar relatório** para **Visualizar relatório**, porque ele só abre a prévia no visualizador; quem gera o arquivo é o botão **Gerar PDF** da prévia. Antes os dois botões diziam "gerar", e o segundo parecia repetir o primeiro.
+
+## 392. Cartões do Abastecimento no modelo da Frota
+
+Os cartões de **Veículos > Abastecimento** (Abastecimentos, Litros, Total gasto e Média de consumo) e de **Equipamentos > Abastecimento** ganharam o formato da Frota: título, uma linha que explica o número, o valor e um detalhe (último abastecimento, preço médio por litro, quantidade de abastecimentos, de onde vem a média). Em Equipamentos, que tinha três cartões, entrou o **Preço médio por litro**, e os quatro ficam na mesma linha, com a largura de um quarto da tela.
