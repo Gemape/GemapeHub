@@ -1,4 +1,7 @@
-# Proposta de ajustes no banco (NÃO APLICADA)
+# Ajustes no banco (migration escrita, NÃO APLICADA no Supabase)
+
+> **Atualização:** os itens 0, 1, 2 e 3 viraram a migration `supabase/migrations/20261104120000_caixas_contrato_e_auditoria.sql` (decisão 402), testada num PostgreSQL em memória (`tests/banco-caixas.test.mjs`). Ela só vale depois que o responsável a aplicar no Supabase real, em transação e com backup. Antes disso, rode a consulta de duplicidade do item 2 (a migration não cria o índice se houver duplicatas, mas avisa).
+
 
 Resultado da auditoria de 04/11/2026. **Nada disto foi executado** e o arquivo fica em `docs/` de propósito (e não em `supabase/migrations/`), para não ser aplicado por sincronização automática. A aplicação só acontece com ordem explícita do responsável, em transação e com backup.
 
