@@ -134,3 +134,9 @@ test("botão de contorno é azul e cartões de dois ou três ocupam um quarto da
   assert.match(g, /2: "grid-cols-2 lg:grid-cols-4"/);
   assert.match(g, /3: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4/);
 });
+
+test("a janela de personalização confirma com Visualizar relatório, e o PDF sai do botão da prévia (decisão 391)", () => {
+  const t = readFileSync(new URL("../src/components/EscolherCamposRelatorio.tsx", import.meta.url), "utf8");
+  assert.match(t, />Visualizar relatório<\/Button>/);
+  assert.doesNotMatch(t, />Gerar relatório<\/Button>/);
+});

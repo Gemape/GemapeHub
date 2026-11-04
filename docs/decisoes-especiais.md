@@ -2187,3 +2187,7 @@ No celular (390 px), a barra de filtros deixou de passar da largura da tela: o c
 ## 390. Compras: Cadastrar fornecedor com vai e volta
 
 No **Registrar Compra** de EPI e de uniforme, o link **Cadastrar fornecedor** deixou de abrir uma nova aba, onde o fornecedor cadastrado não voltava à compra. Agora abre o cadastro de fornecedor por cima da compra (a mesma janela de Cadastros > Fornecedores e do Código de fábrica); ao salvar, a janela fecha, a compra continua aberta com tudo o que já estava preenchido, e o **fornecedor novo já fica escolhido**. O envio do cadastro não grava a compra. O Código de fábrica já funcionava assim.
+
+## 391. Relatório com personalização: "Visualizar relatório" e depois "Gerar PDF"
+
+Na janela de personalização dos relatórios (Abastecimento de veículos e Cadastros), o botão de confirmar passou de **Gerar relatório** para **Visualizar relatório**, porque ele só abre a prévia no visualizador; quem gera o arquivo é o botão **Gerar PDF** da prévia. Antes os dois botões diziam "gerar", e o segundo parecia repetir o primeiro.
