@@ -1,4 +1,5 @@
 import type { Empregado, Movimentacao } from './hooks-gemape';
+import type { ClienteLivre } from "./cliente-livre.ts";
 
 const TAMANHO_PAGINA = 500;
 
@@ -12,7 +13,7 @@ export type FiltrosRelatorio = {
 
 /** Busca páginas até a primeira incompleta, respeitando o limite de resposta do Supabase. */
 export async function lerMovimentacoesRelatorio(
-  cliente: { from: (tabela: string) => any },
+  cliente: ClienteLivre,
   filtros: FiltrosRelatorio,
 ): Promise<Movimentacao[]> {
   const todas: Movimentacao[] = [];
@@ -33,7 +34,7 @@ export async function lerMovimentacoesRelatorio(
   }
 }
 
-export async function lerEmpregadosRelatorio(cliente: { from: (tabela: string) => any }, empresaId: string): Promise<Empregado[]> {
+export async function lerEmpregadosRelatorio(cliente: ClienteLivre, empresaId: string): Promise<Empregado[]> {
   const todos: Empregado[] = [];
   for (let inicio = 0;; inicio += TAMANHO_PAGINA) {
     let q = cliente.from('empregados').select('*');

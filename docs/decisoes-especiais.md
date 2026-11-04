@@ -2222,3 +2222,6 @@ Ordem do responsável (com o print de Parâmetros > Questionário de Despesas co
 
 ## 400. Viagens > Painel: botões no alto à esquerda, período à direita
 Ordem do responsável, lembrando o padrão do layout (botões sempre no alto à esquerda e buscas e filtros à direita): no Painel de Viagens os botões **Despesas de <mês>** e **Resultados dos técnicos** ficam no canto esquerdo da linha de cima, e **Faixas de desempenho** e o período ficam à direita. O título "Indicadores globais de despesas" deixou de aparecer (fica só para leitor de tela), o que mantém a altura do painel. Só visual; nada no Supabase.
+
+## 401. Viagens > Painel: botões de questionário maiores e na largura toda
+Ordem do responsável (com o print dos questionários): os botões de **Questionários de despesas** ficam **maiores e distribuídos por igual na largura da tela**, para ter mais visibilidade. Quatro por linha em tela larga (três em tablet e dois no celular), altura mínima de 7 rem, ícone maior (2,25 rem) e nome em texto normal e em negrito. Deixam de ficar presos a 7/12 da largura. Os cartões de indicadores seguem no tamanho da Frota (decisão 398). Revoga o tamanho da decisão 399, que igualava os botões ao cartão de Parâmetros. Só visual; nada no Supabase.

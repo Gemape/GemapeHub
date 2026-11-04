@@ -5,7 +5,7 @@ import { escaparHtml } from "./gemape.ts";
 import { cabecalhoRelatorio, campoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
 import { gruposDaManutencao, locaisDaManutencao, rotuloDoLocal, type ManutencaoVeiculo } from "./registros-veiculo.ts";
 
-const moeda = (n: number | undefined) => (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(/ /g, " ");
+const moeda = (n: number | undefined) => (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(/\u00a0/g, " ");
 const dia = (data: string) => `${data.slice(8, 10)}/${data.slice(5, 7)}/${data.slice(0, 4)}`;
 
 export function montarManutencaoHtml(

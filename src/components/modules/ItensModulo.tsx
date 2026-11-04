@@ -162,7 +162,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       const v = String(f.get(k) ?? "").trim();
       return v === "" ? null : v;
     };
-    let valores: Record<string, unknown> = {
+    const valores: Record<string, unknown> = {
       // A empresa não aparece no cadastro (decisão 54): a ferramenta nova usa a do cabeçalho e a
       // edição mantém a que já tinha.
       empresa_id: editando?.empresa_id ?? (empresaPadraoParaEscolha(empresas, empresaId) || null),

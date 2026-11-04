@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { allowedOrigin } from "./security";
+import { allowedOrigin } from "./security.ts";
 
 const response = (data: unknown, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const userUpdate = z.object({ id: z.string().uuid(), papel: z.enum(["admin", "gestor", "operador"]), ativo: z.boolean(), empresa_id: z.string().uuid().nullable() }).strict()

@@ -196,7 +196,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           <h2 id="viagens-questionarios" className="text-lg font-semibold">Questionários de despesas</h2>
           <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar.</p>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:w-7/12">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {tipos.map((t) => {
             const Icone = iconeDoTipo(t);
             const acaoRequerida = !questionarioPublicado(estado, t);
@@ -207,9 +207,9 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                 onClick={() => setTipo(t)}
                 disabled={acaoRequerida}
                 title={acaoRequerida ? "Ação requerida: corrija as ramificações em Parâmetros antes de publicar" : undefined}
-                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-28 flex-col items-center justify-center gap-2 p-4 text-center text-sm font-semibold transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
-                <Icone className="h-6 w-6 text-primary" aria-hidden="true" />
+                <Icone className="h-9 w-9 text-primary" aria-hidden="true" />
                 <span className="break-words">{t}</span>
                 {acaoRequerida && <span className="text-xs font-semibold text-destructive">Ação requerida</span>}
               </button>

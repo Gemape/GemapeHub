@@ -44,13 +44,13 @@ import { subcategoriasParaSelecao } from "@/lib/subcategoria-referencia";
 import { DialogAssociarTamanhos } from "@/components/parametros/DialogAssociarTamanhos";
 import { DialogTamanhoSubcategoria } from "@/components/parametros/DialogTamanhoSubcategoria";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import type { ClienteLivre } from "@/lib/cliente-livre";
 
 const CATEGORIA_EPI = "cat-epi";
 const PAGINA = 50;
 const SEM_UNIDADE = "sem-unidade";
 
 // Cliente sem tipos: o catálogo só existe no modo demonstração (decisão 35).
-type ClienteLivre = { from: (tabela: string) => any };
 const cliente = supabase as unknown as ClienteLivre;
 
 // Lê a tabela inteira, de página em página, sem o corte do seletor de cadastro.

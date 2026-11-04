@@ -102,7 +102,11 @@ test("a gravação é recusada sem permissão e liberada com ela", () => {
 
 test("só no modo demonstração: nada de permissões em produção e nada no Supabase", () => {
   const acesso = ler("lib/access-context.tsx");
-  assert.match(acesso, /if \(import\.meta\.env\.VITE_DEMO_MODE !== "false"\) \{[\s\S]*?useRouterState[\s\S]*?useSyncExternalStore/);
+  // Os ganchos das permissões de teste ficam num hook só do modo demonstração, escolhido na compilação; o hook de produção não usa nenhuma permissão de teste.
+  assert.match(acesso, /function useAccessDemo\(\) \{[\s\S]*?useRouterState[\s\S]*?useSyncExternalStore[\s\S]*?\n\}\n\nfunction useAccessProducao/);
+  assert.match(acesso, /export const useAccess: typeof useAccessDemo = import\.meta\.env\.VITE_DEMO_MODE !== "false" \? useAccessDemo : useAccessProducao;/);
+  const producao = acesso.slice(acesso.indexOf("function useAccessProducao"), acesso.indexOf("export const useAccess"));
+  assert.doesNotMatch(producao, /usuarioAtivo|fotografiaPermissoes|useRouterState|localStorage/, "produção não lê permissões de teste");
   assert.match(ler("routes/_authenticated/route.tsx"), /const ConfiguracoesDemo = import\.meta\.env\.VITE_DEMO_MODE !== "false"\s*\n\s*\? lazy\(/);
   assert.match(ler("integrations/supabase/demo-client.ts"), /this\.acao && typeof window !== "undefined" && import\.meta\.env\?\.VITE_DEMO_MODE !== "false"\) \{\s*\n\s*const recusa = recusaGravacao/);
   for (const arq of ["lib/permissoes-demo.ts", "components/layout/ConfiguracoesDemo.tsx", "components/layout/ConfiguracoesAcessos.tsx"]) assert.doesNotMatch(ler(arq), /supabase|fetch\(|\.from\(/, arq);
