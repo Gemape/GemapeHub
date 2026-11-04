@@ -541,6 +541,26 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       if (linha) linha["estoque_atual"] = (Number(linha["estoque_atual"]) || 0) - 1;
     }
   });
+  // Ocorrências de ferramenta (decisão 393): seis registros, ligados a ferramentas e caixas de teste, para a tela Ocorrências do módulo Ferramentas ter o que mostrar.
+  const OCORRENCIAS_FERRAMENTA: { ferramenta: number; empregado: number; diasAtras: number; hora: string; responsavel: number; descricao: string }[] = [
+    { ferramenta: 0, empregado: 0, diasAtras: 1, hora: "08:40", responsavel: 1, descricao: "Cabo isolante da chave com a capa rachada; retirada de uso até a troca." },
+    { ferramenta: 5, empregado: 1, diasAtras: 3, hora: "10:15", responsavel: 0, descricao: "Ferramenta caiu da bancada e a ponta entortou; encaminhada para avaliação." },
+    { ferramenta: 8, empregado: 2, diasAtras: 6, hora: "13:50", responsavel: 1, descricao: "Cabo de madeira solto no martelo; apertado e conferido na vistoria." },
+    { ferramenta: 11, empregado: 3, diasAtras: 9, hora: "15:30", responsavel: 2, descricao: "Peça não retornou à caixa no fim do turno; localizada no dia seguinte." },
+    { ferramenta: 14, empregado: 4, diasAtras: 14, hora: "09:05", responsavel: 0, descricao: "Corrosão no corpo da ferramenta por umidade na caixa; limpeza e óleo aplicados." },
+    { ferramenta: 17, empregado: 5, diasAtras: 20, hora: "16:10", responsavel: 3, descricao: "Empregado relatou desgaste excessivo na catraca; troca solicitada ao almoxarifado." },
+  ];
+  OCORRENCIAS_FERRAMENTA.forEach((o, n) => {
+    const ferr = ferramentas[o.ferramenta];
+    const empregado = EMPREGADOS[o.empregado];
+    if (!ferr || !empregado) return;
+    const noCaixa = tabela("caixa_ferramenta_itens").find((i) => i["ferramenta_id"] === ferr.id);
+    tabela("ocorrencias").push({
+      id: `${PREFIXO}ocorrencia-ferramenta-${n + 1}`, created_at: criadoEm, data: dia(agora, o.diasAtras), hora: o.hora, responsavel_registro: EMPREGADOS[o.responsavel]!.nome,
+      descricao_ocorrencia: o.descricao, tipo_ocorrencia: "Ferramenta", empregado_id: empregado.id, item_id: ferr.id, veiculo_id: null, empresa_id: empregado.empresaId,
+      ...(noCaixa ? { caixa_id: noCaixa["caixa_id"] } : {}),
+    });
+  });
   storage.setItem(CHAVE_DADOS, JSON.stringify(dados));
   const guardados = lerJson(storage, "gemape-demo-portadores-caixa");
   storage.setItem("gemape-demo-portadores-caixa", JSON.stringify([...(Array.isArray(guardados) ? guardados : []), ...portadores]));
