@@ -42,3 +42,10 @@ test("EPIs > Ordem de Serviço é um submenu do módulo, depois da Ficha avulsa,
   assert.match(tela, /ordensDaFuncao\(ordens, area\)/);
   assert.match(tela, /Parâmetros &gt; EPI &gt; Cadastrar Ordem de Serviço/);
 });
+
+test("o texto de abertura dos Parâmetros de EPI e de Uniformes quebra na largura dos quadros abaixo", () => {
+  for (const arq of ["ParametrosEpi", "ParametrosUniforme"]) {
+    const t = readFileSync(new URL(`../src/components/parametros/${arq}.tsx`, import.meta.url), "utf8");
+    assert.match(t, /<div className="max-w-4xl">\s*<h2 id="parametros-/, arq);
+  }
+});

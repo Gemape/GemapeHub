@@ -9,7 +9,7 @@ export function ParametrosUniforme() {
   const [areas, setAreas] = useState(lerAreasUniforme);
   return (
     <section className="space-y-3" aria-labelledby="parametros-uniforme">
-      <div>
+      <div className="max-w-4xl">
         <h2 id="parametros-uniforme" className="text-lg font-semibold">
           Parâmetros dos uniformes
         </h2>
