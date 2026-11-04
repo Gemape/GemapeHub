@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 
 // A grade padrão dos cartões de indicador de todo o sistema (decisão 375): o mesmo espaçamento, todos os cartões com a mesma altura e o mesmo número de colunas por largura de tela,
 // como na Frota. Todos os cartões e KPIs de uma tela ficam juntos numa só grade, logo abaixo da barra de ações e filtros. `colunas` é o máximo em tela larga.
+// Em tela larga todos os cartões têm a largura de um quarto da linha, como os da Frota (decisão 383), qualquer que seja o número deles: três ou dois cartões não esticam a tela inteira.
 const COLUNAS: Record<2 | 3 | 4 | 5, string> = {
-  2: "grid-cols-2",
-  3: "grid-cols-2 sm:grid-cols-3 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2",
+  2: "grid-cols-2 lg:grid-cols-4",
+  3: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 max-sm:[&>*:last-child:nth-child(odd)]:col-span-2",
   4: "grid-cols-2 lg:grid-cols-4",
   5: "grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
 };

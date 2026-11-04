@@ -209,7 +209,7 @@ export function FrotaModulo() {
         acoes={
           <>
             <Button type="button" variant="outline" size="sm" onClick={imprimir} disabled={isLoading}>
-              <Printer className="h-4 w-4" /> Imprimir relatório (PDF)
+              <Printer className="h-4 w-4" /> Relatório
             </Button>
             <InterpretacaoFrota itens={interpretacoesDaFrota(indicadores, cpk, custoPreventivo, cpkMensal)} />
           </>

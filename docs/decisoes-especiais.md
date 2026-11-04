@@ -2152,3 +2152,8 @@ Ao clicar em **Devoluções**, o campo **Buscar devolução** aparece no topo da
 O botão **Imprimir** do Histórico do empregado e de Baixar Definitivas, no EPI e nos Uniformes, passou a se chamar **Relatório** (decisão 382, mesma rodada): continua abrindo o relatório no visualizador, onde se imprime ou se baixa o arquivo.
 
 Na mesma rodada (decisão 382), nos relatórios de **Histórico do empregado** e **Baixar Definitivas**, do EPI e dos Uniformes, os botões (Relatório e Exportar CSV) ficam à esquerda e os campos de busca e de período (Buscar, Início e Fim; Data Inicial, Data Final e Motivo de Baixa) no topo à direita, na barra padrão de filtros.
+
+## 383. Botões todos azuis e cartões com a largura padrão
+
+- **Botões:** o botão de contorno (o branco, como Exportar CSV, Cancelar e os de apoio) passou a ser azul, igual ao principal; nenhum botão do sistema fica em branco. O botão de impressão da Frota também se chama **Relatório**.
+- **Cartões:** em tela larga, todo cartão de indicador tem a largura de um quarto da linha, como os da Frota, mesmo quando a tela tem só dois ou três (Baixar Definitivas, Manutenção, Ocorrências, Abastecimento etc.); antes três cartões esticavam a linha inteira.
