@@ -110,7 +110,7 @@ function PaginaEmpresas() {
 
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               onClick={() =>

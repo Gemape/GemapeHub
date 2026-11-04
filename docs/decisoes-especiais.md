@@ -2179,3 +2179,7 @@ No módulo EPI surgiu o submenu **Ordem de Serviço** (depois da Ficha de EPI Av
 ## 388. Ordem de Serviço do empregado: vai e volta com o cadastro
 
 O link **Parâmetros > EPI > Cadastrar Ordem de Serviço**, na tela EPI > Ordem de Serviço, abre o cadastro das ordens já com a janela **Nova ordem de serviço** aberta e a **função do empregado** (a área em que ele está habilitado) preenchida. O cadastro mostra o botão **Voltar para Ordem de Serviço** no alto e, ao **salvar**, volta sozinho à tela de origem, com a empresa e o empregado de antes e a ordem recém-cadastrada já escolhida. Quem fechar a janela sem salvar usa o botão de volta. Aberto pelo menu, sem o link, o cadastro funciona como sempre. Só modo demonstração; nada no Supabase.
+
+## 389. Responsividade: barras de filtros e de botões no celular
+
+No celular (390 px), a barra de filtros deixou de passar da largura da tela: o campo de busca (largura de 24 rem) cabe na linha (`max-w-full`) e a barra ocupa a linha toda, alinhada à esquerda; os grupos de botões das barras (Exportar CSV, Relatório, Novo..., Importar NF-e, Registrar Compra, Devolução) quebram para a linha de baixo em vez de estourar a página. Conferido em 36 telas, em 390 px de largura, sem rolagem lateral da página.

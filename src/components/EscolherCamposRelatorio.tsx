@@ -44,7 +44,7 @@ export function EscolherCamposRelatorio({ aberto, onAberto, titulo, descricao, c
           <DialogTitle>{titulo}</DialogTitle>
           <DialogDescription>{descricao}</DialogDescription>
         </DialogHeader>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => setMarcados(campos.map((c) => c.id))}>Marcar todos</Button>
           <Button type="button" variant="outline" size="sm" onClick={() => setMarcados([])}>Limpar</Button>
         </div>
