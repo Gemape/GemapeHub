@@ -2070,3 +2070,20 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Achado no code review: a tela de Ocorrências (que serve EPI, Uniformes, Ferramentas e Veículos) ainda oferecia todos os empregados ativos, apesar da ordem de que **toda rotina de EPI que informa o empregado** só mostre os habilitados (decisão 357). Passa a valer em **EPI > Ocorrências** e, como os Uniformes seguem o EPI (decisão 364), em **Uniformes > Ocorrências**. Ferramentas e Veículos seguem oferecendo todos os ativos.
 - **Escolha do Claude:** ao editar uma ocorrência, o empregado já vinculado continua na lista, marcado como "inativo" ou "não habilitado", para a edição não apagar o vínculo.
 - O EPI passa a ter filtro em: Entrega EPI, Termo de Entrega, Ficha avulsa, Devolução e Ocorrências; Relatórios e Baixar Definitivas mostram todos. Os textos das telas de habilitados do EPI e dos Uniformes dizem isso. Só modo demonstração; nada no Supabase.
+
+## 367. Extrato do veículo: botão Registrar ocorrência
+
+- Ordem do responsável: na faixa **Ocorrências** do extrato do veículo entra o botão **Registrar ocorrência**, ao lado de "Só em aberto" e no mesmo desenho de Registrar manutenção, Registrar abastecimento e Registrar check list avulso. Ele abre Veículos > Ocorrências com a **Nova ocorrência já com o veículo do extrato** e, ao salvar ou cancelar, devolve a pessoa ao extrato desse veículo (vai e volta da decisão 346). Só no modo demonstração, como a lista de ocorrências do extrato; nada no Supabase.
+
+## 368. Manutenção: o veículo da lista abre só as informações de manutenção
+
+- Ordem do responsável: em **Veículos > Manutenção**, clicar no veículo da lista (ou em Ver extrato) abre uma janela **só com o que é de manutenção do veículo**, chamada **Manutenção do veículo**: a seção Manutenções (sugeridas, realizadas e itens em atenção), o km atual e as preventivas vencidas. Abastecimentos, Ocorrências e Check lists não aparecem; o Gerar PDF sai direto com essas mesmas tabelas. O Registrar manutenção continua na seção.
+- As outras telas (Frota, Ocorrências, Abastecimento) seguem abrindo o extrato completo. **Escolha do Claude:** a média de consumo também sai do resumo, por ser de abastecimento. Só ajuste de tela; nada no Supabase.
+
+## 369. Ocorrências: o veículo da lista abre só as informações de ocorrências
+
+- Ordem do responsável, no mesmo desenho da decisão 368: em **Veículos > Ocorrências**, clicar no veículo da lista (ou em Ver extrato) abre a janela **Ocorrências do veículo**, só com a seção Ocorrências (com o "Só em aberto", o Registrar ocorrência e a consulta ao código) e o km atual. Manutenções, Abastecimentos e Check lists não aparecem; o Gerar PDF sai direto com a tabela das ocorrências. **Escolha do Claude:** as preventivas vencidas e a média de consumo saem do resumo, por não serem de ocorrência. Só ajuste de tela; nada no Supabase.
+
+## 370. Manutenção e Ocorrências: cards e botões menos alargados
+
+- Ordem do responsável: nas telas **Veículos > Manutenção** e **Veículos > Ocorrências**, os cards de indicadores deixam de esticar na largura da tela. Cada card tem de 15 a 18 rem, em fileira alinhada à esquerda (os de Ocorrências passam ao desenho compacto, como os de Manutenção), e os botões azuis ficam compactos e arredondados numa **linha só, à direita** (em vez de empilhados): em Manutenção, Manutenções planejadas, Manutenções realizadas e Cadastrar nova manutenção; em Ocorrências, Ver ocorrências e Nova ocorrência. Os gráficos e a tabela de diagnóstico não mudam. Só ajuste visual; nada no Supabase.

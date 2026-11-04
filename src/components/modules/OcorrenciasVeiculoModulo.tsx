@@ -81,7 +81,7 @@ export function OcorrenciasVeiculoModulo() {
   const todas = useOcorrenciasVeiculo();
   const [tela, setTela] = useState<Tela>(null);
   // Vindo do extrato do veículo (?ocorrencia=), abre a tratativa dessa ocorrência uma vez e tira o parâmetro do endereço (decisão 331).
-  const { ocorrencia: ocorrenciaPedida, voltar } = useSearch({ from: "/_authenticated/veiculos" });
+  const { ocorrencia: ocorrenciaPedida, voltar, veiculo: veiculoPedido, nova: novaPedida } = useSearch({ from: "/_authenticated/veiculos" });
   const navegar = useNavigate();
   // Vindo do extrato (decisão 346), ao fechar a tela da tratativa a pessoa volta ao extrato do veículo.
   useVoltarAoExtrato(tela !== null, voltar);
@@ -165,6 +165,18 @@ export function OcorrenciasVeiculoModulo() {
     void navegar({ to: "/veiculos", search: { aba: "ocorrencias" }, replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ocorrenciaPedida, todas.length]);
+
+  // Botão Registrar ocorrência do extrato (?nova=sim&veiculo=): abre a Nova ocorrência já com o veículo do extrato, uma vez, e tira os parâmetros do endereço.
+  // Ao fechar a tela (salvar ou cancelar), useVoltarAoExtrato leva a pessoa de volta ao extrato desse veículo.
+  useEffect(() => {
+    if (!novaPedida || veiculos.length === 0) return;
+    // Aberto de dentro do extrato desta própria tela (tabela de diagnóstico), o extrato fecha: não ficam duas janelas uma sobre a outra.
+    setExtrato(null);
+    abrirNova();
+    if (veiculoPedido && veiculos.some((v) => v.id === veiculoPedido)) setVeiculoId(veiculoPedido);
+    void navegar({ to: "/veiculos", search: { aba: "ocorrencias" }, replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [novaPedida, veiculos.length]);
 
   function abrirTratativa(o: OcorrenciaVeiculo) {
     setResponsavelId(o.tratativa?.responsavelId ?? "");
@@ -266,18 +278,18 @@ export function OcorrenciasVeiculoModulo() {
     <div className="space-y-4">
       {!verLista ? (
         <>
-          {/* Nova ocorrência (azul) à direita, acima do botão Ver ocorrências, que abre a lista em outra tela do módulo (decisão 349). */}
-          <section className="flex flex-col items-end gap-2" aria-label="Ocorrências">
-            <Button requiresWrite="operar" onClick={abrirNova}>Nova ocorrência</Button>
-            <Button ref={botaoDaTela("lista")} type="button" aria-label={`Ver ocorrências: ${daEmpresa.length} registrada(s). Abrir a lista`} onClick={() => { setFiltro("todas"); setBusca(""); setInicio(""); setFim(""); setVerLista(true); }}>
+          {/* Os dois botões azuis, compactos e numa linha só, à direita: Ver ocorrências abre a lista em outra tela do módulo (decisão 349) e Nova ocorrência fecha a linha. */}
+          <section className="flex flex-wrap items-center justify-end gap-2" aria-label="Ocorrências">
+            <Button ref={botaoDaTela("lista")} type="button" size="sm" className="rounded-full px-4" aria-label={`Ver ocorrências: ${daEmpresa.length} registrada(s). Abrir a lista`} onClick={() => { setFiltro("todas"); setBusca(""); setInicio(""); setFim(""); setVerLista(true); }}>
               <ClipboardList className="h-4 w-4" aria-hidden="true" /> Ver ocorrências
               <span aria-hidden="true" className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{daEmpresa.length} registradas</span>
             </Button>
+            <Button requiresWrite="operar" size="sm" className="rounded-full px-4" onClick={abrirNova}>Nova ocorrência</Button>
           </section>
           <CartoesOcorrencias indicadores={indicadores} />
           <GraficosOcorrencias compacto ocorrencias={daEmpresa} hoje={hojeLocal()} />
           <TabelaDiagnosticoOcorrencias linhas={diagnostico} aoAbrir={(id, secao) => setExtrato({ id, secao })} />
-          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} onFechar={() => setExtrato(null)} />
+          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} foco="ocorrencias" onFechar={() => setExtrato(null)} />
         </>
       ) : (
         <>

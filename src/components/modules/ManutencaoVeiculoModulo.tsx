@@ -182,7 +182,7 @@ export function ManutencaoVeiculoModulo() {
   const filtroPeriodo = camposDoPeriodo(inicio, setInicio, fim, setFim, "manutencao", "Data da manutenção");
   const filtroPeriodoPlan = camposDoPeriodo(inicioPlan, setInicioPlan, fimPlan, setFimPlan, "planejadas", "Data da próxima revisão: revisões sem data prevista não aparecem quando há período");
 
-  const botaoCadastrar = <Button requiresWrite onClick={() => abrir()}>Cadastrar nova manutenção</Button>;
+  const botaoCadastrar = <Button requiresWrite size="sm" className="rounded-full px-4" onClick={() => abrir()}>Cadastrar nova manutenção</Button>;
   const voltar = (
     <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={() => setAba("painel")}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
   );
@@ -192,23 +192,21 @@ export function ManutencaoVeiculoModulo() {
       {aba === "painel" && (
         <>
           {/* Os dois botões azuis ficam no alto, à direita, no mesmo padrão do Check list; a contagem de cada um vai dentro do botão. */}
-          <section className="flex flex-col items-end gap-2" aria-label="Listas de manutenção">
+          <section className="flex flex-wrap items-center justify-end gap-2" aria-label="Listas de manutenção">
+            <Button ref={botaoDaTela("planejadas")} type="button" size="sm" className="rounded-full px-4" onClick={() => setAba("planejadas")}>
+              <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Manutenções planejadas
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{revisoes.length} no plano</span>
+            </Button>
+            <Button ref={botaoDaTela("realizadas")} type="button" size="sm" className="rounded-full px-4" onClick={() => setAba("realizadas")}>
+              <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Manutenções realizadas
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{indicadores.preventivas.qtd + indicadores.corretivas.qtd} registradas</span>
+            </Button>
             {botaoCadastrar}
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button ref={botaoDaTela("planejadas")} type="button" onClick={() => setAba("planejadas")}>
-                <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Manutenções planejadas
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{revisoes.length} no plano</span>
-              </Button>
-              <Button ref={botaoDaTela("realizadas")} type="button" onClick={() => setAba("realizadas")}>
-                <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Manutenções realizadas
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{indicadores.preventivas.qtd + indicadores.corretivas.qtd} registradas</span>
-              </Button>
-            </div>
           </section>
           <CartoesManutencao indicadores={indicadores} />
           <GraficosManutencao compacto revisoes={revisoes} manutencoes={todas.filter((m) => idsDaEmpresa.has(m.veiculoId))} hoje={hoje} />
           <TabelaDiagnosticoManutencao linhas={diagnostico} aoAbrir={(id, secao) => setExtrato({ id, secao })} />
-          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} onFechar={() => setExtrato(null)} />
+          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} foco="manutencao" onFechar={() => setExtrato(null)} />
         </>
       )}
 

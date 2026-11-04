@@ -59,12 +59,21 @@ const SITUACAO_CHECKLIST: Record<SituacaoPrevisao, { rotulo: string; cor: Cor }>
   opcional: { rotulo: "Opcional", cor: "cinza" },
 };
 
+// `foco` (decisões 368 e 369): aberto pela tela de Manutenção ou de Ocorrências, o extrato mostra só o que é daquele assunto: a seção do foco, o título, o resumo e o PDF dele.
+export type FocoExtrato = "manutencao" | "ocorrencias";
+const FOCOS: Record<FocoExtrato, { titulo: string; secao: string; tabelas: number[]; periodo: string; resumo: ("km" | "vencidas")[] }> = {
+  manutencao: { titulo: "Manutenção do veículo", secao: "Manutenções", tabelas: [0, 1, 2], periodo: "O período vale para as manutenções realizadas. As sugeridas mostram sempre a situação de hoje.", resumo: ["km", "vencidas"] },
+  ocorrencias: { titulo: "Ocorrências do veículo", secao: "Ocorrências", tabelas: [4], periodo: "O período vale para as ocorrências, pela data em que aconteceram.", resumo: ["km"] },
+};
 type DadosDoExtrato = { kmAtual: number; media: number | null; vencidas: number };
-const resumoDo = (d: DadosDoExtrato): [string, string, Cor?][] => [
-  ["Km atual", numero(d.kmAtual)],
-  ["Média de consumo", d.media === null ? "— (precisa de dois abastecimentos)" : `${d.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`],
-  d.vencidas > 0 ? ["Preventivas vencidas", String(d.vencidas), "vermelho"] : ["Preventivas vencidas", "0"],
-];
+const resumoDo = (d: DadosDoExtrato, foco?: FocoExtrato): [string, string, Cor?][] => {
+  const todos: Record<"km" | "media" | "vencidas", [string, string, Cor?]> = {
+    km: ["Km atual", numero(d.kmAtual)],
+    media: ["Média de consumo", d.media === null ? "— (precisa de dois abastecimentos)" : `${d.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`],
+    vencidas: d.vencidas > 0 ? ["Preventivas vencidas", String(d.vencidas), "vermelho"] : ["Preventivas vencidas", "0"],
+  };
+  return (foco ? FOCOS[foco].resumo : (["km", "media", "vencidas"] as const)).map((k) => todos[k]);
+};
 // Cor da bolinha das situações na tela, as mesmas do relatório.
 const PONTO_TELA: Record<Cor, string> = { vermelho: "bg-red-500", amarelo: "bg-amber-400", verde: "bg-emerald-500", cinza: "bg-slate-400" };
 const TEXTO_TELA: Record<Cor, string> = { vermelho: "font-semibold text-red-700", amarelo: "font-semibold text-amber-700", verde: "text-emerald-700", cinza: "text-muted-foreground" };
@@ -79,7 +88,8 @@ const SECOES_DO_EXTRATO = [
 // Que tabela cada seção da Frota (bolinhas) mostra primeiro quando o extrato abre.
 const TABELA_DA_SECAO: Record<Secao, number> = { completo: 0, sugeridas: 0, realizadas: 1, ocorrencias: 4, ocorrenciasAbertas: 4, checklists: 5 };
 
-export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: Veiculo | null; secao?: SecaoExtrato | null; onFechar: () => void }) {
+export function ExtratoVeiculo({ veiculo, secao = null, foco, onFechar }: { veiculo: Veiculo | null; secao?: SecaoExtrato | null; foco?: FocoExtrato; onFechar: () => void }) {
+  const secoesVisiveis = foco ? SECOES_DO_EXTRATO.filter((s) => s.titulo === FOCOS[foco].secao) : SECOES_DO_EXTRATO;
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const abastecimentos = useAbastecimentos();
@@ -213,11 +223,11 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
     const abertas = MODO_DEMO && soAbertas && tabelasEscolhidas.includes(TABELA_DAS_OCORRENCIAS);
     const d = montarDados(v, abertas);
     const html = montarExtratoHtml({
-      titulo: "Extrato do veículo",
+      titulo: foco ? FOCOS[foco].titulo : "Extrato do veículo",
       assunto: d.rotulo,
       subtitulo: [`Período: ${inicio || fim ? `${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : "todo o histórico"}`, abertas ? "Só ocorrências em aberto" : ""].filter(Boolean).join(" · "),
       empresa: d.empresa,
-      resumo: resumoDo(d),
+      resumo: resumoDo(d, foco),
       tabelas: d.tabelas.filter((_, n) => tabelasEscolhidas.includes(n)),
     });
     // Abre direto a janela de impressão (Salvar como PDF): o PDF se gera uma vez só, sem o visualizador no meio (decisão 346).
@@ -254,7 +264,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
     <Dialog open={!!veiculo} onOpenChange={(a) => { if (!a) onFechar(); }}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-6xl">
         <DialogHeader>
-          <DialogTitle>Extrato do veículo</DialogTitle>
+          <DialogTitle>{foco ? FOCOS[foco].titulo : "Extrato do veículo"}</DialogTitle>
           <DialogDescription>{rotuloVeiculo}</DialogDescription>
         </DialogHeader>
 
@@ -267,15 +277,15 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
             <Label htmlFor="extrato-fim">Data fim</Label>
             <Input id="extrato-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
           </div>
-          <p className="max-w-md text-xs text-muted-foreground">O período vale para as manutenções realizadas, os abastecimentos e as ocorrências. As sugeridas mostram sempre a situação de hoje.</p>
-          <Button type="button" className="ml-auto" disabled={periodoInvalido || !veiculo} onClick={() => setPersonalizando(true)}>Gerar PDF</Button>
+          <p className="max-w-md text-xs text-muted-foreground">{foco ? FOCOS[foco].periodo : "O período vale para as manutenções realizadas, os abastecimentos e as ocorrências. As sugeridas mostram sempre a situação de hoje."}</p>
+          <Button type="button" className="ml-auto" disabled={periodoInvalido || !veiculo} onClick={() => (foco && veiculo ? gerarPdf(veiculo, FOCOS[foco].tabelas) : setPersonalizando(true))}>Gerar PDF</Button>
         </div>
         {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
 
         {dados && veiculo && (
           <div className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-3">
-              {resumoDo(dados).map(([rotulo, valor, cor]) => (
+            <div className={`grid gap-3 ${foco ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-3"}`}>
+              {resumoDo(dados, foco).map(([rotulo, valor, cor]) => (
                 <div key={rotulo} className="rounded-xl border bg-muted/30 p-3">
                   <p className="text-eyebrow">{rotulo}</p>
                   <p className={`mt-1 text-lg font-bold ${cor ? TEXTO_TELA[cor] : ""}`}>{valor}</p>
@@ -283,7 +293,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
               ))}
             </div>
 
-            {SECOES_DO_EXTRATO.map((secaoDoExtrato) => (
+            {secoesVisiveis.map((secaoDoExtrato) => (
               <section key={secaoDoExtrato.titulo} className="space-y-3" aria-label={secaoDoExtrato.titulo}>
                 <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gradient-to-r ${secaoDoExtrato.faixa} px-4 py-2.5 text-white shadow-sm`}>
                   <h3 className="text-xl font-bold tracking-tight">{secaoDoExtrato.titulo}</h3>
@@ -293,6 +303,7 @@ export function ExtratoVeiculo({ veiculo, secao = null, onFechar }: { veiculo: V
                         <Checkbox checked={soAbertas} onCheckedChange={(v) => setSoAbertas(v === true)} aria-label="Só as ocorrências em aberto" className="border-white bg-white/90 data-[state=checked]:bg-white data-[state=checked]:text-foreground" /> Só em aberto
                       </label>
                     )}
+                    {secaoDoExtrato.titulo === "Ocorrências" && MODO_DEMO && <Button asChild variant="secondary" size="sm"><Link to="/veiculos" search={{ aba: "ocorrencias", veiculo: veiculo.id, nova: "sim", voltar: veiculo.id }}>Registrar ocorrência</Link></Button>}
                     {secaoDoExtrato.titulo === "Manutenções" && <Button type="button" variant="secondary" size="sm" onClick={() => setRegistrando(true)}>Registrar manutenção</Button>}
                     {secaoDoExtrato.titulo === "Abastecimentos" && <Button type="button" variant="secondary" size="sm" onClick={() => setRegistrandoAbastecimento(true)}>Registrar abastecimento</Button>}
                     {secaoDoExtrato.titulo === "Check lists" && <Button asChild variant="secondary" size="sm"><Link to="/veiculos" search={{ aba: "checklist", veiculo: veiculo.id, avulso: "sim", voltar: veiculo.id }}>Registrar check list avulso</Link></Button>}
