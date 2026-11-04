@@ -2087,3 +2087,8 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 370. Manutenção e Ocorrências: cards e botões menos alargados
 
 - Ordem do responsável: nas telas **Veículos > Manutenção** e **Veículos > Ocorrências**, os cards de indicadores deixam de esticar na largura da tela. Cada card tem de 15 a 18 rem, em fileira alinhada à esquerda (os de Ocorrências passam ao desenho compacto, como os de Manutenção), e os botões azuis ficam compactos e arredondados numa **linha só, à direita** (em vez de empilhados): em Manutenção, Manutenções planejadas, Manutenções realizadas e Cadastrar nova manutenção; em Ocorrências, Ver ocorrências e Nova ocorrência. Os gráficos e a tabela de diagnóstico não mudam. Só ajuste visual; nada no Supabase.
+
+## 371. EPI, Estoque: toda entrada e toda saída movimentam o estoque
+
+- Ordem do responsável: o Estoque de EPI deve se atualizar com as entradas (compra e devolução) e toda **entrega de EPI deve dar baixa** no estoque. Conferido: a **compra** soma nos Novos, a **entrega** (Entrega EPI e Termo de Entrega) subtrai, e a **Devolução** da Entrada no Estoque soma nos Usados, tudo já refletido no Estoque sem recarregar a página.
+- **Defeito corrigido:** a devolução feita pelo botão **Devolver EPI**, da tela Entrega EPI, entrava no saldo como produto **novo**, sem a compra de origem, e por isso a aba Usados do Estoque não mudava. Agora ela segue a decisão 327 como a Devolução da Entrada no Estoque: volta como usada, com a compra original mais antiga do EPI no tamanho (ou sem os dados da compra, se nunca houve compra registrada). Só no EPI; Uniformes não têm estoque de usados. Só modo demonstração; nada no Supabase.

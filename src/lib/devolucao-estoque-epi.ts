@@ -55,6 +55,18 @@ export const origemDaDevolucao = (
   ca_origem: c.ca || caDoEpi || null,
 });
 
+// A origem que a devolução de um EPI leva ao estoque de usados: a compra de origem do EPI no tamanho (ou null, se nunca houve compra registrada, e a unidade volta como
+// usada sem os dados da compra). `tamanhoId` aceita "sem-tamanho" (a devolução grava assim) e vale como sem tamanho.
+export function origemDaLinhaDeDevolucao(
+  compras: readonly CompraDeOrigem[],
+  item: { id: string; ca?: string | null },
+  tamanhoId: string | null | undefined,
+): OrigemDaDevolucao | null {
+  const tamanho = tamanhoId && tamanhoId !== "sem-tamanho" ? tamanhoId : null;
+  const compra = compraDeOrigem(compras, item.id, tamanho);
+  return compra ? origemDaDevolucao(compra, item.ca) : null;
+}
+
 export type PosseDoEmpregado = { itemId: string; tamanhoId: string | null; quantidade: number };
 
 // O que o empregado tem em posse, por EPI e por tamanho (os tamanhos vêm das próprias entregas), só o que é maior que zero.

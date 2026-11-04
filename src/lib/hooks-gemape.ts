@@ -320,9 +320,11 @@ export function useComprasUniformes(empresaId: string, busca = "") {
   });
 }
 
-export function useComprasEpis(empresaId: string, busca = "") {
+// `ativo` falso: a consulta não roda (quem usa a tela só precisa das compras em parte dos casos, como a Entrega, que serve ao EPI e aos uniformes).
+export function useComprasEpis(empresaId: string, busca = "", ativo = true) {
   return useQuery({
     ...opcoesBase,
+    enabled: ativo,
     queryKey: ["compras_epis", empresaId, busca],
     queryFn: async () => {
       const montar = () => {
