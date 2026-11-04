@@ -171,7 +171,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
         </GradeDeCartoes>
       </section>
 
-      {visao === "despesas" && <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} alternador={alternador} />}
+      {/* A lista fica montada e só escondida, para não perder o filtro e as despesas marcadas ao ver os resultados dos técnicos. */}
+      <div hidden={visao !== "despesas"}><ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} alternador={alternador} /></div>
 
       {visao === "tecnicos" && <section className="space-y-2" aria-labelledby="viagens-tecnicos">
         <div className="flex flex-wrap items-center justify-between gap-2">

@@ -8,7 +8,7 @@ const ler = (c) => readFileSync(new URL(`../src/components/modules/${c}`, import
 test("o painel mostra uma lista de cada vez, escolhida por botões", () => {
   const p = ler("ViagensPainel.tsx");
   assert.match(p, /useState<"despesas" \| "tecnicos">\("despesas"\)/);
-  assert.match(p, /\{visao === "despesas" && <ViagensLista/);
+  assert.match(p, /<div hidden=\{visao !== "despesas"\}><ViagensLista/, "a lista fica montada (guarda filtro e marcas)");
   assert.match(p, /\{visao === "tecnicos" && <section/);
   assert.match(p, /aria-pressed=\{visao === "despesas"\}/);
   assert.match(p, /aria-pressed=\{visao === "tecnicos"\}/);
