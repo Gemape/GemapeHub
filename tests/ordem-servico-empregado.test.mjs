@@ -62,3 +62,9 @@ test("vai e volta (decisão 388): o link leva ao cadastro com a função do empr
   assert.match(cadastro, /aba: "ordem-servico"[\s\S]*ordemId \? \{ ordem: ordemId \}/);
   assert.match(ler("routes/_authenticated/epi.tsx"), /empresa\?: string; empregado\?: string; ordem\?: string/);
 });
+
+test("a escolha da Ordem de Serviço fica no endereço e o cadastro não reabre a janela ao recarregar", () => {
+  const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  assert.match(ler("components/modules/EpiOrdemServico.tsx"), /replace: true/);
+  assert.match(ler("routes/_authenticated/epi-ordem-servico.tsx"), /Tira o "nova" do endereço/);
+});

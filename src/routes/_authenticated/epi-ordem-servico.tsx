@@ -55,6 +55,8 @@ function OrdemServicoEpiPagina() {
       setEditandoId(null);
       setConteudo({ ...ordemVazia(), ...(funcao ? { funcao } : {}) });
       setAberto(true);
+      // Tira o "nova" do endereço: recarregar a página não abre a janela de novo.
+      void navegar({ to: "/epi-ordem-servico", search: { voltar: "ordem-servico", ...(empresa ? { empresa } : {}), ...(empregado ? { empregado } : {}), ...(funcao ? { funcao } : {}) }, replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

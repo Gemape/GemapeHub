@@ -1,4 +1,4 @@
-import { Link, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,11 @@ export function EpiOrdemServico() {
   useEffect(() => {
     if (empresas.length > 0 && empresaSel && !empresasParaEscolha(empresas).some((e) => e.id === empresaSel)) setEmpresaSel("");
   }, [empresas, empresaSel]);
+  // O endereço acompanha a escolha (sem criar histórico), para recarregar a página ou ir ao cadastro e voltar não perder o que está marcado.
+  const navegar = useNavigate();
+  useEffect(() => {
+    void navegar({ to: "/epi", search: { aba: "ordem-servico", ...(empresaSel ? { empresa: empresaSel } : {}), ...(empregadoId ? { empregado: empregadoId } : {}), ...(ordemEscolhida ? { ordem: ordemEscolhida } : {}) }, replace: true });
+  }, [empresaSel, empregadoId, ordemEscolhida, navegar]);
   const empregado = empregados.find((e) => e.id === empregadoId);
   const empresa = empresas.find((e) => e.id === empresaSel);
   const area = useMemo(() => lerEmpregadosDeEpi().find((h) => h.empregadoId === empregadoId)?.area ?? "", [empregadoId]);
