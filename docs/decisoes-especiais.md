@@ -2140,3 +2140,7 @@ O botão **Gerar PDF** de Veículos > Abastecimento passa a se chamar **Relatór
 ## 380. Uniformes, Compras: botões no topo e compras e devoluções em listas separadas
 
 Em Uniformes > Compras, Exportar CSV, Importar NF-e, Registrar Compra e Devolução ficam no topo da tela, à esquerda (antes da Sugestão de compras), e a busca à direita. Dois botões, **Compras** e **Devoluções**, alternam as listas: Compras mostra a Sugestão de compras e a tabela das compras; Devoluções mostra as entradas de usados. A busca por fornecedor ou NF só aparece em Compras.
+
+## 381. Uniformes, Compras: Sugestão de compras em botão próprio
+
+Em Uniformes > Compras, a **Sugestão de compras** deixou de aparecer em cima da lista de compras e ganhou o seu botão, ao lado de **Compras** e **Devoluções**: cada botão mostra só a sua lista. A tela abre em Compras. A busca por fornecedor ou NF continua só em Compras.
