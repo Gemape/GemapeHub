@@ -39,3 +39,10 @@ test("os botões de questionário seguem o padrão do cartão de Parâmetros: í
   const param = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
   assert.match(param, /flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium/);
 });
+
+test("os botões das listas ficam no alto, à esquerda, e o período à direita (decisão 400)", () => {
+  const p = ler("ViagensPainel.tsx");
+  const a = p.indexOf("{alternador}\n          <h2 id=\"viagens-indicadores\" className=\"sr-only\"");
+  assert.ok(a > 0, "o alternador abre a linha, antes do título (só para leitor de tela)");
+  assert.ok(p.indexOf("{seletorPeriodo(\"indicadores\")}") > a, "o período fica à direita dos botões");
+});

@@ -2219,3 +2219,6 @@ Ordem do responsável: os cartões dos **Indicadores globais de despesas** segue
 
 ## 399. Viagens > Painel: botões de questionário no padrão do cartão de Parâmetros
 Ordem do responsável (com o print de Parâmetros > Questionário de Despesas como modelo): os botões de **Questionários de despesas** do Painel de Viagens ficaram pequenos demais na decisão 398. Agora têm o mesmo desenho do cartão de Parâmetros: ícone em cima, nome embaixo, altura mínima de 5 rem, quatro por linha, na largura dos cartões de indicador (7/12 em tela larga). A página pode rolar um pouco em janelas baixas. Só visual; nada no Supabase.
+
+## 400. Viagens > Painel: botões no alto à esquerda, período à direita
+Ordem do responsável, lembrando o padrão do layout (botões sempre no alto à esquerda e buscas e filtros à direita): no Painel de Viagens os botões **Despesas de <mês>** e **Resultados dos técnicos** ficam no canto esquerdo da linha de cima, e **Faixas de desempenho** e o período ficam à direita. O título "Indicadores globais de despesas" deixou de aparecer (fica só para leitor de tela), o que mantém a altura do painel. Só visual; nada no Supabase.

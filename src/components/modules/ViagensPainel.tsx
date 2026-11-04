@@ -106,9 +106,10 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   return (
     <div className="space-y-3">
       <section className="space-y-2" aria-labelledby="viagens-indicadores">
+        {/* Padrão do layout: os botões no alto, à esquerda, e os filtros e o período à direita (decisão 400). */}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="viagens-indicadores" className="text-lg font-semibold">Indicadores globais de despesas</h2>
           {alternador}
+          <h2 id="viagens-indicadores" className="sr-only">Indicadores globais de despesas</h2>
           <div className="flex flex-wrap items-center gap-2">
           <LegendaFaixas />
           {seletorPeriodo("indicadores")}
