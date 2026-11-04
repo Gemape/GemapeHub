@@ -111,16 +111,16 @@ export function ManutencaoEquipamentoModulo() {
   );
 }
 
-function NovaManutencao({ aberto, aoMudar, equipamentos }: { aberto: boolean; aoMudar: (v: boolean) => void; equipamentos: { id: string; patrimonio: string; nome: string }[] }) {
+export function NovaManutencao({ aberto, aoMudar, equipamentos, equipamentoInicial = "" }: { aberto: boolean; aoMudar: (v: boolean) => void; equipamentos: { id: string; patrimonio: string; nome: string }[]; equipamentoInicial?: string }) {
   const acoesDisponiveis = lerManutencaoEquipamento().acoes;
-  const [equipamentoId, setEquipamentoId] = useState("");
+  const [equipamentoId, setEquipamentoId] = useState(equipamentoInicial);
   const [tipo, setTipo] = useState("Preventiva");
   const [local, setLocal] = useState("empresa");
   const [escolhidas, setEscolhidas] = useState<Record<string, string[]>>({});
   const sugestao = equipamentoId ? ultimoHorimetro(equipamentoId) : null;
   // Fechar (cancelar ou salvar) limpa o que foi escolhido: o formulário reabre em branco, ações e equipamento incluídos.
   function fechar(v: boolean) {
-    if (!v) { setEquipamentoId(""); setTipo("Preventiva"); setLocal("empresa"); setEscolhidas({}); }
+    if (!v) { setEquipamentoId(equipamentoInicial); setTipo("Preventiva"); setLocal("empresa"); setEscolhidas({}); }
     aoMudar(v);
   }
 
