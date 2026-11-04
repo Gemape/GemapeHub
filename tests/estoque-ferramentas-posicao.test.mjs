@@ -100,3 +100,29 @@ test("Uniformes > Compras: botões no topo à esquerda e compras, sugestão de c
   assert.match(t, /visao === "sugestao" && <SugestaoComprasModulo modulo="uniforme"/, "a sugestão de compras tem o seu botão e sai da lista de compras");
   assert.match(t, /\["sugestao", "Sugestão de compras"\]/);
 });
+
+test("Uniformes > Compras > Devoluções tem o campo de busca no topo à direita (decisão 382)", () => {
+  const ler = (c) => readFileSync(new URL(`../src/components/modules/${c}`, import.meta.url), "utf8");
+  const t = ler("UniformesComprasModulo.tsx");
+  assert.match(t, /visao === "devolucoes" && \(\s*<BarraDeFiltros>\s*<Input\s+aria-label="Buscar devolução"/);
+  assert.match(t, /busca=\{buscaDevolucao\}/);
+  const e = ler("EpiComprasModulo.tsx");
+  assert.match(e, /combinaBusca\(busca, formatarData\(m\.data_movimentacao\)/);
+  assert.match(e, /Nenhuma devolução para a busca/);
+});
+
+test("o botão dos relatórios de Histórico do empregado e de Baixar Definitivas se chama Relatório", () => {
+  for (const arq of ["EpiRelatorioBaixa", "EpiRelatorioFuncionario", "UniformesRelatorioBaixa", "UniformesRelatorioFuncionario"]) {
+    const t = readFileSync(new URL(`../src/components/modules/${arq}.tsx`, import.meta.url), "utf8");
+    assert.doesNotMatch(t, /^\s+Imprimir\s*$/m, arq);
+    assert.match(t, /^\s+Relatório\s*$/m, arq);
+  }
+});
+
+test("nos relatórios de histórico e de baixas, os botões ficam à esquerda e os filtros no topo à direita", () => {
+  for (const arq of ["EpiRelatorioBaixa", "UniformesRelatorioBaixa", "EpiRelatorioFuncionario", "UniformesRelatorioFuncionario"]) {
+    const t = readFileSync(new URL(`../src/components/modules/${arq}.tsx`, import.meta.url), "utf8");
+    assert.ok(t.indexOf("Relatório\n") < t.indexOf("<BarraDeFiltros>"), `${arq}: os botões vêm antes da barra de filtros`);
+    assert.match(t, /<div className="flex flex-wrap items-end gap-2">\s*<div className="flex gap-2">/, arq);
+  }
+});

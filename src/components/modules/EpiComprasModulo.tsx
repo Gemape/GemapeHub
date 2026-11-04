@@ -1,7 +1,7 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { BuscaEpiCompra } from "@/components/modules/BuscaEpiCompra";
 import { DevolucaoEpiDialog } from "@/components/modules/DevolucaoEpiDialog";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
@@ -38,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { exportarCsv, formatarData, formatarMoeda } from "@/lib/gemape";
+import { combinaBusca } from "@/lib/parametros-base";
 import {
   useComprasEpis,
   useEmpregados,
@@ -409,7 +410,7 @@ type MovimentoUsado = {
   id: string; data_movimentacao: string; empresa_id: string; item_id: string | null; quantidade: number; tamanho_id?: string | null; empregado_id?: string | null;
   codigo_movimentacao?: string | null; condicao?: string | null; motivo_devolucao?: string | null; data_compra_origem?: string | null; nota_fiscal_origem?: string | null; fornecedor_origem?: string | null; ca_origem?: string | null;
 };
-export function EntradasDeUsados({ empresaId, itens, empresas, modulo = "epi", mostrarVazio = false }: { modulo?: "epi" | "uniforme"; mostrarVazio?: boolean; empresaId: string; itens: { id: string; nome: string; codigo_sku: string }[]; empresas: { id: string; nome_fantasia: string }[] }) {
+export function EntradasDeUsados({ empresaId, itens, empresas, modulo = "epi", mostrarVazio = false, busca = "" }: { modulo?: "epi" | "uniforme"; mostrarVazio?: boolean; busca?: string; empresaId: string; itens: { id: string; nome: string; codigo_sku: string }[]; empresas: { id: string; nome_fantasia: string }[] }) {
   const parametros = useParametrosBase();
   const { data: empregados = [] } = useEmpregados(TODAS);
   const { data: movimentos = [] } = useQuery({
@@ -421,10 +422,19 @@ export function EntradasDeUsados({ empresaId, itens, empresas, modulo = "epi", m
       return ((data ?? []) as MovimentoUsado[]).filter((m) => m.condicao === "usado").sort((a, b) => b.data_movimentacao.localeCompare(a.data_movimentacao));
     },
   });
+  // Busca por palavra-chave (decisão 382): data, código da devolução, funcionário, empresa, item, tamanho, motivo, compra original, NF, fornecedor e CA; sem acento e com as palavras em qualquer ordem.
+  const visiveis = useMemo(() => {
+    if (!busca.trim()) return movimentos;
+    const nomes = new Map(empregados.map((e) => [e.id, e.nome]));
+    const fantasias = new Map(empresas.map((e) => [e.id, e.nome_fantasia]));
+    const rotulos = new Map(itens.map((i) => [i.id, `${i.codigo_sku} · ${i.nome}`]));
+    return movimentos.filter((m) => combinaBusca(busca, formatarData(m.data_movimentacao), m.codigo_movimentacao, nomes.get(m.empregado_id ?? ""), fantasias.get(m.empresa_id), rotulos.get(m.item_id ?? ""), nomeTamanhoGravado(parametros, m.tamanho_id), m.motivo_devolucao, m.data_compra_origem ? formatarData(m.data_compra_origem) : "", m.nota_fiscal_origem, m.fornecedor_origem, modulo === "epi" ? m.ca_origem : ""));
+  }, [busca, movimentos, empregados, empresas, itens, parametros, modulo]);
   if (movimentos.length === 0) return mostrarVazio ? <p className="panel p-4 text-sm text-muted-foreground">Nenhuma devolução registrada. Use o botão Devolução para registrar.</p> : null;
   return (
     <section className="space-y-2" aria-labelledby="entradas-usados">
       <h2 id="entradas-usados" className="text-lg font-semibold">Entradas de usados (devoluções)</h2>
+      {busca.trim() && <p className="text-sm text-muted-foreground">{visiveis.length} de {movimentos.length} devoluções.</p>}
       <div className="panel overflow-x-auto">
         <Table>
           <TableHeader>
@@ -443,7 +453,8 @@ export function EntradasDeUsados({ empresaId, itens, empresas, modulo = "epi", m
             </TableRow>
           </TableHeader>
           <TableBody>
-            {movimentos.map((m) => (
+            {visiveis.length === 0 && <TableRow><TableCell colSpan={modulo === "epi" ? 11 : 10} className="text-center text-muted-foreground">Nenhuma devolução para a busca.</TableCell></TableRow>}
+            {visiveis.map((m) => (
               <TableRow key={m.id}>
                 <TableCell>{formatarData(m.data_movimentacao)}{m.codigo_movimentacao ? ` · ${m.codigo_movimentacao}` : ""}</TableCell>
                 <TableCell>{empregados.find((e) => e.id === m.empregado_id)?.nome ?? "—"}</TableCell>

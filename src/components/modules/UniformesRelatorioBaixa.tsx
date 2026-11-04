@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, ClipboardList, Package } from "lucide-react";
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { StatCard } from "@/components/StatCard";
@@ -93,39 +94,13 @@ export function UniformesRelatorioBaixa() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end">
-        <div className="space-y-1.5">
-          <Label>Data Inicial</Label>
-          <Input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Data Final</Label>
-          <Input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Motivo de Baixa</Label>
-          <Select value={motivoFiltro} onValueChange={setMotivoFiltro}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODAS}>Todos os motivos</SelectItem>
-              <SelectItem value="Desgaste Natural">Desgaste Natural</SelectItem>
-              <SelectItem value="Quebra">Quebra</SelectItem>
-              <SelectItem value="Desaparecimento">Desaparecimento</SelectItem>
-              <SelectItem value="Perda">Perda</SelectItem>
-              <SelectItem value="Mau Uso">Mau Uso</SelectItem>
-              <SelectItem value="Desligamento">Desligamento</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex flex-wrap items-end gap-2">
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={imprimir}>
-            Imprimir
+          <Button variant="outline" onClick={imprimir}>
+            Relatório
           </Button>
           <Button
             variant="outline"
-            className="flex-1"
             onClick={() =>
               exportarCsv(
                 "relatorio-baixas",
@@ -145,6 +120,33 @@ export function UniformesRelatorioBaixa() {
             Exportar CSV
           </Button>
         </div>
+        <BarraDeFiltros>
+        <div className="space-y-1.5">
+          <Label>Data Inicial</Label>
+          <Input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Data Final</Label>
+          <Input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Motivo de Baixa</Label>
+          <Select value={motivoFiltro} onValueChange={setMotivoFiltro}>
+            <SelectTrigger className="w-56 max-w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODAS}>Todos os motivos</SelectItem>
+              <SelectItem value="Desgaste Natural">Desgaste Natural</SelectItem>
+              <SelectItem value="Quebra">Quebra</SelectItem>
+              <SelectItem value="Desaparecimento">Desaparecimento</SelectItem>
+              <SelectItem value="Perda">Perda</SelectItem>
+              <SelectItem value="Mau Uso">Mau Uso</SelectItem>
+              <SelectItem value="Desligamento">Desligamento</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        </BarraDeFiltros>
       </div>
 
       <GradeDeCartoes colunas={3}>

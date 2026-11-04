@@ -154,8 +154,33 @@ export function UniformesRelatorioFuncionario() {
             <StatCard titulo="Em Posse" valor={emPosse} icone={UserCheck} compacto />
           </GradeDeCartoes>
 
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <h3 className="text-lg font-bold">Histórico de Movimentações</h3>
+          <h3 className="text-lg font-bold">Histórico de Movimentações</h3>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={imprimir}>
+                Relatório
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  exportarCsv(
+                    `historico-${empregado.nome}`,
+                    visiveis.map((h) => ({
+                      Data: formatarData(h.data_movimentacao),
+                      Uniforme: nomeDoUniforme(h.item_id),
+                      Tamanho: tamanhoDe(h),
+                      Tipo: h.tipo_movimentacao,
+                      Qtd: h.quantidade,
+                      Motivo: h.motivo_baixa || "Entrega/Uso",
+                      Obs: h.observacao,
+                    })),
+                  )
+                }
+              >
+                Exportar CSV
+              </Button>
+            </div>
             <BarraDeFiltros>
               <div className="space-y-1">
                 <Label htmlFor="hist-busca">Buscar</Label>
@@ -163,6 +188,7 @@ export function UniformesRelatorioFuncionario() {
                   id="hist-busca"
                   aria-label="Buscar no histórico"
                   type="search"
+                  className="w-96 max-w-full"
                   placeholder="Buscar por uniforme, tamanho, tipo, motivo ou observação"
                   value={palavra}
                   onChange={(e) => setPalavra(e.target.value)}
@@ -191,34 +217,6 @@ export function UniformesRelatorioFuncionario() {
               {visiveis.length} de {historico.length} movimentações.
             </p>
           )}
-          <div className="flex justify-end">
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={imprimir}>
-                Imprimir
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  exportarCsv(
-                    `historico-${empregado.nome}`,
-                    visiveis.map((h) => ({
-                      Data: formatarData(h.data_movimentacao),
-                      Uniforme: nomeDoUniforme(h.item_id),
-                      Tamanho: tamanhoDe(h),
-                      Tipo: h.tipo_movimentacao,
-                      Qtd: h.quantidade,
-                      Motivo: h.motivo_baixa || "Entrega/Uso",
-                      Obs: h.observacao,
-                    })),
-                  )
-                }
-              >
-                Exportar CSV
-              </Button>
-            </div>
-          </div>
-
           <div className="panel overflow-x-auto">
             <Table>
               <TableHeader>
