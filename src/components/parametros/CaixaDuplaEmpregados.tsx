@@ -108,8 +108,8 @@ export function CaixaDuplaEmpregados<A extends string = AreaViagem>({ idBase, ti
         </header>
       )}
 
-      <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
-        <section className="panel flex min-h-80 flex-col gap-2 p-3" aria-labelledby={`${idBase}-todos`}>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-stretch">
+        <section className="panel flex min-h-80 min-w-0 flex-col gap-2 p-3" aria-labelledby={`${idBase}-todos`}>
           <h3 id={`${idBase}-todos`} className="text-sm font-semibold">Todos os empregados <span className="font-normal text-muted-foreground">({aEsquerda.length})</span></h3>
           <Input aria-label="Buscar entre todos os empregados" placeholder="Buscar pelo nome" value={buscaEsq} onChange={(e) => setBuscaEsq(e.target.value)} />
           <ul className="max-h-96 flex-1 space-y-0.5 overflow-y-auto rounded-md border p-1" aria-label="Todos os empregados ativos">
@@ -137,7 +137,7 @@ export function CaixaDuplaEmpregados<A extends string = AreaViagem>({ idBase, ti
           <Button type="button" variant="outline" size="icon" aria-label="Tirar todos os habilitados da lista" title="Tirar todos os que aparecem na lista" disabled={!canWrite || aDireita.length === 0} onClick={() => desabilitar(aDireita.map(chaveDe))}><ChevronsLeft className="h-4 w-4" /></Button>
         </div>
 
-        <section className="panel flex min-h-80 flex-col gap-2 p-3" aria-labelledby={`${idBase}-escolhidos`}>
+        <section className="panel flex min-h-80 min-w-0 flex-col gap-2 p-3" aria-labelledby={`${idBase}-escolhidos`}>
           <h3 id={`${idBase}-escolhidos`} className="text-sm font-semibold">{tituloDireita} <span className="font-normal text-muted-foreground">({habilitados.length})</span></h3>
           <Input aria-label="Buscar entre os habilitados" placeholder="Buscar pelo nome" value={buscaDir} onChange={(e) => setBuscaDir(e.target.value)} />
           <ul className="max-h-96 flex-1 space-y-0.5 overflow-y-auto rounded-md border p-1" aria-label="Empregados habilitados">

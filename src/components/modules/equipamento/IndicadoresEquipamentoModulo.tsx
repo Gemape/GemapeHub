@@ -95,7 +95,7 @@ export function IndicadoresEquipamentoModulo() {
             "Horas paradas = soma do \"tempo parado\" informado nas manutenções do período.",
             "Disponibilidade = (programadas − paradas) ÷ programadas.",
             `Verde a partir de ${META.disponibilidade.verde}%, amarelo a partir de ${META.disponibilidade.amarelo}%, vermelho abaixo.`,
-            `\"Pronto agora\" exige status Ativo ou Reserva${cfg.prontoOcorrenciaAberta ? ", nenhuma ocorrência aberta" : ""}${cfg.prontoVistoriaNok ? " e a última vistoria sem item não conforme pendente" : ""}.`,
+            `"Pronto agora" exige status Ativo ou Reserva${cfg.prontoOcorrenciaAberta ? ", nenhuma ocorrência aberta" : ""}${cfg.prontoVistoriaNok ? " e a última vistoria sem item não conforme pendente" : ""}.`,
           ]} />
         <Cartao titulo="Custo de manutenção por hora" pergunta="Esse equipamento está me custando caro demais?" valor={frota.custoPorHora === null ? "—" : reais(frota.custoPorHora)} pctBarra={null}
           detalhe={`${reais(frota.custo)} em ${numero(frota.horasTrabalhadas)} h trabalhadas`} meta="cada equipamento é comparado à média da frota" semaforo="neutro"

@@ -1,4 +1,5 @@
 import type { Item } from './hooks-gemape';
+import type { ClienteLivre } from "./cliente-livre.ts";
 
 type ModuloEstoque = 'epi' | 'uniforme' | 'ferramenta';
 const TABELA: Record<ModuloEstoque, string> = { epi: 'epis', uniforme: 'uniformes', ferramenta: 'ferramentas' };
@@ -6,7 +7,7 @@ const PAGINA = 50;
 
 /** O quadro do módulo consulta todos os itens, sem o corte do seletor de cadastro. */
 export async function lerItensEstoque(
-  cliente: { from: (tabela: string) => any },
+  cliente: ClienteLivre,
   modulo: ModuloEstoque,
   empresaId: string,
 ): Promise<Item[]> {
