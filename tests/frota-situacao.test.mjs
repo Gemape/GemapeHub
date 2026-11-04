@@ -80,5 +80,5 @@ test("o abastecimento de veículos filtra por data início e fim depois de monta
   // O corte vem depois do histórico: o km/L de cada abastecimento não perde o anterior que ficou fora do período.
   assert.ok(tela.indexOf("historicoAbastecimentos(daEmpresa") < tela.indexOf("(!inicio || a.data >= inicio) && (!fim || a.data <= fim)"));
   assert.match(tela, /Período: \$\{inicio \? formatarData\(inicio\)/);
-  assert.match(tela, /disabled=\{periodoInvalido\}>Gerar PDF/);
+  assert.match(tela, /disabled=\{periodoInvalido\}>Relatório<\/Button>/);
 });

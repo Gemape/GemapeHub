@@ -130,14 +130,18 @@ test("o título das colunas numéricas fica alinhado à direita, junto com os va
   assert.match(html, /<td class="num">1<\/td>/);
 });
 
-test("Abastecimento de veículos tem o Gerar PDF: relatório por veículo, no padrão, com os mesmos filtros da tela", () => {
+test("Abastecimento de veículos tem o botão Relatório (decisão 378): relatório por veículo, no padrão, com os mesmos filtros da tela", () => {
   const tela = ler("components/modules/AbastecimentoVeiculoModulo.tsx");
-  assert.match(tela, /<Button variant="outline" onClick=\{gerarRelatorio\}[^>]*>Gerar PDF<\/Button>/);
+  assert.match(tela, /<Button variant="outline" onClick=\{\(\) => setRelatorioAberto\(true\)\}[^>]*>Relatório<\/Button>/);
   assert.match(tela, /montarExtratoHtml\(\{\s*titulo: "Relatório de abastecimento"/);
   assert.match(tela, /telaCheia: true/);
   assert.match(tela, /grupos\s*=\s*veiculos\s*\.filter\(\(v\) => linhas\.some/, "um quadro por veículo, só dos que têm abastecimento no filtro");
   assert.match(tela, /Total: \$\{g\.dele\.length\} abastecimento\(s\)/);
   for (const coluna of ["Data e hora", "Km rodados", "Litros", "Valor", "R$/L", "Km/L"]) assert.ok(tela.includes(`titulo: "${coluna}"`), coluna);
+  assert.match(tela, /<EscolherCamposRelatorio/, "a janela de personalização das colunas e opções");
+  assert.match(tela, /cols\.map\(\(c\) => \(\{ titulo: c\.titulo/, "só as colunas marcadas saem");
+  assert.match(tela, /comResumo/);
+  assert.match(tela, /comTotais/);
 });
 
 test("Abastecimento de equipamentos tem o mesmo Gerar PDF: relatório por equipamento, no padrão, com os filtros da tela", () => {

@@ -1,6 +1,7 @@
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, Droplets, Fuel, Gauge } from "lucide-react";
+import { EscolherCamposRelatorio } from "@/components/EscolherCamposRelatorio";
 import { StatCard } from "@/components/StatCard";
 import { useMemo, useState } from "react";
 
@@ -34,6 +35,22 @@ const numero = (n: number) => n.toLocaleString("pt-BR");
 // último abastecimento), informa data, hora, km (nunca menor que o anterior), litros e valor em
 // reais. O histórico por veículo mostra o trecho rodado, o km/L e o R$/L de cada abastecimento.
 // Só modo demonstração; nada no Supabase.
+// Colunas do Relatório (decisão 378), na ordem da tabela da tela; o usuário escolhe quais saem.
+type LinhaDoRelatorio = { data: string; hora?: string | null; km: number; kmRodados: number | null; litros: number; valor?: number | null; precoLitro?: number | null; kmPorLitro: number | null };
+const COLUNAS_RELATORIO: { id: string; titulo: string; direita?: boolean; valor: (a: LinhaDoRelatorio) => string }[] = [
+  { id: "data", titulo: "Data e hora", valor: (a) => `${formatarData(a.data)}${a.hora ? ` ${a.hora}` : ""}` },
+  { id: "km", titulo: "Km", direita: true, valor: (a) => numero(a.km) },
+  { id: "kmRodados", titulo: "Km rodados", direita: true, valor: (a) => (a.kmRodados === null ? "—" : numero(a.kmRodados)) },
+  { id: "litros", titulo: "Litros", direita: true, valor: (a) => a.litros.toLocaleString("pt-BR") },
+  { id: "valor", titulo: "Valor", direita: true, valor: (a) => reais(a.valor) },
+  { id: "precoLitro", titulo: "R$/L", direita: true, valor: (a) => reais(a.precoLitro) },
+  { id: "kmPorLitro", titulo: "Km/L", direita: true, valor: (a) => (a.kmPorLitro === null ? "—" : a.kmPorLitro.toLocaleString("pt-BR", { maximumFractionDigits: 1 })) },
+];
+const OPCOES_RELATORIO = [
+  { id: "resumo", rotulo: "Resumo no topo (veículos, abastecimentos, litros, total gasto e média)" },
+  { id: "totais", rotulo: "Total de cada veículo abaixo da tabela" },
+];
+
 export function AbastecimentoVeiculoModulo() {
   const { empresaId, empresas } = useEmpresa();
   const { isAdmin } = useAccess();
@@ -70,6 +87,7 @@ export function AbastecimentoVeiculoModulo() {
     [veiculos, todos, filtroValido, busca, parametros, inicio, fim, periodoInvalido],
   );
   const doFiltro = filtroValido === TODOS ? null : veiculo(filtroValido);
+  const [relatorioAberto, setRelatorioAberto] = useState(false);
   const resumo = doFiltro
     ? {
         litros: linhas.reduce((s, a) => s + a.litros, 0),
@@ -89,7 +107,10 @@ export function AbastecimentoVeiculoModulo() {
 
   // Relatório de abastecimento por veículo, no padrão dos demais: um quadro por veículo (o trecho e o km/L só valem dentro dele), com os mesmos filtros da
   // tela (veículo escolhido e busca), os totais de cada um e o resumo no topo. Abre direto no visualizador, em tela cheia, onde se gera o PDF.
-  function gerarRelatorio() {
+  function gerarRelatorio(escolhidas: string[], opcoes: string[]) {
+    const cols = COLUNAS_RELATORIO.filter((c) => escolhidas.includes(c.id));
+    const comResumo = opcoes.includes("resumo");
+    const comTotais = opcoes.includes("totais");
     const grupos = veiculos
       .filter((v) => linhas.some((a) => a.veiculoId === v.id))
       .map((v) => {
@@ -110,7 +131,7 @@ export function AbastecimentoVeiculoModulo() {
       assunto,
       subtitulo: [busca.trim() ? `Busca: ${busca.trim()}` : "", inicio || fim ? `Período: ${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : ""].filter(Boolean).join(" · ") || "Abastecimentos por veículo",
       empresa: empresaId === TODAS ? "Todas as empresas" : (empresas.find((e) => e.id === empresaId)?.nome_fantasia ?? ""),
-      resumo: [
+      resumo: !comResumo ? [] : [
         ...(unico ? [] : ([["Veículos", String(grupos.length)]] as [string, string][])),
         ["Abastecimentos", String(linhas.length)],
         ["Litros", fmtLitros(litrosTotal)],
@@ -118,19 +139,17 @@ export function AbastecimentoVeiculoModulo() {
         ...(unico ? ([["Média de consumo", fmtMedia(unico.media)]] as [string, string][]) : []),
       ],
       tabelas: grupos.length === 0
-        ? [{ titulo: "Abastecimentos", vazio: busca.trim() || inicio || fim ? "Nenhum resultado para a busca e o período." : "Nenhum abastecimento registrado.", colunas: [{ titulo: "Data e hora" }], linhas: [] }]
+        ? [{ titulo: "Abastecimentos", vazio: busca.trim() || inicio || fim ? "Nenhum resultado para a busca e o período." : "Nenhum abastecimento registrado.", colunas: cols.map((c) => ({ titulo: c.titulo })), linhas: [] }]
         : grupos.map((g) => ({
             titulo: rotuloDoVeiculo(parametros, g.v),
             vazio: "Nenhum abastecimento registrado.",
-            nota: `Total: ${g.dele.length} abastecimento(s) · ${fmtLitros(g.litros)} L · ${reais(g.gasto)} · média ${fmtMedia(g.media)}`,
-            colunas: [{ titulo: "Data e hora" }, { titulo: "Km", direita: true }, { titulo: "Km rodados", direita: true }, { titulo: "Litros", direita: true }, { titulo: "Valor", direita: true }, { titulo: "R$/L", direita: true }, { titulo: "Km/L", direita: true }],
-            linhas: g.dele.map((a) => [
-              `${formatarData(a.data)}${a.hora ? ` ${a.hora}` : ""}`, numero(a.km), a.kmRodados === null ? "—" : numero(a.kmRodados), a.litros.toLocaleString("pt-BR"),
-              reais(a.valor), reais(a.precoLitro), a.kmPorLitro === null ? "—" : a.kmPorLitro.toLocaleString("pt-BR", { maximumFractionDigits: 1 }),
-            ]),
+            ...(comTotais ? { nota: `Total: ${g.dele.length} abastecimento(s) · ${fmtLitros(g.litros)} L · ${reais(g.gasto)} · média ${fmtMedia(g.media)}` } : {}),
+            colunas: cols.map((c) => ({ titulo: c.titulo, ...(c.direita ? { direita: true } : {}) })),
+            linhas: g.dele.map((a) => cols.map((c) => c.valor(a))),
           })),
     });
     abrirDocumento({ titulo: "Relatório de abastecimento", html, arquivo: nomeArquivoDocumento("Relatorio de abastecimento", assunto), telaCheia: true });
+    setRelatorioAberto(false);
   }
 
   function excluir(id: string) {
@@ -141,7 +160,7 @@ export function AbastecimentoVeiculoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <Button variant="outline" onClick={gerarRelatorio} disabled={periodoInvalido}>Gerar PDF</Button>
+        <Button variant="outline" onClick={() => setRelatorioAberto(true)} disabled={periodoInvalido}>Relatório</Button>
         <Button requiresWrite onClick={abrir}>Novo abastecimento</Button>
         <BarraDeFiltros>
           <div className="space-y-1.5">
@@ -228,6 +247,16 @@ export function AbastecimentoVeiculoModulo() {
         </Table>
       </div>
 
+      <EscolherCamposRelatorio
+        aberto={relatorioAberto}
+        onAberto={setRelatorioAberto}
+        titulo="Relatório de abastecimento"
+        descricao={`Marque as colunas e as opções do relatório. Sai o que está na tela: o veículo, a busca e o período escolhidos (${linhas.length} abastecimento${linhas.length === 1 ? "" : "s"}).`}
+        campos={COLUNAS_RELATORIO.map((c) => ({ id: c.id, rotulo: c.titulo }))}
+        opcoes={OPCOES_RELATORIO}
+        prefixo="rel-abastecimento"
+        onGerar={gerarRelatorio}
+      />
       <NovoAbastecimentoDialog aberto={aberto} aoMudar={setAberto} aoSalvar={(registro) => setFiltro(registro.veiculoId)} />
     </div>
   );
