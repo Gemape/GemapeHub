@@ -15,9 +15,14 @@ test("a rota de Veículos aceita o parâmetro nova, e a tela de Ocorrências abr
   assert.match(le("routes/_authenticated/veiculos.tsx"), /typeof search\["nova"\] === "string" \? \{ nova: search\["nova"\] \}/);
   const o = le("components/modules/OcorrenciasVeiculoModulo.tsx");
   assert.match(o, /veiculo: veiculoPedido, nova: novaPedida \} = useSearch/);
-  assert.match(o, /if \(!novaPedida \|\| veiculos\.length === 0\) return;\s*abrirNova\(\);/);
+  assert.match(o, /if \(!novaPedida \|\| veiculos\.length === 0\) return;[\s\S]*?abrirNova\(\);/);
   assert.match(o, /veiculos\.some\(\(v\) => v\.id === veiculoPedido\)\) setVeiculoId\(veiculoPedido\)/);
   assert.match(o, /navegar\(\{ to: "\/veiculos", search: \{ aba: "ocorrencias" \}, replace: true \}\)/);
   // Ao salvar ou cancelar, a pessoa volta ao extrato do veículo (decisão 346).
   assert.match(o, /useVoltarAoExtrato\(tela !== null, voltar\)/);
+});
+
+test("aberto de dentro do extrato da própria tela de Ocorrências, o extrato fecha antes da Nova ocorrência", () => {
+  const o = le("components/modules/OcorrenciasVeiculoModulo.tsx");
+  assert.match(o, /if \(!novaPedida \|\| veiculos\.length === 0\) return;\s*\/\/[^\n]*\n\s*setExtrato\(null\);\s*abrirNova\(\);/);
 });

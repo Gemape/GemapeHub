@@ -170,6 +170,8 @@ export function OcorrenciasVeiculoModulo() {
   // Ao fechar a tela (salvar ou cancelar), useVoltarAoExtrato leva a pessoa de volta ao extrato desse veículo.
   useEffect(() => {
     if (!novaPedida || veiculos.length === 0) return;
+    // Aberto de dentro do extrato desta própria tela (tabela de diagnóstico), o extrato fecha: não ficam duas janelas uma sobre a outra.
+    setExtrato(null);
     abrirNova();
     if (veiculoPedido && veiculos.some((v) => v.id === veiculoPedido)) setVeiculoId(veiculoPedido);
     void navegar({ to: "/veiculos", search: { aba: "ocorrencias" }, replace: true });
