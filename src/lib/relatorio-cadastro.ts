@@ -11,8 +11,6 @@ export type CampoRelatorio<T> = {
   direita?: boolean;
 };
 
-export const camposPadrao = <T>(campos: readonly CampoRelatorio<T>[]): string[] => campos.filter((c) => c.padrao !== false).map((c) => c.id);
-
 // A ordem das colunas é a da lista de campos, e não a em que as caixas foram marcadas. Sem nenhum campo válido, o relatório não é gerado.
 export function montarRelatorioCadastroHtml<T>(d: {
   titulo: string;
