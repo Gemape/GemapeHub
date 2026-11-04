@@ -27,7 +27,7 @@ test("o documento traz os nove tópicos, os dados do empregado, a ciência e as 
   assert.match(html, /Evitar acidentes &lt;b&gt;/);
   assert.match(html, /<li>Ruído<\/li><li>Esmagamento<\/li>/);
   assert.match(html, /Declaro ter recebido esta Ordem de Serviço/);
-  assert.match(html, /Responsável pela segurança/);
+  assert.match(html, /Responsável pela empresa/);
   assert.doesNotMatch(html, /undefined/);
 });
 

@@ -43,7 +43,7 @@ export function montarOrdemServicoHtml(d: DadosOrdemServico): string {
 </table>
 ${topicos}
 <p class="nota">Declaro ter recebido esta Ordem de Serviço, ter sido orientado(a) sobre os riscos da minha função e me comprometo a cumprir os procedimentos, a usar os equipamentos de proteção individual indicados e a não praticar as condutas proibidas.</p>
-<div class="assinaturas">${assinaturaRelatorio("Empregado", String(empregado.nome ?? ""))}${assinaturaRelatorio("Responsável pela segurança")}</div>
+<div class="assinaturas">${assinaturaRelatorio("Empregado", String(empregado.nome ?? ""))}${assinaturaRelatorio("Responsável pela empresa")}</div>
 </div>`,
     botao: BOTAO_IMPRIMIR("Imprimir Ordem de Serviço"),
   });
