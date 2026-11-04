@@ -28,3 +28,11 @@ test("registrar a partir do extrato já vem com o equipamento escolhido", () => 
     assert.match(s, /useState\(equipamentoInicial\)/, nome);
   }
 });
+
+test("a preventiva do equipamento fala em horas (não em km) e o extrato mantém aquisição e custo", () => {
+  const t = ler("ExtratoEquipamento.tsx");
+  assert.match(t, /motivoEmHoras\(s\.motivo\)/);
+  assert.match(t, /adquirido em \$\{formatarData\(e\.dataAquisicao\)\}/);
+  assert.match(t, /Custo de manutenção no período/);
+  assert.doesNotMatch(t, /const (PONTO_TELA|TEXTO_TELA|SITUACAO)\b/, "as cores vêm do extrato do veículo");
+});

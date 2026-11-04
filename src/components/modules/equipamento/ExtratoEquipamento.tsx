@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
+import { PONTO_TELA, SITUACAO, TEXTO_TELA } from "@/components/modules/ExtratoVeiculo";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +12,7 @@ import { useEmpresa } from "@/lib/empresa-context";
 import type { Equipamento } from "@/lib/equipamentos-demo";
 import { lerManutencaoEquipamento } from "@/lib/equipamentos-manutencao";
 import { montarExtratoHtml, type Celula, type Cor, type TabelaExtrato } from "@/lib/extrato-html";
-import { sugestoesPreventivas, type StatusSugestao } from "@/lib/extrato-veiculo";
+import { sugestoesPreventivas } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
 import { custoDaManutencaoEq, ultimoHorimetro } from "@/lib/registros-equipamento";
 import { imprimirDocumento } from "@/lib/visualizador-documento";
@@ -22,15 +23,9 @@ import { hoje, nomeDoTipo, numero, reais, rotuloDoEquipamento, useAbastecimentos
 
 // Extrato do equipamento (Equipamentos > Inventário), na mesma lógica do extrato do veículo: período, resumo, quatro seções coloridas (Manutenções, Abastecimentos,
 // Ocorrências e Check lists) com o botão de registrar de cada uma, e o PDF com as seções que a pessoa marcar em Personalizar o relatório. Só modo demonstração.
-const SITUACAO: Record<StatusSugestao, { rotulo: string; cor: Cor }> = {
-  vencida: { rotulo: "Vencida", cor: "vermelho" },
-  atencao: { rotulo: "Atenção", cor: "amarelo" },
-  em_dia: { rotulo: "Em dia", cor: "verde" },
-  sem_registro: { rotulo: "Sem registro", cor: "cinza" },
-};
-const PONTO_TELA: Record<Cor, string> = { vermelho: "bg-red-500", amarelo: "bg-amber-400", verde: "bg-emerald-500", cinza: "bg-slate-400" };
-const TEXTO_TELA: Record<Cor, string> = { vermelho: "font-semibold text-red-700", amarelo: "font-semibold text-amber-700", verde: "text-emerald-700", cinza: "text-muted-foreground" };
 // As tabelas, pela ordem: 0 preventivas sugeridas, 1 manutenções realizadas, 2 abastecimentos, 3 ocorrências, 4 check lists.
+// O cálculo é o do veículo, que fala em km; no equipamento a medida é a hora de uso.
+const motivoEmHoras = (m: string) => m.replace("Km próximo", "Horas próximas").replace(/\bkm\b/g, "horas");
 export const SECOES_DO_EXTRATO_EQ = [
   { titulo: "Manutenções", tabelas: [0, 1], faixa: "from-blue-800 to-blue-600" },
   { titulo: "Abastecimentos", tabelas: [2], faixa: "from-emerald-800 to-emerald-600" },
@@ -85,11 +80,11 @@ export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equ
           s.nome, `${numero(s.intervaloKm)} h ou ${s.intervaloMeses} meses`,
           s.ultima ? `${formatarData(s.ultima.data)} · ${numero(s.ultima.km)} h` : "—",
           s.proximoKm !== null && s.proximaData ? `${numero(s.proximoKm)} h ou ${formatarData(s.proximaData)}` : "—",
-          { texto: s.status === "sem_registro" || s.status === "em_dia" ? SITUACAO[s.status].rotulo : `${SITUACAO[s.status].rotulo} · ${s.motivo}`, cor: SITUACAO[s.status].cor },
+          { texto: s.status === "sem_registro" || s.status === "em_dia" ? SITUACAO[s.status].rotulo : `${SITUACAO[s.status].rotulo} · ${motivoEmHoras(s.motivo)}`, cor: SITUACAO[s.status].cor },
         ]),
       },
       {
-        titulo: "Manutenções realizadas", vazio: "Nenhuma manutenção no período.",
+        titulo: "Manutenções realizadas", vazio: "Nenhuma manutenção no período.", nota: `Custo de manutenção no período: ${reais(manut.reduce((t, m) => t + custoDaManutencaoEq(m), 0))}`,
         colunas: [{ titulo: "Data" }, { titulo: "Tipo" }, { titulo: "Horímetro", direita: true }, { titulo: "Ações" }, { titulo: "Local" }, { titulo: "Custo", direita: true }],
         linhas: manut.map((m) => [formatarData(m.data), m.tipo, `${numero(m.horimetro)} h`, m.acoes.map((a) => a.nome).join(", "), m.localNome || "Na empresa", reais(custoDaManutencaoEq(m))]),
       },
@@ -126,7 +121,7 @@ export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equ
     const html = montarExtratoHtml({
       titulo: "Extrato do equipamento",
       assunto: rotuloDoEquipamento(e),
-      subtitulo: [`${nomeDoTipo(e)} · ${e.marca} ${e.modelo} · série ${e.numeroSerie}`, `Período: ${inicio || fim ? `${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : "todo o histórico"}`, abertas ? "Só ocorrências em aberto" : ""].filter(Boolean).join(" · "),
+      subtitulo: [`${nomeDoTipo(e)} · ${e.marca} ${e.modelo} · série ${e.numeroSerie} · adquirido em ${formatarData(e.dataAquisicao)} por ${reais(e.valorCompra)}`, `Período: ${inicio || fim ? `${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : "todo o histórico"}`, abertas ? "Só ocorrências em aberto" : ""].filter(Boolean).join(" · "),
       empresa: d.empresa,
       resumo: d.resumo,
       tabelas: d.tabelas.filter((_, n) => tabelasEscolhidas.includes(n)),
@@ -145,7 +140,7 @@ export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equ
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-6xl">
         <DialogHeader>
           <DialogTitle>Extrato do equipamento</DialogTitle>
-          <DialogDescription>{equipamento ? rotuloDoEquipamento(equipamento) : ""}</DialogDescription>
+          <DialogDescription>{equipamento ? `${rotuloDoEquipamento(equipamento)} · adquirido em ${formatarData(equipamento.dataAquisicao)} por ${reais(equipamento.valorCompra)}` : ""}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-wrap items-end gap-3">

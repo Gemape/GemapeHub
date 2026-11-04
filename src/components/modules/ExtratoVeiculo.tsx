@@ -29,7 +29,7 @@ import { MODO_DEMO } from "@/lib/modo-demo";
 import { imprimirDocumento } from "@/lib/visualizador-documento";
 
 // No relatório a situação sai com o ponto colorido, como nos indicadores da tela.
-const SITUACAO: Record<StatusSugestao, { rotulo: string; cor: Cor }> = {
+export const SITUACAO: Record<StatusSugestao, { rotulo: string; cor: Cor }> = {
   vencida: { rotulo: "Vencida", cor: "vermelho" },
   atencao: { rotulo: "Atenção", cor: "amarelo" },
   em_dia: { rotulo: "Em dia", cor: "verde" },
@@ -75,8 +75,8 @@ const resumoDo = (d: DadosDoExtrato, foco?: FocoExtrato): [string, string, Cor?]
   return (foco ? FOCOS[foco].resumo : (["km", "media", "vencidas"] as const)).map((k) => todos[k]);
 };
 // Cor da bolinha das situações na tela, as mesmas do relatório.
-const PONTO_TELA: Record<Cor, string> = { vermelho: "bg-red-500", amarelo: "bg-amber-400", verde: "bg-emerald-500", cinza: "bg-slate-400" };
-const TEXTO_TELA: Record<Cor, string> = { vermelho: "font-semibold text-red-700", amarelo: "font-semibold text-amber-700", verde: "text-emerald-700", cinza: "text-muted-foreground" };
+export const PONTO_TELA: Record<Cor, string> = { vermelho: "bg-red-500", amarelo: "bg-amber-400", verde: "bg-emerald-500", cinza: "bg-slate-400" };
+export const TEXTO_TELA: Record<Cor, string> = { vermelho: "font-semibold text-red-700", amarelo: "font-semibold text-amber-700", verde: "text-emerald-700", cinza: "text-muted-foreground" };
 // As quatro seções do extrato (decisão 345), cada uma com o título grande numa faixa colorida, e as tabelas (pelo número em `tabelas`) que ela reúne: Manutenções (sugeridas, realizadas e itens em
 // atenção), Abastecimentos, Ocorrências e Check lists.
 const SECOES_DO_EXTRATO = [
