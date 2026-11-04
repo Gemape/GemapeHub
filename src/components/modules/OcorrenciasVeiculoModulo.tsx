@@ -287,7 +287,7 @@ export function OcorrenciasVeiculoModulo() {
           <CartoesOcorrencias indicadores={indicadores} />
           <GraficosOcorrencias compacto ocorrencias={daEmpresa} hoje={hojeLocal()} />
           <TabelaDiagnosticoOcorrencias linhas={diagnostico} aoAbrir={(id, secao) => setExtrato({ id, secao })} />
-          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} onFechar={() => setExtrato(null)} />
+          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} foco="ocorrencias" onFechar={() => setExtrato(null)} />
         </>
       ) : (
         <>

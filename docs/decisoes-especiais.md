@@ -2079,3 +2079,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Ordem do responsável: em **Veículos > Manutenção**, clicar no veículo da lista (ou em Ver extrato) abre uma janela **só com o que é de manutenção do veículo**, chamada **Manutenção do veículo**: a seção Manutenções (sugeridas, realizadas e itens em atenção), o km atual e as preventivas vencidas. Abastecimentos, Ocorrências e Check lists não aparecem; o Gerar PDF sai direto com essas mesmas tabelas. O Registrar manutenção continua na seção.
 - As outras telas (Frota, Ocorrências, Abastecimento) seguem abrindo o extrato completo. **Escolha do Claude:** a média de consumo também sai do resumo, por ser de abastecimento. Só ajuste de tela; nada no Supabase.
+
+## 369. Ocorrências: o veículo da lista abre só as informações de ocorrências
+
+- Ordem do responsável, no mesmo desenho da decisão 368: em **Veículos > Ocorrências**, clicar no veículo da lista (ou em Ver extrato) abre a janela **Ocorrências do veículo**, só com a seção Ocorrências (com o "Só em aberto", o Registrar ocorrência e a consulta ao código) e o km atual. Manutenções, Abastecimentos e Check lists não aparecem; o Gerar PDF sai direto com a tabela das ocorrências. **Escolha do Claude:** as preventivas vencidas e a média de consumo saem do resumo, por não serem de ocorrência. Só ajuste de tela; nada no Supabase.
