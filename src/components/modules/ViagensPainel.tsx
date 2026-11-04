@@ -154,7 +154,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
       <div hidden={visao !== "despesas"}><ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} /></div>
 
       {visao === "tecnicos" && <section className="space-y-2" aria-labelledby="viagens-tecnicos">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* O seletor de período dos resultados (decisão 300) fica à direita, como os demais filtros. */}
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <h2 id="viagens-tecnicos" className="sr-only">Resultados dos técnicos</h2>
           {seletorPeriodo("tecnicos")}
         </div>

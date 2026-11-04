@@ -46,3 +46,8 @@ test("os botões das listas ficam no alto, à esquerda, e o período à direita 
   assert.ok(a > 0, "o alternador abre a linha, antes do título (só para leitor de tela)");
   assert.ok(p.indexOf("{seletorPeriodo(\"indicadores\")}") > a, "o período fica à direita dos botões");
 });
+
+test("o seletor de período dos resultados dos técnicos fica à direita", () => {
+  const p = ler("ViagensPainel.tsx");
+  assert.match(p, /justify-end gap-2">\s*<h2 id="viagens-tecnicos" className="sr-only">/);
+});
