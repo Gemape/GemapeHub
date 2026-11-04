@@ -50,7 +50,7 @@ test("as compras de EPI e Uniforme usam o fornecedor do cadastro no demo e grava
   }
   const seletor = ler("SeletorFornecedorCompra.tsx");
   assert.match(seletor, /MODO_DEMO/);
-  assert.match(seletor, /href="\/cadastros\/fornecedores"[^>]*>Cadastrar fornecedor/, "link para cadastrar o fornecedor que não existe (decisão 327)");
+  assert.match(seletor, /onClick=\{\(\) => \{ setCodigoPrevisto\(proximoCodigoFornecedor\(\)\); setCadastrando\(true\); \}\}>Cadastrar fornecedor/, "link para cadastrar o fornecedor que não existe (decisão 327)");
 });
 
 test("fornecedor sem nome no cadastro é recusado", () => {
@@ -61,4 +61,14 @@ test("fornecedor sem nome no cadastro é recusado", () => {
 test("fornecedor sem categoria pode ser escolhido em qualquer compra (decisão 55)", () => {
   assert.deepEqual(escolherFornecedorDaCompra(lista, "cat-epi", "f4"), { id: "f4", nome: "Sem Cat" });
   assert.deepEqual(escolherFornecedorDaCompra(lista, "cat-uniformes", "f4"), { id: "f4", nome: "Sem Cat" });
+});
+
+test("Cadastrar fornecedor na compra abre o cadastro por cima (vai e volta) e já escolhe o fornecedor novo (decisão 390)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const ler = (c) => readFileSync(new URL(`../src/components/${c}`, import.meta.url), "utf8");
+  const seletor = ler("modules/SeletorFornecedorCompra.tsx");
+  assert.match(seletor, /<FornecedorDialog[\s\S]*onSalvo=\{\(novo\) => \{ setVersao\(\(v\) => v \+ 1\); setNovoId\(novo\.id\); \}\}/);
+  assert.match(seletor, /fornecedores\.some\(\(f\) => f\.id === novoId\)\) \{\s*onChange\(novoId\)/);
+  assert.doesNotMatch(seletor, /target="_blank"/);
+  assert.match(ler("parametros/FornecedorDialog.tsx"), /evento\.stopPropagation\(\)/, "o envio não sobe até o formulário da compra");
 });

@@ -2183,3 +2183,7 @@ O link **Parâmetros > EPI > Cadastrar Ordem de Serviço**, na tela EPI > Ordem 
 ## 389. Responsividade: barras de filtros e de botões no celular
 
 No celular (390 px), a barra de filtros deixou de passar da largura da tela: o campo de busca (largura de 24 rem) cabe na linha (`max-w-full`) e a barra ocupa a linha toda, alinhada à esquerda; os grupos de botões das barras (Exportar CSV, Relatório, Novo..., Importar NF-e, Registrar Compra, Devolução) quebram para a linha de baixo em vez de estourar a página. Conferido em 36 telas, em 390 px de largura, sem rolagem lateral da página.
+
+## 390. Compras: Cadastrar fornecedor com vai e volta
+
+No **Registrar Compra** de EPI e de uniforme, o link **Cadastrar fornecedor** deixou de abrir uma nova aba, onde o fornecedor cadastrado não voltava à compra. Agora abre o cadastro de fornecedor por cima da compra (a mesma janela de Cadastros > Fornecedores e do Código de fábrica); ao salvar, a janela fecha, a compra continua aberta com tudo o que já estava preenchido, e o **fornecedor novo já fica escolhido**. O envio do cadastro não grava a compra. O Código de fábrica já funcionava assim.

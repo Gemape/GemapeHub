@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { FornecedorDialog } from "@/components/parametros/FornecedorDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fornecedoresDaCategoria, rotuloDoFornecedor } from "@/lib/compras-fornecedor";
-import { listarFornecedores } from "@/lib/fornecedores-demo";
+import { listarFornecedores, proximoCodigoFornecedor } from "@/lib/fornecedores-demo";
 import { MODO_DEMO } from "@/lib/modo-demo";
 
-// Fornecedor da compra: no demonstrativo vem de Cadastros > Fornecedores (todos, sem categoria).
+// Fornecedor da compra: no demonstrativo vem de Cadastros > Fornecedores (todos, sem categoria). O link Cadastrar fornecedor abre o cadastro por cima da compra (vai e volta, decisão 390):
+// ao salvar, a janela fecha e o fornecedor novo já fica escolhido, sem perder o que foi preenchido na compra.
 // No banco real o cadastro de fornecedores ainda não existe (Fase 2): lá continua o campo de texto.
 export function SeletorFornecedorCompra({
   categoriaId,
@@ -18,6 +20,10 @@ export function SeletorFornecedorCompra({
   valor: string;
   onChange: (id: string) => void;
 }) {
+  const [cadastrando, setCadastrando] = useState(false);
+  const [codigoPrevisto, setCodigoPrevisto] = useState("");
+  // O fornecedor novo só é escolhido depois de entrar na lista: o seletor devolve o valor vazio quando a escolha chega antes da opção.
+  const [novoId, setNovoId] = useState("");
   // Lê de novo a cada vez que o formulário monta e quando a pessoa volta da aba onde cadastrou o fornecedor (decisão 327).
   const [versao, setVersao] = useState(0);
   useEffect(() => {
@@ -30,6 +36,14 @@ export function SeletorFornecedorCompra({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [categoriaId, versao],
   );
+
+  useEffect(() => {
+    if (novoId && fornecedores.some((f) => f.id === novoId)) {
+      onChange(novoId);
+      setNovoId("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [novoId, fornecedores]);
 
   if (!MODO_DEMO) {
     return (
@@ -57,8 +71,16 @@ export function SeletorFornecedorCompra({
       {fornecedores.length === 0 && <p className="text-xs text-muted-foreground">Nenhum fornecedor cadastrado.</p>}
       <p className="text-xs text-muted-foreground">
         Fornecedor não está na lista?{" "}
-        <a href="/cadastros/fornecedores" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Cadastrar fornecedor</a>
+        <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => { setCodigoPrevisto(proximoCodigoFornecedor()); setCadastrando(true); }}>Cadastrar fornecedor</button>
       </p>
+      <FornecedorDialog
+        aberto={cadastrando}
+        onAberto={setCadastrando}
+        editando={null}
+        modelo={null}
+        codigoPrevisto={codigoPrevisto}
+        onSalvo={(novo) => { setVersao((v) => v + 1); setNovoId(novo.id); }}
+      />
     </div>
   );
 }
