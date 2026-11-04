@@ -41,7 +41,7 @@ export function FornecedorDialog({ aberto, onAberto, editando, modelo, codigoPre
 
   function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    // A janela pode ficar dentro de outro <form> (Código de fábrica); o envio não pode subir até ele.
+    // A janela pode ficar por cima de outro formulário (Código de fábrica, compra); o envio não pode subir pela árvore do React até ele.
     evento.stopPropagation();
     const formulario = new FormData(evento.currentTarget);
     const texto = (nome: string) => String(formulario.get(nome) ?? "").trim();
