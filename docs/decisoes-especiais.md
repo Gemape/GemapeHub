@@ -2169,3 +2169,5 @@ Em todas as páginas e submenus do sistema, os **botões de ação** (Exportar C
 ## 386. Cartões dos relatórios no modelo da Frota
 
 Os cartões de Baixar Definitivas (EPI e Uniformes) passam a ser **quatro por linha**, no tamanho dos da Frota, cada um com o título, uma linha que explica o número, o valor e um detalhe (período, motivo, quantidade de baixas); entrou o **Valor médio por peça**. Os do Histórico do empregado ganharam a linha de explicação. O `StatCard` aceita `subtitulo`. Na mesma rodada, o Estoque de EPI e de Uniformes e a Sugestão de Compras do EPI passaram para o padrão da decisão 385: botões à esquerda (Novos/Usados, Exportar CSV, Gerar relatório) e a busca e os filtros à direita.
+
+Na mesma rodada (decisão 386): o aviso "Estoque no mínimo ou abaixo" saiu da tela **Entrega EPI** e dos Uniformes e passou a aparecer nos **relatórios**, no alto da **Sugestão de Compras** do EPI, respeitando o filtro de empresa; e os dados de teste (versão 36) trazem **oito ocorrências de EPI**, em três empresas, para a tela Ocorrências do módulo ter o que mostrar.

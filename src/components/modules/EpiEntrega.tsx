@@ -101,11 +101,6 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
     [itens, movimentosDoEmpregado, empregadoId],
   );
 
-  // Só da empresa escolhida: o saldo e o mínimo são por empresa, e o mesmo código não aparece repetido (dec 238).
-  const alertas = useMemo(
-    () => (empresaSel ? itens : []).map((i) => ({ item: i, estado: estadoEstoqueModulo(parametros, modulo, i) })).filter((x) => x.estado.alerta && (x.estado.minimo > 0 || x.estado.saldo === 0)),
-    [itens, parametros, empresaSel],
-  );
   const calcularAlerta: CalculoAlerta = (item) => {
     const e = estadoEstoqueModulo(parametros, modulo, item as never);
     return { alerta: e.alerta, saldo: e.saldo, minimo: e.minimo };
@@ -189,13 +184,6 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
 
   return (
     <div className="space-y-6">
-      {alertas.length > 0 && (
-        <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          <strong>Estoque no mínimo ou abaixo ({empresa?.nome_fantasia}):</strong>{" "}
-          {alertas.map(({ item, estado }) => `${item.codigo_sku} ${item.nome} (saldo ${estado.saldo}, mínimo ${estado.minimo})`).join("; ")}
-        </div>
-      )}
-
       <div className="panel p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant={modo === "entrega" ? "default" : "outline"} onClick={() => trocarModo("entrega")}>Registrar entrega</Button>

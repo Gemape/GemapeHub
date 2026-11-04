@@ -462,6 +462,27 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   aplicarSaldos("epis");
   aplicarSaldos("uniformes");
   tabela("movimentacoes").push(...movimentosDe);
+  // Ocorrências de EPI (decisão 386): oito registros em datas e empresas diferentes, para a tela Ocorrências do módulo EPI ter o que mostrar.
+  const OCORRENCIAS_EPI: { empregado: number; epi: [string, number]; diasAtras: number; hora: string; responsavel: number; descricao: string }[] = [
+    { empregado: 0, epi: ["Botina", 0], diasAtras: 2, hora: "08:15", responsavel: 1, descricao: "Solado da botina descolou durante o turno; empregado trocou por um par reserva." },
+    { empregado: 1, epi: ["Luva", 1], diasAtras: 4, hora: "10:40", responsavel: 0, descricao: "Luva nitrílica rasgada ao manusear chapa; reposição solicitada." },
+    { empregado: 2, epi: ["Capacete", 0], diasAtras: 6, hora: "14:05", responsavel: 1, descricao: "Capacete com trinca na aba após queda de ferramenta; retirado de uso." },
+    { empregado: 3, epi: ["Protetor", 0], diasAtras: 9, hora: "09:30", responsavel: 2, descricao: "Protetor auricular extraviado na oficina; novo par entregue." },
+    { empregado: 4, epi: ["Botina", 1], diasAtras: 12, hora: "16:20", responsavel: 0, descricao: "Botina molhada e com biqueira amassada em obra; encaminhada para avaliação." },
+    { empregado: 5, epi: ["Luva", 2], diasAtras: 15, hora: "11:10", responsavel: 3, descricao: "Empregado relatou alergia ao material da luva; troca por modelo de raspa." },
+    { empregado: 6, epi: ["Óculos", 0], diasAtras: 21, hora: "07:50", responsavel: 2, descricao: "Lente do óculos riscada e embaçando; peça substituída pelo almoxarifado." },
+    { empregado: 7, epi: ["Luva", 0], diasAtras: 28, hora: "13:25", responsavel: 4, descricao: "Luva queimada em serviço de solda; baixa e reposição registradas." },
+  ];
+  OCORRENCIAS_EPI.forEach((o, n) => {
+    const empregado = EMPREGADOS[o.empregado];
+    const alvo = catalogoEpis.find((c) => c.item.nome.startsWith(o.epi[0]) && c.indice === o.epi[1]);
+    const item = empregado && alvo ? tabela("epis").find((l) => l["catalogo_id"] === alvo.id && l["empresa_id"] === empregado.empresaId) : undefined;
+    if (!empregado || !item) return;
+    tabela("ocorrencias").push({
+      id: `${PREFIXO}ocorrencia-epi-${n + 1}`, created_at: criadoEm, data: dia(agora, o.diasAtras), hora: o.hora, responsavel_registro: EMPREGADOS[o.responsavel]!.nome,
+      descricao_ocorrencia: o.descricao, tipo_ocorrencia: "EPI", empregado_id: empregado.id, item_id: item["id"], veiculo_id: null, empresa_id: empregado.empresaId,
+    });
+  });
   tabela("compras_epis").push(...compras.compras_epis);
   tabela("compras_uniformes").push(...compras.compras_uniformes);
 

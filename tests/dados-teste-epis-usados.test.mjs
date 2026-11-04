@@ -67,3 +67,17 @@ test("a aba Usados do Estoque mostra as devoluções: o total de usados é o que
   const total = itens.reduce((t, i) => t + Object.values(saldosDeEpi(parametros, i)).reduce((a, v) => a + Math.max(0, v), 0), 0);
   assert.equal(linhas.reduce((t, l) => t + l.disponivel, 0), total, "novos + usados = o estoque");
 });
+
+test("os dados de teste trazem ocorrências de EPI, cada uma com empregado, EPI e responsável", () => {
+  const d = dados(prontos());
+  const ocs = d.ocorrencias.filter((o) => o.tipo_ocorrencia === "EPI" && String(o.id).startsWith("teste-"));
+  assert.equal(ocs.length, 8);
+  for (const o of ocs) {
+    const item = d.epis.find((i) => i.id === o.item_id);
+    const empregado = d.empregados.find((e) => e.id === o.empregado_id);
+    assert.ok(item && empregado, "o EPI e o empregado existem");
+    assert.equal(item.empresa_id, empregado.empresa_id, "o EPI é da empresa do empregado");
+    assert.ok(o.descricao_ocorrencia && o.responsavel_registro && o.data && o.hora);
+  }
+  assert.ok(new Set(ocs.map((o) => o.empresa_id)).size >= 2, "em mais de uma empresa");
+});
