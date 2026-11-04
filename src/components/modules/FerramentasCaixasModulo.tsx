@@ -175,7 +175,7 @@ function CaixaItem({
   const linhas: LinhaCaixa[] = itens.flatMap((ci) => {
     if (!ci.ferramenta) return [];
     const c = controleDaFerramenta(historico, ci.ferramenta_id);
-    return [{ ferramenta: ci.ferramenta, quantidade: ci.quantidade, comEmpregado: c.comEmpregado, disponivel: disponivelNaCaixa(ci.quantidade, c.comEmpregado, c.baixadoDaCaixa) }];
+    return [{ ferramenta: ci.ferramenta, quantidade: ci.quantidade, comEmpregado: c.comEmpregado, disponivel: disponivelNaCaixa(ci.quantidade, c.comEmpregado, c.baixado + c.baixadoDaCaixa) }];
   });
   const comEmpregadoDe = (id: string) => controleDaFerramenta(historico, id).comEmpregado;
 
@@ -241,7 +241,7 @@ function CaixaItem({
                   <TableCell>{ci.quantidade}</TableCell>
                   <TableCell>{comEmpregado}</TableCell>
                   <TableCell>{controle.baixado + controle.baixadoDaCaixa}</TableCell>
-                  <TableCell className="font-semibold">{disponivelNaCaixa(ci.quantidade, comEmpregado, controle.baixadoDaCaixa)}</TableCell>
+                  <TableCell className="font-semibold">{disponivelNaCaixa(ci.quantidade, comEmpregado, controle.baixado + controle.baixadoDaCaixa)}</TableCell>
                   <TableCell>
                     <span
                       className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${

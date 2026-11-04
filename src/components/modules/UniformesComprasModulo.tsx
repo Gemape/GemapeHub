@@ -59,6 +59,7 @@ export function UniformesComprasModulo() {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [devolucaoAberta, setDevolucaoAberta] = useState(false);
+  const [visao, setVisao] = useState<"compras" | "devolucoes">("compras");
   const [editando, setEditando] = useState<CompraUniforme | null>(null);
   const [quantidade, setQuantidade] = useState(0);
   const [valorUnitario, setValorUnitario] = useState(0);
@@ -141,7 +142,6 @@ export function UniformesComprasModulo() {
 
   return (
     <div className="space-y-4">
-      <SugestaoComprasModulo modulo="uniforme" />
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex gap-2">
           <Button
@@ -169,17 +169,29 @@ export function UniformesComprasModulo() {
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
           <Button requiresWrite onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            placeholder="Buscar por fornecedor ou NF"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
+        {visao === "compras" && (
+          <BarraDeFiltros>
+            <Input
+              placeholder="Buscar por fornecedor ou NF"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </BarraDeFiltros>
+        )}
       </div>
 
-      <div className="panel overflow-x-auto">
+      {/* Compras e devoluções em listas separadas (decisão 380): um botão para cada, e só a lista escolhida aparece. */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Compras ou devoluções">
+        {([["compras", "Compras"], ["devolucoes", "Devoluções"]] as const).map(([id, rotulo]) => (
+          <Button key={id} type="button" className={visao === id ? "ring-2 ring-primary ring-offset-2" : "opacity-70"} aria-pressed={visao === id} onClick={() => setVisao(id)}>
+            {rotulo}
+          </Button>
+        ))}
+      </div>
+
+      {visao === "compras" && <SugestaoComprasModulo modulo="uniforme" />}
+
+      {visao === "compras" && <div className="panel overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -246,9 +258,9 @@ export function UniformesComprasModulo() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </div>}
 
-      <EntradasDeUsados modulo="uniforme" empresaId={empresaId} itens={itens} empresas={empresas} />
+      {visao === "devolucoes" && <EntradasDeUsados modulo="uniforme" empresaId={empresaId} itens={itens} empresas={empresas} mostrarVazio />}
       <DevolucaoEpiDialog modulo="uniforme" aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />
 
       <Dialog open={aberto} onOpenChange={setAberto}>

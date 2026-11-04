@@ -9,7 +9,7 @@ test("dec 238: Estoque mostra a empresa de cada linha, no CSV e no título de Co
   assert.match(tela, /<TableCell>\{nomeDaEmpresa\(item\.empresa_id\)\}<\/TableCell>/);
   assert.match(tela, /Empresa: nomeDaEmpresa\(item\.empresa_id\)/);
   assert.match(tela, /Configurar estoque — \{itemEditado\?\.nome\}\{itemEditado \? ` \(\$\{nomeDaEmpresa/);
-  // 7 colunas: o aviso de carregando e de lista vazia ocupam todas.
-  assert.equal((tela.match(/colSpan=\{7\}/g) ?? []).length, 2);
+  // 7 colunas (13 em Ferramentas, com a posição por caixa): o aviso de carregando e de lista vazia ocupam todas.
+  assert.equal((tela.match(/colSpan=\{ferr \? 13 : 7\}/g) ?? []).length, 2);
   assert.doesNotMatch(tela, /colSpan=\{6\}/);
 });

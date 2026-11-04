@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { demoSupabase } from "../src/integrations/supabase/demo-client.ts";
 
-// Ferramenta cadastrada em Parâmetros nasce sem estoque (o que existe fica na caixa): a baixa pela caixa não pode exigir estoque.
+// Decisão 379: o estoque da ferramenta controla entradas e baixas como o do EPI. A entrega e a devolução pela caixa não mexem no saldo; a baixa pela caixa o reduz.
 const novaFerramenta = async (estoque = 0) => {
   const empresa = crypto.randomUUID();
   const id = crypto.randomUUID();
@@ -15,19 +15,34 @@ const baixa = (empresa, id, extra = {}) => ({
 });
 const saldo = async (id) => (await demoSupabase.from("ferramentas").select("*").eq("id", id)).data[0].estoque_atual;
 
-test("baixa pela caixa de ferramenta sem estoque cadastrado é gravada e não deixa o estoque negativo", async () => {
-  const { empresa, id } = await novaFerramenta(0);
-  const { error } = await demoSupabase.from("movimentacoes").insert([baixa(empresa, id, { caixa_id: "cx-1" })]);
+test("baixa pela caixa reduz o saldo da ferramenta, como a baixa do EPI", async () => {
+  const { empresa, id } = await novaFerramenta(3);
+  const { error } = await demoSupabase.from("movimentacoes").insert([baixa(empresa, id, { caixa_id: "cx-1", quantidade: 2 })]);
   assert.equal(error, null);
-  assert.equal(await saldo(id), 0);
-  const { data } = await demoSupabase.from("movimentacoes").select("*").eq("item_id", id);
-  assert.equal(data.length, 1);
+  assert.equal(await saldo(id), 1);
 });
 
-test("baixa pela caixa com empregado também é gravada", async () => {
-  const { empresa, id } = await novaFerramenta(0);
+test("baixa pela caixa com empregado também reduz o saldo", async () => {
+  const { empresa, id } = await novaFerramenta(2);
   const { error } = await demoSupabase.from("movimentacoes").insert([baixa(empresa, id, { caixa_id: "cx-1", empregado_id: "ana" })]);
   assert.equal(error, null);
+  assert.equal(await saldo(id), 1);
+});
+
+test("baixa pela caixa sem saldo no estoque é recusada: a caixa não guarda mais do que o estoque tem", async () => {
+  const { empresa, id } = await novaFerramenta(0);
+  const { error } = await demoSupabase.from("movimentacoes").insert([baixa(empresa, id, { caixa_id: "cx-1" })]);
+  assert.match(error?.message ?? "", /Estoque insuficiente/);
+});
+
+test("entrega e devolução pela caixa não mexem no saldo, só a baixa", async () => {
+  const { empresa, id } = await novaFerramenta(2);
+  const entrega = { ...baixa(empresa, id, { caixa_id: "cx-1", empregado_id: "ana" }), motivo_baixa: "Fornecimento ao Empregado" };
+  assert.equal((await demoSupabase.from("movimentacoes").insert([entrega])).error, null);
+  assert.equal(await saldo(id), 2);
+  const devolucao = { ...entrega, tipo_movimentacao: "Devolucao", motivo_baixa: null };
+  assert.equal((await demoSupabase.from("movimentacoes").insert([devolucao])).error, null);
+  assert.equal(await saldo(id), 2);
 });
 
 test("saída comum sem estoque continua recusada", async () => {

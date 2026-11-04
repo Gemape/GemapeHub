@@ -502,6 +502,24 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       empregado_nome: EMPREGADOS[n]!.nome, status: "Ativa", observacao: "Portador de teste", data_inicio: dia(agora, 40), data_fim: null,
     });
   });
+  // Movimentação das ferramentas pelas caixas (decisão 379), para a posição por caixa ter o que mostrar: a primeira ferramenta de cada caixa é entregue ao portador (a da caixa 4 é devolvida em
+  // seguida) e, nas caixas 2 e 3, a segunda sofre baixa dentro da caixa. A entrega e a devolução não mexem no saldo; a baixa o reduz.
+  const movimentoDeCaixa = (n: number, ferramentaId: string, empresaId: unknown, extra: Linha) => ({
+    id: `${PREFIXO}mov-caixa-${n + 1}-${String(extra["tipo_movimentacao"])}-${String(extra["motivo_baixa"] ?? "entrega")}-${ferramentaId}`, created_at: criadoEm, modulo: "ferramenta", item_id: ferramentaId, empresa_id: empresaId, quantidade: 1,
+    tamanho_id: null, onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false, observacao: null, caixa_id: `${PREFIXO}caixa-${n + 1}`, ...extra,
+  });
+  ferramentas.slice(0, CAIXAS_TESTE).forEach(({ f }, n) => {
+    const daCaixa = ferramentas.filter((_, k) => k % CAIXAS_TESTE === n);
+    const empresaDaCaixa = empresaIds[f.empresaIndice];
+    const portadorId = EMPREGADOS[n]!.id;
+    tabela("movimentacoes").push(movimentoDeCaixa(n, daCaixa[0]!.id, empresaDaCaixa, { tipo_movimentacao: "Saida", motivo_baixa: "Fornecimento ao Empregado", empregado_id: portadorId, data_movimentacao: dia(agora, 12 - n), observacao: "Entrega da caixa ao portador." }));
+    if (n === 3) tabela("movimentacoes").push(movimentoDeCaixa(n, daCaixa[0]!.id, empresaDaCaixa, { tipo_movimentacao: "Devolucao", motivo_baixa: null, empregado_id: portadorId, data_movimentacao: dia(agora, 5), observacao: "Devolução à caixa." }));
+    if ((n === 1 || n === 2) && daCaixa[1]) {
+      tabela("movimentacoes").push(movimentoDeCaixa(n, daCaixa[1].id, empresaDaCaixa, { tipo_movimentacao: "Saida", motivo_baixa: "Desgaste Natural", onus_baixa: "Da Empresa", empregado_id: null, data_movimentacao: dia(agora, 3), observacao: "Baixa pela caixa: desgaste." }));
+      const linha = tabela("ferramentas").find((x) => x["id"] === daCaixa[1]!.id);
+      if (linha) linha["estoque_atual"] = (Number(linha["estoque_atual"]) || 0) - 1;
+    }
+  });
   storage.setItem(CHAVE_DADOS, JSON.stringify(dados));
   const guardados = lerJson(storage, "gemape-demo-portadores-caixa");
   storage.setItem("gemape-demo-portadores-caixa", JSON.stringify([...(Array.isArray(guardados) ? guardados : []), ...portadores]));

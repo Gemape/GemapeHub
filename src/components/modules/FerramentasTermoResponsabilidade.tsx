@@ -97,7 +97,7 @@ export function FerramentasTermoResponsabilidade() {
     );
     return itensDaCaixa.map((ci) => {
       const c = controleDaFerramenta(historicoCaixa, ci.ferramenta_id);
-      return { ferramentaId: ci.ferramenta_id, cadastrada: ci.quantidade, comEmpregado: c.comEmpregado, guardadas: disponivelNaCaixa(ci.quantidade, c.comEmpregado, c.baixadoDaCaixa) };
+      return { ferramentaId: ci.ferramenta_id, cadastrada: ci.quantidade, comEmpregado: c.comEmpregado, guardadas: disponivelNaCaixa(ci.quantidade, c.comEmpregado, c.baixado + c.baixadoDaCaixa) };
     });
   }
 

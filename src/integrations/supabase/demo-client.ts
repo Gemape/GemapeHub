@@ -1,6 +1,7 @@
 // @ts-nocheck -- adaptador propositalmente genérico para emular a API de consulta no demo.
 /* Ambiente de demonstração local. Não envia dados e não substitui o Supabase real. */
 import { codigoCaixa, numeroDaCaixa } from "../../lib/caixas-habilitadas.ts";
+import { ehBaixa } from "../../lib/historico-movimentacoes.ts";
 import { EVENTO_PARAMETROS, lerParametros } from "../../lib/parametros-base.ts";
 import { TABELAS_EPI, TABELAS_UNIFORME, duplicadoNoCatalogo, editarEpiCatalogo, excluirEpiCatalogo, sincronizarEstoqueEpis, travasDoItem, type TabelasCatalogo } from "../../lib/epi-catalogo.ts";
 import { aplicarSeparacao, opcoesDaSeparacao } from "../../lib/epi-separar-tamanhos.ts";
@@ -119,8 +120,9 @@ const aplicarEstoque = (movimentacoes: Linha[]): Error | null => {
         );
     }
     if (delta === 0) continue;
-    // Ferramenta movimentada pela caixa (entrega, devolução ou baixa): a quantidade vive na caixa, cujo histórico a controla, e não no estoque do cadastro, que nasce zerado.
-    if (m.modulo === "ferramenta" && m.caixa_id && (m.tipo_movimentacao === "Saida" || m.tipo_movimentacao === "Devolucao")) continue;
+    // Ferramenta movimentada pela caixa: a entrega e a devolução só mudam onde ela está (a ferramenta continua sendo da empresa) e não mexem no saldo; a baixa definitiva, com ou sem
+    // caixa, sai do saldo, como a baixa do EPI e do uniforme (decisão 379).
+    if (m.modulo === "ferramenta" && m.caixa_id && (m.tipo_movimentacao === "Devolucao" || (m.tipo_movimentacao === "Saida" && !ehBaixa(m)))) continue;
     const saldo = (saldos.get(item) ?? (Number(item.estoque_atual) || 0)) + delta;
     if (saldo < 0) return new Error("Estoque insuficiente");
     saldos.set(item, saldo);
