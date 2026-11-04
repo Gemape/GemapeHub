@@ -58,7 +58,7 @@ export function EscolherCamposRelatorio({ aberto, onAberto, titulo, descricao, c
         )}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onAberto(false)}>Cancelar</Button>
-          <Button type="button" disabled={marcados.length === 0} onClick={() => onGerar(campos.map((c) => c.id).filter((id) => marcados.includes(id)), marcadas)}>Gerar relatório</Button>
+          <Button type="button" disabled={marcados.length === 0} onClick={() => onGerar(campos.map((c) => c.id).filter((id) => marcados.includes(id)), marcadas)}>Visualizar relatório</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
