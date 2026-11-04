@@ -105,32 +105,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
 
   return (
     <div className="space-y-4">
-      <section className="space-y-2" aria-labelledby="viagens-questionarios">
-        <div className="flex flex-wrap items-baseline gap-x-3">
-          <h2 id="viagens-questionarios" className="text-lg font-semibold">Questionários de despesas</h2>
-          <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar.</p>
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {tipos.map((t) => {
-            const Icone = iconeDoTipo(t);
-            const acaoRequerida = !questionarioPublicado(estado, t);
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTipo(t)}
-                disabled={acaoRequerida}
-                title={acaoRequerida ? "Ação requerida: corrija as ramificações em Parâmetros antes de publicar" : undefined}
-                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-12 items-center justify-center gap-3 px-3 py-1.5 text-left text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-              >
-                <Icone className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
-                <span className="break-words">{t}</span>
-                {acaoRequerida && <span className="text-xs font-semibold text-destructive">Ação requerida</span>}
-              </button>
-            );
-          })}
-        </div>
-      </section>
+      {alternador}
 
       <section className="space-y-2" aria-labelledby="viagens-indicadores">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -172,16 +147,15 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
       </section>
 
       {/* A lista fica montada e só escondida, para não perder o filtro e as despesas marcadas ao ver os resultados dos técnicos. */}
-      <div hidden={visao !== "despesas"}><ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} alternador={alternador} /></div>
+      <div hidden={visao !== "despesas"}><ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} /></div>
 
       {visao === "tecnicos" && <section className="space-y-2" aria-labelledby="viagens-tecnicos">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {alternador}
           <h2 id="viagens-tecnicos" className="sr-only">Resultados dos técnicos</h2>
           {seletorPeriodo("tecnicos")}
         </div>
         {noPeriodo === 0 && <p className="text-sm text-muted-foreground">Nenhuma despesa lançada em {rotuloPeriodo(periodo)}.</p>}
-        <div className="panel flex max-h-[max(8rem,calc(100dvh-43rem))] flex-col overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+        <div className="panel flex max-h-[max(6rem,calc(100dvh-50rem))] flex-col overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -211,6 +185,33 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           </Table>
         </div>
       </section>}
+
+      <section className="space-y-2" aria-labelledby="viagens-questionarios">
+        <div className="flex flex-wrap items-baseline gap-x-3">
+          <h2 id="viagens-questionarios" className="text-lg font-semibold">Questionários de despesas</h2>
+          <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {tipos.map((t) => {
+            const Icone = iconeDoTipo(t);
+            const acaoRequerida = !questionarioPublicado(estado, t);
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTipo(t)}
+                disabled={acaoRequerida}
+                title={acaoRequerida ? "Ação requerida: corrija as ramificações em Parâmetros antes de publicar" : undefined}
+                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-12 items-center justify-center gap-3 px-3 py-1.5 text-left text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                <Icone className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
+                <span className="break-words">{t}</span>
+                {acaoRequerida && <span className="text-xs font-semibold text-destructive">Ação requerida</span>}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {extratoDe && <ViagensExtrato tecnico={extratoDe} periodoInicial={periodo} lista={lista} aoFechar={() => setExtratoDe(null)} />}
     </div>
