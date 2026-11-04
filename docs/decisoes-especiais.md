@@ -2086,7 +2086,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 ## 370. Manutenção e Ocorrências: cards e botões menos alargados
 
-- Ordem do responsável: nas telas **Veículos > Manutenção** e **Veículos > Ocorrências**, os cards de indicadores deixam de esticar na largura da tela. Cada card tem de 15 a 18 rem, em fileira alinhada à esquerda (os de Ocorrências passam ao desenho compacto, como os de Manutenção), e os botões azuis ficam compactos e arredondados numa **linha só, à direita** (em vez de empilhados): em Manutenção, Manutenções planejadas, Manutenções realizadas e Cadastrar nova manutenção; em Ocorrências, Ver ocorrências e Nova ocorrência. Os gráficos e a tabela de diagnóstico não mudam. Só ajuste visual; nada no Supabase.
+- Ordem do responsável: nas telas **Veículos > Manutenção** e **Veículos > Ocorrências**, os cards de indicadores deixam de esticar na largura da tela. Cada card tem de 15 a 18 rem, em fileira alinhada à esquerda (os de Ocorrências passam ao desenho compacto, como os de Manutenção), e os botões azuis ficam compactos e arredondados numa **linha só, à direita** (em vez de empilhados): em Manutenção, Manutenções planejadas, Manutenções realizadas e Cadastrar nova manutenção; em Ocorrências, Ver ocorrências e Nova ocorrência. O mesmo estilo vale nas telas das listas (Nova ocorrência e Voltar ao painel). Os gráficos e a tabela de diagnóstico não mudam. Só ajuste visual; nada no Supabase.
 
 ## 371. EPI, Estoque: toda entrada e toda saída movimentam o estoque
 

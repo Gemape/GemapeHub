@@ -184,7 +184,7 @@ export function ManutencaoVeiculoModulo() {
 
   const botaoCadastrar = <Button requiresWrite size="sm" className="rounded-full px-4" onClick={() => abrir()}>Cadastrar nova manutenção</Button>;
   const voltar = (
-    <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={() => setAba("painel")}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+    <Button ref={voltarRef} type="button" variant="outline" size="sm" className="rounded-full" onClick={() => setAba("painel")}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
   );
 
   return (
