@@ -119,7 +119,7 @@ export function Cartao({
           </div>
         )}
         {indicador.detalhe && (
-          <p className={`text-xs text-muted-foreground ${compacto ? "truncate" : ""}`} title={compacto ? indicador.detalhe : undefined}>
+          <p className={`text-xs text-muted-foreground ${compacto ? "line-clamp-2" : ""}`} title={compacto ? indicador.detalhe : undefined}>
             {indicador.detalhe}
           </p>
         )}

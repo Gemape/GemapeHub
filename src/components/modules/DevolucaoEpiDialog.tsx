@@ -27,13 +27,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAccess } from "@/lib/access-context";
 import { compraDeOrigem, origemDaDevolucao, posseDoEmpregado } from "@/lib/devolucao-estoque-epi";
 import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
+import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { lerMotivosDevolucaoEpi } from "@/lib/epi-parametros";
 import { lerHistoricoEpiPorItem, mensagemSoAdmin, registrarDevolucaoEpi } from "@/lib/entrega-epi";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { formatarData } from "@/lib/gemape";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { useComprasEpis, useEmpregados, useEmpresas, useItens } from "@/lib/hooks-gemape";
+import { useComprasEpis, useComprasUniformes, useEmpregados, useEmpresas, useItens } from "@/lib/hooks-gemape";
 import { TODAS } from "@/lib/empresa-context";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -44,10 +45,13 @@ type Escolha = { marcado: boolean; quantidade: number; motivo: string };
 export function DevolucaoEpiDialog({
   aberto,
   onAbrirMudou,
+  modulo = "epi",
 }: {
   aberto: boolean;
   onAbrirMudou: (aberto: boolean) => void;
+  modulo?: "epi" | "uniforme";
 }) {
+  const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { isAdmin } = useAccess();
   const queryClient = useQueryClient();
   const { user } = useRouteContext({ from: "/_authenticated" });
@@ -71,12 +75,14 @@ export function DevolucaoEpiDialog({
   const { data: empresas = [] } = useEmpresas();
   const empregado = empregados.find((e) => e.id === empregadoId);
   const empresaId = empregado?.empresa_id ?? "";
-  const { data: itens = [] } = useItens("epi", empresaId || TODAS);
-  const { data: compras = [] } = useComprasEpis(empresaId || TODAS);
+  const { data: itens = [] } = useItens(modulo, empresaId || TODAS);
+  const { data: comprasEpi = [] } = useComprasEpis(empresaId || TODAS, "", modulo === "epi");
+  const { data: comprasUniforme = [] } = useComprasUniformes(empresaId || TODAS, "", modulo === "uniforme");
+  const compras = modulo === "epi" ? comprasEpi : comprasUniforme;
   const historico = useQuery({
-    queryKey: ["epi-devolucao-em-posse", empresaId, empregadoId],
+    queryKey: [`${modulo}-devolucao-em-posse`, empresaId, empregadoId],
     enabled: aberto && Boolean(empresaId && empregadoId),
-    queryFn: () => lerHistoricoEpiPorItem(supabase, { empresaId, empregadoId, modulo: "epi" }),
+    queryFn: () => lerHistoricoEpiPorItem(supabase, { empresaId, empregadoId, modulo }),
   });
   const linhasEmPosse = useMemo(
     () =>
@@ -111,7 +117,7 @@ export function DevolucaoEpiDialog({
     e.preventDefault();
     if (trava.current) return;
     if (!isAdmin) {
-      alert(mensagemSoAdmin("epi"));
+      alert(mensagemSoAdmin(modulo));
       return;
     }
     if (!empregado) {
@@ -119,7 +125,7 @@ export function DevolucaoEpiDialog({
       return;
     }
     if (marcadas.length === 0) {
-      alert("Marque pelo menos um EPI para devolver.");
+      alert(`Marque pelo menos um ${rotulo} para devolver.`);
       return;
     }
     if (!data) {
@@ -156,7 +162,7 @@ export function DevolucaoEpiDialog({
         empregado,
         data,
         observacao,
-        modulo: "epi",
+        modulo,
         comCodigo: MODO_DEMO,
         administrador: isAdmin,
         responsavel,
@@ -186,10 +192,10 @@ export function DevolucaoEpiDialog({
     <Dialog open={aberto} onOpenChange={fechar}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Devolução de EPI</DialogTitle>
+          <DialogTitle>Devolução de {rotulo}</DialogTitle>
           <DialogDescription>
             O que for devolvido entra no estoque como produto usado, com os dados da compra
-            original: data da compra, nota fiscal, fornecedor, tamanho e CA.
+            original: data da compra, nota fiscal, fornecedor, tamanho{modulo === "epi" ? " e CA" : ""}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={registrar} className="space-y-4">
@@ -206,7 +212,7 @@ export function DevolucaoEpiDialog({
                 <SelectValue placeholder="Selecione o funcionário" />
               </SelectTrigger>
               <SelectContent>
-                {soEmpregadosDeEpi(empregados).map((e) => (
+                {(modulo === "epi" ? soEmpregadosDeEpi : soEmpregadosDeUniforme)(empregados).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                     {empresas.find((x) => x.id === e.empresa_id)
@@ -220,12 +226,12 @@ export function DevolucaoEpiDialog({
 
           {empregado && (
             <div className="space-y-2">
-              <p className="text-sm font-medium">EPIs em posse de {empregado.nome}</p>
+              <p className="text-sm font-medium">{modulo === "epi" ? "EPIs" : "Uniformes"} em posse de {empregado.nome}</p>
               {historico.isLoading ? (
                 <p className="text-sm text-muted-foreground">Carregando...</p>
               ) : linhasEmPosse.length === 0 ? (
                 <p className="rounded-lg border p-3 text-sm text-muted-foreground">
-                  Este funcionário não tem EPI em posse para devolver.
+                  Este funcionário não tem {rotulo} em posse para devolver.
                 </p>
               ) : (
                 <ul className="divide-y rounded-lg border">
@@ -254,8 +260,8 @@ export function DevolucaoEpiDialog({
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {l.origem
-                              ? `Compra original: ${formatarData(l.origem.data_compra)} · NF ${l.origem.nota_fiscal || "não informada"} · ${l.origem.fornecedor || "fornecedor não informado"} · CA ${l.origem.ca || l.item?.ca || "não informado"}`
-                              : "Sem compra de origem registrada para este EPI."}
+                              ? `Compra original: ${formatarData(l.origem.data_compra)} · NF ${l.origem.nota_fiscal || "não informada"} · ${l.origem.fornecedor || "fornecedor não informado"}${modulo === "epi" ? ` · CA ${l.origem.ca || l.item?.ca || "não informado"}` : ""}`
+                              : `Sem compra de origem registrada para este ${rotulo}.`}
                           </p>
                         </div>
                         <Input
@@ -332,7 +338,7 @@ export function DevolucaoEpiDialog({
           </div>
           {!isAdmin && (
             <p className="text-xs text-muted-foreground">
-              A devolução de EPI é registrada somente pelo Administrador.
+              A devolução de {rotulo} é registrada somente pelo Administrador.
             </p>
           )}
           <DialogFooter>

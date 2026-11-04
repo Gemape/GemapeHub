@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const le = (c) => readFileSync(new URL(`../src/components/modules/${c}`, import.meta.url), "utf8");
-const GRADE = /grid justify-start gap-3 \[grid-template-columns:repeat\(auto-fill,minmax\(min\(15rem,100%\),18rem\)\)\]/;
+const GRADE = /<GradeDeCartoes colunas=\{4\}/;
 
-test("os cards de Manutenção e de Ocorrências têm largura limitada, alinhados à esquerda, e compactos", () => {
+test("os cards de Manutenção e de Ocorrências usam a grade padrão de cartões (decisão 375), compactos", () => {
   for (const f of ["CartoesManutencao.tsx", "CartoesOcorrencias.tsx"]) {
     const t = le(f);
     assert.match(t, GRADE, f);

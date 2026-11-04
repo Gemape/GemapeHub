@@ -1,3 +1,4 @@
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, Forklift, TriangleAlert, Wrench } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
@@ -105,12 +106,12 @@ export function InventarioEquipamentoModulo() {
         </BarraDeFiltros>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <GradeDeCartoes colunas={4}>
         <StatCard titulo="Equipamentos" valor={equipamentos.length} icone={Forklift} compacto />
         <StatCard titulo="Em manutenção" valor={equipamentos.filter((e) => e.status === "Em manutenção").length} icone={Wrench} compacto />
         <StatCard titulo="Ocorrências abertas" valor={abertasTotal} icone={TriangleAlert} compacto />
         <StatCard titulo="Custo de manutenção" valor={reais(custoTotal)} icone={Banknote} compacto />
-      </div>
+      </GradeDeCartoes>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
       <div className="max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">

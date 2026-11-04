@@ -2102,3 +2102,16 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - **Baixar Definitivas:** o valor de cada baixa (e o total) saía sempre **R$ 0,00**, porque a baixa só traz o preço quando o banco o grava na hora. Agora, sem preço registrado, vale o preço da **compra do mesmo EPI** (e tamanho, se houver) **mais recente até a data da baixa**; sem compra anterior, a primeira compra depois dela; sem nenhuma compra, zero. A tela, a impressão e o CSV usam o mesmo cálculo.
 - **Histórico do empregado:** (a) lê **todas as movimentações do empregado**, de qualquer empresa, em vez de só as da empresa do cadastro dele; (b) a coluna Tipo mostra "Saída (entrega)", "Saída (baixa)" ou "Devolução", em vez de "Saida" e "Devolucao"; (c) cada **entrega** mostra a sua situação: Em posse, Devolvido, Baixado, Devolvido e baixado, ou "Em posse: 2 de 5" (parcial). Como o histórico não diz de qual entrega saiu cada devolução ou baixa, vale a regra de que **o mais antigo sai primeiro**, por EPI e tamanho; os cartões (Entregues, Devolvidos, Baixados e Em posse) seguem contando o histórico inteiro. A busca também acha pelo tipo e pela situação. Só modo demonstração; nada no Supabase.
+
+## 374. Uniformes: a mesma lógica de movimentação de estoque do EPI
+
+- **Estoque:** a aba Estoque dos Uniformes passou a ser a mesma consulta do EPI (decisão 329), com os botões **Novos** e **Usados**, as compras de origem, o mínimo por tamanho, o alerta e a média de consumo mensal. Só não tem a coluna e o filtro de **CA**, que não existem em uniforme.
+- **Entrega de uniforme:** continua dando baixa no saldo (por tamanho). A **devolução** feita na Entrega Uniforme agora entra no estoque como **usada**, com a compra mais antiga do uniforme no tamanho (data, nota fiscal e fornecedor) e o motivo.
+- **Compras (Uniformes):** ganhou o botão **Devolução** ao lado de Registrar Compra (mesmo diálogo do EPI: escolhe o funcionário, vê o que ele tem em posse e devolve com motivo) e a lista **Entradas de usados (devoluções)**. A aba segue chamada "Compras" nos Uniformes; os motivos de devolução são os do EPI, pois os Uniformes não têm cadastro próprio deles.
+- **Dados de teste (versão 34):** as devoluções de uniforme dos dados de teste entram como usadas, para a aba Usados ter o que mostrar.
+
+## 375. Cartões e KPIs: uma grade padrão em todas as telas
+
+- Todo cartão e KPI usa o card da Frota (compacto) e vive numa só grade, `GradeDeCartoes`, logo abaixo da barra de ações e filtros: mesmo espaçamento, mesma altura em cada fileira, duas colunas no celular e até 3, 4 ou 5 em tela larga.
+- A grade vale para Dashboard, Dashboard do módulo, relatórios de EPI e Uniformes, Abastecimento, Check list, Manutenção e Ocorrências de Veículos, Viagens e Equipamentos.
+- Em **Equipamentos > Indicadores** o card próprio (colorido, com a lista de cálculo aberta) passou ao card padrão; o "Como é calculado" abre no ícone de informação ao lado do título, e a pergunta e a meta ficam no subtítulo.

@@ -1,5 +1,6 @@
 import { CalendarClock } from "lucide-react";
 
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { Cartao } from "@/components/modules/CartoesIndicadoresFrota";
 import type { IndicadoresDaManutencao } from "@/lib/manutencao-indicadores";
 
@@ -7,11 +8,7 @@ import type { IndicadoresDaManutencao } from "@/lib/manutencao-indicadores";
 // (com a cor e a seta da faixa) e as previstas (quantidade). As manutenções preventivas e corretivas são botões da lista, no módulo.
 export function CartoesManutencao({ indicadores }: { indicadores: IndicadoresDaManutencao }) {
   return (
-    <section
-      // Cards de largura limitada, alinhados à esquerda: não esticam a tela inteira em monitor largo.
-      className="grid justify-start gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(15rem,100%),18rem))]"
-      aria-label="Indicadores de manutenção"
-    >
+    <GradeDeCartoes colunas={4} rotulo="Indicadores de manutenção">
       <Cartao titulo="Realizadas no prazo" indicador={indicadores.noPrazo} compacto />
       <Cartao titulo="Não realizadas no prazo" indicador={indicadores.naoRealizadas} compacto />
       <Cartao
@@ -21,6 +18,6 @@ export function CartoesManutencao({ indicadores }: { indicadores: IndicadoresDaM
         compacto
         indicador={indicadores.previstas.indicador}
       />
-    </section>
+    </GradeDeCartoes>
   );
 }

@@ -1,5 +1,6 @@
 import { AlertTriangle, Boxes, PackageCheck, Wallet } from "lucide-react";
 
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { StatCard } from "@/components/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,32 +59,36 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      <GradeDeCartoes colunas={4}>
         <StatCard
           titulo="Itens nesta consulta"
           valor={itens.length}
           detalhe={`${totalEstoque} unidades em estoque`}
           icone={Boxes}
+          compacto
         />
         <StatCard
           titulo="Saídas recentes"
           valor={emUso}
           detalhe="Unidades entregues nas últimas movimentações"
           icone={PackageCheck}
+          compacto
         />
         <StatCard
           titulo="Valor em estoque"
           valor={formatarMoeda(valorEstoque)}
           detalhe="Itens carregados × preço informado; sem preço conta como zero"
           icone={Wallet}
+          compacto
         />
         <StatCard
           titulo="Alertas de reposição"
           valor={alertas.length}
           detalhe="Cobertura abaixo de 180 dias"
           icone={AlertTriangle}
+          compacto
         />
-      </div>
+      </GradeDeCartoes>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

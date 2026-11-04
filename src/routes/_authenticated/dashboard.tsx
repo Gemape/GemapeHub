@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, Boxes, Building2, Car, Users, Wallet } from "lucide-react";
 
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,31 +141,31 @@ function DashboardGeral() {
         </Button>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      <GradeDeCartoes colunas={4}>
         <StatCard
           titulo="Itens cadastrados"
           valor={itens.length}
           detalhe={`${itens.reduce((s, i) => s + (i.estoque_atual ?? 0), 0)} unidades`}
-          icone={Boxes}
+          icone={Boxes} compacto
         />
         <StatCard
           titulo="Valor total em estoque"
           valor={formatarMoeda(valorTotal)}
-          icone={Wallet}
+          icone={Wallet} compacto
         />
         <StatCard
           titulo="Veículos"
           valor={veiculos.length}
           detalhe={`${veiculos.filter((v) => v.status === "Ativo").length} ativos`}
-          icone={Car}
+          icone={Car} compacto
         />
         <StatCard
           titulo="Empregados ativos"
           valor={totalEmpregados}
           detalhe="Somente colaboradores em atividade"
-          icone={Users}
+          icone={Users} compacto
         />
-      </div>
+      </GradeDeCartoes>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

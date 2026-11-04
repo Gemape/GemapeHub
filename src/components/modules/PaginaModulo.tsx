@@ -48,8 +48,8 @@ export function PaginaModulo({
           <DashboardModulo modulo={modulo} />
         </TabsContent>
         <TabsContent value="estoque" className="mt-5">
-          {/* No EPI o Estoque é só consulta (decisão 329): novos e usados, com os filtros e a compra de origem. */}
-          {modulo === "epi" ? <EstoqueEpiModulo /> : <EstoqueModulo modulo={modulo} />}
+          {/* No EPI e nos Uniformes o Estoque é só consulta (decisões 329 e 374): novos e usados, com os filtros e a compra de origem. */}
+          {modulo === "epi" || modulo === "uniforme" ? <EstoqueEpiModulo modulo={modulo} /> : <EstoqueModulo modulo={modulo} />}
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />

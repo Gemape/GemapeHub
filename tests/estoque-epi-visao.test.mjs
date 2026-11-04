@@ -131,7 +131,7 @@ test("filtros: empresa, palavra-chave (inclusive tamanho), data da compra, forne
 test("a aba Estoque do EPI é a consulta nova, com os botões Novos e Usados e as colunas na ordem pedida", () => {
   assert.match(
     ler("components/modules/PaginaModulo.tsx"),
-    /modulo === "epi" \? <EstoqueEpiModulo \/> : <EstoqueModulo modulo=\{modulo\} \/>/,
+    /modulo === "epi" \|\| modulo === "uniforme" \? <EstoqueEpiModulo modulo=\{modulo\} \/> : <EstoqueModulo modulo=\{modulo\} \/>/,
   );
   const tela = ler("components/modules/EstoqueEpiModulo.tsx");
   assert.match(tela, /aria-pressed=\{condicao === c\}/);

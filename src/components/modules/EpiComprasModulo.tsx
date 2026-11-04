@@ -409,13 +409,13 @@ type MovimentoUsado = {
   id: string; data_movimentacao: string; empresa_id: string; item_id: string | null; quantidade: number; tamanho_id?: string | null; empregado_id?: string | null;
   codigo_movimentacao?: string | null; condicao?: string | null; motivo_devolucao?: string | null; data_compra_origem?: string | null; nota_fiscal_origem?: string | null; fornecedor_origem?: string | null; ca_origem?: string | null;
 };
-function EntradasDeUsados({ empresaId, itens, empresas }: { empresaId: string; itens: { id: string; nome: string; codigo_sku: string }[]; empresas: { id: string; nome_fantasia: string }[] }) {
+export function EntradasDeUsados({ empresaId, itens, empresas, modulo = "epi" }: { modulo?: "epi" | "uniforme"; empresaId: string; itens: { id: string; nome: string; codigo_sku: string }[]; empresas: { id: string; nome_fantasia: string }[] }) {
   const parametros = useParametrosBase();
   const { data: empregados = [] } = useEmpregados(TODAS);
   const { data: movimentos = [] } = useQuery({
-    queryKey: ["epi-entradas-usados", empresaId],
+    queryKey: [`${modulo}-entradas-usados`, empresaId],
     queryFn: async () => {
-      let q = supabase.from("movimentacoes").select("*").eq("modulo", "epi").eq("tipo_movimentacao", "Devolucao");
+      let q = supabase.from("movimentacoes").select("*").eq("modulo", modulo).eq("tipo_movimentacao", "Devolucao");
       if (empresaId !== TODAS) q = q.eq("empresa_id", empresaId);
       const { data } = await q;
       return ((data ?? []) as MovimentoUsado[]).filter((m) => m.condicao === "usado").sort((a, b) => b.data_movimentacao.localeCompare(a.data_movimentacao));
@@ -432,14 +432,14 @@ function EntradasDeUsados({ empresaId, itens, empresas }: { empresaId: string; i
               <TableHead>Devolução</TableHead>
               <TableHead>Funcionário</TableHead>
               <TableHead>Empresa</TableHead>
-              <TableHead>EPI</TableHead>
+              <TableHead>{modulo === "epi" ? "EPI" : "Uniforme"}</TableHead>
               <TableHead>Tamanho</TableHead>
               <TableHead className="text-right">Qtd</TableHead>
               <TableHead>Motivo</TableHead>
               <TableHead>Compra original</TableHead>
               <TableHead>NF</TableHead>
               <TableHead>Fornecedor</TableHead>
-              <TableHead>CA</TableHead>
+              {modulo === "epi" && <TableHead>CA</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -455,7 +455,7 @@ function EntradasDeUsados({ empresaId, itens, empresas }: { empresaId: string; i
                 <TableCell>{m.data_compra_origem ? formatarData(m.data_compra_origem) : "—"}</TableCell>
                 <TableCell>{m.nota_fiscal_origem || "—"}</TableCell>
                 <TableCell>{m.fornecedor_origem || "—"}</TableCell>
-                <TableCell>{m.ca_origem || "—"}</TableCell>
+                {modulo === "epi" && <TableCell>{m.ca_origem || "—"}</TableCell>}
               </TableRow>
             ))}
           </TableBody>

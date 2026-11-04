@@ -1,3 +1,4 @@
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { Cartao } from "@/components/modules/CartoesIndicadoresFrota";
 import type { IndicadorDaFrota } from "@/lib/frota-indicadores";
 
@@ -9,13 +10,9 @@ export function CartoesOcorrencias({
   indicadores: { noPrazo: IndicadorDaFrota; naoTratadas: IndicadorDaFrota };
 }) {
   return (
-    <section
-      // Cards de largura limitada, alinhados à esquerda: não esticam a tela inteira em monitor largo.
-      className="grid justify-start gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(15rem,100%),18rem))]"
-      aria-label="Indicadores de ocorrências"
-    >
+    <GradeDeCartoes colunas={4} rotulo="Indicadores de ocorrências">
       <Cartao titulo="Tratadas no prazo" indicador={indicadores.noPrazo} compacto />
       <Cartao titulo="Não tratadas" indicador={indicadores.naoTratadas} compacto />
-    </section>
+    </GradeDeCartoes>
   );
 }

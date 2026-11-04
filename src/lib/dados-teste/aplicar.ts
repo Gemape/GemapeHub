@@ -415,6 +415,14 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       if (k === 4) entrega("uniforme", "uniformes", uniDe("Jaqueta", jaqueta).id, empresa, 1, diaBase - 6, TAMANHO_JAQUETA[jaqueta], { ...quem, responsavel_nome: almoxarifado, observacao: "Devolução por troca de função" }, "Devolucao");
     }
   }
+  // Toda devolução de uniforme também entra no estoque como usada (decisão 374), com a compra mais antiga do uniforme e o motivo da devolução.
+  movimentosDe.filter((m) => m["modulo"] === "uniforme" && m["tipo_movimentacao"] === "Devolucao").forEach((m, n) => {
+    const origem = compras.compras_uniformes.filter((c) => c["item_id"] === m["item_id"]).sort((x, y) => String(x["data_compra"]).localeCompare(String(y["data_compra"])))[0];
+    Object.assign(m, {
+      condicao: "usado", motivo_devolucao: ["Fim do uso", "Troca de tamanho", "Mudança de função", "Troca por desgaste"][n % 4],
+      ...(origem ? { compra_origem_id: origem["id"], data_compra_origem: origem["data_compra"], nota_fiscal_origem: origem["nota_fiscal"], fornecedor_origem: origem["fornecedor"], fornecedor_id_origem: origem["fornecedor_id"] } : {}),
+    });
+  });
 
   // Ferramentas: uma por empresa, com estoque inicial por entrada.
   const novaFerramenta = sequencia("ferramenta");

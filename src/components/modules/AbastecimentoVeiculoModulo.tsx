@@ -1,3 +1,4 @@
+import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, Droplets, Fuel, Gauge } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
@@ -173,12 +174,12 @@ export function AbastecimentoVeiculoModulo() {
       </div>
 
       {resumo && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <GradeDeCartoes colunas={4}>
           <StatCard titulo="Abastecimentos" valor={linhas.length} icone={Fuel} compacto />
           <StatCard titulo="Litros" valor={resumo.litros.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} icone={Droplets} compacto />
           <StatCard titulo="Total gasto" valor={reais(resumo.gasto)} icone={Banknote} compacto />
           <StatCard titulo="Média de consumo" valor={resumo.media === null ? "—" : `${resumo.media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km/L`} icone={Gauge} compacto />
-        </div>
+        </GradeDeCartoes>
       )}
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
