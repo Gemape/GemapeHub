@@ -61,8 +61,8 @@ export function FerramentasTermoResponsabilidade() {
   }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("ferramenta", empresaSel || TODAS);
-  const { data: todasAsCaixas = [] } = useCaixasFerramentas(empresaSel || TODAS);
-  // Só caixas habilitadas em Caixas de Ferramentas > Habilitar caixas.
+  const { data: todasAsCaixas = [] } = useCaixasFerramentas(TODAS);
+  // Todas as caixas habilitadas em Caixas de Ferramentas > Habilitar caixas (decisão 393), de qualquer empresa; a de outra empresa aparece com o nome dela.
   const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
 
   const { data: itensCaixa = [], refetch: buscarItensCaixa } = useCaixaItens(caixaSel || null);
@@ -105,6 +105,12 @@ export function FerramentasTermoResponsabilidade() {
   async function carregarItensDaCaixa() {
     if (!caixaSel) {
       alert("Selecione uma caixa para carregar os itens.");
+      return;
+    }
+
+    const daCaixa = caixas.find((c) => c.id === caixaSel);
+    if (daCaixa?.empresa_id && empresaSel && daCaixa.empresa_id !== empresaSel) {
+      alert(`A caixa ${daCaixa.codigo} é de ${empresas.find((e) => e.id === daCaixa.empresa_id)?.nome_fantasia ?? "outra empresa"}. Escolha essa empresa acima para carregar as ferramentas dela.`);
       return;
     }
 
@@ -275,7 +281,7 @@ export function FerramentasTermoResponsabilidade() {
                   <SelectItem value="">Avulsa / Sem Caixa</SelectItem>
                   {caixas.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.codigo}
+                      {c.codigo}{c.empresa_id && c.empresa_id !== empresaSel ? ` · ${empresas.find((e) => e.id === c.empresa_id)?.nome_fantasia ?? "outra empresa"}` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

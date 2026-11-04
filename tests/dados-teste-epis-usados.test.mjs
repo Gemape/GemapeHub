@@ -81,3 +81,15 @@ test("os dados de teste trazem ocorrências de EPI, cada uma com empregado, EPI 
   }
   assert.ok(new Set(ocs.map((o) => o.empresa_id)).size >= 2, "em mais de uma empresa");
 });
+
+test("os dados de teste trazem ocorrências de ferramenta, ligadas a ferramenta, empregado e caixa", () => {
+  const d = dados(prontos());
+  const ocs = d.ocorrencias.filter((o) => o.tipo_ocorrencia === "Ferramenta" && String(o.id).startsWith("teste-"));
+  assert.equal(ocs.length, 6);
+  for (const o of ocs) {
+    assert.ok(d.ferramentas.some((f) => f.id === o.item_id), "a ferramenta existe");
+    assert.ok(d.empregados.some((e) => e.id === o.empregado_id), "o empregado existe");
+    assert.ok(o.caixa_id && d.caixas_ferramentas.some((c) => c.id === o.caixa_id), "a ocorrência é da caixa da ferramenta");
+    assert.ok(o.descricao_ocorrencia && o.responsavel_registro && o.data && o.hora);
+  }
+});

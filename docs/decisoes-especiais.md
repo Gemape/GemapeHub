@@ -2195,3 +2195,9 @@ Na janela de personalização dos relatórios (Abastecimento de veículos e Cada
 ## 392. Cartões do Abastecimento no modelo da Frota
 
 Os cartões de **Veículos > Abastecimento** (Abastecimentos, Litros, Total gasto e Média de consumo) e de **Equipamentos > Abastecimento** ganharam o formato da Frota: título, uma linha que explica o número, o valor e um detalhe (último abastecimento, preço médio por litro, quantidade de abastecimentos, de onde vem a média). Em Equipamentos, que tinha três cartões, entrou o **Preço médio por litro**, e os quatro ficam na mesma linha, com a largura de um quarto da tela.
+
+## 393. Caixas do termo, ocorrências de ferramenta e busca por período
+
+- **Termo de responsabilidade e Termo de vistoria (Ferramentas):** o campo **Caixa de Ferramentas** lista **todas as caixas habilitadas**, de qualquer empresa, e não só as da empresa escolhida (antes, com cinco habilitadas, aparecia só a parte que era da empresa). A caixa de outra empresa leva o nome dela ao lado (CX-0001 · Gemape Máquinas), e, ao carregar uma caixa que não é da empresa escolhida, a tela avisa qual é a empresa dela, porque as ferramentas de uma caixa só entram no termo da própria empresa.
+- **Dados de teste (versão 37):** seis ocorrências de ferramenta, ligadas a ferramenta, empregado e caixa de teste.
+- **Ocorrências (EPI, Uniformes, Ferramentas e Veículos):** nova **busca por período**, com Início e Fim (as duas datas inclusas, e só uma já filtra), ao lado da busca por palavra-chave, com a contagem "x de y ocorrências no período", aviso de período inválido e botão Limpar período. O Exportar CSV sai com o que está filtrado.
