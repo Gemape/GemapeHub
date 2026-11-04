@@ -19,6 +19,7 @@ import { restaurarPermissoes } from "../permissoes-demo.ts";
 import { semearModuloEquipamentos } from "./equipamentos-modulo.ts";
 import { semearModuloVeiculos } from "./veiculos-modulo.ts";
 import { removerGruposDeChecklistSemUso } from "./enxugar-checklists.ts";
+import { removerOrdensEFichasDeTeste, semearOrdensEFichasEpi } from "./ordens-fichas-epi.ts";
 import { semearViagens } from "./viagens.ts";
 import {
   ACOES_MANUTENCAO_VEICULO, CAIXAS_TESTE, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, EQUIPAMENTOS_CATALOGO, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
@@ -111,6 +112,7 @@ export function removerDadosDeTeste(storage: Armazenamento, base: Dados): void {
     }
     storage.setItem(CHAVE_DADOS, JSON.stringify(dados));
   }
+  removerOrdensEFichasDeTeste(storage);
   for (const chave of CHAVES_LISTAS) {
     const lido = lerJson(storage, chave);
     if (Array.isArray(lido)) storage.setItem(chave, JSON.stringify(lido.filter((l) => !(ehLinha(l) && teste(l)))));
@@ -343,8 +345,24 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       if (k === 2) entrega("epi", "epis", epiDe("Capacete", 0).id, empresa, 1, diaBase - 5, null, { ...quem, motivo_baixa: "Perda", observacao: "Perdido em obra" });
       if (k === 3) entrega("epi", "epis", epiDe("Botina", botina).id, empresa, 1, diaBase - 4, TAMANHO_BOTINA[botina], { ...quem, motivo_baixa: "Quebra", observacao: "Biqueira solta" });
       if (k === 4) entrega("epi", "epis", epiDe("Capacete", 0).id, empresa, 1, diaBase - 6, null, { ...quem, responsavel_nome: `Almoxarifado ${EMPRESAS[empresa]!.nome_fantasia}`, observacao: "Devolução por troca de função" }, "Devolucao");
+      // Mais devoluções, para o estoque de usados ter o que mostrar, em tamanhos e motivos variados: cada empregado devolve o que tem em posse.
+      const almox = `Almoxarifado ${EMPRESAS[empresa]!.nome_fantasia}`;
+      if (k === 1) entrega("epi", "epis", epiDe("Botina", botina).id, empresa, 1, diaBase - 8, TAMANHO_BOTINA[botina], { ...quem, responsavel_nome: almox, observacao: "Botina devolvida: tamanho trocado" }, "Devolucao");
+      if (k === 2) entrega("epi", "epis", epiDe("Botina", botina).id, empresa, 1, diaBase - 7, TAMANHO_BOTINA[botina], { ...quem, responsavel_nome: almox, observacao: "Botina devolvida: desgaste" }, "Devolucao");
+      if (k === 3) entrega("epi", "epis", epiDe("Luva", luva).id, empresa, 1, diaBase - 5, TAMANHO_LUVA[luva], { ...quem, responsavel_nome: almox, observacao: "Luva devolvida: fim do uso" }, "Devolucao");
+      if (k === 4) entrega("epi", "epis", epiDe("Luva", luva).id, empresa, 1, diaBase - 7, TAMANHO_LUVA[luva], { ...quem, responsavel_nome: almox, observacao: "Luva devolvida: mudança de função" }, "Devolucao");
     }
   }
+  // Toda devolução de EPI entra no estoque como produto usado (decisão 327): leva a compra mais antiga do EPI no tamanho (data, nota fiscal, fornecedor e CA) e o motivo da devolução.
+  const MOTIVOS_DEVOLUCAO_TESTE = ["Fim do uso", "Troca de tamanho", "Troca por desgaste", "Mudança de função", "Fim do uso"];
+  movimentosDe.filter((m) => m["modulo"] === "epi" && m["tipo_movimentacao"] === "Devolucao").forEach((m, n) => {
+    const doItem = compras.compras_epis.filter((c) => c["item_id"] === m["item_id"]).sort((a, b) => String(a["data_compra"]).localeCompare(String(b["data_compra"])));
+    const origem = doItem[0];
+    Object.assign(m, {
+      condicao: "usado", motivo_devolucao: MOTIVOS_DEVOLUCAO_TESTE[n % MOTIVOS_DEVOLUCAO_TESTE.length],
+      ...(origem ? { compra_origem_id: origem["id"], data_compra_origem: origem["data_compra"], nota_fiscal_origem: origem["nota_fiscal"], fornecedor_origem: origem["fornecedor"], fornecedor_id_origem: origem["fornecedor_id"], ca_origem: origem["ca"] ?? null } : {}),
+    });
+  });
   // Consumo de um ano de alguns EPIs, para a Sugestão de Compras mostrar Ruptura, Comprar já e Planejar (decisão 330): uma compra anterior e as entregas dela, em seis parcelas de 40 a 215
   // dias atrás, deixam o estoque como está e dão ao EPI a média de consumo que leva ao tempo de cobertura pedido (com o prazo de reposição padrão de 30 dias).
   const consumoDoAno = (nome: string, indice: number, empresaIndice: number, tamanho: string | null, coberturaDias: number) => {
@@ -353,7 +371,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     // O consumo do ano já tem as entregas e devoluções acima: a nova compra completa o que falta para a média pedida.
     const jaConsumido = movimentosDe.filter((m) => m["item_id"] === estoque["id"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? Number(m["quantidade"]) : m["tipo_movimentacao"] === "Devolucao" ? -Number(m["quantidade"]) : 0), 0);
     const total = Math.max(6, Math.ceil((360 * saldo) / coberturaDias) - jaConsumido);
-    mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade: total, data_movimentacao: dia(agora, 300), item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: tamanho, observacao: "Compra anterior: reposição do ano" });
+    mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade: total, data_movimentacao: dia(agora, 366), item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: tamanho, observacao: "Compra anterior: reposição do ano" });
     const parcela = Math.floor(total / 6);
     [40, 75, 110, 145, 180, 215].forEach((dias, k) => entrega("epi", "epis", epiDe(nome, indice).id, empresaIndice, k === 0 ? total - parcela * 5 : parcela, dias, tamanho));
   };
@@ -517,6 +535,9 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   semearModuloVeiculos(storage, agora);
 
   semearViagens(storage, agora);
+
+  // Parâmetros > EPI: cinco ordens de serviço e cinco fichas de EPI, para ver as telas com conteúdo.
+  semearOrdensEFichasEpi(storage, tabela("epis"), agora);
 
   // Só ficam os grupos de check list com uso (associados ou em check lists preenchidos); os do padrão sem uso saem.
   try { removerGruposDeChecklistSemUso(storage); } catch { /* parâmetros ilegíveis: ficam como estão */ }

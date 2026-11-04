@@ -19,6 +19,9 @@ export type LinhaControle = {
   consumoTrimestral: number; // 90 dias ÷ 3
   consumoSemestral: number; // 180 dias ÷ 6
   consumoAnual: number; // 365 dias ÷ 12
+  // Média de consumo mensal da Sugestão de Compras e do Estoque (decisão 372): o consumo dos últimos 365 dias dividido pelos meses realmente observados do EPI (da primeira entrada, saída
+  // ou devolução até hoje, de 1 a 12), e não sempre por 12, que fazia um EPI com poucos meses de histórico parecer em excesso. Com um ano de histórico, ou mais, é igual ao consumoAnual.
+  mediaMensal: number;
   cobertura: number | null; // dias; null = sem consumo no último ano
 };
 
@@ -56,6 +59,9 @@ export function controleDeEstoque(itens: ItemControle[], movimentos: MovimentoCo
     const [ultimaEntrada, penultimaEntrada] = ultimas(entradas);
     const [ultimaSaida, penultimaSaida] = ultimas(saidas.map((m) => dia(m.data_movimentacao)));
     const consumoAnual = somaSaidas(365) / 12;
+    const [primeira] = doItem.map((m) => dia(m.data_movimentacao)).sort();
+    const mesesObservados = primeira ? Math.min(12, Math.max(1, dias(primeira, hoje) / 30)) : 12;
+    const mediaMensal = somaSaidas(365) / mesesObservados;
     const estoqueAtual = item.estoque_atual ?? 0;
     return {
       itemId: item.id,
@@ -68,6 +74,7 @@ export function controleDeEstoque(itens: ItemControle[], movimentos: MovimentoCo
       consumoTrimestral: somaSaidas(90) / 3,
       consumoSemestral: somaSaidas(180) / 6,
       consumoAnual,
+      mediaMensal,
       cobertura: consumoAnual > 0 ? Math.round(estoqueAtual / (consumoAnual / 30)) : null,
     };
   });

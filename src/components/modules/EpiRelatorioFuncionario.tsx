@@ -27,7 +27,8 @@ import { TODAS } from "@/lib/empresa-context";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
 import { filtrarHistoricoPorBuscaEPeriodo, periodoInvalido } from "@/lib/historico-busca";
-import { ehBaixa } from "@/lib/historico-movimentacoes";
+import { ehBaixa, naturezaMovimentacao } from "@/lib/historico-movimentacoes";
+import { rotuloDaSituacao, situacaoDasEntregas } from "@/lib/situacao-entregas";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useEmpresas, useItens } from "@/lib/hooks-gemape";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
@@ -48,9 +49,10 @@ export function EpiRelatorioFuncionario() {
   const { data: itens = [] } = useItens("epi", TODAS);
   const empregado = empregados.find((e) => e.id === empregadoId);
   const { data: movimentacoes = [], isLoading, isError, error } = useQuery({
-    queryKey: ["relatorio-funcionario", "epi", empregadoId, empregado?.empresa_id],
-    enabled: Boolean(empregadoId && empregado?.empresa_id),
-    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo: "epi", empregadoId, empresaId: empregado?.empresa_id ?? undefined }),
+    // Todas as movimentações do empregado, de qualquer empresa (o id do empregado já é só dele): filtrar também pela empresa deixaria de fora o que foi registrado em outra (decisão 373).
+    queryKey: ["relatorio-funcionario", "epi", empregadoId],
+    enabled: Boolean(empregadoId),
+    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo: "epi", empregadoId }),
   });
 
   const historico = movimentacoes.filter((m) => m.empregado_id === empregadoId);
@@ -67,12 +69,14 @@ export function EpiRelatorioFuncionario() {
   const emPosse = totalEntregue - totalDevolvido - totalBaixado;
 
   // Os cartões acima contam o histórico inteiro (o que está em posse não depende do período); a busca e o período filtram só a tabela, o CSV e o PDF.
+  // Cada entrega mostra o que ainda está em posse, o que foi devolvido e o que foi baixado (o mais antigo sai primeiro); devolução e baixa dizem o que são.
+  const situacoes = situacaoDasEntregas(historico);
   const situacaoDe = (h: (typeof historico)[number]) =>
-    h.tipo_movimentacao === "Devolucao" ? "Devolvido" : ehBaixa(h) ? `Baixado: ${h.motivo_baixa ?? "—"}` : "Em posse";
+    h.tipo_movimentacao === "Devolucao" ? "Devolvido" : ehBaixa(h) ? `Baixado: ${h.motivo_baixa ?? "—"}` : rotuloDaSituacao(situacoes.get(h.id));
   const nomeDoEpi = (id: string | null) => itens.find((i) => i.id === id)?.nome;
   const comTexto = historico.map((h) => ({
     ...h,
-    texto: [nomeDoEpi(h.item_id), tamanhoDe(h), h.tipo_movimentacao, String(h.quantidade), situacaoDe(h), h.observacao, formatarData(h.data_movimentacao)].filter(Boolean).join(" "),
+    texto: [nomeDoEpi(h.item_id), tamanhoDe(h), naturezaMovimentacao(h), String(h.quantidade), situacaoDe(h), h.observacao, formatarData(h.data_movimentacao)].filter(Boolean).join(" "),
   }));
   const periodoErrado = periodoInvalido(dataInicio, dataFim);
   const visiveis = filtrarHistoricoPorBuscaEPeriodo(comTexto, { palavra, dataInicio, dataFim });
@@ -95,7 +99,7 @@ export function EpiRelatorioFuncionario() {
           formatarData(h.data_movimentacao),
           nomeDoEpi(h.item_id) ?? "—",
           tamanhoDe(h) || "—",
-          h.tipo_movimentacao,
+          naturezaMovimentacao(h),
           String(h.quantidade),
           situacaoDe(h),
           h.observacao || "—",
@@ -205,7 +209,7 @@ export function EpiRelatorioFuncionario() {
                       Data: formatarData(h.data_movimentacao),
                       EPI: nomeDoEpi(h.item_id),
                       Tamanho: tamanhoDe(h),
-                      Tipo: h.tipo_movimentacao,
+                      Tipo: naturezaMovimentacao(h),
                       Qtd: h.quantidade,
                       Motivo: h.motivo_baixa || "Entrega/Uso",
                       Obs: h.observacao,
@@ -244,7 +248,7 @@ export function EpiRelatorioFuncionario() {
                       <TableCell>{formatarData(h.data_movimentacao)}</TableCell>
                       <TableCell>{nomeDoEpi(h.item_id)}</TableCell>
                       <TableCell>{tamanhoDe(h) || "—"}</TableCell>
-                      <TableCell>{h.tipo_movimentacao}</TableCell>
+                      <TableCell>{naturezaMovimentacao(h)}</TableCell>
                       <TableCell className="text-right">{h.quantidade}</TableCell>
                       <TableCell>
                         {situacaoDe(h)}

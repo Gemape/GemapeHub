@@ -67,7 +67,7 @@ export function EstoqueEpiModulo() {
 
   const todas = useMemo(() => {
     const consumo = new Map(
-      controleDeEstoque(itens, movimentos, hojeLocal()).map((l) => [l.itemId, l.consumoAnual]),
+      controleDeEstoque(itens, movimentos, hojeLocal()).map((l) => [l.itemId, l.mediaMensal]),
     );
     const porId = new Map(itens.map((i) => [i.id, i]));
     return linhasDeEstoqueEpi({
