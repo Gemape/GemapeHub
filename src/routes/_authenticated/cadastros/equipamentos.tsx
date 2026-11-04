@@ -63,39 +63,41 @@ function PaginaEquipamentos() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           <EyebrowDoCard fallback="Parâmetros" />
           <h1 className="text-2xl font-bold">Cadastrar equipamento</h1>
           <p className="mt-1 text-sm text-muted-foreground">Dados gerais e especificações técnicas por categoria. O módulo Equipamentos usa estes cadastros.</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={lista.length === 0}
-            onClick={() =>
-              exportarCsv(
-                "equipamentos",
-                lista.map((e) => ({
-                  Patrimônio: e.patrimonio,
-                  Equipamento: e.nome,
-                  Subcategoria: nomeSubcategoria(e.tipoId),
-                  Tipo: tipoDe(e.tipoId)?.nome ?? "",
-                  "Marca / modelo": `${e.marca} ${e.modelo}`.trim(),
-                  Setor: e.setor,
-                  Status: e.status,
-                  Empresa: nomeEmpresa(e.empresaId),
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
-          <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploEquipamento(equipamentos, empresaPadraoParaEscolha(empresas, empresaId)), true) : abrir(null)}>Cadastrar equipamento</Button>
-        </div>
       </header>
 
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={lista.length === 0}
+              onClick={() =>
+                exportarCsv(
+                  "equipamentos",
+                  lista.map((e) => ({
+                    Patrimônio: e.patrimonio,
+                    Equipamento: e.nome,
+                    Subcategoria: nomeSubcategoria(e.tipoId),
+                    Tipo: tipoDe(e.tipoId)?.nome ?? "",
+                    "Marca / modelo": `${e.marca} ${e.modelo}`.trim(),
+                    Setor: e.setor,
+                    Status: e.status,
+                    Empresa: nomeEmpresa(e.empresaId),
+                  })),
+                )
+              }
+            >
+              Exportar CSV
+            </Button>
+            <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploEquipamento(equipamentos, empresaPadraoParaEscolha(empresas, empresaId)), true) : abrir(null)}>Cadastrar equipamento</Button>
+          </div>
+        </div>
         <BarraDeFiltros>
           <Input
             aria-label="Buscar equipamento por palavra-chave"

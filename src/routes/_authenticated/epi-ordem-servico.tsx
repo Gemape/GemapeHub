@@ -68,27 +68,27 @@ function OrdemServicoEpiPagina() {
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          disabled={linhas.length === 0}
-          onClick={() =>
-            exportarCsv(
-              "ordens-de-servico-epi",
-              linhas.map((o) => ({
-                ...Object.fromEntries(CAMPOS_OS.map((c) => [c.rotulo, o[c.chave]])),
-                "Atualizada em": o.atualizadaEm ? dataDaOrdem(o.atualizadaEm) : "",
-              })),
-            )
-          }
-        >
-          Exportar CSV
-        </Button>
-        <Button requiresWrite onClick={() => abrir()}>
-          Nova ordem de serviço
-        </Button>
-      </div>
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={linhas.length === 0}
+            onClick={() =>
+              exportarCsv(
+                "ordens-de-servico-epi",
+                linhas.map((o) => ({
+                  ...Object.fromEntries(CAMPOS_OS.map((c) => [c.rotulo, o[c.chave]])),
+                  "Atualizada em": o.atualizadaEm ? dataDaOrdem(o.atualizadaEm) : "",
+                })),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+          <Button requiresWrite onClick={() => abrir()}>
+            Nova ordem de serviço
+          </Button>
+        </div>
         <BarraDeFiltros>
           <Input
             aria-label="Buscar ordem de serviço"

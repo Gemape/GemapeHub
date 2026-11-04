@@ -130,7 +130,7 @@ export function PlanoManutencaoEquipamento({ secao = false, versao, aoMudar }: {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           {!secao && <EyebrowDoCard fallback={CAMINHO} />}
           {secao ? <h2 className="text-xl font-bold">Cadastrar Plano de Manutenções</h2> : <h1 className="text-2xl font-bold">Cadastrar Plano de Manutenções</h1>}

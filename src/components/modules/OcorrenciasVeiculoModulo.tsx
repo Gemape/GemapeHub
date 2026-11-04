@@ -279,7 +279,7 @@ export function OcorrenciasVeiculoModulo() {
       {!verLista ? (
         <>
           {/* Os dois botões azuis, compactos e numa linha só, à direita: Ver ocorrências abre a lista em outra tela do módulo (decisão 349) e Nova ocorrência fecha a linha. */}
-          <section className="flex flex-wrap items-center justify-end gap-2" aria-label="Ocorrências">
+          <section className="flex flex-wrap items-center gap-2" aria-label="Ocorrências">
             <Button ref={botaoDaTela("lista")} type="button" size="sm" className="rounded-full px-4" aria-label={`Ver ocorrências: ${daEmpresa.length} registrada(s). Abrir a lista`} onClick={() => { setFiltro("todas"); setBusca(""); setInicio(""); setFim(""); setVerLista(true); }}>
               <ClipboardList className="h-4 w-4" aria-hidden="true" /> Ver ocorrências
               <span aria-hidden="true" className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{daEmpresa.length} registradas</span>

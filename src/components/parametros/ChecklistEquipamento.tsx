@@ -97,7 +97,7 @@ export function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { f
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           <h2 className="text-xl font-bold">Itens check list</h2>
           <p className="mt-1 text-sm text-muted-foreground">Os grupos de itens do check list de {nomeFinalidade.toLowerCase()}, cada um para os tipos de equipamento a que se aplica.</p>
@@ -371,7 +371,7 @@ export function AssociarEquipamento({ finalidade, versao, aoMudar, abrirDireto }
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           <h2 className="text-xl font-bold">Associar itens de check list a um equipamento</h2>
           <p className="mt-1 text-sm text-muted-foreground">Para cada equipamento, escolha o responsável e a periodicidade do check list. Periódico é obrigatório e entra nos KPI; avulso não é obrigatório e não entra nos KPI.</p>

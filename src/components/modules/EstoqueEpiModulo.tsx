@@ -110,8 +110,8 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
 
   return (
     <section className="space-y-4" aria-label={modulo === "epi" ? "Estoque de EPIs" : "Estoque de uniformes"}>
-      {/* Novos e Usados: botões azuis no topo, à direita; o escolhido leva um anel e o outro fica mais claro (decisão 353). */}
-      <div className="flex flex-wrap justify-end gap-2" role="group" aria-label="Novos ou usados">
+      {/* Novos e Usados: botões azuis no topo, à esquerda; o escolhido leva um anel e o outro fica mais claro (decisão 353). */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
         {(["novo", "usado"] as const).map((c) => (
           <Button
             key={c}

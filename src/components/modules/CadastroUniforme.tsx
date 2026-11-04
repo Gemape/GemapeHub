@@ -269,33 +269,33 @@ function CatalogoUniforme() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          disabled={grupos.length === 0}
-          onClick={() =>
-            exportarCsv(
-              "uniformes",
-              grupos.flatMap((g) =>
-                g.itens.map((item) => ({
-                  Uniforme: g.nome,
-                  Categoria: g.categoria,
-                  Unidade: g.unidade_medida ?? "",
-                  Código: item.codigo_sku,
-                  Tamanho: rotuloTamanho(item.tamanho_id) || "Sem tamanho",
-                  "Estoque mínimo": item.estoque_minimo,
-                })),
-              ),
-            )
-          }
-        >
-          Exportar CSV
-        </Button>
-        <Button requiresWrite onClick={abrirNovo}>
-          Novo uniforme
-        </Button>
-      </div>
       <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={grupos.length === 0}
+            onClick={() =>
+              exportarCsv(
+                "uniformes",
+                grupos.flatMap((g) =>
+                  g.itens.map((item) => ({
+                    Uniforme: g.nome,
+                    Categoria: g.categoria,
+                    Unidade: g.unidade_medida ?? "",
+                    Código: item.codigo_sku,
+                    Tamanho: rotuloTamanho(item.tamanho_id) || "Sem tamanho",
+                    "Estoque mínimo": item.estoque_minimo,
+                  })),
+                ),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+          <Button requiresWrite onClick={abrirNovo}>
+            Novo uniforme
+          </Button>
+        </div>
         <BarraDeFiltros>
           <Input
             aria-label="Buscar uniforme por código, descrição, subcategoria ou tamanho"

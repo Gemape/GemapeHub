@@ -318,7 +318,7 @@ export function ChecklistVeiculoModulo() {
             idsDosVeiculos={idsDaEmpresa}
             hoje={hoje}
             acoes={
-              <section className="flex flex-wrap justify-end gap-2" aria-label="Tipos de check list">
+              <section className="flex flex-wrap gap-2" aria-label="Tipos de check list">
                 <Button ref={botaoDaTela("periodicos")} type="button" onClick={() => setAba("periodicos")}>
                   <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Check list periódico
                   <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{previstosDoMes} previsto(s) neste mês</span>

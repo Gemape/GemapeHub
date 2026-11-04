@@ -114,8 +114,8 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
 
   return (
     <div className="space-y-4">
-      {/* Sem o título "Estoque" (a página já tem o dela): o Exportar CSV no alto, à direita, acima da busca (decisão 339). */}
-      <div className="flex flex-col items-end gap-2">
+      {/* Sem o título "Estoque" (a página já tem o dela): o Exportar CSV no alto, à esquerda, e a busca à direita, na mesma linha (decisões 339 e 385). */}
+      <div className="flex flex-wrap items-end gap-2">
         <Button variant="outline" disabled={isLoading || linhas.length === 0} onClick={() =>
           exportarCsv(`estoque-${modulo}`, linhas.map(({ item, estado }) => ({
             Código: item.codigo_sku,

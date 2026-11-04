@@ -128,7 +128,7 @@ function DashboardGeral() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col items-start gap-3">
         <div>
           <p className="text-eyebrow">Visão consolidada</p>
           <h1 className="text-2xl font-bold">Patrimônio do grupo GEMAPE</h1>
