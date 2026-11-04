@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -131,6 +132,7 @@ export function SugestaoComprasEpi() {
   const daEmpresa = filtrarSugestaoEpi(todas, {
     ...(empresaFiltro !== TODOS ? { empresaId: empresaFiltro } : {}),
   });
+  const noMinimo = filtradas.filter((l) => l.minimo > 0 && l.total <= l.minimo);
   const subcategoriasPresentes = [...new Set(daEmpresa.map((l) => l.subcategoriaId))]
     .map((id) => ({ id: id ?? "", nome: nomeDaSubcategoria(id) }))
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
@@ -207,38 +209,14 @@ export function SugestaoComprasEpi() {
             : "estoque mínimo"}
           ).
         </p>
-        <Button type="button" onClick={abrirRelatorio}>
-          Gerar relatório
-        </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-1">
-          <Label htmlFor="sug-empresa">Empresa</Label>
-          <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
-            <SelectTrigger id="sug-empresa">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODOS}>Todas as empresas</SelectItem>
-              {empresasParaEscolha(empresas).map((e) => (
-                <SelectItem key={e.id} value={e.id}>
-                  {e.nome_fantasia}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1 lg:col-span-2">
-          <Label htmlFor="sug-palavra">Palavra-chave</Label>
-          <Input
-            id="sug-palavra"
-            placeholder="Código, descrição ou CA"
-            value={palavra}
-            onChange={(e) => setPalavra(e.target.value)}
-          />
-        </div>
-        <div className="flex items-end">
+      {/* Botões à esquerda, busca e filtros à direita (decisão 385). */}
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" onClick={abrirRelatorio}>
+            Gerar relatório
+          </Button>
           <Button
             type="button"
             variant="outline"
@@ -262,7 +240,42 @@ export function SugestaoComprasEpi() {
             Exportar CSV
           </Button>
         </div>
+        <BarraDeFiltros>
+        <div className="w-56 space-y-1">
+          <Label htmlFor="sug-empresa">Empresa</Label>
+          <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
+            <SelectTrigger id="sug-empresa">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS}>Todas as empresas</SelectItem>
+              {empresasParaEscolha(empresas).map((e) => (
+                <SelectItem key={e.id} value={e.id}>
+                  {e.nome_fantasia}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-72 space-y-1">
+          <Label htmlFor="sug-palavra">Palavra-chave</Label>
+          <Input
+            id="sug-palavra"
+            placeholder="Código, descrição ou CA"
+            value={palavra}
+            onChange={(e) => setPalavra(e.target.value)}
+          />
+        </div>
+        </BarraDeFiltros>
       </div>
+
+      {/* O alerta de estoque no mínimo ou abaixo fica aqui, nos relatórios, e não na Entrega (decisão 386). */}
+      {noMinimo.length > 0 && (
+        <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <strong>Estoque no mínimo ou abaixo ({empresaFiltro === TODOS ? "todas as empresas" : nomeDaEmpresa(empresaFiltro)}):</strong>{" "}
+          {noMinimo.map((l) => `${l.codigo} ${l.descricao} (${nomeDaEmpresa(l.empresaId)}: saldo ${l.total}, mínimo ${l.minimo})`).join("; ")}
+        </div>
+      )}
 
       <LegendaStatusCompra parametros={parametrosCompra} />
 

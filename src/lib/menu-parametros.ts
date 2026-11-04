@@ -45,6 +45,7 @@ export const ABAS_EPI: readonly AbaMenu[] = [
   { aba: "entrega", titulo: "Entrega EPI", icone: "PackageCheck" },
   { aba: "termo-entrega", titulo: "Termo de Entrega", icone: "FileSignature" },
   { aba: "ficha-avulsa", titulo: "Ficha de EPI Avulsa", icone: "ClipboardList" },
+  { aba: "ordem-servico", titulo: "Ordem de Serviço", icone: "FileText" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 

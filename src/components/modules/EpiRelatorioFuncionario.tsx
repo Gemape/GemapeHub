@@ -152,10 +152,10 @@ export function EpiRelatorioFuncionario() {
       {empregado && (
         <>
           <GradeDeCartoes colunas={4}>
-            <StatCard titulo="Entregues" valor={totalEntregue} icone={PackageCheck} compacto />
-            <StatCard titulo="Devolvidos" valor={totalDevolvido} icone={Undo2} compacto />
-            <StatCard titulo="Baixados" valor={totalBaixado} icone={PackageX} compacto />
-            <StatCard titulo="Em Posse" valor={emPosse} icone={UserCheck} compacto />
+            <StatCard titulo="Entregues" subtitulo="Saídas de entrega ao empregado." valor={totalEntregue} icone={PackageCheck} compacto />
+            <StatCard titulo="Devolvidos" subtitulo="O que ele devolveu ao estoque." valor={totalDevolvido} icone={Undo2} compacto />
+            <StatCard titulo="Baixados" subtitulo="Baixas definitivas feitas com ele." valor={totalBaixado} icone={PackageX} compacto />
+            <StatCard titulo="Em Posse" subtitulo="Entregue − devolvido − baixado." valor={emPosse} icone={UserCheck} compacto />
           </GradeDeCartoes>
 
           <h3 className="text-lg font-bold">Histórico de Movimentações de EPI</h3>

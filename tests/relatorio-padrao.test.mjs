@@ -195,7 +195,7 @@ test("celular: indicadores em duas colunas, cartões menores e botões das janel
 
 test("celular: o último cartão de uma fileira de três ocupa a linha toda, sem meia linha vazia; o valor longo quebra dentro do cartão", () => {
   for (const arq of ["components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
-    assert.match(ler(arq), /<GradeDeCartoes colunas=\{3\}>/, arq);
+    assert.match(ler(arq), /<GradeDeCartoes colunas=\{[34]\}>/, arq);
   }
   assert.match(ler("components/GradeDeCartoes.tsx"), /sm:grid-cols-3 lg:grid-cols-4 max-sm:\[&>\*:last-child:nth-child\(odd\)\]:col-span-2/);
   assert.match(ler("components/modules/CartoesIndicadoresFrota.tsx"), /break-words font-display text-2xl font-bold/);

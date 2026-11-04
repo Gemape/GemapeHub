@@ -7,6 +7,7 @@ import type { Faixa } from "@/lib/faixas-desempenho";
 // com `faixa`, a cor e a seta da faixa (verde, amarelo ou vermelho); sem eles, o card é neutro.
 export function StatCard({
   titulo,
+  subtitulo,
   valor,
   detalhe,
   icone,
@@ -15,6 +16,8 @@ export function StatCard({
   compacto = false,
 }: {
   titulo: string;
+  // Uma linha que explica o número, como nos cartões da Frota.
+  subtitulo?: string;
   valor: string | number;
   detalhe?: string;
   icone?: LucideIcon;
@@ -22,5 +25,5 @@ export function StatCard({
   faixa?: Faixa | null;
   compacto?: boolean;
 }) {
-  return <Cartao titulo={titulo} valor={String(valor)} icone={icone} compacto={compacto} indicador={{ pct, faixa, detalhe: detalhe ?? "" }} />;
+  return <Cartao titulo={titulo} {...(subtitulo ? { subtitulo } : {})} valor={String(valor)} icone={icone} compacto={compacto} indicador={{ pct, faixa, detalhe: detalhe ?? "" }} />;
 }
