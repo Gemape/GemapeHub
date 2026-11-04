@@ -25,6 +25,7 @@ import {
 import { useEmpresa, type Empresa } from "@/lib/empresa-context";
 import { exportarCsv } from "@/lib/gemape";
 import { combinaBusca } from "@/lib/parametros-base";
+import type { CampoRelatorio } from "@/lib/relatorio-cadastro";
 import {
   CAMPOS_ENDERECO_EMPRESA,
   STATUS_EMPRESA,
@@ -32,6 +33,7 @@ import {
   statusDaEmpresa,
   valoresDaEmpresa,
 } from "@/lib/empresas";
+import { RelatorioCadastro } from "@/components/RelatorioCadastro";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
 import { formatarCnpj, formatarCep } from "@/lib/formatacao-cadastral";
@@ -65,6 +67,15 @@ function PaginaEmpresas() {
   // Busca por palavra-chave (decisão 341): nome fantasia, razão social, CNPJ, endereço e status.
   const [busca, setBusca] = useState("");
   const lista = empresas.filter((e) => combinaBusca(busca, e.nome_fantasia, e.razao_social, formatarCnpj(e.cnpj), e.cnpj, MODO_DEMO ? enderecoResumido(e) : "", MODO_DEMO ? statusDaEmpresa(e) : ""));
+  const camposRelatorio: CampoRelatorio<Empresa>[] = [
+    { id: "nome_fantasia", rotulo: "Nome fantasia", valor: (e) => e.nome_fantasia },
+    { id: "razao_social", rotulo: "Razão social", valor: (e) => e.razao_social },
+    { id: "cnpj", rotulo: "CNPJ", valor: (e) => formatarCnpj(e.cnpj) },
+    ...(MODO_DEMO ? [
+      { id: "endereco", rotulo: "Endereço", valor: (e: Empresa) => enderecoResumido(e) },
+      { id: "status", rotulo: "Status", valor: (e: Empresa) => statusDaEmpresa(e) },
+    ] : []),
+  ];
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Empresa | null>(null);
   // Clonar: dados da empresa de origem num cadastro NOVO (todos os campos copiados, decisão 138).
@@ -113,6 +124,7 @@ function PaginaEmpresas() {
           >
             Exportar CSV
           </Button>
+          <RelatorioCadastro nome="empresas" campos={camposRelatorio} linhas={lista} filtro={busca.trim()} />
           <Button requiresWrite
             onClick={() => {
               setEditando(null);

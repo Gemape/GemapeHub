@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { RelatorioCadastro } from "@/components/RelatorioCadastro";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { exemploCliente } from "@/lib/dados-teste/exemplos";
 import { ClienteDialog } from "@/components/parametros/ClienteDialog";
@@ -16,6 +17,20 @@ import { listarClientes, proximoCodigoCliente, removerCliente, type Cliente } fr
 import { camposDeBusca } from "@/lib/busca-cadastro";
 import { formatarTelefone } from "@/lib/formatacao-cadastral";
 import { combinaBusca } from "@/lib/parametros-base";
+import type { CampoRelatorio } from "@/lib/relatorio-cadastro";
+
+const CAMPOS_RELATORIO: CampoRelatorio<Cliente>[] = [
+  { id: "codigo", rotulo: "Código", valor: (c) => c.codigo },
+  { id: "nome", rotulo: "Nome", valor: (c) => c.nome },
+  { id: "cpf", rotulo: "CPF", valor: (c) => c.cpf },
+  { id: "cnpj", rotulo: "CNPJ", valor: (c) => c.cnpj },
+  { id: "endereco", rotulo: "Endereço", valor: (c) => c.endereco },
+  { id: "contato", rotulo: "Contato", valor: (c) => c.contato },
+  { id: "telefone", rotulo: "Telefone", valor: (c) => formatarTelefone(c.telefone) ?? "" },
+  { id: "telefone2", rotulo: "Telefone 2", valor: (c) => formatarTelefone(c.telefone2) ?? "", padrao: false },
+  { id: "email", rotulo: "E-mail", valor: (c) => c.email, padrao: false },
+  { id: "observacao", rotulo: "Observação", valor: (c) => c.observacao, padrao: false },
+];
 
 export const Route = createFileRoute("/_authenticated/cadastros/clientes")({
   head: () => ({ meta: [{ title: "Clientes | Patrimônio GEMAPE" }] }),
@@ -73,6 +88,7 @@ function PaginaClientes() {
           Contato: x.contato ?? "",
           Telefone: formatarTelefone(x.telefone) ?? "",
         })))}>Exportar CSV</Button>
+        <RelatorioCadastro nome="clientes" campos={CAMPOS_RELATORIO} linhas={lista} filtro={busca.trim()} />
         <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploCliente(clientes), true) : abrir(null)}>Novo cliente</Button>
       </div>
     </header>

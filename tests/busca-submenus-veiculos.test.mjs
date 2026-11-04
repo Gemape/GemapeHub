@@ -10,15 +10,15 @@ test("Frota, Manutenção, Movimentações e Ocorrências de Veículos têm camp
   assert.match(fonte("components/modules/AbastecimentoVeiculoModulo.tsx"), /combinaBusca\(busca/);
   assert.match(fonte("components/modules/ManutencaoVeiculoModulo.tsx"), /combinaBusca\(busca/);
   const mov = fonte("components/modules/MovimentacoesModulo.tsx");
-  assert.match(mov, /comBusca && busca\.trim\(\)/);
+  assert.match(mov, /\n\s+busca\.trim\(\)\n/);
   assert.match(mov, /visiveis\.map\(/);
   assert.match(fonte("components/modules/OcorrenciasModulo.tsx"), /Buscar por descrição ou responsável/);
 });
 
 test("a busca de Movimentações aparece em Veículos e em Ferramentas, sem mudar o uniforme", () => {
   const mov = fonte("components/modules/MovimentacoesModulo.tsx");
-  assert.match(mov, /const comBusca = ehVeiculo \|\| modulo === "ferramenta";/);
-  assert.match(mov, /\{comBusca && \(\s*<Input\s+aria-label="Buscar movimentação"/);
+  assert.doesNotMatch(mov, /comBusca/, "a busca vale para todos os módulos (decisão 376)");
+  assert.match(mov, /<BarraDeFiltros>\s*<Input\s+aria-label="Buscar movimentação"/);
 });
 
 test("a busca de Movimentações de Ferramentas olha código, item, empregado, tipo, motivo, ônus, vistoria, ocorrência, observação e data", () => {

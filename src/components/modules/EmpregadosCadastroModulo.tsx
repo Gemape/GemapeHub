@@ -37,6 +37,8 @@ import { exportarCsv, formatarData } from "@/lib/gemape";
 import { camposDeBusca } from "@/lib/busca-cadastro";
 import { empregadoAtivo, mascararCpf, prepararEmpregado, separarEmpregados } from "@/lib/empregados";
 import { combinaBusca } from "@/lib/parametros-base";
+import { RelatorioCadastro } from "@/components/RelatorioCadastro";
+import type { CampoRelatorio } from "@/lib/relatorio-cadastro";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 import { lerTodas } from "@/lib/ler-todas";
@@ -172,6 +174,21 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
           >
             Exportar CSV
           </Button>
+          <RelatorioCadastro
+            nome="empregados"
+            filtro={busca.trim()}
+            linhas={[...ativos, ...inativos]}
+            campos={[
+              { id: "nome", rotulo: "Nome completo", valor: (e) => e.nome },
+              { id: "cpf", rotulo: "CPF", valor: (e) => (e.cpf.replace(/\D/g, "").length > 11 ? e.cpf : mascararCpf(e.cpf)) },
+              { id: "matricula", rotulo: "Matrícula", valor: (e) => e.matricula },
+              { id: "empresa", rotulo: "Empresa", valor: (e) => nomeEmpresa(e.empresa_id) },
+              { id: "email", rotulo: "E-mail", valor: (e) => e.email ?? "" },
+              { id: "admissao", rotulo: "Admissão", valor: (e) => formatarData(e.data_admissao) },
+              { id: "demissao", rotulo: "Demissão", valor: (e) => formatarData(e.data_demissao) },
+              { id: "situacao", rotulo: "Situação", valor: (e) => (empregadoAtivo(e) ? "Ativo" : "Inativo") },
+            ] satisfies CampoRelatorio<EmpregadoCadastro>[]}
+          />
           <Button requiresWrite onClick={() => void abrirNovo()}>
             Novo empregado
           </Button>
