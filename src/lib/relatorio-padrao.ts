@@ -132,6 +132,12 @@ export const CSS_TERMO = `
           .termo .info { background: #f1f5f9; border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; }
           .termo .nota { font-size: 8pt; color: #475569; }`;
 
+const CSS_PAISAGEM = `
+          @page { size: A4 landscape; margin: 12mm 12mm 16mm; }
+          table.padrao { table-layout: auto; }
+          table.padrao th, table.padrao td { font-size: 8pt; overflow-wrap: break-word; }
+          @media screen { table.padrao, .termo table { display: table; } }`;
+
 // Relatório simples de uma tabela (histórico, baixas): cabeçalho, quadro de resumo, tabela e rodapé no padrão.
 export function montarRelatorioTabelaHtml(d: {
   titulo: string;
@@ -142,6 +148,8 @@ export function montarRelatorioTabelaHtml(d: {
   linhas: string[][];
   vazio: string;
   geradoEm?: Date | string;
+  // Muitas colunas: o papel vai para a paisagem e a tabela ocupa toda a largura da tela (`larga`), com texto menor e quebra de palavras longas.
+  paisagem?: boolean;
 }): string {
   const direita = (n: number) => (d.colunas[n]?.direita ? ' class="num"' : "");
   const corpo = d.linhas.length === 0
@@ -151,6 +159,7 @@ export function montarRelatorioTabelaHtml(d: {
   return paginaRelatorio({
     titulo: d.titulo,
     ...(d.geradoEm ? { geradoEm: d.geradoEm } : {}),
+    ...(d.paisagem ? { larga: true, css: CSS_PAISAGEM } : {}),
     cabecalho: cabecalhoRelatorio({ titulo: d.titulo, subtitulos: d.subtitulos ?? [], empresa: d.empresa }),
     corpo: `${resumo}<table class="padrao"><thead><tr>${d.colunas.map((c) => `<th${c.direita ? ' class="num"' : ""}>${escaparHtml(c.titulo)}</th>`).join("")}</tr></thead><tbody>${corpo}</tbody></table>`,
   });

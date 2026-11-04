@@ -2119,3 +2119,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 376. Movimentações: busca por palavra-chave em todos os módulos
 
 Em Uniformes (e em qualquer módulo que use a tela de Movimentações), o campo **Buscar movimentação** passa a existir, como já existia em Veículos e Ferramentas. Acha por item, código, tamanho, tipo, empregado, motivo da baixa, ônus, ocorrência, observação e data, sem diferenciar acento e maiúsculas, com as palavras em qualquer ordem. O Exportar CSV continua exportando todas as movimentações.
+
+## 377. Cadastros: relatório com os campos escolhidos por caixas de marcação
+
+Em Cadastros > Clientes, Fornecedores, Empregados e Empresas, o botão **Relatório** (ao lado de Exportar CSV) abre uma janela com uma caixa de marcação por campo (com "Marcar todos" e "Limpar"). Os campos longos (observações, segundo telefone, e-mail do cliente, endereço do fornecedor, país) começam desmarcados. "Gerar relatório" abre o relatório no visualizador do sistema, no padrão de `relatorio-padrao.ts` (logomarca, quadro com o número de registros, tabela de cabeçalho azul e "Emitido em"), com a lista como está na tela: a busca vale, e em Empregados saem os ativos e depois os demitidos / inativos. As colunas seguem a ordem da lista de campos, e não a da marcação; campo vazio sai como "—". Sem nenhum campo marcado o botão fica desabilitado. Só modo demonstração; nada no Supabase.

@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { RelatorioCadastro } from "@/components/RelatorioCadastro";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { exemploFornecedor } from "@/lib/dados-teste/exemplos";
 import { FornecedorDialog } from "@/components/parametros/FornecedorDialog";
@@ -20,7 +21,31 @@ import { avisoExclusaoDoFornecedor, vinculosDoFornecedor } from "@/lib/codigo-fa
 import { nomeDoFornecedor } from "@/lib/compras-fornecedor";
 import { camposDeBusca } from "@/lib/busca-cadastro";
 import { combinaBusca, lerParametros, removerCodigosFabricaPorIds, type CodigoFabrica } from "@/lib/parametros-base";
-import { formatarCnpj, formatarTelefone } from "@/lib/formatacao-cadastral";
+import { formatarCep, formatarCnpj, formatarTelefone } from "@/lib/formatacao-cadastral";
+import type { CampoRelatorio } from "@/lib/relatorio-cadastro";
+
+const nomesDasCategorias = (f: Fornecedor): string => {
+  try {
+    const todas = lerParametros().categorias;
+    return (f.categorias ?? []).map((id) => todas.find((c) => c.id === id)?.nome ?? "").filter(Boolean).join(", ");
+  } catch {
+    return "";
+  }
+};
+const CAMPOS_RELATORIO: CampoRelatorio<Fornecedor>[] = [
+  { id: "codigo", rotulo: "Código", valor: (f) => f.codigo },
+  { id: "nome_fantasia", rotulo: "Nome fantasia", valor: (f) => f.nome_fantasia ?? "" },
+  { id: "razao_social", rotulo: "Razão social", valor: (f) => f.razao_social },
+  { id: "cnpj", rotulo: "CNPJ", valor: (f) => formatarCnpj(f.cnpj) },
+  { id: "inscricao_estadual", rotulo: "Inscrição estadual", valor: (f) => f.inscricao_estadual },
+  { id: "endereco", rotulo: "Endereço", valor: (f) => [[f.rua, f.numero].filter(Boolean).join(", "), f.bairro, f.cep ? formatarCep(f.cep) : ""].filter(Boolean).join(" · "), padrao: false },
+  { id: "cidade", rotulo: "Cidade/Estado", valor: (f) => [f.cidade, f.estado].filter(Boolean).join("/") },
+  { id: "pais", rotulo: "País", valor: (f) => f.pais, padrao: false },
+  { id: "telefone", rotulo: "Telefone", valor: (f) => formatarTelefone(f.telefone) ?? "" },
+  { id: "contato", rotulo: "Contato", valor: (f) => f.contato },
+  { id: "categorias", rotulo: "Categorias", valor: nomesDasCategorias },
+  { id: "observacoes", rotulo: "Observações", valor: (f) => f.observacoes, padrao: false },
+];
 
 export const Route = createFileRoute("/_authenticated/cadastros/fornecedores")({
   head: () => ({ meta: [{ title: "Fornecedores | Patrimônio GEMAPE" }] }),
@@ -91,6 +116,7 @@ function PaginaFornecedores() {
           "Cidade/Estado": [x.cidade, x.estado].filter(Boolean).join("/"),
           Contato: x.contato || formatarTelefone(x.telefone) || "",
         })))}>Exportar CSV</Button>
+        <RelatorioCadastro nome="fornecedores" campos={CAMPOS_RELATORIO} linhas={lista} filtro={busca.trim()} />
         <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploFornecedor(fornecedores), true) : abrir(null)}>Novo fornecedor</Button>
       </div>
     </header>
