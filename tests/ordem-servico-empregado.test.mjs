@@ -49,3 +49,16 @@ test("o texto de abertura dos Parâmetros de EPI e de Uniformes quebra na largur
     assert.match(t, /<div className="max-w-4xl">\s*<h2 id="parametros-/, arq);
   }
 });
+
+test("vai e volta (decisão 388): o link leva ao cadastro com a função do empregado e a volta devolve a escolha e a ordem nova", () => {
+  const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  const tela = ler("components/modules/EpiOrdemServico.tsx");
+  assert.match(tela, /search=\{\{ voltar: "ordem-servico", nova: "sim"/);
+  assert.match(tela, /useState\(volta\.empregado \?\? ""\)/);
+  assert.match(tela, /useState\(volta\.ordem \?\? ""\)/);
+  const cadastro = ler("routes/_authenticated/epi-ordem-servico.tsx");
+  assert.match(cadastro, /voltar === "ordem-servico" && \(\s*<Button[^>]*onClick=\{\(\) => volta\(\)\}/);
+  assert.match(cadastro, /if \(voltar === "ordem-servico"\) volta\(salva\?\.id\)/);
+  assert.match(cadastro, /aba: "ordem-servico"[\s\S]*ordemId \? \{ ordem: ordemId \}/);
+  assert.match(ler("routes/_authenticated/epi.tsx"), /empresa\?: string; empregado\?: string; ordem\?: string/);
+});

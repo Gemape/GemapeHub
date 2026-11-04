@@ -3,8 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PaginaModulo } from "@/components/modules/PaginaModulo";
 
 export const Route = createFileRoute("/_authenticated/epi")({
-  validateSearch: (search: Record<string, unknown>): { aba?: string } =>
-    typeof search["aba"] === "string" ? { aba: search["aba"] } : {},
+  // empresa, empregado e ordem: a volta do cadastro da Ordem de Serviço (decisão 388) reabre a tela com a escolha que estava feita.
+  validateSearch: (search: Record<string, unknown>): { aba?: string; empresa?: string; empregado?: string; ordem?: string } => ({
+    ...(typeof search["aba"] === "string" ? { aba: search["aba"] } : {}),
+    ...(typeof search["empresa"] === "string" && search["empresa"] ? { empresa: search["empresa"] } : {}),
+    ...(typeof search["empregado"] === "string" && search["empregado"] ? { empregado: search["empregado"] } : {}),
+    ...(typeof search["ordem"] === "string" && search["ordem"] ? { ordem: search["ordem"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "EPIs | Patrimônio GEMAPE" },

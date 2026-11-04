@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,11 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 // (a área em que está habilitado em Parâmetros > EPI); quando não há ordem para ela, ou se quiser outra, a pessoa escolhe na lista.
 export function EpiOrdemServico() {
   const { empresaId } = useEmpresa();
-  const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
-  const [empregadoId, setEmpregadoId] = useState("");
-  const [ordemEscolhida, setOrdemEscolhida] = useState("");
+  // Vindo da volta do cadastro da ordem (vai e volta, decisão 388), a escolha de antes e a ordem recém-cadastrada já vêm marcadas.
+  const volta = useSearch({ strict: false }) as { empresa?: string; empregado?: string; ordem?: string };
+  const [empresaSel, setEmpresaSel] = useState(volta.empresa ?? (empresaId !== TODAS ? empresaId : ""));
+  const [empregadoId, setEmpregadoId] = useState(volta.empregado ?? "");
+  const [ordemEscolhida, setOrdemEscolhida] = useState(volta.ordem ?? "");
   const ordens = useOrdensServicoEpi();
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
@@ -47,7 +49,11 @@ export function EpiOrdemServico() {
           <h3 className="text-lg font-bold">Gerar Ordem de Serviço do empregado</h3>
           <p className="text-sm text-muted-foreground">
             Escolha o empregado: a ordem é a da função dele, cadastrada em{" "}
-            <Link to="/epi-ordem-servico" className="font-medium text-primary underline underline-offset-2">Parâmetros &gt; EPI &gt; Cadastrar Ordem de Serviço</Link>.
+            <Link
+              to="/epi-ordem-servico"
+              search={{ voltar: "ordem-servico", nova: "sim", ...(empresaSel ? { empresa: empresaSel } : {}), ...(empregadoId ? { empregado: empregadoId } : {}), ...(area ? { funcao: area } : {}) }}
+              className="font-medium text-primary underline underline-offset-2"
+            >Parâmetros &gt; EPI &gt; Cadastrar Ordem de Serviço</Link>.
           </p>
         </div>
         <div className="grid gap-4">
