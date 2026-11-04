@@ -134,7 +134,11 @@ test("estoque: saldo por empresa e tamanho = movimentações; mínimos variados;
   const d = dados(s);
   for (const [tabela, modulo] of [["epis", "epi"], ["uniformes", "uniforme"], ["ferramentas", "ferramenta"]]) {
     for (const linha of doTeste(d[tabela])) {
-      const saldo = doTeste(d.movimentacoes).filter((m) => m.modulo === modulo && m.item_id === linha.id).reduce((t, m) => t + (m.tipo_movimentacao === "Saida" ? -m.quantidade : m.quantidade), 0);
+      // Ferramenta (decisão 379): só entrada soma e só baixa subtrai; entrega e devolução pela caixa não mexem no saldo.
+      const doItem = doTeste(d.movimentacoes).filter((m) => m.modulo === modulo && m.item_id === linha.id);
+      const saldo = modulo === "ferramenta"
+        ? doItem.reduce((t, m) => t + (m.tipo_movimentacao === "Entrada" ? m.quantidade : m.tipo_movimentacao === "Saida" && m.motivo_baixa && m.motivo_baixa !== "Fornecimento ao Empregado" ? -m.quantidade : 0), 0)
+        : doItem.reduce((t, m) => t + (m.tipo_movimentacao === "Saida" ? -m.quantidade : m.quantidade), 0);
       assert.equal(linha.estoque_atual, saldo, `${tabela} ${linha.codigo_sku}`);
       assert.ok(linha.estoque_atual >= 0);
     }
@@ -538,7 +542,7 @@ test("as 20 ferramentas de teste ficam distribuídas nas cinco caixas, quatro em
   for (const c of doTeste(d.caixas_ferramentas)) assert.equal(itens.filter((i) => i.caixa_id === c.id).length, 4, c.codigo);
   for (const i of itens) assert.equal(ferramentas.get(i.ferramenta_id)?.empresa_id, caixas.get(i.caixa_id)?.empresa_id, "a ferramenta é da empresa da caixa");
   assert.equal(new Set(doTeste(d.ferramentas).map((f) => f.codigo_sku)).size, 20, "códigos únicos");
-  assert.equal(doTeste(d.movimentacoes).filter((m) => m.modulo === "ferramenta").length, 20, "uma entrada por ferramenta");
+  assert.equal(doTeste(d.movimentacoes).filter((m) => m.modulo === "ferramenta" && m.tipo_movimentacao === "Entrada").length, 20, "uma entrada por ferramenta");
 });
 
 test("a base recusa gravar uma caixa com ferramenta que já está em outra caixa", async () => {

@@ -91,9 +91,12 @@ export function controleDaFerramenta(
   };
 }
 
-/** Quanto da quantidade cadastrada na caixa continua guardado nela. */
-export const disponivelNaCaixa = (quantidadeNaCaixa: number, comEmpregado: number, baixadoDaCaixa = 0) =>
-  Math.max((Number(quantidadeNaCaixa) || 0) - comEmpregado - baixadoDaCaixa, 0);
+/**
+ * Quanto da quantidade cadastrada na caixa continua guardado nela: o que está com empregado e o que já foi baixado (da caixa ou de quem estava com o empregado) não conta.
+ * `comEmpregado` já vem líquido da baixa feita com empregado, e por isso essa baixa tem de entrar aqui, em `baixado`.
+ */
+export const disponivelNaCaixa = (quantidadeNaCaixa: number, comEmpregado: number, baixado = 0) =>
+  Math.max((Number(quantidadeNaCaixa) || 0) - comEmpregado - baixado, 0);
 
 /** Confere a lista de ferramentas da caixa antes de gravar; devolve a mensagem de erro ou null. */
 export function validarFerramentasDaCaixa(

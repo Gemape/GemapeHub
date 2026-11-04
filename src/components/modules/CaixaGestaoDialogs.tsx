@@ -30,9 +30,12 @@ import {
   validarBaixaDaCaixa,
   validarFerramentasDaCaixa,
 } from "@/lib/controle-caixa";
+import { ehBaixa } from "@/lib/historico-movimentacoes";
+import { ferramentasAcimaDoEstoque, limiteDaCaixa } from "@/lib/estoque-ferramentas-posicao";
 import {
   useEmpregados,
   useItens,
+  useMovimentacoes,
   useRegistrarMovimentacoesLote,
   useSalvar,
   useSalvarCaixa,
@@ -74,6 +77,7 @@ export function DialogFerramentasDaCaixa({
   const { data: itensDeTodas = [] } = useTodosCaixaItens();
   const { data: caixasDeTodas = [] } = useCaixasFerramentas(TODAS, "");
   const salvar = useSalvarCaixa();
+  const { data: movimentosDaFerramenta = [] } = useMovimentacoes("ferramenta", TODAS);
   const [linhas, setLinhas] = useState(() =>
     itensAtuais.map((i) => ({ ferramenta_id: i.ferramenta_id, quantidade: i.quantidade, observacao: i.observacao ?? "" })),
   );
@@ -99,6 +103,16 @@ export function DialogFerramentasDaCaixa({
   function gravar() {
     const erro =
       validarFerramentasDaCaixa(linhas, comEmpregado, nome) ??
+      // A caixa guarda no máximo o que o estoque tem (decisão 379): o saldo mais o que já saiu dela por baixa.
+      ferramentasAcimaDoEstoque(
+        linhas,
+        // Quem já estava na caixa com mais do que o estoque (cadastro anterior a esta regra) continua como está: o limite vale para o que aumenta.
+        (id) => Math.max(
+          limiteDaCaixa(Number(ferramenta(id)?.estoque_atual) || 0, movimentosDaFerramenta.filter((m) => m.item_id === id && m.caixa_id === caixa.id && ehBaixa(m)).reduce((t, m) => t + (Number(m.quantidade) || 0), 0)),
+          itensAtuais.find((i) => i.ferramenta_id === id)?.quantidade ?? 0,
+        ),
+        nome,
+      ) ??
       ferramentasComEmpregadoRemovidas(itensAtuais, linhas, comEmpregado, nome) ??
       ferramentasEmOutraCaixa(
         linhas,
@@ -282,6 +296,12 @@ export function DialogBaixaCaixa({
     });
     if (erro || !linha) {
       alert(erro ?? "Escolha a ferramenta.");
+      return;
+    }
+    // A baixa sai do saldo do estoque (decisão 379): sem saldo, a entrada precisa ser registrada antes.
+    const saldoNoEstoque = Number(linha.ferramenta.estoque_atual) || 0;
+    if (quantidade > saldoNoEstoque) {
+      alert(`O estoque tem ${saldoNoEstoque} de ${linha.ferramenta.nome}; a baixa não pode passar disso. Registre a entrada (compra ou ajuste em Estoque) antes.`);
       return;
     }
     registrar.mutate(

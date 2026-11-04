@@ -2127,3 +2127,16 @@ Em Cadastros > Clientes, Fornecedores, Empregados e Empresas, o botão **Relató
 ## 378. Abastecimento de veículos: botão Relatório com colunas e opções personalizáveis
 
 O botão **Gerar PDF** de Veículos > Abastecimento passa a se chamar **Relatório**. Ao clicar, abre a janela de personalização (a mesma dos Cadastros, decisão 377): uma caixa de marcação por coluna (Data e hora, Km, Km rodados, Litros, Valor, R$/L e Km/L, todas marcadas de início, com Marcar todos e Limpar) e duas opções, **Resumo no topo** e **Total de cada veículo**, também marcadas de início. "Gerar relatório" abre o mesmo relatório de antes, no visualizador em tela cheia, só com o que foi marcado e com os filtros da tela (veículo, busca e período). Sem nenhuma coluna o botão fica desabilitado. A janela de marcação virou o componente `EscolherCamposRelatorio`, usado também no Relatório dos Cadastros. Abastecimento de equipamentos mantém o Gerar PDF. Só modo demonstração; nada no Supabase.
+
+## 379. Ferramentas, Estoque: o mesmo controle de entradas e saídas do EPI, com a posição por caixa
+
+- **Saldo:** a **entrada** (compra, NF-e, entrada avulsa ou ajuste) soma e a **baixa definitiva** (perda, quebra, desgaste etc.), com ou sem caixa, subtrai. A **entrega** e a **devolução** pela caixa não mexem no saldo, pois a ferramenta continua sendo da empresa: só mudam onde ela está. Antes, a baixa pela caixa não reduzia o saldo.
+- **Estoque (Ferramentas):** a tabela ganhou Caixa, Entradas, Baixas, Guardada na caixa, Com empregado e Sem caixa, e avisa "Não bate" quando o saldo difere de entradas menos baixas ou quando a caixa tem mais do que o estoque. Abaixo há a **Posição por caixa**: cada caixa com as suas ferramentas (cadastrada, baixas, com empregado, guardada, saldo no estoque) e o total. O CSV leva as mesmas colunas.
+- **Caixa × estoque:** a caixa não guarda mais ferramentas do que o estoque tem (saldo mais o que já saiu dela por baixa); o cadastro da caixa recusa o excesso e pede a entrada antes.
+- **Estoque inicial:** continua na tela de Configurar, mas só aumenta o saldo, e o aumento vira uma **entrada de ajuste** no histórico, para o saldo continuar batendo com as movimentações. Para reduzir, usa-se a baixa.
+- **Correção:** o "Disponível" da caixa não descontava a baixa feita com o empregado (5 na caixa, 2 entregues e 1 perdido mostrava 4 guardadas; o certo é 3).
+- **Dados de teste (versão 35):** a primeira ferramenta de cada caixa é entregue ao portador (a da caixa 4 volta), e a segunda das caixas 2 e 3 sofre baixa; o saldo bate em todas. No banco real (Fase 2) o gatilho de movimentações precisa da mesma regra; nada foi alterado no Supabase.
+
+## 380. Uniformes, Compras: botões no topo e compras e devoluções em listas separadas
+
+Em Uniformes > Compras, Exportar CSV, Importar NF-e, Registrar Compra e Devolução ficam no topo da tela, à esquerda (antes da Sugestão de compras), e a busca à direita. Dois botões, **Compras** e **Devoluções**, alternam as listas: Compras mostra a Sugestão de compras e a tabela das compras; Devoluções mostra as entradas de usados. A busca por fornecedor ou NF só aparece em Compras.
