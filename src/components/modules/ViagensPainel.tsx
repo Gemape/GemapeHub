@@ -104,21 +104,22 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   );
 
   return (
-    <div className="space-y-4">
-      {alternador}
-
+    <div className="space-y-3">
       <section className="space-y-2" aria-labelledby="viagens-indicadores">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="viagens-indicadores" className="text-lg font-semibold">Indicadores globais de despesas</h2>
+          {alternador}
           <div className="flex flex-wrap items-center gap-2">
           <LegendaFaixas />
           {seletorPeriodo("indicadores")}
           </div>
         </div>
-        <GradeDeCartoes colunas={4}>
-          <Indicador titulo="Despesas lançadas no mês" valor={String(globais.quantidade)} />
+        {/* Os cartões seguem o desenho da Frota (decisão 398): título com o escopo, uma linha que explica o cálculo e a mesma largura (7/12 da tela larga). */}
+        <GradeDeCartoes colunas={4} classe="xl:w-7/12">
+          <Indicador titulo="Viagens · Despesas lançadas no mês" subtitulo="Todas as despesas lançadas no período escolhido." valor={String(globais.quantidade)} />
           <Indicador
-            titulo="Índice de conformidade de lançamento"
+            titulo="Viagens · Índice de conformidade de lançamento"
+            subtitulo="Lançadas pelo próprio técnico ÷ lançadas no índice."
             valor={formatarPercentual(globais.icl)}
             pct={globais.icl}
             faixa={faixaDoIndice(globais.icl)?.faixa}
@@ -126,7 +127,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             explicacao={<ExplicacaoIcl />}
           />
           <Indicador
-            titulo="Índice de lançamento no prazo"
+            titulo="Viagens · Índice de lançamento no prazo"
+            subtitulo="Lançadas no prazo ÷ lançadas do técnico mecânico."
             valor={formatarPercentual(globais.prazo)}
             pct={globais.prazo}
             faixa={faixaDoIndice(globais.prazo)?.faixa}
@@ -135,7 +137,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             roxo
           />
           <Indicador
-            titulo="Índice de fechamento do relatório no prazo"
+            titulo="Viagens · Índice de fechamento do relatório no prazo"
+            subtitulo="Fechadas no prazo ÷ despesas a fechar no período."
             valor={formatarPercentual(fechamentoGlobal.indice)}
             pct={fechamentoGlobal.indice}
             faixa={faixaDoIndice(fechamentoGlobal.indice)?.faixa}
@@ -191,7 +194,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
           <h2 id="viagens-questionarios" className="text-lg font-semibold">Questionários de despesas</h2>
           <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar.</p>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:w-7/12">
           {tipos.map((t) => {
             const Icone = iconeDoTipo(t);
             const acaoRequerida = !questionarioPublicado(estado, t);
@@ -202,7 +205,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                 onClick={() => setTipo(t)}
                 disabled={acaoRequerida}
                 title={acaoRequerida ? "Ação requerida: corrija as ramificações em Parâmetros antes de publicar" : undefined}
-                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-12 items-center justify-center gap-3 px-3 py-1.5 text-left text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-11 items-center justify-center gap-3 px-3 py-1 text-left text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
                 <Icone className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
                 <span className="break-words">{t}</span>
@@ -218,8 +221,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   );
 }
 
-function Indicador({ titulo, valor, detalhe, explicacao, roxo, faixa, pct }: { titulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean; faixa?: Faixa | undefined; pct?: number | null | undefined }) {
-  return <Cartao titulo={titulo} valor={valor} indicador={{ pct: pct ?? null, faixa: faixa ?? null, detalhe: detalhe ?? "" }} extra={explicacao} classe={roxo ? "border-l-4 border-l-purple-600" : ""} compacto />;
+function Indicador({ titulo, subtitulo, valor, detalhe, explicacao, roxo, faixa, pct }: { titulo: string; subtitulo?: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean; faixa?: Faixa | undefined; pct?: number | null | undefined }) {
+  return <Cartao titulo={titulo} {...(subtitulo ? { subtitulo } : {})} valor={valor} indicador={{ pct: pct ?? null, faixa: faixa ?? null, detalhe: detalhe ?? "" }} extra={explicacao} classe={roxo ? "border-l-4 border-l-purple-600" : ""} compacto />;
 }
 
 function ExplicacaoIcl() {
