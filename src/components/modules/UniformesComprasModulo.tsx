@@ -1,6 +1,8 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useState } from "react";
+import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
+import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { DevolucaoEpiDialog } from "@/components/modules/DevolucaoEpiDialog";
 import { EntradasDeUsados } from "@/components/modules/EpiComprasModulo";
 import { SugestaoComprasModulo } from "@/components/modules/SugestaoComprasModulo";
@@ -137,7 +139,7 @@ export function UniformesComprasModulo() {
 
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
-      { onSuccess: () => setAberto(false) },
+      { onSuccess: () => { setAberto(false); void avisarEnderecamentoObrigatorio(parametros, "cat-uniformes", empresaCompra, itens.find((i) => i.id === itemSel)?.codigo_sku ?? ""); } },
     );
   }
 
@@ -332,6 +334,11 @@ export function UniformesComprasModulo() {
                 </SelectContent>
               </Select>
             </div>
+            {itemSel && (
+              <div className="sm:col-span-2">
+                <EnderecoDaEntrada categoriaId="cat-uniformes" empresaId={empresaCompra} codigo={itens.find((i) => i.id === itemSel)?.codigo_sku ?? ""} />
+              </div>
+            )}
             {pedeTamanho(
               parametros,
               "uniforme",

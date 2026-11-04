@@ -197,7 +197,7 @@ test("celular: o último cartão de uma fileira de três ocupa a linha toda, sem
   for (const arq of ["components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
     assert.match(ler(arq), /<GradeDeCartoes colunas=\{3\}>/, arq);
   }
-  assert.match(ler("components/GradeDeCartoes.tsx"), /sm:grid-cols-3 max-sm:\[&>\*:last-child:nth-child\(odd\)\]:col-span-2/);
+  assert.match(ler("components/GradeDeCartoes.tsx"), /sm:grid-cols-3 lg:grid-cols-4 max-sm:\[&>\*:last-child:nth-child\(odd\)\]:col-span-2/);
   assert.match(ler("components/modules/CartoesIndicadoresFrota.tsx"), /break-words font-display text-2xl font-bold/);
   for (const arq of ["components/modules/EpiRelatorioBaixa.tsx", "components/modules/UniformesRelatorioBaixa.tsx", "components/modules/EpiRelatorioFuncionario.tsx", "components/modules/UniformesRelatorioFuncionario.tsx", "components/modules/equipamento/AbastecimentoEquipamentoModulo.tsx", "components/modules/equipamento/ManutencaoEquipamentoModulo.tsx"]) {
     assert.match(ler(arq), /<GradeDeCartoes/, `${arq}: a grade padrão de cartões`);

@@ -100,3 +100,21 @@ export function montarClonagemEndereco(entrada: {
   if (repetido) throw new Error("O item de destino já está neste endereço.");
   return copia;
 }
+
+export const CATEGORIA_DA_TABELA = CATEGORIA;
+
+// Endereçamento do produto na entrada de uma compra (decisão 384): a categoria não usa endereçamento → nada a mostrar; usa → o endereço guardado (ou a falta dele, que na categoria
+// obrigatória é aviso). O endereço se acha pelo código do produto na empresa, sem diferenciar maiúsculas.
+export function enderecoDaEntrada(
+  dados: ParametrosBase,
+  categoriaId: string,
+  empresaId: string,
+  codigoProduto: string,
+  enderecos: EnderecoProduto[],
+): { aplica: boolean; obrigatorio: boolean; endereco: EnderecoProduto | null; texto: string } {
+  const tipo = enderecamentoDaCategoria(dados, categoriaId);
+  if (tipo === "nao_usa" || !empresaId || !codigoProduto.trim()) return { aplica: false, obrigatorio: false, endereco: null, texto: "" };
+  const endereco = enderecos.find((e) => e.empresa_id === empresaId && chave(e.codigo_produto) === chave(codigoProduto)) ?? null;
+  const texto = endereco ? [endereco.rua && `Rua ${endereco.rua}`, endereco.prateleira && `Número ${endereco.prateleira}`, endereco.apartamento && `Apartamento ${endereco.apartamento}`].filter(Boolean).join(" · ") : "";
+  return { aplica: true, obrigatorio: tipo === "obrigatorio", endereco, texto };
+}

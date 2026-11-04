@@ -1,3 +1,5 @@
+import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
+import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 
@@ -217,7 +219,11 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
         ? associarTamanhoNaEntrada(modulo, produtoEntrada, tamanho)
         : null;
     registrarLote.mutate([valores], {
-      onSuccess: () => setAberto(false),
+      onSuccess: () => {
+        setAberto(false);
+        // Entrada de ferramenta em categoria com endereçamento obrigatório e sem endereço: avisa onde cadastrar (decisão 384).
+        if (modulo === "ferramenta" && tipo === "Entrada" && produtoEntrada) void avisarEnderecamentoObrigatorio(parametros, "cat-ferramentas", produtoEntrada.empresa_id ?? "", produtoEntrada.codigo_sku ?? "");
+      },
       onError: () => {
         if (associada) desfazerAssociacaoDaEntrada(associada, tamanho);
       },
@@ -424,6 +430,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   )}
                 </SelectContent>
               </Select>
+              {modulo === "ferramenta" && tipoMovimentacao === "Entrada" && alvoId && (
+                <EnderecoDaEntrada categoriaId="cat-ferramentas" empresaId={itens.find((i) => i.id === alvoId)?.empresa_id ?? ""} codigo={itens.find((i) => i.id === alvoId)?.codigo_sku ?? ""} />
+              )}
               {!ehVeiculo && alvoId && (
                 <p className="text-[10px] text-muted-foreground">
                   Estoque atual:{" "}

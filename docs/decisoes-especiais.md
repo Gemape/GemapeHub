@@ -2152,3 +2152,12 @@ Ao clicar em **Devoluções**, o campo **Buscar devolução** aparece no topo da
 O botão **Imprimir** do Histórico do empregado e de Baixar Definitivas, no EPI e nos Uniformes, passou a se chamar **Relatório** (decisão 382, mesma rodada): continua abrindo o relatório no visualizador, onde se imprime ou se baixa o arquivo.
 
 Na mesma rodada (decisão 382), nos relatórios de **Histórico do empregado** e **Baixar Definitivas**, do EPI e dos Uniformes, os botões (Relatório e Exportar CSV) ficam à esquerda e os campos de busca e de período (Buscar, Início e Fim; Data Inicial, Data Final e Motivo de Baixa) no topo à direita, na barra padrão de filtros.
+
+## 383. Botões todos azuis e cartões com a largura padrão
+
+- **Botões:** o botão de contorno (o branco, como Exportar CSV, Cancelar e os de apoio) passou a ser azul, igual ao principal; nenhum botão do sistema fica em branco. O botão de impressão da Frota também se chama **Relatório**.
+- **Cartões:** em tela larga, todo cartão de indicador tem a largura de um quarto da linha, como os da Frota, mesmo quando a tela tem só dois ou três (Baixar Definitivas, Manutenção, Ocorrências, Abastecimento etc.); antes três cartões esticavam a linha inteira.
+
+## 384. Entrada de compra ligada ao endereçamento
+
+Ao registrar a entrada de uma compra de **EPI** ou **uniforme** (Registrar Compra) e a **entrada de ferramenta** (Movimentações > Nova movimentação > Entrada), a tela mostra, logo abaixo do produto escolhido e só quando a categoria usa endereçamento (Parâmetros > Gerais > Endereçamento), **onde guardar**: rua, número (estante) e apartamento do produto na empresa. Se o produto ainda não tem endereço, aparece o aviso "Sem endereçamento" (e "obrigatório nesta categoria", quando for o caso) com o link **Cadastrar endereçamento**, que abre o Endereçamento em outra aba, já filtrado pelo código do produto (`?busca=`), sem perder o que foi preenchido na compra. Ao salvar, a categoria de endereçamento obrigatório sem endereço recebe o aviso de sempre. Categoria que não usa endereçamento não vê nada disso. A importação de NF-e não mostra o endereço. Só modo demonstração; nada no Supabase.

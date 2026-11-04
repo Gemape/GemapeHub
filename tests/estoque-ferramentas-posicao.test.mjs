@@ -126,3 +126,11 @@ test("nos relatórios de histórico e de baixas, os botões ficam à esquerda e 
     assert.match(t, /<div className="flex flex-wrap items-end gap-2">\s*<div className="flex gap-2">/, arq);
   }
 });
+
+test("botão de contorno é azul e cartões de dois ou três ocupam um quarto da linha (decisão 383)", () => {
+  const ler = (c) => readFileSync(new URL(`../src/components/${c}`, import.meta.url), "utf8");
+  assert.match(ler("ui/button.tsx"), /outline:\s*"border border-primary bg-primary text-primary-foreground/);
+  const g = ler("GradeDeCartoes.tsx");
+  assert.match(g, /2: "grid-cols-2 lg:grid-cols-4"/);
+  assert.match(g, /3: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4/);
+});

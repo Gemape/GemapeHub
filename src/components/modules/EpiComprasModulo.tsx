@@ -2,6 +2,8 @@ import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
+import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { BuscaEpiCompra } from "@/components/modules/BuscaEpiCompra";
 import { DevolucaoEpiDialog } from "@/components/modules/DevolucaoEpiDialog";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
@@ -147,7 +149,7 @@ export function EpiComprasModulo() {
 
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
-      { onSuccess: () => setAberto(false) },
+      { onSuccess: () => { setAberto(false); void avisarEnderecamentoObrigatorio(parametros, "cat-epi", empresaCompra, itens.find((i) => i.id === itemSel)?.codigo_sku ?? ""); } },
     );
   }
 
@@ -325,6 +327,7 @@ export function EpiComprasModulo() {
               ) : (
                 <p className="text-sm text-muted-foreground">Nenhum EPI escolhido: clique numa linha da lista.</p>
               )}
+              {itemSel && <EnderecoDaEntrada categoriaId="cat-epi" empresaId={empresaCompra} codigo={itens.find((i) => i.id === itemSel)?.codigo_sku ?? ""} />}
               {itemSel && (
                 <p className="text-xs text-muted-foreground">
                   Esta compra alimenta o estoque {empresas.find((e) => e.id === empresaCompra)?.nome_fantasia}, onde o item existe uma vez só: compras de qualquer fornecedor somam no mesmo saldo (hoje, {itens.find((i) => i.id === itemSel)?.estoque_atual ?? 0}
