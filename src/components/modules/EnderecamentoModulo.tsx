@@ -1,6 +1,7 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { exportarCsv } from "@/lib/gemape";
 import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -88,7 +89,8 @@ export function EnderecamentoModulo() {
   ], [produtosBase, veiculos, equipamentos, parametros]);
   const salvar = useSalvar("enderecamentos", ["enderecamentos"]);
   const excluir = useExcluir("enderecamentos", ["enderecamentos"]);
-  const [busca, setBusca] = useState("");
+  const { busca: buscaDoLink } = useSearch({ strict: false }) as { busca?: string };
+  const [busca, setBusca] = useState(buscaDoLink ?? "");
   const [somenteSem, setSomenteSem] = useState(false);
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Endereco | null>(null);
