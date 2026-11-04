@@ -1,3 +1,4 @@
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, ClipboardList, Package } from "lucide-react";
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { StatCard } from "@/components/StatCard";
@@ -95,35 +96,13 @@ export function EpiRelatorioBaixa() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-end">
-        <div className="space-y-1.5">
-          <Label>Data Inicial</Label>
-          <Input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Data Final</Label>
-          <Input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Motivo de Baixa</Label>
-          <Select value={motivoFiltro} onValueChange={setMotivoFiltro}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={TODAS}>Todos os motivos</SelectItem>
-              {/* Os motivos de Parâmetros Específicos (decisão 328), mais os de baixas antigas que não estão mais na lista. */}
-              {[...new Set([...lerMotivosBaixaEpi(), ...movimentacoes.map((m) => m.motivo_baixa ?? "").filter(Boolean)])].map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex flex-wrap items-end gap-2">
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={imprimir}>
-            Imprimir
+          <Button variant="outline" onClick={imprimir}>
+            Relatório
           </Button>
           <Button
             variant="outline"
-            className="flex-1"
             onClick={() =>
               exportarCsv(
                 "relatorio-baixas-epi",
@@ -143,6 +122,29 @@ export function EpiRelatorioBaixa() {
             Exportar CSV
           </Button>
         </div>
+        <BarraDeFiltros>
+        <div className="space-y-1.5">
+          <Label>Data Inicial</Label>
+          <Input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Data Final</Label>
+          <Input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Motivo de Baixa</Label>
+          <Select value={motivoFiltro} onValueChange={setMotivoFiltro}>
+            <SelectTrigger className="w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODAS}>Todos os motivos</SelectItem>
+              {/* Os motivos de Parâmetros Específicos (decisão 328), mais os de baixas antigas que não estão mais na lista. */}
+              {[...new Set([...lerMotivosBaixaEpi(), ...movimentacoes.map((m) => m.motivo_baixa ?? "").filter(Boolean)])].map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        </BarraDeFiltros>
       </div>
 
       <GradeDeCartoes colunas={3}>

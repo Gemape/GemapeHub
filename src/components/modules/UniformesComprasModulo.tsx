@@ -59,6 +59,7 @@ export function UniformesComprasModulo() {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [devolucaoAberta, setDevolucaoAberta] = useState(false);
+  const [buscaDevolucao, setBuscaDevolucao] = useState("");
   const [visao, setVisao] = useState<"compras" | "sugestao" | "devolucoes">("compras");
   const [editando, setEditando] = useState<CompraUniforme | null>(null);
   const [quantidade, setQuantidade] = useState(0);
@@ -169,6 +170,16 @@ export function UniformesComprasModulo() {
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
           <Button requiresWrite onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
         </div>
+        {visao === "devolucoes" && (
+          <BarraDeFiltros>
+            <Input
+              aria-label="Buscar devolução"
+              placeholder="Buscar por funcionário, uniforme, motivo, NF ou fornecedor"
+              value={buscaDevolucao}
+              onChange={(e) => setBuscaDevolucao(e.target.value)}
+            />
+          </BarraDeFiltros>
+        )}
         {visao === "compras" && (
           <BarraDeFiltros>
             <Input
@@ -260,7 +271,7 @@ export function UniformesComprasModulo() {
         </Table>
       </div>}
 
-      {visao === "devolucoes" && <EntradasDeUsados modulo="uniforme" empresaId={empresaId} itens={itens} empresas={empresas} mostrarVazio />}
+      {visao === "devolucoes" && <EntradasDeUsados modulo="uniforme" empresaId={empresaId} itens={itens} empresas={empresas} busca={buscaDevolucao} mostrarVazio />}
       <DevolucaoEpiDialog modulo="uniforme" aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />
 
       <Dialog open={aberto} onOpenChange={setAberto}>

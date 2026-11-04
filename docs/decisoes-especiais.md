@@ -2144,3 +2144,11 @@ Em Uniformes > Compras, Exportar CSV, Importar NF-e, Registrar Compra e Devoluç
 ## 381. Uniformes, Compras: Sugestão de compras em botão próprio
 
 Em Uniformes > Compras, a **Sugestão de compras** deixou de aparecer em cima da lista de compras e ganhou o seu botão, ao lado de **Compras** e **Devoluções**: cada botão mostra só a sua lista. A tela abre em Compras. A busca por fornecedor ou NF continua só em Compras.
+
+## 382. Uniformes, Compras > Devoluções: busca por palavra-chave
+
+Ao clicar em **Devoluções**, o campo **Buscar devolução** aparece no topo da tela, à direita, na barra padrão de filtros (no lugar da busca por fornecedor ou NF, que é só de Compras). Acha por data, código da devolução, funcionário, empresa, uniforme (código e nome), tamanho, motivo, data da compra original, NF e fornecedor, sem diferenciar acento e maiúsculas e com as palavras em qualquer ordem. Com a busca ativa a lista mostra "x de y devoluções" e, sem resultado, "Nenhuma devolução para a busca". O texto digitado se guarda enquanto se alterna entre as visões.
+
+O botão **Imprimir** do Histórico do empregado e de Baixar Definitivas, no EPI e nos Uniformes, passou a se chamar **Relatório** (decisão 382, mesma rodada): continua abrindo o relatório no visualizador, onde se imprime ou se baixa o arquivo.
+
+Na mesma rodada (decisão 382), nos relatórios de **Histórico do empregado** e **Baixar Definitivas**, do EPI e dos Uniformes, os botões (Relatório e Exportar CSV) ficam à esquerda e os campos de busca e de período (Buscar, Início e Fim; Data Inicial, Data Final e Motivo de Baixa) no topo à direita, na barra padrão de filtros.
