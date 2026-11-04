@@ -2216,3 +2216,9 @@ Ordem do responsável, sobre o painel da decisão 396: os botões **Despesas de 
 
 ## 398. Viagens > Painel: indicadores no desenho e no tamanho da Frota
 Ordem do responsável: os cartões dos **Indicadores globais de despesas** seguem o padrão e o tamanho dos da Frota. Cada título ganha o escopo ("Viagens · …"), cada cartão ganha a linha que explica o cálculo logo abaixo do título (como na decisão 342) e a fileira ocupa 7/12 da largura em tela larga, como na Frota, em vez de esticar na tela inteira. Os botões de questionário (embaixo) têm a mesma largura dos cartões (7/12, quatro por linha). Para a página continuar cabendo numa tela só (decisão 396), os botões **Despesas de <mês>** e **Resultados dos técnicos** passam para a linha do título dos indicadores e o espaçamento do painel diminui. Só visual; nada no Supabase.
+
+## 399. Viagens > Painel: botões de questionário no padrão do cartão de Parâmetros
+Ordem do responsável (com o print de Parâmetros > Questionário de Despesas como modelo): os botões de **Questionários de despesas** do Painel de Viagens ficaram pequenos demais na decisão 398. Agora têm o mesmo desenho do cartão de Parâmetros: ícone em cima, nome embaixo, altura mínima de 5 rem, quatro por linha, na largura dos cartões de indicador (7/12 em tela larga). A página pode rolar um pouco em janelas baixas. Só visual; nada no Supabase.
+
+## 400. Viagens > Painel: botões no alto à esquerda, período à direita
+Ordem do responsável, lembrando o padrão do layout (botões sempre no alto à esquerda e buscas e filtros à direita): no Painel de Viagens os botões **Despesas de <mês>** e **Resultados dos técnicos** ficam no canto esquerdo da linha de cima, e **Faixas de desempenho** e o período ficam à direita. O título "Indicadores globais de despesas" deixou de aparecer (fica só para leitor de tela), o que mantém a altura do painel. Só visual; nada no Supabase.

@@ -106,9 +106,10 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   return (
     <div className="space-y-3">
       <section className="space-y-2" aria-labelledby="viagens-indicadores">
+        {/* Padrão do layout: os botões no alto, à esquerda, e os filtros e o período à direita (decisão 400). */}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="viagens-indicadores" className="text-lg font-semibold">Indicadores globais de despesas</h2>
           {alternador}
+          <h2 id="viagens-indicadores" className="sr-only">Indicadores globais de despesas</h2>
           <div className="flex flex-wrap items-center gap-2">
           <LegendaFaixas />
           {seletorPeriodo("indicadores")}
@@ -153,7 +154,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
       <div hidden={visao !== "despesas"}><ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} /></div>
 
       {visao === "tecnicos" && <section className="space-y-2" aria-labelledby="viagens-tecnicos">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* O seletor de período dos resultados (decisão 300) fica à direita, como os demais filtros. */}
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <h2 id="viagens-tecnicos" className="sr-only">Resultados dos técnicos</h2>
           {seletorPeriodo("tecnicos")}
         </div>
@@ -205,9 +207,9 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                 onClick={() => setTipo(t)}
                 disabled={acaoRequerida}
                 title={acaoRequerida ? "Ação requerida: corrija as ramificações em Parâmetros antes de publicar" : undefined}
-                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-11 items-center justify-center gap-3 px-3 py-1 text-left text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
-                <Icone className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
+                <Icone className="h-6 w-6 text-primary" aria-hidden="true" />
                 <span className="break-words">{t}</span>
                 {acaoRequerida && <span className="text-xs font-semibold text-destructive">Ação requerida</span>}
               </button>
