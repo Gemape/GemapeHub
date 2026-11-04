@@ -149,3 +149,10 @@ test("os cartões do Abastecimento (veículos e equipamentos) trazem a linha de 
     assert.match(t, /<GradeDeCartoes colunas=\{4\}>/, arq);
   }
 });
+
+test("Ocorrências tem busca por período (início e fim) e mostra a contagem (decisão 393)", () => {
+  const t = readFileSync(new URL("../src/components/modules/OcorrenciasModulo.tsx", import.meta.url), "utf8");
+  assert.match(t, /\(!inicio \|\| o\.data >= inicio\) && \(!fim \|\| o\.data <= fim\)/);
+  assert.match(t, /id="oc-inicio"[^>]*type="date"|<Input id="oc-inicio" type="date"/);
+  assert.match(t, /A data de início não pode ser depois da data de fim/);
+});

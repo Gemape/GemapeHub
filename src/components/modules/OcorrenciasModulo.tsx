@@ -54,7 +54,12 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
   const [editando, setEditando] = useState<Ocorrencia | null>(null);
   const tipoOcorrencia = { epi: "EPI", uniforme: "Uniforme", ferramenta: "Ferramenta", veiculo: "Veículo" }[modulo];
 
-  const { data: ocorrencias = [], isLoading } = useOcorrencias(busca, modulo);
+  const { data: todasAsOcorrencias = [], isLoading } = useOcorrencias(busca, modulo);
+  // Busca por período (decisão 393): da data de início à data de fim, as duas inclusas; só uma delas já filtra.
+  const [inicio, setInicio] = useState("");
+  const [fim, setFim] = useState("");
+  const periodoErrado = !!inicio && !!fim && inicio > fim;
+  const ocorrencias = periodoErrado ? [] : todasAsOcorrencias.filter((o) => (!inicio || o.data >= inicio) && (!fim || o.data <= fim));
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   // Lista completa para os nomes e para manter o empregado já vinculado, mesmo demitido.
   const { data: todosEmpregados = [] } = useEmpregados(TODAS);
@@ -150,12 +155,28 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
         <BarraDeFiltros>
           <Input
             placeholder="Buscar por descrição ou responsável"
-            className="max-w-xs"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
+          <div className="space-y-1">
+            <Label htmlFor="oc-inicio">Início</Label>
+            <Input id="oc-inicio" type="date" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="oc-fim">Fim</Label>
+            <Input id="oc-fim" type="date" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
+          </div>
+          {(inicio || fim) && (
+            <Button type="button" variant="ghost" onClick={() => { setInicio(""); setFim(""); }}>
+              Limpar período
+            </Button>
+          )}
         </BarraDeFiltros>
       </div>
+      {periodoErrado && <p role="alert" className="text-sm text-destructive">A data de início não pode ser depois da data de fim.</p>}
+      {(inicio || fim) && !periodoErrado && (
+        <p role="status" className="text-sm text-muted-foreground">{ocorrencias.length} de {todasAsOcorrencias.length} ocorrências no período.</p>
+      )}
 
       <div className="panel overflow-x-auto">
         <Table>
@@ -181,7 +202,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
             ) : ocorrencias.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center text-muted-foreground">
-                  Nenhuma ocorrência registrada.
+                  {inicio || fim ? "Nenhuma ocorrência no período." : "Nenhuma ocorrência registrada."}
                 </TableCell>
               </TableRow>
             ) : (
