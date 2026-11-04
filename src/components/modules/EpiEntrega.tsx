@@ -19,7 +19,7 @@ import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, tamanhoParaGravar
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
 import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
-import { useComprasEpis, useEmpregados, useEmpresas, useItens } from "@/lib/hooks-gemape";
+import { useComprasEpis, useComprasUniformes, useEmpregados, useEmpresas, useItens } from "@/lib/hooks-gemape";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { montarTermoEntregaEpiHtml } from "@/lib/termo-entrega-epi-html";
 import { montarTermoEntregaUniformeHtml } from "@/lib/termo-entrega-uniforme-html";
@@ -70,8 +70,10 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
 
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens(modulo, empresaSel || TODAS);
-  // Compras do EPI, para a devolução levar a origem ao estoque de usados (só o EPI tem estoque de usados).
+  // Compras do EPI ou do uniforme, para a devolução levar a origem ao estoque de usados.
   const { data: comprasEpi = [] } = useComprasEpis(empresaSel || TODAS, "", modulo === "epi");
+  const { data: comprasUniforme = [] } = useComprasUniformes(empresaSel || TODAS, "", modulo === "uniforme");
+  const comprasOrigem = modulo === "epi" ? comprasEpi : comprasUniforme;
   const parametros = useParametrosBase();
   const empregado = empregados.find((e) => e.id === empregadoId);
   const empresa = empresas.find((e) => e.id === empresaSel);
@@ -138,7 +140,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
         const tamanho = tamanhoParaGravar(l.tamanho, devolucao);
         // A devolução de EPI entra no estoque como produto usado, com os dados da compra original (decisão 327), como na Devolução da Entrada no Estoque.
         const item = itens.find((i) => i.id === l.item_id);
-        const origem = devolucao && modulo === "epi" && item ? { origem: origemDaLinhaDeDevolucao(comprasEpi, item as { id: string; ca?: string | null }, tamanho) } : {};
+        const origem = devolucao && item ? { origem: origemDaLinhaDeDevolucao(comprasOrigem, item as { id: string; ca?: string | null }, tamanho) } : {};
         return { item_id: l.item_id, quantidade: l.quantidade, ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanho ?? null } : {}), ...origem };
       }),
       data,

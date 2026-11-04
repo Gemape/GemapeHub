@@ -203,7 +203,7 @@ test("a tela: Entrada no Estoque com Devolução ao lado de Registrar Compra, ca
   assert.match(compras, /Código \{itens\.find/);
   const dev = ler("components/modules/DevolucaoEpiDialog.tsx");
   assert.ok(
-    dev.indexOf("Funcionário") < dev.indexOf("EPIs em posse de"),
+    dev.indexOf("Funcionário") < dev.indexOf("em posse de {empregado.nome}"),
     "o funcionário é a primeira pergunta",
   );
   assert.match(dev, /registrarDevolucaoEpi/);

@@ -302,9 +302,10 @@ export function useOcorrencias(busca = "", modulo?: Modulo) {
   });
 }
 
-export function useComprasUniformes(empresaId: string, busca = "") {
+export function useComprasUniformes(empresaId: string, busca = "", ativo = true) {
   return useQuery({
     ...opcoesBase,
+    enabled: ativo,
     queryKey: ["compras_uniformes", empresaId, busca],
     queryFn: async () => {
       const montar = () => {

@@ -75,9 +75,41 @@ test("a origem da devolução é a compra mais antiga do EPI no tamanho, e vazia
   assert.equal(origemDaLinhaDeDevolucao(compras, { id: "e1", ca: "99" }, "t42").ca_origem, "99");
 });
 
-test("a tela Entrega EPI leva a origem da compra na devolução de EPI (e só no EPI)", () => {
+test("a tela Entrega leva a origem da compra na devolução de EPI e de uniforme", () => {
   const t = readFileSync(new URL("../src/components/modules/EpiEntrega.tsx", import.meta.url), "utf8");
   assert.match(t, /import \{ origemDaLinhaDeDevolucao \} from "@\/lib\/devolucao-estoque-epi"/);
   assert.match(t, /const \{ data: comprasEpi = \[\] \} = useComprasEpis\(empresaSel \|\| TODAS, "", modulo === "epi"\)/);
-  assert.match(t, /devolucao && modulo === "epi" && item \? \{ origem: origemDaLinhaDeDevolucao\(comprasEpi,/);
+  assert.match(t, /useComprasUniformes\(empresaSel \|\| TODAS, "", modulo === "uniforme"\)/);
+  assert.match(t, /devolucao && item \? \{ origem: origemDaLinhaDeDevolucao\(comprasOrigem,/);
+});
+
+// ---------- Uniformes: mesma lógica de estoque do EPI (decisão 374) ----------
+
+test("Uniformes: o Estoque é a consulta de Novos e Usados e a devolução entra como usado, sem CA", () => {
+  const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  const estoque = ler("components/modules/EstoqueEpiModulo.tsx");
+  assert.match(estoque, /EstoqueEpiModulo\(\{ modulo = "epi" \}/);
+  assert.match(estoque, /saldosDeEpi\(parametros, porId\.get\(id\)!, modulo\)/);
+  assert.match(estoque, /modulo === "epi" && <TableHead>CA<\/TableHead>/);
+  const dev = ler("components/modules/DevolucaoEpiDialog.tsx");
+  assert.match(dev, /modulo,\n\s+comCodigo/);
+  assert.match(dev, /soEmpregadosDeUniforme/);
+  const unif = ler("components/modules/UniformesComprasModulo.tsx");
+  assert.match(unif, /<DevolucaoEpiDialog modulo="uniforme"/);
+  assert.match(unif, /<EntradasDeUsados modulo="uniforme"/);
+});
+
+test("Uniformes: devolução vira estoque usado com a origem da compra e a entrega baixa o saldo por tamanho", async () => {
+  const { demoSupabase } = await import("../src/integrations/supabase/demo-client.ts");
+  const { origemDaLinhaDeDevolucao } = await import("../src/lib/devolucao-estoque-epi.ts");
+  const { linhasDeEstoqueEpi } = await import("../src/lib/estoque-epi-visao.ts");
+  const item = { id: "u1", nome: "Camisa", codigo_sku: "UNI-1", estoque_atual: 7, estoque_minimo: 1, empresa_id: "e1" };
+  const compra = { id: "cu1", item_id: "u1", tamanho_id: null, data_compra: "2026-01-10", nota_fiscal: "55", fornecedor: "Têxtil", quantidade: 10, created_at: "2026-01-10" };
+  const origem = origemDaLinhaDeDevolucao([compra], item, "sem-tamanho");
+  assert.equal(origem?.nota_fiscal_origem, "55");
+  const devolucao = { id: "m1", item_id: "u1", empresa_id: "e1", tipo_movimentacao: "Devolucao", condicao: "usado", quantidade: 2, tamanho_id: null, data_compra_origem: origem.data_compra_origem, nota_fiscal_origem: "55", fornecedor_origem: "Têxtil" };
+  const linhas = linhasDeEstoqueEpi({ itens: [item], compras: [compra], devolucoes: [devolucao], saldosDe: () => ({ "sem-tamanho": 7 }), minimosDe: () => ({ "sem-tamanho": 1 }), mediaMensalDe: () => 0 });
+  assert.equal(linhas.filter((l) => l.condicao === "usado").reduce((t, l) => t + l.disponivel, 0), 2);
+  assert.equal(linhas.filter((l) => l.condicao === "novo").reduce((t, l) => t + l.disponivel, 0), 5);
+  assert.ok(demoSupabase);
 });

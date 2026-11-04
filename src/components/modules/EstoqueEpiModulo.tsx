@@ -34,7 +34,7 @@ import {
 import { minimosDeEpi, saldosDeEpi } from "@/lib/estoque-epi-saldos";
 import { nomeTamanho } from "@/lib/estoque-tamanho";
 import { exportarCsv, formatarData } from "@/lib/gemape";
-import { useComprasEpis, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
+import { useComprasEpis, useComprasUniformes, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
 import { lerItensEstoque } from "@/lib/itens-estoque-modulo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -42,7 +42,8 @@ const TODOS = "todos";
 
 // Módulo EPI > Estoque (decisão 329): só a consulta do estoque de EPIs. Dois botões escolhem os novos ou os usados (que vieram de devolução); filtros por empresa, palavra-chave,
 // data da compra, fornecedor, CA e nota fiscal; e, em cada linha, a compra de origem, o tamanho, o mínimo, a quantidade disponível, o alerta e a média de consumo mensal.
-export function EstoqueEpiModulo() {
+export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniforme" }) {
+  const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const [condicao, setCondicao] = useState<"novo" | "usado">("novo");
@@ -55,12 +56,14 @@ export function EstoqueEpiModulo() {
   const [nf, setNf] = useState("");
 
   const { data: itens = [], isLoading } = useQuery({
-    queryKey: ["estoque-modulo", "epi", empresaId],
-    queryFn: () => lerItensEstoque(supabase, "epi", empresaId),
+    queryKey: ["estoque-modulo", modulo, empresaId],
+    queryFn: () => lerItensEstoque(supabase, modulo, empresaId),
   });
   const { data: empresas = [] } = useEmpresas();
-  const { data: compras = [] } = useComprasEpis(empresaId);
-  const { data: movimentos = [] } = useMovimentacoes("epi", empresaId);
+  const { data: comprasEpi = [] } = useComprasEpis(empresaId, "", modulo === "epi");
+  const { data: comprasUniforme = [] } = useComprasUniformes(empresaId, "", modulo === "uniforme");
+  const compras = modulo === "epi" ? comprasEpi : comprasUniforme;
+  const { data: movimentos = [] } = useMovimentacoes(modulo, empresaId);
   const nomeDaEmpresa = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
   const nomeDoTamanho = (id: string | null) => (id ? nomeTamanho(parametros, id) : "—");
@@ -74,11 +77,11 @@ export function EstoqueEpiModulo() {
       itens,
       compras: compras as unknown as CompraDoEstoque[],
       devolucoes: movimentos as unknown as DevolucaoUsada[],
-      saldosDe: (id) => (porId.has(id) ? saldosDeEpi(parametros, porId.get(id)!) : {}),
-      minimosDe: (id) => (porId.has(id) ? minimosDeEpi(parametros, porId.get(id)!) : {}),
+      saldosDe: (id) => (porId.has(id) ? saldosDeEpi(parametros, porId.get(id)!, modulo) : {}),
+      minimosDe: (id) => (porId.has(id) ? minimosDeEpi(parametros, porId.get(id)!, modulo) : {}),
       mediaMensalDe: (id) => consumo.get(id) ?? 0,
     });
-  }, [itens, compras, movimentos, parametros]);
+  }, [itens, compras, movimentos, parametros, modulo]);
 
   const fornecedores = useMemo(
     () =>
@@ -106,7 +109,7 @@ export function EstoqueEpiModulo() {
   const periodoInvalido = !!dataInicio && !!dataFim && dataInicio > dataFim;
 
   return (
-    <section className="space-y-4" aria-label="Estoque de EPIs">
+    <section className="space-y-4" aria-label={modulo === "epi" ? "Estoque de EPIs" : "Estoque de uniformes"}>
       {/* Novos e Usados: botões azuis no topo, à direita; o escolhido leva um anel e o outro fica mais claro (decisão 353). */}
       <div className="flex flex-wrap justify-end gap-2" role="group" aria-label="Novos ou usados">
         {(["novo", "usado"] as const).map((c) => (
@@ -165,11 +168,13 @@ export function EstoqueEpiModulo() {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label htmlFor="est-ca">CA</Label>
-            <Input id="est-ca" value={ca} onChange={(e) => setCa(e.target.value)} />
-          </div>
+        <div className={modulo === "epi" ? "grid grid-cols-2 gap-2" : "space-y-1"}>
+          {modulo === "epi" && (
+            <div className="space-y-1">
+              <Label htmlFor="est-ca">CA</Label>
+              <Input id="est-ca" value={ca} onChange={(e) => setCa(e.target.value)} />
+            </div>
+          )}
           <div className="space-y-1">
             <Label htmlFor="est-nf">NF</Label>
             <Input id="est-nf" value={nf} onChange={(e) => setNf(e.target.value)} />
@@ -217,7 +222,7 @@ export function EstoqueEpiModulo() {
             disabled={lista.length === 0}
             onClick={() =>
               exportarCsv(
-                `estoque-epi-${condicao === "novo" ? "novos" : "usados"}`,
+                `estoque-${modulo}-${condicao === "novo" ? "novos" : "usados"}`,
                 lista.map((l) => ({
                   Código: l.codigo,
                   Descrição: l.descricao,
@@ -225,7 +230,7 @@ export function EstoqueEpiModulo() {
                   "Data da compra": l.dataCompra ? formatarData(l.dataCompra) : "",
                   NF: l.nf ?? "",
                   Fornecedor: l.fornecedor ?? "",
-                  CA: l.ca ?? "",
+                  ...(modulo === "epi" ? { CA: l.ca ?? "" } : {}),
                   Tamanho: l.tamanhoId ? nomeDoTamanho(l.tamanhoId) : "",
                   "Estoque mínimo": l.minimo,
                   "Quantidade disponível": l.disponivel,
@@ -255,7 +260,7 @@ export function EstoqueEpiModulo() {
               <TableHead>Data da compra</TableHead>
               <TableHead>NF</TableHead>
               <TableHead>Fornecedor</TableHead>
-              <TableHead>CA</TableHead>
+              {modulo === "epi" && <TableHead>CA</TableHead>}
               <TableHead>Tamanho</TableHead>
               <TableHead className="text-right">Estoque mínimo</TableHead>
               <TableHead className="text-right">Quantidade disponível</TableHead>
@@ -266,14 +271,14 @@ export function EstoqueEpiModulo() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={12}>Carregando estoque…</TableCell>
+                <TableCell colSpan={modulo === "epi" ? 12 : 11}>Carregando estoque…</TableCell>
               </TableRow>
             ) : lista.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="py-6 text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "epi" ? 12 : 11} className="py-6 text-center text-muted-foreground">
                   {condicao === "usado"
-                    ? "Nenhum EPI usado no estoque. Eles entram pela Devolução, na Entrada no Estoque."
-                    : "Nenhum EPI novo encontrado."}
+                    ? `Nenhum ${rotulo} usado no estoque. Eles entram pela Devolução, na ${modulo === "epi" ? "Entrada no Estoque" : "aba Compras"}.`
+                    : `Nenhum ${rotulo} novo encontrado.`}
                 </TableCell>
               </TableRow>
             ) : (
@@ -285,7 +290,7 @@ export function EstoqueEpiModulo() {
                   <TableCell>{l.dataCompra ? formatarData(l.dataCompra) : "—"}</TableCell>
                   <TableCell>{l.nf || "—"}</TableCell>
                   <TableCell>{l.fornecedor || "—"}</TableCell>
-                  <TableCell>{l.ca || "—"}</TableCell>
+                  {modulo === "epi" && <TableCell>{l.ca || "—"}</TableCell>}
                   <TableCell>{nomeDoTamanho(l.tamanhoId)}</TableCell>
                   <TableCell className="text-right">{l.minimo}</TableCell>
                   <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>

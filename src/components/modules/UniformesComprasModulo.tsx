@@ -1,6 +1,8 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useState } from "react";
+import { DevolucaoEpiDialog } from "@/components/modules/DevolucaoEpiDialog";
+import { EntradasDeUsados } from "@/components/modules/EpiComprasModulo";
 import { SugestaoComprasModulo } from "@/components/modules/SugestaoComprasModulo";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
@@ -56,6 +58,7 @@ export function UniformesComprasModulo() {
   const { empresaId } = useEmpresa();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
+  const [devolucaoAberta, setDevolucaoAberta] = useState(false);
   const [editando, setEditando] = useState<CompraUniforme | null>(null);
   const [quantidade, setQuantidade] = useState(0);
   const [valorUnitario, setValorUnitario] = useState(0);
@@ -164,6 +167,7 @@ export function UniformesComprasModulo() {
           </Button>
           <ImportarNfeXml />
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
+          <Button requiresWrite onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
         </div>
         <BarraDeFiltros>
           <Input
@@ -243,6 +247,9 @@ export function UniformesComprasModulo() {
           </TableBody>
         </Table>
       </div>
+
+      <EntradasDeUsados modulo="uniforme" empresaId={empresaId} itens={itens} empresas={empresas} />
+      <DevolucaoEpiDialog modulo="uniforme" aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />
 
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
