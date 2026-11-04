@@ -2083,3 +2083,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 369. Ocorrências: o veículo da lista abre só as informações de ocorrências
 
 - Ordem do responsável, no mesmo desenho da decisão 368: em **Veículos > Ocorrências**, clicar no veículo da lista (ou em Ver extrato) abre a janela **Ocorrências do veículo**, só com a seção Ocorrências (com o "Só em aberto", o Registrar ocorrência e a consulta ao código) e o km atual. Manutenções, Abastecimentos e Check lists não aparecem; o Gerar PDF sai direto com a tabela das ocorrências. **Escolha do Claude:** as preventivas vencidas e a média de consumo saem do resumo, por não serem de ocorrência. Só ajuste de tela; nada no Supabase.
+
+## 370. Manutenção e Ocorrências: cards e botões menos alargados
+
+- Ordem do responsável: nas telas **Veículos > Manutenção** e **Veículos > Ocorrências**, os cards de indicadores deixam de esticar na largura da tela. Cada card tem de 15 a 18 rem, em fileira alinhada à esquerda (os de Ocorrências passam ao desenho compacto, como os de Manutenção), e os botões azuis ficam compactos e arredondados numa **linha só, à direita** (em vez de empilhados): em Manutenção, Manutenções planejadas, Manutenções realizadas e Cadastrar nova manutenção; em Ocorrências, Ver ocorrências e Nova ocorrência. Os gráficos e a tabela de diagnóstico não mudam. Só ajuste visual; nada no Supabase.

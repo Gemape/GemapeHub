@@ -8,7 +8,8 @@ import type { IndicadoresDaManutencao } from "@/lib/manutencao-indicadores";
 export function CartoesManutencao({ indicadores }: { indicadores: IndicadoresDaManutencao }) {
   return (
     <section
-      className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      // Cards de largura limitada, alinhados à esquerda: não esticam a tela inteira em monitor largo.
+      className="grid justify-start gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(15rem,100%),18rem))]"
       aria-label="Indicadores de manutenção"
     >
       <Cartao titulo="Realizadas no prazo" indicador={indicadores.noPrazo} compacto />

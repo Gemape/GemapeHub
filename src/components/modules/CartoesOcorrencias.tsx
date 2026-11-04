@@ -10,11 +10,12 @@ export function CartoesOcorrencias({
 }) {
   return (
     <section
-      className="grid auto-rows-fr gap-3 sm:grid-cols-2"
+      // Cards de largura limitada, alinhados à esquerda: não esticam a tela inteira em monitor largo.
+      className="grid justify-start gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(15rem,100%),18rem))]"
       aria-label="Indicadores de ocorrências"
     >
-      <Cartao titulo="Tratadas no prazo" indicador={indicadores.noPrazo} />
-      <Cartao titulo="Não tratadas" indicador={indicadores.naoTratadas} />
+      <Cartao titulo="Tratadas no prazo" indicador={indicadores.noPrazo} compacto />
+      <Cartao titulo="Não tratadas" indicador={indicadores.naoTratadas} compacto />
     </section>
   );
 }
