@@ -33,6 +33,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   const [periodo, setPeriodo] = useState(periodoAtual);
   const prazos = useMemo(() => lerPrazos(), []);
   const [extratoDe, setExtratoDe] = useState<string | null>(null);
+  // O painel cabe numa página só (decisão 396): as duas listas ficam atrás de botões, uma de cada vez, e rolam por dentro.
+  const [visao, setVisao] = useState<"despesas" | "tecnicos">("despesas");
   // Relê os lançamentos sempre que volta do formulário, para o que acabou de ser enviado entrar na conta.
   const lista = useMemo(() => listarRespostas(), [tipo]);
   // Relatórios gerados na lista: o dia de cada um mede o índice de fechamento do relatório no prazo.
@@ -70,6 +72,12 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   const fechamentoDe = fechamentoDosTecnicos;
   const noPeriodo = globais.quantidade;
   // O mesmo período vale para os indicadores e para os resultados dos técnicos: o seletor aparece nas duas áreas (decisão 300).
+  const alternador = (
+    <div role="group" aria-label="Lista exibida" className="flex flex-wrap gap-2">
+      <Button type="button" size="sm" variant={visao === "despesas" ? "default" : "secondary"} aria-pressed={visao === "despesas"} onClick={() => setVisao("despesas")}>Despesas de {rotuloPeriodo(periodo)}</Button>
+      <Button type="button" size="sm" variant={visao === "tecnicos" ? "default" : "secondary"} aria-pressed={visao === "tecnicos"} onClick={() => setVisao("tecnicos")}>Resultados dos técnicos</Button>
+    </div>
+  );
   const seletorPeriodo = (area: string) => (
     <Popover>
       <PopoverTrigger asChild>
@@ -96,11 +104,13 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   );
 
   return (
-    <div className="space-y-8">
-      <section className="space-y-3" aria-labelledby="viagens-questionarios">
-        <h2 id="viagens-questionarios" className="text-lg font-semibold">Questionários de despesas</h2>
-        <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar.</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="space-y-4">
+      <section className="space-y-2" aria-labelledby="viagens-questionarios">
+        <div className="flex flex-wrap items-baseline gap-x-3">
+          <h2 id="viagens-questionarios" className="text-lg font-semibold">Questionários de despesas</h2>
+          <p className="text-sm text-muted-foreground">Escolha o tipo da despesa a lançar.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {tipos.map((t) => {
             const Icone = iconeDoTipo(t);
             const acaoRequerida = !questionarioPublicado(estado, t);
@@ -111,9 +121,9 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
                 onClick={() => setTipo(t)}
                 disabled={acaoRequerida}
                 title={acaoRequerida ? "Ação requerida: corrija as ramificações em Parâmetros antes de publicar" : undefined}
-                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-28 flex-col items-center justify-center gap-2 p-3 text-center text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                className="panel disabled:cursor-not-allowed disabled:opacity-60 flex min-h-12 items-center justify-center gap-3 px-3 py-1.5 text-left text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
-                <Icone className="h-8 w-8 text-primary" aria-hidden="true" />
+                <Icone className="h-6 w-6 shrink-0 text-primary" aria-hidden="true" />
                 <span className="break-words">{t}</span>
                 {acaoRequerida && <span className="text-xs font-semibold text-destructive">Ação requerida</span>}
               </button>
@@ -122,7 +132,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
         </div>
       </section>
 
-      <section className="space-y-3" aria-labelledby="viagens-indicadores">
+      <section className="space-y-2" aria-labelledby="viagens-indicadores">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="viagens-indicadores" className="text-lg font-semibold">Indicadores globais de despesas</h2>
           <div className="flex flex-wrap items-center gap-2">
@@ -161,15 +171,17 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
         </GradeDeCartoes>
       </section>
 
-      <ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} />
+      {/* A lista fica montada e só escondida, para não perder o filtro e as despesas marcadas ao ver os resultados dos técnicos. */}
+      <div hidden={visao !== "despesas"}><ViagensLista lista={lista} periodo={periodo} tipos={tipos} tecnicos={responsaveisDaLista} emitente={emitente} relatorios={relatorios} aoGerarRelatorio={() => setRelatorios(listarRelatorios())} alternador={alternador} /></div>
 
-      <section className="space-y-3" aria-labelledby="viagens-tecnicos">
+      {visao === "tecnicos" && <section className="space-y-2" aria-labelledby="viagens-tecnicos">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="viagens-tecnicos" className="text-lg font-semibold">Resultados dos técnicos</h2>
+          {alternador}
+          <h2 id="viagens-tecnicos" className="sr-only">Resultados dos técnicos</h2>
           {seletorPeriodo("tecnicos")}
         </div>
         {noPeriodo === 0 && <p className="text-sm text-muted-foreground">Nenhuma despesa lançada em {rotuloPeriodo(periodo)}.</p>}
-        <div className="panel overflow-x-auto">
+        <div className="panel flex max-h-[max(8rem,calc(100dvh-43rem))] flex-col overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -198,7 +210,7 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
             </TableBody>
           </Table>
         </div>
-      </section>
+      </section>}
 
       {extratoDe && <ViagensExtrato tecnico={extratoDe} periodoInicial={periodo} lista={lista} aoFechar={() => setExtratoDe(null)} />}
     </div>

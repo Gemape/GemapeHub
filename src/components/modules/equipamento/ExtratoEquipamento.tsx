@@ -35,7 +35,14 @@ export const SECOES_DO_EXTRATO_EQ = [
 const TODAS_AS_SECOES = [0, 1, 2, 3];
 const TABELA_DAS_OCORRENCIAS = 3;
 
-export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equipamento | null; onFechar: () => void }) {
+// `foco`: aberto pela tela de Ocorrências, o extrato mostra só o que é das ocorrências (a seção, o título, o resumo e o PDF), como em Veículos (decisão 369).
+export type FocoExtratoEq = "ocorrencias";
+const FOCOS: Record<FocoExtratoEq, { titulo: string; secao: string; tabelas: number[]; periodo: string }> = {
+  ocorrencias: { titulo: "Ocorrências do equipamento", secao: "Ocorrências", tabelas: [TABELA_DAS_OCORRENCIAS], periodo: "O período vale para as ocorrências, pela data em que aconteceram." },
+};
+
+export function ExtratoEquipamento({ equipamento, foco, soAbertasInicial = false, onFechar }: { equipamento: Equipamento | null; foco?: FocoExtratoEq; soAbertasInicial?: boolean; onFechar: () => void }) {
+  const secoesVisiveis = foco ? SECOES_DO_EXTRATO_EQ.filter((x) => x.titulo === FOCOS[foco].secao) : SECOES_DO_EXTRATO_EQ;
   const { empresas } = useEmpresa();
   const abastecimentos = useAbastecimentosEq();
   const manutencoes = useManutencoesEq();
@@ -43,11 +50,11 @@ export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equ
   const checklists = useChecklistsEq();
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
-  const [soAbertas, setSoAbertas] = useState(false);
+  const [soAbertas, setSoAbertas] = useState(soAbertasInicial);
   const [personalizando, setPersonalizando] = useState(false);
   const [marcadas, setMarcadas] = useState<number[]>(TODAS_AS_SECOES);
   const [registrando, setRegistrando] = useState<"manutencao" | "abastecimento" | "ocorrencia" | null>(null);
-  useEffect(() => { setInicio(""); setFim(""); setSoAbertas(false); setRegistrando(null); }, [equipamento?.id]);
+  useEffect(() => { setInicio(""); setFim(""); setSoAbertas(soAbertasInicial); setRegistrando(null); }, [equipamento?.id]);
   const periodoInvalido = !!inicio && !!fim && inicio > fim;
   const noPeriodo = (data: string) => (!inicio || data >= inicio) && (!fim || data <= fim);
 
@@ -119,11 +126,11 @@ export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equ
     const abertas = soAbertas && tabelasEscolhidas.includes(TABELA_DAS_OCORRENCIAS);
     const d = montarDados(e, abertas);
     const html = montarExtratoHtml({
-      titulo: "Extrato do equipamento",
+      titulo: foco ? FOCOS[foco].titulo : "Extrato do equipamento",
       assunto: rotuloDoEquipamento(e),
       subtitulo: [`${nomeDoTipo(e)} · ${e.marca} ${e.modelo} · série ${e.numeroSerie} · adquirido em ${formatarData(e.dataAquisicao)} por ${reais(e.valorCompra)}`, `Período: ${inicio || fim ? `${inicio ? formatarData(inicio) : "desde o início"} a ${fim ? formatarData(fim) : "hoje"}` : "todo o histórico"}`, abertas ? "Só ocorrências em aberto" : ""].filter(Boolean).join(" · "),
       empresa: d.empresa,
-      resumo: d.resumo,
+      resumo: foco ? d.resumo.slice(0, 1) : d.resumo,
       tabelas: d.tabelas.filter((_, n) => tabelasEscolhidas.includes(n)),
     });
     imprimirDocumento(html);
@@ -139,7 +146,7 @@ export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equ
     <Dialog open={!!equipamento} onOpenChange={(a) => { if (!a) onFechar(); }}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-6xl">
         <DialogHeader>
-          <DialogTitle>Extrato do equipamento</DialogTitle>
+          <DialogTitle>{foco ? FOCOS[foco].titulo : "Extrato do equipamento"}</DialogTitle>
           <DialogDescription>{equipamento ? `${rotuloDoEquipamento(equipamento)} · adquirido em ${formatarData(equipamento.dataAquisicao)} por ${reais(equipamento.valorCompra)}` : ""}</DialogDescription>
         </DialogHeader>
 
@@ -152,15 +159,15 @@ export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equ
             <Label htmlFor="extrato-eq-fim">Data fim</Label>
             <Input id="extrato-eq-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
           </div>
-          <p className="max-w-md text-xs text-muted-foreground">O período vale para as manutenções realizadas, os abastecimentos, as ocorrências e os check lists. As preventivas sugeridas mostram sempre a situação de hoje.</p>
-          <Button type="button" className="ml-auto" disabled={periodoInvalido || !equipamento} onClick={() => setPersonalizando(true)}>Gerar PDF</Button>
+          <p className="max-w-md text-xs text-muted-foreground">{foco ? FOCOS[foco].periodo : "O período vale para as manutenções realizadas, os abastecimentos, as ocorrências e os check lists. As preventivas sugeridas mostram sempre a situação de hoje."}</p>
+          <Button type="button" className="ml-auto" disabled={periodoInvalido || !equipamento} onClick={() => (foco && equipamento ? gerarPdf(equipamento, FOCOS[foco].tabelas) : setPersonalizando(true))}>Gerar PDF</Button>
         </div>
         {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
 
         {dados && equipamento && (
           <div className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-3">
-              {dados.resumo.map(([rotulo, valor, cor]) => (
+              {(foco ? dados.resumo.slice(0, 1) : dados.resumo).map(([rotulo, valor, cor]) => (
                 <div key={rotulo} className="rounded-xl border bg-muted/30 p-3">
                   <p className="text-eyebrow">{rotulo}</p>
                   <p className={`mt-1 text-lg font-bold ${cor ? TEXTO_TELA[cor] : ""}`}>{valor}</p>
@@ -168,7 +175,7 @@ export function ExtratoEquipamento({ equipamento, onFechar }: { equipamento: Equ
               ))}
             </div>
 
-            {SECOES_DO_EXTRATO_EQ.map((secao) => (
+            {secoesVisiveis.map((secao) => (
               <section key={secao.titulo} className="space-y-3" aria-label={secao.titulo}>
                 <div className={`flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gradient-to-r ${secao.faixa} px-4 py-2.5 text-white shadow-sm`}>
                   <h3 className="text-xl font-bold tracking-tight">{secao.titulo}</h3>

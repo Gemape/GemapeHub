@@ -38,10 +38,12 @@ function abrirRelatorioSalvo(rel: RelatorioSalvo, lista: readonly RespostaRegist
 }
 
 // Lista das despesas do mês do painel (dec 186): filtros, detalhe de cada despesa e geração do relatório das marcadas.
-export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente, relatorios, aoGerarRelatorio }: {
+export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente, relatorios, aoGerarRelatorio, alternador }: {
   lista: readonly RespostaRegistrada[]; periodo: PeriodoMes; tipos: readonly string[]; tecnicos: readonly string[]; emitente: string;
   // Os relatórios gerados vivem no painel (que também mede o fechamento no prazo); a lista só os mostra e avisa quando gera um novo.
   relatorios: readonly RelatorioSalvo[]; aoGerarRelatorio: () => void;
+  // Botões que trocam a lista exibida no painel; ficam na linha dos filtros, no lugar do título (decisão 396).
+  alternador?: React.ReactNode;
 }) {
   const { empresaId, empresas } = useEmpresa();
   const { data: empregados = [] } = useEmpregados(TODAS, true);
@@ -104,7 +106,8 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente, relato
   return (
     <section className="space-y-3" aria-labelledby="viagens-lista">
       <div className="flex flex-wrap items-end gap-2">
-      <h2 id="viagens-lista" className="text-lg font-semibold">Despesas de {rotuloPeriodo(periodo)}</h2>
+      {alternador}
+      <h2 id="viagens-lista" className={alternador ? "sr-only" : "text-lg font-semibold"}>Despesas de {rotuloPeriodo(periodo)}</h2>
       <BarraDeFiltros>
         {seletor("Tipo", filtro.tipo ?? TODOS, (v) => mudar({ tipo: v === TODOS ? null : v }), "Todos os tipos", tipos)}
         {seletor("Técnico", filtro.tecnico ?? TODOS, (v) => mudar({ tecnico: v === TODOS ? null : v }), "Todos os técnicos", tecnicos)}
@@ -120,7 +123,7 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente, relato
       </div>
       {!valido && <p role="alert" className="text-sm text-destructive">A data inicial não pode ser depois da final.</p>}
 
-      <div className="panel overflow-x-auto">
+      <div className="panel flex max-h-[max(8rem,calc(100dvh-47rem))] flex-col overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table>
           <TableHeader>
             <TableRow>
