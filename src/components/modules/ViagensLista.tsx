@@ -102,7 +102,7 @@ export function ViagensLista({ lista, periodo, tipos, tecnicos, emitente, relato
   );
 
   return (
-    <section className="space-y-3" aria-labelledby="viagens-lista">
+    <section className="space-y-2" aria-labelledby="viagens-lista">
       <div className="flex flex-wrap items-end gap-2">
       <h2 id="viagens-lista" className="sr-only">Despesas de {rotuloPeriodo(periodo)}</h2>
       <BarraDeFiltros>

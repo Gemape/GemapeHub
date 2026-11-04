@@ -2213,3 +2213,6 @@ Ordem do responsável: no **Painel de Viagens** todas as informações têm de c
 
 ## 397. Viagens > Painel: botões das listas no topo e questionários embaixo
 Ordem do responsável, sobre o painel da decisão 396: os botões **Despesas de <mês>** e **Resultados dos técnicos** passam para o **alto** da tela (logo abaixo do título) e os **Questionários de despesas** vão para a **parte de baixo**, depois da lista. Os indicadores ficam no meio. A altura da tabela foi recalculada para o novo desenho (cabe sem rolar a página em 1880×797). Só visual; nada no Supabase.
+
+## 398. Viagens > Painel: indicadores no desenho e no tamanho da Frota
+Ordem do responsável: os cartões dos **Indicadores globais de despesas** seguem o padrão e o tamanho dos da Frota. Cada título ganha o escopo ("Viagens · …"), cada cartão ganha a linha que explica o cálculo logo abaixo do título (como na decisão 342) e a fileira ocupa 7/12 da largura em tela larga, como na Frota, em vez de esticar na tela inteira. Os botões de questionário (embaixo) têm a mesma largura dos cartões (7/12, quatro por linha). Para a página continuar cabendo numa tela só (decisão 396), os botões **Despesas de <mês>** e **Resultados dos técnicos** passam para a linha do título dos indicadores e o espaçamento do painel diminui. Só visual; nada no Supabase.
