@@ -30,14 +30,14 @@ test("os cartões de indicadores seguem o desenho da Frota: escopo no título, e
   assert.equal((p.match(/titulo="Viagens · /g) ?? []).length, 4);
   assert.match(p, /titulo="Viagens · Despesas lançadas no mês" subtitulo=/);
   assert.equal((p.match(/subtitulo="/g) ?? []).length, 4);
-  assert.match(p, /grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:w-7\/12/, "os questionários têm a mesma largura dos cartões");
+  assert.match(p, /grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">/, "os questionários ocupam a largura toda, distribuídos por igual (decisão 401)");
 });
 
-test("os botões de questionário seguem o padrão do cartão de Parâmetros: ícone em cima, nome embaixo (decisão 399)", () => {
+test("os botões de questionário são grandes: ícone em cima, nome embaixo, altura mínima de 7 rem (decisão 401)", () => {
   const p = ler("ViagensPainel.tsx");
-  assert.match(p, /flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium/);
-  const param = readFileSync(new URL("../src/components/parametros/QuestionarioDespesasConstrutor.tsx", import.meta.url), "utf8");
-  assert.match(param, /flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center text-xs font-medium/);
+  assert.match(p, /flex min-h-28 flex-col items-center justify-center gap-2 p-4 text-center text-sm font-semibold/);
+  assert.match(p, /<Icone className="h-9 w-9 text-primary"/);
+  assert.doesNotMatch(p, /xl:w-7\/12">\s*\{tipos\.map/, "os questionários não ficam presos a 7/12 da largura");
 });
 
 test("os botões das listas ficam no alto, à esquerda, e o período à direita (decisão 400)", () => {
