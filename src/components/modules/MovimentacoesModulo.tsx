@@ -106,14 +106,12 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
 
   const ehVeiculo = modulo === "veiculo";
   const [busca, setBusca] = useState("");
-  // A busca por palavra-chave existe em todas as Movimentações (decisão 376).
-  const comBusca = true;
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
   // Busca: veículo (ou código e descrição do item), empregado, tipo, manutenção, motivo, ônus, vistoria, ocorrência e data.
   const visiveis =
-    comBusca && busca.trim()
+    busca.trim()
       ? movimentacoes.filter((m) =>
           combinaBusca(
             busca,
@@ -264,14 +262,12 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           </Button>
         </div>
         <BarraDeFiltros>
-          {comBusca && (
-            <Input
-              aria-label="Buscar movimentação"
-              placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-          )}
+          <Input
+            aria-label="Buscar movimentação"
+            placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
           <p className="text-sm text-muted-foreground">
             {visiveis.length === movimentacoes.length
               ? `Últimas ${movimentacoes.length} movimentações registradas.`
@@ -313,7 +309,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
                   className="text-center text-muted-foreground"
                 >
-                  {comBusca && busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
+                  {busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
                 </TableCell>
               </TableRow>
             ) : (
