@@ -2074,3 +2074,8 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 ## 367. Extrato do veículo: botão Registrar ocorrência
 
 - Ordem do responsável: na faixa **Ocorrências** do extrato do veículo entra o botão **Registrar ocorrência**, ao lado de "Só em aberto" e no mesmo desenho de Registrar manutenção, Registrar abastecimento e Registrar check list avulso. Ele abre Veículos > Ocorrências com a **Nova ocorrência já com o veículo do extrato** e, ao salvar ou cancelar, devolve a pessoa ao extrato desse veículo (vai e volta da decisão 346). Só no modo demonstração, como a lista de ocorrências do extrato; nada no Supabase.
+
+## 368. Manutenção: o veículo da lista abre só as informações de manutenção
+
+- Ordem do responsável: em **Veículos > Manutenção**, clicar no veículo da lista (ou em Ver extrato) abre uma janela **só com o que é de manutenção do veículo**, chamada **Manutenção do veículo**: a seção Manutenções (sugeridas, realizadas e itens em atenção), o km atual e as preventivas vencidas. Abastecimentos, Ocorrências e Check lists não aparecem; o Gerar PDF sai direto com essas mesmas tabelas. O Registrar manutenção continua na seção.
+- As outras telas (Frota, Ocorrências, Abastecimento) seguem abrindo o extrato completo. **Escolha do Claude:** a média de consumo também sai do resumo, por ser de abastecimento. Só ajuste de tela; nada no Supabase.

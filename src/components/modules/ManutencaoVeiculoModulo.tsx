@@ -208,7 +208,7 @@ export function ManutencaoVeiculoModulo() {
           <CartoesManutencao indicadores={indicadores} />
           <GraficosManutencao compacto revisoes={revisoes} manutencoes={todas.filter((m) => idsDaEmpresa.has(m.veiculoId))} hoje={hoje} />
           <TabelaDiagnosticoManutencao linhas={diagnostico} aoAbrir={(id, secao) => setExtrato({ id, secao })} />
-          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} onFechar={() => setExtrato(null)} />
+          <ExtratoVeiculo veiculo={veiculos.find((v) => v.id === extrato?.id) ?? null} secao={extrato?.secao ?? null} foco="manutencao" onFechar={() => setExtrato(null)} />
         </>
       )}
 
