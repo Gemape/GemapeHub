@@ -294,9 +294,9 @@ export function OcorrenciasVeiculoModulo() {
       ) : (
         <>
           <div className="flex flex-wrap items-end gap-2">
-            <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+            <Button ref={voltarRef} type="button" variant="outline" size="sm" className="rounded-full" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
             <h2 className="text-base font-semibold">{BOTOES_FILTRO.find((b) => b.filtro === filtro)?.rotulo ?? "Ocorrências"}</h2>
-            <Button requiresWrite="operar" onClick={abrirNova}>Nova ocorrência</Button>
+            <Button requiresWrite="operar" size="sm" className="rounded-full px-4" onClick={abrirNova}>Nova ocorrência</Button>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por situação">
               {BOTOES_FILTRO.map(({ filtro: f, rotulo }) => (
                 <Button key={f} type="button" size="sm" variant={filtro === f ? "default" : "outline"} aria-pressed={filtro === f} onClick={() => setFiltro(f)}>

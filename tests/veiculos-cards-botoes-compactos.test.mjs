@@ -26,3 +26,13 @@ test("os botões azuis de Manutenção e de Ocorrências são compactos, arredon
   // Os botões não voltam a empilhar em coluna.
   assert.doesNotMatch(m + o, /flex flex-col items-end gap-2/);
 });
+
+test("os botões das listas seguem o mesmo estilo do painel: Nova ocorrência e Voltar ao painel também compactos e arredondados", () => {
+  const o = le("OcorrenciasVeiculoModulo.tsx");
+  // Todo botão Nova ocorrência da tela (painel e lista) é compacto e arredondado.
+  const novas = o.match(/<Button requiresWrite="operar"[^>]*onClick=\{abrirNova\}>Nova ocorrência<\/Button>/g) ?? [];
+  assert.equal(novas.length, 2);
+  for (const b of novas) assert.match(b, /size="sm" className="rounded-full px-4"/);
+  assert.match(o, /variant="outline" size="sm" className="rounded-full" onClick=\{\(\) => setVerLista\(false\)\}/);
+  assert.match(le("ManutencaoVeiculoModulo.tsx"), /variant="outline" size="sm" className="rounded-full" onClick=\{\(\) => setAba\("painel"\)\}/);
+});
