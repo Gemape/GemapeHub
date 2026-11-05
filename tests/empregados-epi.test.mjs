@@ -90,3 +90,10 @@ test("Parâmetros > EPI > Parâmetros Específicos mostra a caixa dupla e o cada
   assert.match(le("ParametrosEpi.tsx"), /<HabilitarEmpregadosEpi/);
   assert.match(le("HabilitarEmpregadosEpi.tsx"), /CaixaDuplaEmpregados/);
 });
+
+test("se nenhum dos empregados oferecidos (a empresa escolhida) está na lista de habilitados, a rotina oferece todos em vez de uma caixa vazia", () => {
+  const s = memoria();
+  salvarEmpregadosDeEpi([{ empregadoId: "e2", nome: "João Lima", area: "Pintor" }], s);
+  assert.deepEqual(soEmpregadosDeEpi([maria, ana], s), [maria, ana], "só há habilitado em outra empresa");
+  assert.deepEqual(soEmpregadosDeEpi([maria, joao, ana], s), [joao], "com habilitado na empresa, só ele");
+});

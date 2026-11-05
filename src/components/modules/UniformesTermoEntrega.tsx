@@ -62,8 +62,8 @@ export function UniformesTermoEntrega() {
 
   const empresa = empresas.find((e) => e.id === empresaId);
   const empregado = empregados.find((e) => e.id === empregadoId);
-  // Quem pode entregar: empregado ativo, entre os habilitados dos uniformes, que não seja quem recebe.
-  const responsaveis = soEmpregadosDeUniforme(empregados.filter((e) => empregadoAtivo(e) && e.id !== empregadoId));
+  // Quem pode entregar: empregado ativo, entre os habilitados dos uniformes, que não seja quem recebe (tirado depois do filtro, para quem recebe ser o único habilitado não liberar todos).
+  const responsaveis = soEmpregadosDeUniforme(empregados.filter((e) => empregadoAtivo(e))).filter((e) => e.id !== empregadoId);
 
   function adicionarItem() {
     setItensEntrega([...itensEntrega, { item_id: "", quantidade: 1, estado: "Novo", tamanho: "" }]);

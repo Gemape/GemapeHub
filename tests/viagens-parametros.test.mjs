@@ -301,3 +301,12 @@ test("decisão 336: a janela dos habilitados carrega a lista do rascunho, pede c
   assert.match(caixa, /useEffect\(\(\) => \{ aoMudarAlterado\?\.\(alterado\); \}, \[alterado, aoMudarAlterado\]\)/);
   assert.match(ler("components/parametros/QuestionarioDespesasConstrutor.tsx"), /carregarDoQuestionario=\{\(\) => estado\.perguntas\.find\(\(q\) => q\.id === ID_HABILITADOS\)\?\.habilitados \?\? \[\]\}/);
 });
+
+test("Veículos: sem nenhum habilitado entre os empregados oferecidos, todos são oferecidos", async () => {
+  const { salvarEmpregadosDeVeiculos, soEmpregadosDeVeiculos } = await import("../src/lib/empregados-veiculos.ts");
+  const s = memoria();
+  salvarEmpregadosDeVeiculos([{ empregadoId: "x9", nome: "Outra Empresa", area: "Oficina" }], s);
+  const daEmpresa = [{ id: "a", nome: "Ana" }, { id: "b", nome: "Beto" }];
+  assert.deepEqual(soEmpregadosDeVeiculos(daEmpresa, s).map((e) => e.id), ["a", "b"]);
+  assert.deepEqual(soEmpregadosDeVeiculos([...daEmpresa, { id: "x9", nome: "Outra Empresa" }], s).map((e) => e.id), ["x9"]);
+});

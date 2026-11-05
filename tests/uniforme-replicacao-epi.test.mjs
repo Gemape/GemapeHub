@@ -129,3 +129,10 @@ test("o texto da tela de habilitados dos Uniformes diz onde o filtro vale e onde
   assert.match(t, /Na Entrega Uniforme, no Termo de Entrega, na devolução e nas Ocorrências só aparecem os habilitados/);
   assert.match(t, /O Termo de Baixa, as Movimentações e os relatórios mostram todos/);
 });
+
+test("nos Uniformes, se nenhum dos empregados oferecidos está na lista de habilitados, a rotina oferece todos", () => {
+  const s = memoria();
+  salvarEmpregadosDeUniforme([{ empregadoId: "e2", nome: "João Lima", area: "Pintor" }], s);
+  assert.deepEqual(soEmpregadosDeUniforme([maria], s), [maria]);
+  assert.deepEqual(soEmpregadosDeUniforme([maria, joao], s), [joao]);
+});

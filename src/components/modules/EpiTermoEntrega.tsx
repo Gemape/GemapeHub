@@ -54,8 +54,8 @@ export function EpiTermoEntrega() {
   }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("epi", empresaSel || TODAS);
-  // Quem pode entregar: empregado ativo, entre os habilitados do EPI, que não seja quem recebe.
-  const responsaveis = soEmpregadosDeEpi(empregados.filter((e) => empregadoAtivo(e) && e.id !== empregadoId));
+  // Quem pode entregar: empregado ativo, entre os habilitados do EPI, que não seja quem recebe (tirado depois do filtro, para quem recebe ser o único habilitado não liberar todos).
+  const responsaveis = soEmpregadosDeEpi(empregados.filter((e) => empregadoAtivo(e))).filter((e) => e.id !== empregadoId);
 
   const parametros = useParametrosBase();
   const registrarLote = useRegistrarMovimentacoesLote(["movimentacoes", "epis"]);
