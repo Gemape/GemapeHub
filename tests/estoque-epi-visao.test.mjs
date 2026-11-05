@@ -175,3 +175,30 @@ test('devolução gravada com tamanho explícito "sem-tamanho" conta como usado 
     ],
   );
 });
+
+test("alerta vale quando o saldo do tamanho é <= mínimo (e zerado alerta mesmo sem mínimo); a linha soma as compras e mostra o saldo recebido", () => {
+  const compras2 = [
+    { id: "a", item_id: "i1", tamanho_id: "m", data_compra: "2026-03-01", fornecedor: "A", quantidade: 10 },
+    { id: "b", item_id: "i1", tamanho_id: "m", data_compra: "2026-04-01", fornecedor: "B", quantidade: 6 },
+  ];
+  const entregues = 4;
+  const saldo = compras2.reduce((t, c) => t + c.quantidade, 0) - entregues; // 12 (o saldo real vem de saldosDeEpi; aqui entra pronto)
+  const linhaCom = (minimo, s = saldo) => {
+    const [l] = linhasDeEstoqueEpi({ ...base, compras: compras2, saldosDe: () => ({ m: s }), minimosDe: () => ({ m: minimo }) });
+    return l;
+  };
+  assert.equal(linhaCom(5).disponivel, 12, "10 + 6 − 4");
+  assert.equal(linhaCom(5).alerta, false, "12 > 5");
+  assert.equal(linhaCom(12).alerta, true, "12 <= 12 já alerta");
+  assert.equal(linhaCom(13).alerta, true);
+  assert.equal(linhaCom(0, 0).alerta, true, "zerado alerta mesmo sem mínimo");
+  assert.equal(linhaCom(0).alerta, false, "sem mínimo e com saldo não alerta");
+});
+
+test("CA do cadastro do item não vira CA de compra: só aparece quando nenhuma compra trouxe CA", () => {
+  const semCa = (id, data) => ({ id, item_id: "i1", tamanho_id: "m", data_compra: data, fornecedor: "A", quantidade: 5 });
+  const misto = linhasDeEstoqueEpi({ ...base, compras: [compras[0], semCa("x", "2026-07-01")], saldosDe: () => ({ m: 15 }) });
+  assert.deepEqual(misto[0].cas, ["111"], "compra sem CA não puxa o CA do cadastro quando outra compra tem CA");
+  const nenhuma = linhasDeEstoqueEpi({ ...base, compras: [semCa("x", "2026-07-01")], saldosDe: () => ({ m: 5 }) });
+  assert.deepEqual(nenhuma[0].cas, ["999"], "sem CA em nenhuma compra, vale o do cadastro");
+});

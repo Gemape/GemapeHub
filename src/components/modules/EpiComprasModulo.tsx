@@ -87,7 +87,10 @@ export function EpiComprasModulo() {
 
   // Saldo do produto (e do tamanho escolhido) no estoque da empresa: todas as compras, de qualquer fornecedor, somam nele.
   const itemEscolhido = itens.find((i) => i.id === itemSel);
-  const saldoDoEscolhido = itemEscolhido ? (saldosDeEpi(parametros, itemEscolhido)[tamanhoParaGravar(tamanho) ?? SEM_TAMANHO] ?? 0) : 0;
+  // Ao editar uma compra, o saldo já inclui a quantidade antiga dela (mesmo item e tamanho): tira para não contar duas vezes.
+  const tamanhoGravado = tamanhoParaGravar(tamanho) ?? SEM_TAMANHO;
+  const quantidadeAntiga = editando && editando.item_id === itemSel && (editando.tamanho_id ?? SEM_TAMANHO) === tamanhoGravado ? Number(editando.quantidade) || 0 : 0;
+  const saldoDoEscolhido = itemEscolhido ? (saldosDeEpi(parametros, itemEscolhido)[tamanhoGravado] ?? 0) - quantidadeAntiga : 0;
 
   function abrirNovo() {
     setEditando(null);
