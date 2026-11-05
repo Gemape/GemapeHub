@@ -24,7 +24,7 @@ const COR_FAIXA: Record<Faixa, string> = { verde: "text-emerald-700", amarelo: "
 export function TabelaDiagnosticoManutencao({ linhas, aoAbrir }: { linhas: LinhaDiagnostico[]; aoAbrir: (id: string, secao: "sugeridas" | null) => void }) {
   return (
     <section aria-label="Diagnóstico de manutenção por veículo">
-      <div className="flex max-h-[max(8rem,calc(100dvh-47.5rem))] flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="flex max-h-[max(8rem,calc(100dvh-36rem))] flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1100px] table-fixed">
           <TableHeader>
             <TableRow>

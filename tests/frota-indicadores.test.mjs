@@ -205,3 +205,16 @@ test("a Frota filtra a lista por subcategoria do veículo, ao lado da busca por 
   const filtros = frota.slice(frota.indexOf("filtros={"), frota.indexOf("acoes={"));
   assert.ok(filtros.indexOf("<Select") < filtros.indexOf("<Input"), "a seleção fica ao lado da busca, antes dela");
 });
+
+test("meses abaixo de 70% de preventivo entram no alerta de modo reativo (regra 80/20)", async () => {
+  const { mesesNoModoReativo } = await import("../src/lib/frota-indicadores.ts");
+  const meses = [
+    { rotulo: "jun/26", preventiva: 100, corretiva: 0 },
+    { rotulo: "jul/26", preventiva: 75, corretiva: 25 },
+    { rotulo: "ago/26", preventiva: 63.9, corretiva: 36.1 },
+    { rotulo: "set/26", preventiva: 70, corretiva: 30 },
+    { rotulo: "out/26", preventiva: 0, corretiva: 100 },
+    { rotulo: "nov/26", preventiva: 0, corretiva: 0 },
+  ];
+  assert.deepEqual(mesesNoModoReativo(meses), ["ago/26", "out/26"], "70% exato não alerta e mês sem gasto não conta");
+});

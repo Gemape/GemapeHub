@@ -62,6 +62,7 @@ export function QuadroGrafico({
   vazio,
   formula,
   formulaDetalhe,
+  alerta,
   larga = false,
   altura = "h-[clamp(9rem,24vh,15rem)]",
   children,
@@ -71,6 +72,8 @@ export function QuadroGrafico({
   // Como o número do card é calculado, numa linha só; `formulaDetalhe` é a explicação completa, no balão ao passar o mouse.
   formula?: string;
   formulaDetalhe?: string;
+  // Aviso ao gestor, em vermelho, quando o gráfico mostra algo fora do limite.
+  alerta?: string;
   vazio?: boolean;
   larga?: boolean;
   altura?: string;
@@ -94,6 +97,7 @@ export function QuadroGrafico({
             </Balao>
           </BalaoProvider>
         )}
+        {alerta && <p role="alert" className="text-xs font-medium text-destructive">⚠ {alerta}</p>}
       </figcaption>
       {vazio ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Sem dados para comparar.</p>

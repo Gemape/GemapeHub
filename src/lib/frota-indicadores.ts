@@ -221,6 +221,10 @@ export function proporcaoPreventiva(veiculoIds: string[], manutencoes: Manutenca
   };
 }
 
+// Meses do gráfico em que a frota operou no modo reativo (preventivo abaixo de 70% do gasto); mês sem gasto não conta.
+export const mesesNoModoReativo = (porMes: { rotulo: string; preventiva: number; corretiva: number }[]): string[] =>
+  porMes.filter((m) => m.preventiva + m.corretiva > 0 && m.preventiva < LIMITE_REATIVO).map((m) => m.rotulo);
+
 // Proporção do custo preventivo mês a mês (gráfico de barras empilhadas 100%, decisão 345): em cada um dos `n` meses recentes, a parte preventiva e a corretiva do gasto de manutenção, que somam 100%;
 // mês sem gasto fica com as duas em zero.
 export function proporcaoPreventivaPorMes(

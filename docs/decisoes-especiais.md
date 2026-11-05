@@ -2238,3 +2238,11 @@ Pendente: aplicar a migration no Supabase real; resolver as ferramentas hoje em 
 - **Fórmula:** os quatro gráficos da Frota (PCM x técnicos, consumo, CPK mês a mês, custo preventivo x corretivo) trazem uma linha "Fórmula:" abaixo do título; a explicação completa (exceções de Manut. e Conform., km de partida do CPK, primeiro abastecimento do consumo) vai no balão ao passar o mouse, para a tela da Frota continuar sem rolagem a mais.
 - **Regra 80/20:** o cálculo já existia (preventivo ÷ custo total de manutenção, meta 80%, alerta abaixo de 70%). Nada mudou nele.
 - **Dados de teste:** cada veículo ganhou 9 manutenções entre 175 e 2 dias atrás (`HISTORICO_MANUTENCOES`), com meses acima e abaixo da meta, para o gráfico mostrar barras variadas em qualquer dia de hoje. Os planos de freios dos cinco veículos agora nascem em dia (há preventiva de freios recente); os de óleo vencidos continuam os mesmos. Valem após "Restaurar dados de teste".
+
+## 404. Manutenção: cards no padrão da Frota
+- Os três cards (revisões realizadas no prazo, não realizadas no prazo e previstas) trazem a fórmula abaixo do título, como os da Frota, e ficam à esquerda com os gráficos ao lado (em tela larga), na mesma faixa. Em tela estreita os gráficos descem para baixo dos cards.
+- A tabela de diagnóstico passou a usar o espaço que sobrou (`100dvh - 36rem`), para a tela continuar sem rolagem.
+
+## 405. Frota: alerta de modo reativo
+- Com o custo preventivo da frota abaixo de 70% (regra 80/20), a Frota mostra um aviso (toast) uma vez por sessão do navegador; o aviso só é rearmado quando o índice volta a 70% ou mais. Enquanto os veículos carregam ou não há gasto de manutenção, o aviso não é avaliado nem rearmado.
+- O gráfico "Custo preventivo x corretivo por mês" traz, em vermelho, os meses abaixo de 70% (mês sem gasto não conta).
