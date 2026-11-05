@@ -91,7 +91,7 @@ export function GraficosFrota({
       <QuadroGrafico
           titulo="CPK da frota mês a mês (R$/km)"
           formula="(abastecimento + manutenção) ÷ km rodados no mês."
-          formulaDetalhe="Os km do mês vão do maior km registrado antes do mês até o maior do mês; o abastecimento feito no km de partida não entra na conta. Mês sem km rodados fica sem valor."
+          formulaDetalhe="Os km do mês vão do maior km registrado antes do mês até o maior do mês (sem registro antes, do menor km do mês); nesse caso o abastecimento feito no km de partida não entra na conta. Mês sem km rodados fica sem valor."
           {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Custo por km rodado (abastecimento + manutenção) de cada mês, para acompanhar a evolução dos custos." })}
           vazio={cpkMensal.every((m) => m.cpk === null)}
         >

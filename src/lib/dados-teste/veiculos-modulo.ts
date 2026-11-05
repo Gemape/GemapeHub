@@ -43,6 +43,13 @@ export function semearModuloVeiculos(storage: Armazenamento, agora: Date): void 
   const tipoOcorrencia = (nome: string) => parametros.tiposOcorrenciaVeiculo.find((t) => t.nome === nome);
   const subitem = (acao: typeof oleo, nome: string) => acao?.subitens.find((s) => s.nome === nome)?.id;
 
+  // O histórico de manutenções precisa dos grupos e subitens de Parâmetros: confere uma vez antes de gravar o primeiro veículo, para não deixar dados pela metade.
+  const grupoDoHistorico = (h: (typeof HISTORICO_MANUTENCOES)[number]) => (h.acao === "oleo" ? oleo : freios);
+  for (const h of HISTORICO_MANUTENCOES) {
+    const acao = grupoDoHistorico(h);
+    if (!acao || !subitem(acao, h.item)) throw new Error(`Dados de teste: falta "${h.item}" em Parâmetros > Veículos para o histórico de manutenções.`);
+  }
+
   VEICULOS.forEach((v, n) => {
     const K = v.km;
     // Abastecimentos mais antigos e mais novos que o que a base já grava (entre 20 e 8 dias atrás), com o km crescendo.
@@ -66,11 +73,10 @@ export function semearModuloVeiculos(storage: Armazenamento, agora: Date): void 
       }, st, agora, acoes));
     }
 
-    // Histórico dos meses anteriores (ver HISTORICO_MANUTENCOES). Os grupos e subitens vêm de Parâmetros: se faltar algum, o seed avisa em vez de gravar menos dados.
+    // Histórico dos meses anteriores (ver HISTORICO_MANUTENCOES); a conferência dos parâmetros já foi feita antes do loop dos veículos.
     for (const h of HISTORICO_MANUTENCOES) {
-      const acao = h.acao === "oleo" ? oleo : freios;
-      const id = acao && subitem(acao, h.item);
-      if (!acao || !id) throw new Error(`Dados de teste: falta "${h.item}" em Parâmetros > Veículos para o histórico de manutenções.`);
+      const acao = grupoDoHistorico(h)!;
+      const id = subitem(acao, h.item)!;
       ignorar(() => registrarManutencao({
         veiculoId: v.id, data: dia(agora, h.atras), km: K - h.desc, tipo: h.tipo, acaoId: acao.id,
         ...(h.tipo === "Corretiva" ? { descricao: "Desgaste identificado na revisão do veículo." } : {}),
