@@ -132,7 +132,7 @@ export function PortadoresCaixaModulo() {
       </form>
 
       <section className="panel space-y-3 p-5">
-        <div className="flex flex-col items-start gap-3 [&>[role=group]]:order-none">
+        <div className="flex flex-col items-start gap-3">
           <div><h2 className="font-semibold">Histórico de portadores</h2><p className="text-sm text-muted-foreground">Todos os registros das caixas desta empresa, inclusive caixas não habilitadas atualmente.</p></div>
           <BarraDeFiltros>
             <Input className="max-w-xs" value={buscaHistorico} onChange={(e) => setBuscaHistorico(e.target.value)} placeholder="Buscar caixa ou empregado" />

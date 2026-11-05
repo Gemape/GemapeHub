@@ -156,6 +156,14 @@ export function EpiComprasModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            placeholder="Buscar por fornecedor ou NF"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -183,14 +191,6 @@ export function EpiComprasModulo() {
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
           <Button requiresWrite onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            placeholder="Buscar por fornecedor ou NF"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

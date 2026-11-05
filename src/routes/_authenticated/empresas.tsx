@@ -109,6 +109,16 @@ function PaginaEmpresas() {
       </header>
 
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar empresa por palavra-chave"
+            placeholder="Buscar por palavra-chave"
+            className="max-w-md"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {empresas.length} empresa(s).</p>}
+        </BarraDeFiltros>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap gap-2">
             <Button
@@ -141,16 +151,6 @@ function PaginaEmpresas() {
             </Button>
           </div>
         </div>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar empresa por palavra-chave"
-            placeholder="Buscar por palavra-chave"
-            className="max-w-md"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-          {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {empresas.length} empresa(s).</p>}
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

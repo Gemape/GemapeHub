@@ -48,7 +48,6 @@ export function OcorrenciasEquipamentoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <Button requiresWrite="operar" onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova ocorrência</Button>
         <BarraDeFiltros>
           <div className="space-y-1.5">
             <Label htmlFor="filtro_eq_ocor">Equipamento</Label>
@@ -69,6 +68,7 @@ export function OcorrenciasEquipamentoModulo() {
           </div>
           <Input aria-label="Buscar ocorrência" placeholder="Buscar por equipamento, tipo ou descrição" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </BarraDeFiltros>
+        <Button requiresWrite="operar" onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova ocorrência</Button>
       </div>
 
       <div className="overflow-x-auto rounded-xl border">

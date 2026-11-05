@@ -146,6 +146,25 @@ export function UniformesComprasModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
+        {visao === "devolucoes" && (
+          <BarraDeFiltros>
+            <Input
+              aria-label="Buscar devolução"
+              placeholder="Buscar por funcionário, uniforme, motivo, NF ou fornecedor"
+              value={buscaDevolucao}
+              onChange={(e) => setBuscaDevolucao(e.target.value)}
+            />
+          </BarraDeFiltros>
+        )}
+        {visao === "compras" && (
+          <BarraDeFiltros>
+            <Input
+              placeholder="Buscar por fornecedor ou NF"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </BarraDeFiltros>
+        )}
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -172,25 +191,6 @@ export function UniformesComprasModulo() {
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
           <Button requiresWrite onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
         </div>
-        {visao === "devolucoes" && (
-          <BarraDeFiltros>
-            <Input
-              aria-label="Buscar devolução"
-              placeholder="Buscar por funcionário, uniforme, motivo, NF ou fornecedor"
-              value={buscaDevolucao}
-              onChange={(e) => setBuscaDevolucao(e.target.value)}
-            />
-          </BarraDeFiltros>
-        )}
-        {visao === "compras" && (
-          <BarraDeFiltros>
-            <Input
-              placeholder="Buscar por fornecedor ou NF"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-          </BarraDeFiltros>
-        )}
       </div>
 
       {/* Compras e devoluções em listas separadas (decisão 380): um botão para cada, e só a lista escolhida aparece. */}

@@ -119,11 +119,11 @@ test("o botão dos relatórios de Histórico do empregado e de Baixar Definitiva
   }
 });
 
-test("nos relatórios de histórico e de baixas, os botões ficam à esquerda e os filtros no topo à direita", () => {
+test("nos relatórios de histórico e de baixas, os filtros ficam no topo à esquerda e os botões à direita (decisão 406)", () => {
   for (const arq of ["EpiRelatorioBaixa", "UniformesRelatorioBaixa", "EpiRelatorioFuncionario", "UniformesRelatorioFuncionario"]) {
     const t = readFileSync(new URL(`../src/components/modules/${arq}.tsx`, import.meta.url), "utf8");
-    assert.ok(t.indexOf("Relatório\n") < t.indexOf("<BarraDeFiltros>"), `${arq}: os botões vêm antes da barra de filtros`);
-    assert.match(t, /<div className="flex flex-wrap items-end gap-2">\s*<div className="flex (?:flex-wrap )?gap-2">/, arq);
+    assert.ok(t.indexOf("<BarraDeFiltros>") < t.indexOf("Relatório\n"), `${arq}: a barra de filtros vem antes dos botões (ordem do Tab = ordem da tela)`);
+    assert.match(t, /<div className="flex flex-wrap items-end gap-2">\s*<BarraDeFiltros>/, arq);
   }
 });
 

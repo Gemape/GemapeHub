@@ -231,6 +231,14 @@ function CodigoFabricaPagina() {
       />
 
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar por produto, fornecedor, código ou CA"
+            placeholder="Buscar por produto, fornecedor, código ou CA"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
         <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="outline"
@@ -253,14 +261,6 @@ function CodigoFabricaPagina() {
         </Button>
         <Button onClick={() => abrir(null)}>Nova associação</Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar por produto, fornecedor, código ou CA"
-            placeholder="Buscar por produto, fornecedor, código ou CA"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

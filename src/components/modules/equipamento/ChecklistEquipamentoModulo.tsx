@@ -296,13 +296,12 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
 
       <section className="space-y-2">
         <div className="flex flex-wrap items-end gap-2">
-          <h2 className="order-first text-sm font-semibold">Check lists</h2>
-          <div className="order-first flex gap-1" role="group" aria-label="Tipo de check list">
+          <h2 className="text-sm font-semibold">Check lists</h2>
+          <div className="flex gap-1" role="group" aria-label="Tipo de check list">
             <Button size="sm" variant={visao === "periodicos" ? "default" : "outline"} aria-pressed={visao === "periodicos"} onClick={() => setVisao("periodicos")}>Periódicos ({naListaDoMes.length})</Button>
             <Button size="sm" variant={visao === "avulsos" ? "default" : "outline"} aria-pressed={visao === "avulsos"} onClick={() => setVisao("avulsos")}>Avulsos ({avulsosDoMes.length})</Button>
           </div>
-          {visao === "avulsos" && <Button requiresWrite="operar" size="sm" onClick={abrirNovoAvulso}>Novo check list avulso</Button>}
-          <Button className="order-first" variant={soPendencias ? "default" : "outline"} size="sm" onClick={() => setSoPendencias((v) => !v)}>
+          <Button variant={soPendencias ? "default" : "outline"} size="sm" onClick={() => setSoPendencias((v) => !v)}>
             Com pendências abertas ({(visao === "avulsos" ? avulsosDoMes : naListaDoMes).filter((c) => c.itens.some(pendenciaAbertaEq)).length})
           </Button>
           <BarraDeFiltros>
@@ -318,6 +317,7 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
             </div>
             <Input aria-label="Buscar check list" placeholder="Buscar por código, equipamento ou responsável" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
           </BarraDeFiltros>
+          {visao === "avulsos" && <Button requiresWrite="operar" size="sm" onClick={abrirNovoAvulso}>Novo check list avulso</Button>}
         </div>
         <div className="overflow-x-auto rounded-xl border">
           <Table>

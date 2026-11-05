@@ -142,8 +142,8 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
     <section className="space-y-2" aria-label="Indicadores da frota">
       {(acoes || filtros) && (
         <div className="flex flex-wrap items-end gap-2">
-          {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
           {filtros && <BarraDeFiltros>{filtros}</BarraDeFiltros>}
+          {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
         </div>
       )}
       <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">

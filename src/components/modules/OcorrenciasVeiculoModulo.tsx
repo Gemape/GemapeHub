@@ -294,10 +294,9 @@ export function OcorrenciasVeiculoModulo() {
       ) : (
         <>
           <div className="flex flex-wrap items-end gap-2">
-            <Button ref={voltarRef} type="button" variant="outline" size="sm" className="order-first rounded-full" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
-            <h2 className="order-first text-base font-semibold">{BOTOES_FILTRO.find((b) => b.filtro === filtro)?.rotulo ?? "Ocorrências"}</h2>
-            <Button requiresWrite="operar" size="sm" className="rounded-full px-4" onClick={abrirNova}>Nova ocorrência</Button>
-            <div className="order-first flex flex-wrap gap-2" role="group" aria-label="Filtrar por situação">
+            <Button ref={voltarRef} type="button" variant="outline" size="sm" className="rounded-full" onClick={() => setVerLista(false)}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+            <h2 className="text-base font-semibold">{BOTOES_FILTRO.find((b) => b.filtro === filtro)?.rotulo ?? "Ocorrências"}</h2>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por situação">
               {BOTOES_FILTRO.map(({ filtro: f, rotulo }) => (
                 <Button key={f} type="button" size="sm" variant={filtro === f ? "default" : "outline"} aria-pressed={filtro === f} onClick={() => setFiltro(f)}>
                   {rotulo} ({f === "todas" ? daEmpresa.length : contagem[f]})
@@ -323,6 +322,7 @@ export function OcorrenciasVeiculoModulo() {
               {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
               <p className="text-sm text-muted-foreground">{lista.length} ocorrência(s).</p>
             </BarraDeFiltros>
+            <Button requiresWrite="operar" size="sm" className="rounded-full px-4" onClick={abrirNova}>Nova ocorrência</Button>
           </div>
           {periodoInvalido && <p className="text-sm text-destructive">A data início não pode ser depois da data fim.</p>}
           <div className="max-h-[max(12rem,calc(100dvh-20rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">

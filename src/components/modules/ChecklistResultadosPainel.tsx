@@ -111,7 +111,6 @@ export function ChecklistResultadosPainel({
     <div className="space-y-3">
       {/* O período vale para tudo o que está abaixo: fica no alto, à esquerda (decisão 406), na linha dos botões dos tipos de check list, que ficam à direita. */}
       <div className="flex flex-wrap items-end gap-2">
-        {acoes}
         <BarraDeFiltros>
           <div className="flex items-center gap-2">
             <Label htmlFor="resultados_mes" className="text-xs">Período</Label>
@@ -124,6 +123,7 @@ export function ChecklistResultadosPainel({
             </Select>
           </div>
         </BarraDeFiltros>
+        {acoes}
       </div>
       {/* Tudo numa tela, sem rolar (decisões 332 e 347): no alto, os indicadores gerais com os cards e os gráficos ocupando toda a largura; abaixo, a tela dividida ao meio, com os técnicos e o PCM lado a lado
           (indicadores e tabela dos responsáveis de cada um). */}

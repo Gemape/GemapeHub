@@ -2254,3 +2254,5 @@ Esta decisão **inverte a 385**. Em todas as páginas e submenus, a **busca e os
 ## 407. Todo card traz o título e a linha que explica o cálculo
 
 O card padrão (`Cartao` e `StatCard`) passa a exigir o `subtitulo`: **todo card do sistema** mostra o título, uma linha que explica o número (ou o que ele conta) e o valor, no modelo da Frota. Entraram os subtítulos que faltavam em Ocorrências, check lists (painel e resultados), Dashboard, Início, Inventário e Manutenção de equipamentos. Em Veículos > Ocorrências, **Nova ocorrência** (azul) fica à direita, acima de **Ver ocorrências**.
+
+Ordem do Tab (decisão 406): em cada tela a barra de filtros vem **antes** dos botões no HTML, então o teclado e o leitor de tela seguem a ordem que se vê (busca e filtros, depois os botões). O `BarraDeFiltros` não usa mais `order-first`: quem monta uma tela nova deve pôr a barra antes dos botões na linha.

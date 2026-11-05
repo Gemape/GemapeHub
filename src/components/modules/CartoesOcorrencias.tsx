@@ -12,7 +12,7 @@ export function CartoesOcorrencias({
   return (
     <GradeDeCartoes colunas={4} rotulo="Indicadores de ocorrências">
       <Cartao titulo="Tratadas no prazo" subtitulo="Tratadas no prazo ÷ tratadas + vencidas sem tratativa." indicador={indicadores.noPrazo} compacto />
-      <Cartao titulo="Não tratadas" subtitulo="Vencidas sem tratativa ÷ tratadas + vencidas sem tratativa." indicador={indicadores.naoTratadas} compacto />
+      <Cartao titulo="Não tratadas" subtitulo="Tratadas fora do prazo + vencidas sem tratativa ÷ tratadas + vencidas sem tratativa." indicador={indicadores.naoTratadas} compacto />
     </GradeDeCartoes>
   );
 }

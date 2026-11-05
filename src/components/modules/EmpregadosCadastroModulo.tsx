@@ -156,6 +156,10 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
       </header>
 
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input aria-label="Buscar empregado por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {busca.trim() && <p className="text-sm text-muted-foreground">{encontrados.length} de {empregados.length} empregado(s).</p>}
+        </BarraDeFiltros>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap gap-2">
             <Button
@@ -198,10 +202,6 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             </Button>
           </div>
         </div>
-        <BarraDeFiltros>
-          <Input aria-label="Buscar empregado por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
-          {busca.trim() && <p className="text-sm text-muted-foreground">{encontrados.length} de {empregados.length} empregado(s).</p>}
-        </BarraDeFiltros>
       </div>
 
       {isLoading ? (

@@ -233,6 +233,19 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar movimentação"
+            placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          <p className="text-sm text-muted-foreground">
+            {visiveis.length === movimentacoes.length
+              ? `Últimas ${movimentacoes.length} movimentações registradas.`
+              : `${visiveis.length} de ${movimentacoes.length} movimentações.`}
+          </p>
+        </BarraDeFiltros>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -267,19 +280,6 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             Nova movimentação
           </Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar movimentação"
-            placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-          <p className="text-sm text-muted-foreground">
-            {visiveis.length === movimentacoes.length
-              ? `Últimas ${movimentacoes.length} movimentações registradas.`
-              : `${visiveis.length} de ${movimentacoes.length} movimentações.`}
-          </p>
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

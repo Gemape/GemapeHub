@@ -113,48 +113,6 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
     <section className="space-y-4" aria-label={modulo === "epi" ? "Estoque de EPIs" : "Estoque de uniformes"}>
       {/* Novos e Usados: botões azuis no topo, à esquerda; o escolhido leva um anel e o outro fica mais claro (decisão 353). */}
       <div className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
-        {(["novo", "usado"] as const).map((c) => (
-          <Button
-            key={c}
-            type="button"
-            className={condicao === c ? "ring-2 ring-primary ring-offset-2" : "opacity-70"}
-            aria-pressed={condicao === c}
-            onClick={() => setCondicao(c)}
-          >
-            {c === "novo" ? "Novos" : "Usados"} (
-            {doTipo(c, filtradas).reduce((t, l) => t + l.disponivel, 0)})
-          </Button>
-        ))}
-      </div>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={lista.length === 0}
-            onClick={() =>
-              exportarCsv(
-                `estoque-${modulo}-${condicao === "novo" ? "novos" : "usados"}`,
-                lista.map((l) => ({
-                  Código: l.codigo,
-                  Descrição: l.descricao,
-                  Empresa: nomeDaEmpresa(l.empresaId),
-                  "Data da compra": l.dataCompra ? formatarData(l.dataCompra) : "",
-                  NF: l.nf ?? "",
-                  Fornecedor: l.fornecedor ?? "",
-                  ...(modulo === "epi" ? { CA: l.ca ?? "" } : {}),
-                  Tamanho: l.tamanhoId ? nomeDoTamanho(l.tamanhoId) : "",
-                  "Estoque mínimo": l.minimo,
-                  "Quantidade disponível": l.disponivel,
-                  Alerta: l.alerta ? "Abaixo do mínimo" : "",
-                  "Média de consumo mensal": Number(l.mediaMensal.toFixed(2)),
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
-        </div>
         <BarraDeFiltros>
         <div className="w-44 space-y-1">
           <Label htmlFor="est-empresa">Empresa</Label>
@@ -245,6 +203,48 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           Limpar filtros
         </Button>
         </BarraDeFiltros>
+        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
+        {(["novo", "usado"] as const).map((c) => (
+          <Button
+            key={c}
+            type="button"
+            className={condicao === c ? "ring-2 ring-primary ring-offset-2" : "opacity-70"}
+            aria-pressed={condicao === c}
+            onClick={() => setCondicao(c)}
+          >
+            {c === "novo" ? "Novos" : "Usados"} (
+            {doTipo(c, filtradas).reduce((t, l) => t + l.disponivel, 0)})
+          </Button>
+        ))}
+      </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={lista.length === 0}
+            onClick={() =>
+              exportarCsv(
+                `estoque-${modulo}-${condicao === "novo" ? "novos" : "usados"}`,
+                lista.map((l) => ({
+                  Código: l.codigo,
+                  Descrição: l.descricao,
+                  Empresa: nomeDaEmpresa(l.empresaId),
+                  "Data da compra": l.dataCompra ? formatarData(l.dataCompra) : "",
+                  NF: l.nf ?? "",
+                  Fornecedor: l.fornecedor ?? "",
+                  ...(modulo === "epi" ? { CA: l.ca ?? "" } : {}),
+                  Tamanho: l.tamanhoId ? nomeDoTamanho(l.tamanhoId) : "",
+                  "Estoque mínimo": l.minimo,
+                  "Quantidade disponível": l.disponivel,
+                  Alerta: l.alerta ? "Abaixo do mínimo" : "",
+                  "Média de consumo mensal": Number(l.mediaMensal.toFixed(2)),
+                })),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+        </div>
       </div>
       {periodoInvalido && (
         <p className="text-sm text-destructive">

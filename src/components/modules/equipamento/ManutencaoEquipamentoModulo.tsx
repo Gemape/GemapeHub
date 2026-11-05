@@ -46,7 +46,6 @@ export function ManutencaoEquipamentoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova manutenção</Button>
         <BarraDeFiltros>
           <div className="space-y-1.5">
             <Label htmlFor="filtro_eq_manut">Histórico por equipamento</Label>
@@ -69,6 +68,7 @@ export function ManutencaoEquipamentoModulo() {
           </div>
           <Input aria-label="Buscar manutenção" placeholder="Buscar por equipamento, ação ou local" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </BarraDeFiltros>
+        <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova manutenção</Button>
       </div>
 
       <GradeDeCartoes colunas={3}>

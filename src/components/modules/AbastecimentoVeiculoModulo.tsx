@@ -160,8 +160,6 @@ export function AbastecimentoVeiculoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <Button variant="outline" onClick={() => setRelatorioAberto(true)} disabled={periodoInvalido}>Relatório</Button>
-        <Button requiresWrite onClick={abrir}>Novo abastecimento</Button>
         <BarraDeFiltros>
           <div className="space-y-1.5">
             <Label htmlFor="filtro_veiculo">Histórico por veículo</Label>
@@ -190,6 +188,8 @@ export function AbastecimentoVeiculoModulo() {
           </div>
           {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
         </BarraDeFiltros>
+        <Button variant="outline" onClick={() => setRelatorioAberto(true)} disabled={periodoInvalido}>Relatório</Button>
+        <Button requiresWrite onClick={abrir}>Novo abastecimento</Button>
       </div>
 
       {resumo && (

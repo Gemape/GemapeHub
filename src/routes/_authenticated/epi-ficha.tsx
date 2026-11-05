@@ -177,6 +177,15 @@ function FichaEpiPagina() {
       </header>
 
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar ficha por código, descrição ou setor"
+            placeholder="Buscar por código, descrição ou setor"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
@@ -200,15 +209,6 @@ function FichaEpiPagina() {
             Nova ficha
           </Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar ficha por código, descrição ou setor"
-            placeholder="Buscar por código, descrição ou setor"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

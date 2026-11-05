@@ -25,9 +25,8 @@ function BarraDaLista({
 }: { titulo: string; mes: string; onMes: (m: string) => void; hoje: string; busca: string; onBusca: (b: string) => void; onVoltar: () => void; voltarRef?: React.Ref<HTMLButtonElement> | undefined; acao: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-end gap-2">
-      <Button ref={voltarRef} type="button" variant="outline" size="sm" className="order-first" onClick={onVoltar}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+      <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={onVoltar}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
       <h2 className="sr-only">{titulo}</h2>
-      <div>{acao}</div>
       <BarraDeFiltros>
       <div className="flex items-center gap-1.5">
         <Label htmlFor="lista_mes" className="text-xs">Mês</Label>
@@ -41,6 +40,7 @@ function BarraDaLista({
       </div>
       <Input aria-label="Buscar check list" placeholder="Buscar por veículo ou responsável" className="max-w-xs" value={busca} onChange={(e) => onBusca(e.target.value)} />
       </BarraDeFiltros>
+      <div>{acao}</div>
     </div>
   );
 }

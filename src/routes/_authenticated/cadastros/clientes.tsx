@@ -82,6 +82,10 @@ function PaginaClientes() {
     </header>
 
     <div className="flex flex-wrap items-end gap-2">
+      <BarraDeFiltros>
+        <Input aria-label="Buscar cliente por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {clientes.length} cliente(s).</p>}
+      </BarraDeFiltros>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" disabled={lista.length === 0} onClick={() => exportarCsv("clientes", lista.map((x) => ({
@@ -96,10 +100,6 @@ function PaginaClientes() {
           <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploCliente(clientes), true) : abrir(null)}>Novo cliente</Button>
         </div>
       </div>
-      <BarraDeFiltros>
-        <Input aria-label="Buscar cliente por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {clientes.length} cliente(s).</p>}
-      </BarraDeFiltros>
     </div>
 
     <div className="panel overflow-x-auto">

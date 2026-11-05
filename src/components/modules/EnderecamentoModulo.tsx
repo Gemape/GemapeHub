@@ -212,6 +212,10 @@ export function EnderecamentoModulo() {
     </header>
 
     <div className="flex flex-wrap items-end gap-2">
+      <BarraDeFiltros>
+        <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
+        <Input aria-label="Buscar por código, produto ou endereço" className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
+      </BarraDeFiltros>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           variant="outline"
@@ -233,10 +237,6 @@ export function EnderecamentoModulo() {
           Exportar CSV
         </Button>
       </div>
-      <BarraDeFiltros>
-        <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
-        <Input aria-label="Buscar por código, produto ou endereço" className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
-      </BarraDeFiltros>
     </div>
 
     <div className="panel overflow-x-auto">

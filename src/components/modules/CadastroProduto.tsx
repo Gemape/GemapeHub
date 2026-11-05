@@ -406,6 +406,15 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar por código ou descrição"
+            placeholder="Buscar por código ou descrição"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap gap-2">
             <Button
@@ -430,15 +439,6 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
             </Button>
           </div>
         </div>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar por código ou descrição"
-            placeholder="Buscar por código ou descrição"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

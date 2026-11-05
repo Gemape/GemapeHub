@@ -101,8 +101,6 @@ export function AbastecimentoEquipamentoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <Button variant="outline" onClick={gerarRelatorio} disabled={equipamentos.length === 0}>Gerar PDF</Button>
-        <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Novo abastecimento</Button>
         <BarraDeFiltros>
           <div className="space-y-1.5">
             <Label htmlFor="filtro_equipamento">Histórico por equipamento</Label>
@@ -116,6 +114,8 @@ export function AbastecimentoEquipamentoModulo() {
           </div>
           <Input aria-label="Buscar abastecimento" placeholder="Buscar por equipamento, data ou horímetro" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </BarraDeFiltros>
+        <Button variant="outline" onClick={gerarRelatorio} disabled={equipamentos.length === 0}>Gerar PDF</Button>
+        <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Novo abastecimento</Button>
       </div>
       {equipamentos.length === 0 && <p className="text-sm text-muted-foreground">Nenhum equipamento com motor a combustão cadastrado. Cadastre em Parâmetros &gt; Equipamentos com propulsão a diesel, gasolina ou gás.</p>}
 

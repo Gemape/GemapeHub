@@ -12,11 +12,10 @@ test("o cabeçalho das páginas põe o título à esquerda e os botões à direi
   }
 });
 
-test("Clientes, Fornecedores, Empresas, Empregados e Equipamentos têm os botões e a busca na mesma linha, os botões primeiro", () => {
+test("Clientes, Fornecedores, Empresas, Empregados e Equipamentos têm os botões e a busca na mesma linha, a barra de filtros primeiro e os botões depois (ordem do Tab)", () => {
   for (const arq of ["routes/_authenticated/cadastros/clientes.tsx", "routes/_authenticated/cadastros/fornecedores.tsx", "routes/_authenticated/empresas.tsx", "components/modules/EmpregadosCadastroModulo.tsx", "routes/_authenticated/cadastros/equipamentos.tsx"]) {
     const t = ler(arq);
-    assert.match(t, /<div className="flex flex-wrap items-end gap-2">\s*<div className="flex flex-wrap items-center gap-2">[\s\S]*?Exportar CSV[\s\S]*?<BarraDeFiltros>/, arq);
-    assert.doesNotMatch(t, /<header[^>]*>[\s\S]*?<\/header>[\s\S]{0,40}<div className="flex flex-wrap items-end gap-2">\s*<BarraDeFiltros>/, `${arq}: os botões não ficam fora da linha dos filtros`);
+    assert.match(t, /<div className="flex flex-wrap items-end gap-2">\s*<BarraDeFiltros>[\s\S]*?<div className="flex flex-wrap items-center gap-2">[\s\S]*?Exportar CSV/, arq);
   }
 });
 

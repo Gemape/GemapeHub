@@ -213,33 +213,6 @@ export function SugestaoComprasEpi() {
 
       {/* Busca e filtros à esquerda, botões à direita (decisão 406). */}
       <div className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" onClick={abrirRelatorio}>
-            Gerar relatório
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={filtradas.length === 0}
-            onClick={() =>
-              exportarCsv(
-                "sugestao-compras-epi",
-                filtradas.map((l) => ({
-                  Descrição: l.descricao,
-                  Empresa: nomeDaEmpresa(l.empresaId),
-                  "Estoque novos": l.novos,
-                  "Estoque usados": l.usados,
-                  "Estoque total": l.total,
-                  "Média de consumo mensal": Number(l.mediaMensal.toFixed(2)),
-                  "Tempo de cobertura (dias)": l.cobertura ?? "Sem consumo",
-                  "Status de criticidade": rotuloDoStatus(l.status),
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
-        </div>
         <BarraDeFiltros>
         <div className="w-56 space-y-1">
           <Label htmlFor="sug-empresa">Empresa</Label>
@@ -267,6 +240,33 @@ export function SugestaoComprasEpi() {
           />
         </div>
         </BarraDeFiltros>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" onClick={abrirRelatorio}>
+            Gerar relatório
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={filtradas.length === 0}
+            onClick={() =>
+              exportarCsv(
+                "sugestao-compras-epi",
+                filtradas.map((l) => ({
+                  Descrição: l.descricao,
+                  Empresa: nomeDaEmpresa(l.empresaId),
+                  "Estoque novos": l.novos,
+                  "Estoque usados": l.usados,
+                  "Estoque total": l.total,
+                  "Média de consumo mensal": Number(l.mediaMensal.toFixed(2)),
+                  "Tempo de cobertura (dias)": l.cobertura ?? "Sem consumo",
+                  "Status de criticidade": rotuloDoStatus(l.status),
+                })),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+        </div>
       </div>
 
       {/* O alerta de estoque no mínimo ou abaixo fica aqui, nos relatórios, e não na Entrega (decisão 386). */}

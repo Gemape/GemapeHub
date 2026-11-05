@@ -66,7 +66,7 @@ export function ChecklistPainelMensal({
 
   return (
     <section className="space-y-3" aria-label="Painel mensal do check list">
-      <div className="flex flex-col items-start gap-3 [&>[role=group]]:order-none">
+      <div className="flex flex-col items-start gap-3">
         <div>
           <h2 className="text-sm font-semibold">{todos ? "Painel de check lists" : "Painel do mês"}</h2>
           <p className="text-xs text-muted-foreground">
