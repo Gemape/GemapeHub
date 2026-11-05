@@ -144,25 +144,28 @@ function DashboardGeral() {
       <GradeDeCartoes colunas={4}>
         <StatCard
           titulo="Itens cadastrados"
+          subtitulo="Itens do cadastro e as unidades em estoque."
           valor={itens.length}
           detalhe={`${itens.reduce((s, i) => s + (i.estoque_atual ?? 0), 0)} unidades`}
           icone={Boxes} compacto
         />
         <StatCard
           titulo="Valor total em estoque"
+          subtitulo="Estoque atual × preço de cada item."
           valor={formatarMoeda(valorTotal)}
           icone={Wallet} compacto
         />
         <StatCard
           titulo="Veículos"
+          subtitulo="Veículos cadastrados e quantos estão ativos."
           valor={veiculos.length}
           detalhe={`${veiculos.filter((v) => v.status === "Ativo").length} ativos`}
           icone={Car} compacto
         />
         <StatCard
           titulo="Empregados ativos"
+          subtitulo="Somente colaboradores em atividade."
           valor={totalEmpregados}
-          detalhe="Somente colaboradores em atividade"
           icone={Users} compacto
         />
       </GradeDeCartoes>

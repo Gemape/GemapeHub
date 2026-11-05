@@ -66,10 +66,10 @@ export function InventarioEquipamentoModulo() {
       </div>
 
       <GradeDeCartoes colunas={4}>
-        <StatCard titulo="Equipamentos" valor={equipamentos.length} icone={Forklift} compacto />
-        <StatCard titulo="Em manutenção" valor={equipamentos.filter((e) => e.status === "Em manutenção").length} icone={Wrench} compacto />
-        <StatCard titulo="Ocorrências abertas" valor={abertasTotal} icone={TriangleAlert} compacto />
-        <StatCard titulo="Custo de manutenção" valor={reais(custoTotal)} icone={Banknote} compacto />
+        <StatCard titulo="Equipamentos" subtitulo="Equipamentos cadastrados." valor={equipamentos.length} icone={Forklift} compacto />
+        <StatCard titulo="Em manutenção" subtitulo="Equipamentos com status Em manutenção." valor={equipamentos.filter((e) => e.status === "Em manutenção").length} icone={Wrench} compacto />
+        <StatCard titulo="Ocorrências abertas" subtitulo="Ocorrências ainda sem encerramento." valor={abertasTotal} icone={TriangleAlert} compacto />
+        <StatCard titulo="Custo de manutenção" subtitulo="Soma das manutenções dos equipamentos." valor={reais(custoTotal)} icone={Banknote} compacto />
       </GradeDeCartoes>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}

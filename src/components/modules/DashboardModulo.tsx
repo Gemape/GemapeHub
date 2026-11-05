@@ -62,6 +62,7 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
       <GradeDeCartoes colunas={4}>
         <StatCard
           titulo="Itens nesta consulta"
+          subtitulo="Itens da lista filtrada e o estoque somado deles."
           valor={itens.length}
           detalhe={`${totalEstoque} unidades em estoque`}
           icone={Boxes}
@@ -69,22 +70,22 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
         />
         <StatCard
           titulo="Saídas recentes"
+          subtitulo="Unidades entregues nas últimas movimentações."
           valor={emUso}
-          detalhe="Unidades entregues nas últimas movimentações"
           icone={PackageCheck}
           compacto
         />
         <StatCard
           titulo="Valor em estoque"
+          subtitulo="Itens carregados × preço informado; sem preço conta como zero."
           valor={formatarMoeda(valorEstoque)}
-          detalhe="Itens carregados × preço informado; sem preço conta como zero"
           icone={Wallet}
           compacto
         />
         <StatCard
           titulo="Alertas de reposição"
+          subtitulo="Itens com cobertura de estoque abaixo de 180 dias."
           valor={alertas.length}
-          detalhe="Cobertura abaixo de 180 dias"
           icone={AlertTriangle}
           compacto
         />

@@ -17,7 +17,7 @@ export function StatCard({
 }: {
   titulo: string;
   // Uma linha que explica o número, como nos cartões da Frota.
-  subtitulo?: string;
+  subtitulo: string;
   valor: string | number;
   detalhe?: string;
   icone?: LucideIcon;
@@ -25,5 +25,5 @@ export function StatCard({
   faixa?: Faixa | null;
   compacto?: boolean;
 }) {
-  return <Cartao titulo={titulo} {...(subtitulo ? { subtitulo } : {})} valor={String(valor)} icone={icone} compacto={compacto} indicador={{ pct, faixa, detalhe: detalhe ?? "" }} />;
+  return <Cartao titulo={titulo} subtitulo={subtitulo} valor={String(valor)} icone={icone} compacto={compacto} indicador={{ pct, faixa, detalhe: detalhe ?? "" }} />;
 }

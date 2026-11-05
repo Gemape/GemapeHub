@@ -64,7 +64,7 @@ export function Cartao({
 }: {
   titulo: string;
   // Uma linha que explica como o indicador é calculado (decisão 342), logo abaixo do título.
-  subtitulo?: string;
+  subtitulo: string;
   indicador: IndicadorDaFrota;
   valor?: string;
   icone?: LucideIcon | undefined;
@@ -89,7 +89,7 @@ export function Cartao({
             <p className="text-eyebrow">{titulo}</p>
             {extra}
           </div>
-          {subtitulo && <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{subtitulo}</p>}
+          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{subtitulo}</p>
           <p
             className={`${compacto ? "mt-1 break-words font-display text-xl font-bold leading-none tracking-tight" : "mt-1.5 break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl [@media(max-height:820px)]:sm:text-2xl"} ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}
           >
