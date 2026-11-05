@@ -335,7 +335,7 @@ export function EpiComprasModulo() {
               {itemSel && <EnderecoDaEntrada categoriaId="cat-epi" empresaId={empresaCompra} codigo={itens.find((i) => i.id === itemSel)?.codigo_sku ?? ""} />}
               {itemSel && (
                 <p className="text-xs text-muted-foreground">
-                  Esta compra alimenta o estoque {empresas.find((e) => e.id === empresaCompra)?.nome_fantasia}, onde o item existe uma vez só: compras de qualquer fornecedor somam no mesmo saldo (hoje, {saldoDoEscolhido}{tamanho ? " no tamanho" : ""}{quantidade > 0 ? `; com esta compra, ${saldoDoEscolhido + quantidade}` : ""}).
+                  Esta compra alimenta o estoque {empresas.find((e) => e.id === empresaCompra)?.nome_fantasia}, onde o item existe uma vez só: compras de qualquer fornecedor somam no mesmo saldo (saldo {tamanho ? "do tamanho escolhido " : ""}hoje: {saldoDoEscolhido}{quantidade > 0 ? `; com esta compra: ${saldoDoEscolhido + quantidade}` : ""}).
                 </p>
               )}
               <p className="text-xs text-muted-foreground">

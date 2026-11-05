@@ -78,12 +78,16 @@ function somarLotes(lotes: LinhaDeLote[]): LinhaEstoqueEpi[] {
   const grupos = new Map<string, LinhaDeLote[]>();
   for (const l of lotes) {
     const k = `${l.itemId}|${l.tamanhoId ?? ""}|${l.condicao}`;
-    grupos.set(k, [...(grupos.get(k) ?? []), l]);
+    const g = grupos.get(k);
+    if (g) g.push(l);
+    else grupos.set(k, [l]);
   }
   return [...grupos.entries()].map(([k, g]) => {
     const fornecedores = distintos(g.map((l) => l.fornecedor));
     const notas = distintos(g.map((l) => l.nf));
-    const cas = distintos(g.map((l) => l.ca));
+    // O CA do cadastro do item só vale quando nenhuma compra trouxe CA (não é CA de compra).
+    const cas = distintos(g.filter((l) => l.dataCompra).map((l) => l.ca));
+    if (cas.length === 0) cas.push(...distintos(g.map((l) => l.ca)));
     const datas = distintos(g.map((l) => l.dataCompra)).sort();
     return {
       ...g[0]!,

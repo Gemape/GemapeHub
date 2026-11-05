@@ -111,7 +111,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
 
   return (
     <section className="space-y-4" aria-label={modulo === "epi" ? "Estoque de EPIs" : "Estoque de uniformes"}>
-      {/* Novos e Usados: botões azuis no topo, à esquerda; o escolhido leva um anel e o outro fica mais claro (decisão 353). */}
+      {/* Filtros à esquerda; Novos e Usados e Exportar à direita (decisão 406). O botão escolhido leva um anel e o outro fica mais claro (decisão 353). */}
       <div className="flex flex-wrap items-end gap-2">
         <BarraDeFiltros>
         <div className="w-44 space-y-1">
@@ -267,11 +267,11 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={modulo === "epi" ? 12 : 11}>Carregando estoque…</TableCell>
+                <TableCell colSpan={modulo === "epi" ? 9 : 8}>Carregando estoque…</TableCell>
               </TableRow>
             ) : lista.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={modulo === "epi" ? 12 : 11} className="py-6 text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "epi" ? 9 : 8} className="py-6 text-center text-muted-foreground">
                   {condicao === "usado"
                     ? `Nenhum ${rotulo} usado no estoque. Eles entram pela Devolução, na ${modulo === "epi" ? "Entrada no Estoque" : "aba Compras"}.`
                     : `Nenhum ${rotulo} novo encontrado.`}

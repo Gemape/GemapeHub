@@ -139,7 +139,7 @@ test("a aba Estoque do EPI é a consulta nova, com os botões Novos e Usados e a
   ];
   const ordem = colunas.map((c) =>
     tela.indexOf(
-      `${c === "Estoque mínimo" || c === "Quantidade disponível" || c === "Média de consumo mensal" ? '<TableHead className="text-right">' : (/^(Última compra|NFs|Fornecedores)$/.test(c) ? "" : "<TableHead>")}${c}</TableHead>`,
+      `${c === "Estoque mínimo" || c === "Quantidade disponível" || c === "Média de consumo mensal" ? '<TableHead className="text-right">' : "<TableHead>"}${c}</TableHead>`,
     ),
   );
   assert.ok(
