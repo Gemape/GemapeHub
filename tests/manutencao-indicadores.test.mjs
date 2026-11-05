@@ -49,7 +49,7 @@ test("revisões do plano: no prazo é o que não está vencido; não realizadas 
 
 test("a tela de Manutenção traz os cards e a lista de revisões com serviço, periodicidade, última, próxima e os links para sugeridas e realizadas", () => {
   const modulo = ler("components/modules/ManutencaoVeiculoModulo.tsx");
-  assert.match(modulo, /<CartoesManutencao indicadores=\{indicadores\} \/>/);
+  assert.match(modulo, /<CartoesManutencao indicadores=\{indicadores\} graficos=\{/);
   assert.match(modulo, /<ManutencaoRevisoes revisoes=\{revisoesDaBusca\}/);
   assert.match(
     modulo,
@@ -84,6 +84,9 @@ test("a tela de Manutenção traz os cards e a lista de revisões com serviço, 
     !cartoes.includes("aria-pressed"),
     "os cards são só os indicadores; Preventivas e Corretivas são botões da lista",
   );
-  for (const t of ["Previstas", "Realizadas no prazo", "Não realizadas no prazo"])
+  for (const t of ["Revisões previstas", "Revisões realizadas no prazo", "Revisões não realizadas no prazo"])
     assert.ok(cartoes.includes(t), t);
+  // Padrão da Frota (decisão 404): fórmula abaixo do título de cada card e gráficos ao lado dos cards.
+  assert.equal((cartoes.match(/subtitulo=/g) ?? []).length, 3, "cada card explica a fórmula");
+  assert.match(cartoes, /xl:grid-cols-\[minmax\(0,5fr\)_minmax\(0,7fr\)\]/);
 });

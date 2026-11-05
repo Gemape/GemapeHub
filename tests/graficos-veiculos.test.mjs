@@ -55,7 +55,7 @@ test("as telas de Veículos têm os gráficos comparativos abaixo dos cards, e t
   );
   assert.match(
     ler("components/modules/ManutencaoVeiculoModulo.tsx"),
-    /<CartoesManutencao indicadores=\{indicadores\} \/>\s*<GraficosManutencao /,
+    /<CartoesManutencao indicadores=\{indicadores\} graficos=\{<GraficosManutencao compacto /,
   );
   assert.match(
     ler("components/modules/OcorrenciasVeiculoModulo.tsx"),

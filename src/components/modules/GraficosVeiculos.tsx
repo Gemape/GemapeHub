@@ -12,7 +12,7 @@ import type { GrupoDeArea } from "@/lib/area-responsaveis";
 import { grupoDaLinha } from "@/lib/area-responsaveis";
 import { resultadosPorResponsavel, resumoDeLinhas, type LinhaPainel } from "@/lib/checklist-painel";
 import { faixaDoIndiceDeVeiculos } from "@/lib/faixas-desempenho";
-import type { IndicadoresDaFrota } from "@/lib/frota-indicadores";
+import { LIMITE_REATIVO, mesesNoModoReativo, type IndicadoresDaFrota } from "@/lib/frota-indicadores";
 import { contagemPorMes, placaDoRotulo } from "@/lib/graficos-veiculos";
 import type { StatusOcorrencia } from "@/lib/ocorrencias-veiculo";
 
@@ -58,6 +58,7 @@ export function GraficosFrota({
     .filter((m): m is { veiculo: string; media: number } => m.media !== null)
     .map((m) => ({ veiculo: placaDoRotulo(m.veiculo), media: Math.round(m.media * 10) / 10 }))
     .sort((a, b) => b.media - a.media);
+  const mesesReativos = mesesNoModoReativo(preventivoMensal);
   return (
     <PainelGraficos>
       <QuadroGrafico
@@ -107,6 +108,7 @@ export function GraficosFrota({
       <QuadroGrafico
         titulo="Custo preventivo x corretivo por mês (100%)"
         formula="custo de cada tipo ÷ custo total de manutenção do mês × 100."
+        {...(mesesReativos.length > 0 ? { alerta: `Abaixo de ${LIMITE_REATIVO}% em ${mesesReativos.join(", ")}: frota no modo reativo.` } : {})}
         {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quanto do gasto de manutenção de cada mês foi preventivo (verde) e corretivo (vermelho). A meta é 80% ou mais de preventivo." })}
         vazio={preventivoMensal.every((m) => m.preventiva + m.corretiva === 0)}
       >

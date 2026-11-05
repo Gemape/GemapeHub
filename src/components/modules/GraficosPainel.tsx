@@ -1,3 +1,4 @@
+import { AlertTriangle } from "lucide-react";
 import type { ReactNode } from "react";
 import {
   Bar,
@@ -62,6 +63,7 @@ export function QuadroGrafico({
   vazio,
   formula,
   formulaDetalhe,
+  alerta,
   larga = false,
   altura = "h-[clamp(9rem,24vh,15rem)]",
   children,
@@ -71,6 +73,8 @@ export function QuadroGrafico({
   // Como o número do card é calculado, numa linha só; `formulaDetalhe` é a explicação completa, no balão ao passar o mouse.
   formula?: string;
   formulaDetalhe?: string;
+  // Aviso ao gestor, em vermelho, quando o gráfico mostra algo fora do limite.
+  alerta?: string;
   vazio?: boolean;
   larga?: boolean;
   altura?: string;
@@ -93,6 +97,12 @@ export function QuadroGrafico({
               {formulaDetalhe && <BalaoConteudo className="max-w-xs">{formulaDetalhe}</BalaoConteudo>}
             </Balao>
           </BalaoProvider>
+        )}
+        {alerta && (
+          <p role="alert" className="flex items-start gap-1 text-xs font-semibold text-red-700 dark:text-red-300">
+            <AlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+            {alerta}
+          </p>
         )}
       </figcaption>
       {vazio ? (

@@ -5,13 +5,14 @@ import { readFileSync } from "node:fs";
 const le = (c) => readFileSync(new URL(`../src/components/modules/${c}`, import.meta.url), "utf8");
 const GRADE = /<GradeDeCartoes colunas=\{4\}/;
 
-test("os cards de Manutenção e de Ocorrências usam a grade padrão de cartões (decisão 375), compactos", () => {
-  for (const f of ["CartoesManutencao.tsx", "CartoesOcorrencias.tsx"]) {
-    const t = le(f);
-    assert.match(t, GRADE, f);
-    assert.doesNotMatch(t, /lg:grid-cols-3|sm:grid-cols-2"/, `${f} não estica em colunas de largura total`);
-  }
-  assert.equal((le("CartoesOcorrencias.tsx").match(/compacto/g) ?? []).length, 2);
+test("os cards de Ocorrências usam a grade padrão de cartões (decisão 375), compactos; os de Manutenção seguem o padrão da Frota (decisão 404)", () => {
+  const o = le("CartoesOcorrencias.tsx");
+  assert.match(o, GRADE);
+  assert.doesNotMatch(o, /lg:grid-cols-3|sm:grid-cols-2"/, "CartoesOcorrencias.tsx não estica em colunas de largura total");
+  assert.equal((o.match(/compacto/g) ?? []).length, 2);
+  const m = le("CartoesManutencao.tsx");
+  assert.equal((m.match(/compacto/g) ?? []).length, 3, "os três cards são compactos");
+  assert.match(m, /\{graficos\}/, "os gráficos ficam ao lado dos cards");
 });
 
 test("os botões azuis de Manutenção e de Ocorrências são compactos, arredondados e ficam numa linha só, à esquerda", () => {

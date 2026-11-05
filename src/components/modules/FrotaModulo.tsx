@@ -1,6 +1,7 @@
 import { Printer } from "lucide-react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import { ExtratoVeiculo, type SecaoExtrato } from "@/components/modules/ExtratoVeiculo";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
@@ -18,7 +19,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { grupoDeAreaPorNome } from "@/lib/area-responsaveis";
 import { painelDoMes } from "@/lib/checklist-painel";
 import { historicoAbastecimentos, kmAtualDoVeiculo, mediaKmPorLitro, sugestoesPreventivas } from "@/lib/extrato-veiculo";
-import { custoPorKm, custoPorKmPorMes, indicadoresDaFrota, proporcaoPreventiva, proporcaoPreventivaPorMes } from "@/lib/frota-indicadores";
+import { custoPorKm, custoPorKmPorMes, indicadoresDaFrota, META_PREVENTIVA, noModoReativo, proporcaoPreventiva, proporcaoPreventivaPorMes } from "@/lib/frota-indicadores";
 import { interpretacoesDaFrota } from "@/lib/frota-interpretacao";
 import { InterpretacaoFrota } from "@/components/modules/InterpretacaoFrota";
 import { custoDaManutencao } from "@/lib/registros-veiculo";
@@ -142,6 +143,25 @@ export function FrotaModulo() {
   const custoPreventivo = proporcaoPreventiva(idsDeCusto, custosDeManutencao);
   const cpkMensal = custoPorKmPorMes(idsDeCusto, abastecimentos, custosDeManutencao, hoje);
   const preventivoMensal = proporcaoPreventivaPorMes(idsDeCusto, custosDeManutencao, hoje);
+  // Aviso ao gestor (regra 80/20): com o preventivo abaixo de 70% a frota opera no modo reativo. Um aviso por sessão do navegador; some e volta se a situação melhorar e piorar de novo.
+  const pctPreventivo = custoPreventivo.pct;
+  useEffect(() => {
+    // Sem veículos carregados (ou sem gasto) não há o que avaliar: não mexe no aviso, para o carregamento não "rearmar" o toast a cada visita.
+    if (isLoading || pctPreventivo === null) return;
+    // Uma chave por empresa: trocar a empresa escolhida não apaga nem consome o aviso da outra.
+    const chave = `gemape-frota-alerta-reativo:${empresaId}`;
+    try {
+      if (!noModoReativo(pctPreventivo)) {
+        sessionStorage.removeItem(chave);
+        return;
+      }
+      if (sessionStorage.getItem(chave)) return;
+      sessionStorage.setItem(chave, "1");
+    } catch {
+      /* sem armazenamento: avisa de novo a cada visita */
+    }
+    toast.warning("Frota no modo reativo", { description: `Só ${pctPreventivo.toLocaleString("pt-BR")}% do gasto de manutenção é preventivo (meta ${META_PREVENTIVA}%). Reforce o plano de revisões.` });
+  }, [isLoading, pctPreventivo, empresaId]);
   // Média de consumo do veículo (km/L), do histórico de abastecimentos dele (Módulo > Veículos > Abastecimento); precisa de dois abastecimentos.
   const mediaDo = (id: string): number | null => mediaKmPorLitro(historicoAbastecimentos(abastecimentos.filter((a) => a.veiculoId === id)));
   const textoMedia = (m: number | null) => (m === null ? "—" : m.toLocaleString("pt-BR", { maximumFractionDigits: 1 }));

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle, ArrowDown, ArrowLeftRight, ArrowUp, Coins, Minus, type LucideIcon } from "lucide-react";
 
 import type { Faixa } from "@/lib/faixas-desempenho";
-import { LIMITE_REATIVO, reais, type CustoPorKm, type IndicadorDaFrota, type IndicadoresDaFrota } from "@/lib/frota-indicadores";
+import { LIMITE_REATIVO, noModoReativo, reais, type CustoPorKm, type IndicadorDaFrota, type IndicadoresDaFrota } from "@/lib/frota-indicadores";
 
 const porcento = (n: number | null) =>
   n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
@@ -166,7 +166,7 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
             titulo="Frota · Custo preventivo (meta 80%)"
             subtitulo="Gasto preventivo ÷ gasto total de manutenção. Referência 80/20."
             indicador={custoPreventivo}
-            {...(custoPreventivo.pct !== null && custoPreventivo.pct < LIMITE_REATIVO ? { alerta: `Abaixo de ${LIMITE_REATIVO}%: modo reativo.` } : {})}
+            {...(noModoReativo(custoPreventivo.pct) ? { alerta: `Abaixo de ${LIMITE_REATIVO}%: modo reativo.` } : {})}
             compacto
           />
           <Cartao
