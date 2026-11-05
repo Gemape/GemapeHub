@@ -101,8 +101,8 @@ function PaginaFornecedores() {
   const lista = fornecedores.filter((f) => combinaBusca(busca, ...camposDeBusca(f, [formatarCnpj(f.cnpj), formatarTelefone(f.telefone)])));
 
   return <div className="space-y-5">
-    <header className="flex flex-col items-start gap-3">
-      <div>
+    <header className="flex flex-wrap items-start justify-between gap-3 [&>:not(:first-child)]:ml-auto">
+      <div className="min-w-0 flex-1 basis-[28rem]">
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Fornecedores</h1>
         <p className="mt-1 text-sm text-muted-foreground">Dados cadastrais dos fornecedores.</p>

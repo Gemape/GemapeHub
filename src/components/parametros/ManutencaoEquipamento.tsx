@@ -130,8 +130,8 @@ export function PlanoManutencaoEquipamento({ secao = false, versao, aoMudar }: {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-col items-start gap-3">
-        <div>
+      <header className="flex flex-wrap items-start justify-between gap-3 [&>:not(:first-child)]:ml-auto">
+        <div className="min-w-0 flex-1 basis-[28rem]">
           {!secao && <EyebrowDoCard fallback={CAMINHO} />}
           {secao ? <h2 className="text-xl font-bold">Cadastrar Plano de Manutenções</h2> : <h1 className="text-2xl font-bold">Cadastrar Plano de Manutenções</h1>}
           <p className="mt-1 text-sm text-muted-foreground">Para cada equipamento, as ações habilitadas e o limite de horas de uso e de tempo de cada uma; vale o que vier primeiro.</p>

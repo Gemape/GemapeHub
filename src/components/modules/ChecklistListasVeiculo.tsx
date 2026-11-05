@@ -25,7 +25,7 @@ function BarraDaLista({
 }: { titulo: string; mes: string; onMes: (m: string) => void; hoje: string; busca: string; onBusca: (b: string) => void; onVoltar: () => void; voltarRef?: React.Ref<HTMLButtonElement> | undefined; acao: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-end gap-2">
-      <Button ref={voltarRef} type="button" variant="outline" size="sm" onClick={onVoltar}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+      <Button ref={voltarRef} type="button" variant="outline" size="sm" className="order-first" onClick={onVoltar}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
       <h2 className="sr-only">{titulo}</h2>
       <div>{acao}</div>
       <BarraDeFiltros>

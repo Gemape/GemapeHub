@@ -73,7 +73,7 @@ export function IndicadoresEquipamentoModulo() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end gap-2">
-        <p className="pb-2 text-xs text-muted-foreground">De {formatarData(inicio)} a {formatarData(hoje())} · {frota.total} equipamento{frota.total === 1 ? "" : "s"} · {frota.prontos} pronto{frota.prontos === 1 ? "" : "s"} para trabalhar agora</p>
+        <p className="order-first pb-2 text-xs text-muted-foreground">De {formatarData(inicio)} a {formatarData(hoje())} · {frota.total} equipamento{frota.total === 1 ? "" : "s"} · {frota.prontos} pronto{frota.prontos === 1 ? "" : "s"} para trabalhar agora</p>
         <BarraDeFiltros>
           <div className="space-y-1.5">
             <Label htmlFor="periodo_kpi">Período</Label>

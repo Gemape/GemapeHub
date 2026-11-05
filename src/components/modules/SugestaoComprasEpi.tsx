@@ -211,7 +211,7 @@ export function SugestaoComprasEpi() {
         </p>
       </div>
 
-      {/* Botões à esquerda, busca e filtros à direita (decisão 385). */}
+      {/* Busca e filtros à esquerda, botões à direita (decisão 406). */}
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" onClick={abrirRelatorio}>

@@ -34,6 +34,6 @@ test("os botões das listas seguem o mesmo estilo do painel: Nova ocorrência e 
   const novas = o.match(/<Button requiresWrite="operar"[^>]*onClick=\{abrirNova\}>Nova ocorrência<\/Button>/g) ?? [];
   assert.equal(novas.length, 2);
   for (const b of novas) assert.match(b, /size="sm" className="rounded-full px-4"/);
-  assert.match(o, /variant="outline" size="sm" className="rounded-full" onClick=\{\(\) => setVerLista\(false\)\}/);
+  assert.match(o, /variant="outline" size="sm" className="order-first rounded-full" onClick=\{\(\) => setVerLista\(false\)\}/);
   assert.match(le("ManutencaoVeiculoModulo.tsx"), /variant="outline" size="sm" className="rounded-full" onClick=\{\(\) => setAba\("painel"\)\}/);
 });

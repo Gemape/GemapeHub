@@ -80,8 +80,8 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
 
   return (
     <section className="space-y-5" data-testid="subgrupos-ferramenta">
-      <header className="flex flex-col items-start gap-3">
-        <div>
+      <header className="flex flex-wrap items-start justify-between gap-3 [&>:not(:first-child)]:ml-auto">
+        <div className="min-w-0 flex-1 basis-[28rem]">
           <h2 className="text-xl font-bold">Subgrupos por grupo de ferramenta</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Cada grupo (pai) tem os seus subgrupos (filhos): numerações e especificações. Ao cadastrar uma ferramenta, escolhe-se o grupo e o subgrupo.

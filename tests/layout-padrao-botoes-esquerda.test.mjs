@@ -4,11 +4,11 @@ import test from "node:test";
 
 const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 
-// Decisão 385: botões de ação no topo à esquerda, busca e filtros no topo à direita (BarraDeFiltros, que empurra para a direita).
-test("o cabeçalho das páginas empilha o título e os botões, que ficam à esquerda; nenhum cabeçalho espalha os botões à direita", () => {
+// Decisão 406 (que inverte a 385): busca e filtros no topo à esquerda (BarraDeFiltros, order-first + mr-auto) e botões de ação no topo à direita.
+test("o cabeçalho das páginas põe o título à esquerda e os botões à direita; nenhum cabeçalho empilha os botões embaixo do título", () => {
   for (const arq of ["components/parametros/Cabecalho.tsx", "routes/_authenticated/dashboard.tsx", "components/modules/EnderecamentoModulo.tsx", "components/parametros/PlanoManutencaoVeiculo.tsx", "components/parametros/VeiculosListasParametros.tsx"]) {
-    assert.doesNotMatch(ler(arq), /<header className="flex flex-wrap items-end justify-between gap-3">/, arq);
-    assert.match(ler(arq), /<header className="flex flex-col items-start gap-3">/, arq);
+    assert.doesNotMatch(ler(arq), /<header className="flex flex-col items-start gap-3">/, arq);
+    assert.match(ler(arq), /<header className="flex flex-wrap items-start justify-between gap-3 \[&>:not\(:first-child\)\]:ml-auto">/, arq);
   }
 });
 

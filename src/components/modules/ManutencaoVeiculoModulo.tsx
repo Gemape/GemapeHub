@@ -212,7 +212,7 @@ export function ManutencaoVeiculoModulo() {
       {aba === "planejadas" && (
         <>
           <div className="flex flex-wrap items-end gap-2">
-            {voltar}
+            <div className="order-first">{voltar}</div>
             <div>{botaoCadastrar}</div>
             <BarraDeFiltros>
               <Input aria-label="Buscar manutenção" placeholder="Buscar por veículo ou serviço" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
@@ -230,7 +230,7 @@ export function ManutencaoVeiculoModulo() {
       {aba === "realizadas" && (
         <>
           <div className="flex flex-wrap items-end gap-2">
-            {voltar}
+            <div className="order-first">{voltar}</div>
             <div>{botaoCadastrar}</div>
             <BarraDeFiltros>
               <div className="flex gap-2" role="group" aria-label="Tipo de manutenção">
