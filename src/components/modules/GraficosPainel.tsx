@@ -1,3 +1,4 @@
+import { AlertTriangle } from "lucide-react";
 import type { ReactNode } from "react";
 import {
   Bar,
@@ -97,7 +98,12 @@ export function QuadroGrafico({
             </Balao>
           </BalaoProvider>
         )}
-        {alerta && <p role="alert" className="text-xs font-medium text-destructive">⚠ {alerta}</p>}
+        {alerta && (
+          <p role="alert" className="flex items-start gap-1 text-xs font-semibold text-red-700 dark:text-red-300">
+            <AlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+            {alerta}
+          </p>
+        )}
       </figcaption>
       {vazio ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Sem dados para comparar.</p>
