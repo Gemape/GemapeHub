@@ -74,7 +74,7 @@ type LinhaDeLote = Omit<LinhaEstoqueEpi, "fornecedores" | "notas" | "cas" | "dat
 const distintos = (valores: (string | null)[]) => [...new Set(valores.filter((v): v is string => !!v))];
 const juntar = (l: string[]) => (l.length ? l.join(", ") : null);
 
-// Junta as linhas de lote do mesmo EPI, tamanho e condição numa só: a quantidade soma e os dados de compra viram listas.
+// Junta as linhas de lote do mesmo EPI, tamanho e condição numa só (uma linha por código + empresa + tamanho; fornecedores, notas e CAs diferentes não separam e aparecem listados): a quantidade soma e os dados de compra viram listas.
 function somarLotes(lotes: LinhaDeLote[]): LinhaEstoqueEpi[] {
   const grupos = new Map<string, LinhaDeLote[]>();
   for (const l of lotes) {

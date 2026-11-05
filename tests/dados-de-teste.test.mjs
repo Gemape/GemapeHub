@@ -634,3 +634,49 @@ test("o histórico de manutenções cobre os cinco meses anteriores do gráfico 
     for (const m of mesesRecentes(iso(hoje.getTime())).slice(0, 5)) assert.ok(meses.has(m), `${iso(hoje.getTime())}: sem manutenção em ${m}`);
   }
 });
+
+test("estoque de EPI e uniforme: total comprado (compras) − total entregue (saídas) + devolvido = quantidade disponível, por item e empresa", () => {
+  const d = dados(prontos());
+  for (const [tabela, modulo, compras] of [["epis", "epi", "compras_epis"], ["uniformes", "uniforme", "compras_uniformes"]]) {
+    for (const linha of doTeste(d[tabela])) {
+      const comprado = doTeste(d[compras]).filter((c) => c.item_id === linha.id).reduce((t, c) => t + c.quantidade, 0);
+      const mov = doTeste(d.movimentacoes).filter((m) => m.modulo === modulo && m.item_id === linha.id);
+      const entregue = mov.filter((m) => m.tipo_movimentacao === "Saida").reduce((t, m) => t + m.quantidade, 0);
+      const devolvido = mov.filter((m) => m.tipo_movimentacao === "Devolucao").reduce((t, m) => t + m.quantidade, 0);
+      assert.equal(linha.estoque_atual, comprado - entregue + devolvido, `${tabela} ${linha.codigo_sku} (${linha.empresa_id})`);
+    }
+  }
+});
+
+test("dados de teste do EPI: itens comprados de vários fornecedores na mesma empresa têm um estoque só, somando as compras", () => {
+  const d = dados(prontos());
+  const porItem = new Map();
+  for (const c of doTeste(d.compras_epis)) porItem.set(c.item_id, [...(porItem.get(c.item_id) ?? []), c]);
+  const varios = [...porItem.entries()].filter(([, cs]) => new Set(cs.map((c) => c.fornecedor)).size >= 2);
+  assert.ok(varios.length >= 4, "há EPIs com compras de fornecedores diferentes");
+  assert.ok(varios.some(([, cs]) => new Set(cs.map((c) => c.ca)).size >= 2), "e um com CAs diferentes");
+  for (const [itemId, cs] of varios) {
+    assert.equal(d.epis.filter((e) => e.id === itemId).length, 1, "o item existe uma vez");
+    assert.equal(d.epis.find((e) => e.id === itemId).estoque_atual >= 0, true);
+  }
+});
+
+test("a visão do Estoque de EPI com os dados de teste: uma linha por item, empresa e tamanho, e Novos + Usados = saldo", async () => {
+  const { linhasDeEstoqueEpi } = await import("../src/lib/estoque-epi-visao.ts");
+  const d = dados(prontos());
+  const itens = doTeste(d.epis);
+  const porId = new Map(itens.map((i) => [i.id, i]));
+  const linhas = linhasDeEstoqueEpi({
+    itens, compras: doTeste(d.compras_epis), devolucoes: doTeste(d.movimentacoes).filter((m) => m.modulo === "epi"),
+    saldosDe: (id) => porId.get(id).saldos_tamanho ?? { "sem-tamanho": porId.get(id).estoque_atual ?? 0 },
+    minimosDe: () => ({}), mediaMensalDe: () => 0,
+  });
+  const chaves = linhas.map((l) => `${l.itemId}|${l.tamanhoId}|${l.condicao}`);
+  assert.equal(new Set(chaves).size, chaves.length, "nenhuma linha repetida por item, tamanho e condição");
+  for (const i of itens) {
+    const soma = linhas.filter((l) => l.itemId === i.id).reduce((t, l) => t + l.disponivel, 0);
+    assert.equal(soma, i.estoque_atual, `${i.codigo_sku} (${i.empresa_id}): novos + usados = saldo`);
+  }
+  const multi = linhas.filter((l) => l.condicao === "novo" && l.fornecedores.length >= 2);
+  assert.ok(multi.length >= 3, "há linhas que juntam compras de mais de um fornecedor");
+});

@@ -312,7 +312,29 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   };
   const epiDe = (nome: string, indice: number) => catalogoEpis.find((c) => c.item.nome.startsWith(nome) && c.indice === indice)!;
   const uniDe = (nome: string, indice: number) => catalogoUniformes.find((c) => c.item.nome.startsWith(nome) && c.indice === indice)!;
-  // Empresa 1 (Ana): botina 40 em estoque baixo de propósito, luvas M abaixo do mínimo.
+  // Mais compras do MESMO item na MESMA empresa, de outros fornecedores e notas, para ver o estoque unificado: o item continua numa linha só e as quantidades somam. A segunda
+  // compra da luva M da Gemape traz outro CA (a linha mostra os dois CAs).
+  const caDoCatalogo = (c: (typeof catalogoEpis)[number]) => String(31000 + catalogoEpis.indexOf(c) * 211);
+  const compraExtra = (nome: string, indice: number, empresaIndice: number, deslocaFornecedor: number, quantidade: number, diasAtras: number, nota: string, caOutro?: string) => {
+    const cat = epiDe(nome, indice);
+    const ca = caOutro ?? caDoCatalogo(cat);
+    const estoque = estoqueDe("epis", cat.id, empresaIds[empresaIndice]!);
+    const fornecedor = FORNECEDORES[(cat.item.fornecedor + deslocaFornecedor) % FORNECEDORES.length]!;
+    const valorUnitario = Math.round((20 + indice * 3) * 100) / 100;
+    const data = dia(agora, diasAtras);
+    compras.compras_epis.push({
+      id: novaCompra(), created_at: criadoEm, empresa_id: empresaIds[empresaIndice], item_id: estoque["id"], fornecedor: fornecedor.nome_fantasia, fornecedor_id: fornecedor.id,
+      nota_fiscal: nota, data_compra: data, quantidade, valor_unitario: valorUnitario, valor_total: Math.round(quantidade * valorUnitario * 100) / 100,
+      observacao: "Segunda compra do item, de outro fornecedor", tamanho_id: cat.item.tamanhos[cat.indice] ?? null, ca,
+    });
+    mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade, data_movimentacao: data, item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: cat.item.tamanhos[cat.indice] ?? null, observacao: `Compra: NF ${nota} / ${fornecedor.nome_fantasia}` });
+  };
+  compraExtra("Botina", 0, 0, 1, 6, 40, "NF-02001"); // mesmo CA, outro fornecedor: soma na mesma linha
+  compraExtra("Botina", 0, 0, 2, 4, 25, "NF-02002"); // um terceiro fornecedor
+  compraExtra("Luva", 1, 0, 1, 8, 35, "NF-02003", "36188"); // outro CA no mesmo item
+  compraExtra("Capacete", 0, 2, 1, 10, 30, "NF-02004");
+  compraExtra("Botina", 2, 1, 2, 5, 28, "NF-02005");
+  // Empresa 1 (Ana): botina 40 em estoque baixo de propósito, luvas M no mínimo (a segunda compra de luva M soma 8).
   entrega("epi", "epis", epiDe("Botina", 1).id, 0, 3, 30, "tam-40");
   entrega("epi", "epis", epiDe("Luva", 1).id, 0, 5, 28, "tam-m");
   entrega("epi", "epis", epiDe("Capacete", 0).id, 0, 2, 26, null);
@@ -371,7 +393,17 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     // O consumo do ano já tem as entregas e devoluções acima: a nova compra completa o que falta para a média pedida.
     const jaConsumido = movimentosDe.filter((m) => m["item_id"] === estoque["id"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? Number(m["quantidade"]) : m["tipo_movimentacao"] === "Devolucao" ? -Number(m["quantidade"]) : 0), 0);
     const total = Math.max(6, Math.ceil((360 * saldo) / coberturaDias) - jaConsumido);
-    mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade: total, data_movimentacao: dia(agora, 366), item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: tamanho, observacao: "Compra anterior: reposição do ano" });
+    // A compra anterior também é uma compra registrada (NF, fornecedor e CA), para "total comprado − total entregue = disponível" fechar em todo EPI.
+    const catalogo = epiDe(nome, indice);
+    const fornecedor = FORNECEDORES[catalogo.item.fornecedor]!;
+    const nota = `NF-${String(1400 + compras.compras_epis.length).padStart(5, "0")}`;
+    const valorUnitario = Math.round((18 + catalogo.indice * 2 + 7.5) * 100) / 100;
+    compras.compras_epis.push({
+      id: novaCompra(), created_at: criadoEm, empresa_id: empresaIds[empresaIndice], item_id: estoque["id"], fornecedor: fornecedor.nome_fantasia, fornecedor_id: fornecedor.id,
+      nota_fiscal: nota, data_compra: dia(agora, 366), quantidade: total, valor_unitario: valorUnitario, valor_total: Math.round(total * valorUnitario * 100) / 100,
+      observacao: "Compra anterior: reposição do ano", tamanho_id: tamanho, ca: caDoCatalogo(catalogo),
+    });
+    mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade: total, data_movimentacao: dia(agora, 366), item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: tamanho, observacao: `Compra anterior: NF ${nota} / ${fornecedor.nome_fantasia}` });
     const parcela = Math.floor(total / 6);
     [40, 75, 110, 145, 180, 215].forEach((dias, k) => entrega("epi", "epis", epiDe(nome, indice).id, empresaIndice, k === 0 ? total - parcela * 5 : parcela, dias, tamanho));
   };
