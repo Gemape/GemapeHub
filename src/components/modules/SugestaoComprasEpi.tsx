@@ -43,6 +43,7 @@ import {
   type CompraDoEstoque,
   type DevolucaoUsada,
 } from "@/lib/estoque-epi-visao";
+import { EstoqueMinimoEpi } from "@/components/modules/EstoqueMinimoEpi";
 import { minimosDeEpi, minimoTotalDeEpi, saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
 import { controlaTamanho, nomeTamanho, saldosPorTamanho, SEM_TAMANHO } from "@/lib/estoque-tamanho";
 import { exportarCsv } from "@/lib/gemape";
@@ -132,7 +133,6 @@ export function SugestaoComprasEpi() {
   const daEmpresa = filtrarSugestaoEpi(todas, {
     ...(empresaFiltro !== TODOS ? { empresaId: empresaFiltro } : {}),
   });
-  const noMinimo = filtradas.filter((l) => l.minimo > 0 && l.total <= l.minimo);
   const subcategoriasPresentes = [...new Set(daEmpresa.map((l) => l.subcategoriaId))]
     .map((id) => ({ id: id ?? "", nome: nomeDaSubcategoria(id) }))
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
@@ -244,6 +244,7 @@ export function SugestaoComprasEpi() {
           <Button type="button" onClick={abrirRelatorio}>
             Gerar relatório
           </Button>
+          <EstoqueMinimoEpi linhas={filtradas} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
           <Button
             type="button"
             variant="outline"
@@ -268,14 +269,6 @@ export function SugestaoComprasEpi() {
           </Button>
         </div>
       </div>
-
-      {/* O alerta de estoque no mínimo ou abaixo fica aqui, nos relatórios, e não na Entrega (decisão 386). */}
-      {noMinimo.length > 0 && (
-        <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          <strong>Estoque no mínimo ou abaixo ({empresaFiltro === TODOS ? "todas as empresas" : nomeDaEmpresa(empresaFiltro)}):</strong>{" "}
-          {noMinimo.map((l) => `${l.codigo} ${l.descricao} (${nomeDaEmpresa(l.empresaId)}: saldo ${l.total}, mínimo ${l.minimo})`).join("; ")}
-        </div>
-      )}
 
       <LegendaStatusCompra parametros={parametrosCompra} />
 

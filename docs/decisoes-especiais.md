@@ -2260,3 +2260,15 @@ Ordem do Tab (decisão 406): em cada tela a barra de filtros vem **antes** dos b
 ## 408. Estoque de EPI: um item por empresa, compras de todos os fornecedores somam
 
 Em EPIs > Estoque (e Uniformes, que usa a mesma tela), cada **código + tamanho existe uma vez por empresa** (Gemape, GMP, Lapa): a linha mostra o saldo total, o mínimo e o alerta, e **não se divide mais por fornecedor ou nota**. Compras de fornecedores diferentes somam no mesmo saldo (a regra de gravação já somava; mudou a consulta, que antes mostrava uma linha por compra). As colunas **Data da compra, NF e Fornecedor continuam na tabela**, agora consolidadas: a data é a da compra mais recente e NF e Fornecedor listam todos os que formam o saldo (separados por vírgula); o detalhe de cada compra fica em Entrada no Estoque. Os filtros de fornecedor, NF, CA e data continuam e olham todas as compras que formam o estoque. Em Registrar Compra, o aviso mostra o saldo do **tamanho escolhido** antes e depois da compra, na empresa escolhida. Novos e Usados continuam em botões separados.
+
+## 409. Estoque de EPI: uma linha por item e tamanho, mesmo com CAs diferentes
+
+Ajusta a 408: o Estoque mostra **uma linha por código + empresa + tamanho** (separando só Novos e Usados), **mesmo quando as compras trazem CAs diferentes**: a coluna CA lista todos eles. Compras de qualquer fornecedor, nota ou CA somam no mesmo saldo. Os dados de teste (versão 39) ganharam compras do mesmo item, na mesma empresa, de outros fornecedores (botina 38 da Gemape com três fornecedores; luva M da Gemape com dois CAs; capacete da Lapa; botina 42 da Carlos), e a "compra anterior" do consumo do ano passou a ser uma compra registrada (NF, fornecedor e CA), para total comprado − total entregue + devolvido = disponível fechar em todo item. Testes cobrem essa conta e a visão da tela com esses dados.
+
+## 410. Sugestão de Compras: botão Estoque mínimo, uma tela por empresa
+
+O aviso fixo "Estoque no mínimo ou abaixo (todas as empresas)" saiu do alto da Sugestão de Compras do EPI e virou o botão **Estoque mínimo**, que mostra quantos EPIs estão no mínimo ou abaixo (vermelho quando há algum). Ao clicar, abre uma janela com **uma tela por empresa** (botões para trocar de empresa, sem abas, como manda a decisão 43), cada uma com o resumo (itens em alerta, sem estoque, unidades até o mínimo), um cartão por EPI (saldo, mínimo, quanto falta, barra e selo Sem estoque, Abaixo do mínimo ou No mínimo, do mais crítico ao menos) e Exportar CSV. A empresa sem alerta mostra "Tudo certo". A janela **respeita o filtro da tela** (empresa e palavra-chave): com uma empresa escolhida, mostra só ela.
+
+## 411. Histórico do empregado: cartões no padrão da Frota
+
+Em EPIs e Uniformes > Relatórios > Histórico do empregado, os quatro cartões (Entregues, Devolvidos, Baixados, Em posse) ganharam o desenho da Frota: título com o escopo ("Empregado · ..."), a linha que explica o número, o valor, a **barra** (parte do que foi entregue a ele) e o detalhe embaixo ("2 de 4 entregues · 50%"). O Estoque mínimo (decisão 410) passou a respeitar o filtro de empresa e a palavra-chave da Sugestão de Compras.

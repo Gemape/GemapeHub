@@ -224,3 +224,9 @@ export function montarCotacaoExcel(linhas: LinhaCotacao[]): string {
 
 export const rotuloDoStatus = (s: StatusCriticidade | null) =>
   s ? STATUS_CRITICIDADE[s].rotulo : "Sem consumo";
+
+// Os EPIs no mínimo ou abaixo (decisão 410), do mais distante do mínimo para o mais perto; só vale com mínimo definido.
+export const abaixoDoMinimo = <T extends Pick<LinhaSugestaoEpi, "total" | "minimo" | "descricao">>(linhas: T[]): T[] =>
+  linhas
+    .filter((l) => l.minimo > 0 && l.total <= l.minimo)
+    .sort((a, b) => a.total / a.minimo - b.total / b.minimo || a.descricao.localeCompare(b.descricao, "pt-BR"));

@@ -69,11 +69,12 @@ export type EntradaEstoqueEpi = {
 const SEM = "sem-tamanho";
 const numero = (v: unknown) => Number(v) || 0;
 
-type LinhaDeLote = Omit<LinhaEstoqueEpi, "fornecedores" | "notas" | "cas" | "datas">;
+// caItem: CA do cadastro do item; só vale quando nenhuma compra (ou devolução de origem) trouxe CA.
+type LinhaDeLote = Omit<LinhaEstoqueEpi, "fornecedores" | "notas" | "cas" | "datas"> & { caItem: string | null };
 const distintos = (valores: (string | null)[]) => [...new Set(valores.filter((v): v is string => !!v))];
 const juntar = (l: string[]) => (l.length ? l.join(", ") : null);
 
-// Junta as linhas de lote do mesmo EPI, tamanho e condição numa só: a quantidade soma e os dados de compra viram listas.
+// Junta as linhas de lote do mesmo EPI, tamanho e condição numa só (uma linha por código + empresa + tamanho; fornecedores, notas e CAs diferentes não separam e aparecem listados): a quantidade soma e os dados de compra viram listas.
 function somarLotes(lotes: LinhaDeLote[]): LinhaEstoqueEpi[] {
   const grupos = new Map<string, LinhaDeLote[]>();
   for (const l of lotes) {
@@ -86,11 +87,12 @@ function somarLotes(lotes: LinhaDeLote[]): LinhaEstoqueEpi[] {
     const fornecedores = distintos(g.map((l) => l.fornecedor));
     const notas = distintos(g.map((l) => l.nf));
     // O CA do cadastro do item só vale quando nenhuma compra trouxe CA (não é CA de compra).
-    const cas = distintos(g.filter((l) => l.dataCompra).map((l) => l.ca));
-    if (cas.length === 0) cas.push(...distintos(g.map((l) => l.ca)));
+    const cas = distintos(g.map((l) => l.ca));
+    if (cas.length === 0) cas.push(...distintos(g.map((l) => l.caItem)));
+    const { caItem: _caItem, ...primeira } = g[0]!;
     const datas = distintos(g.map((l) => l.dataCompra)).sort();
     return {
-      ...g[0]!,
+      ...primeira,
       chave: k,
       disponivel: g.reduce((t, l) => t + l.disponivel, 0),
       dataCompra: datas.length ? datas[datas.length - 1]! : null,
@@ -151,6 +153,7 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
         minimo,
         alerta,
         mediaMensal: media,
+        caItem: item.ca ?? null,
       };
 
       // Usados: as devoluções do EPI no tamanho, por compra de origem, sem passar do saldo.
@@ -176,7 +179,7 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
           dataCompra: d.data_compra_origem ?? null,
           nf: d.nota_fiscal_origem ?? null,
           fornecedor: d.fornecedor_origem ?? null,
-          ca: d.ca_origem ?? item.ca ?? null,
+          ca: d.ca_origem ?? null,
           disponivel: q,
         });
       }
@@ -202,7 +205,7 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
           dataCompra: c.data_compra,
           nf: c.nota_fiscal ?? null,
           fornecedor: c.fornecedor ?? null,
-          ca: c.ca || item.ca || null,
+          ca: c.ca || null,
           disponivel: q,
         });
       }
@@ -215,7 +218,7 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
           dataCompra: null,
           nf: null,
           fornecedor: null,
-          ca: item.ca ?? null,
+          ca: null,
           disponivel: Math.max(0, restanteNovo),
         });
       }
