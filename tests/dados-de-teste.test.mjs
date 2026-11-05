@@ -364,7 +364,11 @@ test("cada um dos cinco veículos e dos cinco equipamentos de teste vem com dado
     }
   }
   const manut = lista("gemape-demo-manutencoes-veiculo");
-  assert.deepEqual([manut.filter((m) => m.tipo === "Preventiva").length, manut.filter((m) => m.tipo === "Corretiva").length], [5, 5]);
+  for (const v of veiculos) {
+    const dele = manut.filter((m) => m.veiculoId === v.id);
+    assert.deepEqual([dele.filter((m) => m.tipo === "Preventiva").length, dele.filter((m) => m.tipo === "Corretiva").length], [7, 4], `${v.placa}: 7 preventivas e 4 corretivas para o gráfico 80/20`);
+  }
+  assert.ok(new Set(manut.map((m) => m.data.slice(0, 7))).size >= 6, "custos espalhados por pelo menos seis meses");
   const ocor = lista("gemape-demo-ocorrencias-veiculo");
   assert.ok(ocor.some((o) => o.status === "Aberta") && ocor.some((o) => o.status === "Em tratativa") && ocor.some((o) => o.status === "Encerrada"));
   assert.ok(lista("gemape-demo-checklists-veiculo").every((c) => c.status === "Concluído"));
@@ -618,4 +622,15 @@ test("código de fábrica que já existe (de uma aplicação interrompida) não 
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
   assert.equal(doTeste(dados(s).equipamentos ?? []).length, 0);
   assert.equal(doTeste(json(s, "gemape-demo-equipamentos")).length, 40);
+});
+
+test("o histórico de manutenções cobre os cinco meses anteriores do gráfico 80/20 em qualquer dia de hoje", async () => {
+  const { HISTORICO_MANUTENCOES } = await import("../src/lib/dados-teste/veiculos-modulo.ts");
+  const { mesesRecentes } = await import("../src/lib/graficos-veiculos.ts");
+  for (let d = 0; d < 366; d++) {
+    const hoje = new Date(Date.UTC(2026, 0, 1 + d));
+    const iso = (t) => new Date(t).toISOString().slice(0, 10);
+    const meses = new Set(HISTORICO_MANUTENCOES.map((h) => iso(hoje.getTime() - h.atras * 86_400_000).slice(0, 7)));
+    for (const m of mesesRecentes(iso(hoje.getTime())).slice(0, 5)) assert.ok(meses.has(m), `${iso(hoje.getTime())}: sem manutenção em ${m}`);
+  }
 });

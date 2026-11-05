@@ -16,6 +16,21 @@ const dia = (agora: Date, atras: number) => hojeLocal(new Date(agora.getTime() -
 const ignorar = (acao: () => unknown) => { try { acao(); } catch { /* já existe: o conjunto é aplicado de novo sem duplicar */ } };
 const em = (agora: Date, atras: number) => new Date(agora.getTime() - atras * 86_400_000);
 
+// Histórico de manutenções para o gráfico de custo preventivo x corretivo (regra 80/20) ter barras variadas, acima e abaixo da meta de 80% de preventiva. Os intervalos entre as datas são de
+// até 25 dias e o conjunto começa 175 dias atrás, para cobrir os seis meses do gráfico em qualquer dia de hoje. As preventivas recentes são de freios (e não de óleo) para não mudar quais planos
+// de óleo nascem vencidos; `desc` é quanto o km do registro fica abaixo do km atual do veículo.
+export const HISTORICO_MANUTENCOES = [
+  { atras: 175, desc: 6600, tipo: "Preventiva", acao: "oleo", item: "Óleo do motor", pecas: "380,00", mao: "150,00" },
+  { atras: 150, desc: 6000, tipo: "Preventiva", acao: "oleo", item: "Óleo do motor", pecas: "380,00", mao: "150,00" },
+  { atras: 125, desc: 5400, tipo: "Preventiva", acao: "oleo", item: "Óleo do motor", pecas: "380,00", mao: "150,00" },
+  { atras: 112, desc: 5000, tipo: "Corretiva", acao: "freios", item: "Pastilhas de freio", pecas: "120,00", mao: "60,00" },
+  { atras: 90, desc: 3800, tipo: "Preventiva", acao: "oleo", item: "Óleo do motor", pecas: "380,00", mao: "150,00" },
+  { atras: 75, desc: 3200, tipo: "Corretiva", acao: "freios", item: "Pastilhas de freio", pecas: "200,00", mao: "100,00" },
+  { atras: 50, desc: 2350, tipo: "Corretiva", acao: "freios", item: "Pastilhas de freio", pecas: "100,00", mao: "50,00" },
+  { atras: 25, desc: 900, tipo: "Preventiva", acao: "freios", item: "Pastilhas de freio", pecas: "280,00", mao: "120,00" },
+  { atras: 2, desc: 20, tipo: "Preventiva", acao: "freios", item: "Pastilhas de freio", pecas: "250,00", mao: "100,00" },
+] as const;
+
 export function semearModuloVeiculos(storage: Armazenamento, agora: Date): void {
   const st = storage as Storage;
   ignorar(() => Gerais.cadastrarPadraoChecklistVeiculos(storage as never));
@@ -51,7 +66,20 @@ export function semearModuloVeiculos(storage: Armazenamento, agora: Date): void 
       }, st, agora, acoes));
     }
 
+    // Histórico dos meses anteriores (ver HISTORICO_MANUTENCOES). Os grupos e subitens vêm de Parâmetros: se faltar algum, o seed avisa em vez de gravar menos dados.
+    for (const h of HISTORICO_MANUTENCOES) {
+      const acao = h.acao === "oleo" ? oleo : freios;
+      const id = acao && subitem(acao, h.item);
+      if (!acao || !id) throw new Error(`Dados de teste: falta "${h.item}" em Parâmetros > Veículos para o histórico de manutenções.`);
+      ignorar(() => registrarManutencao({
+        veiculoId: v.id, data: dia(agora, h.atras), km: K - h.desc, tipo: h.tipo, acaoId: acao.id,
+        ...(h.tipo === "Corretiva" ? { descricao: "Desgaste identificado na revisão do veículo." } : {}),
+        itens: [{ subitemId: id }], local: "empresa", localNome: "", custoPecas: h.pecas, custoMaoDeObra: h.mao,
+      }, st, agora, acoes));
+    }
+
     // Plano de manutenção: o do primeiro veículo (óleo a cada 2.000 km) e o do quarto (óleo a cada mês) já nascem vencidos; os outros, em dia.
+    // Os planos de freios nascem em dia para os cinco, porque o histórico acima tem preventiva de freios recente.
     const itensDoPlano = [
       oleo ? { acaoId: oleo.id, km: n === 0 ? 2000 : 10000, meses: n === 3 ? 1 : 6 } : null,
       freios ? { acaoId: freios.id, km: 20000, meses: 12 } : null,

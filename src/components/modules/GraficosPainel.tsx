@@ -58,12 +58,17 @@ export function QuadroGrafico({
   titulo,
   descricao,
   vazio,
+  formula,
+  formulaDetalhe,
   larga = false,
   altura = "h-[clamp(9rem,24vh,15rem)]",
   children,
 }: {
   titulo: string;
   descricao?: string;
+  // Como o número do card é calculado, numa linha só; `formulaDetalhe` é a explicação completa, no balão ao passar o mouse.
+  formula?: string;
+  formulaDetalhe?: string;
   vazio?: boolean;
   larga?: boolean;
   altura?: string;
@@ -74,6 +79,7 @@ export function QuadroGrafico({
       <figcaption>
         <p className="text-sm font-semibold">{titulo}</p>
         {descricao && <p className="text-xs text-muted-foreground">{descricao}</p>}
+        {formula && <p title={formulaDetalhe} className={`text-xs text-muted-foreground ${formulaDetalhe ? "cursor-help" : ""}`}><strong className="font-medium text-foreground">Fórmula:</strong> {formula}</p>}
       </figcaption>
       {vazio ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Sem dados para comparar.</p>

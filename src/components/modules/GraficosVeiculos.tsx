@@ -62,6 +62,8 @@ export function GraficosFrota({
     <PainelGraficos>
       <QuadroGrafico
         titulo="PCM x técnicos (%)"
+        formula="no prazo ÷ com desfecho × 100."
+        formulaDetalhe="Manut.: preventivas não vencidas ÷ preventivas com registro. Check PCM, Técnicos e Ocorr.: realizados ou tratados no prazo ÷ os que já têm desfecho. Conform.: as tarefas de todos os indicadores somadas."
         {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Cada indicador contra a meta de 90% (faixa verde)." })}
       >
         <GraficoBarras
@@ -75,6 +77,8 @@ export function GraficosFrota({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="Média de consumo por veículo (km/L)"
+        formula="km rodados ÷ litros abastecidos."
+        formulaDetalhe="Distância do primeiro ao último abastecimento ÷ litros dos abastecimentos seguintes (o primeiro só marca onde a conta começa)."
         {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quanto cada veículo roda por litro, do maior para o menor." })}
         vazio={consumo.length === 0}
       >
@@ -86,6 +90,8 @@ export function GraficosFrota({
       </QuadroGrafico>
       <QuadroGrafico
           titulo="CPK da frota mês a mês (R$/km)"
+          formula="(abastecimento + manutenção) ÷ km rodados no mês."
+          formulaDetalhe="Os km do mês vão do maior km registrado antes do mês até o maior do mês; o abastecimento feito no km de partida não entra na conta. Mês sem km rodados fica sem valor."
           {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Custo por km rodado (abastecimento + manutenção) de cada mês, para acompanhar a evolução dos custos." })}
           vazio={cpkMensal.every((m) => m.cpk === null)}
         >
@@ -100,6 +106,7 @@ export function GraficosFrota({
         </QuadroGrafico>
       <QuadroGrafico
         titulo="Custo preventivo x corretivo por mês (100%)"
+        formula="custo de cada tipo ÷ custo total de manutenção do mês × 100."
         {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quanto do gasto de manutenção de cada mês foi preventivo (verde) e corretivo (vermelho). A meta é 80% ou mais de preventivo." })}
         vazio={preventivoMensal.every((m) => m.preventiva + m.corretiva === 0)}
       >
