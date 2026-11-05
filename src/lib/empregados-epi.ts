@@ -21,3 +21,4 @@ export const salvarAreasEpi = lista.salvarAreas;
 export const lerEmpregadosDeEpi = lista.lerEmpregados;
 export const salvarEmpregadosDeEpi = lista.salvarEmpregados;
 export const soEmpregadosDeEpi = lista.soHabilitados;
+export const listaDeEpiDesatualizada = lista.listaDesatualizada;

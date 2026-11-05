@@ -39,7 +39,7 @@ test("EPIs > Ordem de Serviço é um submenu do módulo, depois da Ficha avulsa,
   const pagina = readFileSync(new URL("../src/components/modules/PaginaModulo.tsx", import.meta.url), "utf8");
   assert.match(pagina, /<TabsContent value="ordem-servico"[^>]*>\s*<EpiOrdemServico \/>/);
   const tela = readFileSync(new URL("../src/components/modules/EpiOrdemServico.tsx", import.meta.url), "utf8");
-  assert.match(tela, /ordensDaFuncao\(ordens, area\)/);
+  assert.match(tela, /ordensDaFuncao\(ordens, funcao\)/);
   assert.match(tela, /Parâmetros &gt; EPI &gt; Cadastrar Ordem de Serviço/);
 });
 
@@ -67,4 +67,23 @@ test("a escolha da Ordem de Serviço fica no endereço e o cadastro não reabre 
   const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
   assert.match(ler("components/modules/EpiOrdemServico.tsx"), /replace: true/);
   assert.match(ler("routes/_authenticated/epi-ordem-servico.tsx"), /Tira o "nova" do endereço/);
+});
+
+test("função da ordem: a do empregado habilitado vale; sem habilitação vale a que a pessoa informou, e as ordens sugeridas seguem ela (decisão 413)", async () => {
+  const { funcaoDaOrdem, ordensDaFuncao } = await import("../src/lib/ordem-servico-empregado-html.ts");
+  const ordens = [{ id: "1", funcao: "Pintor", setor: "A" }, { id: "2", funcao: "Pintor", setor: "B" }, { id: "3", funcao: "Soldador", setor: "C" }];
+  assert.equal(funcaoDaOrdem("Soldador", "Pintor"), "Soldador", "a função cadastrada não é trocada");
+  assert.equal(funcaoDaOrdem("", "Pintor"), "Pintor");
+  assert.equal(funcaoDaOrdem("", ""), "");
+  assert.deepEqual(ordensDaFuncao(ordens, funcaoDaOrdem("", " pintor ")).map((o) => o.id), ["1", "2"], "maiúsculas e espaços não atrapalham");
+  assert.deepEqual(ordensDaFuncao(ordens, funcaoDaOrdem("", "")), [], "sem função, sem ordem sugerida");
+});
+
+test("a função do habilitado vem pelo id e, para quem entrou na lista sem vínculo, pelo nome", async () => {
+  const { funcaoDeHabilitado } = await import("../src/lib/ordem-servico-empregado-html.ts");
+  const lista = [{ empregadoId: "e1", nome: "Ana", area: "Pintor" }, { empregadoId: null, nome: "João Lima", area: "Soldador" }];
+  assert.equal(funcaoDeHabilitado(lista, { id: "e1", nome: "Ana" }), "Pintor");
+  assert.equal(funcaoDeHabilitado(lista, { id: "e7", nome: "joão lima" }), "Soldador", "sem vínculo, pelo nome");
+  assert.equal(funcaoDeHabilitado(lista, { id: "e9", nome: "Ana" }), "", "com id, homônimo de outra empresa não vale");
+  assert.equal(funcaoDeHabilitado(lista, undefined), "");
 });

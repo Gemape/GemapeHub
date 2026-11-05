@@ -21,7 +21,8 @@ import {
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
-import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
+import { listaDeEpiDesatualizada, soEmpregadosDeEpi } from "@/lib/empregados-epi";
+import { AvisoHabilitados } from "@/components/AvisoHabilitados";
 import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
 import { montarTermoEntregaEpiHtml, observacaoEntregaEpi } from "@/lib/termo-entrega-epi-html";
 import { validarSaidaDeEpis } from "@/lib/termos-atomicos";
@@ -54,8 +55,9 @@ export function EpiTermoEntrega() {
   }, [empresas, empresaSel]);
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens("epi", empresaSel || TODAS);
-  // Quem pode entregar: empregado ativo, entre os habilitados do EPI, que não seja quem recebe.
-  const responsaveis = soEmpregadosDeEpi(empregados.filter((e) => empregadoAtivo(e) && e.id !== empregadoId));
+  const habilitadosDesatualizados = !!empresaSel && listaDeEpiDesatualizada(empregados.filter((e) => empregadoAtivo(e)));
+  // Quem pode entregar: empregado ativo, entre os habilitados do EPI, que não seja quem recebe (tirado depois do filtro, para quem recebe ser o único habilitado não liberar todos).
+  const responsaveis = soEmpregadosDeEpi(empregados.filter((e) => empregadoAtivo(e))).filter((e) => e.id !== empregadoId);
 
   const parametros = useParametrosBase();
   const registrarLote = useRegistrarMovimentacoesLote(["movimentacoes", "epis"]);
@@ -181,6 +183,7 @@ export function EpiTermoEntrega() {
     <div className="space-y-6">
       <div className="panel p-6 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <AvisoHabilitados desatualizada={habilitadosDesatualizados} onde="Parâmetros &gt; EPI &gt; Parâmetros Específicos" />
           <div className="space-y-1.5">
             <Label>Empresa</Label>
             <Select value={empresaSel} onValueChange={(v) => { if (!v) return; setEmpresaSel(v); setEmpregadoId(""); setResponsavelId(""); setItensTermo([]); }}>

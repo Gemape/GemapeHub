@@ -21,3 +21,4 @@ export const salvarAreasUniforme = lista.salvarAreas;
 export const lerEmpregadosDeUniforme = lista.lerEmpregados;
 export const salvarEmpregadosDeUniforme = lista.salvarEmpregados;
 export const soEmpregadosDeUniforme = lista.soHabilitados;
+export const listaDeUniformeDesatualizada = lista.listaDesatualizada;

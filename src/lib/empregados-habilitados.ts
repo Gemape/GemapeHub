@@ -1,5 +1,5 @@
 // Empregados habilitados (cada um com a sua área de atuação) e a lista de áreas, guardados no navegador em modo demonstração. Cada domínio (EPI, Uniformes) tem as suas duas
-// listas, com chaves próprias: habilitar alguém no EPI não habilita nos Uniformes. Lista de habilitados vazia = sem restrição: as rotinas oferecem todos os empregados ativos.
+// listas, com chaves próprias: habilitar alguém no EPI não habilita nos Uniformes. Lista de habilitados vazia, ou sem ninguém dela entre os empregados oferecidos (a empresa escolhida) = sem restrição: as rotinas oferecem todos os empregados ativos.
 // Fase 1: fica só no navegador; na Fase 2 vira cadastro no banco.
 
 export type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -77,15 +77,28 @@ export function criarListaDeHabilitados(config: { chaveAreas: string; chaveEmpre
     }
   }
 
-  // As rotinas só oferecem quem está na lista; sem lista, todos. Compara pelo id do empregado e, para quem entrou sem vínculo, pelo nome.
-  function soHabilitados<T extends { id: string; nome: string }>(empregados: T[], storage?: StorageLike): T[] {
-    const lista = lerEmpregados(storage);
-    if (lista.length === 0) return empregados;
+  // As rotinas só oferecem quem está na lista; sem lista, ou sem ninguém da lista entre os empregados oferecidos, todos. Compara pelo id do empregado e, para quem entrou sem vínculo, pelo nome.
+  function entreHabilitados<T extends { id: string; nome: string }>(lista: Habilitado[], empregados: T[]): T[] {
     const ids = new Set(lista.flatMap((h) => (h.empregadoId ? [h.empregadoId] : [])));
     // O nome só vale para quem entrou sem vínculo: com id, um homônimo de outra empresa não passa.
     const nomes = new Set(lista.filter((h) => !h.empregadoId).map((h) => chave(h.nome)));
     return empregados.filter((e) => ids.has(e.id) || nomes.has(chave(e.nome)));
   }
 
-  return { lerAreas, salvarAreas, lerEmpregados, salvarEmpregados, soHabilitados };
+  function soHabilitados<T extends { id: string; nome: string }>(empregados: T[], storage?: StorageLike): T[] {
+    const lista = lerEmpregados(storage);
+    if (lista.length === 0) return empregados;
+    const habilitados = entreHabilitados(lista, empregados);
+    // A lista de habilitados é por pessoa: se ninguém dos empregados oferecidos (a empresa escolhida) está nela, não há restrição para eles e as rotinas oferecem todos, em vez de uma
+    // caixa de seleção vazia que trava a tela.
+    return habilitados.length > 0 ? habilitados : empregados;
+  }
+
+  // Há habilitados cadastrados, mas nenhum dos empregados oferecidos (os ativos da empresa escolhida) está entre eles: a lista ficou desatualizada e as rotinas oferecem todos.
+  function listaDesatualizada(empregados: { id: string; nome: string }[], storage?: StorageLike): boolean {
+    const lista = lerEmpregados(storage);
+    return empregados.length > 0 && lista.length > 0 && entreHabilitados(lista, empregados).length === 0;
+  }
+
+  return { lerAreas, salvarAreas, lerEmpregados, salvarEmpregados, soHabilitados, listaDesatualizada };
 }

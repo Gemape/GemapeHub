@@ -90,3 +90,23 @@ test("Parâmetros > EPI > Parâmetros Específicos mostra a caixa dupla e o cada
   assert.match(le("ParametrosEpi.tsx"), /<HabilitarEmpregadosEpi/);
   assert.match(le("HabilitarEmpregadosEpi.tsx"), /CaixaDuplaEmpregados/);
 });
+
+test("se nenhum dos empregados oferecidos (a empresa escolhida) está na lista de habilitados, a rotina oferece todos em vez de uma caixa vazia", () => {
+  const s = memoria();
+  salvarEmpregadosDeEpi([{ empregadoId: "e2", nome: "João Lima", area: "Pintor" }], s);
+  assert.deepEqual(soEmpregadosDeEpi([maria, ana], s), [maria, ana], "só há habilitado em outra empresa");
+  assert.deepEqual(soEmpregadosDeEpi([maria, joao, ana], s), [joao], "com habilitado na empresa, só ele");
+});
+
+test("lista desatualizada: há habilitados, mas nenhum empregado oferecido está entre eles (desligados ou de outra empresa)", async () => {
+  const { listaDeEpiDesatualizada } = await import("../src/lib/empregados-epi.ts");
+  const s = memoria();
+  assert.equal(listaDeEpiDesatualizada([maria, joao], s), false, "sem lista não há o que atualizar");
+  salvarEmpregadosDeEpi([{ empregadoId: "e2", nome: "João Lima", area: "Pintor" }], s);
+  assert.equal(listaDeEpiDesatualizada([maria, joao], s), false, "o habilitado está entre os oferecidos");
+  assert.equal(listaDeEpiDesatualizada([maria], s), true, "o habilitado foi desligado (não está entre os ativos)");
+  assert.equal(listaDeEpiDesatualizada([], s), false, "empresa sem empregados: nada a avisar");
+  salvarEmpregadosDeEpi([{ empregadoId: null, nome: "ana paula", area: "Pintor" }], s);
+  assert.equal(listaDeEpiDesatualizada([maria, ana], s), false, "habilitado só por nome vale");
+  assert.equal(listaDeEpiDesatualizada([maria], s), true);
+});

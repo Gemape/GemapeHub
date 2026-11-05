@@ -32,12 +32,13 @@ export function salvarEmpregadosDeVeiculos(lista: Habilitado[], storage?: Storag
   }
 }
 
-// As rotinas de veículos só oferecem quem está na lista; sem lista, todos. Compara pelo id do empregado e, para quem entrou sem vínculo, pelo nome.
+// As rotinas de veículos só oferecem quem está na lista; sem lista, ou sem ninguém da lista entre os empregados oferecidos, todos (como em empregados-habilitados.ts). Compara pelo id do empregado e, para quem entrou sem vínculo, pelo nome.
 export function soEmpregadosDeVeiculos<T extends { id: string; nome: string }>(empregados: T[], storage?: StorageLike): T[] {
   const lista = lerEmpregadosDeVeiculos(storage);
   if (lista.length === 0) return empregados;
   const ids = new Set(lista.flatMap((h) => (h.empregadoId ? [h.empregadoId] : [])));
   // O nome só vale para quem entrou sem vínculo: com id, um homônimo de outra empresa não passa.
   const nomes = new Set(lista.filter((h) => !h.empregadoId).map((h) => h.nome.trim().toLocaleLowerCase("pt-BR")));
-  return empregados.filter((e) => ids.has(e.id) || nomes.has(e.nome.trim().toLocaleLowerCase("pt-BR")));
+  const habilitados = empregados.filter((e) => ids.has(e.id) || nomes.has(e.nome.trim().toLocaleLowerCase("pt-BR")));
+  return habilitados.length > 0 ? habilitados : empregados;
 }
