@@ -154,21 +154,6 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           >
             Exportar CSV
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setEmpresaFiltro(TODOS);
-              setPalavra("");
-              setDataInicio("");
-              setDataFim("");
-              setFornecedor(TODOS);
-              setCa("");
-              setNf("");
-            }}
-          >
-            Limpar filtros
-          </Button>
         </div>
         <BarraDeFiltros>
         <div className="w-44 space-y-1">
@@ -244,6 +229,21 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
             onChange={(e) => setDataFim(e.target.value)}
           />
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setEmpresaFiltro(TODOS);
+            setPalavra("");
+            setDataInicio("");
+            setDataFim("");
+            setFornecedor(TODOS);
+            setCa("");
+            setNf("");
+          }}
+        >
+          Limpar filtros
+        </Button>
         </BarraDeFiltros>
       </div>
       {periodoInvalido && (

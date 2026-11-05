@@ -203,8 +203,8 @@ export function EnderecamentoModulo() {
   }
 
   return <div className="space-y-5">
-    <header className="flex flex-col items-start gap-3">
-      <div>
+    <header className="flex flex-wrap items-start justify-between gap-3 [&>:not(:first-child)]:ml-auto">
+      <div className="min-w-0 flex-1 basis-[28rem]">
         <EyebrowDoCard fallback="Cadastros · Gerais" />
         <h1 className="text-2xl font-bold">Endereçamento de estoque</h1>
         <p className="mt-1 text-sm text-muted-foreground">Onde cada produto deve ser guardado no almoxarifado depois da entrada da nota fiscal: rua (corredor), número (estante) e apartamento (nível da prateleira, contado de cima para baixo).</p>
@@ -232,9 +232,9 @@ export function EnderecamentoModulo() {
         >
           Exportar CSV
         </Button>
-        <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
       </div>
       <BarraDeFiltros>
+        <Button variant={somenteSem ? "default" : "outline"} aria-pressed={somenteSem} onClick={() => setSomenteSem(!somenteSem)}>Filtrar itens sem endereçamento</Button>
         <Input aria-label="Buscar por código, produto ou endereço" className="max-w-sm" placeholder="Buscar por código, produto ou endereço" value={busca} onChange={(e) => setBusca(e.target.value)} />
       </BarraDeFiltros>
     </div>

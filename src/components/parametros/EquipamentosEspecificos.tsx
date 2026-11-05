@@ -133,8 +133,8 @@ export function EquipamentosEspecificos() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-col items-start gap-3">
-        <div>
+      <header className="flex flex-wrap items-start justify-between gap-3 [&>:not(:first-child)]:ml-auto">
+        <div className="min-w-0 flex-1 basis-[28rem]">
           <EyebrowDoCard fallback="Parâmetros" />
           <h1 className="text-2xl font-bold">Parâmetros Específicos</h1>
           <p className="mt-1 text-sm text-muted-foreground">Cadastro em pai e filho: a subcategoria é o pai e o tipo de equipamento é o filho, sempre debaixo de uma subcategoria.</p>

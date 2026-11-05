@@ -109,7 +109,7 @@ export function ChecklistResultadosPainel({
 
   return (
     <div className="space-y-3">
-      {/* O período vale para tudo o que está abaixo: fica no alto, à direita (decisão 339), na linha dos botões dos tipos de check list. */}
+      {/* O período vale para tudo o que está abaixo: fica no alto, à esquerda (decisão 406), na linha dos botões dos tipos de check list, que ficam à direita. */}
       <div className="flex flex-wrap items-end gap-2">
         {acoes}
         <BarraDeFiltros>
