@@ -223,8 +223,8 @@ export function ViagensPainel({ emitente }: { emitente: string }) {
   );
 }
 
-function Indicador({ titulo, subtitulo, valor, detalhe, explicacao, roxo, faixa, pct }: { titulo: string; subtitulo?: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean; faixa?: Faixa | undefined; pct?: number | null | undefined }) {
-  return <Cartao titulo={titulo} {...(subtitulo ? { subtitulo } : {})} valor={valor} indicador={{ pct: pct ?? null, faixa: faixa ?? null, detalhe: detalhe ?? "" }} extra={explicacao} classe={roxo ? "border-l-4 border-l-purple-600" : ""} compacto />;
+function Indicador({ titulo, subtitulo, valor, detalhe, explicacao, roxo, faixa, pct }: { titulo: string; subtitulo: string; valor: string; detalhe?: string; explicacao?: React.ReactNode; roxo?: boolean; faixa?: Faixa | undefined; pct?: number | null | undefined }) {
+  return <Cartao titulo={titulo} subtitulo={subtitulo} valor={valor} indicador={{ pct: pct ?? null, faixa: faixa ?? null, detalhe: detalhe ?? "" }} extra={explicacao} classe={roxo ? "border-l-4 border-l-purple-600" : ""} compacto />;
 }
 
 function ExplicacaoIcl() {

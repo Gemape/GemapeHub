@@ -53,7 +53,8 @@ import {
 import { escolherFornecedorDaCompra } from "@/lib/compras-fornecedor";
 import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { saldosDeEpi } from "@/lib/estoque-epi-saldos";
+import { nomeTamanhoGravado, SEM_TAMANHO, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { hojeLocal } from "@/lib/empregados";
 
@@ -83,6 +84,10 @@ export function EpiComprasModulo() {
 
   const salvar = useSalvar("compras_epis", CHAVES);
   const excluir = useExcluir("compras_epis", CHAVES);
+
+  // Saldo do produto (e do tamanho escolhido) no estoque da empresa: todas as compras, de qualquer fornecedor, somam nele.
+  const itemEscolhido = itens.find((i) => i.id === itemSel);
+  const saldoDoEscolhido = itemEscolhido ? (saldosDeEpi(parametros, itemEscolhido)[tamanhoParaGravar(tamanho) ?? SEM_TAMANHO] ?? 0) : 0;
 
   function abrirNovo() {
     setEditando(null);
@@ -156,6 +161,14 @@ export function EpiComprasModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            placeholder="Buscar por fornecedor ou NF"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -183,14 +196,6 @@ export function EpiComprasModulo() {
           <Button requiresWrite onClick={abrirNovo}>Registrar Compra</Button>
           <Button requiresWrite onClick={() => setDevolucaoAberta(true)}>Devolução</Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            placeholder="Buscar por fornecedor ou NF"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">
@@ -330,8 +335,7 @@ export function EpiComprasModulo() {
               {itemSel && <EnderecoDaEntrada categoriaId="cat-epi" empresaId={empresaCompra} codigo={itens.find((i) => i.id === itemSel)?.codigo_sku ?? ""} />}
               {itemSel && (
                 <p className="text-xs text-muted-foreground">
-                  Esta compra alimenta o estoque {empresas.find((e) => e.id === empresaCompra)?.nome_fantasia}, onde o item existe uma vez só: compras de qualquer fornecedor somam no mesmo saldo (hoje, {itens.find((i) => i.id === itemSel)?.estoque_atual ?? 0}
-                  {quantidade > 0 ? `; com esta compra, ${(itens.find((i) => i.id === itemSel)?.estoque_atual ?? 0) + quantidade}` : ""}).
+                  Esta compra alimenta o estoque {empresas.find((e) => e.id === empresaCompra)?.nome_fantasia}, onde o item existe uma vez só: compras de qualquer fornecedor somam no mesmo saldo (saldo {tamanho ? "do tamanho escolhido " : ""}hoje: {saldoDoEscolhido}{quantidade > 0 ? `; com esta compra: ${saldoDoEscolhido + quantidade}` : ""}).
                 </p>
               )}
               <p className="text-xs text-muted-foreground">

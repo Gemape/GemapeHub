@@ -103,6 +103,15 @@ function OrdemServicoEpiPagina() {
       </header>
 
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar ordem de serviço"
+            placeholder="Buscar por função, setor ou palavra-chave"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
@@ -123,15 +132,6 @@ function OrdemServicoEpiPagina() {
             Nova ordem de serviço
           </Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar ordem de serviço"
-            placeholder="Buscar por função, setor ou palavra-chave"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

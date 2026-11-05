@@ -15,17 +15,17 @@ test("os cards de Ocorrências usam a grade padrão de cartões (decisão 375), 
   assert.match(m, /\{graficos\}/, "os gráficos ficam ao lado dos cards");
 });
 
-test("os botões azuis de Manutenção e de Ocorrências são compactos, arredondados e ficam numa linha só, à esquerda", () => {
+test("os botões azuis de Manutenção e de Ocorrências são compactos, arredondados e os de Manutenção ficam numa linha e os de Ocorrências à direita, um embaixo do outro", () => {
   const m = le("ManutencaoVeiculoModulo.tsx");
   assert.match(m, /<section className="flex flex-wrap items-center gap-2" aria-label="Listas de manutenção">/);
   assert.match(m, /const botaoCadastrar = <Button requiresWrite size="sm" className="rounded-full px-4"/);
   assert.equal((m.match(/size="sm" className="rounded-full px-4"/g) ?? []).length >= 3, true);
   const o = le("OcorrenciasVeiculoModulo.tsx");
-  assert.match(o, /<section className="flex flex-wrap items-center gap-2" aria-label="Ocorrências">/);
+  assert.match(o, /<section className="flex flex-col items-end gap-2" aria-label="Ocorrências">\s*<Button requiresWrite="operar"[^>]*>Nova ocorrência<\/Button>\s*<Button ref=\{botaoDaTela\("lista"\)\}/);
   assert.match(o, /size="sm" className="rounded-full px-4" aria-label/);
   assert.match(o, /<Button requiresWrite="operar" size="sm" className="rounded-full px-4" onClick=\{abrirNova\}>Nova ocorrência<\/Button>/);
-  // Os botões não voltam a empilhar em coluna.
-  assert.doesNotMatch(m + o, /flex flex-col items-end gap-2/);
+  // Os de Manutenção não empilham em coluna.
+  assert.doesNotMatch(m, /flex flex-col items-end gap-2/);
 });
 
 test("os botões das listas seguem o mesmo estilo do painel: Nova ocorrência e Voltar ao painel também compactos e arredondados", () => {
@@ -34,6 +34,6 @@ test("os botões das listas seguem o mesmo estilo do painel: Nova ocorrência e 
   const novas = o.match(/<Button requiresWrite="operar"[^>]*onClick=\{abrirNova\}>Nova ocorrência<\/Button>/g) ?? [];
   assert.equal(novas.length, 2);
   for (const b of novas) assert.match(b, /size="sm" className="rounded-full px-4"/);
-  assert.match(o, /variant="outline" size="sm" className="order-first rounded-full" onClick=\{\(\) => setVerLista\(false\)\}/);
+  assert.match(o, /variant="outline" size="sm" className="rounded-full" onClick=\{\(\) => setVerLista\(false\)\}/);
   assert.match(le("ManutencaoVeiculoModulo.tsx"), /variant="outline" size="sm" className="rounded-full" onClick=\{\(\) => setAba\("painel"\)\}/);
 });

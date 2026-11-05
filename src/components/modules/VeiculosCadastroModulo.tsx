@@ -384,6 +384,15 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar por código, placa ou descrição"
+            placeholder="Buscar por código, placa ou descrição"
+            className="max-w-xs"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap gap-2">
             <Button
@@ -425,15 +434,6 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
             </Button>
           </div>
         </div>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar por código, placa ou descrição"
-            placeholder="Buscar por código, placa ou descrição"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

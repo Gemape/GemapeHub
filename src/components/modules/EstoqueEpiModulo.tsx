@@ -42,7 +42,7 @@ import { useParametrosBase } from "@/lib/use-parametros-base";
 const TODOS = "todos";
 
 // Módulo EPI > Estoque (decisão 329): só a consulta do estoque de EPIs. Dois botões escolhem os novos ou os usados (que vieram de devolução); filtros por empresa, palavra-chave,
-// data da compra, fornecedor, CA e nota fiscal; e, em cada linha, a compra de origem, o tamanho, o mínimo, a quantidade disponível, o alerta e a média de consumo mensal.
+// data da compra, fornecedor, CA e nota fiscal; e, em cada linha, o item de cada empresa (as compras de todos os fornecedores somam num estoque só; data, NF e fornecedor listam todas as compras que o formam), o tamanho, o mínimo, a quantidade disponível, o alerta e a média de consumo mensal.
 export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniforme" }) {
   const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { empresaId } = useEmpresa();
@@ -86,7 +86,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
 
   const fornecedores = useMemo(
     () =>
-      [...new Set(todas.map((l) => l.fornecedor).filter((f): f is string => !!f))].sort((a, b) =>
+      [...new Set(todas.flatMap((l) => l.fornecedores))].sort((a, b) =>
         a.localeCompare(b, "pt-BR"),
       ),
     [todas],
@@ -111,50 +111,8 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
 
   return (
     <section className="space-y-4" aria-label={modulo === "epi" ? "Estoque de EPIs" : "Estoque de uniformes"}>
-      {/* Novos e Usados: botões azuis no topo, à esquerda; o escolhido leva um anel e o outro fica mais claro (decisão 353). */}
+      {/* Filtros à esquerda; Novos e Usados e Exportar à direita (decisão 406). O botão escolhido leva um anel e o outro fica mais claro (decisão 353). */}
       <div className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
-        {(["novo", "usado"] as const).map((c) => (
-          <Button
-            key={c}
-            type="button"
-            className={condicao === c ? "ring-2 ring-primary ring-offset-2" : "opacity-70"}
-            aria-pressed={condicao === c}
-            onClick={() => setCondicao(c)}
-          >
-            {c === "novo" ? "Novos" : "Usados"} (
-            {doTipo(c, filtradas).reduce((t, l) => t + l.disponivel, 0)})
-          </Button>
-        ))}
-      </div>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={lista.length === 0}
-            onClick={() =>
-              exportarCsv(
-                `estoque-${modulo}-${condicao === "novo" ? "novos" : "usados"}`,
-                lista.map((l) => ({
-                  Código: l.codigo,
-                  Descrição: l.descricao,
-                  Empresa: nomeDaEmpresa(l.empresaId),
-                  "Data da compra": l.dataCompra ? formatarData(l.dataCompra) : "",
-                  NF: l.nf ?? "",
-                  Fornecedor: l.fornecedor ?? "",
-                  ...(modulo === "epi" ? { CA: l.ca ?? "" } : {}),
-                  Tamanho: l.tamanhoId ? nomeDoTamanho(l.tamanhoId) : "",
-                  "Estoque mínimo": l.minimo,
-                  "Quantidade disponível": l.disponivel,
-                  Alerta: l.alerta ? "Abaixo do mínimo" : "",
-                  "Média de consumo mensal": Number(l.mediaMensal.toFixed(2)),
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
-        </div>
         <BarraDeFiltros>
         <div className="w-44 space-y-1">
           <Label htmlFor="est-empresa">Empresa</Label>
@@ -245,6 +203,48 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           Limpar filtros
         </Button>
         </BarraDeFiltros>
+        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
+        {(["novo", "usado"] as const).map((c) => (
+          <Button
+            key={c}
+            type="button"
+            className={condicao === c ? "ring-2 ring-primary ring-offset-2" : "opacity-70"}
+            aria-pressed={condicao === c}
+            onClick={() => setCondicao(c)}
+          >
+            {c === "novo" ? "Novos" : "Usados"} (
+            {doTipo(c, filtradas).reduce((t, l) => t + l.disponivel, 0)})
+          </Button>
+        ))}
+      </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={lista.length === 0}
+            onClick={() =>
+              exportarCsv(
+                `estoque-${modulo}-${condicao === "novo" ? "novos" : "usados"}`,
+                lista.map((l) => ({
+                  Código: l.codigo,
+                  Descrição: l.descricao,
+                  Empresa: nomeDaEmpresa(l.empresaId),
+                  "Data da compra": l.dataCompra ? formatarData(l.dataCompra) : "",
+                  NF: l.nf ?? "",
+                  Fornecedor: l.fornecedor ?? "",
+                  ...(modulo === "epi" ? { CA: l.ca ?? "" } : {}),
+                  Tamanho: l.tamanhoId ? nomeDoTamanho(l.tamanhoId) : "",
+                  "Estoque mínimo": l.minimo,
+                  "Quantidade disponível": l.disponivel,
+                  Alerta: l.alerta ? "Abaixo do mínimo" : "",
+                  "Média de consumo mensal": Number(l.mediaMensal.toFixed(2)),
+                })),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+        </div>
       </div>
       {periodoInvalido && (
         <p className="text-sm text-destructive">
@@ -259,9 +259,9 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               <TableHead>Código</TableHead>
               <TableHead>Item</TableHead>
               <TableHead>Empresa</TableHead>
-              <TableHead>Data da compra</TableHead>
-              <TableHead>NF</TableHead>
-              <TableHead>Fornecedor</TableHead>
+              <TableHead title="Data da compra mais recente entre as que formam este estoque">Data da compra</TableHead>
+              <TableHead title="Notas fiscais de todas as compras deste estoque">NF</TableHead>
+              <TableHead title="Fornecedores de todas as compras: somam no mesmo estoque">Fornecedor</TableHead>
               {modulo === "epi" && <TableHead>CA</TableHead>}
               <TableHead>Tamanho</TableHead>
               <TableHead className="text-right">Estoque mínimo</TableHead>

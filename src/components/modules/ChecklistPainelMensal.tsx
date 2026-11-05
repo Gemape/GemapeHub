@@ -66,7 +66,7 @@ export function ChecklistPainelMensal({
 
   return (
     <section className="space-y-3" aria-label="Painel mensal do check list">
-      <div className="flex flex-col items-start gap-3 [&>[role=group]]:order-none">
+      <div className="flex flex-col items-start gap-3">
         <div>
           <h2 className="text-sm font-semibold">{todos ? "Painel de check lists" : "Painel do mês"}</h2>
           <p className="text-xs text-muted-foreground">
@@ -90,6 +90,7 @@ export function ChecklistPainelMensal({
       <GradeDeCartoes colunas={4}>
         <StatCard
           titulo="Realizados no prazo"
+          subtitulo="Realizados no prazo ÷ os que já venceram (feitos + não feitos)."
           pct={resumo.pctNoPrazo}
           faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null}
           valor={porcento(resumo.pctNoPrazo)}
@@ -99,6 +100,7 @@ export function ChecklistPainelMensal({
         />
         <StatCard
           titulo="Não realizados no prazo"
+          subtitulo="Não feitos no prazo ÷ os que já venceram (o oposto do ao lado)."
           pct={resumo.pctNaoNoPrazo}
           faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null}
           valor={porcento(resumo.pctNaoNoPrazo)}
@@ -106,8 +108,8 @@ export function ChecklistPainelMensal({
           icone={CircleX}
           compacto
         />
-        <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} compacto />
-        <StatCard titulo="A vencer" valor={resumo.aVencer} icone={CalendarClock} compacto />
+        <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} subtitulo="Check lists obrigatórios previstos no período." valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} compacto />
+        <StatCard titulo="A vencer" subtitulo="Previstos que ainda estão dentro do prazo." valor={resumo.aVencer} icone={CalendarClock} compacto />
       </GradeDeCartoes>
 
       <div className="overflow-x-auto rounded-xl border">

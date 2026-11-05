@@ -122,6 +122,26 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            placeholder="Buscar por descrição ou responsável"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+          <div className="space-y-1">
+            <Label htmlFor="oc-inicio">Início</Label>
+            <Input id="oc-inicio" type="date" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="oc-fim">Fim</Label>
+            <Input id="oc-fim" type="date" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
+          </div>
+          {(inicio || fim) && (
+            <Button type="button" variant="ghost" onClick={() => { setInicio(""); setFim(""); }}>
+              Limpar período
+            </Button>
+          )}
+        </BarraDeFiltros>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -152,26 +172,6 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
             Nova Ocorrência
           </Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            placeholder="Buscar por descrição ou responsável"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-          <div className="space-y-1">
-            <Label htmlFor="oc-inicio">Início</Label>
-            <Input id="oc-inicio" type="date" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="oc-fim">Fim</Label>
-            <Input id="oc-fim" type="date" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
-          </div>
-          {(inicio || fim) && (
-            <Button type="button" variant="ghost" onClick={() => { setInicio(""); setFim(""); }}>
-              Limpar período
-            </Button>
-          )}
-        </BarraDeFiltros>
       </div>
       {periodoErrado && <p role="alert" className="text-sm text-destructive">A data de início não pode ser depois da data de fim.</p>}
       {(inicio || fim) && !periodoErrado && (

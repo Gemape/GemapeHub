@@ -116,6 +116,14 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
     <div className="space-y-4">
       {/* Sem o título "Estoque" (a página já tem o dela): a busca no alto, à esquerda, e o Exportar CSV à direita, na mesma linha (decisões 339 e 406). */}
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar item do estoque"
+            placeholder="Buscar por código, item ou empresa"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </BarraDeFiltros>
         <Button variant="outline" disabled={isLoading || linhas.length === 0} onClick={() =>
           exportarCsv(`estoque-${modulo}`, linhas.map(({ item, estado }) => ({
             Código: item.codigo_sku,
@@ -130,14 +138,6 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             Alerta: estado.alerta ? `Abaixo do mínimo${estado.detalheAlerta ? `: ${estado.detalheAlerta}` : ''}` : '',
           })))
         }>Exportar CSV</Button>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar item do estoque"
-            placeholder="Buscar por código, item ou empresa"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
       </div>
       <div className="panel overflow-x-auto">
         <Table>

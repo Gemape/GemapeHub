@@ -254,6 +254,15 @@ function CatalogoEpi() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+          <Input
+            aria-label="Buscar EPI por código, descrição, subcategoria ou tamanho"
+            placeholder="Buscar por código, descrição, subcategoria ou tamanho"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="max-w-md"
+          />
+        </BarraDeFiltros>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
@@ -279,15 +288,6 @@ function CatalogoEpi() {
             Novo EPI
           </Button>
         </div>
-        <BarraDeFiltros>
-          <Input
-            aria-label="Buscar EPI por código, descrição, subcategoria ou tamanho"
-            placeholder="Buscar por código, descrição, subcategoria ou tamanho"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="max-w-md"
-          />
-        </BarraDeFiltros>
       </div>
 
       <div className="panel overflow-x-auto">

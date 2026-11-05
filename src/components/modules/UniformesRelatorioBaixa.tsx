@@ -95,31 +95,6 @@ export function UniformesRelatorioBaixa() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={imprimir}>
-            Relatório
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() =>
-              exportarCsv(
-                "relatorio-baixas",
-                baixas.map((b) => ({
-                  Data: formatarData(b.data_movimentacao),
-                  Empresa: empresas.find((e) => e.id === b.empresa_id)?.nome_fantasia,
-                  Empregado: empregados.find((e) => e.id === b.empregado_id)?.nome ?? "—",
-                  Uniforme: itens.find((i) => i.id === b.item_id)?.nome,
-                  Tamanho: tamanhoDe(b),
-                  Motivo: b.motivo_baixa,
-                  Qtd: b.quantidade,
-                  Valor: formatarMoeda(b.quantidade * (b.preco_unitario_registrado ?? 0)),
-                })),
-              )
-            }
-          >
-            Exportar CSV
-          </Button>
-        </div>
         <BarraDeFiltros>
         <div className="space-y-1.5">
           <Label>Data Inicial</Label>
@@ -147,6 +122,31 @@ export function UniformesRelatorioBaixa() {
           </Select>
         </div>
         </BarraDeFiltros>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={imprimir}>
+            Relatório
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              exportarCsv(
+                "relatorio-baixas",
+                baixas.map((b) => ({
+                  Data: formatarData(b.data_movimentacao),
+                  Empresa: empresas.find((e) => e.id === b.empresa_id)?.nome_fantasia,
+                  Empregado: empregados.find((e) => e.id === b.empregado_id)?.nome ?? "—",
+                  Uniforme: itens.find((i) => i.id === b.item_id)?.nome,
+                  Tamanho: tamanhoDe(b),
+                  Motivo: b.motivo_baixa,
+                  Qtd: b.quantidade,
+                  Valor: formatarMoeda(b.quantidade * (b.preco_unitario_registrado ?? 0)),
+                })),
+              )
+            }
+          >
+            Exportar CSV
+          </Button>
+        </div>
       </div>
 
       {/* Quatro cartões do tamanho dos da Frota (decisão 386): o que cada número mostra e o período. */}

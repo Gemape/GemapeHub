@@ -37,15 +37,19 @@ const base = {
   mediaMensalDe: () => 2.5,
 };
 
-test("novos: o saldo vem das compras mais recentes (as mais antigas saem primeiro), com alerta pelo mínimo e a média do EPI", () => {
+test("compras de fornecedores diferentes somam num estoque só: uma linha por EPI e tamanho, com o total, os fornecedores e a média do EPI (decisão 408)", () => {
   const linhas = linhasDeEstoqueEpi(base);
+  assert.equal(linhas.length, 1);
+  const [l] = linhas;
   assert.deepEqual(
-    linhas.map((l) => [l.condicao, l.nf, l.disponivel, l.tamanhoId, l.alerta, l.mediaMensal]),
-    [
-      ["novo", "200", 5, "m", true, 2.5],
-      ["novo", "100", 3, "m", true, 2.5],
-    ],
+    [l.condicao, l.disponivel, l.tamanhoId, l.alerta, l.mediaMensal],
+    ["novo", 8, "m", true, 2.5],
   );
+  assert.deepEqual([l.fornecedores, l.notas, l.cas, l.dataCompra], [["B", "A"], ["200", "100"], ["222", "111"], "2026-06-01"]);
+  assert.equal(l.fornecedor, "B, A");
+  // O saldo é o do produto, não o de cada compra: mais compras (de qualquer fornecedor) não criam outra linha.
+  const maisUma = linhasDeEstoqueEpi({ ...base, compras: [...compras, { id: "c3", item_id: "i1", tamanho_id: "m", data_compra: "2026-07-01", nota_fiscal: "300", fornecedor: "C", ca: "333", quantidade: 20 }], saldosDe: () => ({ m: 28 }) });
+  assert.deepEqual(maisUma.map((x) => [x.disponivel, x.fornecedores.length]), [[28, 3]]);
 });
 
 test("usados: vêm das devoluções, com a compra original, e saem do saldo dos novos", () => {
@@ -101,31 +105,18 @@ test("EPI zerado ou sem compra registrada continua aparecendo, para o alerta nã
   );
 });
 
-test("filtros: empresa, palavra-chave (inclusive tamanho), data da compra, fornecedor, CA e NF", () => {
+test("filtros: empresa, palavra-chave (inclusive tamanho), data da compra, fornecedor, CA e NF olham todas as compras que formam o estoque", () => {
   const linhas = linhasDeEstoqueEpi(base);
   const nome = (id) => (id === "m" ? "Médio" : "—");
   assert.equal(filtrarEstoqueEpi(linhas, { empresaId: "e2" }, nome).length, 0);
-  assert.equal(
-    filtrarEstoqueEpi(linhas, { palavra: "medio" }, nome).length,
-    2,
-    "acento e caixa não atrapalham",
-  );
-  assert.deepEqual(
-    filtrarEstoqueEpi(linhas, { dataInicio: "2026-05-01" }, nome).map((l) => l.nf),
-    ["200"],
-  );
-  assert.deepEqual(
-    filtrarEstoqueEpi(linhas, { fornecedor: "A" }, nome).map((l) => l.nf),
-    ["100"],
-  );
-  assert.deepEqual(
-    filtrarEstoqueEpi(linhas, { ca: "22" }, nome).map((l) => l.nf),
-    ["200"],
-  );
-  assert.deepEqual(
-    filtrarEstoqueEpi(linhas, { nf: "100" }, nome).map((l) => l.nf),
-    ["100"],
-  );
+  assert.equal(filtrarEstoqueEpi(linhas, { palavra: "medio" }, nome).length, 1, "acento e caixa não atrapalham");
+  assert.equal(filtrarEstoqueEpi(linhas, { dataInicio: "2026-05-01" }, nome).length, 1);
+  assert.equal(filtrarEstoqueEpi(linhas, { dataInicio: "2026-07-01" }, nome).length, 0);
+  assert.equal(filtrarEstoqueEpi(linhas, { fornecedor: "A" }, nome).length, 1);
+  assert.equal(filtrarEstoqueEpi(linhas, { fornecedor: "Z" }, nome).length, 0);
+  assert.equal(filtrarEstoqueEpi(linhas, { ca: "22" }, nome).length, 1);
+  assert.equal(filtrarEstoqueEpi(linhas, { nf: "100" }, nome).length, 1);
+  assert.equal(filtrarEstoqueEpi(linhas, { nf: "999" }, nome).length, 0);
 });
 
 test("a aba Estoque do EPI é a consulta nova, com os botões Novos e Usados e as colunas na ordem pedida", () => {
@@ -139,9 +130,6 @@ test("a aba Estoque do EPI é a consulta nova, com os botões Novos e Usados e a
     "Código",
     "Item",
     "Empresa",
-    "Data da compra",
-    "NF",
-    "Fornecedor",
     "CA",
     "Tamanho",
     "Estoque mínimo",
@@ -151,7 +139,7 @@ test("a aba Estoque do EPI é a consulta nova, com os botões Novos e Usados e a
   ];
   const ordem = colunas.map((c) =>
     tela.indexOf(
-      `<TableHead${c === "Estoque mínimo" || c === "Quantidade disponível" || c === "Média de consumo mensal" ? ' className="text-right"' : ""}>${c}</TableHead>`,
+      `${c === "Estoque mínimo" || c === "Quantidade disponível" || c === "Média de consumo mensal" ? '<TableHead className="text-right">' : "<TableHead>"}${c}</TableHead>`,
     ),
   );
   assert.ok(

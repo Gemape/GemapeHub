@@ -46,7 +46,6 @@ export function ManutencaoEquipamentoModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
-        <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova manutenção</Button>
         <BarraDeFiltros>
           <div className="space-y-1.5">
             <Label htmlFor="filtro_eq_manut">Histórico por equipamento</Label>
@@ -69,12 +68,13 @@ export function ManutencaoEquipamentoModulo() {
           </div>
           <Input aria-label="Buscar manutenção" placeholder="Buscar por equipamento, ação ou local" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </BarraDeFiltros>
+        <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova manutenção</Button>
       </div>
 
       <GradeDeCartoes colunas={3}>
-        <StatCard titulo="Manutenções" valor={linhas.length} icone={Wrench} compacto />
-        <StatCard titulo="Preventivas / corretivas" valor={`${linhas.filter((m) => m.tipo === "Preventiva").length} / ${linhas.filter((m) => m.tipo === "Corretiva").length}`} icone={ListChecks} compacto />
-        <StatCard titulo="Custo total" valor={reais(custo)} icone={Banknote} compacto />
+        <StatCard titulo="Manutenções" subtitulo="Registros da lista abaixo." valor={linhas.length} icone={Wrench} compacto />
+        <StatCard titulo="Preventivas / corretivas" subtitulo="Registros de cada tipo na lista." valor={`${linhas.filter((m) => m.tipo === "Preventiva").length} / ${linhas.filter((m) => m.tipo === "Corretiva").length}`} icone={ListChecks} compacto />
+        <StatCard titulo="Custo total" subtitulo="Soma do custo das manutenções da lista." valor={reais(custo)} icone={Banknote} compacto />
       </GradeDeCartoes>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}

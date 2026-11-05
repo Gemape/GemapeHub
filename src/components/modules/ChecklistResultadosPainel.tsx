@@ -21,10 +21,10 @@ function Indicadores({ resumo, todos, colunas = 4 }: { resumo: ResumoPainel; tod
   const desfechos = resumo.realizados + resumo.naoRealizados;
   return (
     <GradeDeCartoes colunas={colunas}>
-      <StatCard titulo="Realizados no prazo" pct={resumo.pctNoPrazo} faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} compacto />
-      <StatCard titulo="Não realizados no prazo" pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} compacto />
-      <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} compacto />
-      <StatCard titulo="A vencer" valor={resumo.aVencer} detalhe="Ainda dentro do prazo" icone={CalendarClock} compacto />
+      <StatCard titulo="Realizados no prazo" subtitulo="Realizados no prazo ÷ os que já venceram (feitos + não feitos)." pct={resumo.pctNoPrazo} faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNoPrazo)} detalhe={desfechos > 0 ? `${resumo.realizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleCheck} compacto />
+      <StatCard titulo="Não realizados no prazo" subtitulo="Não feitos no prazo ÷ os que já venceram (o oposto do ao lado)." pct={resumo.pctNaoNoPrazo} faixa={faixaDoIndiceDeVeiculos(resumo.pctNoPrazo)?.faixa ?? null} valor={porcento(resumo.pctNaoNoPrazo)} detalhe={desfechos > 0 ? `${resumo.naoRealizados} de ${desfechos} com prazo definido` : "Ainda sem prazo vencido"} icone={CircleX} compacto />
+      <StatCard titulo={todos ? "Previstos" : "Previstos no mês"} subtitulo="Check lists obrigatórios previstos no período." valor={resumo.previstos} detalhe={resumo.opcionais > 0 ? `+ ${resumo.opcionais} opcional(is), fora dos percentuais` : "Só os obrigatórios"} icone={CalendarCheck} compacto />
+      <StatCard titulo="A vencer" subtitulo="Previstos que ainda estão dentro do prazo." valor={resumo.aVencer} icone={CalendarClock} compacto />
     </GradeDeCartoes>
   );
 }
@@ -111,7 +111,6 @@ export function ChecklistResultadosPainel({
     <div className="space-y-3">
       {/* O período vale para tudo o que está abaixo: fica no alto, à esquerda (decisão 406), na linha dos botões dos tipos de check list, que ficam à direita. */}
       <div className="flex flex-wrap items-end gap-2">
-        {acoes}
         <BarraDeFiltros>
           <div className="flex items-center gap-2">
             <Label htmlFor="resultados_mes" className="text-xs">Período</Label>
@@ -124,6 +123,7 @@ export function ChecklistResultadosPainel({
             </Select>
           </div>
         </BarraDeFiltros>
+        {acoes}
       </div>
       {/* Tudo numa tela, sem rolar (decisões 332 e 347): no alto, os indicadores gerais com os cards e os gráficos ocupando toda a largura; abaixo, a tela dividida ao meio, com os técnicos e o PCM lado a lado
           (indicadores e tabela dos responsáveis de cada um). */}

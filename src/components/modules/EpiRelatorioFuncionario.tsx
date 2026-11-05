@@ -160,31 +160,6 @@ export function EpiRelatorioFuncionario() {
 
           <h3 className="text-lg font-bold">Histórico de Movimentações de EPI</h3>
           <div className="flex flex-wrap items-end gap-2">
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={imprimir}>
-                Relatório
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  exportarCsv(
-                    `historico-epi-${empregado.nome}`,
-                    visiveis.map((h) => ({
-                      Data: formatarData(h.data_movimentacao),
-                      EPI: nomeDoEpi(h.item_id),
-                      Tamanho: tamanhoDe(h),
-                      Tipo: naturezaMovimentacao(h),
-                      Qtd: h.quantidade,
-                      Motivo: h.motivo_baixa || "Entrega/Uso",
-                      Obs: h.observacao,
-                    })),
-                  )
-                }
-              >
-                Exportar CSV
-              </Button>
-            </div>
             <BarraDeFiltros>
               <div className="space-y-1">
                 <Label htmlFor="hist-busca">Buscar</Label>
@@ -212,6 +187,31 @@ export function EpiRelatorioFuncionario() {
                 </Button>
               )}
             </BarraDeFiltros>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={imprimir}>
+                Relatório
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  exportarCsv(
+                    `historico-epi-${empregado.nome}`,
+                    visiveis.map((h) => ({
+                      Data: formatarData(h.data_movimentacao),
+                      EPI: nomeDoEpi(h.item_id),
+                      Tamanho: tamanhoDe(h),
+                      Tipo: naturezaMovimentacao(h),
+                      Qtd: h.quantidade,
+                      Motivo: h.motivo_baixa || "Entrega/Uso",
+                      Obs: h.observacao,
+                    })),
+                  )
+                }
+              >
+                Exportar CSV
+              </Button>
+            </div>
           </div>
           {periodoErrado && (
             <p role="alert" className="text-sm text-destructive">A data de início não pode ser depois da data de fim.</p>

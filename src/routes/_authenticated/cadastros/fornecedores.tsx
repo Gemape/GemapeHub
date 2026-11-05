@@ -110,6 +110,10 @@ function PaginaFornecedores() {
     </header>
 
     <div className="flex flex-wrap items-end gap-2">
+      <BarraDeFiltros>
+        <Input aria-label="Buscar fornecedor por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
+        {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {fornecedores.length} fornecedor(es).</p>}
+      </BarraDeFiltros>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" disabled={lista.length === 0} onClick={() => exportarCsv("fornecedores", lista.map((x) => ({
@@ -124,10 +128,6 @@ function PaginaFornecedores() {
           <Button requiresWrite onClick={() => import.meta.env.VITE_DEMO_MODE !== "false" ? abrir(exemploFornecedor(fornecedores), true) : abrir(null)}>Novo fornecedor</Button>
         </div>
       </div>
-      <BarraDeFiltros>
-        <Input aria-label="Buscar fornecedor por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
-        {busca.trim() && <p className="text-sm text-muted-foreground">{lista.length} de {fornecedores.length} fornecedor(es).</p>}
-      </BarraDeFiltros>
     </div>
 
     <div className="panel overflow-x-auto">
