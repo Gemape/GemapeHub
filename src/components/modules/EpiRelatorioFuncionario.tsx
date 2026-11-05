@@ -110,6 +110,9 @@ export function EpiRelatorioFuncionario() {
       arquivo: nomeArquivoDocumento("Histórico de movimentações de EPI", empregado?.nome),
     });
 
+  // Parte do que foi entregue (0 a 100), para a barra e o detalhe dos cartões.
+  const parteDoEntregue = (n: number) => (totalEntregue > 0 ? Math.max(0, Math.min(100, Math.round((n / totalEntregue) * 100))) : 0);
+
   if (isError) return <div role="alert">Não foi possível carregar o histórico completo: {error.message}</div>;
   if (empregado && isLoading) return <div>Carregando histórico completo…</div>;
 
@@ -151,11 +154,12 @@ export function EpiRelatorioFuncionario() {
 
       {empregado && (
         <>
+          {/* Cartões no modelo da Frota (decisão 411): título com o escopo, a linha que explica o número, o valor, a barra (parte do que foi entregue) e o detalhe embaixo. */}
           <GradeDeCartoes colunas={4}>
-            <StatCard titulo="Entregues" subtitulo="Saídas de entrega ao empregado." valor={totalEntregue} icone={PackageCheck} compacto />
-            <StatCard titulo="Devolvidos" subtitulo="O que ele devolveu ao estoque." valor={totalDevolvido} icone={Undo2} compacto />
-            <StatCard titulo="Baixados" subtitulo="Baixas definitivas feitas com ele." valor={totalBaixado} icone={PackageX} compacto />
-            <StatCard titulo="Em Posse" subtitulo="Entregue − devolvido − baixado." valor={emPosse} icone={UserCheck} compacto />
+            <StatCard titulo="Empregado · Entregues" subtitulo="Saídas de entrega ao empregado." valor={totalEntregue} pct={totalEntregue > 0 ? 100 : 0} detalhe={`${totalEntregue} peça(s) entregue(s) em todo o histórico`} icone={PackageCheck} compacto />
+            <StatCard titulo="Empregado · Devolvidos" subtitulo="O que ele devolveu ao estoque." valor={totalDevolvido} pct={parteDoEntregue(totalDevolvido)} detalhe={`${totalDevolvido} de ${totalEntregue} entregue(s) · ${parteDoEntregue(totalDevolvido)}%`} icone={Undo2} compacto />
+            <StatCard titulo="Empregado · Baixados" subtitulo="Baixas definitivas feitas com ele." valor={totalBaixado} pct={parteDoEntregue(totalBaixado)} detalhe={`${totalBaixado} de ${totalEntregue} entregue(s) · ${parteDoEntregue(totalBaixado)}%`} icone={PackageX} compacto />
+            <StatCard titulo="Empregado · Em posse" subtitulo="Entregue − devolvido − baixado." valor={emPosse} pct={parteDoEntregue(emPosse)} detalhe={`${emPosse} de ${totalEntregue} entregue(s) ainda com ele · ${parteDoEntregue(emPosse)}%`} icone={UserCheck} compacto />
           </GradeDeCartoes>
 
           <h3 className="text-lg font-bold">Histórico de Movimentações de EPI</h3>

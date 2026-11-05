@@ -244,7 +244,7 @@ export function SugestaoComprasEpi() {
           <Button type="button" onClick={abrirRelatorio}>
             Gerar relatório
           </Button>
-          <EstoqueMinimoEpi linhas={todas} empresas={empresasParaEscolha(empresas)} />
+          <EstoqueMinimoEpi linhas={filtradas} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
           <Button
             type="button"
             variant="outline"
