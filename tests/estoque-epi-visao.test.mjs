@@ -119,7 +119,7 @@ test("filtros: empresa, palavra-chave (inclusive tamanho), data da compra, forne
   assert.equal(filtrarEstoqueEpi(linhas, { nf: "999" }, nome).length, 0);
 });
 
-test("a aba Estoque do EPI é a consulta nova, com os botões Novos e Usados e as colunas na ordem pedida, sem coluna de compra (o estoque é um só por produto e empresa)", () => {
+test("a aba Estoque do EPI é a consulta nova, com os botões Novos e Usados e as colunas na ordem pedida", () => {
   assert.match(
     ler("components/modules/PaginaModulo.tsx"),
     /modulo === "epi" \|\| modulo === "uniforme" \? <EstoqueEpiModulo modulo=\{modulo\} \/> : <EstoqueModulo modulo=\{modulo\} \/>/,
