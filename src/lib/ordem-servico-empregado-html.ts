@@ -12,6 +12,13 @@ const chave = (t: string) => t.trim().replace(/\s*\/\s*/g, "/").replace(/\s+/g, 
 export const ordensDaFuncao = (ordens: readonly OrdemServicoEpi[], area: Texto): OrdemServicoEpi[] =>
   area ? ordens.filter((o) => chave(o.funcao) === chave(area)) : [];
 
+// A área em que o empregado está habilitado: pelo id e, para quem entrou na lista sem vínculo (id nulo), pelo nome.
+export const funcaoDeHabilitado = (habilitados: readonly { empregadoId: string | null; nome: string; area: string }[], empregado: { id: string; nome: string } | undefined): string =>
+  !empregado ? "" : (habilitados.find((h) => h.empregadoId === empregado.id) ?? habilitados.find((h) => !h.empregadoId && chave(h.nome) === chave(empregado.nome)))?.area ?? "";
+
+// A função que vale para a ordem: a do empregado (a área em que está habilitado) e, quando ele não está habilitado em nenhuma, a que a pessoa informa na hora (decisão 413).
+export const funcaoDaOrdem = (areaHabilitada: Texto, informada: Texto): string => (areaHabilitada || informada || "").trim();
+
 // Um item por linha, tirando o marcador (●, -, •, *) que a pessoa tenha digitado.
 export const itensDaLista = (texto: string): string[] => texto.split("\n").map((l) => l.replace(/^\s*[●•\-*–]\s*/, "").trim()).filter(Boolean);
 

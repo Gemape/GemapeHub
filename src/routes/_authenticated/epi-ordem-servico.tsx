@@ -38,7 +38,7 @@ function OrdemServicoEpiPagina() {
   const { voltar, nova, empresa, empregado, funcao } = Route.useSearch();
   const navegar = useNavigate();
   const volta = (ordemId?: string) =>
-    void navegar({ to: "/epi", search: { aba: "ordem-servico", ...(empresa ? { empresa } : {}), ...(empregado ? { empregado } : {}), ...(ordemId ? { ordem: ordemId } : {}) } });
+    void navegar({ to: "/epi", search: { aba: "ordem-servico", ...(empresa ? { empresa } : {}), ...(empregado ? { empregado } : {}), ...(funcao ? { funcao } : {}), ...(ordemId ? { ordem: ordemId } : {}) } });
   const ordens = useOrdensServicoEpi();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);

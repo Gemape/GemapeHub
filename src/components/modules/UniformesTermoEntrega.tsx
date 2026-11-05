@@ -27,7 +27,8 @@ import {
   useEmpregados,
   useRegistrarMovimentacoesLote,
 } from "@/lib/hooks-gemape";
-import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
+import { listaDeUniformeDesatualizada, soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
+import { AvisoHabilitados } from "@/components/AvisoHabilitados";
 import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
 import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
@@ -62,6 +63,7 @@ export function UniformesTermoEntrega() {
 
   const empresa = empresas.find((e) => e.id === empresaId);
   const empregado = empregados.find((e) => e.id === empregadoId);
+  const habilitadosDesatualizados = !!empresaId && listaDeUniformeDesatualizada(empregados.filter((e) => empregadoAtivo(e)));
   // Quem pode entregar: empregado ativo, entre os habilitados dos uniformes, que não seja quem recebe (tirado depois do filtro, para quem recebe ser o único habilitado não liberar todos).
   const responsaveis = soEmpregadosDeUniforme(empregados.filter((e) => empregadoAtivo(e))).filter((e) => e.id !== empregadoId);
 
@@ -179,6 +181,7 @@ export function UniformesTermoEntrega() {
     <div className="space-y-6">
       <div className="panel p-6 space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <AvisoHabilitados desatualizada={habilitadosDesatualizados} onde="Parâmetros &gt; Uniformes &gt; Parâmetros Específicos" />
           <div className="space-y-1.5">
             <Label>Empresa</Label>
             <Select value={empresaId} onValueChange={(v) => { if (!v) return; setEmpresaId(v); setEmpregadoId(""); setResponsavelId(""); setItensEntrega([]); }}>
