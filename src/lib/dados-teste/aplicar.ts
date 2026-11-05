@@ -319,7 +319,9 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     const cat = epiDe(nome, indice);
     const ca = caOutro ?? caDoCatalogo(cat);
     const estoque = estoqueDe("epis", cat.id, empresaIds[empresaIndice]!);
-    const fornecedor = FORNECEDORES[(cat.item.fornecedor + deslocaFornecedor) % FORNECEDORES.length]!;
+    // Só fornecedor que atende a categoria de EPI (a compra recusa os outros): o deslocamento escolhe entre os que não são o da compra original do item.
+    const alternativos = FORNECEDORES.filter((f, i) => i !== cat.item.fornecedor && (f.categorias as readonly string[]).includes("cat-epi"));
+    const fornecedor = alternativos[(deslocaFornecedor - 1) % alternativos.length]!;
     const valorUnitario = Math.round((20 + indice * 3) * 100) / 100;
     const data = dia(agora, diasAtras);
     compras.compras_epis.push({
@@ -334,6 +336,25 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   compraExtra("Luva", 1, 0, 1, 8, 35, "NF-02003", "36188"); // outro CA no mesmo item
   compraExtra("Capacete", 0, 2, 1, 10, 30, "NF-02004");
   compraExtra("Botina", 2, 1, 2, 5, 28, "NF-02005");
+  // O mesmo para uniformes: compras do mesmo item e empresa de outros fornecedores somam no mesmo saldo.
+  const compraExtraUniforme = (nome: string, indice: number, empresaIndice: number, quantidade: number, diasAtras: number, nota: string) => {
+    const cat = uniDe(nome, indice);
+    const estoque = estoqueDe("uniformes", cat.id, empresaIds[empresaIndice]!);
+    // Só fornecedor que atende a categoria de uniformes (a compra recusa os outros): o primeiro que não é o da compra original do item.
+    const fornecedor = FORNECEDORES.find((f, i) => i !== cat.item.fornecedor && (f.categorias as readonly string[]).includes("cat-uniformes"))!;
+    const valorUnitario = Math.round((35 + indice * 4) * 100) / 100;
+    const data = dia(agora, diasAtras);
+    compras.compras_uniformes.push({
+      id: novaCompra(), created_at: criadoEm, empresa_id: empresaIds[empresaIndice], item_id: estoque["id"], fornecedor: fornecedor.nome_fantasia, fornecedor_id: fornecedor.id,
+      nota_fiscal: nota, data_compra: data, quantidade, valor_unitario: valorUnitario, valor_total: Math.round(quantidade * valorUnitario * 100) / 100,
+      observacao: "Segunda compra do item, de outro fornecedor", tamanho_id: cat.item.tamanhos[cat.indice] ?? null,
+    });
+    mov({ modulo: "uniforme", tipo_movimentacao: "Entrada", quantidade, data_movimentacao: data, item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: cat.item.tamanhos[cat.indice] ?? null, observacao: `Compra: NF ${nota} / ${fornecedor.nome_fantasia}` });
+  };
+  compraExtraUniforme("Camisa", 1, 0, 6, 38, "NF-02101");
+  compraExtraUniforme("Camisa", 1, 0, 4, 22, "NF-02102");
+  compraExtraUniforme("Calça", 2, 1, 5, 30, "NF-02103");
+  compraExtraUniforme("Jaqueta", 0, 2, 4, 26, "NF-02104");
   // Empresa 1 (Ana): botina 40 em estoque baixo de propósito, luvas M no mínimo (a segunda compra de luva M soma 8).
   entrega("epi", "epis", epiDe("Botina", 1).id, 0, 3, 30, "tam-40");
   entrega("epi", "epis", epiDe("Luva", 1).id, 0, 5, 28, "tam-m");

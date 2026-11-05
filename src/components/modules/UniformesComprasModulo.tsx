@@ -50,7 +50,8 @@ import {
 import { escolherFornecedorDaCompra } from "@/lib/compras-fornecedor";
 import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
+import { nomeTamanhoGravado, SEM_TAMANHO, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { hojeLocal } from "@/lib/empregados";
 
@@ -80,6 +81,11 @@ export function UniformesComprasModulo() {
 
   const salvar = useSalvar("compras_uniformes", CHAVES);
   const excluir = useExcluir("compras_uniformes", CHAVES);
+
+  // Saldo do produto (e do tamanho escolhido) no estoque da empresa: todas as compras, de qualquer fornecedor, somam nele, como no EPI (decisão 412).
+  const itemEscolhido = itens.find((i) => i.id === itemSel);
+  // Sem tamanho escolhido (ou produto sem tamanho), vale o saldo total do item; com tamanho, o saldo dele.
+  const saldoDoEscolhido = !itemEscolhido ? 0 : tamanho ? (saldosDeEpi(parametros, itemEscolhido, "uniforme")[tamanhoParaGravar(tamanho) ?? SEM_TAMANHO] ?? 0) : totalDeEpi(parametros, itemEscolhido, "uniforme");
 
   function abrirNovo() {
     setEditando(null);
@@ -139,7 +145,7 @@ export function UniformesComprasModulo() {
 
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
-      { onSuccess: () => { setAberto(false); void avisarEnderecamentoObrigatorio(parametros, "cat-uniformes", empresaCompra, itens.find((i) => i.id === itemSel)?.codigo_sku ?? ""); } },
+      { onSuccess: () => { setAberto(false); void avisarEnderecamentoObrigatorio(parametros, "cat-uniformes", empresaCompra, itemEscolhido?.codigo_sku ?? ""); } },
     );
   }
 
@@ -335,14 +341,19 @@ export function UniformesComprasModulo() {
               </Select>
             </div>
             {itemSel && (
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Esta compra alimenta o estoque {empresas.find((e) => e.id === empresaCompra)?.nome_fantasia}, onde o item existe uma vez só: compras de qualquer fornecedor somam no mesmo saldo (saldo {tamanho ? "do tamanho escolhido " : ""}hoje: {saldoDoEscolhido}{quantidade > 0 ? `; com esta compra: ${saldoDoEscolhido + quantidade}` : ""}).
+              </p>
+            )}
+            {itemSel && (
               <div className="sm:col-span-2">
-                <EnderecoDaEntrada categoriaId="cat-uniformes" empresaId={empresaCompra} codigo={itens.find((i) => i.id === itemSel)?.codigo_sku ?? ""} />
+                <EnderecoDaEntrada categoriaId="cat-uniformes" empresaId={empresaCompra} codigo={itemEscolhido?.codigo_sku ?? ""} />
               </div>
             )}
             {pedeTamanho(
               parametros,
               "uniforme",
-              itens.find((i) => i.id === itemSel),
+              itemEscolhido,
             ) && (
               <div className="space-y-1.5">
                 <Label htmlFor="tamanho_compra">Tamanho</Label>
@@ -350,7 +361,7 @@ export function UniformesComprasModulo() {
                   id="tamanho_compra"
                   parametros={parametros}
                   modulo="uniforme"
-                  produto={itens.find((i) => i.id === itemSel)}
+                  produto={itemEscolhido}
                   uso="entrada"
                   valor={tamanho}
                   onChange={setTamanho}

@@ -2272,3 +2272,7 @@ O aviso fixo "Estoque no mínimo ou abaixo (todas as empresas)" saiu do alto da 
 ## 411. Histórico do empregado: cartões no padrão da Frota
 
 Em EPIs e Uniformes > Relatórios > Histórico do empregado, os quatro cartões (Entregues, Devolvidos, Baixados, Em posse) ganharam o desenho da Frota: título com o escopo ("Empregado · ..."), a linha que explica o número, o valor, a **barra** (parte do que foi entregue a ele) e o detalhe embaixo ("2 de 4 entregues · 50%"). O Estoque mínimo (decisão 410) passou a respeitar o filtro de empresa e a palavra-chave da Sugestão de Compras.
+
+## 412. Controle de estoque dos Uniformes na mesma lógica do EPI
+
+Uniformes seguem o EPI: o Estoque já usa a mesma consulta consolidada (uma linha por código, empresa e tamanho, com Novos e Usados), e em **Registrar Compra** o aviso mostra o saldo do tamanho escolhido (ou o total do item, enquanto não há tamanho) antes e depois da compra, na empresa escolhida, onde compras de qualquer fornecedor somam no mesmo saldo. O mesmo aviso do EPI passou a mostrar o total do item enquanto nenhum tamanho foi escolhido (antes mostrava 0). Os dados de teste (versão 40) trazem uniformes comprados de mais de um fornecedor na mesma empresa, sempre de fornecedores que atendem a categoria; os indicadores e relatórios leem o mesmo saldo (`estoque_atual`, mantido pelas movimentações).

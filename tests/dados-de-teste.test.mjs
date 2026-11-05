@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 
 import { dadosIniciais as base } from "../src/integrations/supabase/demo-client.ts";
 import { aplicarDadosDeTeste, CHAVE_CONTROLE, lerControle, pedirLimpar, pedirRestaurar, prepararDadosDeTeste } from "../src/lib/dados-teste/aplicar.ts";
-import { VERSAO_DADOS_TESTE } from "../src/lib/dados-teste/conjunto.ts";
+import { FORNECEDORES, VERSAO_DADOS_TESTE } from "../src/lib/dados-teste/conjunto.ts";
 import * as P_GERAIS from "../src/lib/parametros-base.ts";
 import { cpfValido, emailValido, matriculaValida } from "../src/lib/empregados.ts";
 import { validarCep, validarCnpj, validarTelefone } from "../src/lib/formatacao-cadastral.ts";
@@ -679,4 +679,36 @@ test("a visão do Estoque de EPI com os dados de teste: uma linha por item, empr
   }
   const multi = linhas.filter((l) => l.condicao === "novo" && l.fornecedores.length >= 2);
   assert.ok(multi.length >= 3, "há linhas que juntam compras de mais de um fornecedor");
+});
+
+test("dados de teste do uniforme: itens comprados de vários fornecedores na mesma empresa somam num estoque só, e a visão tem uma linha por item e tamanho", async () => {
+  const { linhasDeEstoqueEpi } = await import("../src/lib/estoque-epi-visao.ts");
+  const d = dados(prontos());
+  const itens = doTeste(d.uniformes);
+  const porId = new Map(itens.map((i) => [i.id, i]));
+  const linhas = linhasDeEstoqueEpi({
+    itens, compras: doTeste(d.compras_uniformes), devolucoes: doTeste(d.movimentacoes).filter((m) => m.modulo === "uniforme"),
+    saldosDe: (id) => porId.get(id).saldos_tamanho ?? { "sem-tamanho": porId.get(id).estoque_atual ?? 0 },
+    minimosDe: () => ({}), mediaMensalDe: () => 0,
+  });
+  const chaves = linhas.map((l) => `${l.itemId}|${l.tamanhoId}|${l.condicao}`);
+  assert.equal(new Set(chaves).size, chaves.length, "nenhuma linha repetida");
+  for (const i of itens) {
+    assert.equal(linhas.filter((l) => l.itemId === i.id).reduce((t, l) => t + l.disponivel, 0), i.estoque_atual, `${i.codigo_sku}: novos + usados = saldo`);
+  }
+  assert.ok(linhas.filter((l) => l.condicao === "novo" && l.fornecedores.length >= 2).length >= 3, "há uniformes com compras de mais de um fornecedor");
+  // Cada compra extra tem a sua entrada no histórico, com a mesma quantidade.
+  for (const nf of ["NF-02101", "NF-02102", "NF-02103", "NF-02104"]) {
+    const compra = doTeste(d.compras_uniformes).find((c) => c.nota_fiscal === nf);
+    assert.ok(compra, `${nf}: compra registrada`);
+    assert.ok(FORNECEDORES.find((f) => f.id === compra.fornecedor_id)?.categorias.includes("cat-uniformes"), `${nf}: fornecedor atende uniformes`);
+    assert.ok(doTeste(d.movimentacoes).some((m) => m.modulo === "uniforme" && m.tipo_movimentacao === "Entrada" && m.item_id === compra.item_id && m.quantidade === compra.quantidade && String(m.observacao).includes(nf)), `${nf}: entrada no histórico`);
+  }
+});
+
+test("dados de teste do EPI: toda compra é de fornecedor que atende a categoria de EPI", async () => {
+  const { FORNECEDORES } = await import("../src/lib/dados-teste/conjunto.ts");
+  const d = dados(prontos());
+  const atendem = new Set(FORNECEDORES.filter((f) => f.categorias.includes("cat-epi")).map((f) => f.nome_fantasia));
+  for (const c of doTeste(d.compras_epis)) assert.ok(atendem.has(c.fornecedor), `${c.nota_fiscal}: ${c.fornecedor}`);
 });
