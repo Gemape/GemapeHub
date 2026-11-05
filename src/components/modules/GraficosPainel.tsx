@@ -16,6 +16,8 @@ import {
   YAxis,
 } from "recharts";
 
+import { Tooltip as Balao, TooltipContent as BalaoConteudo, TooltipProvider as BalaoProvider, TooltipTrigger as BalaoGatilho } from "@/components/ui/tooltip";
+
 // Peças dos relatórios gráficos (estilo painel de BI) que ficam abaixo dos cards (decisão 325): um quadro com título e comparações, e os gráficos de barras e de rosca.
 export const COR_GRAFICO = {
   azul: "#3b2fc9",
@@ -58,12 +60,17 @@ export function QuadroGrafico({
   titulo,
   descricao,
   vazio,
+  formula,
+  formulaDetalhe,
   larga = false,
   altura = "h-[clamp(9rem,24vh,15rem)]",
   children,
 }: {
   titulo: string;
   descricao?: string;
+  // Como o número do card é calculado, numa linha só; `formulaDetalhe` é a explicação completa, no balão ao passar o mouse.
+  formula?: string;
+  formulaDetalhe?: string;
   vazio?: boolean;
   larga?: boolean;
   altura?: string;
@@ -74,6 +81,19 @@ export function QuadroGrafico({
       <figcaption>
         <p className="text-sm font-semibold">{titulo}</p>
         {descricao && <p className="text-xs text-muted-foreground">{descricao}</p>}
+        {formula && (
+          <BalaoProvider delayDuration={100}>
+            <Balao>
+              <BalaoGatilho asChild>
+                {/* Focável, para o balão abrir também com o teclado e com o toque. */}
+                <p {...(formulaDetalhe ? { tabIndex: 0, "aria-label": `Fórmula: ${formula} ${formulaDetalhe}` } : {})} className={`text-xs text-muted-foreground ${formulaDetalhe ? "cursor-help" : ""}`}>
+                  <strong className="font-medium text-foreground">Fórmula:</strong> {formula}
+                </p>
+              </BalaoGatilho>
+              {formulaDetalhe && <BalaoConteudo className="max-w-xs">{formulaDetalhe}</BalaoConteudo>}
+            </Balao>
+          </BalaoProvider>
+        )}
       </figcaption>
       {vazio ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Sem dados para comparar.</p>
