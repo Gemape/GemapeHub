@@ -34,7 +34,7 @@ import {
 } from "@/lib/estoque-epi-visao";
 import { minimosDeEpi, saldosDeEpi } from "@/lib/estoque-epi-saldos";
 import { nomeTamanho } from "@/lib/estoque-tamanho";
-import { exportarCsv, formatarData } from "@/lib/gemape";
+import { exportarCsv } from "@/lib/gemape";
 import { useComprasEpis, useComprasUniformes, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
 import { lerItensEstoque } from "@/lib/itens-estoque-modulo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -42,7 +42,7 @@ import { useParametrosBase } from "@/lib/use-parametros-base";
 const TODOS = "todos";
 
 // Módulo EPI > Estoque (decisão 329): só a consulta do estoque de EPIs. Dois botões escolhem os novos ou os usados (que vieram de devolução); filtros por empresa, palavra-chave,
-// data da compra, fornecedor, CA e nota fiscal; e, em cada linha, a compra de origem, o tamanho, o mínimo, a quantidade disponível, o alerta e a média de consumo mensal.
+// data da compra, fornecedor, CA e nota fiscal; e, em cada linha, o item de cada empresa (as compras de todos os fornecedores somam num estoque só; fornecedor e nota ficam no histórico de Entrada no Estoque), o tamanho, o mínimo, a quantidade disponível, o alerta e a média de consumo mensal.
 export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniforme" }) {
   const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { empresaId } = useEmpresa();
@@ -86,7 +86,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
 
   const fornecedores = useMemo(
     () =>
-      [...new Set(todas.map((l) => l.fornecedor).filter((f): f is string => !!f))].sort((a, b) =>
+      [...new Set(todas.flatMap((l) => l.fornecedores))].sort((a, b) =>
         a.localeCompare(b, "pt-BR"),
       ),
     [todas],
@@ -229,9 +229,6 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   Código: l.codigo,
                   Descrição: l.descricao,
                   Empresa: nomeDaEmpresa(l.empresaId),
-                  "Data da compra": l.dataCompra ? formatarData(l.dataCompra) : "",
-                  NF: l.nf ?? "",
-                  Fornecedor: l.fornecedor ?? "",
                   ...(modulo === "epi" ? { CA: l.ca ?? "" } : {}),
                   Tamanho: l.tamanhoId ? nomeDoTamanho(l.tamanhoId) : "",
                   "Estoque mínimo": l.minimo,
@@ -259,9 +256,6 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               <TableHead>Código</TableHead>
               <TableHead>Item</TableHead>
               <TableHead>Empresa</TableHead>
-              <TableHead>Data da compra</TableHead>
-              <TableHead>NF</TableHead>
-              <TableHead>Fornecedor</TableHead>
               {modulo === "epi" && <TableHead>CA</TableHead>}
               <TableHead>Tamanho</TableHead>
               <TableHead className="text-right">Estoque mínimo</TableHead>
@@ -289,9 +283,6 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   <TableCell className="font-mono text-xs">{l.codigo}</TableCell>
                   <TableCell>{l.descricao}</TableCell>
                   <TableCell>{nomeDaEmpresa(l.empresaId)}</TableCell>
-                  <TableCell>{l.dataCompra ? formatarData(l.dataCompra) : "—"}</TableCell>
-                  <TableCell>{l.nf || "—"}</TableCell>
-                  <TableCell>{l.fornecedor || "—"}</TableCell>
                   {modulo === "epi" && <TableCell>{l.ca || "—"}</TableCell>}
                   <TableCell>{nomeDoTamanho(l.tamanhoId)}</TableCell>
                   <TableCell className="text-right">{l.minimo}</TableCell>

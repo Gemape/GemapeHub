@@ -1,5 +1,6 @@
-// Visão do estoque de EPI (decisão 329): uma linha por EPI, tamanho e compra de origem, separada em novos e usados. O estoque não guarda de qual compra vem cada unidade; vale a regra
-// de que as unidades mais antigas saem primeiro, então o que está disponível como novo vem das compras mais recentes. O que é usado vem das devoluções (que mantêm a compra original).
+// Visão do estoque de EPI (decisões 329 e 408): uma linha por EPI e tamanho, separada em novos e usados. O produto existe uma vez em cada estoque (empresa) e as compras de todos os
+// fornecedores se somam num estoque só; a linha mostra o total e, como informação, o que veio de cada compra (fornecedores, notas, CAs e a data da última). O estoque não guarda de
+// qual compra vem cada unidade: o que é usado vem das devoluções (que mantêm a compra original) e o resto é novo.
 export type CompraDoEstoque = {
   id: string;
   item_id: string | null;
@@ -42,6 +43,11 @@ export type LinhaEstoqueEpi = {
   nf: string | null;
   fornecedor: string | null;
   ca: string | null;
+  // Tudo o que alimentou o estoque da linha: as compras (ou, nos usados, as compras de origem das devoluções), sem repetir.
+  fornecedores: string[];
+  notas: string[];
+  cas: string[];
+  datas: string[];
   tamanhoId: string | null; // null = sem tamanho
   minimo: number;
   disponivel: number;
@@ -63,9 +69,41 @@ export type EntradaEstoqueEpi = {
 const SEM = "sem-tamanho";
 const numero = (v: unknown) => Number(v) || 0;
 
+type LinhaDeLote = Omit<LinhaEstoqueEpi, "fornecedores" | "notas" | "cas" | "datas">;
+const distintos = (valores: (string | null)[]) => [...new Set(valores.filter((v): v is string => !!v))];
+const juntar = (l: string[]) => (l.length ? l.join(", ") : null);
+
+// Junta as linhas de lote do mesmo EPI, tamanho e condição numa só: a quantidade soma e os dados de compra viram listas.
+function somarLotes(lotes: LinhaDeLote[]): LinhaEstoqueEpi[] {
+  const grupos = new Map<string, LinhaDeLote[]>();
+  for (const l of lotes) {
+    const k = `${l.itemId}|${l.tamanhoId ?? ""}|${l.condicao}`;
+    grupos.set(k, [...(grupos.get(k) ?? []), l]);
+  }
+  return [...grupos.entries()].map(([k, g]) => {
+    const fornecedores = distintos(g.map((l) => l.fornecedor));
+    const notas = distintos(g.map((l) => l.nf));
+    const cas = distintos(g.map((l) => l.ca));
+    const datas = distintos(g.map((l) => l.dataCompra)).sort();
+    return {
+      ...g[0]!,
+      chave: k,
+      disponivel: g.reduce((t, l) => t + l.disponivel, 0),
+      dataCompra: datas.length ? datas[datas.length - 1]! : null,
+      fornecedor: juntar(fornecedores),
+      nf: juntar(notas),
+      ca: juntar(cas),
+      fornecedores,
+      notas,
+      cas,
+      datas,
+    };
+  });
+}
+
 export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
   const sem = e.semTamanho ?? SEM;
-  const linhas: LinhaEstoqueEpi[] = [];
+  const linhas: LinhaDeLote[] = [];
   // Compras e devoluções usadas agrupadas uma vez por EPI e tamanho (a devolução grava "sem-tamanho" de forma explícita: vale como sem tamanho, o mesmo que null).
   const chaveDe = (itemId: string, tamanho: string | null | undefined) =>
     `${itemId}|${tamanho === sem ? "" : (tamanho ?? "")}`;
@@ -179,7 +217,7 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
       }
     }
   }
-  return linhas;
+  return somarLotes(linhas);
 }
 
 export type FiltroEstoqueEpi = {
@@ -205,14 +243,13 @@ export function filtrarEstoqueEpi(
   const nf = norm(f.nf).trim();
   return linhas.filter((l) => {
     if (f.empresaId && l.empresaId !== f.empresaId) return false;
-    if (f.fornecedor && l.fornecedor !== f.fornecedor) return false;
-    if (ca && !norm(l.ca).includes(ca)) return false;
-    if (nf && !norm(l.nf).includes(nf)) return false;
+    if (f.fornecedor && !l.fornecedores.includes(f.fornecedor)) return false;
+    if (ca && !l.cas.some((c) => norm(c).includes(ca))) return false;
+    if (nf && !l.notas.some((n) => norm(n).includes(nf))) return false;
+    // Basta uma das compras que formam o estoque cair no período.
     if (
       (f.dataInicio || f.dataFim) &&
-      (!l.dataCompra ||
-        (f.dataInicio && l.dataCompra < f.dataInicio) ||
-        (f.dataFim && l.dataCompra > f.dataFim))
+      !l.datas.some((d) => (!f.dataInicio || d >= f.dataInicio) && (!f.dataFim || d <= f.dataFim))
     )
       return false;
     if (
