@@ -69,7 +69,7 @@ export function ViagensRelatorio({ emitente }: { emitente: string }) {
 
   const lista2 = (valor: string, aoMudar: (v: string) => void, rotulo: string, vazio: string, itens: string[]) => (
     <div className="space-y-1">
-      <Label>{rotulo}</Label>
+      <Label className="block text-center">{rotulo}</Label>
       <Select value={valor} onValueChange={(v) => { if (v) aoMudar(v); }}>
         <SelectTrigger aria-label={rotulo}><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -87,15 +87,15 @@ export function ViagensRelatorio({ emitente }: { emitente: string }) {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {lista2(empregado, setEmpregado, "Empregado", TODOS, nomes)}
           <div className="space-y-1">
-            <Label htmlFor="relatorio-de">Data inicial</Label>
+            <Label className="block text-center" htmlFor="relatorio-de">Data inicial</Label>
             <Input id="relatorio-de" name="relatorio-de" type="date" value={de} onChange={(e) => setDe(e.target.value)} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="relatorio-ate">Data final</Label>
+            <Label className="block text-center" htmlFor="relatorio-ate">Data final</Label>
             <Input id="relatorio-ate" name="relatorio-ate" type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
           </div>
           <div className="space-y-1">
-            <Label>Comprovantes por página</Label>
+            <Label className="block text-center">Comprovantes por página</Label>
             <Select value={String(porPagina)} onValueChange={(v) => { if (v) setPorPagina(Number(v) as ComprovantesPorPagina); }}>
               <SelectTrigger aria-label="Comprovantes por página"><SelectValue /></SelectTrigger>
               <SelectContent>{["1", "2", "4"].map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}</SelectContent>
