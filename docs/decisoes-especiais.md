@@ -2292,3 +2292,7 @@ Complemento: Termo de Entrega e Ficha avulsa listam os habilitados (desligados i
 ## 415. Termos de Entrega de Uniforme e de EPI só documentam
 
 Gerar o **Termo de Entrega de Uniforme** não movimenta mais o estoque nem grava saída no histórico: o termo serve só para documentar. A saída só é contabilizada quando lançada em **Entrega Uniforme**. Por isso o termo também não confere mais o saldo; a conferência fica na Entrega. A tela traz o aviso fixo dizendo isso. O Termo de Entrega do EPI segue a mesma regra (a saída só conta em Entrega EPI). Com isso, o nome de quem entrega (decisões 360 e 361) fica só no documento impresso: o termo deixou de gravar "Entregue por" na observação do histórico.
+
+## 416. Estoque mínimo editável na aba Estoque (EPI e Uniformes)
+
+O **Estoque mínimo** de cada linha do **Estoque** de EPI e de Uniformes é um campo numérico com setas, editado na própria tabela (grava ao sair do campo, com Enter ou 0,8 s depois da última mudança; quem só consulta vê o número). Produto com tamanho grava só o mínimo do tamanho da linha (o total do item passa a ser a soma dos tamanhos; os outros tamanhos ficam como estavam); produto sem tamanho grava o mínimo único. Zero desliga o alerta. O valor fica no item, então vale para o alerta "Abaixo do mínimo", a Sugestão de Compras e o botão Estoque mínimo. Aceita só inteiros maiores ou iguais a zero.

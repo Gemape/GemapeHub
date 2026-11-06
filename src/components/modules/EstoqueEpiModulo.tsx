@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { MinimoEditavel } from "@/components/modules/MinimoEditavel";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,9 +36,11 @@ import {
   type LinhaEstoqueEpi,
 } from "@/lib/estoque-epi-visao";
 import { minimosDeEpi, saldosDeEpi } from "@/lib/estoque-epi-saldos";
-import { nomeTamanho } from "@/lib/estoque-tamanho";
+import { prepararMinimoDaLinha } from "@/lib/estoque-configuracao";
+import { controlaTamanho, nomeTamanho } from "@/lib/estoque-tamanho";
+import { MODO_DEMO } from "@/lib/modo-demo";
 import { exportarCsv, formatarData } from "@/lib/gemape";
-import { useComprasEpis, useComprasUniformes, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
+import { useComprasEpis, useComprasUniformes, useEmpresas, useMovimentacoes, useSalvar } from "@/lib/hooks-gemape";
 import { lerItensEstoque } from "@/lib/itens-estoque-modulo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -55,6 +60,8 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
   const [fornecedor, setFornecedor] = useState(TODOS);
   const [ca, setCa] = useState("");
   const [nf, setNf] = useState("");
+  // Estoque mínimo editável no próprio campo da linha (decisão 416); gravado no item, então os alertas, a Sugestão e o Estoque mínimo passam a usar o novo valor.
+  const salvar = useSalvar(modulo === "epi" ? "epis" : "uniformes", ["estoque-modulo"]);
 
   const { data: itens = [], isLoading } = useQuery({
     queryKey: ["estoque-modulo", modulo, empresaId],
@@ -107,6 +114,21 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
   const doTipo = (c: "novo" | "usado", lista: LinhaEstoqueEpi[]) =>
     lista.filter((l) => l.condicao === c);
   const lista = doTipo(condicao, filtradas);
+  // Produto com tamanho grava o mínimo do tamanho da linha; sem tamanho, o mínimo único do item (como em Estoque das ferramentas). Devolve false quando o valor não vale.
+  function gravarMinimo(l: LinhaEstoqueEpi, texto: string): boolean {
+    const item = itens.find((i) => i.id === l.itemId);
+    if (!item || salvar.isPending) return false;
+    try {
+      const porTamanho = !!l.tamanhoId && MODO_DEMO && controlaTamanho(parametros, modulo, item);
+      const valores: Record<string, unknown> = prepararMinimoDaLinha(item.minimos_tamanho ?? {}, porTamanho ? l.tamanhoId : null, texto);
+      if (!MODO_DEMO) delete valores["minimos_tamanho"];
+      salvar.mutate({ id: item.id, valores });
+      return true;
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Estoque mínimo inválido.");
+      return false;
+    }
+  }
   const periodoInvalido = !!dataInicio && !!dataFim && dataInicio > dataFim;
 
   return (
@@ -294,7 +316,9 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   <TableCell>{l.fornecedor || "—"}</TableCell>
                   {modulo === "epi" && <TableCell>{l.ca || "—"}</TableCell>}
                   <TableCell>{nomeDoTamanho(l.tamanhoId)}</TableCell>
-                  <TableCell className="text-right">{l.minimo}</TableCell>
+                  <TableCell className="text-right">
+                    <MinimoEditavel key={l.chave} valor={l.minimo} rotulo={`${l.descricao} ${nomeDoTamanho(l.tamanhoId)}`.trim()} onSalvar={(texto) => gravarMinimo(l, texto)} />
+                  </TableCell>
                   <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>
                   <TableCell className={l.alerta ? "font-bold text-destructive" : ""}>
                     {l.alerta ? "Abaixo do mínimo" : "—"}

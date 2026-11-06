@@ -48,3 +48,22 @@ export function prepararMinimoUnico(minimoTexto: string) {
   }
   return { estoque_minimo, minimos_tamanho: {} as Record<string, number> };
 }
+
+/** Estoque mínimo editado na linha do Estoque de EPI/Uniformes (decisão 416). Linha de um tamanho, em produto que controla tamanho: grava só aquele tamanho e o total passa a ser a soma; os demais tamanhos ficam como estavam. Sem tamanho: o mínimo único do item. */
+export function prepararMinimoDaLinha(
+  minimosAtuais: Record<string, number>,
+  tamanhoId: string | null,
+  minimoTexto: string,
+): { estoque_minimo: number; minimos_tamanho: Record<string, number> } {
+  // Linha sem tamanho em item que já tem mínimo por tamanho: grava na chave "sem-tamanho", sem apagar os mínimos dos tamanhos.
+  const temPorTamanho = Object.values(minimosAtuais).some((m) => Number(m) > 0);
+  if (!tamanhoId && !temPorTamanho) return prepararMinimoUnico(minimoTexto);
+  tamanhoId = tamanhoId ?? 'sem-tamanho';
+  const valor = Number(minimoTexto);
+  if (!minimoTexto.trim() || !Number.isSafeInteger(valor) || valor < 0) throw new Error('Estoque mínimo inválido.');
+  const minimos_tamanho = { ...minimosAtuais };
+  if (valor > 0) minimos_tamanho[tamanhoId] = valor;
+  else delete minimos_tamanho[tamanhoId];
+  const estoque_minimo = Object.values(minimos_tamanho).reduce((soma, m) => soma + (Number(m) || 0), 0);
+  return { estoque_minimo, minimos_tamanho };
+}
