@@ -68,7 +68,7 @@ function TextosDosDocumentos() {
   );
 }
 
-// `voltarParaSugestao`: aberto pelo link da Sugestão de Compras (decisão 355); o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela.
+// `voltarParaSugestao`: aberto pelo link da Sugestão de Compras (decisão 355); o botão do alto (na tela Parâmetros Específicos) e o salvar dos parâmetros da sugestão levam de volta a ela.
 export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugestao?: boolean }) {
   const navegar = useNavigate();
   const voltar = () => void navegar({ to: "/epi", search: { aba: "sugestao-compras" } });

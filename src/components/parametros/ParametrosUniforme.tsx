@@ -4,7 +4,6 @@ import { useState } from "react";
 import { CartaoDeMotivos } from "@/components/parametros/CartaoDeMotivos";
 import { HabilitarEmpregadosUniforme } from "@/components/parametros/HabilitarEmpregadosUniforme";
 import { SugestaoDeCompra } from "@/components/parametros/SugestaoDeCompra";
-import { Button } from "@/components/ui/button";
 import { lerAreasUniforme, MAX_AREAS_UNIFORME, salvarAreasUniforme } from "@/lib/empregados-uniforme";
 
 // Parâmetros Específicos dos Uniformes: as áreas da oficina, os empregados habilitados a entregar e receber uniformes (mesma lógica do EPI, decisão 357, com listas próprias) e os parâmetros

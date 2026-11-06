@@ -51,6 +51,8 @@ export type LinhaEstoqueEpi = {
   tamanhoId: string | null; // null = sem tamanho
   minimo: number;
   disponivel: number;
+  // Saldo total do EPI no tamanho (novos + usados): o alerta olha este saldo, não o `disponivel` da linha (que é só a parte novo ou usado).
+  saldo: number;
   alerta: boolean;
   mediaMensal: number;
 };
@@ -64,8 +66,8 @@ export function nivelDoAlerta(saldo: number, minimo: number): "abaixo" | "minimo
 }
 
 const TEXTO_DO_NIVEL = { abaixo: "Abaixo do mínimo", minimo: "Estoque mínimo", proximo: "Próximo do mínimo" } as const;
-export const textoDoAlerta = (l: { disponivel: number; minimo: number }): string => {
-  const nivel = nivelDoAlerta(l.disponivel, l.minimo);
+export const textoDoAlerta = (l: { saldo: number; minimo: number }): string => {
+  const nivel = nivelDoAlerta(l.saldo, l.minimo);
   return nivel ? TEXTO_DO_NIVEL[nivel] : "";
 };
 
@@ -165,6 +167,7 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
         empresaId: item.empresa_id,
         tamanhoId,
         minimo,
+        saldo,
         alerta,
         mediaMensal: media,
         caItem: item.ca ?? null,

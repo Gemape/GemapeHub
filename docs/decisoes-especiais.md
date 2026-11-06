@@ -2305,6 +2305,10 @@ A aba **Estoque**, o botão **Estoque mínimo**, o **Dashboard** e o aviso da **
 
 Em **Parâmetros > Uniformes > Parâmetros Específicos** entra o bloco **Sugestão de compra**, igual ao do EPI (método tempo de cobertura ou estoque mínimo, dias de cobertura, prazo de reposição do fornecedor (TR), dias de segurança, janela de planejamento, limite de excesso e a tabela de status de criticidade). É o mesmo componente (`SugestaoDeCompra`), mas cada módulo guarda os seus valores: mexer nos uniformes não muda o EPI e vice-versa (os uniformes começam nos valores padrão). A Sugestão de Compras de Uniformes passa a usar os parâmetros dos uniformes; o link "Parâmetros Específicos" dela abre os parâmetros de Uniformes com o botão "Voltar para Sugestão de Compras", e salvar leva de volta a ela.
 
-419. **Alerta amarelo "Estoque mínimo" (EPI e Uniformes).** Na aba Estoque, quando o saldo chega igual ao estoque mínimo (e o mínimo é maior que zero), o alerta aparece em amarelo com o nome "Estoque mínimo". Abaixo do mínimo, ou zerado, continua vermelho como "Abaixo do mínimo". No botão Estoque mínimo da Sugestão de Compras, o cartão amarelo também passa a se chamar "Estoque mínimo". A contagem de alertas não muda: saldo menor ou igual ao mínimo continua alertando (decisão 417).
+## 419. Alerta amarelo "Estoque mínimo" (EPI e Uniformes).
 
-420. **Aviso "Próximo do mínimo" (EPI e Uniformes).** Na aba Estoque, quando o saldo está a 1 unidade acima do estoque mínimo (mínimo maior que zero), a coluna Alerta mostra "Próximo do mínimo" em amarelo mais claro. É só um aviso de leitura: não entra na contagem de alertas, no Dashboard nem no botão Estoque mínimo, que seguem a regra 417 (saldo menor ou igual ao mínimo).
+ Na aba Estoque, quando o saldo chega igual ao estoque mínimo (e o mínimo é maior que zero), o alerta aparece em amarelo com o nome "Estoque mínimo". Abaixo do mínimo, ou zerado, continua vermelho como "Abaixo do mínimo". No botão Estoque mínimo da Sugestão de Compras, o cartão amarelo também passa a se chamar "Estoque mínimo". A contagem de alertas não muda: saldo menor ou igual ao mínimo continua alertando (decisão 417).
+
+## 420. Aviso "Próximo do mínimo" (EPI e Uniformes).
+
+ Na aba Estoque, quando o saldo está a 1 unidade acima do estoque mínimo (mínimo maior que zero), a coluna Alerta mostra "Próximo do mínimo" em amarelo mais claro. É só um aviso de leitura: não entra na contagem de alertas, no Dashboard nem no botão Estoque mínimo, que seguem a regra 417 (saldo menor ou igual ao mínimo).

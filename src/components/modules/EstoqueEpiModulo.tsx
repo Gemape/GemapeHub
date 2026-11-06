@@ -328,7 +328,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                     <MinimoEditavel key={l.chave} valor={l.minimo} rotulo={`${l.descricao} ${nomeDoTamanho(l.tamanhoId)}`.trim()} onSalvar={(texto) => gravarMinimo(l, texto)} />
                   </TableCell>
                   <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>
-                  <TableCell className={CLASSE_DO_NIVEL[nivelDoAlerta(l.disponivel, l.minimo) ?? "nenhum"]}>
+                  <TableCell className={CLASSE_DO_NIVEL[nivelDoAlerta(l.saldo, l.minimo) ?? "nenhum"]}>
                     {textoDoAlerta(l) || "—"}
                   </TableCell>
                   <TableCell className="text-right">

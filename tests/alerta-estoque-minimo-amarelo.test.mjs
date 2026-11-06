@@ -10,8 +10,8 @@ test("abaixo/zerado vermelho, igual ao mínimo amarelo, 1 acima 'próximo' (deci
   assert.equal(nivelDoAlerta(6, 5), "proximo");
   assert.equal(nivelDoAlerta(7, 5), null);
   assert.equal(nivelDoAlerta(1, 0), null, "sem mínimo, 1 unidade não alerta");
-  assert.equal(textoDoAlerta({ disponivel: 5, minimo: 5 }), "Estoque mínimo");
-  assert.equal(textoDoAlerta({ disponivel: 6, minimo: 5 }), "Próximo do mínimo");
-  assert.equal(textoDoAlerta({ disponivel: 3, minimo: 5 }), "Abaixo do mínimo");
-  assert.equal(textoDoAlerta({ disponivel: 9, minimo: 5 }), "");
+  assert.equal(textoDoAlerta({ saldo: 5, minimo: 5 }), "Estoque mínimo");
+  assert.equal(textoDoAlerta({ saldo: 6, minimo: 5 }), "Próximo do mínimo");
+  assert.equal(textoDoAlerta({ saldo: 3, minimo: 5 }), "Abaixo do mínimo");
+  assert.equal(textoDoAlerta({ saldo: 9, minimo: 5 }), "");
 });
