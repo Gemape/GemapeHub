@@ -178,12 +178,13 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
         criterio: criterio(),
         empresa,
         geradoEm: new Date(),
+        comCa: modulo === "epi",
       }),
       arquivo: nomeArquivoDocumento("Cotacao de precos", empresa, hojeBrasilia()),
     });
   }
   function gerarExcel() {
-    const blob = new Blob(["﻿" + montarCotacaoExcel(linhasDaCotacao())], {
+    const blob = new Blob(["﻿" + montarCotacaoExcel(linhasDaCotacao(), modulo === "epi")], {
       type: "application/vnd.ms-excel;charset=utf-8;",
     });
     const url = URL.createObjectURL(blob);

@@ -174,6 +174,8 @@ const COLUNAS_COTACAO = [
   "Preço unitário (R$)",
   "Prazo de entrega (dias)",
 ];
+// Uniforme não tem CA: a cotação dele sai sem essa coluna (índice 2).
+const semCaDe = <T,>(celulas: T[], comCa: boolean): T[] => (comCa ? celulas : celulas.filter((_, n) => n !== 2));
 const celulasCotacao = (l: LinhaCotacao): string[] => [
   l.codigo,
   l.descricao,
@@ -192,7 +194,9 @@ export function montarCotacaoHtml(d: {
   criterio: string;
   empresa?: string;
   geradoEm?: Date | string;
+  comCa?: boolean;
 }): string {
+  const comCa = d.comCa ?? true;
   return montarRelatorioTabelaHtml({
     titulo: "Cotação de preços",
     subtitulos: [d.criterio],
@@ -201,20 +205,20 @@ export function montarCotacaoHtml(d: {
       ["Itens", String(d.linhas.length)],
       ["Unidades a cotar", String(d.linhas.reduce((t, l) => t + l.quantidade, 0))],
     ],
-    colunas: COLUNAS_COTACAO.map((titulo, n) => ({ titulo, direita: n === 4 || n === 5 })),
-    linhas: d.linhas.map(celulasCotacao),
+    colunas: COLUNAS_COTACAO.map((titulo, n) => ({ titulo, direita: n === 4 || n === 5 })).filter((_, n) => comCa || n !== 2),
+    linhas: d.linhas.map((l) => semCaDe(celulasCotacao(l), comCa)),
     vazio: "Nenhum item selecionado.",
     ...(d.geradoEm ? { geradoEm: d.geradoEm } : {}),
   });
 }
 
 // Excel: tabela HTML salva como .xls, que o Excel abre direto (sem biblioteca); o texto passa por escaparHtml.
-export function montarCotacaoExcel(linhas: LinhaCotacao[]): string {
-  const cabecalho = `<tr>${COLUNAS_COTACAO.map((c) => `<th>${escaparHtml(c)}</th>`).join("")}</tr>`;
+export function montarCotacaoExcel(linhas: LinhaCotacao[], comCa = true): string {
+  const cabecalho = `<tr>${semCaDe(COLUNAS_COTACAO, comCa).map((c) => `<th>${escaparHtml(c)}</th>`).join("")}</tr>`;
   const corpo = linhas
     .map(
       (l) =>
-        `<tr>${celulasCotacao(l)
+        `<tr>${semCaDe(celulasCotacao(l), comCa)
           .map((v) => `<td>${escaparHtml(/^\s*[=+@-]/.test(v) ? `'${v}` : v)}</td>`)
           .join("")}</tr>`,
     )

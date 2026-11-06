@@ -128,7 +128,7 @@ test("o limite de áreas da tela é o da lista de áreas, não o dos motivos", (
 test("o texto da tela de habilitados dos Uniformes diz onde o filtro vale e onde todos aparecem", () => {
   const t = le("components/parametros/HabilitarEmpregadosUniforme.tsx");
   assert.match(t, /Na Entrega Uniforme, no Termo de Entrega, na devolução e nas Ocorrências só aparecem os habilitados/);
-  assert.match(t, /O Termo de Baixa, as Movimentações e os relatórios mostram todos/);
+  assert.match(t, /O Termo de Baixa e os relatórios mostram todos/);
 });
 
 test("nos Uniformes, se nenhum dos empregados oferecidos está na lista de habilitados, a rotina oferece todos", () => {

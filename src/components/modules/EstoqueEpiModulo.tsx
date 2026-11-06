@@ -279,7 +279,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               <TableRow>
                 <TableCell colSpan={modulo === "epi" ? 12 : 11} className="py-6 text-center text-muted-foreground">
                   {condicao === "usado"
-                    ? `Nenhum ${rotulo} usado no estoque. Eles entram pela Devolução, na ${modulo === "epi" ? "Entrada no Estoque" : "aba Compras"}.`
+                    ? `Nenhum ${rotulo} usado no estoque. Eles entram pela Devolução, na Entrada no Estoque.`
                     : `Nenhum ${rotulo} novo encontrado.`}
                 </TableCell>
               </TableRow>
