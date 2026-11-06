@@ -53,6 +53,9 @@ export type LinhaEstoqueEpi = {
   disponivel: number;
   // Saldo total do EPI no tamanho (novos + usados): o alerta olha este saldo, não o `disponivel` da linha (que é só a parte novo ou usado).
   saldo: number;
+  // Quantos do saldo são novos e quantos são usados, no mesmo item e tamanho (as linhas de novos e de usados mostram os dois números; novos + usados = saldo).
+  novos: number;
+  usados: number;
   alerta: boolean;
   mediaMensal: number;
 };
@@ -95,12 +98,12 @@ const SEM = "sem-tamanho";
 const numero = (v: unknown) => Number(v) || 0;
 
 // caItem: CA do cadastro do item; só vale quando nenhuma compra (ou devolução de origem) trouxe CA.
-type LinhaDeLote = Omit<LinhaEstoqueEpi, "fornecedores" | "notas" | "cas" | "datas"> & { caItem: string | null };
+type LinhaDeLote = Omit<LinhaEstoqueEpi, "novos" | "usados" | "fornecedores" | "notas" | "cas" | "datas"> & { caItem: string | null };
 const distintos = (valores: (string | null)[]) => [...new Set(valores.filter((v): v is string => !!v))];
 const juntar = (l: string[]) => (l.length ? l.join(", ") : null);
 
 // Junta as linhas de lote do mesmo EPI, tamanho e condição numa só (uma linha por código + empresa + tamanho; fornecedores, notas e CAs diferentes não separam e aparecem listados): a quantidade soma e os dados de compra viram listas.
-function somarLotes(lotes: LinhaDeLote[]): LinhaEstoqueEpi[] {
+function somarLotes(lotes: LinhaDeLote[]): Omit<LinhaEstoqueEpi, "novos" | "usados">[] {
   const grupos = new Map<string, LinhaDeLote[]>();
   for (const l of lotes) {
     const k = `${l.itemId}|${l.tamanhoId ?? ""}|${l.condicao}`;
@@ -250,7 +253,16 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
       }
     }
   }
-  return somarLotes(linhas);
+  const somadas = somarLotes(linhas);
+  const porGrupo = new Map<string, { novos: number; usados: number }>();
+  for (const l of somadas) {
+    const k = `${l.itemId}|${l.tamanhoId ?? ""}`;
+    const g = porGrupo.get(k) ?? { novos: 0, usados: 0 };
+    if (l.condicao === "usado") g.usados += l.disponivel;
+    else g.novos += l.disponivel;
+    porGrupo.set(k, g);
+  }
+  return somadas.map((l) => ({ ...l, ...porGrupo.get(`${l.itemId}|${l.tamanhoId ?? ""}`)! }));
 }
 
 export type FiltroEstoqueEpi = {

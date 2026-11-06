@@ -2316,3 +2316,7 @@ Em **Parâmetros > Uniformes > Parâmetros Específicos** entra o bloco **Sugest
 ## 421. Níveis do alerta em todas as telas de estoque
 
 O alerta em três níveis (Abaixo do mínimo em vermelho, Estoque mínimo em amarelo, Próximo do mínimo em amarelo claro) vale também na aba Estoque dos demais módulos (Ferramentas), com as mesmas cores e textos (`CLASSE_DO_NIVEL`). Itens com mínimo por tamanho seguem como antes, por tamanho.
+
+## 422. Alerta mostra quantos novos e quantos usados
+
+Na coluna Alerta do Estoque de EPI e de Uniformes, a linha mostra "Saldo total: N (X novos e Y usados)", tanto na lista de novos quanto na de usados. O nível do alerta usa o saldo total (novos + usados) e as duas listas mostram os mesmos números, que sempre somam o saldo.

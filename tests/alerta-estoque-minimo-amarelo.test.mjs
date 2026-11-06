@@ -24,3 +24,22 @@ test("todas as telas de estoque usam os mesmos níveis (decisão 421)", async ()
     assert.match(src, /nivelDoAlerta/, f);
   }
 });
+
+test("as linhas de novos e de usados mostram os mesmos números e novos + usados = saldo (decisão 422)", async () => {
+  const { linhasDeEstoqueEpi } = await import("../src/lib/estoque-epi-visao.ts");
+  const linhas = linhasDeEstoqueEpi({
+    itens: [{ id: "i1", codigo_sku: "EPI-1", nome: "Luva", empresa_id: "e1", ca: null }],
+    compras: [{ id: "c1", item_id: "i1", tamanho_id: "m", data_compra: "2026-03-01", nota_fiscal: null, fornecedor: null, ca: null, quantidade: 10 }],
+    devolucoes: [{ item_id: "i1", tamanho_id: "m", tipo_movimentacao: "Devolucao", condicao: "usado", quantidade: 3, compra_origem_id: "c1", data_compra_origem: "2026-03-01" }],
+    saldosDe: () => ({ m: 8 }),
+    minimosDe: () => ({ m: 8 }),
+    mediaMensalDe: () => 0,
+  });
+  assert.equal(linhas.length, 2);
+  for (const l of linhas) {
+    assert.equal(l.saldo, 8);
+    assert.equal(l.novos + l.usados, l.saldo);
+    assert.equal(l.novos, 5);
+    assert.equal(l.usados, 3);
+  }
+});

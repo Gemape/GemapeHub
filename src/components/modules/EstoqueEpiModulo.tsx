@@ -325,8 +325,8 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>
                   <TableCell className={CLASSE_DO_NIVEL[nivelDoAlerta(l.saldo, l.minimo) ?? "nenhum"]}>
                     {textoDoAlerta(l) || "—"}
-                    {l.saldo !== l.disponivel && textoDoAlerta(l) && (
-                      <p className="text-xs font-normal text-muted-foreground">Saldo total do item: {l.saldo} (novos e usados)</p>
+                    {textoDoAlerta(l) && (
+                      <p className="text-xs font-normal text-muted-foreground">Saldo total: {l.saldo} ({l.novos} {l.novos === 1 ? "novo" : "novos"} e {l.usados} {l.usados === 1 ? "usado" : "usados"})</p>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
