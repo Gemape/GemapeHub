@@ -74,7 +74,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
   const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
-  const parametrosCompra = useParametrosCompraEpi();
+  const parametrosCompra = useParametrosCompraEpi(modulo);
   const [empresaFiltro, setEmpresaFiltro] = useState(TODOS);
   const [palavra, setPalavra] = useState("");
   const { data: itens = [], isLoading } = useQuery({
@@ -220,12 +220,12 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
           Para comprar, o estoque de novos e de usados é um só. O status vem dos parâmetros de{" "}
           <Link
             to="/cadastros/gerais/categorias"
-            search={{ de: "epi", voltar: modulo === "epi" ? "sugestao-compras" : "sugestao-uniformes" }}
+            search={modulo === "epi" ? { de: "epi", voltar: "sugestao-compras" } : { de: "uniformes", voltar: "sugestao-uniformes" }}
             className="font-medium text-primary underline underline-offset-2"
           >
             Parâmetros Específicos
           </Link>{" "}
-          {modulo === "uniforme" && "do EPI, os mesmos para os uniformes "}(
+(
           {parametrosCompra.metodo === "cobertura"
             ? `tempo de cobertura, reposição de ${parametrosCompra.prazoReposicao} dias`
             : "estoque mínimo"}

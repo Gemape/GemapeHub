@@ -4,7 +4,9 @@
 import { MOTIVOS_BAIXA } from "./gemape.ts";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
-const CHAVE_COMPRA = "gemape-demo-epi-parametros-compra";
+// A sugestão de compra tem parâmetros próprios em cada módulo (decisão 418): o EPI e os uniformes não compartilham prazo, cobertura nem cortes.
+const CHAVES_COMPRA = { epi: "gemape-demo-epi-parametros-compra", uniforme: "gemape-demo-uniforme-parametros-compra" } as const;
+export type ModuloDeCompra = keyof typeof CHAVES_COMPRA;
 const CHAVE_BAIXA = "gemape-demo-epi-motivos-baixa";
 const CHAVE_DEVOLUCAO = "gemape-demo-epi-motivos-devolucao";
 
@@ -87,9 +89,9 @@ export const diasValidos = (n: number): boolean => Number.isInteger(n) && n >= 0
 const dias = (v: unknown, padrao: number): number =>
   typeof v === "number" && diasValidos(v) ? v : padrao;
 
-export function lerParametrosCompraEpi(storage?: StorageLike): ParametrosCompraEpi {
+export function lerParametrosCompraEpi(storage?: StorageLike, modulo: ModuloDeCompra = "epi"): ParametrosCompraEpi {
   try {
-    const bruto = (storage ?? localStorage).getItem(CHAVE_COMPRA);
+    const bruto = (storage ?? localStorage).getItem(CHAVES_COMPRA[modulo]);
     const obj: unknown = bruto === null ? null : JSON.parse(bruto);
     const o = obj && typeof obj === "object" ? (obj as Record<string, unknown>) : {};
     const p = PARAMETROS_COMPRA_PADRAO;
@@ -106,7 +108,7 @@ export function lerParametrosCompraEpi(storage?: StorageLike): ParametrosCompraE
   }
 }
 
-export function salvarParametrosCompraEpi(p: ParametrosCompraEpi, storage?: StorageLike): void {
+export function salvarParametrosCompraEpi(p: ParametrosCompraEpi, storage?: StorageLike, modulo: ModuloDeCompra = "epi"): void {
   if (p.metodo !== "minimo" && p.metodo !== "cobertura")
     throw new Error("Escolha o método: estoque mínimo ou tempo de cobertura.");
   if (
@@ -124,7 +126,7 @@ export function salvarParametrosCompraEpi(p: ParametrosCompraEpi, storage?: Stor
   if (p.diasPlanejamento < p.diasSeguranca)
     throw new Error("O planejamento não pode ser menor que a segurança.");
   try {
-    (storage ?? localStorage).setItem(CHAVE_COMPRA, JSON.stringify(p));
+    (storage ?? localStorage).setItem(CHAVES_COMPRA[modulo], JSON.stringify(p));
   } catch {
     throw new Error("Não foi possível guardar os parâmetros neste navegador.");
   }

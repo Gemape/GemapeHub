@@ -2300,3 +2300,7 @@ O **Estoque mínimo** de cada linha do **Estoque** de EPI e de Uniformes é um c
 ## 417. Uma regra só para o alerta de estoque mínimo (EPI e Uniformes)
 
 A aba **Estoque**, o botão **Estoque mínimo**, o **Dashboard** e o aviso da **Entrega** usam a mesma função (`alertasDeMinimoEpi`): cada tamanho (ou o item inteiro, sem tamanho) alerta quando o saldo é menor ou igual ao mínimo; sem mínimo definido, só o saldo zerado alerta. Antes o botão comparava o total do item com a soma dos mínimos e o Dashboard e a Entrega usavam outra conta, então um tamanho zerado podia sumir do botão porque o total estava folgado. O botão agora lista um cartão por tamanho. A Sugestão de Compras continua por item (o estoque de novos e usados é um só para comprar, decisão 330).
+
+## 418. Parâmetros da sugestão de compra próprios de Uniformes
+
+Em **Parâmetros > Uniformes > Parâmetros Específicos** entra o bloco **Sugestão de compra**, igual ao do EPI (método tempo de cobertura ou estoque mínimo, dias de cobertura, prazo de reposição do fornecedor (TR), dias de segurança, janela de planejamento, limite de excesso e a tabela de status de criticidade). É o mesmo componente (`SugestaoDeCompra`), mas cada módulo guarda os seus valores: mexer nos uniformes não muda o EPI e vice-versa (os uniformes começam nos valores padrão). A Sugestão de Compras de Uniformes passa a usar os parâmetros dos uniformes; o link "Parâmetros Específicos" dela abre os parâmetros de Uniformes com o botão "Voltar para Sugestão de Compras", e salvar leva de volta a ela.

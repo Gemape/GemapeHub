@@ -1,19 +1,31 @@
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 import { CartaoDeMotivos } from "@/components/parametros/CartaoDeMotivos";
 import { HabilitarEmpregadosUniforme } from "@/components/parametros/HabilitarEmpregadosUniforme";
+import { SugestaoDeCompra } from "@/components/parametros/SugestaoDeCompra";
+import { Button } from "@/components/ui/button";
 import { lerAreasUniforme, MAX_AREAS_UNIFORME, salvarAreasUniforme } from "@/lib/empregados-uniforme";
 
-// Parâmetros Específicos dos Uniformes: as áreas da oficina e os empregados habilitados a entregar e receber uniformes (mesma lógica do EPI, decisão 357, com listas próprias).
-export function ParametrosUniforme() {
+// Parâmetros Específicos dos Uniformes: as áreas da oficina, os empregados habilitados a entregar e receber uniformes (mesma lógica do EPI, decisão 357, com listas próprias) e os parâmetros
+// da sugestão de compra (decisão 418, a mesma tela do EPI com valores próprios). `voltarParaSugestao`: aberto pelo link da Sugestão de Compras de Uniformes; o botão do alto e o salvar levam de volta a ela.
+export function ParametrosUniforme({ voltarParaSugestao = false }: { voltarParaSugestao?: boolean }) {
+  const navegar = useNavigate();
+  const voltar = () => void navegar({ to: "/uniformes", search: { aba: "sugestao-compras" } });
   const [areas, setAreas] = useState(lerAreasUniforme);
   return (
     <section className="space-y-3" aria-labelledby="parametros-uniforme">
+      {voltarParaSugestao && (
+        <Button type="button" variant="outline" size="sm" onClick={voltar}>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Sugestão de Compras
+        </Button>
+      )}
       <div className="max-w-4xl">
         <h2 id="parametros-uniforme" className="text-lg font-semibold">
           Parâmetros dos uniformes
         </h2>
-        <p className="text-sm text-muted-foreground">Áreas da oficina e empregados habilitados para entregar e receber uniformes.</p>
+        <p className="text-sm text-muted-foreground">Áreas da oficina, empregados habilitados para entregar e receber uniformes e como a sugestão de compra é calculada.</p>
       </div>
       <div className="panel max-w-4xl space-y-4 p-4">
         <div className="space-y-3 rounded-lg border p-3">
@@ -34,6 +46,8 @@ export function ParametrosUniforme() {
           />
           <HabilitarEmpregadosUniforme areas={areas} />
         </div>
+
+        <SugestaoDeCompra modulo="uniforme" onSalvou={voltarParaSugestao ? voltar : undefined} />
       </div>
     </section>
   );

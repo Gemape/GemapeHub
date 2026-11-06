@@ -31,13 +31,38 @@ test("a condição lógica de cada status muda com o método: tempo de cobertura
   assert.match(textoDoPontoDePedido(min), /estoque mínimo/);
 });
 
-test("Parâmetros Específicos de EPI: tabela com a condição lógica ao lado da tag e vai e volta com a Sugestão de Compras (decisão 355)", () => {
-  const tela = readFileSync(new URL("../src/components/parametros/ParametrosEpi.tsx", import.meta.url), "utf8");
-  assert.match(tela, /Condição lógica \(gatilho\)/);
-  assert.match(tela, /condicaoDoStatus\(st, emUso\)/, "a tabela segue o método e os dias que estão na tela");
-  assert.match(tela, /Voltar para Sugestão de Compras/);
-  assert.match(tela, /if \(voltarParaSugestao\) voltar\(\)/, "salvar os parâmetros da sugestão volta a ela");
-  assert.match(readFileSync(new URL("../src/components/modules/SugestaoComprasEpi.tsx", import.meta.url), "utf8"), /voltar: modulo === "epi" \? "sugestao-compras" : "sugestao-uniformes" \}/);
+test("Parâmetros Específicos de EPI e de Uniformes: a mesma tela da sugestão, com a condição lógica e o vai e volta com a Sugestão de Compras (decisões 355 e 418)", () => {
+  const le = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
+  const bloco = le("components/parametros/SugestaoDeCompra.tsx");
+  assert.match(bloco, /Condição lógica \(gatilho\)/);
+  assert.match(bloco, /condicaoDoStatus\(st, emUso\)/, "a tabela segue o método e os dias que estão na tela");
+  assert.match(bloco, /Salvar parâmetros da sugestão/);
+  assert.match(bloco, /onSalvou\?\.\(\)/, "salvar os parâmetros da sugestão volta a ela, quando aberta por ela");
+  const epi = le("components/parametros/ParametrosEpi.tsx");
+  assert.match(epi, /Voltar para Sugestão de Compras/);
+  assert.match(epi, /<SugestaoDeCompra modulo="epi" onSalvou=\{voltarParaSugestao \? voltar : undefined\} \/>/);
+  const uni = le("components/parametros/ParametrosUniforme.tsx");
+  assert.match(uni, /Voltar para Sugestão de Compras/);
+  assert.match(uni, /<SugestaoDeCompra modulo="uniforme" onSalvou=\{voltarParaSugestao \? voltar : undefined\} \/>/);
+  assert.match(uni, /to: "\/uniformes", search: \{ aba: "sugestao-compras" \}/);
+  const sug = le("components/modules/SugestaoComprasEpi.tsx");
+  assert.match(sug, /\{ de: "epi", voltar: "sugestao-compras" \} : \{ de: "uniformes", voltar: "sugestao-uniformes" \}/);
+  assert.match(sug, /useParametrosCompraEpi\(modulo\)/);
+});
+
+test("os parâmetros da sugestão de compra são próprios de cada módulo: mexer nos uniformes não muda o EPI (decisão 418)", async () => {
+  const { lerParametrosCompraEpi, salvarParametrosCompraEpi, PARAMETROS_COMPRA_PADRAO } = await import("../src/lib/epi-parametros.ts");
+  const m = new Map();
+  const s = { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v) };
+  assert.deepEqual(lerParametrosCompraEpi(s, "uniforme"), PARAMETROS_COMPRA_PADRAO, "sem nada guardado, valem os padrões");
+  salvarParametrosCompraEpi({ ...PARAMETROS_COMPRA_PADRAO, metodo: "minimo", prazoReposicao: 10 }, s, "uniforme");
+  assert.equal(lerParametrosCompraEpi(s, "uniforme").prazoReposicao, 10);
+  assert.equal(lerParametrosCompraEpi(s, "uniforme").metodo, "minimo");
+  assert.deepEqual(lerParametrosCompraEpi(s, "epi"), PARAMETROS_COMPRA_PADRAO, "o EPI não mudou");
+  assert.deepEqual(lerParametrosCompraEpi(s), PARAMETROS_COMPRA_PADRAO, "sem módulo, é o EPI");
+  salvarParametrosCompraEpi({ ...PARAMETROS_COMPRA_PADRAO, diasCobertura: 60 }, s);
+  assert.equal(lerParametrosCompraEpi(s, "epi").diasCobertura, 60);
+  assert.equal(lerParametrosCompraEpi(s, "uniforme").diasCobertura, PARAMETROS_COMPRA_PADRAO.diasCobertura, "os uniformes não mudaram");
 });
 
 const memoriaTextos = () => {
