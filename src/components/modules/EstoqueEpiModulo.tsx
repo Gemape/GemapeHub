@@ -117,14 +117,14 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
   const lista = doTipo(condicao, filtradas);
   const itemEditado = editando ? itens.find((i) => i.id === editando.itemId) : undefined;
   // Produto com tamanho grava o mínimo do tamanho da linha; sem tamanho, o mínimo único do item (como em Estoque das ferramentas).
-  const porTamanho = !!itemEditado && !!editando?.tamanhoId && MODO_DEMO && controlaTamanho(parametros, modulo, itemEditado as never);
+  const porTamanho = !!itemEditado && !!editando?.tamanhoId && MODO_DEMO && controlaTamanho(parametros, modulo, itemEditado);
   function salvarMinimo(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (!itemEditado || !editando || salvar.isPending) return;
     try {
       const texto = String(new FormData(evento.currentTarget).get("minimo") ?? "");
       const valores: Record<string, unknown> = prepararMinimoDaLinha(
-        ((itemEditado as { minimos_tamanho?: Record<string, number> | null }).minimos_tamanho ?? {}),
+        itemEditado.minimos_tamanho ?? {},
         porTamanho ? editando.tamanhoId : null,
         texto,
       );
@@ -295,7 +295,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               <TableHead className="text-right">Quantidade disponível</TableHead>
               <TableHead>Alerta</TableHead>
               <TableHead className="text-right">Média de consumo mensal</TableHead>
-              <TableHead>Estoque mínimo</TableHead>
+              <TableHead>Configurar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -55,7 +55,10 @@ export function prepararMinimoDaLinha(
   tamanhoId: string | null,
   minimoTexto: string,
 ): { estoque_minimo: number; minimos_tamanho: Record<string, number> } {
-  if (!tamanhoId) return prepararMinimoUnico(minimoTexto);
+  // Linha sem tamanho em item que já tem mínimo por tamanho: grava na chave "sem-tamanho", sem apagar os mínimos dos tamanhos.
+  const temPorTamanho = Object.values(minimosAtuais).some((m) => Number(m) > 0);
+  if (!tamanhoId && !temPorTamanho) return prepararMinimoUnico(minimoTexto);
+  tamanhoId = tamanhoId ?? 'sem-tamanho';
   const valor = Number(minimoTexto);
   if (!minimoTexto.trim() || !Number.isSafeInteger(valor) || valor < 0) throw new Error('Estoque mínimo inválido.');
   const minimos_tamanho = { ...minimosAtuais };

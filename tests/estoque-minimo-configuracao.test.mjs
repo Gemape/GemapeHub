@@ -9,11 +9,14 @@ test("linha de um tamanho: grava só aquele tamanho e o total vira a soma", () =
   assert.deepEqual(prepararMinimoDaLinha({ M: 5, G: 3 }, "M", "8"), { estoque_minimo: 11, minimos_tamanho: { M: 8, G: 3 } });
   assert.deepEqual(prepararMinimoDaLinha({}, "P", "4"), { estoque_minimo: 4, minimos_tamanho: { P: 4 } });
 });
+test("linha sem tamanho em item com mínimos por tamanho não apaga os tamanhos", () => {
+  assert.deepEqual(prepararMinimoDaLinha({ M: 5, G: 3 }, null, "7"), { estoque_minimo: 15, minimos_tamanho: { M: 5, G: 3, "sem-tamanho": 7 } });
+});
 test("zero desliga o alerta do tamanho; os outros ficam", () => {
   assert.deepEqual(prepararMinimoDaLinha({ M: 5, G: 3 }, "M", "0"), { estoque_minimo: 3, minimos_tamanho: { G: 3 } });
 });
 test("sem tamanho grava o mínimo único; valor inválido é recusado", () => {
-  assert.deepEqual(prepararMinimoDaLinha({ M: 5 }, null, "7"), { estoque_minimo: 7, minimos_tamanho: {} });
+  assert.deepEqual(prepararMinimoDaLinha({}, null, "7"), { estoque_minimo: 7, minimos_tamanho: {} });
   for (const ruim of ["", "-1", "2.5", "abc"]) assert.throws(() => prepararMinimoDaLinha({}, "M", ruim), /inválido/);
   assert.throws(() => prepararMinimoDaLinha({}, null, "-1"), /inválido/);
 });
