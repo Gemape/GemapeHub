@@ -44,6 +44,6 @@ test("o cartão EPIs do menu do topo e da tela Início traz a seção Relatório
 });
 
 test("o vai e volta dos Parâmetros Específicos continua levando à Sugestão de Compras, agora em Relatórios", () => {
-  assert.match(le("components/modules/SugestaoComprasEpi.tsx"), /voltar: modulo === "epi" \? "sugestao-compras" : "sugestao-uniformes"/);
+  assert.match(le("components/modules/SugestaoComprasEpi.tsx"), /voltar: "sugestao-compras"[\s\S]*voltar: "sugestao-uniformes"/);
   assert.match(le("components/parametros/ParametrosEpi.tsx"), /search: \{ aba: "sugestao-compras" \}/);
 });

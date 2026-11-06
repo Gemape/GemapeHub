@@ -21,7 +21,8 @@ import { empregadoAtivo } from "@/lib/empregados";
 import { formatarMoeda, valorTotalEmEstoque, MODULO_LABEL, type Modulo } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
 import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
-import { alertasPorTamanho, controlaModulo, usaMinimoPorTamanho } from "@/lib/estoque-tamanho";
+import { alertasDeMinimoEpi } from "@/lib/estoque-epi-saldos";
+import { controlaModulo } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -105,11 +106,9 @@ function DashboardGeral() {
   // EPI e uniforme com tamanho e mínimo por tamanho alertam por tamanho; os demais, pelo total.
   const parametros = useParametrosBase();
   const alertasDe = (i: (typeof itens)[number]) => {
-    const produto = i as typeof i & Parameters<typeof alertasPorTamanho>[2];
     if (!TAMANHO_DISPONIVEL || !controlaModulo(i.modulo)) return null;
-    // Mesmo critério da lista do cadastro: sem mínimo por tamanho, vale o mínimo do produto.
-    if (!usaMinimoPorTamanho(parametros, i.modulo, produto)) return null;
-    return alertasPorTamanho(parametros, i.modulo, produto);
+    // Mesma regra da aba Estoque e do botão Estoque mínimo (decisão 417): um alerta por tamanho.
+    return alertasDeMinimoEpi(parametros, i as never, i.modulo as "epi" | "uniforme");
   };
   const criticos = itens.filter((i) => {
     const alertas = alertasDe(i);

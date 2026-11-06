@@ -1,5 +1,5 @@
 import { CadastrarPadraoSelecionado } from "@/components/parametros/CadastrarPadraoSelecionado";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
@@ -63,7 +63,7 @@ async function lerRegistros(montar: () => any): Promise<{ data: Record<string, u
 }
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
-  // `voltar` (decisão 355): aberto pelo link da Sugestão de Compras de EPI, mostra o botão e volta a ela depois de salvar os parâmetros da sugestão.
+  // `voltar` (decisão 355): aberto pelo link da Sugestão de Compras de EPI (ou de Uniformes, "sugestao-uniformes"), mostra o botão e volta a ela depois de salvar os parâmetros da sugestão.
   validateSearch: (search: Record<string, unknown>): { de?: De; voltar?: "sugestao-compras" | "sugestao-uniformes" } => ({
     ...(DE.includes(search["de"] as De) ? { de: search["de"] as De } : {}),
     ...(search["voltar"] === "sugestao-compras" || search["voltar"] === "sugestao-uniformes" ? { voltar: search["voltar"] } : {}),
@@ -75,6 +75,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/gerais/categoria
 function Categorias() {
   const dados = useParametrosBase();
   const { de, voltar } = Route.useSearch();
+  const navegar = useNavigate();
   const [escolhidaLivre, setEscolhida] = useState("");
   const escolhida = de ? CATEGORIA_DO_MENU[de] : escolhidaLivre;
   const categoria = dados.categorias.find((c) => c.id === escolhida);
@@ -248,7 +249,14 @@ function Categorias() {
         titulo="Parâmetros Específicos"
         topo={de ? `Parâmetros · ${NOME_DO_MENU[de]}` : "Cadastros · Gerais"}
         descricao={de ? "Configure o endereçamento e as tabelas relacionadas a esta categoria." : "Escolha uma categoria para configurar o endereçamento e abrir as tabelas relacionadas."}
-      />
+      >
+        {/* Aberto pelo link da Sugestão de Compras: o botão fica no alto, à direita, e volta a ela (decisão 355). */}
+        {voltar && (
+          <Button type="button" onClick={() => void navegar(voltar === "sugestao-compras" ? { to: "/epi", search: { aba: "sugestao-compras" } } : { to: "/uniformes", search: { aba: "sugestao-compras" } })}>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Sugestão de Compras
+          </Button>
+        )}
+      </Cabecalho>
       {!escolhida && <div className="max-w-3xl">
         <ListaEditavel
           titulo="Categorias"
@@ -396,8 +404,8 @@ function Categorias() {
               cadastrar={(nomes) => cadastrarMarcasPadraoVeiculos(undefined, nomes)}
             />
           </div>}
-          {categoria.id === "cat-epi" && <ParametrosEpi voltarParaSugestao={voltar === "sugestao-compras" || voltar === "sugestao-uniformes"} paraUniformes={voltar === "sugestao-uniformes"} />}
-          {categoria.id === "cat-uniformes" && <ParametrosUniforme />}
+          {categoria.id === "cat-epi" && <ParametrosEpi voltarParaSugestao={voltar === "sugestao-compras"} />}
+          {categoria.id === "cat-uniformes" && <ParametrosUniforme voltarParaSugestao={voltar === "sugestao-uniformes"} />}
           {categoria.id === "cat-veiculos" && <HabilitarEmpregadosVeiculos />}
           {categoria.id === "cat-veiculos" && <PrazosOcorrenciasVeiculo />}
           {categoria.id === "cat-veiculos" && <SupervisoresOcorrencias />}

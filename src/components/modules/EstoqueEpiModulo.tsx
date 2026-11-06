@@ -31,6 +31,9 @@ import { controleDeEstoque } from "@/lib/epi-controle-estoque";
 import {
   filtrarEstoqueEpi,
   linhasDeEstoqueEpi,
+  CLASSE_DO_NIVEL,
+  nivelDoAlerta,
+  textoDoAlerta,
   type CompraDoEstoque,
   type DevolucaoUsada,
   type LinhaEstoqueEpi,
@@ -211,7 +214,6 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
         </div>
         <Button
           type="button"
-          variant="ghost"
           onClick={() => {
             setEmpresaFiltro(TODOS);
             setPalavra("");
@@ -258,7 +260,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   Tamanho: l.tamanhoId ? nomeDoTamanho(l.tamanhoId) : "",
                   "Estoque mínimo": l.minimo,
                   "Quantidade disponível": l.disponivel,
-                  Alerta: l.alerta ? "Abaixo do mínimo" : "",
+                  Alerta: textoDoAlerta(l),
                   "Média de consumo mensal": Number(l.mediaMensal.toFixed(2)),
                 })),
               )
@@ -320,8 +322,11 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                     <MinimoEditavel key={l.chave} valor={l.minimo} rotulo={`${l.descricao} ${nomeDoTamanho(l.tamanhoId)}`.trim()} onSalvar={(texto) => gravarMinimo(l, texto)} />
                   </TableCell>
                   <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>
-                  <TableCell className={l.alerta ? "font-bold text-destructive" : ""}>
-                    {l.alerta ? "Abaixo do mínimo" : "—"}
+                  <TableCell className={CLASSE_DO_NIVEL[nivelDoAlerta(l.saldo, l.minimo) ?? "nenhum"]}>
+                    {textoDoAlerta(l) || "—"}
+                    {textoDoAlerta(l) && (
+                      <p className="text-xs font-normal text-muted-foreground">Saldo total: {l.saldo} ({l.novos} {l.novos === 1 ? "novo" : "novos"} e {l.usados} {l.usados === 1 ? "usado" : "usados"})</p>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     {l.mediaMensal.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}

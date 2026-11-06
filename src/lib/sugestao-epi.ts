@@ -126,10 +126,10 @@ export function linhasDaSugestaoEpi(e: {
 const norm = (t: string | null | undefined) =>
   (t ?? "").toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[̀-ͯ]/g, "");
 
-export function filtrarSugestaoEpi(
-  linhas: LinhaSugestaoEpi[],
+export function filtrarSugestaoEpi<T extends Pick<LinhaSugestaoEpi, "empresaId" | "codigo" | "descricao"> & { ca?: string | null }>(
+  linhas: T[],
   f: { empresaId?: string; palavra?: string },
-): LinhaSugestaoEpi[] {
+): T[] {
   const palavra = norm(f.palavra).trim();
   return linhas.filter(
     (l) =>
@@ -229,8 +229,8 @@ export function montarCotacaoExcel(linhas: LinhaCotacao[], comCa = true): string
 export const rotuloDoStatus = (s: StatusCriticidade | null) =>
   s ? STATUS_CRITICIDADE[s].rotulo : "Sem consumo";
 
-// Os EPIs no mínimo ou abaixo (decisão 410), do mais distante do mínimo para o mais perto; só vale com mínimo definido.
+// Os itens no mínimo ou abaixo (decisões 410 e 417), com a mesma regra da aba Estoque: saldo menor ou igual ao mínimo (sem mínimo, só o saldo zerado). Do mais distante do mínimo para o mais perto.
 export const abaixoDoMinimo = <T extends Pick<LinhaSugestaoEpi, "total" | "minimo" | "descricao">>(linhas: T[]): T[] =>
   linhas
-    .filter((l) => l.minimo > 0 && l.total <= l.minimo)
-    .sort((a, b) => a.total / a.minimo - b.total / b.minimo || a.descricao.localeCompare(b.descricao, "pt-BR"));
+    .filter((l) => l.total <= l.minimo)
+    .sort((a, b) => (a.minimo > 0 ? a.total / a.minimo : 0) - (b.minimo > 0 ? b.total / b.minimo : 0) || a.descricao.localeCompare(b.descricao, "pt-BR"));

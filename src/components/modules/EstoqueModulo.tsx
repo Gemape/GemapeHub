@@ -8,6 +8,7 @@ import { MODO_DEMO } from '@/lib/modo-demo';
 import { exportarCsv } from '@/lib/gemape';
 import { lerItensEstoque } from '@/lib/itens-estoque-modulo';
 import { prepararEstoqueFerramenta, prepararMinimoUnico, prepararMinimosEstoque, tamanhosConfiguraveisNoModulo } from '@/lib/estoque-configuracao';
+import { CLASSE_DO_NIVEL, nivelDoAlerta, TEXTO_DO_NIVEL_ALERTA } from '@/lib/estoque-epi-visao';
 import { controlaTamanho, estadoEstoqueModulo, nomeTamanho, preservarMinimosNaoSelecionados, tamanhosAutorizadosDoProduto, tamanhosDisponiveisDoProduto } from '@/lib/estoque-tamanho';
 import { useCaixasFerramentas, useEmpresas, useMovimentacoes, useRegistrarMovimentacoesLote, useSalvar, useTodosCaixaItens } from '@/lib/hooks-gemape';
 import { posicaoDasFerramentas, type PosicaoDaFerramenta } from '@/lib/estoque-ferramentas-posicao';
@@ -110,6 +111,19 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
     }
   }
 
+  // Alerta em três níveis (decisão 421): sem mínimo por tamanho, saldo igual ao mínimo é "Estoque mínimo" e 1 acima é "Próximo do mínimo"; os demais casos seguem como antes.
+  const nivelDe = (estado: (typeof linhas)[number]['estado']) => {
+    const porTotal = !estado.detalheMinimo && !estado.detalheAlerta;
+    const calculado = porTotal ? nivelDoAlerta(estado.saldo, estado.minimo) : null;
+    // "Abaixo" só vale se o estado já alertava (produto com tamanhos sem seleção não ganha alerta novo).
+    const nivel = calculado === 'abaixo' && !estado.alerta ? null : calculado;
+    return nivel ?? (estado.alerta ? 'abaixo' : 'nenhum');
+  };
+  const textoDe = (estado: (typeof linhas)[number]['estado']) => {
+    const nivel = nivelDe(estado);
+    return nivel === 'nenhum' ? '' : `${TEXTO_DO_NIVEL_ALERTA[nivel]}${estado.detalheAlerta ? `: ${estado.detalheAlerta}` : ''}`;
+  };
+
   if (isError) return <p role="alert">Não foi possível carregar o estoque completo: {error.message}</p>;
 
   return (
@@ -135,7 +149,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             'Estoque mínimo': estado.minimo,
             'Saldo por tamanho': estado.detalheSaldo,
             'Mínimo por tamanho': estado.detalheMinimo,
-            Alerta: estado.alerta ? `Abaixo do mínimo${estado.detalheAlerta ? `: ${estado.detalheAlerta}` : ''}` : '',
+            Alerta: textoDe(estado),
           })))
         }>Exportar CSV</Button>
       </div>
@@ -168,8 +182,8 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
                     <TableCell className={`text-right ${(posicoes.get(item.id)?.semCaixa ?? 0) < 0 ? 'font-bold text-destructive' : ''}`}>{posicoes.get(item.id)?.semCaixa ?? 0}</TableCell>
                   </>}
                   <TableCell className="text-right">{estado.minimo}{estado.detalheMinimo && <p className="text-xs text-muted-foreground">{estado.detalheMinimo}</p>}</TableCell>
-                  <TableCell className={estado.alerta ? 'font-bold text-destructive' : ''}>
-                    {estado.alerta ? `Abaixo do mínimo${estado.detalheAlerta ? `: ${estado.detalheAlerta}` : ''}` : '—'}
+                  <TableCell className={CLASSE_DO_NIVEL[nivelDe(estado)]}>
+                    {textoDe(estado) || '—'}
                     {(posicoes.get(item.id)?.divergencias ?? []).map((d) => <p key={d} className="text-xs font-bold text-destructive">Não bate: {d}</p>)}
                   </TableCell>
                   <TableCell><Button requiresWrite variant="outline" size="sm" onClick={() => setItemId(item.id)}>Configurar</Button></TableCell>

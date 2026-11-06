@@ -43,8 +43,8 @@ import {
   type CompraDoEstoque,
   type DevolucaoUsada,
 } from "@/lib/estoque-epi-visao";
-import { EstoqueMinimoEpi } from "@/components/modules/EstoqueMinimoEpi";
-import { minimosDeEpi, minimoTotalDeEpi, saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
+import { EstoqueMinimoEpi, type LinhaDeMinimo } from "@/components/modules/EstoqueMinimoEpi";
+import { alertasDeMinimoEpi, minimosDeEpi, minimoTotalDeEpi, saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
 import { controlaTamanho, nomeTamanho, saldosPorTamanho, SEM_TAMANHO } from "@/lib/estoque-tamanho";
 import { exportarCsv } from "@/lib/gemape";
 import { useComprasEpis, useComprasUniformes, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
@@ -74,7 +74,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
   const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
-  const parametrosCompra = useParametrosCompraEpi();
+  const parametrosCompra = useParametrosCompraEpi(modulo);
   const [empresaFiltro, setEmpresaFiltro] = useState(TODOS);
   const [palavra, setPalavra] = useState("");
   const { data: itens = [], isLoading } = useQuery({
@@ -121,6 +121,25 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
       },
     });
   }, [itens, movimentos, compras, parametros, parametrosCompra, modulo]);
+  // Estoque mínimo: um alerta por tamanho, pela mesma regra da aba Estoque (decisão 417); itens inativos ficam de fora, como na sugestão.
+  const alertasMinimo: LinhaDeMinimo[] = useMemo(
+    () =>
+      itens
+        .filter((i) => (i as { status?: string | null }).status !== "Inativo")
+        .flatMap((item) =>
+          alertasDeMinimoEpi(parametros, item as never, modulo).map((a) => ({
+            chave: `${item.id}|${a.chave}`,
+            itemId: item.id,
+            codigo: item.codigo_sku,
+            descricao: a.chave === SEM_TAMANHO ? item.nome : `${item.nome} · Tamanho ${a.nome}`,
+            empresaId: item.empresa_id,
+            total: a.saldo,
+            minimo: a.minimo,
+          })),
+        ),
+    [itens, parametros, modulo],
+  );
+  const alertasFiltrados = useMemo(() => filtrarSugestaoEpi(alertasMinimo, { palavra }), [alertasMinimo, palavra]);
   const filtradas = filtrarSugestaoEpi(todas, {
     ...(empresaFiltro !== TODOS ? { empresaId: empresaFiltro } : {}),
     palavra,
@@ -202,12 +221,12 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
           Para comprar, o estoque de novos e de usados é um só. O status vem dos parâmetros de{" "}
           <Link
             to="/cadastros/gerais/categorias"
-            search={{ de: "epi", voltar: modulo === "epi" ? "sugestao-compras" : "sugestao-uniformes" }}
+            search={modulo === "epi" ? { de: "epi", voltar: "sugestao-compras" } : { de: "uniformes", voltar: "sugestao-uniformes" }}
             className="font-medium text-primary underline underline-offset-2"
           >
             Parâmetros Específicos
           </Link>{" "}
-          {modulo === "uniforme" && "do EPI, os mesmos para os uniformes "}(
+(
           {parametrosCompra.metodo === "cobertura"
             ? `tempo de cobertura, reposição de ${parametrosCompra.prazoReposicao} dias`
             : "estoque mínimo"}
@@ -248,7 +267,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
           <Button type="button" onClick={abrirRelatorio}>
             Gerar relatório
           </Button>
-          <EstoqueMinimoEpi rotulo={modulo === "epi" ? "EPIs" : "uniformes"} linhas={filtradas} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
+          <EstoqueMinimoEpi rotulo={modulo === "epi" ? "EPIs" : "uniformes"} linhas={alertasFiltrados} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
           <Button
             type="button"
             variant="outline"

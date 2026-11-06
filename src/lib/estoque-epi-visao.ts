@@ -51,8 +51,35 @@ export type LinhaEstoqueEpi = {
   tamanhoId: string | null; // null = sem tamanho
   minimo: number;
   disponivel: number;
+  // Saldo total do EPI no tamanho (novos + usados): o alerta olha este saldo, não o `disponivel` da linha (que é só a parte novo ou usado).
+  saldo: number;
+  // Quantos do saldo são novos e quantos são usados, no mesmo item e tamanho (as linhas de novos e de usados mostram os dois números; novos + usados = saldo).
+  novos: number;
+  usados: number;
   alerta: boolean;
   mediaMensal: number;
+};
+
+// Nível do alerta de estoque mínimo (decisões 419 e 420): abaixo do mínimo ou zerado é "abaixo" (vermelho); saldo igual ao mínimo é "minimo" (amarelo, "Estoque mínimo");
+// saldo a 1 unidade acima do mínimo é "proximo" (aviso "Próximo do mínimo"). Sem mínimo definido, só o saldo zerado alerta.
+export function nivelDoAlerta(saldo: number, minimo: number): "abaixo" | "minimo" | "proximo" | null {
+  if (saldo < minimo || (saldo === 0 && minimo === 0)) return "abaixo";
+  if (minimo <= 0) return null;
+  return saldo === minimo ? "minimo" : saldo === minimo + 1 ? "proximo" : null;
+}
+
+export const TEXTO_DO_NIVEL_ALERTA = { abaixo: "Abaixo do mínimo", minimo: "Estoque mínimo", proximo: "Próximo do mínimo" } as const;
+// Cores do nível na coluna Alerta, as mesmas em todas as telas de estoque (decisão 421).
+export const CLASSE_DO_NIVEL = {
+  abaixo: "font-bold text-destructive",
+  minimo: "font-bold text-amber-600 dark:text-amber-400",
+  proximo: "font-semibold text-yellow-600 dark:text-yellow-300",
+  nenhum: "",
+} as const;
+
+export const textoDoAlerta = (l: { saldo: number; minimo: number }): string => {
+  const nivel = nivelDoAlerta(l.saldo, l.minimo);
+  return nivel ? TEXTO_DO_NIVEL_ALERTA[nivel] : "";
 };
 
 export type EntradaEstoqueEpi = {
@@ -70,12 +97,12 @@ const SEM = "sem-tamanho";
 const numero = (v: unknown) => Number(v) || 0;
 
 // caItem: CA do cadastro do item; só vale quando nenhuma compra (ou devolução de origem) trouxe CA.
-type LinhaDeLote = Omit<LinhaEstoqueEpi, "fornecedores" | "notas" | "cas" | "datas"> & { caItem: string | null };
+type LinhaDeLote = Omit<LinhaEstoqueEpi, "novos" | "usados" | "fornecedores" | "notas" | "cas" | "datas"> & { caItem: string | null };
 const distintos = (valores: (string | null)[]) => [...new Set(valores.filter((v): v is string => !!v))];
 const juntar = (l: string[]) => (l.length ? l.join(", ") : null);
 
 // Junta as linhas de lote do mesmo EPI, tamanho e condição numa só (uma linha por código + empresa + tamanho; fornecedores, notas e CAs diferentes não separam e aparecem listados): a quantidade soma e os dados de compra viram listas.
-function somarLotes(lotes: LinhaDeLote[]): LinhaEstoqueEpi[] {
+function somarLotes(lotes: LinhaDeLote[]): Omit<LinhaEstoqueEpi, "novos" | "usados">[] {
   const grupos = new Map<string, LinhaDeLote[]>();
   for (const l of lotes) {
     const k = `${l.itemId}|${l.tamanhoId ?? ""}|${l.condicao}`;
@@ -143,7 +170,9 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
       const tamanhoId = chave === sem ? null : chave;
       const saldo = Math.max(0, numero(saldos[chave]));
       const minimo = numero(minimos[chave]);
-      const alerta = saldo <= minimo && (minimo > 0 || saldo === 0);
+      // Conta como alerta (decisão 417) o nível "abaixo" ou "minimo"; "proximo" é só aviso de leitura.
+      const nivel = nivelDoAlerta(saldo, minimo);
+      const alerta = nivel === "abaixo" || nivel === "minimo";
       const comum = {
         itemId: item.id,
         codigo: item.codigo_sku,
@@ -151,6 +180,7 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
         empresaId: item.empresa_id,
         tamanhoId,
         minimo,
+        saldo,
         alerta,
         mediaMensal: media,
         caItem: item.ca ?? null,
@@ -224,7 +254,16 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
       }
     }
   }
-  return somarLotes(linhas);
+  const somadas = somarLotes(linhas);
+  const porGrupo = new Map<string, { novos: number; usados: number }>();
+  for (const l of somadas) {
+    const k = `${l.itemId}|${l.tamanhoId ?? ""}`;
+    const g = porGrupo.get(k) ?? { novos: 0, usados: 0 };
+    if (l.condicao === "usado") g.usados += l.disponivel;
+    else g.novos += l.disponivel;
+    porGrupo.set(k, g);
+  }
+  return somadas.map((l) => ({ ...l, ...porGrupo.get(`${l.itemId}|${l.tamanhoId ?? ""}`)! }));
 }
 
 export type FiltroEstoqueEpi = {

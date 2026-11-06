@@ -4,12 +4,15 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { exportarCsv } from "@/lib/gemape";
-import { abaixoDoMinimo, type LinhaSugestaoEpi } from "@/lib/sugestao-epi";
+import { abaixoDoMinimo } from "@/lib/sugestao-epi";
+
+// Um alerta por tamanho (decisão 417): o saldo e o mínimo daquele tamanho, como na aba Estoque.
+export type LinhaDeMinimo = { chave: string; itemId: string; codigo: string; descricao: string; empresaId: string | null; total: number; minimo: number };
 
 type Empresa = { id: string; nome_fantasia: string };
 
 // Botão "Estoque mínimo" (decisão 410): abre uma janela com uma tela por empresa (botões para trocar de empresa), cada uma com os EPIs no mínimo ou abaixo em cartões (saldo, mínimo, quanto falta e uma barra).
-export function EstoqueMinimoEpi({ linhas, empresas, rotulo = "EPIs" }: { linhas: LinhaSugestaoEpi[]; empresas: Empresa[]; rotulo?: string }) {
+export function EstoqueMinimoEpi({ linhas, empresas, rotulo = "EPIs" }: { linhas: LinhaDeMinimo[]; empresas: Empresa[]; rotulo?: string }) {
   const [aberto, setAberto] = useState(false);
   const [escolhida, setEscolhida] = useState("");
   const alertas = useMemo(() => abaixoDoMinimo(linhas), [linhas]);
@@ -62,7 +65,7 @@ export function EstoqueMinimoEpi({ linhas, empresas, rotulo = "EPIs" }: { linhas
   );
 }
 
-function PainelDaEmpresa({ nome, itens, rotulo }: { nome: string; itens: LinhaSugestaoEpi[]; rotulo: string }) {
+function PainelDaEmpresa({ nome, itens, rotulo }: { nome: string; itens: LinhaDeMinimo[]; rotulo: string }) {
   if (itens.length === 0)
     return (
       <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-50 p-8 text-center dark:border-emerald-800 dark:from-emerald-950/50 dark:via-transparent dark:to-emerald-950/30">
@@ -96,7 +99,7 @@ function PainelDaEmpresa({ nome, itens, rotulo }: { nome: string; itens: LinhaSu
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">
         {itens.map((l) => (
-          <CartaoDoItem key={l.itemId} l={l} />
+          <CartaoDoItem key={l.chave} l={l} />
         ))}
       </ul>
     </>
@@ -111,10 +114,10 @@ function Resumo({ rotulo, valor, destaque = false }: { rotulo: string; valor: nu
   );
 }
 
-function CartaoDoItem({ l }: { l: LinhaSugestaoEpi }) {
+function CartaoDoItem({ l }: { l: LinhaDeMinimo }) {
   const ruptura = l.total <= 0;
   const abaixo = l.total < l.minimo;
-  const pct = Math.max(0, Math.min(100, Math.round((l.total / l.minimo) * 100)));
+  const pct = l.minimo > 0 ? Math.max(0, Math.min(100, Math.round((l.total / l.minimo) * 100))) : 0;
   const falta = Math.max(0, l.minimo - l.total);
   const tom = abaixo
     ? "border-red-200 bg-gradient-to-br from-red-50 via-white to-red-50 dark:border-red-800 dark:from-red-950/50 dark:via-transparent dark:to-red-950/30"
@@ -128,7 +131,7 @@ function CartaoDoItem({ l }: { l: LinhaSugestaoEpi }) {
         </div>
         <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold text-white ${abaixo ? "bg-red-600" : "bg-amber-500"}`}>
           {ruptura ? <PackageX className="h-3.5 w-3.5" aria-hidden="true" /> : <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />}
-          {ruptura ? "Sem estoque" : abaixo ? "Abaixo do mínimo" : "No mínimo"}
+          {ruptura ? "Sem estoque" : abaixo ? "Abaixo do mínimo" : "Estoque mínimo"}
         </span>
       </div>
       <div className="flex items-end gap-4">

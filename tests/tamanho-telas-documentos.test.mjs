@@ -207,7 +207,7 @@ test("compras, termos e movimentações escolhem o tamanho e mostram o tamanho",
 
 test("o Dashboard alerta o estoque baixo por tamanho e reabrir a movimentação volta para Saída", () => {
   const dashboard = fonte("routes/_authenticated/dashboard.tsx");
-  assert.match(dashboard, /alertasPorTamanho/);
+  assert.match(dashboard, /alertasDeMinimoEpi/);
   assert.match(dashboard, /TAMANHO_DISPONIVEL/, "colunas novas só no modo demonstração");
   const movimentacoes = fonte("components/modules/MovimentacoesModulo.tsx");
   assert.match(movimentacoes, /setTipoMovimentacao\("Saida"\);\s*setAberto\(true\)/);

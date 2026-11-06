@@ -107,7 +107,7 @@ test("o Histórico do empregado de Uniformes tem busca, início e fim, no PDF, n
 });
 
 test("Parâmetros > Uniformes > Parâmetros Específicos mostra as áreas e a caixa dupla dos habilitados", () => {
-  assert.match(le("routes/_authenticated/cadastros/gerais/categorias.tsx"), /categoria\.id === "cat-uniformes" && <ParametrosUniforme \/>/);
+  assert.match(le("routes/_authenticated/cadastros/gerais/categorias.tsx"), /categoria\.id === "cat-uniformes" && <ParametrosUniforme voltarParaSugestao=\{voltar === "sugestao-uniformes"\} \/>/);
   assert.match(le("components/parametros/ParametrosUniforme.tsx"), /<HabilitarEmpregadosUniforme areas=\{areas\} \/>/);
   assert.match(le("components/parametros/HabilitarEmpregadosUniforme.tsx"), /CaixaDuplaEmpregados/);
   assert.match(le("components/parametros/ParametrosEpi.tsx"), /import \{ CartaoDeMotivos \}/);

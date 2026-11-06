@@ -142,7 +142,7 @@ test("telas: mínimo único quando a grade fica vazia, alerta no módulo e fila 
   const estoque = ler("components/modules/EstoqueModulo.tsx");
   assert.match(estoque, /estadoEstoqueModulo/);
   assert.match(estoque, /prepararMinimosEstoque|prepararMinimoUnico/);
-  assert.match(ler("routes/_authenticated/dashboard.tsx"), /usaMinimoPorTamanho/);
+  assert.match(ler("routes/_authenticated/dashboard.tsx"), /alertasDeMinimoEpi/);
   const associar = ler("components/parametros/AssociarTamanhosPainel.tsx");
   assert.match(associar, /fila\.current/);
   assert.match(associar, /lerParametros\(\)/);

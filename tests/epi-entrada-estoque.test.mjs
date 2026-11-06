@@ -210,11 +210,11 @@ test("a tela: Entrada no Estoque com Devolução ao lado de Registrar Compra, ca
   assert.match(dev, /lerMotivosDevolucaoEpi/);
   assert.match(
     ler("components/parametros/ParametrosEpi.tsx"),
-    /Motivos de baixa definitiva[\s\S]*Motivos de devolução ao estoque[\s\S]*Sugestão de compra/,
+    /Motivos de baixa definitiva[\s\S]*Motivos de devolução ao estoque[\s\S]*<SugestaoDeCompra modulo="epi"/,
   );
   assert.match(
     ler("routes/_authenticated/cadastros/gerais/categorias.tsx"),
-    /categoria\.id === "cat-epi" && <ParametrosEpi voltarParaSugestao=\{voltar === "sugestao-compras" \|\| voltar === "sugestao-uniformes"\} paraUniformes=\{voltar === "sugestao-uniformes"\} \/>/,
+    /categoria\.id === "cat-epi" && <ParametrosEpi voltarParaSugestao=\{voltar === "sugestao-compras"\} \/>/,
   );
   assert.match(ler("integrations/supabase/demo-client.ts"), /m\.condicao === "usado" && delta > 0/);
 });
