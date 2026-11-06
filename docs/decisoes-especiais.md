@@ -2296,3 +2296,7 @@ Gerar o **Termo de Entrega de Uniforme** não movimenta mais o estoque nem grava
 ## 416. Estoque mínimo editável na aba Estoque (EPI e Uniformes)
 
 O **Estoque mínimo** de cada linha do **Estoque** de EPI e de Uniformes é um campo numérico com setas, editado na própria tabela (grava ao sair do campo, com Enter ou 0,8 s depois da última mudança; quem só consulta vê o número). Produto com tamanho grava só o mínimo do tamanho da linha (o total do item passa a ser a soma dos tamanhos; os outros tamanhos ficam como estavam); produto sem tamanho grava o mínimo único. Zero desliga o alerta. O valor fica no item, então vale para o alerta "Abaixo do mínimo", a Sugestão de Compras e o botão Estoque mínimo. Aceita só inteiros maiores ou iguais a zero.
+
+## 417. Uma regra só para o alerta de estoque mínimo (EPI e Uniformes)
+
+A aba **Estoque**, o botão **Estoque mínimo**, o **Dashboard** e o aviso da **Entrega** usam a mesma função (`alertasDeMinimoEpi`): cada tamanho (ou o item inteiro, sem tamanho) alerta quando o saldo é menor ou igual ao mínimo; sem mínimo definido, só o saldo zerado alerta. Antes o botão comparava o total do item com a soma dos mínimos e o Dashboard e a Entrega usavam outra conta, então um tamanho zerado podia sumir do botão porque o total estava folgado. O botão agora lista um cartão por tamanho. A Sugestão de Compras continua por item (o estoque de novos e usados é um só para comprar, decisão 330).

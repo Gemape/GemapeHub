@@ -43,8 +43,8 @@ import {
   type CompraDoEstoque,
   type DevolucaoUsada,
 } from "@/lib/estoque-epi-visao";
-import { EstoqueMinimoEpi } from "@/components/modules/EstoqueMinimoEpi";
-import { minimosDeEpi, minimoTotalDeEpi, saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
+import { EstoqueMinimoEpi, type LinhaDeMinimo } from "@/components/modules/EstoqueMinimoEpi";
+import { alertasDeMinimoEpi, minimosDeEpi, minimoTotalDeEpi, saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
 import { controlaTamanho, nomeTamanho, saldosPorTamanho, SEM_TAMANHO } from "@/lib/estoque-tamanho";
 import { exportarCsv } from "@/lib/gemape";
 import { useComprasEpis, useComprasUniformes, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
@@ -121,6 +121,24 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
       },
     });
   }, [itens, movimentos, compras, parametros, parametrosCompra, modulo]);
+  // Estoque mínimo: um alerta por tamanho, pela mesma regra da aba Estoque (decisão 417); itens inativos ficam de fora, como na sugestão.
+  const alertasMinimo: LinhaDeMinimo[] = useMemo(
+    () =>
+      itens
+        .filter((i) => (i as { status?: string | null }).status !== "Inativo")
+        .flatMap((item) =>
+          alertasDeMinimoEpi(parametros, item as never, modulo).map((a) => ({
+            chave: `${item.id}|${a.chave}`,
+            itemId: item.id,
+            codigo: item.codigo_sku,
+            descricao: a.chave === SEM_TAMANHO ? item.nome : `${item.nome} · Tamanho ${a.nome}`,
+            empresaId: item.empresa_id,
+            total: a.saldo,
+            minimo: a.minimo,
+          })),
+        ),
+    [itens, parametros, modulo],
+  );
   const filtradas = filtrarSugestaoEpi(todas, {
     ...(empresaFiltro !== TODOS ? { empresaId: empresaFiltro } : {}),
     palavra,
@@ -248,7 +266,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
           <Button type="button" onClick={abrirRelatorio}>
             Gerar relatório
           </Button>
-          <EstoqueMinimoEpi rotulo={modulo === "epi" ? "EPIs" : "uniformes"} linhas={filtradas} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
+          <EstoqueMinimoEpi rotulo={modulo === "epi" ? "EPIs" : "uniformes"} linhas={filtrarSugestaoEpi(alertasMinimo, { palavra })} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
           <Button
             type="button"
             variant="outline"

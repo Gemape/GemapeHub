@@ -3,6 +3,7 @@
 import {
   controlaTamanho,
   type ModuloTamanho,
+  nomeTamanho,
   saldosPorTamanho,
   SEM_TAMANHO,
   tamanhoParaGravar,
@@ -52,3 +53,25 @@ export function saldoParaCompra(
   return saldo - (mesmo ? Number(editando.quantidade) || 0 : 0);
 }
 
+
+export type AlertaDeMinimo = { chave: string; nome: string; saldo: number; minimo: number };
+
+// A regra única do estoque mínimo de EPI e de uniforme (decisão 417), a mesma da linha da aba Estoque: cada tamanho (ou o item inteiro, sem tamanho) alerta quando o saldo é menor ou igual
+// ao mínimo; sem mínimo definido, só o saldo zerado alerta. A aba Estoque, o botão Estoque mínimo, o Dashboard e o aviso da Entrega usam esta função, então nunca divergem.
+export function alertasDeMinimoEpi(p: Parametros, item: ItemDeEstoque, modulo: ModuloTamanho = "epi"): AlertaDeMinimo[] {
+  const saldos = saldosDeEpi(p, item, modulo);
+  const minimos = minimosDeEpi(p, item, modulo);
+  const chaves = [
+    ...new Set([
+      ...Object.keys(saldos),
+      ...Object.keys(minimos).filter(
+        (k) => Number(minimos[k]) > 0 && (k !== SEM_TAMANHO || k in saldos || Object.keys(saldos).length === 0),
+      ),
+    ]),
+  ];
+  return (chaves.length > 0 ? chaves : [SEM_TAMANHO]).flatMap((chave) => {
+    const saldo = Math.max(0, Number(saldos[chave]) || 0);
+    const minimo = Number(minimos[chave]) || 0;
+    return saldo <= minimo ? [{ chave, nome: chave === SEM_TAMANHO ? "Geral" : nomeTamanho(p as never, chave), saldo, minimo }] : [];
+  });
+}

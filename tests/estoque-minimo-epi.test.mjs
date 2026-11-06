@@ -7,14 +7,14 @@ import { abaixoDoMinimo } from "../src/lib/sugestao-epi.ts";
 const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 const l = (itemId, total, minimo, empresaId = "e1") => ({ itemId, codigo: itemId, descricao: `EPI ${itemId}`, empresaId, total, minimo });
 
-test("estoque mínimo: só entra saldo <= mínimo (com mínimo definido), do mais distante do mínimo para o mais perto", () => {
-  const r = abaixoDoMinimo([l("a", 8, 9), l("b", 0, 5), l("c", 9, 9), l("d", 10, 9), l("e", 3, 0), l("f", 2, 10)]);
-  assert.deepEqual(r.map((x) => x.itemId), ["b", "f", "a", "c"], "sem estoque primeiro; 10 > 9 e mínimo 0 ficam de fora");
+test("estoque mínimo: entra saldo <= mínimo (sem mínimo, só o saldo zerado), do mais distante do mínimo para o mais perto", () => {
+  const r = abaixoDoMinimo([l("a", 8, 9), l("b", 0, 5), l("c", 9, 9), l("d", 10, 9), l("e", 3, 0), l("f", 2, 10), l("g", 0, 0)]);
+  assert.deepEqual(r.map((x) => x.itemId), ["b", "g", "f", "a", "c"], "sem estoque primeiro; 10 > 9 e saldo 3 sem mínimo ficam de fora; zerado sem mínimo entra, como na aba Estoque");
 });
 
 test("o botão Estoque mínimo abre a janela com uma tela por empresa e o aviso fixo saiu da Sugestão de Compras (decisão 410)", () => {
   const sug = ler("components/modules/SugestaoComprasEpi.tsx");
-  assert.match(sug, /<EstoqueMinimoEpi rotulo=\{[^}]*\} linhas=\{filtradas\} empresas=\{empresasParaEscolha\(empresas\)\.filter\(\(e\) => empresaFiltro === TODOS \|\| e\.id === empresaFiltro\)\} \/>/);
+  assert.match(sug, /<EstoqueMinimoEpi rotulo=\{[^}]*\} linhas=\{filtrarSugestaoEpi\(alertasMinimo, \{ palavra \}\)\} empresas=\{empresasParaEscolha\(empresas\)\.filter\(\(e\) => empresaFiltro === TODOS \|\| e\.id === empresaFiltro\)\} \/>/);
   assert.doesNotMatch(sug, /Estoque no mínimo ou abaixo \(/);
   const tela = ler("components/modules/EstoqueMinimoEpi.tsx");
   assert.match(tela, /Estoque mínimo/);

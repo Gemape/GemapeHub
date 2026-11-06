@@ -16,6 +16,7 @@ import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { emPosseEpi, lerHistoricoEpiPorItem, mensagemSoAdmin, registrarDevolucaoEpi, registrarEntregaEpi, type CalculoAlerta, type ModuloEntrega } from "@/lib/entrega-epi";
 import { origemDaLinhaDeDevolucao } from "@/lib/devolucao-estoque-epi";
 import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { alertasDeMinimoEpi } from "@/lib/estoque-epi-saldos";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
 import { soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
@@ -102,8 +103,10 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   );
 
   const calcularAlerta: CalculoAlerta = (item) => {
+    // Mesma regra da aba Estoque (decisão 417): alerta por tamanho; o aviso traz o primeiro tamanho em alerta.
+    const alertas = alertasDeMinimoEpi(parametros, item as never, modulo);
     const e = estadoEstoqueModulo(parametros, modulo, item as never);
-    return { alerta: e.alerta, saldo: e.saldo, minimo: e.minimo };
+    return alertas.length > 0 ? { alerta: true, saldo: alertas[0]!.saldo, minimo: alertas[0]!.minimo } : { alerta: false, saldo: e.saldo, minimo: e.minimo };
   };
 
   function mudarLinha(id: string, campo: keyof Linha, valor: string | number) {
