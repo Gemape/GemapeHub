@@ -7,7 +7,7 @@ import {
 } from "../src/lib/empregados-uniforme.ts";
 import { lerEmpregadosDeEpi, salvarEmpregadosDeEpi, soEmpregadosDeEpi } from "../src/lib/empregados-epi.ts";
 import { ABAS_UNIFORME, ABAS_UNIFORME_RELATORIOS, abaDoModulo } from "../src/lib/menu-parametros.ts";
-import { montarTermoEntregaUniformeHtml, observacaoEntregaUniforme } from "../src/lib/termo-entrega-uniforme-html.ts";
+import { montarTermoEntregaUniformeHtml } from "../src/lib/termo-entrega-uniforme-html.ts";
 
 const le = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 const memoria = () => {
@@ -75,18 +75,14 @@ test("o Termo de Entrega de Uniforme sai com o nome completo de quem entrega e d
   assert.match(antigo, /<strong>Responsável<\/strong><br>Gemape/);
 });
 
-test("a observação gravada em cada saída de uniforme traz quem entregou, para o histórico mostrar", () => {
-  assert.equal(observacaoEntregaUniforme("Novo", "  Carlos   Menezes "), "Entrega de uniforme via termo - Estado: Novo - Entregue por Carlos Menezes");
-  assert.equal(observacaoEntregaUniforme("Usado", ""), "Entrega de uniforme via termo - Estado: Usado");
-  assert.equal(observacaoEntregaUniforme("Usado", null), "Entrega de uniforme via termo - Estado: Usado");
-});
-
-test("a tela do Termo de Entrega de Uniforme pede o responsável, exige outra pessoa, grava no histórico e o leva ao termo", () => {
+test("a tela do Termo de Entrega de Uniforme pede o responsável, exige outra pessoa e o leva ao termo, sem mexer no estoque (decisão 415)", () => {
   const t = le("components/modules/UniformesTermoEntrega.tsx");
   assert.match(t, /Responsável pela entrega/);
   assert.match(t, /Informe o responsável pela entrega/);
   assert.match(t, /quem entrega não pode ser quem recebe/i);
-  assert.match(t, /observacao: observacaoEntregaUniforme\(item\.estado, responsavel\.nome\)/);
+  assert.doesNotMatch(t, /useRegistrarMovimentacoesLote|registrarEntregas|tipo_movimentacao|validarSaidaDeUniformes/, "o termo só documenta, não movimenta o estoque");
+  assert.match(t, /não movimenta o estoque/);
+  assert.match(t, /validarLinhasDoTermo\(itensEntrega, "uniforme"\)/);
   assert.match(t, /responsavel: \{ nome: responsavel\.nome \}/);
   assert.match(t, /if \(v === responsavelId\) setResponsavelId\(""\)/);
   assert.match(t, /Nenhum outro empregado habilitado para entregar uniformes/);

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,12 +20,11 @@ import {
 } from "@/components/ui/table";
 import { TODAS } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
-import { montarTermoEntregaUniformeHtml, observacaoEntregaUniforme } from "@/lib/termo-entrega-uniforme-html";
+import { montarTermoEntregaUniformeHtml } from "@/lib/termo-entrega-uniforme-html";
 import {
   useEmpresas,
   useItens,
   useEmpregados,
-  useRegistrarMovimentacoesLote,
 } from "@/lib/hooks-gemape";
 import { receptoresDeEntrega } from "@/lib/empregados-habilitados";
 import { listaDeUniformeDesatualizada, soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
@@ -34,7 +33,7 @@ import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados
 import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
-import { validarSaidaDeUniformes } from "@/lib/termos-atomicos";
+import { validarLinhasDoTermo } from "@/lib/termos-atomicos";
 
 interface ItemTermo {
   item_id: string;
@@ -58,9 +57,6 @@ export function UniformesTermoEntrega() {
   const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
   const { data: uniformes = [] } = useItens("uniforme", empresaId || TODAS);
   const parametros = useParametrosBase();
-
-  const registrarEntregas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"]);
-  const salvando = useRef(false);
 
   const empresa = empresas.find((e) => e.id === empresaId);
   const empregado = empregados.find((e) => e.id === empregadoId);
@@ -87,8 +83,7 @@ export function UniformesTermoEntrega() {
     );
   }
 
-  async function gerarTermo() {
-    if (salvando.current) return;
+  function gerarTermo() {
     if (!empresaId || !empregadoId || itensEntrega.length === 0) {
       alert("Preencha todos os campos e adicione pelo menos um item.");
       return;
@@ -115,51 +110,28 @@ export function UniformesTermoEntrega() {
       alert(bloqueio);
       return;
     }
-
-    // Não entrega mais do que o estoque disponível de cada uniforme.
-    // Com tamanho, a conta é feita no saldo de cada tamanho.
-    const erro =
-      validarSaidaDeUniformes(itensEntrega, uniformes, "entrega") ??
-      (TAMANHO_DISPONIVEL
-        ? validarLinhasTamanho(itensEntrega, uniformes, parametros, "uniforme", "entrega")
-        : null);
-    if (erro) {
-      alert(erro);
+    // Sem empresa ou empregado na lista, o termo sairia com nome e CPF em branco.
+    if (!empregado || !empresa) {
+      alert("Escolha a empresa e o empregado.");
       return;
     }
 
-    // Registra todas as saídas de uma vez: ou entram todas, ou nenhuma.
-    salvando.current = true;
-    try {
-      await registrarEntregas.mutateAsync(
-        itensEntrega.map((item) => ({
-          modulo: "uniforme",
-          tipo_movimentacao: "Saida",
-          item_id: item.item_id,
-          empresa_id: empresaId,
-          empregado_id: empregadoId,
-          quantidade: item.quantidade,
-          ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
-          data_movimentacao: dataEntrega,
-          observacao: observacaoEntregaUniforme(item.estado, responsavel.nome),
-        })),
-      );
-    } catch {
-      // A falha já aparece no aviso da gravação.
+    // O termo só documenta (decisão 415): não mexe no estoque. A saída só conta quando lançada em Entrega Uniforme.
+    // O tamanho vem dos autorizados do produto (não do saldo, já que o termo não confere estoque) e é obrigatório quando o produto tem tamanho.
+    const erroLinhas =
+      validarLinhasDoTermo(itensEntrega, "uniforme") ??
+      (TAMANHO_DISPONIVEL ? validarLinhasTamanho(itensEntrega, uniformes, parametros, "uniforme", "entrada") : null);
+    if (erroLinhas) {
+      alert(erroLinhas);
       return;
-    } finally {
-      salvando.current = false;
     }
-    // Limpa a lista para um segundo clique não registrar a mesma entrega de novo.
-    const itensDoTermo = itensEntrega;
-    setItensEntrega([]);
 
     const html = montarTermoEntregaUniformeHtml({
       empresa,
       empregado,
       responsavel: { nome: responsavel.nome },
       data: dataEntrega,
-      linhas: itensDoTermo.map((i) => {
+      linhas: itensEntrega.map((i) => {
         const u = uniformes.find((uni) => uni.id === i.item_id);
         return {
           nome: u?.nome,
@@ -174,13 +146,16 @@ export function UniformesTermoEntrega() {
     abrirDocumento({
       titulo: "Termo de Entrega de Uniforme",
       html,
-      arquivo: nomeArquivoDocumento("Termo de Entrega de Uniforme", empregado?.nome, dataEntrega),
+      arquivo: nomeArquivoDocumento("Termo de Entrega de Uniforme", empregado.nome, dataEntrega),
     });
   }
 
   return (
     <div className="space-y-6">
       <div className="panel p-6 space-y-6">
+        <p className="rounded-lg border bg-muted/40 p-2 text-xs text-muted-foreground">
+          O termo só documenta a entrega e não movimenta o estoque. A saída só é contabilizada quando lançada no menu Entrega Uniforme.
+        </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AvisoHabilitados desatualizada={habilitadosDesatualizados} onde="Parâmetros &gt; Uniformes &gt; Parâmetros Específicos" />
           <div className="space-y-1.5">
@@ -285,7 +260,7 @@ export function UniformesTermoEntrega() {
                         parametros={parametros}
                         modulo="uniforme"
                         produto={uniformes.find((u) => u.id === item.item_id)}
-                        uso="saida"
+                        uso="entrada"
                         valor={item.tamanho}
                         onChange={(v) => atualizarItem(index, "tamanho", v)}
                       />
@@ -332,7 +307,7 @@ export function UniformesTermoEntrega() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite="operar" size="lg" onClick={gerarTermo} disabled={registrarEntregas.isPending}>
+          <Button requiresWrite="operar" size="lg" onClick={gerarTermo}>
             Gerar Termo de Entrega
           </Button>
         </div>

@@ -63,6 +63,19 @@ export function validarSaidaDeEpis(
   return null;
 }
 
+/** Termo de Entrega de EPI ou uniforme só documenta (decisão 415): confere as linhas, mas não o estoque. */
+export function validarLinhasDoTermo(
+  linhas: LinhaTermo[],
+  rotulo: "EPI" | "uniforme",
+): string | null {
+  const pedidas = somarLinhas(linhas, {
+    vazio: `Adicione pelo menos um ${rotulo}.`,
+    semItem: `Selecione o ${rotulo} de cada linha.`,
+    quantidade: `A quantidade de cada ${rotulo} deve ser um número inteiro maior que zero.`,
+  });
+  return typeof pedidas === "string" ? pedidas : null;
+}
+
 /** Vistoria só registra o estado das ferramentas; o estoque não muda, então não é conferido. */
 export function validarTermoVistoria(linhas: LinhaTermo[]): string | null {
   const pedidas = somarLinhas(linhas, {

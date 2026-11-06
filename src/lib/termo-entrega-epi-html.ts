@@ -1,7 +1,6 @@
 // HTML do Termo de Entrega de EPI. Todo texto informado passa por escaparHtml, como nos
 // termos de Encerramento, Responsabilidade, Baixa e Vistoria.
-import { hojeLocal } from "./empregados.ts";
-import { comTamanho, escaparHtml, formatarData, textoDeDocumentoHtml } from "./gemape.ts";
+import { comTamanho, escaparHtml, textoDeDocumentoHtml } from "./gemape.ts";
 import { lerTextosDocumentosEpi, type TextosDocumentosEpi } from "./epi-parametros.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
 import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
@@ -90,11 +89,4 @@ export function montarTermoEntregaEpiHtml(dados: DadosTermoEntregaEpi): string {
         </div>`,
     botao: BOTAO_IMPRIMIR("Imprimir Termo"),
   });
-}
-
-/** Observação gravada em cada saída do termo, com a data local (não a de UTC) e, se informado, o nome de quem entregou (assim o histórico do empregado mostra o responsável). */
-export function observacaoEntregaEpi(agora = new Date(), responsavel?: string | null): string {
-  const base = `Entrega de EPI - Termo Gerado em ${formatarData(hojeLocal(agora))}`;
-  const nome = responsavel?.trim().replace(/\s+/g, " ");
-  return nome ? `${base} - Entregue por ${nome}` : base;
 }
