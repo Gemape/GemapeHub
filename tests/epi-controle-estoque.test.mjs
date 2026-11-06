@@ -90,11 +90,13 @@ test("as telas: estoque detalhado na aba Estoque e sugestão de compras na aba C
   // No EPI a sugestão de compras é uma rotina própria, fora da Entrada no Estoque (decisão 327).
   assert.match(ler("components/modules/PaginaModulo.tsx"), /<TabsContent value="sugestao-compras"[^>]*>\s*<SugestaoComprasEpi \/>/);
   assert.doesNotMatch(ler("components/modules/EpiComprasModulo.tsx"), /SugestaoComprasModulo/);
-  assert.match(ler("components/modules/UniformesComprasModulo.tsx"), /<SugestaoComprasModulo modulo="uniforme"/);
+  // Nos Uniformes a sugestão é a mesma tela do EPI, em Relatórios, e saiu da aba Compras.
+  assert.match(ler("components/modules/PaginaModulo.tsx"), /<SugestaoComprasEpi modulo="uniforme" \/>/);
+  assert.doesNotMatch(ler("components/modules/UniformesComprasModulo.tsx"), /Sugest/);
   const tela = ler("components/modules/ControleEstoqueModulo.tsx");
   for (const t of ["Média mensal", "Média trimestral", "Média semestral", "Média anual", "Última entrada", "Penúltima entrada", "Última saída", "Penúltima saída", "Cobertura \\(dias\\)"]) assert.match(tela, new RegExp(t));
-  const sug = ler("components/modules/SugestaoComprasModulo.tsx");
-  for (const t of ["Quantidade sugerida", "Prioridade", "Observação", "Meta de cobertura"]) assert.match(sug, new RegExp(t));
+  const sug = ler("components/modules/SugestaoComprasEpi.tsx");
+  for (const t of ["Estoque total", "Status de criticidade", "Gerar relatório"]) assert.match(sug, new RegExp(t));
   assert.doesNotMatch(tela + sug, /dangerouslySetInnerHTML|innerHTML/);
 });
 
@@ -108,11 +110,11 @@ test("Uniformes segue o EPI: mesmos nomes de submenu, aba Entrega Uniforme, e a 
   for (const t of ["Dashboard", "Estoque", "Histórico do empregado", "Baixar Definitivas", "Termo de Entrega", "Ocorrências"]) {
     assert.ok(titulos(ABAS_EPI).includes(t) && titulos(ABAS_UNIFORME).includes(t), t);
   }
-  // No EPI, Compras virou Entrada no Estoque e a Sugestão de Compras ganhou a sua aba (decisão 327); os uniformes seguem com Compras.
+  // No EPI, Compras virou Entrada no Estoque e a Sugestão de Compras ganhou a sua aba (decisão 327); os uniformes também têm Entrada no Estoque e Sugestão de Compras (mesma lógica do EPI).
   assert.ok(titulos(ABAS_EPI).includes("Entrada no Estoque") && titulos(ABAS_EPI).includes("Sugestão de Compras") && !titulos(ABAS_EPI).includes("Compras"));
-  assert.ok(titulos(ABAS_UNIFORME).includes("Compras"));
+  assert.ok(titulos(ABAS_UNIFORME).includes("Entrada no Estoque") && titulos(ABAS_UNIFORME).includes("Sugestão de Compras") && !titulos(ABAS_UNIFORME).includes("Compras"));
   assert.ok(titulos(ABAS_EPI).includes("Entrega EPI") && titulos(ABAS_UNIFORME).includes("Entrega Uniforme"));
-  assert.ok(titulos(ABAS_UNIFORME).includes("Movimentações"), "Movimentações continua nos uniformes");
+  assert.ok(!titulos(ABAS_UNIFORME).includes("Movimentações"), "Movimentações saiu dos uniformes");
   const pagina = ler("components/modules/PaginaModulo.tsx");
   assert.match(pagina, /<TabsContent value="entrega"[^>]*>\s*<UniformesEntrega \/>/);
   const entrega = ler("components/modules/EpiEntrega.tsx");
@@ -175,7 +177,6 @@ test("a linha leva a empresa do item, e muitos movimentos de um item são lidos 
   assert.ok(Date.now() - inicio < 2000, "leitura linear");
   assert.equal(g.consumoAnual, 50_000 / 12);
   assert.match(ler("components/modules/ControleEstoqueModulo.tsx"), /comEmpresa && <TableHead>Empresa<\/TableHead>/);
-  assert.match(ler("components/modules/SugestaoComprasModulo.tsx"), /comEmpresa && <TableHead>Empresa<\/TableHead>/);
 });
 
 test("grupo personalizado: nomes por veículo ou equipamento, e o que é de outro não se confunde", async () => {

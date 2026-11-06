@@ -58,8 +58,9 @@ export const ABAS_EPI_RELATORIOS: readonly AbaMenu[] = [
 ];
 
 // Uniformes > Relatórios (decisão 364): como no EPI, Histórico do empregado e Baixar Definitivas saem da lista do Módulo e ficam só aqui, com os mesmos endereços de sempre
-// (?aba=historico e baixas). Os Uniformes não têm Sugestão de Compras.
+// (?aba=historico e baixas). A Sugestão de Compras entra aqui com a mesma lógica do EPI (?aba=sugestao-compras) e saiu da aba Compras.
 export const ABAS_UNIFORME_RELATORIOS: readonly AbaMenu[] = [
+  { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
   { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
   { aba: "baixas", titulo: "Baixar Definitivas", icone: "PackageMinus" },
 ];
@@ -67,8 +68,7 @@ export const ABAS_UNIFORME_RELATORIOS: readonly AbaMenu[] = [
 export const ABAS_UNIFORME: readonly AbaMenu[] = [
   { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
-  { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
-  { aba: "compras", titulo: "Compras", icone: "ShoppingCart" },
+  { aba: "compras", titulo: "Entrada no Estoque", icone: "ShoppingCart" },
   { aba: "entrega", titulo: "Entrega Uniforme", icone: "PackageCheck" },
   { aba: "termo-entrega", titulo: "Termo de Entrega", icone: "FileSignature" },
   { aba: "termo-baixa", titulo: "Termo de Baixa", icone: "FileMinus" },

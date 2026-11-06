@@ -5,7 +5,6 @@ import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { DevolucaoEpiDialog } from "@/components/modules/DevolucaoEpiDialog";
 import { EntradasDeUsados } from "@/components/modules/EpiComprasModulo";
-import { SugestaoComprasModulo } from "@/components/modules/SugestaoComprasModulo";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
 import { pedeTamanho, SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
@@ -63,7 +62,7 @@ export function UniformesComprasModulo() {
   const [aberto, setAberto] = useState(false);
   const [devolucaoAberta, setDevolucaoAberta] = useState(false);
   const [buscaDevolucao, setBuscaDevolucao] = useState("");
-  const [visao, setVisao] = useState<"compras" | "sugestao" | "devolucoes">("compras");
+  const [visao, setVisao] = useState<"compras" | "devolucoes">("compras");
   const [editando, setEditando] = useState<CompraUniforme | null>(null);
   const [quantidade, setQuantidade] = useState(0);
   const [valorUnitario, setValorUnitario] = useState(0);
@@ -200,15 +199,13 @@ export function UniformesComprasModulo() {
       </div>
 
       {/* Compras e devoluções em listas separadas (decisão 380): um botão para cada, e só a lista escolhida aparece. */}
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Compras, sugestão de compras ou devoluções">
-        {([["compras", "Compras"], ["sugestao", "Sugestão de compras"], ["devolucoes", "Devoluções"]] as const).map(([id, rotulo]) => (
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Compras ou devoluções">
+        {([["compras", "Compras"], ["devolucoes", "Devoluções"]] as const).map(([id, rotulo]) => (
           <Button key={id} type="button" className={visao === id ? "ring-2 ring-primary ring-offset-2" : "opacity-70"} aria-pressed={visao === id} onClick={() => setVisao(id)}>
             {rotulo}
           </Button>
         ))}
       </div>
-
-      {visao === "sugestao" && <SugestaoComprasModulo modulo="uniforme" />}
 
       {visao === "compras" && <div className="panel overflow-x-auto">
         <Table>

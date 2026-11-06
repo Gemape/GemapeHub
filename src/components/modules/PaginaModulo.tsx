@@ -56,7 +56,7 @@ export function PaginaModulo({
           <OcorrenciasModulo modulo={modulo} />
         </TabsContent>
 
-        {modulo !== "epi" && (
+        {modulo === "ferramenta" && (
           <TabsContent value="movimentacoes" className="mt-5">
             <MovimentacoesModulo modulo={modulo} />
           </TabsContent>
@@ -66,6 +66,9 @@ export function PaginaModulo({
           <>
             <TabsContent value="compras" className="mt-5">
               <UniformesComprasModulo />
+            </TabsContent>
+            <TabsContent value="sugestao-compras" className="mt-5">
+              <SugestaoComprasEpi modulo="uniforme" />
             </TabsContent>
             <TabsContent value="historico" className="mt-5">
               <UniformesRelatorioFuncionario />
