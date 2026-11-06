@@ -17,6 +17,8 @@ import { montarFichaEpiAvulsaHtml } from "@/lib/ficha-epi-avulsa-html";
 import { linhasDaFichaEpi } from "@/lib/entrega-epi";
 import { lerHistoricoEpiEmpregado, type MovimentacaoFicha } from "@/lib/historico-epi-empregado";
 import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
+import { receptoresDeEntrega } from "@/lib/empregados-habilitados";
+import { empregadoAtivo } from "@/lib/empregados";
 import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
 import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { nomeTamanhoGravado } from "@/lib/estoque-tamanho";
@@ -105,7 +107,7 @@ export function EpiFichaEpiAvulsa() {
                 <SelectValue placeholder="Selecione o empregado" />
               </SelectTrigger>
               <SelectContent>
-                {soEmpregadosDeEpi(empregados).map((e) => (
+                {receptoresDeEntrega(empregados, soEmpregadosDeEpi, empregadoAtivo).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                   </SelectItem>

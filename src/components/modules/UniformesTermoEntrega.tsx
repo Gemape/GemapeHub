@@ -27,6 +27,7 @@ import {
   useEmpregados,
   useRegistrarMovimentacoesLote,
 } from "@/lib/hooks-gemape";
+import { receptoresDeEntrega } from "@/lib/empregados-habilitados";
 import { listaDeUniformeDesatualizada, soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
 import { AvisoHabilitados } from "@/components/AvisoHabilitados";
 import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
@@ -204,7 +205,7 @@ export function UniformesTermoEntrega() {
                 <SelectValue placeholder="Selecione o empregado" />
               </SelectTrigger>
               <SelectContent>
-                {soEmpregadosDeUniforme(empregados).map((e) => (
+                {receptoresDeEntrega(empregados, soEmpregadosDeUniforme, empregadoAtivo).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                   </SelectItem>

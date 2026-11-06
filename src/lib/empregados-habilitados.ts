@@ -102,3 +102,9 @@ export function criarListaDeHabilitados(config: { chaveAreas: string; chaveEmpre
 
   return { lerAreas, salvarAreas, lerEmpregados, salvarEmpregados, soHabilitados, listaDesatualizada };
 }
+
+// Quem recebe uma entrega: os habilitados (desligados incluídos, por causa de datas retroativas); se nenhum habilitado está ativo, a lista cai para os ativos.
+export function receptoresDeEntrega<T extends { id: string }>(todos: T[], soHabilitados: (l: T[]) => T[], ativo: (e: T) => boolean): T[] {
+  const habilitados = soHabilitados(todos);
+  return habilitados.some(ativo) ? habilitados : soHabilitados(todos.filter(ativo));
+}
