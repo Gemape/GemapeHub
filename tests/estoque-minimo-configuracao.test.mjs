@@ -25,9 +25,14 @@ test("o mínimo configurado muda o alerta: saldo 5 com mínimo 4 não alerta, co
   assert.equal(abaixoDoMinimo(l(4)).length, 0);
   assert.equal(abaixoDoMinimo(l(6)).length, 1);
 });
-test("a aba Estoque de EPI e de Uniformes tem o botão Configurar que grava o mínimo no item (decisão 416)", () => {
+test("o mínimo é editado no próprio campo da tabela, com setas, e grava no item (decisão 416)", () => {
   const t = readFileSync(new URL("../src/components/modules/EstoqueEpiModulo.tsx", import.meta.url), "utf8");
   assert.match(t, /prepararMinimoDaLinha\(/);
   assert.match(t, /useSalvar\(modulo === "epi" \? "epis" : "uniformes", \["estoque-modulo"\]\)/);
-  assert.match(t, /<Button requiresWrite variant="outline" size="sm" onClick=\{\(\) => setEditando\(l\)\}>/);
+  assert.match(t, /<MinimoEditavel /);
+  assert.doesNotMatch(t, /Configurar|<Dialog/, "sem botão nem janela: o campo é a configuração");
+  const c = readFileSync(new URL("../src/components/modules/MinimoEditavel.tsx", import.meta.url), "utf8");
+  assert.match(c, /type="number"/);
+  assert.match(c, /onBlur=/);
+  assert.match(c, /canWrite/);
 });

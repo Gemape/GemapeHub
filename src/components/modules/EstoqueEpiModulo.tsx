@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { MinimoEditavel } from "@/components/modules/MinimoEditavel";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -60,8 +60,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
   const [fornecedor, setFornecedor] = useState(TODOS);
   const [ca, setCa] = useState("");
   const [nf, setNf] = useState("");
-  // Estoque mínimo editável na própria linha (decisão 416); gravado no item, então os alertas, a Sugestão e o Estoque mínimo passam a usar o novo valor.
-  const [editando, setEditando] = useState<LinhaEstoqueEpi | null>(null);
+  // Estoque mínimo editável no próprio campo da linha (decisão 416); gravado no item, então os alertas, a Sugestão e o Estoque mínimo passam a usar o novo valor.
   const salvar = useSalvar(modulo === "epi" ? "epis" : "uniformes", ["estoque-modulo"]);
 
   const { data: itens = [], isLoading } = useQuery({
@@ -115,23 +114,19 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
   const doTipo = (c: "novo" | "usado", lista: LinhaEstoqueEpi[]) =>
     lista.filter((l) => l.condicao === c);
   const lista = doTipo(condicao, filtradas);
-  const itemEditado = editando ? itens.find((i) => i.id === editando.itemId) : undefined;
-  // Produto com tamanho grava o mínimo do tamanho da linha; sem tamanho, o mínimo único do item (como em Estoque das ferramentas).
-  const porTamanho = !!itemEditado && !!editando?.tamanhoId && MODO_DEMO && controlaTamanho(parametros, modulo, itemEditado);
-  function salvarMinimo(evento: React.FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
-    if (!itemEditado || !editando || salvar.isPending) return;
+  // Produto com tamanho grava o mínimo do tamanho da linha; sem tamanho, o mínimo único do item (como em Estoque das ferramentas). Devolve false quando o valor não vale.
+  function gravarMinimo(l: LinhaEstoqueEpi, texto: string): boolean {
+    const item = itens.find((i) => i.id === l.itemId);
+    if (!item || salvar.isPending) return false;
     try {
-      const texto = String(new FormData(evento.currentTarget).get("minimo") ?? "");
-      const valores: Record<string, unknown> = prepararMinimoDaLinha(
-        itemEditado.minimos_tamanho ?? {},
-        porTamanho ? editando.tamanhoId : null,
-        texto,
-      );
+      const porTamanho = !!l.tamanhoId && MODO_DEMO && controlaTamanho(parametros, modulo, item);
+      const valores: Record<string, unknown> = prepararMinimoDaLinha(item.minimos_tamanho ?? {}, porTamanho ? l.tamanhoId : null, texto);
       if (!MODO_DEMO) delete valores["minimos_tamanho"];
-      salvar.mutate({ id: itemEditado.id, valores }, { onSuccess: () => setEditando(null) });
+      salvar.mutate({ id: item.id, valores });
+      return true;
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Estoque mínimo inválido.");
+      return false;
     }
   }
   const periodoInvalido = !!dataInicio && !!dataFim && dataInicio > dataFim;
@@ -295,17 +290,16 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               <TableHead className="text-right">Quantidade disponível</TableHead>
               <TableHead>Alerta</TableHead>
               <TableHead className="text-right">Média de consumo mensal</TableHead>
-              <TableHead>Configurar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={modulo === "epi" ? 13 : 12}>Carregando estoque…</TableCell>
+                <TableCell colSpan={modulo === "epi" ? 12 : 11}>Carregando estoque…</TableCell>
               </TableRow>
             ) : lista.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={modulo === "epi" ? 13 : 12} className="py-6 text-center text-muted-foreground">
+                <TableCell colSpan={modulo === "epi" ? 12 : 11} className="py-6 text-center text-muted-foreground">
                   {condicao === "usado"
                     ? `Nenhum ${rotulo} usado no estoque. Eles entram pela Devolução, na Entrada no Estoque.`
                     : `Nenhum ${rotulo} novo encontrado.`}
@@ -322,7 +316,9 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   <TableCell>{l.fornecedor || "—"}</TableCell>
                   {modulo === "epi" && <TableCell>{l.ca || "—"}</TableCell>}
                   <TableCell>{nomeDoTamanho(l.tamanhoId)}</TableCell>
-                  <TableCell className="text-right">{l.minimo}</TableCell>
+                  <TableCell className="text-right">
+                    <MinimoEditavel key={l.chave} valor={l.minimo} rotulo={`${l.descricao} ${nomeDoTamanho(l.tamanhoId)}`.trim()} onSalvar={(texto) => gravarMinimo(l, texto)} />
+                  </TableCell>
                   <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>
                   <TableCell className={l.alerta ? "font-bold text-destructive" : ""}>
                     {l.alerta ? "Abaixo do mínimo" : "—"}
@@ -330,42 +326,12 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   <TableCell className="text-right">
                     {l.mediaMensal.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
                   </TableCell>
-                  <TableCell>
-                    <Button requiresWrite variant="outline" size="sm" onClick={() => setEditando(l)}>
-                      Configurar
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
-
-      <Dialog open={!!editando} onOpenChange={(aberto) => { if (!aberto) setEditando(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Estoque mínimo — {editando?.descricao}</DialogTitle>
-            <DialogDescription>
-              {editando ? `${nomeDaEmpresa(editando.empresaId)}${porTamanho ? ` · Tamanho ${nomeDoTamanho(editando.tamanhoId)}` : ""}. ` : ""}
-              Quando o saldo (novos e usados) fica igual ou abaixo do mínimo, o item entra nos alertas, na Sugestão de Compras e no botão Estoque mínimo.
-            </DialogDescription>
-          </DialogHeader>
-          {editando && itemEditado && (
-            <form key={editando.chave} onSubmit={salvarMinimo} className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="estoque-minimo-linha">Estoque mínimo</Label>
-                <Input id="estoque-minimo-linha" name="minimo" type="number" min={0} step={1} defaultValue={editando.minimo} />
-                <p className="text-xs text-muted-foreground">Saldo atual: {editando.disponivel}. Zero desliga o alerta.</p>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setEditando(null)}>Cancelar</Button>
-                <Button requiresWrite type="submit" disabled={salvar.isPending}>Salvar</Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }
