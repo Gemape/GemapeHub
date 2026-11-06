@@ -45,16 +45,17 @@ test("a lista dos Uniformes e a do EPI não se misturam ao acrescentar áreas", 
   assert.throws(() => salvarEmpregadosDeEpi([{ empregadoId: "e1", nome: "Maria Souza", area: "Estoquista" }], s), /área/i);
 });
 
-test("Uniformes > Relatórios traz Histórico do empregado e Baixar Definitivas, só lá (sem Sugestão de Compras)", async () => {
-  assert.deepEqual(ABAS_UNIFORME_RELATORIOS.map((a) => a.titulo), ["Histórico do empregado", "Baixar Definitivas"]);
-  assert.deepEqual(ABAS_UNIFORME_RELATORIOS.map((a) => a.aba), ["historico", "baixas"]);
+test("Uniformes > Relatórios traz Histórico do empregado e Baixar Definitivas, só lá, junto da Sugestão de Compras", async () => {
+  assert.deepEqual(ABAS_UNIFORME_RELATORIOS.map((a) => a.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]);
+  assert.deepEqual(ABAS_UNIFORME_RELATORIOS.map((a) => a.aba), ["sugestao-compras", "historico", "baixas"]);
   const modulo = ABAS_UNIFORME.map((a) => a.aba);
-  for (const a of ["historico", "baixas"]) assert.ok(!modulo.includes(a), a);
-  assert.ok(modulo.includes("termo-baixa") && modulo.includes("termo-entrega") && modulo.includes("movimentacoes"));
-  for (const a of ["historico", "baixas"]) assert.equal(abaDoModulo("uniforme", a), a);
+  for (const a of ["sugestao-compras", "historico", "baixas"]) assert.ok(!modulo.includes(a), a);
+  assert.ok(modulo.includes("termo-baixa") && modulo.includes("termo-entrega") && !modulo.includes("movimentacoes"), "Movimentações saiu dos Uniformes");
+  assert.equal(ABAS_UNIFORME.find((a) => a.aba === "compras").titulo, "Entrada no Estoque");
+  for (const a of ["sugestao-compras", "historico", "baixas"]) assert.equal(abaDoModulo("uniforme", a), a);
   const { GRUPOS_INICIO, areaDaRota } = await import("../src/lib/inicio.ts");
   const card = GRUPOS_INICIO.flatMap((g) => g.cartoes).find((c) => c.titulo === "Uniformes");
-  assert.deepEqual(card.itens.filter((i) => i.secao === "Relatórios").map((i) => i.titulo), ["Histórico do empregado", "Baixar Definitivas"]);
+  assert.deepEqual(card.itens.filter((i) => i.secao === "Relatórios").map((i) => i.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]);
   assert.equal(areaDaRota("/uniformes", { aba: "historico" }, true).atual.secao, "Relatórios");
   assert.equal(areaDaRota("/uniformes", { aba: "entrega" }, true).atual.secao, "Módulo");
 });
@@ -127,7 +128,7 @@ test("o limite de áreas da tela é o da lista de áreas, não o dos motivos", (
 test("o texto da tela de habilitados dos Uniformes diz onde o filtro vale e onde todos aparecem", () => {
   const t = le("components/parametros/HabilitarEmpregadosUniforme.tsx");
   assert.match(t, /Na Entrega Uniforme, no Termo de Entrega, na devolução e nas Ocorrências só aparecem os habilitados/);
-  assert.match(t, /O Termo de Baixa, as Movimentações e os relatórios mostram todos/);
+  assert.match(t, /O Termo de Baixa e os relatórios mostram todos/);
 });
 
 test("nos Uniformes, se nenhum dos empregados oferecidos está na lista de habilitados, a rotina oferece todos", () => {

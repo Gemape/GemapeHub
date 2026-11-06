@@ -47,7 +47,7 @@ import { EstoqueMinimoEpi } from "@/components/modules/EstoqueMinimoEpi";
 import { minimosDeEpi, minimoTotalDeEpi, saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
 import { controlaTamanho, nomeTamanho, saldosPorTamanho, SEM_TAMANHO } from "@/lib/estoque-tamanho";
 import { exportarCsv } from "@/lib/gemape";
-import { useComprasEpis, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
+import { useComprasEpis, useComprasUniformes, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
 import { lerItensEstoque } from "@/lib/itens-estoque-modulo";
 import {
   filtrarSugestaoEpi,
@@ -70,18 +70,21 @@ const NIVEIS = Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[];
 
 // Módulo EPI > Sugestão de Compras (decisão 330): estoque de novos e usados como um só, filtros por empresa e palavra-chave, status de criticidade dos Parâmetros Específicos e o botão
 // Gerar relatório, que monta a Cotação de preços (PDF ou Excel) pela subcategoria e pelos níveis de criticidade escolhidos.
-export function SugestaoComprasEpi() {
+export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "uniforme" }) {
+  const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const parametrosCompra = useParametrosCompraEpi();
   const [empresaFiltro, setEmpresaFiltro] = useState(TODOS);
   const [palavra, setPalavra] = useState("");
   const { data: itens = [], isLoading } = useQuery({
-    queryKey: ["estoque-modulo", "epi", empresaId],
-    queryFn: () => lerItensEstoque(supabase, "epi", empresaId),
+    queryKey: ["estoque-modulo", modulo, empresaId],
+    queryFn: () => lerItensEstoque(supabase, modulo, empresaId),
   });
-  const { data: movimentos = [] } = useMovimentacoes("epi", empresaId);
-  const { data: compras = [] } = useComprasEpis(empresaId);
+  const { data: movimentos = [] } = useMovimentacoes(modulo, empresaId);
+  const { data: comprasEpi = [] } = useComprasEpis(empresaId, "", modulo === "epi");
+  const { data: comprasUniforme = [] } = useComprasUniformes(empresaId, "", modulo === "uniforme");
+  const compras = modulo === "epi" ? comprasEpi : comprasUniforme;
   const { data: empresas = [] } = useEmpresas();
   const nomeDaEmpresa = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
@@ -96,8 +99,8 @@ export function SugestaoComprasEpi() {
       itens,
       compras: compras as unknown as CompraDoEstoque[],
       devolucoes: movimentos as unknown as DevolucaoUsada[],
-      saldosDe: (id) => (porId.has(id) ? saldosDeEpi(parametros, porId.get(id)!) : {}),
-      minimosDe: (id) => (porId.has(id) ? minimosDeEpi(parametros, porId.get(id)!) : {}),
+      saldosDe: (id) => (porId.has(id) ? saldosDeEpi(parametros, porId.get(id)!, modulo) : {}),
+      minimosDe: (id) => (porId.has(id) ? minimosDeEpi(parametros, porId.get(id)!, modulo) : {}),
       mediaMensalDe: () => 0,
     }))
       if (l.condicao === "usado") usados.set(l.itemId, (usados.get(l.itemId) ?? 0) + l.disponivel);
@@ -105,19 +108,19 @@ export function SugestaoComprasEpi() {
       itens: itens as unknown as ItemDaSugestao[],
       controle: controleDeEstoque(itens, movimentos, hojeLocal()),
       parametros: parametrosCompra,
-      totalDe: (item) => totalDeEpi(parametros, item as never),
+      totalDe: (item) => totalDeEpi(parametros, item as never, modulo),
       usadosDe: (item) => usados.get(item.id) ?? 0,
-      minimoDe: (item) => minimoTotalDeEpi(parametros, item as never),
+      minimoDe: (item) => minimoTotalDeEpi(parametros, item as never, modulo),
       // Item de um tamanho só mostra o tamanho na descrição; item com vários tamanhos já aparece uma vez por tamanho no cadastro.
       tamanhoDe: (item) => {
-        if (!controlaTamanho(parametros, "epi", item as never)) return "";
-        const chaves = Object.keys(saldosPorTamanho(parametros, "epi", item as never)).filter(
+        if (!controlaTamanho(parametros, modulo, item as never)) return "";
+        const chaves = Object.keys(saldosPorTamanho(parametros, modulo, item as never)).filter(
           (k) => k !== SEM_TAMANHO,
         );
         return chaves.length === 1 ? nomeTamanho(parametros, chaves[0]) : "";
       },
     });
-  }, [itens, movimentos, compras, parametros, parametrosCompra]);
+  }, [itens, movimentos, compras, parametros, parametrosCompra, modulo]);
   const filtradas = filtrarSugestaoEpi(todas, {
     ...(empresaFiltro !== TODOS ? { empresaId: empresaFiltro } : {}),
     palavra,
@@ -175,12 +178,13 @@ export function SugestaoComprasEpi() {
         criterio: criterio(),
         empresa,
         geradoEm: new Date(),
+        comCa: modulo === "epi",
       }),
       arquivo: nomeArquivoDocumento("Cotacao de precos", empresa, hojeBrasilia()),
     });
   }
   function gerarExcel() {
-    const blob = new Blob(["﻿" + montarCotacaoExcel(linhasDaCotacao())], {
+    const blob = new Blob(["﻿" + montarCotacaoExcel(linhasDaCotacao(), modulo === "epi")], {
       type: "application/vnd.ms-excel;charset=utf-8;",
     });
     const url = URL.createObjectURL(blob);
@@ -198,12 +202,12 @@ export function SugestaoComprasEpi() {
           Para comprar, o estoque de novos e de usados é um só. O status vem dos parâmetros de{" "}
           <Link
             to="/cadastros/gerais/categorias"
-            search={{ de: "epi", voltar: "sugestao-compras" }}
+            search={{ de: "epi", voltar: modulo === "epi" ? "sugestao-compras" : "sugestao-uniformes" }}
             className="font-medium text-primary underline underline-offset-2"
           >
             Parâmetros Específicos
           </Link>{" "}
-          (
+          {modulo === "uniforme" && "do EPI, os mesmos para os uniformes "}(
           {parametrosCompra.metodo === "cobertura"
             ? `tempo de cobertura, reposição de ${parametrosCompra.prazoReposicao} dias`
             : "estoque mínimo"}
@@ -234,7 +238,7 @@ export function SugestaoComprasEpi() {
           <Label htmlFor="sug-palavra">Palavra-chave</Label>
           <Input
             id="sug-palavra"
-            placeholder="Código, descrição ou CA"
+            placeholder={modulo === "epi" ? "Código, descrição ou CA" : "Código ou descrição"}
             value={palavra}
             onChange={(e) => setPalavra(e.target.value)}
           />
@@ -244,14 +248,14 @@ export function SugestaoComprasEpi() {
           <Button type="button" onClick={abrirRelatorio}>
             Gerar relatório
           </Button>
-          <EstoqueMinimoEpi linhas={filtradas} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
+          <EstoqueMinimoEpi rotulo={modulo === "epi" ? "EPIs" : "uniformes"} linhas={filtradas} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
           <Button
             type="button"
             variant="outline"
             disabled={filtradas.length === 0}
             onClick={() =>
               exportarCsv(
-                "sugestao-compras-epi",
+                `sugestao-compras-${modulo}`,
                 filtradas.map((l) => ({
                   Descrição: l.descricao,
                   Empresa: nomeDaEmpresa(l.empresaId),
@@ -294,7 +298,7 @@ export function SugestaoComprasEpi() {
             ) : filtradas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-6 text-center text-muted-foreground">
-                  Nenhum EPI encontrado.
+                  Nenhum {rotulo} encontrado.
                 </TableCell>
               </TableRow>
             ) : (

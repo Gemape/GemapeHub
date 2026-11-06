@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
-  controleDeEstoque, META_COBERTURA_PADRAO, METAS_COBERTURA, sugestoesDeCompra, lerMetaCobertura, salvarMetaCobertura,
+  controleDeEstoque,
 } from "../src/lib/epi-controle-estoque.ts";
 
 const HOJE = "2026-04-10";
@@ -45,56 +45,18 @@ test("últimas e penúltimas entradas e saídas, por data", () => {
   assert.deepEqual([l.ultimaSaida, l.penultimaSaida], ["2026-02-02", null]);
 });
 
-test("sugestão de compras: o exemplo da planilha (meta 120 dias)", () => {
-  const itens = [item("n37", "Bota N.37", -1, 0), item("gg", "Luva GG", 2, 0), item("mat", "Bota mateiro", 0, 1), item("ok", "Colete", 50, 1), item("n41", "Bota N.41", 0, 0)];
-  const movs = [mov("n37", "Saida", 2, "2026-03-01"), mov("gg", "Saida", 8, "2026-03-01"), mov("ok", "Saida", 1, "2026-03-01"), mov("n41", "Saida", 1, "2026-03-01")];
-  const s = sugestoesDeCompra(controleDeEstoque(itens, movs, HOJE), 120);
-  const por = (id) => s.find((x) => x.itemId === id);
-  assert.equal(por("n37").quantidade, 2);
-  assert.equal(por("n37").prioridade, "1-URGENTE");
-  assert.equal(por("n37").observacao, "Abaixo do estoque crítico. Cobertura abaixo da meta (-150%).");
-  assert.equal(por("gg").quantidade, 1);
-  assert.equal(por("gg").prioridade, "4-BAIXA");
-  assert.equal(por("gg").observacao, "Cobertura abaixo da meta (75%).");
-  assert.equal(por("mat").quantidade, 1);
-  assert.equal(por("mat").prioridade, "1-URGENTE");
-  assert.equal(por("mat").observacao, "Abaixo do estoque crítico. Sem consumo no último ano.");
-  assert.equal(por("n41").quantidade, 1);
-  assert.equal(por("n41").observacao, "Cobertura abaixo da meta (0%).");
-  assert.equal(por("ok"), undefined, "cobertura acima da meta e acima do crítico não entra");
-});
-
-test("abaixo do crítico soma o aviso e a prioridade sobe; prioridades por faixa de cobertura da meta", () => {
-  const base = (atual, saidas) => sugestoesDeCompra(controleDeEstoque([item("a", "X", atual, 1)], [mov("a", "Saida", saidas, "2026-03-01")], HOJE), 120)[0];
-  assert.equal(base(0, 12).observacao, "Abaixo do estoque crítico. Cobertura abaixo da meta (0%).");
-  // média anual 1/mês: cobertura = estoque × 30 dias; meta 120 → estoque 1 = 25%, 2 = 50%, 3 = 75%
-  assert.equal(base(1, 12).prioridade, "2-ALTA");
-  assert.equal(base(2, 12).prioridade, "3-MÉDIA");
-  assert.equal(base(3, 12).prioridade, "4-BAIXA");
-  assert.equal(base(4, 12), undefined, "100% da meta: não precisa comprar");
-});
-
-test("meta de cobertura: 30, 60, 90, 120 ou 180 dias; padrão 120; lixo salvo volta ao padrão", () => {
-  assert.deepEqual([...METAS_COBERTURA], [30, 60, 90, 120, 180]);
-  const s = memoria();
-  assert.equal(lerMetaCobertura(s), META_COBERTURA_PADRAO);
-  salvarMetaCobertura(90, s);
-  assert.equal(lerMetaCobertura(s), 90);
-  assert.throws(() => salvarMetaCobertura(45, s), /30, 60, 90, 120 ou 180/);
-  s.setItem("gemape-demo-epi-meta-cobertura", "abc");
-  assert.equal(lerMetaCobertura(s), META_COBERTURA_PADRAO);
-});
-
 test("as telas: estoque detalhado na aba Estoque e sugestão de compras na aba Compras, nos módulos de EPIs e de Uniformes", () => {
   assert.match(ler("components/modules/EstoqueModulo.tsx"), /modulo !== 'ferramenta' && <ControleEstoqueModulo modulo=\{modulo\}/);
   // No EPI a sugestão de compras é uma rotina própria, fora da Entrada no Estoque (decisão 327).
   assert.match(ler("components/modules/PaginaModulo.tsx"), /<TabsContent value="sugestao-compras"[^>]*>\s*<SugestaoComprasEpi \/>/);
   assert.doesNotMatch(ler("components/modules/EpiComprasModulo.tsx"), /SugestaoComprasModulo/);
-  assert.match(ler("components/modules/UniformesComprasModulo.tsx"), /<SugestaoComprasModulo modulo="uniforme"/);
+  // Nos Uniformes a sugestão é a mesma tela do EPI, em Relatórios, e saiu da aba Compras.
+  assert.match(ler("components/modules/PaginaModulo.tsx"), /<SugestaoComprasEpi modulo="uniforme" \/>/);
+  assert.doesNotMatch(ler("components/modules/UniformesComprasModulo.tsx"), /Sugest/);
   const tela = ler("components/modules/ControleEstoqueModulo.tsx");
   for (const t of ["Média mensal", "Média trimestral", "Média semestral", "Média anual", "Última entrada", "Penúltima entrada", "Última saída", "Penúltima saída", "Cobertura \\(dias\\)"]) assert.match(tela, new RegExp(t));
-  const sug = ler("components/modules/SugestaoComprasModulo.tsx");
-  for (const t of ["Quantidade sugerida", "Prioridade", "Observação", "Meta de cobertura"]) assert.match(sug, new RegExp(t));
+  const sug = ler("components/modules/SugestaoComprasEpi.tsx");
+  for (const t of ["Estoque total", "Status de criticidade", "Gerar relatório"]) assert.match(sug, new RegExp(t));
   assert.doesNotMatch(tela + sug, /dangerouslySetInnerHTML|innerHTML/);
 });
 
@@ -108,11 +70,11 @@ test("Uniformes segue o EPI: mesmos nomes de submenu, aba Entrega Uniforme, e a 
   for (const t of ["Dashboard", "Estoque", "Histórico do empregado", "Baixar Definitivas", "Termo de Entrega", "Ocorrências"]) {
     assert.ok(titulos(ABAS_EPI).includes(t) && titulos(ABAS_UNIFORME).includes(t), t);
   }
-  // No EPI, Compras virou Entrada no Estoque e a Sugestão de Compras ganhou a sua aba (decisão 327); os uniformes seguem com Compras.
+  // No EPI, Compras virou Entrada no Estoque e a Sugestão de Compras ganhou a sua aba (decisão 327); os uniformes também têm Entrada no Estoque e Sugestão de Compras (mesma lógica do EPI).
   assert.ok(titulos(ABAS_EPI).includes("Entrada no Estoque") && titulos(ABAS_EPI).includes("Sugestão de Compras") && !titulos(ABAS_EPI).includes("Compras"));
-  assert.ok(titulos(ABAS_UNIFORME).includes("Compras"));
+  assert.ok(titulos(ABAS_UNIFORME).includes("Entrada no Estoque") && titulos(ABAS_UNIFORME).includes("Sugestão de Compras") && !titulos(ABAS_UNIFORME).includes("Compras"));
   assert.ok(titulos(ABAS_EPI).includes("Entrega EPI") && titulos(ABAS_UNIFORME).includes("Entrega Uniforme"));
-  assert.ok(titulos(ABAS_UNIFORME).includes("Movimentações"), "Movimentações continua nos uniformes");
+  assert.ok(!titulos(ABAS_UNIFORME).includes("Movimentações"), "Movimentações saiu dos uniformes");
   const pagina = ler("components/modules/PaginaModulo.tsx");
   assert.match(pagina, /<TabsContent value="entrega"[^>]*>\s*<UniformesEntrega \/>/);
   const entrega = ler("components/modules/EpiEntrega.tsx");
@@ -154,7 +116,6 @@ test("item inativo fica fora do controle e da sugestão de compras", () => {
   const itens = [{ id: "a", nome: "Antigo", estoque_atual: 0, estoque_minimo: 2, status: "Inativo" }, item("b", "Ativo", 0, 2)];
   const linhas = controleDeEstoque(itens, [], HOJE);
   assert.deepEqual(linhas.map((l) => l.nome), ["Ativo"]);
-  assert.deepEqual(sugestoesDeCompra(linhas, 120).map((s) => s.nome), ["Ativo"]);
 });
 
 test("devolução volta ao estoque: sai do consumo da mesma janela e o consumo nunca fica negativo", () => {
@@ -175,7 +136,6 @@ test("a linha leva a empresa do item, e muitos movimentos de um item são lidos 
   assert.ok(Date.now() - inicio < 2000, "leitura linear");
   assert.equal(g.consumoAnual, 50_000 / 12);
   assert.match(ler("components/modules/ControleEstoqueModulo.tsx"), /comEmpresa && <TableHead>Empresa<\/TableHead>/);
-  assert.match(ler("components/modules/SugestaoComprasModulo.tsx"), /comEmpresa && <TableHead>Empresa<\/TableHead>/);
 });
 
 test("grupo personalizado: nomes por veículo ou equipamento, e o que é de outro não se confunde", async () => {

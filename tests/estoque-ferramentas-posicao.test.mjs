@@ -93,12 +93,10 @@ test("a tela de Estoque de Ferramentas mostra a posição por caixa e o limite v
 
 test("Uniformes > Compras: botões no topo à esquerda e compras, sugestão de compras e devoluções em listas separadas por botões", () => {
   const t = readFileSync(new URL("../src/components/modules/UniformesComprasModulo.tsx", import.meta.url), "utf8");
-  assert.ok(t.indexOf("Registrar Compra</Button>") < t.indexOf('<SugestaoComprasModulo modulo="uniforme"'), "os botões vêm antes da sugestão");
-  assert.match(t, /aria-label="Compras, sugestão de compras ou devoluções"/);
+  assert.match(t, /aria-label="Compras ou devoluções"/);
   assert.match(t, /visao === "compras" && <div className="panel/);
   assert.match(t, /visao === "devolucoes" && <EntradasDeUsados/);
-  assert.match(t, /visao === "sugestao" && <SugestaoComprasModulo modulo="uniforme"/, "a sugestão de compras tem o seu botão e sai da lista de compras");
-  assert.match(t, /\["sugestao", "Sugestão de compras"\]/);
+  assert.doesNotMatch(t, /SugestaoComprasModulo|"sugestao"/, "a sugestão de compras foi para Relatórios");
 });
 
 test("Uniformes > Compras > Devoluções tem o campo de busca no topo à direita (decisão 382)", () => {

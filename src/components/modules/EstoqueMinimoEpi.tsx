@@ -9,7 +9,7 @@ import { abaixoDoMinimo, type LinhaSugestaoEpi } from "@/lib/sugestao-epi";
 type Empresa = { id: string; nome_fantasia: string };
 
 // Botão "Estoque mínimo" (decisão 410): abre uma janela com uma tela por empresa (botões para trocar de empresa), cada uma com os EPIs no mínimo ou abaixo em cartões (saldo, mínimo, quanto falta e uma barra).
-export function EstoqueMinimoEpi({ linhas, empresas }: { linhas: LinhaSugestaoEpi[]; empresas: Empresa[] }) {
+export function EstoqueMinimoEpi({ linhas, empresas, rotulo = "EPIs" }: { linhas: LinhaSugestaoEpi[]; empresas: Empresa[]; rotulo?: string }) {
   const [aberto, setAberto] = useState(false);
   const [escolhida, setEscolhida] = useState("");
   const alertas = useMemo(() => abaixoDoMinimo(linhas), [linhas]);
@@ -31,7 +31,7 @@ export function EstoqueMinimoEpi({ linhas, empresas }: { linhas: LinhaSugestaoEp
           <DialogHeader>
             <DialogTitle>Estoque no mínimo ou abaixo</DialogTitle>
             <DialogDescription>
-              EPIs com saldo menor ou igual ao estoque mínimo, uma tela por empresa. O saldo soma novos e usados.
+              {rotulo} com saldo menor ou igual ao estoque mínimo, uma tela por empresa. O saldo soma novos e usados.
             </DialogDescription>
           </DialogHeader>
           {empresas.length === 0 ? (
@@ -53,7 +53,7 @@ export function EstoqueMinimoEpi({ linhas, empresas }: { linhas: LinhaSugestaoEp
                   </Button>
                 ))}
               </div>
-              {atual && <PainelDaEmpresa nome={atual.empresa.nome_fantasia} itens={atual.itens} />}
+              {atual && <PainelDaEmpresa nome={atual.empresa.nome_fantasia} itens={atual.itens} rotulo={rotulo} />}
             </>
           )}
         </DialogContent>
@@ -62,12 +62,12 @@ export function EstoqueMinimoEpi({ linhas, empresas }: { linhas: LinhaSugestaoEp
   );
 }
 
-function PainelDaEmpresa({ nome, itens }: { nome: string; itens: LinhaSugestaoEpi[] }) {
+function PainelDaEmpresa({ nome, itens, rotulo }: { nome: string; itens: LinhaSugestaoEpi[]; rotulo: string }) {
   if (itens.length === 0)
     return (
       <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-50 p-8 text-center dark:border-emerald-800 dark:from-emerald-950/50 dark:via-transparent dark:to-emerald-950/30">
         <p className="font-display text-lg font-bold text-emerald-700 dark:text-emerald-200">Tudo certo em {nome}</p>
-        <p className="mt-1 text-sm text-muted-foreground">Nenhum EPI no mínimo ou abaixo nesta empresa.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Nenhum item de {rotulo} no mínimo ou abaixo nesta empresa.</p>
       </div>
     );
   const rupturas = itens.filter((l) => l.total <= 0).length;
