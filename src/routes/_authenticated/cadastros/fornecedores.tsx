@@ -105,7 +105,7 @@ function PaginaFornecedores() {
       <div className="min-w-0 flex-1 basis-[28rem]">
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Fornecedores</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Dados cadastrais dos fornecedores.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Cadastra os fornecedores de quem o grupo compra. Eles são escolhidos na entrada de estoque e nas notas fiscais.</p>
       </div>
     </header>
 

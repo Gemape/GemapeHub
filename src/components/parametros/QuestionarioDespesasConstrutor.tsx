@@ -155,6 +155,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
       <header>
         <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-xl font-semibold">Configuração Formulário de Despesas</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Monta o formulário de despesas de viagem: escolha o tipo de despesa e defina as perguntas que o técnico responde.</p>
       </header>
 
       <section className="space-y-2" aria-labelledby="escolher-card">

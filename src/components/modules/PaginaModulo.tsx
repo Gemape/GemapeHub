@@ -22,7 +22,7 @@ import { FerramentasTermoEncerramento } from "@/components/modules/FerramentasTe
 import { FerramentasTermoVistoria } from "@/components/modules/FerramentasTermoVistoria";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { abaDoModulo, tituloDaAba } from "@/lib/menu-parametros";
+import { abaDoModulo, descricaoDaAba, tituloDaAba } from "@/lib/menu-parametros";
 import type { Modulo } from "@/lib/gemape";
 
 export function PaginaModulo({
@@ -40,7 +40,7 @@ export function PaginaModulo({
       <header>
         <EyebrowDoCard fallback="Módulo" />
         <h1 className="text-2xl font-bold">{tituloDaAba(modulo, aba)}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{descricaoDaAba(modulo, aba, descricao)}</p>
       </header>
 
       {/* As abas viraram submenus no menu lateral (decisão 43): a aba vem de ?aba=. */}

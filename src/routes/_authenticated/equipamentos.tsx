@@ -8,7 +8,7 @@ import { InventarioEquipamentoModulo } from "@/components/modules/equipamento/In
 import { ManutencaoEquipamentoModulo } from "@/components/modules/equipamento/ManutencaoEquipamentoModulo";
 import { OcorrenciasEquipamentoModulo } from "@/components/modules/equipamento/OcorrenciasEquipamentoModulo";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { abaDoModulo, tituloDaAba } from "@/lib/menu-parametros";
+import { abaDoModulo, descricaoDaAba, tituloDaAba } from "@/lib/menu-parametros";
 import { MODO_DEMO } from "@/lib/modo-demo";
 
 export const Route = createFileRoute("/_authenticated/equipamentos")({
@@ -27,9 +27,7 @@ function PaginaEquipamentosModulo() {
       <header>
         <EyebrowDoCard fallback="Módulo" />
         <h1 className="text-2xl font-bold">{tituloDaAba("equipamento", aba)}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Inventário com extrato por equipamento, indicadores de gestão, abastecimentos, manutenções, ocorrências e check lists. O cadastro fica em Parâmetros &gt; Equipamentos.
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{descricaoDaAba("equipamento", aba, "")}</p>
       </header>
       {MODO_DEMO ? (
         <Tabs value={abaValida}>

@@ -150,7 +150,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
           <p className="text-eyebrow">Cadastros</p>
           <h1 className="text-2xl font-bold">Empregados</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Colaboradores vinculados às movimentações de patrimônio.
+            Cadastra os empregados do grupo, com empresa e situação. Eles recebem as entregas e os termos e são escolhidos nas rotinas de cada módulo.
           </p>
         </div>
       </header>
