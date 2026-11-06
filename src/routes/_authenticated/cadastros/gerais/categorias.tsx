@@ -1,5 +1,5 @@
 import { CadastrarPadraoSelecionado } from "@/components/parametros/CadastrarPadraoSelecionado";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
@@ -75,6 +75,7 @@ export const Route = createFileRoute("/_authenticated/cadastros/gerais/categoria
 function Categorias() {
   const dados = useParametrosBase();
   const { de, voltar } = Route.useSearch();
+  const navegar = useNavigate();
   const [escolhidaLivre, setEscolhida] = useState("");
   const escolhida = de ? CATEGORIA_DO_MENU[de] : escolhidaLivre;
   const categoria = dados.categorias.find((c) => c.id === escolhida);
@@ -248,7 +249,14 @@ function Categorias() {
         titulo="Parâmetros Específicos"
         topo={de ? `Parâmetros · ${NOME_DO_MENU[de]}` : "Cadastros · Gerais"}
         descricao={de ? "Configure o endereçamento e as tabelas relacionadas a esta categoria." : "Escolha uma categoria para configurar o endereçamento e abrir as tabelas relacionadas."}
-      />
+      >
+        {/* Aberto pelo link da Sugestão de Compras: o botão fica no alto, à direita, e volta a ela (decisão 355). */}
+        {voltar && (
+          <Button type="button" onClick={() => void navegar(voltar === "sugestao-compras" ? { to: "/epi", search: { aba: "sugestao-compras" } } : { to: "/uniformes", search: { aba: "sugestao-compras" } })}>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Sugestão de Compras
+          </Button>
+        )}
+      </Cabecalho>
       {!escolhida && <div className="max-w-3xl">
         <ListaEditavel
           titulo="Categorias"

@@ -1,5 +1,4 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 import { CartaoDeMotivos } from "@/components/parametros/CartaoDeMotivos";
@@ -16,11 +15,6 @@ export function ParametrosUniforme({ voltarParaSugestao = false }: { voltarParaS
   const [areas, setAreas] = useState(lerAreasUniforme);
   return (
     <section className="space-y-3" aria-labelledby="parametros-uniforme">
-      {voltarParaSugestao && (
-        <Button type="button" variant="outline" size="sm" onClick={voltar}>
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Sugestão de Compras
-        </Button>
-      )}
       <div className="max-w-4xl">
         <h2 id="parametros-uniforme" className="text-lg font-semibold">
           Parâmetros dos uniformes

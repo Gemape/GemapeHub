@@ -39,10 +39,10 @@ test("Parâmetros Específicos de EPI e de Uniformes: a mesma tela da sugestão,
   assert.match(bloco, /Salvar parâmetros da sugestão/);
   assert.match(bloco, /onSalvou\?\.\(\)/, "salvar os parâmetros da sugestão volta a ela, quando aberta por ela");
   const epi = le("components/parametros/ParametrosEpi.tsx");
-  assert.match(epi, /Voltar para Sugestão de Compras/);
+  const cat = le("routes/_authenticated/cadastros/gerais/categorias.tsx");
+  assert.match(cat, /<Cabecalho[\s\S]*\{voltar && \([\s\S]*Voltar para Sugestão de Compras[\s\S]*<\/Cabecalho>/, "o botão fica no cabeçalho, no alto à direita");
   assert.match(epi, /<SugestaoDeCompra modulo="epi" onSalvou=\{voltarParaSugestao \? voltar : undefined\} \/>/);
   const uni = le("components/parametros/ParametrosUniforme.tsx");
-  assert.match(uni, /Voltar para Sugestão de Compras/);
   assert.match(uni, /<SugestaoDeCompra modulo="uniforme" onSalvou=\{voltarParaSugestao \? voltar : undefined\} \/>/);
   assert.match(uni, /to: "\/uniformes", search: \{ aba: "sugestao-compras" \}/);
   const sug = le("components/modules/SugestaoComprasEpi.tsx");

@@ -1,5 +1,4 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -76,11 +75,6 @@ export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugest
   const [areas, setAreas] = useState(lerAreasEpi);
   return (
     <section className="space-y-3" aria-labelledby="parametros-epi">
-      {voltarParaSugestao && (
-        <Button type="button" variant="outline" size="sm" onClick={voltar}>
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Sugestão de Compras
-        </Button>
-      )}
       {/* O texto quebra na largura dos quadros logo abaixo (max-w-4xl). */}
       <div className="max-w-4xl">
         <h2 id="parametros-epi" className="text-lg font-semibold">
