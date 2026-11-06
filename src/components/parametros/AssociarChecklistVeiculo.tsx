@@ -133,10 +133,13 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     const h = listaVeiculos.find((x) => x.empregadoId === e.id);
     return h ? grupoDeAreaPorNome([[h]])(h.nome) : grupoPorNome(e.nome);
   };
-  const elegiveis = soEmpregadosDeVeiculos(empregados.filter((e) =>
+  const habilitadosDaEmpresa = soEmpregadosDeVeiculos(empregados.filter((e) =>
     empregadoElegivelPortador({ ativo: e.ativo ?? null, data_demissao: e.data_demissao ?? null } as never) &&
     (!veiculoEscolhido?.["empresa_id"] || e.empresa_id === veiculoEscolhido["empresa_id"]),
-  )).filter((e) => !listaRestrita || ["Técnicos", "PCM"].includes(grupoDe(e)));
+  ));
+  // Técnicos/PCM; se a lista habilitada não tem nenhum deles, vale o fallback e aparecem todos os habilitados (decisão 413).
+  const soTecnicosPcm = habilitadosDaEmpresa.filter((e) => !listaRestrita || ["Técnicos", "PCM"].includes(grupoDe(e)));
+  const elegiveis = soTecnicosPcm.length > 0 ? soTecnicosPcm : habilitadosDaEmpresa;
   const responsavel = elegiveis.find((e) => e.id === responsavelId) ?? null;
   // Itens que se aplicam ao tipo do veículo e à periodicidade escolhida (Avulso traz só os grupos avulsos).
   const subcategoriaEscolhida = veiculoEscolhido ? resolverSubcategoria(parametros, "cat-veiculos", veiculoEscolhido as never) : null;

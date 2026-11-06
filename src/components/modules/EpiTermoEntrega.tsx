@@ -21,6 +21,7 @@ import {
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
+import { receptoresDeEntrega } from "@/lib/empregados-habilitados";
 import { listaDeEpiDesatualizada, soEmpregadosDeEpi } from "@/lib/empregados-epi";
 import { AvisoHabilitados } from "@/components/AvisoHabilitados";
 import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
@@ -206,7 +207,7 @@ export function EpiTermoEntrega() {
                 <SelectValue placeholder="Selecione o empregado" />
               </SelectTrigger>
               <SelectContent>
-                {soEmpregadosDeEpi(empregados).map((e) => (
+                {receptoresDeEntrega(empregados, soEmpregadosDeEpi, empregadoAtivo).map((e) => (
                   <SelectItem key={e.id} value={e.id}>
                     {e.nome}
                   </SelectItem>

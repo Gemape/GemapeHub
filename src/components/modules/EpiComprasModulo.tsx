@@ -53,8 +53,8 @@ import {
 import { escolherFornecedorDaCompra } from "@/lib/compras-fornecedor";
 import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
-import { nomeTamanhoGravado, SEM_TAMANHO, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { saldoParaCompra } from "@/lib/estoque-epi-saldos";
+import { nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { hojeLocal } from "@/lib/empregados";
 
@@ -88,7 +88,7 @@ export function EpiComprasModulo() {
   // Saldo do produto (e do tamanho escolhido) no estoque da empresa: todas as compras, de qualquer fornecedor, somam nele.
   const itemEscolhido = itens.find((i) => i.id === itemSel);
   // Sem tamanho escolhido (ou produto sem tamanho), vale o saldo total do item; com tamanho, o saldo dele.
-  const saldoDoEscolhido = !itemEscolhido ? 0 : tamanho ? (saldosDeEpi(parametros, itemEscolhido)[tamanhoParaGravar(tamanho) ?? SEM_TAMANHO] ?? 0) : totalDeEpi(parametros, itemEscolhido);
+  const saldoDoEscolhido = saldoParaCompra(parametros, itemEscolhido, "epi", tamanho, editando, itemSel);
 
   function abrirNovo() {
     setEditando(null);

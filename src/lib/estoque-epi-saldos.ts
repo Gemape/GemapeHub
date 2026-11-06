@@ -5,6 +5,7 @@ import {
   type ModuloTamanho,
   saldosPorTamanho,
   SEM_TAMANHO,
+  tamanhoParaGravar,
   usaMinimoPorTamanho,
 } from "./estoque-tamanho.ts";
 
@@ -34,3 +35,20 @@ export const totalDeEpi = (p: Parametros, item: ItemDeEstoque, modulo: ModuloTam
 // Estoque mínimo do EPI como um número só (soma dos mínimos por tamanho, quando há), o mesmo que a aba Estoque mostra por tamanho.
 export const minimoTotalDeEpi = (p: Parametros, item: ItemDeEstoque, modulo: ModuloTamanho = "epi"): number =>
   Object.values(minimosDeEpi(p, item, modulo)).reduce((t, v) => t + Math.max(0, Number(v) || 0), 0);
+
+// Saldo mostrado em Registrar Compra: o do tamanho escolhido ou, sem tamanho, o total do item. Ao editar uma compra, o saldo já inclui a quantidade antiga dela (mesmo item e tamanho): tira, para não contar duas vezes.
+export function saldoParaCompra(
+  p: Parametros,
+  item: ItemDeEstoque | undefined,
+  modulo: ModuloTamanho,
+  tamanho: string,
+  editando?: { item_id: string | null; tamanho_id?: string | null | undefined; quantidade: number | string } | null,
+  itemId?: string,
+): number {
+  if (!item) return 0;
+  const gravado = tamanhoParaGravar(tamanho) ?? SEM_TAMANHO;
+  const saldo = tamanho ? (saldosDeEpi(p, item, modulo)[gravado] ?? 0) : totalDeEpi(p, item, modulo);
+  const mesmo = editando && editando.item_id === itemId && (!tamanho || (editando.tamanho_id ?? SEM_TAMANHO) === gravado);
+  return saldo - (mesmo ? Number(editando.quantidade) || 0 : 0);
+}
+
