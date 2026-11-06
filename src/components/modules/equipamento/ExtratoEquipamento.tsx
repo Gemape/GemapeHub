@@ -152,11 +152,11 @@ export function ExtratoEquipamento({ equipamento, foco, soAbertasInicial = false
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="extrato-eq-inicio">Data início</Label>
+            <Label htmlFor="extrato-eq-inicio" className="block text-center">Data início</Label>
             <Input id="extrato-eq-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="extrato-eq-fim">Data fim</Label>
+            <Label htmlFor="extrato-eq-fim" className="block text-center">Data fim</Label>
             <Input id="extrato-eq-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
           </div>
           <p className="max-w-md text-xs text-muted-foreground">{foco ? FOCOS[foco].periodo : "O período vale para as manutenções realizadas, os abastecimentos, as ocorrências e os check lists. As preventivas sugeridas mostram sempre a situação de hoje."}</p>

@@ -2320,3 +2320,7 @@ O alerta em três níveis (Abaixo do mínimo em vermelho, Estoque mínimo em ama
 ## 422. Alerta mostra quantos novos e quantos usados
 
 Na coluna Alerta do Estoque de EPI e de Uniformes, a linha mostra "Saldo total: N (X novos e Y usados)", tanto na lista de novos quanto na de usados. O nível do alerta usa o saldo total (novos + usados) e as duas listas mostram os mesmos números, que sempre somam o saldo.
+
+## 423. Rótulos dos filtros centralizados em todo o sistema
+
+Os textos acima das caixas de busca e filtro ficam centralizados sobre a caixa. O padrão está na `BarraDeFiltros` (vale para todas as telas que a usam) e foi aplicado à mão nas telas de filtro que não a usam (Relatórios, Extrato de veículo e de equipamento).
