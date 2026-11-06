@@ -22,13 +22,6 @@ export interface DadosTermoEntregaUniforme {
   }[];
 }
 
-/** Observação gravada em cada saída do termo: o estado do uniforme e, se informado, o nome de quem entregou (assim o histórico do empregado mostra o responsável). */
-export function observacaoEntregaUniforme(estado: string, responsavel?: string | null): string {
-  const base = `Entrega de uniforme via termo - Estado: ${estado}`;
-  const nome = responsavel?.trim().replace(/\s+/g, " ");
-  return nome ? `${base} - Entregue por ${nome}` : base;
-}
-
 export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme): string {
   const { empresa, empregado } = dados;
   const linhasHtml = dados.linhas

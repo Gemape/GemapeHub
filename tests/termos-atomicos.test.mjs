@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { demoSupabase } from "../src/integrations/supabase/demo-client.ts";
 import {
   empregadoDoTermo,
+  validarLinhasDoTermo,
   validarSaidaDeUniformes,
   validarTermoVistoria,
 } from "../src/lib/termos-atomicos.ts";
@@ -103,4 +104,13 @@ test("termo de uniforme gravado de uma vez: se uma linha falha, nenhuma entra", 
     const { data } = await demoSupabase.from("movimentacoes").select("*").eq("item_id", id);
     assert.equal(data.length, 0);
   }
+});
+
+test("o Termo de Entrega só documenta: confere item e quantidade das linhas, mas não o estoque (decisão 415)", () => {
+  assert.match(validarLinhasDoTermo([], "EPI"), /pelo menos um EPI/);
+  assert.match(validarLinhasDoTermo([{ item_id: "", quantidade: 1 }], "uniforme"), /Selecione o uniforme/);
+  assert.match(validarLinhasDoTermo([{ item_id: "camisa", quantidade: 0 }], "EPI"), /quantidade/i);
+  assert.match(validarLinhasDoTermo([{ item_id: "camisa", quantidade: 1.5 }], "uniforme"), /número inteiro/);
+  // Passa do saldo (3) e mesmo assim documenta.
+  assert.equal(validarLinhasDoTermo([{ item_id: "camisa", quantidade: 50 }], "uniforme"), null);
 });

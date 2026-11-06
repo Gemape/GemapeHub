@@ -2289,6 +2289,6 @@ Nos **Uniformes**, a **Sugestão de Compras** passa a ser a mesma tela do EPI (`
 
 Complemento: Termo de Entrega e Ficha avulsa listam os habilitados (desligados incluídos, por datas retroativas) e, se nenhum está ativo, os ativos; em Associar check list de veículo, se o filtro Técnicos/PCM não deixa ninguém, valem os habilitados da empresa.
 
-## 415. Termo de Entrega de Uniforme só documenta
+## 415. Termos de Entrega de Uniforme e de EPI só documentam
 
-Gerar o **Termo de Entrega de Uniforme** não movimenta mais o estoque nem grava saída no histórico: o termo serve só para documentar. A saída só é contabilizada quando lançada em **Entrega Uniforme**. Por isso o termo também não confere mais o saldo; a conferência fica na Entrega. A tela traz o aviso fixo dizendo isso. O Termo de Entrega do EPI segue a mesma regra (a saída só conta em Entrega EPI).
+Gerar o **Termo de Entrega de Uniforme** não movimenta mais o estoque nem grava saída no histórico: o termo serve só para documentar. A saída só é contabilizada quando lançada em **Entrega Uniforme**. Por isso o termo também não confere mais o saldo; a conferência fica na Entrega. A tela traz o aviso fixo dizendo isso. O Termo de Entrega do EPI segue a mesma regra (a saída só conta em Entrega EPI). Com isso, o nome de quem entrega (decisões 360 e 361) fica só no documento impresso: o termo deixou de gravar "Entregue por" na observação do histórico.

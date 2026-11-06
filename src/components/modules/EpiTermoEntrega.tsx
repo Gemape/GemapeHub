@@ -26,8 +26,9 @@ import { listaDeEpiDesatualizada, soEmpregadosDeEpi } from "@/lib/empregados-epi
 import { AvisoHabilitados } from "@/components/AvisoHabilitados";
 import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
 import { montarTermoEntregaEpiHtml } from "@/lib/termo-entrega-epi-html";
-import { SeletorTamanho } from "@/components/SeletorTamanho";
-import { nomeTamanho, tamanhoParaGravar } from "@/lib/estoque-tamanho";
+import { validarLinhasDoTermo } from "@/lib/termos-atomicos";
+import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 interface ItemTermo {
@@ -82,7 +83,7 @@ export function EpiTermoEntrega() {
     setItensTermo((atuais) => atuais.map((i) => (i.id === id ? { ...i, [campo]: valor } : i)));
   }
 
-  async function gerarTermo() {
+  function gerarTermo() {
     if (!empregadoId || itensTermo.length === 0) {
       alert("Selecione um empregado e adicione pelo menos um item.");
       return;
@@ -115,22 +116,21 @@ export function EpiTermoEntrega() {
     }
 
     // O termo só documenta (decisão 415): não mexe no estoque. A saída só conta quando lançada em Entrega EPI.
-    if (itensTermo.some((i) => !i.item_id)) {
-      alert("Escolha o EPI em todas as linhas.");
+    // O tamanho vem dos autorizados do produto (não do saldo, já que o termo não confere estoque) e é obrigatório quando o produto tem tamanho.
+    const erroLinhas =
+      validarLinhasDoTermo(itensTermo, "EPI") ??
+      (TAMANHO_DISPONIVEL ? validarLinhasTamanho(itensTermo, itens, parametros, "epi", "entrada") : null);
+    if (erroLinhas) {
+      alert(erroLinhas);
       return;
     }
-    if (itensTermo.some((i) => !Number.isInteger(i.quantidade) || i.quantidade <= 0)) {
-      alert("A quantidade de cada EPI deve ser um número inteiro maior que zero.");
-      return;
-    }
-    const itensDoTermo = itensTermo;
 
     const html = montarTermoEntregaEpiHtml({
       empresa,
       empregado,
       responsavel: { nome: responsavel.nome },
       data: dataEntrega,
-      linhas: itensDoTermo.map((it) => {
+      linhas: itensTermo.map((it) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return {
           nome: itemInfo?.nome,
@@ -270,7 +270,7 @@ export function EpiTermoEntrega() {
                           parametros={parametros}
                           modulo="epi"
                           produto={itens.find((i) => i.id === it.item_id)}
-                          uso="saida"
+                          uso="entrada"
                           valor={it.tamanho}
                           onChange={(v) => atualizarItem(it.id, "tamanho", v)}
                         />
