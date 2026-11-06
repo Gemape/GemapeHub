@@ -15,3 +15,12 @@ test("abaixo/zerado vermelho, igual ao mínimo amarelo, 1 acima 'próximo' (deci
   assert.equal(textoDoAlerta({ saldo: 3, minimo: 5 }), "Abaixo do mínimo");
   assert.equal(textoDoAlerta({ saldo: 9, minimo: 5 }), "");
 });
+
+test("todas as telas de estoque usam os mesmos níveis (decisão 421)", async () => {
+  const { readFileSync } = await import("node:fs");
+  for (const f of ["EstoqueEpiModulo", "EstoqueModulo"]) {
+    const src = readFileSync(new URL(`../src/components/modules/${f}.tsx`, import.meta.url), "utf8");
+    assert.match(src, /CLASSE_DO_NIVEL\[/, f);
+    assert.match(src, /nivelDoAlerta/, f);
+  }
+});

@@ -38,7 +38,7 @@ test('módulos EPI, Uniformes e Ferramentas têm aba de estoque própria', () =>
   assert.match(pagina, /value="estoque"/);
   const estoque = ler('components/modules/EstoqueModulo.tsx');
   assert.match(estoque, /Estoque mínimo/);
-  assert.match(estoque, /Abaixo do mínimo/);
+  assert.match(estoque, /TEXTO_DO_NIVEL_ALERTA\[nivel\]/);
   assert.match(estoque, /estadoEstoqueModulo/);
   assert.match(estoque, /prepararMinimosEstoque/, 'mínimos são gravados pelo módulo');
   assert.match(estoque, /Estoque inicial/, 'Ferramentas configura o estoque inicial no módulo');

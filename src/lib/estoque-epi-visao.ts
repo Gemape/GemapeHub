@@ -66,6 +66,15 @@ export function nivelDoAlerta(saldo: number, minimo: number): "abaixo" | "minimo
 }
 
 const TEXTO_DO_NIVEL = { abaixo: "Abaixo do mínimo", minimo: "Estoque mínimo", proximo: "Próximo do mínimo" } as const;
+// Cores do nível na coluna Alerta, as mesmas em todas as telas de estoque (decisão 421).
+export const CLASSE_DO_NIVEL = {
+  abaixo: "font-bold text-destructive",
+  minimo: "font-bold text-amber-600 dark:text-amber-400",
+  proximo: "font-semibold text-yellow-600 dark:text-yellow-300",
+  nenhum: "",
+} as const;
+export const TEXTO_DO_NIVEL_ALERTA = TEXTO_DO_NIVEL;
+
 export const textoDoAlerta = (l: { saldo: number; minimo: number }): string => {
   const nivel = nivelDoAlerta(l.saldo, l.minimo);
   return nivel ? TEXTO_DO_NIVEL[nivel] : "";

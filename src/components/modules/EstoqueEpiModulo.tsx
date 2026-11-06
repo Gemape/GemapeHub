@@ -31,6 +31,7 @@ import { controleDeEstoque } from "@/lib/epi-controle-estoque";
 import {
   filtrarEstoqueEpi,
   linhasDeEstoqueEpi,
+  CLASSE_DO_NIVEL,
   nivelDoAlerta,
   textoDoAlerta,
   type CompraDoEstoque,
@@ -47,12 +48,6 @@ import { lerItensEstoque } from "@/lib/itens-estoque-modulo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 const TODOS = "todos";
-const CLASSE_DO_NIVEL = {
-  abaixo: "font-bold text-destructive",
-  minimo: "font-bold text-amber-600 dark:text-amber-400",
-  proximo: "font-semibold text-yellow-600 dark:text-yellow-300",
-  nenhum: "",
-} as const;
 
 // Módulo EPI > Estoque (decisão 329): só a consulta do estoque de EPIs. Dois botões escolhem os novos ou os usados (que vieram de devolução); filtros por empresa, palavra-chave,
 // data da compra, fornecedor, CA e nota fiscal; e, em cada linha, o item de cada empresa (as compras de todos os fornecedores somam num estoque só; data, NF e fornecedor listam todas as compras que o formam), o tamanho, o mínimo, a quantidade disponível, o alerta e a média de consumo mensal.
@@ -330,6 +325,9 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>
                   <TableCell className={CLASSE_DO_NIVEL[nivelDoAlerta(l.saldo, l.minimo) ?? "nenhum"]}>
                     {textoDoAlerta(l) || "—"}
+                    {l.saldo !== l.disponivel && textoDoAlerta(l) && (
+                      <p className="text-xs font-normal text-muted-foreground">Saldo total do item: {l.saldo} (novos e usados)</p>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     {l.mediaMensal.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}

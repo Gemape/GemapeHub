@@ -2312,3 +2312,7 @@ Em **Parâmetros > Uniformes > Parâmetros Específicos** entra o bloco **Sugest
 ## 420. Aviso "Próximo do mínimo" (EPI e Uniformes).
 
  Na aba Estoque, quando o saldo está a 1 unidade acima do estoque mínimo (mínimo maior que zero), a coluna Alerta mostra "Próximo do mínimo" em amarelo mais claro. É só um aviso de leitura: não entra na contagem de alertas, no Dashboard nem no botão Estoque mínimo, que seguem a regra 417 (saldo menor ou igual ao mínimo).
+
+## 421. Níveis do alerta em todas as telas de estoque
+
+O alerta em três níveis (Abaixo do mínimo em vermelho, Estoque mínimo em amarelo, Próximo do mínimo em amarelo claro) vale também na aba Estoque dos demais módulos (Ferramentas), com as mesmas cores e textos (`CLASSE_DO_NIVEL`). Itens com mínimo por tamanho seguem como antes, por tamanho.
