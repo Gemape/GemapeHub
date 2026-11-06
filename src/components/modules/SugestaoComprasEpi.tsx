@@ -202,7 +202,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
           Para comprar, o estoque de novos e de usados é um só. O status vem dos parâmetros de{" "}
           <Link
             to="/cadastros/gerais/categorias"
-            search={modulo === "epi" ? { de: "epi", voltar: "sugestao-compras" } : { de: "epi" }}
+            search={{ de: "epi", voltar: modulo === "epi" ? "sugestao-compras" : "sugestao-uniformes" }}
             className="font-medium text-primary underline underline-offset-2"
           >
             Parâmetros Específicos

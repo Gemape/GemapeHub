@@ -83,9 +83,9 @@ function TextosDosDocumentos() {
 }
 
 // `voltarParaSugestao`: aberto pelo link da Sugestão de Compras (decisão 355); o botão do alto e o salvar dos parâmetros da sugestão levam de volta a ela.
-export function ParametrosEpi({ voltarParaSugestao = false }: { voltarParaSugestao?: boolean }) {
+export function ParametrosEpi({ voltarParaSugestao = false, paraUniformes = false }: { voltarParaSugestao?: boolean; paraUniformes?: boolean }) {
   const navegar = useNavigate();
-  const voltar = () => void navegar({ to: "/epi", search: { aba: "sugestao-compras" } });
+  const voltar = () => void navegar({ to: paraUniformes ? "/uniformes" : "/epi", search: { aba: "sugestao-compras" } });
   const [areas, setAreas] = useState(lerAreasEpi);
   const [salvo, setSalvo] = useState(lerParametrosCompraEpi);
   const [metodo, setMetodo] = useState<MetodoReposicao>(salvo.metodo);
