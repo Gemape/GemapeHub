@@ -85,9 +85,10 @@ test("a observação gravada na entrega traz o nome de quem entregou, para o his
   assert.equal(observacaoEntregaEpi(agora, null), "Entrega de EPI - Termo Gerado em 01/10/2026");
 });
 
-test("a tela do termo grava o responsável na observação de cada saída, sem coluna nova no banco", async () => {
+test("a tela do termo só documenta: não grava saída nem mexe no estoque (decisão 415)", async () => {
   const { readFileSync } = await import("node:fs");
   const tela = readFileSync(new URL("../src/components/modules/EpiTermoEntrega.tsx", import.meta.url), "utf8");
-  assert.match(tela, /observacao: observacaoEntregaEpi\(new Date\(\), responsavel\.nome\)/);
+  assert.doesNotMatch(tela, /useRegistrarMovimentacoesLote|registrarLote|tipo_movimentacao|validarSaidaDeEpis/);
+  assert.match(tela, /não movimenta o estoque/);
   assert.doesNotMatch(tela, /responsavel_nome/, "responsavel_nome só existe no modo demonstração");
 });

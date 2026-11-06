@@ -2291,4 +2291,4 @@ Complemento: Termo de Entrega e Ficha avulsa listam os habilitados (desligados i
 
 ## 415. Termo de Entrega de Uniforme só documenta
 
-Gerar o **Termo de Entrega de Uniforme** não movimenta mais o estoque nem grava saída no histórico: o termo serve só para documentar. A saída só é contabilizada quando lançada em **Entrega Uniforme**. Por isso o termo também não confere mais o saldo; a conferência fica na Entrega. A tela traz o aviso fixo dizendo isso. (O Termo de Entrega do EPI não foi alterado.)
+Gerar o **Termo de Entrega de Uniforme** não movimenta mais o estoque nem grava saída no histórico: o termo serve só para documentar. A saída só é contabilizada quando lançada em **Entrega Uniforme**. Por isso o termo também não confere mais o saldo; a conferência fica na Entrega. A tela traz o aviso fixo dizendo isso. O Termo de Entrega do EPI segue a mesma regra (a saída só conta em Entrega EPI).

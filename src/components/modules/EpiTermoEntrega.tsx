@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,15 +20,14 @@ import {
 } from "@/components/ui/table";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
-import { useEmpresas, useItens, useEmpregados, useRegistrarMovimentacoesLote } from "@/lib/hooks-gemape";
+import { useEmpresas, useItens, useEmpregados } from "@/lib/hooks-gemape";
 import { receptoresDeEntrega } from "@/lib/empregados-habilitados";
 import { listaDeEpiDesatualizada, soEmpregadosDeEpi } from "@/lib/empregados-epi";
 import { AvisoHabilitados } from "@/components/AvisoHabilitados";
 import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
-import { montarTermoEntregaEpiHtml, observacaoEntregaEpi } from "@/lib/termo-entrega-epi-html";
-import { validarSaidaDeEpis } from "@/lib/termos-atomicos";
-import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
-import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { montarTermoEntregaEpiHtml } from "@/lib/termo-entrega-epi-html";
+import { SeletorTamanho } from "@/components/SeletorTamanho";
+import { nomeTamanho, tamanhoParaGravar } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 interface ItemTermo {
@@ -61,8 +60,6 @@ export function EpiTermoEntrega() {
   const responsaveis = soEmpregadosDeEpi(empregados.filter((e) => empregadoAtivo(e))).filter((e) => e.id !== empregadoId);
 
   const parametros = useParametrosBase();
-  const registrarLote = useRegistrarMovimentacoesLote(["movimentacoes", "epis"]);
-  const salvando = useRef(false);
 
   function adicionarItem() {
     setItensTermo([
@@ -86,7 +83,6 @@ export function EpiTermoEntrega() {
   }
 
   async function gerarTermo() {
-    if (salvando.current) return;
     if (!empregadoId || itensTermo.length === 0) {
       alert("Selecione um empregado e adicione pelo menos um item.");
       return;
@@ -118,43 +114,12 @@ export function EpiTermoEntrega() {
       return;
     }
 
-    // Não entrega mais do que o estoque disponível nem grava linha sem EPI.
-    // Com tamanho, a conta é feita no saldo de cada tamanho.
-    const erro =
-      validarSaidaDeEpis(itensTermo, itens) ??
-      (TAMANHO_DISPONIVEL
-        ? validarLinhasTamanho(itensTermo, itens, parametros, "epi", "entrega")
-        : null);
-    if (erro) {
-      alert(erro);
+    // O termo só documenta (decisão 415): não mexe no estoque. A saída só conta quando lançada em Entrega EPI.
+    if (itensTermo.some((i) => !i.item_id)) {
+      alert("Escolha o EPI em todas as linhas.");
       return;
     }
-
-    // Registra todas as saídas de uma vez: ou entram todas, ou nenhuma.
-    const movimentacoesLote = itensTermo.map((item) => ({
-      modulo: "epi",
-      tipo_movimentacao: "Saida",
-      quantidade: item.quantidade,
-      data_movimentacao: dataEntrega,
-      item_id: item.item_id,
-      empresa_id: empresaSel,
-      empregado_id: empregadoId,
-      observacao: observacaoEntregaEpi(new Date(), responsavel.nome),
-      ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
-    }));
-
-    salvando.current = true;
-    try {
-      await registrarLote.mutateAsync(movimentacoesLote);
-    } catch {
-      // O hook já mostra toast de erro. Paramos o processo.
-      return;
-    } finally {
-      salvando.current = false;
-    }
-    // Limpa a lista para um segundo clique não registrar a mesma entrega de novo.
     const itensDoTermo = itensTermo;
-    setItensTermo([]);
 
     const html = montarTermoEntregaEpiHtml({
       empresa,
@@ -183,6 +148,9 @@ export function EpiTermoEntrega() {
   return (
     <div className="space-y-6">
       <div className="panel p-6 space-y-4">
+        <p className="rounded-lg border bg-muted/40 p-2 text-xs text-muted-foreground">
+          O termo só documenta a entrega e não movimenta o estoque. A saída só é contabilizada quando lançada no menu Entrega EPI.
+        </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <AvisoHabilitados desatualizada={habilitadosDesatualizados} onde="Parâmetros &gt; EPI &gt; Parâmetros Específicos" />
           <div className="space-y-1.5">
@@ -346,7 +314,7 @@ export function EpiTermoEntrega() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button requiresWrite="operar" onClick={gerarTermo} disabled={registrarLote.isPending}>
+          <Button requiresWrite="operar" onClick={gerarTermo}>
             Gerar Termo de Entrega
           </Button>
         </div>
