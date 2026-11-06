@@ -139,6 +139,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
         ),
     [itens, parametros, modulo],
   );
+  const alertasFiltrados = useMemo(() => filtrarSugestaoEpi(alertasMinimo, { palavra }), [alertasMinimo, palavra]);
   const filtradas = filtrarSugestaoEpi(todas, {
     ...(empresaFiltro !== TODOS ? { empresaId: empresaFiltro } : {}),
     palavra,
@@ -266,7 +267,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
           <Button type="button" onClick={abrirRelatorio}>
             Gerar relatório
           </Button>
-          <EstoqueMinimoEpi rotulo={modulo === "epi" ? "EPIs" : "uniformes"} linhas={filtrarSugestaoEpi(alertasMinimo, { palavra })} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
+          <EstoqueMinimoEpi rotulo={modulo === "epi" ? "EPIs" : "uniformes"} linhas={alertasFiltrados} empresas={empresasParaEscolha(empresas).filter((e) => empresaFiltro === TODOS || e.id === empresaFiltro)} />
           <Button
             type="button"
             variant="outline"

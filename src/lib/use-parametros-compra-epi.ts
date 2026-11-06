@@ -11,6 +11,7 @@ export function useParametrosCompraEpi(modulo: ModuloDeCompra = "epi"): Parametr
         const novo = lerParametrosCompraEpi(undefined, modulo);
         return JSON.stringify(novo) === JSON.stringify(atual) ? atual : novo;
       });
+    atualizar(); // o módulo pode ter mudado com o componente montado: não deixa valer o do outro módulo
     window.addEventListener("focus", atualizar);
     window.addEventListener("storage", atualizar);
     return () => {

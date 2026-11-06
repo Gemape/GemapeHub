@@ -105,8 +105,9 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   const calcularAlerta: CalculoAlerta = (item) => {
     // Mesma regra da aba Estoque (decisão 417): alerta por tamanho; o aviso traz o primeiro tamanho em alerta.
     const alertas = alertasDeMinimoEpi(parametros, item as never, modulo);
+    if (alertas.length > 0) return { alerta: true, saldo: alertas[0]!.saldo, minimo: alertas[0]!.minimo };
     const e = estadoEstoqueModulo(parametros, modulo, item as never);
-    return alertas.length > 0 ? { alerta: true, saldo: alertas[0]!.saldo, minimo: alertas[0]!.minimo } : { alerta: false, saldo: e.saldo, minimo: e.minimo };
+    return { alerta: false, saldo: e.saldo, minimo: e.minimo };
   };
 
   function mudarLinha(id: string, campo: keyof Linha, valor: string | number) {

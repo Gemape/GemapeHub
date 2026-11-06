@@ -14,7 +14,7 @@ test("estoque mínimo: entra saldo <= mínimo (sem mínimo, só o saldo zerado),
 
 test("o botão Estoque mínimo abre a janela com uma tela por empresa e o aviso fixo saiu da Sugestão de Compras (decisão 410)", () => {
   const sug = ler("components/modules/SugestaoComprasEpi.tsx");
-  assert.match(sug, /<EstoqueMinimoEpi rotulo=\{[^}]*\} linhas=\{filtrarSugestaoEpi\(alertasMinimo, \{ palavra \}\)\} empresas=\{empresasParaEscolha\(empresas\)\.filter\(\(e\) => empresaFiltro === TODOS \|\| e\.id === empresaFiltro\)\} \/>/);
+  assert.match(sug, /<EstoqueMinimoEpi rotulo=\{[^}]*\} linhas=\{alertasFiltrados\} empresas=\{empresasParaEscolha\(empresas\)\.filter\(\(e\) => empresaFiltro === TODOS \|\| e\.id === empresaFiltro\)\} \/>/);
   assert.doesNotMatch(sug, /Estoque no mínimo ou abaixo \(/);
   const tela = ler("components/modules/EstoqueMinimoEpi.tsx");
   assert.match(tela, /Estoque mínimo/);
