@@ -186,7 +186,7 @@ export function EpiRelatorioFuncionario() {
                 <Input id="hist-fim" type="date" value={dataFim} min={dataInicio || undefined} onChange={(e) => setDataFim(e.target.value)} />
               </div>
               {comFiltro && (
-                <Button type="button" variant="ghost" onClick={() => { setPalavra(""); setDataInicio(""); setDataFim(""); }}>
+                <Button type="button" onClick={() => { setPalavra(""); setDataInicio(""); setDataFim(""); }}>
                   Limpar filtros
                 </Button>
               )}

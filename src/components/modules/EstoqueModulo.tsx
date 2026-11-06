@@ -114,7 +114,9 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
   // Alerta em três níveis (decisão 421): sem mínimo por tamanho, saldo igual ao mínimo é "Estoque mínimo" e 1 acima é "Próximo do mínimo"; os demais casos seguem como antes.
   const nivelDe = (estado: (typeof linhas)[number]['estado']) => {
     const porTotal = !estado.detalheMinimo && !estado.detalheAlerta;
-    const nivel = porTotal ? nivelDoAlerta(estado.saldo, estado.minimo) : null;
+    const calculado = porTotal ? nivelDoAlerta(estado.saldo, estado.minimo) : null;
+    // "Abaixo" só vale se o estado já alertava (produto com tamanhos sem seleção não ganha alerta novo).
+    const nivel = calculado === 'abaixo' && !estado.alerta ? null : calculado;
     return nivel ?? (estado.alerta ? 'abaixo' : 'nenhum');
   };
   const textoDe = (estado: (typeof linhas)[number]['estado']) => {

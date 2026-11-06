@@ -68,7 +68,7 @@ export function nivelDoAlerta(saldo: number, minimo: number): "abaixo" | "minimo
   return saldo === minimo ? "minimo" : saldo === minimo + 1 ? "proximo" : null;
 }
 
-const TEXTO_DO_NIVEL = { abaixo: "Abaixo do mínimo", minimo: "Estoque mínimo", proximo: "Próximo do mínimo" } as const;
+export const TEXTO_DO_NIVEL_ALERTA = { abaixo: "Abaixo do mínimo", minimo: "Estoque mínimo", proximo: "Próximo do mínimo" } as const;
 // Cores do nível na coluna Alerta, as mesmas em todas as telas de estoque (decisão 421).
 export const CLASSE_DO_NIVEL = {
   abaixo: "font-bold text-destructive",
@@ -76,11 +76,10 @@ export const CLASSE_DO_NIVEL = {
   proximo: "font-semibold text-yellow-600 dark:text-yellow-300",
   nenhum: "",
 } as const;
-export const TEXTO_DO_NIVEL_ALERTA = TEXTO_DO_NIVEL;
 
 export const textoDoAlerta = (l: { saldo: number; minimo: number }): string => {
   const nivel = nivelDoAlerta(l.saldo, l.minimo);
-  return nivel ? TEXTO_DO_NIVEL[nivel] : "";
+  return nivel ? TEXTO_DO_NIVEL_ALERTA[nivel] : "";
 };
 
 export type EntradaEstoqueEpi = {
@@ -171,7 +170,9 @@ export function linhasDeEstoqueEpi(e: EntradaEstoqueEpi): LinhaEstoqueEpi[] {
       const tamanhoId = chave === sem ? null : chave;
       const saldo = Math.max(0, numero(saldos[chave]));
       const minimo = numero(minimos[chave]);
-      const alerta = saldo <= minimo && (minimo > 0 || saldo === 0);
+      // Conta como alerta (decisão 417) o nível "abaixo" ou "minimo"; "proximo" é só aviso de leitura.
+      const nivel = nivelDoAlerta(saldo, minimo);
+      const alerta = nivel === "abaixo" || nivel === "minimo";
       const comum = {
         itemId: item.id,
         codigo: item.codigo_sku,

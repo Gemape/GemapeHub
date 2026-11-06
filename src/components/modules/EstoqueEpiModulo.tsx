@@ -214,7 +214,6 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
         </div>
         <Button
           type="button"
-          variant="ghost"
           onClick={() => {
             setEmpresaFiltro(TODOS);
             setPalavra("");
