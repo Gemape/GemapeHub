@@ -119,6 +119,10 @@ export function EpiTermoEntrega() {
       alert("Escolha o EPI em todas as linhas.");
       return;
     }
+    if (itensTermo.some((i) => !Number.isInteger(i.quantidade) || i.quantidade <= 0)) {
+      alert("A quantidade de cada EPI deve ser um número inteiro maior que zero.");
+      return;
+    }
     const itensDoTermo = itensTermo;
 
     const html = montarTermoEntregaEpiHtml({

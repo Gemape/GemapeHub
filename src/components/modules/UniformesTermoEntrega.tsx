@@ -30,7 +30,7 @@ import { receptoresDeEntrega } from "@/lib/empregados-habilitados";
 import { listaDeUniformeDesatualizada, soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
 import { AvisoHabilitados } from "@/components/AvisoHabilitados";
 import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
-import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { SeletorTamanho } from "@/components/SeletorTamanho";
 import { nomeTamanho, tamanhoParaGravar } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
@@ -56,7 +56,6 @@ export function UniformesTermoEntrega() {
   const { data: todosEmpregados = [] } = useEmpregados(empresaId || TODAS);
   const { data: uniformes = [] } = useItens("uniforme", empresaId || TODAS);
   const parametros = useParametrosBase();
-
 
   const empresa = empresas.find((e) => e.id === empresaId);
   const empregado = empregados.find((e) => e.id === empregadoId);
@@ -112,6 +111,14 @@ export function UniformesTermoEntrega() {
     }
 
     // O termo só documenta (decisão 415): não mexe no estoque. A saída só conta quando lançada em Entrega Uniforme.
+    if (itensEntrega.some((i) => !i.item_id)) {
+      alert("Selecione o uniforme de cada linha.");
+      return;
+    }
+    if (itensEntrega.some((i) => !Number.isInteger(i.quantidade) || i.quantidade <= 0)) {
+      alert("A quantidade de cada uniforme deve ser um número inteiro maior que zero.");
+      return;
+    }
     const itensDoTermo = itensEntrega;
 
     const html = montarTermoEntregaUniformeHtml({
