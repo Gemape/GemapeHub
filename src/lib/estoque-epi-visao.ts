@@ -55,6 +55,20 @@ export type LinhaEstoqueEpi = {
   mediaMensal: number;
 };
 
+// Nível do alerta de estoque mínimo (decisões 419 e 420): abaixo do mínimo ou zerado é "abaixo" (vermelho); saldo igual ao mínimo é "minimo" (amarelo, "Estoque mínimo");
+// saldo a 1 unidade acima do mínimo é "proximo" (aviso "Próximo do mínimo"). Sem mínimo definido, só o saldo zerado alerta.
+export function nivelDoAlerta(saldo: number, minimo: number): "abaixo" | "minimo" | "proximo" | null {
+  if (saldo < minimo || (saldo === 0 && minimo === 0)) return "abaixo";
+  if (minimo <= 0) return null;
+  return saldo === minimo ? "minimo" : saldo === minimo + 1 ? "proximo" : null;
+}
+
+const TEXTO_DO_NIVEL = { abaixo: "Abaixo do mínimo", minimo: "Estoque mínimo", proximo: "Próximo do mínimo" } as const;
+export const textoDoAlerta = (l: { disponivel: number; minimo: number }): string => {
+  const nivel = nivelDoAlerta(l.disponivel, l.minimo);
+  return nivel ? TEXTO_DO_NIVEL[nivel] : "";
+};
+
 export type EntradaEstoqueEpi = {
   itens: ItemDoEstoque[];
   compras: CompraDoEstoque[];

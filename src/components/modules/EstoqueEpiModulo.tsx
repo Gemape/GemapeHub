@@ -31,6 +31,8 @@ import { controleDeEstoque } from "@/lib/epi-controle-estoque";
 import {
   filtrarEstoqueEpi,
   linhasDeEstoqueEpi,
+  nivelDoAlerta,
+  textoDoAlerta,
   type CompraDoEstoque,
   type DevolucaoUsada,
   type LinhaEstoqueEpi,
@@ -45,6 +47,12 @@ import { lerItensEstoque } from "@/lib/itens-estoque-modulo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 const TODOS = "todos";
+const CLASSE_DO_NIVEL = {
+  abaixo: "font-bold text-destructive",
+  minimo: "font-bold text-amber-600 dark:text-amber-400",
+  proximo: "font-semibold text-yellow-600 dark:text-yellow-300",
+  nenhum: "",
+} as const;
 
 // Módulo EPI > Estoque (decisão 329): só a consulta do estoque de EPIs. Dois botões escolhem os novos ou os usados (que vieram de devolução); filtros por empresa, palavra-chave,
 // data da compra, fornecedor, CA e nota fiscal; e, em cada linha, o item de cada empresa (as compras de todos os fornecedores somam num estoque só; data, NF e fornecedor listam todas as compras que o formam), o tamanho, o mínimo, a quantidade disponível, o alerta e a média de consumo mensal.
@@ -258,7 +266,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   Tamanho: l.tamanhoId ? nomeDoTamanho(l.tamanhoId) : "",
                   "Estoque mínimo": l.minimo,
                   "Quantidade disponível": l.disponivel,
-                  Alerta: l.alerta ? "Abaixo do mínimo" : "",
+                  Alerta: textoDoAlerta(l),
                   "Média de consumo mensal": Number(l.mediaMensal.toFixed(2)),
                 })),
               )
@@ -320,8 +328,8 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                     <MinimoEditavel key={l.chave} valor={l.minimo} rotulo={`${l.descricao} ${nomeDoTamanho(l.tamanhoId)}`.trim()} onSalvar={(texto) => gravarMinimo(l, texto)} />
                   </TableCell>
                   <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>
-                  <TableCell className={l.alerta ? "font-bold text-destructive" : ""}>
-                    {l.alerta ? "Abaixo do mínimo" : "—"}
+                  <TableCell className={CLASSE_DO_NIVEL[nivelDoAlerta(l.disponivel, l.minimo) ?? "nenhum"]}>
+                    {textoDoAlerta(l) || "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     {l.mediaMensal.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
