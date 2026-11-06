@@ -140,7 +140,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
       <div className="flex flex-wrap items-end gap-2">
         <BarraDeFiltros>
         <div className="w-44 space-y-1">
-          <Label htmlFor="est-empresa">Empresa</Label>
+          <Label htmlFor="est-empresa" className="block text-center">Empresa</Label>
           <Select value={empresaFiltro} onValueChange={setEmpresaFiltro}>
             <SelectTrigger id="est-empresa">
               <SelectValue />
@@ -156,7 +156,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           </Select>
         </div>
         <div className="w-44 space-y-1">
-          <Label htmlFor="est-palavra">Palavra-chave</Label>
+          <Label htmlFor="est-palavra" className="block text-center">Palavra-chave</Label>
           <Input
             id="est-palavra"
             placeholder="Código, descrição, tamanho…"
@@ -165,7 +165,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           />
         </div>
         <div className="w-44 space-y-1">
-          <Label htmlFor="est-fornecedor">Fornecedor</Label>
+          <Label htmlFor="est-fornecedor" className="block text-center">Fornecedor</Label>
           <Select value={fornecedor} onValueChange={setFornecedor}>
             <SelectTrigger id="est-fornecedor">
               <SelectValue />
@@ -182,18 +182,18 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
         </div>
         <div className={modulo === "epi" ? "grid grid-cols-2 gap-2" : "space-y-1"}>
           {modulo === "epi" && (
-            <div className="w-44 space-y-1">
-              <Label htmlFor="est-ca">CA</Label>
+            <div className="w-24 space-y-1">
+              <Label htmlFor="est-ca" className="block text-center">CA</Label>
               <Input id="est-ca" className="w-24" value={ca} onChange={(e) => setCa(e.target.value)} />
             </div>
           )}
-          <div className="space-y-1">
-            <Label htmlFor="est-nf">NF</Label>
+          <div className="w-24 space-y-1">
+            <Label htmlFor="est-nf" className="block text-center">NF</Label>
             <Input id="est-nf" className="w-24" value={nf} onChange={(e) => setNf(e.target.value)} />
           </div>
         </div>
         <div className="w-44 space-y-1">
-          <Label htmlFor="est-inicio">Data da compra, de</Label>
+          <Label htmlFor="est-inicio" className="block text-center">Data da compra, de</Label>
           <Input
             id="est-inicio"
             type="date"
@@ -203,7 +203,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           />
         </div>
         <div className="w-44 space-y-1">
-          <Label htmlFor="est-fim">Data da compra, até</Label>
+          <Label htmlFor="est-fim" className="block text-center">Data da compra, até</Label>
           <Input
             id="est-fim"
             type="date"
