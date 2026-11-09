@@ -2328,3 +2328,7 @@ Os textos acima das caixas de busca e filtro ficam centralizados sobre a caixa. 
 ## 424. Texto abaixo do nome da tela explica o que ela faz
 
 Cada tela mostra, abaixo do nome, uma frase que explica o que a rotina, o parâmetro ou o relatório faz. Nos módulos com abas (EPI, Uniformes, Ferramentas, Veículos, Viagens e Equipamentos) o texto é próprio de cada aba (`descricaoDaAba`, em `menu-parametros.ts`), no lugar de repetir a descrição do módulo em todas. Telas de cadastro e de parâmetros que não tinham texto ou tinham um texto vago (Usuários, Formulário de Despesas, Empregados, Fornecedores, Empresas e Clientes) ganharam uma explicação.
+
+## 425. Estoque das ferramentas: posição consolidada, extrato por clique e mínimo no campo
+
+Na aba Estoque das Ferramentas: (a) o botão "Estoque por posição" troca a lista pelo estoque consolidado de cada ferramenta (guardada na caixa, com empregado, sem caixa e saldo total, somadas as empresas); (b) clicar numa ferramenta, na lista ou no consolidado, abre o extrato da ferramenta (`ExtratoFerramenta`), no modelo do extrato do veículo: período, resumo, onde está hoje (caixa, empregado, sem caixa), movimentações do período e PDF; (c) o botão Configurar e a janela saíram: o estoque mínimo é editado no próprio campo da tabela (`MinimoEditavel`), como em EPIs e uniformes (decisão 416). O saldo só muda por movimentação; o ajuste de saldo pela janela deixou de existir.
