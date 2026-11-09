@@ -63,6 +63,8 @@ const CHAVES = ["compras_epis", "itens", "movimentacoes"];
 export function EpiComprasModulo() {
   const { empresaId } = useEmpresa();
   const [busca, setBusca] = useState("");
+  const [buscaDevolucao, setBuscaDevolucao] = useState("");
+  const [visao, setVisao] = useState<"compras" | "devolucoes">("compras");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<CompraEpi | null>(null);
   const [quantidade, setQuantidade] = useState(0);
@@ -91,6 +93,7 @@ export function EpiComprasModulo() {
   const saldoDoEscolhido = saldoParaCompra(parametros, itemEscolhido, "epi", tamanho, editando, itemSel);
 
   function abrirNovo() {
+    setVisao("compras");
     setEditando(null);
     setQuantidade(0);
     setValorUnitario(0);
@@ -162,14 +165,26 @@ export function EpiComprasModulo() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
-        <BarraDeFiltros>
-          <Input
-            placeholder="Buscar por fornecedor ou NF"
-            className="max-w-xs"
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </BarraDeFiltros>
+        {visao === "devolucoes" ? (
+          <BarraDeFiltros>
+            <Input
+              aria-label="Buscar devolução"
+              placeholder="Buscar por funcionário, EPI, motivo, NF ou fornecedor"
+              className="max-w-xs"
+              value={buscaDevolucao}
+              onChange={(e) => setBuscaDevolucao(e.target.value)}
+            />
+          </BarraDeFiltros>
+        ) : (
+          <BarraDeFiltros>
+            <Input
+              placeholder="Buscar por fornecedor ou NF"
+              className="max-w-xs"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </BarraDeFiltros>
+        )}
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -199,7 +214,16 @@ export function EpiComprasModulo() {
         </div>
       </div>
 
-      <div className="panel overflow-x-auto">
+      {/* Compras e devoluções em listas separadas (decisão 380): um botão para cada, e só a lista escolhida aparece. */}
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Compras ou devoluções">
+        {([["compras", "Compras"], ["devolucoes", "Devoluções"]] as const).map(([id, rotulo]) => (
+          <Button key={id} type="button" className={visao === id ? "ring-2 ring-primary ring-offset-2" : "opacity-70"} aria-pressed={visao === id} onClick={() => setVisao(id)}>
+            {rotulo}
+          </Button>
+        ))}
+      </div>
+
+      {visao === "compras" && <div className="panel overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -270,9 +294,9 @@ export function EpiComprasModulo() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </div>}
 
-      <EntradasDeUsados empresaId={empresaId} itens={itens} empresas={empresas} />
+      {visao === "devolucoes" && <EntradasDeUsados empresaId={empresaId} itens={itens} empresas={empresas} busca={buscaDevolucao} mostrarVazio />}
       <DevolucaoEpiDialog aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />
 
       <Dialog open={aberto} onOpenChange={setAberto}>

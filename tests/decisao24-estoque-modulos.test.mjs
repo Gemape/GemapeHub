@@ -40,8 +40,7 @@ test('módulos EPI, Uniformes e Ferramentas têm aba de estoque própria', () =>
   assert.match(estoque, /Estoque mínimo/);
   assert.match(estoque, /TEXTO_DO_NIVEL_ALERTA\[nivel\]/);
   assert.match(estoque, /estadoEstoqueModulo/);
-  assert.match(estoque, /prepararMinimosEstoque/, 'mínimos são gravados pelo módulo');
-  assert.match(estoque, /Estoque inicial/, 'Ferramentas configura o estoque inicial no módulo');
+  assert.match(estoque, /MinimoEditavel/, 'o mínimo é editado no campo da tabela, sem botão Configurar');
 });
 
 test('mínimos por tamanho são gravados no mesmo mapa e somados no mínimo do produto', () => {

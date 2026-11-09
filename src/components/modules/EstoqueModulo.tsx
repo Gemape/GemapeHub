@@ -4,23 +4,22 @@ import { toast } from 'sonner';
 
 import { supabase } from '@/integrations/supabase/client';
 import { TODAS, useEmpresa } from '@/lib/empresa-context';
-import { MODO_DEMO } from '@/lib/modo-demo';
 import { exportarCsv } from '@/lib/gemape';
 import { lerItensEstoque } from '@/lib/itens-estoque-modulo';
-import { prepararEstoqueFerramenta, prepararMinimoUnico, prepararMinimosEstoque, tamanhosConfiguraveisNoModulo } from '@/lib/estoque-configuracao';
+import { prepararMinimoUnico } from '@/lib/estoque-configuracao';
 import { CLASSE_DO_NIVEL, nivelDoAlerta, TEXTO_DO_NIVEL_ALERTA } from '@/lib/estoque-epi-visao';
-import { controlaTamanho, estadoEstoqueModulo, nomeTamanho, preservarMinimosNaoSelecionados, tamanhosAutorizadosDoProduto, tamanhosDisponiveisDoProduto } from '@/lib/estoque-tamanho';
-import { useCaixasFerramentas, useEmpresas, useMovimentacoes, useRegistrarMovimentacoesLote, useSalvar, useTodosCaixaItens } from '@/lib/hooks-gemape';
+import { estadoEstoqueModulo } from '@/lib/estoque-tamanho';
+import { useCaixasFerramentas, useEmpregados, useEmpresas, useMovimentacoes, useSalvar, useTodosCaixaItens } from '@/lib/hooks-gemape';
+import { controleDaFerramenta } from '@/lib/controle-caixa';
 import { posicaoDasFerramentas, type PosicaoDaFerramenta } from '@/lib/estoque-ferramentas-posicao';
-import { hojeLocal } from '@/lib/empregados';
-import { combinaBusca, estaAtivo } from '@/lib/parametros-base';
+import { combinaBusca } from '@/lib/parametros-base';
 import { useParametrosBase } from '@/lib/use-parametros-base';
 import { BarraDeFiltros } from '@/components/layout/BarraDeFiltros';
+import { MinimoEditavel } from '@/components/modules/MinimoEditavel';
+import { ExtratoFerramenta, type AlvoDoExtrato } from '@/components/modules/ExtratoFerramenta';
 import { ControleEstoqueModulo } from '@/components/modules/ControleEstoqueModulo';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 // O EPI tem a sua tela de Estoque (EstoqueEpiModulo, decisão 329): esta é a dos uniformes e das ferramentas.
@@ -32,11 +31,12 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
   const [itemId, setItemId] = useState<string | null>(null);
   // Busca por palavra-chave (decisão 339): código, nome do item ou empresa, sem acento e sem diferenciar maiúscula.
   const [busca, setBusca] = useState('');
+  // Ferramentas: botão que troca a lista pelo estoque consolidado por posição (guardada na caixa, com empregado, sem caixa).
+  const [porPosicao, setPorPosicao] = useState(false);
   const tabela = modulo === 'uniforme' ? 'uniformes' : 'ferramentas';
   const salvar = useSalvar(tabela, ['estoque-modulo']);
   // Ferramentas (decisão 379): o saldo se reparte entre as caixas, os empregados e o que está sem caixa, e tem de bater com as entradas e as baixas.
   const ferr = modulo === 'ferramenta';
-  const registrar = useRegistrarMovimentacoesLote(['estoque-modulo']);
   const { data: movimentos = [] } = useMovimentacoes('ferramenta', empresaId);
   const { data: itensDeCaixa = [] } = useTodosCaixaItens();
   const { data: caixas = [] } = useCaixasFerramentas(TODAS, '');
@@ -45,69 +45,44 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
     queryFn: () => lerItensEstoque(supabase, modulo, empresaId),
   });
   const { data: empresas = [] } = useEmpresas();
+  const { data: empregados = [] } = useEmpregados(TODAS);
+  const [extrato, setExtrato] = useState<AlvoDoExtrato | null>(null);
   // Dec 238: o estoque é por empresa; cada linha diz de qual empresa é, para o mesmo código não parecer repetido.
   const nomeDaEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome_fantasia ?? '—';
   const posicoes = useMemo(
     () => new Map<string, PosicaoDaFerramenta>(ferr ? posicaoDasFerramentas(itens, movimentos, itensDeCaixa).map((p) => [p.ferramentaId, p]) : []),
     [ferr, itens, movimentos, itensDeCaixa],
   );
+  // Onde cada ferramenta está: em qual caixa, com qual empregado e quanto está sem caixa (clique na linha).
+  const ondeEsta = (ids: string[]) => {
+    const caixasDe = itensDeCaixa.filter((i) => ids.includes(i.ferramenta_id)).map((i) => ({ codigo: caixas.find((c) => c.id === i.caixa_id)?.codigo ?? '—', quantidade: Number(i.quantidade) || 0 }));
+    const porEmpregado = new Map<string, number>();
+    for (const id of ids) {
+      const doItem = movimentos.filter((m) => m.item_id === id && m.empregado_id);
+      for (const eid of new Set(doItem.map((m) => m.empregado_id as string))) {
+        const q = controleDaFerramenta(doItem.filter((m) => m.empregado_id === eid), id).comEmpregado;
+        if (q > 0) porEmpregado.set(eid, (porEmpregado.get(eid) ?? 0) + q);
+      }
+    }
+    const comEmpregados = [...porEmpregado].map(([eid, quantidade]) => ({ nome: empregados.find((e) => e.id === eid)?.nome ?? 'Empregado não encontrado', quantidade }));
+    const semCaixa = ids.reduce((t, id) => t + (posicoes.get(id)?.semCaixa ?? 0), 0);
+    const guardada = ids.reduce((t, id) => t + (posicoes.get(id)?.guardada ?? 0), 0);
+    return { caixasDe, comEmpregados, semCaixa, guardada };
+  };
   const codigoDaCaixa = (id: string | null) => caixas.find((c) => c.id === id)?.codigo ?? '—';
   const linhas = itens
     .filter((item) => combinaBusca(busca, item.codigo_sku, item.nome, nomeDaEmpresa(item.empresa_id)))
     .map((item) => ({ item, estado: estadoEstoqueModulo(parametros, modulo, item) }));
-  const itemEditado = itens.find((item) => item.id === itemId);
-  const porTamanho = Boolean(itemEditado && MODO_DEMO && modulo !== 'ferramenta' && (
-    controlaTamanho(parametros, modulo, itemEditado)
-    || Object.values(itemEditado.minimos_tamanho ?? {}).some((minimo) => Number(minimo) > 0)
-  ));
-  const tamanhosDaGrade = itemEditado && modulo !== 'ferramenta' && porTamanho
-    ? tamanhosConfiguraveisNoModulo(
-      tamanhosAutorizadosDoProduto(parametros, modulo, itemEditado)
-        .filter((tamanho) => estaAtivo(parametros, tamanho.id)).map((tamanho) => tamanho.id),
-      itemEditado.minimos_tamanho ?? {},
-      itemEditado.tamanhos_selecionados,
-    )
-    : [];
-  const usaGrade = porTamanho && tamanhosDaGrade.length > 0;
-  const semSelecao = Boolean(itemEditado && modulo !== 'ferramenta' && MODO_DEMO &&
-    Array.isArray(itemEditado.tamanhos_selecionados) && itemEditado.tamanhos_selecionados.length === 0 &&
-    (tamanhosDisponiveisDoProduto(parametros, modulo, itemEditado).length > 0 ||
-      Object.values(itemEditado.minimos_tamanho ?? {}).some((valor) => Number(valor) > 0)));
-
-  function salvarConfiguracao(evento: React.FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
-    if (!itemEditado || salvar.isPending || semSelecao) return;
-    const formulario = new FormData(evento.currentTarget);
+  // Estoque mínimo editado no próprio campo da tabela, como no Estoque de EPIs e uniformes (decisão 416): sem botão nem janela.
+  function gravarMinimo(item: (typeof itens)[number], texto: string): boolean {
+    if (salvar.isPending) return false;
     try {
-      let valores: Record<string, unknown>;
-      if (modulo === 'ferramenta') {
-        const { estoque_minimo, estoque_atual: novoSaldo } = prepararEstoqueFerramenta(String(formulario.get('estoque_minimo') ?? ''), String(formulario.get('estoque_atual') ?? ''));
-        const saldoAtual = Number(itemEditado.estoque_atual) || 0;
-        if (novoSaldo < saldoAtual) throw new Error('Para reduzir o saldo, registre a baixa (pela caixa ou em Movimentações): o ajuste só aumenta.');
-        // O saldo só muda por movimentação, para as entradas e as baixas continuarem batendo com ele: o aumento vira uma entrada de ajuste.
-        if (novoSaldo > saldoAtual) {
-          registrar.mutate([{
-            modulo: 'ferramenta', item_id: itemEditado.id, veiculo_id: null, empresa_id: itemEditado.empresa_id, empregado_id: null, tipo_movimentacao: 'Entrada',
-            motivo_baixa: null, quantidade: novoSaldo - saldoAtual, onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false, tipo_ocorrencia: null, conducao_ocorrencia: null,
-            data_movimentacao: hojeLocal(), origem_local: null, destino_local: null, observacao: 'Ajuste de estoque feito na tela de Estoque.',
-          }]);
-        }
-        valores = { estoque_minimo };
-      } else if (usaGrade) {
-        const digitados = Object.fromEntries(tamanhosDaGrade.map((id) => [id, Number(formulario.get(`minimo:${id}`))]));
-        valores = prepararMinimosEstoque(digitados, tamanhosDaGrade);
-        if (MODO_DEMO && Array.isArray(itemEditado.tamanhos_selecionados)) {
-          const minimos = preservarMinimosNaoSelecionados(itemEditado.minimos_tamanho ?? {}, itemEditado.tamanhos_selecionados, valores['minimos_tamanho'] as Record<string, number>);
-          valores['minimos_tamanho'] = minimos;
-          valores['estoque_minimo'] = Object.values(minimos).reduce((soma, minimo) => soma + minimo, 0);
-        }
-      } else {
-        valores = prepararMinimoUnico(String(formulario.get('estoque_minimo') ?? ''));
-        if (!MODO_DEMO) delete valores['minimos_tamanho'];
-      }
-      salvar.mutate({ id: itemEditado.id, valores }, { onSuccess: () => setItemId(null) });
+      const { estoque_minimo } = prepararMinimoUnico(texto);
+      salvar.mutate({ id: item.id, valores: { estoque_minimo } });
+      return true;
     } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : 'Configuração de estoque inválida.');
+      toast.error(erro instanceof Error ? erro.message : 'Estoque mínimo inválido.');
+      return false;
     }
   }
 
@@ -138,7 +113,8 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             onChange={(e) => setBusca(e.target.value)}
           />
         </BarraDeFiltros>
-        <Button variant="outline" disabled={isLoading || linhas.length === 0} onClick={() =>
+        {ferr && <Button type="button" variant={porPosicao ? 'default' : 'outline'} aria-pressed={porPosicao} onClick={() => setPorPosicao((v) => !v)}>{porPosicao ? 'Ver estoque por item' : 'Estoque por posição'}</Button>}
+        <Button variant="outline" hidden={porPosicao} disabled={isLoading || linhas.length === 0} onClick={() =>
           exportarCsv(`estoque-${modulo}`, linhas.map(({ item, estado }) => ({
             Código: item.codigo_sku,
             Empresa: nomeDaEmpresa(item.empresa_id),
@@ -153,7 +129,8 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
           })))
         }>Exportar CSV</Button>
       </div>
-      <div className="panel overflow-x-auto">
+      {ferr && porPosicao && <ConsolidadoPorPosicao linhas={linhas.map(({ item }) => item)} posicoes={posicoes} onAbrir={setExtrato} />}
+      {!(ferr && porPosicao) && <div className="panel overflow-x-auto">
         <Table>
           <TableHeader><TableRow>
             <TableHead>Código</TableHead><TableHead>Item</TableHead><TableHead>Empresa</TableHead>
@@ -161,12 +138,12 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             <TableHead className="text-right">Saldo</TableHead>
             {ferr && <><TableHead className="text-right">Guardada na caixa</TableHead><TableHead className="text-right">Com empregado</TableHead><TableHead className="text-right">Sem caixa</TableHead></>}
             <TableHead className="text-right">Estoque mínimo</TableHead>
-            <TableHead>Alerta</TableHead><TableHead />
+            <TableHead>Alerta</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={ferr ? 13 : 7}>Carregando estoque…</TableCell></TableRow>
-              : linhas.length === 0 ? <TableRow><TableCell colSpan={ferr ? 13 : 7}>{busca.trim() ? 'Nenhum item para a busca.' : 'Nenhum item cadastrado.'}</TableCell></TableRow>
-                : linhas.map(({ item, estado }) => <TableRow key={item.id}>
+            {isLoading ? <TableRow><TableCell colSpan={ferr ? 12 : 6}>Carregando estoque…</TableCell></TableRow>
+              : linhas.length === 0 ? <TableRow><TableCell colSpan={ferr ? 12 : 6}>{busca.trim() ? 'Nenhum item para a busca.' : 'Nenhum item cadastrado.'}</TableCell></TableRow>
+                : linhas.map(({ item, estado }) => <TableRow key={item.id} {...(ferr ? linhaClicavel(() => setExtrato({ titulo: `${item.codigo_sku ?? ''} · ${item.nome} (${nomeDaEmpresa(item.empresa_id)})`, ids: [item.id] })) : {})}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell>{item.nome}</TableCell>
                   <TableCell>{nomeDaEmpresa(item.empresa_id)}</TableCell>
@@ -181,50 +158,18 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
                     <TableCell className="text-right">{posicoes.get(item.id)?.comEmpregado ?? 0}</TableCell>
                     <TableCell className={`text-right ${(posicoes.get(item.id)?.semCaixa ?? 0) < 0 ? 'font-bold text-destructive' : ''}`}>{posicoes.get(item.id)?.semCaixa ?? 0}</TableCell>
                   </>}
-                  <TableCell className="text-right">{estado.minimo}{estado.detalheMinimo && <p className="text-xs text-muted-foreground">{estado.detalheMinimo}</p>}</TableCell>
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}><MinimoEditavel valor={estado.minimo} rotulo={item.nome} onSalvar={(texto) => gravarMinimo(item, texto)} />{estado.detalheMinimo && <p className="text-xs text-muted-foreground">{estado.detalheMinimo}</p>}</TableCell>
                   <TableCell className={CLASSE_DO_NIVEL[nivelDe(estado)]}>
                     {textoDe(estado) || '—'}
                     {(posicoes.get(item.id)?.divergencias ?? []).map((d) => <p key={d} className="text-xs font-bold text-destructive">Não bate: {d}</p>)}
                   </TableCell>
-                  <TableCell><Button requiresWrite variant="outline" size="sm" onClick={() => setItemId(item.id)}>Configurar</Button></TableCell>
                 </TableRow>)}
           </TableBody>
         </Table>
-      </div>
-      {ferr && <PosicaoPorCaixa caixas={caixas.filter((c) => itens.some((i) => i.empresa_id === c.empresa_id) || empresaId === TODAS)} itensDeCaixa={itensDeCaixa} itens={itens} posicoes={posicoes} />}
+      </div>}
+      {ferr && <ExtratoFerramenta alvo={extrato} movimentos={movimentos} saldo={(extrato?.ids ?? []).reduce((t, id) => t + (posicoes.get(id)?.saldo ?? 0), 0)} onde={ondeEsta(extrato?.ids ?? [])} nomeEmpregado={(id) => empregados.find((e) => e.id === id)?.nome ?? 'Empregado não encontrado'} empresa={empresaId === TODAS ? 'Todas as empresas' : nomeDaEmpresa(empresaId)} onFechar={() => setExtrato(null)} />}
+      {ferr && !porPosicao && <PosicaoPorCaixa caixas={caixas.filter((c) => itens.some((i) => i.empresa_id === c.empresa_id) || empresaId === TODAS)} itensDeCaixa={itensDeCaixa} itens={itens} posicoes={posicoes} />}
       {modulo !== 'ferramenta' && <ControleEstoqueModulo modulo={modulo} />}
-      <Dialog open={Boolean(itemEditado)} onOpenChange={(aberto) => { if (!aberto) setItemId(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Configurar estoque — {itemEditado?.nome}{itemEditado ? ` (${nomeDaEmpresa(itemEditado.empresa_id)})` : ''}</DialogTitle>
-            <DialogDescription>Saldo, mínimo e alertas pertencem ao módulo.</DialogDescription>
-          </DialogHeader>
-          {itemEditado && <form key={itemEditado.id} onSubmit={salvarConfiguracao} className="space-y-4">
-            {semSelecao ? <p className="text-sm text-muted-foreground">Selecione um tamanho no cadastro do produto para configurar o mínimo.</p>
-              : usaGrade ? <fieldset className="space-y-2">
-              <legend className="font-medium">Estoque mínimo por tamanho</legend>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                {tamanhosDaGrade.map((id) => <div key={id} className="space-y-1">
-                  <Label htmlFor={`minimo:${id}`}>{nomeTamanho(parametros, id)}{!estaAtivo(parametros, id) ? ' (desativado)' : ''}</Label>
-                  <Input id={`minimo:${id}`} name={`minimo:${id}`} type="number" min={0} step={1} defaultValue={itemEditado.minimos_tamanho?.[id] ?? 0} />
-                </div>)}
-              </div>
-            </fieldset> : <div className="space-y-1">
-              <Label htmlFor="estoque_minimo">Estoque mínimo</Label>
-              <Input id="estoque_minimo" name="estoque_minimo" type="number" min={0} step={1} defaultValue={itemEditado.estoque_minimo ?? 0} />
-            </div>}
-            {modulo === 'ferramenta' && <div className="space-y-1">
-              <Label htmlFor="estoque_atual">Estoque inicial</Label>
-              <Input id="estoque_atual" name="estoque_atual" type="number" min={0} step={1} defaultValue={itemEditado.estoque_atual ?? 0} />
-              <p className="text-xs text-muted-foreground">O saldo só muda por movimentação: aumentar aqui registra uma entrada de ajuste; para reduzir, registre a baixa (pela caixa ou em Movimentações).</p>
-            </div>}
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setItemId(null)}>Cancelar</Button>
-              <Button requiresWrite type="submit" disabled={salvar.isPending || semSelecao}>Salvar</Button>
-            </DialogFooter>
-          </form>}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -284,3 +229,55 @@ function PosicaoPorCaixa({ caixas, itensDeCaixa, itens, posicoes }: {
     </section>
   );
 }
+
+// Linha da tabela que abre o extrato: clique, e Enter ou espaço para quem usa o teclado.
+const linhaClicavel = (abrir: () => void) => ({
+  className: 'cursor-pointer', tabIndex: 0,
+  onClick: abrir,
+  onKeyDown: (e: React.KeyboardEvent) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(); } },
+});
+
+// Estoque consolidado por posição: cada ferramenta com o saldo somado das empresas e repartido entre guardada na caixa, com empregado e sem caixa.
+function ConsolidadoPorPosicao({ linhas, posicoes, onAbrir }: { linhas: { id: string; codigo_sku: string | null; nome: string }[]; posicoes: Map<string, PosicaoDaFerramenta>; onAbrir: (alvo: AlvoDoExtrato) => void }) {
+  const grupos = new Map<string, { ids: string[]; codigo: string; nome: string; saldo: number; guardada: number; comEmpregado: number; semCaixa: number }>();
+  for (const item of linhas) {
+    const p = posicoes.get(item.id);
+    const chave = `${item.codigo_sku ?? ''}|${item.nome}`;
+    const g = grupos.get(chave) ?? { ids: [], codigo: item.codigo_sku ?? '—', nome: item.nome, saldo: 0, guardada: 0, comEmpregado: 0, semCaixa: 0 };
+    g.ids.push(item.id);
+    g.saldo += p?.saldo ?? 0; g.guardada += p?.guardada ?? 0; g.comEmpregado += p?.comEmpregado ?? 0; g.semCaixa += p?.semCaixa ?? 0;
+    grupos.set(chave, g);
+  }
+  const lista = [...grupos.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const total = (campo: 'saldo' | 'guardada' | 'comEmpregado' | 'semCaixa') => lista.reduce((t, g) => t + g[campo], 0);
+  return (
+    <section className="space-y-2" aria-labelledby="estoque-por-posicao">
+      <h2 id="estoque-por-posicao" className="text-lg font-semibold">Estoque consolidado por posição</h2>
+      <p className="text-sm text-muted-foreground">O saldo de cada ferramenta, somadas as empresas, repartido entre o que está guardado nas caixas, com empregados e sem caixa.</p>
+      <div className="panel overflow-x-auto">
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead>Código</TableHead><TableHead>Ferramenta</TableHead>
+            <TableHead className="text-right">Guardada na caixa</TableHead><TableHead className="text-right">Com empregado</TableHead>
+            <TableHead className="text-right">Sem caixa</TableHead><TableHead className="text-right">Saldo total</TableHead>
+          </TableRow></TableHeader>
+          <TableBody>
+            {lista.length === 0 ? <TableRow><TableCell colSpan={3 + 3}>Nenhum item para mostrar.</TableCell></TableRow> : lista.map((g) => (
+              <TableRow key={`${g.codigo}|${g.nome}`} {...linhaClicavel(() => onAbrir({ titulo: `${g.codigo} · ${g.nome}`, ids: g.ids }))}>
+                <TableCell className="font-mono text-xs">{g.codigo}</TableCell><TableCell>{g.nome}</TableCell>
+                <TableCell className="text-right">{g.guardada}</TableCell><TableCell className="text-right">{g.comEmpregado}</TableCell>
+                <TableCell className="text-right">{g.semCaixa}</TableCell><TableCell className="text-right font-semibold">{g.saldo}</TableCell>
+              </TableRow>
+            ))}
+            {lista.length > 0 && <TableRow className="bg-muted/40 font-semibold">
+              <TableCell colSpan={2}>Total</TableCell>
+              <TableCell className="text-right">{total('guardada')}</TableCell><TableCell className="text-right">{total('comEmpregado')}</TableCell>
+              <TableCell className="text-right">{total('semCaixa')}</TableCell><TableCell className="text-right">{total('saldo')}</TableCell>
+            </TableRow>}
+          </TableBody>
+        </Table>
+      </div>
+    </section>
+  );
+}
+

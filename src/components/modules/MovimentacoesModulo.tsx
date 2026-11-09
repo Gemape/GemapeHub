@@ -17,6 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SeletorComBusca } from "@/components/SeletorComBusca";
+import { DevolucaoFerramentaDialog } from "@/components/modules/DevolucaoFerramentaDialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -85,11 +87,19 @@ function textoManutencao(m: unknown): string {
 const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
 
-export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
+// `foco` (Ferramentas): "entrada" mostra e registra só as entradas no estoque; "entrega" só as entregas e devoluções ao empregado.
+const TIPOS_DO_FOCO = { entrada: ["Entrada", "Devolucao"], entrega: ["Saida"] } as const;
+const TIPOS_DA_VISAO = { compras: ["Entrada"], devolucoes: ["Devolucao"] } as const;
+const TEXTO_DO_FOCO = { entrada: { novo: "Nova entrada", titulo: "Entrada no estoque", busca: "Buscar entrada ou devolução", plural: "entradas e devoluções" }, entrega: { novo: "Nova entrega", titulo: "Entrega de ferramentas", busca: "Buscar entrega", plural: "entregas e baixas" } } as const;
+
+export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "entrada" | "entrega" }) {
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
+  const [devolucaoAberta, setDevolucaoAberta] = useState(false);
+  // Entrada no estoque: Compras e Devoluções em listas separadas, um botão para cada (decisão 380).
+  const [visao, setVisao] = useState<"compras" | "devolucoes">("compras");
   const [comOcorrencia, setComOcorrencia] = useState(false);
-  const [tipoMovimentacao, setTipoMovimentacao] = useState<string>("Saida");
+  const [tipoMovimentacao, setTipoMovimentacao] = useState<string>(foco === "entrada" ? "Entrada" : "Saida");
   const [alvoId, setAlvoId] = useState<string>("");
   // Tamanho de EPI e uniforme com tamanho em Gerais (decisão 23).
   const [tamanho, setTamanho] = useState("");
@@ -98,7 +108,13 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   const [acaoManutId, setAcaoManutId] = useState("");
   const [subitensMarcados, setSubitensMarcados] = useState<string[]>([]);
   const comTamanho = TAMANHO_DISPONIVEL && controlaModulo(modulo);
-  const { data: movimentacoes = [], isLoading } = useMovimentacoes(modulo, empresaId);
+  const { data: todasMovimentacoes = [], isLoading } = useMovimentacoes(modulo, empresaId);
+  const tiposDoFoco: readonly string[] | null = foco === "entrada" ? TIPOS_DA_VISAO[visao] : foco ? TIPOS_DO_FOCO[foco] : null;
+  const movimentacoes = tiposDoFoco ? todasMovimentacoes.filter((m) => tiposDoFoco.includes(m.tipo_movimentacao)) : todasMovimentacoes;
+  const texto = foco ? TEXTO_DO_FOCO[foco] : null;
+  // Entrada no estoque (Ferramentas): só item, empresa, quantidade, data e observação; sem tipo, empregado, baixa, vistoria nem ocorrência.
+  const soEntrada = foco === "entrada";
+  const ocultoNaEntrada = soEntrada ? " hidden" : "";
   const { data: itens = [] } = useItens(modulo === "veiculo" ? "ferramenta" : modulo, empresaId);
   const { data: veiculos = [] } = useVeiculos(empresaId);
   const { data: empregados = [] } = useEmpregados(empresaId, true);
@@ -107,7 +123,11 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   const registrarLote = useRegistrarMovimentacoesLote(CHAVES);
 
   const ehVeiculo = modulo === "veiculo";
+  // Compras (entradas) não têm empregado; as devoluções, sim.
+  const mostraEmpregado = !soEntrada || visao === "devolucoes";
   const [busca, setBusca] = useState("");
+  // Data, Tipo, Item, Empresa/Empregado e Qtde sempre; as demais dependem do módulo e do foco.
+  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada && visao === "devolucoes");
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
@@ -143,6 +163,10 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
     const quantidadeDigitada = Number(f.get("quantidade") ?? 1);
     const tipo = String(f.get("tipo_movimentacao") ?? "Entrada");
     const alvo = ehVeiculo ? null : texto("alvo_id");
+    if (!texto("alvo_id")) {
+      alert(ehVeiculo ? "Selecione o veículo." : "Selecione o item.");
+      return;
+    }
     const bloqueio = bloqueioPorDemissao(
       todosEmpregados.find((p) => p.id === texto("empregado_id")),
       tipo === "Saida" ? "entrega" : tipo === "Devolucao" ? "devolucao" : "movimentacao",
@@ -199,6 +223,8 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       tipo_ocorrencia: comOcorrencia ? texto("tipo_ocorrencia") : null,
       conducao_ocorrencia: comOcorrencia ? texto("conducao_ocorrencia") : null,
       data_movimentacao: String(f.get("data_movimentacao") ?? ""),
+      // Entrada no estoque (Ferramentas): nova ou usada. A coluna ainda não existe no banco real (Fase 2): só vai no modo demonstração.
+      ...(soEntrada && MODO_DEMO ? { condicao: f.get("condicao_entrada") === "usado" ? "usado" : "novo" } : {}),
       origem_local: capitalizarTexto(texto("origem_local")) || null,
       destino_local: capitalizarTexto(texto("destino_local")) || null,
       observacao: capitalizarTexto(texto("observacao"))?.slice(0, 500) || null,
@@ -235,15 +261,15 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       <div className="flex flex-wrap items-end gap-2">
         <BarraDeFiltros>
           <Input
-            aria-label="Buscar movimentação"
+            aria-label={texto?.busca ?? "Buscar movimentação"}
             placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
           <p className="text-sm text-muted-foreground">
             {visiveis.length === movimentacoes.length
-              ? `Últimas ${movimentacoes.length} movimentações registradas.`
-              : `${visiveis.length} de ${movimentacoes.length} movimentações.`}
+              ? `Últimas ${movimentacoes.length} ${texto?.plural ?? "movimentações"} registradas.`
+              : `${visiveis.length} de ${movimentacoes.length} ${texto?.plural ?? "movimentações"}.`}
           </p>
         </BarraDeFiltros>
         <div className="flex flex-wrap gap-2">
@@ -266,21 +292,34 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             Exportar CSV
           </Button>
           {modulo === "ferramenta" && <ImportarNfeXml />}
+          {soEntrada && <Button requiresWrite="operar" variant="outline" onClick={() => setDevolucaoAberta(true)}>Devolução</Button>}
           <Button requiresWrite="operar"
             onClick={() => {
               setComOcorrencia(false);
               setAcaoManutId("");
               setSubitensMarcados([]);
               setTamanho("");
+              // A nova entrada aparece na lista Compras.
+              if (soEntrada) setVisao("compras");
               // O tipo volta para Saída como o formulário, que reabre com o valor padrão.
-              setTipoMovimentacao("Saida");
+              setTipoMovimentacao(foco === "entrada" ? "Entrada" : "Saida");
               setAberto(true);
             }}
           >
-            Nova movimentação
+            {texto?.novo ?? "Nova movimentação"}
           </Button>
         </div>
       </div>
+
+      {soEntrada && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Compras ou devoluções">
+          {([["compras", "Compras"], ["devolucoes", "Devoluções"]] as const).map(([id, rotulo]) => (
+            <Button key={id} type="button" className={visao === id ? "ring-2 ring-primary ring-offset-2" : "opacity-70"} aria-pressed={visao === id} onClick={() => setVisao(id)}>
+              {rotulo}
+            </Button>
+          ))}
+        </div>
+      )}
 
       <div className="panel overflow-x-auto">
         <Table>
@@ -291,19 +330,20 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               {!ehVeiculo && <TableHead>Código</TableHead>}
               <TableHead>{ehVeiculo ? "Veículo" : "Item"}</TableHead>
               {comTamanho && <TableHead>Tamanho</TableHead>}
-              <TableHead>Empregado</TableHead>
+              {soEntrada && <TableHead>Empresa</TableHead>}
+              {mostraEmpregado && <TableHead>Empregado</TableHead>}
               <TableHead className="text-right">Qtde</TableHead>
-              <TableHead>Motivo da baixa</TableHead>
-              <TableHead>Ônus</TableHead>
+              {!soEntrada && <TableHead>Motivo da baixa</TableHead>}
+              {!foco && <TableHead>Ônus</TableHead>}
               {ehVeiculo && MODO_DEMO && <TableHead>Manutenção</TableHead>}
-              <TableHead>Ocorrência</TableHead>
+              {!foco && <TableHead>Ocorrência</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
+                  colSpan={totalColunas}
                   className="text-center text-muted-foreground"
                 >
                   Carregando…
@@ -312,7 +352,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             ) : visiveis.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
+                  colSpan={totalColunas}
                   className="text-center text-muted-foreground"
                 >
                   {busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
@@ -323,7 +363,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{naturezaMovimentacao(m)}</Badge>
+                    <Badge variant="secondary">{soEntrada ? (m.tipo_movimentacao === "Devolucao" ? "Devolução (usada)" : (m as { condicao?: string }).condicao === "usado" ? "Usada" : "Nova") : naturezaMovimentacao(m)}</Badge>
                   </TableCell>
                   {!ehVeiculo && (
                     <TableCell className="font-mono text-xs">
@@ -334,20 +374,21 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   {comTamanho && (
                     <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) || "—"}</TableCell>
                   )}
-                  <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>
+                  {soEntrada && <TableCell>{empresas.find((e) => e.id === m.empresa_id)?.nome_fantasia ?? "—"}</TableCell>}
+                  {mostraEmpregado && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
                   <TableCell className="text-right">{m.quantidade}</TableCell>
-                  <TableCell>{m.motivo_baixa ?? "—"}</TableCell>
-                  <TableCell>{m.onus_baixa ?? "—"}</TableCell>
+                  {!soEntrada && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
+                  {!foco && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}
                   {ehVeiculo && MODO_DEMO && (
                     <TableCell>{textoManutencao(m) || "—"}</TableCell>
                   )}
-                  <TableCell>
+                  {!foco && <TableCell>
                     {m.sinalizar_ocorrencia ? (
                       <Badge variant="destructive">Sim</Badge>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
-                  </TableCell>
+                  </TableCell>}
                 </TableRow>
               ))
             )}
@@ -358,9 +399,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nova movimentação</DialogTitle>
+            <DialogTitle>{texto?.titulo ?? "Nova movimentação"}</DialogTitle>
             <DialogDescription>
-              Toda movimentação registra a empresa e o empregado envolvidos.
+              {foco === "entrada" ? "Registra a ferramenta que entra no estoque." : foco === "entrega" ? "Entrega ao empregado ou baixa: para baixar, informe o motivo da baixa." : "Toda movimentação registra a empresa e o empregado envolvidos."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
@@ -374,11 +415,11 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 defaultValue={hojeLocal()}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={`space-y-1.5${ocultoNaEntrada}`}>
               <Label htmlFor="tipo_movimentacao">Tipo de movimentação</Label>
               <Select
                 name="tipo_movimentacao"
-                defaultValue="Saida"
+                defaultValue={foco === "entrada" ? "Entrada" : "Saida"}
                 onValueChange={(v) => {
                   setTipoMovimentacao(v);
                   setTamanho("");
@@ -389,6 +430,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </SelectTrigger>
                 <SelectContent>
                   {TIPOS_MOVIMENTACAO.filter((t) => {
+                    // A janela de entrada só registra Entrada, qualquer que seja a lista (Compras ou Devoluções) aberta.
+                    if (soEntrada) return t === "Entrada";
+                    if (tiposDoFoco) return tiposDoFoco.includes(t);
                     // Remover Transferência para EPI e Uniforme
                     if (modulo === "epi" || modulo === "uniforme") {
                       return t !== "Transferencia";
@@ -396,40 +440,38 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                     return true;
                   }).map((t) => (
                     <SelectItem key={t} value={t}>
-                      {TIPO_MOVIMENTACAO_LABEL[t]}
+                      {foco === "entrega" && t === "Saida" ? "Entrega ou baixa (com motivo)" : TIPO_MOVIMENTACAO_LABEL[t]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            {soEntrada && (
+              <div className="space-y-1.5">
+                <Label htmlFor="condicao_entrada">Tipo</Label>
+                <Select name="condicao_entrada" defaultValue="novo">
+                  <SelectTrigger id="condicao_entrada">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="novo">Nova</SelectItem>
+                    <SelectItem value="usado">Usada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="alvo_id">{ehVeiculo ? "Veículo" : "Item"}</Label>
-              <Select
-                name="alvo_id"
-                required
-                onValueChange={(v) => {
+              <SeletorComBusca
+                id="alvo_id"
+                nome="alvo_id"
+                valor={alvoId}
+                opcoes={ehVeiculo ? veiculos.map((o) => ({ id: o.id, rotulo: [o.placa, o.modelo].filter(Boolean).join(" — ") || "—" })) : itens.map((o) => ({ id: o.id, rotulo: `${o.codigo_sku} — ${o.nome}` }))}
+                onChange={(v) => {
                   setAlvoId(v);
                   setTamanho("");
                 }}
-                defaultValue={alvoId}
-              >
-                <SelectTrigger id="alvo_id">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(ehVeiculo ? veiculos : itens).map((o) =>
-                    "placa" in o ? (
-                      <SelectItem key={o.id} value={o.id}>
-                        {[o.placa, o.modelo].filter(Boolean).join(" — ") || "—"}
-                      </SelectItem>
-                    ) : (
-                      <SelectItem key={o.id} value={o.id}>
-                        {o.codigo_sku} — {o.nome}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
+              />
               {modulo === "ferramenta" && tipoMovimentacao === "Entrada" && alvoId && (
                 <EnderecoDaEntrada categoriaId="cat-ferramentas" empresaId={itens.find((i) => i.id === alvoId)?.empresa_id ?? ""} codigo={itens.find((i) => i.id === alvoId)?.codigo_sku ?? ""} />
               )}
@@ -491,7 +533,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className={`space-y-1.5${ocultoNaEntrada}`}>
               <Label htmlFor="empregado_id">Empregado</Label>
               <Select
                 name="empregado_id"
@@ -521,7 +563,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 required
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={`space-y-1.5${ocultoNaEntrada}`}>
               <Label htmlFor="motivo_baixa">Motivo da baixa</Label>
               <Select
                 name="motivo_baixa"
@@ -542,7 +584,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className={`space-y-1.5${foco ? " hidden" : ""}`}>
               <Label htmlFor="onus_baixa">Ônus da baixa</Label>
               <Select
                 name="onus_baixa"
@@ -562,7 +604,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               </Select>
             </div>
             {/* Vistoria e Ocorrência apenas para Ferramentas e Veículos */}
-            {(modulo === "ferramenta" || ehVeiculo) && (
+            {(modulo === "ferramenta" || ehVeiculo) && !foco && (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="tipo_vistoria">Tipo de vistoria</Label>
                 <Select name="tipo_vistoria">
@@ -591,7 +633,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               />
             )}
 
-            {(modulo === "ferramenta" || ehVeiculo) && (
+            {(modulo === "ferramenta" || ehVeiculo) && !foco && (
               <>
                 <div className="flex items-center gap-2 sm:col-span-2">
                   <Checkbox
@@ -656,6 +698,8 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
           </form>
         </DialogContent>
       </Dialog>
+      {soEntrada && devolucaoAberta && <DevolucaoFerramentaDialog aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />}
     </div>
   );
 }
+

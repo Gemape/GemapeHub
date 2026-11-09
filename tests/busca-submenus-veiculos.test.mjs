@@ -18,7 +18,7 @@ test("Frota, Manutenção, Movimentações e Ocorrências de Veículos têm camp
 test("a busca de Movimentações aparece em Veículos e em Ferramentas, sem mudar o uniforme", () => {
   const mov = fonte("components/modules/MovimentacoesModulo.tsx");
   assert.doesNotMatch(mov, /comBusca/, "a busca vale para todos os módulos (decisão 376)");
-  assert.match(mov, /<BarraDeFiltros>\s*<Input\s+aria-label="Buscar movimentação"/);
+  assert.match(mov, /<BarraDeFiltros>\s*<Input\s+aria-label=\{texto\?\.busca \?\? "Buscar movimentação"\}/);
 });
 
 test("a busca de Movimentações de Ferramentas olha código, item, empregado, tipo, motivo, ônus, vistoria, ocorrência, observação e data", () => {

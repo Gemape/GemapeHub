@@ -176,7 +176,7 @@ test("o cadastro escolhe a unidade; o módulo configura o mínimo por tamanho", 
   assert.doesNotMatch(tela, /resumoEstoquePorTamanho|alertasPorTamanho/);
   const estoque = fonte("components/modules/EstoqueModulo.tsx");
   assert.match(estoque, /estadoEstoqueModulo/);
-  assert.match(estoque, /prepararMinimosEstoque/);
+  assert.match(estoque, /prepararMinimoUnico/);
   // A edição nunca envia o saldo por tamanho: só o gatilho mexe nele.
   assert.equal(/valores\[?["']?saldos_tamanho/.test(tela), false);
 });
@@ -210,5 +210,5 @@ test("o Dashboard alerta o estoque baixo por tamanho e reabrir a movimentação 
   assert.match(dashboard, /alertasDeMinimoEpi/);
   assert.match(dashboard, /TAMANHO_DISPONIVEL/, "colunas novas só no modo demonstração");
   const movimentacoes = fonte("components/modules/MovimentacoesModulo.tsx");
-  assert.match(movimentacoes, /setTipoMovimentacao\("Saida"\);\s*setAberto\(true\)/);
+  assert.match(movimentacoes, /setTipoMovimentacao\(foco === "entrada" \? "Entrada" : "Saida"\);\s*setAberto\(true\)/);
 });

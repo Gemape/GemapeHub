@@ -4,12 +4,16 @@ import { readFileSync } from "node:fs";
 
 const tela = readFileSync(new URL("../src/components/modules/EstoqueModulo.tsx", import.meta.url), "utf8");
 
-test("dec 238: Estoque mostra a empresa de cada linha, no CSV e no título de Configurar", () => {
+test("dec 238: Estoque mostra a empresa de cada linha, e no CSV", () => {
   assert.match(tela, /<TableHead>Empresa<\/TableHead>/);
   assert.match(tela, /<TableCell>\{nomeDaEmpresa\(item\.empresa_id\)\}<\/TableCell>/);
   assert.match(tela, /Empresa: nomeDaEmpresa\(item\.empresa_id\)/);
-  assert.match(tela, /Configurar estoque — \{itemEditado\?\.nome\}\{itemEditado \? ` \(\$\{nomeDaEmpresa/);
-  // 7 colunas (13 em Ferramentas, com a posição por caixa): o aviso de carregando e de lista vazia ocupam todas.
-  assert.equal((tela.match(/colSpan=\{ferr \? 13 : 7\}/g) ?? []).length, 2);
+  // 6 colunas (12 em Ferramentas, com a posição por caixa): o aviso de carregando e de lista vazia ocupam todas.
+  assert.equal((tela.match(/colSpan=\{ferr \? 12 : 6\}/g) ?? []).length, 2);
   assert.doesNotMatch(tela, /colSpan=\{6\}/);
+});
+
+test("Estoque das ferramentas edita o mínimo no campo, sem botão Configurar nem janela", () => {
+  assert.match(tela, /<MinimoEditavel /);
+  assert.doesNotMatch(tela, /Configurar|<Dialog/);
 });

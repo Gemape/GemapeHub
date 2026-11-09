@@ -2328,3 +2328,23 @@ Os textos acima das caixas de busca e filtro ficam centralizados sobre a caixa. 
 ## 424. Texto abaixo do nome da tela explica o que ela faz
 
 Cada tela mostra, abaixo do nome, uma frase que explica o que a rotina, o parâmetro ou o relatório faz. Nos módulos com abas (EPI, Uniformes, Ferramentas, Veículos, Viagens e Equipamentos) o texto é próprio de cada aba (`descricaoDaAba`, em `menu-parametros.ts`), no lugar de repetir a descrição do módulo em todas. Telas de cadastro e de parâmetros que não tinham texto ou tinham um texto vago (Usuários, Formulário de Despesas, Empregados, Fornecedores, Empresas e Clientes) ganharam uma explicação.
+
+## 425. Estoque das ferramentas: posição consolidada, extrato por clique e mínimo no campo
+
+Na aba Estoque das Ferramentas: (a) o botão "Estoque por posição" troca a lista pelo estoque consolidado de cada ferramenta (guardada na caixa, com empregado, sem caixa e saldo total, somadas as empresas); (b) clicar numa ferramenta, na lista ou no consolidado, abre o extrato da ferramenta (`ExtratoFerramenta`), no modelo do extrato do veículo: período, resumo, onde está hoje (caixa, empregado, sem caixa), movimentações do período e PDF; (c) o botão Configurar e a janela saíram: o estoque mínimo é editado no próprio campo da tabela (`MinimoEditavel`), como em EPIs e uniformes (decisão 416). O saldo só muda por movimentação; o ajuste de saldo pela janela deixou de existir.
+
+## 426. Ferramentas: menus Entrada no estoque e Entrega de ferramentas, sem Movimentações
+
+O menu Movimentações das Ferramentas foi substituído por dois, como em EPIs e Uniformes: **Entrada no estoque** (`?aba=entrada-estoque`) controla só as entradas; **Entrega de ferramentas** (`?aba=entrega`) controla a saída do estoque: entrega ao empregado, devolução e baixa (com o motivo da baixa). As duas telas usam `MovimentacoesModulo` com `foco`, que filtra a lista e os tipos do formulário. Veículos continuam com o histórico completo. O botão Exportar CSV some no Estoque por posição, onde as linhas não são as da lista.
+
+A Entrada no estoque (decisão 426) só controla as entradas por empresa: o formulário não tem Tipo de movimentação, Empregado, Motivo da baixa, Ônus da baixa, Tipo de vistoria nem Sinalizar ocorrência, e a lista mostra Empresa no lugar das colunas de empregado, baixa e ocorrência.
+
+## 427. Movimentações: item com busca ao digitar e entrada nova ou usada
+
+No formulário de movimentação o campo Item (ou Veículo) é uma lista com busca ao digitar, por código ou nome (`SeletorComBusca`). Na Entrada no estoque das Ferramentas o campo **Tipo** distingue "Nova" e "Usada" (grava `condicao`, só no modo demonstração, como a devolução de EPI), e a coluna Tipo da lista mostra Nova ou Usada; entradas antigas, sem o campo, aparecem como nova.
+
+A Entrega de ferramentas (decisão 426) também não tem Tipo de vistoria, Ônus da baixa nem Sinalizar ocorrência, nem as colunas Ônus e Ocorrência na lista.
+
+## 428. Devolução de ferramenta e botões Compras e Devoluções (EPI e Ferramentas)
+
+Na Entrada no estoque das Ferramentas há o botão **Devolução** (`DevolucaoFerramentaDialog`), na lógica da devolução de EPIs e uniformes (decisão 327): escolhe-se o empregado, a lista traz as ferramentas que ele tem em posse, e cada uma marcada volta ao estoque da empresa como usada, com a quantidade e o motivo. Como a ferramenta é da empresa, a devolução muda a posição e não o saldo. A Entrega de ferramentas passa a controlar só entregas e baixas. EPI e Ferramentas ganham, como os Uniformes (decisão 380), os botões **Compras** e **Devoluções**: cada um mostra só a sua lista.
