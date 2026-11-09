@@ -130,7 +130,7 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   assert.deepEqual(ABAS_VEICULO.map((a) => a.aba), ["frota", "abastecimento", "manutencao", "ocorrencias", "checklist"]);
   assert.equal(ABAS_EPI[0].aba, "dashboard");
   assert.equal(ABAS_UNIFORME.length, 7); // sem Sugestão, Histórico e Baixar Definitivas (Relatórios, decisão 364) e sem Movimentações
-  assert.equal(ABAS_FERRAMENTA.length, 8);
+  assert.equal(ABAS_FERRAMENTA.length, 9); // com Entrada no estoque e Entrega de ferramentas, sem Movimentações
   // Cada submenu aponta para uma aba que a tela realmente tem.
   const modulos = readFileSync(new URL("../src/components/modules/PaginaModulo.tsx", import.meta.url), "utf8");
   for (const a of [...ABAS_EPI, ...ABAS_EPI_RELATORIOS, ...ABAS_UNIFORME, ...ABAS_UNIFORME_RELATORIOS, ...ABAS_FERRAMENTA]) assert.match(modulos, new RegExp(`value="${a.aba}"`));

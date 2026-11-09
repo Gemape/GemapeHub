@@ -40,7 +40,8 @@ export function ExtratoFerramenta({ alvo, movimentos, saldo, onde, nomeEmpregado
         titulo: 'Onde está hoje', vazio: '',
         colunas: [{ titulo: 'Posição' }, { titulo: 'Onde' }, { titulo: 'Quantidade', direita: true }],
         linhas: [
-          ...onde.caixasDe.map((c): Celula[] => ['Na caixa', `Caixa ${c.codigo}`, String(c.quantidade)]),
+          // Guardada = o cadastrado na caixa menos o que está com empregado e o que foi baixado; assim as linhas somam o saldo e não repetem o que está com empregado.
+          ...(onde.caixasDe.length > 0 || onde.guardada > 0 ? [['Na caixa', onde.caixasDe.map((c) => `Caixa ${c.codigo}`).join(', ') || '—', String(onde.guardada)] as Celula[]] : []),
           ...onde.comEmpregados.map((e): Celula[] => ['Com empregado', e.nome, String(e.quantidade)]),
           ['Sem caixa', 'Estoque, fora das caixas', String(onde.semCaixa)],
         ],

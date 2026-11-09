@@ -85,11 +85,15 @@ function textoManutencao(m: unknown): string {
 const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
 
-export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
+// `foco` (Ferramentas): "entrada" mostra e registra só as entradas no estoque; "entrega" só as entregas e devoluções ao empregado.
+const TIPOS_DO_FOCO = { entrada: ["Entrada"], entrega: ["Saida", "Devolucao"] } as const;
+const TEXTO_DO_FOCO = { entrada: { novo: "Nova entrada", titulo: "Entrada no estoque", busca: "Buscar entrada", plural: "entradas" }, entrega: { novo: "Nova entrega", titulo: "Entrega de ferramentas", busca: "Buscar entrega", plural: "entregas e devoluções" } } as const;
+
+export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "entrada" | "entrega" }) {
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
   const [comOcorrencia, setComOcorrencia] = useState(false);
-  const [tipoMovimentacao, setTipoMovimentacao] = useState<string>("Saida");
+  const [tipoMovimentacao, setTipoMovimentacao] = useState<string>(foco === "entrada" ? "Entrada" : "Saida");
   const [alvoId, setAlvoId] = useState<string>("");
   // Tamanho de EPI e uniforme com tamanho em Gerais (decisão 23).
   const [tamanho, setTamanho] = useState("");
@@ -98,7 +102,13 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
   const [acaoManutId, setAcaoManutId] = useState("");
   const [subitensMarcados, setSubitensMarcados] = useState<string[]>([]);
   const comTamanho = TAMANHO_DISPONIVEL && controlaModulo(modulo);
-  const { data: movimentacoes = [], isLoading } = useMovimentacoes(modulo, empresaId);
+  const { data: todasMovimentacoes = [], isLoading } = useMovimentacoes(modulo, empresaId);
+  const tiposDoFoco: readonly string[] | null = foco ? TIPOS_DO_FOCO[foco] : null;
+  const movimentacoes = tiposDoFoco ? todasMovimentacoes.filter((m) => tiposDoFoco.includes(m.tipo_movimentacao)) : todasMovimentacoes;
+  const texto = foco ? TEXTO_DO_FOCO[foco] : null;
+  // Entrada no estoque (Ferramentas): só item, empresa, quantidade, data e observação; sem tipo, empregado, baixa, vistoria nem ocorrência.
+  const soEntrada = foco === "entrada";
+  const ocultoNaEntrada = soEntrada ? " hidden" : "";
   const { data: itens = [] } = useItens(modulo === "veiculo" ? "ferramenta" : modulo, empresaId);
   const { data: veiculos = [] } = useVeiculos(empresaId);
   const { data: empregados = [] } = useEmpregados(empresaId, true);
@@ -235,15 +245,15 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       <div className="flex flex-wrap items-end gap-2">
         <BarraDeFiltros>
           <Input
-            aria-label="Buscar movimentação"
+            aria-label={texto?.busca ?? "Buscar movimentação"}
             placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
           />
           <p className="text-sm text-muted-foreground">
             {visiveis.length === movimentacoes.length
-              ? `Últimas ${movimentacoes.length} movimentações registradas.`
-              : `${visiveis.length} de ${movimentacoes.length} movimentações.`}
+              ? `Últimas ${movimentacoes.length} ${texto?.plural ?? "movimentações"} registradas.`
+              : `${visiveis.length} de ${movimentacoes.length} ${texto?.plural ?? "movimentações"}.`}
           </p>
         </BarraDeFiltros>
         <div className="flex flex-wrap gap-2">
@@ -273,11 +283,11 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               setSubitensMarcados([]);
               setTamanho("");
               // O tipo volta para Saída como o formulário, que reabre com o valor padrão.
-              setTipoMovimentacao("Saida");
+              setTipoMovimentacao(foco === "entrada" ? "Entrada" : "Saida");
               setAberto(true);
             }}
           >
-            Nova movimentação
+            {texto?.novo ?? "Nova movimentação"}
           </Button>
         </div>
       </div>
@@ -291,19 +301,20 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               {!ehVeiculo && <TableHead>Código</TableHead>}
               <TableHead>{ehVeiculo ? "Veículo" : "Item"}</TableHead>
               {comTamanho && <TableHead>Tamanho</TableHead>}
-              <TableHead>Empregado</TableHead>
+              {soEntrada && <TableHead>Empresa</TableHead>}
+              {!soEntrada && <TableHead>Empregado</TableHead>}
               <TableHead className="text-right">Qtde</TableHead>
-              <TableHead>Motivo da baixa</TableHead>
-              <TableHead>Ônus</TableHead>
+              {!soEntrada && <TableHead>Motivo da baixa</TableHead>}
+              {!soEntrada && <TableHead>Ônus</TableHead>}
               {ehVeiculo && MODO_DEMO && <TableHead>Manutenção</TableHead>}
-              <TableHead>Ocorrência</TableHead>
+              {!soEntrada && <TableHead>Ocorrência</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
+                  colSpan={soEntrada ? 6 : ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
                   className="text-center text-muted-foreground"
                 >
                   Carregando…
@@ -312,7 +323,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
             ) : visiveis.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
+                  colSpan={soEntrada ? 6 : ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
                   className="text-center text-muted-foreground"
                 >
                   {busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
@@ -334,20 +345,21 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                   {comTamanho && (
                     <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) || "—"}</TableCell>
                   )}
-                  <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>
+                  {soEntrada && <TableCell>{empresas.find((e) => e.id === m.empresa_id)?.nome_fantasia ?? "—"}</TableCell>}
+                  {!soEntrada && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
                   <TableCell className="text-right">{m.quantidade}</TableCell>
-                  <TableCell>{m.motivo_baixa ?? "—"}</TableCell>
-                  <TableCell>{m.onus_baixa ?? "—"}</TableCell>
+                  {!soEntrada && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
+                  {!soEntrada && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}
                   {ehVeiculo && MODO_DEMO && (
                     <TableCell>{textoManutencao(m) || "—"}</TableCell>
                   )}
-                  <TableCell>
+                  {!soEntrada && <TableCell>
                     {m.sinalizar_ocorrencia ? (
                       <Badge variant="destructive">Sim</Badge>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
-                  </TableCell>
+                  </TableCell>}
                 </TableRow>
               ))
             )}
@@ -358,9 +370,9 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nova movimentação</DialogTitle>
+            <DialogTitle>{texto?.titulo ?? "Nova movimentação"}</DialogTitle>
             <DialogDescription>
-              Toda movimentação registra a empresa e o empregado envolvidos.
+              {foco === "entrada" ? "Registra a ferramenta que entra no estoque." : foco === "entrega" ? "Entrega ao empregado, devolução ou baixa: para baixar, informe o motivo da baixa." : "Toda movimentação registra a empresa e o empregado envolvidos."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
@@ -374,11 +386,11 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 defaultValue={hojeLocal()}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={`space-y-1.5${ocultoNaEntrada}`}>
               <Label htmlFor="tipo_movimentacao">Tipo de movimentação</Label>
               <Select
                 name="tipo_movimentacao"
-                defaultValue="Saida"
+                defaultValue={foco === "entrada" ? "Entrada" : "Saida"}
                 onValueChange={(v) => {
                   setTipoMovimentacao(v);
                   setTamanho("");
@@ -389,6 +401,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </SelectTrigger>
                 <SelectContent>
                   {TIPOS_MOVIMENTACAO.filter((t) => {
+                    if (tiposDoFoco) return tiposDoFoco.includes(t);
                     // Remover Transferência para EPI e Uniforme
                     if (modulo === "epi" || modulo === "uniforme") {
                       return t !== "Transferencia";
@@ -396,7 +409,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                     return true;
                   }).map((t) => (
                     <SelectItem key={t} value={t}>
-                      {TIPO_MOVIMENTACAO_LABEL[t]}
+                      {foco === "entrega" && t === "Saida" ? "Entrega ou baixa (com motivo)" : TIPO_MOVIMENTACAO_LABEL[t]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -491,7 +504,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className={`space-y-1.5${ocultoNaEntrada}`}>
               <Label htmlFor="empregado_id">Empregado</Label>
               <Select
                 name="empregado_id"
@@ -521,7 +534,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 required
               />
             </div>
-            <div className="space-y-1.5">
+            <div className={`space-y-1.5${ocultoNaEntrada}`}>
               <Label htmlFor="motivo_baixa">Motivo da baixa</Label>
               <Select
                 name="motivo_baixa"
@@ -542,7 +555,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className={`space-y-1.5${ocultoNaEntrada}`}>
               <Label htmlFor="onus_baixa">Ônus da baixa</Label>
               <Select
                 name="onus_baixa"
@@ -562,7 +575,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               </Select>
             </div>
             {/* Vistoria e Ocorrência apenas para Ferramentas e Veículos */}
-            {(modulo === "ferramenta" || ehVeiculo) && (
+            {(modulo === "ferramenta" || ehVeiculo) && !soEntrada && (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="tipo_vistoria">Tipo de vistoria</Label>
                 <Select name="tipo_vistoria">
@@ -591,7 +604,7 @@ export function MovimentacoesModulo({ modulo }: { modulo: Modulo }) {
               />
             )}
 
-            {(modulo === "ferramenta" || ehVeiculo) && (
+            {(modulo === "ferramenta" || ehVeiculo) && !soEntrada && (
               <>
                 <div className="flex items-center gap-2 sm:col-span-2">
                   <Checkbox

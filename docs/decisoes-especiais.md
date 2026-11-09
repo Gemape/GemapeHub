@@ -2332,3 +2332,9 @@ Cada tela mostra, abaixo do nome, uma frase que explica o que a rotina, o parâm
 ## 425. Estoque das ferramentas: posição consolidada, extrato por clique e mínimo no campo
 
 Na aba Estoque das Ferramentas: (a) o botão "Estoque por posição" troca a lista pelo estoque consolidado de cada ferramenta (guardada na caixa, com empregado, sem caixa e saldo total, somadas as empresas); (b) clicar numa ferramenta, na lista ou no consolidado, abre o extrato da ferramenta (`ExtratoFerramenta`), no modelo do extrato do veículo: período, resumo, onde está hoje (caixa, empregado, sem caixa), movimentações do período e PDF; (c) o botão Configurar e a janela saíram: o estoque mínimo é editado no próprio campo da tabela (`MinimoEditavel`), como em EPIs e uniformes (decisão 416). O saldo só muda por movimentação; o ajuste de saldo pela janela deixou de existir.
+
+## 426. Ferramentas: menus Entrada no estoque e Entrega de ferramentas, sem Movimentações
+
+O menu Movimentações das Ferramentas foi substituído por dois, como em EPIs e Uniformes: **Entrada no estoque** (`?aba=entrada-estoque`) controla só as entradas; **Entrega de ferramentas** (`?aba=entrega`) controla a saída do estoque: entrega ao empregado, devolução e baixa (com o motivo da baixa). As duas telas usam `MovimentacoesModulo` com `foco`, que filtra a lista e os tipos do formulário. Veículos continuam com o histórico completo. O botão Exportar CSV some no Estoque por posição, onde as linhas não são as da lista.
+
+A Entrada no estoque (decisão 426) só controla as entradas por empresa: o formulário não tem Tipo de movimentação, Empregado, Motivo da baixa, Ônus da baixa, Tipo de vistoria nem Sinalizar ocorrência, e a lista mostra Empresa no lugar das colunas de empregado, baixa e ocorrência.

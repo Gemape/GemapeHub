@@ -57,9 +57,14 @@ export function PaginaModulo({
         </TabsContent>
 
         {modulo === "ferramenta" && (
-          <TabsContent value="movimentacoes" className="mt-5">
-            <MovimentacoesModulo modulo={modulo} />
-          </TabsContent>
+          <>
+            <TabsContent value="entrada-estoque" className="mt-5">
+              <MovimentacoesModulo modulo={modulo} foco="entrada" />
+            </TabsContent>
+            <TabsContent value="entrega" className="mt-5">
+              <MovimentacoesModulo modulo={modulo} foco="entrega" />
+            </TabsContent>
+          </>
         )}
 
         {modulo === "uniforme" && (

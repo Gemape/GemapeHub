@@ -210,5 +210,5 @@ test("o Dashboard alerta o estoque baixo por tamanho e reabrir a movimentação 
   assert.match(dashboard, /alertasDeMinimoEpi/);
   assert.match(dashboard, /TAMANHO_DISPONIVEL/, "colunas novas só no modo demonstração");
   const movimentacoes = fonte("components/modules/MovimentacoesModulo.tsx");
-  assert.match(movimentacoes, /setTipoMovimentacao\("Saida"\);\s*setAberto\(true\)/);
+  assert.match(movimentacoes, /setTipoMovimentacao\(foco === "entrada" \? "Entrada" : "Saida"\);\s*setAberto\(true\)/);
 });

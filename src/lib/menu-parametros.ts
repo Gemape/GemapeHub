@@ -78,11 +78,12 @@ export const ABAS_UNIFORME: readonly AbaMenu[] = [
 export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
   { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
+  { aba: "entrada-estoque", titulo: "Entrada no estoque", icone: "ShoppingCart" },
+  { aba: "entrega", titulo: "Entrega de ferramentas", icone: "PackageCheck" },
   { aba: "caixas", titulo: "Número da caixa", icone: "Box" },
   { aba: "termo-responsabilidade", titulo: "Termo de responsabilidade individual", icone: "FileSignature" },
   { aba: "termo-encerramento", titulo: "Termo de encerramento responsabilidade", icone: "FileX" },
   { aba: "termo-vistoria", titulo: "Termo de vistoria periódica", icone: "ClipboardCheck" },
-  { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
@@ -238,7 +239,8 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     "termo-responsabilidade": "Gera o termo de responsabilidade individual do empregado pelas ferramentas que recebeu.",
     "termo-encerramento": "Gera o termo que encerra a responsabilidade do empregado sobre as ferramentas devolvidas.",
     "termo-vistoria": "Gera o termo da vistoria periódica das ferramentas que estão com o empregado.",
-    movimentacoes: "Lista as entradas, saídas e devoluções de ferramentas e registra novas movimentações.",
+    "entrada-estoque": "Controla só as entradas de ferramentas no estoque (compra, nota fiscal ou ajuste) e lista as entradas já feitas.",
+    entrega: "Controla a saída das ferramentas do estoque: entrega ao empregado, devolução e baixa (perda, quebra ou desgaste, com o motivo).",
     ocorrencias: OCORR,
   },
   veiculo: {

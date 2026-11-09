@@ -114,7 +114,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
           />
         </BarraDeFiltros>
         {ferr && <Button type="button" variant={porPosicao ? 'default' : 'outline'} aria-pressed={porPosicao} onClick={() => setPorPosicao((v) => !v)}>{porPosicao ? 'Ver estoque por item' : 'Estoque por posição'}</Button>}
-        <Button variant="outline" disabled={isLoading || linhas.length === 0} onClick={() =>
+        <Button variant="outline" hidden={porPosicao} disabled={isLoading || linhas.length === 0} onClick={() =>
           exportarCsv(`estoque-${modulo}`, linhas.map(({ item, estado }) => ({
             Código: item.codigo_sku,
             Empresa: nomeDaEmpresa(item.empresa_id),
@@ -130,7 +130,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
         }>Exportar CSV</Button>
       </div>
       {ferr && porPosicao && <ConsolidadoPorPosicao linhas={linhas.map(({ item }) => item)} posicoes={posicoes} onAbrir={setExtrato} />}
-      <div className={`panel overflow-x-auto ${ferr && porPosicao ? 'hidden' : ''}`}>
+      {!(ferr && porPosicao) && <div className="panel overflow-x-auto">
         <Table>
           <TableHeader><TableRow>
             <TableHead>Código</TableHead><TableHead>Item</TableHead><TableHead>Empresa</TableHead>
@@ -143,7 +143,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
           <TableBody>
             {isLoading ? <TableRow><TableCell colSpan={ferr ? 12 : 6}>Carregando estoque…</TableCell></TableRow>
               : linhas.length === 0 ? <TableRow><TableCell colSpan={ferr ? 12 : 6}>{busca.trim() ? 'Nenhum item para a busca.' : 'Nenhum item cadastrado.'}</TableCell></TableRow>
-                : linhas.flatMap(({ item, estado }) => [<TableRow key={item.id} className={ferr ? 'cursor-pointer' : undefined} onClick={ferr ? () => setExtrato({ titulo: `${item.codigo_sku ?? ''} · ${item.nome} (${nomeDaEmpresa(item.empresa_id)})`, ids: [item.id] }) : undefined}>
+                : linhas.map(({ item, estado }) => <TableRow key={item.id} {...(ferr ? linhaClicavel(() => setExtrato({ titulo: `${item.codigo_sku ?? ''} · ${item.nome} (${nomeDaEmpresa(item.empresa_id)})`, ids: [item.id] })) : {})}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell>{item.nome}</TableCell>
                   <TableCell>{nomeDaEmpresa(item.empresa_id)}</TableCell>
@@ -163,10 +163,10 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
                     {textoDe(estado) || '—'}
                     {(posicoes.get(item.id)?.divergencias ?? []).map((d) => <p key={d} className="text-xs font-bold text-destructive">Não bate: {d}</p>)}
                   </TableCell>
-                </TableRow>])}
+                </TableRow>)}
           </TableBody>
         </Table>
-      </div>
+      </div>}
       {ferr && <ExtratoFerramenta alvo={extrato} movimentos={movimentos} saldo={(extrato?.ids ?? []).reduce((t, id) => t + (posicoes.get(id)?.saldo ?? 0), 0)} onde={ondeEsta(extrato?.ids ?? [])} nomeEmpregado={(id) => empregados.find((e) => e.id === id)?.nome ?? 'Empregado não encontrado'} empresa={empresaId === TODAS ? 'Todas as empresas' : nomeDaEmpresa(empresaId)} onFechar={() => setExtrato(null)} />}
       {ferr && !porPosicao && <PosicaoPorCaixa caixas={caixas.filter((c) => itens.some((i) => i.empresa_id === c.empresa_id) || empresaId === TODAS)} itensDeCaixa={itensDeCaixa} itens={itens} posicoes={posicoes} />}
       {modulo !== 'ferramenta' && <ControleEstoqueModulo modulo={modulo} />}
@@ -230,6 +230,13 @@ function PosicaoPorCaixa({ caixas, itensDeCaixa, itens, posicoes }: {
   );
 }
 
+// Linha da tabela que abre o extrato: clique, e Enter ou espaço para quem usa o teclado.
+const linhaClicavel = (abrir: () => void) => ({
+  className: 'cursor-pointer', tabIndex: 0,
+  onClick: abrir,
+  onKeyDown: (e: React.KeyboardEvent) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(); } },
+});
+
 // Estoque consolidado por posição: cada ferramenta com o saldo somado das empresas e repartido entre guardada na caixa, com empregado e sem caixa.
 function ConsolidadoPorPosicao({ linhas, posicoes, onAbrir }: { linhas: { id: string; codigo_sku: string | null; nome: string }[]; posicoes: Map<string, PosicaoDaFerramenta>; onAbrir: (alvo: AlvoDoExtrato) => void }) {
   const grupos = new Map<string, { ids: string[]; codigo: string; nome: string; saldo: number; guardada: number; comEmpregado: number; semCaixa: number }>();
@@ -255,13 +262,13 @@ function ConsolidadoPorPosicao({ linhas, posicoes, onAbrir }: { linhas: { id: st
             <TableHead className="text-right">Sem caixa</TableHead><TableHead className="text-right">Saldo total</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {lista.length === 0 ? <TableRow><TableCell colSpan={3 + 3}>Nenhum item para mostrar.</TableCell></TableRow> : lista.flatMap((g) => [
-              <TableRow key={`${g.codigo}|${g.nome}`} className="cursor-pointer" onClick={() => onAbrir({ titulo: `${g.codigo} · ${g.nome}`, ids: g.ids })}>
+            {lista.length === 0 ? <TableRow><TableCell colSpan={3 + 3}>Nenhum item para mostrar.</TableCell></TableRow> : lista.map((g) => (
+              <TableRow key={`${g.codigo}|${g.nome}`} {...linhaClicavel(() => onAbrir({ titulo: `${g.codigo} · ${g.nome}`, ids: g.ids }))}>
                 <TableCell className="font-mono text-xs">{g.codigo}</TableCell><TableCell>{g.nome}</TableCell>
                 <TableCell className="text-right">{g.guardada}</TableCell><TableCell className="text-right">{g.comEmpregado}</TableCell>
                 <TableCell className="text-right">{g.semCaixa}</TableCell><TableCell className="text-right font-semibold">{g.saldo}</TableCell>
-              </TableRow>,
-            ])}
+              </TableRow>
+            ))}
             {lista.length > 0 && <TableRow className="bg-muted/40 font-semibold">
               <TableCell colSpan={2}>Total</TableCell>
               <TableCell className="text-right">{total('guardada')}</TableCell><TableCell className="text-right">{total('comEmpregado')}</TableCell>
