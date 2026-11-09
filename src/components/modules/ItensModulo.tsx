@@ -127,6 +127,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
   async function abrirNovo(origem?: Item) {
     if (!regraFerramenta) {
       toast.error("Cadastre antes a regra do código de Ferramentas em Cadastros > Gerais.");
+      janela?.onAberto(false);
       return;
     }
     setEditando(null);
@@ -223,7 +224,8 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
   }
 
   return (
-    <div className={janela ? "hidden" : "space-y-4"}>
+    <div className="space-y-4">
+      {!janela && <>
       <div className="flex flex-wrap items-end gap-2">
         <BarraDeFiltros>
           <Input
@@ -360,6 +362,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
           </TableBody>
         </Table>
       </div>
+      </>}
 
       <Dialog open={aberto} onOpenChange={(a) => { setAberto(a); if (!a) janela?.onAberto(false); }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">

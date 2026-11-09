@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
@@ -31,7 +30,11 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
   const { data: itens = [] } = useItens("ferramenta", TODAS);
   const parametros = useParametrosBase();
   const registrar = useRegistrarMovimentacoesLote(["estoque-modulo"]);
-  const [empresaCompra, setEmpresaCompra] = useState(() => (empresasParaEscolha(empresas).some((e) => e.id === empresaId) ? empresaId : ""));
+  const [empresaCompra, setEmpresaCompra] = useState("");
+  // Começa na empresa escolhida no topo, assim que a lista de empresas chega (e só se ainda não houver escolha).
+  useEffect(() => {
+    if (!empresaCompra && empresasParaEscolha(empresas).some((e) => e.id === empresaId)) setEmpresaCompra(empresaId);
+  }, [empresas, empresaId, empresaCompra]);
   const [itemId, setItemId] = useState("");
   const [fornecedorId, setFornecedorId] = useState("");
   const [quantidade, setQuantidade] = useState(0);
@@ -47,15 +50,6 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
     setItemId(nova.id);
     setNovoCodigo("");
   }, [novoCodigo, itens]);
-  // Vai e volta: o link Cadastrar ferramenta abre o cadastro em outra aba; ao voltar para esta, a lista de ferramentas é lida de novo e a nova já aparece (decisão 327).
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    if (!aberto) return;
-    const aoVoltar = () => void queryClient.invalidateQueries({ queryKey: ["ferramentas"] });
-    window.addEventListener("focus", aoVoltar);
-    return () => window.removeEventListener("focus", aoVoltar);
-  }, [aberto, queryClient]);
-
   function fechar(a: boolean) {
     if (!a) {
       setItemId("");
@@ -125,7 +119,8 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
             <p className="text-xs text-muted-foreground">
               Ferramenta não está na lista?{" "}
               <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setCadastrando(true)}>Cadastrar ferramenta</button>
-            </p>          </div>
+            </p>
+          </div>
           {item && (
             <>
               <p className="text-xs text-muted-foreground sm:col-span-2">
