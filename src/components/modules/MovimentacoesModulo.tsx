@@ -1,6 +1,7 @@
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
 
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
@@ -16,7 +17,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -153,6 +156,10 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
     const quantidadeDigitada = Number(f.get("quantidade") ?? 1);
     const tipo = String(f.get("tipo_movimentacao") ?? "Entrada");
     const alvo = ehVeiculo ? null : texto("alvo_id");
+    if (!texto("alvo_id")) {
+      alert(ehVeiculo ? "Selecione o veículo." : "Selecione o item.");
+      return;
+    }
     const bloqueio = bloqueioPorDemissao(
       todosEmpregados.find((p) => p.id === texto("empregado_id")),
       tipo === "Saida" ? "entrega" : tipo === "Devolucao" ? "devolucao" : "movimentacao",
@@ -209,6 +216,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
       tipo_ocorrencia: comOcorrencia ? texto("tipo_ocorrencia") : null,
       conducao_ocorrencia: comOcorrencia ? texto("conducao_ocorrencia") : null,
       data_movimentacao: String(f.get("data_movimentacao") ?? ""),
+      // Entrada no estoque (Ferramentas): nova ou usada. A coluna ainda não existe no banco real (Fase 2): só vai no modo demonstração.
+      ...(soEntrada && MODO_DEMO ? { condicao: f.get("condicao_entrada") === "usado" ? "usado" : "novo" } : {}),
       origem_local: capitalizarTexto(texto("origem_local")) || null,
       destino_local: capitalizarTexto(texto("destino_local")) || null,
       observacao: capitalizarTexto(texto("observacao"))?.slice(0, 500) || null,
@@ -334,7 +343,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{naturezaMovimentacao(m)}</Badge>
+                    <Badge variant="secondary">{soEntrada ? ((m as { condicao?: string }).condicao === "usado" ? "Entrada usada" : "Entrada nova") : naturezaMovimentacao(m)}</Badge>
                   </TableCell>
                   {!ehVeiculo && (
                     <TableCell className="font-mono text-xs">
@@ -415,34 +424,32 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 </SelectContent>
               </Select>
             </div>
+            {soEntrada && (
+              <div className="space-y-1.5">
+                <Label htmlFor="condicao_entrada">Tipo</Label>
+                <Select name="condicao_entrada" defaultValue="novo">
+                  <SelectTrigger id="condicao_entrada">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="novo">Entrada nova</SelectItem>
+                    <SelectItem value="usado">Entrada usada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="alvo_id">{ehVeiculo ? "Veículo" : "Item"}</Label>
-              <Select
-                name="alvo_id"
-                required
-                onValueChange={(v) => {
+              <SeletorComBusca
+                id="alvo_id"
+                nome="alvo_id"
+                valor={alvoId}
+                opcoes={ehVeiculo ? veiculos.map((o) => ({ id: o.id, rotulo: [o.placa, o.modelo].filter(Boolean).join(" — ") || "—" })) : itens.map((o) => ({ id: o.id, rotulo: `${o.codigo_sku} — ${o.nome}` }))}
+                onChange={(v) => {
                   setAlvoId(v);
                   setTamanho("");
                 }}
-                defaultValue={alvoId}
-              >
-                <SelectTrigger id="alvo_id">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(ehVeiculo ? veiculos : itens).map((o) =>
-                    "placa" in o ? (
-                      <SelectItem key={o.id} value={o.id}>
-                        {[o.placa, o.modelo].filter(Boolean).join(" — ") || "—"}
-                      </SelectItem>
-                    ) : (
-                      <SelectItem key={o.id} value={o.id}>
-                        {o.codigo_sku} — {o.nome}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
+              />
               {modulo === "ferramenta" && tipoMovimentacao === "Entrada" && alvoId && (
                 <EnderecoDaEntrada categoriaId="cat-ferramentas" empresaId={itens.find((i) => i.id === alvoId)?.empresa_id ?? ""} codigo={itens.find((i) => i.id === alvoId)?.codigo_sku ?? ""} />
               )}
@@ -670,5 +677,38 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Lista com busca ao digitar (código ou nome): o valor escolhido vai num campo oculto, para o formulário enviar como os demais.
+function SeletorComBusca({ id, nome, valor, opcoes, onChange }: { id: string; nome: string; valor: string; opcoes: { id: string; rotulo: string }[]; onChange: (id: string) => void }) {
+  const [aberto, setAberto] = useState(false);
+  const escolhido = opcoes.find((o) => o.id === valor);
+  return (
+    <Popover open={aberto} onOpenChange={setAberto}>
+      <input type="hidden" name={nome} value={valor} />
+      <PopoverTrigger asChild>
+        <Button id={id} type="button" variant="outline" role="combobox" aria-expanded={aberto} className="w-full justify-between font-normal">
+          <span className={`truncate ${escolhido ? "" : "text-muted-foreground"}`}>{escolhido?.rotulo ?? "Selecione"}</span>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Digite para buscar…" />
+          <CommandList>
+            <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+            <CommandGroup>
+              {opcoes.map((o) => (
+                <CommandItem key={o.id} value={o.rotulo} onSelect={() => { onChange(o.id); setAberto(false); }}>
+                  <Check className={`mr-2 h-4 w-4 ${o.id === valor ? "opacity-100" : "opacity-0"}`} />
+                  {o.rotulo}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
