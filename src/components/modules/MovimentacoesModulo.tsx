@@ -463,7 +463,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                     return true;
                   }).map((t) => (
                     <SelectItem key={t} value={t}>
-                      {foco === "entrega" && t === "Saida" ? "Entrega ou baixa (com motivo)" : TIPO_MOVIMENTACAO_LABEL[t]}
+                      {TIPO_MOVIMENTACAO_LABEL[t]}
                     </SelectItem>
                   ))}
                 </SelectContent>
