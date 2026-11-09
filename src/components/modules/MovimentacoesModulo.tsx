@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SeletorComBusca } from "@/components/SeletorComBusca";
+import { CompraFerramentaDialog } from "@/components/modules/CompraFerramentaDialog";
 import { DevolucaoFerramentaDialog } from "@/components/modules/DevolucaoFerramentaDialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -42,6 +43,7 @@ import {
   CONDUCOES_OCORRENCIA,
   exportarCsv,
   formatarData,
+  formatarMoeda,
   MOTIVOS_BAIXA,
   ONUS_BAIXA,
   TIPO_MOVIMENTACAO_LABEL,
@@ -88,7 +90,7 @@ const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
 
 // `foco` (Ferramentas): "entrada" mostra e registra só as entradas no estoque; "entrega" só as entregas e devoluções ao empregado.
-const TIPOS_DO_FOCO = { entrada: ["Entrada", "Devolucao"], entrega: ["Saida"] } as const;
+const TIPOS_DO_FOCO = { entrega: ["Saida"] } as const;
 const TIPOS_DA_VISAO = { compras: ["Entrada"], devolucoes: ["Devolucao"] } as const;
 const TEXTO_DO_FOCO = { entrada: { novo: "Nova entrada", titulo: "Entrada no estoque", busca: "Buscar entrada ou devolução", plural: "entradas e devoluções" }, entrega: { novo: "Nova entrega", titulo: "Entrega de ferramentas", busca: "Buscar entrega", plural: "entregas e baixas" } } as const;
 
@@ -96,6 +98,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
   const [devolucaoAberta, setDevolucaoAberta] = useState(false);
+  const [compraAberta, setCompraAberta] = useState(false);
   // Entrada no estoque: Compras e Devoluções em listas separadas, um botão para cada (decisão 380).
   const [visao, setVisao] = useState<"compras" | "devolucoes">("compras");
   const [comOcorrencia, setComOcorrencia] = useState(false);
@@ -112,6 +115,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const tiposDoFoco: readonly string[] | null = foco === "entrada" ? TIPOS_DA_VISAO[visao] : foco ? TIPOS_DO_FOCO[foco] : null;
   const movimentacoes = tiposDoFoco ? todasMovimentacoes.filter((m) => tiposDoFoco.includes(m.tipo_movimentacao)) : todasMovimentacoes;
   const texto = foco ? TEXTO_DO_FOCO[foco] : null;
+  // Na Entrada no estoque a lista mostra só a visão escolhida, e o contador acompanha.
+  const plural = foco === "entrada" ? (visao === "devolucoes" ? "devoluções" : "entradas") : texto?.plural ?? "movimentações";
   // Entrada no estoque (Ferramentas): só item, empresa, quantidade, data e observação; sem tipo, empregado, baixa, vistoria nem ocorrência.
   const soEntrada = foco === "entrada";
   const ocultoNaEntrada = soEntrada ? " hidden" : "";
@@ -127,7 +132,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const mostraEmpregado = !soEntrada || visao === "devolucoes";
   const [busca, setBusca] = useState("");
   // Data, Tipo, Item, Empresa/Empregado e Qtde sempre; as demais dependem do módulo e do foco.
-  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada && visao === "devolucoes");
+  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada && visao === "devolucoes") + 4 * Number(soEntrada && visao === "compras");
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
@@ -223,8 +228,6 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
       tipo_ocorrencia: comOcorrencia ? texto("tipo_ocorrencia") : null,
       conducao_ocorrencia: comOcorrencia ? texto("conducao_ocorrencia") : null,
       data_movimentacao: String(f.get("data_movimentacao") ?? ""),
-      // Entrada no estoque (Ferramentas): nova ou usada. A coluna ainda não existe no banco real (Fase 2): só vai no modo demonstração.
-      ...(soEntrada && MODO_DEMO ? { condicao: f.get("condicao_entrada") === "usado" ? "usado" : "novo" } : {}),
       origem_local: capitalizarTexto(texto("origem_local")) || null,
       destino_local: capitalizarTexto(texto("destino_local")) || null,
       observacao: capitalizarTexto(texto("observacao"))?.slice(0, 500) || null,
@@ -268,8 +271,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           />
           <p className="text-sm text-muted-foreground">
             {visiveis.length === movimentacoes.length
-              ? `Últimas ${movimentacoes.length} ${texto?.plural ?? "movimentações"} registradas.`
-              : `${visiveis.length} de ${movimentacoes.length} ${texto?.plural ?? "movimentações"}.`}
+              ? `Últimas ${movimentacoes.length} ${plural} registradas.`
+              : `${visiveis.length} de ${movimentacoes.length} ${plural}.`}
           </p>
         </BarraDeFiltros>
         <div className="flex flex-wrap gap-2">
@@ -295,18 +298,22 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           {soEntrada && <Button requiresWrite="operar" variant="outline" onClick={() => setDevolucaoAberta(true)}>Devolução</Button>}
           <Button requiresWrite="operar"
             onClick={() => {
+              if (soEntrada) {
+                // Entrada no estoque: a compra tem o seu próprio formulário (CompraFerramentaDialog), como em EPIs e uniformes.
+                setVisao("compras");
+                setCompraAberta(true);
+                return;
+              }
               setComOcorrencia(false);
               setAcaoManutId("");
               setSubitensMarcados([]);
               setTamanho("");
-              // A nova entrada aparece na lista Compras.
-              if (soEntrada) setVisao("compras");
               // O tipo volta para Saída como o formulário, que reabre com o valor padrão.
-              setTipoMovimentacao(foco === "entrada" ? "Entrada" : "Saida");
+              setTipoMovimentacao("Saida");
               setAberto(true);
             }}
           >
-            {texto?.novo ?? "Nova movimentação"}
+            {soEntrada ? "Registrar Compra" : (texto?.novo ?? "Nova movimentação")}
           </Button>
         </div>
       </div>
@@ -331,6 +338,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               <TableHead>{ehVeiculo ? "Veículo" : "Item"}</TableHead>
               {comTamanho && <TableHead>Tamanho</TableHead>}
               {soEntrada && <TableHead>Empresa</TableHead>}
+              {soEntrada && visao === "compras" && <><TableHead>Fornecedor</TableHead><TableHead>NF</TableHead><TableHead className="text-right">Valor unit.</TableHead><TableHead className="text-right">Valor total</TableHead></>}
               {mostraEmpregado && <TableHead>Empregado</TableHead>}
               <TableHead className="text-right">Qtde</TableHead>
               {!soEntrada && <TableHead>Motivo da baixa</TableHead>}
@@ -375,6 +383,10 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                     <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) || "—"}</TableCell>
                   )}
                   {soEntrada && <TableCell>{empresas.find((e) => e.id === m.empresa_id)?.nome_fantasia ?? "—"}</TableCell>}
+                  {soEntrada && visao === "compras" && (() => {
+                    const c = m as { fornecedor?: string | null; nota_fiscal?: string | null; valor_unitario?: number | null; valor_total?: number | null };
+                    return <><TableCell>{c.fornecedor || "—"}</TableCell><TableCell>{c.nota_fiscal || "—"}</TableCell><TableCell className="text-right">{c.valor_unitario != null ? formatarMoeda(c.valor_unitario) : "—"}</TableCell><TableCell className="text-right">{c.valor_total != null ? formatarMoeda(c.valor_total) : "—"}</TableCell></>;
+                  })()}
                   {mostraEmpregado && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
                   <TableCell className="text-right">{m.quantidade}</TableCell>
                   {!soEntrada && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
@@ -416,6 +428,27 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               />
             </div>
             <div className={`space-y-1.5${ocultoNaEntrada}`}>
+              <Label htmlFor="motivo_baixa">Motivo da baixa</Label>
+              <Select
+                name="motivo_baixa"
+                disabled={modulo === "epi" && tipoMovimentacao === "Entrada"}
+              >
+                <SelectTrigger id="motivo_baixa">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NENHUM}>Não se aplica</SelectItem>
+                  {MOTIVOS_BAIXA.filter((m) => !(modulo === "uniforme" && m === "Quebra")).map(
+                    (m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className={`space-y-1.5${foco ? " hidden" : ""}`}>
               <Label htmlFor="tipo_movimentacao">Tipo de movimentação</Label>
               <Select
                 name="tipo_movimentacao"
@@ -440,26 +473,12 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                     return true;
                   }).map((t) => (
                     <SelectItem key={t} value={t}>
-                      {foco === "entrega" && t === "Saida" ? "Entrega ou baixa (com motivo)" : TIPO_MOVIMENTACAO_LABEL[t]}
+                      {TIPO_MOVIMENTACAO_LABEL[t]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {soEntrada && (
-              <div className="space-y-1.5">
-                <Label htmlFor="condicao_entrada">Tipo</Label>
-                <Select name="condicao_entrada" defaultValue="novo">
-                  <SelectTrigger id="condicao_entrada">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="novo">Nova</SelectItem>
-                    <SelectItem value="usado">Usada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             <div className="space-y-1.5">
               <Label htmlFor="alvo_id">{ehVeiculo ? "Veículo" : "Item"}</Label>
               <SeletorComBusca
@@ -562,27 +581,6 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 defaultValue={1}
                 required
               />
-            </div>
-            <div className={`space-y-1.5${ocultoNaEntrada}`}>
-              <Label htmlFor="motivo_baixa">Motivo da baixa</Label>
-              <Select
-                name="motivo_baixa"
-                disabled={modulo === "epi" && tipoMovimentacao === "Entrada"}
-              >
-                <SelectTrigger id="motivo_baixa">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NENHUM}>Não se aplica</SelectItem>
-                  {MOTIVOS_BAIXA.filter((m) => !(modulo === "uniforme" && m === "Quebra")).map(
-                    (m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
             </div>
             <div className={`space-y-1.5${foco ? " hidden" : ""}`}>
               <Label htmlFor="onus_baixa">Ônus da baixa</Label>
@@ -698,6 +696,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           </form>
         </DialogContent>
       </Dialog>
+      {soEntrada && compraAberta && <CompraFerramentaDialog aberto={compraAberta} onAbrirMudou={setCompraAberta} />}
       {soEntrada && devolucaoAberta && <DevolucaoFerramentaDialog aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />}
     </div>
   );
