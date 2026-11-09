@@ -67,7 +67,10 @@ import { SiglaCodigo } from "@/components/modules/SiglaCodigo";
 // vêm de Cadastros > Gerais. Ferramenta não tem subcategoria (decisão 25).
 const SEM_TAMANHO = "sem-tamanho";
 
-export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
+// `janela`: uso de ida e volta (Registrar Compra). Só o formulário de cadastro aparece, por cima da tela de origem; ao salvar ele fecha e devolve o código da ferramenta nova.
+export type JanelaDeCadastro = { aberto: boolean; onAberto: (aberto: boolean) => void; onSalvo: (codigo: string) => void };
+
+export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?: JanelaDeCadastro }) {
   const { empresas, empresaId } = useEmpresa();
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
@@ -108,6 +111,9 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   const { data: itens = [], isLoading } = useItens(modulo, empresaId, busca);
   const salvar = useSalvar(tabela, [tabela, "saidas-por-item"]);
   const excluir = useExcluir(tabela, [tabela, "saidas-por-item"]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (janela?.aberto) void abrirNovo(); else if (janela) setAberto(false); }, [janela?.aberto]);
 
   async function codigosFerramenta(): Promise<string[]> {
     const data = await lerTodas<{ codigo_sku: string | null }>(() => supabase.from("ferramentas").select("codigo_sku"), (q) => q.order("id"));
@@ -209,6 +215,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
       { ...(editando ? { id: editando.id } : {}), valores },
       { onSuccess: () => {
         setAberto(false);
+        if (janela) { janela.onAberto(false); janela.onSalvo(String(valores["codigo_sku"] ?? "")); return; }
         void avisarEnderecamentoObrigatorio(parametros, "cat-ferramentas",
           String(valores["empresa_id"] ?? ""), String(valores["codigo_sku"] ?? ""));
       }, onSettled: () => { salvando.current = false; } },
@@ -216,7 +223,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={janela ? "hidden" : "space-y-4"}>
       <div className="flex flex-wrap items-end gap-2">
         <BarraDeFiltros>
           <Input
@@ -354,7 +361,7 @@ export function ItensModulo({ modulo }: { modulo: "ferramenta" }) {
         </Table>
       </div>
 
-      <Dialog open={aberto} onOpenChange={setAberto}>
+      <Dialog open={aberto} onOpenChange={(a) => { setAberto(a); if (!a) janela?.onAberto(false); }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>

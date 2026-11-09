@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
 import { SeletorComBusca } from "@/components/SeletorComBusca";
+import { ItensModulo } from "@/components/modules/ItensModulo";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -36,6 +37,16 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
   const [quantidade, setQuantidade] = useState(0);
   const [valorUnitario, setValorUnitario] = useState(0);
   const item = itens.find((i) => i.id === itemId);
+  // Vai e volta: o cadastro abre por cima da compra; a ferramenta salva (achada pelo código) fica escolhida, com a empresa dela, sem perder o que foi preenchido.
+  const [cadastrando, setCadastrando] = useState(false);
+  const [novoCodigo, setNovoCodigo] = useState("");
+  useEffect(() => {
+    const nova = novoCodigo ? itens.find((i) => i.codigo_sku === novoCodigo) : undefined;
+    if (!nova) return;
+    setEmpresaCompra(nova.empresa_id ?? "");
+    setItemId(nova.id);
+    setNovoCodigo("");
+  }, [novoCodigo, itens]);
   // Vai e volta: o link Cadastrar ferramenta abre o cadastro em outra aba; ao voltar para esta, a lista de ferramentas é lida de novo e a nova já aparece (decisão 327).
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -113,9 +124,8 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
             {!empresaCompra && <p className="text-xs text-muted-foreground">Escolha a empresa para ver as ferramentas dela.</p>}
             <p className="text-xs text-muted-foreground">
               Ferramenta não está na lista?{" "}
-              <a href="/cadastros/ferramentas" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline underline-offset-2">Cadastrar ferramenta</a>
-            </p>
-          </div>
+              <button type="button" className="font-medium text-primary underline underline-offset-2" onClick={() => setCadastrando(true)}>Cadastrar ferramenta</button>
+            </p>          </div>
           {item && (
             <>
               <p className="text-xs text-muted-foreground sm:col-span-2">
@@ -164,6 +174,8 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
             <Button requiresWrite="operar" type="submit" disabled={registrar.isPending}>Registrar Compra</Button>
           </DialogFooter>
         </form>
+        {/* Fora do <form>: o submit do cadastro não pode subir para o da compra. */}
+        {aberto && <ItensModulo modulo="ferramenta" janela={{ aberto: cadastrando, onAberto: setCadastrando, onSalvo: setNovoCodigo }} />}
       </DialogContent>
     </Dialog>
   );
