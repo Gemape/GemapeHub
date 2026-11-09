@@ -68,7 +68,7 @@ import { SiglaCodigo } from "@/components/modules/SiglaCodigo";
 const SEM_TAMANHO = "sem-tamanho";
 
 // `janela`: uso de ida e volta (Registrar Compra). Só o formulário de cadastro aparece, por cima da tela de origem; ao salvar ele fecha e devolve o código da ferramenta nova.
-export type JanelaDeCadastro = { aberto: boolean; onAberto: (aberto: boolean) => void; onSalvo: (codigo: string) => void };
+export type JanelaDeCadastro = { empresaId?: string; aberto: boolean; onAberto: (aberto: boolean) => void; onSalvo: (codigo: string) => void };
 
 export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?: JanelaDeCadastro }) {
   const { empresas, empresaId } = useEmpresa();
@@ -172,7 +172,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
     const valores: Record<string, unknown> = {
       // A empresa não aparece no cadastro (decisão 54): a ferramenta nova usa a do cabeçalho e a
       // edição mantém a que já tinha.
-      empresa_id: editando?.empresa_id ?? (empresaPadraoParaEscolha(empresas, empresaId) || null),
+      empresa_id: editando?.empresa_id ?? (janela?.empresaId || empresaPadraoParaEscolha(empresas, empresaId) || null),
       codigo_sku: String(f.get("codigo_sku") ?? "").trim(),
       marca: texto("marca"),
       unidade_medida: texto("unidade_medida"),

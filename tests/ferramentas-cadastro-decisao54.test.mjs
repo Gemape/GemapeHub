@@ -19,7 +19,7 @@ test("Cadastrar Ferramenta não tem descrição, série, patrimônio, aquisiçã
 
 test("a ferramenta nova usa a empresa do cabeçalho e a edição mantém a dela", () => {
   const fonte = ler("components/modules/ItensModulo.tsx");
-  assert.match(fonte, /empresa_id: editando\?\.empresa_id \?\? \(empresaPadraoParaEscolha\(empresas, empresaId\) \|\| null\)/);
+  assert.match(fonte, /empresa_id: editando\?\.empresa_id \?\? \(janela\?\.empresaId \|\| empresaPadraoParaEscolha\(empresas, empresaId\) \|\| null\)/);
 });
 
 test("a edição não apaga série, patrimônio, aquisição, custo e nota fiscal que a ferramenta já tem", () => {

@@ -114,7 +114,7 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="compra-fer-item">Ferramenta</Label>
-            <SeletorComBusca id="compra-fer-item" nome="item_id" valor={itemId} opcoes={itens.filter((i) => i.empresa_id === empresaCompra).map((i) => ({ id: i.id, rotulo: `${i.codigo_sku} — ${i.nome}` }))} onChange={setItemId} />
+            <SeletorComBusca id="compra-fer-item" nome="item_id" valor={itemId} opcoes={itens.filter((i) => i.empresa_id === empresaCompra && i.status === "Ativo").map((i) => ({ id: i.id, rotulo: `${i.codigo_sku} — ${i.nome}` }))} onChange={(v) => { setItemId(v); setNovoCodigo(""); }} />
             {!empresaCompra && <p className="text-xs text-muted-foreground">Escolha a empresa para ver as ferramentas dela.</p>}
             <p className="text-xs text-muted-foreground">
               Ferramenta não está na lista?{" "}
@@ -170,7 +170,7 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
           </DialogFooter>
         </form>
         {/* Fora do <form>: o submit do cadastro não pode subir para o da compra. */}
-        {aberto && <ItensModulo modulo="ferramenta" janela={{ aberto: cadastrando, onAberto: setCadastrando, onSalvo: setNovoCodigo }} />}
+        {aberto && <ItensModulo modulo="ferramenta" janela={{ empresaId: empresaCompra, aberto: cadastrando, onAberto: setCadastrando, onSalvo: setNovoCodigo }} />}
       </DialogContent>
     </Dialog>
   );
