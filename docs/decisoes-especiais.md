@@ -2342,3 +2342,5 @@ A Entrada no estoque (decisão 426) só controla as entradas por empresa: o form
 ## 427. Movimentações: item com busca ao digitar e entrada nova ou usada
 
 No formulário de movimentação o campo Item (ou Veículo) é uma lista com busca ao digitar, por código ou nome (`SeletorComBusca`). Na Entrada no estoque das Ferramentas o campo **Tipo** distingue "Nova" e "Usada" (grava `condicao`, só no modo demonstração, como a devolução de EPI), e a coluna Tipo da lista mostra Nova ou Usada; entradas antigas, sem o campo, aparecem como nova.
+
+A Entrega de ferramentas (decisão 426) também não tem Tipo de vistoria, Ônus da baixa nem Sinalizar ocorrência, nem as colunas Ônus e Ocorrência na lista.

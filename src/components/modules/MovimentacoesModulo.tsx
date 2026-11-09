@@ -314,9 +314,9 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               {!soEntrada && <TableHead>Empregado</TableHead>}
               <TableHead className="text-right">Qtde</TableHead>
               {!soEntrada && <TableHead>Motivo da baixa</TableHead>}
-              {!soEntrada && <TableHead>Ônus</TableHead>}
+              {!foco && <TableHead>Ônus</TableHead>}
               {ehVeiculo && MODO_DEMO && <TableHead>Manutenção</TableHead>}
-              {!soEntrada && <TableHead>Ocorrência</TableHead>}
+              {!foco && <TableHead>Ocorrência</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -358,11 +358,11 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                   {!soEntrada && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
                   <TableCell className="text-right">{m.quantidade}</TableCell>
                   {!soEntrada && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
-                  {!soEntrada && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}
+                  {!foco && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}
                   {ehVeiculo && MODO_DEMO && (
                     <TableCell>{textoManutencao(m) || "—"}</TableCell>
                   )}
-                  {!soEntrada && <TableCell>
+                  {!foco && <TableCell>
                     {m.sinalizar_ocorrencia ? (
                       <Badge variant="destructive">Sim</Badge>
                     ) : (
@@ -562,7 +562,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 </SelectContent>
               </Select>
             </div>
-            <div className={`space-y-1.5${ocultoNaEntrada}`}>
+            <div className={`space-y-1.5${foco ? " hidden" : ""}`}>
               <Label htmlFor="onus_baixa">Ônus da baixa</Label>
               <Select
                 name="onus_baixa"
@@ -582,7 +582,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               </Select>
             </div>
             {/* Vistoria e Ocorrência apenas para Ferramentas e Veículos */}
-            {(modulo === "ferramenta" || ehVeiculo) && !soEntrada && (
+            {(modulo === "ferramenta" || ehVeiculo) && !foco && (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="tipo_vistoria">Tipo de vistoria</Label>
                 <Select name="tipo_vistoria">
@@ -611,7 +611,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               />
             )}
 
-            {(modulo === "ferramenta" || ehVeiculo) && !soEntrada && (
+            {(modulo === "ferramenta" || ehVeiculo) && !foco && (
               <>
                 <div className="flex items-center gap-2 sm:col-span-2">
                   <Checkbox
