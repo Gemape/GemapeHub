@@ -1,7 +1,7 @@
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
@@ -343,7 +343,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{soEntrada ? ((m as { condicao?: string }).condicao === "usado" ? "Entrada usada" : "Entrada nova") : naturezaMovimentacao(m)}</Badge>
+                    <Badge variant="secondary">{soEntrada ? ((m as { condicao?: string }).condicao === "usado" ? "Usada" : "Nova") : naturezaMovimentacao(m)}</Badge>
                   </TableCell>
                   {!ehVeiculo && (
                     <TableCell className="font-mono text-xs">
@@ -432,8 +432,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="novo">Entrada nova</SelectItem>
-                    <SelectItem value="usado">Entrada usada</SelectItem>
+                    <SelectItem value="novo">Nova</SelectItem>
+                    <SelectItem value="usado">Usada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -688,10 +688,10 @@ function SeletorComBusca({ id, nome, valor, opcoes, onChange }: { id: string; no
     <Popover open={aberto} onOpenChange={setAberto}>
       <input type="hidden" name={nome} value={valor} />
       <PopoverTrigger asChild>
-        <Button id={id} type="button" variant="outline" role="combobox" aria-expanded={aberto} className="w-full justify-between font-normal">
+        <button id={id} type="button" role="combobox" aria-expanded={aberto} className="flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-input bg-white/60 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring dark:bg-white/5">
           <span className={`truncate ${escolhido ? "" : "text-muted-foreground"}`}>{escolhido?.rotulo ?? "Selecione"}</span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <Command>
