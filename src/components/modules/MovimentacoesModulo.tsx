@@ -123,9 +123,11 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const registrarLote = useRegistrarMovimentacoesLote(CHAVES);
 
   const ehVeiculo = modulo === "veiculo";
+  // Compras (entradas) não têm empregado; as devoluções, sim.
+  const mostraEmpregado = !soEntrada || visao === "devolucoes";
   const [busca, setBusca] = useState("");
   // Data, Tipo, Item, Empresa/Empregado e Qtde sempre; as demais dependem do módulo e do foco.
-  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada);
+  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada && visao === "devolucoes");
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
@@ -297,6 +299,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               setAcaoManutId("");
               setSubitensMarcados([]);
               setTamanho("");
+              // A nova entrada aparece na lista Compras.
+              if (soEntrada) setVisao("compras");
               // O tipo volta para Saída como o formulário, que reabre com o valor padrão.
               setTipoMovimentacao(foco === "entrada" ? "Entrada" : "Saida");
               setAberto(true);
@@ -327,7 +331,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               <TableHead>{ehVeiculo ? "Veículo" : "Item"}</TableHead>
               {comTamanho && <TableHead>Tamanho</TableHead>}
               {soEntrada && <TableHead>Empresa</TableHead>}
-              {(!soEntrada || foco) && <TableHead>Empregado</TableHead>}
+              {mostraEmpregado && <TableHead>Empregado</TableHead>}
               <TableHead className="text-right">Qtde</TableHead>
               {!soEntrada && <TableHead>Motivo da baixa</TableHead>}
               {!foco && <TableHead>Ônus</TableHead>}
@@ -371,7 +375,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                     <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) || "—"}</TableCell>
                   )}
                   {soEntrada && <TableCell>{empresas.find((e) => e.id === m.empresa_id)?.nome_fantasia ?? "—"}</TableCell>}
-                  {(!soEntrada || foco) && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
+                  {mostraEmpregado && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
                   <TableCell className="text-right">{m.quantidade}</TableCell>
                   {!soEntrada && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
                   {!foco && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}
@@ -397,7 +401,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           <DialogHeader>
             <DialogTitle>{texto?.titulo ?? "Nova movimentação"}</DialogTitle>
             <DialogDescription>
-              {foco === "entrada" ? "Registra a ferramenta que entra no estoque." : foco === "entrega" ? "Entrega ao empregado, devolução ou baixa: para baixar, informe o motivo da baixa." : "Toda movimentação registra a empresa e o empregado envolvidos."}
+              {foco === "entrada" ? "Registra a ferramenta que entra no estoque." : foco === "entrega" ? "Entrega ao empregado ou baixa: para baixar, informe o motivo da baixa." : "Toda movimentação registra a empresa e o empregado envolvidos."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
@@ -426,6 +430,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 </SelectTrigger>
                 <SelectContent>
                   {TIPOS_MOVIMENTACAO.filter((t) => {
+                    // A janela de entrada só registra Entrada, qualquer que seja a lista (Compras ou Devoluções) aberta.
+                    if (soEntrada) return t === "Entrada";
                     if (tiposDoFoco) return tiposDoFoco.includes(t);
                     // Remover Transferência para EPI e Uniforme
                     if (modulo === "epi" || modulo === "uniforme") {
@@ -692,7 +698,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           </form>
         </DialogContent>
       </Dialog>
-      {soEntrada && <DevolucaoFerramentaDialog aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />}
+      {soEntrada && devolucaoAberta && <DevolucaoFerramentaDialog aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />}
     </div>
   );
 }

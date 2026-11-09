@@ -24,7 +24,7 @@ export function SeletorComBusca({ id, nome, valor, opcoes, onChange }: { id: str
             <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
             <CommandGroup>
               {opcoes.map((o) => (
-                <CommandItem key={o.id} value={o.rotulo} onSelect={() => { onChange(o.id); setAberto(false); }}>
+                <CommandItem key={o.id} value={o.id} keywords={[o.rotulo]} onSelect={() => { onChange(o.id); setAberto(false); }}>
                   <Check className={`mr-2 h-4 w-4 ${o.id === valor ? "opacity-100" : "opacity-0"}`} />
                   {o.rotulo}
                 </CommandItem>

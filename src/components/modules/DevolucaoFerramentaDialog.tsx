@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 
 import { SeletorComBusca } from "@/components/SeletorComBusca";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { controleDaFerramenta } from "@/lib/controle-caixa";
+import { caixaDaUltimaEntrega, controleDaFerramenta } from "@/lib/controle-caixa";
 import { TODAS } from "@/lib/empresa-context";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { lerMotivosDevolucaoEpi } from "@/lib/epi-parametros";
@@ -72,10 +71,10 @@ export function DevolucaoFerramentaDialog({ aberto, onAbrirMudou }: { aberto: bo
         modulo: "ferramenta", item_id: l.item.id, veiculo_id: null, empresa_id: l.item.empresa_id, empregado_id: empregado.id, tipo_movimentacao: "Devolucao",
         motivo_baixa: null, quantidade: Number(escolha(l.item.id, l.quantidade).quantidade), onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false,
         tipo_ocorrencia: null, conducao_ocorrencia: null, data_movimentacao: data, origem_local: null, destino_local: null, observacao: observacao.trim().slice(0, 500) || null,
-        // Colunas só do modo demonstração: o banco real ainda não as tem (Fase 2).
-        ...(MODO_DEMO ? { condicao: "usado", motivo_devolucao: escolha(l.item.id, l.quantidade).motivo } : {}),
+        // Colunas só do modo demonstração: o banco real ainda não as tem (Fase 2). A devolução volta para a caixa da última entrega (decisão 103).
+        ...(MODO_DEMO ? { condicao: "usado", motivo_devolucao: escolha(l.item.id, l.quantidade).motivo, caixa_id: caixaDaUltimaEntrega(movimentos, empregado.id, l.item.id) } : {}),
       })),
-      { onSuccess: () => { toast.success("Devolução registrada como entrada de usada"); fechar(false); } },
+      { onSuccess: () => fechar(false) },
     );
   }
 

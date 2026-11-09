@@ -93,6 +93,7 @@ export function EpiComprasModulo() {
   const saldoDoEscolhido = saldoParaCompra(parametros, itemEscolhido, "epi", tamanho, editando, itemSel);
 
   function abrirNovo() {
+    setVisao("compras");
     setEditando(null);
     setQuantidade(0);
     setValorUnitario(0);
