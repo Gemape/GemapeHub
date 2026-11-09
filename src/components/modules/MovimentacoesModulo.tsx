@@ -119,6 +119,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const plural = foco === "entrada" ? (visao === "devolucoes" ? "devoluções" : "entradas") : texto?.plural ?? "movimentações";
   // Entrada no estoque (Ferramentas): só item, empresa, quantidade, data e observação; sem tipo, empregado, baixa, vistoria nem ocorrência.
   const soEntrada = foco === "entrada";
+  // Entrega de ferramentas: na lista, o Motivo da baixa ocupa o lugar da coluna Tipo (como no formulário).
+  const soEntrega = foco === "entrega";
   const ocultoNaEntrada = soEntrada ? " hidden" : "";
   const { data: itens = [] } = useItens(modulo === "veiculo" ? "ferramenta" : modulo, empresaId);
   const { data: veiculos = [] } = useVeiculos(empresaId);
@@ -132,7 +134,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const mostraEmpregado = !soEntrada || visao === "devolucoes";
   const [busca, setBusca] = useState("");
   // Data, Tipo, Item, Empresa/Empregado e Qtde sempre; as demais dependem do módulo e do foco.
-  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada && visao === "devolucoes") + 4 * Number(soEntrada && visao === "compras");
+  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada && !soEntrega) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada && visao === "devolucoes") + 4 * Number(soEntrada && visao === "compras");
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
@@ -333,7 +335,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           <TableHeader>
             <TableRow>
               <TableHead>Data</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead>{soEntrega ? "Motivo da baixa" : "Tipo"}</TableHead>
               {!ehVeiculo && <TableHead>Código</TableHead>}
               <TableHead>{ehVeiculo ? "Veículo" : "Item"}</TableHead>
               {comTamanho && <TableHead>Tamanho</TableHead>}
@@ -341,7 +343,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               {soEntrada && visao === "compras" && <><TableHead>Fornecedor</TableHead><TableHead>NF</TableHead><TableHead className="text-right">Valor unit.</TableHead><TableHead className="text-right">Valor total</TableHead></>}
               {mostraEmpregado && <TableHead>Empregado</TableHead>}
               <TableHead className="text-right">Qtde</TableHead>
-              {!soEntrada && <TableHead>Motivo da baixa</TableHead>}
+              {!soEntrada && !soEntrega && <TableHead>Motivo da baixa</TableHead>}
               {!foco && <TableHead>Ônus</TableHead>}
               {ehVeiculo && MODO_DEMO && <TableHead>Manutenção</TableHead>}
               {!foco && <TableHead>Ocorrência</TableHead>}
@@ -371,7 +373,12 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{soEntrada ? (m.tipo_movimentacao === "Devolucao" ? "Devolução (usada)" : (m as { condicao?: string }).condicao === "usado" ? "Usada" : "Nova") : naturezaMovimentacao(m)}</Badge>
+                    {soEntrega ? (
+                      // Entrega: o motivo da baixa é texto comum, não etiqueta.
+                      m.motivo_baixa ?? "—"
+                    ) : (
+                      <Badge variant="secondary">{soEntrada ? (m.tipo_movimentacao === "Devolucao" ? "Devolução (usada)" : (m as { condicao?: string }).condicao === "usado" ? "Usada" : "Nova") : naturezaMovimentacao(m)}</Badge>
+                    )}
                   </TableCell>
                   {!ehVeiculo && (
                     <TableCell className="font-mono text-xs">
@@ -389,7 +396,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                   })()}
                   {mostraEmpregado && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
                   <TableCell className="text-right">{m.quantidade}</TableCell>
-                  {!soEntrada && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
+                  {!soEntrada && !soEntrega && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
                   {!foco && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}
                   {ehVeiculo && MODO_DEMO && (
                     <TableCell>{textoManutencao(m) || "—"}</TableCell>
