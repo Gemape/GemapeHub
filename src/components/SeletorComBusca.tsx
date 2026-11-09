@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { combinaBusca } from "@/lib/parametros-base";
 
 // Lista com busca ao digitar (código ou nome): o valor escolhido vai num campo oculto, para o formulário enviar como os demais.
 export function SeletorComBusca({ id, nome, valor, opcoes, onChange }: { id: string; nome: string; valor: string; opcoes: { id: string; rotulo: string }[]; onChange: (id: string) => void }) {
@@ -18,7 +19,8 @@ export function SeletorComBusca({ id, nome, valor, opcoes, onChange }: { id: str
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        <Command>
+        {/* O valor do item é o id (único, mesmo com rótulos iguais); o filtro padrão compararia também o id, então a busca olha só o rótulo. */}
+        <Command filter={(_valor, busca, rotulos) => (combinaBusca(busca, ...(rotulos ?? [])) ? 1 : 0)}>
           <CommandInput placeholder="Digite para buscar…" />
           <CommandList>
             <CommandEmpty>Nenhum item encontrado.</CommandEmpty>

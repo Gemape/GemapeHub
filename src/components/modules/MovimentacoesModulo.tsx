@@ -88,7 +88,7 @@ const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
 
 // `foco` (Ferramentas): "entrada" mostra e registra só as entradas no estoque; "entrega" só as entregas e devoluções ao empregado.
-const TIPOS_DO_FOCO = { entrada: ["Entrada", "Devolucao"], entrega: ["Saida"] } as const;
+const TIPOS_DO_FOCO = { entrega: ["Saida"] } as const;
 const TIPOS_DA_VISAO = { compras: ["Entrada"], devolucoes: ["Devolucao"] } as const;
 const TEXTO_DO_FOCO = { entrada: { novo: "Nova entrada", titulo: "Entrada no estoque", busca: "Buscar entrada ou devolução", plural: "entradas e devoluções" }, entrega: { novo: "Nova entrega", titulo: "Entrega de ferramentas", busca: "Buscar entrega", plural: "entregas e baixas" } } as const;
 
@@ -112,6 +112,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const tiposDoFoco: readonly string[] | null = foco === "entrada" ? TIPOS_DA_VISAO[visao] : foco ? TIPOS_DO_FOCO[foco] : null;
   const movimentacoes = tiposDoFoco ? todasMovimentacoes.filter((m) => tiposDoFoco.includes(m.tipo_movimentacao)) : todasMovimentacoes;
   const texto = foco ? TEXTO_DO_FOCO[foco] : null;
+  // Na Entrada no estoque a lista mostra só a visão escolhida, e o contador acompanha.
+  const plural = foco === "entrada" ? (visao === "devolucoes" ? "devoluções" : "entradas") : texto?.plural ?? "movimentações";
   // Entrada no estoque (Ferramentas): só item, empresa, quantidade, data e observação; sem tipo, empregado, baixa, vistoria nem ocorrência.
   const soEntrada = foco === "entrada";
   const ocultoNaEntrada = soEntrada ? " hidden" : "";
@@ -268,8 +270,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           />
           <p className="text-sm text-muted-foreground">
             {visiveis.length === movimentacoes.length
-              ? `Últimas ${movimentacoes.length} ${texto?.plural ?? "movimentações"} registradas.`
-              : `${visiveis.length} de ${movimentacoes.length} ${texto?.plural ?? "movimentações"}.`}
+              ? `Últimas ${movimentacoes.length} ${plural} registradas.`
+              : `${visiveis.length} de ${movimentacoes.length} ${plural}.`}
           </p>
         </BarraDeFiltros>
         <div className="flex flex-wrap gap-2">
