@@ -2344,3 +2344,7 @@ A Entrada no estoque (decisão 426) só controla as entradas por empresa: o form
 No formulário de movimentação o campo Item (ou Veículo) é uma lista com busca ao digitar, por código ou nome (`SeletorComBusca`). Na Entrada no estoque das Ferramentas o campo **Tipo** distingue "Nova" e "Usada" (grava `condicao`, só no modo demonstração, como a devolução de EPI), e a coluna Tipo da lista mostra Nova ou Usada; entradas antigas, sem o campo, aparecem como nova.
 
 A Entrega de ferramentas (decisão 426) também não tem Tipo de vistoria, Ônus da baixa nem Sinalizar ocorrência, nem as colunas Ônus e Ocorrência na lista.
+
+## 428. Devolução de ferramenta e botões Compras e Devoluções (EPI e Ferramentas)
+
+Na Entrada no estoque das Ferramentas há o botão **Devolução** (`DevolucaoFerramentaDialog`), na lógica da devolução de EPIs e uniformes (decisão 327): escolhe-se o empregado, a lista traz as ferramentas que ele tem em posse, e cada uma marcada volta ao estoque da empresa como usada, com a quantidade e o motivo. Como a ferramenta é da empresa, a devolução muda a posição e não o saldo. A Entrega de ferramentas passa a controlar só entregas e baixas. EPI e Ferramentas ganham, como os Uniformes (decisão 380), os botões **Compras** e **Devoluções**: cada um mostra só a sua lista.

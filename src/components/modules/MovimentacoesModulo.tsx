@@ -1,7 +1,6 @@
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
-import { Check, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
@@ -17,9 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SeletorComBusca } from "@/components/SeletorComBusca";
+import { DevolucaoFerramentaDialog } from "@/components/modules/DevolucaoFerramentaDialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -89,12 +88,16 @@ const CHAVES = ["movimentacoes", "itens", "saidas-por-item"];
 const NENHUM = "nenhum";
 
 // `foco` (Ferramentas): "entrada" mostra e registra só as entradas no estoque; "entrega" só as entregas e devoluções ao empregado.
-const TIPOS_DO_FOCO = { entrada: ["Entrada"], entrega: ["Saida", "Devolucao"] } as const;
-const TEXTO_DO_FOCO = { entrada: { novo: "Nova entrada", titulo: "Entrada no estoque", busca: "Buscar entrada", plural: "entradas" }, entrega: { novo: "Nova entrega", titulo: "Entrega de ferramentas", busca: "Buscar entrega", plural: "entregas e devoluções" } } as const;
+const TIPOS_DO_FOCO = { entrada: ["Entrada", "Devolucao"], entrega: ["Saida"] } as const;
+const TIPOS_DA_VISAO = { compras: ["Entrada"], devolucoes: ["Devolucao"] } as const;
+const TEXTO_DO_FOCO = { entrada: { novo: "Nova entrada", titulo: "Entrada no estoque", busca: "Buscar entrada ou devolução", plural: "entradas e devoluções" }, entrega: { novo: "Nova entrega", titulo: "Entrega de ferramentas", busca: "Buscar entrega", plural: "entregas e baixas" } } as const;
 
 export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "entrada" | "entrega" }) {
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
+  const [devolucaoAberta, setDevolucaoAberta] = useState(false);
+  // Entrada no estoque: Compras e Devoluções em listas separadas, um botão para cada (decisão 380).
+  const [visao, setVisao] = useState<"compras" | "devolucoes">("compras");
   const [comOcorrencia, setComOcorrencia] = useState(false);
   const [tipoMovimentacao, setTipoMovimentacao] = useState<string>(foco === "entrada" ? "Entrada" : "Saida");
   const [alvoId, setAlvoId] = useState<string>("");
@@ -106,7 +109,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const [subitensMarcados, setSubitensMarcados] = useState<string[]>([]);
   const comTamanho = TAMANHO_DISPONIVEL && controlaModulo(modulo);
   const { data: todasMovimentacoes = [], isLoading } = useMovimentacoes(modulo, empresaId);
-  const tiposDoFoco: readonly string[] | null = foco ? TIPOS_DO_FOCO[foco] : null;
+  const tiposDoFoco: readonly string[] | null = foco === "entrada" ? TIPOS_DA_VISAO[visao] : foco ? TIPOS_DO_FOCO[foco] : null;
   const movimentacoes = tiposDoFoco ? todasMovimentacoes.filter((m) => tiposDoFoco.includes(m.tipo_movimentacao)) : todasMovimentacoes;
   const texto = foco ? TEXTO_DO_FOCO[foco] : null;
   // Entrada no estoque (Ferramentas): só item, empresa, quantidade, data e observação; sem tipo, empregado, baixa, vistoria nem ocorrência.
@@ -122,7 +125,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const ehVeiculo = modulo === "veiculo";
   const [busca, setBusca] = useState("");
   // Data, Tipo, Item, Empresa/Empregado e Qtde sempre; as demais dependem do módulo e do foco.
-  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO);
+  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada);
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
@@ -287,6 +290,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
             Exportar CSV
           </Button>
           {modulo === "ferramenta" && <ImportarNfeXml />}
+          {soEntrada && <Button requiresWrite="operar" variant="outline" onClick={() => setDevolucaoAberta(true)}>Devolução</Button>}
           <Button requiresWrite="operar"
             onClick={() => {
               setComOcorrencia(false);
@@ -303,6 +307,16 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
         </div>
       </div>
 
+      {soEntrada && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Compras ou devoluções">
+          {([["compras", "Compras"], ["devolucoes", "Devoluções"]] as const).map(([id, rotulo]) => (
+            <Button key={id} type="button" className={visao === id ? "ring-2 ring-primary ring-offset-2" : "opacity-70"} aria-pressed={visao === id} onClick={() => setVisao(id)}>
+              {rotulo}
+            </Button>
+          ))}
+        </div>
+      )}
+
       <div className="panel overflow-x-auto">
         <Table>
           <TableHeader>
@@ -313,7 +327,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               <TableHead>{ehVeiculo ? "Veículo" : "Item"}</TableHead>
               {comTamanho && <TableHead>Tamanho</TableHead>}
               {soEntrada && <TableHead>Empresa</TableHead>}
-              {!soEntrada && <TableHead>Empregado</TableHead>}
+              {(!soEntrada || foco) && <TableHead>Empregado</TableHead>}
               <TableHead className="text-right">Qtde</TableHead>
               {!soEntrada && <TableHead>Motivo da baixa</TableHead>}
               {!foco && <TableHead>Ônus</TableHead>}
@@ -345,7 +359,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 <TableRow key={m.id}>
                   <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{soEntrada ? ((m as { condicao?: string }).condicao === "usado" ? "Usada" : "Nova") : naturezaMovimentacao(m)}</Badge>
+                    <Badge variant="secondary">{soEntrada ? (m.tipo_movimentacao === "Devolucao" ? "Devolução (usada)" : (m as { condicao?: string }).condicao === "usado" ? "Usada" : "Nova") : naturezaMovimentacao(m)}</Badge>
                   </TableCell>
                   {!ehVeiculo && (
                     <TableCell className="font-mono text-xs">
@@ -357,7 +371,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                     <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) || "—"}</TableCell>
                   )}
                   {soEntrada && <TableCell>{empresas.find((e) => e.id === m.empresa_id)?.nome_fantasia ?? "—"}</TableCell>}
-                  {!soEntrada && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
+                  {(!soEntrada || foco) && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
                   <TableCell className="text-right">{m.quantidade}</TableCell>
                   {!soEntrada && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
                   {!foco && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}
@@ -678,39 +692,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           </form>
         </DialogContent>
       </Dialog>
+      {soEntrada && <DevolucaoFerramentaDialog aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />}
     </div>
   );
 }
 
-// Lista com busca ao digitar (código ou nome): o valor escolhido vai num campo oculto, para o formulário enviar como os demais.
-function SeletorComBusca({ id, nome, valor, opcoes, onChange }: { id: string; nome: string; valor: string; opcoes: { id: string; rotulo: string }[]; onChange: (id: string) => void }) {
-  const [aberto, setAberto] = useState(false);
-  const escolhido = opcoes.find((o) => o.id === valor);
-  return (
-    <Popover open={aberto} onOpenChange={setAberto}>
-      <input type="hidden" name={nome} value={valor} />
-      <PopoverTrigger asChild>
-        <button id={id} type="button" role="combobox" aria-expanded={aberto} className="flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-input bg-white/60 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring dark:bg-white/5">
-          <span className={`truncate ${escolhido ? "" : "text-muted-foreground"}`}>{escolhido?.rotulo ?? "Selecione"}</span>
-          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Digite para buscar…" />
-          <CommandList>
-            <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
-            <CommandGroup>
-              {opcoes.map((o) => (
-                <CommandItem key={o.id} value={o.rotulo} onSelect={() => { onChange(o.id); setAberto(false); }}>
-                  <Check className={`mr-2 h-4 w-4 ${o.id === valor ? "opacity-100" : "opacity-0"}`} />
-                  {o.rotulo}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
