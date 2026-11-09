@@ -15,13 +15,16 @@ export function AccessProvider({ perfil, children }: { perfil: Perfil; children:
 // Espelha as regras do banco (20260928120000_empresa_papeis_rls.sql); a proteção real é a RLS.
 // No modo demonstração (só teste) quem manda são as permissões por usuário e por tela de Configurações; em produção a condição é falsa na compilação.
 // São dois hooks separados e `useAccess` aponta para um deles já na compilação: cada hook chama os seus ganchos sempre na mesma ordem.
+// No servidor (renderização do SSR) o Node pode não ter localStorage (Node 25+ sem --localstorage-file): sem ele, lê vazio e vale o usuário padrão.
+const semArmazenamento = { getItem: () => null, setItem: () => undefined, removeItem: () => undefined };
+const armazenamentoDemo = () => (typeof localStorage === "undefined" ? semArmazenamento : localStorage);
 function useAccessDemo() {
   const perfil = useContext(AccessContext);
   const ativo = perfil?.ativo === true;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const search = useRouterState({ select: (s) => s.location.search }) as Record<string, unknown>;
-  useSyncExternalStore(assinarPermissoes, () => fotografiaPermissoes(localStorage), () => "");
-  const usuario = usuarioAtivo(localStorage);
+  useSyncExternalStore(assinarPermissoes, () => fotografiaPermissoes(armazenamentoDemo()), () => "");
+  const usuario = usuarioAtivo(armazenamentoDemo());
   // A tela é o menu da rota (aba ou item de Parâmetros) ou, sem menu próprio, o módulo.
   const tela = telaDaRota(pathname, search);
   const administrador = ativo && usuario.perfil === "admin";
