@@ -12,7 +12,7 @@ export default defineConfig({
   nitro: { preset: process.env["VERCEL"] ? "vercel" : "node-server" },
   vite: {
     base: process.env["GITHUB_PAGES"] === "true" ? "/GemapeHub/" : "/",
-    server: { host: "::", strictPort: true },
+    server: { host: "127.0.0.1", strictPort: true },
     preview: { host: "127.0.0.1" },
   },
   tanstackStart: {
