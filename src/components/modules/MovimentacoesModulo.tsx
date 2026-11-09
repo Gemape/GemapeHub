@@ -133,17 +133,20 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   // Compras (entradas) não têm empregado; as devoluções, sim.
   const mostraEmpregado = !soEntrada || visao === "devolucoes";
   const [busca, setBusca] = useState("");
+  const [buscaDevolucao, setBuscaDevolucao] = useState("");
   // Data, Tipo, Item, Empresa/Empregado e Qtde sempre; as demais dependem do módulo e do foco.
   const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada && !soEntrega) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada && visao === "devolucoes") + 4 * Number(soEntrada && visao === "compras");
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
   // Busca: veículo (ou código e descrição do item), empregado, tipo, manutenção, motivo, ônus, vistoria, ocorrência e data.
+  // Na Entrada no estoque cada visão tem a sua busca (como em EpiComprasModulo).
+  const buscaAtiva = soEntrada && visao === "devolucoes" ? buscaDevolucao : busca;
   const visiveis =
-    busca.trim()
+    buscaAtiva.trim()
       ? movimentacoes.filter((m) =>
           combinaBusca(
-            busca,
+            buscaAtiva,
             alvoHistorico(m, itens, veiculos).codigo,
             alvoHistorico(m, itens, veiculos).descricao,
             comTamanho ? nomeTamanhoGravado(parametros, m.tamanho_id) : null,
@@ -268,8 +271,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           <Input
             aria-label={texto?.busca ?? "Buscar movimentação"}
             placeholder={ehVeiculo ? "Buscar por veículo, empregado ou manutenção" : "Buscar por item, código, empregado ou motivo"}
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+            value={buscaAtiva}
+            onChange={(e) => (soEntrada && visao === "devolucoes" ? setBuscaDevolucao : setBusca)(e.target.value)}
           />
           <p className="text-sm text-muted-foreground">
             {visiveis.length === movimentacoes.length
@@ -365,7 +368,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                   colSpan={totalColunas}
                   className="text-center text-muted-foreground"
                 >
-                  {busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
+                  {buscaAtiva.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
                 </TableCell>
               </TableRow>
             ) : (
