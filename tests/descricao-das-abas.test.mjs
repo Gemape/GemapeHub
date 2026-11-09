@@ -15,6 +15,6 @@ test("toda aba de módulo tem a sua própria descrição, diferente da das outra
   for (const [modulo, abas] of Object.entries(abasDe)) {
     const textos = abas.map((a) => m.descricaoDaAba(modulo, a.aba, ""));
     for (const [i, t] of textos.entries()) assert.ok(t.length > 20, `${modulo}/${abas[i].aba} sem descrição`);
-    assert.equal(new Set(textos).size - (modulo === "epi" || modulo === "uniforme" || modulo === "ferramenta" ? 0 : 0), textos.length, `${modulo}: textos repetidos`);
+    assert.equal(new Set(textos).size, textos.length, `${modulo}: textos repetidos`);
   }
 });
