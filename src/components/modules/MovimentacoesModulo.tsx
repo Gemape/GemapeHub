@@ -121,6 +121,8 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
 
   const ehVeiculo = modulo === "veiculo";
   const [busca, setBusca] = useState("");
+  // Data, Tipo, Item, Empresa/Empregado e Qtde sempre; as demais dependem do módulo e do foco.
+  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO);
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
@@ -323,7 +325,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={soEntrada ? 6 : ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
+                  colSpan={totalColunas}
                   className="text-center text-muted-foreground"
                 >
                   Carregando…
@@ -332,7 +334,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
             ) : visiveis.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={soEntrada ? 6 : ehVeiculo ? (MODO_DEMO ? 9 : 8) : comTamanho ? 10 : 9}
+                  colSpan={totalColunas}
                   className="text-center text-muted-foreground"
                 >
                   {busca.trim() ? "Nenhum resultado para a busca." : "Nenhuma movimentação registrada."}
