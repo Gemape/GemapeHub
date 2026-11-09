@@ -202,3 +202,65 @@ export function tituloDaAba(modulo: ModuloComAbas, aba: string | undefined): str
   const abas = ABAS_DO_MODULO(modulo);
   return (abas.find((a) => a.aba === aba) ?? abas[0]!).titulo;
 }
+
+// Texto abaixo do nome da tela (decisão 424): cada aba explica o que ela faz, no lugar de repetir a descrição do módulo.
+const OCORR = "Registra e acompanha as ocorrências ligadas aos itens do módulo, com a situação e o tratamento de cada uma.";
+const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
+  epi: {
+    dashboard: "Resumo do estoque de EPIs: itens consultados, saídas recentes, valor em estoque e alertas de reposição.",
+    estoque: "Consulta o saldo de cada EPI por empresa e tamanho, separado em novos e usados, e permite ajustar o estoque mínimo que gera os alertas.",
+    compras: "Registra a entrada de EPIs no estoque (compra, nota fiscal ou devolução), com fornecedor, CA, tamanho e valor.",
+    entrega: "Lança a entrega de EPIs ao empregado, ou a devolução, e atualiza o saldo do estoque.",
+    "termo-entrega": "Gera o termo de entrega de EPI para o empregado assinar. O termo só documenta a entrega e não movimenta o estoque.",
+    "ficha-avulsa": "Gera a ficha de controle de EPI de um empregado, com o histórico de entregas, devoluções e baixas, pronta para impressão.",
+    "ordem-servico": "Emite a ordem de serviço de segurança do empregado, conforme a função e o setor cadastrados.",
+    ocorrencias: OCORR,
+    "sugestao-compras": "Indica o que comprar e em que quantidade, com base no consumo, no estoque e nos parâmetros de compra do módulo.",
+    historico: "Mostra, por empregado, o que recebeu, devolveu e baixou e o que está em posse dele.",
+    baixas: "Lista as baixas definitivas de EPIs, com motivo, quantidade e valor, por período, para consulta e exportação.",
+  },
+  uniforme: {
+    dashboard: "Resumo do estoque de uniformes: itens consultados, saídas recentes, valor em estoque e alertas de reposição.",
+    estoque: "Consulta o saldo de cada uniforme por empresa e tamanho, separado em novos e usados, e permite ajustar o estoque mínimo que gera os alertas.",
+    compras: "Registra a entrada de uniformes no estoque (compra, nota fiscal ou devolução), com fornecedor, tamanho e valor.",
+    entrega: "Lança a entrega de uniformes ao empregado, ou a devolução, e atualiza o saldo do estoque.",
+    "termo-entrega": "Gera o termo de entrega de uniforme para o empregado assinar. O termo só documenta a entrega e não movimenta o estoque.",
+    "termo-baixa": "Gera o termo de baixa de uniforme do empregado, para documentar a baixa definitiva.",
+    ocorrencias: OCORR,
+    "sugestao-compras": "Indica o que comprar e em que quantidade, com base no consumo, no estoque e nos parâmetros de compra dos uniformes.",
+    historico: "Mostra, por empregado, o que recebeu, devolveu e baixou e o que está em posse dele.",
+    baixas: "Lista as baixas definitivas de uniformes, com motivo, quantidade e valor, por período, para consulta e exportação.",
+  },
+  ferramenta: {
+    dashboard: "Resumo do estoque de ferramentas: itens consultados, saídas recentes, valor em estoque e alertas de reposição.",
+    estoque: "Consulta o saldo de cada ferramenta por empresa, a posição de cada uma nas caixas e com os empregados, e permite ajustar o estoque mínimo.",
+    caixas: "Mostra as caixas de ferramentas e quais ferramentas estão guardadas em cada uma.",
+    "termo-responsabilidade": "Gera o termo de responsabilidade individual do empregado pelas ferramentas que recebeu.",
+    "termo-encerramento": "Gera o termo que encerra a responsabilidade do empregado sobre as ferramentas devolvidas.",
+    "termo-vistoria": "Gera o termo da vistoria periódica das ferramentas que estão com o empregado.",
+    movimentacoes: "Lista as entradas, saídas e devoluções de ferramentas e registra novas movimentações.",
+    ocorrencias: OCORR,
+  },
+  veiculo: {
+    frota: "Lista a frota com o extrato de cada veículo, os indicadores de conformidade e custo por km e os dados de cada veículo.",
+    abastecimento: "Registra os abastecimentos de cada veículo e calcula litros, gasto e média de consumo.",
+    manutencao: "Acompanha as revisões e manutenções do plano de cada veículo: o que está em dia e o que venceu.",
+    ocorrencias: "Registra e acompanha as ocorrências dos veículos, com a situação e o tratamento de cada uma.",
+    checklist: "Faz os check lists periódicos e avulsos dos veículos e acompanha o que foi feito no prazo.",
+  },
+  viagem: {
+    painel: "Registra as despesas de viagens e saídas externas dos técnicos, com os comprovantes, e mostra o painel dos gastos.",
+    relatorio: "Emite o relatório de despesas de viagens por empregado e período, com os comprovantes prontos para impressão.",
+  },
+  equipamento: {
+    inventario: "Lista os equipamentos com o extrato de cada um: abastecimentos, manutenções, ocorrências e custo.",
+    indicadores: "Mostra os indicadores de gestão dos equipamentos: disponibilidade, custo de manutenção por hora, aderência ao plano e conformidade legal.",
+    abastecimento: "Registra os abastecimentos dos equipamentos e calcula litros, gasto e preço médio por litro.",
+    manutencao: "Registra e acompanha as manutenções dos equipamentos, preventivas e corretivas, com o custo de cada uma.",
+    ocorrencias: "Registra e acompanha as ocorrências dos equipamentos, com a situação e o tratamento de cada uma.",
+    "checklist-manutencao": "Faz o check list de manutenção dos equipamentos e acompanha o que foi realizado.",
+    "checklist-vistoria": "Faz o check list de vistoria dos equipamentos e acompanha o que foi realizado.",
+  },
+};
+export const descricaoDaAba = (modulo: ModuloComAbas, aba: string | undefined, padrao: string): string =>
+  DESCRICAO_DAS_ABAS[modulo][abaDoModulo(modulo, aba)] ?? padrao;

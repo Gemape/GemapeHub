@@ -270,11 +270,11 @@ export function ExtratoVeiculo({ veiculo, secao = null, foco, onFechar }: { veic
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="extrato-inicio">Data início</Label>
+            <Label htmlFor="extrato-inicio" className="block text-center">Data início</Label>
             <Input id="extrato-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="extrato-fim">Data fim</Label>
+            <Label htmlFor="extrato-fim" className="block text-center">Data fim</Label>
             <Input id="extrato-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
           </div>
           <p className="max-w-md text-xs text-muted-foreground">{foco ? FOCOS[foco].periodo : "O período vale para as manutenções realizadas, os abastecimentos e as ocorrências. As sugeridas mostram sempre a situação de hoje."}</p>

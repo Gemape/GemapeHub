@@ -182,12 +182,12 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
         </div>
         <div className={modulo === "epi" ? "grid grid-cols-2 gap-2" : "space-y-1"}>
           {modulo === "epi" && (
-            <div className="w-44 space-y-1">
+            <div className="w-24 space-y-1">
               <Label htmlFor="est-ca">CA</Label>
               <Input id="est-ca" className="w-24" value={ca} onChange={(e) => setCa(e.target.value)} />
             </div>
           )}
-          <div className="space-y-1">
+          <div className="w-24 space-y-1">
             <Label htmlFor="est-nf">NF</Label>
             <Input id="est-nf" className="w-24" value={nf} onChange={(e) => setNf(e.target.value)} />
           </div>

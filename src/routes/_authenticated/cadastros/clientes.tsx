@@ -77,7 +77,7 @@ function PaginaClientes() {
       <div className="min-w-0 flex-1 basis-[28rem]">
         <p className="text-eyebrow">Cadastros</p>
         <h1 className="text-2xl font-bold">Clientes</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Clientes atendidos pela equipe em viagens e saídas externas.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Cadastra os clientes atendidos pela equipe, escolhidos nas viagens e saídas externas.</p>
       </div>
     </header>
 

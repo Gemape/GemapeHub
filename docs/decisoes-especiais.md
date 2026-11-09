@@ -2320,3 +2320,11 @@ O alerta em três níveis (Abaixo do mínimo em vermelho, Estoque mínimo em ama
 ## 422. Alerta mostra quantos novos e quantos usados
 
 Na coluna Alerta do Estoque de EPI e de Uniformes, a linha mostra "Saldo total: N (X novos e Y usados)", tanto na lista de novos quanto na de usados. O nível do alerta usa o saldo total (novos + usados) e as duas listas mostram os mesmos números, que sempre somam o saldo.
+
+## 423. Rótulos dos filtros centralizados em todo o sistema
+
+Os textos acima das caixas de busca e filtro ficam centralizados sobre a caixa. O padrão está na `BarraDeFiltros` (vale para todas as telas que a usam) e foi aplicado à mão nas telas de filtro que não a usam (Relatórios, Extrato de veículo e de equipamento).
+
+## 424. Texto abaixo do nome da tela explica o que ela faz
+
+Cada tela mostra, abaixo do nome, uma frase que explica o que a rotina, o parâmetro ou o relatório faz. Nos módulos com abas (EPI, Uniformes, Ferramentas, Veículos, Viagens e Equipamentos) o texto é próprio de cada aba (`descricaoDaAba`, em `menu-parametros.ts`), no lugar de repetir a descrição do módulo em todas. Telas de cadastro e de parâmetros que não tinham texto ou tinham um texto vago (Usuários, Formulário de Despesas, Empregados, Fornecedores, Empresas e Clientes) ganharam uma explicação.

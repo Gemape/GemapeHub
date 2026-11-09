@@ -103,7 +103,7 @@ function PaginaEmpresas() {
           <p className="text-eyebrow">Cadastros</p>
           <h1 className="text-2xl font-bold">Empresas</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Unidades do grupo usadas para filtrar todos os módulos.
+            Cadastra as unidades do grupo. A empresa escolhida no topo da página filtra todos os módulos.
           </p>
         </div>
       </header>

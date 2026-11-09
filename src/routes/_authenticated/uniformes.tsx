@@ -28,7 +28,7 @@ function Pagina() {
     <PaginaModulo
       aba={aba}
       modulo="uniforme"
-      descricao="Tipo, tamanho e cor de cada peça, com entrega por empregado e a mesma lógica de baixa dos EPIs."
+      descricao="Tipo, tamanho e cor de cada peça, com entrega por empregado."
     />
   );
 }

@@ -119,7 +119,7 @@ function PaginaRelatorios() {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
-            <Label>Módulo</Label>
+            <Label className="block text-center">Módulo</Label>
             <Select value={modulo} onValueChange={setModulo}>
               <SelectTrigger>
                 <SelectValue />
@@ -134,7 +134,7 @@ function PaginaRelatorios() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Empregado</Label>
+            <Label className="block text-center">Empregado</Label>
             <Select value={empregadoId} onValueChange={setEmpregadoId}>
               <SelectTrigger>
                 <SelectValue />
@@ -150,11 +150,11 @@ function PaginaRelatorios() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="de">De</Label>
+            <Label htmlFor="de" className="block text-center">De</Label>
             <Input id="de" type="date" value={de} onChange={(e) => setDe(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ate">Até</Label>
+            <Label htmlFor="ate" className="block text-center">Até</Label>
             <Input id="ate" type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
           </div>
         </CardContent>

@@ -30,7 +30,7 @@ function Usuarios() {
   const nomeEmpresa = (id: string | null) => id ? empresas.find(e => e.id === id)?.nome_fantasia ?? "—" : "Todas";
   if (!isAdmin) return <p role="alert">Acesso restrito ao administrador.</p>;
   if (demo) return <p>Usuários e permissões estarão disponíveis quando a autenticação e o banco de dados forem configurados.</p>;
-  return <section className="space-y-6"><h1 className="text-2xl font-bold">Usuários e permissões</h1>
+  return <section className="space-y-6"><div><h1 className="text-2xl font-bold">Usuários e permissões</h1><p className="mt-1 text-sm text-muted-foreground">Cria os usuários do sistema e define o que cada um pode ver e alterar.</p></div>
     <form className="panel flex flex-wrap items-end gap-3 p-4" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); void executar(() => api("POST", { email: f.get("email"), password: f.get("password") })); }}>
       <div><Label htmlFor="new-email">E-mail</Label><Input name="email" id="new-email" type="email" required /></div><div><Label htmlFor="new-password">Senha inicial</Label><Input name="password" id="new-password" type="password" minLength={12} required autoComplete="new-password" /></div><Button type="submit" disabled={busy}>Criar conta desativada</Button>
     </form>{error && <p role="alert">{error.message}</p>}{isLoading && <p>Carregando usuários…</p>}
