@@ -418,6 +418,27 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               />
             </div>
             <div className={`space-y-1.5${ocultoNaEntrada}`}>
+              <Label htmlFor="motivo_baixa">Motivo da baixa</Label>
+              <Select
+                name="motivo_baixa"
+                disabled={modulo === "epi" && tipoMovimentacao === "Entrada"}
+              >
+                <SelectTrigger id="motivo_baixa">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NENHUM}>Não se aplica</SelectItem>
+                  {MOTIVOS_BAIXA.filter((m) => !(modulo === "uniforme" && m === "Quebra")).map(
+                    (m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className={`space-y-1.5${foco ? " hidden" : ""}`}>
               <Label htmlFor="tipo_movimentacao">Tipo de movimentação</Label>
               <Select
                 name="tipo_movimentacao"
@@ -564,27 +585,6 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 defaultValue={1}
                 required
               />
-            </div>
-            <div className={`space-y-1.5${ocultoNaEntrada}`}>
-              <Label htmlFor="motivo_baixa">Motivo da baixa</Label>
-              <Select
-                name="motivo_baixa"
-                disabled={modulo === "epi" && tipoMovimentacao === "Entrada"}
-              >
-                <SelectTrigger id="motivo_baixa">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NENHUM}>Não se aplica</SelectItem>
-                  {MOTIVOS_BAIXA.filter((m) => !(modulo === "uniforme" && m === "Quebra")).map(
-                    (m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
             </div>
             <div className={`space-y-1.5${foco ? " hidden" : ""}`}>
               <Label htmlFor="onus_baixa">Ônus da baixa</Label>
