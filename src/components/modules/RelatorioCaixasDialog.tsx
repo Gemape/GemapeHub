@@ -19,11 +19,12 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 
 const TODAS_AS_SECOES = SECOES_RELATORIO_CAIXAS.map((_, n) => n);
 
-// Relatório de todas as caixas de ferramentas: a pessoa marca as seções e o relatório abre no visualizador, como os outros relatórios do sistema.
+// Relatório das caixas de ferramentas: a pessoa marca as seções e as caixas e o relatório abre no visualizador, como os outros relatórios do sistema.
 // Os dados são lidos só enquanto a janela está aberta.
 export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; aoMudar: (aberto: boolean) => void }) {
   const { empresaId } = useEmpresa();
   const [marcadas, setMarcadas] = useState<number[]>(TODAS_AS_SECOES);
+  const [fora, setFora] = useState<string[]>([]); // caixas desmarcadas; começa vazio = todas entram
   const habilitadas = useParametrosBase().caixasHabilitadas;
   const caixasQuery = useCaixasFerramentas(empresaId, "");
   const itensQuery = useTodosCaixaItens();
@@ -37,13 +38,15 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
   const { data: empregados = [] } = useEmpregados(TODAS);
   const portadores = usePortadoresCaixa();
   const pronto = [caixasQuery, itensQuery, ferramentasQuery, ocorrenciasQuery, movimentosQuery].every((q) => q.isSuccess);
+  const lista = caixasHabilitadas(caixasQuery.data ?? [], habilitadas);
+  const escolhidas = lista.filter((c) => !fora.includes(c.id));
 
   function gerar() {
     const nomeEmpregado = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "—";
     const nomeEmpresa = (id: string | null | undefined) => empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
     const ferramentas = ferramentasQuery.data ?? [];
     const movimentos = movimentosQuery.data ?? [];
-    const caixas: CaixaParaRelatorio[] = caixasHabilitadas(caixasQuery.data ?? [], habilitadas).map((caixa) => {
+    const caixas: CaixaParaRelatorio[] = escolhidas.map((caixa) => {
       const itens = (itensQuery.data ?? []).filter((i) => i.caixa_id === caixa.id);
       const ids = itens.map((i) => i.ferramenta_id);
       const historico = movimentacoesDaCaixa(movimentos, caixa.id, ids, caixa.codigo);
@@ -79,7 +82,7 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
     aoMudar(false);
     abrirDocumento({
       titulo: "Relatório de caixas de ferramentas",
-      html: montarRelatorioCaixasHtml({ caixas, secoes: marcadas, empresa: empresaId === TODAS ? "Todas as empresas" : nomeEmpresa(empresaId) }),
+      html: montarRelatorioCaixasHtml({ caixas, secoes: marcadas, parcial: escolhidas.length < lista.length, empresa: empresaId === TODAS ? "Todas as empresas" : nomeEmpresa(empresaId) }),
       arquivo: nomeArquivoDocumento("Relatório de caixas de ferramentas"),
     });
   }
@@ -89,7 +92,7 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Relatório das caixas de ferramentas</DialogTitle>
-          <DialogDescription>Marque o que entra no relatório de todas as caixas. O resumo geral (caixas, ferramentas, com empregado, baixado, disponível e ocorrências) sai sempre.</DialogDescription>
+          <DialogDescription>Marque as seções e as caixas que entram no relatório. O resumo (das caixas escolhidas: caixas, ferramentas, com empregado, baixado, disponível e ocorrências) sai sempre.</DialogDescription>
         </DialogHeader>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(TODAS_AS_SECOES)}>Marcar todos</Button>
@@ -106,9 +109,29 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
             </li>
           ))}
         </ul>
+        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+          <span className="text-sm font-medium">Caixas</span>
+          <Button type="button" variant="outline" size="sm" onClick={() => setFora([])}>Marcar todas</Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setFora(lista.map((c) => c.id))}>Desmarcar todas</Button>
+          <span className="ml-auto text-xs text-muted-foreground">{pronto && escolhidas.length === 0 ? "Marque ao menos uma caixa" : `${escolhidas.length} de ${lista.length} caixas`}</span>
+        </div>
+        {!pronto && <p className="text-xs text-muted-foreground">Carregando as caixas...</p>}
+        <ul className="max-h-48 space-y-1 overflow-y-auto" aria-label="Caixas do relatório">
+          {lista.map((c) => {
+            const portador = portadorAtivo(portadores, c.id)?.empregado_nome;
+            return (
+            <li key={c.id}>
+              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
+                <Checkbox checked={!fora.includes(c.id)} onCheckedChange={(v) => setFora((f) => (v === true ? f.filter((x) => x !== c.id) : [...f, c.id]))} />
+                <span className="min-w-0 truncate">{c.codigo}{portador ? ` — ${portador}` : ""}</span>
+              </label>
+            </li>
+            );
+          })}
+        </ul>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => aoMudar(false)}>Cancelar</Button>
-          <Button type="button" disabled={!pronto} onClick={gerar}>{pronto ? "Gerar relatório" : "Carregando..."}</Button>
+          <Button type="button" disabled={!pronto || escolhidas.length === 0} onClick={gerar}>{pronto ? "Gerar relatório" : "Carregando..."}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

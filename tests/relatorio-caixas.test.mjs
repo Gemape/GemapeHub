@@ -44,4 +44,13 @@ test("Número da caixa tem o botão Relatório no alto, à direita, que abre a e
   const dialogo = readFileSync(new URL("../src/components/modules/RelatorioCaixasDialog.tsx", import.meta.url), "utf8");
   assert.match(dialogo, /abrirDocumento\(/);
   assert.match(dialogo, /<Checkbox /);
+  assert.match(dialogo, /aria-label="Caixas do relatório"/);
+  assert.match(dialogo, /escolhidas\.map\(/);
+});
+
+test("com só algumas caixas o relatório não se diz de todas", () => {
+  const parcial = montarRelatorioCaixasHtml({ caixas: [caixas[0]], secoes: [0], empresa: "Gemape", parcial: true });
+  assert.match(parcial, /Caixas selecionadas/);
+  assert.ok(!parcial.includes("Todas as caixas") && !parcial.includes("CX-0002"));
+  assert.match(montarRelatorioCaixasHtml({ caixas, secoes: [0], empresa: "Gemape" }), /Todas as caixas/);
 });

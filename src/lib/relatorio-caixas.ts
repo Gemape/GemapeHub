@@ -1,4 +1,4 @@
-// Relatório de todas as caixas de ferramentas (Ferramentas > Módulo > Número da caixa), no padrão dos relatórios do sistema (folha A4 com cabeçalho, quadros de resumo e tabelas
+// Relatório das caixas de ferramentas (todas ou só as escolhidas) (Ferramentas > Módulo > Número da caixa), no padrão dos relatórios do sistema (folha A4 com cabeçalho, quadros de resumo e tabelas
 // de cabeçalho azul). A pessoa escolhe antes, por caixas de seleção, quais seções entram. Só monta o texto: quem lê os dados e abre o visualizador é a tela.
 import { montarExtratoHtml, type TabelaExtrato } from "./extrato-html.ts";
 
@@ -20,7 +20,7 @@ export type CaixaParaRelatorio = {
 
 const soma = (lista: number[]) => lista.reduce((t, n) => t + n, 0);
 
-export function montarRelatorioCaixasHtml(d: { caixas: CaixaParaRelatorio[]; secoes: readonly number[]; empresa: string; geradoEm?: Date | string }): string {
+export function montarRelatorioCaixasHtml(d: { caixas: CaixaParaRelatorio[]; secoes: readonly number[]; empresa: string; parcial?: boolean; geradoEm?: Date | string }): string {
   const tem = (n: number) => d.secoes.includes(n);
   const doTodas = (pegar: (c: CaixaParaRelatorio) => number) => soma(d.caixas.map(pegar));
   const tabelas: TabelaExtrato[] = [];
@@ -76,7 +76,7 @@ export function montarRelatorioCaixasHtml(d: { caixas: CaixaParaRelatorio[]; sec
 
   return montarExtratoHtml({
     titulo: "Relatório de caixas de ferramentas",
-    assunto: "Todas as caixas",
+    assunto: d.parcial ? "Caixas selecionadas" : "Todas as caixas",
     subtitulo: `${d.caixas.length} ${d.caixas.length === 1 ? "caixa" : "caixas"}`,
     empresa: d.empresa,
     resumo: [
