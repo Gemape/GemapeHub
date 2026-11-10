@@ -271,6 +271,12 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   const catalogoUniformes = adicionarCatalogo(UNIFORMES, "uniformes_catalogo", proximosCodigos(dados, "UNI", ["uniformes", "uniformes_catalogo"]), "uniforme-cat");
   sincronizarEstoqueEpis(dados, sequencia("epi-est"), criadoEm, TABELAS_EPI);
   sincronizarEstoqueEpis(dados, sequencia("uniforme-est"), criadoEm, TABELAS_UNIFORME);
+  // A marca do uniforme vem do catálogo de teste e vai para o estoque de cada empresa (aparece na descrição e no Termo de Entrega).
+  const marcaPorCatalogo = new Map(catalogoUniformes.map((c) => [c.id, c.item.marca]));
+  for (const l of tabela(TABELAS_UNIFORME.estoque)) {
+    const marca = marcaPorCatalogo.get(String(l["catalogo_id"]));
+    if (marca) l["marca"] = marca;
+  }
 
   // Habilitados de EPI e de uniforme (Parâmetros > EPI|Uniformes > Parâmetros Específicos): os cinco empregados de cada empresa de teste, cada um numa área da oficina.
   // Todas as empresas entram: com a lista preenchida só para algumas, os demais sairiam das listas de quem entrega e recebe quando "Todas as empresas" está escolhido.
