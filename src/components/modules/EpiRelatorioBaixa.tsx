@@ -75,7 +75,7 @@ export function EpiRelatorioBaixa() {
         titulo: "Relatório de baixas de EPI",
         subtitulos: [`Período: ${formatarData(dataInicial)} a ${formatarData(dataFinal)}`, motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`],
         empresa: empresaId === TODAS ? "Todas as empresas" : empresas.find((e) => e.id === empresaId)?.nome_fantasia,
-        resumo: [["Total de baixas", String(baixas.length)], ["Total de peças", String(totalQuantidade)], ["Valor total", formatarMoeda(totalValor)]],
+        resumo: [["Total de baixas", String(baixas.length)], ["Total de EPIs", String(totalQuantidade)], ["Valor total", formatarMoeda(totalValor)]],
         colunas: [{ titulo: "Data" }, { titulo: "Empresa" }, { titulo: "Empregado" }, { titulo: "EPI" }, { titulo: "Tamanho" }, { titulo: "Motivo" }, { titulo: "Qtd", direita: true }, { titulo: "Valor total", direita: true }],
         linhas: baixas.map((b) => [
           formatarData(b.data_movimentacao),
@@ -150,7 +150,7 @@ export function EpiRelatorioBaixa() {
       {/* Quatro cartões do tamanho dos da Frota (decisão 386): o que cada número mostra e o período. */}
       <GradeDeCartoes colunas={4}>
         <StatCard titulo="Total de Baixas" subtitulo="Baixas definitivas registradas no período e no motivo escolhidos." valor={baixas.length} detalhe={`${formatarData(dataInicial)} a ${formatarData(dataFinal)}`} icone={ClipboardList} compacto />
-        <StatCard titulo="Total de Peças" subtitulo="Soma das quantidades de todas as baixas." valor={totalQuantidade} detalhe={motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`} icone={Package} compacto />
+        <StatCard titulo="Total de EPIs" subtitulo="Soma das quantidades de todas as baixas." valor={totalQuantidade} detalhe={motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`} icone={Package} compacto />
         <StatCard titulo="Valor Total" subtitulo="Quantidade × preço da compra de origem de cada baixa." valor={formatarMoeda(totalValor)} detalhe={`${baixas.length} baixa${baixas.length === 1 ? "" : "s"}`} icone={Banknote} compacto />
         <StatCard titulo="Valor Médio por Peça" subtitulo="Valor total ÷ total de peças." valor={totalQuantidade > 0 ? formatarMoeda(totalValor / totalQuantidade) : "—"} detalhe={totalQuantidade > 0 ? `${totalQuantidade} peça${totalQuantidade === 1 ? "" : "s"} no período` : "Sem baixas no período"} icone={Banknote} compacto />
       </GradeDeCartoes>

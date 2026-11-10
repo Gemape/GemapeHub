@@ -109,7 +109,7 @@ test("Uniformes > Compras > Devoluções tem o campo de busca no topo à direita
   assert.match(e, /Nenhuma devolução para a busca/);
 });
 
-test("o botão dos relatórios de Histórico do empregado e de Baixar Definitivas se chama Relatório", () => {
+test("o botão dos relatórios de Histórico do empregado e de Baixas definitivas se chama Relatório", () => {
   for (const arq of ["EpiRelatorioBaixa", "EpiRelatorioFuncionario", "UniformesRelatorioBaixa", "UniformesRelatorioFuncionario"]) {
     const t = readFileSync(new URL(`../src/components/modules/${arq}.tsx`, import.meta.url), "utf8");
     assert.doesNotMatch(t, /^\s+Imprimir\s*$/m, arq);

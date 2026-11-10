@@ -45,8 +45,8 @@ test("a lista dos Uniformes e a do EPI não se misturam ao acrescentar áreas", 
   assert.throws(() => salvarEmpregadosDeEpi([{ empregadoId: "e1", nome: "Maria Souza", area: "Estoquista" }], s), /área/i);
 });
 
-test("Uniformes > Relatórios traz Histórico do empregado e Baixar Definitivas, só lá, junto da Sugestão de Compras", async () => {
-  assert.deepEqual(ABAS_UNIFORME_RELATORIOS.map((a) => a.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]);
+test("Uniformes > Relatórios traz Histórico do empregado e Baixas definitivas, só lá, junto da Sugestão de Compras", async () => {
+  assert.deepEqual(ABAS_UNIFORME_RELATORIOS.map((a) => a.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixas definitivas"]);
   assert.deepEqual(ABAS_UNIFORME_RELATORIOS.map((a) => a.aba), ["sugestao-compras", "historico", "baixas"]);
   const modulo = ABAS_UNIFORME.map((a) => a.aba);
   for (const a of ["sugestao-compras", "historico", "baixas"]) assert.ok(!modulo.includes(a), a);
@@ -55,7 +55,7 @@ test("Uniformes > Relatórios traz Histórico do empregado e Baixar Definitivas,
   for (const a of ["sugestao-compras", "historico", "baixas"]) assert.equal(abaDoModulo("uniforme", a), a);
   const { GRUPOS_INICIO, areaDaRota } = await import("../src/lib/inicio.ts");
   const card = GRUPOS_INICIO.flatMap((g) => g.cartoes).find((c) => c.titulo === "Uniformes");
-  assert.deepEqual(card.itens.filter((i) => i.secao === "Relatórios").map((i) => i.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixar Definitivas"]);
+  assert.deepEqual(card.itens.filter((i) => i.secao === "Relatórios").map((i) => i.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixas definitivas"]);
   assert.equal(areaDaRota("/uniformes", { aba: "historico" }, true).atual.secao, "Relatórios");
   assert.equal(areaDaRota("/uniformes", { aba: "entrega" }, true).atual.secao, "Módulo");
 });
