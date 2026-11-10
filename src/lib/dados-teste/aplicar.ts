@@ -355,7 +355,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   compraExtraUniforme("Camisa", 1, 0, 4, 22, "NF-02102");
   compraExtraUniforme("Calça", 2, 1, 5, 30, "NF-02103");
   compraExtraUniforme("Jaqueta", 0, 2, 4, 26, "NF-02104");
-  // Empresa 1 (Ana): botina 40 em estoque baixo de propósito, luvas M no mínimo (a segunda compra de luva M soma 8).
+  // Empresa 1 (Ana): entregas pequenas, de uso real (a segunda compra de luva M soma 8). Os alertas de estoque mínimo vêm de luvas, máscaras, coletes e outros itens.
   entrega("epi", "epis", epiDe("Botina", 1).id, 0, 1, 30, "tam-40");
   entrega("epi", "epis", epiDe("Luva", 1).id, 0, 2, 28, "tam-m");
   entrega("epi", "epis", epiDe("Capacete", 0).id, 0, 1, 26, null);
@@ -421,7 +421,6 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   // parcelas de 40 a 215 dias atrás, repartidas entre os cinco empregados da empresa, dão ao EPI a média de consumo mensal da Sugestão de Compras (decisão 330).
   const consumoDoAno = (nome: string, indice: number, empresaIndice: number, tamanho: string | null, anual: number) => {
     const estoque = estoqueDe("epis", epiDe(nome, indice).id, empresaIds[empresaIndice]!);
-    const total = anual;
     // A compra anterior também é uma compra registrada (NF, fornecedor e CA), para "total comprado − total entregue = disponível" fechar em todo EPI.
     const catalogo = epiDe(nome, indice);
     const fornecedor = FORNECEDORES[catalogo.item.fornecedor]!;
@@ -429,13 +428,13 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     const valorUnitario = Math.round((18 + catalogo.indice * 2 + 7.5) * 100) / 100;
     compras.compras_epis.push({
       id: novaCompra(), created_at: criadoEm, empresa_id: empresaIds[empresaIndice], item_id: estoque["id"], fornecedor: fornecedor.nome_fantasia, fornecedor_id: fornecedor.id,
-      nota_fiscal: nota, data_compra: dia(agora, 366), quantidade: total, valor_unitario: valorUnitario, valor_total: Math.round(total * valorUnitario * 100) / 100,
+      nota_fiscal: nota, data_compra: dia(agora, 366), quantidade: anual, valor_unitario: valorUnitario, valor_total: Math.round(anual * valorUnitario * 100) / 100,
       observacao: "Compra anterior: reposição do ano", tamanho_id: tamanho, ca: caDoCatalogo(catalogo),
     });
-    mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade: total, data_movimentacao: dia(agora, 366), item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: tamanho, observacao: `Compra anterior: NF ${nota} / ${fornecedor.nome_fantasia}` });
-    const parcela = Math.floor(total / 6);
-    // Começa pelo segundo empregado: o primeiro já recebeu as entregas escritas acima.
-    [40, 75, 110, 145, 180, 215].forEach((dias, k) => { const q = parcela + (k < total % 6 ? 1 : 0); if (q > 0) entrega("epi", "epis", catalogo.id, empresaIndice, q, dias, tamanho, { empregado_id: EMPREGADOS[empresaIndice + 3 * ((k + 1) % 5)]!.id }); });
+    mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade: anual, data_movimentacao: dia(agora, 366), item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: tamanho, observacao: `Compra anterior: NF ${nota} / ${fornecedor.nome_fantasia}` });
+    const parcela = Math.floor(anual / 6);
+    // Só do segundo ao quinto empregado: o primeiro já recebeu as entregas escritas acima.
+    [40, 75, 110, 145, 180, 215].forEach((dias, k) => { const q = parcela + (k < anual % 6 ? 1 : 0); if (q > 0) entrega("epi", "epis", catalogo.id, empresaIndice, q, dias, tamanho, { empregado_id: EMPREGADOS[empresaIndice + 3 * (1 + (k % 4))]!.id }); });
   };
   consumoDoAno("Botina", 0, 0, "tam-38", 4);
   consumoDoAno("Luva", 2, 1, "tam-g", 12);
