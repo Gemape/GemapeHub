@@ -1,10 +1,11 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { guardarRascunho, lerRascunho, limparRascunho, type RascunhoFerramenta } from "@/lib/rascunho-ferramenta";
 import { capitalizarCadastro } from "@/lib/formatacao-cadastral";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -78,7 +79,10 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
   // Clonar: item de origem que preenche o formulário de cadastro NOVO. Só os defaultValue
   // leem dele (base); `editando` continua sendo a flag de edição.
   const [modelo, setModelo] = useState<Item | null>(null);
-  const base = editando ?? modelo;
+  // Rascunho: o que estava no formulário ao ir cadastrar um parâmetro (marca, tamanho, unidade). Ao voltar, o formulário reabre com isso preenchido.
+  const [rascunho, setRascunho] = useState<Item | null>(null);
+  const original = editando ?? modelo;
+  const base = rascunho ?? original;
   // Grupo escolhido no formulário: "Outros" e "Diversos" abrem o campo para digitar qual ferramenta é (decisão 83).
   const [grupoEscolhido, setGrupoEscolhido] = useState("");
   useEffect(() => { if (aberto) setGrupoEscolhido(base?.grupo_ferramenta ?? ""); }, [aberto, base]);
@@ -103,6 +107,39 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
   const rotulo = (item: { id: string; nome: string }) => (estaAtivo(parametros, item.id) ? item.nome : `${item.nome} (desativado)`);
   const marcaCadastrada = parametros.marcasFerramenta.find((m) => m.nome === base?.marca);
   const marcaAntiga = base?.marca && !marcaCadastrada ? base.marca : null;
+  // Marca e unidade escolhidas (controladas, para o rascunho poder guardá-las).
+  const [marcaSel, setMarcaSel] = useState(SELECAO_SEM_MARCA);
+  const [unidadeSel, setUnidadeSel] = useState("Unidade");
+  useEffect(() => {
+    if (!aberto) return;
+    setMarcaSel(marcaCadastrada ? selecaoMarcaCadastrada(marcaCadastrada.id) : marcaAntiga ? SELECAO_MARCA_LEGADA : SELECAO_SEM_MARCA);
+    setUnidadeSel(base?.unidade_medida ?? (parametros.unidades.find((u) => u.nome === "Unidade") ?? parametros.unidades[0])?.nome ?? "Unidade");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto, base]);
+  const unidadesLista = [...new Set([...(parametros.unidades.length ? parametros.unidades.filter((u) => estaAtivo(parametros, u.id) || u.nome === unidadeSel).map((u) => u.nome) : ["Unidade"]), unidadeSel])];
+  const navegar = useNavigate();
+  const [pendente, setPendente] = useState<RascunhoFerramenta | null>(() => (janela ? null : lerRascunho()));
+
+  const linkCadastrar = (tipo: "marca" | "tamanho" | "unidade") =>
+    !janela && <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={(e) => irParaParametro(e.currentTarget.form, tipo)}>+ Cadastrar</button>;
+  // Os links "Cadastrar" levam a Parâmetros Específicos guardando o formulário; o botão de lá devolve a ele.
+  function irParaParametro(form: HTMLFormElement | null, tipo: "marca" | "tamanho" | "unidade") {
+    if (!form) return;
+    const f = new FormData(form);
+    const t = (k: string) => String(f.get(k) ?? "");
+    let marca: string | null = null;
+    try { marca = marcaDaSelecao(marcaSel, parametrosSelecao.marcasFerramenta, original?.marca ?? null) ?? null; } catch { /* marca sem correspondência: segue sem ela */ }
+    const campos = {
+      categoria_ferramenta: t("categoria_ferramenta"), grupo_ferramenta: grupoEscolhido, nome: t("qual_ferramenta"), modelo: t("modelo"),
+      marca,
+      tamanho: tamanhoEscolhido === SEM_TAMANHO ? "" : tamanhoEscolhido, estoque_minimo: Number(t("estoque_minimo")) || 0,
+      unidade_medida: unidadeSel, status: t("status") || "Ativo", observacoes: t("observacoes"),
+    };
+    guardarRascunho({ editandoId: editando?.id ?? null, sigla: siglaSel, campos });
+    void navegar(tipo === "unidade"
+      ? { to: "/cadastros/gerais/tamanhos-unidades", search: { de: "ferramentas", voltar: "cadastro-ferramenta" } }
+      : { to: "/cadastros/gerais/categorias", search: { de: "ferramentas", voltar: "cadastro-ferramenta" } });
+  }
   const tamanhosDoGrupo = tamanhosDoGrupoFerramenta(parametros, grupoEscolhido);
   const tamanhoForaDaLista = base?.tamanho && !tamanhosDoGrupo.includes(base.tamanho) && grupoEscolhido === base.grupo_ferramenta ? base.tamanho : null;
   // Exemplo de ferramenta: "Chave L" (ou o primeiro grupo ativo) e o primeiro tamanho cadastrado para ele, para o Salvar passar na validação.
@@ -125,6 +162,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
   // todos os dados dela (decisão 138), que podem ser editados. O código sai da
   // mesma geração do cadastro novo; estoque começa em zero.
   async function abrirNovo(origem?: Item) {
+    setRascunho(null);
     if (!regraFerramenta) {
       toast.error("Cadastre antes a regra do código de Ferramentas em Cadastros > Gerais.");
       janela?.onAberto(false);
@@ -139,6 +177,25 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
     setAberto(true);
     await calcularPrevia(regraDoCadastro(parametros.regrasCodigo, "cat-ferramentas", siglaInicial));
   }
+
+  // Voltando de Parâmetros: reabre o formulário (novo ou em edição) com o rascunho guardado.
+  useEffect(() => {
+    if (!pendente || isLoading) return;
+    limparRascunho();
+    setPendente(null);
+    const alvo = pendente.editandoId ? itens.find((i) => i.id === pendente.editandoId) : null;
+    if (pendente.editandoId && !alvo) {
+      toast.error("Não foi possível reabrir a ferramenta que estava sendo editada. Abra-a de novo em Editar.");
+      return;
+    }
+    if (alvo) {
+      setModelo(null);
+      setEditando(alvo);
+      setAberto(true);
+    } else void abrirNovo().then(() => { if (pendente.sigla) escolherSigla(pendente.sigla); });
+    setRascunho({ ...(alvo ?? {}), ...pendente.campos } as unknown as Item);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendente, isLoading]);
 
   // Só a última resposta vale: abrir outro cadastro ou trocar a sigla descarta a prévia que ainda vinha a caminho.
   const pedidoPrevia = useRef(0);
@@ -195,14 +252,14 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
         codigosExistentes: editando ? [] : await codigosFerramenta(),
         sigla: siglaSel,
         categoriaFerramenta: String(f.get("categoria_ferramenta") ?? ""),
-        categoriaAtual: base?.categoria_ferramenta ?? "",
+        categoriaAtual: original?.categoria_ferramenta ?? "",
         grupoFerramenta: grupoEscolhido,
         qualFerramenta: String(f.get("qual_ferramenta") ?? ""),
-        marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, base?.marca ?? null),
-        marcaAtual: base?.marca ?? "",
+        marca: marcaDaSelecao(String(f.get("marca") ?? ""), parametrosSelecao.marcasFerramenta, original?.marca ?? null),
+        marcaAtual: original?.marca ?? "",
         modelo: capitalizarCadastro(String(f.get("modelo") ?? "")),
         tamanho: tamanhoEscolhido === SEM_TAMANHO ? "" : tamanhoEscolhido,
-        tamanhoAtual: base?.tamanho ?? "",
+        tamanhoAtual: original?.tamanho ?? "",
         estoqueMinimo: String(f.get("estoque_minimo") ?? ""),
         ...(editando ? { codigoAtual: editando.codigo_sku } : {}),
       });
@@ -305,11 +362,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
                   <TableCell>{item.modelo ?? "—"}</TableCell>
                   <TableCell>{item.tamanho || "—"}</TableCell>
                   <TableCell className="text-right">{item.estoque_minimo ?? 0}</TableCell>
-                  <TableCell>
-                    <Badge variant={item.status === "Ativo" ? "secondary" : "outline"}>
-                      {item.status}
-                    </Badge>
-                  </TableCell>
+                  <TableCell>{item.status}</TableCell>
                   <TableCell className="text-[10px] text-muted-foreground">
                     {formatarData(item.created_at)}
                   </TableCell>
@@ -319,6 +372,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
                       onClonar={() => void abrirNovo(item)}
                       onEditar={() => {
                         setModelo(null);
+                        setRascunho(null);
                         setEditando(item);
                         setAberto(true);
                       }}
@@ -418,8 +472,8 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
               )}
 
               <div className="space-y-1.5">
-                <Label htmlFor="marca">Marca</Label>
-                <Select name="marca" defaultValue={marcaCadastrada ? selecaoMarcaCadastrada(marcaCadastrada.id) : marcaAntiga ? SELECAO_MARCA_LEGADA : SELECAO_SEM_MARCA}>
+                <div className="flex items-center justify-between gap-2"><Label htmlFor="marca">Marca</Label>{linkCadastrar("marca")}</div>
+                <Select name="marca" value={marcaSel} onValueChange={setMarcaSel}>
                   <SelectTrigger id="marca"><SelectValue placeholder="Selecione a marca" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={SELECAO_SEM_MARCA}>Sem marca</SelectItem>
@@ -434,7 +488,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
                 <Input id="modelo" name="modelo" capitalizar="texto" required defaultValue={base?.modelo ?? ""} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="tamanho_ferramenta">Tamanho</Label>
+                <div className="flex items-center justify-between gap-2"><Label htmlFor="tamanho_ferramenta">Tamanho</Label>{linkCadastrar("tamanho")}</div>
                 <Select value={tamanhoEscolhido} onValueChange={setTamanhoEscolhido} disabled={!grupoEscolhido}>
                   <SelectTrigger id="tamanho_ferramenta"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -461,17 +515,18 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
               </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="unidade_medida">Unidade de Medida</Label>
+              <div className="flex items-center justify-between gap-2"><Label htmlFor="unidade_medida">Unidade de Medida</Label>{linkCadastrar("unidade")}</div>
               <Select
                 name="unidade_medida"
                 required
-                defaultValue={base?.unidade_medida ?? "Unidade"}
+                value={unidadeSel}
+                onValueChange={setUnidadeSel}
               >
                 <SelectTrigger id="unidade_medida">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Unidade">Unidade</SelectItem>
+                  {unidadesLista.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

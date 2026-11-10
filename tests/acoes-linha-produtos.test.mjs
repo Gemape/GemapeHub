@@ -18,7 +18,7 @@ for (const [nome, arquivo] of [
   test(`${nome}: Clonar abre cadastro novo (sem editando), com código gerado e sem estoque herdado`, () => {
     const fonte = ler(arquivo);
     assert.match(fonte, /onClonar=\{\(\) => void abrirNovo\(item\)\}/);
-    assert.match(fonte, /const base = editando \?\? modelo;/);
+    assert.match(fonte, /const (base = (rascunho \?\? )?editando \?\? modelo|original = editando \?\? modelo);/);
     assert.match(fonte, /setEditando\(null\);\s*setModelo\(origem \?\? null\)/);
     assert.match(fonte, /estoque_atual/);
   });
