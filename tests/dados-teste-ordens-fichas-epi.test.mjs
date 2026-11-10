@@ -41,14 +41,14 @@ test("as ordens de teste passam pelas mesmas regras da tela (todos os tópicos e
   assert.equal(lerOrdens(vazia).length, 5);
 });
 
-test("os dados de teste trazem cinco fichas de EPI, uma por modelo do catálogo, ligadas a EPIs de teste", () => {
+test("os dados de teste trazem oito fichas de EPI, uma por modelo do catálogo, ligadas a EPIs de teste", () => {
   const s = prontos();
   const fichas = json(s, "gemape-demo-fichas-epi");
-  assert.equal(fichas.length, 5);
+  assert.equal(fichas.length, 8);
   const epis = json(s, "gemape-demo-dados").epis;
   const nomes = fichas.map((f) => epis.find((e) => e.id === f.epiId).nome);
   assert.deepEqual(nomes, EPIS.map((e) => e.nome));
-  assert.equal(new Set(fichas.map((f) => f.epiId)).size, 5, "uma ficha por EPI");
+  assert.equal(new Set(fichas.map((f) => f.epiId)).size, 8, "uma ficha por EPI");
   for (const f of fichas) {
     assert.ok(f.epiId.startsWith("teste-"));
     for (const c of CAMPOS_FICHA) assert.ok(String(f[c.chave]).trim().length > 0, `${f.epiId}: ${c.rotulo}`);
@@ -73,5 +73,5 @@ test("aplicar de novo não duplica as ordens nem as fichas", () => {
   s.setItem("gemape-demo-dados-teste", JSON.stringify({ ...json(s, "gemape-demo-dados-teste"), versao: 1 }));
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
   assert.equal(lerOrdens(s).length, 5);
-  assert.equal(json(s, "gemape-demo-fichas-epi").length, 5);
+  assert.equal(json(s, "gemape-demo-fichas-epi").length, 8);
 });

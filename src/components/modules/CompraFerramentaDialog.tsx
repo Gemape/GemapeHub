@@ -76,7 +76,9 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
       fornecedorGravado = escolha.id;
     }
     const qtde = Number(f.get("quantidade"));
+    if (!Number.isInteger(qtde) || qtde < 1) return void alert("Informe uma quantidade inteira maior que zero.");
     const unitario = Number(f.get("valor_unitario"));
+    if (!unitario || unitario <= 0) return void alert("Informe o valor unitário.");
     const nota = String(f.get("nota_fiscal") || "").trim();
     const obs = capitalizarTexto(String(f.get("observacao") || "").trim());
     const observacao = [`Compra: ${fornecedor}${nota ? ` · NF ${nota}` : ""}`, obs].filter(Boolean).join(" · ").slice(0, 500);
@@ -158,7 +160,7 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
           </div>
           <div className="space-y-1.5">
             <Label>Valor Total</Label>
-            <Input value={formatarMoeda(quantidade * valorUnitario)} readOnly className="bg-muted font-bold" />
+            <Input value={formatarMoeda((quantidade || 0) * (valorUnitario || 0))} readOnly className="bg-muted font-bold" />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="compra-fer-obs">Observação</Label>

@@ -186,7 +186,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     Gerais.autorizar(sub, "tamanhos", [...tamanhos], storage);
     Gerais.autorizar(sub, "unidades", [sub === "sub-epi-botina" || sub === "sub-epi-luva" ? "uni-par" : "uni-unidade"], storage);
   }
-  for (const sub of ["sub-epi-capacete", "sub-epi-oculos", "sub-epi-protetor-auricular"]) Gerais.autorizar(sub, "unidades", ["uni-unidade"], storage);
+  for (const sub of ["sub-epi-capacete", "sub-epi-oculos", "sub-epi-protetor-auricular", "sub-epi-mascara"]) Gerais.autorizar(sub, "unidades", ["uni-unidade"], storage);
   // O que já existe em Gerais (de quem cadastrou igual, ou de uma aplicação que parou no meio) fica como está e não é anotado: o Limpar só tira o que o conjunto criou.
   const criar = (lista: string, novo: () => { id: string }) => { try { anotar(lista, novo().id); } catch (erro) { if (!/Já existe/.test(String(erro))) throw erro; } };
   for (const nome of MARCAS_FERRAMENTA) criar("marcasFerramenta", () => Gerais.adicionarListaFerramenta("marcasFerramenta", nome, storage));
@@ -396,6 +396,17 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       if (k === 4) entrega("epi", "epis", epiDe("Luva", luva).id, empresa, 1, diaBase - 7, TAMANHO_LUVA[luva], { ...quem, responsavel_nome: almox, observacao: "Luva devolvida: mudança de função" }, "Devolucao");
     }
   }
+  // Itens novos de EPI (colete, máscara e cinto): entregas, uma devolução e baixas nas três empresas.
+  entrega("epi", "epis", epiDe("Colete", 0).id, 0, 3, 18, "tam-m");
+  entrega("epi", "epis", epiDe("Colete", 1).id, 1, 2, 17, "tam-g");
+  entrega("epi", "epis", epiDe("Colete", 0).id, 0, 1, 7, "tam-m", { responsavel_nome: "Almoxarifado Gemape", observacao: "Colete devolvido: mudança de função" }, "Devolucao");
+  entrega("epi", "epis", epiDe("Máscara", 0).id, 2, 5, 10, null);
+  entrega("epi", "epis", epiDe("Máscara", 0).id, 0, 4, 9, null);
+  entrega("epi", "epis", epiDe("Máscara", 0).id, 1, 1, 5, null, { motivo_baixa: "Perda", observacao: "Perdida em obra" });
+  entrega("epi", "epis", epiDe("Cinto", 0).id, 1, 1, 14, "tam-m");
+  entrega("epi", "epis", epiDe("Cinto", 1).id, 2, 1, 13, "tam-g");
+  entrega("epi", "epis", epiDe("Cinto", 1).id, 2, 1, 4, "tam-g", { motivo_baixa: "Quebra", observacao: "Fivela quebrada" });
+
   // Toda devolução de EPI entra no estoque como produto usado (decisão 327): leva a compra mais antiga do EPI no tamanho (data, nota fiscal, fornecedor e CA) e o motivo da devolução.
   const MOTIVOS_DEVOLUCAO_TESTE = ["Fim do uso", "Troca de tamanho", "Troca por desgaste", "Mudança de função", "Fim do uso"];
   movimentosDe.filter((m) => m["modulo"] === "epi" && m["tipo_movimentacao"] === "Devolucao").forEach((m, n) => {
@@ -468,6 +479,13 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       if (k === 4) entrega("uniforme", "uniformes", uniDe("Jaqueta", jaqueta).id, empresa, 1, diaBase - 6, TAMANHO_JAQUETA[jaqueta], { ...quem, responsavel_nome: almoxarifado, observacao: "Devolução por troca de função" }, "Devolucao");
     }
   }
+  // Itens novos de uniforme (camisa térmica, bermuda e jaqueta corta-vento): entregas, uma devolução e uma baixa nas três empresas.
+  entrega("uniforme", "uniformes", uniDe("Camisa Térmica", 1).id, 0, 2, 19, "tam-m");
+  entrega("uniforme", "uniformes", uniDe("Camisa Térmica", 2).id, 1, 2, 18, "tam-g");
+  entrega("uniforme", "uniformes", uniDe("Bermuda", 1).id, 2, 1, 16, "tam-42");
+  entrega("uniforme", "uniformes", uniDe("Bermuda", 0).id, 0, 1, 11, "tam-40", { motivo_baixa: "Desgaste Natural", observacao: "Tecido puído" });
+  entrega("uniforme", "uniformes", uniDe("Jaqueta Corta", 0).id, 1, 1, 12, "tam-m");
+  entrega("uniforme", "uniformes", uniDe("Jaqueta Corta", 1).id, 2, 1, 8, "tam-g", { responsavel_nome: "Almoxarifado Lapa", observacao: "Jaqueta devolvida: troca de tamanho" }, "Devolucao");
   // Toda devolução de uniforme também entra no estoque como usada (decisão 374), com a compra mais antiga do uniforme e o motivo da devolução.
   movimentosDe.filter((m) => m["modulo"] === "uniforme" && m["tipo_movimentacao"] === "Devolucao").forEach((m, n) => {
     const origem = compras.compras_uniformes.filter((c) => c["item_id"] === m["item_id"]).sort((x, y) => String(x["data_compra"]).localeCompare(String(y["data_compra"])))[0];
@@ -539,7 +557,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   tabela("compras_epis").push(...compras.compras_epis);
   tabela("compras_uniformes").push(...compras.compras_uniformes);
 
-  // Veículos, um por empresa, com empregado responsável.
+  // Veículos (dez, distribuídos pelas três empresas), cada um com empregado responsável.
   const proximoVei = proximosCodigos(dados, "VEI", ["veiculos"]);
   for (const v of VEICULOS) {
     const placaFormatada = `${v.placa.slice(0, 3)}-${v.placa.slice(3)}`;
@@ -647,7 +665,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
 
   // Abastecimentos dos veículos (as mesmas conferências do registro em Veículos).
   VEICULOS.forEach((v, n) => {
-    const ab = registrarAbastecimento({ veiculoId: v.id, data: dia(agora, 20 - n * 3), hora: `${String(8 + n).padStart(2, "0")}:30`, km: String(v.km - 400 + n * 40), litros: String(38.5 + n * 12), valor: String(240 + n * 85) }, storage as Storage, agora);
+    const ab = registrarAbastecimento({ veiculoId: v.id, data: dia(agora, 20 - (n % 5) * 3), hora: `${String(8 + (n % 5)).padStart(2, "0")}:30`, km: String(v.km - 400 + (n % 5) * 40), litros: String(38.5 + (n % 5) * 12 + Math.floor(n / 5) * 3), valor: String(240 + (n % 5) * 85 + Math.floor(n / 5) * 22) }, storage as Storage, agora);
     trocarId(storage, "gemape-demo-abastecimentos", ab.id, `${PREFIXO}abastecimento-${n + 1}`);
   });
 

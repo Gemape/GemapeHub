@@ -31,7 +31,7 @@ export function semearViagens(storage: Armazenamento, agora: Date): void {
 
   const cartoes = estado.perguntas.find((p) => p.id === "q-02")?.opcoes ?? [];
   if (cartoes.length === 0) throw new Error("O questionário de despesas não tem cartões de crédito cadastrados.");
-  const abastecimentos = lerAbastecimentos(storage).filter((a) => a.id.startsWith(PREFIXO)).sort((a, b) => a.id.localeCompare(b.id));
+  const abastecimentos = lerAbastecimentos(storage).filter((a) => a.id.startsWith(PREFIXO)).sort((a, b) => Number(a.id.split("-").pop()) - Number(b.id.split("-").pop())).slice(0, DESTINOS.length); // uma viagem por destino, nos primeiros abastecimentos
   if (abastecimentos.length !== DESTINOS.length) throw new Error("Os abastecimentos de teste não estão gravados; as viagens de teste não puderam ser criadas.");
   abastecimentos.forEach((ab, i) => {
     const tecnico = EMPREGADOS[i]!;

@@ -10,7 +10,7 @@ test("Frota, Manutenção, Movimentações e Ocorrências de Veículos têm camp
   assert.match(fonte("components/modules/AbastecimentoVeiculoModulo.tsx"), /combinaBusca\(busca/);
   assert.match(fonte("components/modules/ManutencaoVeiculoModulo.tsx"), /combinaBusca\(busca/);
   const mov = fonte("components/modules/MovimentacoesModulo.tsx");
-  assert.match(mov, /\n\s+busca\.trim\(\)\n/);
+  assert.match(mov, /\n\s+busca(?:Ativa)?\.trim\(\)\n/);
   assert.match(mov, /visiveis\.map\(/);
   assert.match(fonte("components/modules/OcorrenciasModulo.tsx"), /Buscar por descrição ou responsável/);
 });

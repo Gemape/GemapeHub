@@ -3,7 +3,7 @@
 // dados serem atualizados sozinhos no navegador.
 import { gerarCnpj, gerarCpf } from "./documentos.ts";
 
-export const VERSAO_DADOS_TESTE = 40;
+export const VERSAO_DADOS_TESTE = 41;
 
 // Prefixo dos ids escritos à mão: dá para reconhecer o que é de teste mesmo sem a lista de ids guardada.
 export const PREFIXO = "teste-";
@@ -98,13 +98,18 @@ export const CLIENTES = [
   },
 ] as const;
 
-// Veículos: um por empresa, cada um com um empregado responsável.
+// Veículos: dez, distribuídos pelas empresas, cada um com um empregado responsável.
 export const VEICULOS = [
   { id: `${PREFIXO}veiculo-1`, empresaId: EMPRESAS[0]!.id, responsavelId: EMPREGADOS[0]!.id, tipo: "Utilitário", subId: "sub-veiculos-utilitario", placa: "TST1A23", marca: "Fiat", modelo: "Strada Endurance", ano: 2022, cor: "Branca", combustivel: "Flex", renavam: "00123456789", km: 38500, aquisicao: "2022-02-18", custo: 98500, nota: "NF-004512", observacoes: "Veículo da equipe de campo da Gemape Máquinas." },
   { id: `${PREFIXO}veiculo-2`, empresaId: EMPRESAS[1]!.id, responsavelId: EMPREGADOS[1]!.id, tipo: "Caminhão", subId: "sub-veiculos-caminhao", placa: "TST2B34", marca: "Volkswagen", modelo: "Delivery 11.180", ano: 2020, cor: "Branco", combustivel: "Diesel", renavam: "00234567890", km: 112300, aquisicao: "2020-06-05", custo: 285000, nota: "NF-001873", observacoes: "Transporte de máquinas até o cliente." },
   { id: `${PREFIXO}veiculo-3`, empresaId: EMPRESAS[2]!.id, responsavelId: EMPREGADOS[2]!.id, tipo: "Carro", subId: "sub-veiculos-carro", placa: "TST3C45", marca: "Chevrolet", modelo: "Onix LT", ano: 2023, cor: "Prata", combustivel: "Flex", renavam: "00345678901", km: 15200, aquisicao: "2023-03-22", custo: 84900, nota: "NF-007790", observacoes: "Uso administrativo e visitas comerciais." },
   { id: `${PREFIXO}veiculo-4`, empresaId: EMPRESAS[0]!.id, responsavelId: EMPREGADOS[3]!.id, tipo: "Utilitário", subId: "sub-veiculos-utilitario", placa: "TST4D56", marca: "Toyota", modelo: "Hilux CD 4x4", ano: 2021, cor: "Preta", combustivel: "Diesel", renavam: "00456789012", km: 61800, aquisicao: "2021-09-10", custo: 245000, nota: "NF-003340", observacoes: "Atendimento a clientes em área rural." },
   { id: `${PREFIXO}veiculo-5`, empresaId: EMPRESAS[1]!.id, responsavelId: EMPREGADOS[4]!.id, tipo: "Caminhão", subId: "sub-veiculos-caminhao", placa: "TST5E67", marca: "Mercedes-Benz", modelo: "Accelo 815", ano: 2022, cor: "Branco", combustivel: "Diesel", renavam: "00567890123", km: 47200, aquisicao: "2022-04-28", custo: 318000, nota: "NF-005128", observacoes: "Entrega de peças e equipamentos pesados." },
+  { id: `${PREFIXO}veiculo-6`, empresaId: EMPRESAS[2]!.id, responsavelId: EMPREGADOS[5]!.id, tipo: "Utilitário", subId: "sub-veiculos-utilitario", placa: "TST6F78", marca: "Volkswagen", modelo: "Saveiro Robust", ano: 2023, cor: "Cinza", combustivel: "Flex", renavam: "00678901234", km: 22100, aquisicao: "2023-05-12", custo: 91500, nota: "NF-008214", observacoes: "Apoio técnico da Lapa Máquinas." },
+  { id: `${PREFIXO}veiculo-7`, empresaId: EMPRESAS[0]!.id, responsavelId: EMPREGADOS[6]!.id, tipo: "Carro", subId: "sub-veiculos-carro", placa: "TST7G89", marca: "Toyota", modelo: "Corolla XEi", ano: 2022, cor: "Preto", combustivel: "Flex", renavam: "00789012345", km: 41800, aquisicao: "2022-11-03", custo: 152000, nota: "NF-006021", observacoes: "Diretoria e visitas a clientes." },
+  { id: `${PREFIXO}veiculo-8`, empresaId: EMPRESAS[1]!.id, responsavelId: EMPREGADOS[7]!.id, tipo: "Utilitário", subId: "sub-veiculos-utilitario", placa: "TST8H90", marca: "Ford", modelo: "Ranger XLS", ano: 2021, cor: "Prata", combustivel: "Diesel", renavam: "00890123456", km: 73400, aquisicao: "2021-07-19", custo: 231000, nota: "NF-004477", observacoes: "Atendimento externo de locações." },
+  { id: `${PREFIXO}veiculo-9`, empresaId: EMPRESAS[2]!.id, responsavelId: EMPREGADOS[8]!.id, tipo: "Caminhão", subId: "sub-veiculos-caminhao", placa: "TST9I01", marca: "Iveco", modelo: "Daily 35S14", ano: 2020, cor: "Branco", combustivel: "Diesel", renavam: "00901234567", km: 126900, aquisicao: "2020-10-08", custo: 247000, nota: "NF-002951", observacoes: "Entrega de peças na região de Campinas." },
+  { id: `${PREFIXO}veiculo-10`, empresaId: EMPRESAS[0]!.id, responsavelId: EMPREGADOS[9]!.id, tipo: "Carro", subId: "sub-veiculos-carro", placa: "TST0A12", marca: "Renault", modelo: "Kwid Zen", ano: 2023, cor: "Vermelho", combustivel: "Flex", renavam: "00012345678", km: 9800, aquisicao: "2023-08-25", custo: 69900, nota: "NF-009310", observacoes: "Uso administrativo e malote." },
 ] as const;
 
 // Itens do catálogo de EPI e de uniforme: um registro por tamanho (decisão 35). O código e o id saem em ordem.
@@ -115,6 +120,9 @@ export const EPIS: readonly ItemCatalogoTeste[] = [
   { nome: "Capacete de Segurança Classe B", sub: "sub-epi-capacete", subNome: "Capacete", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: [null], minimos: [5], fornecedor: 0, ca: "31469" },
   { nome: "Óculos de Proteção Incolor Antiembaçante", sub: "sub-epi-oculos", subNome: "Óculos", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: [null], minimos: [8], fornecedor: 3, ca: "28911" },
   { nome: "Protetor Auricular Tipo Concha", sub: "sub-epi-protetor-auricular", subNome: "Protetor Auricular", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: [null], minimos: [6], fornecedor: 3, ca: "5745" },
+  { nome: "Colete Refletivo de Alta Visibilidade", sub: "sub-epi-colete", subNome: "Colete", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [6, 6], fornecedor: 3, ca: "40233" },
+  { nome: "Máscara Respiratória PFF2", sub: "sub-epi-mascara", subNome: "Máscara", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: [null], minimos: [20], fornecedor: 0, ca: "38744" },
+  { nome: "Cinto de Segurança Tipo Paraquedista", sub: "sub-epi-cinto-de-seguranca", subNome: "Cinto de Segurança", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [3, 3], fornecedor: 2, ca: "29810" },
 ];
 export const UNIFORMES: readonly ItemCatalogoTeste[] = [
   { nome: "Camisa Operacional Manga Longa", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [8, 12, 10], fornecedor: 2 },
@@ -122,6 +130,9 @@ export const UNIFORMES: readonly ItemCatalogoTeste[] = [
   { nome: "Jaqueta Térmica Impermeável", sub: "sub-uniformes-jaqueta", subNome: "Jaqueta", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [4, 4], fornecedor: 0 },
   { nome: "Camisa Polo Institucional Bordada", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [5, 8, 6], fornecedor: 2 },
   { nome: "Calça Jeans Operacional Reforçada", sub: "sub-uniformes-calca", subNome: "Calça", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-40", "tam-42", "tam-44"], minimos: [4, 6, 4], fornecedor: 0 },
+  { nome: "Camisa Térmica Proteção UV", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [4, 6, 4], fornecedor: 2 },
+  { nome: "Bermuda Operacional Ripstop", sub: "sub-uniformes-calca", subNome: "Calça", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-40", "tam-42", "tam-44"], minimos: [3, 5, 3], fornecedor: 0 },
+  { nome: "Jaqueta Corta-Vento Refletiva", sub: "sub-uniformes-jaqueta", subNome: "Jaqueta", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [3, 3], fornecedor: 2 },
 ];
 // Tamanhos que cada subcategoria passa a aceitar em Gerais (somam-se aos que já estavam autorizados).
 export const TAMANHOS_AUTORIZADOS: Record<string, readonly string[]> = {
@@ -130,6 +141,8 @@ export const TAMANHOS_AUTORIZADOS: Record<string, readonly string[]> = {
   "sub-uniformes-jaqueta": ["tam-m", "tam-g"],
   "sub-epi-botina": ["tam-38", "tam-40", "tam-42"],
   "sub-epi-luva": ["tam-p", "tam-m", "tam-g"],
+  "sub-epi-colete": ["tam-m", "tam-g"],
+  "sub-epi-cinto-de-seguranca": ["tam-m", "tam-g"],
 };
 
 export const MARCAS_FERRAMENTA = ["Ferrotec", "Maxforça", "Duramax"] as const;
@@ -159,6 +172,17 @@ export const FERRAMENTAS = [
   { empresaIndice: 2, categoria: "Manual", grupo: "Diversos", qual: "Nível de Bolha 40 cm", marca: "Duramax", modelo: "NB-400", tamanho: "", minimo: 2, entrada: 4, fornecedor: 1 },
   { empresaIndice: 0, categoria: "Manual", grupo: "Combinada", qual: "", marca: "Maxforça", modelo: "Aço Carbono", tamanho: "13", minimo: 3, entrada: 8, fornecedor: 4 },
   { empresaIndice: 1, categoria: "Manual", grupo: "Alicates", qual: "", marca: "Ferrotec", modelo: "Bico Meia Cana", tamanho: "8 pol", minimo: 2, entrada: 5, fornecedor: 1 },
+  // Mais dez ferramentas (a ordem 21 a 30 segue a mesma regra de empresa da caixa n mod 5).
+  { empresaIndice: 0, categoria: "Manual", grupo: "Alicates", qual: "", marca: "Maxforça", modelo: "Bico Curvo", tamanho: "8 pol", minimo: 2, entrada: 5, fornecedor: 4 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Chave L", qual: "", marca: "Duramax", modelo: "Cromada Longa", tamanho: "14", minimo: 3, entrada: 6, fornecedor: 1 },
+  { empresaIndice: 2, categoria: "Elétrica", grupo: "Diversos", qual: "Parafusadeira a Bateria", marca: "Ferrotec", modelo: "PB-12V", tamanho: "", minimo: 2, entrada: 3, fornecedor: 4 },
+  { empresaIndice: 0, categoria: "Manual", grupo: "Chave Philips", qual: "", marca: "Duramax", modelo: "Ponta Imantada", tamanho: "", minimo: 3, entrada: 8, fornecedor: 1 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Chave boca", qual: "", marca: "Maxforça", modelo: "Aço Cromo-Vanádio", tamanho: "14-15", minimo: 2, entrada: 5, fornecedor: 4 },
+  { empresaIndice: 0, categoria: "Manual", grupo: "Meia lua", qual: "", marca: "Ferrotec", modelo: "Forjada Cromada", tamanho: "12-14", minimo: 2, entrada: 4, fornecedor: 1 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Canhão", qual: "", marca: "Maxforça", modelo: "Curto Cromado", tamanho: "10", minimo: 3, entrada: 6, fornecedor: 4 },
+  { empresaIndice: 2, categoria: "Elétrica", grupo: "Diversos", qual: "Esmerilhadeira Angular", marca: "Duramax", modelo: "EA-4.1/2 850W", tamanho: "", minimo: 2, entrada: 3, fornecedor: 1 },
+  { empresaIndice: 0, categoria: "Manual", grupo: "Lima", qual: "", marca: "Duramax", modelo: "Murça Bastarda", tamanho: "Redonda", minimo: 2, entrada: 5, fornecedor: 4 },
+  { empresaIndice: 1, categoria: "Manual", grupo: "Cachimbo", qual: "", marca: "Duramax", modelo: "Jogo Sextavado", tamanho: "19", minimo: 2, entrada: 4, fornecedor: 1 },
 ] as const;
 export const CAIXAS_TESTE = 5;
 
