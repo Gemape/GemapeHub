@@ -37,4 +37,8 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  // O código do projeto não é formatado pelo Prettier (os testes conferem o texto das fontes); a regra marcava 16 mil "erros" e escondia os problemas reais.
+  { rules: { "prettier/prettier": "off" } },
+  // O cliente de demonstração imita a API do Supabase sem os tipos gerados; o @ts-nocheck dele é proposital.
+  { files: ["src/integrations/supabase/demo-client.ts"], rules: { "@typescript-eslint/ban-ts-comment": "off" } },
 );
