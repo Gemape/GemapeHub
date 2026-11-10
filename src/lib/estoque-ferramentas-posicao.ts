@@ -78,3 +78,26 @@ export function ferramentasAcimaDoEstoque(
   }
   return null;
 }
+
+export type FerramentaAbaixoDoMinimo = { id: string; codigo: string; nome: string; empresaId: string | null; saldo: number; minimo: number; guardada: number; comEmpregado: number; situacao: "Zerado" | "Abaixo do mínimo" | "No mínimo" };
+
+/** Ferramentas ativas no mínimo ou abaixo, do mais crítico ao menos: zeradas primeiro, depois as mais distantes do mínimo. Sem mínimo, só a ferramenta zerada alerta (mesma regra do EPI). */
+export function ferramentasAbaixoDoMinimo(
+  ferramentas: { id: string; codigo_sku?: string | null; nome: string; empresa_id?: string | null; estoque_minimo?: number | null; status?: string | null }[],
+  posicoes: ReadonlyMap<string, Pick<PosicaoDaFerramenta, "saldo" | "guardada" | "comEmpregado">>,
+): FerramentaAbaixoDoMinimo[] {
+  const lista: FerramentaAbaixoDoMinimo[] = [];
+  for (const f of ferramentas) {
+    if (f.status === "Inativo") continue;
+    const p = posicoes.get(f.id);
+    const saldo = p?.saldo ?? 0;
+    const minimo = Number(f.estoque_minimo) || 0;
+    if (saldo > minimo) continue;
+    lista.push({
+      id: f.id, codigo: f.codigo_sku ?? "", nome: f.nome, empresaId: f.empresa_id ?? null, saldo, minimo, guardada: p?.guardada ?? 0, comEmpregado: p?.comEmpregado ?? 0,
+      situacao: saldo === 0 ? "Zerado" : saldo < minimo ? "Abaixo do mínimo" : "No mínimo",
+    });
+  }
+  const falta = (l: FerramentaAbaixoDoMinimo) => (l.minimo > 0 ? l.saldo / l.minimo : 0);
+  return lista.sort((a, b) => falta(a) - falta(b) || a.nome.localeCompare(b.nome, "pt-BR"));
+}

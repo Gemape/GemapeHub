@@ -35,7 +35,7 @@ test("a aba Estoque e a regra única concordam, linha a linha, em quem está em 
 });
 
 test("o botão, o Dashboard e o aviso da Entrega usam a regra única (decisão 417)", () => {
-  assert.match(ler("components/modules/SugestaoComprasEpi.tsx"), /alertasDeMinimoEpi\(parametros, item as never, modulo\)/);
+  assert.match(ler("lib/use-sugestao-compras.ts"), /alertasDeMinimoEpi\(parametros, item as never, modulo\)/);
   assert.match(ler("routes/_authenticated/dashboard.tsx"), /alertasDeMinimoEpi\(parametros, i as never/);
   assert.match(ler("components/modules/EpiEntrega.tsx"), /alertasDeMinimoEpi\(parametros, item as never, modulo\)/);
   assert.doesNotMatch(ler("routes/_authenticated/dashboard.tsx"), /alertasPorTamanho|usaMinimoPorTamanho/);

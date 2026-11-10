@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
@@ -30,39 +29,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
 import { hojeBrasilia } from "@/lib/checklist-veiculo";
-import { hojeLocal } from "@/lib/empregados";
 import { empresasParaEscolha } from "@/lib/empresas";
-import { useEmpresa } from "@/lib/empresa-context";
-import { controleDeEstoque } from "@/lib/epi-controle-estoque";
 import { CLASSE_STATUS, EtiquetaStatusCompra, LegendaStatusCompra } from "@/components/modules/LegendaStatusCompra";
 import { STATUS_CRITICIDADE, type StatusCriticidade } from "@/lib/epi-parametros";
-import {
-  linhasDeEstoqueEpi,
-  type CompraDoEstoque,
-  type DevolucaoUsada,
-} from "@/lib/estoque-epi-visao";
-import { EstoqueMinimoEpi, type LinhaDeMinimo } from "@/components/modules/EstoqueMinimoEpi";
-import { alertasDeMinimoEpi, minimosDeEpi, minimoTotalDeEpi, saldosDeEpi, totalDeEpi } from "@/lib/estoque-epi-saldos";
-import { controlaTamanho, nomeTamanho, saldosPorTamanho, SEM_TAMANHO } from "@/lib/estoque-tamanho";
+import { EstoqueMinimoEpi } from "@/components/modules/EstoqueMinimoEpi";
 import { exportarCsv } from "@/lib/gemape";
-import { useComprasEpis, useComprasUniformes, useEmpresas, useMovimentacoes } from "@/lib/hooks-gemape";
-import { lerItensEstoque } from "@/lib/itens-estoque-modulo";
+import { useEmpresas } from "@/lib/hooks-gemape";
 import {
   filtrarSugestaoEpi,
   itensDaCotacao,
-  linhasDaSugestaoEpi,
   montarCotacaoExcel,
   montarCotacaoHtml,
   rotuloDoStatus,
   STATUS_QUE_PEDEM_COMPRA,
-  type ItemDaSugestao,
   type LinhaCotacao,
   type LinhaSugestaoEpi,
 } from "@/lib/sugestao-epi";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useParametrosCompraEpi } from "@/lib/use-parametros-compra-epi";
+import { useSugestaoCompras } from "@/lib/use-sugestao-compras";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 
 const TODOS = "todos";
@@ -72,73 +58,17 @@ const NIVEIS = Object.keys(STATUS_CRITICIDADE) as StatusCriticidade[];
 // Gerar relatório, que monta a Cotação de preços (PDF ou Excel) pela subcategoria e pelos níveis de criticidade escolhidos.
 export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "uniforme" }) {
   const rotulo = modulo === "epi" ? "EPI" : "uniforme";
-  const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const parametrosCompra = useParametrosCompraEpi(modulo);
   const [empresaFiltro, setEmpresaFiltro] = useState(TODOS);
   const [palavra, setPalavra] = useState("");
-  const { data: itens = [], isLoading } = useQuery({
-    queryKey: ["estoque-modulo", modulo, empresaId],
-    queryFn: () => lerItensEstoque(supabase, modulo, empresaId),
-  });
-  const { data: movimentos = [] } = useMovimentacoes(modulo, empresaId);
-  const { data: comprasEpi = [] } = useComprasEpis(empresaId, "", modulo === "epi");
-  const { data: comprasUniforme = [] } = useComprasUniformes(empresaId, "", modulo === "uniforme");
-  const compras = modulo === "epi" ? comprasEpi : comprasUniforme;
+  const { todas, alertasMinimo, isLoading } = useSugestaoCompras(modulo);
   const { data: empresas = [] } = useEmpresas();
   const nomeDaEmpresa = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
   const nomeDaSubcategoria = (id: string | null) =>
     parametros.subcategorias.find((s) => s.id === id)?.nome ?? "Sem subcategoria";
 
-  const todas: LinhaSugestaoEpi[] = useMemo(() => {
-    // Total e usados pelo mesmo critério da aba Estoque (decisão 330): o saldo por tamanho e as devoluções usadas, limitadas ao saldo.
-    const porId = new Map(itens.map((i) => [i.id, i]));
-    const usados = new Map<string, number>();
-    for (const l of linhasDeEstoqueEpi({
-      itens,
-      compras: compras as unknown as CompraDoEstoque[],
-      devolucoes: movimentos as unknown as DevolucaoUsada[],
-      saldosDe: (id) => (porId.has(id) ? saldosDeEpi(parametros, porId.get(id)!, modulo) : {}),
-      minimosDe: (id) => (porId.has(id) ? minimosDeEpi(parametros, porId.get(id)!, modulo) : {}),
-      mediaMensalDe: () => 0,
-    }))
-      if (l.condicao === "usado") usados.set(l.itemId, (usados.get(l.itemId) ?? 0) + l.disponivel);
-    return linhasDaSugestaoEpi({
-      itens: itens as unknown as ItemDaSugestao[],
-      controle: controleDeEstoque(itens, movimentos, hojeLocal()),
-      parametros: parametrosCompra,
-      totalDe: (item) => totalDeEpi(parametros, item as never, modulo),
-      usadosDe: (item) => usados.get(item.id) ?? 0,
-      minimoDe: (item) => minimoTotalDeEpi(parametros, item as never, modulo),
-      // Item de um tamanho só mostra o tamanho na descrição; item com vários tamanhos já aparece uma vez por tamanho no cadastro.
-      tamanhoDe: (item) => {
-        if (!controlaTamanho(parametros, modulo, item as never)) return "";
-        const chaves = Object.keys(saldosPorTamanho(parametros, modulo, item as never)).filter(
-          (k) => k !== SEM_TAMANHO,
-        );
-        return chaves.length === 1 ? nomeTamanho(parametros, chaves[0]) : "";
-      },
-    });
-  }, [itens, movimentos, compras, parametros, parametrosCompra, modulo]);
-  // Estoque mínimo: um alerta por tamanho, pela mesma regra da aba Estoque (decisão 417); itens inativos ficam de fora, como na sugestão.
-  const alertasMinimo: LinhaDeMinimo[] = useMemo(
-    () =>
-      itens
-        .filter((i) => (i as { status?: string | null }).status !== "Inativo")
-        .flatMap((item) =>
-          alertasDeMinimoEpi(parametros, item as never, modulo).map((a) => ({
-            chave: `${item.id}|${a.chave}`,
-            itemId: item.id,
-            codigo: item.codigo_sku,
-            descricao: a.chave === SEM_TAMANHO ? item.nome : `${item.nome} · Tamanho ${a.nome}`,
-            empresaId: item.empresa_id,
-            total: a.saldo,
-            minimo: a.minimo,
-          })),
-        ),
-    [itens, parametros, modulo],
-  );
   const alertasFiltrados = useMemo(() => filtrarSugestaoEpi(alertasMinimo, { palavra }), [alertasMinimo, palavra]);
   const filtradas = filtrarSugestaoEpi(todas, {
     ...(empresaFiltro !== TODOS ? { empresaId: empresaFiltro } : {}),

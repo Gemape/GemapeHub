@@ -1,6 +1,8 @@
-import { AlertTriangle, Boxes, PackageCheck, Wallet } from "lucide-react";
+import { Boxes, PackageCheck, Wallet } from "lucide-react";
 
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
+import { DashboardFerramentas } from "@/components/modules/DashboardFerramentas";
+import { DashboardSugestaoCompras } from "@/components/modules/DashboardSugestaoCompras";
 import { StatCard } from "@/components/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,22 +16,18 @@ import {
 } from "@/components/ui/table";
 import { useEmpresa } from "@/lib/empresa-context";
 import {
-  coberturaEmDias,
   formatarData,
   formatarMoeda,
   valorTotalEmEstoque,
-  NIVEL_ALERTA_INFO,
-  nivelPorCobertura,
   TIPO_MOVIMENTACAO_LABEL,
   type Modulo,
 } from "@/lib/gemape";
-import { useEmpregados, useItens, useMovimentacoes, useSaidasPorItem } from "@/lib/hooks-gemape";
+import { useEmpregados, useItens, useMovimentacoes } from "@/lib/hooks-gemape";
 
 export function DashboardModulo({ modulo }: { modulo: Modulo }) {
   const { empresaId } = useEmpresa();
   const { data: itens = [] } = useItens(modulo, empresaId);
   const { data: movimentacoes = [] } = useMovimentacoes(modulo, empresaId, 20);
-  const { data: saidas } = useSaidasPorItem(modulo, empresaId);
   const { data: empregados = [] } = useEmpregados(empresaId);
 
   const totalEstoque = itens.reduce((s, i) => s + i.estoque_atual, 0);
@@ -37,14 +35,6 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
   const emUso = movimentacoes
     .filter((m) => m.tipo_movimentacao === "Saida")
     .reduce((s, m) => s + m.quantidade, 0);
-
-  const alertas = itens
-    .map((item) => {
-      const dias = coberturaEmDias(item.estoque_atual, saidas?.get(item.id) ?? 0, 180);
-      return { item, dias, nivel: nivelPorCobertura(dias) };
-    })
-    .filter((a) => a.nivel !== "ok")
-    .sort((a, b) => (a.dias ?? 999) - (b.dias ?? 999));
 
   const custoEmpresa = movimentacoes
     .filter((m) => m.onus_baixa === "Da Empresa")
@@ -57,85 +47,45 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
   const ocorrencias = movimentacoes.filter((m) => m.sinalizar_ocorrencia);
   const nomeEmpregado = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "—";
 
+  const cartoes = (
+    <>
+      <StatCard
+        titulo="Itens nesta consulta"
+        subtitulo="Itens da lista filtrada e o estoque somado deles."
+        valor={itens.length}
+        detalhe={`${totalEstoque} unidades em estoque`}
+        icone={Boxes}
+        compacto
+      />
+      <StatCard
+        titulo="Saídas recentes"
+        subtitulo="Unidades entregues nas últimas movimentações."
+        valor={emUso}
+        icone={PackageCheck}
+        compacto
+      />
+      <StatCard
+        titulo="Valor em estoque"
+        subtitulo="Itens carregados × preço informado; sem preço conta como zero."
+        valor={formatarMoeda(valorEstoque)}
+        icone={Wallet}
+        compacto
+      />
+    </>
+  );
+
   return (
     <div className="space-y-5">
-      <GradeDeCartoes colunas={4}>
-        <StatCard
-          titulo="Itens nesta consulta"
-          subtitulo="Itens da lista filtrada e o estoque somado deles."
-          valor={itens.length}
-          detalhe={`${totalEstoque} unidades em estoque`}
-          icone={Boxes}
-          compacto
-        />
-        <StatCard
-          titulo="Saídas recentes"
-          subtitulo="Unidades entregues nas últimas movimentações."
-          valor={emUso}
-          icone={PackageCheck}
-          compacto
-        />
-        <StatCard
-          titulo="Valor em estoque"
-          subtitulo="Itens carregados × preço informado; sem preço conta como zero."
-          valor={formatarMoeda(valorEstoque)}
-          icone={Wallet}
-          compacto
-        />
-        <StatCard
-          titulo="Alertas de reposição"
-          subtitulo="Itens com cobertura de estoque abaixo de 180 dias."
-          valor={alertas.length}
-          icone={AlertTriangle}
-          compacto
-        />
-      </GradeDeCartoes>
+      {/* EPI e Uniformes: os cartões da Sugestão de Compras entram na mesma grade e a lista do que pede compra vem logo abaixo. Ferramentas: os do estoque por posição. */}
+      {modulo === "uniforme" || modulo === "epi" ? (
+        <DashboardSugestaoCompras modulo={modulo} cartoes={cartoes} />
+      ) : modulo === "ferramenta" ? (
+        <DashboardFerramentas cartoes={cartoes} />
+      ) : (
+        <GradeDeCartoes colunas={4}>{cartoes}</GradeDeCartoes>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Alertas de reposição</CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead className="text-right">Estoque</TableHead>
-                  <TableHead className="text-right">Cobertura</TableHead>
-                  <TableHead>Alerta</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {alertas.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
-                      Nenhum alerta no momento.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  alertas.slice(0, 10).map(({ item, dias, nivel }) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.nome}</TableCell>
-                      <TableCell className="text-right">{item.estoque_atual}</TableCell>
-                      <TableCell className="text-right">
-                        {dias === null ? "—" : `${dias} d`}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`inline-flex rounded-md px-2 py-0.5 text-xs font-semibold ${NIVEL_ALERTA_INFO[nivel].classe}`}
-                        >
-                          {NIVEL_ALERTA_INFO[nivel].label} · sugerir compra
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Movimentações recentes</CardTitle>

@@ -16,6 +16,7 @@ import { ParametrosUniforme } from "@/components/parametros/ParametrosUniforme";
 import { PrazosOcorrenciasVeiculo } from "@/components/parametros/PrazosOcorrenciasVeiculo";
 import { SupervisoresOcorrencias } from "@/components/parametros/SupervisoresOcorrencias";
 import { SubgruposFerramenta } from "@/components/parametros/SubgruposFerramenta";
+import { marcarVoltaDoRascunho } from "@/lib/rascunho-ferramenta";
 import { ListaEditavel } from "@/components/parametros/ListaEditavel";
 import {
   adicionarCategoria,
@@ -64,9 +65,9 @@ async function lerRegistros(montar: () => any): Promise<{ data: Record<string, u
 
 export const Route = createFileRoute("/_authenticated/cadastros/gerais/categorias")({
   // `voltar` (decisão 355): aberto pelo link da Sugestão de Compras de EPI (ou de Uniformes, "sugestao-uniformes"), mostra o botão e volta a ela depois de salvar os parâmetros da sugestão.
-  validateSearch: (search: Record<string, unknown>): { de?: De; voltar?: "sugestao-compras" | "sugestao-uniformes" } => ({
+  validateSearch: (search: Record<string, unknown>): { de?: De; voltar?: "sugestao-compras" | "sugestao-uniformes" | "cadastro-ferramenta" } => ({
     ...(DE.includes(search["de"] as De) ? { de: search["de"] as De } : {}),
-    ...(search["voltar"] === "sugestao-compras" || search["voltar"] === "sugestao-uniformes" ? { voltar: search["voltar"] } : {}),
+    ...(search["voltar"] === "sugestao-compras" || search["voltar"] === "sugestao-uniformes" || search["voltar"] === "cadastro-ferramenta" ? { voltar: search["voltar"] } : {}),
   }),
   head: () => ({ meta: [{ title: "Parâmetros Específicos | Patrimônio GEMAPE" }] }),
   component: Categorias,
@@ -252,8 +253,8 @@ function Categorias() {
       >
         {/* Aberto pelo link da Sugestão de Compras: o botão fica no alto, à direita, e volta a ela (decisão 355). */}
         {voltar && (
-          <Button type="button" onClick={() => void navegar(voltar === "sugestao-compras" ? { to: "/epi", search: { aba: "sugestao-compras" } } : { to: "/uniformes", search: { aba: "sugestao-compras" } })}>
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar para Sugestão de Compras
+          <Button type="button" onClick={() => { if (voltar === "cadastro-ferramenta") marcarVoltaDoRascunho(); void navegar(voltar === "cadastro-ferramenta" ? { to: "/cadastros/ferramentas" } : voltar === "sugestao-compras" ? { to: "/epi", search: { aba: "sugestao-compras" } } : { to: "/uniformes", search: { aba: "sugestao-compras" } }); }}>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {voltar === "cadastro-ferramenta" ? "Voltar para Cadastrar ferramenta" : "Voltar para Sugestão de Compras"}
           </Button>
         )}
       </Cabecalho>

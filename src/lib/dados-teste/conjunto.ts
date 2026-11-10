@@ -3,7 +3,7 @@
 // dados serem atualizados sozinhos no navegador.
 import { gerarCnpj, gerarCpf } from "./documentos.ts";
 
-export const VERSAO_DADOS_TESTE = 41;
+export const VERSAO_DADOS_TESTE = 44;
 
 // Prefixo dos ids escritos à mão: dá para reconhecer o que é de teste mesmo sem a lista de ids guardada.
 export const PREFIXO = "teste-";
@@ -113,7 +113,7 @@ export const VEICULOS = [
 ] as const;
 
 // Itens do catálogo de EPI e de uniforme: um registro por tamanho (decisão 35). O código e o id saem em ordem.
-export type ItemCatalogoTeste = { nome: string; sub: string; subNome: string; unidade: "uni-par" | "uni-unidade"; unidadeNome: string; tamanhos: readonly (string | null)[]; minimos: readonly number[]; fornecedor: 0 | 1 | 2 | 3 | 4; ca?: string };
+export type ItemCatalogoTeste = { nome: string; sub: string; subNome: string; unidade: "uni-par" | "uni-unidade"; unidadeNome: string; tamanhos: readonly (string | null)[]; minimos: readonly number[]; fornecedor: 0 | 1 | 2 | 3 | 4; ca?: string; marca?: (typeof MARCAS_UNIFORME)[number] };
 export const EPIS: readonly ItemCatalogoTeste[] = [
   { nome: "Botina de Segurança com Biqueira de Aço", sub: "sub-epi-botina", subNome: "Botina", unidade: "uni-par", unidadeNome: "Par", tamanhos: ["tam-38", "tam-40", "tam-42"], minimos: [4, 10, 6], fornecedor: 0, ca: "42158" },
   { nome: "Luva Nitrílica Antiderrapante", sub: "sub-epi-luva", subNome: "Luva", unidade: "uni-par", unidadeNome: "Par", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [6, 12, 8], fornecedor: 2, ca: "35671" },
@@ -125,14 +125,14 @@ export const EPIS: readonly ItemCatalogoTeste[] = [
   { nome: "Cinto de Segurança Tipo Paraquedista", sub: "sub-epi-cinto-de-seguranca", subNome: "Cinto de Segurança", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [3, 3], fornecedor: 2, ca: "29810" },
 ];
 export const UNIFORMES: readonly ItemCatalogoTeste[] = [
-  { nome: "Camisa Operacional Manga Longa", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [8, 12, 10], fornecedor: 2 },
-  { nome: "Calça Operacional com Faixa Refletiva", sub: "sub-uniformes-calca", subNome: "Calça", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-40", "tam-42", "tam-44"], minimos: [6, 10, 6], fornecedor: 2 },
-  { nome: "Jaqueta Térmica Impermeável", sub: "sub-uniformes-jaqueta", subNome: "Jaqueta", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [4, 4], fornecedor: 0 },
-  { nome: "Camisa Polo Institucional Bordada", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [5, 8, 6], fornecedor: 2 },
-  { nome: "Calça Jeans Operacional Reforçada", sub: "sub-uniformes-calca", subNome: "Calça", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-40", "tam-42", "tam-44"], minimos: [4, 6, 4], fornecedor: 0 },
-  { nome: "Camisa Térmica Proteção UV", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [4, 6, 4], fornecedor: 2 },
-  { nome: "Bermuda Operacional Ripstop", sub: "sub-uniformes-calca", subNome: "Calça", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-40", "tam-42", "tam-44"], minimos: [3, 5, 3], fornecedor: 0 },
-  { nome: "Jaqueta Corta-Vento Refletiva", sub: "sub-uniformes-jaqueta", subNome: "Jaqueta", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [3, 3], fornecedor: 2 },
+  { nome: "Camisa Operacional Manga Longa", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [8, 12, 10], fornecedor: 2, marca: "Vestir Bem" },
+  { nome: "Calça Operacional com Faixa Refletiva", sub: "sub-uniformes-calca", subNome: "Calça", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-40", "tam-42", "tam-44"], minimos: [6, 10, 6], fornecedor: 2, marca: "Trabalho Forte" },
+  { nome: "Jaqueta Térmica Impermeável", sub: "sub-uniformes-jaqueta", subNome: "Jaqueta", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [4, 4], fornecedor: 0, marca: "Vestir Bem" },
+  { nome: "Camisa Polo Institucional Bordada", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [5, 8, 6], fornecedor: 2, marca: "Norte Uniformes" },
+  { nome: "Calça Jeans Operacional Reforçada", sub: "sub-uniformes-calca", subNome: "Calça", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-40", "tam-42", "tam-44"], minimos: [4, 6, 4], fornecedor: 0, marca: "Trabalho Forte" },
+  { nome: "Camisa Térmica Proteção UV", sub: "sub-uniformes-camisa", subNome: "Camisa", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-p", "tam-m", "tam-g"], minimos: [4, 6, 4], fornecedor: 2, marca: "Norte Uniformes" },
+  { nome: "Bermuda Operacional Ripstop", sub: "sub-uniformes-calca", subNome: "Calça", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-40", "tam-42", "tam-44"], minimos: [3, 5, 3], fornecedor: 0, marca: "Trabalho Forte" },
+  { nome: "Jaqueta Corta-Vento Refletiva", sub: "sub-uniformes-jaqueta", subNome: "Jaqueta", unidade: "uni-unidade", unidadeNome: "Unidade", tamanhos: ["tam-m", "tam-g"], minimos: [3, 3], fornecedor: 2, marca: "Norte Uniformes" },
 ];
 // Tamanhos que cada subcategoria passa a aceitar em Gerais (somam-se aos que já estavam autorizados).
 export const TAMANHOS_AUTORIZADOS: Record<string, readonly string[]> = {

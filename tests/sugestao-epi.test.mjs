@@ -198,3 +198,10 @@ test("a aba Sugestão de Compras do EPI tem as colunas na ordem pedida, o botão
   ])
     assert.ok(tela.includes(t), t);
 });
+
+test("o Dashboard lista só o que pede compra, do mais crítico ao menos, e dentro do status o de menor cobertura primeiro", async () => {
+  const { itensQuePedemCompra } = await import("../src/lib/sugestao-epi.ts");
+  const l = (itemId, status, cobertura) => ({ itemId, descricao: itemId, status, cobertura });
+  const ordem = itensQuePedemCompra([l("estavel", "estavel", 300), l("planejar", "planejar", 60), l("semConsumo", null, null), l("comprar2", "comprar_ja", 40), l("ruptura", "ruptura", 5), l("comprar1", "comprar_ja", 20)]).map((x) => x.itemId);
+  assert.deepEqual(ordem, ["ruptura", "comprar1", "comprar2", "planejar"]);
+});
