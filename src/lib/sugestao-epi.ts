@@ -234,3 +234,11 @@ export const abaixoDoMinimo = <T extends Pick<LinhaSugestaoEpi, "total" | "minim
   linhas
     .filter((l) => l.total <= l.minimo)
     .sort((a, b) => (a.minimo > 0 ? a.total / a.minimo : 0) - (b.minimo > 0 ? b.total / b.minimo : 0) || a.descricao.localeCompare(b.descricao, "pt-BR"));
+
+// Os itens que pedem compra, do mais crítico ao menos: ruptura, comprar já e planejar; no mesmo status, o de menor cobertura primeiro.
+export function itensQuePedemCompra(linhas: LinhaSugestaoEpi[]): LinhaSugestaoEpi[] {
+  const ordem = (l: LinhaSugestaoEpi) => (l.status ? STATUS_QUE_PEDEM_COMPRA.indexOf(l.status) : 99);
+  return linhas
+    .filter((l) => l.status !== null && STATUS_QUE_PEDEM_COMPRA.includes(l.status))
+    .sort((a, b) => ordem(a) - ordem(b) || (a.cobertura ?? Infinity) - (b.cobertura ?? Infinity) || a.descricao.localeCompare(b.descricao, "pt-BR"));
+}

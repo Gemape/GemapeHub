@@ -1,6 +1,8 @@
 import { AlertTriangle, Boxes, PackageCheck, Wallet } from "lucide-react";
 
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
+import { DashboardFerramentas } from "@/components/modules/DashboardFerramentas";
+import { DashboardSugestaoCompras } from "@/components/modules/DashboardSugestaoCompras";
 import { StatCard } from "@/components/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,39 +59,50 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
   const ocorrencias = movimentacoes.filter((m) => m.sinalizar_ocorrencia);
   const nomeEmpregado = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "—";
 
+  const cartoes = (
+    <>
+      <StatCard
+        titulo="Itens nesta consulta"
+        subtitulo="Itens da lista filtrada e o estoque somado deles."
+        valor={itens.length}
+        detalhe={`${totalEstoque} unidades em estoque`}
+        icone={Boxes}
+        compacto
+      />
+      <StatCard
+        titulo="Saídas recentes"
+        subtitulo="Unidades entregues nas últimas movimentações."
+        valor={emUso}
+        icone={PackageCheck}
+        compacto
+      />
+      <StatCard
+        titulo="Valor em estoque"
+        subtitulo="Itens carregados × preço informado; sem preço conta como zero."
+        valor={formatarMoeda(valorEstoque)}
+        icone={Wallet}
+        compacto
+      />
+      <StatCard
+        titulo="Alertas de reposição"
+        subtitulo="Itens com cobertura de estoque abaixo de 180 dias."
+        valor={alertas.length}
+        icone={AlertTriangle}
+        compacto
+      />
+    </>
+  );
+
   return (
     <div className="space-y-5">
-      <GradeDeCartoes colunas={4}>
-        <StatCard
-          titulo="Itens nesta consulta"
-          subtitulo="Itens da lista filtrada e o estoque somado deles."
-          valor={itens.length}
-          detalhe={`${totalEstoque} unidades em estoque`}
-          icone={Boxes}
-          compacto
-        />
-        <StatCard
-          titulo="Saídas recentes"
-          subtitulo="Unidades entregues nas últimas movimentações."
-          valor={emUso}
-          icone={PackageCheck}
-          compacto
-        />
-        <StatCard
-          titulo="Valor em estoque"
-          subtitulo="Itens carregados × preço informado; sem preço conta como zero."
-          valor={formatarMoeda(valorEstoque)}
-          icone={Wallet}
-          compacto
-        />
-        <StatCard
-          titulo="Alertas de reposição"
-          subtitulo="Itens com cobertura de estoque abaixo de 180 dias."
-          valor={alertas.length}
-          icone={AlertTriangle}
-          compacto
-        />
-      </GradeDeCartoes>
+      {/* EPI e Uniformes: os cartões da Sugestão de Compras entram na mesma grade e a lista do que pede compra vem logo abaixo. Ferramentas: os do estoque por posição. */}
+      {modulo === "uniforme" || modulo === "epi" ? (
+        <DashboardSugestaoCompras modulo={modulo} cartoes={cartoes} />
+      ) : modulo === "ferramenta" ? (
+        <DashboardFerramentas cartoes={cartoes} />
+      ) : (
+        <GradeDeCartoes colunas={4}>{cartoes}</GradeDeCartoes>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

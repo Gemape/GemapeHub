@@ -154,3 +154,11 @@ test("Ocorrências tem busca por período (início e fim) e mostra a contagem (d
   assert.match(t, /id="oc-inicio"[^>]*type="date"|<Input id="oc-inicio" type="date"/);
   assert.match(t, /A data de início não pode ser depois da data de fim/);
 });
+
+test("o Dashboard lista as ferramentas no mínimo ou abaixo, as zeradas primeiro; sem mínimo, só a zerada", async () => {
+  const { ferramentasAbaixoDoMinimo } = await import("../src/lib/estoque-ferramentas-posicao.ts");
+  const f = (id, estoque_minimo) => ({ id, nome: id, codigo_sku: id, empresa_id: "e", estoque_minimo });
+  const pos = new Map([["zero", { saldo: 0, guardada: 0, comEmpregado: 0 }], ["abaixo", { saldo: 1, guardada: 1, comEmpregado: 0 }], ["igual", { saldo: 4, guardada: 3, comEmpregado: 1 }], ["folga", { saldo: 9, guardada: 9, comEmpregado: 0 }], ["semMinimo", { saldo: 2, guardada: 2, comEmpregado: 0 }], ["semMinimoZero", { saldo: 0, guardada: 0, comEmpregado: 0 }]]);
+  const r = ferramentasAbaixoDoMinimo([f("folga", 3), f("igual", 4), f("abaixo", 5), f("zero", 3), f("semMinimo", 0), f("semMinimoZero", 0)], pos);
+  assert.deepEqual(r.map((x) => [x.id, x.situacao]), [["semMinimoZero", "Zerado"], ["zero", "Zerado"], ["abaixo", "Abaixo do mínimo"], ["igual", "No mínimo"]]);
+});

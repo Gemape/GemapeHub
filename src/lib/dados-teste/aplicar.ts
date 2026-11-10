@@ -21,6 +21,8 @@ import { semearModuloVeiculos } from "./veiculos-modulo.ts";
 import { removerGruposDeChecklistSemUso } from "./enxugar-checklists.ts";
 import { removerOrdensEFichasDeTeste, semearOrdensEFichasEpi } from "./ordens-fichas-epi.ts";
 import { semearViagens } from "./viagens.ts";
+import { lerAreasEpi, lerEmpregadosDeEpi, salvarEmpregadosDeEpi } from "../empregados-epi.ts";
+import { lerAreasUniforme, lerEmpregadosDeUniforme, salvarEmpregadosDeUniforme } from "../empregados-uniforme.ts";
 import {
   ACOES_MANUTENCAO_VEICULO, CAIXAS_TESTE, CLIENTES, EMPREGADOS, EMPRESAS, EPIS, EQUIPAMENTOS, EQUIPAMENTOS_CATALOGO, FERRAMENTAS, FORNECEDORES, MARCAS_FERRAMENTA, MARCAS_UNIFORME, PREFIXO,
   TAMANHOS_AUTORIZADOS, TAMANHOS_GRUPO_FERRAMENTA, TIPOS_OCORRENCIA_VEICULO, UNIFORMES, VEICULOS, VERSAO_DADOS_TESTE, type ItemCatalogoTeste,
@@ -147,6 +149,11 @@ export function removerDadosDeTeste(storage: Armazenamento, base: Dados): void {
     }
     storage.setItem(chave, JSON.stringify(lido));
   }
+  // Empregados de teste habilitados a entregar e receber EPI e uniforme.
+  for (const chave of ["gemape-demo-epi-empregados", "gemape-demo-uniforme-empregados"]) {
+    const lido = lerJson(storage, chave);
+    if (Array.isArray(lido)) storage.setItem(chave, JSON.stringify(lido.filter((h) => !(ehLinha(h) && typeof h["empregadoId"] === "string" && (h["empregadoId"] as string).startsWith(PREFIXO)))));
+  }
   // Técnicos habilitados do questionário de viagens que são empregados de teste.
   const questionario = lerJson(storage, CHAVE_QUESTIONARIO);
   if (ehLinha(questionario) && Array.isArray(questionario["perguntas"])) {
@@ -264,6 +271,21 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   const catalogoUniformes = adicionarCatalogo(UNIFORMES, "uniformes_catalogo", proximosCodigos(dados, "UNI", ["uniformes", "uniformes_catalogo"]), "uniforme-cat");
   sincronizarEstoqueEpis(dados, sequencia("epi-est"), criadoEm, TABELAS_EPI);
   sincronizarEstoqueEpis(dados, sequencia("uniforme-est"), criadoEm, TABELAS_UNIFORME);
+
+  // Habilitados de EPI e de uniforme (Parâmetros > EPI|Uniformes > Parâmetros Específicos): os cinco empregados de cada empresa de teste, cada um numa área da oficina.
+  // Todas as empresas entram: com a lista preenchida só para algumas, os demais sairiam das listas de quem entrega e recebe quando "Todas as empresas" está escolhido.
+  // Se o navegador não guardar a lista, o resto dos dados de teste segue sem ela (sem lista = todos os ativos).
+  const habilitar = (ler: typeof lerEmpregadosDeEpi, salvar: typeof salvarEmpregadosDeEpi, areas: string[]) => {
+    try {
+      const dosTestes = EMPREGADOS.map((e, n) => ({ empregadoId: e.id, nome: e.nome, area: areas[n % areas.length]! }));
+      const dela = ler(storage).filter((h) => !(h.empregadoId ?? "").startsWith(PREFIXO));
+      salvar([...dela, ...dosTestes], storage);
+    } catch {
+      /* ignora */
+    }
+  };
+  habilitar(lerEmpregadosDeEpi, salvarEmpregadosDeEpi, lerAreasEpi(storage));
+  habilitar(lerEmpregadosDeUniforme, salvarEmpregadosDeUniforme, lerAreasUniforme(storage));
 
   const empresaIds = EMPRESAS.map((e) => e.id);
   const estoqueDe = (tabelaEstoque: string, catalogoId: string, empresaId: string) =>
