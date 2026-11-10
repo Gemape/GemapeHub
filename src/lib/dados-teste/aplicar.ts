@@ -356,19 +356,19 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   compraExtraUniforme("Calça", 2, 1, 5, 30, "NF-02103");
   compraExtraUniforme("Jaqueta", 0, 2, 4, 26, "NF-02104");
   // Empresa 1 (Ana): botina 40 em estoque baixo de propósito, luvas M no mínimo (a segunda compra de luva M soma 8).
-  entrega("epi", "epis", epiDe("Botina", 1).id, 0, 3, 30, "tam-40");
-  entrega("epi", "epis", epiDe("Luva", 1).id, 0, 5, 28, "tam-m");
-  entrega("epi", "epis", epiDe("Capacete", 0).id, 0, 2, 26, null);
+  entrega("epi", "epis", epiDe("Botina", 1).id, 0, 1, 30, "tam-40");
+  entrega("epi", "epis", epiDe("Luva", 1).id, 0, 2, 28, "tam-m");
+  entrega("epi", "epis", epiDe("Capacete", 0).id, 0, 1, 26, null);
   entrega("epi", "epis", epiDe("Luva", 1).id, 0, 1, 12, "tam-m", { responsavel_nome: "Almoxarifado Gemape", observacao: "Luva devolvida sem uso" }, "Devolucao");
   entrega("epi", "epis", epiDe("Botina", 1).id, 0, 1, 8, "tam-40", { motivo_baixa: "Desgaste Natural", observacao: "Solado gasto" });
   // Empresa 2 (Carlos).
-  entrega("epi", "epis", epiDe("Botina", 2).id, 1, 2, 24, "tam-42");
-  entrega("epi", "epis", epiDe("Luva", 2).id, 1, 4, 22, "tam-g");
-  entrega("epi", "epis", epiDe("Capacete", 0).id, 1, 5, 20, null);
+  entrega("epi", "epis", epiDe("Botina", 2).id, 1, 1, 24, "tam-42");
+  entrega("epi", "epis", epiDe("Luva", 2).id, 1, 2, 22, "tam-g");
+  entrega("epi", "epis", epiDe("Capacete", 0).id, 1, 1, 20, null);
   // Empresa 3 (Fernanda).
-  entrega("epi", "epis", epiDe("Botina", 0).id, 2, 2, 18, "tam-38");
-  entrega("epi", "epis", epiDe("Luva", 0).id, 2, 3, 16, "tam-p");
-  entrega("epi", "epis", epiDe("Capacete", 0).id, 2, 3, 14, null);
+  entrega("epi", "epis", epiDe("Botina", 0).id, 2, 1, 18, "tam-38");
+  entrega("epi", "epis", epiDe("Luva", 0).id, 2, 2, 16, "tam-p");
+  entrega("epi", "epis", epiDe("Capacete", 0).id, 2, 1, 14, null);
   // Os outros quatro empregados de cada empresa (o primeiro já tem as entregas acima): botina, luvas e capacete entregues em dias diferentes, e alguns com
   // devolução ou baixa, para o histórico de movimentações de cada um ter o que mostrar. O empregado de ordem c + 3k é da empresa c.
   const BOTINA_DO_EMPREGADO = [null, 1, 2, 0, 1] as const; // índice do tamanho no catálogo (38, 40, 42)
@@ -397,11 +397,11 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     }
   }
   // Itens novos de EPI (colete, máscara e cinto): entregas, uma devolução e baixas nas três empresas.
-  entrega("epi", "epis", epiDe("Colete", 0).id, 0, 3, 18, "tam-m");
+  entrega("epi", "epis", epiDe("Colete", 0).id, 0, 2, 18, "tam-m");
   entrega("epi", "epis", epiDe("Colete", 1).id, 1, 2, 17, "tam-g");
   entrega("epi", "epis", epiDe("Colete", 0).id, 0, 1, 7, "tam-m", { responsavel_nome: "Almoxarifado Gemape", observacao: "Colete devolvido: mudança de função" }, "Devolucao");
-  entrega("epi", "epis", epiDe("Máscara", 0).id, 2, 5, 10, null);
-  entrega("epi", "epis", epiDe("Máscara", 0).id, 0, 4, 9, null);
+  entrega("epi", "epis", epiDe("Máscara", 0).id, 2, 3, 10, null);
+  entrega("epi", "epis", epiDe("Máscara", 0).id, 0, 2, 9, null);
   entrega("epi", "epis", epiDe("Máscara", 0).id, 1, 1, 5, null, { motivo_baixa: "Perda", observacao: "Perdida em obra" });
   entrega("epi", "epis", epiDe("Cinto", 0).id, 1, 1, 14, "tam-m");
   entrega("epi", "epis", epiDe("Cinto", 1).id, 2, 1, 13, "tam-g");
@@ -417,14 +417,11 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       ...(origem ? { compra_origem_id: origem["id"], data_compra_origem: origem["data_compra"], nota_fiscal_origem: origem["nota_fiscal"], fornecedor_origem: origem["fornecedor"], fornecedor_id_origem: origem["fornecedor_id"], ca_origem: origem["ca"] ?? null } : {}),
     });
   });
-  // Consumo de um ano de alguns EPIs, para a Sugestão de Compras mostrar Ruptura, Comprar já e Planejar (decisão 330): uma compra anterior e as entregas dela, em seis parcelas de 40 a 215
-  // dias atrás, deixam o estoque como está e dão ao EPI a média de consumo que leva ao tempo de cobertura pedido (com o prazo de reposição padrão de 30 dias).
-  const consumoDoAno = (nome: string, indice: number, empresaIndice: number, tamanho: string | null, coberturaDias: number) => {
+  // Consumo de um ano de alguns EPIs, com números de uso real (botina 1 a 2 por empregado no ano, luva e capacete pouco mais): uma compra anterior e as entregas dela, em seis
+  // parcelas de 40 a 215 dias atrás, repartidas entre os cinco empregados da empresa, dão ao EPI a média de consumo mensal da Sugestão de Compras (decisão 330).
+  const consumoDoAno = (nome: string, indice: number, empresaIndice: number, tamanho: string | null, anual: number) => {
     const estoque = estoqueDe("epis", epiDe(nome, indice).id, empresaIds[empresaIndice]!);
-    const saldo = movimentosDe.filter((m) => m["item_id"] === estoque["id"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? -Number(m["quantidade"]) : Number(m["quantidade"])), 0);
-    // O consumo do ano já tem as entregas e devoluções acima: a nova compra completa o que falta para a média pedida.
-    const jaConsumido = movimentosDe.filter((m) => m["item_id"] === estoque["id"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? Number(m["quantidade"]) : m["tipo_movimentacao"] === "Devolucao" ? -Number(m["quantidade"]) : 0), 0);
-    const total = Math.max(6, Math.ceil((360 * saldo) / coberturaDias) - jaConsumido);
+    const total = anual;
     // A compra anterior também é uma compra registrada (NF, fornecedor e CA), para "total comprado − total entregue = disponível" fechar em todo EPI.
     const catalogo = epiDe(nome, indice);
     const fornecedor = FORNECEDORES[catalogo.item.fornecedor]!;
@@ -437,14 +434,15 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
     });
     mov({ modulo: "epi", tipo_movimentacao: "Entrada", quantidade: total, data_movimentacao: dia(agora, 366), item_id: estoque["id"], empresa_id: empresaIds[empresaIndice], tamanho_id: tamanho, observacao: `Compra anterior: NF ${nota} / ${fornecedor.nome_fantasia}` });
     const parcela = Math.floor(total / 6);
-    [40, 75, 110, 145, 180, 215].forEach((dias, k) => entrega("epi", "epis", epiDe(nome, indice).id, empresaIndice, k === 0 ? total - parcela * 5 : parcela, dias, tamanho));
+    // Começa pelo segundo empregado: o primeiro já recebeu as entregas escritas acima.
+    [40, 75, 110, 145, 180, 215].forEach((dias, k) => { const q = parcela + (k < total % 6 ? 1 : 0); if (q > 0) entrega("epi", "epis", catalogo.id, empresaIndice, q, dias, tamanho, { empregado_id: EMPREGADOS[empresaIndice + 3 * ((k + 1) % 5)]!.id }); });
   };
-  consumoDoAno("Botina", 0, 0, "tam-38", 15); // Ruptura
-  consumoDoAno("Luva", 2, 1, "tam-g", 25); // Ruptura
-  consumoDoAno("Luva", 1, 0, "tam-m", 38); // Comprar já
-  consumoDoAno("Capacete", 0, 2, null, 40); // Comprar já
-  consumoDoAno("Capacete", 0, 0, null, 52); // Planejar
-  consumoDoAno("Botina", 2, 1, "tam-42", 55); // Planejar
+  consumoDoAno("Botina", 0, 0, "tam-38", 4);
+  consumoDoAno("Luva", 2, 1, "tam-g", 12);
+  consumoDoAno("Luva", 1, 0, "tam-m", 10);
+  consumoDoAno("Capacete", 0, 2, null, 4);
+  consumoDoAno("Capacete", 0, 0, null, 5);
+  consumoDoAno("Botina", 2, 1, "tam-42", 4);
   // Uniformes.
   entrega("uniforme", "uniformes", uniDe("Camisa", 1).id, 0, 2, 27, "tam-m");
   entrega("uniforme", "uniformes", uniDe("Calça", 1).id, 0, 2, 27, "tam-42");
