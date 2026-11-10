@@ -180,8 +180,8 @@ function CaixaItem({
   const comEmpregadoDe = (id: string) => controleDaFerramenta(historico, id).comEmpregado;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
+    <section className="panel space-y-4 p-4 sm:p-5">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="h-8 w-1 bg-primary rounded-full" />
         <h3 className="text-lg font-black uppercase tracking-tight">
           {caixa.codigo}
@@ -196,7 +196,7 @@ function CaixaItem({
         )}
       </div>
 
-      <div className="panel overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -261,47 +261,51 @@ function CaixaItem({
         </Table>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button requiresWrite="operar" size="sm" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
+      {/* Todas as ações e os dois relatórios da caixa numa linha só, em colunas iguais. */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+        <Button requiresWrite="operar" size="sm" className="w-full" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
           Vincular ferramentas
         </Button>
-        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
+        <Button requiresWrite="operar" variant="outline" size="sm" className="w-full" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
           Dar baixa
         </Button>
-        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
+        <Button requiresWrite="operar" variant="outline" size="sm" className="w-full" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
           Transferir
         </Button>
-        <Button requiresWrite="operar" variant="outline" size="sm" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
+        <Button requiresWrite="operar" variant="outline" size="sm" className="w-full" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
           Registrar ocorrência
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-expanded={historicoAberto}
-          onClick={() => setHistoricoAberto(!historicoAberto)}
-        >
+        <Button variant="outline" size="sm" className="w-full" aria-expanded={historicoAberto} onClick={() => setHistoricoAberto(!historicoAberto)}>
           <ChevronDown className={`mr-1 size-4 transition-transform ${historicoAberto ? "" : "-rotate-90"}`} />
-          Histórico de movimentações ({historico.length})
+          Histórico ({historico.length})
         </Button>
-        {historicoAberto && historico.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              exportarCsv(
-                `historico-${caixa.codigo}`,
-                historico.map((m) => linhaCsvCaixa(m, { caixa: caixa.codigo, ferramentas: cadastroFerramentas, nomeEmpregado })),
-              )
-            }
-          >
-            <Download className="mr-1 size-4" />
-            Exportar
-          </Button>
-        )}
+        <Button variant="outline" size="sm" className="w-full" aria-expanded={ocorrenciasAberto} onClick={() => setOcorrenciasAberto(!ocorrenciasAberto)}>
+          <ChevronDown className={`mr-1 size-4 transition-transform ${ocorrenciasAberto ? "" : "-rotate-90"}`} />
+          Ocorrências ({ocorrencias.length})
+        </Button>
       </div>
 
       {historicoAberto && (
-        <div className="panel overflow-x-auto">
+        <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="text-sm font-bold">Histórico de movimentações da caixa {caixa.codigo}</h4>
+            {historico.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  exportarCsv(
+                    `historico-${caixa.codigo}`,
+                    historico.map((m) => linhaCsvCaixa(m, { caixa: caixa.codigo, ferramentas: cadastroFerramentas, nomeEmpregado })),
+                  )
+                }
+              >
+                <Download className="mr-1 size-4" />
+                Exportar
+              </Button>
+            )}
+          </div>
+          <div className="overflow-x-auto rounded-md border bg-background">
           <Table>
             <TableHeader>
               <TableRow>
@@ -339,18 +343,14 @@ function CaixaItem({
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" aria-expanded={ocorrenciasAberto} onClick={() => setOcorrenciasAberto(!ocorrenciasAberto)}>
-          <ChevronDown className={`mr-1 size-4 transition-transform ${ocorrenciasAberto ? "" : "-rotate-90"}`} />
-          Ocorrências da caixa ({ocorrencias.length})
-        </Button>
-      </div>
-
       {ocorrenciasAberto && (
-        <div className="panel overflow-x-auto">
+        <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+          <h4 className="text-sm font-bold">Ocorrências da caixa {caixa.codigo}</h4>
+          <div className="overflow-x-auto rounded-md border bg-background">
           <Table>
             <TableHeader>
               <TableRow>
@@ -388,6 +388,7 @@ function CaixaItem({
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
 
@@ -399,6 +400,6 @@ function CaixaItem({
         <DialogTransferirCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} destinos={destinos} novas={novas} />
       )}
       {dialogo === "ocorrencia" && <DialogOcorrenciaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
-    </div>
+    </section>
   );
 }
