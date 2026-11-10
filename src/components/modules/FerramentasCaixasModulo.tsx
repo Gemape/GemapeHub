@@ -59,8 +59,9 @@ export function FerramentasCaixasModulo() {
   const caixas = caixasHabilitadas(todasAsCaixas, habilitadas);
   // Caixas habilitadas que ainda não têm cadastro: o botão Vincular ferramentas cria a caixa.
   // Os números são uma sequência só para as três empresas: o que já existe em qualquer empresa não fica livre.
-  const { data: caixasDeTodas = [] } = useCaixasFerramentas(TODAS, "");
-  const semCadastro = numerosDisponiveis(habilitadas, caixasDeTodas).filter((n) =>
+  const { data: caixasDeTodas = [], isSuccess: todasCarregadas } = useCaixasFerramentas(TODAS, "");
+  // Só calcula depois que a lista de todas as empresas chegou: com ela vazia, todo número pareceria livre e daria para criar uma caixa repetida.
+  const semCadastro = (todasCarregadas ? numerosDisponiveis(habilitadas, caixasDeTodas) : []).filter((n) =>
     codigoCaixa(n).toLowerCase().includes(buscaCaixa.trim().toLowerCase()),
   );
   const portadores = usePortadoresCaixa();
@@ -191,24 +192,24 @@ function CaixaItem({
           </span>
           {portador && <span className="text-xs font-medium text-muted-foreground ml-2">Portador: {portador}</span>}
         </div>
-        {/* Ações e relatórios ao lado do portador, três por linha; os relatórios abrem em janela. */}
+        {/* Ações e relatórios ao lado do portador, duas colunas no celular e três a partir de sm; os relatórios abrem em janela. */}
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-          <Button requiresWrite="operar" size="sm" className="whitespace-nowrap px-2 sm:h-7" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
+          <Button requiresWrite="operar" size="sm" className="h-auto min-h-8 min-w-0 px-2 py-1 leading-tight sm:min-h-7" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
             Vincular ferramentas
           </Button>
-          <Button requiresWrite="operar" variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="h-auto min-h-8 min-w-0 px-2 py-1 leading-tight sm:min-h-7" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
             Dar baixa
           </Button>
-          <Button requiresWrite="operar" variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="h-auto min-h-8 min-w-0 px-2 py-1 leading-tight sm:min-h-7" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
             Transferir
           </Button>
-          <Button requiresWrite="operar" variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="h-auto min-h-8 min-w-0 px-2 py-1 leading-tight sm:min-h-7" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
             Registrar ocorrência
           </Button>
-          <Button variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" onClick={() => setHistoricoAberto(true)}>
+          <Button variant="outline" size="sm" className="h-auto min-h-8 min-w-0 px-2 py-1 leading-tight sm:min-h-7" onClick={() => setHistoricoAberto(true)}>
             Histórico de movimentações ({historico.length})
           </Button>
-          <Button variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" onClick={() => setOcorrenciasAberto(true)}>
+          <Button variant="outline" size="sm" className="h-auto min-h-8 min-w-0 px-2 py-1 leading-tight sm:min-h-7" onClick={() => setOcorrenciasAberto(true)}>
             Ocorrências da caixa ({ocorrencias.length})
           </Button>
         </div>
@@ -302,7 +303,8 @@ function CaixaItem({
           )
         }
       >
-        <Table>
+        {historicoAberto && (
+<Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
@@ -339,6 +341,7 @@ function CaixaItem({
               )}
             </TableBody>
           </Table>
+        )}
       </JanelaRelatorio>
 
       <JanelaRelatorio
@@ -347,7 +350,8 @@ function CaixaItem({
         titulo={`Ocorrências da caixa ${caixa.codigo}`}
         descricao="Ocorrências registradas para as ferramentas desta caixa."
       >
-        <Table>
+        {ocorrenciasAberto && (
+<Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
@@ -384,6 +388,7 @@ function CaixaItem({
               )}
             </TableBody>
           </Table>
+        )}
       </JanelaRelatorio>
 
       {dialogo === "ferramentas" && (

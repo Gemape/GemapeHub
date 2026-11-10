@@ -96,7 +96,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
     enabled: Boolean(empresaSel && empregadoId && modo === "devolucao"),
     queryFn: () => lerHistoricoEpiPorItem(supabase, { empresaId: empresaSel, empregadoId, modulo }),
   });
-  const movimentosDoEmpregado = doEmpregado.data ?? [];
+  const movimentosDoEmpregado = useMemo(() => doEmpregado.data ?? [], [doEmpregado.data]);
   const itensEmPosse = useMemo(
     () => itens.filter((i) => emPosseEpi(movimentosDoEmpregado, empregadoId, i.id, null) > 0),
     [itens, movimentosDoEmpregado, empregadoId],
