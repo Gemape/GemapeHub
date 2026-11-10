@@ -19,7 +19,7 @@ import {
   type LinhaCaixa,
 } from "./CaixaGestaoDialogs";
 import { naturezaMovimentacao } from "@/lib/historico-movimentacoes";
-import { ChevronDown, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { caixasHabilitadas, codigoCaixa, numerosDisponiveis } from "@/lib/caixas-habilitadas";
 import { empresaPadraoParaEscolha } from "@/lib/empresas";
 import { portadorAtivo } from "@/lib/portadores-caixa";
@@ -47,6 +47,7 @@ import {
   type Movimentacao,
 } from "@/lib/hooks-gemape";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function FerramentasCaixasModulo() {
   const { empresaId } = useEmpresa();
@@ -181,19 +182,36 @@ function CaixaItem({
 
   return (
     <section className="panel space-y-4 p-4 sm:p-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="h-8 w-1 bg-primary rounded-full" />
-        <h3 className="text-lg font-black uppercase tracking-tight">
-          {caixa.codigo}
-        </h3>
-        <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-          {itens.length} {itens.length === 1 ? "item" : "itens"}
-        </span>
-        {portador && (
-          <span className="text-xs font-medium text-muted-foreground ml-2">
-            Portador: {portador}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="h-8 w-1 bg-primary rounded-full" />
+          <h3 className="text-lg font-black uppercase tracking-tight">{caixa.codigo}</h3>
+          <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+            {itens.length} {itens.length === 1 ? "item" : "itens"}
           </span>
-        )}
+          {portador && <span className="text-xs font-medium text-muted-foreground ml-2">Portador: {portador}</span>}
+        </div>
+        {/* Ações e relatórios ao lado do portador, três por linha; os relatórios abrem em janela. */}
+        <div className="grid grid-cols-3 gap-1.5">
+          <Button requiresWrite="operar" size="sm" className="h-7 whitespace-nowrap px-2" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
+            Vincular ferramentas
+          </Button>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
+            Dar baixa
+          </Button>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
+            Transferir
+          </Button>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
+            Registrar ocorrência
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" onClick={() => setHistoricoAberto(true)}>
+            Histórico ({historico.length})
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" onClick={() => setOcorrenciasAberto(true)}>
+            Ocorrências ({ocorrencias.length})
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-lg border">
@@ -261,35 +279,13 @@ function CaixaItem({
         </Table>
       </div>
 
-      {/* Todas as ações e os dois relatórios da caixa numa linha só, em colunas iguais. */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
-        <Button requiresWrite="operar" size="sm" className="w-full" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
-          Vincular ferramentas
-        </Button>
-        <Button requiresWrite="operar" variant="outline" size="sm" className="w-full" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
-          Dar baixa
-        </Button>
-        <Button requiresWrite="operar" variant="outline" size="sm" className="w-full" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
-          Transferir
-        </Button>
-        <Button requiresWrite="operar" variant="outline" size="sm" className="w-full" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
-          Registrar ocorrência
-        </Button>
-        <Button variant="outline" size="sm" className="w-full" aria-expanded={historicoAberto} onClick={() => setHistoricoAberto(!historicoAberto)}>
-          <ChevronDown className={`mr-1 size-4 transition-transform ${historicoAberto ? "" : "-rotate-90"}`} />
-          Histórico ({historico.length})
-        </Button>
-        <Button variant="outline" size="sm" className="w-full" aria-expanded={ocorrenciasAberto} onClick={() => setOcorrenciasAberto(!ocorrenciasAberto)}>
-          <ChevronDown className={`mr-1 size-4 transition-transform ${ocorrenciasAberto ? "" : "-rotate-90"}`} />
-          Ocorrências ({ocorrencias.length})
-        </Button>
-      </div>
-
-      {historicoAberto && (
-        <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="text-sm font-bold">Histórico de movimentações da caixa {caixa.codigo}</h4>
-            {historico.length > 0 && (
+      <Dialog open={historicoAberto} onOpenChange={setHistoricoAberto}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Histórico de movimentações da caixa {caixa.codigo}</DialogTitle>
+          </DialogHeader>
+          {historico.length > 0 && (
+            <div className="flex justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -303,9 +299,9 @@ function CaixaItem({
                 <Download className="mr-1 size-4" />
                 Exportar
               </Button>
-            )}
-          </div>
-          <div className="overflow-x-auto rounded-md border bg-background">
+            </div>
+          )}
+          <div className="overflow-x-auto rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -344,13 +340,15 @@ function CaixaItem({
             </TableBody>
           </Table>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {ocorrenciasAberto && (
-        <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-          <h4 className="text-sm font-bold">Ocorrências da caixa {caixa.codigo}</h4>
-          <div className="overflow-x-auto rounded-md border bg-background">
+      <Dialog open={ocorrenciasAberto} onOpenChange={setOcorrenciasAberto}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Ocorrências da caixa {caixa.codigo}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-x-auto rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -389,8 +387,8 @@ function CaixaItem({
             </TableBody>
           </Table>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {dialogo === "ferramentas" && (
         <DialogFerramentasDaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} itensAtuais={itens} comEmpregado={comEmpregadoDe} />
