@@ -183,7 +183,10 @@ test("o cadastro escolhe a unidade; o módulo configura o mínimo por tamanho", 
 
 test("compras, termos e movimentações escolhem o tamanho e mostram o tamanho", () => {
   // Os termos de entrega de EPI e de uniforme só documentam (decisão 415): escolhem o tamanho para o documento, sem gravar movimento.
-  for (const f of ["EpiTermoEntrega", "UniformesTermoEntrega"]) assert.match(fonte(`components/modules/${f}.tsx`), /SeletorTamanho/);
+  assert.match(fonte("components/modules/EpiTermoEntrega.tsx"), /SeletorTamanho/);
+  // O termo de uniforme não escolhe tamanho: usa o cadastrado no uniforme e o mostra na descrição.
+  assert.doesNotMatch(fonte("components/modules/UniformesTermoEntrega.tsx"), /SeletorTamanho/);
+  assert.match(fonte("components/modules/UniformesTermoEntrega.tsx"), /descricaoDoUniforme\(u\)/);
   for (const arquivo of [
     "components/modules/EpiComprasModulo.tsx",
     "components/modules/UniformesComprasModulo.tsx",

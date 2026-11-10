@@ -25,13 +25,13 @@ import {
   useEmpresas,
   useItens,
   useEmpregados,
+  type Item,
 } from "@/lib/hooks-gemape";
 import { receptoresDeEntrega } from "@/lib/empregados-habilitados";
 import { listaDeUniformeDesatualizada, soEmpregadosDeUniforme } from "@/lib/empregados-uniforme";
 import { AvisoHabilitados } from "@/components/AvisoHabilitados";
 import { bloqueioPorDemissao, empregadoAtivo, hojeLocal } from "@/lib/empregados";
-import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
-import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { tamanhoDoEpi } from "@/lib/ficha-epi-rotulo";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { validarLinhasDoTermo } from "@/lib/termos-atomicos";
 
@@ -39,8 +39,6 @@ interface ItemTermo {
   item_id: string;
   quantidade: number;
   estado: string;
-  // Tamanho da saída, quando o uniforme tem tamanho em Gerais (decisão 23).
-  tamanho: string;
 }
 
 export function UniformesTermoEntrega() {
@@ -65,7 +63,7 @@ export function UniformesTermoEntrega() {
   const responsaveis = soEmpregadosDeUniforme(empregados.filter((e) => empregadoAtivo(e))).filter((e) => e.id !== empregadoId);
 
   function adicionarItem() {
-    setItensEntrega([...itensEntrega, { item_id: "", quantidade: 1, estado: "Novo", tamanho: "" }]);
+    setItensEntrega([...itensEntrega, { item_id: "", quantidade: 1, estado: "Novo" }]);
   }
 
   function removerItem(index: number) {
@@ -74,14 +72,14 @@ export function UniformesTermoEntrega() {
 
   function atualizarItem(index: number, campo: keyof ItemTermo, valor: string | number) {
     setItensEntrega((atuais) =>
-      atuais.map((item, i) =>
-        i !== index
-          ? item
-          : // Trocar o uniforme limpa o tamanho escolhido para o anterior.
-            { ...item, [campo]: valor, ...(campo === "item_id" ? { tamanho: "" } : {}) },
-      ),
+      atuais.map((item, i) => (i !== index ? item : { ...item, [campo]: valor })),
     );
   }
+
+  // Tamanho cadastrado do uniforme (o mesmo cálculo da Ficha de EPI: ignora "sem tamanho" e tamanho excluído). Cada tamanho é um código próprio.
+  const uniformePorId = (id: string) => uniformes.find((u) => u.id === id);
+  const tamanhoDoUniforme = (u: Item | undefined) => (u ? tamanhoDoEpi(u, parametros) ?? undefined : undefined);
+  const descricaoDoUniforme = (u: Item) => [u.codigo_sku, u.nome, u.marca, tamanhoDoUniforme(u)].filter(Boolean).join(" · ");
 
   function gerarTermo() {
     if (!empresaId || !empregadoId || itensEntrega.length === 0) {
@@ -117,10 +115,8 @@ export function UniformesTermoEntrega() {
     }
 
     // O termo só documenta (decisão 415): não mexe no estoque. A saída só conta quando lançada em Entrega Uniforme.
-    // O tamanho vem dos autorizados do produto (não do saldo, já que o termo não confere estoque) e é obrigatório quando o produto tem tamanho.
-    const erroLinhas =
-      validarLinhasDoTermo(itensEntrega, "uniforme") ??
-      (TAMANHO_DISPONIVEL ? validarLinhasTamanho(itensEntrega, uniformes, parametros, "uniforme", "entrada") : null);
+    // O tamanho é o cadastrado no uniforme (cada tamanho é um código próprio): sai na descrição, sem escolha na linha.
+    const erroLinhas = validarLinhasDoTermo(itensEntrega, "uniforme");
     if (erroLinhas) {
       alert(erroLinhas);
       return;
@@ -132,12 +128,12 @@ export function UniformesTermoEntrega() {
       responsavel: { nome: responsavel.nome },
       data: dataEntrega,
       linhas: itensEntrega.map((i) => {
-        const u = uniformes.find((uni) => uni.id === i.item_id);
+        const u = uniformePorId(i.item_id);
         return {
           nome: u?.nome,
           marca: u?.marca,
           modelo: u?.modelo,
-          tamanho: tamanhoParaGravar(i.tamanho) ? nomeTamanho(parametros, i.tamanho) : undefined,
+          tamanho: tamanhoDoUniforme(u),
           quantidade: i.quantidade,
           estado: i.estado,
         };
@@ -229,7 +225,6 @@ export function UniformesTermoEntrega() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Uniforme</TableHead>
-                  <TableHead className="w-40">Tamanho</TableHead>
                   <TableHead className="w-24">Qtd</TableHead>
                   <TableHead className="w-32">Estado</TableHead>
                   <TableHead className="w-20"></TableHead>
@@ -244,26 +239,18 @@ export function UniformesTermoEntrega() {
                         onValueChange={(v) => atualizarItem(index, "item_id", v)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o uniforme" />
+                          <SelectValue placeholder="Selecione o uniforme">
+                            {uniformePorId(item.item_id) ? descricaoDoUniforme(uniformePorId(item.item_id)!) : undefined}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {uniformes.map((u) => (
                             <SelectItem key={u.id} value={u.id}>
-                              {u.codigo_sku} · {u.nome}
+                              {descricaoDoUniforme(u)}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    </TableCell>
-                    <TableCell>
-                      <SeletorTamanho
-                        parametros={parametros}
-                        modulo="uniforme"
-                        produto={uniformes.find((u) => u.id === item.item_id)}
-                        uso="entrada"
-                        valor={item.tamanho}
-                        onChange={(v) => atualizarItem(index, "tamanho", v)}
-                      />
                     </TableCell>
                     <TableCell>
                       <Input
@@ -296,7 +283,7 @@ export function UniformesTermoEntrega() {
                 ))}
                 {itensEntrega.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                       Nenhum item adicionado.
                     </TableCell>
                   </TableRow>
