@@ -52,7 +52,7 @@ test("cada entrega mostra o que está em posse, devolvido e baixado, do mais ant
 
 test("rótulos da situação: em posse, parcial, baixado e sem informação", () => {
   assert.equal(rotuloDaSituacao({ quantidade: 3, devolvido: 0, baixado: 0, emPosse: 3 }), "Em posse");
-  assert.equal(rotuloDaSituacao({ quantidade: 3, devolvido: 1, baixado: 0, emPosse: 2 }), "Em posse: 2 de 3");
+  assert.equal(rotuloDaSituacao({ quantidade: 3, devolvido: 1, baixado: 0, emPosse: 2 }), "Em posse: 2");
   assert.equal(rotuloDaSituacao({ quantidade: 3, devolvido: 0, baixado: 3, emPosse: 0 }), "Baixado");
   assert.equal(rotuloDaSituacao(undefined), "Em posse");
 });

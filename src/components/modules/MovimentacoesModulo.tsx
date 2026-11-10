@@ -377,10 +377,10 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                   <TableCell>{formatarData(m.data_movimentacao)}</TableCell>
                   <TableCell>
                     {soEntrega ? (
-                      // Entrega: o motivo da baixa é texto comum, não etiqueta.
+                      // Tipo e motivo da baixa são texto comum, sem etiqueta.
                       m.motivo_baixa ?? "—"
                     ) : (
-                      <Badge variant="secondary">{soEntrada ? (m.tipo_movimentacao === "Devolucao" ? "Devolução (usada)" : (m as { condicao?: string }).condicao === "usado" ? "Usada" : "Nova") : naturezaMovimentacao(m)}</Badge>
+                      soEntrada ? (m.tipo_movimentacao === "Devolucao" ? "Devolução (usada)" : (m as { condicao?: string }).condicao === "usado" ? "Usada" : "Nova") : naturezaMovimentacao(m)
                     )}
                   </TableCell>
                   {!ehVeiculo && (

@@ -1462,7 +1462,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 - Só modo demonstração; nada no Supabase.
 
 ## 253. Uniformes com a mesma lógica e os mesmos submenus do módulo de EPIs
-- **Submenus dos Uniformes** passam a seguir os do EPI: Dashboard, Estoque, Movimentações (continua), Compras, Histórico do empregado, Baixar Definitivas, **Entrega Uniforme** (nova), Termo de Entrega, Termo de Baixa e Ocorrências. Os nomes "Histórico do empregado" e "Baixar Definitivas" são os mesmos do EPI. A Ficha de EPI Avulsa não tem equivalente em Uniformes.
+- **Submenus dos Uniformes** passam a seguir os do EPI: Dashboard, Estoque, Movimentações (continua), Compras, Histórico do empregado, Baixas definitivas, **Entrega Uniforme** (nova), Termo de Entrega, Termo de Baixa e Ocorrências. Os nomes "Histórico do empregado" e "Baixas definitivas" são os mesmos do EPI. A Ficha de EPI Avulsa não tem equivalente em Uniformes.
 - **Entrega Uniforme:** a mesma tela de Entrega EPI (entrega e devolução por empregado, códigos ENT e DEV, devolução só do Administrador, histórico filtrável, alerta de estoque mínimo e termo de entrega), agora usada pelos dois módulos. A entrega aceita o módulo (`epi` ou `uniforme`), que define a tabela dos itens, o módulo gravado na movimentação e as palavras das mensagens.
 - **Estoque e Compras dos Uniformes:** ganham o Controle de estoque e consumo e a Sugestão de compras da decisão 252 (mesmos cálculos e a mesma meta de cobertura, que vale para os dois módulos).
 - Só modo demonstração; nada no Supabase.
@@ -2015,7 +2015,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 ## 358. EPI: seção Relatórios, com cópias das três rotinas de consulta (substituída pela 359: mover, não clonar)
 
-- No menu de EPIs (o seletor do topo e o cartão EPIs da tela Início) entra a seção **Relatórios**, entre Módulo e Parâmetros, com **Sugestão de Compras**, **Histórico do empregado** e **Baixar Definitivas**.
+- No menu de EPIs (o seletor do topo e o cartão EPIs da tela Início) entra a seção **Relatórios**, entre Módulo e Parâmetros, com **Sugestão de Compras**, **Histórico do empregado** e **Baixas definitivas**.
 - Ordem do responsável: **clonar, não mover**. As três rotinas continuam na lista principal (seção Módulo) e as cópias abrem a mesma tela. Cada cópia tem a sua aba (`relatorio-sugestao-compras`, `relatorio-historico`, `relatorio-baixas`), para o menu marcar só a que está aberta; os endereços antigos (`?aba=sugestao-compras`, `historico`, `baixas`) não mudam.
 - O cabeçalho da página mostra "EPIs › Relatórios" quando a tela vem da cópia.
 - **Vai e volta com os Parâmetros Específicos:** o link "Parâmetros Específicos" da Sugestão de Compras abre a tela de configuração e o botão "Voltar para Sugestão de Compras" (e o salvar dos parâmetros da sugestão) devolve à tela de onde a pessoa saiu, na lista principal ou em Relatórios.
@@ -2023,7 +2023,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 ## 359. EPI: as rotinas de consulta se movem para Relatórios
 
-- Ordem do responsável, corrigindo a decisão 358 ("clonar"): **mover**. Sugestão de Compras, Histórico do empregado e Baixar Definitivas saem da seção Módulo do menu de EPIs e ficam **só** na seção Relatórios (menu do topo e cartão EPIs da tela Início).
+- Ordem do responsável, corrigindo a decisão 358 ("clonar"): **mover**. Sugestão de Compras, Histórico do empregado e Baixas definitivas saem da seção Módulo do menu de EPIs e ficam **só** na seção Relatórios (menu do topo e cartão EPIs da tela Início).
 - As abas mantêm os endereços de sempre (`?aba=sugestao-compras`, `historico`, `baixas`), então links e favoritos antigos abrem as mesmas telas. As abas de cópia (`relatorio-*`) deixam de existir.
 - O vai e volta da Sugestão de Compras com os Parâmetros Específicos volta ao funcionamento simples: leva sempre à Sugestão de Compras.
 - A matriz de acessos do modo demonstração passa a ter essas três rotinas na seção Relatórios; exceção de acesso já guardada para o nome antigo (seção Módulo) deixa de valer. Só modo demonstração; nada no Supabase.
@@ -2055,10 +2055,10 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Ordem do responsável: as mudanças recentes do EPI valem também para Uniformes, respeitando o que é próprio deles.
 - **Parâmetros > Uniformes > Parâmetros Específicos** (decisão 357): cartão **Áreas da oficina** e caixa dupla **Empregados das rotinas de uniformes**. As listas são **próprias dos Uniformes** (habilitar alguém no EPI não habilita nos Uniformes) e as áreas partem das mesmas cinco da oficina. Só os habilitados aparecem em Entrega Uniforme, Termo de Entrega e devolução (o Termo de Baixa e a Nova movimentação voltaram a oferecer todos, pela decisão 365); com a lista vazia aparecem todos. Relatórios e filtros de histórico continuam mostrando todos.
-- **Uniformes > Relatórios** (decisão 359): **Histórico do empregado** e **Baixar Definitivas** saem da seção Módulo e ficam só em Relatórios, com os mesmos endereços de antes (`?aba=historico` e `baixas`).
+- **Uniformes > Relatórios** (decisão 359): **Histórico do empregado** e **Baixas definitivas** saem da seção Módulo e ficam só em Relatórios, com os mesmos endereços de antes (`?aba=historico` e `baixas`).
 - **Histórico do empregado** (busca e período): campo de busca por palavra-chave e datas de Início e Fim, valendo para tabela, CSV e PDF; os cartões seguem contando o histórico inteiro. A observação quebra linha em vez de cortar.
 - **Termo de Entrega** (decisão 360): campo obrigatório **Responsável pela entrega** (empregado ativo, habilitado dos Uniformes, diferente de quem recebe); o termo sai com o nome completo de quem entrega e de quem recebe, e a observação de cada saída grava "Entregue por Nome" (decisão 361), sem coluna nova no banco real.
-- Como no EPI, a matriz de acessos do modo demonstração passa a ter Histórico do empregado e Baixar Definitivas na seção Relatórios dos Uniformes; exceção de acesso já guardada para o nome antigo (seção Módulo) deixa de valer.
+- Como no EPI, a matriz de acessos do modo demonstração passa a ter Histórico do empregado e Baixas definitivas na seção Relatórios dos Uniformes; exceção de acesso já guardada para o nome antigo (seção Módulo) deixa de valer.
 - **Sem equivalente nos Uniformes, por isso não replicado:** Sugestão de Compras, Ficha de EPI Avulsa (e a confirmação ao gerar) e Cadastrar Ordem de Serviço, que é sobre os EPIs de cada função. A busca nas Movimentações (decisão 363) é de Ferramentas e não foi estendida aos Uniformes. Só modo demonstração; nada no Supabase.
 
 ## 365. Uniformes: Termo de Baixa e Nova movimentação oferecem todos os empregados
@@ -2069,7 +2069,7 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 - Achado no code review: a tela de Ocorrências (que serve EPI, Uniformes, Ferramentas e Veículos) ainda oferecia todos os empregados ativos, apesar da ordem de que **toda rotina de EPI que informa o empregado** só mostre os habilitados (decisão 357). Passa a valer em **EPI > Ocorrências** e, como os Uniformes seguem o EPI (decisão 364), em **Uniformes > Ocorrências**. Ferramentas e Veículos seguem oferecendo todos os ativos.
 - **Escolha do Claude:** ao editar uma ocorrência, o empregado já vinculado continua na lista, marcado como "inativo" ou "não habilitado", para a edição não apagar o vínculo.
-- O EPI passa a ter filtro em: Entrega EPI, Termo de Entrega, Ficha avulsa, Devolução e Ocorrências; Relatórios e Baixar Definitivas mostram todos. Os textos das telas de habilitados do EPI e dos Uniformes dizem isso. Só modo demonstração; nada no Supabase.
+- O EPI passa a ter filtro em: Entrega EPI, Termo de Entrega, Ficha avulsa, Devolução e Ocorrências; Relatórios e Baixas definitivas mostram todos. Os textos das telas de habilitados do EPI e dos Uniformes dizem isso. Só modo demonstração; nada no Supabase.
 
 ## 367. Extrato do veículo: botão Registrar ocorrência
 
@@ -2100,8 +2100,8 @@ Pedido do responsável em 22/10: o cadastro dos parâmetros específicos de equi
 
 ## 373. EPI, Relatórios: valor das baixas e histórico por empregado
 
-- **Baixar Definitivas:** o valor de cada baixa (e o total) saía sempre **R$ 0,00**, porque a baixa só traz o preço quando o banco o grava na hora. Agora, sem preço registrado, vale o preço da **compra do mesmo EPI** (e tamanho, se houver) **mais recente até a data da baixa**; sem compra anterior, a primeira compra depois dela; sem nenhuma compra, zero. A tela, a impressão e o CSV usam o mesmo cálculo.
-- **Histórico do empregado:** (a) lê **todas as movimentações do empregado**, de qualquer empresa, em vez de só as da empresa do cadastro dele; (b) a coluna Tipo mostra "Saída (entrega)", "Saída (baixa)" ou "Devolução", em vez de "Saida" e "Devolucao"; (c) cada **entrega** mostra a sua situação: Em posse, Devolvido, Baixado, Devolvido e baixado, ou "Em posse: 2 de 5" (parcial). Como o histórico não diz de qual entrega saiu cada devolução ou baixa, vale a regra de que **o mais antigo sai primeiro**, por EPI e tamanho; os cartões (Entregues, Devolvidos, Baixados e Em posse) seguem contando o histórico inteiro. A busca também acha pelo tipo e pela situação. Só modo demonstração; nada no Supabase.
+- **Baixas definitivas:** o valor de cada baixa (e o total) saía sempre **R$ 0,00**, porque a baixa só traz o preço quando o banco o grava na hora. Agora, sem preço registrado, vale o preço da **compra do mesmo EPI** (e tamanho, se houver) **mais recente até a data da baixa**; sem compra anterior, a primeira compra depois dela; sem nenhuma compra, zero. A tela, a impressão e o CSV usam o mesmo cálculo.
+- **Histórico do empregado:** (a) lê **todas as movimentações do empregado**, de qualquer empresa, em vez de só as da empresa do cadastro dele; (b) a coluna Tipo mostra "Saída (entrega)", "Saída (baixa)" ou "Devolução", em vez de "Saida" e "Devolucao"; (c) cada **entrega** mostra a sua situação: Em posse, Devolvido, Baixado, Devolvido e baixado, ou "Em posse: 2" (parcial, só o número que ainda resta). Como o histórico não diz de qual entrega saiu cada devolução ou baixa, vale a regra de que **o mais antigo sai primeiro**, por EPI e tamanho; os cartões (Entregues, Devolvidos, Baixados e Em posse) seguem contando o histórico inteiro. A busca também acha pelo tipo e pela situação. Só modo demonstração; nada no Supabase.
 
 ## 374. Uniformes: a mesma lógica de movimentação de estoque do EPI
 
@@ -2149,14 +2149,14 @@ Em Uniformes > Compras, a **Sugestão de compras** deixou de aparecer em cima da
 
 Ao clicar em **Devoluções**, o campo **Buscar devolução** aparece no topo da tela, à direita, na barra padrão de filtros (no lugar da busca por fornecedor ou NF, que é só de Compras). Acha por data, código da devolução, funcionário, empresa, uniforme (código e nome), tamanho, motivo, data da compra original, NF e fornecedor, sem diferenciar acento e maiúsculas e com as palavras em qualquer ordem. Com a busca ativa a lista mostra "x de y devoluções" e, sem resultado, "Nenhuma devolução para a busca". O texto digitado se guarda enquanto se alterna entre as visões.
 
-O botão **Imprimir** do Histórico do empregado e de Baixar Definitivas, no EPI e nos Uniformes, passou a se chamar **Relatório** (decisão 382, mesma rodada): continua abrindo o relatório no visualizador, onde se imprime ou se baixa o arquivo.
+O botão **Imprimir** do Histórico do empregado e de Baixas definitivas, no EPI e nos Uniformes, passou a se chamar **Relatório** (decisão 382, mesma rodada): continua abrindo o relatório no visualizador, onde se imprime ou se baixa o arquivo.
 
-Na mesma rodada (decisão 382), nos relatórios de **Histórico do empregado** e **Baixar Definitivas**, do EPI e dos Uniformes, os botões (Relatório e Exportar CSV) ficam à esquerda e os campos de busca e de período (Buscar, Início e Fim; Data Inicial, Data Final e Motivo de Baixa) no topo à direita, na barra padrão de filtros.
+Na mesma rodada (decisão 382), nos relatórios de **Histórico do empregado** e **Baixas definitivas**, do EPI e dos Uniformes, os botões (Relatório e Exportar CSV) ficam à esquerda e os campos de busca e de período (Buscar, Início e Fim; Data Inicial, Data Final e Motivo de Baixa) no topo à direita, na barra padrão de filtros.
 
 ## 383. Botões todos azuis e cartões com a largura padrão
 
 - **Botões:** o botão de contorno (o branco, como Exportar CSV, Cancelar e os de apoio) passou a ser azul, igual ao principal; nenhum botão do sistema fica em branco. O botão de impressão da Frota também se chama **Relatório**.
-- **Cartões:** em tela larga, todo cartão de indicador tem a largura de um quarto da linha, como os da Frota, mesmo quando a tela tem só dois ou três (Baixar Definitivas, Manutenção, Ocorrências, Abastecimento etc.); antes três cartões esticavam a linha inteira.
+- **Cartões:** em tela larga, todo cartão de indicador tem a largura de um quarto da linha, como os da Frota, mesmo quando a tela tem só dois ou três (Baixas definitivas, Manutenção, Ocorrências, Abastecimento etc.); antes três cartões esticavam a linha inteira.
 
 ## 384. Entrada de compra ligada ao endereçamento
 
@@ -2168,7 +2168,7 @@ Em todas as páginas e submenus do sistema, os **botões de ação** (Exportar C
 
 ## 386. Cartões dos relatórios no modelo da Frota
 
-Os cartões de Baixar Definitivas (EPI e Uniformes) passam a ser **quatro por linha**, no tamanho dos da Frota, cada um com o título, uma linha que explica o número, o valor e um detalhe (período, motivo, quantidade de baixas); entrou o **Valor médio por peça**. Os do Histórico do empregado ganharam a linha de explicação. O `StatCard` aceita `subtitulo`. Na mesma rodada, o Estoque de EPI e de Uniformes e a Sugestão de Compras do EPI passaram para o padrão da decisão 385: botões à esquerda (Novos/Usados, Exportar CSV, Gerar relatório) e a busca e os filtros à direita.
+Os cartões de Baixas definitivas (EPI e Uniformes) passam a ser **quatro por linha**, no tamanho dos da Frota, cada um com o título, uma linha que explica o número, o valor e um detalhe (período, motivo, quantidade de baixas); entrou o **Valor médio por peça**. Os do Histórico do empregado ganharam a linha de explicação. O `StatCard` aceita `subtitulo`. Na mesma rodada, o Estoque de EPI e de Uniformes e a Sugestão de Compras do EPI passaram para o padrão da decisão 385: botões à esquerda (Novos/Usados, Exportar CSV, Gerar relatório) e a busca e os filtros à direita.
 
 Na mesma rodada (decisão 386): o aviso "Estoque no mínimo ou abaixo" saiu da tela **Entrega EPI** e dos Uniformes e passou a aparecer nos **relatórios**, no alto da **Sugestão de Compras** do EPI, respeitando o filtro de empresa; e os dados de teste (versão 36) trazem **oito ocorrências de EPI**, em três empresas, para a tela Ocorrências do módulo ter o que mostrar.
 

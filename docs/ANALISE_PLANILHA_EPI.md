@@ -205,7 +205,7 @@ O estoque atual **não é fórmula**: é recalculado por macro a partir do livro
 
 ## 12. Comparação com o módulo de EPIs do sistema (GemapeHub)
 
-Já existe no sistema: abas Dashboard, Estoque, Compras, Histórico do empregado, Baixar Definitivas, Entrega EPI, Termo de Entrega, Ficha de EPI Avulsa e Ocorrências; motivos de baixa iguais aos da planilha; estado Novo e Usado; níveis de cobertura em 30, 60, 90, 120 e 180 dias (`nivelPorCobertura`) e cálculo de cobertura com as saídas dos últimos 180 dias; ficha com CA.
+Já existe no sistema: abas Dashboard, Estoque, Compras, Histórico do empregado, Baixas definitivas, Entrega EPI, Termo de Entrega, Ficha de EPI Avulsa e Ocorrências; motivos de baixa iguais aos da planilha; estado Novo e Usado; níveis de cobertura em 30, 60, 90, 120 e 180 dias (`nivelPorCobertura`) e cálculo de cobertura com as saídas dos últimos 180 dias; ficha com CA.
 
 **Lacunas em relação à planilha** (candidatas a implantar):
 
