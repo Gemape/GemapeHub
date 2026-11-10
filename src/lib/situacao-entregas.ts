@@ -50,10 +50,10 @@ export function situacaoDasEntregas(movimentos: readonly MovimentoDoHistorico[])
   return resultado;
 }
 
-// O texto da coluna Status da entrega: Em posse, Devolvido, Baixado, Devolvido e baixado, ou Em posse com a parte que ainda resta.
+// O texto da coluna Status da entrega: Em posse, Devolvido, Baixado, Devolvido e baixado, ou Em posse com a quantidade que ainda resta (só o número).
 export function rotuloDaSituacao(s: SituacaoDaEntrega | undefined): string {
   if (!s || s.emPosse === s.quantidade) return "Em posse";
-  if (s.emPosse > 0) return `Em posse: ${s.emPosse} de ${s.quantidade}`;
+  if (s.emPosse > 0) return `Em posse: ${s.emPosse}`;
   if (s.devolvido > 0 && s.baixado > 0) return "Devolvido e baixado";
   return s.baixado > 0 ? "Baixado" : "Devolvido";
 }
