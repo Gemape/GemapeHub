@@ -47,7 +47,7 @@ import {
   type Movimentacao,
 } from "@/lib/hooks-gemape";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function FerramentasCaixasModulo() {
   const { empresaId } = useEmpresa();
@@ -132,7 +132,7 @@ function CaixaSemCadastro({ numero, empresaId }: { numero: number; empresaId: st
     status: "Ativa",
   };
   return (
-    <div className="space-y-3">
+    <section className="panel space-y-4 p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <div className="h-8 w-1 bg-muted-foreground/40 rounded-full" />
         <h3 className="text-lg font-black uppercase tracking-tight">{codigo}</h3>
@@ -142,7 +142,7 @@ function CaixaSemCadastro({ numero, empresaId }: { numero: number; empresaId: st
         </Button>
       </div>
       {aberto && <DialogFerramentasDaCaixa caixa={caixa} aberto aoFechar={() => setAberto(false)} itensAtuais={[]} comEmpregado={() => 0} />}
-    </div>
+    </section>
   );
 }
 
@@ -192,24 +192,24 @@ function CaixaItem({
           {portador && <span className="text-xs font-medium text-muted-foreground ml-2">Portador: {portador}</span>}
         </div>
         {/* Ações e relatórios ao lado do portador, três por linha; os relatórios abrem em janela. */}
-        <div className="grid grid-cols-3 gap-1.5">
-          <Button requiresWrite="operar" size="sm" className="h-7 whitespace-nowrap px-2" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
+        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+          <Button requiresWrite="operar" size="sm" className="whitespace-nowrap px-2 sm:h-7" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
             Vincular ferramentas
           </Button>
-          <Button requiresWrite="operar" variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" disabled={linhas.length === 0} onClick={() => setDialogo("baixa")}>
             Dar baixa
           </Button>
-          <Button requiresWrite="operar" variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" disabled={linhas.length === 0 || destinos.filter((d) => d.id !== caixa.id).length + novas.length === 0} onClick={() => setDialogo("transferencia")}>
             Transferir
           </Button>
-          <Button requiresWrite="operar" variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
+          <Button requiresWrite="operar" variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" disabled={linhas.length === 0} onClick={() => setDialogo("ocorrencia")}>
             Registrar ocorrência
           </Button>
-          <Button variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" onClick={() => setHistoricoAberto(true)}>
-            Histórico ({historico.length})
+          <Button variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" onClick={() => setHistoricoAberto(true)}>
+            Histórico de movimentações ({historico.length})
           </Button>
-          <Button variant="outline" size="sm" className="h-7 whitespace-nowrap px-2" onClick={() => setOcorrenciasAberto(true)}>
-            Ocorrências ({ocorrencias.length})
+          <Button variant="outline" size="sm" className="whitespace-nowrap px-2 sm:h-7" onClick={() => setOcorrenciasAberto(true)}>
+            Ocorrências da caixa ({ocorrencias.length})
           </Button>
         </div>
       </div>
@@ -279,30 +279,30 @@ function CaixaItem({
         </Table>
       </div>
 
-      <Dialog open={historicoAberto} onOpenChange={setHistoricoAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Histórico de movimentações da caixa {caixa.codigo}</DialogTitle>
-          </DialogHeader>
-          {historico.length > 0 && (
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  exportarCsv(
-                    `historico-${caixa.codigo}`,
-                    historico.map((m) => linhaCsvCaixa(m, { caixa: caixa.codigo, ferramentas: cadastroFerramentas, nomeEmpregado })),
-                  )
-                }
-              >
-                <Download className="mr-1 size-4" />
-                Exportar
-              </Button>
-            </div>
-          )}
-          <div className="overflow-x-auto rounded-md border">
-          <Table>
+      <JanelaRelatorio
+        aberto={historicoAberto}
+        aoMudar={setHistoricoAberto}
+        titulo={`Histórico de movimentações da caixa ${caixa.codigo}`}
+        descricao="Entregas, devoluções, baixas e transferências das ferramentas desta caixa."
+        acao={
+          historico.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                exportarCsv(
+                  `historico-${caixa.codigo}`,
+                  historico.map((m) => linhaCsvCaixa(m, { caixa: caixa.codigo, ferramentas: cadastroFerramentas, nomeEmpregado })),
+                )
+              }
+            >
+              <Download className="mr-1 size-4" />
+              Exportar
+            </Button>
+          )
+        }
+      >
+        <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
@@ -339,17 +339,15 @@ function CaixaItem({
               )}
             </TableBody>
           </Table>
-          </div>
-        </DialogContent>
-      </Dialog>
+      </JanelaRelatorio>
 
-      <Dialog open={ocorrenciasAberto} onOpenChange={setOcorrenciasAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Ocorrências da caixa {caixa.codigo}</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-x-auto rounded-md border">
-          <Table>
+      <JanelaRelatorio
+        aberto={ocorrenciasAberto}
+        aoMudar={setOcorrenciasAberto}
+        titulo={`Ocorrências da caixa ${caixa.codigo}`}
+        descricao="Ocorrências registradas para as ferramentas desta caixa."
+      >
+        <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
@@ -386,9 +384,7 @@ function CaixaItem({
               )}
             </TableBody>
           </Table>
-          </div>
-        </DialogContent>
-      </Dialog>
+      </JanelaRelatorio>
 
       {dialogo === "ferramentas" && (
         <DialogFerramentasDaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} itensAtuais={itens} comEmpregado={comEmpregadoDe} />
@@ -399,5 +395,35 @@ function CaixaItem({
       )}
       {dialogo === "ocorrencia" && <DialogOcorrenciaCaixa caixa={caixa} aberto aoFechar={() => setDialogo(null)} linhas={linhas} />}
     </section>
+  );
+}
+
+// Janela dos relatórios da caixa (histórico e ocorrências): título, descrição, ação opcional e a tabela.
+function JanelaRelatorio({
+  aberto,
+  aoMudar,
+  titulo,
+  descricao,
+  acao,
+  children,
+}: {
+  aberto: boolean;
+  aoMudar: (aberto: boolean) => void;
+  titulo: string;
+  descricao: string;
+  acao?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Dialog open={aberto} onOpenChange={aoMudar}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{titulo}</DialogTitle>
+          <DialogDescription>{descricao}</DialogDescription>
+        </DialogHeader>
+        {acao && <div className="flex justify-end">{acao}</div>}
+        <div className="overflow-x-auto rounded-md border">{children}</div>
+      </DialogContent>
+    </Dialog>
   );
 }
