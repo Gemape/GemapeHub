@@ -154,7 +154,7 @@ export function UniformesRelatorioBaixa() {
         <StatCard titulo="Total de Baixas" subtitulo="Baixas definitivas registradas no período e no motivo escolhidos." valor={baixas.length} detalhe={`${formatarData(dataInicial)} a ${formatarData(dataFinal)}`} icone={ClipboardList} compacto />
         <StatCard titulo="Total de Uniformes" subtitulo="Soma das quantidades de todas as baixas." valor={totalQuantidade} detalhe={motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`} icone={Package} compacto />
         <StatCard titulo="Valor Total" subtitulo="Quantidade × preço da compra de origem de cada baixa." valor={formatarMoeda(totalValor)} detalhe={`${baixas.length} baixa${baixas.length === 1 ? "" : "s"}`} icone={Banknote} compacto />
-        <StatCard titulo="Valor Médio por Peça" subtitulo="Valor total ÷ total de peças." valor={totalQuantidade > 0 ? formatarMoeda(totalValor / totalQuantidade) : "—"} detalhe={totalQuantidade > 0 ? `${totalQuantidade} peça${totalQuantidade === 1 ? "" : "s"} no período` : "Sem baixas no período"} icone={Banknote} compacto />
+        <StatCard titulo="Valor Médio por Uniforme" subtitulo="Valor total ÷ total de uniformes." valor={totalQuantidade > 0 ? formatarMoeda(totalValor / totalQuantidade) : "—"} detalhe={totalQuantidade > 0 ? `${totalQuantidade} peça${totalQuantidade === 1 ? "" : "s"} no período` : "Sem baixas no período"} icone={Banknote} compacto />
       </GradeDeCartoes>
 
       <div className="panel max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card print:max-h-none print:overflow-visible print:border-none print:shadow-none">
