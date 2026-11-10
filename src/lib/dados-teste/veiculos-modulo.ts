@@ -101,6 +101,11 @@ export function semearModuloVeiculos(storage: Armazenamento, agora: Date): void 
     { n: 2, atras: 9, tipo: "Multa de trânsito", local: "Av. Brasil, 1200", empresa: true, terceiros: false, texto: "Infração por excesso de velocidade em via urbana, identificar o condutor.", tratativa: "encerrada" },
     { n: 3, atras: 5, tipo: "Colisão leve", local: "Estacionamento do cliente, Rua das Flores, 90", empresa: true, terceiros: true, texto: "Contato com o veículo de terceiro ao estacionar, sem feridos." },
     { n: 4, atras: 2, tipo: "Pane mecânica na estrada", local: "Rodovia Anhanguera, km 45", empresa: true, terceiros: false, texto: "Falha na embreagem durante a viagem de entrega." },
+    { n: 5, atras: 16, tipo: "Multa de trânsito", local: "Rua XV de Novembro, 300", empresa: true, terceiros: false, texto: "Estacionamento em local proibido durante visita ao cliente.", tratativa: "encerrada" },
+    { n: 6, atras: 14, tipo: "Colisão leve", local: "Estacionamento do shopping, Av. Paulista, 1000", empresa: true, terceiros: true, texto: "Arranhão na lateral causado por outro veículo, sem feridos." },
+    { n: 7, atras: 10, tipo: "Pane mecânica na estrada", local: "BR-381, km 450", empresa: true, terceiros: false, texto: "Pneu furado em viagem; troca feita no acostamento.", tratativa: "andamento" },
+    { n: 8, atras: 7, tipo: "Colisão leve", local: "Pátio da obra, Rua Sete, 25", empresa: true, terceiros: false, texto: "Contato com poste ao manobrar o caminhão, dano no para-choque." },
+    { n: 9, atras: 3, tipo: "Multa de trânsito", local: "Av. Amazonas, 800", empresa: true, terceiros: false, texto: "Radar de velocidade em via urbana, condutor a identificar." },
   ] as const;
   ocorrencias.forEach((o) => {
     const v = VEICULOS[o.n]!;
@@ -136,8 +141,9 @@ export function semearModuloVeiculos(storage: Armazenamento, agora: Date): void 
     const periodicos = escolher(gruposAplicaveis(grupos, v.subId, false));
     const avulsos = escolher(gruposAplicaveis(grupos, v.subId, true));
     // Os dois últimos veículos têm responsável do PCM (Thiago e Camila, os empregados 7 e 8, da mesma empresa de cada veículo, para o responsável da associação valer), para os indicadores do PCM do check list terem dados; os outros três são da Oficina.
-    const responsavel = EMPREGADOS[n < 3 ? n : n + 3]!;
-    const plano = PLANOS_CHECKLIST_TESTE[n < 3 ? n : n - 2]!;
+    // Do sexto veículo em diante, o responsável é o empregado de mesma ordem (n % 3 = empresa do veículo, como EMPRESAS[n % 3] em conjunto.ts).
+    const responsavel = EMPREGADOS[n < 3 ? n : n < 5 ? n + 3 : n]!;
+    const plano = PLANOS_CHECKLIST_TESTE[n < 3 ? n : n < 5 ? n - 2 : n % 5]!;
     const rotulo = `${v.placa.slice(0, 3)}-${v.placa.slice(3)} · ${v.marca} ${v.modelo}`;
     if (periodicos.length > 0) {
       ignorar(() => criarAssociacao(v.id, { id: responsavel.id, nome: responsavel.nome }, periodicos.map((g) => ({ grupoId: g.id, tipo: "periodico", periodicidade: plano.periodicidade })), st, em(agora, plano.desde)));

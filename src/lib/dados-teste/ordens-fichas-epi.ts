@@ -220,7 +220,7 @@ export const ORDENS_DE_TESTE = [
   },
 ] as const;
 
-// Texto da ficha de cada modelo do catálogo de teste, na ordem de EPIS: Botina, Luva, Capacete, Óculos e Protetor auricular.
+// Texto da ficha de cada modelo do catálogo de teste, na ordem de EPIS: Botina, Luva, Capacete, Óculos, Protetor auricular, Colete, Máscara e Cinto.
 const FICHAS: readonly Record<string, string>[] = [
   {
     setores: "Oficina mecânica, serralheria, lavagem e pátio, serviços gerais",
@@ -265,6 +265,33 @@ const FICHAS: readonly Record<string, string>[] = [
     verificacao: "Antes do uso, conferir as almofadas, a haste e as articulações; não usar com o vedante ressecado ou rachado.",
     higienizacao: "Limpar as almofadas com pano úmido e sabão neutro, secar e guardar longe de calor e de óleo.",
     descarte: "Trocar as almofadas ao ressecar e o conjunto ao quebrar a haste ou perder a vedação.",
+    responsabilidades: "O empregado deve usar, guardar e conservar o EPI, comunicar o desgaste ou o defeito e devolvê-lo ao desligar-se, conforme a NR-6.",
+  },
+  {
+    setores: "Pátio, expedição, obras e estradas de acesso, serviços externos",
+    finalidade: "Torna o empregado visível a máquinas e veículos, de dia e à noite, com faixas retrorrefletivas.",
+    instrucoes: "Vestir por cima da roupa, com o fecho fechado e as faixas livres, sem cobrir com crachá, mochila ou outra peça.",
+    verificacao: "Antes do uso, conferir as faixas, as costuras e o fecho; não usar com faixa descolada, rasgo ou sujeira que esconda o refletivo.",
+    higienizacao: "Lavar à mão com água e sabão neutro, sem alvejante, secar à sombra e não passar a ferro.",
+    descarte: "Trocar quando as faixas perderem o brilho, descolarem ou o tecido rasgar; descartar como resíduo comum.",
+    responsabilidades: "O empregado deve usar, guardar e conservar o EPI, comunicar o desgaste ou o defeito e devolvê-lo ao desligar-se, conforme a NR-6.",
+  },
+  {
+    setores: "Pintura, lixamento, solda, serralheria, ambientes com poeira e fumos",
+    finalidade: "Filtra partículas, poeiras, névoas e fumos, reduzindo a inalação de contaminantes do ar.",
+    instrucoes: "Ajustar o clipe nasal e as tiras à face, sem pelos entre a borda e a pele, e fazer o teste de vedação antes de entrar na área.",
+    verificacao: "Antes do uso, conferir o elástico, o clipe e a vedação; não usar com a peça úmida, suja, amassada ou com odor.",
+    higienizacao: "Peça descartável, não lavar; guardar em saco limpo e fechado, longe de poeira e umidade.",
+    descarte: "Trocar quando houver resistência para respirar, dano ou contaminação, ou ao fim do turno; descartar como resíduo contaminado.",
+    responsabilidades: "O empregado deve usar, guardar e conservar o EPI, comunicar o desgaste ou o defeito e devolvê-lo ao desligar-se, conforme a NR-6.",
+  },
+  {
+    setores: "Trabalho em altura, montagem e manutenção de estruturas, telhados",
+    finalidade: "Sustenta o empregado e limita a queda em trabalho em altura, ligado ao talabarte e ao ponto de ancoragem.",
+    instrucoes: "Vestir com as fitas sem torção, ajustar nas pernas, no peito e nos ombros e conectar ao ponto de ancoragem antes de qualquer deslocamento.",
+    verificacao: "Antes do uso, inspecionar fitas, costuras, fivelas e mosquetões; não usar com corte, fio solto, deformação ou corrosão.",
+    higienizacao: "Lavar as fitas com água e sabão neutro, secar à sombra e guardar pendurado, longe de calor, óleo e produtos químicos.",
+    descarte: "Retirar de uso após qualquer queda ou ao vencer a validade do fabricante, inutilizando as fitas antes do descarte.",
     responsabilidades: "O empregado deve usar, guardar e conservar o EPI, comunicar o desgaste ou o defeito e devolvê-lo ao desligar-se, conforme a NR-6.",
   },
 ];
