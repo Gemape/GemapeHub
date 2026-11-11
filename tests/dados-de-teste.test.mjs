@@ -51,6 +51,16 @@ test("cinco registros em cada cadastro (cinco empregados por empresa); o sistema
   assert.deepEqual([1, 2, 3].filter((n) => gerais.caixasHabilitadas.includes(n)), [1, 2, 3]);
 });
 
+test("Histórico do empregado de ferramentas: cada empregado tem ao menos cinco movimentações, só com ferramentas da própria empresa", () => {
+  const d = dados(prontos());
+  const movs = d.movimentacoes.filter((m) => m.modulo === "ferramenta" && String(m.id).startsWith("teste-mov-hist-ferr-"));
+  for (const e of doTeste(d.empregados)) {
+    const dele = movs.filter((m) => m.empregado_id === e.id);
+    assert.ok(dele.length >= 5, `${e.nome}: ${dele.length} movimentações`);
+    for (const m of dele) assert.equal(d.ferramentas.find((f) => f.id === m.item_id)?.empresa_id, e.empresa_id, `${e.nome}: ferramenta de outra empresa`);
+  }
+});
+
 test("documentos, e-mails, telefones, CEPs, matrículas e placas têm formato válido", () => {
   const s = prontos();
   const d = dados(s);
