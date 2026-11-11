@@ -135,12 +135,15 @@ export function GraficosManutencao({
   manutencoes,
   hoje,
   compacto = false,
+  item = "veículo",
 }: {
   revisoes: RevisaoDoVeiculo[];
   manutencoes: { tipo: string; data: string }[];
   hoje: string;
   // Com a tabela de diagnóstico embaixo (decisão 348): gráficos mais baixos e sem o texto de apoio, para tudo caber na tela.
   compacto?: boolean;
+  // Em Equipamentos, "equipamento".
+  item?: string;
 }) {
   const porVeiculo = new Map<
     string,
@@ -171,8 +174,8 @@ export function GraficosManutencao({
   return (
     <PainelGraficos>
       <QuadroGrafico
-        titulo="Revisões por veículo"
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Situação das revisões do plano de cada veículo." })}
+        titulo={`Revisões por ${item}`}
+        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: `Situação das revisões do plano de cada ${item}.` })}
         vazio={porVeiculo.size === 0}
       >
         <GraficoBarras

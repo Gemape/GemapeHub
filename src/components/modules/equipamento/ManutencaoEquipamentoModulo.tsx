@@ -1,7 +1,11 @@
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
-import { Banknote, CircleDashed, ListChecks, Wrench } from "lucide-react";
+import { ArrowLeft, Banknote, CalendarCheck, CircleDashed, ClipboardCheck, ListChecks, Wrench } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
+import { CartoesManutencao } from "@/components/modules/CartoesManutencao";
+import { GraficosManutencao } from "@/components/modules/GraficosVeiculos";
+import { ManutencaoRevisoes } from "@/components/modules/ManutencaoRevisoes";
+import { TabelaDiagnosticoManutencao } from "@/components/modules/TabelaDiagnosticoManutencao";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -14,11 +18,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAccess } from "@/lib/access-context";
 import { lerManutencaoEquipamento } from "@/lib/equipamentos-manutencao";
+import { useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
+import { proporcaoPreventiva } from "@/lib/frota-indicadores";
+import { situacaoPreventivas } from "@/lib/frota-situacao";
+import { indicadoresDaManutencao } from "@/lib/manutencao-indicadores";
+import { montarManutencaoEquipamentoHtml } from "@/lib/manutencao-equipamento-relatorio-html";
+import { useFocoDaTela } from "@/lib/use-foco-da-tela";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
+import { ExtratoEquipamento } from "./ExtratoEquipamento";
 import { combinaBusca } from "@/lib/parametros-base";
-import { atualizarManutencaoEq, custoDaManutencaoEq, registrarManutencaoEq, removerManutencaoEq, STATUS_OS_EQ, statusDaOsEq, ultimoHorimetro, type AcaoRealizada, type ManutencaoEquipamentoRegistro, type StatusOsEq } from "@/lib/registros-equipamento";
+import { atualizarManutencaoEq, custoDaManutencaoEq, manutencoesConcluidasEq, registrarManutencaoEq, removerManutencaoEq, STATUS_OS_EQ, statusDaOsEq, ultimoHorimetro, type AcaoRealizada, type ManutencaoEquipamentoRegistro, type StatusOsEq } from "@/lib/registros-equipamento";
 import { executar } from "@/lib/use-parametros-base";
-import { hoje, horimetroEmTexto, numero, reais, rotuloDoEquipamento, TODOS, useEquipamentosDaEmpresa, useOrdensEq } from "./comum";
+import { hoje, horimetroEmTexto, numero, reais, rotuloDoEquipamento, TODOS, revisoesDoEquipamento, useEquipamentosDaEmpresa, useOrdensEq } from "./comum";
 
 // Módulos > Equipamentos > Manutenção: ordens de serviço de manutenção preventiva ou corretiva. A ordem nasce Pendente, vai para Em andamento e termina Concluída
 // (com as ações realizadas, as de Parâmetros > Equipamentos > Manutenção, e os custos) ou Cancelada; tem técnico responsável e previsão de conclusão.
@@ -34,12 +46,19 @@ export function ManutencaoEquipamentoModulo() {
   const { canDelete } = useAccess();
   const equipamentos = useEquipamentosDaEmpresa();
   const todas = useOrdensEq();
+  const { empresas } = useEmpresa();
+  // Como em Veículos (decisão 319): o painel com indicadores, gráficos e diagnóstico; os dois botões do alto abrem a lista das revisões planejadas (plano de cada equipamento) e a das ordens de serviço.
+  const [vista, setVistaAtual] = useState<"painel" | "planejadas" | "realizadas">("painel");
+  const { voltarRef, botaoDaTela } = useFocoDaTela(vista, "painel");
+  const [extratoDe, setExtratoDe] = useState<string | null>(null);
   const [aberto, setAberto] = useState(false);
   const [filtro, setFiltro] = useState(TODOS);
   const [tipo, setTipo] = useState(TODOS);
   const [situacao, setSituacao] = useState(TODOS);
   const [editando, setEditando] = useState<ManutencaoEquipamentoRegistro | null>(null);
   const [busca, setBusca] = useState("");
+  // Cada lista começa com a busca limpa: o texto de uma não filtra a outra em silêncio.
+  const setVista = (v: "painel" | "planejadas" | "realizadas") => { setBusca(""); setVistaAtual(v); };
   const rotulos = new Map(equipamentos.map((e) => [e.id, rotuloDoEquipamento(e)]));
   const filtroValido = filtro === TODOS || rotulos.has(filtro) ? filtro : TODOS;
 
@@ -56,11 +75,78 @@ export function ManutencaoEquipamentoModulo() {
   const custo = linhas.filter((m) => statusDaOsEq(m) === "Concluída").reduce((s, m) => s + custoDaManutencaoEq(m), 0);
   const emAberto = base.filter((m) => ["Pendente", "Em andamento"].includes(statusDaOsEq(m))).length;
   const hojeIso = hoje();
+  // Revisões do plano de cada equipamento e o diagnóstico de manutenção (só ordens concluídas contam), a mesma conta de Veículos com horas de uso no lugar do km.
+  const concluidas = useMemo(() => manutencoesConcluidasEq(todas).filter((m) => rotulos.has(m.equipamentoId)), [todas, equipamentos]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Lê o plano e o horímetro de cada equipamento do navegador: só refaz quando as ordens ou os equipamentos mudam, não a cada letra da busca.
+  const comRevisoes = useMemo(() => equipamentos.map((e) => ({ e, ...revisoesDoEquipamento(e, concluidas, hojeIso) })), [equipamentos, concluidas, hojeIso]);
+  const revisoes = comRevisoes.flatMap(({ e, horimetro, sugestoes }) => sugestoes.map((sugestao) => ({ veiculoId: e.id, veiculo: rotuloDoEquipamento(e), kmAtual: horimetro, sugestao })));
+  const indicadores = indicadoresDaManutencao({ tipos: concluidas.map((m) => m.tipo), statusRevisoes: revisoes.map((r) => r.sugestao.status) });
+  const revisoesDaBusca = revisoes.filter((r) => combinaBusca(busca, r.veiculo, r.sugestao.nome));
+  const diagnostico = comRevisoes.map(({ e, horimetro, sugestoes }) => {
+    const dele = concluidas.filter((m) => m.equipamentoId === e.id).sort((a, b) => b.data.localeCompare(a.data) || b.horimetro - a.horimetro);
+    const custos = dele.map((m) => ({ veiculoId: e.id, data: m.data, km: m.horimetro, tipo: m.tipo as string, custo: custoDaManutencaoEq(m) }));
+    const preventivo = proporcaoPreventiva([e.id], custos);
+    return {
+      id: e.id, veiculo: rotuloDoEquipamento(e), km: horimetro, ultima: dele[0] ? { data: dele[0].data, tipo: dele[0].tipo as string } : null,
+      preventivas: situacaoPreventivas(sugestoes.map((s) => s.status)), realizadas: dele.length, corretivas: dele.filter((m) => m.tipo === "Corretiva").length,
+      custo: dele.reduce((t, m) => t + custoDaManutencaoEq(m), 0), pctPreventivo: preventivo.pct, faixaPreventivo: preventivo.faixa,
+    };
+  });
+
+  // Relatório da ordem no visualizador do sistema (imprimir ou salvar em PDF).
+  function gerarRelatorio(m: ManutencaoEquipamentoRegistro) {
+    const e = equipamentos.find((x) => x.id === m.equipamentoId);
+    const equipamento = e ? rotuloDoEquipamento(e) : "Equipamento";
+    abrirDocumento({
+      titulo: "Relatório de manutenção",
+      html: montarManutencaoEquipamentoHtml(m, { empresa: empresas.find((x) => x.id === e?.empresaId)?.razao_social ?? "GEMAPE", equipamento, logoUrl: `${window.location.origin}${import.meta.env["BASE_URL"] ?? "/"}logo-relatorio-viagens.png` }),
+      arquivo: nomeArquivoDocumento("Manutencao", equipamento, m.abertaEm ?? m.data),
+    });
+  }
+  const voltar = (
+    <Button ref={voltarRef} type="button" variant="outline" size="sm" className="rounded-full" onClick={() => setVista("painel")}><ArrowLeft className="h-4 w-4" /> Voltar ao painel</Button>
+  );
   const atrasadas = base.filter((m) => ["Pendente", "Em andamento"].includes(statusDaOsEq(m)) && !!m.dataPrevista && m.dataPrevista < hojeIso).length;
 
   return (
     <div className="space-y-4">
+      {vista === "painel" && (
+        <>
+          <section className="flex flex-wrap items-center gap-2" aria-label="Listas de manutenção">
+            <Button ref={botaoDaTela("planejadas")} type="button" size="sm" className="rounded-full px-4" onClick={() => setVista("planejadas")}>
+              <CalendarCheck className="h-4 w-4" aria-hidden="true" /> Manutenções planejadas
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{revisoes.length} no plano</span>
+            </Button>
+            <Button ref={botaoDaTela("realizadas")} type="button" size="sm" className="rounded-full px-4" onClick={() => setVista("realizadas")}>
+              <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Ordens de serviço
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-normal">{base.length} registradas</span>
+            </Button>
+            <Button requiresWrite size="sm" className="rounded-full px-4" onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova ordem de serviço</Button>
+          </section>
+          <CartoesManutencao itens="equipamentos" indicadores={indicadores} graficos={<GraficosManutencao compacto item="equipamento" revisoes={revisoes} manutencoes={concluidas} hoje={hojeIso} />} />
+          <TabelaDiagnosticoManutencao item="Equipamento" medida="Horímetro" linhas={diagnostico} aoAbrir={(id) => setExtratoDe(id)} />
+          <ExtratoEquipamento equipamento={equipamentos.find((e) => e.id === extratoDe) ?? null} onFechar={() => setExtratoDe(null)} />
+        </>
+      )}
+
+      {vista === "planejadas" && (
+        <>
+          <div className="flex flex-wrap items-end gap-2">
+            {voltar}
+            <BarraDeFiltros>
+              <Input aria-label="Buscar revisão" placeholder="Buscar por equipamento ou serviço" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
+              <p className="text-sm text-muted-foreground">{revisoesDaBusca.length} manutenção(ões) planejada(s).</p>
+            </BarraDeFiltros>
+          </div>
+          <div className="max-h-[calc(100dvh-19rem)] overflow-y-auto">
+            <ManutencaoRevisoes revisoes={revisoesDaBusca} unidade="h" item="Equipamento" medida="Horímetro" orientacao="O plano de cada equipamento fica em Parâmetros > Equipamentos." />
+          </div>
+        </>
+      )}
+
+      {vista === "realizadas" && (<>
       <div className="flex flex-wrap items-end gap-3">
+        {voltar}
         <BarraDeFiltros>
           <div className="space-y-1.5">
             <Label htmlFor="filtro_eq_manut">Histórico por equipamento</Label>
@@ -130,6 +216,7 @@ export function ManutencaoEquipamentoModulo() {
                 <TableCell className="max-w-sm text-xs">{m.acoes.length === 0 && st !== "Concluída" ? <span className="text-muted-foreground">A definir ao concluir</span> : m.acoes.map((a) => (a.subitens.length ? `${a.nome} (${a.subitens.join(", ")})` : a.nome)).join("; ")}{m.observacao && <span className="block text-muted-foreground">{m.observacao}</span>}<span className="block text-muted-foreground">{m.localNome || "Empresa"}{m.horasParada ? ` · parado ${numero(m.horasParada)} h` : ""}</span></TableCell>
                 <TableCell className="whitespace-nowrap text-right">{st === "Concluída" ? reais(custoDaManutencaoEq(m)) : "—"}</TableCell>
                 <TableCell className="whitespace-nowrap text-right">
+                  {st === "Concluída" && <Button variant="outline" size="sm" aria-label="Relatório da ordem de serviço" onClick={() => gerarRelatorio(m)}>Relatório</Button>}
                   {aberta && <Button requiresWrite variant="outline" size="sm" aria-label="Atualizar ordem de serviço" onClick={() => setEditando(m)}>Atualizar</Button>}
                   {canDelete && <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir manutenção" className="text-destructive hover:text-destructive" onClick={() => { if (confirm("Excluir esta manutenção?")) executar(() => removerManutencaoEq(m.id), "Manutenção excluída"); }}>Excluir</Button>}
                 </TableCell>
@@ -139,6 +226,7 @@ export function ManutencaoEquipamentoModulo() {
           </TableBody>
         </Table>
       </div>
+      </>)}
       <NovaManutencao aberto={aberto} aoMudar={setAberto} equipamentos={equipamentos} />
       {editando && <NovaManutencao key={editando.id} aberto aoMudar={(v) => !v && setEditando(null)} equipamentos={equipamentos} equipamentoInicial={editando.equipamentoId} ordem={editando} />}
     </div>
