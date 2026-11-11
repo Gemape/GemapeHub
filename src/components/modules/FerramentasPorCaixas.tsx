@@ -85,6 +85,11 @@ export function FerramentasPorCaixas() {
   }
 
   return (
+    <div className="space-y-4">
+      {/* Gerar relatório no alto da página, à direita, como nos outros relatórios. */}
+      <div className="flex justify-end">
+        <Button type="button" disabled={!pronto || escolhidas.length === 0} onClick={gerar}>{pronto ? "Gerar relatório" : "Carregando..."}</Button>
+      </div>
     <section className="panel max-w-xl space-y-4 p-5" aria-label="Ferramentas por caixas">
       <p className="text-sm text-muted-foreground">Marque as seções e as caixas que entram no relatório. O resumo (das caixas escolhidas: caixas, ferramentas, com empregado, baixado, disponível e ocorrências) sai sempre.</p>
         <div className="flex flex-wrap items-center gap-2">
@@ -122,9 +127,7 @@ export function FerramentasPorCaixas() {
             </li>
           ))}
         </ul>
-        <div className="flex justify-end border-t pt-3">
-          <Button type="button" disabled={!pronto || escolhidas.length === 0} onClick={gerar}>{pronto ? "Gerar relatório" : "Carregando..."}</Button>
-        </div>
     </section>
+    </div>
   );
 }

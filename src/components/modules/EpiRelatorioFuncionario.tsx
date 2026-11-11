@@ -118,6 +118,63 @@ export function EpiRelatorioFuncionario() {
 
   return (
     <div className="space-y-6">
+      {/* Busca e filtros no alto à esquerda, Relatório e Exportar CSV à direita (decisão 406); sem empregado escolhido ficam desabilitados. */}
+      <div className="flex flex-wrap items-end gap-2">
+        <BarraDeFiltros>
+              <div className="space-y-1">
+                <Label htmlFor="hist-busca">Buscar</Label>
+                <Input disabled={!empregado}
+                  id="hist-busca"
+                  aria-label="Buscar no histórico"
+                  type="search"
+                  className="w-96 max-w-full"
+                  placeholder="Buscar por EPI, tamanho, tipo, motivo ou observação"
+                  value={palavra}
+                  onChange={(e) => setPalavra(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="hist-inicio">Início</Label>
+                <Input disabled={!empregado} id="hist-inicio" type="date" value={dataInicio} max={dataFim || undefined} onChange={(e) => setDataInicio(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="hist-fim">Fim</Label>
+                <Input disabled={!empregado} id="hist-fim" type="date" value={dataFim} min={dataInicio || undefined} onChange={(e) => setDataFim(e.target.value)} />
+              </div>
+              {comFiltro && (
+                <Button type="button" onClick={() => { setPalavra(""); setDataInicio(""); setDataFim(""); }}>
+                  Limpar filtros
+                </Button>
+              )}
+        </BarraDeFiltros>
+        <div className="ml-auto flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" disabled={!empregado} onClick={imprimir}>
+          Relatório
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!empregado}
+          onClick={() =>
+            exportarCsv(
+              `historico-epi-${empregado?.nome ?? ""}`,
+              visiveis.map((h) => ({
+                Data: formatarData(h.data_movimentacao),
+                EPI: nomeDoEpi(h.item_id),
+                Tamanho: tamanhoDe(h),
+                Tipo: naturezaMovimentacao(h),
+                Qtd: h.quantidade,
+                Motivo: h.motivo_baixa || "Entrega/Uso",
+                Obs: h.observacao,
+              })),
+            )
+          }
+        >
+          Exportar CSV
+        </Button>
+        </div>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 items-end">
         <div className="space-y-1.5">
           <Label>Empresa</Label>
@@ -155,7 +212,7 @@ export function EpiRelatorioFuncionario() {
       {empregado && (
         <>
           {/* Cartões no modelo da Frota (decisão 411): título com o escopo, a linha que explica o número, o valor, a barra (parte do que foi entregue) e o detalhe embaixo. */}
-          <GradeDeCartoes colunas={4}>
+          <GradeDeCartoes colunas={4} classe="xl:w-7/12">
             <StatCard titulo="Empregado · Entregues" subtitulo="Saídas de entrega ao empregado." valor={totalEntregue} pct={totalEntregue > 0 ? 100 : 0} detalhe={`${totalEntregue} peça(s) entregue(s) em todo o histórico`} icone={PackageCheck} compacto />
             <StatCard titulo="Empregado · Devolvidos" subtitulo="O que ele devolveu ao estoque." valor={totalDevolvido} pct={parteDoEntregue(totalDevolvido)} detalhe={`${totalDevolvido} de ${totalEntregue} entregue(s) · ${parteDoEntregue(totalDevolvido)}%`} icone={Undo2} compacto />
             <StatCard titulo="Empregado · Baixados" subtitulo="Baixas definitivas feitas com ele." valor={totalBaixado} pct={parteDoEntregue(totalBaixado)} detalhe={`${totalBaixado} de ${totalEntregue} entregue(s) · ${parteDoEntregue(totalBaixado)}%`} icone={PackageX} compacto />
@@ -163,60 +220,6 @@ export function EpiRelatorioFuncionario() {
           </GradeDeCartoes>
 
           <h3 className="text-lg font-bold">Histórico de Movimentações de EPI</h3>
-          <div className="flex flex-wrap items-end gap-2">
-            <BarraDeFiltros>
-              <div className="space-y-1">
-                <Label htmlFor="hist-busca">Buscar</Label>
-                <Input
-                  id="hist-busca"
-                  aria-label="Buscar no histórico"
-                  type="search"
-                  className="w-96 max-w-full"
-                  placeholder="Buscar por EPI, tamanho, tipo, motivo ou observação"
-                  value={palavra}
-                  onChange={(e) => setPalavra(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="hist-inicio">Início</Label>
-                <Input id="hist-inicio" type="date" value={dataInicio} max={dataFim || undefined} onChange={(e) => setDataInicio(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="hist-fim">Fim</Label>
-                <Input id="hist-fim" type="date" value={dataFim} min={dataInicio || undefined} onChange={(e) => setDataFim(e.target.value)} />
-              </div>
-              {comFiltro && (
-                <Button type="button" onClick={() => { setPalavra(""); setDataInicio(""); setDataFim(""); }}>
-                  Limpar filtros
-                </Button>
-              )}
-            </BarraDeFiltros>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={imprimir}>
-                Relatório
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  exportarCsv(
-                    `historico-epi-${empregado.nome}`,
-                    visiveis.map((h) => ({
-                      Data: formatarData(h.data_movimentacao),
-                      EPI: nomeDoEpi(h.item_id),
-                      Tamanho: tamanhoDe(h),
-                      Tipo: naturezaMovimentacao(h),
-                      Qtd: h.quantidade,
-                      Motivo: h.motivo_baixa || "Entrega/Uso",
-                      Obs: h.observacao,
-                    })),
-                  )
-                }
-              >
-                Exportar CSV
-              </Button>
-            </div>
-          </div>
           {periodoErrado && (
             <p role="alert" className="text-sm text-destructive">A data de início não pode ser depois da data de fim.</p>
           )}
