@@ -88,21 +88,6 @@ export function FerramentasPorCaixas() {
     <section className="panel max-w-xl space-y-4 p-5" aria-label="Ferramentas por caixas">
       <p className="text-sm text-muted-foreground">Marque as seções e as caixas que entram no relatório. O resumo (das caixas escolhidas: caixas, ferramentas, com empregado, baixado, disponível e ocorrências) sai sempre.</p>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(TODAS_AS_SECOES)}>Marcar todos</Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas([])}>Desmarcar todos</Button>
-          <span className="ml-auto text-xs text-muted-foreground">{marcadas.length} de {SECOES_RELATORIO_CAIXAS.length} seções</span>
-        </div>
-        <ul className="space-y-1.5" aria-label="Seções do relatório">
-          {SECOES_RELATORIO_CAIXAS.map((titulo, n) => (
-            <li key={titulo}>
-              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
-                <Checkbox checked={marcadas.includes(n)} onCheckedChange={(v) => setMarcadas((m) => (v === true ? [...m.filter((x) => x !== n), n].sort((a, b) => a - b) : m.filter((x) => x !== n)))} />
-                {titulo}
-              </label>
-            </li>
-          ))}
-        </ul>
-        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
           <span className="text-sm font-medium">Caixas</span>
           <Button type="button" variant="outline" size="sm" onClick={() => setFora([])}>Marcar todas</Button>
           <Button type="button" variant="outline" size="sm" onClick={() => setFora(lista.map((c) => c.id))}>Desmarcar todas</Button>
@@ -121,6 +106,21 @@ export function FerramentasPorCaixas() {
             </li>
             );
           })}
+        </ul>
+        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+          <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(TODAS_AS_SECOES)}>Marcar todos</Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas([])}>Desmarcar todos</Button>
+          <span className="ml-auto text-xs text-muted-foreground">{marcadas.length} de {SECOES_RELATORIO_CAIXAS.length} seções</span>
+        </div>
+        <ul className="space-y-1.5" aria-label="Seções do relatório">
+          {SECOES_RELATORIO_CAIXAS.map((titulo, n) => (
+            <li key={titulo}>
+              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
+                <Checkbox checked={marcadas.includes(n)} onCheckedChange={(v) => setMarcadas((m) => (v === true ? [...m.filter((x) => x !== n), n].sort((a, b) => a - b) : m.filter((x) => x !== n)))} />
+                {titulo}
+              </label>
+            </li>
+          ))}
         </ul>
         <div className="flex justify-end border-t pt-3">
           <Button type="button" disabled={!pronto || escolhidas.length === 0} onClick={gerar}>{pronto ? "Gerar relatório" : "Carregando..."}</Button>
