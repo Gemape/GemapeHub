@@ -11,7 +11,7 @@ import { useEmpresas, useItens, useMovimentacoes, useTodosCaixaItens } from "@/l
 import { indicadorDeEstoque, textoPercentual } from "@/lib/indicador-estoque";
 
 // Dashboard de Ferramentas: o que importa do estoque das ferramentas (quantas estão abaixo do mínimo, guardadas nas caixas, com empregado ou sem caixa) e quais pedem reposição.
-// Os cartões do módulo (`cartoes`) e os daqui ficam numa só grade, como na Frota (decisão 375).
+// Os cartões ocupam 7/12 da largura em tela larga, como na Frota (os gráficos dela ficam nos outros 5/12), para não esticarem. Os cartões do módulo (`cartoes`) e os daqui ficam numa só grade, como na Frota (decisão 375).
 export function DashboardFerramentas({ cartoes }: { cartoes: ReactNode }) {
   const { empresaId } = useEmpresa();
   const { data: ferramentas = [], isLoading } = useItens("ferramenta", empresaId);
@@ -39,7 +39,7 @@ export function DashboardFerramentas({ cartoes }: { cartoes: ReactNode }) {
 
   return (
     <>
-      <GradeDeCartoes colunas={4}>
+      <GradeDeCartoes colunas={4} classe="xl:w-7/12">
         {cartoes}
         <StatCard titulo="Estoque · Ferramentas acima do mínimo" subtitulo="Ferramentas ativas acima do estoque mínimo ÷ todas as ativas." valor={textoPercentual(acimaDoMinimo.pct)} {...acimaDoMinimo} detalhe={`${abaixo.length} de ${ativas} no mínimo ou abaixo · ${zeradas} zerada(s)`} icone={AlertTriangle} compacto />
         <StatCard titulo="Estoque · Guardadas nas caixas" subtitulo="Unidades nas caixas, disponíveis ÷ unidades em estoque." valor={textoPercentual(guardadas.pct)} {...guardadas} detalhe={`${soma("guardada")} de ${saldoTotal} unidades`} icone={Archive} compacto />

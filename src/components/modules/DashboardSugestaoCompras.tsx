@@ -39,7 +39,7 @@ export function DashboardSugestaoCompras({ modulo, cartoes }: { modulo: "epi" | 
 
   return (
     <>
-      <GradeDeCartoes colunas={4}>
+      <GradeDeCartoes colunas={4} classe="xl:w-7/12">
         {cartoes}
         <StatCard
           titulo="Estoque · Itens sem necessidade de compra"
