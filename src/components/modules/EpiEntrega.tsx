@@ -69,7 +69,8 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   useEffect(() => {
     if (empresas.length > 0 && empresaSel && !empresasParaEscolha(empresas).some((e) => e.id === empresaSel)) setEmpresaSel("");
   }, [empresas, empresaSel]);
-  useEffect(() => { if (!responsavel) setResponsavel(responsavelPadrao); }, [responsavelPadrao, responsavel]);
+  // Só preenche quando o usuário carrega; apagar o campo para digitar outro nome não repõe o padrão.
+  useEffect(() => { setResponsavel((atual) => atual || responsavelPadrao); }, [responsavelPadrao]);
 
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens(modulo, empresaSel || TODAS);
@@ -117,6 +118,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   }
   function trocarModo(novo: "entrega" | "devolucao") {
     setModo(novo);
+    setResponsavel(responsavelPadrao); // o nome digitado numa tela não vale para a outra
     setLinhas([]);
     setUltima(null);
   }
@@ -236,8 +238,8 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
             <Input id={`obs-entrega-${modulo}`} value={observacao} maxLength={500} onChange={(e) => setObservacao(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor={`resp-devolucao-${modulo}`}>{modo === "devolucao" ? "Responsável pela devolução" : "Responsável pela entrega"}</Label>
-            <Input id={`resp-devolucao-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
+            <Label htmlFor={`responsavel-${modo}-${modulo}`}>{modo === "devolucao" ? "Responsável pela devolução" : "Responsável pela entrega"}</Label>
+            <Input id={`responsavel-${modo}-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
           </div>
         </div>
 
