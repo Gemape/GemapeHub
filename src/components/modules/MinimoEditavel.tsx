@@ -25,7 +25,7 @@ export function MinimoEditavel({ valor, rotulo, onSalvar }: { valor: number; rot
       step={1}
       inputMode="numeric"
       aria-label={`Estoque mínimo de ${rotulo}`}
-      className="ml-auto h-8 w-20 text-right"
+      className="h-8 w-20 text-left"
       value={rascunho}
       onChange={(e) => {
         setRascunho(e.target.value);
