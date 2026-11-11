@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
@@ -19,9 +18,8 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 
 const TODAS_AS_SECOES = SECOES_RELATORIO_CAIXAS.map((_, n) => n);
 
-// Relatório das caixas de ferramentas: a pessoa marca as seções e as caixas e o relatório abre no visualizador, como os outros relatórios do sistema.
-// Os dados são lidos só enquanto a janela está aberta.
-export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; aoMudar: (aberto: boolean) => void }) {
+// Ferramentas > Relatórios > Ferramentas por caixas: a pessoa marca as seções e as caixas e o relatório abre no visualizador, como os outros relatórios do sistema.
+export function FerramentasPorCaixas() {
   const { empresaId } = useEmpresa();
   const [marcadas, setMarcadas] = useState<number[]>(TODAS_AS_SECOES);
   const [fora, setFora] = useState<string[]>([]); // caixas desmarcadas; começa vazio = todas entram
@@ -79,7 +77,6 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
         })),
       };
     });
-    aoMudar(false);
     abrirDocumento({
       titulo: "Relatório de caixas de ferramentas",
       html: montarRelatorioCaixasHtml({ caixas, secoes: marcadas, parcial: escolhidas.length < lista.length, empresa: empresaId === TODAS ? "Todas as empresas" : nomeEmpresa(empresaId) }),
@@ -88,40 +85,31 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
   }
 
   return (
-    <Dialog open={aberto} onOpenChange={aoMudar}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Relatório das caixas de ferramentas</DialogTitle>
-          <DialogDescription>Marque as seções e as caixas que entram no relatório. O resumo (das caixas escolhidas: caixas, ferramentas, com empregado, baixado, disponível e ocorrências) sai sempre.</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(TODAS_AS_SECOES)}>Marcar todos</Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas([])}>Desmarcar todos</Button>
-          <span className="ml-auto text-xs text-muted-foreground">{marcadas.length} de {SECOES_RELATORIO_CAIXAS.length} seções</span>
-        </div>
-        <ul className="space-y-1.5" aria-label="Seções do relatório">
-          {SECOES_RELATORIO_CAIXAS.map((titulo, n) => (
-            <li key={titulo}>
-              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
-                <Checkbox checked={marcadas.includes(n)} onCheckedChange={(v) => setMarcadas((m) => (v === true ? [...m.filter((x) => x !== n), n].sort((a, b) => a - b) : m.filter((x) => x !== n)))} />
-                {titulo}
-              </label>
-            </li>
-          ))}
-        </ul>
-        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
-          <span className="text-sm font-medium">Caixas</span>
-          <Button type="button" variant="outline" size="sm" onClick={() => setFora([])}>Marcar todas</Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setFora(lista.map((c) => c.id))}>Desmarcar todas</Button>
-          <span className="ml-auto text-xs text-muted-foreground">{pronto && escolhidas.length === 0 ? "Marque ao menos uma caixa" : `${escolhidas.length} de ${lista.length} caixas`}</span>
+    <div className="space-y-4">
+      {/* Gerar relatório no alto da página, à direita, como nos outros relatórios. */}
+      <div className="flex justify-end">
+        <Button type="button" disabled={!pronto || escolhidas.length === 0} onClick={gerar}>{pronto ? "Gerar relatório" : "Carregando..."}</Button>
+      </div>
+    <section className="panel max-w-xl space-y-5 p-5" aria-label="Ferramentas por caixas">
+      <p className="text-sm text-muted-foreground">Marque as seções e as caixas que entram no relatório. O resumo (das caixas escolhidas: caixas, ferramentas, com empregado, baixado, disponível e ocorrências) sai sempre.</p>
+        <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div>
+            <h3 className="text-sm font-semibold">Caixas</h3>
+            <span className="text-xs text-muted-foreground">{pronto && escolhidas.length === 0 ? "Marque ao menos uma caixa" : `${escolhidas.length} de ${lista.length} caixas`}</span>
+          </div>
+          <div className="ml-auto flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setFora([])}>Marcar todas</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setFora(lista.map((c) => c.id))}>Desmarcar todas</Button>
+          </div>
         </div>
         {!pronto && <p className="text-xs text-muted-foreground">Carregando as caixas...</p>}
-        <ul className="max-h-48 space-y-1 overflow-y-auto" aria-label="Caixas do relatório">
+        <ul className="max-h-72 space-y-1.5 overflow-y-auto pr-1" aria-label="Caixas do relatório">
           {lista.map((c) => {
             const portador = portadorAtivo(portadores, c.id)?.empregado_nome;
             return (
             <li key={c.id}>
-              <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/60">
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted/60 has-[[data-state=checked]]:border-primary/40 has-[[data-state=checked]]:bg-primary/5">
                 <Checkbox checked={!fora.includes(c.id)} onCheckedChange={(v) => setFora((f) => (v === true ? f.filter((x) => x !== c.id) : [...f, c.id]))} />
                 <span className="min-w-0 truncate">{c.codigo}{portador ? ` — ${portador}` : ""}</span>
               </label>
@@ -129,11 +117,30 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
             );
           })}
         </ul>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => aoMudar(false)}>Cancelar</Button>
-          <Button type="button" disabled={!pronto || escolhidas.length === 0} onClick={gerar}>{pronto ? "Gerar relatório" : "Carregando..."}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+        <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div>
+            <h3 className="text-sm font-semibold">Seções</h3>
+            <span className="text-xs text-muted-foreground">{marcadas.length} de {SECOES_RELATORIO_CAIXAS.length} seções</span>
+          </div>
+          <div className="ml-auto flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(TODAS_AS_SECOES)}>Marcar todos</Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas([])}>Desmarcar todos</Button>
+          </div>
+        </div>
+        <ul className="space-y-1.5" aria-label="Seções do relatório">
+          {SECOES_RELATORIO_CAIXAS.map((titulo, n) => (
+            <li key={titulo}>
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted/60 has-[[data-state=checked]]:border-primary/40 has-[[data-state=checked]]:bg-primary/5">
+                <Checkbox checked={marcadas.includes(n)} onCheckedChange={(v) => setMarcadas((m) => (v === true ? [...m.filter((x) => x !== n), n].sort((a, b) => a - b) : m.filter((x) => x !== n)))} />
+                {titulo}
+              </label>
+            </li>
+          ))}
+        </ul>
+        </div>
+    </section>
+    </div>
   );
 }

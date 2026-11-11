@@ -148,7 +148,7 @@ export function EpiRelatorioBaixa() {
       </div>
 
       {/* Quatro cartões do tamanho dos da Frota (decisão 386): o que cada número mostra e o período. */}
-      <GradeDeCartoes colunas={4}>
+      <GradeDeCartoes colunas={4} classe="xl:w-7/12">
         <StatCard titulo="Total de Baixas" subtitulo="Baixas definitivas registradas no período e no motivo escolhidos." valor={baixas.length} detalhe={`${formatarData(dataInicial)} a ${formatarData(dataFinal)}`} icone={ClipboardList} compacto />
         <StatCard titulo="Total de EPIs" subtitulo="Soma das quantidades de todas as baixas." valor={totalQuantidade} detalhe={motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`} icone={Package} compacto />
         <StatCard titulo="Valor Total" subtitulo="Quantidade × preço da compra de origem de cada baixa." valor={formatarMoeda(totalValor)} detalhe={`${baixas.length} baixa${baixas.length === 1 ? "" : "s"}`} icone={Banknote} compacto />

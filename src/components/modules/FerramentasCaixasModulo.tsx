@@ -47,13 +47,11 @@ import {
   type Movimentacao,
 } from "@/lib/hooks-gemape";
 import { Button } from "@/components/ui/button";
-import { RelatorioCaixasDialog } from "./RelatorioCaixasDialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function FerramentasCaixasModulo() {
   const { empresaId } = useEmpresa();
   const [buscaCaixa, setBuscaCaixa] = useState("");
-  const [relatorioAberto, setRelatorioAberto] = useState(false);
 
   const { data: todasAsCaixas = [], isLoading } = useCaixasFerramentas(empresaId, buscaCaixa);
   // Só caixas habilitadas em Caixas de Ferramentas > Habilitar caixas.
@@ -89,12 +87,7 @@ export function FerramentasCaixasModulo() {
             onChange={(e) => setBuscaCaixa(e.target.value)}
           />
         </BarraDeFiltros>
-        {/* Relatório de todas as caixas, no alto à direita; as seções se escolhem na janela. */}
-        <Button type="button" variant="outline" className="ml-auto" onClick={() => setRelatorioAberto(true)}>
-          Relatório
-        </Button>
       </div>
-      {relatorioAberto && <RelatorioCaixasDialog aberto={relatorioAberto} aoMudar={setRelatorioAberto} />}
 
       <div className="space-y-8">
         {isLoading ? (
@@ -189,18 +182,17 @@ function CaixaItem({
   const comEmpregadoDe = (id: string) => controleDaFerramenta(historico, id).comEmpregado;
 
   return (
-    <section className="panel space-y-4 p-4 sm:p-5">
+    <section className="space-y-4 rounded-xl border bg-muted/30 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="h-8 w-1 bg-primary rounded-full" />
-          <h3 className="text-lg font-black uppercase tracking-tight">{caixa.codigo}</h3>
-          <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+        <div>
+          <h3 className="text-sm font-semibold">{caixa.codigo}</h3>
+          <span className="text-xs text-muted-foreground">
             {itens.length} {itens.length === 1 ? "item" : "itens"}
+            {portador && ` · Portador: ${portador}`}
           </span>
-          {portador && <span className="text-xs font-medium text-muted-foreground ml-2">Portador: {portador}</span>}
         </div>
         {/* Ações e relatórios ao lado do portador, duas colunas no celular e três a partir de sm; os relatórios abrem em janela. */}
-        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+        <div className="ml-auto flex flex-wrap justify-end gap-2">
           <Button requiresWrite="operar" size="sm" className="h-auto min-h-8 min-w-0 px-2 py-1 leading-tight sm:min-h-7" disabled={isLoading} onClick={() => setDialogo("ferramentas")}>
             Vincular ferramentas
           </Button>

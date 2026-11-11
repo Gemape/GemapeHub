@@ -38,10 +38,10 @@ test("só as seções marcadas entram, e o texto informado é escapado", () => {
   assert.ok(!nenhuma.includes("<table"), "sem seção marcada não sai tabela");
 });
 
-test("Número da caixa tem o botão Relatório no alto, à direita, que abre a escolha das seções", () => {
+test("o relatório das caixas é o submenu Relatórios > Ferramentas por caixas, e Número da caixa não tem mais o botão", () => {
   const modulo = readFileSync(new URL("../src/components/modules/FerramentasCaixasModulo.tsx", import.meta.url), "utf8");
-  assert.match(modulo, /ml-auto[^>]*onClick=\{\(\) => setRelatorioAberto\(true\)\}>\s*Relatório\s*<\/Button>/);
-  const dialogo = readFileSync(new URL("../src/components/modules/RelatorioCaixasDialog.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(modulo, /setRelatorioAberto|RelatorioCaixasDialog/);
+  const dialogo = readFileSync(new URL("../src/components/modules/FerramentasPorCaixas.tsx", import.meta.url), "utf8");
   assert.match(dialogo, /abrirDocumento\(/);
   assert.match(dialogo, /<Checkbox /);
   assert.match(dialogo, /aria-label="Caixas do relatório"/);
