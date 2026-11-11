@@ -288,7 +288,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               <TableHead title="Fornecedores de todas as compras: somam no mesmo estoque">Fornecedor</TableHead>
               {modulo === "epi" && <TableHead>CA</TableHead>}
               <TableHead>Tamanho</TableHead>
-              <TableHead>Estoque mínimo</TableHead>
+              <TableHead className="text-center">Estoque mínimo</TableHead>
               <TableHead>Quantidade disponível</TableHead>
               <TableHead>Alerta</TableHead>
               <TableHead>Média de consumo mensal</TableHead>
@@ -318,7 +318,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   <TableCell>{l.fornecedor || "—"}</TableCell>
                   {modulo === "epi" && <TableCell>{l.ca || "—"}</TableCell>}
                   <TableCell>{nomeDoTamanho(l.tamanhoId)}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <MinimoEditavel key={l.chave} valor={l.minimo} rotulo={`${l.descricao} ${nomeDoTamanho(l.tamanhoId)}`.trim()} onSalvar={(texto) => gravarMinimo(l, texto)} />
                   </TableCell>
                   <TableCell className="font-semibold">{l.disponivel}</TableCell>
