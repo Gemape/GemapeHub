@@ -69,7 +69,8 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   useEffect(() => {
     if (empresas.length > 0 && empresaSel && !empresasParaEscolha(empresas).some((e) => e.id === empresaSel)) setEmpresaSel("");
   }, [empresas, empresaSel]);
-  useEffect(() => { if (!responsavel) setResponsavel(responsavelPadrao); }, [responsavelPadrao, responsavel]);
+  // Só preenche quando o usuário carrega; apagar o campo para digitar outro nome não repõe o padrão.
+  useEffect(() => { setResponsavel((atual) => atual || responsavelPadrao); }, [responsavelPadrao]);
 
   const { data: empregados = [] } = useEmpregados(empresaSel || TODAS);
   const { data: itens = [] } = useItens(modulo, empresaSel || TODAS);
@@ -117,6 +118,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   }
   function trocarModo(novo: "entrega" | "devolucao") {
     setModo(novo);
+    setResponsavel(responsavelPadrao); // o nome digitado numa tela não vale para a outra
     setLinhas([]);
     setUltima(null);
   }
@@ -236,8 +238,8 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
             <Input id={`obs-entrega-${modulo}`} value={observacao} maxLength={500} onChange={(e) => setObservacao(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor={`resp-devolucao-${modulo}`}>{modo === "devolucao" ? "Responsável pela devolução" : "Responsável pela entrega"}</Label>
-            <Input id={`resp-devolucao-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
+            <Label htmlFor={`responsavel-${modo}-${modulo}`}>{modo === "devolucao" ? "Responsável pela devolução" : "Responsável pela entrega"}</Label>
+            <Input id={`responsavel-${modo}-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
           </div>
         </div>
 
@@ -328,7 +330,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Código</TableHead><TableHead>Data</TableHead><TableHead>Tipo</TableHead><TableHead>{rot.Sing}</TableHead><TableHead>Tam.</TableHead>
-                      <TableHead className="text-right">Qtd</TableHead><TableHead>Empregado</TableHead><TableHead>Responsável</TableHead><TableHead>Observação</TableHead>
+                      <TableHead>Qtd</TableHead><TableHead>Empregado</TableHead><TableHead>Responsável</TableHead><TableHead>Observação</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -341,7 +343,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
                         <TableCell>{ROTULO_TIPO[m.tipo_movimentacao] ?? m.tipo_movimentacao}</TableCell>
                         <TableCell>{nomeDoItem(m.item_id)?.nome ?? "—"}</TableCell>
                         <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) ?? "—"}</TableCell>
-                        <TableCell className="text-right">{m.quantidade}</TableCell>
+                        <TableCell>{m.quantidade}</TableCell>
                         <TableCell>{nomeDoEmpregado(m.empregado_id)}</TableCell>
                         <TableCell>{m.responsavel_nome ?? "—"}</TableCell>
                         <TableCell className="max-w-xs truncate">{m.observacao || "—"}</TableCell>

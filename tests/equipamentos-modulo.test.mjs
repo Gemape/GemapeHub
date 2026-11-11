@@ -19,11 +19,13 @@ const aplicado = () => { const s = memoria(); assert.equal(prepararDadosDeTeste(
 test("os dados de teste trazem registros de cada controle do módulo Equipamentos nos cinco equipamentos, ligados a equipamentos de teste", () => {
   const s = aplicado();
   const equipamentos = new Set(json(s, "gemape-demo-equipamentos").map((e) => e.id));
-  for (const [chave, quantidade] of [[R.CHAVE_ABASTECIMENTOS_EQ, 9], [R.CHAVE_MANUTENCOES_EQ, 20], [C.CHAVE_CHECKLISTS_EQ, 150]]) {
+  for (const [chave, quantidade] of [[R.CHAVE_ABASTECIMENTOS_EQ, 9], [R.CHAVE_MANUTENCOES_EQ, 20 + 7], [C.CHAVE_CHECKLISTS_EQ, 150]]) {
     const lista = json(s, chave);
     assert.equal(lista.length, quantidade, chave);
     for (const r of lista) assert.ok(r.id.startsWith("teste-") && equipamentos.has(r.equipamentoId), `${chave}: registro solto`);
   }
+  // Das 27 ordens de serviço, 20 estão concluídas e 7 em aberto (pendentes ou em andamento).
+  assert.equal(R.manutencoesConcluidasEq(json(s, R.CHAVE_MANUTENCOES_EQ)).length, 20);
   // Seis ocorrências lançadas (quatro abertas, duas resolvidas) e uma por item NOK dos check lists concluídos.
   const ocorrencias = json(s, R.CHAVE_OCORRENCIAS_EQ);
   const checklists = json(s, C.CHAVE_CHECKLISTS_EQ);
@@ -82,6 +84,46 @@ test("manutenção: tipo, ao menos uma ação, terceiro com nome e custos válid
   const m = R.registrarManutencaoEq(entrada, s, AGORA);
   assert.equal(R.custoDaManutencaoEq(m), 150.5);
   assert.equal(m.localNome, "Empresa");
+});
+
+test("ordem de serviço: abre pendente sem ações nem horímetro, só avança, conclui com ações e fora dos custos até concluir", () => {
+  const s = memoria();
+  const base = { equipamentoId: "e1", tipo: "Corretiva", data: "2026-10-10", acoes: [], local: "empresa", localNome: "", status: "Pendente", responsavel: "Ana Souza", dataPrevista: "2026-10-15" };
+  assert.throws(() => R.registrarManutencaoEq({ ...base, responsavel: " " }, s, AGORA), /técnico responsável/);
+  assert.throws(() => R.registrarManutencaoEq({ ...base, dataPrevista: "2026-10-09" }, s, AGORA), /anterior à abertura/);
+  assert.throws(() => R.registrarManutencaoEq({ ...base, status: "Inventada" }, s, AGORA), /situação/);
+  const os = R.registrarManutencaoEq(base, s, AGORA);
+  assert.equal(R.statusDaOsEq(os), "Pendente");
+  assert.equal(R.manutencoesConcluidasEq(R.lerManutencoesEq(s)).length, 0);
+  assert.equal(R.ultimoHorimetro("e1", s), null, "a ordem aberta não vira horímetro");
+  R.atualizarManutencaoEq(os.id, { ...base, status: "Em andamento" }, s, AGORA);
+  assert.throws(() => R.atualizarManutencaoEq(os.id, { ...base, status: "Pendente" }, s, AGORA), /não pode voltar/);
+  assert.throws(() => R.atualizarManutencaoEq(os.id, { ...base, status: "Concluída", horimetro: "" }, s, AGORA), /horímetro/);
+  assert.throws(() => R.atualizarManutencaoEq(os.id, { ...base, status: "Concluída", horimetro: "120" }, s, AGORA), /ao menos uma ação/);
+  const feita = R.atualizarManutencaoEq(os.id, { ...base, status: "Concluída", horimetro: "120", acoes: [{ acaoId: "a1", nome: "Troca de óleo", subitens: [] }], custoPecas: "80,00" }, s, AGORA);
+  assert.equal(feita.id, os.id);
+  assert.equal(R.manutencoesConcluidasEq(R.lerManutencoesEq(s)).length, 1);
+  assert.equal(R.ultimoHorimetro("e1", s), 120);
+  assert.ok(feita.encerradaEm);
+  assert.throws(() => R.atualizarManutencaoEq(os.id, { ...base, status: "Cancelada" }, s, AGORA), /já está concluída/);
+  const cancelada = R.registrarManutencaoEq({ ...base, status: "Cancelada" }, s, AGORA);
+  assert.equal(R.manutencoesConcluidasEq(R.lerManutencoesEq(s)).includes(cancelada), false);
+  assert.throws(() => R.atualizarManutencaoEq("nao-existe", base, s, AGORA), /não existe/);
+});
+
+test("ordem de serviço: o horímetro de quem conclui é conferido na data da conclusão, não na da abertura", () => {
+  const s = memoria();
+  const base = { equipamentoId: "e1", tipo: "Corretiva", data: "2026-10-10", acoes: [], local: "empresa", localNome: "", responsavel: "Ana" };
+  const os = R.registrarManutencaoEq({ ...base, status: "Pendente" }, s, AGORA);
+  R.registrarAbastecimentoEq({ equipamentoId: "e1", data: "2026-10-12", hora: "08:00", horimetro: "150", litros: "40", valor: "250,00" }, s, AGORA);
+  const acoes = [{ acaoId: "a1", nome: "Troca de óleo", subitens: [] }];
+  assert.throws(() => R.atualizarManutencaoEq(os.id, { ...base, status: "Concluída", horimetro: "160", acoes, dataConclusao: "2026-10-09" }, s, AGORA), /anterior à abertura/);
+  const feita = R.atualizarManutencaoEq(os.id, { ...base, status: "Concluída", horimetro: "160", acoes, dataConclusao: "2026-10-14" }, s, AGORA);
+  assert.deepEqual([feita.data, feita.abertaEm], ["2026-10-14", "2026-10-10"]);
+});
+
+test("manutenção registrada sem status continua concluída (registros antigos e o fluxo de antes)", () => {
+  assert.equal(R.statusDaOsEq({}), "Concluída");
 });
 
 test("ocorrência: descrição e tipo obrigatórios; resolver exige a solução e fecha a ocorrência", () => {

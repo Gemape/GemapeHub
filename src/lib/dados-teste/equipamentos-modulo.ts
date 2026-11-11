@@ -107,6 +107,15 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
       }, st, agora);
       trocarId(storage, CHAVE_MANUTENCOES_EQ, r.id, `${PREFIXO}eq-manutencao-${k + 1}-${i + 1}`);
     });
+    // Ordens de serviço em aberto, para testar o acompanhamento: uma pendente (atrasada em alguns) e uma em andamento, com técnico e previsão.
+    if (k % 3 !== 2) {
+      const andamento = k % 3 === 1;
+      const o = registrarManutencaoEq({
+        equipamentoId: id, tipo: andamento ? "Corretiva" : "Preventiva", status: andamento ? "Em andamento" : "Pendente", data: dia(agora, andamento ? 4 : 6), dataPrevista: dia(agora, k % 2 === 0 ? -5 : 2),
+        responsavel: responsavel.nome, local: "empresa", localNome: "", observacao: andamento ? "Troca de componente aguardando peça." : "Revisão agendada com o técnico.", acoes: [],
+      }, st, agora);
+      trocarId(storage, CHAVE_MANUTENCOES_EQ, o.id, `${PREFIXO}eq-os-${k + 1}`);
+    }
     if (daFamilia.length > 0) {
       ignorar(() => salvarPlano({ modo: "criar", equipamentoId: id, itens: daFamilia.slice(0, 2).map((a, i) => ({ acaoId: a.id, horas: i === 0 ? 250 * ((k % 3) + 1) : 1000, meses: i === 0 ? 3 + (k % 4) : 12 })) }, storage, agora));
     }

@@ -356,7 +356,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               {soEntrada && <TableHead>Empresa</TableHead>}
               {soEntrada && visao === "compras" && <><TableHead>Fornecedor</TableHead><TableHead>NF</TableHead><TableHead className="text-right">Valor unit.</TableHead><TableHead className="text-right">Valor total</TableHead></>}
               {mostraEmpregado && <TableHead>Empregado</TableHead>}
-              <TableHead className="text-right">Qtde</TableHead>
+              <TableHead>Qtde</TableHead>
               {soEntrega && MODO_DEMO && <TableHead>Responsável</TableHead>}
               {!soEntrada && !soEntrega && <TableHead>Motivo da baixa</TableHead>}
               {!foco && <TableHead>Ônus</TableHead>}
@@ -410,7 +410,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                     return <><TableCell>{c.fornecedor || "—"}</TableCell><TableCell>{c.nota_fiscal || "—"}</TableCell><TableCell className="text-right">{c.valor_unitario != null ? formatarMoeda(c.valor_unitario) : "—"}</TableCell><TableCell className="text-right">{c.valor_total != null ? formatarMoeda(c.valor_total) : "—"}</TableCell></>;
                   })()}
                   {mostraEmpregado && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
-                  <TableCell className="text-right">{m.quantidade}</TableCell>
+                  <TableCell>{m.quantidade}</TableCell>
                   {soEntrega && MODO_DEMO && <TableCell>{(m as { responsavel_nome?: string | null }).responsavel_nome || "—"}</TableCell>}
                   {!soEntrada && !soEntrega && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
                   {!foco && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}

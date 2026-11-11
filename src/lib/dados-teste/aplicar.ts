@@ -637,6 +637,34 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       if (linha) linha["estoque_atual"] = (Number(linha["estoque_atual"]) || 0) - 1;
     }
   });
+  // Histórico do empregado (Ferramentas > Relatórios): cada um dos cinco empregados de cada empresa recebe e devolve ferramentas da própria empresa, no mínimo cinco
+  // movimentações (duas entregas devolvidas e, quando sobra ferramenta livre, uma entrega ainda em posse). Entrega seguida de devolução não muda o saldo das caixas.
+  const ferramentasDaEmpresa = (c: number) => ferramentas.filter((x) => x.f.empresaIndice === c);
+  const livres = (c: number) => ferramentasDaEmpresa(c).filter((x) => x.n >= 8); // fora as dos portadores (0 a 4) e as que sofreram baixa (6 e 7)
+  const usadasEmPosse = new Set<string>();
+  let seqHistorico = 0;
+  EMPRESAS.forEach((_, c) => {
+    const almoxarife = EMPREGADOS[c]!.nome;
+    const doEmpregado = (j: number) => EMPREGADOS[c + 3 * j]!;
+    for (let j = 0; j < 5; j++) {
+      const emp = doEmpregado(j);
+      const base = 80 - 5 * j - c;
+      const doGrupo = ferramentasDaEmpresa(c);
+      const par = (k: number, dias: number) => {
+        const t = doGrupo[(j * 2 + k) % doGrupo.length]!;
+        const comum = { modulo: "ferramenta", item_id: t.id, empresa_id: empresaIds[c], empregado_id: emp.id, quantidade: 1, tamanho_id: null, onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false, created_at: criadoEm };
+        tabela("movimentacoes").push({ ...comum, id: `${PREFIXO}mov-hist-ferr-${++seqHistorico}`, tipo_movimentacao: "Saida", motivo_baixa: "Fornecimento ao Empregado", data_movimentacao: dia(agora, dias), responsavel_nome: almoxarife, observacao: "Entrega para o serviço do dia." });
+        tabela("movimentacoes").push({ ...comum, id: `${PREFIXO}mov-hist-ferr-${++seqHistorico}`, tipo_movimentacao: "Devolucao", motivo_baixa: null, data_movimentacao: dia(agora, dias - 7), observacao: "Devolvida ao fim do serviço." });
+      };
+      par(0, base);
+      par(1, base - 12);
+      const livre = livres(c).find((x) => !usadasEmPosse.has(x.id));
+      if (livre) {
+        usadasEmPosse.add(livre.id);
+        tabela("movimentacoes").push({ modulo: "ferramenta", item_id: livre.id, empresa_id: empresaIds[c], empregado_id: emp.id, quantidade: 1, tamanho_id: null, onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false, created_at: criadoEm, id: `${PREFIXO}mov-hist-ferr-${++seqHistorico}`, tipo_movimentacao: "Saida", motivo_baixa: "Fornecimento ao Empregado", data_movimentacao: dia(agora, base - 24), responsavel_nome: almoxarife, observacao: "Entrega para uso contínuo." });
+      } else par(2, base - 24);
+    }
+  });
   // Ocorrências de ferramenta (decisão 393): seis registros, ligados a ferramentas e caixas de teste, para a tela Ocorrências do módulo Ferramentas ter o que mostrar.
   const OCORRENCIAS_FERRAMENTA: { ferramenta: number; empregado: number; diasAtras: number; hora: string; responsavel: number; descricao: string }[] = [
     { ferramenta: 0, empregado: 0, diasAtras: 1, hora: "08:40", responsavel: 1, descricao: "Cabo isolante da chave com a capa rachada; retirada de uso até a troca." },

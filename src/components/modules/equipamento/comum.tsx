@@ -6,7 +6,7 @@ import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
 import { lerChecklistEquipamento, type FinalidadeChecklist } from "@/lib/equipamentos-checklist";
 import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
 import {
-  EVENTO_REGISTROS_EQUIPAMENTO, lerAbastecimentosEq, lerManutencoesEq, lerOcorrenciasEq,
+  EVENTO_REGISTROS_EQUIPAMENTO, lerAbastecimentosEq, lerManutencoesEq, lerOcorrenciasEq, manutencoesConcluidasEq,
   type AbastecimentoEquipamento, type ManutencaoEquipamentoRegistro, type OcorrenciaEquipamento,
 } from "@/lib/registros-equipamento";
 import { lerChecklistsEq, type ChecklistEquipamentoRegistro } from "@/lib/checklist-equipamento-exec";
@@ -34,7 +34,9 @@ export function useLeitura<T>(ler: () => T): T {
   return valor;
 }
 export const useAbastecimentosEq = (): AbastecimentoEquipamento[] => useLeitura(() => lerAbastecimentosEq());
-export const useManutencoesEq = (): ManutencaoEquipamentoRegistro[] => useLeitura(() => lerManutencoesEq());
+// Ordens de serviço de todas as situações (a tela de Manutenção) e só as concluídas (inventário, extrato e indicadores).
+export const useOrdensEq = (): ManutencaoEquipamentoRegistro[] => useLeitura(() => lerManutencoesEq());
+export const useManutencoesEq = (): ManutencaoEquipamentoRegistro[] => useLeitura(() => manutencoesConcluidasEq(lerManutencoesEq()));
 export const useOcorrenciasEq = (): OcorrenciaEquipamento[] => useLeitura(() => lerOcorrenciasEq());
 export const useChecklistsEq = (): ChecklistEquipamentoRegistro[] => useLeitura(() => lerChecklistsEq());
 

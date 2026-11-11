@@ -172,7 +172,7 @@ export async function registrarEntregaEpi(cliente: ClienteEntrega, entrada: Entr
   // Na entrega de EPI e de uniforme, quem entrega fica registrado (Responsável pela entrega).
   const responsavel = (entrada.responsavel ?? "").trim();
   if (!responsavel) throw new Error("Informe o responsável pela entrega.");
-  return gravar(cliente, entrada, "Saida", responsavel || null);
+  return gravar(cliente, entrada, "Saida", responsavel);
 }
 
 export const mensagemSoAdmin = (modulo: ModuloEntrega) => `Somente o Administrador registra a devolução de ${CONTEXTO[modulo].rotulo}.`;

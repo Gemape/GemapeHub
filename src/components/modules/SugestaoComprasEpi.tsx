@@ -378,7 +378,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
                         <TableHead>Empresa</TableHead>
                         <TableHead className="text-right">Estoque total</TableHead>
                         <TableHead>Criticidade</TableHead>
-                        <TableHead className="w-28 text-right">Quantidade</TableHead>
+                        <TableHead className="w-28">Quantidade</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

@@ -37,7 +37,7 @@ test("cinco registros em cada cadastro (cinco empregados por empresa); o sistema
   assert.equal(doTeste(d.empregados).length, 15);
   for (const e of doTeste(d.empresas)) assert.equal(doTeste(d.empregados).filter((x) => x.empresa_id === e.id).length, 5, `cinco empregados em ${e.nome_fantasia}`);
   assert.equal(d.empregados.length, 15);
-  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, k.endsWith("abastecimentos") ? 10 : 5, k);
+  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, k.endsWith("abastecimentos") ? 10 : k.endsWith("respostas-despesas") ? 75 : 5, k);
   assert.equal(doTeste(json(s, "gemape-demo-equipamentos")).length, 40);
   assert.equal(doTeste(json(s, "gemape-demo-equipamentos")).length, 40, "cinco equipamentos em cada um dos oito tipos");
   // EPIs e uniformes: três produtos (descrições), um registro de catálogo por tamanho.
@@ -49,6 +49,29 @@ test("cinco registros em cada cadastro (cinco empregados por empresa); o sistema
     for (const id of lerControle(s).gerais[lista]) assert.ok(gerais[lista].some((o) => o.id === id), `${lista} gravada`);
   }
   assert.deepEqual([1, 2, 3].filter((n) => gerais.caixasHabilitadas.includes(n)), [1, 2, 3]);
+});
+
+test("Viagens: cada um dos 15 empregados tem cinco despesas de teste, com comprovante, para o painel e o relatório", () => {
+  const s = prontos();
+  const d = dados(s);
+  const respostas = doTeste(json(s, "gemape-demo-respostas-despesas"));
+  assert.equal(respostas.length, 75);
+  for (const e of doTeste(d.empregados)) {
+    const dele = respostas.filter((r) => r.valores["q-04"][0].startsWith(`${e.nome} (`));
+    assert.equal(dele.length, 5, e.nome);
+    for (const r of dele) assert.ok(r.itens.some((i) => i.perguntaId === "q-12" && i.imagens?.length), `${e.nome}: sem comprovante`);
+  }
+  assert.ok(new Set(respostas.map((r) => r.tipo)).size >= 5, "tipos variados de despesa");
+});
+
+test("Histórico do empregado de ferramentas: cada empregado tem ao menos cinco movimentações, só com ferramentas da própria empresa", () => {
+  const d = dados(prontos());
+  const movs = d.movimentacoes.filter((m) => m.modulo === "ferramenta" && String(m.id).startsWith("teste-mov-hist-ferr-"));
+  for (const e of doTeste(d.empregados)) {
+    const dele = movs.filter((m) => m.empregado_id === e.id);
+    assert.ok(dele.length >= 5, `${e.nome}: ${dele.length} movimentações`);
+    for (const m of dele) assert.equal(d.ferramentas.find((f) => f.id === m.item_id)?.empresa_id, e.empresa_id, `${e.nome}: ferramenta de outra empresa`);
+  }
 });
 
 test("documentos, e-mails, telefones, CEPs, matrículas e placas têm formato válido", () => {
@@ -122,9 +145,20 @@ test("coerência: cada registro aponta para algo que existe, na mesma empresa", 
   const questionario = json(s, "gemape-demo-questionario-despesas");
   const habilitados = questionario.perguntas.find((p) => p.id === "q-04").habilitados.filter((h) => String(h.empregadoId).startsWith("teste-"));
   assert.equal(habilitados.length, 15);
-  for (const v of doTeste(json(s, "gemape-demo-respostas-despesas"))) {
-    const ab = abastecimentos.get(v.valores["abastecimento:id"]);
-    assert.ok(ab && veiculos.has(ab.veiculoId), "viagem sem veículo");
+  const faixa = { "Alimentação": [30, 100], "Hospedagem": [150, 450], "Pedágio": [10, 50], "Estacionamento": [10, 50], "Compra de peças para cliente": [80, 350] };
+  const respostasTeste = doTeste(json(s, "gemape-demo-respostas-despesas"));
+  assert.equal(respostasTeste.filter((v) => v.tipo === "Abastecimento").length, 5);
+  for (const v of respostasTeste) {
+    // Só a despesa de abastecimento é ligada a um registro de Veículos; as demais (alimentação, hospedagem etc.) não têm veículo.
+    if (v.tipo === "Abastecimento") {
+      const ab = abastecimentos.get(v.valores["abastecimento:id"]);
+      assert.ok(ab && veiculos.has(ab.veiculoId), "viagem sem veículo");
+    } else {
+      assert.equal(v.valores["abastecimento:id"], undefined);
+      const valor = Number(String(v.valores["q-11"]).replace(",", "."));
+      const [min, max] = faixa[v.tipo];
+      assert.ok(valor >= min && valor <= max, `${v.tipo} com valor implausível: ${valor}`);
+    }
     const tecnico = habilitados.find((h) => v.valores["q-04"][0].startsWith(`${h.nome} (`));
     assert.ok(tecnico && empregados.has(tecnico.empregadoId), "viagem sem empregado");
   }
@@ -181,7 +215,7 @@ test("versão nova do conjunto troca só o que é de teste e mantém o que o usu
   assert.equal(depois.empresas.filter((e) => e.nome_fantasia === "Minha empresa").length, 1);
   assert.equal(depois.empregados.filter((e) => e.id.startsWith("teste-")).length, 15);
   assert.equal(lerControle(s).versao, VERSAO_DADOS_TESTE);
-  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, k.endsWith("abastecimentos") ? 10 : 5, `${k} sem duplicar`);
+  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, k.endsWith("abastecimentos") ? 10 : k.endsWith("respostas-despesas") ? 75 : 5, `${k} sem duplicar`);
   assert.equal(doTeste(json(s, "gemape-demo-equipamentos")).length, 40, "equipamentos sem duplicar");
   const gerais = json(s, "gemape-demo-parametros-base");
   assert.equal(gerais.marcasFerramenta.filter((m) => ["Ferrotec", "Maxforça", "Duramax"].includes(m.nome)).length, 3, "marcas sem duplicar");
@@ -211,7 +245,7 @@ test("Limpar tira só os dados de teste e não grava de novo; Restaurar repõe o
   assert.equal(prepararDadosDeTeste(s, base, AGORA), "aplicado");
   assert.equal(doTeste(dados(s).empresas).length, 3);
   assert.ok(dados(s).empresas.some((e) => e.id === "empresa-do-usuario"), "o do usuário continua");
-  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, k.endsWith("abastecimentos") ? 10 : 5, k);
+  for (const k of LISTAS) assert.equal(doTeste(json(s, k)).length, k.endsWith("abastecimentos") ? 10 : k.endsWith("respostas-despesas") ? 75 : 5, k);
 });
 
 test("restaurar desfaz o que foi sujo nos dados de teste", () => {

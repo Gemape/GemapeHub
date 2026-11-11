@@ -183,7 +183,7 @@ function PaginaRelatorios() {
               <TableHead>Tipo</TableHead>
               <TableHead>Empresa</TableHead>
               <TableHead>Empregado</TableHead>
-              <TableHead className="text-right">Qtde</TableHead>
+              <TableHead>Qtde</TableHead>
               <TableHead>Motivo</TableHead>
               <TableHead>Ônus</TableHead>
             </TableRow>
@@ -205,7 +205,7 @@ function PaginaRelatorios() {
                   </TableCell>
                   <TableCell>{nomeEmpresa(m.empresa_id)}</TableCell>
                   <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>
-                  <TableCell className="text-right">{m.quantidade}</TableCell>
+                  <TableCell>{m.quantidade}</TableCell>
                   <TableCell>{m.motivo_baixa ?? "—"}</TableCell>
                   <TableCell>{m.onus_baixa ?? "—"}</TableCell>
                 </TableRow>
