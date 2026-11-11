@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEmpresas } from "@/lib/hooks-gemape";
+import { indicadorDeEstoque, textoPercentual } from "@/lib/indicador-estoque";
 import { itensQuePedemCompra } from "@/lib/sugestao-epi";
 import { useParametrosCompraEpi } from "@/lib/use-parametros-compra-epi";
 import { useSugestaoCompras } from "@/lib/use-sugestao-compras";
@@ -27,22 +28,55 @@ export function DashboardSugestaoCompras({ modulo, cartoes }: { modulo: "epi" | 
   // Um item conta uma vez, mesmo com vários tamanhos no mínimo (os cartões vizinhos também contam itens).
   const abaixoDoMinimo = useMemo(() => new Set(alertasMinimo.map((a) => a.itemId)).size, [alertasMinimo]);
   const rotulo = modulo === "epi" ? "EPI" : "uniforme";
+  // Cada cartão é um percentual de itens "em ordem", com a cor e a seta da faixa, como os da Frota.
+  const total = todas.length;
+  const ruptura = contar("ruptura");
+  const comprarJa = contar("comprar_ja");
+  const semCompra = indicadorDeEstoque(total - pedem.length, total);
+  const semRuptura = indicadorDeEstoque(total - ruptura, total);
+  const foraDeComprarJa = indicadorDeEstoque(total - comprarJa, total);
+  const acimaDoMinimo = indicadorDeEstoque(total - abaixoDoMinimo, total);
 
   return (
     <>
       <GradeDeCartoes colunas={4}>
         {cartoes}
         <StatCard
-          titulo="Itens para comprar"
-          subtitulo={`${rotulo}s em ruptura, comprar já ou planejar.`}
-          valor={pedem.length}
-          detalhe={`${unidades} unidades sugeridas`}
+          titulo="Estoque · Itens sem necessidade de compra"
+          subtitulo={`${rotulo}s fora de ruptura, comprar já e planejar ÷ todos os itens.`}
+          valor={textoPercentual(semCompra.pct)}
+          {...semCompra}
+          detalhe={`${pedem.length} de ${total} pedem compra · ${unidades} unidades sugeridas`}
           icone={ShoppingCart}
           compacto
         />
-        <StatCard titulo="Em ruptura" subtitulo="O estoque zera antes de o pedido chegar." valor={contar("ruptura")} icone={AlertTriangle} compacto />
-        <StatCard titulo="Comprar já" subtitulo="Estoque de segurança acionado." valor={contar("comprar_ja")} icone={AlertTriangle} compacto />
-        <StatCard titulo="Abaixo do mínimo" subtitulo="Itens no estoque mínimo ou abaixo dele." valor={abaixoDoMinimo} icone={TrendingDown} compacto />
+        <StatCard
+          titulo="Estoque · Itens sem ruptura"
+          subtitulo="Itens cujo estoque não zera antes de o pedido chegar ÷ todos os itens."
+          valor={textoPercentual(semRuptura.pct)}
+          {...semRuptura}
+          detalhe={`${ruptura} de ${total} em ruptura`}
+          icone={AlertTriangle}
+          compacto
+        />
+        <StatCard
+          titulo="Estoque · Itens fora de comprar já"
+          subtitulo="Itens sem o estoque de segurança acionado ÷ todos os itens."
+          valor={textoPercentual(foraDeComprarJa.pct)}
+          {...foraDeComprarJa}
+          detalhe={`${comprarJa} de ${total} em comprar já`}
+          icone={AlertTriangle}
+          compacto
+        />
+        <StatCard
+          titulo="Estoque · Itens acima do mínimo"
+          subtitulo="Itens acima do estoque mínimo ÷ todos os itens."
+          valor={textoPercentual(acimaDoMinimo.pct)}
+          {...acimaDoMinimo}
+          detalhe={`${abaixoDoMinimo} de ${total} no mínimo ou abaixo`}
+          icone={TrendingDown}
+          compacto
+        />
       </GradeDeCartoes>
 
       <Card>

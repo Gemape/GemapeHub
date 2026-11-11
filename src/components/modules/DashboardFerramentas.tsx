@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useEmpresa } from "@/lib/empresa-context";
 import { ferramentasAbaixoDoMinimo, posicaoDasFerramentas, type PosicaoDaFerramenta } from "@/lib/estoque-ferramentas-posicao";
 import { useEmpresas, useItens, useMovimentacoes, useTodosCaixaItens } from "@/lib/hooks-gemape";
+import { indicadorDeEstoque, textoPercentual } from "@/lib/indicador-estoque";
 
 // Dashboard de Ferramentas: o que importa do estoque das ferramentas (quantas estão abaixo do mínimo, guardadas nas caixas, com empregado ou sem caixa) e quais pedem reposição.
 // Os cartões do módulo (`cartoes`) e os daqui ficam numa só grade, como na Frota (decisão 375).
@@ -27,15 +28,23 @@ export function DashboardFerramentas({ cartoes }: { cartoes: ReactNode }) {
   const soma = (campo: "guardada" | "comEmpregado") => [...posicoes.values()].reduce((t, p) => t + p[campo], 0);
   // Valor real, sem esconder a divergência: negativo quer dizer que as caixas guardam mais do que o estoque (a aba Estoque mostra o aviso).
   const semCaixa = [...posicoes.values()].reduce((t, p) => t + p.semCaixa, 0);
+  // Cada cartão é um percentual com a cor e a seta da faixa, como os da Frota. Com empregado e sem caixa só informam (barra neutra).
+  const saldoTotal = [...posicoes.values()].reduce((t, p) => t + p.saldo, 0);
+  const ativas = ferramentas.filter((f) => f.status !== "Inativo").length;
+  const zeradas = abaixo.filter((l) => l.situacao === "Zerado").length;
+  const acimaDoMinimo = indicadorDeEstoque(ativas - abaixo.length, ativas);
+  const guardadas = indicadorDeEstoque(soma("guardada"), saldoTotal);
+  const comEmpregado = indicadorDeEstoque(soma("comEmpregado"), saldoTotal, false);
+  const foraDaCaixa = indicadorDeEstoque(semCaixa, saldoTotal, false);
 
   return (
     <>
       <GradeDeCartoes colunas={4}>
         {cartoes}
-        <StatCard titulo="Abaixo do mínimo" subtitulo="Ferramentas no estoque mínimo ou abaixo dele." valor={abaixo.length} detalhe={`${abaixo.filter((l) => l.situacao === "Zerado").length} zerada(s)`} icone={AlertTriangle} compacto />
-        <StatCard titulo="Guardadas nas caixas" subtitulo="Unidades que estão nas caixas, disponíveis." valor={soma("guardada")} icone={Archive} compacto />
-        <StatCard titulo="Com empregado" subtitulo="Unidades entregues e ainda não devolvidas." valor={soma("comEmpregado")} icone={UserRound} compacto />
-        <StatCard titulo="Sem caixa" subtitulo="Unidades em estoque fora das caixas; negativo = caixas com mais do que o estoque." valor={semCaixa} icone={Package} compacto />
+        <StatCard titulo="Estoque · Ferramentas acima do mínimo" subtitulo="Ferramentas ativas acima do estoque mínimo ÷ todas as ativas." valor={textoPercentual(acimaDoMinimo.pct)} {...acimaDoMinimo} detalhe={`${abaixo.length} de ${ativas} no mínimo ou abaixo · ${zeradas} zerada(s)`} icone={AlertTriangle} compacto />
+        <StatCard titulo="Estoque · Guardadas nas caixas" subtitulo="Unidades nas caixas, disponíveis ÷ unidades em estoque." valor={textoPercentual(guardadas.pct)} {...guardadas} detalhe={`${soma("guardada")} de ${saldoTotal} unidades`} icone={Archive} compacto />
+        <StatCard titulo="Estoque · Com empregado" subtitulo="Unidades entregues e ainda não devolvidas ÷ unidades em estoque." valor={textoPercentual(comEmpregado.pct)} {...comEmpregado} detalhe={`${soma("comEmpregado")} de ${saldoTotal} unidades`} icone={UserRound} compacto />
+        <StatCard titulo="Estoque · Sem caixa" subtitulo="Unidades fora das caixas ÷ unidades em estoque." valor={textoPercentual(foraDaCaixa.pct)} {...foraDaCaixa} detalhe={semCaixa < 0 ? `Caixas guardam ${-semCaixa} a mais que o estoque` : `${semCaixa} de ${saldoTotal} unidades`} icone={Package} compacto />
       </GradeDeCartoes>
 
       <Card>
