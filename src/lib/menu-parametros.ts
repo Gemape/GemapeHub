@@ -87,6 +87,13 @@ export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
+// Ferramentas > Relatórios: as mesmas três rotinas de EPI e Uniformes, com os mesmos endereços (?aba=sugestao-compras, historico e baixas).
+export const ABAS_FERRAMENTA_RELATORIOS: readonly AbaMenu[] = [
+  { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
+  { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
+  { aba: "baixas", titulo: "Baixas definitivas", icone: "PackageMinus" },
+];
+
 export const ABAS_VEICULO: readonly AbaMenu[] = [
   { aba: "frota", titulo: "Frota", icone: "Car" },
   { aba: "abastecimento", titulo: "Abastecimento", icone: "Fuel" },
@@ -192,8 +199,9 @@ export const MENU_EPI: readonly ItemComFilhos[] = [
 type ModuloComAbas = "epi" | "uniforme" | "ferramenta" | "veiculo" | "viagem" | "equipamento";
 const ABAS_EPI_COM_RELATORIOS: readonly AbaMenu[] = [...ABAS_EPI, ...ABAS_EPI_RELATORIOS];
 const ABAS_UNIFORME_COM_RELATORIOS: readonly AbaMenu[] = [...ABAS_UNIFORME, ...ABAS_UNIFORME_RELATORIOS];
+const ABAS_FERRAMENTA_COM_RELATORIOS: readonly AbaMenu[] = [...ABAS_FERRAMENTA, ...ABAS_FERRAMENTA_RELATORIOS];
 const ABAS_DO_MODULO = (modulo: ModuloComAbas): readonly AbaMenu[] =>
-  ({ epi: ABAS_EPI_COM_RELATORIOS, uniforme: ABAS_UNIFORME_COM_RELATORIOS, ferramenta: ABAS_FERRAMENTA, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
+  ({ epi: ABAS_EPI_COM_RELATORIOS, uniforme: ABAS_UNIFORME_COM_RELATORIOS, ferramenta: ABAS_FERRAMENTA_COM_RELATORIOS, veiculo: ABAS_VEICULO, viagem: ABAS_VIAGEM, equipamento: ABAS_EQUIPAMENTO })[modulo];
 export function abaDoModulo(modulo: ModuloComAbas, aba: string | undefined): string {
   const abas = ABAS_DO_MODULO(modulo);
   return abas.find((a) => a.aba === aba)?.aba ?? abas[0]!.aba;
@@ -233,7 +241,7 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     baixas: "Lista as baixas definitivas de uniformes, com motivo, quantidade e valor, por período, para consulta e exportação.",
   },
   ferramenta: {
-    dashboard: "Resumo do estoque de ferramentas: itens consultados, saídas recentes, valor em estoque e alertas de reposição.",
+    dashboard: "Resumo do estoque de ferramentas: quantas estão acima do mínimo, guardadas nas caixas, com empregado ou fora das caixas, e as que pedem reposição.",
     estoque: "Consulta o saldo de cada ferramenta por empresa, a posição de cada uma nas caixas e com os empregados, e permite ajustar o estoque mínimo.",
     caixas: "Mostra as caixas de ferramentas e quais ferramentas estão guardadas em cada uma.",
     "termo-responsabilidade": "Gera o termo de responsabilidade individual do empregado pelas ferramentas que recebeu.",
@@ -241,6 +249,9 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     "termo-vistoria": "Gera o termo da vistoria periódica das ferramentas que estão com o empregado.",
     "entrada-estoque": "Controla só as entradas de ferramentas no estoque (compra, nota fiscal ou ajuste) e lista as entradas já feitas.",
     entrega: "Controla a saída das ferramentas do estoque: entrega ao empregado, devolução e baixa (perda, quebra ou desgaste, com o motivo).",
+    "sugestao-compras": "Indica quais ferramentas repor e em que quantidade, pelo estoque mínimo e pelas baixas definitivas dos últimos 12 meses.",
+    historico: "Mostra, por empregado, as ferramentas que recebeu, devolveu e baixou e as que estão em posse dele.",
+    baixas: "Lista as baixas definitivas de ferramentas, com motivo, quantidade e valor, por período, para consulta e exportação.",
     ocorrencias: OCORR,
   },
   veiculo: {

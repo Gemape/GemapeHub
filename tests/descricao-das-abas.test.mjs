@@ -5,7 +5,7 @@ import * as m from "../src/lib/menu-parametros.ts";
 const abasDe = {
   epi: [...m.ABAS_EPI, ...m.ABAS_EPI_RELATORIOS],
   uniforme: [...m.ABAS_UNIFORME, ...m.ABAS_UNIFORME_RELATORIOS],
-  ferramenta: m.ABAS_FERRAMENTA,
+  ferramenta: [...m.ABAS_FERRAMENTA, ...m.ABAS_FERRAMENTA_RELATORIOS],
   veiculo: m.ABAS_VEICULO,
   viagem: m.ABAS_VIAGEM,
   equipamento: m.ABAS_EQUIPAMENTO,

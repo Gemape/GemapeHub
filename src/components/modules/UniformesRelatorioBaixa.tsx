@@ -34,7 +34,12 @@ import { hojeLocal } from "@/lib/empregados";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { montarRelatorioTabelaHtml } from "@/lib/relatorio-padrao";
 
-export function UniformesRelatorioBaixa() {
+// Uniformes e Ferramentas usam o mesmo relatório (Relatórios > Baixas definitivas); ferramenta não tem tamanho, então a coluna some.
+export function UniformesRelatorioBaixa({ modulo = "uniforme" }: { modulo?: "uniforme" | "ferramenta" }) {
+  const ferramenta = modulo === "ferramenta";
+  const rotulo = ferramenta ? "ferramenta" : "uniforme";
+  const Rotulo = ferramenta ? "Ferramenta" : "Uniforme";
+  const titulo = `Relatório de baixas de ${rotulo}`;
   const { empresaId } = useEmpresa();
   const [dataInicial, setDataInicial] = useState(
     hojeLocal().slice(0, 8) + "01",
@@ -46,10 +51,10 @@ export function UniformesRelatorioBaixa() {
     nomeTamanhoGravado(parametros, m.tamanho_id);
 
   const { data: movimentacoes = [], isLoading, isError, error } = useQuery({
-    queryKey: ["relatorio-baixas", "uniforme", empresaId, dataInicial, dataFinal],
-    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo: "uniforme", empresaId: empresaId === TODAS ? undefined : empresaId, de: dataInicial, ate: dataFinal }),
+    queryKey: ["relatorio-baixas", modulo, empresaId, dataInicial, dataFinal],
+    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo, empresaId: empresaId === TODAS ? undefined : empresaId, de: dataInicial, ate: dataFinal }),
   });
-  const { data: itens = [] } = useItens("uniforme", TODAS);
+  const { data: itens = [] } = useItens(modulo, TODAS);
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(TODAS);
 
@@ -68,26 +73,26 @@ export function UniformesRelatorioBaixa() {
 
   const imprimir = () =>
     abrirDocumento({
-      titulo: "Relatório de baixas de uniforme",
+      titulo,
       html: montarRelatorioTabelaHtml({
-        titulo: "Relatório de baixas de uniforme",
+        titulo,
         subtitulos: [`Período: ${formatarData(dataInicial)} a ${formatarData(dataFinal)}`, motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`],
         empresa: empresaId === TODAS ? "Todas as empresas" : empresas.find((e) => e.id === empresaId)?.nome_fantasia,
-        resumo: [["Total de baixas", String(baixas.length)], ["Total de Uniformes", String(totalQuantidade)], ["Valor total", formatarMoeda(totalValor)]],
-        colunas: [{ titulo: "Data" }, { titulo: "Empresa" }, { titulo: "Empregado" }, { titulo: "Uniforme" }, { titulo: "Tamanho" }, { titulo: "Motivo" }, { titulo: "Qtd", direita: true }, { titulo: "Valor total", direita: true }],
+        resumo: [["Total de baixas", String(baixas.length)], [`Total de ${Rotulo}s`, String(totalQuantidade)], ["Valor total", formatarMoeda(totalValor)]],
+        colunas: [{ titulo: "Data" }, { titulo: "Empresa" }, { titulo: "Empregado" }, { titulo: Rotulo }, ...(ferramenta ? [] : [{ titulo: "Tamanho" }]), { titulo: "Motivo" }, { titulo: "Qtd", direita: true }, { titulo: "Valor total", direita: true }],
         linhas: baixas.map((b) => [
           formatarData(b.data_movimentacao),
           empresas.find((e) => e.id === b.empresa_id)?.nome_fantasia ?? "—",
           empregados.find((e) => e.id === b.empregado_id)?.nome ?? "—",
           itens.find((i) => i.id === b.item_id)?.nome ?? "—",
-          tamanhoDe(b) || "—",
+          ...(ferramenta ? [] : [tamanhoDe(b) || "—"]),
           b.motivo_baixa ?? "—",
           String(b.quantidade),
           formatarMoeda(b.quantidade * (b.preco_unitario_registrado ?? 0)),
         ]),
         vazio: "Nenhuma baixa no período.",
       }),
-      arquivo: nomeArquivoDocumento("Relatório de baixas de uniforme", dataInicial, dataFinal),
+      arquivo: nomeArquivoDocumento(titulo, dataInicial, dataFinal),
     });
 
   if (isError) return <div role="alert">Não foi possível carregar o histórico completo: {error.message}</div>;
@@ -135,8 +140,8 @@ export function UniformesRelatorioBaixa() {
                   Data: formatarData(b.data_movimentacao),
                   Empresa: empresas.find((e) => e.id === b.empresa_id)?.nome_fantasia,
                   Empregado: empregados.find((e) => e.id === b.empregado_id)?.nome ?? "—",
-                  Uniforme: itens.find((i) => i.id === b.item_id)?.nome,
-                  Tamanho: tamanhoDe(b),
+                  [Rotulo]: itens.find((i) => i.id === b.item_id)?.nome,
+                  ...(ferramenta ? {} : { Tamanho: tamanhoDe(b) }),
                   Motivo: b.motivo_baixa,
                   Qtd: b.quantidade,
                   Valor: formatarMoeda(b.quantidade * (b.preco_unitario_registrado ?? 0)),
@@ -152,9 +157,9 @@ export function UniformesRelatorioBaixa() {
       {/* Quatro cartões do tamanho dos da Frota (decisão 386): o que cada número mostra e o período. */}
       <GradeDeCartoes colunas={4}>
         <StatCard titulo="Total de Baixas" subtitulo="Baixas definitivas registradas no período e no motivo escolhidos." valor={baixas.length} detalhe={`${formatarData(dataInicial)} a ${formatarData(dataFinal)}`} icone={ClipboardList} compacto />
-        <StatCard titulo="Total de Uniformes" subtitulo="Soma das quantidades de todas as baixas." valor={totalQuantidade} detalhe={motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`} icone={Package} compacto />
+        <StatCard titulo={`Total de ${Rotulo}s`} subtitulo="Soma das quantidades de todas as baixas." valor={totalQuantidade} detalhe={motivoFiltro === TODAS ? "Todos os motivos" : `Motivo: ${motivoFiltro}`} icone={Package} compacto />
         <StatCard titulo="Valor Total" subtitulo="Quantidade × preço da compra de origem de cada baixa." valor={formatarMoeda(totalValor)} detalhe={`${baixas.length} baixa${baixas.length === 1 ? "" : "s"}`} icone={Banknote} compacto />
-        <StatCard titulo="Valor Médio por Uniforme" subtitulo="Valor total ÷ total de uniformes." valor={totalQuantidade > 0 ? formatarMoeda(totalValor / totalQuantidade) : "—"} detalhe={totalQuantidade > 0 ? `${totalQuantidade} uniforme${totalQuantidade === 1 ? "" : "s"} no período` : "Sem baixas no período"} icone={Banknote} compacto />
+        <StatCard titulo={`Valor Médio por ${Rotulo}`} subtitulo={`Valor total ÷ total de ${rotulo}s.`} valor={totalQuantidade > 0 ? formatarMoeda(totalValor / totalQuantidade) : "—"} detalhe={totalQuantidade > 0 ? `${totalQuantidade} ${rotulo}${totalQuantidade === 1 ? "" : "s"} no período` : "Sem baixas no período"} icone={Banknote} compacto />
       </GradeDeCartoes>
 
       <div className="panel max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card print:max-h-none print:overflow-visible print:border-none print:shadow-none">
@@ -164,8 +169,8 @@ export function UniformesRelatorioBaixa() {
               <TableHead>Data</TableHead>
               <TableHead>Empresa</TableHead>
               <TableHead>Empregado</TableHead>
-              <TableHead>Uniforme</TableHead>
-              <TableHead>Tamanho</TableHead>
+              <TableHead>{Rotulo}</TableHead>
+              {!ferramenta && <TableHead>Tamanho</TableHead>}
               <TableHead>Motivo</TableHead>
               <TableHead className="text-right">Qtd</TableHead>
               <TableHead className="text-right">Valor Total</TableHead>
@@ -174,13 +179,13 @@ export function UniformesRelatorioBaixa() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={ferramenta ? 7 : 8} className="text-center">
                   Carregando...
                 </TableCell>
               </TableRow>
             ) : baixas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={ferramenta ? 7 : 8} className="text-center">
                   Nenhuma baixa no período.
                 </TableCell>
               </TableRow>
@@ -198,7 +203,7 @@ export function UniformesRelatorioBaixa() {
                       {empregados.find((e) => e.id === b.empregado_id)?.nome ?? "—"}
                     </TableCell>
                     <TableCell>{item?.nome}</TableCell>
-                    <TableCell>{tamanhoDe(b) || "—"}</TableCell>
+                    {!ferramenta && <TableCell>{tamanhoDe(b) || "—"}</TableCell>}
                     <TableCell>{b.motivo_baixa}</TableCell>
                     <TableCell className="text-right">{b.quantidade}</TableCell>
                     <TableCell className="text-right font-bold">{formatarMoeda(valorB)}</TableCell>

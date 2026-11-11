@@ -34,7 +34,12 @@ import { useEmpresas, useItens } from "@/lib/hooks-gemape";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { montarRelatorioTabelaHtml } from "@/lib/relatorio-padrao";
 
-export function UniformesRelatorioFuncionario() {
+// Uniformes e Ferramentas usam o mesmo relatório (Relatórios > Histórico do empregado); ferramenta não tem tamanho, então a coluna some.
+export function UniformesRelatorioFuncionario({ modulo = "uniforme" }: { modulo?: "uniforme" | "ferramenta" }) {
+  const ferramenta = modulo === "ferramenta";
+  const rotulo = ferramenta ? "ferramenta" : "uniforme";
+  const Rotulo = ferramenta ? "Ferramenta" : "Uniforme";
+  const titulo = `Histórico de movimentações de ${rotulo}`;
   const [empresaSel, setEmpresaSel] = useState(TODAS);
   const [empregadoId, setEmpregadoId] = useState("");
   const [palavra, setPalavra] = useState("");
@@ -46,12 +51,12 @@ export function UniformesRelatorioFuncionario() {
 
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useQuery({ queryKey: ["empregados-relatorio", empresaSel], queryFn: () => lerEmpregadosRelatorio(supabase, empresaSel) });
-  const { data: itens = [] } = useItens("uniforme", TODAS);
+  const { data: itens = [] } = useItens(modulo, TODAS);
   const empregado = empregados.find((e) => e.id === empregadoId);
   const { data: movimentacoes = [], isLoading, isError, error } = useQuery({
-    queryKey: ["relatorio-funcionario", "uniforme", empregadoId, empregado?.empresa_id],
+    queryKey: ["relatorio-funcionario", modulo, empregadoId, empregado?.empresa_id],
     enabled: Boolean(empregadoId && empregado?.empresa_id),
-    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo: "uniforme", empregadoId, empresaId: empregado?.empresa_id ?? undefined }),
+    queryFn: () => lerMovimentacoesRelatorio(supabase, { modulo, empregadoId, empresaId: empregado?.empresa_id ?? undefined }),
   });
 
   const historico = movimentacoes.filter((m) => m.empregado_id === empregadoId);
@@ -85,17 +90,17 @@ export function UniformesRelatorioFuncionario() {
 
   const imprimir = () =>
     abrirDocumento({
-      titulo: "Histórico de movimentações de uniforme",
+      titulo,
       html: montarRelatorioTabelaHtml({
-        titulo: "Histórico de movimentações de uniforme",
+        titulo,
         subtitulos: [empregado?.nome, ...descricaoFiltro],
         empresa: empresas.find((e) => e.id === empregado?.empresa_id)?.nome_fantasia,
         resumo: [["Entregues", String(totalEntregue)], ["Devolvidos", String(totalDevolvido)], ["Baixados", String(totalBaixado)], ["Em posse", String(emPosse)]],
-        colunas: [{ titulo: "Data" }, { titulo: "Uniforme" }, { titulo: "Tamanho" }, { titulo: "Tipo" }, { titulo: "Qtd", direita: true }, { titulo: "Status/Motivo" }, { titulo: "Observação" }],
+        colunas: [{ titulo: "Data" }, { titulo: Rotulo }, ...(ferramenta ? [] : [{ titulo: "Tamanho" }]), { titulo: "Tipo" }, { titulo: "Qtd", direita: true }, { titulo: "Status/Motivo" }, { titulo: "Observação" }],
         linhas: visiveis.map((h) => [
           formatarData(h.data_movimentacao),
           nomeDoUniforme(h.item_id) ?? "—",
-          tamanhoDe(h) || "—",
+          ...(ferramenta ? [] : [tamanhoDe(h) || "—"]),
           h.tipo_movimentacao,
           String(h.quantidade),
           situacaoDe(h),
@@ -103,7 +108,7 @@ export function UniformesRelatorioFuncionario() {
         ]),
         vazio: comFiltro ? "Nenhuma movimentação encontrada para a busca." : "Nenhuma movimentação para este empregado.",
       }),
-      arquivo: nomeArquivoDocumento("Histórico de movimentações de uniforme", empregado?.nome),
+      arquivo: nomeArquivoDocumento(titulo, empregado?.nome),
     });
 
   // Parte do que foi entregue (0 a 100), para a barra e o detalhe dos cartões.
@@ -152,7 +157,7 @@ export function UniformesRelatorioFuncionario() {
         <>
           {/* Cartões no modelo da Frota (decisão 411): título com o escopo, a linha que explica o número, o valor, a barra (parte do que foi entregue) e o detalhe embaixo. */}
           <GradeDeCartoes colunas={4}>
-            <StatCard titulo="Empregado · Entregues" subtitulo="Saídas de entrega ao empregado." valor={totalEntregue} pct={totalEntregue > 0 ? 100 : 0} detalhe={`${totalEntregue} peça(s) entregue(s) em todo o histórico`} icone={PackageCheck} compacto />
+            <StatCard titulo="Empregado · Entregues" subtitulo="Saídas de entrega ao empregado." valor={totalEntregue} pct={totalEntregue > 0 ? 100 : 0} detalhe={`${totalEntregue} ${ferramenta ? "unidade(s)" : "peça(s)"} entregue(s) em todo o histórico`} icone={PackageCheck} compacto />
             <StatCard titulo="Empregado · Devolvidos" subtitulo="O que ele devolveu ao estoque." valor={totalDevolvido} pct={parteDoEntregue(totalDevolvido)} detalhe={`${totalDevolvido} de ${totalEntregue} entregue(s) · ${parteDoEntregue(totalDevolvido)}%`} icone={Undo2} compacto />
             <StatCard titulo="Empregado · Baixados" subtitulo="Baixas definitivas feitas com ele." valor={totalBaixado} pct={parteDoEntregue(totalBaixado)} detalhe={`${totalBaixado} de ${totalEntregue} entregue(s) · ${parteDoEntregue(totalBaixado)}%`} icone={PackageX} compacto />
             <StatCard titulo="Empregado · Em posse" subtitulo="Entregue − devolvido − baixado." valor={emPosse} pct={parteDoEntregue(emPosse)} detalhe={`${emPosse} de ${totalEntregue} entregue(s) ainda com ele · ${parteDoEntregue(emPosse)}%`} icone={UserCheck} compacto />
@@ -168,7 +173,7 @@ export function UniformesRelatorioFuncionario() {
                   aria-label="Buscar no histórico"
                   type="search"
                   className="w-96 max-w-full"
-                  placeholder="Buscar por uniforme, tamanho, tipo, motivo ou observação"
+                  placeholder={`Buscar por ${rotulo}, ${ferramenta ? "" : "tamanho, "}tipo, motivo ou observação`}
                   value={palavra}
                   onChange={(e) => setPalavra(e.target.value)}
                 />
@@ -199,8 +204,8 @@ export function UniformesRelatorioFuncionario() {
                     `historico-${empregado.nome}`,
                     visiveis.map((h) => ({
                       Data: formatarData(h.data_movimentacao),
-                      Uniforme: nomeDoUniforme(h.item_id),
-                      Tamanho: tamanhoDe(h),
+                      [Rotulo]: nomeDoUniforme(h.item_id),
+                      ...(ferramenta ? {} : { Tamanho: tamanhoDe(h) }),
                       Tipo: h.tipo_movimentacao,
                       Qtd: h.quantidade,
                       Motivo: h.motivo_baixa || "Entrega/Uso",
@@ -226,8 +231,8 @@ export function UniformesRelatorioFuncionario() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
-                  <TableHead>Uniforme</TableHead>
-                  <TableHead>Tamanho</TableHead>
+                  <TableHead>{Rotulo}</TableHead>
+                  {!ferramenta && <TableHead>Tamanho</TableHead>}
                   <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Qtd</TableHead>
                   <TableHead>Status/Motivo</TableHead>
@@ -237,7 +242,7 @@ export function UniformesRelatorioFuncionario() {
               <TableBody>
                 {visiveis.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center">
+                    <TableCell colSpan={ferramenta ? 6 : 7} className="text-center">
                       {comFiltro ? "Nenhuma movimentação encontrada para a busca." : "Nenhuma movimentação para este empregado."}
                     </TableCell>
                   </TableRow>
@@ -246,7 +251,7 @@ export function UniformesRelatorioFuncionario() {
                     <TableRow key={h.id}>
                       <TableCell>{formatarData(h.data_movimentacao)}</TableCell>
                       <TableCell>{nomeDoUniforme(h.item_id)}</TableCell>
-                      <TableCell>{tamanhoDe(h) || "—"}</TableCell>
+                      {!ferramenta && <TableCell>{tamanhoDe(h) || "—"}</TableCell>}
                       <TableCell>{h.tipo_movimentacao}</TableCell>
                       <TableCell className="text-right">{h.quantidade}</TableCell>
                       <TableCell>
