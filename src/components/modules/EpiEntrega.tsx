@@ -235,12 +235,10 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
             <Label htmlFor={`obs-entrega-${modulo}`}>Observações</Label>
             <Input id={`obs-entrega-${modulo}`} value={observacao} maxLength={500} onChange={(e) => setObservacao(e.target.value)} />
           </div>
-          {(modo === "devolucao" || modulo === "uniforme") && (
-            <div className="space-y-1.5">
-              <Label htmlFor={`resp-devolucao-${modulo}`}>{modo === "devolucao" ? "Responsável pela devolução" : "Responsável pela entrega"}</Label>
-              <Input id={`resp-devolucao-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label htmlFor={`resp-devolucao-${modulo}`}>{modo === "devolucao" ? "Responsável pela devolução" : "Responsável pela entrega"}</Label>
+            <Input id={`resp-devolucao-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
+          </div>
         </div>
 
         <div className="space-y-3">

@@ -35,7 +35,7 @@ test("o estoque acompanha as entradas e saídas: compra soma, entrega dá baixa,
   assert.equal(total(v, "novo"), 10);
   assert.equal(total(v, "usado"), 0);
   // Entrega: dá baixa.
-  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 4 }], data: "2026-10-16" });
+  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 4 }], data: "2026-10-16", responsavel: "Almoxarife Teste" });
   assert.equal((await lerItem(id)).estoque_atual, 6);
   assert.equal(total(await visao(empresa, id), "novo"), 6);
   // Devolução com a origem da compra: volta ao estoque como usado, sem mexer nos novos.
@@ -52,7 +52,7 @@ test("o estoque acompanha as entradas e saídas: compra soma, entrega dá baixa,
 test("devolução sem a origem entraria como novo: por isso toda devolução de EPI leva a origem (ou null) e vira usada", async () => {
   const { empresa, id } = await novoEpi();
   await demoSupabase.from("compras_epis").insert({ empresa_id: empresa, item_id: id, fornecedor: "Segura Mais", nota_fiscal: "NF-1", ca: "123", data_compra: "2026-10-01", quantidade: 5, valor_unitario: 5 });
-  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16" });
+  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16", responsavel: "Almoxarife Teste" });
   // origem: null (nunca houve compra registrada) ainda marca a unidade como usada.
   await registrarDevolucaoEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2, origem: null }], data: "2026-10-20", administrador: true, responsavel: "Almoxarifado" });
   const [devolucao] = (await lerMovs(empresa)).filter((m) => m.tipo_movimentacao === "Devolucao");

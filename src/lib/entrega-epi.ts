@@ -169,9 +169,9 @@ export async function registrarEntregaEpi(cliente: ClienteEntrega, entrada: Entr
   conferirItens(entrada.linhas, itens, true, modulo);
   const erro = modulo === "uniforme" ? validarSaidaDeUniformes(entrada.linhas, itens, "entrega") : validarSaidaDeEpis(entrada.linhas, itens);
   if (erro) throw new Error(erro);
-  // Na entrega de uniforme, quem entrega fica registrado (Responsável pela entrega).
+  // Na entrega de EPI e de uniforme, quem entrega fica registrado (Responsável pela entrega).
   const responsavel = (entrada.responsavel ?? "").trim();
-  if (modulo === "uniforme" && !responsavel) throw new Error("Informe o responsável pela entrega.");
+  if (!responsavel) throw new Error("Informe o responsável pela entrega.");
   return gravar(cliente, entrada, "Saida", responsavel || null);
 }
 
