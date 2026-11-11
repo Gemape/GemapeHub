@@ -138,11 +138,14 @@ export function GraficoBarras({
   // Teto fixo do eixo (gráfico de 100%): sem ele o eixo se estica além dos 100%.
   maximo?: number;
 }) {
+  // Muitas categorias de nome longo (ex.: 18 patrimônios): o rótulo do eixo vai na diagonal, com altura pelo maior nome, para os textos não se sobreporem nem serem cortados.
+  const maiorRotulo = Math.max(0, ...dados.map((d) => String(d[categoria] ?? "").length));
+  const inclinar = dados.length > 6 && maiorRotulo > 5;
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={dados} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
+      <BarChart data={dados} margin={{ top: 8, right: 8, bottom: 0, left: inclinar ? 8 : -12 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.35} />
-        <XAxis dataKey={categoria} tick={eixo} interval={0} tickLine={false} />
+        <XAxis dataKey={categoria} tick={inclinar ? { ...eixo, textAnchor: "end" } : eixo} interval={0} tickLine={false} {...(inclinar ? { angle: -45, height: Math.min(96, 16 + Math.round(maiorRotulo * 4.4)) } : {})} />
         <YAxis tick={eixo} tickLine={false} axisLine={false} allowDecimals={false} unit={sufixo} {...(maximo !== undefined ? { domain: [0, maximo] as [number, number] } : {})} />
         <Tooltip
           formatter={(v) => `${Number(v).toLocaleString("pt-BR")}${sufixo}`}
