@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, Car, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { ArrowRight, Building2, Car, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 import { ICONES } from "@/components/layout/AppSidebar";
@@ -21,11 +21,25 @@ const ICONES_CARTAO: Record<IconeInicio, typeof Car> = {
 };
 
 const classeCartao =
-  "vidro-cartao group/cartao overflow-hidden rounded-2xl transition duration-300 hover:-translate-y-1 hover:shadow-2xl motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+  "vidro-cartao group/cartao overflow-hidden rounded-2xl transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:ring-2 hover:ring-primary/30 motion-reduce:transition-none motion-reduce:hover:translate-y-0";
 const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
-// Três cartões por linha no desktop; a última linha, se incompleta, fica centralizada.
-const larguraCartao = "w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]";
+// Dois cartões por linha em qualquer tela (um só em celular bem estreito); com número ímpar, o último fica sozinho e centralizado na largura de um cartão.
+const gradeDeCartoes =
+  "mx-auto grid max-w-4xl grid-cols-1 items-start gap-4 min-[480px]:grid-cols-2 sm:gap-6 min-[480px]:[&>li:last-child:nth-child(odd)]:col-span-2 min-[480px]:[&>li:last-child:nth-child(odd)]:mx-auto min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.5rem)] sm:min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.75rem)]";
 const SECOES: readonly SecaoInicio[] = ["Módulo", "Relatórios", "Parâmetros"];
+
+// Faixa do alto do cartão: degradê azul, duas luzes suaves de fundo e o medalhão com o ícone (mais baixa no celular, para caber mais cartões na tela).
+function FaixaDoCartao({ Icone, atraso }: { Icone: typeof Car; atraso: string }) {
+  return (
+    <span className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-[oklch(0.88_0.06_255)] to-[oklch(0.97_0.02_255)] text-primary min-[480px]:h-32 sm:h-40 lg:h-44">
+      <span aria-hidden="true" className="pointer-events-none absolute -left-8 -top-10 size-32 rounded-full bg-white/60 blur-2xl" />
+      <span aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-6 size-36 rounded-full bg-primary/15 blur-2xl" />
+      <span className="medalhao-cartao relative" style={{ "--atraso": atraso } as React.CSSProperties}>
+        <Icone aria-hidden="true" />
+      </span>
+    </span>
+  );
+}
 
 function AtalhoDoCartao({ sub }: { sub: SubitemInicio }) {
   const IconeSub = ICONES[sub.icone];
@@ -43,6 +57,8 @@ function PaginaInicio() {
   const { isAdmin, podeVerCaminho } = useAccess();
   const [abertos, setAbertos] = useState<ReadonlySet<string>>(new Set());
   const [configAberta, setConfigAberta] = useState(false);
+  // Configurações é um cartão extra do grupo Visão geral (só o Administrador, só no modo demonstração): a mesma conta vale para o cartão e para o contador do grupo.
+  const comConfiguracoes = (titulo: string) => !!ConfiguracoesAcessos && isAdmin && titulo === "Visão geral";
   const alternar = (chave: string) =>
     setAbertos((a) => {
       const nova = new Set(a);
@@ -70,32 +86,30 @@ function PaginaInicio() {
     <div className="fonte-manrope">
       {/* Sem título na tela: ela começa direto nos cartões. O título fica só para o leitor de tela. */}
       <h1 className="sr-only">Início</h1>
-      <div className="mx-auto max-w-6xl space-y-10">
+      <div className="mx-auto max-w-5xl space-y-8 sm:space-y-10">
       {gruposDoInicio(isAdmin, podeVerCaminho).map((grupo) => (
-        <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="space-y-4">
-          <h2 id={`grupo-${grupo.titulo}`} className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-primary/80">
+        <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="mx-auto w-full max-w-4xl space-y-4">
+          <h2 id={`grupo-${grupo.titulo}`} className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-primary/80 sm:text-sm">
             {grupo.titulo}
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold tracking-normal text-primary">{grupo.cartoes.length + (comConfiguracoes(grupo.titulo) ? 1 : 0)}</span>
             <span aria-hidden="true" className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
           </h2>
-          <ul className="flex flex-wrap items-start justify-center gap-6">
+          <ul className={gradeDeCartoes}>
             {grupo.cartoes.map((c, indice) => {
               const Icone = ICONES_CARTAO[c.icone];
               const chave = `${grupo.titulo}/${c.titulo}`;
-              const faixa = (
-                <span className="flex h-36 items-center justify-center bg-gradient-to-br from-[oklch(0.9_0.05_255)] to-[oklch(0.965_0.025_255)] text-primary">
-                  <span className="medalhao-cartao" style={{ "--atraso": `${(indice % 6) * -0.8}s` } as React.CSSProperties}>
-                    <Icone aria-hidden="true" />
-                  </span>
-                </span>
-              );
+              const faixa = <FaixaDoCartao Icone={Icone} atraso={`${(indice % 6) * -0.8}s`} />;
               if (!c.itens) {
                 return (
-                  <li key={chave} data-cartao className={larguraCartao}>
+                  <li key={chave} data-cartao >
                     <Link to={c.url ?? "/inicio"} className={`flex flex-col ${classeCartao} ${classeFoco}`}>
                       {faixa}
                       <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
                         <span className="font-medium">{c.titulo}</span>
-                        <span className="text-xs text-muted-foreground">Clique para acessar</span>
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          Clique para acessar
+                          <ArrowRight className="size-3.5 transition-transform group-hover/cartao:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
+                        </span>
                       </span>
                     </Link>
                   </li>
@@ -104,7 +118,7 @@ function PaginaInicio() {
               const aberto = abertos.has(chave);
               const idLista = `atalhos-${grupo.titulo}-${c.titulo}`;
               return (
-                <li key={chave} data-cartao className={`${classeCartao} ${larguraCartao}`}>
+                <li key={chave} data-cartao className={classeCartao}>
                   <button
                     type="button"
                     aria-expanded={aberto}
@@ -143,14 +157,10 @@ function PaginaInicio() {
               );
             })}
             {/* Configurações é um cartão ao lado do Dashboard (só o Administrador, só no modo demonstração). */}
-            {ConfiguracoesAcessos && isAdmin && grupo.titulo === "Visão geral" && (
-              <li data-cartao className={larguraCartao}>
+            {comConfiguracoes(grupo.titulo) && (
+              <li data-cartao>
                 <button type="button" onClick={() => setConfigAberta(true)} className={`flex w-full flex-col text-left ${classeCartao} ${classeFoco}`}>
-                  <span className="flex h-36 items-center justify-center bg-gradient-to-br from-[oklch(0.9_0.05_255)] to-[oklch(0.965_0.025_255)] text-primary">
-                    <span className="medalhao-cartao" style={{ "--atraso": "-2.4s" } as React.CSSProperties}>
-                      <Settings aria-hidden="true" />
-                    </span>
-                  </span>
+                  <FaixaDoCartao Icone={Settings} atraso="-2.4s" />
                   <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
                     <span className="font-medium">Configurações</span>
                     <span className="text-xs text-muted-foreground">Acessos por usuário e por menu</span>
