@@ -158,7 +158,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
                     <TableCell className="text-right">{posicoes.get(item.id)?.comEmpregado ?? 0}</TableCell>
                     <TableCell className={`text-right ${(posicoes.get(item.id)?.semCaixa ?? 0) < 0 ? 'font-bold text-destructive' : ''}`}>{posicoes.get(item.id)?.semCaixa ?? 0}</TableCell>
                   </>}
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}><MinimoEditavel valor={estado.minimo} rotulo={item.nome} onSalvar={(texto) => gravarMinimo(item, texto)} />{estado.detalheMinimo && <p className="text-xs text-muted-foreground">{estado.detalheMinimo}</p>}</TableCell>
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}><MinimoEditavel className="ml-auto text-right" valor={estado.minimo} rotulo={item.nome} onSalvar={(texto) => gravarMinimo(item, texto)} />{estado.detalheMinimo && <p className="text-xs text-muted-foreground">{estado.detalheMinimo}</p>}</TableCell>
                   <TableCell className={CLASSE_DO_NIVEL[nivelDe(estado)]}>
                     {textoDe(estado) || '—'}
                     {(posicoes.get(item.id)?.divergencias ?? []).map((d) => <p key={d} className="text-xs font-bold text-destructive">Não bate: {d}</p>)}
