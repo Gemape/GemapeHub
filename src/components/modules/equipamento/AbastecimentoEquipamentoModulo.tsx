@@ -121,14 +121,14 @@ export function AbastecimentoEquipamentoModulo() {
 
       {/* Cartões no modelo da Frota (decisão 392): título, o que o número mostra, o valor e um detalhe. */}
       <GradeDeCartoes colunas={4}>
-        <StatCard titulo="Abastecimentos" subtitulo="Registros dos equipamentos, no filtro e na busca escolhidos." valor={linhas.length} detalhe={linhas[0] ? `Último em ${formatarData(linhas[0].data)}` : "Nenhum no filtro"} icone={Fuel} compacto />
-        <StatCard titulo="Litros" subtitulo="Soma dos litros abastecidos nos registros da tela." valor={numero(resumo.litros)} detalhe={linhas.length > 0 ? `${numero(resumo.litros / linhas.length)} L por abastecimento` : "Sem litros no filtro"} icone={Droplets} compacto />
-        <StatCard titulo="Total gasto" subtitulo="Soma dos valores pagos nos abastecimentos da tela." valor={reais(resumo.gasto)} detalhe={`${linhas.length} abastecimento${linhas.length === 1 ? "" : "s"}`} icone={Banknote} compacto />
-        <StatCard titulo="Preço médio por litro" subtitulo="Total gasto ÷ litros abastecidos." valor={resumo.litros > 0 ? reais(resumo.gasto / resumo.litros) : "—"} detalhe={resumo.litros > 0 ? "Média dos registros da tela" : "Sem litros no filtro"} icone={Gauge} compacto />
+        <StatCard titulo="Abastecimentos" subtitulo="Registros dos equipamentos, no filtro e na busca escolhidos." valor={linhas.length} detalhe={linhas[0] ? `Último em ${formatarData(linhas[0].data)}` : "Nenhum no filtro"} icone={Fuel} />
+        <StatCard titulo="Litros" subtitulo="Soma dos litros abastecidos nos registros da tela." valor={numero(resumo.litros)} detalhe={linhas.length > 0 ? `${numero(resumo.litros / linhas.length)} L por abastecimento` : "Sem litros no filtro"} icone={Droplets} />
+        <StatCard titulo="Total gasto" subtitulo="Soma dos valores pagos nos abastecimentos da tela." valor={reais(resumo.gasto)} detalhe={`${linhas.length} abastecimento${linhas.length === 1 ? "" : "s"}`} icone={Banknote} />
+        <StatCard titulo="Preço médio por litro" subtitulo="Total gasto ÷ litros abastecidos." valor={resumo.litros > 0 ? reais(resumo.gasto / resumo.litros) : "—"} detalhe={resumo.litros > 0 ? "Média dos registros da tela" : "Sem litros no filtro"} icone={Gauge} />
       </GradeDeCartoes>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
-      <div className="max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="max-h-[max(12rem,calc(100dvh-33rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table>
           <TableHeader>
             <TableRow>

@@ -3,7 +3,7 @@
 // dados serem atualizados sozinhos no navegador.
 import { gerarCnpj, gerarCpf } from "./documentos.ts";
 
-export const VERSAO_DADOS_TESTE = 48;
+export const VERSAO_DADOS_TESTE = 50;
 
 // Prefixo dos ids escritos à mão: dá para reconhecer o que é de teste mesmo sem a lista de ids guardada.
 export const PREFIXO = "teste-";

@@ -9,7 +9,7 @@ import { CONFIG_KPIS_PADRAO, type ConfigKpisEquipamento, type PeriodicidadeVisto
 import type { AssociacaoChecklistEquipamento } from "./equipamentos-checklist.ts";
 import type { PlanoEquipamento } from "./equipamentos-manutencao.ts";
 import type { ChecklistEquipamentoRegistro } from "./checklist-equipamento-exec.ts";
-import type { AbastecimentoEquipamento, ManutencaoEquipamentoRegistro, OcorrenciaEquipamento } from "./registros-equipamento.ts";
+import { ocorrenciaPendenteEq, type AbastecimentoEquipamento, type ManutencaoEquipamentoRegistro, type OcorrenciaEquipamento } from "./registros-equipamento.ts";
 
 export type Semaforo = "verde" | "amarelo" | "vermelho" | "neutro";
 // Padrões; os valores em vigor vêm de Parâmetros > Equipamentos > Parâmetros Específicos > Indicadores (ConfigKpisEquipamento).
@@ -90,7 +90,7 @@ export function calcularKpis(e: EntradaKpis): { porEquipamento: KpiEquipamento[]
     const disponibilidade = horasProgramadas > 0 ? ((horasProgramadas - horasParada) / horasProgramadas) * 100 : null;
     const motivos: string[] = [];
     if (!STATUS_PRONTOS.includes(eq.status)) motivos.push(`Status: ${eq.status}`);
-    const abertas = ocor.filter((o) => o.status === "Aberta").length;
+    const abertas = ocor.filter(ocorrenciaPendenteEq).length;
     if (abertas > 0 && cfg.prontoOcorrenciaAberta) motivos.push(`${abertas} ocorrência${abertas > 1 ? "s" : ""} aberta${abertas > 1 ? "s" : ""}`);
     // Vale a última vistoria concluída; item NOK ainda sem resolução (pendência aberta) tira o equipamento de "pronto".
     const ultimaVistoria = checks.filter((c) => c.finalidade === "vistoria" && c.status === "Concluído").sort((a, b) => b.data.localeCompare(a.data))[0];

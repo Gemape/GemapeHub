@@ -33,7 +33,8 @@ test("os dados de teste trazem registros de cada controle do módulo Equipamento
   assert.ok(nok.length > 10 && nok.length < checklists.length, "parte dos check lists tem NOK");
   assert.ok(nok.every((i) => i.ocorrenciaId), "cada NOK gerou a sua ocorrência");
   assert.equal(ocorrencias.filter((o) => o.tipoId === "checklist-nok").length, nok.length);
-  assert.deepEqual([ocorrencias.filter((o) => o.status === "Aberta").length, ocorrencias.filter((o) => o.status === "Resolvida").length], [6 + nok.length, 4]);
+  assert.deepEqual(["Aberta", "Em tratativa", "Encerrada"].map((st) => ocorrencias.filter((o) => o.status === st).length), [3 + nok.length, 3, 4]);
+  assert.ok(ocorrencias.every((o) => /^OCO-\d{4}$/.test(o.codigo)) && new Set(ocorrencias.map((o) => o.codigo)).size === ocorrencias.length, "cada ocorrência tem código próprio");
   assert.equal(ocorrencias.length, 10 + nok.length);
   for (const r of ocorrencias) assert.ok(r.id.startsWith("teste-") && equipamentos.has(r.equipamentoId), "ocorrência solta");
   // Em cada equipamento, cinco periódicos de cada finalidade e cinco avulsos (sem periodicidade).
@@ -141,9 +142,25 @@ test("ocorrência: descrição e tipo obrigatórios; resolver exige a solução 
   assert.throws(() => R.registrarOcorrenciaEq({ ...entrada, tipoId: "" }, s, AGORA), /tipo/);
   const o = R.registrarOcorrenciaEq(entrada, s, AGORA);
   assert.equal(o.status, "Aberta");
-  assert.throws(() => R.resolverOcorrenciaEq(o.id, " ", s, AGORA), /resolvida/);
-  R.resolverOcorrenciaEq(o.id, "Peça trocada", s, AGORA);
-  assert.deepEqual([R.lerOcorrenciasEq(s)[0].status, R.lerOcorrenciasEq(s)[0].solucao], ["Resolvida", "Peça trocada"]);
+  assert.equal(o.codigo, "OCO-0001");
+  const dados = { responsavelId: "r1", descricaoEmpresa: "Peça trocada", custoEmpresa: "1.500,50", pagamentoTerceiros: "", seguradora: "nao" };
+  assert.throws(() => R.salvarTratativaEq(o.id, { ...dados, responsavelId: "" }, { encerrar: false, isAdmin: false }, s, AGORA), /responsável/);
+  assert.throws(() => R.salvarTratativaEq(o.id, { ...dados, descricaoEmpresa: " " }, { encerrar: false, isAdmin: false }, s, AGORA), /descrição/);
+  assert.throws(() => R.salvarTratativaEq(o.id, { ...dados, custoEmpresa: "" }, { encerrar: false, isAdmin: false }, s, AGORA), /custo/);
+  assert.throws(() => R.salvarTratativaEq(o.id, { ...dados, seguradora: "" }, { encerrar: false, isAdmin: false }, s, AGORA), /seguradora/);
+  // Salvar deixa Em tratativa e pode ser editada de novo; renovar o prazo grava o passo e a nova data.
+  R.salvarTratativaEq(o.id, dados, { encerrar: false, isAdmin: false }, s, AGORA);
+  assert.deepEqual([R.lerOcorrenciasEq(s)[0].status, R.lerOcorrenciasEq(s)[0].tratativa.custoEmpresa], ["Em tratativa", 1500.5]);
+  assert.throws(() => R.renovarPrazoTratativaEq(o.id, { autorizadoPorId: "s1", autorizadoPorNome: "Sup", registradoPorNome: "Ana", ate: "2020-01-01" }, s, AGORA), /anterior/);
+  R.renovarPrazoTratativaEq(o.id, { autorizadoPorId: "s1", autorizadoPorNome: "Sup", registradoPorNome: "Ana", ate: "2026-12-31" }, s, AGORA);
+  assert.equal(R.lerOcorrenciasEq(s)[0].renovacoes[0].passo, "finalizar");
+  // Encerrar fecha: depois só o Administrador altera, e a ocorrência não conta mais como pendente.
+  R.salvarTratativaEq(o.id, dados, { encerrar: true, isAdmin: false }, s, AGORA);
+  assert.equal(R.lerOcorrenciasEq(s)[0].status, "Encerrada");
+  assert.equal(R.ocorrenciaPendenteEq(R.lerOcorrenciasEq(s)[0]), false);
+  assert.throws(() => R.salvarTratativaEq(o.id, dados, { encerrar: false, isAdmin: false }, s, AGORA), /Administrador/);
+  assert.throws(() => R.renovarPrazoTratativaEq(o.id, { autorizadoPorId: "s1", autorizadoPorNome: "Sup", registradoPorNome: "Ana", ate: "2026-12-31" }, s, AGORA), /encerrada/);
+  assert.equal(R.salvarTratativaEq(o.id, { ...dados, descricaoEmpresa: "Ajuste" }, { encerrar: false, isAdmin: true }, s, AGORA).status, "Encerrada");
 });
 
 const grupo = { id: "g1", nome: "Motor", itens: [{ id: "i1", nome: "Nível de óleo" }, { id: "i2", nome: "Correia" }], tipos: ["todos"] };

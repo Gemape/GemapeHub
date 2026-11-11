@@ -698,15 +698,6 @@
 
 /* Ícone dos cartões da tela inicial: medalhão grande de vidro com brilho, que flutua devagar, tem um halo que respira e se anima ao passar o mouse.
    O atraso da flutuação varia de um cartão para outro (--atraso), para não se moverem todos juntos. Quem reduz movimento recebe tudo parado. */
-@keyframes cartao-flutua {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
 @keyframes cartao-halo {
   0%,
   100% {
@@ -720,18 +711,22 @@
       0 14px 26px -8px oklch(0.45 0.2 264 / 0.55);
   }
 }
+/* Versão em 3D: o medalhão balança em perspectiva (gira um pouco em X e em Y enquanto flutua) e o ícone fica à frente dele, em profundidade. */
+@keyframes cartao-flutua3d {
+  0%,
+  100% {
+    transform: perspective(520px) translateY(0) rotateX(9deg) rotateY(-18deg);
+  }
+  50% {
+    transform: perspective(520px) translateY(-6px) rotateX(-7deg) rotateY(18deg);
+  }
+}
 @keyframes cartao-icone-giro {
   0% {
-    transform: rotate(0) scale(1);
-  }
-  35% {
-    transform: rotate(-12deg) scale(1.18);
-  }
-  70% {
-    transform: rotate(8deg) scale(1.12);
+    transform: translateZ(22px) rotateY(0) scale(1);
   }
   100% {
-    transform: rotate(0) scale(1.1);
+    transform: translateZ(22px) rotateY(360deg) scale(1.12);
   }
 }
 @utility medalhao-cartao {
@@ -744,13 +739,15 @@
   background: radial-gradient(circle at 30% 25%, oklch(1 0 0) 0%, oklch(0.95 0.04 255) 55%, oklch(0.88 0.08 258) 100%);
   border: 1px solid oklch(1 0 0 / 0.9);
   color: var(--color-primary);
+  transform-style: preserve-3d;
   animation:
-    cartao-flutua 5s ease-in-out var(--atraso, 0s) infinite,
+    cartao-flutua3d 6s ease-in-out var(--atraso, 0s) infinite,
     cartao-halo 3.6s ease-in-out var(--atraso, 0s) infinite;
   & > svg {
     height: 2.5rem;
     width: 2.5rem;
-    filter: drop-shadow(0 2px 3px oklch(0.4 0.2 264 / 0.3));
+    transform: translateZ(22px);
+    filter: drop-shadow(0 6px 5px oklch(0.4 0.2 264 / 0.35));
     transition: transform 0.3s;
   }
   @media (prefers-reduced-motion: reduce) {
@@ -759,10 +756,10 @@
   }
 }
 .group\/cartao:hover .medalhao-cartao > svg {
-  animation: cartao-icone-giro 0.7s ease-out forwards;
+  animation: cartao-icone-giro 0.9s ease-in-out forwards;
   @media (prefers-reduced-motion: reduce) {
     animation: none;
-    transform: scale(1.1);
+    transform: translateZ(22px) scale(1.1);
   }
 }
 

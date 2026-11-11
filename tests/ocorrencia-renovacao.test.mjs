@@ -91,7 +91,7 @@ test("a sugestão da data é hoje mais os dias do prazo, e o formulário tem o c
   assert.equal(dataLimiteSugerida("2026-10-29", 0), "2026-10-29");
   const form = ler("components/modules/RenovarPrazoOcorrencia.tsx");
   assert.match(form, /<Input id="renovar_data" type="date" min=\{hoje\} value=\{ate\}/);
-  assert.match(form, /renovarPrazoTratativa\(ocorrencia\.id, \{[^}]*ate \}\)/);
+  assert.match(form, /gravarRenovacao\(ocorrencia\.id, \{[^}]*ate \}\)/);
 });
 
 test("o relatório da ocorrência traz dados, tratativa e renovações e escapa os textos", () => {

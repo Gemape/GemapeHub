@@ -129,7 +129,7 @@ test("a tela mostra cartões com ícone, título e Clique para acessar, só os d
   assert.match(pagina, /gruposDoInicio\(isAdmin, podeVerCaminho\)/);
   assert.match(pagina, /Clique para acessar/);
   assert.match(pagina, /focus-visible:ring/);
-  assert.match(pagina, /lg:w-\[calc\(33\.333%/);
+  assert.match(pagina, /grid-cols-1[^\"]*min-\[480px\]:grid-cols-2/);
   assert.doesNotMatch(pagina, /dangerouslySetInnerHTML|innerHTML/);
 });
 

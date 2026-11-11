@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { renovarPrazoTratativa, type OcorrenciaVeiculo } from "@/lib/ocorrencias-veiculo";
+import { renovarPrazoTratativa } from "@/lib/ocorrencias-veiculo";
 import { lerPermissoes, usuarioAtivo } from "@/lib/permissoes-demo";
 import { hojeBrasilia } from "@/lib/checklist-veiculo";
 import { formatarData } from "@/lib/gemape";
@@ -16,7 +16,8 @@ import { SENHA_DEMONSTRACAO, autorizarRenovacao, supervisoresEfetivos } from "@/
 // Renovar o prazo da tratativa (decisões 309, 315 e 316): o supervisor valida, sempre com a senha de login dele. Quem está renovando escolhe o supervisor na lista (o próprio
 // nome já vem escolhido quando é supervisor) e digita a senha. A renovação vale para o passo em que a ocorrência está (iniciar ou finalizar a
 // tratativa) e define a nova data limite, sugerida como hoje mais os dias do prazo.
-export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: OcorrenciaVeiculo | null; onFechar: () => void }) {
+// `renovar` troca a gravação (Equipamentos usa a sua); sem ele, grava a ocorrência de veículo.
+export function RenovarPrazoOcorrencia({ ocorrencia, onFechar, renovar: gravarRenovacao = renovarPrazoTratativa }: { ocorrencia: { id: string; codigo: string; status: string } | null; onFechar: () => void; renovar?: (id: string, quem: { autorizadoPorId: string; autorizadoPorNome: string; registradoPorNome: string; ate: string }) => unknown }) {
   const usuarios = lerPermissoes(localStorage).usuarios;
   const quem = usuarioAtivo(localStorage);
   const supervisores = supervisoresEfetivos(usuarios);
@@ -48,7 +49,7 @@ export function RenovarPrazoOcorrencia({ ocorrencia, onFechar }: { ocorrencia: O
       // A prorrogação desligada em Parâmetros Específicos vale também aqui, não só no botão da ocorrência.
       if (!permitir) throw new Error("A prorrogação da tratativa está desligada em Parâmetros Específicos.");
       const autorizou = autorizarRenovacao({ supervisorId, senha }, supervisores);
-      renovarPrazoTratativa(ocorrencia.id, { autorizadoPorId: autorizou.id, autorizadoPorNome: autorizou.nome, registradoPorNome: quem.nome, ate });
+      gravarRenovacao(ocorrencia.id, { autorizadoPorId: autorizou.id, autorizadoPorNome: autorizou.nome, registradoPorNome: quem.nome, ate });
       toast.success(`Prazo renovado: a tratativa pode ${passo === "iniciar" ? "começar" : "terminar"} até ${formatarData(ate)}.`);
       fechar();
     } catch (falha) {

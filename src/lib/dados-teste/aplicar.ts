@@ -314,6 +314,8 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
         const estoque = estoqueDe(tabelaEstoque, id, empresaId);
         const fornecedor = FORNECEDORES[item.fornecedor]!;
         const valorUnitario = Math.round((18 + n * 7.5 + indice * 2) * 100) / 100;
+        // O preço da última compra vira o preço do item no estoque (o Dashboard soma estoque × preço).
+        estoque["preco_unitario"] = valorUnitario;
         compras[tabelaCompra].push({
           id: novaCompra(), created_at: criadoEm, empresa_id: empresaId, item_id: estoque["id"], fornecedor: fornecedor.nome_fantasia, fornecedor_id: fornecedor.id,
           nota_fiscal: `NF-${String(1200 + n * 3 + e).padStart(5, "0")}`, data_compra: dia(agora, diasAtras + e * 2), quantidade, valor_unitario: valorUnitario,
@@ -530,7 +532,7 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       marca: f.marca, marcaAtual: "", modelo: f.modelo, tamanho: f.tamanho, tamanhoAtual: "", estoqueMinimo: String(f.minimo),
     });
     // O código fica o que a regra gerou: a lista de existentes tem só o último gerado, então o próximo já sai em sequência.
-    return { f, n, id: novaFerramenta(), linha: { ...cadastro, empresa_id: empresaIds[f.empresaIndice], numero_serie: `SN-TESTE-${n + 1}`, estoque_atual: f.entrada, status: "Ativo", unidade_medida: "Unidade", observacoes: "Ferramenta de teste do inventário da empresa.", created_at: criadoEm } };
+    return { f, n, id: novaFerramenta(), linha: { ...cadastro, empresa_id: empresaIds[f.empresaIndice], numero_serie: `SN-TESTE-${n + 1}`, estoque_atual: f.entrada, preco_unitario: Math.round((85 + n * 37.5) * 100) / 100, status: "Ativo", unidade_medida: "Unidade", observacoes: "Ferramenta de teste do inventário da empresa.", created_at: criadoEm } };
   });
   for (const { f, id, linha } of ferramentas) {
     tabela("ferramentas").push({ id, ...linha });

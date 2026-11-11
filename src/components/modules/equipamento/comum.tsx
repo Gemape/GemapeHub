@@ -4,6 +4,7 @@ import { hojeLocal, horaBrasilia } from "@/lib/empregados";
 import { useEmpresa, TODAS } from "@/lib/empresa-context";
 import { listarEquipamentos, type Equipamento } from "@/lib/equipamentos-demo";
 import { lerChecklistEquipamento, type FinalidadeChecklist } from "@/lib/equipamentos-checklist";
+import { faixaDoIndice, lerFaixasDeVeiculos } from "@/lib/faixas-desempenho";
 import { lerManutencaoEquipamento } from "@/lib/equipamentos-manutencao";
 import { lerParametrosEquipamento } from "@/lib/equipamentos-parametros";
 import { sugestoesPreventivas } from "@/lib/extrato-veiculo";
@@ -18,6 +19,21 @@ export const reais = (n: number | null | undefined) => (n === null || n === unde
 export const numero = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 // Dia e hora de Brasília, como o resto do sistema (passada a meia-noite em UTC, o dia do navegador seria o de amanhã).
 export const hoje = () => hojeLocal();
+// Faixa (verde, amarelo ou vermelho) de um percentual, pelos mesmos limites dos indicadores da Frota (Parâmetros > Veículos > Parâmetros Específicos).
+export const faixaEq = (pct: number | null) => faixaDoIndice(pct, lerFaixasDeVeiculos())?.faixa ?? null;
+// Cores de semáforo dos selos de situação: vermelho (aberta, inativo), amarelo (em andamento, em manutenção, reserva) e verde (encerrada, ativo, concluído).
+const SELO = {
+  vermelho: "border-red-300 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
+  amarelo: "border-amber-300 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200",
+  verde: "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+} as const;
+const FAIXA_DA_SITUACAO: Record<string, keyof typeof SELO> = {
+  Aberta: "vermelho", "Em tratativa": "amarelo", Encerrada: "verde", Resolvida: "verde",
+  Ativo: "verde", "Em manutenção": "amarelo", Reserva: "amarelo", "Baixado/Inativo": "vermelho",
+  "Em andamento": "amarelo", Concluído: "verde",
+};
+export const seloDaSituacao = (situacao: string) => SELO[FAIXA_DA_SITUACAO[situacao] ?? "amarelo"];
+export const pctDe =(parte: number, total: number): number | null => (total === 0 ? null : Math.round((parte / total) * 1000) / 10);
 
 // Revisões preventivas de um equipamento: o horímetro faz o papel do km do veículo (vence pelas horas de uso ou pelos meses, o que vier primeiro).
 export function revisoesDoEquipamento(e: Equipamento, concluidas: ManutencaoEquipamentoRegistro[], dia: string) {
