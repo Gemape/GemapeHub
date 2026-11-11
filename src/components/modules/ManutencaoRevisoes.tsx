@@ -106,7 +106,7 @@ export function ManutencaoRevisoes({ revisoes }: { revisoes: RevisaoDoVeiculo[] 
                     <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   <span
                     title={s.motivo}
                     className={`mx-auto flex h-8 w-full max-w-[12rem] items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-xs font-semibold shadow-sm ${cor.pilula}`}
