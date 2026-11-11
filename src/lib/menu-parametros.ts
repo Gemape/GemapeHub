@@ -87,11 +87,12 @@ export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
-// Ferramentas > Relatórios: as mesmas três rotinas de EPI e Uniformes, com os mesmos endereços (?aba=sugestao-compras, historico e baixas).
+// Ferramentas > Relatórios: as mesmas três rotinas de EPI e Uniformes, com os mesmos endereços (?aba=sugestao-compras, historico e baixas), e Ferramentas por caixas (o antigo botão Relatório de Número da caixa).
 export const ABAS_FERRAMENTA_RELATORIOS: readonly AbaMenu[] = [
   { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
   { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
   { aba: "baixas", titulo: "Baixas definitivas", icone: "PackageMinus" },
+  { aba: "ferramentas-por-caixa", titulo: "Ferramentas por caixas", icone: "Archive" },
 ];
 
 export const ABAS_VEICULO: readonly AbaMenu[] = [
@@ -252,6 +253,7 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     "sugestao-compras": "Indica quais ferramentas repor e em que quantidade, pelo estoque mínimo e pelas baixas definitivas dos últimos 12 meses.",
     historico: "Mostra, por empregado, as ferramentas que recebeu, devolveu e baixou e as que estão em posse dele.",
     baixas: "Lista as baixas definitivas de ferramentas, com motivo, quantidade e valor, por período, para consulta e exportação.",
+    "ferramentas-por-caixa": "Gera o relatório das caixas de ferramentas: você escolhe as caixas e as seções (ferramentas, histórico e ocorrências) que entram.",
     ocorrencias: OCORR,
   },
   veiculo: {

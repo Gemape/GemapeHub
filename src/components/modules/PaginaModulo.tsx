@@ -16,6 +16,7 @@ import { EpiEntrega, UniformesEntrega } from "@/components/modules/EpiEntrega";
 import { EpiTermoEntrega } from "@/components/modules/EpiTermoEntrega";
 import { EpiOrdemServico } from "@/components/modules/EpiOrdemServico";
 import { EpiFichaEpiAvulsa } from "@/components/modules/EpiFichaEpiAvulsa";
+import { FerramentasPorCaixas } from "@/components/modules/FerramentasPorCaixas";
 import { FerramentasSugestaoCompras } from "@/components/modules/FerramentasSugestaoCompras";
 import { FerramentasCaixasModulo } from "@/components/modules/FerramentasCaixasModulo";
 import { FerramentasTermoResponsabilidade } from "@/components/modules/FerramentasTermoResponsabilidade";
@@ -145,6 +146,9 @@ export function PaginaModulo({
             </TabsContent>
             <TabsContent value="baixas" className="mt-5">
               <UniformesRelatorioBaixa modulo="ferramenta" />
+            </TabsContent>
+            <TabsContent value="ferramentas-por-caixa" className="mt-5">
+              <FerramentasPorCaixas />
             </TabsContent>
           </>
         )}

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
@@ -19,9 +18,8 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 
 const TODAS_AS_SECOES = SECOES_RELATORIO_CAIXAS.map((_, n) => n);
 
-// Relatório das caixas de ferramentas: a pessoa marca as seções e as caixas e o relatório abre no visualizador, como os outros relatórios do sistema.
-// Os dados são lidos só enquanto a janela está aberta.
-export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; aoMudar: (aberto: boolean) => void }) {
+// Ferramentas > Relatórios > Ferramentas por caixas: a pessoa marca as seções e as caixas e o relatório abre no visualizador, como os outros relatórios do sistema.
+export function FerramentasPorCaixas() {
   const { empresaId } = useEmpresa();
   const [marcadas, setMarcadas] = useState<number[]>(TODAS_AS_SECOES);
   const [fora, setFora] = useState<string[]>([]); // caixas desmarcadas; começa vazio = todas entram
@@ -79,7 +77,6 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
         })),
       };
     });
-    aoMudar(false);
     abrirDocumento({
       titulo: "Relatório de caixas de ferramentas",
       html: montarRelatorioCaixasHtml({ caixas, secoes: marcadas, parcial: escolhidas.length < lista.length, empresa: empresaId === TODAS ? "Todas as empresas" : nomeEmpresa(empresaId) }),
@@ -88,12 +85,8 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
   }
 
   return (
-    <Dialog open={aberto} onOpenChange={aoMudar}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Relatório das caixas de ferramentas</DialogTitle>
-          <DialogDescription>Marque as seções e as caixas que entram no relatório. O resumo (das caixas escolhidas: caixas, ferramentas, com empregado, baixado, disponível e ocorrências) sai sempre.</DialogDescription>
-        </DialogHeader>
+    <section className="panel max-w-xl space-y-4 p-5" aria-label="Ferramentas por caixas">
+      <p className="text-sm text-muted-foreground">Marque as seções e as caixas que entram no relatório. O resumo (das caixas escolhidas: caixas, ferramentas, com empregado, baixado, disponível e ocorrências) sai sempre.</p>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas(TODAS_AS_SECOES)}>Marcar todos</Button>
           <Button type="button" variant="outline" size="sm" onClick={() => setMarcadas([])}>Desmarcar todos</Button>
@@ -116,7 +109,7 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
           <span className="ml-auto text-xs text-muted-foreground">{pronto && escolhidas.length === 0 ? "Marque ao menos uma caixa" : `${escolhidas.length} de ${lista.length} caixas`}</span>
         </div>
         {!pronto && <p className="text-xs text-muted-foreground">Carregando as caixas...</p>}
-        <ul className="max-h-48 space-y-1 overflow-y-auto" aria-label="Caixas do relatório">
+        <ul className="max-h-72 space-y-1 overflow-y-auto" aria-label="Caixas do relatório">
           {lista.map((c) => {
             const portador = portadorAtivo(portadores, c.id)?.empregado_nome;
             return (
@@ -129,11 +122,9 @@ export function RelatorioCaixasDialog({ aberto, aoMudar }: { aberto: boolean; ao
             );
           })}
         </ul>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => aoMudar(false)}>Cancelar</Button>
+        <div className="flex justify-end border-t pt-3">
           <Button type="button" disabled={!pronto || escolhidas.length === 0} onClick={gerar}>{pronto ? "Gerar relatório" : "Carregando..."}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </section>
   );
 }

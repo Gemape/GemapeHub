@@ -47,13 +47,11 @@ import {
   type Movimentacao,
 } from "@/lib/hooks-gemape";
 import { Button } from "@/components/ui/button";
-import { RelatorioCaixasDialog } from "./RelatorioCaixasDialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function FerramentasCaixasModulo() {
   const { empresaId } = useEmpresa();
   const [buscaCaixa, setBuscaCaixa] = useState("");
-  const [relatorioAberto, setRelatorioAberto] = useState(false);
 
   const { data: todasAsCaixas = [], isLoading } = useCaixasFerramentas(empresaId, buscaCaixa);
   // Só caixas habilitadas em Caixas de Ferramentas > Habilitar caixas.
@@ -89,12 +87,7 @@ export function FerramentasCaixasModulo() {
             onChange={(e) => setBuscaCaixa(e.target.value)}
           />
         </BarraDeFiltros>
-        {/* Relatório de todas as caixas, no alto à direita; as seções se escolhem na janela. */}
-        <Button type="button" variant="outline" className="ml-auto" onClick={() => setRelatorioAberto(true)}>
-          Relatório
-        </Button>
       </div>
-      {relatorioAberto && <RelatorioCaixasDialog aberto={relatorioAberto} aoMudar={setRelatorioAberto} />}
 
       <div className="space-y-8">
         {isLoading ? (
