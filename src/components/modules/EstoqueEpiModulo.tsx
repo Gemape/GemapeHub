@@ -288,10 +288,10 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               <TableHead title="Fornecedores de todas as compras: somam no mesmo estoque">Fornecedor</TableHead>
               {modulo === "epi" && <TableHead>CA</TableHead>}
               <TableHead>Tamanho</TableHead>
-              <TableHead className="text-right">Estoque mínimo</TableHead>
-              <TableHead className="text-right">Quantidade disponível</TableHead>
+              <TableHead className="text-center">Estoque mínimo</TableHead>
+              <TableHead>Quantidade disponível</TableHead>
               <TableHead>Alerta</TableHead>
-              <TableHead className="text-right">Média de consumo mensal</TableHead>
+              <TableHead>Média de consumo mensal</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -318,17 +318,17 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                   <TableCell>{l.fornecedor || "—"}</TableCell>
                   {modulo === "epi" && <TableCell>{l.ca || "—"}</TableCell>}
                   <TableCell>{nomeDoTamanho(l.tamanhoId)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                     <MinimoEditavel key={l.chave} valor={l.minimo} rotulo={`${l.descricao} ${nomeDoTamanho(l.tamanhoId)}`.trim()} onSalvar={(texto) => gravarMinimo(l, texto)} />
                   </TableCell>
-                  <TableCell className="text-right font-semibold">{l.disponivel}</TableCell>
+                  <TableCell className="font-semibold">{l.disponivel}</TableCell>
                   <TableCell className={CLASSE_DO_NIVEL[nivelDoAlerta(l.saldo, l.minimo) ?? "nenhum"]}>
                     {textoDoAlerta(l) || "—"}
                     {textoDoAlerta(l) && (
                       <p className="text-xs font-normal text-muted-foreground">Saldo total: {l.saldo} ({l.novos} {l.novos === 1 ? "novo" : "novos"} e {l.usados} {l.usados === 1 ? "usado" : "usados"})</p>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
                     {l.mediaMensal.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
                   </TableCell>
                 </TableRow>

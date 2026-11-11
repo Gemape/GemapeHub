@@ -22,7 +22,7 @@ const pessoa = { id: "ana", nome: "Ana", data_demissao: null };
 
 test("entrega baixa o saldo e ganha código ENT automático", async () => {
   const { empresa, id } = await novoEpi();
-  const r = await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 4 }], data: "2026-10-16", observacao: "primeira entrega" });
+  const r = await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 4 }], data: "2026-10-16", observacao: "primeira entrega", responsavel: "Almoxarife Teste" });
   assert.equal(await saldo(id), 6);
   assert.equal(r.saldoApos[id], 6);
   const [m] = await movs(empresa);
@@ -33,17 +33,17 @@ test("entrega baixa o saldo e ganha código ENT automático", async () => {
 
 test("entrega maior que o saldo é bloqueada e não grava nada", async () => {
   const { empresa, id } = await novoEpi({ estoque_atual: 2 });
-  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 3 }], data: "2026-10-16" }), /passa do estoque/);
+  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 3 }], data: "2026-10-16", responsavel: "Almoxarife Teste" }), /passa do estoque/);
   assert.equal(await saldo(id), 2);
   assert.equal((await movs(empresa)).length, 0);
-  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 0 }], data: "2026-10-16" }), /maior que zero/);
+  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 0 }], data: "2026-10-16", responsavel: "Almoxarife Teste" }), /maior que zero/);
 });
 
 test("operação atômica: um item acima do saldo impede a entrega dos outros", async () => {
   const a = await novoEpi({ estoque_atual: 5 });
   const b = crypto.randomUUID();
   await demoSupabase.from("epis").insert({ id: b, empresa_id: a.empresa, nome: "Óculos", codigo_sku: "EPI-0002", estoque_atual: 1, estoque_minimo: 0, status: "ativo" });
-  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: a.empresa, empregado: pessoa, linhas: [{ item_id: a.id, quantidade: 2 }, { item_id: b, quantidade: 2 }], data: "2026-10-16" }));
+  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: a.empresa, empregado: pessoa, linhas: [{ item_id: a.id, quantidade: 2 }, { item_id: b, quantidade: 2 }], data: "2026-10-16", responsavel: "Almoxarife Teste" }));
   assert.equal(await saldo(a.id), 5);
   assert.equal(await saldo(b), 1);
   assert.equal((await movs(a.empresa)).length, 0);
@@ -51,16 +51,16 @@ test("operação atômica: um item acima do saldo impede a entrega dos outros", 
 
 test("empregado demitido ou inativo e EPI inativo não recebem entrega", async () => {
   const { empresa, id } = await novoEpi();
-  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: { ...pessoa, data_demissao: "2020-01-01" }, linhas: [{ item_id: id, quantidade: 1 }], data: "2026-10-16" }), /demitido/);
+  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: { ...pessoa, data_demissao: "2020-01-01" }, linhas: [{ item_id: id, quantidade: 1 }], data: "2026-10-16", responsavel: "Almoxarife Teste" }), /demitido/);
   assert.match(empregadoPodeReceberEpi({ ...pessoa, ativo: false }) ?? "", /inativo/);
   assert.equal(empregadoPodeReceberEpi(pessoa), null);
   const inativo = await novoEpi({ status: "inativo" });
-  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: inativo.empresa, empregado: pessoa, linhas: [{ item_id: inativo.id, quantidade: 1 }], data: "2026-10-16" }), /inativo/);
+  await assert.rejects(() => registrarEntregaEpi(demoSupabase, { empresaId: inativo.empresa, empregado: pessoa, linhas: [{ item_id: inativo.id, quantidade: 1 }], data: "2026-10-16", responsavel: "Almoxarife Teste" }), /inativo/);
 });
 
 test("devolução só Administrador, soma ao saldo e guarda código DEV e responsável", async () => {
   const { empresa, id } = await novoEpi();
-  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 5 }], data: "2026-10-16" });
+  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 5 }], data: "2026-10-16", responsavel: "Almoxarife Teste" });
   const base = { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-17", responsavel: "Paula" };
   await assert.rejects(() => registrarDevolucaoEpi(demoSupabase, { ...base, administrador: false }), /Administrador/);
   assert.equal(await saldo(id), 5);
@@ -74,7 +74,7 @@ test("devolução só Administrador, soma ao saldo e guarda código DEV e respon
 
 test("devolução não passa do que o empregado tem em posse", async () => {
   const { empresa, id } = await novoEpi();
-  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16" });
+  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16", responsavel: "Almoxarife Teste" });
   await assert.rejects(() => registrarDevolucaoEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 3 }], data: "2026-10-17", responsavel: "Paula", administrador: true }), /em posse/);
   const hist = (await movs(empresa));
   assert.equal(emPosseEpi(hist, "ana", id, null), 2);
@@ -91,14 +91,14 @@ test("alerta dispara quando o saldo chega ao mínimo e a entrega avisa", async (
   assert.equal(alertaMinimoEpi(3, 3), true);
   assert.equal(alertaMinimoEpi(0, 0), true);
   const { empresa, id } = await novoEpi({ estoque_atual: 5, estoque_minimo: 3 });
-  const r = await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16" });
+  const r = await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16", responsavel: "Almoxarife Teste" });
   assert.deepEqual(r.alertas.map((a) => [a.itemId, a.saldo, a.minimo]), [[id, 3, 3]]);
 });
 
 test("ficha reflete entregas e devoluções com código e responsável, e escapa texto", async () => {
   const { empresa, id } = await novoEpi();
   const ana = { id: "ana-ficha", nome: "Ana", data_demissao: null };
-  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: ana, linhas: [{ item_id: id, quantidade: 3 }], data: "2026-10-16" });
+  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: ana, linhas: [{ item_id: id, quantidade: 3 }], data: "2026-10-16", responsavel: "Almoxarife Teste" });
   await registrarDevolucaoEpi(demoSupabase, { empresaId: empresa, empregado: ana, linhas: [{ item_id: id, quantidade: 1 }], data: "2026-10-18", responsavel: "<b>Paula</b>", administrador: true });
   const hist = await lerHistoricoEpiEmpregado(demoSupabase, { empregadoId: "ana-ficha", empresaId: empresa, comTamanho: true });
   const linhas = linhasDaFichaEpi(hist, [{ id, nome: "Luva de raspa", ca: "123" }], () => undefined);
@@ -126,7 +126,7 @@ test("empresa inativa não aparece na escolha da rotina", () => {
 
 test("devolução de EPI que ficou inativo depois da entrega é aceita", async () => {
   const { empresa, id } = await novoEpi();
-  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16" });
+  await registrarEntregaEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16", responsavel: "Almoxarife Teste" });
   await demoSupabase.from("epis").update({ status: "inativo" }).eq("id", id);
   await registrarDevolucaoEpi(demoSupabase, { empresaId: empresa, empregado: pessoa, linhas: [{ item_id: id, quantidade: 2 }], data: "2026-10-16", administrador: true, responsavel: "Admin" });
   assert.equal(await saldo(id), 10);

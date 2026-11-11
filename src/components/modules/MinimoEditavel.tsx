@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { useAccess } from "@/lib/access-context";
+import { cn } from "@/lib/utils";
 
 // Estoque mínimo editado no próprio campo da tabela, com as setas do campo numérico (decisão 416). Grava ao sair do campo, ao teclar Enter ou 0,8 s depois da última mudança (setas);
 // valor inválido volta ao que estava. Quem só consulta (sem permissão de escrita) vê o número.
-export function MinimoEditavel({ valor, rotulo, onSalvar }: { valor: number; rotulo: string; onSalvar: (texto: string) => boolean }) {
+// `className` ajusta o campo ao alinhamento da coluna (padrão: centralizado; no Estoque de ferramentas a coluna é à direita).
+export function MinimoEditavel({ valor, rotulo, onSalvar, className }: { valor: number; rotulo: string; onSalvar: (texto: string) => boolean; className?: string }) {
   const { canWrite } = useAccess();
   const [rascunho, setRascunho] = useState(String(valor));
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -25,7 +27,7 @@ export function MinimoEditavel({ valor, rotulo, onSalvar }: { valor: number; rot
       step={1}
       inputMode="numeric"
       aria-label={`Estoque mínimo de ${rotulo}`}
-      className="ml-auto h-8 w-20 text-right"
+      className={cn("h-8 w-20 text-center", className)}
       value={rascunho}
       onChange={(e) => {
         setRascunho(e.target.value);

@@ -399,7 +399,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
                           <TableCell>
                             <EtiquetaStatusCompra status={l.status} parametros={parametrosCompra} />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-right">
                             <Input
                               aria-label={`Quantidade de ${l.descricao}`}
                               type="number"

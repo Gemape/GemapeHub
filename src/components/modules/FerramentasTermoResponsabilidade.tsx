@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
 import { useParametrosBase } from "@/lib/use-parametros-base";
@@ -336,7 +337,7 @@ export function FerramentasTermoResponsabilidade() {
                           <SelectContent>
                             {itens.map((i) => (
                               <SelectItem key={i.id} value={i.id}>
-                                {i.nome} (Cód: {i.codigo_sku})
+                                {i.nome}{sufixoTamanhoFerramenta(i)} (Cód: {i.codigo_sku})
                               </SelectItem>
                             ))}
                           </SelectContent>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ItensModulo } from "./ItensModulo";
@@ -169,7 +170,7 @@ export function DialogFerramentasDaCaixa({
                 const emOutra = caixaDe(t.id);
                 return (
                   <SelectItem key={t.id} value={t.id} disabled={!!emOutra}>
-                    {t.codigo_sku} — {t.nome}
+                    {t.codigo_sku} — {t.nome}{sufixoTamanhoFerramenta(t)}
                     {emOutra ? ` (já na caixa ${emOutra})` : ""}
                   </SelectItem>
                 );
@@ -350,7 +351,7 @@ export function DialogBaixaCaixa({
               <SelectContent>
                 {linhas.map((l) => (
                   <SelectItem key={l.ferramenta.id} value={l.ferramenta.id}>
-                    {l.ferramenta.codigo_sku} — {l.ferramenta.nome} (guardadas {l.disponivel}, com empregado {l.comEmpregado})
+                    {l.ferramenta.codigo_sku} — {l.ferramenta.nome}{sufixoTamanhoFerramenta(l.ferramenta)} (guardadas {l.disponivel}, com empregado {l.comEmpregado})
                   </SelectItem>
                 ))}
               </SelectContent>

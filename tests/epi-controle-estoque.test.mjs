@@ -102,7 +102,8 @@ test("entrega e devolução de uniforme: grava no módulo uniforme, confere os i
     },
   };
   const empregado = { id: "e1", nome: "Maria", data_demissao: null, ativo: true };
-  const r = await registrarEntregaEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "u1", quantidade: 2 }], data: "2026-04-10", modulo: "uniforme", comCodigo: false });
+  await assert.rejects(() => registrarEntregaEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "u1", quantidade: 2 }], data: "2026-04-10", modulo: "uniforme", comCodigo: false }), /responsável pela entrega/);
+  const r = await registrarEntregaEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "u1", quantidade: 2 }], data: "2026-04-10", modulo: "uniforme", comCodigo: false, responsavel: "Almoxarife Teste" });
   assert.equal(r.codigos.length, 0);
   assert.equal(gravado[0].modulo, "uniforme");
   await assert.rejects(() => registrarEntregaEpi(cliente, { empresaId: "emp", empregado, linhas: [{ item_id: "u1", quantidade: 9 }], data: "2026-04-10", modulo: "uniforme", comCodigo: false }), /uniforme|Camisa G/);

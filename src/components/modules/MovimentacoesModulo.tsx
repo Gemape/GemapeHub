@@ -1,7 +1,9 @@
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
+import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
+import { useRouteContext } from "@tanstack/react-router";
 
 import { ImportarNfeXml } from "@/components/modules/ImportarNfeXml";
 import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
@@ -96,6 +98,8 @@ const TEXTO_DO_FOCO = { entrada: { novo: "Nova entrada", titulo: "Entrada no est
 
 export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "entrada" | "entrega" }) {
   const { empresas, empresaId } = useEmpresa();
+  const { user } = useRouteContext({ from: "/_authenticated" });
+  const responsavelPadrao = String((user?.user_metadata as { nome?: unknown } | undefined)?.nome ?? user?.email ?? "");
   const [aberto, setAberto] = useState(false);
   const [devolucaoAberta, setDevolucaoAberta] = useState(false);
   const [compraAberta, setCompraAberta] = useState(false);
@@ -135,7 +139,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const [busca, setBusca] = useState("");
   const [buscaDevolucao, setBuscaDevolucao] = useState("");
   // Data, Tipo, Item, Empresa/Empregado e Qtde sempre; as demais dependem do módulo e do foco.
-  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada && !soEntrega) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrada && visao === "devolucoes") + 4 * Number(soEntrada && visao === "compras");
+  const totalColunas = 5 + Number(!ehVeiculo) + Number(comTamanho) + Number(!soEntrada && !soEntrega) + 2 * Number(!foco) + Number(ehVeiculo && MODO_DEMO) + Number(soEntrega && MODO_DEMO) + Number(soEntrada && visao === "devolucoes") + 4 * Number(soEntrada && visao === "compras");
   const nomeEmpregado = (id: string | null) =>
     todosEmpregados.find((e) => e.id === id)?.nome ?? "—";
 
@@ -171,6 +175,12 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
       return v === "" || v === NENHUM ? null : v;
     };
     const quantidadeDigitada = Number(f.get("quantidade") ?? 1);
+    // Entrega de ferramentas: quem entrega fica registrado (só no modo demonstração, a coluna entra na Fase 2).
+    const responsavelEntrega = foco === "entrega" ? texto("responsavel_entrega") : null;
+    if (foco === "entrega" && !responsavelEntrega) {
+      alert("Informe o responsável pela entrega.");
+      return;
+    }
     const tipo = String(f.get("tipo_movimentacao") ?? "Entrada");
     const alvo = ehVeiculo ? null : texto("alvo_id");
     if (!texto("alvo_id")) {
@@ -236,6 +246,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
       origem_local: capitalizarTexto(texto("origem_local")) || null,
       destino_local: capitalizarTexto(texto("destino_local")) || null,
       observacao: capitalizarTexto(texto("observacao"))?.slice(0, 500) || null,
+      ...(MODO_DEMO && responsavelEntrega ? { responsavel_nome: responsavelEntrega } : {}),
       // A manutenção ainda não existe no banco real (Fase 2): só vai no modo demonstração.
       ...(acaoManut
         ? {
@@ -346,6 +357,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               {soEntrada && visao === "compras" && <><TableHead>Fornecedor</TableHead><TableHead>NF</TableHead><TableHead className="text-right">Valor unit.</TableHead><TableHead className="text-right">Valor total</TableHead></>}
               {mostraEmpregado && <TableHead>Empregado</TableHead>}
               <TableHead className="text-right">Qtde</TableHead>
+              {soEntrega && MODO_DEMO && <TableHead>Responsável</TableHead>}
               {!soEntrada && !soEntrega && <TableHead>Motivo da baixa</TableHead>}
               {!foco && <TableHead>Ônus</TableHead>}
               {ehVeiculo && MODO_DEMO && <TableHead>Manutenção</TableHead>}
@@ -399,6 +411,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                   })()}
                   {mostraEmpregado && <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>}
                   <TableCell className="text-right">{m.quantidade}</TableCell>
+                  {soEntrega && MODO_DEMO && <TableCell>{(m as { responsavel_nome?: string | null }).responsavel_nome || "—"}</TableCell>}
                   {!soEntrada && !soEntrega && <TableCell>{m.motivo_baixa ?? "—"}</TableCell>}
                   {!foco && <TableCell>{m.onus_baixa ?? "—"}</TableCell>}
                   {ehVeiculo && MODO_DEMO && (
@@ -437,6 +450,12 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 defaultValue={hojeLocal()}
               />
             </div>
+            {foco === "entrega" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="responsavel_entrega">Responsável pela entrega</Label>
+                <Input id="responsavel_entrega" name="responsavel_entrega" defaultValue={responsavelPadrao} maxLength={200} required />
+              </div>
+            )}
             <div className={`space-y-1.5${ocultoNaEntrada}`}>
               <Label htmlFor="motivo_baixa">Motivo da baixa</Label>
               <Select
@@ -495,7 +514,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 id="alvo_id"
                 nome="alvo_id"
                 valor={alvoId}
-                opcoes={ehVeiculo ? veiculos.map((o) => ({ id: o.id, rotulo: [o.placa, o.modelo].filter(Boolean).join(" — ") || "—" })) : itens.map((o) => ({ id: o.id, rotulo: `${o.codigo_sku} — ${o.nome}` }))}
+                opcoes={ehVeiculo ? veiculos.map((o) => ({ id: o.id, rotulo: [o.placa, o.modelo].filter(Boolean).join(" — ") || "—" })) : itens.map((o) => ({ id: o.id, rotulo: `${o.codigo_sku} — ${o.nome}${modulo === "ferramenta" ? sufixoTamanhoFerramenta(o) : ""}` }))}
                 onChange={(v) => {
                   setAlvoId(v);
                   setTamanho("");

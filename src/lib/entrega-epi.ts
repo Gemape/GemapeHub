@@ -160,7 +160,7 @@ async function gravar(cliente: ClienteEntrega, entrada: EntradaBase, tipo: "Said
 }
 
 /** Entrega de EPI: confere empregado, EPI e saldo e grava todas as saídas de uma vez (ou nenhuma). */
-export async function registrarEntregaEpi(cliente: ClienteEntrega, entrada: EntradaBase): Promise<ResultadoMovimentacao> {
+export async function registrarEntregaEpi(cliente: ClienteEntrega, entrada: EntradaBase & { responsavel?: string }): Promise<ResultadoMovimentacao> {
   const modulo = entrada.modulo ?? "epi";
   const bloqueio = empregadoPodeReceberEpi(entrada.empregado, modulo) ?? bloqueioPorDemissao(entrada.empregado, "entrega", entrada.data);
   if (bloqueio) throw new Error(bloqueio);
@@ -169,7 +169,10 @@ export async function registrarEntregaEpi(cliente: ClienteEntrega, entrada: Entr
   conferirItens(entrada.linhas, itens, true, modulo);
   const erro = modulo === "uniforme" ? validarSaidaDeUniformes(entrada.linhas, itens, "entrega") : validarSaidaDeEpis(entrada.linhas, itens);
   if (erro) throw new Error(erro);
-  return gravar(cliente, entrada, "Saida", null);
+  // Na entrega de EPI e de uniforme, quem entrega fica registrado (Responsável pela entrega).
+  const responsavel = (entrada.responsavel ?? "").trim();
+  if (!responsavel) throw new Error("Informe o responsável pela entrega.");
+  return gravar(cliente, entrada, "Saida", responsavel || null);
 }
 
 export const mensagemSoAdmin = (modulo: ModuloEntrega) => `Somente o Administrador registra a devolução de ${CONTEXTO[modulo].rotulo}.`;

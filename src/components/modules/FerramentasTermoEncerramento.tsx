@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -379,7 +380,7 @@ export function FerramentasTermoEncerramento() {
                           <SelectContent>
                             {itensComSaldo.map((i) => (
                               <SelectItem key={i.id} value={i.id}>
-                                {i.nome} ({i.codigo_sku}) · saldo {saldos.get(i.id)}
+                                {i.nome}{sufixoTamanhoFerramenta(i)} ({i.codigo_sku}) · saldo {saldos.get(i.id)}
                               </SelectItem>
                             ))}
                           </SelectContent>

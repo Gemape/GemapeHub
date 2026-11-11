@@ -1,4 +1,5 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { useState, useEffect } from "react";
 import { exemploCaixa } from "@/lib/dados-teste/exemplos";
 import { useQuery } from "@tanstack/react-query";
@@ -521,7 +522,7 @@ export function CaixasFerramentasModulo() {
                                 />
                                 <div className="flex flex-col">
                                   <span className="font-mono text-[10px]">{t.codigo_sku}</span>
-                                  <span>{t.nome}</span>
+                                  <span>{t.nome}{sufixoTamanhoFerramenta(t)}</span>
                                 </div>
                               </CommandItem>
                             ))}

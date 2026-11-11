@@ -3,7 +3,6 @@ import { useRef, useState } from "react";
 import { useAbrirDireto } from "@/lib/use-abrir-direto";
 import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -379,9 +378,9 @@ function BlocoEmpregados({
                   <TableCell>{formatarData(e.data_admissao)}</TableCell>
                   <TableCell>{formatarData(e.data_demissao)}</TableCell>
                   <TableCell>
-                    <Badge variant={empregadoAtivo(e) ? "secondary" : "outline"}>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${empregadoAtivo(e) ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" : "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"}`}>
                       {empregadoAtivo(e) ? "Ativo" : "Inativo"}
-                    </Badge>
+                    </span>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-right">
                     <AcoesLinha rotulo={e.nome} onClonar={() => onClonar(e)} onEditar={() => onEditar(e)} onExcluir={() => onExcluir(e)} />

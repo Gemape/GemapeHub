@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
+import { pedeTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccess } from "@/lib/access-context";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
@@ -15,7 +15,7 @@ import { empresasParaEscolha } from "@/lib/empresas";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { emPosseEpi, lerHistoricoEpiPorItem, mensagemSoAdmin, registrarDevolucaoEpi, registrarEntregaEpi, type CalculoAlerta, type ModuloEntrega } from "@/lib/entrega-epi";
 import { origemDaLinhaDeDevolucao } from "@/lib/devolucao-estoque-epi";
-import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, opcoesTamanhoDevolucao, opcoesTamanhoSaida, SEM_TAMANHO, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { alertasDeMinimoEpi } from "@/lib/estoque-epi-saldos";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
@@ -29,6 +29,8 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 
 type Linha = { id: string; item_id: string; quantidade: number; tamanho: string };
 const TODOS = "todos";
+// O EPI e o tamanho vão juntos na mesma lista: uma opção para cada tamanho do EPI.
+const SEP = "::";
 const novaLinha = (): Linha => ({ id: Math.random().toString(36).slice(2, 11), item_id: "", quantidade: 1, tamanho: "" });
 const ROTULO_TIPO: Record<string, string> = { Saida: "Entrega", Devolucao: "Devolução", Entrada: "Entrada" };
 
@@ -153,7 +155,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
     try {
       const r = devolucao
         ? await registrarDevolucaoEpi(supabase, { ...entrada, administrador: isAdmin, responsavel })
-        : await registrarEntregaEpi(supabase, entrada);
+        : await registrarEntregaEpi(supabase, { ...entrada, responsavel });
       queryClient.invalidateQueries();
       toast.success(devolucao ? "Devolução registrada" : "Entrega registrada", { description: r.codigos.join(", ") || undefined });
       for (const a of r.alertas) toast.warning(`${a.nome} chegou ao estoque mínimo`, { description: `Saldo ${a.saldo} de mínimo ${a.minimo}.` });
@@ -185,6 +187,14 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   const nomeDoItem = (id: string | null) => itens.find((i) => i.id === id);
   const movimentos = historico.data ?? [];
   const escolhaItens = modo === "devolucao" ? itensEmPosse : itens;
+  // Uma opção por tamanho (entrega: com o saldo; devolução: tamanhos em que pode ter saído); EPI sem tamanho tem uma opção só.
+  const opcoesDoItem = (i: (typeof itens)[number]): { valor: string; rotulo: string }[] => {
+    if (!pedeTamanho(parametros, modulo, i)) return [{ valor: "", rotulo: "" }];
+    const ops = modo === "entrega"
+      ? opcoesTamanhoSaida(parametros, modulo, i).map((o) => ({ valor: o.valor, rotulo: `${o.rotulo} (saldo ${o.saldo})` }))
+      : opcoesTamanhoDevolucao(parametros, modulo, i);
+    return ops.length ? ops : [{ valor: "", rotulo: modo === "entrega" ? "sem saldo" : "" }];
+  };
 
   return (
     <div className="space-y-6">
@@ -225,12 +235,10 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
             <Label htmlFor={`obs-entrega-${modulo}`}>Observações</Label>
             <Input id={`obs-entrega-${modulo}`} value={observacao} maxLength={500} onChange={(e) => setObservacao(e.target.value)} />
           </div>
-          {modo === "devolucao" && (
-            <div className="space-y-1.5">
-              <Label htmlFor={`resp-devolucao-${modulo}`}>Responsável pela devolução</Label>
-              <Input id={`resp-devolucao-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <Label htmlFor={`resp-devolucao-${modulo}`}>{modo === "devolucao" ? "Responsável pela devolução" : "Responsável pela entrega"}</Label>
+            <Input id={`resp-devolucao-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -243,32 +251,27 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
               <TableHeader>
                 <TableRow>
                   <TableHead>{rot.Sing}</TableHead>
-                  <TableHead className="w-40">Tamanho</TableHead>
                   <TableHead className="w-32">Quantidade</TableHead>
                   <TableHead className="w-20"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {linhas.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum {rot.um} adicionado. Clique em "+ Adicionar {rot.Sing}".</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Nenhum {rot.um} adicionado. Clique em "+ Adicionar {rot.Sing}".</TableCell></TableRow>
                 ) : linhas.map((l) => {
-                  const produto = itens.find((i) => i.id === l.item_id);
                   return (
                     <TableRow key={l.id}>
                       <TableCell>
-                        <Select value={l.item_id} onValueChange={(v) => { mudarLinha(l.id, "item_id", v); mudarLinha(l.id, "tamanho", ""); }}>
+                        <Select value={l.item_id ? `${l.item_id}${SEP}${l.tamanho}` : ""} onValueChange={(v) => { const [item = "", tam = ""] = v.split(SEP); mudarLinha(l.id, "item_id", item); mudarLinha(l.id, "tamanho", tam); }}>
                           <SelectTrigger><SelectValue placeholder={`Selecione o ${rot.um}`} /></SelectTrigger>
                           <SelectContent>
-                            {escolhaItens.map((i) => (
-                              <SelectItem key={i.id} value={i.id}>
-                                {i.codigo_sku} · {i.nome}{i.ca ? ` (CA: ${i.ca})` : ""}{modo === "devolucao" ? ` · em posse: ${emPosseEpi(movimentosDoEmpregado, empregadoId, i.id, null)}` : ""}
+                            {escolhaItens.flatMap((i) => opcoesDoItem(i).map((o) => (
+                              <SelectItem key={`${i.id}${SEP}${o.valor}`} value={`${i.id}${SEP}${o.valor}`}>
+                                {i.codigo_sku} · {i.nome}{o.rotulo ? ` · ${o.rotulo}` : ""}{i.ca ? ` (CA: ${i.ca})` : ""}{modo === "devolucao" ? ` · em posse: ${emPosseEpi(movimentosDoEmpregado, empregadoId, i.id, o.valor && o.valor !== SEM_TAMANHO ? o.valor : null)}` : ""}
                               </SelectItem>
-                            ))}
+                            )))}
                           </SelectContent>
                         </Select>
-                      </TableCell>
-                      <TableCell>
-                        <SeletorTamanho parametros={parametros} modulo={modulo} produto={produto} uso={modo === "entrega" ? "saida" : "devolucao"} valor={l.tamanho} onChange={(v) => mudarLinha(l.id, "tamanho", v)} />
                       </TableCell>
                       <TableCell><Input type="number" min="1" value={l.quantidade} onChange={(e) => mudarLinha(l.id, "quantidade", Number(e.target.value))} /></TableCell>
                       <TableCell><Button variant="ghost" size="sm" className="text-red-500" onClick={() => setLinhas(linhas.filter((x) => x.id !== l.id))}>Remover</Button></TableCell>
