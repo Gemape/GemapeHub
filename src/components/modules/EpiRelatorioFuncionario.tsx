@@ -236,7 +236,7 @@ export function EpiRelatorioFuncionario() {
                   <TableHead>EPI</TableHead>
                   <TableHead>Tamanho</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead className="text-right">Qtd</TableHead>
+                  <TableHead>Qtd</TableHead>
                   <TableHead>Status/Motivo</TableHead>
                   <TableHead>Observação</TableHead>
                 </TableRow>
@@ -255,7 +255,7 @@ export function EpiRelatorioFuncionario() {
                       <TableCell>{nomeDoEpi(h.item_id)}</TableCell>
                       <TableCell>{tamanhoDe(h) || "—"}</TableCell>
                       <TableCell>{naturezaMovimentacao(h)}</TableCell>
-                      <TableCell className="text-right">{h.quantidade}</TableCell>
+                      <TableCell>{h.quantidade}</TableCell>
                       <TableCell>
                         {situacaoDe(h)}
                       </TableCell>

@@ -217,7 +217,7 @@ export function UniformesComprasModulo() {
               <TableHead>Tamanho</TableHead>
               <TableHead>Fornecedor</TableHead>
               <TableHead>NF</TableHead>
-              <TableHead className="text-right">Qtd</TableHead>
+              <TableHead>Qtd</TableHead>
               <TableHead className="text-right">Unitário</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead />
@@ -247,7 +247,7 @@ export function UniformesComprasModulo() {
                   <TableCell>{nomeTamanhoGravado(parametros, c.tamanho_id) || "—"}</TableCell>
                   <TableCell>{c.fornecedor}</TableCell>
                   <TableCell>{c.nota_fiscal || "—"}</TableCell>
-                  <TableCell className="text-right">{c.quantidade}</TableCell>
+                  <TableCell>{c.quantidade}</TableCell>
                   <TableCell className="text-right">{formatarMoeda(c.valor_unitario)}</TableCell>
                   <TableCell className="text-right font-bold">
                     {formatarMoeda(c.valor_total ?? 0)}

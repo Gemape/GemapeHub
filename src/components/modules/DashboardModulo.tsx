@@ -97,7 +97,7 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
                   <TableHead>Data</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Empregado</TableHead>
-                  <TableHead className="text-right">Qtde</TableHead>
+                  <TableHead>Qtde</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -115,7 +115,7 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
                         {TIPO_MOVIMENTACAO_LABEL[m.tipo_movimentacao] ?? m.tipo_movimentacao}
                       </TableCell>
                       <TableCell>{nomeEmpregado(m.empregado_id)}</TableCell>
-                      <TableCell className="text-right">{m.quantidade}</TableCell>
+                      <TableCell>{m.quantidade}</TableCell>
                     </TableRow>
                   ))
                 )}

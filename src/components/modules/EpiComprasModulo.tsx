@@ -235,7 +235,7 @@ export function EpiComprasModulo() {
               <TableHead>Fornecedor</TableHead>
               <TableHead>NF</TableHead>
               <TableHead>CA</TableHead>
-              <TableHead className="text-right">Qtd</TableHead>
+              <TableHead>Qtd</TableHead>
               <TableHead className="text-right">Unitário</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead />
@@ -267,7 +267,7 @@ export function EpiComprasModulo() {
                   <TableCell>{c.fornecedor}</TableCell>
                   <TableCell>{c.nota_fiscal || "—"}</TableCell>
                   <TableCell>{String((c as { ca?: string | null }).ca ?? "") || "—"}</TableCell>
-                  <TableCell className="text-right">{c.quantidade}</TableCell>
+                  <TableCell>{c.quantidade}</TableCell>
                   <TableCell className="text-right">{formatarMoeda(c.valor_unitario)}</TableCell>
                   <TableCell className="text-right font-bold">
                     {formatarMoeda(c.valor_total ?? 0)}
@@ -476,7 +476,7 @@ export function EntradasDeUsados({ empresaId, itens, empresas, modulo = "epi", m
               <TableHead>Empresa</TableHead>
               <TableHead>{modulo === "epi" ? "EPI" : "Uniforme"}</TableHead>
               <TableHead>Tamanho</TableHead>
-              <TableHead className="text-right">Qtd</TableHead>
+              <TableHead>Qtd</TableHead>
               <TableHead>Motivo</TableHead>
               <TableHead>Compra original</TableHead>
               <TableHead>NF</TableHead>
@@ -493,7 +493,7 @@ export function EntradasDeUsados({ empresaId, itens, empresas, modulo = "epi", m
                 <TableCell>{empresas.find((e) => e.id === m.empresa_id)?.nome_fantasia ?? "—"}</TableCell>
                 <TableCell>{itens.find((i) => i.id === m.item_id) ? `${itens.find((i) => i.id === m.item_id)?.codigo_sku} · ${itens.find((i) => i.id === m.item_id)?.nome}` : "—"}</TableCell>
                 <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) || "—"}</TableCell>
-                <TableCell className="text-right">{m.quantidade}</TableCell>
+                <TableCell>{m.quantidade}</TableCell>
                 <TableCell>{m.motivo_devolucao || "—"}</TableCell>
                 <TableCell>{m.data_compra_origem ? formatarData(m.data_compra_origem) : "—"}</TableCell>
                 <TableCell>{m.nota_fiscal_origem || "—"}</TableCell>

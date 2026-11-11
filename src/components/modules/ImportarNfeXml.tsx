@@ -259,7 +259,7 @@ export function ImportarNfeXml() {
                       <TableHead>Item</TableHead>
                       <TableHead>Código do fornecedor</TableHead>
                       <TableHead>Descrição na nota</TableHead>
-                      <TableHead className="text-right">Qtd.</TableHead>
+                      <TableHead>Qtd.</TableHead>
                       <TableHead className="text-right">Valor unit.</TableHead>
                       <TableHead>Destino</TableHead>
                     </TableRow>

@@ -330,7 +330,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Código</TableHead><TableHead>Data</TableHead><TableHead>Tipo</TableHead><TableHead>{rot.Sing}</TableHead><TableHead>Tam.</TableHead>
-                      <TableHead className="text-right">Qtd</TableHead><TableHead>Empregado</TableHead><TableHead>Responsável</TableHead><TableHead>Observação</TableHead>
+                      <TableHead>Qtd</TableHead><TableHead>Empregado</TableHead><TableHead>Responsável</TableHead><TableHead>Observação</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -343,7 +343,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
                         <TableCell>{ROTULO_TIPO[m.tipo_movimentacao] ?? m.tipo_movimentacao}</TableCell>
                         <TableCell>{nomeDoItem(m.item_id)?.nome ?? "—"}</TableCell>
                         <TableCell>{nomeTamanhoGravado(parametros, m.tamanho_id) ?? "—"}</TableCell>
-                        <TableCell className="text-right">{m.quantidade}</TableCell>
+                        <TableCell>{m.quantidade}</TableCell>
                         <TableCell>{nomeDoEmpregado(m.empregado_id)}</TableCell>
                         <TableCell>{m.responsavel_nome ?? "—"}</TableCell>
                         <TableCell className="max-w-xs truncate">{m.observacao || "—"}</TableCell>

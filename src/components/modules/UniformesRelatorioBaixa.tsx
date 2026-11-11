@@ -172,7 +172,7 @@ export function UniformesRelatorioBaixa({ modulo = "uniforme" }: { modulo?: "uni
               <TableHead>{Rotulo}</TableHead>
               {!ferramenta && <TableHead>Tamanho</TableHead>}
               <TableHead>Motivo</TableHead>
-              <TableHead className="text-right">Qtd</TableHead>
+              <TableHead>Qtd</TableHead>
               <TableHead className="text-right">Valor Total</TableHead>
             </TableRow>
           </TableHeader>
@@ -205,7 +205,7 @@ export function UniformesRelatorioBaixa({ modulo = "uniforme" }: { modulo?: "uni
                     <TableCell>{item?.nome}</TableCell>
                     {!ferramenta && <TableCell>{tamanhoDe(b) || "—"}</TableCell>}
                     <TableCell>{b.motivo_baixa}</TableCell>
-                    <TableCell className="text-right">{b.quantidade}</TableCell>
+                    <TableCell>{b.quantidade}</TableCell>
                     <TableCell className="text-right font-bold">{formatarMoeda(valorB)}</TableCell>
                   </TableRow>
                 );
