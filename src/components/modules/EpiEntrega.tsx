@@ -155,7 +155,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
     try {
       const r = devolucao
         ? await registrarDevolucaoEpi(supabase, { ...entrada, administrador: isAdmin, responsavel })
-        : await registrarEntregaEpi(supabase, entrada);
+        : await registrarEntregaEpi(supabase, { ...entrada, responsavel });
       queryClient.invalidateQueries();
       toast.success(devolucao ? "Devolução registrada" : "Entrega registrada", { description: r.codigos.join(", ") || undefined });
       for (const a of r.alertas) toast.warning(`${a.nome} chegou ao estoque mínimo`, { description: `Saldo ${a.saldo} de mínimo ${a.minimo}.` });
@@ -235,9 +235,9 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
             <Label htmlFor={`obs-entrega-${modulo}`}>Observações</Label>
             <Input id={`obs-entrega-${modulo}`} value={observacao} maxLength={500} onChange={(e) => setObservacao(e.target.value)} />
           </div>
-          {modo === "devolucao" && (
+          {(modo === "devolucao" || modulo === "uniforme") && (
             <div className="space-y-1.5">
-              <Label htmlFor={`resp-devolucao-${modulo}`}>Responsável pela devolução</Label>
+              <Label htmlFor={`resp-devolucao-${modulo}`}>{modo === "devolucao" ? "Responsável pela devolução" : "Responsável pela entrega"}</Label>
               <Input id={`resp-devolucao-${modulo}`} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
             </div>
           )}
