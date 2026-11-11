@@ -15,7 +15,7 @@ import { empresasParaEscolha } from "@/lib/empresas";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { emPosseEpi, lerHistoricoEpiPorItem, mensagemSoAdmin, registrarDevolucaoEpi, registrarEntregaEpi, type CalculoAlerta, type ModuloEntrega } from "@/lib/entrega-epi";
 import { origemDaLinhaDeDevolucao } from "@/lib/devolucao-estoque-epi";
-import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, opcoesTamanhoDevolucao, opcoesTamanhoSaida, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, opcoesTamanhoDevolucao, opcoesTamanhoSaida, SEM_TAMANHO, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
 import { alertasDeMinimoEpi } from "@/lib/estoque-epi-saldos";
 import { exportarCsv, formatarData } from "@/lib/gemape";
 import { soEmpregadosDeEpi } from "@/lib/empregados-epi";
@@ -193,7 +193,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
     const ops = modo === "entrega"
       ? opcoesTamanhoSaida(parametros, modulo, i).map((o) => ({ valor: o.valor, rotulo: `${o.rotulo} (saldo ${o.saldo})` }))
       : opcoesTamanhoDevolucao(parametros, modulo, i);
-    return ops.length ? ops : [{ valor: "", rotulo: "" }];
+    return ops.length ? ops : [{ valor: "", rotulo: modo === "entrega" ? "sem saldo" : "" }];
   };
 
   return (
@@ -269,7 +269,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
                           <SelectContent>
                             {escolhaItens.flatMap((i) => opcoesDoItem(i).map((o) => (
                               <SelectItem key={`${i.id}${SEP}${o.valor}`} value={`${i.id}${SEP}${o.valor}`}>
-                                {i.codigo_sku} · {i.nome}{o.rotulo ? ` · ${o.rotulo}` : ""}{i.ca ? ` (CA: ${i.ca})` : ""}{modo === "devolucao" ? ` · em posse: ${emPosseEpi(movimentosDoEmpregado, empregadoId, i.id, null)}` : ""}
+                                {i.codigo_sku} · {i.nome}{o.rotulo ? ` · ${o.rotulo}` : ""}{i.ca ? ` (CA: ${i.ca})` : ""}{modo === "devolucao" ? ` · em posse: ${emPosseEpi(movimentosDoEmpregado, empregadoId, i.id, o.valor && o.valor !== SEM_TAMANHO ? o.valor : null)}` : ""}
                               </SelectItem>
                             )))}
                           </SelectContent>

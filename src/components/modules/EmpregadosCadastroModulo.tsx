@@ -378,7 +378,7 @@ function BlocoEmpregados({
                   <TableCell>{formatarData(e.data_admissao)}</TableCell>
                   <TableCell>{formatarData(e.data_demissao)}</TableCell>
                   <TableCell>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${empregadoAtivo(e) ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${empregadoAtivo(e) ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" : "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300"}`}>
                       {empregadoAtivo(e) ? "Ativo" : "Inativo"}
                     </span>
                   </TableCell>

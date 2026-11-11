@@ -79,8 +79,8 @@ export function ConfiguracoesAcessos({ aberto, onAberto }: { aberto: boolean; on
           </div>
         </div>
         {travado && <p className="rounded-lg border bg-primary/5 px-3 py-2 text-xs text-muted-foreground">O Administrador sempre tem todos os acessos; para testar restrições, escolha outro usuário.</p>}
-        <div className="overflow-x-auto rounded-xl border bg-muted/30 p-2">
-        <div className="overflow-hidden rounded-lg border bg-background">
+        <div className="rounded-xl border bg-muted/30 p-2">
+        <div className="overflow-x-auto rounded-lg border bg-background">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/60 text-left">
