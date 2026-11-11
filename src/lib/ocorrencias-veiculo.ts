@@ -154,7 +154,7 @@ export type EntradaTratativa = {
 };
 
 // Custo pode ser zero; fora isso segue o formato de reais da tela ("R$ 1.500,50").
-function custo(valor: string | number): number | null {
+export function custo(valor: string | number): number | null {
   const texto = String(valor ?? "").replace(/R\$/gi, "").trim();
   if (!texto) return null;
   if (/^0+([.,]0{1,2})?$/.test(texto)) return 0;

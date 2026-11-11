@@ -10,7 +10,7 @@ import { lerParametrosEquipamento } from "../equipamentos-parametros.ts";
 import { hojeLocal } from "../empregados.ts";
 import { ACOES_PADRAO_EQUIPAMENTO } from "../equipamentos-manutencao-padrao.ts";
 import {
-  CHAVE_ABASTECIMENTOS_EQ, CHAVE_MANUTENCOES_EQ, CHAVE_OCORRENCIAS_EQ, registrarAbastecimentoEq, registrarManutencaoEq, registrarOcorrenciaEq, resolverOcorrenciaEq,
+  CHAVE_ABASTECIMENTOS_EQ, CHAVE_MANUTENCOES_EQ, CHAVE_OCORRENCIAS_EQ, registrarAbastecimentoEq, registrarManutencaoEq, registrarOcorrenciaEq, salvarTratativaEq,
 } from "../registros-equipamento.ts";
 import {
   avaliarItemEq, CHAVE_CHECKLISTS_EQ, concluirChecklistEq, gruposDoChecklistEq, gruposDoTipoEq, iniciarChecklistAvulsoEq, iniciarChecklistEq, periodicidadesDaAssociacaoEq,
@@ -120,11 +120,14 @@ export function semearModuloEquipamentos(storage: Armazenamento, agora: Date): v
       ignorar(() => salvarPlano({ modo: "criar", equipamentoId: id, itens: daFamilia.slice(0, 2).map((a, i) => ({ acaoId: a.id, horas: i === 0 ? 250 * ((k % 3) + 1) : 1000, meses: i === 0 ? 3 + (k % 4) : 12 })) }, storage, agora));
     }
 
-    // Ocorrência: uma por equipamento, três delas resolvidas.
+    // Ocorrência: uma por equipamento, com tratativa em parte delas.
     const nomeTipo = TIPOS_OCORRENCIA[k % TIPOS_OCORRENCIA.length]!.nome;
     const tipoOcorrencia = tiposOcorrencia.find((t) => t.nome === nomeTipo);
     const oc = registrarOcorrenciaEq({ equipamentoId: id, tipoId: tipoOcorrencia?.id ?? "", tipoNome: nomeTipo, data: dia(agora, 20 - k), descricao: TEXTO_OCORRENCIA[nomeTipo]! }, st, agora);
-    if (k % 3 === 0) resolverOcorrenciaEq(oc.id, "Defeito corrigido e equipamento liberado.", st, agora);
+    // Quatro encerradas e três em tratativa (a tratativa fica salva, sem encerrar); as outras três seguem abertas.
+    if (k % 3 === 0 || k % 5 === 1 || k % 5 === 2) {
+      salvarTratativaEq(oc.id, { responsavelId: responsavel.id, descricaoEmpresa: "Defeito corrigido e equipamento liberado.", custoEmpresa: 150 + k * 40, pagamentoTerceiros: "", seguradora: "nao" }, { encerrar: k % 3 === 0, isAdmin: true }, st, agora);
+    }
     trocarId(storage, CHAVE_OCORRENCIAS_EQ, oc.id, `${PREFIXO}eq-ocorrencia-${k + 1}`);
 
     // Check lists: cinco periódicos de cada finalidade (um por período da periodicidade da associação) e cinco avulsos, todos concluídos.

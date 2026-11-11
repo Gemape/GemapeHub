@@ -1,7 +1,7 @@
 // Registros do módulo Equipamentos (Inventário, Abastecimento, Manutenção, Ocorrências e Check lists), na mesma lógica dos de Veículos, mas por equipamento e com
 // horímetro no lugar do km. Fase 1: ficam só no navegador, em modo demonstração; as tabelas no banco real são pendência da Fase 2.
 import { horaBrasilia, hojeLocal } from "./empregados.ts";
-import { MAX_FOTOS } from "./ocorrencias-veiculo.ts";
+import { custo, MAX_FOTOS, type RenovacaoPrazo } from "./ocorrencias-veiculo.ts";
 import { alterarLista, dinheiroPositivo, lerLista, validarData, validarHora, type StorageLike } from "./registros-veiculo.ts";
 
 export const CHAVE_ABASTECIMENTOS_EQ = "gemape-demo-eq-abastecimentos";
@@ -28,8 +28,15 @@ export type ManutencaoEquipamentoRegistro = {
 export const statusDaOsEq = (m: Pick<ManutencaoEquipamentoRegistro, "status">): StatusOsEq => m.status ?? "Concluída";
 // Só a manutenção concluída conta no horímetro, nos custos, na disponibilidade e nos indicadores; pendente, em andamento e cancelada ficam só na lista de ordens.
 export const manutencoesConcluidasEq = (lista: ManutencaoEquipamentoRegistro[]) => lista.filter((m) => statusDaOsEq(m) === "Concluída");
+// Como em Veículos: Aberta, Em tratativa (salvou a tratativa) e Encerrada. "Resolvida" é só dos registros de antes da tratativa e conta como Encerrada.
+export type StatusOcorrenciaEq = "Aberta" | "Em tratativa" | "Encerrada" | "Resolvida";
+export type TratativaEq = {
+  responsavelId: string; descricaoEmpresa: string; custoEmpresa: number; pagamentoTerceiros: string; seguradora: boolean; registradaEm: string; atualizadaEm: string;
+};
 export type OcorrenciaEquipamento = {
-  id: string; equipamentoId: string; tipoId: string; tipoNome: string; data: string; descricao: string; status: "Aberta" | "Resolvida"; solucao: string; resolvidaEm: string | null; criadoEm: string;
+  id: string; equipamentoId: string; tipoId: string; tipoNome: string; data: string; descricao: string; status: StatusOcorrenciaEq; solucao: string; resolvidaEm: string | null; criadoEm: string;
+  // Código (OCO-0001), tratativa, quando foi encerrada e renovações do prazo; registros antigos não têm.
+  codigo?: string; tratativa?: TratativaEq | null; encerradaEm?: string | null; renovacoes?: RenovacaoPrazo[];
   // Fotos da ocorrência (data URLs já reduzidas na tela), como em Veículos; registros antigos não têm.
   fotos?: string[];
 };
@@ -185,8 +192,14 @@ export function registrarOcorrenciaEq(entrada: EntradaOcorrenciaEq, storage = st
   const data = validarData(entrada.data, agora);
   const descricao = entrada.descricao.trim();
   if (descricao.length < 5) throw new Error("Descreva a ocorrência (ao menos 5 letras).");
-  const registro: OcorrenciaEquipamento = { id: novoId(), equipamentoId: entrada.equipamentoId, tipoId: entrada.tipoId, tipoNome: entrada.tipoNome.trim(), data, descricao, status: "Aberta", solucao: "", resolvidaEm: null, fotos: validarFotosEq(entrada.fotos ?? []), criadoEm: agora.toISOString() };
-  gravar<OcorrenciaEquipamento>(CHAVE_OCORRENCIAS_EQ, storage, (l) => [...l, registro]);
+  const fotos = validarFotosEq(entrada.fotos ?? []);
+  let registro!: OcorrenciaEquipamento;
+  gravar<OcorrenciaEquipamento>(CHAVE_OCORRENCIAS_EQ, storage, (l) => {
+    // O código é calculado dentro da gravação, para dois cadastros seguidos não repetirem o número.
+    const maior = l.reduce((m, o) => Math.max(m, Number(String(o.codigo ?? "").replace(/\D/g, "")) || 0), 0);
+    registro = { id: novoId(), codigo: `OCO-${String(maior + 1).padStart(4, "0")}`, equipamentoId: entrada.equipamentoId, tipoId: entrada.tipoId, tipoNome: entrada.tipoNome.trim(), data, descricao, status: "Aberta", solucao: "", resolvidaEm: null, tratativa: null, encerradaEm: null, fotos, criadoEm: agora.toISOString() };
+    return [...l, registro];
+  });
   return registro;
 }
 export function adicionarFotosOcorrenciaEq(id: string, fotos: string[], storage = storagePadrao()): void {
@@ -209,6 +222,61 @@ export function resolverOcorrenciaEq(id: string, solucao: string, storage = stor
   const texto = solucao.trim();
   if (texto.length < 3) throw new Error("Informe como a ocorrência foi resolvida.");
   gravar<OcorrenciaEquipamento>(CHAVE_OCORRENCIAS_EQ, storage, (l) => l.map((o) => (o.id === id ? { ...o, status: "Resolvida" as const, solucao: texto, resolvidaEm: hojeLocal(agora) } : o)));
+}
+// Encerrada (ou resolvida, no registro antigo) não recebe mais alteração, só do Administrador; aberta e em tratativa ainda pedem solução e bloqueiam o "pronto" do equipamento.
+export const ocorrenciaEncerradaEq = (o: Pick<OcorrenciaEquipamento, "status">) => o.status === "Encerrada" || o.status === "Resolvida";
+export const ocorrenciaPendenteEq = (o: Pick<OcorrenciaEquipamento, "status">) => !ocorrenciaEncerradaEq(o);
+export const codigoDaOcorrenciaEq = (o: Pick<OcorrenciaEquipamento, "id" | "codigo">) => o.codigo ?? `OCO-${o.id.replace(/\W/g, "").slice(-4).toUpperCase()}`;
+export const contarOcorrenciasEq = (lista: Pick<OcorrenciaEquipamento, "status">[]) => ({
+  Aberta: lista.filter((o) => o.status === "Aberta").length,
+  "Em tratativa": lista.filter((o) => o.status === "Em tratativa").length,
+  Encerrada: lista.filter(ocorrenciaEncerradaEq).length,
+});
+
+function mudarOcorrenciaEq(id: string, storage: StorageLike | null, alterar: (o: OcorrenciaEquipamento) => OcorrenciaEquipamento): OcorrenciaEquipamento {
+  let resultado!: OcorrenciaEquipamento;
+  gravar<OcorrenciaEquipamento>(CHAVE_OCORRENCIAS_EQ, storage, (l) => {
+    const atual = l.find((o) => o.id === id);
+    if (!atual) throw new Error("Ocorrência não encontrada.");
+    resultado = alterar(atual);
+    return l.map((o) => (o.id === id ? resultado : o));
+  });
+  return resultado;
+}
+
+export type EntradaTratativaEq = { responsavelId: string; descricaoEmpresa: string; custoEmpresa: string | number; pagamentoTerceiros: string; seguradora: string };
+// Salvar deixa a ocorrência "Em tratativa" (e pode ser editada de novo); encerrar fecha. Depois de encerrada só o Administrador mexe. Tudo ou nada.
+export function salvarTratativaEq(id: string, dados: EntradaTratativaEq, opcoes: { encerrar: boolean; isAdmin: boolean }, storage = storagePadrao(), agora = new Date()): OcorrenciaEquipamento {
+  return mudarOcorrenciaEq(id, storage, (o) => {
+    if (ocorrenciaEncerradaEq(o) && !opcoes.isAdmin) throw new Error("Esta ocorrência está encerrada. Só o Administrador pode alterá-la.");
+    if (!dados.responsavelId) throw new Error("Selecione o responsável pela tratativa.");
+    const descricaoEmpresa = dados.descricaoEmpresa.trim().slice(0, 2000);
+    if (!descricaoEmpresa) throw new Error("Informe a descrição da tratativa do equipamento da empresa.");
+    const valor = custo(dados.custoEmpresa);
+    if (valor === null) throw new Error("Informe o custo total da tratativa para a empresa (use 0 se não houve custo).");
+    if (dados.seguradora !== "sim" && dados.seguradora !== "nao") throw new Error("Informe se houve uso de seguradora.");
+    const iso = agora.toISOString();
+    const tratativa: TratativaEq = {
+      responsavelId: dados.responsavelId, descricaoEmpresa, custoEmpresa: valor, pagamentoTerceiros: dados.pagamentoTerceiros.trim().slice(0, 1000),
+      seguradora: dados.seguradora === "sim", registradaEm: o.tratativa?.registradaEm ?? iso, atualizadaEm: iso,
+    };
+    const encerra = ocorrenciaEncerradaEq(o) || opcoes.encerrar;
+    return { ...o, tratativa, status: encerra ? "Encerrada" : "Em tratativa", encerradaEm: encerra ? (o.encerradaEm ?? iso) : null };
+  });
+}
+// Renovar o prazo: só vale para ocorrência ainda não encerrada; quem chama já conferiu a autorização do supervisor.
+export function renovarPrazoTratativaEq(
+  id: string, quem: { autorizadoPorId: string; autorizadoPorNome: string; registradoPorNome: string; ate: string }, storage = storagePadrao(), agora = new Date(),
+): OcorrenciaEquipamento {
+  return mudarOcorrenciaEq(id, storage, (o) => {
+    if (ocorrenciaEncerradaEq(o)) throw new Error("Esta ocorrência está encerrada: não há prazo para renovar.");
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(quem.ate ?? "");
+    const real = m ? new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))) : null;
+    if (!m || !real || real.getUTCFullYear() !== Number(m[1]) || real.getUTCMonth() !== Number(m[2]) - 1 || real.getUTCDate() !== Number(m[3])) throw new Error("Informe a data para a renovação da tratativa.");
+    if (quem.ate < hojeLocal(agora)) throw new Error("A nova data da tratativa não pode ser anterior a hoje.");
+    const renovacao: RenovacaoPrazo = { em: agora.toISOString(), passo: o.status === "Aberta" ? "iniciar" : "finalizar", ...quem };
+    return { ...o, renovacoes: [...(o.renovacoes ?? []), renovacao] };
+  });
 }
 export const removerOcorrenciaEq = (id: string, storage = storagePadrao()) => gravar<OcorrenciaEquipamento>(CHAVE_OCORRENCIAS_EQ, storage, (l) => l.filter((o) => o.id !== id));
 

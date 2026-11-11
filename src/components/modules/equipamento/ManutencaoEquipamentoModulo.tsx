@@ -30,7 +30,7 @@ import { ExtratoEquipamento } from "./ExtratoEquipamento";
 import { combinaBusca } from "@/lib/parametros-base";
 import { atualizarManutencaoEq, custoDaManutencaoEq, manutencoesConcluidasEq, registrarManutencaoEq, removerManutencaoEq, STATUS_OS_EQ, statusDaOsEq, ultimoHorimetro, type AcaoRealizada, type ManutencaoEquipamentoRegistro, type StatusOsEq } from "@/lib/registros-equipamento";
 import { executar } from "@/lib/use-parametros-base";
-import { hoje, horimetroEmTexto, numero, reais, rotuloDoEquipamento, TODOS, revisoesDoEquipamento, useEquipamentosDaEmpresa, useOrdensEq } from "./comum";
+import { hoje, horimetroEmTexto, numero, reais, rotuloDoEquipamento, TODOS, faixaEq, pctDe, revisoesDoEquipamento, useEquipamentosDaEmpresa, useOrdensEq } from "./comum";
 
 // Módulos > Equipamentos > Manutenção: ordens de serviço de manutenção preventiva ou corretiva. A ordem nasce Pendente, vai para Em andamento e termina Concluída
 // (com as ações realizadas, as de Parâmetros > Equipamentos > Manutenção, e os custos) ou Cancelada; tem técnico responsável e previsão de conclusão.
@@ -73,6 +73,11 @@ export function ManutencaoEquipamentoModulo() {
   );
   const linhas = base.filter((m) => situacao === TODOS || statusDaOsEq(m) === situacao);
   const custo = linhas.filter((m) => statusDaOsEq(m) === "Concluída").reduce((s, m) => s + custoDaManutencaoEq(m), 0);
+  const concluidasDaLista = linhas.filter((m) => statusDaOsEq(m) === "Concluída");
+  const feitas = concluidasDaLista.length;
+  const preventivas = linhas.filter((m) => m.tipo === "Preventiva").length;
+  const pecas = concluidasDaLista.reduce((s, m) => s + m.custoPecas, 0);
+  const maoDeObra = concluidasDaLista.reduce((s, m) => s + m.custoMaoDeObra, 0);
   const emAberto = base.filter((m) => ["Pendente", "Em andamento"].includes(statusDaOsEq(m))).length;
   const hojeIso = hoje();
   // Revisões do plano de cada equipamento e o diagnóstico de manutenção (só ordens concluídas contam), a mesma conta de Veículos com horas de uso no lugar do km.
@@ -183,14 +188,14 @@ export function ManutencaoEquipamentoModulo() {
       </div>
 
       <GradeDeCartoes colunas={4}>
-        <StatCard titulo="Manutenções" subtitulo="Ordens de serviço da lista abaixo." valor={linhas.length} detalhe={`${linhas.filter((m) => statusDaOsEq(m) === "Concluída").length} concluída(s)`} icone={Wrench} compacto />
-        <StatCard titulo="Em aberto" subtitulo="Pendentes e em andamento." valor={emAberto} detalhe={atrasadas > 0 ? `${atrasadas} com a previsão vencida` : "Nenhuma atrasada"} icone={CircleDashed} compacto />
-        <StatCard titulo="Preventivas / corretivas" subtitulo="Ordens de cada tipo na lista." valor={`${linhas.filter((m) => m.tipo === "Preventiva").length} / ${linhas.filter((m) => m.tipo === "Corretiva").length}`} detalhe={`${linhas.length} ordem(ns) na lista`} icone={ListChecks} compacto />
-        <StatCard titulo="Custo total" subtitulo="Soma do custo das ordens concluídas da lista." valor={reais(custo)} detalhe="Peças e mão de obra" icone={Banknote} compacto />
+        <StatCard titulo="Ordens de serviço" subtitulo="Ordens da lista abaixo, com as concluídas em destaque." valor={linhas.length} pct={pctDe(feitas, linhas.length)} detalhe={`${feitas} concluída(s) de ${linhas.length}`} icone={Wrench} />
+        <StatCard titulo="Em aberto" subtitulo="Ordens no prazo ÷ ordens pendentes ou em andamento." valor={emAberto} pct={pctDe(emAberto - atrasadas, emAberto)} faixa={faixaEq(pctDe(emAberto - atrasadas, emAberto))} detalhe={atrasadas > 0 ? `${atrasadas} de ${emAberto} com a previsão vencida` : emAberto > 0 ? `${emAberto} de ${emAberto} no prazo` : "Nenhuma ordem em aberto"} icone={CircleDashed} />
+        <StatCard titulo="Preventivas / corretivas" subtitulo="Ordens preventivas ÷ ordens da lista." valor={`${preventivas} / ${linhas.length - preventivas}`} pct={pctDe(preventivas, linhas.length)} detalhe={`${preventivas} preventiva(s) de ${linhas.length} ordem(ns)`} icone={ListChecks} />
+        <StatCard titulo="Custo total" subtitulo="Soma do custo das ordens concluídas da lista." valor={reais(custo)} detalhe={`${reais(pecas)} em peças + ${reais(maoDeObra)} em mão de obra`} icone={Banknote} />
       </GradeDeCartoes>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
-      <div className="max-h-[max(12rem,calc(100dvh-27rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="max-h-[max(12rem,calc(100dvh-33rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table>
           <TableHeader>
             <TableRow>

@@ -197,7 +197,7 @@ export function concluirChecklistEq(id: string, storage = storagePadrao(), agora
   try {
     let concluido!: ChecklistEquipamentoRegistro;
     alterarAberto(id, storage, (c) => {
-      nok.forEach((n, k) => { const item = acharItem(c, n.id); item.ocorrenciaId = criadas[k]!.id; item.ocorrenciaCodigo = `OCE-${criadas[k]!.id.slice(0, 6).toUpperCase()}`; });
+      nok.forEach((n, k) => { const item = acharItem(c, n.id); item.ocorrenciaId = criadas[k]!.id; item.ocorrenciaCodigo = criadas[k]!.codigo ?? null; });
       c.status = "Concluído";
       c.concluidoEm = agora.toISOString();
       concluido = c;

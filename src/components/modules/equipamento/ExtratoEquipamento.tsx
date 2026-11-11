@@ -14,7 +14,7 @@ import { lerManutencaoEquipamento } from "@/lib/equipamentos-manutencao";
 import { montarExtratoHtml, type Celula, type Cor, type TabelaExtrato } from "@/lib/extrato-html";
 import { sugestoesPreventivas } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
-import { custoDaManutencaoEq, ultimoHorimetro } from "@/lib/registros-equipamento";
+import { custoDaManutencaoEq, ocorrenciaPendenteEq, ultimoHorimetro } from "@/lib/registros-equipamento";
 import { imprimirDocumento } from "@/lib/visualizador-documento";
 import { NovoAbastecimento } from "./AbastecimentoEquipamentoModulo";
 import { NovaManutencao } from "./ManutencaoEquipamentoModulo";
@@ -103,7 +103,7 @@ export function ExtratoEquipamento({ equipamento, foco, soAbertasInicial = false
       {
         titulo: abertas ? "Ocorrências em aberto" : "Ocorrências", vazio: abertas ? "Nenhuma ocorrência em aberto no período." : "Nenhuma ocorrência no período.",
         colunas: [{ titulo: "Data" }, { titulo: "Tipo" }, { titulo: "Status" }, { titulo: "Descrição" }],
-        linhas: dele(ocorrencias).filter((o) => !abertas || o.status === "Aberta").map((o): Celula[] => [formatarData(o.data), o.tipoNome, { texto: o.status, cor: o.status === "Aberta" ? "vermelho" : "verde" }, o.descricao]),
+        linhas: dele(ocorrencias).filter((o) => !abertas || ocorrenciaPendenteEq(o)).map((o): Celula[] => [formatarData(o.data), o.tipoNome, { texto: o.status, cor: o.status === "Aberta" ? "vermelho" : ocorrenciaPendenteEq(o) ? "amarelo" : "verde" }, o.descricao]),
       },
       {
         titulo: "Check lists", vazio: "Nenhum check list no período.",

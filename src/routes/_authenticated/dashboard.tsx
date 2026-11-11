@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, Boxes, Building2, Car, Users, Wallet } from "lucide-react";
 
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
+import { PainelKpisDialog, type CardDoPainel } from "@/components/PainelKpisDialog";
 import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +22,9 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empregadoAtivo } from "@/lib/empregados";
 import { formatarMoeda, valorTotalEmEstoque, MODULO_LABEL, type Modulo } from "@/lib/gemape";
 import { useVeiculos } from "@/lib/hooks-gemape";
+import { faixaDoIndice, lerFaixasDeVeiculos } from "@/lib/faixas-desempenho";
+import { lerOcorrenciasVeiculo } from "@/lib/ocorrencias-veiculo";
+import { kpisDeEmpregados, kpisDeItens, kpisDeValor, kpisDeVeiculos } from "@/lib/painel-kpis";
 import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { alertasDeMinimoEpi } from "@/lib/estoque-epi-saldos";
 import { controlaModulo } from "@/lib/estoque-tamanho";
@@ -48,9 +53,19 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 const MODULOS: Modulo[] = ["epi", "uniforme", "ferramenta"];
 
+// O card do alto abre os KPIs dele (PainelKpisDialog): vira botão, com o mesmo foco visível dos outros cartões clicáveis.
+function CardClicavel({ rotulo, onAbrir, children }: { rotulo: string; onAbrir: () => void; children: ReactNode }) {
+  return (
+    <button type="button" aria-label={`${rotulo}: ver indicadores`} onClick={onAbrir} className="block h-full w-full rounded-2xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      {children}
+    </button>
+  );
+}
+
 function DashboardGeral() {
   const { empresas, empresaId } = useEmpresa();
   const { data: veiculos = [] } = useVeiculos(empresaId);
+  const [cardAberto, setCardAberto] = useState<CardDoPainel | null>(null);
 
   const { data: itens = [] } = useQuery({
     queryKey: ["itens-todos", empresaId],
@@ -86,22 +101,23 @@ function DashboardGeral() {
     },
   });
 
-  const { data: totalEmpregados = 0 } = useQuery({
+  const { data: empregadosAtivos = [] } = useQuery({
     queryKey: ["empregados-total", empresaId],
     staleTime: 60_000,
     queryFn: async () => {
       // Conta só quem está ativo hoje: demissão futura conta, demissão vencida não.
-      const data = await lerTodas<{ ativo: boolean; data_demissao: string | null }>(
+      const data = await lerTodas<{ ativo: boolean; data_demissao: string | null; empresa_id: string | null }>(
         () => {
-          const q = supabase.from("empregados").select("ativo,data_demissao").eq("ativo", true);
+          const q = supabase.from("empregados").select("ativo,data_demissao,empresa_id").eq("ativo", true);
           return empresaId !== TODAS ? q.eq("empresa_id", empresaId) : q;
         },
         (q) => q.order("id"),
       );
-      return data.filter((e) => empregadoAtivo(e)).length;
+      return data.filter((e) => empregadoAtivo(e));
     },
   });
 
+  const totalEmpregados = empregadosAtivos.length;
   const valorTotal = valorTotalEmEstoque(itens);
   // EPI e uniforme com tamanho e mínimo por tamanho alertam por tamanho; os demais, pelo total.
   const parametros = useParametrosBase();
@@ -125,6 +141,22 @@ function DashboardGeral() {
     };
   });
 
+  // As ocorrências ficam no navegador: relê quando a lista de veículos muda e a cada card aberto, para o número não ficar velho.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const ocorrenciasDeVeiculos = useMemo(() => lerOcorrenciasVeiculo(), [veiculos, cardAberto]);
+  const empresasDoPainel = empresas.map((e) => ({ id: e.id, nome: e.nome_fantasia }));
+  const kpis = {
+    itens: kpisDeItens(itens, new Set(criticos.map((i) => i.id)), empresasDoPainel),
+    valor: kpisDeValor(itens, empresasDoPainel),
+    veiculos: kpisDeVeiculos(veiculos, ocorrenciasDeVeiculos, empresasDoPainel),
+    empregados: kpisDeEmpregados(empregadosAtivos, itens, empresasDoPainel),
+  };
+
+  // Faixas (verde, amarelo, vermelho) dos mesmos limites dos indicadores da Frota.
+  const faixas = lerFaixasDeVeiculos();
+  const pctSemAlerta = kpis.itens.pctAbaixoMinimo === null ? null : Math.round((100 - kpis.itens.pctAbaixoMinimo) * 10) / 10;
+  const porcento = (n: number | null) => (n === null ? "—" : `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3 [&>:not(:first-child)]:ml-auto">
@@ -141,38 +173,55 @@ function DashboardGeral() {
       </header>
 
       <GradeDeCartoes colunas={4}>
-        <StatCard
-          titulo="Itens cadastrados"
-          subtitulo="Itens do cadastro e as unidades em estoque."
-          valor={itens.length}
-          detalhe={`${itens.reduce((s, i) => s + (i.estoque_atual ?? 0), 0)} unidades`}
-          icone={Boxes} compacto
-        />
-        <StatCard
-          titulo="Valor total em estoque"
-          subtitulo="Estoque atual × preço de cada item."
-          valor={formatarMoeda(valorTotal)}
-          icone={Wallet} compacto
-        />
-        <StatCard
-          titulo="Veículos"
-          subtitulo="Veículos cadastrados e quantos estão ativos."
-          valor={veiculos.length}
-          detalhe={`${veiculos.filter((v) => v.status === "Ativo").length} ativos`}
-          icone={Car} compacto
-        />
-        <StatCard
-          titulo="Empregados ativos"
-          subtitulo="Somente colaboradores em atividade."
-          valor={totalEmpregados}
-          icone={Users} compacto
-        />
+        <CardClicavel rotulo="Itens cadastrados" onAbrir={() => setCardAberto("itens")}>
+          <StatCard
+            titulo="Itens cadastrados"
+            subtitulo="Itens sem alerta de estoque ÷ itens cadastrados."
+            valor={kpis.itens.total}
+            pct={pctSemAlerta}
+            faixa={faixaDoIndice(pctSemAlerta, faixas)?.faixa ?? null}
+            detalhe={`${kpis.itens.unidades.toLocaleString("pt-BR")} unidades · ${kpis.itens.abaixoMinimo} em alerta`}
+            icone={Boxes}
+          />
+        </CardClicavel>
+        <CardClicavel rotulo="Valor total em estoque" onAbrir={() => setCardAberto("valor")}>
+          <StatCard
+            titulo="Valor total em estoque"
+            subtitulo="Estoque atual × preço de cada item."
+            valor={formatarMoeda(valorTotal)}
+            detalhe={`${formatarMoeda(kpis.valor.valorMedioPorUnidade)} por unidade em média`}
+            icone={Wallet}
+          />
+        </CardClicavel>
+        <CardClicavel rotulo="Veículos" onAbrir={() => setCardAberto("veiculos")}>
+          <StatCard
+            titulo="Veículos"
+            subtitulo="Veículos ativos ÷ veículos cadastrados."
+            valor={veiculos.length}
+            pct={kpis.veiculos.pctAtivos}
+            faixa={faixaDoIndice(kpis.veiculos.pctAtivos, faixas)?.faixa ?? null}
+            detalhe={`${kpis.veiculos.ativos} ativos de ${veiculos.length}`}
+            icone={Car}
+          />
+        </CardClicavel>
+        <CardClicavel rotulo="Empregados ativos" onAbrir={() => setCardAberto("empregados")}>
+          <StatCard
+            titulo="Empregados ativos"
+            subtitulo="Somente colaboradores em atividade."
+            valor={totalEmpregados}
+            detalhe={kpis.empregados.unidadesDeVestuarioPorEmpregado === null ? "Sem empregados ativos" : `${kpis.empregados.unidadesDeVestuarioPorEmpregado.toLocaleString("pt-BR")} un. de EPI e uniforme por empregado`}
+            icone={Users}
+          />
+        </CardClicavel>
       </GradeDeCartoes>
+      <PainelKpisDialog card={cardAberto} kpis={kpis} onFechar={() => setCardAberto(null)} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+      <div className="grid items-stretch gap-4 lg:grid-cols-5">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Patrimônio por categoria</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Boxes className="size-4" /> Patrimônio por categoria
+            </CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
@@ -181,20 +230,28 @@ function DashboardGeral() {
                   <TableHead>Categoria</TableHead>
                   <TableHead className="text-right">Itens</TableHead>
                   <TableHead className="text-right">Unidades</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="min-w-36 text-right">Valor</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {porModulo.map((linha) => (
-                  <TableRow key={linha.modulo}>
-                    <TableCell>{MODULO_LABEL[linha.modulo]}</TableCell>
-                    <TableCell className="text-right">{linha.itens}</TableCell>
-                    <TableCell className="text-right">{linha.unidades}</TableCell>
-                    <TableCell className="text-right">{formatarMoeda(linha.valor)}</TableCell>
-                  </TableRow>
-                ))}
+                {porModulo.map((linha) => {
+                  const parte = valorTotal > 0 ? (linha.valor / valorTotal) * 100 : 0;
+                  return (
+                    <TableRow key={linha.modulo}>
+                      <TableCell className="font-medium">{MODULO_LABEL[linha.modulo]}</TableCell>
+                      <TableCell className="text-right">{linha.itens}</TableCell>
+                      <TableCell className="text-right">{linha.unidades.toLocaleString("pt-BR")}</TableCell>
+                      <TableCell className="text-right">
+                        {formatarMoeda(linha.valor)}
+                        <span className="mt-1 block h-1.5 w-full overflow-hidden rounded-full bg-muted" role="presentation">
+                          <span className="block h-full rounded-full bg-primary" style={{ width: `${parte}%` }} />
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 <TableRow>
-                  <TableCell>Veículos</TableCell>
+                  <TableCell className="font-medium">Veículos</TableCell>
                   <TableCell className="text-right">{veiculos.length}</TableCell>
                   <TableCell className="text-right">—</TableCell>
                   <TableCell className="text-right">—</TableCell>
@@ -204,10 +261,11 @@ function DashboardGeral() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="size-4 text-destructive" /> Alertas críticos
+              {criticos.length > 0 && <span className="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-200">{criticos.length} item(ns)</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
@@ -230,7 +288,7 @@ function DashboardGeral() {
                 ) : (
                   criticos.slice(0, 10).map((i) => (
                     <TableRow key={i.id}>
-                      <TableCell>{i.nome}</TableCell>
+                      <TableCell className="font-medium">{i.nome}</TableCell>
                       <TableCell>{MODULO_LABEL[i.modulo as Modulo] ?? i.modulo}</TableCell>
                       <TableCell className="text-right">
                         {alertasDe(i)?.map((a) => `${a.nome}: ${a.saldo}`).join(" · ") ??
@@ -245,32 +303,50 @@ function DashboardGeral() {
                 )}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building2 className="size-4" /> Distribuição por empresa
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
-            {empresas.map((empresa) => {
-              const doGrupo = itens.filter((i) => i.empresa_id === empresa.id);
-              return (
-                <div key={empresa.id} className="rounded-md border p-4">
-                  <p className="text-eyebrow">{empresa.nome_fantasia}</p>
-                  <p className="mt-1 font-display text-xl font-bold">{doGrupo.length} itens</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatarMoeda(valorTotalEmEstoque(doGrupo))} em estoque
-                    · {veiculos.filter((v) => v.empresa_id === empresa.id).length} veículos
-                  </p>
-                </div>
-              );
-            })}
+            {criticos.length > 10 && <p className="mt-2 text-xs text-muted-foreground">Mostrando 10 de {criticos.length}. Clique no card Itens cadastrados para ver o resumo por categoria e empresa.</p>}
           </CardContent>
         </Card>
       </div>
+
+      <section aria-label="Distribuição por empresa" className="space-y-3">
+        <h2 className="flex items-center gap-2 text-base font-semibold"><Building2 className="size-4" /> Distribuição por empresa</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {empresas.map((empresa) => {
+            const valorEmpresa = kpis.valor.porEmpresa.find((e) => e.id === empresa.id);
+            const itensEmpresa = kpis.itens.porEmpresa.find((e) => e.id === empresa.id);
+            const veiculosEmpresa = kpis.veiculos.porEmpresa.find((e) => e.id === empresa.id);
+            const equipe = kpis.empregados.porEmpresa.find((e) => e.id === empresa.id);
+            return (
+              <div key={empresa.id} className="flex h-full flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-eyebrow">{empresa.nome_fantasia}</p>
+                    <p className="mt-1 break-words font-display text-2xl font-bold leading-none">{formatarMoeda(valorEmpresa?.valor ?? 0)}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">Valor em estoque · {porcento(valorEmpresa?.pct ?? null)} do grupo</p>
+                  </div>
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md ring-4 ring-white/70 dark:ring-white/10"><Building2 className="size-5" aria-hidden="true" /></span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/15" role="presentation">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${valorEmpresa?.pct ?? 0}%` }} />
+                </div>
+                <dl className="grid grid-cols-4 gap-2 text-center">
+                  {[
+                    ["Itens", itensEmpresa?.itens ?? 0],
+                    ["Em alerta", itensEmpresa?.abaixoMinimo ?? 0],
+                    ["Veículos", veiculosEmpresa?.total ?? 0],
+                    ["Equipe", equipe?.ativos ?? 0],
+                  ].map(([rotulo, n]) => (
+                    <div key={rotulo} className="rounded-xl bg-muted/50 px-1 py-2">
+                      <dd className="font-display text-lg font-bold leading-none">{n}</dd>
+                      <dt className="mt-1 text-[11px] text-muted-foreground">{rotulo}</dt>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

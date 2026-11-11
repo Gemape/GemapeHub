@@ -35,7 +35,7 @@ import { combinaBusca } from "@/lib/parametros-base";
 import { EVENTO_REGISTROS_EQUIPAMENTO } from "@/lib/registros-equipamento";
 import { executar } from "@/lib/use-parametros-base";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
-import { nomeDoTipo, rotuloDoEquipamento, useChecklistParametros, useChecklistsEq, useEquipamentosDaEmpresa, useEquipamentosTodos, useLeitura } from "./comum";
+import { nomeDoTipo, rotuloDoEquipamento, seloDaSituacao, useChecklistParametros, useChecklistsEq, useEquipamentosDaEmpresa, useEquipamentosTodos, useLeitura } from "./comum";
 
 const TITULO: Record<FinalidadeChecklist, string> = { manutencao: "Check list de manutenção", vistoria: "Check list de vistoria" };
 const SITUACAO: Record<SituacaoPeriodica, { rotulo: string; classe: string }> = {
@@ -336,7 +336,7 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
                     <TableCell className="whitespace-nowrap font-medium">{nomeDe(c)}</TableCell>
                     <TableCell>{formatarData(c.data)}</TableCell>
                     <TableCell className="text-xs">{r.avaliados}/{r.total} · {r.ok} OK · {r.nok} NOK · {r.na} N.A.</TableCell>
-                    <TableCell><Badge variant={c.status === "Concluído" ? "secondary" : "outline"}>{c.status}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className={seloDaSituacao(c.status)}>{c.status}</Badge></TableCell>
                     <TableCell className="text-right">{r.pendenciasAbertas > 0 ? <span className="font-semibold text-red-700 dark:text-red-300">{r.pendenciasAbertas}</span> : 0}</TableCell>
                   </TableRow>
                 );
