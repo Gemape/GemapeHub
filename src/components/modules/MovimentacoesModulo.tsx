@@ -1,4 +1,5 @@
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
+import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
@@ -495,7 +496,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
                 id="alvo_id"
                 nome="alvo_id"
                 valor={alvoId}
-                opcoes={ehVeiculo ? veiculos.map((o) => ({ id: o.id, rotulo: [o.placa, o.modelo].filter(Boolean).join(" — ") || "—" })) : itens.map((o) => ({ id: o.id, rotulo: `${o.codigo_sku} — ${o.nome}` }))}
+                opcoes={ehVeiculo ? veiculos.map((o) => ({ id: o.id, rotulo: [o.placa, o.modelo].filter(Boolean).join(" — ") || "—" })) : itens.map((o) => ({ id: o.id, rotulo: `${o.codigo_sku} — ${o.nome}${modulo === "ferramenta" ? sufixoTamanhoFerramenta(o) : ""}` }))}
                 onChange={(v) => {
                   setAlvoId(v);
                   setTamanho("");

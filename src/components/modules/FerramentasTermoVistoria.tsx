@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
 import { portadorNaData } from "@/lib/portadores-caixa";
@@ -296,7 +297,7 @@ export function FerramentasTermoVistoria() {
                           <SelectContent>
                             {itens.map((i) => (
                               <SelectItem key={i.id} value={i.id}>
-                                {i.nome} ({i.codigo_sku})
+                                {i.nome}{sufixoTamanhoFerramenta(i)} ({i.codigo_sku})
                               </SelectItem>
                             ))}
                           </SelectContent>
