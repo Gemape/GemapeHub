@@ -122,6 +122,14 @@ test("ordem de serviço: o horímetro de quem conclui é conferido na data da co
   assert.deepEqual([feita.data, feita.abertaEm], ["2026-10-14", "2026-10-10"]);
 });
 
+test("relatório da ordem de serviço: dados, ações e custos, com todo texto escapado", async () => {
+  const { montarManutencaoEquipamentoHtml } = await import("../src/lib/manutencao-equipamento-relatorio-html.ts");
+  const os = { id: "m1", equipamentoId: "e1", tipo: "Corretiva", data: "2026-10-14", abertaEm: "2026-10-10", horimetro: 160, acoes: [{ acaoId: "a1", nome: "Troca <b>de</b> óleo", subitens: ["Filtro & junta"] }], local: "terceiro", localNome: "Oficina <x>", custoPecas: 80, custoMaoDeObra: 20.5, observacao: "<script>alert(1)</script>", criadoEm: "2026-10-10T10:00:00Z", status: "Concluída", responsavel: "Ana", horasParada: 4 };
+  const html = montarManutencaoEquipamentoHtml(os, { empresa: "GEMAPE", equipamento: "PAT-1 · Empilhadeira" });
+  for (const t of ["PAT-1 · Empilhadeira", "10/10/2026", "14/10/2026", "R$ 100,50", "Ana", "160 h", "Filtro &amp; junta", "Troca &lt;b&gt;de&lt;/b&gt; óleo", "Oficina &lt;x&gt;"]) assert.ok(html.replace(/ /g, " ").includes(t), t);
+  assert.ok(!html.includes("<script>alert") && !html.includes("<b>de</b>"));
+});
+
 test("manutenção registrada sem status continua concluída (registros antigos e o fluxo de antes)", () => {
   assert.equal(R.statusDaOsEq({}), "Concluída");
 });

@@ -46,17 +46,19 @@ const ROTULO: Record<StatusSugestao, string> = {
   sem_registro: "Sem registro",
 };
 
-const km = (n: number) => `${n.toLocaleString("pt-BR")} km`;
+const medida = (n: number, un: string) => `${n.toLocaleString("pt-BR")} ${un}`;
 
 // Lista das revisões do plano de cada veículo (decisão 319): serviço, periodicidade, última realizada, próxima revisão e situação (pílula colorida). A revisão vence pelo que vier primeiro, o km atual do veículo ou a data (por isso a situação diz o motivo
 // e a próxima revisão mostra o km atual).
-export function ManutencaoRevisoes({ revisoes }: { revisoes: RevisaoDoVeiculo[] }) {
+// Em Equipamentos, `unidade` é "h", `item` é "Equipamento", `medida` é "Horímetro" e `orientacao` aponta o cadastro do plano.
+export function ManutencaoRevisoes({ revisoes, unidade = "km", item = "Veículo", medida: rotuloMedida = "Km", orientacao = "O plano de cada veículo fica em Parâmetros > Veículos." }: { revisoes: RevisaoDoVeiculo[]; unidade?: string; item?: string; medida?: string; orientacao?: string }) {
+  const km = (n: number) => medida(n, unidade);
   return (
     <div className="overflow-x-auto rounded-xl border">
       <Table className="min-w-[1200px] table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[19%]">Veículo</TableHead>
+            <TableHead className="w-[19%]">{item}</TableHead>
             <TableHead className="w-[19%]">Serviço</TableHead>
             <TableHead className="w-[17%]">Periodicidade</TableHead>
             <TableHead className="w-[15%]">Última realizada</TableHead>
@@ -68,8 +70,7 @@ export function ManutencaoRevisoes({ revisoes }: { revisoes: RevisaoDoVeiculo[] 
           {revisoes.length === 0 && (
             <TableRow>
               <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                Nenhuma revisão encontrada. O plano de cada veículo fica em Parâmetros &gt;
-                Veículos.
+                Nenhuma revisão encontrada. {orientacao}
               </TableCell>
             </TableRow>
           )}
@@ -99,7 +100,7 @@ export function ManutencaoRevisoes({ revisoes }: { revisoes: RevisaoDoVeiculo[] 
                       {formatarData(s.proximaData)}
                       <span className="block text-xs text-muted-foreground">{km(s.proximoKm)}</span>
                       <span className="block text-xs text-muted-foreground">
-                        Km atual: {km(kmAtual)}
+                        {rotuloMedida} atual: {km(kmAtual)}
                       </span>
                     </>
                   ) : (

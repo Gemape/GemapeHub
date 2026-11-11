@@ -21,15 +21,16 @@ export type LinhaDiagnostico = {
 
 const COR_FAIXA: Record<Faixa, string> = { verde: "text-emerald-700", amarelo: "font-semibold text-amber-700", vermelho: "font-semibold text-red-700" };
 
-export function TabelaDiagnosticoManutencao({ linhas, aoAbrir }: { linhas: LinhaDiagnostico[]; aoAbrir: (id: string, secao: "sugeridas" | null) => void }) {
+// Em Equipamentos, `item` é "Equipamento" e `medida` é "Horímetro" (no lugar de Veículo e Km).
+export function TabelaDiagnosticoManutencao({ linhas, aoAbrir, item = "Veículo", medida = "Km" }: { linhas: LinhaDiagnostico[]; aoAbrir: (id: string, secao: "sugeridas" | null) => void; item?: string; medida?: string }) {
   return (
-    <section aria-label="Diagnóstico de manutenção por veículo">
+    <section aria-label={`Diagnóstico de manutenção por ${item.toLowerCase()}`}>
       <div className="flex max-h-[max(8rem,calc(100dvh-36rem))] flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1100px] table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[28%]">Veículo</TableHead>
-              <TableHead className="w-[8%] pr-6 text-right">Km atual</TableHead>
+              <TableHead className="w-[28%]">{item}</TableHead>
+              <TableHead className="w-[8%] pr-6 text-right">{medida} atual</TableHead>
               <TableHead className="w-[14%]">Última manutenção</TableHead>
               <TableHead className="w-[11%] text-center">Preventivas</TableHead>
               <TableHead className="w-[8%] pr-6 text-right">Realizadas</TableHead>
@@ -40,7 +41,7 @@ export function TabelaDiagnosticoManutencao({ linhas, aoAbrir }: { linhas: Linha
             </TableRow>
           </TableHeader>
           <TableBody>
-            {linhas.length === 0 && <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Nenhum veículo encontrado.</TableCell></TableRow>}
+            {linhas.length === 0 && <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Nenhum {item.toLowerCase()} encontrado.</TableCell></TableRow>}
             {linhas.map((l) => (
               <TableRow key={l.id} className="cursor-pointer" onClick={() => aoAbrir(l.id, null)}>
                 <TableCell className="font-medium">{l.veiculo}</TableCell>
