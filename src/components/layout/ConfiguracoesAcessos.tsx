@@ -30,14 +30,14 @@ export function ConfiguracoesAcessos({ aberto, onAberto }: { aberto: boolean; on
   };
 
   const linha = (id: string, nome: string, grupo: string | null, menuDe: string | null) => (
-    <tr key={id} className="border-b last:border-0">
-      <td className={`p-2 ${menuDe ? "pl-6" : "bg-muted/30 font-medium"}`}>
+    <tr key={id} className="border-b last:border-0 hover:bg-muted/40">
+      <td className={`px-3 py-2 ${menuDe ? "pl-8" : "border-l-4 border-l-primary/60 bg-primary/5 font-semibold"}`}>
         {grupo && menuDe === null && <span className="text-xs text-muted-foreground">{grupo} · </span>}
         {nome}
         {menuDe && <span className="ml-1 text-xs text-muted-foreground">({grupo})</span>}
       </td>
       {ACOES.map((a) => (
-        <td key={a} className={`p-2 text-center ${menuDe ? "" : "bg-muted/30"}`}>
+        <td key={a} className={`px-3 py-2 text-center ${menuDe ? "" : "bg-primary/5"}`}>
           <span className="relative inline-flex">
             <Checkbox
               aria-label={`${ROTULO_ACAO[a]} ${nome}${menuDe ? ` (${grupo})` : ""}`}
@@ -62,7 +62,7 @@ export function ConfiguracoesAcessos({ aberto, onAberto }: { aberto: boolean; on
             herda o do módulo, e marcar ou desmarcar dá exceções a um usuário (marcadas com *). Gerais e Configurações são sempre só do Administrador.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 rounded-xl border bg-muted/30 p-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label className="text-sm font-medium" htmlFor="usuario-config">Usuário</label>
             <Select value={editado.id} onValueChange={setEditadoId}>
@@ -78,13 +78,14 @@ export function ConfiguracoesAcessos({ aberto, onAberto }: { aberto: boolean; on
             </Select>
           </div>
         </div>
-        {travado && <p className="text-xs text-muted-foreground">O Administrador sempre tem todos os acessos; para testar restrições, escolha outro usuário.</p>}
-        <div className="overflow-x-auto rounded-md border">
+        {travado && <p className="rounded-lg border bg-primary/5 px-3 py-2 text-xs text-muted-foreground">O Administrador sempre tem todos os acessos; para testar restrições, escolha outro usuário.</p>}
+        <div className="overflow-x-auto rounded-xl border bg-muted/30 p-2">
+        <div className="overflow-hidden rounded-lg border bg-background">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b bg-muted/50 text-left">
-                <th className="p-2 font-medium">Tela / menu</th>
-                {ACOES.map((a) => <th key={a} className="p-2 text-center font-medium">{ROTULO_ACAO[a]}</th>)}
+              <tr className="border-b bg-muted/60 text-left">
+                <th className="px-3 py-2.5 font-semibold">Tela / menu</th>
+                {ACOES.map((a) => <th key={a} className="px-3 py-2.5 text-center font-semibold">{ROTULO_ACAO[a]}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -94,6 +95,7 @@ export function ConfiguracoesAcessos({ aberto, onAberto }: { aberto: boolean; on
               ])}
             </tbody>
           </table>
+        </div>
         </div>
         <DialogFooter className="gap-2 sm:justify-between">
           <Button type="button" variant="outline" onClick={() => { salvarPermissoes(localStorage, voltarAoPerfil(estado, editado.id)); toast.success("Voltou ao padrão do perfil"); }} disabled={travado}>
