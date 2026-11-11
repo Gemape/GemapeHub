@@ -56,4 +56,40 @@ export function semearViagens(storage: Armazenamento, agora: Date): void {
     for (const r of guardadas) if (r.id === resposta.id) r.id = `${PREFIXO}viagem-${i + 1}`;
     storage.setItem("gemape-demo-respostas-despesas", JSON.stringify(guardadas));
   });
+
+  // Painel e relatório de Viagens: cada um dos 15 empregados (cinco por empresa) fecha cinco despesas. Os técnicos da Oficina já têm o abastecimento acima e ganham mais
+  // quatro; os de PCM lançam pelo PCM (Avulso) as cinco. Datas espalhadas pelos últimos dois meses, em dinheiro ou cartão, todas com o comprovante.
+  const TIPOS = ["Alimentação", "Hospedagem", "Pedágio", "Estacionamento", "Compra de peças para cliente"] as const;
+  const VALORES = [48.9, 312.5, 27.4, 35, 186.75, 61.2, 420, 18.6, 22, 254.3];
+  const brl = (v: number) => v.toFixed(2).replace(".", ",");
+  let n = DESTINOS.length;
+  EMPREGADOS.forEach((emp, i) => {
+    const pcm = i >= PRIMEIRO_PCM_DE_TESTE;
+    const tipos = pcm ? TIPOS : TIPOS.slice(0, 4);
+    tipos.forEach((tipo, k) => {
+      const destino = DESTINOS[(i + k) % DESTINOS.length]!;
+      const atras = 3 + ((i * 7 + k * 11) % 56);
+      const dataDespesa = new Date(agora.getTime() - atras * 86_400_000);
+      const iso = `${dataDespesa.getFullYear()}-${String(dataDespesa.getMonth() + 1).padStart(2, "0")}-${String(dataDespesa.getDate()).padStart(2, "0")}`;
+      const cartao = (i + k) % 2 === 0;
+      const resposta = registrarResposta(estado, {
+        "q-03": [tipo],
+        "q-04": [`${emp.nome} (${pcm ? "PCM" : AREA})`],
+        ...(pcm ? { "q-13": ["Avulso – técnico não monitorado"], "q-15": `Auxiliar contratado por ${emp.nome.split(" ")[0]}` } : {}),
+        "q-08": iso,
+        "q-05": destino.uf,
+        "q-06": destino.municipio,
+        "q-07": destino.cliente,
+        "q-01": [cartao ? "Cartão de crédito" : "Dinheiro"],
+        ...(cartao ? { "q-02": [cartoes[(i + k) % cartoes.length]!] } : {}),
+        "q-11": brl(VALORES[(i * 3 + k) % VALORES.length]!),
+        ...(tipo === "Compra de peças para cliente" ? { "q-09": "Compra de peças de reposição para o cliente atendido." } : {}),
+        "q-12": ["comprovante.png"],
+      }, storage, new Date(dataDespesa.getTime() + 3_600_000), { "q-12": [{ nome: "comprovante.png", dataUrl: COMPROVANTE }] });
+      const guardadas = JSON.parse(storage.getItem("gemape-demo-respostas-despesas") ?? "[]") as { id: string }[];
+      n += 1;
+      for (const r of guardadas) if (r.id === resposta.id) r.id = `${PREFIXO}viagem-${n}`;
+      storage.setItem("gemape-demo-respostas-despesas", JSON.stringify(guardadas));
+    });
+  });
 }
