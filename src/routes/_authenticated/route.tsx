@@ -160,14 +160,14 @@ function LayoutAutenticado() {
   );
 }
 
-// Título do topo: cada letra num quadrado de contorno, animado em onda; o texto fica só para o leitor de tela.
+// Título do topo: cada letra grossa e arredondada, animada em onda; o texto fica só para o leitor de tela.
 function TituloMarca() {
   let n = 0;
   return (
     <p className="flex flex-wrap items-center xl:flex-nowrap justify-center gap-x-3 gap-y-1.5 sm:gap-x-5 xl:gap-x-6">
       <span className="sr-only">Gestão de Patrimônio</span>
       {["GESTÃO", "DE", "PATRIMÔNIO"].map((palavra) => (
-        <span key={palavra} aria-hidden="true" className="flex gap-1 sm:gap-1.5">
+        <span key={palavra} aria-hidden="true" className="flex gap-0.5 sm:gap-1">
           {[...palavra].map((letra) => (
             <span key={n} className="letra-marca" style={{ "--d": `${(n++ * 0.09).toFixed(2)}s` } as React.CSSProperties}>
               {letra}

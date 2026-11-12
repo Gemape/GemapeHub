@@ -408,33 +408,25 @@
   }
 }
 @utility letra-marca {
-  /* Uma letra do título dentro de um quadrado de contorno arredondado: entra em sequência e depois sobe e desce em onda (só transform e opacidade). */
-  display: inline-grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0.5rem;
-  background: oklch(1 0 0 / 0.6);
-  border: 2px solid var(--color-primary);
+  /* Uma letra grossa e arredondada do título: entra em sequência e depois sobe e desce em onda (só transform e opacidade). */
+  display: inline-block;
   font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
   font-weight: 800;
-  font-size: 0.8rem;
-  line-height: 1;
+  font-size: 1.35rem;
+  line-height: 1.15;
   color: var(--color-primary);
+  /* engrossa o traço e arredonda as pontas, como nas letras de referência */
+  -webkit-text-stroke: 0.06em currentColor;
+  paint-order: stroke fill;
+  stroke-linejoin: round;
   animation:
     titulo-entrada 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s) both,
     letra-sobe 3.2s ease-in-out calc(var(--d, 0s) + 0.8s) infinite;
   @media (min-width: 640px) {
-    width: 1.9rem;
-    height: 1.9rem;
-    border-radius: 0.6rem;
-    font-size: 1rem;
+    font-size: 1.7rem;
   }
   @media (min-width: 1536px) {
-    width: 2.3rem;
-    height: 2.3rem;
-    border-radius: 0.7rem;
-    font-size: 1.2rem;
+    font-size: 2.3rem;
   }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
