@@ -702,64 +702,145 @@
   0%,
   100% {
     box-shadow:
+      inset 0 -6px 10px oklch(0.55 0.16 262 / 0.28),
+      inset 0 4px 8px oklch(1 0 0 / 0.9),
       0 0 0 0 oklch(0.7 0.16 258 / 0.35),
       0 10px 22px -8px oklch(0.45 0.2 264 / 0.45);
   }
   50% {
     box-shadow:
+      inset 0 -6px 10px oklch(0.55 0.16 262 / 0.28),
+      inset 0 4px 8px oklch(1 0 0 / 0.9),
       0 0 0 10px oklch(0.7 0.16 258 / 0),
       0 14px 26px -8px oklch(0.45 0.2 264 / 0.55);
   }
 }
-/* Versão em 3D: o medalhão balança em perspectiva (gira um pouco em X e em Y enquanto flutua) e o ícone fica à frente dele, em profundidade. */
+/* Versão em 3D: o medalhão flutua e balança em perspectiva como um objeto sob a luz; o brilho (::after) desliza sobre ele, um anel orbita à sua volta (::before) e o ícone, extrudado em camadas, fica à frente em profundidade e oscila sozinho. */
 @keyframes cartao-flutua3d {
   0%,
   100% {
-    transform: perspective(520px) translateY(0) rotateX(9deg) rotateY(-18deg);
+    transform: perspective(560px) translateY(0) rotateX(7deg) rotateY(-14deg) rotateZ(-1deg);
+  }
+  25% {
+    transform: perspective(560px) translateY(-5px) rotateX(2deg) rotateY(2deg) rotateZ(0deg);
   }
   50% {
-    transform: perspective(520px) translateY(-6px) rotateX(-7deg) rotateY(18deg);
+    transform: perspective(560px) translateY(-8px) rotateX(-6deg) rotateY(14deg) rotateZ(1deg);
+  }
+  75% {
+    transform: perspective(560px) translateY(-4px) rotateX(2deg) rotateY(0deg) rotateZ(0deg);
   }
 }
-@keyframes cartao-icone-giro {
-  0% {
-    transform: translateZ(22px) rotateY(0) scale(1);
-  }
+@keyframes cartao-icone-bob {
+  0%,
   100% {
-    transform: translateZ(22px) rotateY(360deg) scale(1.12);
+    transform: translateZ(20px) rotateY(0deg) scale(1);
+  }
+  50% {
+    transform: translateZ(28px) rotateY(0deg) scale(1.03);
+  }
+}
+@keyframes cartao-anel-orbita {
+  from {
+    transform: translateZ(8px) rotateX(72deg) rotateZ(0deg);
+  }
+  to {
+    transform: translateZ(8px) rotateX(72deg) rotateZ(360deg);
+  }
+}
+@keyframes cartao-brilho {
+  0%,
+  100% {
+    transform: translate(-14%, -6%) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(18%, 10%) scale(1.15);
+    opacity: 0.95;
   }
 }
 @utility medalhao-cartao {
+  position: relative;
   display: flex;
   height: 5rem;
   width: 5rem;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: radial-gradient(circle at 30% 25%, oklch(1 0 0) 0%, oklch(0.95 0.04 255) 55%, oklch(0.88 0.08 258) 100%);
+  background:
+    radial-gradient(circle at 30% 22%, oklch(1 0 0) 0%, oklch(0.96 0.035 255) 38%, oklch(0.88 0.08 258) 78%, oklch(0.8 0.11 260) 100%);
   border: 1px solid oklch(1 0 0 / 0.9);
+  box-shadow: inset 0 -6px 10px oklch(0.55 0.16 262 / 0.28), inset 0 4px 8px oklch(1 0 0 / 0.9);
   color: var(--color-primary);
   transform-style: preserve-3d;
   animation:
-    cartao-flutua3d 6s ease-in-out var(--atraso, 0s) infinite,
+    cartao-flutua3d 8s ease-in-out var(--atraso, 0s) infinite,
     cartao-halo 3.6s ease-in-out var(--atraso, 0s) infinite;
+  /* anel que orbita o medalhão, em outro plano */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -9px;
+    border-radius: 9999px;
+    border: 1.5px solid transparent;
+    border-top-color: oklch(0.62 0.17 258 / 0.6);
+    border-bottom-color: oklch(0.8 0.1 258 / 0.35);
+    pointer-events: none;
+    animation: cartao-anel-orbita 9s linear var(--atraso, 0s) infinite;
+  }
+  /* reflexo de luz que passeia pela superfície */
+  &::after {
+    content: "";
+    position: absolute;
+    left: 14%;
+    top: 8%;
+    height: 38%;
+    width: 52%;
+    border-radius: 9999px;
+    background: radial-gradient(ellipse at center, oklch(1 0 0 / 0.85), oklch(1 0 0 / 0));
+    pointer-events: none;
+    transform: translateZ(2px);
+    animation: cartao-brilho 5s ease-in-out var(--atraso, 0s) infinite;
+  }
   & > svg {
+    position: relative;
+    z-index: 1;
     height: 2.5rem;
     width: 2.5rem;
     transform: translateZ(22px);
-    filter: drop-shadow(0 6px 5px oklch(0.4 0.2 264 / 0.35));
-    transition: transform 0.3s;
+    /* extrusão: camadas de sombra empilhadas dão espessura ao ícone */
+    filter: drop-shadow(0 1px 0 oklch(0.8 0.08 258 / 0.9)) drop-shadow(0 6px 5px oklch(0.4 0.18 264 / 0.25));
+    animation: cartao-icone-bob 3.2s ease-in-out var(--atraso, 0s) infinite;
+  }
+  /* o ícone ganha um giro e um leve avanço quando o ponteiro está sobre o cartão (propriedades individuais: somam-se à oscilação, sem trocar a animação) */
+  & > svg {
+    transition: rotate 0.95s cubic-bezier(0.34, 1.25, 0.5, 1), scale 0.5s ease-out;
+  }
+  .group\/cartao:hover & > svg {
+    rotate: y 360deg;
+    scale: 1.14;
+  }
+  .group\/cartao:hover &::before {
+    border-top-color: oklch(0.55 0.2 258 / 0.9);
   }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
-    box-shadow: 0 8px 18px -8px oklch(0.45 0.2 264 / 0.45);
-  }
-}
-.group\/cartao:hover .medalhao-cartao > svg {
-  animation: cartao-icone-giro 0.9s ease-in-out forwards;
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-    transform: translateZ(22px) scale(1.1);
+    box-shadow: 0 8px 18px -8px oklch(0.45 0.2 264 / 0.45), inset 0 4px 8px oklch(1 0 0 / 0.9);
+    &::before {
+      animation: none;
+      transform: translateZ(8px) rotateX(72deg);
+    }
+    &::after,
+    & > svg {
+      animation: none;
+    }
+    & > svg {
+      transition: none;
+    }
+    .group\/cartao:hover & > svg {
+      rotate: none;
+      scale: 1.1;
+    }
   }
 }
 
