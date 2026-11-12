@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, createLucideIcon, MapPin, Plane, UserRound, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ShieldCheck, ShoppingBag, SlidersHorizontal, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { ArrowRight, ChartPie, createLucideIcon, MapPin, Plane, UserRound, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, SlidersHorizontal, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/inicio")({
 });
 
 const ICONES_CARTAO: Record<IconeInicio, typeof Car> = {
-  LayoutDashboard, HardHat, Shirt, Wrench, Car, Luggage, Forklift, FolderCog, Building2, Users, Truck, Handshake,
+  LayoutDashboard: ChartPie, HardHat, Shirt, Wrench, Car, Luggage, Forklift, FolderCog, Building2, Users, Truck, Handshake,
 };
 
 // Pá carregadeira (o lucide não traz uma): corpo com cabine, duas rodas, braço e caçamba, no mesmo traço dos outros ícones.
@@ -30,9 +30,19 @@ const PaCarregadeira = createLucideIcon("PaCarregadeira", [
   ["path", { d: "M15 6l6 .5-1 6.5h-6z", key: "cacamba" }],
 ]);
 
+// Botina (EPIs) e calça (Uniformes): o lucide não traz; mesmo traço dos outros ícones.
+const Botina = createLucideIcon("Botina", [
+  ["path", { d: "M6 3h6v8l5 2.5c2 .8 3 1.6 3 3.5v2H6z", key: "cano" }],
+  ["path", { d: "M6 17h14M9 7h3M9 10h3", key: "detalhes" }],
+]);
+const Calca = createLucideIcon("Calca", [
+  ["path", { d: "M7 3h10l1.5 18h-5L12 10l-1.5 11h-5z", key: "pernas" }],
+  ["path", { d: "M7.3 7h9.4", key: "cintura" }],
+]);
+
 // Morphing: cada ícone se desmancha e se refaz como este outro (do mesmo assunto), no mesmo lugar dentro do círculo, e volta.
 const ICONES_MORPH: Record<IconeInicio | "Settings", typeof Car> = {
-  LayoutDashboard: ChartColumn, Settings: SlidersHorizontal, HardHat: ShieldCheck, Shirt: ShoppingBag, Wrench: Hammer, Car: Fuel,
+  LayoutDashboard: ChartColumn, Settings: SlidersHorizontal, HardHat: Botina, Shirt: Calca, Wrench: Hammer, Car: Fuel,
   Luggage: Plane, Forklift: PaCarregadeira, FolderCog: FileText, Building2: Factory, Users: UserCheck, Truck: MapPin, Handshake: UserRound,
 };
 
