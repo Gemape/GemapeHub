@@ -28,7 +28,7 @@ test("o topo traz só Gestão de Patrimônio (letras em quadradinhos animados), 
   assert.match(rota, /<span className="sr-only">Gestão de Patrimônio<\/span>/);
   assert.match(rota, /className="letra-marca"/);
   assert.doesNotMatch(rota, /Demonstração · dados locais|Grupo GEMAPE</);
-  assert.match(rota, /md:grid-cols-\[1fr_auto_1fr\]/);
+  assert.match(rota, /md:grid-cols-\[auto_1fr_auto\]/);
   const css = ler("styles.css");
   assert.match(css, /@utility letra-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
 });
@@ -51,7 +51,7 @@ test("o título da página continua existindo só para o leitor de tela (acessib
 
 test("a tipografia é Manrope: título 700 em caixa alta, cartões 500 e 400; e o topo é maior", () => {
   const css = ler("styles.css");
-  assert.match(css, /@utility letra-marca \{[\s\S]*?"Manrope"[\s\S]*?font-weight: 800/);
+  assert.match(css, /@utility letra-marca \{[\s\S]*?"Manrope"[\s\S]*?font-weight: 900/);
   assert.match(inicio, /fonte-manrope/);
   assert.match(inicio, /font-medium">\{c\.titulo\}/);
   assert.match(ler("routes/__root.tsx"), /family=Manrope/);

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, SlidersHorizontal, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { ArrowRight, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
@@ -42,7 +42,7 @@ const Calca = createLucideIcon("Calca", [
 
 // Morphing: cada ícone se desmancha e se refaz como este outro (do mesmo assunto), no mesmo lugar dentro do círculo, e volta.
 const ICONES_MORPH: Record<IconeInicio | "Settings", typeof Car> = {
-  LayoutDashboard: ChartColumn, Settings: SlidersHorizontal, HardHat: Botina, Shirt: Calca, Wrench: Hammer, Car: Fuel,
+  LayoutDashboard: ChartColumn, Settings: ScreenShare, HardHat: Botina, Shirt: Calca, Wrench: Hammer, Car: Fuel,
   Luggage: Plane, Forklift: PaCarregadeira, FolderCog: FileText, Building2: Factory, Users: UserCheck, Truck: MapPin, Handshake: UserStar,
 };
 

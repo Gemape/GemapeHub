@@ -117,7 +117,7 @@ function LayoutAutenticado() {
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
         <main className="layout-app flex min-h-screen w-full min-w-0 flex-col">
-          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[1fr_auto_1fr]">
+          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[auto_1fr_auto]">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-32 shrink-0 rounded-md sm:w-52 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <div
@@ -140,7 +140,7 @@ function LayoutAutenticado() {
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
             {/* No celular os controles ficam em duas colunas (usuário em linha própria, depois testes e empresa); a partir de md voltam a uma linha só. */}
-            <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:justify-end">
+            <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:justify-end lg:flex-nowrap [&_button]:h-8 [&_button]:gap-1.5 [&_button]:px-2.5 [&_button]:text-xs [&_svg]:size-3.5">
               {ConfiguracoesDemo && <Suspense fallback={null}><div className="col-span-2 min-w-0 md:col-auto"><ConfiguracoesDemo /></div></Suspense>}
               {MenuDadosDeTeste && <Suspense fallback={null}><div className="min-w-0"><MenuDadosDeTeste /></div></Suspense>}
               <div className="min-w-0"><FiltroEmpresa /></div>
