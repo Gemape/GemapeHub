@@ -38,7 +38,7 @@ export function ConfiguracoesAcessos({ aberto, onAberto }: { aberto: boolean; on
           <MenuDeSecoes vertical rotulo="Submenus de Configurações" itens={SUBMENUS} ativo={ativo.id} aoEscolher={(id) => setAtivoId(id)} />
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 md:p-5">
             {/* key: ao trocar de submenu a tela entra de novo, deslizando e aparecendo */}
-            <div key={ativo.id} className="animate-in fade-in-0 slide-in-from-right-4 duration-300 motion-reduce:animate-none">
+            <div key={ativo.id} className="animate-in fade-in-0 slide-in-from-right-2 duration-200 motion-reduce:animate-none">
               <h2 className="mb-4 text-lg font-semibold">{ativo.nome}</h2>
               <ativo.Tela />
             </div>

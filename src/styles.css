@@ -732,6 +732,17 @@
     transform: translateZ(30px) scale(1.1);
   }
 }
+/* morphing: o ícone se desmancha (o traço some) e o outro se desenha no mesmo lugar, depois volta */
+@keyframes ic-morph-a {
+  0%, 30% { stroke-dashoffset: 0; opacity: 1; }
+  45%, 92% { stroke-dashoffset: 200; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes ic-morph-b {
+  0%, 45% { stroke-dashoffset: -200; opacity: 0; }
+  60%, 80% { stroke-dashoffset: 0; opacity: 1; }
+  92%, 100% { stroke-dashoffset: 200; opacity: 0; }
+}
 @keyframes cartao-icone-pulso {
   0%,
   100% {
@@ -739,17 +750,6 @@
   }
   50% {
     transform: scale(1.1);
-  }
-}
-/* giro completo do ícone (propriedade individual `rotate`, soma-se à pulsação): fica parado um tempo, gira com mola e volta a parar */
-@keyframes cartao-icone-gira {
-  0%,
-  58% {
-    rotate: y 0deg;
-    animation-timing-function: cubic-bezier(0.55, 0, 0.2, 1);
-  }
-  100% {
-    rotate: y 360deg;
   }
 }
 /* ondas que saem do medalhão e se desfazem: só transform e opacidade */
@@ -894,11 +894,9 @@
     transform: translateZ(22px);
     /* extrusão: camadas de sombra empilhadas dão espessura ao ícone */
     filter: drop-shadow(0 1px 0 oklch(0.8 0.08 258 / 0.9)) drop-shadow(0 6px 5px oklch(0.4 0.18 264 / 0.25));
-    animation:
-      cartao-icone-bob 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite,
-      cartao-icone-gira 7s linear var(--atraso, 0s) infinite;
+    animation: cartao-icone-bob 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite;
   }
-  /* o ícone ganha um giro e um leve avanço quando o ponteiro está sobre o cartão (propriedades individuais: somam-se à oscilação, sem trocar a animação) */
+  /* o ícone cresce um pouco quando o ponteiro está sobre o cartão (propriedade individual `scale`: soma-se à oscilação) */
   & > svg {
     transition: scale 0.5s cubic-bezier(0.34, 1.4, 0.5, 1);
   }
@@ -921,7 +919,17 @@
       animation: none;
     }
     & > svg {
-      animation-name: cartao-icone-pulso, cartao-icone-gira;
+      animation-name: cartao-icone-pulso;
+    }
+  }
+  & > svg[data-morph] { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    & > svg { stroke-dasharray: 200; animation: cartao-icone-bob 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite, ic-morph-a 7s ease-in-out var(--atraso, 0s) infinite; }
+    & > svg[data-morph] { display: block; position: absolute; left: 50%; top: 50%; margin: -1.25rem 0 0 -1.25rem; animation: cartao-icone-bob 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite, ic-morph-b 7s ease-in-out var(--atraso, 0s) infinite; }
+    /* celular e telas de toque: sem morphing (animar o traço repinta o SVG a cada quadro); o ícone só pulsa, na placa de vídeo */
+    @media (max-width: 767px), (pointer: coarse) {
+      & > svg { stroke-dasharray: none; animation: cartao-icone-pulso 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite; }
+      & > svg[data-morph] { display: none; }
     }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -939,7 +947,6 @@
       transition: none;
     }
     .group\/cartao:hover & > svg {
-      rotate: none;
       scale: 1.1;
     }
   }

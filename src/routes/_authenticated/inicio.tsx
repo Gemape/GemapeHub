@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Building2, Car, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { ArrowRight, MapPin, BadgeCheck, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, Package, PackageCheck, ShieldCheck, ShoppingBag, SlidersHorizontal, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
@@ -21,8 +21,14 @@ const ICONES_CARTAO: Record<IconeInicio, typeof Car> = {
   LayoutDashboard, HardHat, Shirt, Wrench, Car, Luggage, Forklift, FolderCog, Building2, Users, Truck, Handshake,
 };
 
+// Morphing: cada ícone se desmancha e se refaz como este outro (do mesmo assunto), no mesmo lugar dentro do círculo, e volta.
+const ICONES_MORPH: Record<IconeInicio | "Settings", typeof Car> = {
+  LayoutDashboard: ChartColumn, Settings: SlidersHorizontal, HardHat: ShieldCheck, Shirt: ShoppingBag, Wrench: Hammer, Car: Fuel,
+  Luggage: Package, Forklift: PackageCheck, FolderCog: FileText, Building2: Factory, Users: UserCheck, Truck: MapPin, Handshake: BadgeCheck,
+};
+
 const classeCartao =
-  "vidro-cartao group/cartao overflow-hidden rounded-2xl transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:ring-2 hover:ring-primary/30 motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+  "vidro-cartao group/cartao overflow-hidden rounded-2xl transition duration-200 ease-out hover:-translate-y-1 hover:shadow-2xl hover:ring-2 hover:ring-primary/30 motion-reduce:transition-none motion-reduce:hover:translate-y-0";
 const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 // Dois cartões por linha em qualquer tela (um só em celular bem estreito); com número ímpar, o último fica sozinho e centralizado na largura de um cartão.
 const gradeDeCartoes =
@@ -30,15 +36,17 @@ const gradeDeCartoes =
 const SECOES: readonly SecaoInicio[] = ["Módulo", "Relatórios", "Parâmetros"];
 
 // Faixa do alto do cartão: degradê azul, duas luzes suaves de fundo e o medalhão com o ícone (mais baixa no celular, para caber mais cartões na tela).
-function FaixaDoCartao({ Icone, atraso }: { Icone: typeof Car; atraso: string }) {
+function FaixaDoCartao({ Icone, tipo, atraso }: { Icone: typeof Car; tipo: IconeInicio | "Settings"; atraso: string }) {
+  const Morph = ICONES_MORPH[tipo];
   return (
-    <span className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-[oklch(0.88_0.06_255)] to-[oklch(0.97_0.02_255)] text-primary min-[480px]:h-32 sm:h-40 lg:h-44">
+    <span className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-[oklch(0.88_0.06_255)] via-[oklch(0.93_0.04_255)] to-[oklch(0.98_0.015_255)] text-primary min-[480px]:h-32 sm:h-40 lg:h-44">
       <span aria-hidden="true" className="pointer-events-none absolute -left-8 -top-10 size-32 rounded-full bg-white/60 blur-2xl" />
       <span aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-6 size-36 rounded-full bg-primary/15 blur-2xl" />
       <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": atraso } as React.CSSProperties} />
       <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": `calc(${atraso} + 1.8s)` } as React.CSSProperties} />
       <span className="medalhao-cartao relative" style={{ "--atraso": atraso } as React.CSSProperties}>
         <Icone aria-hidden="true" strokeWidth={1.6} />
+        {Morph && <Morph aria-hidden="true" strokeWidth={1.6} data-morph="" />}
       </span>
     </span>
   );
@@ -103,14 +111,14 @@ function PaginaInicio() {
             {grupo.cartoes.map((c, indice) => {
               const Icone = ICONES_CARTAO[c.icone];
               const chave = `${grupo.titulo}/${c.titulo}`;
-              const faixa = <FaixaDoCartao Icone={Icone} atraso={`${(indice % 6) * -0.8}s`} />;
+              const faixa = <FaixaDoCartao Icone={Icone} tipo={c.icone} atraso={`${(indice % 6) * -0.8}s`} />;
               if (!c.itens) {
                 return (
                   <li key={chave} data-cartao >
                     <Link to={c.url ?? "/inicio"} className={`flex flex-col ${classeCartao} ${classeFoco}`}>
                       {faixa}
                       <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
-                        <span className="font-medium">{c.titulo}</span>
+                        <span className="transition-colors duration-200 group-hover/cartao:text-primary font-medium">{c.titulo}</span>
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           Clique para acessar
                           <ArrowRight className="size-3.5 transition-transform group-hover/cartao:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />
@@ -133,7 +141,7 @@ function PaginaInicio() {
                   >
                     {faixa}
                     <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
-                      <span className="font-medium">{c.titulo}</span>
+                      <span className="transition-colors duration-200 group-hover/cartao:text-primary font-medium">{c.titulo}</span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         {aberto ? "Clique para recolher" : "Clique para acessar"}
                         <ChevronDown className={`size-3.5 transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -165,9 +173,9 @@ function PaginaInicio() {
             {comConfiguracoes(grupo.titulo) && (
               <li data-cartao>
                 <button type="button" onClick={() => setConfigAberta(true)} className={`flex w-full flex-col text-left ${classeCartao} ${classeFoco}`}>
-                  <FaixaDoCartao Icone={Settings} atraso="-2.4s" />
+                  <FaixaDoCartao Icone={Settings} tipo="Settings" atraso="-2.4s" />
                   <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
-                    <span className="font-medium">Configurações</span>
+                    <span className="transition-colors duration-200 group-hover/cartao:text-primary font-medium">Configurações</span>
                     <span className="text-xs text-muted-foreground">Acessos por usuário e por menu</span>
                   </span>
                 </button>

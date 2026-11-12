@@ -70,5 +70,16 @@ test("o ícone dos cartões é um medalhão grande que flutua e brilha, e fica p
   assert.match(inicio, /medalhao-cartao/);
   const css = ler("styles.css");
   assert.match(css, /@utility medalhao-cartao \{[\s\S]*?height: 5rem[\s\S]*?cartao-flutua[\s\S]*?cartao-anel-pulso[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
-  assert.ok(css.includes(".group\\/cartao:hover & > svg") && css.includes("rotate: y 360deg"));
+  assert.ok(css.includes(".group\\/cartao:hover & > svg"));
+});
+
+test("o morphing: todo ícone da tela inicial tem um segundo ícone, que só anima sem 'reduzir movimento' e some no celular", () => {
+  const lib = ler("lib/inicio.ts");
+  const chaves = [...inicio.match(/const ICONES_MORPH[^{]*\{([\s\S]*?)\};/)[1].matchAll(/(\w+):/g)].map((m) => m[1]);
+  const icones = [...inicio.match(/const ICONES_CARTAO[^{]*\{([\s\S]*?)\};/)[1].matchAll(/\w+/g)].map((m) => m[0]);
+  for (const i of icones) assert.ok(chaves.includes(i), `sem morph para ${i}`);
+  assert.ok(lib.length > 0);
+  const css = ler("styles.css");
+  assert.match(css, /@keyframes ic-morph-a[\s\S]*@keyframes ic-morph-b/);
+  assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?ic-morph-a[\s\S]*?pointer: coarse[\s\S]*?data-morph\] \{ display: none/);
 });
