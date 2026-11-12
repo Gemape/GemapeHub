@@ -3,6 +3,8 @@ import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } 
 import { lazy, Suspense, useEffect } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 
+import { RegistraRecente } from "@/components/inicio/atalhosPessoais";
+import { TrocaDeModulo, TrilhaDeNavegacao } from "@/components/layout/NavegacaoRapida";
 import { MenuDaArea } from "@/components/layout/MenuDaArea";
 import { VisualizadorDocumento } from "@/components/layout/VisualizadorDocumento";
 import { Button } from "@/components/ui/button";
@@ -119,6 +121,7 @@ function LayoutAutenticado() {
         <main className="layout-app flex min-h-screen w-full min-w-0 flex-col">
           <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[auto_1fr_auto] min-[1760px]:grid-cols-[1fr_auto_1fr]!">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {!noInicio && <TrocaDeModulo />}
             <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-32 shrink-0 rounded-md sm:w-52 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <div
                 className="logo-marca-site"
@@ -135,7 +138,8 @@ function LayoutAutenticado() {
             {!noInicio && <MenuDaArea />}
             </div>
             {/* Título da marca, centralizado no topo; no celular fica numa linha própria, entre o menu e os filtros. */}
-            <div className="min-w-0 px-4 text-center">
+            {/* Nas telas internas o cabeçalho já tem o seletor de módulos, o Voltar e o menu da área: o título só aparece onde sobra espaço (telas largas). */}
+            <div className={`min-w-0 px-4 text-center ${noInicio ? "" : "max-[1759px]:invisible max-[1759px]:h-0 max-[1759px]:overflow-hidden"}`}>
               <TituloMarca />
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
@@ -151,7 +155,9 @@ function LayoutAutenticado() {
             </div>
           </header>
           <div className="min-w-0 flex-1 p-3 sm:p-4 md:p-6">
+            <TrilhaDeNavegacao />
             <ConteudoComAcesso />
+            <RegistraRecente />
           </div>
           <VisualizadorDocumento />
         </main>
