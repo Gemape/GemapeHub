@@ -70,5 +70,5 @@ test("o ícone dos cartões é um medalhão grande que flutua e brilha, e fica p
   assert.match(inicio, /medalhao-cartao/);
   const css = ler("styles.css");
   assert.match(css, /@utility medalhao-cartao \{[\s\S]*?height: 5rem[\s\S]*?cartao-flutua[\s\S]*?cartao-halo[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
-  assert.ok(css.includes(".group\\/cartao:hover .medalhao-cartao > svg") && css.includes("animation: cartao-icone-giro"));
+  assert.ok(css.includes(".group\\/cartao:hover & > svg") && css.includes("rotate: y 360deg"));
 });
