@@ -39,6 +39,9 @@ import { combinaBusca } from "@/lib/parametros-base";
 import { RelatorioCadastro } from "@/components/RelatorioCadastro";
 import type { CampoRelatorio } from "@/lib/relatorio-cadastro";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
+import { DemitirEmpregadoDialog } from "./DemitirEmpregadoDialog";
+import { comDesligamento, lerConfig, salvarConfig } from "@/lib/configuracoes-demo";
+import { usuarioAtivo } from "@/lib/permissoes-demo";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 import { lerTodas } from "@/lib/ler-todas";
 import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
@@ -60,6 +63,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
   const base = editando ?? modelo;
   const [empresaSel, setEmpresaSel] = useState("");
   const salvando = useRef(false);
+  const [demitindo, setDemitindo] = useState<EmpregadoCadastro | null>(null);
   useAbrirDireto(direto, empresas.length > 0, aberto, abrirNovo, aoConcluir);
   const { data: lista = [], isLoading } = useEmpregados(empresaId);
   const empregados = lista as EmpregadoCadastro[];
@@ -217,6 +221,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             onExcluir={(e) => {
               if (confirm(`Excluir ${e.nome}?`)) excluir.mutate(e.id);
             }}
+            onDemitir={setDemitindo}
           />
           <BlocoEmpregados
             titulo={`Demitidos / inativos (${inativos.length})`}
@@ -231,6 +236,32 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
           />
         </>
       )}
+
+      <DemitirEmpregadoDialog
+        alvo={demitindo}
+        salvando={salvar.isPending}
+        demo={MODO_DEMO}
+        aoFechar={() => setDemitindo(null)}
+        aoConfirmar={({ data, motivo, pendentes }) => {
+          const alvo = demitindo;
+          if (!alvo) return;
+          salvar.mutate(
+            { id: alvo.id, valores: { data_demissao: data, ativo: false } },
+            {
+              onSuccess: () => {
+                setDemitindo(null);
+                let efeitos: string[] = [];
+                if (MODO_DEMO) {
+                  const r = comDesligamento(lerConfig(localStorage), usuarioAtivo(localStorage).nome, { nome: alvo.nome, motivo, data, pendentes });
+                  efeitos = r.efeitos;
+                  salvarConfig(localStorage, r.config);
+                }
+                toast.success(`${alvo.nome} desligado(a)${efeitos.length ? ` (simulado: ${efeitos.join(", ")})` : ""}`);
+              },
+            },
+          );
+        }}
+      />
 
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
@@ -333,6 +364,7 @@ function BlocoEmpregados({
   onClonar,
   onEditar,
   onExcluir,
+  onDemitir,
 }: {
   titulo: string;
   lista: EmpregadoCadastro[];
@@ -341,6 +373,7 @@ function BlocoEmpregados({
   onClonar: (e: EmpregadoCadastro) => void;
   onEditar: (e: EmpregadoCadastro) => void;
   onExcluir: (e: EmpregadoCadastro) => void;
+  onDemitir?: (e: EmpregadoCadastro) => void;
 }) {
   return (
     <section className="space-y-2">
@@ -383,7 +416,14 @@ function BlocoEmpregados({
                     </span>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end gap-2">
+                    {onDemitir && (
+                      <Button requiresWrite type="button" size="sm" className="h-7 px-2.5 text-xs" onClick={() => onDemitir(e)}>
+                        Demitir
+                      </Button>
+                    )}
                     <AcoesLinha rotulo={e.nome} onClonar={() => onClonar(e)} onEditar={() => onEditar(e)} onExcluir={() => onExcluir(e)} />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

@@ -7,9 +7,12 @@ import { GRUPOS_INICIO } from "./inicio.ts";
 export const ACOES = ["ver", "criar", "editar", "excluir"] as const;
 export type Acao = (typeof ACOES)[number];
 export type Matriz = Record<string, Partial<Record<Acao, boolean>>>;
-export type PerfilId = "admin" | "rh" | "padrao";
+export type PerfilBase = "admin" | "rh" | "padrao";
+// Além dos três perfis de origem, o Administrador cria perfis próprios (`Estado.perfis`), com a sua matriz de permissões por módulo.
+export type PerfilId = PerfilBase | (string & {});
+export type PerfilPersonalizado = { id: string; nome: string; matriz: Matriz };
 export type Usuario = { id: string; nome: string; perfil: PerfilId; excecoes: Matriz };
-export type Estado = { versao: number; usuarios: Usuario[] };
+export type Estado = { versao: number; usuarios: Usuario[]; perfis?: PerfilPersonalizado[] };
 type Armazenamento = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 export const CHAVE_PERMISSOES = "gemape-demo-permissoes";
@@ -65,11 +68,21 @@ export const PERFIS: readonly { id: PerfilId; nome: string }[] = [
   { id: "padrao", nome: "Padrão" },
 ];
 
+// Perfis próprios do estado lido por último (as contas de permissão abaixo precisam achá-los pelo id, como os de origem).
+let personalizados = new Map<string, Matriz>();
+const sincronizar = (estado: Estado) => { personalizados = new Map((estado.perfis ?? []).map((p) => [p.id, p.matriz])); };
+export const padraoDe = (perfil: PerfilId): Matriz => PADRAO_DO_PERFIL[perfil as PerfilBase] ?? personalizados.get(perfil) ?? PADRAO_DO_PERFIL.padrao;
+export const perfisDoEstado = (estado: Estado): { id: PerfilId; nome: string; proprio: boolean }[] => [
+  ...PERFIS.map((p) => ({ ...p, proprio: false })),
+  ...(estado.perfis ?? []).map((p) => ({ id: p.id, nome: p.nome, proprio: true })),
+];
+export const nomeDoPerfil = (estado: Estado, id: PerfilId): string => perfisDoEstado(estado).find((p) => p.id === id)?.nome ?? String(id);
+
 const tudo = (): Record<Acao, boolean> => ({ ver: true, criar: true, editar: true, excluir: true });
 const so = (...acoes: Acao[]): Partial<Record<Acao, boolean>> => Object.fromEntries(acoes.map((a) => [a, true]));
 // Ponto de partida de cada perfil. Administrador tem tudo (e é o único que vê Gerais e Configurações); RH cuida de pessoas, EPIs e uniformes; Padrão
 // opera os módulos do dia a dia e não vê os cadastros administrativos.
-export const PADRAO_DO_PERFIL: Record<PerfilId, Matriz> = {
+export const PADRAO_DO_PERFIL: Record<PerfilBase, Matriz> = {
   admin: Object.fromEntries(TELAS.map((t) => [t.id, tudo()])),
   rh: Object.fromEntries(TELAS.map((t) => [t.id, t.id === "empregados" ? tudo() : t.id === "epi" || t.id === "uniformes" ? so("ver", "criar", "editar") : so("ver")])),
   padrao: Object.fromEntries(TELAS.map((t) => [t.id, ["empresas", "empregados", "fornecedores", "clientes"].includes(t.id) ? {} : ["epi", "uniformes", "ferramentas", "viagens"].includes(t.id) ? so("ver", "criar") : so("ver")])),
@@ -91,7 +104,7 @@ export function diferencaParaPerfil(perfil: PerfilId, desejada: Matriz): Matriz 
   const saida: Matriz = {};
   for (const t of TELAS) for (const a of ACOES) {
     const quer = !!desejada[t.id]?.[a];
-    if (quer !== !!PADRAO_DO_PERFIL[perfil][t.id]?.[a]) (saida[t.id] ??= {})[a] = quer;
+    if (quer !== !!padraoDe(perfil)[t.id]?.[a]) (saida[t.id] ??= {})[a] = quer;
   }
   return saida;
 }
@@ -103,8 +116,9 @@ export function efetivas(u: Pick<Usuario, "perfil" | "excecoes">): Matriz {
   if (guardada) return guardada;
   const saida: Matriz = {};
   for (const t of TELAS) {
-    const ver = u.excecoes[t.id]?.ver ?? PADRAO_DO_PERFIL[u.perfil][t.id]?.ver ?? false;
-    saida[t.id] = Object.fromEntries(ACOES.map((a) => [a, a === "ver" ? ver : ver && (u.excecoes[t.id]?.[a] ?? PADRAO_DO_PERFIL[u.perfil][t.id]?.[a] ?? false)]));
+    const base = padraoDe(u.perfil)[t.id];
+    const ver = u.excecoes[t.id]?.ver ?? base?.ver ?? false;
+    saida[t.id] = Object.fromEntries(ACOES.map((a) => [a, a === "ver" ? ver : ver && (u.excecoes[t.id]?.[a] ?? base?.[a] ?? false)]));
   }
   // Menus: herdam do módulo, e a exceção do menu vale por cima (só com "ver" do módulo).
   for (const s of SUBTELAS) {
@@ -131,6 +145,7 @@ export function lerPermissoes(storage: Armazenamento): Estado {
   } catch { /* dado ilegível: volta ao original */ }
   ultimoTexto = texto;
   ultimoEstado = estado ?? { versao: VERSAO_PERMISSOES, usuarios: usuariosOriginais() };
+  sincronizar(ultimoEstado);
   return ultimoEstado;
 }
 export function salvarPermissoes(storage: Armazenamento, estado: Estado): void {
@@ -180,6 +195,31 @@ export function alternarAcao(estado: Estado, usuarioId: string, tela: string, ac
     }),
   };
 }
+// Perfil próprio: nasce como cópia de outro perfil (a "base") e depois o Administrador ajusta as caixas por módulo.
+export function criarPerfil(estado: Estado, nome: string, baseId: PerfilId): Estado {
+  const base = padraoDe(baseId);
+  const matriz: Matriz = Object.fromEntries(TELAS.map((t) => [t.id, { ...(base[t.id] ?? {}) }]));
+  return { ...estado, perfis: [...(estado.perfis ?? []), { id: `perfil-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, nome: nome.trim(), matriz }] };
+}
+// Mesma regra da matriz dos usuários: marcar criar, editar ou excluir marca "ver"; desmarcar "ver" desmarca as outras.
+export function alterarAcaoDoPerfil(estado: Estado, perfilId: string, tela: string, acao: Acao, valor: boolean): Estado {
+  return {
+    ...estado,
+    perfis: (estado.perfis ?? []).map((p) => {
+      if (p.id !== perfilId) return p;
+      const novo: Partial<Record<Acao, boolean>> = { ...(p.matriz[tela] ?? {}), [acao]: valor };
+      if (acao === "ver" && !valor) for (const a of ACOES) novo[a] = false;
+      if (acao !== "ver" && valor) novo.ver = true;
+      return { ...p, matriz: { ...p.matriz, [tela]: novo } };
+    }),
+  };
+}
+// Quem usava o perfil excluído volta ao Padrão, sem exceções.
+export const excluirPerfil = (estado: Estado, perfilId: string): Estado => ({
+  ...estado,
+  perfis: (estado.perfis ?? []).filter((p) => p.id !== perfilId),
+  usuarios: estado.usuarios.map((u) => (u.perfil === perfilId ? { ...u, perfil: "padrao", excecoes: {} } : u)),
+});
 export const mudarPerfil = (estado: Estado, usuarioId: string, perfil: PerfilId): Estado => ({
   ...estado, usuarios: estado.usuarios.map((u) => (u.id === usuarioId ? { ...u, perfil, excecoes: {} } : u)),
 });

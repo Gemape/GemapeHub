@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Building2, Car, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 
+import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
 import { ICONES } from "@/components/layout/AppSidebar";
 import { useAccess } from "@/lib/access-context";
 import { gruposDoInicio, type IconeInicio, type SecaoInicio, type SubitemInicio } from "@/lib/inicio";
@@ -84,9 +85,11 @@ function PaginaInicio() {
 
   return (
     <div className="fonte-manrope">
+      {/* Só a animação e o vidro da vitrine: a cor e o layout da tela seguem os mesmos. */}
+      <FundoVidroQuantico claro />
       {/* Sem título na tela: ela começa direto nos cartões. O título fica só para o leitor de tela. */}
       <h1 className="sr-only">Início</h1>
-      <div className="mx-auto max-w-5xl space-y-8 sm:space-y-10">
+      <div className="relative z-10 mx-auto max-w-5xl space-y-8 sm:space-y-10">
       {gruposDoInicio(isAdmin, podeVerCaminho).map((grupo) => (
         <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="mx-auto w-full max-w-4xl space-y-4">
           <h2 id={`grupo-${grupo.titulo}`} className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-primary/80 sm:text-sm">

@@ -86,6 +86,15 @@ function LayoutAutenticado() {
   // Sem menu lateral: tudo se acessa pelos cartões da tela inicial. Fora dela, o topo traz o botão de voltar ao início.
   const noInicio = useRouterState({ select: (s) => s.location.pathname === "/inicio" });
 
+  // Só na demonstração: aplica a aparência escolhida em Configurações (tema, cores, fonte, densidade, favicon). Na produção a condição é falsa e o código não é gerado.
+  useEffect(() => {
+    if (import.meta.env.VITE_DEMO_MODE === "false") return;
+    let parar = () => {};
+    let cancelado = false;
+    void import("@/lib/configuracoes-demo").then((m) => { if (!cancelado) parar = m.aplicarAparenciaSalva(); });
+    return () => { cancelado = true; parar(); };
+  }, []);
+
   // Sessão encerrada em outra aba ou expirada: volta ao login sem deixar dados em cache.
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -107,8 +116,8 @@ function LayoutAutenticado() {
   return (
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
-        <main className="flex min-h-screen w-full min-w-0 flex-col">
-          <header className="z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[1fr_auto_1fr]">
+        <main className="layout-app flex min-h-screen w-full min-w-0 flex-col">
+          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[1fr_auto_1fr]">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-32 shrink-0 rounded-md sm:w-52 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <div
