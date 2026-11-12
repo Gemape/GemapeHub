@@ -65,7 +65,7 @@ function FaixaDoCartao({ Icone, tipo, atraso }: { Icone: typeof Car; tipo: Icone
       <span aria-hidden="true" className="pointer-events-none absolute -left-8 -top-10 size-32 rounded-full bg-white/60 blur-2xl" />
       <span aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-6 size-36 rounded-full bg-primary/15 blur-2xl" />
       <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": atraso } as React.CSSProperties} />
-      <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": `calc(${atraso} + 1.8s)` } as React.CSSProperties} />
+      <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": `calc(${atraso} + 1.55s)` } as React.CSSProperties} />
       <span className="medalhao-cartao relative" style={{ "--atraso": atraso } as React.CSSProperties}>
         <Icone aria-hidden="true" strokeWidth={1.6} />
         {Morph && <Morph aria-hidden="true" strokeWidth={1.6} data-morph="" />}

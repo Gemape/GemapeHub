@@ -135,7 +135,7 @@ function LayoutAutenticado() {
             {!noInicio && <MenuDaArea />}
             </div>
             {/* Título da marca, centralizado no topo; no celular fica numa linha própria, entre o menu e os filtros. */}
-            <div className="min-w-0 text-center">
+            <div className="min-w-0 px-4 text-center">
               <TituloMarca />
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
@@ -167,13 +167,14 @@ function espalhada(i: number, atraso: number): React.CSSProperties {
   return { "--d": `${(atraso + i * 0.12).toFixed(2)}s`, "--x": `${x * 14}px`, "--y": `${y * 9}px`, "--r": `${(((i * 29) % 11) - 5) * 40}deg` } as React.CSSProperties;
 }
 
-// Os dois textos do topo se alternam: um se desfaz em poeira e, em seguida, o outro se reconstrói no mesmo lugar (ciclo de 28 s, 14 s para cada um).
+// Os dois textos do topo se alternam: um se desfaz em poeira e, em seguida, o outro se reconstrói no mesmo lugar (a metade do ciclo para cada um).
 const TEXTOS_DO_TOPO = ["GESTÃO DE PATRIMÔNIO", "GEMAPE MÁQUINAS E PEÇAS LTDA"] as const;
+const CICLO_S = 22; // ciclo completo em segundos: cada texto ocupa metade (a CSS lê --ciclo)
 
 // Título do topo: cada letra grossa e arredondada, se desfazendo em poeira e se reconstruindo; o texto fica só para o leitor de tela.
 function TituloMarca() {
   return (
-    <p className="grid w-full justify-items-center overflow-x-clip">
+    <p className="grid w-full justify-items-center overflow-x-clip" style={{ "--ciclo": `${CICLO_S}s` } as React.CSSProperties}>
       <span className="sr-only">Gestão de Patrimônio e Gemape Máquinas e Peças Ltda</span>
       {TEXTOS_DO_TOPO.map((texto, k) => {
         let n = 0;
@@ -182,7 +183,7 @@ function TituloMarca() {
             {texto.split(" ").map((palavra) => (
               <span key={palavra + n} className="flex gap-0.5 sm:gap-1">
                 {[...palavra].map((letra) => (
-                  <span key={n} className="letra-marca" style={espalhada(n++, k * 14)}>
+                  <span key={n} className="letra-marca" style={espalhada(n++, (k * CICLO_S) / TEXTOS_DO_TOPO.length)}>
                     {letra}
                   </span>
                 ))}

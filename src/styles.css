@@ -406,14 +406,14 @@
     filter: blur(7px);
     animation-timing-function: cubic-bezier(0.25, 0.8, 0.3, 1);
   }
-  12%,
-  34% {
+  11%,
+  40% {
     transform: translate(0, 0) scale(1);
     opacity: 1;
     filter: blur(0);
     animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.4);
   }
-  47%,
+  50%,
   100% {
     transform: translate(calc(var(--x) * -0.8), calc(var(--y) * -0.6 - 12px)) scale(1.04);
     opacity: 0;
@@ -428,19 +428,19 @@
   3% {
     opacity: 0.9;
   }
-  12% {
+  11% {
     transform: translate(0, 0) scale(0.2);
     opacity: 0;
   }
-  12.05%,
-  34% {
+  11.05%,
+  40% {
     transform: translate(0, 0) scale(0.3);
     opacity: 0;
   }
-  37% {
+  43% {
     opacity: 0.9;
   }
-  47%,
+  50%,
   100% {
     transform: translate(calc(var(--x) * -1.1), calc(var(--y) * -1.1 - 16px)) scale(0.7);
     opacity: 0;
@@ -454,19 +454,19 @@
   4% {
     opacity: 0.8;
   }
-  12% {
+  11% {
     transform: translate(0, 0) scale(0.2);
     opacity: 0;
   }
-  12.05%,
-  34% {
+  11.05%,
+  40% {
     transform: translate(0, 0) scale(0.3);
     opacity: 0;
   }
-  38% {
+  44% {
     opacity: 0.8;
   }
-  47%,
+  50%,
   100% {
     transform: translate(calc(var(--y) * 2.2), calc(var(--x) * -0.5 - 20px)) scale(0.6);
     opacity: 0;
@@ -485,7 +485,7 @@
   paint-order: stroke fill;
   stroke-linejoin: round;
   position: relative;
-  animation: letra-monta 28s linear var(--d, 0s) infinite both;
+  animation: letra-monta var(--ciclo, 22s) linear var(--d, 0s) infinite both;
   /* a poeira: dois pontinhos que se espalham e se juntam junto com a letra */
   &::before,
   &::after {
@@ -501,7 +501,7 @@
     opacity: 0;
     pointer-events: none;
     -webkit-text-stroke: 0;
-    animation: letra-po-a 28s linear var(--d, 0s) infinite both;
+    animation: letra-po-a var(--ciclo, 22s) linear var(--d, 0s) infinite both;
   }
   &::after {
     width: 0.14em;
@@ -514,11 +514,11 @@
   }
   /* ao lado do logo e dos controles, a letra acompanha a largura da tela para o texto caber no espaço entre eles */
   @media (min-width: 768px) {
-    font-size: clamp(0.95rem, 1.75vw, 1.7rem);
+    font-size: clamp(1.05rem, 1.9vw, 1.9rem);
   }
   /* telas largas: o título fica no centro da página (colunas iguais dos dois lados), com a letra limitada para não encostar nos controles */
   @media (min-width: 1760px) {
-    font-size: min(1.7rem, calc((100vw - 1200px) / 36));
+    font-size: min(2rem, calc((100vw - 1200px) / 30));
   }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
@@ -867,7 +867,7 @@
   border: 2px solid oklch(0.62 0.17 258 / 0.55);
   opacity: 0;
   pointer-events: none;
-  animation: cartao-onda 3.6s cubic-bezier(0.2, 0.6, 0.3, 1) var(--atraso, 0s) infinite;
+  animation: cartao-onda 3.1s cubic-bezier(0.2, 0.6, 0.3, 1) var(--atraso, 0s) infinite;
   @media (max-width: 767px), (pointer: coarse) {
     display: none;
   }
@@ -884,7 +884,7 @@
 }
 @utility grade-entra {
   & > li {
-    animation: cartao-entra 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation: cartao-entra 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   }
   & > li:nth-child(2) { animation-delay: 0.07s; }
   & > li:nth-child(3) { animation-delay: 0.14s; }
@@ -947,7 +947,7 @@
   transform-style: preserve-3d;
   box-shadow: inset 0 -6px 10px oklch(0.55 0.16 262 / 0.28), inset 0 4px 8px oklch(1 0 0 / 0.9), 0 12px 24px -8px oklch(0.45 0.2 264 / 0.5);
   /* só transform e opacidade animam: ficam na placa de vídeo e não repintam a página */
-  animation: cartao-flutua3d 8s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite;
+  animation: cartao-flutua3d 6.5s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite;
   /* anel que orbita o medalhão, em outro plano */
   &::before {
     content: "";
@@ -960,7 +960,7 @@
     pointer-events: none;
     animation:
       cartao-anel-orbita 9s linear var(--atraso, 0s) infinite,
-      cartao-anel-pulso 3.6s ease-in-out var(--atraso, 0s) infinite;
+      cartao-anel-pulso 3.1s ease-in-out var(--atraso, 0s) infinite;
   }
   /* reflexo de luz que passeia pela superfície */
   &::after {
@@ -984,7 +984,7 @@
     transform: translateZ(22px);
     /* extrusão: camadas de sombra empilhadas dão espessura ao ícone */
     filter: drop-shadow(0 1px 0 oklch(0.8 0.08 258 / 0.9)) drop-shadow(0 6px 5px oklch(0.4 0.18 264 / 0.25));
-    animation: cartao-icone-bob 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite;
+    animation: cartao-icone-bob 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite;
   }
   /* o ícone cresce um pouco quando o ponteiro está sobre o cartão (propriedade individual `scale`: soma-se à oscilação) */
   & > svg {
@@ -1014,11 +1014,11 @@
   }
   & > svg[data-morph] { display: none; }
   @media (prefers-reduced-motion: no-preference) {
-    & > svg { stroke-dasharray: 200; animation: cartao-icone-bob 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite, ic-morph-a 7s ease-in-out var(--atraso, 0s) infinite; }
-    & > svg[data-morph] { display: block; position: absolute; left: 50%; top: 50%; margin: -1.25rem 0 0 -1.25rem; animation: cartao-icone-bob 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite, ic-morph-b 7s ease-in-out var(--atraso, 0s) infinite; }
+    & > svg { stroke-dasharray: 200; animation: cartao-icone-bob 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite, ic-morph-a 6s ease-in-out var(--atraso, 0s) infinite; }
+    & > svg[data-morph] { display: block; position: absolute; left: 50%; top: 50%; margin: -1.25rem 0 0 -1.25rem; animation: cartao-icone-bob 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite, ic-morph-b 6s ease-in-out var(--atraso, 0s) infinite; }
     /* celular e telas de toque: sem morphing (animar o traço repinta o SVG a cada quadro); o ícone só pulsa, na placa de vídeo */
     @media (max-width: 767px), (pointer: coarse) {
-      & > svg { stroke-dasharray: none; animation: cartao-icone-pulso 2.6s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite; }
+      & > svg { stroke-dasharray: none; animation: cartao-icone-pulso 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite; }
       & > svg[data-morph] { display: none; }
     }
   }
