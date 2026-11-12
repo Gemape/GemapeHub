@@ -117,7 +117,7 @@ function LayoutAutenticado() {
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
         <main className="layout-app flex min-h-screen w-full min-w-0 flex-col">
-          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[1fr_auto] 2xl:grid-cols-[1fr_auto_1fr]">
+          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[auto_1fr_auto]">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-32 shrink-0 rounded-md sm:w-52 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <div
@@ -135,7 +135,7 @@ function LayoutAutenticado() {
             {!noInicio && <MenuDaArea />}
             </div>
             {/* Título da marca, centralizado no topo; no celular fica numa linha própria, entre o menu e os filtros. */}
-            <div className="text-center md:order-last md:col-span-2 2xl:order-none 2xl:col-span-1">
+            <div className="min-w-0 text-center">
               <TituloMarca />
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
@@ -161,27 +161,36 @@ function LayoutAutenticado() {
 }
 
 // Ponto de partida (espalhado) de cada letra na montagem: valores fixos derivados do índice, sem sorteio, para não mudar entre renderizações.
-function espalhada(i: number): React.CSSProperties {
+function espalhada(i: number, atraso: number): React.CSSProperties {
   const x = ((i * 37) % 13) - 6;
   const y = ((i * 53) % 9) - 4;
-  return { "--d": `${(i * 0.12).toFixed(2)}s`, "--x": `${x * 14}px`, "--y": `${y * 9}px`, "--r": `${(((i * 29) % 11) - 5) * 40}deg` } as React.CSSProperties;
+  return { "--d": `${(atraso + i * 0.12).toFixed(2)}s`, "--x": `${x * 14}px`, "--y": `${y * 9}px`, "--r": `${(((i * 29) % 11) - 5) * 40}deg` } as React.CSSProperties;
 }
+
+// Os dois textos do topo se alternam: um se desfaz em poeira e, em seguida, o outro se reconstrói no mesmo lugar (ciclo de 28 s, 14 s para cada um).
+const TEXTOS_DO_TOPO = ["GESTÃO DE PATRIMÔNIO", "GEMAPE MÁQUINAS E PEÇAS LTDA"] as const;
 
 // Título do topo: cada letra grossa e arredondada, se desfazendo em poeira e se reconstruindo; o texto fica só para o leitor de tela.
 function TituloMarca() {
-  let n = 0;
   return (
-    <p className="flex w-full flex-wrap items-center xl:flex-nowrap justify-center gap-x-3 gap-y-1.5 sm:gap-x-5 xl:gap-x-6">
-      <span className="sr-only">Gestão de Patrimônio</span>
-      {["GESTÃO", "DE", "PATRIMÔNIO"].map((palavra) => (
-        <span key={palavra} aria-hidden="true" className="flex gap-0.5 sm:gap-1">
-          {[...palavra].map((letra) => (
-            <span key={n} className="letra-marca" style={espalhada(n++)}>
-              {letra}
-            </span>
-          ))}
-        </span>
-      ))}
+    <p className="grid w-full justify-items-center overflow-x-clip">
+      <span className="sr-only">Gestão de Patrimônio e Gemape Máquinas e Peças Ltda</span>
+      {TEXTOS_DO_TOPO.map((texto, k) => {
+        let n = 0;
+        return (
+          <span key={texto} aria-hidden="true" className="col-start-1 row-start-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 sm:gap-x-5">
+            {texto.split(" ").map((palavra) => (
+              <span key={palavra + n} className="flex gap-0.5 sm:gap-1">
+                {[...palavra].map((letra) => (
+                  <span key={n} className="letra-marca" style={espalhada(n++, k * 14)}>
+                    {letra}
+                  </span>
+                ))}
+              </span>
+            ))}
+          </span>
+        );
+      })}
     </p>
   );
 }

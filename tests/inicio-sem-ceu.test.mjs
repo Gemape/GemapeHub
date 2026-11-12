@@ -25,10 +25,10 @@ test("os cartões da tela inicial são de vidro (efeito glassmorphism do sistema
 test("o topo traz só Gestão de Patrimônio (letras em quadradinhos animados), centralizado, sem o Grupo Gemape acima", () => {
   const rota = ler("routes/_authenticated/route.tsx");
   assert.doesNotMatch(rota, /eyebrow-marca/);
-  assert.match(rota, /<span className="sr-only">Gestão de Patrimônio<\/span>/);
+  assert.match(rota, /<span className="sr-only">Gestão de Patrimônio e Gemape Máquinas e Peças Ltda<\/span>/);
   assert.match(rota, /className="letra-marca"/);
   assert.doesNotMatch(rota, /Demonstração · dados locais|Grupo GEMAPE</);
-  assert.match(rota, /md:grid-cols-\[1fr_auto\]/);
+  assert.match(rota, /md:grid-cols-\[auto_1fr_auto\]/);
   const css = ler("styles.css");
   assert.match(css, /@utility letra-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
 });

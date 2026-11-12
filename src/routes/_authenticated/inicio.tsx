@@ -30,10 +30,13 @@ const PaCarregadeira = createLucideIcon("PaCarregadeira", [
   ["path", { d: "M15 6l6 .5-1 6.5h-6z", key: "cacamba" }],
 ]);
 
-// Botina (EPIs) e calça (Uniformes): o lucide não traz; mesmo traço dos outros ícones.
+// EPIs (máscara e botas de borracha com brilhos) e calça (Uniformes): o lucide não traz; mesmo traço dos outros ícones.
 const Botina = createLucideIcon("Botina", [
-  ["path", { d: "M6 3h6v8l5 2.5c2 .8 3 1.6 3 3.5v2H6z", key: "cano" }],
-  ["path", { d: "M6 17h14M9 7h3M9 10h3", key: "detalhes" }],
+  ["path", { d: "M5 2.5h5.5a1 1 0 0 1 1 1V6a4.5 4.5 0 0 1-3.75 4.4A4.5 4.5 0 0 1 4 6V3.5a1 1 0 0 1 1-1z", key: "mascara" }],
+  ["path", { d: "M7.8 6.5h.01", key: "filtro" }],
+  ["path", { d: "M3.5 12.5h4v5l2.9 1c.5.2.8.6.8 1.2V21H3.5z", key: "bota1" }],
+  ["path", { d: "M12.8 12.5h4v5l2.9 1c.5.2.8.6.8 1.2V21h-7.7z", key: "bota2" }],
+  ["path", { d: "M19 2.5v3M17.5 4h3M15 8h.01", key: "brilhos" }],
 ]);
 const Calca = createLucideIcon("Calca", [
   ["path", { d: "M7 3h10l1.5 18h-5L12 10l-1.5 11h-5z", key: "pernas" }],

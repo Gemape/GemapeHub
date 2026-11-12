@@ -406,14 +406,14 @@
     filter: blur(7px);
     animation-timing-function: cubic-bezier(0.25, 0.8, 0.3, 1);
   }
-  24%,
-  68% {
+  12%,
+  34% {
     transform: translate(0, 0) scale(1);
     opacity: 1;
     filter: blur(0);
     animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.4);
   }
-  94%,
+  47%,
   100% {
     transform: translate(calc(var(--x) * -0.8), calc(var(--y) * -0.6 - 12px)) scale(1.04);
     opacity: 0;
@@ -425,22 +425,22 @@
     transform: translate(calc(var(--x) * 0.7), calc(var(--y) * 0.7)) scale(0.6);
     opacity: 0;
   }
-  6% {
+  3% {
     opacity: 0.9;
   }
-  24% {
+  12% {
     transform: translate(0, 0) scale(0.2);
     opacity: 0;
   }
-  24.1%,
-  68% {
+  12.05%,
+  34% {
     transform: translate(0, 0) scale(0.3);
     opacity: 0;
   }
-  74% {
+  37% {
     opacity: 0.9;
   }
-  94%,
+  47%,
   100% {
     transform: translate(calc(var(--x) * -1.1), calc(var(--y) * -1.1 - 16px)) scale(0.7);
     opacity: 0;
@@ -451,22 +451,22 @@
     transform: translate(calc(var(--y) * -2), calc(var(--x) * 0.4)) scale(0.5);
     opacity: 0;
   }
-  8% {
+  4% {
     opacity: 0.8;
   }
-  24% {
+  12% {
     transform: translate(0, 0) scale(0.2);
     opacity: 0;
   }
-  24.1%,
-  68% {
+  12.05%,
+  34% {
     transform: translate(0, 0) scale(0.3);
     opacity: 0;
   }
-  76% {
+  38% {
     opacity: 0.8;
   }
-  94%,
+  47%,
   100% {
     transform: translate(calc(var(--y) * 2.2), calc(var(--x) * -0.5 - 20px)) scale(0.6);
     opacity: 0;
@@ -485,7 +485,7 @@
   paint-order: stroke fill;
   stroke-linejoin: round;
   position: relative;
-  animation: letra-monta 14s linear var(--d, 0s) infinite both;
+  animation: letra-monta 28s linear var(--d, 0s) infinite both;
   /* a poeira: dois pontinhos que se espalham e se juntam junto com a letra */
   &::before,
   &::after {
@@ -501,7 +501,7 @@
     opacity: 0;
     pointer-events: none;
     -webkit-text-stroke: 0;
-    animation: letra-po-a 14s linear var(--d, 0s) infinite both;
+    animation: letra-po-a 28s linear var(--d, 0s) infinite both;
   }
   &::after {
     width: 0.14em;
@@ -512,8 +512,9 @@
   @media (min-width: 640px) {
     font-size: 1.45rem;
   }
-  @media (min-width: 1536px) {
-    font-size: 2.1rem;
+  /* ao lado do logo e dos controles, a letra acompanha a largura da tela para o texto caber no espaço entre eles */
+  @media (min-width: 768px) {
+    font-size: clamp(0.95rem, 1.75vw, 1.7rem);
   }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
