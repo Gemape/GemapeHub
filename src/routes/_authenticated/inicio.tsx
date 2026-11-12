@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, MapPin, BadgeCheck, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, Package, PackageCheck, ShieldCheck, ShoppingBag, SlidersHorizontal, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { ArrowRight, createLucideIcon, MapPin, Plane, UserRound, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ShieldCheck, ShoppingBag, SlidersHorizontal, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
@@ -21,10 +21,19 @@ const ICONES_CARTAO: Record<IconeInicio, typeof Car> = {
   LayoutDashboard, HardHat, Shirt, Wrench, Car, Luggage, Forklift, FolderCog, Building2, Users, Truck, Handshake,
 };
 
+// Pá carregadeira (o lucide não traz uma): corpo com cabine, duas rodas, braço e caçamba, no mesmo traço dos outros ícones.
+const PaCarregadeira = createLucideIcon("PaCarregadeira", [
+  ["circle", { cx: "6.5", cy: "17", r: "2.5", key: "r1" }],
+  ["circle", { cx: "15.5", cy: "17", r: "2.5", key: "r2" }],
+  ["path", { d: "M4 17H3v-5l2-4h5v6h2", key: "cabine" }],
+  ["path", { d: "M9 17h4M10 11l5-3", key: "braco" }],
+  ["path", { d: "M15 6l6 .5-1 6.5h-6z", key: "cacamba" }],
+]);
+
 // Morphing: cada ícone se desmancha e se refaz como este outro (do mesmo assunto), no mesmo lugar dentro do círculo, e volta.
 const ICONES_MORPH: Record<IconeInicio | "Settings", typeof Car> = {
   LayoutDashboard: ChartColumn, Settings: SlidersHorizontal, HardHat: ShieldCheck, Shirt: ShoppingBag, Wrench: Hammer, Car: Fuel,
-  Luggage: Package, Forklift: PackageCheck, FolderCog: FileText, Building2: Factory, Users: UserCheck, Truck: MapPin, Handshake: BadgeCheck,
+  Luggage: Plane, Forklift: PaCarregadeira, FolderCog: FileText, Building2: Factory, Users: UserCheck, Truck: MapPin, Handshake: UserRound,
 };
 
 const classeCartao =
