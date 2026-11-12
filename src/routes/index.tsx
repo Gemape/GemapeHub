@@ -33,8 +33,8 @@ function Home() {
 
   useEffect(() => {
     if (variaveisSupabaseFaltando().length) return;
-    // Só na demonstração: /?vitrine mostra esta página mesmo com a sessão de teste (some do pacote de produção).
-    if (import.meta.env.VITE_DEMO_MODE !== "false" && new URLSearchParams(window.location.search).has("vitrine")) return;
+    // Só na demonstração: a vitrine sempre abre primeiro (vitrine → login → início), mesmo com a sessão de teste guardada no navegador.
+    if (import.meta.env.VITE_DEMO_MODE !== "false") return;
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/inicio", replace: true });
     });
