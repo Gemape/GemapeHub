@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { ArrowRight, Star, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
+import { AtalhosPessoais, useAtalhosPessoais } from "@/components/inicio/atalhosPessoais";
 import { BuscaRapida } from "@/components/inicio/BuscaRapida";
 import { ICONES } from "@/components/layout/AppSidebar";
 import { useAccess } from "@/lib/access-context";
+import { chaveDoAtalho, type AtalhoGuardado } from "@/lib/atalhos-usuario";
 import { gruposDoInicio, lerAbertos, guardarAbertos, type IconeInicio, type SecaoInicio, type SubitemInicio } from "@/lib/inicio";
 
 // Matriz de acessos por usuário (card Configurações): só no modo demonstração; na produção a condição é falsa na compilação e o código nem é gerado.
@@ -75,13 +77,26 @@ function FaixaDoCartao({ Icone, tipo, atraso }: { Icone: typeof Car; tipo: Icone
   );
 }
 
-function AtalhoDoCartao({ sub }: { sub: SubitemInicio }) {
+function AtalhoDoCartao({ sub, cartao, fixado, aoFixar }: { sub: SubitemInicio; cartao: string; fixado: boolean; aoFixar: (a: AtalhoGuardado) => void }) {
   const IconeSub = ICONES[sub.icone];
+  const guardado: AtalhoGuardado = { titulo: sub.titulo, cartao, secao: sub.secao, url: sub.url, ...(sub.search ? { search: sub.search } : {}) };
   return (
-    <Link to={sub.url} search={sub.search as never} className={`flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-primary/10 ${classeFoco}`}>
-      <IconeSub className="size-4 shrink-0 text-primary" aria-hidden="true" />
-      {sub.titulo}
-    </Link>
+    <div className="flex items-center hover:bg-primary/10">
+      <Link to={sub.url} search={sub.search as never} className={`flex min-w-0 flex-1 items-center gap-2 py-2.5 pl-4 pr-2 text-sm ${classeFoco}`}>
+        <IconeSub className="size-4 shrink-0 text-primary" aria-hidden="true" />
+        <span className="truncate">{sub.titulo}</span>
+      </Link>
+      <button
+        type="button"
+        aria-pressed={fixado}
+        aria-label={`${fixado ? "Desafixar" : "Fixar"} ${sub.titulo} no topo da tela inicial`}
+        title={fixado ? "Desafixar do topo" : "Fixar no topo"}
+        onClick={() => aoFixar(guardado)}
+        className={`mr-2 grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:text-primary ${classeFoco}`}
+      >
+        <Star className={`size-4 transition-transform duration-200 ${fixado ? "fill-primary text-primary scale-110" : ""}`} aria-hidden="true" />
+      </button>
+    </div>
   );
 }
 
@@ -101,6 +116,7 @@ function PaginaInicio() {
     setAbertos(nova);
     guardarAbertos(nova);
   };
+  const { fixados, recentes, alternar: alternarFixado } = useAtalhosPessoais();
   const grupos = useMemo(() => gruposDoInicio(isAdmin, podeVerCaminho), [isAdmin, podeVerCaminho]);
 
   return (
@@ -111,6 +127,7 @@ function PaginaInicio() {
       <h1 className="sr-only">Início</h1>
       <div className="relative z-10 mx-auto max-w-5xl space-y-8 sm:space-y-10">
       <BuscaRapida grupos={grupos} />
+      <AtalhosPessoais fixados={fixados.filter((a) => podeVerCaminho(a.url, a.search))} recentes={recentes.filter((a) => podeVerCaminho(a.url, a.search))} />
       {grupos.map((grupo) => (
         <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="mx-auto w-full max-w-4xl space-y-4">
           <h2 id={`grupo-${grupo.titulo}`} className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-primary/80 sm:text-sm">
@@ -169,7 +186,7 @@ function PaginaInicio() {
                             <h3 className="bg-muted/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{secao}</h3>
                             <ul className="divide-y">
                               {doCartao.map((sub) => (
-                                <li key={`${sub.titulo}-${sub.url}`}><AtalhoDoCartao sub={sub} /></li>
+                                <li key={`${sub.titulo}-${sub.url}-${JSON.stringify(sub.search ?? {})}`}><AtalhoDoCartao sub={sub} cartao={c.titulo} fixado={fixados.some((f) => chaveDoAtalho(f) === chaveDoAtalho({ url: sub.url, search: sub.search }))} aoFixar={alternarFixado} /></li>
                               ))}
                             </ul>
                           </section>

@@ -229,3 +229,39 @@ test("cartões abertos da tela inicial são lembrados no navegador; dado ilegív
   assert.match(pagina, /guardarAbertos\(nova\)/);
   assert.match(pagina, /<BuscaRapida grupos=\{grupos\} \/>/);
 });
+
+test("atalhos pessoais: fixar com a estrela, últimos 4 acessados sem repetir, um conjunto por usuário e sem quebrar sem armazenamento", async () => {
+  const { alternarFixado, registrarRecente, lerFixados, lerRecentes, chaveDoAtalho, MAX_RECENTES } = await import("../src/lib/atalhos-usuario.ts");
+  const guardado = {};
+  globalThis.localStorage = { getItem: (k) => guardado[k] ?? null, setItem: (k, v) => { guardado[k] = v; } };
+  try {
+    const entrega = { titulo: "Entrega EPI", cartao: "EPIs", secao: "Módulo", url: "/epi", search: { aba: "entrega" } };
+    const estoque = { titulo: "Estoque", cartao: "EPIs", secao: "Módulo", url: "/epi", search: { aba: "estoque" } };
+    assert.notEqual(chaveDoAtalho(entrega), chaveDoAtalho(estoque));
+    assert.equal(alternarFixado("ana", entrega).length, 1);
+    assert.equal(lerFixados("bia").length, 0); // outro usuário não vê
+    assert.equal(alternarFixado("ana", entrega).length, 0); // segunda estrela desfixa
+    for (let i = 0; i < 6; i++) registrarRecente("ana", { ...entrega, titulo: `T${i}`, search: { aba: `a${i}` } });
+    assert.equal(lerRecentes("ana").length, MAX_RECENTES);
+    assert.equal(lerRecentes("ana")[0].titulo, "T5");
+    registrarRecente("ana", { ...entrega, titulo: "T3", search: { aba: "a3" } }); // reabrir leva ao começo, sem duplicar
+    assert.deepEqual(lerRecentes("ana").map((a) => a.titulo), ["T3", "T5", "T4", "T2"]);
+    guardado["gemape-inicio-recentes:ana"] = "{ruim";
+    assert.deepEqual(lerRecentes("ana"), []);
+    globalThis.localStorage = { getItem: () => { throw new Error("x"); }, setItem: () => { throw new Error("y"); } };
+    assert.deepEqual(lerFixados("ana"), []);
+    assert.doesNotThrow(() => registrarRecente("ana", entrega));
+  } finally {
+    delete globalThis.localStorage;
+  }
+});
+
+test("navegação: seletor de módulos no canto esquerdo, trilha Início / módulo / tela e Voltar ao início no mesmo lugar", () => {
+  const rota = ler("routes/_authenticated/route.tsx");
+  const nav = ler("components/layout/NavegacaoRapida.tsx");
+  assert.match(rota, /\{!noInicio && <TrocaDeModulo \/>\}[\s\S]*?<Link to="\/inicio" aria-label="GEMAPE, tela inicial"/);
+  assert.match(rota, /<TrilhaDeNavegacao \/>/);
+  assert.match(rota, /<RegistraRecente \/>/);
+  assert.match(nav, /aria-label="Trocar de módulo"/);
+  assert.match(nav, /to="\/inicio"[^>]*>[\s\S]*?Início/);
+});
