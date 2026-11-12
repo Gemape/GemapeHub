@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
+import { BuscaRapida } from "@/components/inicio/BuscaRapida";
 import { ICONES } from "@/components/layout/AppSidebar";
 import { useAccess } from "@/lib/access-context";
-import { gruposDoInicio, type IconeInicio, type SecaoInicio, type SubitemInicio } from "@/lib/inicio";
+import { gruposDoInicio, lerAbertos, guardarAbertos, type IconeInicio, type SecaoInicio, type SubitemInicio } from "@/lib/inicio";
 
 // Matriz de acessos por usuário (card Configurações): só no modo demonstração; na produção a condição é falsa na compilação e o código nem é gerado.
 const ConfiguracoesAcessos = import.meta.env.VITE_DEMO_MODE !== "false"
@@ -92,28 +93,15 @@ function PaginaInicio() {
   const [configAberta, setConfigAberta] = useState(false);
   // Configurações é um cartão extra do grupo Visão geral (só o Administrador, só no modo demonstração): a mesma conta vale para o cartão e para o contador do grupo.
   const comConfiguracoes = (titulo: string) => !!ConfiguracoesAcessos && isAdmin && titulo === "Visão geral";
-  const alternar = (chave: string) =>
-    setAbertos((a) => {
-      const nova = new Set(a);
-      if (!nova.delete(chave)) nova.add(chave);
-      return nova;
-    });
-
-  // Clicar em qualquer lugar fora dos cartões (ou apertar Esc) recolhe os menus abertos.
-  useEffect(() => {
-    const fora = (e: PointerEvent) => {
-      if (!(e.target instanceof Element) || !e.target.closest("[data-cartao]")) setAbertos((a) => (a.size ? new Set() : a));
-    };
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAbertos((a) => (a.size ? new Set() : a));
-    };
-    document.addEventListener("pointerdown", fora);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("pointerdown", fora);
-      document.removeEventListener("keydown", esc);
-    };
-  }, []);
+  // O que o operador abriu ou recolheu fica guardado neste navegador: a tela volta como ele deixou. Lê depois de montar para não divergir do HTML do servidor.
+  useEffect(() => setAbertos(lerAbertos()), []);
+  const alternar = (chave: string) => {
+    const nova = new Set(abertos);
+    if (!nova.delete(chave)) nova.add(chave);
+    setAbertos(nova);
+    guardarAbertos(nova);
+  };
+  const grupos = useMemo(() => gruposDoInicio(isAdmin, podeVerCaminho), [isAdmin, podeVerCaminho]);
 
   return (
     <div className="fonte-manrope">
@@ -122,7 +110,8 @@ function PaginaInicio() {
       {/* Sem título na tela: ela começa direto nos cartões. O título fica só para o leitor de tela. */}
       <h1 className="sr-only">Início</h1>
       <div className="relative z-10 mx-auto max-w-5xl space-y-8 sm:space-y-10">
-      {gruposDoInicio(isAdmin, podeVerCaminho).map((grupo) => (
+      <BuscaRapida grupos={grupos} />
+      {grupos.map((grupo) => (
         <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="mx-auto w-full max-w-4xl space-y-4">
           <h2 id={`grupo-${grupo.titulo}`} className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-primary/80 sm:text-sm">
             {grupo.titulo}
@@ -136,7 +125,7 @@ function PaginaInicio() {
               const faixa = <FaixaDoCartao Icone={Icone} tipo={c.icone} atraso={`${(indice % 6) * -0.8}s`} />;
               if (!c.itens) {
                 return (
-                  <li key={chave} data-cartao >
+                  <li key={chave} >
                     <Link to={c.url ?? "/inicio"} className={`flex flex-col ${classeCartao} ${classeFoco}`}>
                       {faixa}
                       <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
@@ -153,7 +142,7 @@ function PaginaInicio() {
               const aberto = abertos.has(chave);
               const idLista = `atalhos-${grupo.titulo}-${c.titulo}`;
               return (
-                <li key={chave} data-cartao className={classeCartao}>
+                <li key={chave} className={classeCartao}>
                   <button
                     type="button"
                     aria-expanded={aberto}
@@ -193,7 +182,7 @@ function PaginaInicio() {
             })}
             {/* Configurações é um cartão ao lado do Dashboard (só o Administrador, só no modo demonstração). */}
             {comConfiguracoes(grupo.titulo) && (
-              <li data-cartao>
+              <li>
                 <button type="button" onClick={() => setConfigAberta(true)} className={`flex w-full flex-col text-left ${classeCartao} ${classeFoco}`}>
                   <FaixaDoCartao Icone={Settings} tipo="Settings" atraso="-2.4s" />
                   <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">

@@ -126,7 +126,7 @@ test("a tela de clonar acha o responsável do original, e o topo e o início nã
   assert.match(ler2("components/parametros/ChecklistEquipamento.tsx"), /\(editando \?\? clonandoDe\)\)\?\.responsavel/);
   assert.match(ler2("components/parametros/ChecklistEquipamento.tsx"), /useVersaoArmazenamento/);
   assert.match(ler2("components/layout/MenuDaArea.tsx"), /useRouterState\(\{ select: \(s\) => s\.location\.pathname \}\)/);
-  assert.match(ler2("routes/_authenticated/inicio.tsx"), /setAbertos\(\(a\) => \(a\.size \? new Set\(\) : a\)\)/);
+  assert.match(ler2("routes/_authenticated/inicio.tsx"), /useMemo\(\(\) => gruposDoInicio\(isAdmin, podeVerCaminho\)/);
 });
 
 test("cadastro de grupo: itens do padrão para marcar, lista editável dos selecionados e item próprio (veículos e equipamentos)", () => {
