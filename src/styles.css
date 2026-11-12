@@ -398,13 +398,23 @@
     transform: translateY(0) scale(1);
   }
 }
-@keyframes letra-sobe {
-  0%,
-  100% {
-    transform: translateY(0);
+/* montagem e desmontagem: cada letra vem de um ponto espalhado (--x, --y, --r), se encaixa, fica parada um tempo e se solta de novo; só transform e opacidade */
+@keyframes letra-monta {
+  0% {
+    transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(0.2);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1.15);
   }
-  50% {
-    transform: translateY(-3px);
+  16%,
+  72% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.8, 0.3);
+  }
+  92%,
+  100% {
+    transform: translate(calc(var(--x) * -0.8), calc(var(--y) * -0.8)) rotate(calc(var(--r) * -1)) scale(0.2);
+    opacity: 0;
   }
 }
 @utility letra-marca {
@@ -419,9 +429,7 @@
   -webkit-text-stroke: 0.13em var(--color-primary);
   paint-order: stroke fill;
   stroke-linejoin: round;
-  animation:
-    titulo-entrada 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0s) both,
-    letra-sobe 3.2s ease-in-out calc(var(--d, 0s) + 0.8s) infinite;
+  animation: letra-monta 9s linear var(--d, 0s) infinite both;
   @media (min-width: 640px) {
     font-size: 1.45rem;
   }

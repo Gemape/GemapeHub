@@ -170,7 +170,7 @@ test("o anexo de fotos (ocorrências e check lists de veículos e equipamentos) 
 
 test("celular: o cabeçalho da tela, as janelas e os relatórios se ajustam à tela estreita", async () => {
   const rota = ler("routes/_authenticated/route.tsx");
-  assert.match(rota, /grid-cols-1 [^"]*md:grid-cols-\[auto_1fr_auto\]/, "cabeçalho em uma coluna no celular");
+  assert.match(rota, /grid-cols-1 [^"]*md:grid-cols-\[1fr_auto\]/, "cabeçalho em uma coluna no celular");
   assert.match(rota, /md:sticky md:top-0/, "só fixa no topo a partir de md");
   assert.match(rota, /grid grid-cols-2 items-center gap-2 md:flex/, "controles em duas colunas no celular");
   assert.match(rota, /w-full min-w-0 sm:w-\[210px\]/, "o filtro de empresa não força a largura");

@@ -28,7 +28,7 @@ test("o topo traz só Gestão de Patrimônio (letras em quadradinhos animados), 
   assert.match(rota, /<span className="sr-only">Gestão de Patrimônio<\/span>/);
   assert.match(rota, /className="letra-marca"/);
   assert.doesNotMatch(rota, /Demonstração · dados locais|Grupo GEMAPE</);
-  assert.match(rota, /md:grid-cols-\[auto_1fr_auto\]/);
+  assert.match(rota, /md:grid-cols-\[1fr_auto\]/);
   const css = ler("styles.css");
   assert.match(css, /@utility letra-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
 });

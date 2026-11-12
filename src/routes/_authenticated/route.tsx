@@ -117,7 +117,7 @@ function LayoutAutenticado() {
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
         <main className="layout-app flex min-h-screen w-full min-w-0 flex-col">
-          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[auto_1fr_auto]">
+          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[1fr_auto] 2xl:grid-cols-[1fr_auto_1fr]">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-32 shrink-0 rounded-md sm:w-52 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <div
@@ -135,7 +135,7 @@ function LayoutAutenticado() {
             {!noInicio && <MenuDaArea />}
             </div>
             {/* Título da marca, centralizado no topo; no celular fica numa linha própria, entre o menu e os filtros. */}
-            <div className="text-center">
+            <div className="text-center md:order-last md:col-span-2 2xl:order-none 2xl:col-span-1">
               <TituloMarca />
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
@@ -160,16 +160,23 @@ function LayoutAutenticado() {
   );
 }
 
-// Título do topo: cada letra grossa e arredondada, animada em onda; o texto fica só para o leitor de tela.
+// Ponto de partida (espalhado) de cada letra na montagem: valores fixos derivados do índice, sem sorteio, para não mudar entre renderizações.
+function espalhada(i: number): React.CSSProperties {
+  const x = ((i * 37) % 13) - 6;
+  const y = ((i * 53) % 9) - 4;
+  return { "--d": `${(i * 0.08).toFixed(2)}s`, "--x": `${x * 14}px`, "--y": `${y * 9}px`, "--r": `${(((i * 29) % 11) - 5) * 40}deg` } as React.CSSProperties;
+}
+
+// Título do topo: cada letra grossa e arredondada, montando e desmontando em peças soltas; o texto fica só para o leitor de tela.
 function TituloMarca() {
   let n = 0;
   return (
-    <p className="flex flex-wrap items-center xl:flex-nowrap justify-center gap-x-3 gap-y-1.5 sm:gap-x-5 xl:gap-x-6">
+    <p className="flex w-full flex-wrap items-center xl:flex-nowrap justify-center gap-x-3 gap-y-1.5 sm:gap-x-5 xl:gap-x-6">
       <span className="sr-only">Gestão de Patrimônio</span>
       {["GESTÃO", "DE", "PATRIMÔNIO"].map((palavra) => (
         <span key={palavra} aria-hidden="true" className="flex gap-0.5 sm:gap-1">
           {[...palavra].map((letra) => (
-            <span key={n} className="letra-marca" style={{ "--d": `${(n++ * 0.09).toFixed(2)}s` } as React.CSSProperties}>
+            <span key={n} className="letra-marca" style={espalhada(n++)}>
               {letra}
             </span>
           ))}
