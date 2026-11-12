@@ -26,7 +26,7 @@ const classeCartao =
 const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 // Dois cartões por linha em qualquer tela (um só em celular bem estreito); com número ímpar, o último fica sozinho e centralizado na largura de um cartão.
 const gradeDeCartoes =
-  "mx-auto grid max-w-4xl grid-cols-1 items-start gap-4 min-[480px]:grid-cols-2 sm:gap-6 min-[480px]:[&>li:last-child:nth-child(odd)]:col-span-2 min-[480px]:[&>li:last-child:nth-child(odd)]:mx-auto min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.5rem)] sm:min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.75rem)]";
+  "grade-entra mx-auto grid max-w-4xl grid-cols-1 items-start gap-4 min-[480px]:grid-cols-2 sm:gap-6 min-[480px]:[&>li:last-child:nth-child(odd)]:col-span-2 min-[480px]:[&>li:last-child:nth-child(odd)]:mx-auto min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.5rem)] sm:min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.75rem)]";
 const SECOES: readonly SecaoInicio[] = ["Módulo", "Relatórios", "Parâmetros"];
 
 // Faixa do alto do cartão: degradê azul, duas luzes suaves de fundo e o medalhão com o ícone (mais baixa no celular, para caber mais cartões na tela).
@@ -35,6 +35,8 @@ function FaixaDoCartao({ Icone, atraso }: { Icone: typeof Car; atraso: string })
     <span className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-[oklch(0.88_0.06_255)] to-[oklch(0.97_0.02_255)] text-primary min-[480px]:h-32 sm:h-40 lg:h-44">
       <span aria-hidden="true" className="pointer-events-none absolute -left-8 -top-10 size-32 rounded-full bg-white/60 blur-2xl" />
       <span aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-6 size-36 rounded-full bg-primary/15 blur-2xl" />
+      <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": atraso } as React.CSSProperties} />
+      <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": `calc(${atraso} + 1.8s)` } as React.CSSProperties} />
       <span className="medalhao-cartao relative" style={{ "--atraso": atraso } as React.CSSProperties}>
         <Icone aria-hidden="true" strokeWidth={1.6} />
       </span>

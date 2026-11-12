@@ -69,6 +69,6 @@ test("o fundo segue o site da Gemape: branco descendo para um azul clarinho, com
 test("o ícone dos cartões é um medalhão grande que flutua e brilha, e fica parado para quem reduz movimento", () => {
   assert.match(inicio, /medalhao-cartao/);
   const css = ler("styles.css");
-  assert.match(css, /@utility medalhao-cartao \{[\s\S]*?height: 5rem[\s\S]*?cartao-flutua[\s\S]*?cartao-halo[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
+  assert.match(css, /@utility medalhao-cartao \{[\s\S]*?height: 5rem[\s\S]*?cartao-flutua[\s\S]*?cartao-anel-pulso[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
   assert.ok(css.includes(".group\\/cartao:hover & > svg") && css.includes("rotate: y 360deg"));
 });
