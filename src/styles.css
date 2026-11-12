@@ -516,6 +516,10 @@
   @media (min-width: 768px) {
     font-size: clamp(0.95rem, 1.75vw, 1.7rem);
   }
+  /* telas largas: o título fica no centro da página (colunas iguais dos dois lados), com a letra limitada para não encostar nos controles */
+  @media (min-width: 1760px) {
+    font-size: min(1.7rem, calc((100vw - 1200px) / 36));
+  }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     &::before,

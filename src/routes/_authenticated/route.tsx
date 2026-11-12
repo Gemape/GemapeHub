@@ -117,7 +117,7 @@ function LayoutAutenticado() {
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
         <main className="layout-app flex min-h-screen w-full min-w-0 flex-col">
-          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[auto_1fr_auto]">
+          <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[auto_1fr_auto] min-[1760px]:grid-cols-[1fr_auto_1fr]!">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link to="/inicio" aria-label="GEMAPE, tela inicial" title="Ir para a tela inicial" className="block w-32 shrink-0 rounded-md sm:w-52 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
               <div
