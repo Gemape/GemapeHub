@@ -4,6 +4,8 @@ import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, Boxes, Building2, Car, Users, Wallet } from "lucide-react";
 
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
+import { RelatorioPainelDialog, type RelatorioDoPainel } from "@/components/RelatorioPainelDialog";
+import { RelatorioEmpresaDialog } from "@/components/RelatorioEmpresaDialog";
 import { PainelKpisDialog, type CardDoPainel } from "@/components/PainelKpisDialog";
 import { StatCard } from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
@@ -54,11 +56,16 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const MODULOS: Modulo[] = ["epi", "uniforme", "ferramenta"];
 
 // O card do alto abre os KPIs dele (PainelKpisDialog): vira botão, com o mesmo foco visível dos outros cartões clicáveis.
-function CardClicavel({ rotulo, onAbrir, children }: { rotulo: string; onAbrir: () => void; children: ReactNode }) {
+// Enter e espaço abrem, como num botão (o card tem blocos e tabelas dentro, que não cabem em <button>).
+const teclaDeAbrir = (abrir: () => void) => (ev: React.KeyboardEvent) => {
+  if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); abrir(); }
+};
+
+function CardClicavel({ rotulo, onAbrir, children, classe = "" }: { rotulo: string; onAbrir: () => void; children: ReactNode; classe?: string }) {
   return (
-    <button type="button" aria-label={`${rotulo}: ver indicadores`} onClick={onAbrir} className="block h-full w-full rounded-2xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <div role="button" tabIndex={0} aria-label={`${rotulo}: ver relatório`} onClick={onAbrir} onKeyDown={teclaDeAbrir(onAbrir)} className={`block h-full w-full cursor-pointer rounded-2xl text-left transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${classe}`}>
       {children}
-    </button>
+    </div>
   );
 }
 
@@ -66,6 +73,8 @@ function DashboardGeral() {
   const { empresas, empresaId } = useEmpresa();
   const { data: veiculos = [] } = useVeiculos(empresaId);
   const [cardAberto, setCardAberto] = useState<CardDoPainel | null>(null);
+  const [empresaAberta, setEmpresaAberta] = useState<string | null>(null);
+  const [quadroAberto, setQuadroAberto] = useState<RelatorioDoPainel | null>(null);
 
   const { data: itens = [] } = useQuery({
     queryKey: ["itens-todos", empresaId],
@@ -143,7 +152,13 @@ function DashboardGeral() {
 
   // As ocorrências ficam no navegador: relê quando a lista de veículos muda e a cada card aberto, para o número não ficar velho.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const ocorrenciasDeVeiculos = useMemo(() => lerOcorrenciasVeiculo(), [veiculos, cardAberto]);
+  const ocorrenciasDeVeiculos = useMemo(() => lerOcorrenciasVeiculo(), [veiculos, cardAberto, empresaAberta, quadroAberto]);
+  // Uma linha por alerta (EPI e uniforme alertam por tamanho): os relatórios dos quadros e das empresas listam as mesmas linhas.
+  const linhasDeAlerta = criticos.flatMap((i) => {
+    const por = alertasDe(i);
+    const base = { id: i.id, nome: i.nome, modulo: i.modulo, empresaId: i.empresa_id };
+    return por ? por.map((a) => ({ ...base, estoque: `${a.nome}: ${a.saldo}`, minimo: `${a.nome}: ${a.minimo}` })) : [{ ...base, estoque: String(i.estoque_atual ?? 0), minimo: String(i.estoque_minimo ?? 0) }];
+  });
   const empresasDoPainel = empresas.map((e) => ({ id: e.id, nome: e.nome_fantasia }));
   const kpis = {
     itens: kpisDeItens(itens, new Set(criticos.map((i) => i.id)), empresasDoPainel),
@@ -215,9 +230,16 @@ function DashboardGeral() {
         </CardClicavel>
       </GradeDeCartoes>
       <PainelKpisDialog card={cardAberto} kpis={kpis} onFechar={() => setCardAberto(null)} />
+      <RelatorioPainelDialog relatorio={quadroAberto} itens={itens} alertas={linhasDeAlerta} empresas={empresasDoPainel} totalVeiculos={veiculos.length} onFechar={() => setQuadroAberto(null)} />
+      <RelatorioEmpresaDialog
+        empresa={empresasDoPainel.find((e) => e.id === empresaAberta) ?? null}
+        itens={itens} alertas={linhasDeAlerta} criticos={new Set(criticos.map((i) => i.id))} veiculos={veiculos} ocorrencias={ocorrenciasDeVeiculos} empregados={empregadosAtivos}
+        onFechar={() => setEmpresaAberta(null)}
+      />
 
       <div className="grid items-stretch gap-4 lg:grid-cols-5">
-        <Card className="lg:col-span-2">
+        <CardClicavel rotulo="Patrimônio por categoria" onAbrir={() => setQuadroAberto("categorias")} classe="lg:col-span-2">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Boxes className="size-4" /> Patrimônio por categoria
@@ -260,8 +282,10 @@ function DashboardGeral() {
             </Table>
           </CardContent>
         </Card>
+        </CardClicavel>
 
-        <Card className="lg:col-span-3">
+        <CardClicavel rotulo="Alertas críticos" onAbrir={() => setQuadroAberto("alertas")} classe="lg:col-span-3">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="size-4 text-destructive" /> Alertas críticos
@@ -303,9 +327,10 @@ function DashboardGeral() {
                 )}
               </TableBody>
             </Table>
-            {criticos.length > 10 && <p className="mt-2 text-xs text-muted-foreground">Mostrando 10 de {criticos.length}. Clique no card Itens cadastrados para ver o resumo por categoria e empresa.</p>}
+            {criticos.length > 10 && <p className="mt-2 text-xs text-muted-foreground">Mostrando 10 de {criticos.length}. Clique no quadro para ver a lista completa.</p>}
           </CardContent>
         </Card>
+        </CardClicavel>
       </div>
 
       <section aria-label="Distribuição por empresa" className="space-y-3">
@@ -317,7 +342,7 @@ function DashboardGeral() {
             const veiculosEmpresa = kpis.veiculos.porEmpresa.find((e) => e.id === empresa.id);
             const equipe = kpis.empregados.porEmpresa.find((e) => e.id === empresa.id);
             return (
-              <div key={empresa.id} className="flex h-full flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
+              <div role="button" tabIndex={0} key={empresa.id} onClick={() => setEmpresaAberta(empresa.id)} onKeyDown={teclaDeAbrir(() => setEmpresaAberta(empresa.id))} aria-label={`Abrir o relatório de ${empresa.nome_fantasia}`} className="flex h-full w-full cursor-pointer flex-col gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-eyebrow">{empresa.nome_fantasia}</p>

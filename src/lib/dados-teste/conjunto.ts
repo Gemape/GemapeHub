@@ -3,7 +3,7 @@
 // dados serem atualizados sozinhos no navegador.
 import { gerarCnpj, gerarCpf } from "./documentos.ts";
 
-export const VERSAO_DADOS_TESTE = 50;
+export const VERSAO_DADOS_TESTE = 51;
 
 // Prefixo dos ids escritos à mão: dá para reconhecer o que é de teste mesmo sem a lista de ids guardada.
 export const PREFIXO = "teste-";
@@ -304,13 +304,15 @@ const FAMILIAS_EXTRAS: readonly { tipoId: string; setor: string; itens: readonly
     { nome: "Extintor de Incêndio Pó BC 4 kg", marca: "Kidde", modelo: "BC-4", valor: "190,00", tecnico: EXTINTOR("Pó PQS BC", "4", "kg", "2025-05-20", "2030-05-20") },
   ] },
 ];
+// Situação dos equipamentos que não estão ativos (por patrimônio): PAT-0007, 0019 e 0033 (que têm ordem de serviço em andamento) estão em manutenção, dois ficam de reserva e um está baixado.
+const SITUACAO_DOS_EXTRAS: Record<string, string> = { "PAT-0007": "Em manutenção", "PAT-0019": "Em manutenção", "PAT-0033": "Em manutenção", "PAT-0011": "Reserva", "PAT-0022": "Reserva", "PAT-0031": "Baixado/Inativo" };
 const EMPRESA_DOS_EXTRAS = [0, 1, 2] as const;
 // PAT-0006 em diante, em ordem; a empresa gira entre as três.
 export const EQUIPAMENTOS_CATALOGO = FAMILIAS_EXTRAS.flatMap((f) => f.itens.map((i) => ({ tipoId: f.tipoId, setor: f.setor, ...i }))).map((e, n) => ({
   empresaIndice: EMPRESA_DOS_EXTRAS[n % 3]!,
   patrimonio: `PAT-${String(EQUIPAMENTOS.length + n + 1).padStart(4, "0")}`,
   nome: e.nome, tipoId: e.tipoId, marca: e.marca, modelo: e.modelo, numeroSerie: `SN-TESTE-EQ-${String(EQUIPAMENTOS.length + n + 1).padStart(3, "0")}`,
-  dataAquisicao: `${2019 + (n % 6)}-${String(1 + (n % 12)).padStart(2, "0")}-${String(3 + (n % 25)).padStart(2, "0")}`, valorCompra: e.valor, status: "Ativo", setor: e.setor, tecnico: e.tecnico,
+  dataAquisicao: `${2019 + (n % 6)}-${String(1 + (n % 12)).padStart(2, "0")}-${String(3 + (n % 25)).padStart(2, "0")}`, valorCompra: e.valor, status: SITUACAO_DOS_EXTRAS[`PAT-${String(EQUIPAMENTOS.length + n + 1).padStart(4, "0")}`] ?? "Ativo", setor: e.setor, tecnico: e.tecnico,
 }));
 
 // Todos os equipamentos de teste na ordem do cadastro (PAT-0001 a PAT-0040) e os dez que levam registros (associação, plano, abastecimento, manutenção, ocorrência e

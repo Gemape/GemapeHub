@@ -69,12 +69,30 @@ export function InventarioEquipamentoModulo() {
         </BarraDeFiltros>
       </div>
 
-      <GradeDeCartoes colunas={4}>
-        <StatCard titulo="Equipamentos" subtitulo="Equipamentos cadastrados, com os ativos em destaque." valor={equipamentos.length} pct={pctDe(ativos, equipamentos.length)} detalhe={`${ativos} ativo(s) de ${equipamentos.length}`} icone={Forklift} />
-        <StatCard titulo="Em manutenção" subtitulo="Equipamentos em manutenção ÷ equipamentos cadastrados." valor={emManutencao} pct={pctDe(emManutencao, equipamentos.length)} faixa={faixaEq(pctDe(equipamentos.length - emManutencao, equipamentos.length))} detalhe={`${emManutencao} de ${equipamentos.length} equipamentos`} icone={Wrench} />
-        <StatCard titulo="Ocorrências abertas" subtitulo="Equipamentos sem ocorrência aberta ÷ equipamentos cadastrados." valor={abertasTotal} pct={pctDe(semOcorrencia, equipamentos.length)} faixa={faixaEq(pctDe(semOcorrencia, equipamentos.length))} detalhe={`${semOcorrencia} de ${equipamentos.length} equipamentos sem ocorrência aberta`} icone={TriangleAlert} />
-        <StatCard titulo="Custo de manutenção" subtitulo="Soma das manutenções concluídas dos equipamentos." valor={reais(custoTotal)} detalhe={`${manutencoesDaLista.length} manutenção(ões) · ${reais(equipamentos.length ? custoTotal / equipamentos.length : 0)} por equipamento`} icone={Banknote} />
+      {/* Como na Frota: cartões compactos (menos largos) em 7/12 da linha e, ao lado, a distribuição por situação. */}
+      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+      <GradeDeCartoes colunas={4} rotulo="Indicadores dos equipamentos">
+        <StatCard titulo="Equipamentos" subtitulo="Equipamentos cadastrados, com os ativos em destaque." valor={equipamentos.length} pct={pctDe(ativos, equipamentos.length)} detalhe={`${ativos} ativo(s) de ${equipamentos.length}`} icone={Forklift} compacto />
+        <StatCard titulo="Em manutenção" subtitulo="Equipamentos em manutenção ÷ equipamentos cadastrados." valor={emManutencao} pct={pctDe(emManutencao, equipamentos.length)} faixa={faixaEq(pctDe(equipamentos.length - emManutencao, equipamentos.length))} detalhe={`${emManutencao} de ${equipamentos.length} equipamentos`} icone={Wrench} compacto />
+        <StatCard titulo="Ocorrências abertas" subtitulo="Equipamentos sem ocorrência aberta ÷ equipamentos cadastrados." valor={abertasTotal} pct={pctDe(semOcorrencia, equipamentos.length)} faixa={faixaEq(pctDe(semOcorrencia, equipamentos.length))} detalhe={`${semOcorrencia} de ${equipamentos.length} equipamentos sem ocorrência aberta`} icone={TriangleAlert} compacto />
+        <StatCard titulo="Custo de manutenção" subtitulo="Soma das manutenções concluídas dos equipamentos." valor={reais(custoTotal)} detalhe={`${manutencoesDaLista.length} manutenção(ões) · ${reais(equipamentos.length ? custoTotal / equipamentos.length : 0)} por equipamento`} icone={Banknote} compacto />
       </GradeDeCartoes>
+      <section aria-label="Equipamentos por situação" className="rounded-xl border bg-card p-4 shadow-sm">
+        <h3 className="text-eyebrow">Equipamentos por situação</h3>
+        <ul className="mt-3 space-y-2.5">
+          {[...new Set([...STATUS_EQUIPAMENTO, ...equipamentos.map((e) => e.status)])].map((st) => {
+            const n = equipamentos.filter((e) => e.status === st).length;
+            return (
+              <li key={st} className="grid grid-cols-[8.5rem_1fr_2.5rem] items-center gap-3 text-sm">
+                <span className={`w-fit rounded-full border px-2 py-0.5 text-xs font-medium ${seloDaSituacao(st)}`}>{st}</span>
+                <span className="h-2 overflow-hidden rounded-full bg-muted" role="presentation"><span className="block h-full rounded-full bg-primary" style={{ width: `${pctDe(n, equipamentos.length) ?? 0}%` }} /></span>
+                <span className="text-right font-semibold tabular-nums">{n}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+      </div>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
       <div className="max-h-[max(12rem,calc(100dvh-33rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
