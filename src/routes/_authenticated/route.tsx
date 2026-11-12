@@ -164,10 +164,10 @@ function LayoutAutenticado() {
 function espalhada(i: number): React.CSSProperties {
   const x = ((i * 37) % 13) - 6;
   const y = ((i * 53) % 9) - 4;
-  return { "--d": `${(i * 0.08).toFixed(2)}s`, "--x": `${x * 14}px`, "--y": `${y * 9}px`, "--r": `${(((i * 29) % 11) - 5) * 40}deg` } as React.CSSProperties;
+  return { "--d": `${(i * 0.12).toFixed(2)}s`, "--x": `${x * 14}px`, "--y": `${y * 9}px`, "--r": `${(((i * 29) % 11) - 5) * 40}deg` } as React.CSSProperties;
 }
 
-// Título do topo: cada letra grossa e arredondada, montando e desmontando em peças soltas; o texto fica só para o leitor de tela.
+// Título do topo: cada letra grossa e arredondada, se desfazendo em poeira e se reconstruindo; o texto fica só para o leitor de tela.
 function TituloMarca() {
   let n = 0;
   return (
