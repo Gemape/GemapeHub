@@ -3,6 +3,7 @@ import { exportarCsv } from "@/lib/gemape";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { EstadoVazio } from "@/components/EstadoVazio";
 import { toast } from "sonner";
 
 import { EdicaoCatalogoForm } from "@/components/modules/EdicaoCatalogoForm";
@@ -325,8 +326,10 @@ function CatalogoUniforme() {
             )}
             {!isLoading && grupos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  {busca.trim() ? "Nenhum uniforme encontrado." : "Nenhum uniforme cadastrado. Use Novo uniforme."}
+                <TableCell colSpan={4}>
+                  {busca.trim()
+                    ? <EstadoVazio titulo="Nenhum uniforme encontrado." dica="Confira o nome digitado." />
+                    : <EstadoVazio titulo="Nenhum uniforme cadastrado." dica="Cadastre o primeiro uniforme para controlar estoque e entregas." acao="+ Cadastrar Primeiro Uniforme" aoAcionar={abrirNovo} />}
                 </TableCell>
               </TableRow>
             )}

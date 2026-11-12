@@ -3,6 +3,7 @@ import { exportarCsv } from "@/lib/gemape";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { EstadoVazio } from "@/components/EstadoVazio";
 import { toast } from "sonner";
 
 import { EdicaoCatalogoForm } from "@/components/modules/EdicaoCatalogoForm";
@@ -310,8 +311,10 @@ function CatalogoEpi() {
             )}
             {!isLoading && grupos.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  {busca.trim() ? "Nenhum EPI encontrado." : "Nenhum EPI cadastrado. Use Novo EPI."}
+                <TableCell colSpan={6}>
+                  {busca.trim()
+                    ? <EstadoVazio titulo="Nenhum EPI encontrado." dica="Confira o nome ou o CA digitado." />
+                    : <EstadoVazio titulo="Nenhum EPI cadastrado." dica="Cadastre o primeiro EPI para controlar CA, estoque e entregas." acao="+ Cadastrar Primeiro EPI" aoAcionar={abrirNovo} />}
                 </TableCell>
               </TableRow>
             )}

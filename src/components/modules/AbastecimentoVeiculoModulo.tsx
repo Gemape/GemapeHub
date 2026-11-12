@@ -4,6 +4,7 @@ import { Banknote, Droplets, Fuel, Gauge } from "lucide-react";
 import { EscolherCamposRelatorio } from "@/components/EscolherCamposRelatorio";
 import { StatCard } from "@/components/StatCard";
 import { useMemo, useState } from "react";
+import { EstadoVazio } from "@/components/EstadoVazio";
 
 import { NovoAbastecimentoDialog } from "@/components/modules/NovoAbastecimentoDialog";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
@@ -220,7 +221,7 @@ export function AbastecimentoVeiculoModulo() {
           </TableHeader>
           <TableBody>
             {linhas.length === 0 && (
-              <TableRow><TableCell colSpan={doFiltro ? 8 : 9} className="py-6 text-center text-muted-foreground">{busca.trim() || inicio || fim ? "Nenhum resultado para a busca e o período." : "Nenhum abastecimento registrado."}</TableCell></TableRow>
+              <TableRow><TableCell colSpan={doFiltro ? 8 : 9}>{busca.trim() || inicio || fim ? <EstadoVazio titulo="Nenhum resultado para a busca e o período." dica="Mude a busca ou as datas." /> : <EstadoVazio titulo="Nenhum abastecimento registrado." dica="Registre o primeiro para acompanhar consumo e custo por km." acao="+ Registrar Primeiro Abastecimento" aoAcionar={abrir} />}</TableCell></TableRow>
             )}
             {linhas.map((a) => {
               const v = veiculo(a.veiculoId);

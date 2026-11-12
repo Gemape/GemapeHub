@@ -192,11 +192,12 @@ function getTabelaModulo(modulo: Modulo): "epis" | "uniformes" | "ferramentas" {
   return "ferramentas";
 }
 
-export function useItens(modulo: Modulo, empresaId: string, busca = "") {
+export function useItens(modulo: Modulo, empresaId: string, busca = "", ativo = true) {
   const tabela = getTabelaModulo(modulo);
   return useQuery({
     ...opcoesBase,
     queryKey: [tabela, empresaId, busca],
+    enabled: ativo,
     queryFn: async () => {
       const montar = () => {
         let q = supabase.from(tabela).select("*");

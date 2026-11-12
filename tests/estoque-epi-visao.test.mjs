@@ -140,7 +140,7 @@ test("a aba Estoque do EPI é a consulta nova, com os botões Novos e Usados e a
   ];
   const ordem = colunas.map((c) =>
     tela.indexOf(
-      `${c === "Estoque mínimo" ? '<TableHead className="text-center">' : "<TableHead>"}${c}</TableHead>`,
+      c === "Estoque mínimo" ? '<TableHead className="text-center">Estoque mínimo ' : `<TableHead>${c}</TableHead>`, // este cabeçalho leva o (?) do ponto de pedido
     ),
   );
   assert.ok(

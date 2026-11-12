@@ -1,3 +1,4 @@
+import { AjudaTermo } from "@/components/AjudaTermo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouteContext } from "@tanstack/react-router";
@@ -12,7 +13,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAccess } from "@/lib/access-context";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
-import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
+import { bloqueioPorDemissao, formatarCpf, hojeLocal } from "@/lib/empregados";
+import { resumoEmpregado } from "@/lib/resumo-empregado";
+import { SeletorComBusca } from "@/components/SeletorComBusca";
+import { ResumoEmpregado } from "@/components/modules/ResumoEmpregado";
 import { emPosseEpi, lerHistoricoEpiPorItem, mensagemSoAdmin, registrarDevolucaoEpi, registrarEntregaEpi, type CalculoAlerta, type ModuloEntrega } from "@/lib/entrega-epi";
 import { origemDaLinhaDeDevolucao } from "@/lib/devolucao-estoque-epi";
 import { estadoEstoqueModulo, nomeTamanho, nomeTamanhoGravado, opcoesTamanhoDevolucao, opcoesTamanhoSaida, SEM_TAMANHO, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
@@ -96,10 +100,22 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   // O que o empregado tem em posse, para a devolução.
   const doEmpregado = useQuery({
     queryKey: [`${modulo}-entrega-em-posse`, empresaSel, empregadoId],
-    enabled: Boolean(empresaSel && empregadoId && modo === "devolucao"),
+    enabled: Boolean(empresaSel && empregadoId),
     queryFn: () => lerHistoricoEpiPorItem(supabase, { empresaId: empresaSel, empregadoId, modulo }),
   });
   const movimentosDoEmpregado = useMemo(() => doEmpregado.data ?? [], [doEmpregado.data]);
+  // Ferramentas que o empregado ainda não devolveu (mesma conta de posse, no módulo de ferramentas).
+  const ferramentasDoEmpregado = useQuery({
+    queryKey: ["ferramenta-entrega-em-posse", empresaSel, empregadoId],
+    enabled: Boolean(empresaSel && empregadoId),
+    queryFn: () => lerHistoricoEpiPorItem(supabase, { empresaId: empresaSel, empregadoId, modulo: "ferramenta" as ModuloEntrega }),
+  });
+  const { data: ferramentas = [] } = useItens("ferramenta", empresaSel || TODAS);
+  const resumo = useMemo(() => resumoEmpregado(movimentosDoEmpregado, itens, empregadoId, hojeLocal()), [movimentosDoEmpregado, itens, empregadoId]);
+  const ferramentasPendentes = useMemo(
+    () => resumoEmpregado(ferramentasDoEmpregado.data ?? [], ferramentas, empregadoId, hojeLocal()).emPosse.map((p) => ({ nome: p.nome, quantidade: p.quantidade })),
+    [ferramentasDoEmpregado.data, ferramentas, empregadoId],
+  );
   const itensEmPosse = useMemo(
     () => itens.filter((i) => emPosseEpi(movimentosDoEmpregado, empregadoId, i.id, null) > 0),
     [itens, movimentosDoEmpregado, empregadoId],
@@ -200,6 +216,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
 
   return (
     <div className="space-y-6">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="panel p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant={modo === "entrega" ? "default" : "outline"} onClick={() => trocarModo("entrega")}>Registrar entrega</Button>
@@ -218,13 +235,14 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Empregado</Label>
-            <Select value={empregadoId} onValueChange={(v) => { setEmpregadoId(v); setLinhas([]); }}>
-              <SelectTrigger><SelectValue placeholder="Selecione o empregado" /></SelectTrigger>
-              <SelectContent>
-                {(modulo === "epi" ? soEmpregadosDeEpi : soEmpregadosDeUniforme)(empregados.filter((e) => e.ativo !== false)).map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label>Empregado <span className="font-normal text-muted-foreground">(nome, matrícula ou CPF)</span></Label>
+            <SeletorComBusca
+              id={`empregado-${modulo}`}
+              nome="empregado_id"
+              valor={empregadoId}
+              onChange={(v) => { setEmpregadoId(v); setLinhas([]); }}
+              opcoes={(modulo === "epi" ? soEmpregadosDeEpi : soEmpregadosDeUniforme)(empregados.filter((e) => e.ativo !== false)).map((e) => ({ id: e.id, rotulo: `${e.nome} · ${e.matricula ?? "sem matrícula"} · ${formatarCpf(e.cpf)}` }))}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>{modo === "entrega" ? "Data da entrega" : "Data da devolução"}</Label>
@@ -288,7 +306,10 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
         <div className="flex flex-wrap justify-end gap-2 pt-2">
           {ultima && <Button type="button" variant="outline" onClick={() => abrirDocumento({ titulo: rot.termo, html: ultima.html, arquivo: ultima.arquivo })}>Gerar Termo de Entrega ({ultima.codigos.join(", ") || "entrega registrada"})</Button>}
           <Button requiresWrite="operar" disabled={gravando || !canOperate} onClick={salvar}>{modo === "entrega" ? "Registrar entrega" : "Registrar devolução"}</Button>
+          <AjudaTermo termo="Termo de Entrega">Documento assinado pelo empregado ao receber itens de maior custo ou durabilidade. Para itens de consumo corriqueiro use a Ficha de EPI Avulsa.</AjudaTermo>
         </div>
+      </div>
+      <ResumoEmpregado empregado={empregado} rotuloItens={rot.plural} posse={resumo.emPosse} vencidos={resumo.vencidos} ferramentas={ferramentasPendentes} nomeTamanho={(id) => nomeTamanhoGravado(parametros, id)} carregando={doEmpregado.isLoading} />
       </div>
 
       <div className="panel p-6 space-y-4">
