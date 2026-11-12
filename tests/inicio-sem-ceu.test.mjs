@@ -22,15 +22,15 @@ test("os cartões da tela inicial são de vidro (efeito glassmorphism do sistema
   assert.doesNotMatch(inicio, /bg-card\b/);
 });
 
-test("o topo traz só GESTÃO DE PATRIMÔNIO (título animado em caixa alta), centralizado, sem o Grupo Gemape acima", () => {
+test("o topo traz só Gestão de Patrimônio (letras em quadradinhos animados), centralizado, sem o Grupo Gemape acima", () => {
   const rota = ler("routes/_authenticated/route.tsx");
   assert.doesNotMatch(rota, /eyebrow-marca/);
-  assert.match(rota, /titulo-marca[^>]*>GESTÃO DE PATRIMÔNIO</);
-  assert.match(ler("styles.css"), /@utility titulo-marca \{[\s\S]*?text-transform: uppercase/);
+  assert.match(rota, /<span className="sr-only">Gestão de Patrimônio<\/span>/);
+  assert.match(rota, /className="letra-marca"/);
   assert.doesNotMatch(rota, /Demonstração · dados locais|Grupo GEMAPE</);
   assert.match(rota, /md:grid-cols-\[1fr_auto_1fr\]/);
   const css = ler("styles.css");
-  assert.match(css, /@utility titulo-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
+  assert.match(css, /@utility letra-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
 });
 
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {
@@ -51,7 +51,7 @@ test("o título da página continua existindo só para o leitor de tela (acessib
 
 test("a tipografia é Manrope: título 700 em caixa alta, cartões 500 e 400; e o topo é maior", () => {
   const css = ler("styles.css");
-  assert.match(css, /@utility titulo-marca \{[\s\S]*?"Manrope"[\s\S]*?font-weight: 700/);
+  assert.match(css, /@utility letra-marca \{[\s\S]*?"Manrope"[\s\S]*?font-weight: 800/);
   assert.match(inicio, /fonte-manrope/);
   assert.match(inicio, /font-medium">\{c\.titulo\}/);
   assert.match(ler("routes/__root.tsx"), /family=Manrope/);

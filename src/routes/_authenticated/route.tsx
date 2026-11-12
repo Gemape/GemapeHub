@@ -136,7 +136,7 @@ function LayoutAutenticado() {
             </div>
             {/* Título da marca, centralizado no topo; no celular fica numa linha própria, entre o menu e os filtros. */}
             <div className="text-center">
-              <p className="titulo-marca text-base sm:text-2xl lg:text-3xl">GESTÃO DE PATRIMÔNIO</p>
+              <TituloMarca />
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
             {/* No celular os controles ficam em duas colunas (usuário em linha própria, depois testes e empresa); a partir de md voltam a uma linha só. */}
@@ -157,5 +157,24 @@ function LayoutAutenticado() {
         </main>
       </SidebarProvider>
     </EmpresaProvider></AccessProvider>
+  );
+}
+
+// Título do topo: cada letra num quadrado de contorno, animado em onda; o texto fica só para o leitor de tela.
+function TituloMarca() {
+  let n = 0;
+  return (
+    <p className="flex flex-wrap items-center xl:flex-nowrap justify-center gap-x-3 gap-y-1.5 sm:gap-x-5 xl:gap-x-6">
+      <span className="sr-only">Gestão de Patrimônio</span>
+      {["GESTÃO", "DE", "PATRIMÔNIO"].map((palavra) => (
+        <span key={palavra} aria-hidden="true" className="flex gap-1 sm:gap-1.5">
+          {[...palavra].map((letra) => (
+            <span key={n} className="letra-marca" style={{ "--d": `${(n++ * 0.09).toFixed(2)}s` } as React.CSSProperties}>
+              {letra}
+            </span>
+          ))}
+        </span>
+      ))}
+    </p>
   );
 }
