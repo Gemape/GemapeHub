@@ -191,6 +191,25 @@
     border-color: var(--color-border);
   }
 
+  html {
+    /* sem o brilho cinza do toque no celular */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* toque sem a espera de 300 ms nem o zoom por duplo toque nos controles */
+  a,
+  button,
+  [role="button"],
+  [role="tab"],
+  select,
+  summary {
+    touch-action: manipulation;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 28%, transparent);
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -204,7 +223,6 @@
       linear-gradient(160deg, var(--fundo-a), var(--fundo-b));
     background-attachment: fixed;
   }
-
   h1,
   h2,
   h3,
