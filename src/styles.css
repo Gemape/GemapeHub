@@ -191,6 +191,25 @@
     border-color: var(--color-border);
   }
 
+  html {
+    /* sem o brilho cinza do toque no celular */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* toque sem a espera de 300 ms nem o zoom por duplo toque nos controles */
+  a,
+  button,
+  [role="button"],
+  [role="tab"],
+  select,
+  summary {
+    touch-action: manipulation;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 28%, transparent);
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -204,7 +223,6 @@
       linear-gradient(160deg, var(--fundo-a), var(--fundo-b));
     background-attachment: fixed;
   }
-
   h1,
   h2,
   h3,
@@ -398,44 +416,134 @@
     transform: translateY(0) scale(1);
   }
 }
-@keyframes titulo-brilho {
-  0%,
-  100% {
-    filter: drop-shadow(0 1px 1px oklch(0.32 0.25 266 / 0.15));
+/* desintegração: a letra se desfaz em poeira (desfoca, sobe e some enquanto pontinhos se espalham) e se reconstrói no sentido inverso, quando a poeira volta e se junta; só transform, opacidade e um desfoque leve */
+@keyframes letra-monta {
+  0% {
+    transform: translate(var(--x), calc(var(--y) * 0.6)) scale(0.92);
+    opacity: 0;
+    filter: blur(7px);
+    animation-timing-function: cubic-bezier(0.25, 0.8, 0.3, 1);
   }
-  50% {
-    filter: drop-shadow(0 2px 8px oklch(0.55 0.2 262 / 0.45));
+  11%,
+  40% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+    animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.4);
+  }
+  50%,
+  100% {
+    transform: translate(calc(var(--x) * -0.8), calc(var(--y) * -0.6 - 12px)) scale(1.04);
+    opacity: 0;
+    filter: blur(9px);
   }
 }
-@utility titulo-marca {
-  /* Manrope 700 em caixa alta e letras bem espaçadas: a entrada sobe e cresce (só transform e opacidade) e o brilho percorre as letras. */
+@keyframes letra-po-a {
+  0% {
+    transform: translate(calc(var(--x) * 0.7), calc(var(--y) * 0.7)) scale(0.6);
+    opacity: 0;
+  }
+  3% {
+    opacity: 0.9;
+  }
+  11% {
+    transform: translate(0, 0) scale(0.2);
+    opacity: 0;
+  }
+  11.05%,
+  40% {
+    transform: translate(0, 0) scale(0.3);
+    opacity: 0;
+  }
+  43% {
+    opacity: 0.9;
+  }
+  50%,
+  100% {
+    transform: translate(calc(var(--x) * -1.1), calc(var(--y) * -1.1 - 16px)) scale(0.7);
+    opacity: 0;
+  }
+}
+@keyframes letra-po-b {
+  0% {
+    transform: translate(calc(var(--y) * -2), calc(var(--x) * 0.4)) scale(0.5);
+    opacity: 0;
+  }
+  4% {
+    opacity: 0.8;
+  }
+  11% {
+    transform: translate(0, 0) scale(0.2);
+    opacity: 0;
+  }
+  11.05%,
+  40% {
+    transform: translate(0, 0) scale(0.3);
+    opacity: 0;
+  }
+  44% {
+    opacity: 0.8;
+  }
+  50%,
+  100% {
+    transform: translate(calc(var(--y) * 2.2), calc(var(--x) * -0.5 - 20px)) scale(0.6);
+    opacity: 0;
+  }
+}
+@utility letra-marca {
+  /* Uma letra do título só de contorno grosso e arredondado (miolo vazio): entra em sequência e depois sobe e desce em onda (só transform e opacidade). */
+  display: inline-block;
   font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  /* O espaçamento também vem depois da última letra; o padding à esquerda do mesmo tamanho mantém o título no centro. */
-  padding-left: 0.16em;
+  font-weight: 900;
+  font-size: 1.2rem;
   line-height: 1.15;
-  background-image: linear-gradient(
-    105deg,
-    var(--color-primary) 0%,
-    var(--color-primary) 40%,
-    oklch(0.62 0.2 262) 50%,
-    var(--color-primary) 60%,
-    var(--color-primary) 100%
-  );
-  background-size: 250% 100%;
-  background-position: 100% 0;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation:
-    titulo-entrada 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) both,
-    logo-varredura 11s ease-in-out 1.5s infinite,
-    titulo-brilho 8s ease-in-out infinite;
+  /* o miolo é claro e o contorno é azul, como na letra de referência */
+  color: oklch(1 0 0 / 0.9);
+  -webkit-text-stroke: 0.13em var(--color-primary);
+  paint-order: stroke fill;
+  stroke-linejoin: round;
+  position: relative;
+  animation: letra-monta var(--ciclo, 22s) linear var(--d, 0s) infinite both;
+  /* a poeira: dois pontinhos que se espalham e se juntam junto com a letra */
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.2em;
+    height: 0.2em;
+    margin: -0.1em 0 0 -0.1em;
+    border-radius: 9999px;
+    background: var(--color-primary);
+    opacity: 0;
+    pointer-events: none;
+    -webkit-text-stroke: 0;
+    animation: letra-po-a var(--ciclo, 22s) linear var(--d, 0s) infinite both;
+  }
+  &::after {
+    width: 0.14em;
+    height: 0.14em;
+    margin: -0.07em 0 0 -0.07em;
+    animation-name: letra-po-b;
+  }
+  @media (min-width: 640px) {
+    font-size: 1.45rem;
+  }
+  /* ao lado do logo e dos controles, a letra acompanha a largura da tela para o texto caber no espaço entre eles */
+  @media (min-width: 768px) {
+    font-size: clamp(1.05rem, 1.9vw, 1.9rem);
+  }
+  /* telas largas: o título fica no centro da página (colunas iguais dos dois lados), com a letra limitada para não encostar nos controles */
+  @media (min-width: 1760px) {
+    font-size: min(2rem, calc((100vw - 1200px) / 30));
+  }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
-    background-position: 0 0;
+    &::before,
+    &::after {
+      animation: none;
+    }
   }
 }
 
@@ -698,23 +806,6 @@
 
 /* Ícone dos cartões da tela inicial: medalhão grande de vidro com brilho, que flutua devagar, tem um halo que respira e se anima ao passar o mouse.
    O atraso da flutuação varia de um cartão para outro (--atraso), para não se moverem todos juntos. Quem reduz movimento recebe tudo parado. */
-@keyframes cartao-halo {
-  0%,
-  100% {
-    box-shadow:
-      inset 0 -6px 10px oklch(0.55 0.16 262 / 0.28),
-      inset 0 4px 8px oklch(1 0 0 / 0.9),
-      0 0 0 0 oklch(0.7 0.16 258 / 0.35),
-      0 10px 22px -8px oklch(0.45 0.2 264 / 0.45);
-  }
-  50% {
-    box-shadow:
-      inset 0 -6px 10px oklch(0.55 0.16 262 / 0.28),
-      inset 0 4px 8px oklch(1 0 0 / 0.9),
-      0 0 0 10px oklch(0.7 0.16 258 / 0),
-      0 14px 26px -8px oklch(0.45 0.2 264 / 0.55);
-  }
-}
 /* Versão em 3D: o medalhão flutua e balança em perspectiva como um objeto sob a luz; o brilho (::after) desliza sobre ele, um anel orbita à sua volta (::before) e o ícone, extrudado em camadas, fica à frente em profundidade e oscila sozinho. */
 @keyframes cartao-flutua3d {
   0%,
@@ -731,13 +822,104 @@
     transform: perspective(560px) translateY(-4px) rotateX(2deg) rotateY(0deg) rotateZ(0deg);
   }
 }
+@keyframes cartao-flutua-leve {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
 @keyframes cartao-icone-bob {
   0%,
   100% {
-    transform: translateZ(20px) rotateY(0deg) scale(1);
+    transform: translateZ(20px) scale(0.96);
   }
   50% {
-    transform: translateZ(28px) rotateY(0deg) scale(1.03);
+    transform: translateZ(30px) scale(1.1);
+  }
+}
+/* morphing: o ícone se desmancha (o traço some) e o outro se desenha no mesmo lugar, depois volta */
+@keyframes ic-morph-a {
+  0%, 30% { stroke-dashoffset: 0; opacity: 1; }
+  45%, 92% { stroke-dashoffset: 200; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes ic-morph-b {
+  0%, 45% { stroke-dashoffset: -200; opacity: 0; }
+  60%, 80% { stroke-dashoffset: 0; opacity: 1; }
+  92%, 100% { stroke-dashoffset: 200; opacity: 0; }
+}
+@keyframes cartao-icone-pulso {
+  0%,
+  100% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+/* ondas que saem do medalhão e se desfazem: só transform e opacidade */
+@keyframes cartao-onda {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+@utility onda-cartao {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 5rem;
+  width: 5rem;
+  margin: -2.5rem 0 0 -2.5rem;
+  border-radius: 9999px;
+  border: 2px solid oklch(0.62 0.17 258 / 0.55);
+  opacity: 0;
+  pointer-events: none;
+  animation: cartao-onda 3.1s cubic-bezier(0.2, 0.6, 0.3, 1) var(--atraso, 0s) infinite;
+  @media (max-width: 767px), (pointer: coarse) {
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+/* entrada dos cartões: sobem e aparecem em sequência; `backwards` não segura o transform depois, para o levantar do hover continuar funcionando */
+@keyframes cartao-entra {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+}
+@utility grade-entra {
+  & > li {
+    animation: cartao-entra 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  & > li:nth-child(2) { animation-delay: 0.07s; }
+  & > li:nth-child(3) { animation-delay: 0.14s; }
+  & > li:nth-child(4) { animation-delay: 0.21s; }
+  & > li:nth-child(5) { animation-delay: 0.28s; }
+  & > li:nth-child(6) { animation-delay: 0.35s; }
+  & > li:nth-child(7) { animation-delay: 0.42s; }
+  & > li:nth-child(8) { animation-delay: 0.49s; }
+  & > li:nth-child(9) { animation-delay: 0.56s; }
+  & > li:nth-child(10) { animation-delay: 0.63s; }
+  & > li:nth-child(11) { animation-delay: 0.70s; }
+  & > li:nth-child(12) { animation-delay: 0.77s; }
+  & > li:nth-child(n + 13) { animation-delay: 0.84s; }
+  @media (prefers-reduced-motion: reduce) {
+    & > li {
+      animation: none;
+    }
   }
 }
 @keyframes cartao-anel-orbita {
@@ -746,6 +928,15 @@
   }
   to {
     transform: translateZ(8px) rotateX(72deg) rotateZ(360deg);
+  }
+}
+@keyframes cartao-anel-pulso {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
   }
 }
 @keyframes cartao-brilho {
@@ -770,12 +961,11 @@
   background:
     radial-gradient(circle at 30% 22%, oklch(1 0 0) 0%, oklch(0.96 0.035 255) 38%, oklch(0.88 0.08 258) 78%, oklch(0.8 0.11 260) 100%);
   border: 1px solid oklch(1 0 0 / 0.9);
-  box-shadow: inset 0 -6px 10px oklch(0.55 0.16 262 / 0.28), inset 0 4px 8px oklch(1 0 0 / 0.9);
   color: var(--color-primary);
   transform-style: preserve-3d;
-  animation:
-    cartao-flutua3d 8s ease-in-out var(--atraso, 0s) infinite,
-    cartao-halo 3.6s ease-in-out var(--atraso, 0s) infinite;
+  box-shadow: inset 0 -6px 10px oklch(0.55 0.16 262 / 0.28), inset 0 4px 8px oklch(1 0 0 / 0.9), 0 12px 24px -8px oklch(0.45 0.2 264 / 0.5);
+  /* só transform e opacidade animam: ficam na placa de vídeo e não repintam a página */
+  animation: cartao-flutua3d 6.5s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite;
   /* anel que orbita o medalhão, em outro plano */
   &::before {
     content: "";
@@ -786,7 +976,9 @@
     border-top-color: oklch(0.62 0.17 258 / 0.6);
     border-bottom-color: oklch(0.8 0.1 258 / 0.35);
     pointer-events: none;
-    animation: cartao-anel-orbita 9s linear var(--atraso, 0s) infinite;
+    animation:
+      cartao-anel-orbita 9s linear var(--atraso, 0s) infinite,
+      cartao-anel-pulso 3.1s ease-in-out var(--atraso, 0s) infinite;
   }
   /* reflexo de luz que passeia pela superfície */
   &::after {
@@ -800,7 +992,7 @@
     background: radial-gradient(ellipse at center, oklch(1 0 0 / 0.85), oklch(1 0 0 / 0));
     pointer-events: none;
     transform: translateZ(2px);
-    animation: cartao-brilho 5s ease-in-out var(--atraso, 0s) infinite;
+    animation: cartao-brilho 5s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite;
   }
   & > svg {
     position: relative;
@@ -810,18 +1002,43 @@
     transform: translateZ(22px);
     /* extrusão: camadas de sombra empilhadas dão espessura ao ícone */
     filter: drop-shadow(0 1px 0 oklch(0.8 0.08 258 / 0.9)) drop-shadow(0 6px 5px oklch(0.4 0.18 264 / 0.25));
-    animation: cartao-icone-bob 3.2s ease-in-out var(--atraso, 0s) infinite;
+    animation: cartao-icone-bob 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite;
   }
-  /* o ícone ganha um giro e um leve avanço quando o ponteiro está sobre o cartão (propriedades individuais: somam-se à oscilação, sem trocar a animação) */
+  /* o ícone cresce um pouco quando o ponteiro está sobre o cartão (propriedade individual `scale`: soma-se à oscilação) */
   & > svg {
-    transition: rotate 0.95s cubic-bezier(0.34, 1.25, 0.5, 1), scale 0.5s ease-out;
+    transition: scale 0.5s cubic-bezier(0.34, 1.4, 0.5, 1);
   }
-  .group\/cartao:hover & > svg {
-    rotate: y 360deg;
-    scale: 1.14;
+  @media (hover: hover) {
+    .group\/cartao:hover & > svg {
+      scale: 1.14;
+    }
+    .group\/cartao:hover &::before {
+      border-top-color: oklch(0.55 0.2 258 / 0.9);
+    }
   }
-  .group\/cartao:hover &::before {
-    border-top-color: oklch(0.55 0.2 258 / 0.9);
+  /* celular e telas de toque: sem perspectiva 3D nem anel orbitando (pesa na GPU e na bateria); o medalhão só flutua de leve */
+  @media (max-width: 767px), (pointer: coarse) {
+    animation-name: cartao-flutua-leve;
+    &::before {
+      animation: none;
+      transform: translateZ(8px) rotateX(72deg);
+    }
+    &::after {
+      animation: none;
+    }
+    & > svg {
+      animation-name: cartao-icone-pulso;
+    }
+  }
+  & > svg[data-morph] { display: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    & > svg { stroke-dasharray: 200; animation: cartao-icone-bob 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite, ic-morph-a 6s ease-in-out var(--atraso, 0s) infinite; }
+    & > svg[data-morph] { display: block; position: absolute; left: 50%; top: 50%; margin: -1.25rem 0 0 -1.25rem; animation: cartao-icone-bob 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite, ic-morph-b 6s ease-in-out var(--atraso, 0s) infinite; }
+    /* celular e telas de toque: sem morphing (animar o traço repinta o SVG a cada quadro); o ícone só pulsa, na placa de vídeo */
+    @media (max-width: 767px), (pointer: coarse) {
+      & > svg { stroke-dasharray: none; animation: cartao-icone-pulso 2.2s cubic-bezier(0.45, 0, 0.55, 1) var(--atraso, 0s) infinite; }
+      & > svg[data-morph] { display: none; }
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
@@ -838,7 +1055,6 @@
       transition: none;
     }
     .group\/cartao:hover & > svg {
-      rotate: none;
       scale: 1.1;
     }
   }
@@ -948,8 +1164,7 @@
 
 /* Ícone ativo do menu de Configurações: salta e volta ao tamanho ao ser escolhido. */
 @keyframes icone-pop {
-  0% { transform: scale(0.7) rotate(-12deg); }
-  60% { transform: scale(1.18) rotate(6deg); }
+  0% { transform: scale(0.7) rotate(-12deg); animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); }
   100% { transform: scale(1) rotate(0); }
 }
 

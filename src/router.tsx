@@ -11,6 +11,8 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 30_000,
+    // carrega a próxima tela assim que o mouse passa (ou o dedo toca) no link: o clique já encontra tudo pronto
+    defaultPreload: "intent",
   });
 
   return router;

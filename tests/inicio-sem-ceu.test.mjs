@@ -22,15 +22,15 @@ test("os cartões da tela inicial são de vidro (efeito glassmorphism do sistema
   assert.doesNotMatch(inicio, /bg-card\b/);
 });
 
-test("o topo traz só GESTÃO DE PATRIMÔNIO (título animado em caixa alta), centralizado, sem o Grupo Gemape acima", () => {
+test("o topo traz só Gestão de Patrimônio (letras em quadradinhos animados), centralizado, sem o Grupo Gemape acima", () => {
   const rota = ler("routes/_authenticated/route.tsx");
   assert.doesNotMatch(rota, /eyebrow-marca/);
-  assert.match(rota, /titulo-marca[^>]*>GESTÃO DE PATRIMÔNIO</);
-  assert.match(ler("styles.css"), /@utility titulo-marca \{[\s\S]*?text-transform: uppercase/);
+  assert.match(rota, /<span className="sr-only">Gestão de Patrimônio e Gemape Máquinas e Peças Ltda<\/span>/);
+  assert.match(rota, /className="letra-marca"/);
   assert.doesNotMatch(rota, /Demonstração · dados locais|Grupo GEMAPE</);
-  assert.match(rota, /md:grid-cols-\[1fr_auto_1fr\]/);
+  assert.match(rota, /md:grid-cols-\[auto_1fr_auto\]/);
   const css = ler("styles.css");
-  assert.match(css, /@utility titulo-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
+  assert.match(css, /@utility letra-marca \{[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
 });
 
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {
@@ -51,7 +51,7 @@ test("o título da página continua existindo só para o leitor de tela (acessib
 
 test("a tipografia é Manrope: título 700 em caixa alta, cartões 500 e 400; e o topo é maior", () => {
   const css = ler("styles.css");
-  assert.match(css, /@utility titulo-marca \{[\s\S]*?"Manrope"[\s\S]*?font-weight: 700/);
+  assert.match(css, /@utility letra-marca \{[\s\S]*?"Manrope"[\s\S]*?font-weight: 900/);
   assert.match(inicio, /fonte-manrope/);
   assert.match(inicio, /font-medium">\{c\.titulo\}/);
   assert.match(ler("routes/__root.tsx"), /family=Manrope/);
@@ -69,6 +69,17 @@ test("o fundo segue o site da Gemape: branco descendo para um azul clarinho, com
 test("o ícone dos cartões é um medalhão grande que flutua e brilha, e fica parado para quem reduz movimento", () => {
   assert.match(inicio, /medalhao-cartao/);
   const css = ler("styles.css");
-  assert.match(css, /@utility medalhao-cartao \{[\s\S]*?height: 5rem[\s\S]*?cartao-flutua[\s\S]*?cartao-halo[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
-  assert.ok(css.includes(".group\\/cartao:hover & > svg") && css.includes("rotate: y 360deg"));
+  assert.match(css, /@utility medalhao-cartao \{[\s\S]*?height: 5rem[\s\S]*?cartao-flutua[\s\S]*?cartao-anel-pulso[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
+  assert.ok(css.includes(".group\\/cartao:hover & > svg"));
+});
+
+test("o morphing: todo ícone da tela inicial tem um segundo ícone, que só anima sem 'reduzir movimento' e some no celular", () => {
+  const lib = ler("lib/inicio.ts");
+  const chaves = [...inicio.match(/const ICONES_MORPH[^{]*\{([\s\S]*?)\};/)[1].matchAll(/(\w+):/g)].map((m) => m[1]);
+  const icones = [...inicio.match(/const ICONES_CARTAO[^{]*\{([\s\S]*?)\};/)[1].replace(/:\s*\w+/g, "").matchAll(/\w+/g)].map((m) => m[0]);
+  for (const i of icones) assert.ok(chaves.includes(i), `sem morph para ${i}`);
+  assert.ok(lib.length > 0);
+  const css = ler("styles.css");
+  assert.match(css, /@keyframes ic-morph-a[\s\S]*@keyframes ic-morph-b/);
+  assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?ic-morph-a[\s\S]*?pointer: coarse[\s\S]*?data-morph\] \{ display: none/);
 });

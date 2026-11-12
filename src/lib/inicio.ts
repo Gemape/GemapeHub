@@ -86,3 +86,50 @@ export function areaDaRota(pathname: string, search: Record<string, unknown>, is
   const achados = daUrl.length > 0 ? daUrl : subrotas;
   return achados.find((c) => casaBusca(c.atual)) ?? achados.find((c) => !c.atual.search) ?? achados[0] ?? null;
 }
+
+// Busca rápida da tela inicial: acha qualquer função de qualquer módulo sem abrir os cartões. Ignora acentos e maiúsculas; todas as palavras digitadas
+// precisam aparecer no nome do atalho, do cartão ou da seção; o que começa pelo que foi digitado vem primeiro.
+export type ResultadoBusca = { titulo: string; cartao: string; secao: SecaoInicio | null; url: string; search?: Record<string, string> };
+
+const semAcento = (t: string): string => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+export function buscarAtalhos(grupos: readonly GrupoInicio[], termo: string, limite = 8): ResultadoBusca[] {
+  const palavras = semAcento(termo).split(/\s+/).filter(Boolean);
+  if (palavras.length === 0) return [];
+  const achados: { r: ResultadoBusca; nota: number; ordem: number }[] = [];
+  let ordem = 0;
+  const considera = (r: ResultadoBusca) => {
+    const titulo = semAcento(r.titulo);
+    const todo = `${titulo} ${semAcento(r.cartao)} ${r.secao ? semAcento(r.secao) : ""}`;
+    if (!palavras.every((p) => todo.includes(p))) return;
+    const nota = titulo.startsWith(palavras[0] ?? "") ? 0 : titulo.includes(palavras[0] ?? "") ? 1 : 2;
+    achados.push({ r, nota, ordem: ordem++ });
+  };
+  for (const g of grupos) {
+    for (const c of g.cartoes) {
+      if (c.url) considera({ titulo: c.titulo, cartao: c.titulo, secao: null, url: c.url });
+      for (const i of c.itens ?? []) considera({ titulo: i.titulo, cartao: c.titulo, secao: i.secao, url: i.url, ...(i.search ? { search: i.search } : {}) });
+    }
+  }
+  return achados.sort((a, b) => a.nota - b.nota || a.ordem - b.ordem).slice(0, limite).map((a) => a.r);
+}
+
+// Cartões abertos na tela inicial, lembrados neste navegador (chave `grupo/cartão`). Sem armazenamento ou com dado ilegível, tudo começa recolhido.
+export const CHAVE_ABERTOS = "gemape-inicio-abertos";
+
+export function lerAbertos(): Set<string> {
+  try {
+    const bruto: unknown = JSON.parse(globalThis.localStorage?.getItem(CHAVE_ABERTOS) ?? "[]");
+    return new Set(Array.isArray(bruto) ? bruto.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function guardarAbertos(abertos: ReadonlySet<string>): void {
+  try {
+    globalThis.localStorage?.setItem(CHAVE_ABERTOS, JSON.stringify([...abertos]));
+  } catch {
+    // armazenamento cheio ou bloqueado: a tela segue funcionando, só não lembra
+  }
+}

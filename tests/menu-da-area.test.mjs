@@ -51,11 +51,8 @@ test("o topo mostra o menu da área ao lado do Voltar ao início, só fora da te
   assert.doesNotMatch(menu, /dangerouslySetInnerHTML|innerHTML/);
 });
 
-test("na tela inicial, clicar fora dos cartões (ou Esc) recolhe os menus abertos", () => {
+test("na tela inicial, os cartões abertos ficam como o operador deixou (lembrados no navegador): clicar fora não recolhe", () => {
   const inicio = ler("routes/_authenticated/inicio.tsx");
-  assert.match(inicio, /addEventListener\("pointerdown"/);
-  assert.match(inicio, /closest\("\[data-cartao\]"\)/);
-  assert.match(inicio, /data-cartao/);
-  assert.match(inicio, /Escape/);
-  assert.match(inicio, /removeEventListener\("pointerdown"/);
+  assert.doesNotMatch(inicio, /addEventListener\("pointerdown"|data-cartao/);
+  assert.match(inicio, /guardarAbertos\(nova\)/);
 });

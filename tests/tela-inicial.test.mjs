@@ -186,3 +186,46 @@ test("todo campo de arquivo mostra o botão Escolher arquivo(s) no lugar do camp
     assert.match(ler(f), /<Input[^>]*\n?\s*(ref=\{arquivo\}\s*)?type="file"/s, f);
   }
 });
+
+test("busca rápida: acha função de qualquer módulo, sem acento nem maiúscula, e o que começa pelo digitado vem primeiro", async () => {
+  const { buscarAtalhos } = await import("../src/lib/inicio.ts");
+  const grupos = gruposDoInicio(true);
+  assert.deepEqual(buscarAtalhos(grupos, "   "), []);
+  const r = buscarAtalhos(grupos, "OCORRENCIAS");
+  assert.ok(r.length > 0 && r.every((x) => x.url && x.cartao));
+  assert.ok(r.some((x) => x.cartao === "Veículos") || r.some((x) => x.cartao === "Equipamentos"));
+  // cartão sem submenu (abre a tela direto) também é achado
+  assert.equal(buscarAtalhos(grupos, "fornecedores")[0].url, "/cadastros/fornecedores");
+  // várias palavras: todas precisam aparecer (no atalho, no cartão ou na seção)
+  assert.ok(buscarAtalhos(grupos, "veiculos ocorrencias").every((x) => x.cartao === "Veículos"));
+  assert.deepEqual(buscarAtalhos(grupos, "zzzxxx"), []);
+  assert.ok(buscarAtalhos(grupos, "a", 3).length <= 3);
+  // só o que o perfil vê: sem Administrador, nada de Gerais
+  assert.ok(!buscarAtalhos(gruposDoInicio(false), "gerais").some((x) => x.cartao === "Gerais"));
+});
+
+test("cartões abertos da tela inicial são lembrados no navegador; dado ilegível ou sem armazenamento volta tudo recolhido", async () => {
+  const { lerAbertos, guardarAbertos, CHAVE_ABERTOS } = await import("../src/lib/inicio.ts");
+  const guardado = {};
+  globalThis.localStorage = { getItem: (k) => guardado[k] ?? null, setItem: (k, v) => { guardado[k] = v; } };
+  try {
+    assert.equal(lerAbertos().size, 0);
+    guardarAbertos(new Set(["Módulos/EPIs", "Módulos/Veículos"]));
+    assert.deepEqual([...lerAbertos()].sort(), ["Módulos/EPIs", "Módulos/Veículos"]);
+    guardarAbertos(new Set(["Módulos/EPIs"])); // recolher Veículos
+    assert.deepEqual([...lerAbertos()], ["Módulos/EPIs"]);
+    guardado[CHAVE_ABERTOS] = "{não é json";
+    assert.equal(lerAbertos().size, 0);
+    guardado[CHAVE_ABERTOS] = JSON.stringify([1, "Módulos/EPIs", null]);
+    assert.deepEqual([...lerAbertos()], ["Módulos/EPIs"]);
+    globalThis.localStorage = { getItem: () => { throw new Error("bloqueado"); }, setItem: () => { throw new Error("cheio"); } };
+    assert.equal(lerAbertos().size, 0);
+    assert.doesNotThrow(() => guardarAbertos(new Set(["x"])));
+  } finally {
+    delete globalThis.localStorage;
+  }
+  assert.match(pagina, /lerAbertos\(\)/);
+  assert.doesNotMatch(pagina, /data-cartao/);
+  assert.match(pagina, /guardarAbertos\(nova\)/);
+  assert.match(pagina, /<BuscaRapida grupos=\{grupos\} \/>/);
+});
