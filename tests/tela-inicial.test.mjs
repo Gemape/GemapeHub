@@ -144,7 +144,11 @@ test("a página pública usa vidro e a logo brilhante animada da tela dos módul
   const pagina = ler("routes/index.tsx");
   const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
   assert.match(pagina, /<LogoEntrada grande \/>/);
-  for (const c of ["fundo-vidro", "vidro-claro", "mancha-a", "mancha-b", "vidro-entra"]) assert.match(pagina, new RegExp(c), c);
+  // O vidro, as manchas de luz e a animação vêm do fundo compartilhado com a tela de login (FundoVidroQuantico).
+  const fundo = readFileSync(new URL("../src/components/FundoVidroQuantico.tsx", import.meta.url), "utf8");
+  assert.match(pagina, /<FundoVidroQuantico \/>/);
+  for (const c of ["vidro-claro", "mancha-a", "mancha-b"]) assert.match(fundo, new RegExp(c), c);
+  for (const c of ["fundo-vidro", "vidro-entra"]) assert.match(pagina, new RegExp(c), c);
   assert.match(pagina, /<Link to="\/auth">Acessar o sistema<\/Link>/);
   for (const c of ["fundo-vidro", "vidro-claro", "mancha-luz", "vidro-reflexo"]) assert.match(css, new RegExp(`@utility ${c} {`), c);
   assert.match(css, /@utility vidro-entra \{(?:(?!@utility)[\s\S])*?prefers-reduced-motion/);
