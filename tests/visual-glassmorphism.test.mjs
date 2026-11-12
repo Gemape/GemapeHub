@@ -32,7 +32,7 @@ test("o menu traz a logo GEMAPE 40 anos animada; a tela de acesso usa o mesmo lo
   const css = ler("styles.css");
   assert.match(css, /@keyframes engrenagem-girando/);
   assert.match(css, /prefers-reduced-motion: reduce\) \{\s*animation: none/);
-  assert.match(ler("routes/auth.tsx"), /<LogoEntrada \/>/);
+  assert.match(ler("routes/auth.tsx"), /<LogoEntrada grande \/>/);
 });
 
 test("telas estreitas: o conteúdo não estoura a largura (cartões e abas rolam por dentro)", () => {
