@@ -1,6 +1,7 @@
+import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileUp } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { ehXml, registrarReceptor } from "@/lib/arquivos-soltos";
 import { lerTodas } from "@/lib/ler-todas";
 import { useEmpresa } from "@/lib/empresa-context";
 import { listarFornecedores } from "@/lib/fornecedores-demo";
@@ -92,6 +94,14 @@ export function ImportarNfeXml() {
   const parametros = useParametrosBase();
   const dados = useDadosImportacao(aberto);
 
+  // Soltar o XML da nota em qualquer parte da tela abre a importação já com a prévia.
+  const lerRef = useRef(lerEscolhido);
+  lerRef.current = lerEscolhido;
+  useEffect(() => {
+    if (!MODO_DEMO) return;
+    return registrarReceptor({ rotulo: "importar a nota fiscal (XML)", aceita: (a) => ehXml(a) && !!a, receber: (arquivos) => { setAberto(true); void lerRef.current(arquivos[0]); } });
+  }, []);
+
   if (!MODO_DEMO) return null;
 
   function limpar() {
@@ -101,8 +111,11 @@ export function ImportarNfeXml() {
     if (arquivo.current) arquivo.current.value = "";
   }
 
-  async function lerArquivo(e: React.ChangeEvent<HTMLInputElement>) {
-    const escolhido = e.target.files?.[0];
+  function lerArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    void lerEscolhido(e.target.files?.[0]);
+  }
+
+  async function lerEscolhido(escolhido: File | undefined) {
     const atual = ++leitura.current;
     setPrevia(null);
     setErro(null);
@@ -165,6 +178,7 @@ export function ImportarNfeXml() {
         `NF-e ${previa.nota.numero} importada: ${total} item(ns) com entrada no estoque.`,
       );
       await queryClient.invalidateQueries();
+      avisarOutrasAbas();
       limpar();
       setAberto(false);
     } catch (falha) {

@@ -8,6 +8,9 @@ import { useAbrirDireto } from "@/lib/use-abrir-direto";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { descricaoVeiculo, validarAquisicao } from "@/lib/descricao-veiculo";
 import { dataBrasilia } from "@/lib/portadores-caixa";
+import { useAvisoNaoSalvo } from "@/lib/use-aviso-nao-salvo";
+import { NomeComResumo } from "@/components/GavetaResumo";
+import { GavetaItemMovimentado } from "@/components/modules/GavetasDeResumo";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
 import { toast } from "sonner";
 
@@ -125,6 +128,8 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
   const [aberto, setAberto] = useState(false);
   const [erroPlaca, setErroPlaca] = useState<string | null>(null);
   const [editando, setEditando] = useState<VeiculoCadastro | null>(null);
+  const [resumo, setResumo] = useState<VeiculoCadastro | null>(null);
+  const aviso = useAvisoNaoSalvo(aberto);
   // Clonar: veículo de origem que só preenche o formulário de novo cadastro.
   const [origem, setOrigem] = useState<VeiculoCadastro | null>(null);
   const base = editando ?? origem;
@@ -383,6 +388,17 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
   }
 
   const nomeEmpregado = (id: string | null) => empregados.find((e) => e.id === id)?.nome ?? "—";
+  function editarVeiculo(v: VeiculoCadastro) {
+    destravar();
+    pedidoPrevia.current++;
+    setOrigem(null);
+    setEmpresaSel(v.empresa_id ?? "");
+    setSubSel(null);
+    setPrevia("");
+    setSiglaSel("");
+    setEditando(v);
+    setAberto(true);
+  }
   const nomeEmpresa = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
 
@@ -476,7 +492,14 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
                     {v.codigo_sku || "—"}
                   </TableCell>
                   <TableCell>{subcategoriaDe(v) || "—"}</TableCell>
-                  <TableCell className="font-medium">{descricaoDe(v) || "—"}</TableCell>
+                  <TableCell>
+                    <NomeComResumo rotulo={descricaoDe(v) || formatarPlaca(v.placa)} aoAbrir={() => setResumo(v)} cartao={<>
+                      <p className="font-semibold">{descricaoDe(v) || "—"}</p>
+                      <p className="font-mono text-xs">{formatarPlaca(v.placa) || "—"}</p>
+                      <p className="text-xs text-muted-foreground">Responsável: {nomeEmpregado(v.empregado_responsavel_id)}</p>
+                      <p className="text-xs text-muted-foreground">{kmAtualDe(v).toLocaleString("pt-BR")} km · {STATUS_VEICULO_LABEL[v.status] ?? v.status}</p>
+                    </>}>{descricaoDe(v) || "—"}</NomeComResumo>
+                  </TableCell>
                   <TableCell className="whitespace-nowrap font-mono text-xs">
                     {formatarPlaca(v.placa) || "—"}
                   </TableCell>
@@ -498,17 +521,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
                     <AcoesLinha
                       rotulo={`veículo ${v.codigo_sku || formatarPlaca(v.placa)}`}
                       onClonar={() => void abrirNovo(v)}
-                      onEditar={() => {
-                        destravar();
-                        pedidoPrevia.current++;
-                        setOrigem(null);
-                        setEmpresaSel(v.empresa_id ?? "");
-                        setSubSel(null);
-                        setPrevia("");
-                        setSiglaSel("");
-                        setEditando(v);
-                        setAberto(true);
-                      }}
+                      onEditar={() => editarVeiculo(v)}
                       onExcluir={() => {
                         if (confirm(`Excluir ${v.codigo_sku || formatarPlaca(v.placa)}?`)) excluir.mutate(v.id);
                       }}
@@ -521,7 +534,18 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
         </Table>
       </div>
 
-      <Dialog open={aberto} onOpenChange={setAberto}>
+      <GavetaItemMovimentado
+        modulo="veiculo"
+        alvo={resumo ? { id: resumo.id, campo: "veiculo_id", titulo: descricaoDe(resumo) || formatarPlaca(resumo.placa), subtitulo: `${formatarPlaca(resumo.placa)} · ${nomeEmpresa(resumo.empresa_id)}`, indicadores: [
+          { rotulo: "Quilometragem", valor: `${kmAtualDe(resumo).toLocaleString("pt-BR")} km` },
+          { rotulo: "Situação", valor: STATUS_VEICULO_LABEL[resumo.status] ?? resumo.status },
+          { rotulo: "Responsável", valor: nomeEmpregado(resumo.empregado_responsavel_id) },
+        ] } : null}
+        aoFechar={() => setResumo(null)}
+        aoAbrirFicha={() => { if (resumo) editarVeiculo(resumo); }}
+        rotuloFicha="Abrir ficha completa (editar)"
+      />
+      <Dialog open={aberto} onOpenChange={aviso.aoMudarAberto(setAberto)}>
         <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
@@ -536,7 +560,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
             </DialogDescription>
           </DialogHeader>
           <AvisoEdicaoSimultanea chave={editando ? `veiculo:${editando.id}` : null} />
-          <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
+          <form onSubmit={enviar} onInput={aviso.aoAlterar} onChange={aviso.aoAlterar} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="codigo_sku">Código</Label>
               <Input
@@ -799,7 +823,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
             </div>
 
             <DialogFooter className="sm:col-span-2">
-              <Button type="button" variant="outline" onClick={() => setAberto(false)}>
+              <Button type="button" variant="outline" onClick={() => aviso.aoMudarAberto(setAberto)(false)}>
                 Cancelar
               </Button>
               <Button requiresWrite type="submit" disabled={salvar.isPending || gerando}>

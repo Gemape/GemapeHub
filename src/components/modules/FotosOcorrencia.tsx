@@ -1,8 +1,10 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { VisorArquivo } from "@/components/VisorArquivo";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ehImagem, registrarReceptor } from "@/lib/arquivos-soltos";
 import { comprimirImagem } from "@/lib/imagem";
 import { MAX_FOTOS } from "@/lib/ocorrencias-veiculo";
 
@@ -29,6 +31,10 @@ export function BotaoAnexarFotos({
   async function escolher(e: React.ChangeEvent<HTMLInputElement>) {
     const arquivos = Array.from(e.target.files ?? []);
     e.target.value = "";
+    await processar(arquivos);
+  }
+
+  async function processar(arquivos: File[]) {
     if (arquivos.length === 0) return;
     if (arquivos.length > restante) {
       toast.error(`Cabem mais ${restante} foto(s) (máximo ${maximo} por ${oQue}).`);
@@ -43,6 +49,14 @@ export function BotaoAnexarFotos({
       setProcessando(false);
     }
   }
+
+  // Arrastar e soltar: enquanto este botão está na tela e pode receber fotos, soltar imagens em qualquer parte da tela as anexa.
+  const processarRef = useRef(processar);
+  processarRef.current = processar;
+  useEffect(() => {
+    if (desabilitado || restante <= 0) return;
+    return registrarReceptor({ rotulo: `anexar as fotos da ${oQue}`, aceita: ehImagem, receber: (arquivos) => void processarRef.current(arquivos) });
+  }, [desabilitado, restante, oQue]);
 
   return (
     <>
@@ -99,17 +113,7 @@ export function GaleriaFotos({
   );
 }
 
-// Diálogo irmão dos outros (nunca dentro de um deles): mostra uma foto ampliada.
+// Diálogo irmão dos outros (nunca dentro de um deles): mostra uma foto ampliada, com zoom.
 export function VisorFoto({ foto, titulo, onFechar }: { foto: string | null; titulo: string; onFechar: () => void }) {
-  return (
-    <Dialog open={foto !== null} onOpenChange={(aberto) => !aberto && onFechar()}>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{titulo}</DialogTitle>
-          <DialogDescription className="sr-only">Foto da ocorrência ampliada</DialogDescription>
-        </DialogHeader>
-        {foto && <img src={foto} alt={titulo} className="max-h-[70vh] w-full rounded-md object-contain" />}
-      </DialogContent>
-    </Dialog>
-  );
+  return <VisorArquivo fonte={foto} titulo={titulo} tipo="imagem" onFechar={onFechar} />;
 }

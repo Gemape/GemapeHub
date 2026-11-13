@@ -1,3 +1,4 @@
+import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
@@ -176,6 +177,7 @@ export function DevolucaoEpiDialog({
         })),
       });
       queryClient.invalidateQueries();
+      avisarOutrasAbas();
       toast.success("Devolução registrada como entrada de usado", {
         description:
           [...r.codigos, empresa?.nome_fantasia].filter(Boolean).join(" · ") || undefined,

@@ -4,6 +4,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
 import { AtalhosPessoais, useAtalhosPessoais } from "@/components/inicio/atalhosPessoais";
+import { AtencaoHoje } from "@/components/inicio/AtencaoHoje";
 import { BuscaRapida } from "@/components/inicio/BuscaRapida";
 import { ICONES } from "@/components/layout/AppSidebar";
 import { useAccess } from "@/lib/access-context";
@@ -127,6 +128,7 @@ function PaginaInicio() {
       <h1 className="sr-only">Início</h1>
       <div className="relative z-10 mx-auto max-w-5xl space-y-8 sm:space-y-10">
       <BuscaRapida grupos={grupos} />
+      <AtencaoHoje />
       <AtalhosPessoais fixados={fixados.filter((a) => podeVerCaminho(a.url, a.search))} recentes={recentes.filter((a) => podeVerCaminho(a.url, a.search))} />
       {grupos.map((grupo) => (
         <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="mx-auto w-full max-w-4xl space-y-4">

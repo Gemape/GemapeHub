@@ -227,9 +227,10 @@ export function useProximoCodigo(modulo: Modulo) {
   });
 }
 
-export function useEmpregados(empresaId: string, apenasAtivos = false) {
+export function useEmpregados(empresaId: string, apenasAtivos = false, ativo = true) {
   return useQuery({
     ...opcoesBase,
+    enabled: ativo,
     queryKey: ["empregados", empresaId, apenasAtivos],
     queryFn: async () => {
       const montar = () => {
@@ -261,9 +262,10 @@ export function useVeiculos(empresaId: string) {
 }
 
 /** Sem limite, lê o histórico inteiro (decisão: nada de corte em 50 ou 1000 linhas). */
-export function useMovimentacoes(modulo: Modulo, empresaId: string, limite?: number) {
+export function useMovimentacoes(modulo: Modulo, empresaId: string, limite?: number, ativo = true) {
   return useQuery({
     ...opcoesBase,
+    enabled: ativo,
     queryKey: ["movimentacoes", modulo, empresaId, limite],
     queryFn: async () => {
       const montar = () => {

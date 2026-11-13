@@ -1,3 +1,4 @@
+import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { useQueryClient } from "@tanstack/react-query";
 import { WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -51,6 +52,7 @@ export function RedeEFila() {
       if (r.enviados > 0) {
         toast.success(`${r.enviados} registro(s) guardado(s) sem rede foram enviados`);
         queryClient.invalidateQueries();
+        avisarOutrasAbas();
       }
       if (r.falhas > 0) {
         for (const i of lerFila().filter((x) => x.tentativas > 0 && doDono(x, dono))) toast.error(`Não foi possível enviar: ${i.rotulo}`, { description: "Ele continua guardado. Confira o registro e tente de novo." });
