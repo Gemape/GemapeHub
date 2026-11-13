@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PONTO_TELA, TEXTO_TELA } from '@/components/modules/ExtratoVeiculo';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AtalhoPeriodo } from "@/components/AtalhoPeriodo";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -84,6 +85,7 @@ export function ExtratoFerramenta({ alvo, movimentos, saldo, onde, nomeEmpregado
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5"><Label htmlFor="extrato-fer-inicio" className="block text-center">Data início</Label><Input id="extrato-fer-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} /></div>
           <div className="space-y-1.5"><Label htmlFor="extrato-fer-fim" className="block text-center">Data fim</Label><Input id="extrato-fer-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} /></div>
+          <AtalhoPeriodo aoEscolher={(i, f) => { setInicio(i); setFim(f); }} />
           <p className="max-w-md text-xs text-muted-foreground">O período vale para as movimentações. A posição (caixa, empregado, sem caixa) mostra sempre a situação de hoje.</p>
           <Button type="button" className="ml-auto" disabled={periodoInvalido || !alvo} onClick={gerarPdf}>Gerar PDF</Button>
         </div>

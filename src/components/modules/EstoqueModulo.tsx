@@ -15,6 +15,7 @@ import { controleDaFerramenta } from '@/lib/controle-caixa';
 import { posicaoDasFerramentas, type PosicaoDaFerramenta } from '@/lib/estoque-ferramentas-posicao';
 import { combinaBuscaTolerante } from '@/lib/busca-tolerante';
 import { useParametrosBase } from '@/lib/use-parametros-base';
+import { AlternarDensidade } from '@/components/AlternarDensidade';
 import { BarraDeFiltros } from '@/components/layout/BarraDeFiltros';
 import { MinimoEditavel } from '@/components/modules/MinimoEditavel';
 import { ExtratoFerramenta, type AlvoDoExtrato } from '@/components/modules/ExtratoFerramenta';
@@ -117,6 +118,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             onChange={(e) => setBusca(e.target.value)}
           />
         </BarraDeFiltros>
+        <AlternarDensidade />
         {ferr && <Button type="button" variant={porPosicao ? 'default' : 'outline'} aria-pressed={porPosicao} onClick={() => setPorPosicao((v) => !v)}>{porPosicao ? 'Ver estoque por item' : 'Estoque por posição'}</Button>}
         <Button variant="outline" hidden={porPosicao} disabled={isLoading || linhas.length === 0} onClick={() =>
           exportarCsv(`estoque-${modulo}`, linhas.map(({ item, estado }) => ({

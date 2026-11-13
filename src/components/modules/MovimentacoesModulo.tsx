@@ -2,6 +2,7 @@ import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
+import { AlternarDensidade } from "@/components/AlternarDensidade";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 import { useRouteContext } from "@tanstack/react-router";
@@ -294,6 +295,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               : `${visiveis.length} de ${movimentacoes.length} ${plural}.`}
           </p>
         </BarraDeFiltros>
+        <AlternarDensidade />
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"

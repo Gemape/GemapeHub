@@ -8,6 +8,7 @@ import { lerEmpregadosRelatorio, lerMovimentacoesRelatorio } from "@/lib/relator
 import { useState } from "react";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Button } from "@/components/ui/button";
+import { AtalhoPeriodo } from "@/components/AtalhoPeriodo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -142,6 +143,7 @@ export function EpiRelatorioFuncionario() {
                 <Label htmlFor="hist-fim">Fim</Label>
                 <Input disabled={!empregado} id="hist-fim" type="date" value={dataFim} min={dataInicio || undefined} onChange={(e) => setDataFim(e.target.value)} />
               </div>
+              <AtalhoPeriodo aoEscolher={(i, f) => { setDataInicio(i); setDataFim(f); }} />
               {comFiltro && (
                 <Button type="button" onClick={() => { setPalavra(""); setDataInicio(""); setDataFim(""); }}>
                   Limpar filtros

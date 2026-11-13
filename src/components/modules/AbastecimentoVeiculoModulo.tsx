@@ -9,6 +9,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { NovoAbastecimentoDialog } from "@/components/modules/NovoAbastecimentoDialog";
 import { rotuloDoVeiculo } from "@/components/modules/rotulo-veiculo";
 import { Button } from "@/components/ui/button";
+import { AtalhoPeriodo } from "@/components/AtalhoPeriodo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -187,6 +188,7 @@ export function AbastecimentoVeiculoModulo() {
             <Label htmlFor="abastecimento-fim">Data fim</Label>
             <Input id="abastecimento-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
           </div>
+          <AtalhoPeriodo aoEscolher={(i, f) => { setInicio(i); setFim(f); }} />
           {(inicio || fim) && <Button type="button" variant="ghost" size="sm" onClick={() => { setInicio(""); setFim(""); }}>Limpar período</Button>}
         </BarraDeFiltros>
         <Button variant="outline" onClick={() => setRelatorioAberto(true)} disabled={periodoInvalido}>Relatório</Button>

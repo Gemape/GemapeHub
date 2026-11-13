@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AtalhoPeriodo } from "@/components/AtalhoPeriodo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -107,6 +108,7 @@ export function EpiRelatorioBaixa() {
           <Label>Data Final</Label>
           <Input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} />
         </div>
+        <AtalhoPeriodo aoEscolher={(i, f) => { setDataInicial(i); setDataFinal(f); }} />
         <div className="space-y-1.5">
           <Label>Motivo de Baixa</Label>
           <Select value={motivoFiltro} onValueChange={setMotivoFiltro}>

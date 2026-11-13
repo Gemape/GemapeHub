@@ -5,6 +5,7 @@ import { PONTO_TELA, SITUACAO, TEXTO_TELA } from "@/components/modules/ExtratoVe
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AtalhoPeriodo } from "@/components/AtalhoPeriodo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -159,6 +160,7 @@ export function ExtratoEquipamento({ equipamento, foco, soAbertasInicial = false
             <Label htmlFor="extrato-eq-fim" className="block text-center">Data fim</Label>
             <Input id="extrato-eq-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
           </div>
+          <AtalhoPeriodo aoEscolher={(i, f) => { setInicio(i); setFim(f); }} />
           <p className="max-w-md text-xs text-muted-foreground">{foco ? FOCOS[foco].periodo : "O período vale para as manutenções realizadas, os abastecimentos, as ocorrências e os check lists. As preventivas sugeridas mostram sempre a situação de hoje."}</p>
           <Button type="button" className="ml-auto" disabled={periodoInvalido || !equipamento} onClick={() => (foco && equipamento ? gerarPdf(equipamento, FOCOS[foco].tabelas) : setPersonalizando(true))}>Gerar PDF</Button>
         </div>

@@ -1212,3 +1212,10 @@ table, .tabular-nums, [data-numerico] { font-variant-numeric: tabular-nums; }
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.25); opacity: 0.6; }
 }
+
+/* Densidade das tabelas (ver lib/densidade.ts): compacta cabe cerca de 25 linhas por tela; a confortável é o visual de sempre. No celular as linhas são cartões e não mudam. */
+@media (min-width: 640px) {
+  [data-densidade="compacta"] > table { font-size: 0.8125rem; }
+  [data-densidade="compacta"] td { padding-block: 0.125rem; }
+  [data-densidade="compacta"] th { height: 1.75rem; }
+}

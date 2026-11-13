@@ -4,10 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { MinimoEditavel } from "@/components/modules/MinimoEditavel";
+import { AlternarDensidade } from "@/components/AlternarDensidade";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { AtalhoPeriodo } from "@/components/AtalhoPeriodo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -216,6 +218,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
             onChange={(e) => setDataFim(e.target.value)}
           />
         </div>
+        <AtalhoPeriodo aoEscolher={(i, f) => { setDataInicio(i); setDataFim(f); }} />
         <Button
           type="button"
           onClick={() => {
@@ -231,6 +234,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           Limpar filtros
         </Button>
         </BarraDeFiltros>
+        <AlternarDensidade />
         <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
         {(["novo", "usado"] as const).map((c) => (
