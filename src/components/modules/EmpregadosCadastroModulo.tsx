@@ -1,3 +1,5 @@
+import { AvisoEdicaoSimultanea } from "@/components/AvisoEdicaoSimultanea";
+import { validarCpfCampo, validarMatriculaCampo } from "@/lib/validacao-campos";
 import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useRef, useState } from "react";
@@ -30,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresaPadraoParaEscolha, empresasParaEscolha } from "@/lib/empresas";
@@ -41,6 +44,7 @@ import { RelatorioCadastro } from "@/components/RelatorioCadastro";
 import type { CampoRelatorio } from "@/lib/relatorio-cadastro";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { DemitirEmpregadoDialog } from "./DemitirEmpregadoDialog";
+import { avisarComDesfazer } from "@/lib/toast-desfazer";
 import { comDesligamento, lerConfig, salvarConfig } from "@/lib/configuracoes-demo";
 import { usuarioAtivo } from "@/lib/permissoes-demo";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
@@ -80,12 +84,16 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
   const empresaForm = empresaSel || (base ? "" : empresaPadrao);
   const salvar = useSalvar("empregados", ["empregados", "empregados-total"]);
   const excluir = useExcluir("empregados", ["empregados", "empregados-total"]);
+  const queryClient = useQueryClient();
 
   function abrir(empregado: EmpregadoCadastro | null, clonar = false) {
     salvando.current = false;
     setEditando(clonar ? null : empregado);
     setModelo(clonar ? empregado : null);
     setEmpresaSel(empregado?.empresa_id ?? "");
+    setErroCpf(null);
+    setErroMatricula(null);
+    listaParaConferir.current = null;
     setAberto(true);
   }
 
@@ -97,6 +105,21 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
       return abrir(exemploEmpregado(todos, empresaPadrao) as EmpregadoCadastro, true);
     }
     abrir(null);
+  }
+
+  const [erroCpf, setErroCpf] = useState<string | null>(null);
+  const [erroMatricula, setErroMatricula] = useState<string | null>(null);
+  // Valida ao sair do campo contra todos os empregados (de todas as empresas); se a lista não carregar, o Salvar confere de novo.
+  const listaParaConferir = useRef<Promise<{ id: string; cpf: string | null; matricula: string | null }[]> | null>(null);
+  function conferirAoSair(campo: HTMLInputElement, validar: typeof validarCpfCampo, definir: (m: string | null) => void) {
+    const valor = campo.value;
+    if (!valor.trim()) { definir(null); return; }
+    // A lista é lida uma vez por abertura do formulário; resposta que chega depois de o valor mudar é descartada.
+    listaParaConferir.current ??= lerTodas<{ id: string; cpf: string | null; matricula: string | null }>(() => supabase.from("empregados").select("id,cpf,matricula"), (q) => q.order("id"));
+    listaParaConferir.current.then(
+      (todos) => { if (campo.value === valor) definir(validar(valor, todos, editando ?? undefined)); },
+      () => { listaParaConferir.current = null; definir(null); },
+    );
   }
 
   async function enviar(e: React.FormEvent<HTMLFormElement>) {
@@ -252,12 +275,19 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
               onSuccess: () => {
                 setDemitindo(null);
                 let efeitos: string[] = [];
-                if (MODO_DEMO) {
-                  const r = comDesligamento(lerConfig(localStorage), usuarioAtivo(localStorage).nome, { nome: alvo.nome, motivo, data, pendentes });
+                const configAntes = MODO_DEMO ? lerConfig(localStorage) : null;
+                if (MODO_DEMO && configAntes) {
+                  const r = comDesligamento(configAntes, usuarioAtivo(localStorage).nome, { nome: alvo.nome, motivo, data, pendentes });
                   efeitos = r.efeitos;
                   salvarConfig(localStorage, r.config);
                 }
-                toast.success(`${alvo.nome} desligado(a)${efeitos.length ? ` (simulado: ${efeitos.join(", ")})` : ""}`);
+                // Desfazer: volta a data de demissão e a situação de antes (e, na demonstração, os efeitos simulados do desligamento).
+                avisarComDesfazer(`${alvo.nome} desligado(a)${efeitos.length ? ` (simulado: ${efeitos.join(", ")})` : ""}`, async () => {
+                  const { error } = await supabase.from("empregados").update({ data_demissao: alvo.data_demissao ?? null, ativo: alvo.ativo } as never).eq("id", alvo.id);
+                  if (error) throw error;
+                  if (configAntes) salvarConfig(localStorage, configAntes);
+                  queryClient.invalidateQueries();
+                });
               },
             },
           );
@@ -270,6 +300,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             <DialogTitle>{editando ? "Editar empregado" : modelo && !ehExemplo(modelo) ? "Clonar empregado" : "Novo empregado"}</DialogTitle>
             <DialogDescription>Dados do empregado.</DialogDescription>
           </DialogHeader>
+          <AvisoEdicaoSimultanea chave={editando ? `empregado:${editando.id}` : null} />
           <form onSubmit={(e) => void enviar(e)} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Nome completo</Label>
@@ -283,11 +314,17 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                 aria-required
                 inputMode="numeric"
                 placeholder="xxx.xxx.xxx-xx"
+                aria-invalid={erroCpf ? true : undefined}
+                aria-describedby={erroCpf ? "cpf-erro" : undefined}
                 onChange={(ev) => {
                   ev.target.value = mascararCpf(ev.target.value);
+                  setErroCpf(null);
                 }}
+                // Confere ao sair do campo (dígitos e CPF já cadastrado), sem esperar o Salvar.
+                onBlur={(ev) => conferirAoSair(ev.target, validarCpfCampo, setErroCpf)}
                 defaultValue={base?.cpf ? (base.cpf.replace(/\D/g, "").length > 11 ? base.cpf : mascararCpf(base.cpf)) : ""}
               />
+              {erroCpf && <p id="cpf-erro" role="alert" className="text-xs font-medium text-destructive">{erroCpf}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="empresa_id">Empresa</Label>
@@ -311,7 +348,12 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                 name="matricula"
                 placeholder="Livro e página, ex.: L3P25"
                 defaultValue={base?.matricula ?? ""}
+                aria-invalid={erroMatricula ? true : undefined}
+                aria-describedby={erroMatricula ? "matricula-erro" : undefined}
+                onChange={() => setErroMatricula(null)}
+                onBlur={(ev) => conferirAoSair(ev.target, validarMatriculaCampo, setErroMatricula)}
               />
+              {erroMatricula && <p id="matricula-erro" role="alert" className="text-xs font-medium text-destructive">{erroMatricula}</p>}
             </div>
             {MODO_DEMO && (
               <div className="space-y-1.5">

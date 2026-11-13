@@ -1,3 +1,4 @@
+import { TourGuiado } from "@/components/layout/TourGuiado";
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
 import { EstoqueEpiModulo } from "@/components/modules/EstoqueEpiModulo";
@@ -39,6 +40,7 @@ export function PaginaModulo({
   const abaValida = abaDoModulo(modulo, aba);
   return (
     <div className="space-y-5">
+      <TourGuiado modulo={modulo} aba={abaValida} />
       <header>
         <EyebrowDoCard fallback="Módulo" />
         <h1 className="text-2xl font-bold">{tituloDaAba(modulo, aba)}</h1>

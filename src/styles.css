@@ -93,7 +93,7 @@
   --secondary: oklch(0.12 0.08 262); /* #01073D */
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.97 0.01 260); /* Cinza muito claro #F7F7F7 */
-  --muted-foreground: oklch(0.5 0.02 260);
+  --muted-foreground: oklch(0.45 0.02 260);
   --accent: oklch(0.28 0.18 262); /* Usando o azul primário como destaque */
   --accent-foreground: oklch(1 0 0);
 
@@ -1197,3 +1197,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .pagina-entra { animation: pagina-entra 0.2s ease-out backwards; }
 }
+
+/* Acessibilidade e ergonomia: dígitos de largura fixa em tabelas e totais (quantidades e valores alinham na vertical),
+   e o texto secundário (--muted-foreground) com contraste mínimo de 4,5:1 sobre o fundo claro (WCAG AA). */
+table, .tabular-nums, [data-numerico] { font-variant-numeric: tabular-nums; }

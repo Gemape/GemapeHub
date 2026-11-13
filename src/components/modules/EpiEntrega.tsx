@@ -1,3 +1,6 @@
+import { useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
+import { mensagemHumana, mensagemValidadeVencida } from "@/lib/erros-humanos";
+import { ehErroDeRede, enfileirar } from "@/lib/fila-offline";
 import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { AjudaTermo } from "@/components/AjudaTermo";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -66,6 +69,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   const [ultima, setUltima] = useState<{ codigos: string[]; html: string; arquivo: string } | null>(null);
   const [filtroItem, setFiltroItem] = useState(TODOS);
   const [filtroEmpregado, setFiltroEmpregado] = useState(TODOS);
+  const dono = useDonoDosAtalhos();
   const salvando = useRef(false);
   const [gravando, setGravando] = useState(false);
 
@@ -149,6 +153,12 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
     if (devolucao && !isAdmin) { alert(mensagemSoAdmin(modulo)); return; }
     const bloqueio = bloqueioPorDemissao(empregado, devolucao ? "devolucao" : "entrega", data);
     if (bloqueio) { alert(bloqueio); return; }
+    if (!devolucao) {
+      for (const l of linhas) {
+        const vencido = mensagemValidadeVencida(itens.find((i) => i.id === l.item_id) ?? {}, data);
+        if (vencido) { alert(vencido); return; }
+      }
+    }
     if (TAMANHO_DISPONIVEL) {
       const erroTamanho = validarLinhasTamanho(linhas, itens, parametros, modulo, devolucao ? "devolução" : "entrega");
       if (erroTamanho) { alert(erroTamanho); return; }
@@ -171,7 +181,20 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
     };
     salvando.current = true;
     setGravando(true);
+    // Sem rede (ou rede que caiu no meio): guarda neste aparelho e envia sozinho quando voltar; o operador não perde o que preencheu.
+    const guardarParaDepois = () => {
+      const { calcularAlerta: _calculo, ...semFuncao } = entrada;
+      const rotuloFila = `${devolucao ? "Devolução" : "Entrega"} de ${rot.um} — ${empregado.nome}`;
+      if (!enfileirar("entrega-epi", rotuloFila, { dono, devolucao, entrada: semFuncao, responsavel })) {
+        alert("Sem conexão e não foi possível guardar neste aparelho (armazenamento cheio ou bloqueado). Nada foi registrado: tente de novo quando a rede voltar.");
+        return;
+      }
+      toast.info("Sem conexão: registro guardado neste aparelho", { description: "Ele será enviado sozinho assim que a rede voltar." });
+      setLinhas([]);
+      setObservacao("");
+    };
     try {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) { guardarParaDepois(); return; }
       const r = devolucao
         ? await registrarDevolucaoEpi(supabase, { ...entrada, administrador: isAdmin, responsavel })
         : await registrarEntregaEpi(supabase, { ...entrada, responsavel });
@@ -195,7 +218,8 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
       setLinhas([]);
       setObservacao("");
     } catch (erro) {
-      alert((erro as Error).message);
+      if (ehErroDeRede(erro)) guardarParaDepois();
+      else alert(mensagemHumana(erro));
     } finally {
       salvando.current = false;
       setGravando(false);
@@ -235,7 +259,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5" data-tour="empregado">
             <Label>Empregado <span className="font-normal text-muted-foreground">(nome, matrícula ou CPF)</span></Label>
             <SeletorComBusca
               id={`empregado-${modulo}`}
@@ -265,7 +289,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-lg font-bold">{modo === "entrega" ? `${rot.Plural} entregues` : `${rot.Plural} devolvidos`}</Label>
-            <Button type="button" variant="outline" size="sm" disabled={!empresaSel || (modo === "devolucao" && !empregadoId)} onClick={() => setLinhas([...linhas, novaLinha()])}>+ Adicionar {rot.Sing}</Button>
+            <Button type="button" variant="outline" size="sm" data-tour="add-item" disabled={!empresaSel || (modo === "devolucao" && !empregadoId)} onClick={() => setLinhas([...linhas, novaLinha()])}>+ Adicionar {rot.Sing}</Button>
           </div>
           <div className="border rounded-lg overflow-hidden">
             <Table>
@@ -306,7 +330,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
 
         <div className="flex flex-wrap justify-end gap-2 pt-2">
           {ultima && <Button type="button" variant="outline" onClick={() => abrirDocumento({ titulo: rot.termo, html: ultima.html, arquivo: ultima.arquivo })}>Gerar Termo de Entrega ({ultima.codigos.join(", ") || "entrega registrada"})</Button>}
-          <Button requiresWrite="operar" disabled={gravando || !canOperate} onClick={salvar}>{modo === "entrega" ? "Registrar entrega" : "Registrar devolução"}</Button>
+          <Button requiresWrite="operar" data-tour="registrar" disabled={gravando || !canOperate} onClick={salvar}>{modo === "entrega" ? "Registrar entrega" : "Registrar devolução"}</Button>
           <AjudaTermo termo="Termo de Entrega">Documento assinado pelo empregado ao receber itens de maior custo ou durabilidade. Para itens de consumo corriqueiro use a Ficha de EPI Avulsa.</AjudaTermo>
         </div>
       </div>

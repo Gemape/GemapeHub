@@ -1,3 +1,4 @@
+import { AvisoEdicaoSimultanea } from "@/components/AvisoEdicaoSimultanea";
 import { useRef, useState, useEffect } from "react";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
@@ -240,6 +241,7 @@ export function FerramentasTermoResponsabilidade() {
   return (
     <div className="space-y-6">
       <div className="panel p-6 space-y-4">
+        <AvisoEdicaoSimultanea chave={empregadoId ? `cautela:${empresaSel}:${empregadoId}` : null} />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end">
           <div className="space-y-1.5 lg:col-span-3">
             <Label>Empresa</Label>

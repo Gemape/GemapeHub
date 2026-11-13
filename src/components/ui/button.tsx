@@ -43,10 +43,35 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, requiresWrite = false, ...props }, ref) => {
     const { canWrite, canOperate } = useAccess();
+    // Hooks sempre antes de qualquer retorno antecipado.
+    const [ocupado, setOcupado] = React.useState(false);
+    const travado = React.useRef(false);
+    // Clique duplo: se o onClick devolve uma Promise (ação assíncrona), o botão fica desabilitado até ela terminar
+    // e ignora cliques que chegam antes de a tela redesenhar (a trava é um ref, não só o estado).
     if (requiresWrite === "operar" ? !canOperate : requiresWrite && !canWrite) return null;
+    const { onClick, disabled, ...resto } = props;
+    const aoClicar = onClick
+      ? (e: React.MouseEvent<HTMLButtonElement>) => {
+          if (travado.current) { e.preventDefault(); return; }
+          const resultado: unknown = onClick(e);
+          if (resultado && typeof (resultado as PromiseLike<unknown>).then === "function") {
+            travado.current = true;
+            setOcupado(true);
+            const liberar = () => { travado.current = false; setOcupado(false); };
+            (resultado as PromiseLike<unknown>).then(liberar, liberar);
+            window.setTimeout(liberar, 60_000); // saída de segurança: promessa que nunca termina não deixa o botão morto
+          }
+        }
+      : undefined;
     const Comp = asChild ? Slot : "button";
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...resto}
+        {...(!asChild && aoClicar ? { onClick: aoClicar, "aria-busy": ocupado || undefined } : onClick ? { onClick } : {})}
+        {...(disabled || (!asChild && ocupado) ? { disabled: true } : {})}
+      />
     );
   },
 );

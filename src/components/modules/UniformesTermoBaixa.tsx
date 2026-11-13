@@ -1,3 +1,6 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { avisarComDesfazer } from "@/lib/toast-desfazer";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useRef, useState } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
@@ -59,7 +62,8 @@ export function UniformesTermoBaixa() {
   const { data: uniformes = [] } = useItens("uniforme", empresaId || TODAS);
   const parametros = useParametrosBase();
 
-  const registrarBaixas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"]);
+  const registrarBaixas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"], false);
+  const queryClient = useQueryClient();
   const salvando = useRef(false);
 
   const empresa = empresas.find((e) => e.id === empresaId);
@@ -143,6 +147,22 @@ export function UniformesTermoBaixa() {
     } finally {
       salvando.current = false;
     }
+    // Desfazer a baixa: devolve ao estoque com uma entrada igual (o histórico guarda a baixa e a correção, nada some).
+    avisarComDesfazer("Baixa registrada", async () => {
+      const { error } = await supabase.from("movimentacoes").insert(itensBaixa.map((item) => ({
+        modulo: "uniforme",
+        tipo_movimentacao: "Entrada",
+        item_id: item.item_id,
+        empresa_id: empresaId,
+        empregado_id: null,
+        quantidade: item.quantidade,
+        ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
+        data_movimentacao: hojeLocal(),
+        observacao: "Baixa desfeita pelo operador",
+      })) as never);
+      if (error) throw error;
+      queryClient.invalidateQueries();
+    });
     // Limpa a lista para um segundo clique não registrar a mesma baixa de novo.
     const itensDoTermo = itensBaixa;
     setItensBaixa([]);
