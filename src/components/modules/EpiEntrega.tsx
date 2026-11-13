@@ -1,3 +1,4 @@
+import { useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
 import { mensagemHumana, mensagemValidadeVencida } from "@/lib/erros-humanos";
 import { ehErroDeRede, enfileirar } from "@/lib/fila-offline";
 import { BlocoEsqueleto } from "@/components/Esqueletos";
@@ -68,6 +69,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   const [ultima, setUltima] = useState<{ codigos: string[]; html: string; arquivo: string } | null>(null);
   const [filtroItem, setFiltroItem] = useState(TODOS);
   const [filtroEmpregado, setFiltroEmpregado] = useState(TODOS);
+  const dono = useDonoDosAtalhos();
   const salvando = useRef(false);
   const [gravando, setGravando] = useState(false);
 
@@ -183,7 +185,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
     const guardarParaDepois = () => {
       const { calcularAlerta: _calculo, ...semFuncao } = entrada;
       const rotuloFila = `${devolucao ? "Devolução" : "Entrega"} de ${rot.um} — ${empregado.nome}`;
-      if (!enfileirar("entrega-epi", rotuloFila, { devolucao, entrada: semFuncao, responsavel, administrador: isAdmin })) {
+      if (!enfileirar("entrega-epi", rotuloFila, { dono, devolucao, entrada: semFuncao, responsavel })) {
         alert("Sem conexão e não foi possível guardar neste aparelho (armazenamento cheio ou bloqueado). Nada foi registrado: tente de novo quando a rede voltar.");
         return;
       }

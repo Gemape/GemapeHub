@@ -179,3 +179,23 @@ test("o tour rola até o alvo só ao mudar de passo, e a validação ao sair des
   assert.match(ler("components/modules/EmpregadosCadastroModulo.tsx"), /if \(campo\.value === valor\) definir/);
   assert.match(ler("lib/toast-desfazer.ts"), /if \(usado\) return;/);
 });
+
+test("a fila é por usuário: só o dono reenvia, o perfil de administrador vem da sessão atual e a presença na nuvem não leva nome", async () => {
+  globalThis.localStorage = memoria();
+  const { enfileirar, lerFila, sincronizarFila, ehErroDeRede } = await import("../src/lib/fila-offline.ts");
+  enfileirar("t", "da Ana", { dono: "ana", n: 1 });
+  enfileirar("t", "do Beto", { dono: "beto", n: 2 });
+  const enviados = [];
+  const r = await sincronizarFila(async (i) => { enviados.push(i.payload.n); }, ehErroDeRede, (i) => i.payload.dono === "ana");
+  assert.deepEqual(enviados, [1], "o registro do Beto não é enviado pela sessão da Ana");
+  assert.equal(r.restantes, 1);
+  assert.equal(lerFila()[0].payload.dono, "beto");
+  assert.equal(lerFila()[0].tentativas, 0, "o que ficou de fora não conta como tentativa");
+  const f = ler("components/layout/RedeEFila.tsx");
+  assert.match(f, /enviar\(i, isAdmin\)/);
+  assert.match(f, /doDono\(i, dono\)/);
+  assert.doesNotMatch(f, /administrador: p\.administrador/);
+  const aviso = ler("components/AvisoEdicaoSimultanea.tsx");
+  assert.match(aviso, /track\(\{ em: Date\.now\(\) \}\)/);
+  assert.doesNotMatch(aviso, /track\(\{ nome/);
+});

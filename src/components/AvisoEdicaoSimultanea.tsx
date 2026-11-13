@@ -11,7 +11,8 @@ const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 /**
  * Aviso de edição simultânea: se outra pessoa (ou outra aba deste navegador) está com o mesmo registro aberto,
  * mostra uma faixa pequena. `chave` identifica o registro (ex.: "veiculo:<id>"); sem chave, nada acontece.
- * Mesmo navegador: BroadcastChannel. Entre aparelhos (produção): presença em tempo real do Supabase, que não cria tabela nem grava dado.
+ * Mesmo navegador: BroadcastChannel (com o nome do usuário). Entre aparelhos (produção): presença em tempo real do Supabase,
+ * que não cria tabela nem grava dado e NÃO leva nome (o canal não é privado; endurecer exige política de Realtime no Supabase, que depende de ordem do responsável).
  */
 export function AvisoEdicaoSimultanea({ chave }: { chave: string | null }) {
   const { perfil } = useAccessNome();
@@ -44,12 +45,13 @@ export function AvisoEdicaoSimultanea({ chave }: { chave: string | null }) {
         const estado = canalNuvem?.presenceState() as Record<string, { nome?: string }[]> | undefined;
         // Quem não está mais no estado saiu; quem está tem o carimbo renovado (o evento "sync" só vem quando alguém entra ou sai).
         for (const id of [...mapa.keys()]) if (!(id in (estado ?? {}))) mapa.delete(id);
-        for (const [id, metas] of Object.entries(estado ?? {})) registrarSinal(mapa, id, metas[0]?.nome ?? "", meuId, Date.now());
+        // Na nuvem não circula nome de ninguém: o canal é aberto a quem conhece o código do registro, então o aviso é genérico.
+        for (const id of Object.keys(estado ?? {})) registrarSinal(mapa, id, "", meuId, Date.now());
         atualizar();
       };
       canalNuvem
         .on("presence", { event: "sync" }, () => lerNuvem?.())
-        .subscribe((status) => { if (status === "SUBSCRIBED") void canalNuvem?.track({ nome }); });
+        .subscribe((status) => { if (status === "SUBSCRIBED") void canalNuvem?.track({ em: Date.now() }); });
     }
 
     const batimento = window.setInterval(() => {

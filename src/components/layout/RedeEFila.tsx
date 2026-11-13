@@ -8,6 +8,7 @@ import { useAccess } from "@/lib/access-context";
 import { mensagemHumana } from "@/lib/erros-humanos";
 import { registrarDevolucaoEpi, registrarEntregaEpi } from "@/lib/entrega-epi";
 import { ehErroDeRede, lerFila, sincronizarFila, type ItemDaFila } from "@/lib/fila-offline";
+import { useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
 
 const assinar = (aoMudar: () => void) => {
   window.addEventListener("online", aoMudar);
@@ -16,38 +17,43 @@ const assinar = (aoMudar: () => void) => {
 };
 export const useOnline = (): boolean => useSyncExternalStore(assinar, () => navigator.onLine, () => true);
 
-type PayloadEntrega = { devolucao: boolean; entrada: Parameters<typeof registrarEntregaEpi>[1]; responsavel: string; administrador: boolean };
+type PayloadEntrega = { dono: string; devolucao: boolean; entrada: Parameters<typeof registrarEntregaEpi>[1]; responsavel: string };
 
 // O que cada tipo da fila faz ao reenviar. Um tipo desconhecido (de uma versão mais nova do sistema) falha e fica na fila.
-async function enviar(item: ItemDaFila): Promise<void> {
+// O perfil de administrador vem da sessão ATUAL (nunca do que foi guardado): a devolução continua sendo só do Administrador.
+async function enviar(item: ItemDaFila, administrador: boolean): Promise<void> {
   if (item.tipo === "entrega-epi") {
     const p = item.payload as PayloadEntrega;
-    if (p.devolucao) await registrarDevolucaoEpi(supabase, { ...p.entrada, administrador: p.administrador, responsavel: p.responsavel });
+    if (p.devolucao) await registrarDevolucaoEpi(supabase, { ...p.entrada, administrador, responsavel: p.responsavel });
     else await registrarEntregaEpi(supabase, { ...p.entrada, responsavel: p.responsavel });
     return;
   }
   throw new Error(`Tipo de registro guardado não reconhecido: ${item.tipo}`);
 }
 
+// A fila é por usuário: só o dono do registro o reenvia, para o aparelho compartilhado não gravar em nome de outra pessoa.
+const doDono = (item: ItemDaFila, dono: string) => (item.payload as { dono?: string } | null)?.dono === dono;
+
 // Faixa fina no topo, só quando a rede cai (ou quando há registros guardados esperando); reenvia a fila sozinho quando a conexão volta.
 export function RedeEFila() {
   const online = useOnline();
   const queryClient = useQueryClient();
-  const { canOperate } = useAccess();
+  const { canOperate, isAdmin } = useAccess();
+  const dono = useDonoDosAtalhos();
   const [pendentes, setPendentes] = useState(() => lerFila().length);
   const enviando = useRef(false);
 
   const sincronizar = useCallback(async () => {
-    if (enviando.current || !navigator.onLine || lerFila().length === 0) return;
+    if (enviando.current || !navigator.onLine || !dono || lerFila().length === 0) return;
     enviando.current = true;
     try {
-      const r = await sincronizarFila(enviar, ehErroDeRede);
+      const r = await sincronizarFila((i) => enviar(i, isAdmin), ehErroDeRede, (i) => doDono(i, dono));
       if (r.enviados > 0) {
         toast.success(`${r.enviados} registro(s) guardado(s) sem rede foram enviados`);
         queryClient.invalidateQueries();
       }
       if (r.falhas > 0) {
-        for (const i of lerFila().filter((x) => x.tentativas > 0)) toast.error(`Não foi possível enviar: ${i.rotulo}`, { description: "Ele continua guardado. Confira o registro e tente de novo." });
+        for (const i of lerFila().filter((x) => x.tentativas > 0 && doDono(x, dono))) toast.error(`Não foi possível enviar: ${i.rotulo}`, { description: "Ele continua guardado. Confira o registro e tente de novo." });
       }
       setPendentes(r.restantes);
     } catch (erro) {
@@ -55,7 +61,7 @@ export function RedeEFila() {
     } finally {
       enviando.current = false;
     }
-  }, [queryClient]);
+  }, [queryClient, dono, isAdmin]);
 
   // Atualiza o contador quando outra aba mexe na fila e tenta enviar quando a rede volta (ou ao abrir, se já há fila).
   useEffect(() => {

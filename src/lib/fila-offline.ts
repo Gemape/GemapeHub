@@ -51,10 +51,12 @@ export type ResultadoSincronia = { enviados: number; falhas: number; restantes: 
 export async function sincronizarFila(
   enviar: (item: ItemDaFila) => Promise<void>,
   ehErroDeRede: (erro: unknown) => boolean,
+  // Só entram os itens que passam aqui (ex.: os do usuário atual); os demais ficam intocados na fila.
+  daVez: (item: ItemDaFila) => boolean = () => true,
 ): Promise<ResultadoSincronia> {
   let enviados = 0;
   let falhas = 0;
-  for (const item of ler()) {
+  for (const item of ler().filter(daVez)) {
     try {
       await enviar(item);
       removerDaFila(item.id);
