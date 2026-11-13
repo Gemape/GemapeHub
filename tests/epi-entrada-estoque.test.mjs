@@ -224,7 +224,7 @@ test("Registrar Compra: depois da empresa, busca por palavra-chave do EPI, em c�
   assert.match(compras, /<BuscaEpiCompra[\s\S]*itens=\{itens\.filter\(\(i\) => i\.empresa_id === empresaCompra\)\}/, "a lista é só dos EPIs da empresa escolhida");
   assert.match(compras, /<input type="hidden" name="item_id" value=\{itemSel\} \/>/);
   const busca = readFileSync(new URL("../src/components/modules/BuscaEpiCompra.tsx", import.meta.url), "utf8");
-  assert.match(busca, /combinaBusca\(busca, o\.codigo, o\.descricao, o\.rotuloTamanho, o\.ca\)/);
+  assert.match(busca, /combinaBuscaTolerante\(busca, o\.codigo, o\.descricao, o\.rotuloTamanho, o\.ca\)/);
   assert.match(busca, /opcoesTamanhoEntrada\(parametros, "epi", i\)/, "uma linha por tamanho autorizado");
   const devolucao = readFileSync(new URL("../src/components/modules/DevolucaoEpiDialog.tsx", import.meta.url), "utf8");
   assert.match(devolucao, /lerMotivosDevolucaoEpi\(\)/);

@@ -1,3 +1,4 @@
+import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { avisarComDesfazer } from "@/lib/toast-desfazer";
@@ -162,6 +163,7 @@ export function UniformesTermoBaixa() {
       })) as never);
       if (error) throw error;
       queryClient.invalidateQueries();
+      avisarOutrasAbas();
     });
     // Limpa a lista para um segundo clique não registrar a mesma baixa de novo.
     const itensDoTermo = itensBaixa;

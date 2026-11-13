@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SeletorComBusca } from "@/components/SeletorComBusca";
+import { ColarPlanilhaDialog } from "@/components/modules/ColarPlanilhaDialog";
 import { CompraFerramentaDialog } from "@/components/modules/CompraFerramentaDialog";
 import { DevolucaoFerramentaDialog } from "@/components/modules/DevolucaoFerramentaDialog";
 import { Label } from "@/components/ui/label";
@@ -104,6 +105,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
   const [aberto, setAberto] = useState(false);
   const [devolucaoAberta, setDevolucaoAberta] = useState(false);
   const [compraAberta, setCompraAberta] = useState(false);
+  const [colarAberto, setColarAberto] = useState(false);
   // Entrada no estoque: Compras e Devoluções em listas separadas, um botão para cada (decisão 380).
   const [visao, setVisao] = useState<"compras" | "devolucoes">("compras");
   const [comOcorrencia, setComOcorrencia] = useState(false);
@@ -312,6 +314,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
             Exportar CSV
           </Button>
           {modulo === "ferramenta" && <ImportarNfeXml />}
+          {soEntrada && modulo === "ferramenta" && <Button requiresWrite="operar" variant="outline" onClick={() => setColarAberto(true)}>Colar da planilha</Button>}
           {soEntrada && <Button requiresWrite="operar" variant="outline" onClick={() => setDevolucaoAberta(true)}>Devolução</Button>}
           <Button requiresWrite="operar"
             onClick={() => {
@@ -719,6 +722,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           </form>
         </DialogContent>
       </Dialog>
+      {soEntrada && modulo === "ferramenta" && colarAberto && <ColarPlanilhaDialog aberto={colarAberto} onAbertoMudou={setColarAberto} />}
       {soEntrada && compraAberta && <CompraFerramentaDialog aberto={compraAberta} onAbrirMudou={setCompraAberta} />}
       {soEntrada && devolucaoAberta && <DevolucaoFerramentaDialog aberto={devolucaoAberta} onAbrirMudou={setDevolucaoAberta} />}
     </div>

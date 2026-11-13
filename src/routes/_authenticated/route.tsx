@@ -4,6 +4,8 @@ import { lazy, Suspense, useEffect } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 
 import { RedeEFila } from "@/components/layout/RedeEFila";
+import { ReceptorGlobal } from "@/components/layout/ReceptorGlobal";
+import { SincroniaAbas } from "@/components/layout/SincroniaAbas";
 import { ConsultaRapida } from "@/components/layout/ConsultaRapida";
 import { RegistraRecente } from "@/components/inicio/atalhosPessoais";
 import { TrocaDeModulo, TrilhaDeNavegacao } from "@/components/layout/NavegacaoRapida";
@@ -168,6 +170,8 @@ function LayoutAutenticado() {
           <VisualizadorDocumento />
           <ConsultaRapida />
           <RedeEFila />
+          <SincroniaAbas />
+          <ReceptorGlobal />
         </main>
       </SidebarProvider>
     </EmpresaProvider></AccessProvider>

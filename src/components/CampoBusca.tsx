@@ -3,7 +3,7 @@ import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { combinaBusca } from "@/lib/parametros-base";
+import { combinaBuscaTolerante } from "@/lib/busca-tolerante";
 import { cn } from "@/lib/utils";
 
 export type OpcaoBusca = { valor: string; rotulo: string; detalhe?: string };
@@ -38,7 +38,7 @@ export function CampoBusca({
   const [aberto, setAberto] = useState(false);
   const listaId = useId();
   const selecionada = opcoes.find((o) => o.valor === valor);
-  const encontradas = opcoes.filter((o) => combinaBusca(termo, o.rotulo, o.detalhe)).slice(0, 8);
+  const encontradas = opcoes.filter((o) => combinaBuscaTolerante(termo, o.rotulo, o.detalhe)).slice(0, 8);
 
   if (selecionada) {
     return (

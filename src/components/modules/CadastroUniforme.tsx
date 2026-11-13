@@ -1,3 +1,4 @@
+import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { exportarCsv } from "@/lib/gemape";
@@ -156,6 +157,7 @@ function CatalogoUniforme() {
       const { error } = await cliente.from("uniformes_catalogo").insert({ id: crypto.randomUUID(), ...registro });
       if (error) throw error;
       await queryClient.invalidateQueries();
+      avisarOutrasAbas();
       toast.success(`Uniforme ${registro.codigo_sku} cadastrado`);
       depois();
     } catch (erro) {
@@ -183,6 +185,7 @@ function CatalogoUniforme() {
       const { error } = await (supabase as unknown as { rpc: (n: string, a: Linha) => Promise<{ error: Error | null }> }).rpc(nome, { p_id: id, ...(valores ? { p_valores: valores } : {}) });
       if (error) throw error;
       await queryClient.invalidateQueries();
+      avisarOutrasAbas();
       toast.success(sucesso);
       depois?.();
     } catch (erro) {

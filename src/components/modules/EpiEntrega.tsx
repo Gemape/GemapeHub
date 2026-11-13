@@ -1,3 +1,4 @@
+import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
 import { mensagemHumana, mensagemValidadeVencida } from "@/lib/erros-humanos";
 import { ehErroDeRede, enfileirar } from "@/lib/fila-offline";
@@ -199,6 +200,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
         ? await registrarDevolucaoEpi(supabase, { ...entrada, administrador: isAdmin, responsavel })
         : await registrarEntregaEpi(supabase, { ...entrada, responsavel });
       queryClient.invalidateQueries();
+      avisarOutrasAbas();
       toast.success(devolucao ? "Devolução registrada" : "Entrega registrada", { description: r.codigos.join(", ") || undefined });
       for (const a of r.alertas) toast.warning(`${a.nome} chegou ao estoque mínimo`, { description: `Saldo ${a.saldo} de mínimo ${a.minimo}.` });
       if (!devolucao) {

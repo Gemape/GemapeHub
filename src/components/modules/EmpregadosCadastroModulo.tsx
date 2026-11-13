@@ -1,3 +1,7 @@
+import { useAvisoNaoSalvo } from "@/lib/use-aviso-nao-salvo";
+import { NomeComResumo } from "@/components/GavetaResumo";
+import { GavetaEmpregado } from "@/components/modules/GavetasDeResumo";
+import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { AvisoEdicaoSimultanea } from "@/components/AvisoEdicaoSimultanea";
 import { validarCpfCampo, validarMatriculaCampo } from "@/lib/validacao-campos";
 import { BlocoEsqueleto } from "@/components/Esqueletos";
@@ -62,6 +66,8 @@ type EmpregadoCadastro = Empregado & { email?: string | null };
 export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { direto?: boolean; aoConcluir?: () => void } = {}) {
   const { empresas, empresaId } = useEmpresa();
   const [aberto, setAberto] = useState(false);
+  const [resumo, setResumo] = useState<EmpregadoCadastro | null>(null);
+  const aviso = useAvisoNaoSalvo(aberto);
   const [editando, setEditando] = useState<EmpregadoCadastro | null>(null);
   // Clonar: dados do empregado de origem num cadastro NOVO (todos os campos copiados, decisão 138).
   const [modelo, setModelo] = useState<EmpregadoCadastro | null>(null);
@@ -242,6 +248,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             nomeEmpresa={nomeEmpresa}
             onClonar={(e) => abrir(e, true)}
             onEditar={(e) => abrir(e)}
+            onResumo={setResumo}
             onExcluir={(e) => {
               if (confirm(`Excluir ${e.nome}?`)) excluir.mutate(e.id);
             }}
@@ -254,6 +261,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             nomeEmpresa={nomeEmpresa}
             onClonar={(e) => abrir(e, true)}
             onEditar={(e) => abrir(e)}
+            onResumo={setResumo}
             onExcluir={(e) => {
               if (confirm(`Excluir ${e.nome}?`)) excluir.mutate(e.id);
             }}
@@ -287,6 +295,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                   if (error) throw error;
                   if (configAntes) salvarConfig(localStorage, configAntes);
                   queryClient.invalidateQueries();
+                  avisarOutrasAbas();
                 });
               },
             },
@@ -294,14 +303,15 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
         }}
       />
 
-      <Dialog open={aberto} onOpenChange={setAberto}>
+      <GavetaEmpregado empregado={resumo} aoFechar={() => setResumo(null)} aoAbrirFicha={() => { if (resumo) abrir(resumo); }} />
+      <Dialog open={aberto} onOpenChange={aviso.aoMudarAberto(setAberto)}>
         <DialogContent telaCheia className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{editando ? "Editar empregado" : modelo && !ehExemplo(modelo) ? "Clonar empregado" : "Novo empregado"}</DialogTitle>
             <DialogDescription>Dados do empregado.</DialogDescription>
           </DialogHeader>
           <AvisoEdicaoSimultanea chave={editando ? `empregado:${editando.id}` : null} />
-          <form onSubmit={(e) => void enviar(e)} className="grid gap-4 sm:grid-cols-2">
+          <form onSubmit={(e) => void enviar(e)} onInput={aviso.aoAlterar} onChange={aviso.aoAlterar} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Nome completo</Label>
               <Input id="nome" name="nome" capitalizar="nome" aria-required defaultValue={base?.nome ?? ""} />
@@ -385,7 +395,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
               Termo de Encerramento de ferramentas (devolução na saída) continua liberado.
             </p>
             <DialogFooter className="sm:col-span-2">
-              <Button type="button" variant="outline" onClick={() => setAberto(false)}>
+              <Button type="button" variant="outline" onClick={() => aviso.aoMudarAberto(setAberto)(false)}>
                 Cancelar
               </Button>
               <Button requiresWrite type="submit" disabled={salvar.isPending}>
@@ -406,6 +416,7 @@ function BlocoEmpregados({
   nomeEmpresa,
   onClonar,
   onEditar,
+  onResumo,
   onExcluir,
   onDemitir,
 }: {
@@ -415,6 +426,7 @@ function BlocoEmpregados({
   nomeEmpresa: (id: string | null) => string;
   onClonar: (e: EmpregadoCadastro) => void;
   onEditar: (e: EmpregadoCadastro) => void;
+  onResumo: (e: EmpregadoCadastro) => void;
   onExcluir: (e: EmpregadoCadastro) => void;
   onDemitir?: (e: EmpregadoCadastro) => void;
 }) {
@@ -446,7 +458,14 @@ function BlocoEmpregados({
             ) : (
               lista.map((e) => (
                 <TableRow key={e.id}>
-                  <TableCell className="font-medium">{e.nome}</TableCell>
+                  <TableCell>
+                    <NomeComResumo rotulo={e.nome} aoAbrir={() => onResumo(e)} cartao={<>
+                      <p className="font-semibold">{e.nome}</p>
+                      <p className="text-muted-foreground">{e.cargo || "Cargo não informado"}</p>
+                      <p className="text-xs text-muted-foreground">Matrícula {e.matricula ?? "—"} · {nomeEmpresa(e.empresa_id)}</p>
+                      <p className="text-xs">{e.data_demissao ? `Desligado em ${formatarData(e.data_demissao)}` : "Ativo"}</p>
+                    </>}>{e.nome}</NomeComResumo>
+                  </TableCell>
                   <TableCell className="whitespace-nowrap">{e.cpf}</TableCell>
                   <TableCell>{e.matricula ?? "—"}</TableCell>
                   <TableCell>{nomeEmpresa(e.empresa_id)}</TableCell>

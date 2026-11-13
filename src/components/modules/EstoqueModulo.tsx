@@ -13,13 +13,15 @@ import { estadoEstoqueModulo } from '@/lib/estoque-tamanho';
 import { useCaixasFerramentas, useEmpregados, useEmpresas, useMovimentacoes, useSalvar, useTodosCaixaItens } from '@/lib/hooks-gemape';
 import { controleDaFerramenta } from '@/lib/controle-caixa';
 import { posicaoDasFerramentas, type PosicaoDaFerramenta } from '@/lib/estoque-ferramentas-posicao';
-import { combinaBusca } from '@/lib/parametros-base';
+import { combinaBuscaTolerante } from '@/lib/busca-tolerante';
 import { useParametrosBase } from '@/lib/use-parametros-base';
 import { BarraDeFiltros } from '@/components/layout/BarraDeFiltros';
 import { MinimoEditavel } from '@/components/modules/MinimoEditavel';
 import { ExtratoFerramenta, type AlvoDoExtrato } from '@/components/modules/ExtratoFerramenta';
 import { ControleEstoqueModulo } from '@/components/modules/ControleEstoqueModulo';
 import { Button } from '@/components/ui/button';
+import { NomeComResumo } from '@/components/GavetaResumo';
+import { GavetaItemMovimentado } from '@/components/modules/GavetasDeResumo';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -48,6 +50,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
   const { data: empresas = [] } = useEmpresas();
   const { data: empregados = [] } = useEmpregados(TODAS);
   const [extrato, setExtrato] = useState<AlvoDoExtrato | null>(null);
+  const [resumo, setResumo] = useState<{ id: string; nome: string; empresa: string | null; codigo: string | null } | null>(null);
   // Dec 238: o estoque é por empresa; cada linha diz de qual empresa é, para o mesmo código não parecer repetido.
   const nomeDaEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome_fantasia ?? '—';
   const posicoes = useMemo(
@@ -72,7 +75,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
   };
   const codigoDaCaixa = (id: string | null) => caixas.find((c) => c.id === id)?.codigo ?? '—';
   const linhas = itens
-    .filter((item) => combinaBusca(busca, item.codigo_sku, item.nome, nomeDaEmpresa(item.empresa_id)))
+    .filter((item) => combinaBuscaTolerante(busca, item.codigo_sku, item.nome, nomeDaEmpresa(item.empresa_id)))
     .map((item) => ({ item, estado: estadoEstoqueModulo(parametros, modulo, item) }));
   // Estoque mínimo editado no próprio campo da tabela, como no Estoque de EPIs e uniformes (decisão 416): sem botão nem janela.
   function gravarMinimo(item: (typeof itens)[number], texto: string): boolean {
@@ -146,7 +149,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
               : linhas.length === 0 ? <TableRow><TableCell colSpan={ferr ? 12 : 6}>{busca.trim() ? 'Nenhum item para a busca.' : 'Nenhum item cadastrado.'}</TableCell></TableRow>
                 : linhas.map(({ item, estado }) => <TableRow key={item.id} {...(ferr ? linhaClicavel(() => setExtrato({ titulo: `${item.codigo_sku ?? ''} · ${item.nome} (${nomeDaEmpresa(item.empresa_id)})`, ids: [item.id] })) : {})}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
-                  <TableCell>{item.nome}</TableCell>
+                  <TableCell>{ferr ? <NomeComResumo rotulo={item.nome} aoAbrir={() => setResumo({ id: item.id, nome: item.nome, empresa: item.empresa_id, codigo: item.codigo_sku })}>{item.nome}</NomeComResumo> : item.nome}</TableCell>
                   <TableCell>{nomeDaEmpresa(item.empresa_id)}</TableCell>
                   {ferr && <>
                     <TableCell className="font-mono text-xs">{codigoDaCaixa(posicoes.get(item.id)?.caixaId ?? null)}</TableCell>
@@ -168,6 +171,18 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
           </TableBody>
         </Table>
       </div>}
+      {ferr && <GavetaItemMovimentado
+        modulo="ferramenta"
+        alvo={resumo ? { id: resumo.id, campo: "item_id", titulo: resumo.nome, subtitulo: `${resumo.codigo ?? "—"} · ${nomeDaEmpresa(resumo.empresa)}`, indicadores: [
+          { rotulo: "Saldo", valor: posicoes.get(resumo.id)?.saldo ?? 0 },
+          { rotulo: "Guardada na caixa", valor: posicoes.get(resumo.id)?.guardada ?? 0 },
+          { rotulo: "Com empregado", valor: posicoes.get(resumo.id)?.comEmpregado ?? 0 },
+          { rotulo: "Sem caixa", valor: posicoes.get(resumo.id)?.semCaixa ?? 0, alerta: (posicoes.get(resumo.id)?.semCaixa ?? 0) < 0 },
+        ] } : null}
+        aoFechar={() => setResumo(null)}
+        aoAbrirFicha={() => { if (resumo) setExtrato({ titulo: `${resumo.codigo ?? ''} · ${resumo.nome} (${nomeDaEmpresa(resumo.empresa)})`, ids: [resumo.id] }); }}
+        rotuloFicha="Abrir extrato completo"
+      />}
       {ferr && <ExtratoFerramenta alvo={extrato} movimentos={movimentos} saldo={(extrato?.ids ?? []).reduce((t, id) => t + (posicoes.get(id)?.saldo ?? 0), 0)} onde={ondeEsta(extrato?.ids ?? [])} nomeEmpregado={(id) => empregados.find((e) => e.id === id)?.nome ?? 'Empregado não encontrado'} empresa={empresaId === TODAS ? 'Todas as empresas' : nomeDaEmpresa(empresaId)} onFechar={() => setExtrato(null)} />}
       {ferr && !porPosicao && <PosicaoPorCaixa caixas={caixas.filter((c) => itens.some((i) => i.empresa_id === c.empresa_id) || empresaId === TODAS)} itensDeCaixa={itensDeCaixa} itens={itens} posicoes={posicoes} />}
       {modulo !== 'ferramenta' && <ControleEstoqueModulo modulo={modulo} />}

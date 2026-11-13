@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { opcoesTamanhoEntrada } from "@/lib/estoque-tamanho";
 import type { Item } from "@/lib/hooks-gemape";
-import { combinaBusca, type ParametrosBase } from "@/lib/parametros-base";
+import { combinaBuscaTolerante } from "@/lib/busca-tolerante";
+import { type ParametrosBase } from "@/lib/parametros-base";
 
 // Escolha do EPI da compra (decisão 351): depois de escolher a empresa, uma busca por palavra-chave (código, descrição, tamanho ou CA) filtra a lista; cada EPI aparece como código + descrição +
 // tamanho, uma linha por tamanho autorizado (EPI sem tamanho, uma linha só). Escolher a linha já define o EPI e o tamanho da compra.
@@ -40,7 +41,7 @@ export function BuscaEpiCompra({
 }) {
   const [busca, setBusca] = useState("");
   const opcoes = useMemo(() => opcoesDeEpi(itens, parametros), [itens, parametros]);
-  const filtradas = opcoes.filter((o) => combinaBusca(busca, o.codigo, o.descricao, o.rotuloTamanho, o.ca));
+  const filtradas = opcoes.filter((o) => combinaBuscaTolerante(busca, o.codigo, o.descricao, o.rotuloTamanho, o.ca));
   return (
     <div className="space-y-1.5 sm:col-span-2">
       <Label htmlFor="busca_epi">EPI</Label>

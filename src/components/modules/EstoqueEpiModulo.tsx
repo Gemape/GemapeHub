@@ -29,6 +29,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { useEmpresa } from "@/lib/empresa-context";
 import { hojeLocal } from "@/lib/empregados";
+import { CartaoDoNome } from "@/components/GavetaResumo";
+import { situacaoDoCa } from "@/lib/peek";
 import { controleDeEstoque } from "@/lib/epi-controle-estoque";
 import {
   filtrarEstoqueEpi,
@@ -311,7 +313,13 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               lista.map((l) => (
                 <TableRow key={l.chave}>
                   <TableCell className="font-mono text-xs">{l.codigo}</TableCell>
-                  <TableCell>{l.descricao}</TableCell>
+                  <TableCell>
+                    {modulo === "epi" ? (() => {
+                      const item = itens.find((i) => i.id === l.itemId) as { ca_validade?: string | null } | undefined;
+                      const ca = situacaoDoCa(item?.ca_validade ?? null, hojeLocal());
+                      return <CartaoDoNome titulo={l.descricao} aviso={ca.avisar}><p>CA {l.ca || "—"}</p><p className={ca.avisar ? "font-medium text-destructive" : "text-muted-foreground"}>{ca.texto}</p></CartaoDoNome>;
+                    })() : l.descricao}
+                  </TableCell>
                   <TableCell>{nomeDaEmpresa(l.empresaId)}</TableCell>
                   <TableCell>{l.dataCompra ? formatarData(l.dataCompra) : "—"}</TableCell>
                   <TableCell>{l.nf || "—"}</TableCell>
