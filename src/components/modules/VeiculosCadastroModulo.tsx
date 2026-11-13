@@ -1,3 +1,5 @@
+import { AvisoEdicaoSimultanea } from "@/components/AvisoEdicaoSimultanea";
+import { validarPlacaCampo } from "@/lib/validacao-campos";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useRef, useState } from "react";
@@ -121,6 +123,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
   const kmAtualDe = (v: { id: string; quilometragem_atual?: number | null }) => Math.max(v.quilometragem_atual ?? 0, kmDosRegistros(v.id));
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
+  const [erroPlaca, setErroPlaca] = useState<string | null>(null);
   const [editando, setEditando] = useState<VeiculoCadastro | null>(null);
   // Clonar: veículo de origem que só preenche o formulário de novo cadastro.
   const [origem, setOrigem] = useState<VeiculoCadastro | null>(null);
@@ -221,6 +224,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
     // Clonar começa com a mesma sigla do original; senão, a padrão da categoria.
     const siglaInicial = clonar ? siglaDoCodigo(parametros.regrasCodigo, CATEGORIA_VEICULO, clonar.codigo_sku) : "";
     setSiglaSel(siglaInicial);
+    setErroPlaca(null);
     setAberto(true);
     await calcularPrevia(regraDoCadastro(parametros.regrasCodigo, CATEGORIA_VEICULO, siglaInicial));
   }
@@ -531,6 +535,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
                 : "O código é gerado automaticamente ao salvar, pela regra de Cadastros > Gerais > Código do Produto."}
             </DialogDescription>
           </DialogHeader>
+          <AvisoEdicaoSimultanea chave={editando ? `veiculo:${editando.id}` : null} />
           <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="codigo_sku">Código</Label>
@@ -585,7 +590,17 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
                   defaultValue={base ? formatarPlaca(base.placa) : ""}
                   placeholder="ABC-1234 ou ABC1D23"
                   className="uppercase"
+                  aria-invalid={erroPlaca ? true : undefined}
+                  aria-describedby={erroPlaca ? "placa-erro" : undefined}
+                  onChange={() => setErroPlaca(null)}
+                  // Confere ao sair do campo (formato e placa já cadastrada), sem esperar o Salvar.
+                  onBlur={(ev) => {
+                    const valor = ev.target.value;
+                    if (!valor.trim()) { setErroPlaca(null); return; }
+                    void todosVeiculos().then((todos) => setErroPlaca(validarPlacaCampo(valor, todos, editando ?? undefined)), () => setErroPlaca(validarPlacaCampo(valor, [], editando ?? undefined)));
+                  }}
                 />
+                {erroPlaca && <p id="placa-erro" role="alert" className="text-xs font-medium text-destructive">{erroPlaca}</p>}
               </div>
             )}
             <div className="space-y-1.5">

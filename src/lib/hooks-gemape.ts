@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { mensagemHumana } from "./erros-humanos.ts";
+import { avisarComDesfazer } from "./toast-desfazer.ts";
 
 import { supabase } from "@/integrations/supabase/client";
 import { TOTAL_CAIXAS } from "@/lib/caixas-habilitadas";
@@ -411,7 +413,7 @@ export function useSalvarCaixa() {
       queryClient.invalidateQueries({ queryKey: ["caixa_ferramenta_itens"] });
       toast.success("Caixa de ferramentas salva");
     },
-    onError: (erro: Error) => toast.error("Erro ao salvar caixa", { description: erro.message }),
+    onError: (erro: Error) => toast.error("Erro ao salvar caixa", { description: mensagemHumana(erro) }),
   });
 }
 
@@ -478,11 +480,12 @@ export function useSalvar(tabela: Tabela, chaves: string[]) {
       for (const chave of chaves) queryClient.invalidateQueries({ queryKey: [chave] });
       toast.success("Registro salvo");
     },
-    onError: (erro: Error) => toast.error("Não foi possível salvar", { description: erro.message }),
+    onError: (erro: Error) => toast.error("Não foi possível salvar", { description: mensagemHumana(erro) }),
   });
 }
 
-export function useRegistrarMovimentacoesLote(chaves: string[]) {
+// `avisar: false` quando a tela mostra o próprio aviso (por exemplo, com o botão Desfazer).
+export function useRegistrarMovimentacoesLote(chaves: string[], avisar = true) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (movimentacoes: Record<string, unknown>[]) => {
@@ -492,25 +495,39 @@ export function useRegistrarMovimentacoesLote(chaves: string[]) {
     onSuccess: () => {
       queryClient.invalidateQueries();
       for (const chave of chaves) queryClient.invalidateQueries({ queryKey: [chave] });
-      toast.success("Movimentação registrada com sucesso");
+      if (avisar) toast.success("Movimentação registrada com sucesso");
     },
-    onError: (erro: Error) => toast.error("Falha ao registrar movimentação", { description: erro.message }),
+    onError: (erro: Error) => toast.error("Falha ao registrar movimentação", { description: mensagemHumana(erro) }),
   });
 }
 
 export function useExcluir(tabela: Tabela, chaves: string[]) {
   const queryClient = useQueryClient();
+  const atualizar = () => {
+    queryClient.invalidateQueries();
+    for (const chave of chaves) queryClient.invalidateQueries({ queryKey: [chave] });
+  };
   return useMutation({
+    // Guarda a linha inteira antes de apagar: é o que o botão Desfazer devolve (com o mesmo id).
     mutationFn: async (id: string) => {
+      const { data: antes } = await supabase.from(tabela).select("*").eq("id", id).maybeSingle();
       const { error } = await supabase.from(tabela).delete().eq("id", id);
       if (error) throw error;
+      return antes as Record<string, unknown> | null;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries();
-      for (const chave of chaves) queryClient.invalidateQueries({ queryKey: [chave] });
-      toast.success("Registro excluído");
+    onSuccess: (antes) => {
+      atualizar();
+      if (!antes) {
+        toast.success("Registro excluído");
+        return;
+      }
+      avisarComDesfazer("Registro excluído", { descricao: "Se havia registros ligados a ele, o Desfazer não os traz de volta." }, async () => {
+        const { error } = await supabase.from(tabela).insert(antes as never);
+        if (error) throw error;
+        atualizar();
+      });
     },
     onError: (erro: Error) =>
-      toast.error("Não foi possível excluir", { description: erro.message }),
+      toast.error("Não foi possível excluir", { description: mensagemHumana(erro) }),
   });
 }

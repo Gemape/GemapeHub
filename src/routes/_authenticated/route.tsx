@@ -3,6 +3,7 @@ import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } 
 import { lazy, Suspense, useEffect } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 
+import { RedeEFila } from "@/components/layout/RedeEFila";
 import { ConsultaRapida } from "@/components/layout/ConsultaRapida";
 import { RegistraRecente } from "@/components/inicio/atalhosPessoais";
 import { TrocaDeModulo, TrilhaDeNavegacao } from "@/components/layout/NavegacaoRapida";
@@ -123,6 +124,7 @@ function LayoutAutenticado() {
     <AccessProvider perfil={perfil}><EmpresaProvider>
       <SidebarProvider>
         <main className="layout-app flex min-h-screen w-full min-w-0 flex-col">
+          <a href="#conteudo-principal" className="sr-only z-[80] rounded-md bg-background px-3 py-2 text-sm font-medium shadow-lg focus:not-sr-only focus:fixed focus:left-3 focus:top-3">Pular para o conteúdo</a>
           <header className="layout-cabecalho z-10 grid md:sticky md:top-0 grid-cols-1 items-center gap-x-3 gap-y-2 glass border-x-0 border-t-0 px-3 py-3 rounded-none sm:px-4 sm:py-5 md:grid-cols-[auto_1fr_auto] min-[1760px]:grid-cols-[1fr_auto_1fr]!">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {!noInicio && <TrocaDeModulo />}
@@ -158,13 +160,14 @@ function LayoutAutenticado() {
               </Button></>}
             </div>
           </header>
-          <div className="min-w-0 flex-1 p-3 sm:p-4 md:p-6">
+          <div id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 p-3 outline-none sm:p-4 md:p-6">
             <TrilhaDeNavegacao />
             <div key={telaAtual} className="pagina-entra"><ConteudoComAcesso /></div>
             <RegistraRecente />
           </div>
           <VisualizadorDocumento />
           <ConsultaRapida />
+          <RedeEFila />
         </main>
       </SidebarProvider>
     </EmpresaProvider></AccessProvider>
