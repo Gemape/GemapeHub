@@ -1,3 +1,4 @@
+import { AvisoSemelhantes } from "@/components/AvisoSemelhantes";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Link } from "@tanstack/react-router";
@@ -623,6 +624,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                 defaultValue={base?.nome ?? ""}
                 placeholder={`Ex.: ${config.exemplo}`}
               />
+              <AvisoSemelhantes campoId="nome" alvo={config.modulo} ignorarId={editando?.id ?? null} />
             </div>
             {(unidades.length > 0 || unidadeLegada || unidadeForaDaSub) && (
               <div className="space-y-1.5">

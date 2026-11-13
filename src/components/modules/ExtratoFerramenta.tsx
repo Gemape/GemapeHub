@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PONTO_TELA, TEXTO_TELA } from '@/components/modules/ExtratoVeiculo';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AtalhoPeriodo } from "@/components/AtalhoPeriodo";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,11 +11,15 @@ import { montarExtratoHtml, type Celula, type TabelaExtrato } from '@/lib/extrat
 import { formatarData } from '@/lib/gemape';
 import { ehBaixa } from '@/lib/historico-movimentacoes';
 import { imprimirDocumento } from '@/lib/visualizador-documento';
+import { LinhaDoTempo } from '@/components/LinhaDoTempo';
+import { eventosDoTempo } from '@/lib/linha-do-tempo';
 
 // Extrato da ferramenta (Ferramentas > Estoque), na mesma lógica do extrato do veículo: período, resumo, posição de hoje (caixa, empregado, sem caixa),
 // as movimentações do período e o PDF. Com a ferramenta repetida em mais de uma empresa, os números são a soma delas.
+// A segunda tabela (índice 1) é a das movimentações; a linha do tempo a substitui até o operador pedir a tabela.
+const INDICE_MOVIMENTACOES = 1;
 export type AlvoDoExtrato = { titulo: string; ids: string[] };
-type Movimento = { item_id: string | null; tipo_movimentacao: string; empregado_id: string | null; motivo_baixa: string | null; quantidade: number | null; data_movimentacao: string; observacao: string | null };
+type Movimento = { id?: string; created_at?: string | null; sinalizar_ocorrencia?: boolean | null; tipo_ocorrencia?: string | null; item_id: string | null; tipo_movimentacao: string; empregado_id: string | null; motivo_baixa: string | null; quantidade: number | null; data_movimentacao: string; observacao: string | null };
 export type OndeEstaDados = { caixasDe: { codigo: string; quantidade: number }[]; comEmpregados: { nome: string; quantidade: number }[]; semCaixa: number; guardada: number };
 
 const tipoDoMovimento = (m: Movimento) => {
@@ -28,7 +33,8 @@ export function ExtratoFerramenta({ alvo, movimentos, saldo, onde, nomeEmpregado
 }) {
   const [inicio, setInicio] = useState('');
   const [fim, setFim] = useState('');
-  useEffect(() => { setInicio(''); setFim(''); }, [alvo?.titulo]);
+  const [emTabela, setEmTabela] = useState(false);
+  useEffect(() => { setInicio(''); setFim(''); setEmTabela(false); }, [alvo?.titulo]);
   const periodoInvalido = !!inicio && !!fim && inicio > fim;
   const tabelas = useMemo<TabelaExtrato[]>(() => {
     if (!alvo) return [];
@@ -53,6 +59,12 @@ export function ExtratoFerramenta({ alvo, movimentos, saldo, onde, nomeEmpregado
       },
     ];
   }, [alvo, movimentos, inicio, fim, onde, nomeEmpregado]);
+  // Linha do tempo: as mesmas movimentações do período, em eventos com ícone, hora e filtro (Entregas, Devoluções, Ocorrências).
+  const eventos = useMemo(() => {
+    if (!alvo) return [];
+    const doPeriodo = movimentos.filter((m) => m.item_id && alvo.ids.includes(m.item_id) && (!inicio || m.data_movimentacao >= inicio) && (!fim || m.data_movimentacao <= fim));
+    return eventosDoTempo(doPeriodo, { nomeDoItem: () => alvo.titulo, nomeDoEmpregado: (id) => nomeEmpregado(id ?? null), mostrarEmpregado: true });
+  }, [alvo, movimentos, inicio, fim, nomeEmpregado]);
   const resumo: [string, string][] = [
     ['Saldo no estoque', String(saldo)],
     ['Guardada nas caixas', String(onde.guardada)],
@@ -73,6 +85,7 @@ export function ExtratoFerramenta({ alvo, movimentos, saldo, onde, nomeEmpregado
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5"><Label htmlFor="extrato-fer-inicio" className="block text-center">Data início</Label><Input id="extrato-fer-inicio" type="date" className="w-40" value={inicio} max={fim || undefined} onChange={(e) => setInicio(e.target.value)} /></div>
           <div className="space-y-1.5"><Label htmlFor="extrato-fer-fim" className="block text-center">Data fim</Label><Input id="extrato-fer-fim" type="date" className="w-40" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} /></div>
+          <AtalhoPeriodo aoEscolher={(i, f) => { setInicio(i); setFim(f); }} />
           <p className="max-w-md text-xs text-muted-foreground">O período vale para as movimentações. A posição (caixa, empregado, sem caixa) mostra sempre a situação de hoje.</p>
           <Button type="button" className="ml-auto" disabled={periodoInvalido || !alvo} onClick={gerarPdf}>Gerar PDF</Button>
         </div>
@@ -82,7 +95,13 @@ export function ExtratoFerramenta({ alvo, movimentos, saldo, onde, nomeEmpregado
             <div className="grid gap-3 sm:grid-cols-3">
               {resumo.map(([rotulo, valor]) => <div key={rotulo} className="rounded-xl border bg-muted/30 p-3"><p className="text-eyebrow">{rotulo}</p><p className="mt-1 text-lg font-bold">{valor}</p></div>)}
             </div>
-            {tabelas.map((t, n) => (
+            {!emTabela && (
+              <section className="space-y-3" aria-label="Linha do tempo">
+                <div className="flex items-center justify-between gap-2"><h3 className="text-lg font-bold">Linha do tempo</h3><Button type="button" size="sm" variant="outline" onClick={() => setEmTabela(true)}>Ver movimentações em tabela</Button></div>
+                <LinhaDoTempo eventos={eventos} />
+              </section>
+            )}
+            {tabelas.map((t, n) => (!emTabela && n === INDICE_MOVIMENTACOES) ? null : (
               <section key={t.titulo} className="space-y-3" aria-label={t.titulo}>
                 <div className={`rounded-xl bg-gradient-to-r px-4 py-2.5 text-white shadow-sm ${n === 0 ? 'from-emerald-800 to-emerald-600' : 'from-blue-800 to-blue-600'}`}><h3 className="text-xl font-bold tracking-tight">{t.titulo}</h3></div>
                 <div className="overflow-x-auto rounded-xl border">
@@ -97,6 +116,7 @@ export function ExtratoFerramenta({ alvo, movimentos, saldo, onde, nomeEmpregado
                 </div>
               </section>
             ))}
+            {emTabela && <Button type="button" size="sm" variant="outline" onClick={() => setEmTabela(false)}>Ver linha do tempo</Button>}
           </div>
         )}
       </DialogContent>

@@ -1201,3 +1201,21 @@
 /* Acessibilidade e ergonomia: dígitos de largura fixa em tabelas e totais (quantidades e valores alinham na vertical),
    e o texto secundário (--muted-foreground) com contraste mínimo de 4,5:1 sobre o fundo claro (WCAG AA). */
 table, .tabular-nums, [data-numerico] { font-variant-numeric: tabular-nums; }
+
+/* Cartões de pendência do Início: a borda respira de leve para chamar a atenção (2 vezes, nunca sem parar; desligado com movimento reduzido). */
+/* Usa outline (e não box-shadow) para não esconder o anel de seleção e o de foco do teclado, que são box-shadow. */
+@keyframes pulso-atencao {
+  0%, 100% { outline: 2px solid transparent; outline-offset: 0; }
+  50% { outline: 2px solid currentColor; outline-offset: 3px; }
+}
+@keyframes pulso-icone {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.6; }
+}
+
+/* Densidade das tabelas (ver lib/densidade.ts): compacta cabe cerca de 25 linhas por tela; a confortável é o visual de sempre. No celular as linhas são cartões e não mudam. */
+@media (min-width: 640px) {
+  [data-densidade="compacta"] > table { font-size: 0.8125rem; }
+  [data-densidade="compacta"] td { padding-block: 0.125rem; }
+  [data-densidade="compacta"] th { height: 1.75rem; }
+}

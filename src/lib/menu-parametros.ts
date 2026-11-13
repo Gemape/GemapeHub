@@ -235,7 +235,7 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     compras: "Registra a entrada de uniformes no estoque (compra, nota fiscal ou devolução), com fornecedor, tamanho e valor.",
     entrega: "Lança a entrega de uniformes ao empregado, ou a devolução, e atualiza o saldo do estoque.",
     "termo-entrega": "Gera o termo de entrega de uniforme para o empregado assinar. O termo só documenta a entrega e não movimenta o estoque.",
-    "termo-baixa": "Gera o termo de baixa de uniforme do empregado, para documentar a baixa definitiva.",
+    "termo-baixa": "Gera o termo de baixa de uniforme do empregado, para documentar a baixa definitiva. É só um documento: não movimenta o estoque.",
     ocorrencias: OCORR,
     "sugestao-compras": "Indica o que comprar e em que quantidade, com base no consumo, no estoque e nos parâmetros de compra dos uniformes.",
     historico: "Mostra, por empregado, o que recebeu, devolveu e baixou e o que está em posse dele.",

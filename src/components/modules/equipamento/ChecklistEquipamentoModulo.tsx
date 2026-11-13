@@ -2,6 +2,9 @@ import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { BannerLancamentoAberto } from "@/components/BannerLancamentoAberto";
+import { maisRecenteEmAndamento } from "@/lib/lancamento-aberto";
+
 import { ChecklistPainelMensal, rotuloDoMes } from "@/components/modules/ChecklistPainelMensal";
 import { DialogAssociarChecklistEquipamento, DialogItensChecklistEquipamento } from "@/components/modules/equipamento/DialogosChecklistEquipamento";
 import { EquipamentoDialog } from "@/components/parametros/EquipamentoDialog";
@@ -243,10 +246,20 @@ export function ChecklistEquipamentoModulo({ finalidade }: { finalidade: Finalid
   const resumo = atual ? resumoChecklist(atual) : null;
   const grupos = atual ? [...new Set(atual.itens.map((i) => i.grupo))] : [];
   // O painel usa os mesmos campos do de Veículos: aqui o "veículo" é o equipamento.
+  const emAndamento = todosDaFinalidade.filter((c) => c.status === "Em andamento" && idsDaEmpresa.has(c.equipamentoId));
+  const pendente = maisRecenteEmAndamento(emAndamento);
+  const outrosPendentes = Math.max(0, emAndamento.length - 1);
   const paraPainel = todosDaFinalidade.filter(checklistVisivelNaListaEq).map((c) => ({ ...c, veiculoId: c.equipamentoId }));
 
   return (
     <div className="space-y-5">
+      {tela === null && pendente && (
+        <BannerLancamentoAberto
+          criadoEm={pendente.criadoEm} nome={nomeDe(pendente)} outros={outrosPendentes} podeDescartar={canWrite}
+          aoContinuar={() => setTela({ tipo: "check", id: pendente.id })}
+          aoDescartar={() => { executar(() => excluirChecklistEmAndamentoEq(pendente.id), "Check list descartado"); }}
+        />
+      )}
       <ChecklistPainelMensal
         previsoes={previsoes} checklists={paraPainel} idsDosVeiculos={idsDaEmpresa} hoje={hoje} onAbrirChecklist={(id) => setTela({ tipo: "check", id })}
         objeto="Equipamento" textoVazio={`Nenhum check list previsto: associe itens de check list aos equipamentos em Parâmetros > Equipamentos > ${titulo}.`}

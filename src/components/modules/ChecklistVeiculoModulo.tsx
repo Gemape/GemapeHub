@@ -2,6 +2,9 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useVoltarAoExtrato } from "@/lib/use-voltar-ao-extrato";
 import { CalendarCheck, ClipboardList } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+
+import { BannerLancamentoAberto } from "@/components/BannerLancamentoAberto";
+import { maisRecenteEmAndamento } from "@/lib/lancamento-aberto";
 import { gruposAvulsosDaAssociacao, gruposDaPeriodicidade, nomeDoChecklistAssociado } from "@/lib/checklist-associacao-veiculo";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { toast } from "sonner";
@@ -304,11 +307,22 @@ export function ChecklistVeiculoModulo() {
   }
 
   const andamento = atual?.status === "Em andamento";
+  // Retomada: o check list que ficou pela metade (a tela fechada, o telefone tocou) volta como aviso no alto da tela.
+  const emAndamento = checklists.filter((c) => c.status === "Em andamento");
+  const pendente = maisRecenteEmAndamento(emAndamento);
+  const outrosPendentes = Math.max(0, emAndamento.length - 1);
   const resumo = atual ? resumoChecklist(atual) : null;
   const grupos = atual ? [...new Set(atual.itens.map((i) => i.grupo))] : [];
 
   return (
     <div className="space-y-5">
+      {tela === null && aba === "painel" && pendente && (
+        <BannerLancamentoAberto
+          criadoEm={pendente.criadoEm} nome={nomeDe(pendente)} outros={outrosPendentes} podeDescartar={canWrite}
+          aoContinuar={() => setTela({ tipo: "check", id: pendente.id })}
+          aoDescartar={() => { executar(() => excluirChecklistEmAndamento(pendente.id), "Check list descartado"); }}
+        />
+      )}
       {aba === "painel" && (
         <>
           {/* Os dois tipos de check list são botões azuis no canto superior direito, na linha do período; a contagem de cada um vai dentro do botão. */}

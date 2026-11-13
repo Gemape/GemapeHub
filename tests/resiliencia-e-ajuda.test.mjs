@@ -97,7 +97,7 @@ test("a fila offline guarda, reenvia na ordem, para na queda de rede e mantém o
   assert.deepEqual(lerFila(), []);
 });
 
-test("o Desfazer fica de 5 a 8 segundos e as exclusões, desligamentos e baixas o usam", () => {
+test("o Desfazer fica de 5 a 8 segundos e as exclusões e os desligamentos o usam; o termo de baixa é só documental", () => {
   const t = ler("lib/toast-desfazer.ts");
   const ms = Number(t.match(/DURACAO_DESFAZER_MS = (\d+)/)[1]);
   assert.ok(ms >= 5000 && ms <= 8000, `${ms} ms`);
@@ -105,8 +105,9 @@ test("o Desfazer fica de 5 a 8 segundos e as exclusões, desligamentos e baixas 
   assert.match(ler("lib/hooks-gemape.ts"), /avisarComDesfazer\("Registro excluído"/);
   assert.match(ler("components/modules/EmpregadosCadastroModulo.tsx"), /avisarComDesfazer\(`\$\{alvo\.nome\} desligado/);
   const baixa = ler("components/modules/UniformesTermoBaixa.tsx");
-  assert.match(baixa, /avisarComDesfazer\("Baixa registrada"/);
-  assert.match(baixa, /tipo_movimentacao: "Entrada"/);
+  // Termo de baixa de uniforme: só gera o documento, não grava movimentação (então não há o que desfazer no estoque).
+  assert.doesNotMatch(baixa, /useRegistrarMovimentacoesLote|registrarBaixas|\.insert\(|tipo_movimentacao|avisarComDesfazer/);
+  assert.match(baixa, /não movimenta o estoque/);
 });
 
 test("a faixa de rede usa o texto pedido e fica no topo só quando há problema", () => {

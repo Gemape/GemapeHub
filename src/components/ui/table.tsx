@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { useDensidade } from "@/lib/densidade";
 import { cn } from "@/lib/utils";
 
 // No celular (abaixo de 640 px) cada linha vira um cartão: o rótulo de cada valor vem do cabeçalho da coluna
@@ -20,6 +21,7 @@ type TableProps = React.HTMLAttributes<HTMLTableElement> & { semCartoes?: boolea
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ({ className, semCartoes, ...props }, ref) => {
     const interna = React.useRef<HTMLTableElement | null>(null);
+    const densidade = useDensidade();
     React.useImperativeHandle(ref, () => interna.current as HTMLTableElement);
     React.useEffect(() => {
       const tabela = interna.current;
@@ -30,7 +32,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
       return () => observador.disconnect();
     }, [semCartoes]);
     return (
-      <div className={cn("relative w-full overflow-auto", !semCartoes && "tabela-cartoes")}>
+      <div data-densidade={densidade} className={cn("relative w-full overflow-auto", !semCartoes && "tabela-cartoes")}>
         <table ref={interna} className={cn("w-full caption-bottom text-sm", className)} {...props} />
       </div>
     );

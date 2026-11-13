@@ -1,3 +1,4 @@
+import { AvisoSemelhantes } from "@/components/AvisoSemelhantes";
 import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
@@ -366,6 +367,7 @@ function CatalogoEpi() {
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Descrição do item</Label>
               <Textarea id="nome" name="nome" capitalizar="texto" rows={2} defaultValue={clonando?.nome ?? ""} placeholder="Ex.: capacete de segurança em ABS de alto impacto" />
+              <AvisoSemelhantes campoId="nome" alvo="epi" ignorarId={editando?.id ?? null} />
             </div>
             {unidades.length > 0 && (
               <div className="space-y-1.5">
