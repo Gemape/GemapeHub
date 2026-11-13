@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
+import { AjudaTermo } from "@/components/AjudaTermo";
 import { ConfirmarFichaAvulsa } from "@/components/modules/ConfirmarFichaAvulsa";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -77,7 +78,7 @@ export function EpiFichaEpiAvulsa() {
     <div className="space-y-6">
       <div className="panel p-6 max-w-2xl mx-auto space-y-6">
         <div className="space-y-4">
-          <h3 className="text-lg font-bold">Gerar Ficha de EPI (Avulsa/Empregado)</h3>
+          <h3 className="flex items-center gap-1.5 text-lg font-bold">Gerar Ficha de EPI (Avulsa/Empregado)<AjudaTermo termo="Ficha de EPI Avulsa">Use para itens de consumo corriqueiro (luva, óculos, protetor). Itens de maior custo e durabilidade (botina, capacete, cinto) vão pelo Termo de Entrega.</AjudaTermo></h3>
           <p className="text-sm text-muted-foreground">
             Selecione o funcionário para gerar a ficha de controle de EPI completa com o histórico
             de movimentações.

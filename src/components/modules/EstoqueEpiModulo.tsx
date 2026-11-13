@@ -1,3 +1,4 @@
+import { AjudaTermo } from "@/components/AjudaTermo";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -288,7 +289,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
               <TableHead title="Fornecedores de todas as compras: somam no mesmo estoque">Fornecedor</TableHead>
               {modulo === "epi" && <TableHead>CA</TableHead>}
               <TableHead>Tamanho</TableHead>
-              <TableHead className="text-center">Estoque mínimo</TableHead>
+              <TableHead className="text-center">Estoque mínimo <AjudaTermo termo="Estoque mínimo (ponto de pedido)">Quando a quantidade disponível chega neste número, o sistema avisa que está na hora de comprar mais.</AjudaTermo></TableHead>
               <TableHead>Quantidade disponível</TableHead>
               <TableHead>Alerta</TableHead>
               <TableHead>Média de consumo mensal</TableHead>

@@ -3,6 +3,7 @@ import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } 
 import { lazy, Suspense, useEffect } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 
+import { ConsultaRapida } from "@/components/layout/ConsultaRapida";
 import { RegistraRecente } from "@/components/inicio/atalhosPessoais";
 import { TrocaDeModulo, TrilhaDeNavegacao } from "@/components/layout/NavegacaoRapida";
 import { MenuDaArea } from "@/components/layout/MenuDaArea";
@@ -86,7 +87,10 @@ function LayoutAutenticado() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // Sem menu lateral: tudo se acessa pelos cartões da tela inicial. Fora dela, o topo traz o botão de voltar ao início.
-  const noInicio = useRouterState({ select: (s) => s.location.pathname === "/inicio" });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Remonta só quando troca de tela (rota), não quando só muda o parâmetro da mesma tela: formulários e filtros não se perdem.
+  const telaAtual = useRouterState({ select: (s) => s.matches.at(-1)?.routeId ?? "" });
+  const noInicio = pathname === "/inicio";
 
   // Só na demonstração: aplica a aparência escolhida em Configurações (tema, cores, fonte, densidade, favicon). Na produção a condição é falsa e o código não é gerado.
   useEffect(() => {
@@ -156,10 +160,11 @@ function LayoutAutenticado() {
           </header>
           <div className="min-w-0 flex-1 p-3 sm:p-4 md:p-6">
             <TrilhaDeNavegacao />
-            <ConteudoComAcesso />
+            <div key={telaAtual} className="pagina-entra"><ConteudoComAcesso /></div>
             <RegistraRecente />
           </div>
           <VisualizadorDocumento />
+          <ConsultaRapida />
         </main>
       </SidebarProvider>
     </EmpresaProvider></AccessProvider>

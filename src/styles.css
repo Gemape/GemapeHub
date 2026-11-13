@@ -1189,3 +1189,11 @@
   :root[data-densidade="compacta"] table :is(td, th) { padding-top: 0.25rem; padding-bottom: 0.25rem; }
   :root[data-densidade="confortavel"] table :is(td, th) { padding-top: 0.875rem; padding-bottom: 0.875rem; }
 }
+
+/* Troca de tela: o conteúdo entra suave (só opacidade, sem transform, para não criar bloco de contenção). Sem movimento para quem pede menos animação. */
+@keyframes pagina-entra {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pagina-entra { animation: pagina-entra 0.2s ease-out backwards; }
+}

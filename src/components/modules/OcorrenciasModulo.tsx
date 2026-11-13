@@ -1,5 +1,6 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
+import { EstadoVazio } from "@/components/EstadoVazio";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -201,8 +202,10 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
               </TableRow>
             ) : ocorrencias.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
-                  {inicio || fim ? "Nenhuma ocorrência no período." : "Nenhuma ocorrência registrada."}
+                <TableCell colSpan={8}>
+                  {inicio || fim
+                    ? <EstadoVazio titulo="Nenhuma ocorrência no período." dica="Mude as datas ou limpe o período para ver as demais." acao="Limpar período" aoAcionar={() => { setInicio(""); setFim(""); }} />
+                    : <EstadoVazio titulo="Nenhuma ocorrência registrada." dica="Registre a primeira para começar o acompanhamento." acao="+ Registrar Primeira Ocorrência" aoAcionar={abrirNovo} />}
                 </TableCell>
               </TableRow>
             ) : (
