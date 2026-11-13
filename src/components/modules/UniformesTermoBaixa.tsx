@@ -1,9 +1,4 @@
-import { avisarOutrasAbas } from "@/lib/sincronia-abas";
-import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { avisarComDesfazer } from "@/lib/toast-desfazer";
-import { capitalizarTexto } from "@/lib/formatacao-cadastral";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,13 +25,11 @@ import {
   useEmpresas,
   useItens,
   useEmpregados,
-  useRegistrarMovimentacoesLote,
 } from "@/lib/hooks-gemape";
 import { bloqueioPorDemissao, hojeLocal } from "@/lib/empregados";
 import { SeletorTamanho, TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
-import { nomeTamanho, tamanhoParaGravar, validarLinhasTamanho } from "@/lib/estoque-tamanho";
+import { nomeTamanho, tamanhoParaGravar } from "@/lib/estoque-tamanho";
 import { useParametrosBase } from "@/lib/use-parametros-base";
-import { empregadoDoTermo, validarSaidaDeUniformes } from "@/lib/termos-atomicos";
 import { montarTermoBaixaUniformeHtml } from "@/lib/termo-baixa-uniforme-html";
 
 interface ItemBaixa {
@@ -63,10 +56,6 @@ export function UniformesTermoBaixa() {
   const { data: uniformes = [] } = useItens("uniforme", empresaId || TODAS);
   const parametros = useParametrosBase();
 
-  const registrarBaixas = useRegistrarMovimentacoesLote(["movimentacoes", "uniformes"], false);
-  const queryClient = useQueryClient();
-  const salvando = useRef(false);
-
   const empresa = empresas.find((e) => e.id === empresaId);
   const empregado = empregados.find((e) => e.id === empregadoId);
 
@@ -92,8 +81,8 @@ export function UniformesTermoBaixa() {
     );
   }
 
-  async function gerarTermo() {
-    if (salvando.current) return;
+  // O termo é só documental: gera o documento e NÃO grava movimentação, então o estoque não muda.
+  function gerarTermo() {
     if (!empresaId || itensBaixa.length === 0) {
       alert("Preencha os campos obrigatórios e adicione pelo menos um item.");
       return;
@@ -112,60 +101,7 @@ export function UniformesTermoBaixa() {
       return;
     }
 
-    // Não baixa mais do que o estoque disponível de cada uniforme.
-    // Com tamanho, a conta é feita no saldo de cada tamanho.
-    const erro =
-      validarSaidaDeUniformes(itensBaixa, uniformes, "baixa") ??
-      (TAMANHO_DISPONIVEL
-        ? validarLinhasTamanho(itensBaixa, uniformes, parametros, "uniforme", "baixa")
-        : null);
-    if (erro) {
-      alert(erro);
-      return;
-    }
-
-    // Registra todas as baixas de uma vez: ou entram todas, ou nenhuma.
-    salvando.current = true;
-    try {
-      await registrarBaixas.mutateAsync(
-        itensBaixa.map((item) => ({
-          modulo: "uniforme",
-          tipo_movimentacao: "Saida",
-          motivo_baixa: motivoBaixa,
-          onus_baixa: onusBaixa,
-          item_id: item.item_id,
-          empresa_id: empresaId,
-          empregado_id: empregadoDoTermo(empregadoId),
-          quantidade: item.quantidade,
-          ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
-          data_movimentacao: dataBaixa,
-          observacao: `Baixa de uniforme via termo - Motivo: ${motivoBaixa} - Obs: ${capitalizarTexto(item.observacao)}`,
-        })),
-      );
-    } catch {
-      // A falha já aparece no aviso da gravação.
-      return;
-    } finally {
-      salvando.current = false;
-    }
-    // Desfazer a baixa: devolve ao estoque com uma entrada igual (o histórico guarda a baixa e a correção, nada some).
-    avisarComDesfazer("Baixa registrada", async () => {
-      const { error } = await supabase.from("movimentacoes").insert(itensBaixa.map((item) => ({
-        modulo: "uniforme",
-        tipo_movimentacao: "Entrada",
-        item_id: item.item_id,
-        empresa_id: empresaId,
-        empregado_id: null,
-        quantidade: item.quantidade,
-        ...(TAMANHO_DISPONIVEL ? { tamanho_id: tamanhoParaGravar(item.tamanho) } : {}),
-        data_movimentacao: hojeLocal(),
-        observacao: "Baixa desfeita pelo operador",
-      })) as never);
-      if (error) throw error;
-      queryClient.invalidateQueries();
-      avisarOutrasAbas();
-    });
-    // Limpa a lista para um segundo clique não registrar a mesma baixa de novo.
+    // Limpa a lista depois de gerar, para o próximo termo começar vazio.
     const itensDoTermo = itensBaixa;
     setItensBaixa([]);
 
@@ -256,7 +192,10 @@ export function UniformesTermoBaixa() {
 
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-bold">Itens para Baixa Definitiva</h3>
+            <div>
+              <h3 className="font-bold">Itens para Baixa Definitiva</h3>
+              <p className="text-xs text-muted-foreground">Termo somente documental: gerar o termo não movimenta o estoque.</p>
+            </div>
             <Button variant="outline" size="sm" onClick={adicionarItem}>
               + Adicionar Item
             </Button>
@@ -358,7 +297,6 @@ export function UniformesTermoBaixa() {
             size="lg"
             variant="destructive"
             onClick={gerarTermo}
-            disabled={registrarBaixas.isPending}
           >
             Gerar Termo de Baixa
           </Button>

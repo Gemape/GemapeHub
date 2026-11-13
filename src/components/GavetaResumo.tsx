@@ -10,9 +10,9 @@ export type SecaoDaGaveta = { titulo: string; vazio: string; linhas: LinhaDaGave
 export type IndicadorDaGaveta = { rotulo: string; valor: string | number; alerta?: boolean };
 
 // Gaveta lateral de resumo (peek): o essencial do registro sem sair da lista. "Abrir ficha completa" leva a quem realmente precisa editar.
-export function GavetaResumo({ aberto, onAbertoMudou, titulo, subtitulo, indicadores, secoes, carregando = false, rotuloFicha = "Abrir ficha completa", aoAbrirFicha }: {
+export function GavetaResumo({ aberto, onAbertoMudou, titulo, subtitulo, indicadores, secoes, carregando = false, rotuloFicha = "Abrir ficha completa", aoAbrirFicha, aoAbrirLinhaDoTempo }: {
   aberto: boolean; onAbertoMudou: (aberto: boolean) => void; titulo: string; subtitulo?: string; indicadores: IndicadorDaGaveta[]; secoes: SecaoDaGaveta[];
-  carregando?: boolean; rotuloFicha?: string; aoAbrirFicha?: () => void;
+  carregando?: boolean; rotuloFicha?: string; aoAbrirFicha?: () => void; aoAbrirLinhaDoTempo?: () => void;
 }) {
   // A ficha completa abre num diálogo: só depois que a gaveta terminou de fechar (e devolveu o foco), para dois modais não ficarem um sobre o outro.
   const fichaPendente = useRef<(() => void) | null>(null);
@@ -54,7 +54,8 @@ export function GavetaResumo({ aberto, onAbertoMudou, titulo, subtitulo, indicad
                 ))}</ul>}
           </section>
         ))}
-        {aoAbrirFicha && <Button type="button" className="mt-auto" onClick={() => { fichaPendente.current = aoAbrirFicha; onAbertoMudou(false); }}>{rotuloFicha}</Button>}
+        {aoAbrirLinhaDoTempo && <Button type="button" variant="outline" className="mt-auto" onClick={() => { fichaPendente.current = aoAbrirLinhaDoTempo; onAbertoMudou(false); }}>Ver linha do tempo completa</Button>}
+        {aoAbrirFicha && <Button type="button" className={aoAbrirLinhaDoTempo ? "" : "mt-auto"} onClick={() => { fichaPendente.current = aoAbrirFicha; onAbertoMudou(false); }}>{rotuloFicha}</Button>}
       </SheetContent>
     </Sheet>
   );

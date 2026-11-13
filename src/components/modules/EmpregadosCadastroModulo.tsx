@@ -1,3 +1,4 @@
+import { AvisoSemelhantes } from "@/components/AvisoSemelhantes";
 import { useAvisoNaoSalvo } from "@/lib/use-aviso-nao-salvo";
 import { NomeComResumo } from "@/components/GavetaResumo";
 import { GavetaEmpregado } from "@/components/modules/GavetasDeResumo";
@@ -315,6 +316,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Nome completo</Label>
               <Input id="nome" name="nome" capitalizar="nome" aria-required defaultValue={base?.nome ?? ""} />
+              <AvisoSemelhantes campoId="nome" alvo="empregado" ignorarId={editando?.id ?? null} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cpf">CPF</Label>

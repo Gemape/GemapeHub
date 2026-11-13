@@ -190,7 +190,6 @@ test("compras, termos e movimentações escolhem o tamanho e mostram o tamanho",
   for (const arquivo of [
     "components/modules/EpiComprasModulo.tsx",
     "components/modules/UniformesComprasModulo.tsx",
-    "components/modules/UniformesTermoBaixa.tsx",
     "components/modules/MovimentacoesModulo.tsx",
   ]) {
     const tela = fonte(arquivo);

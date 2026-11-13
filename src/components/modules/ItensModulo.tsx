@@ -1,3 +1,4 @@
+import { AvisoSemelhantes } from "@/components/AvisoSemelhantes";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useEffect, useRef, useState } from "react";
@@ -465,6 +466,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
                   <Label htmlFor="qual_ferramenta">Qual ferramenta?</Label>
                   <Input id="qual_ferramenta" name="qual_ferramenta" capitalizar="texto" required maxLength={60} defaultValue={qualFerramentaDe(base)} placeholder="Digite o nome da ferramenta" />
                   <p className="text-xs text-muted-foreground">O nome digitado entra na descrição no lugar do grupo.</p>
+                  <AvisoSemelhantes campoId="qual_ferramenta" alvo="ferramenta" ignorarId={editando?.id ?? null} />
                 </div>
               )}
 
