@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { exportarCsv } from "@/lib/gemape";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
@@ -320,9 +321,7 @@ function CatalogoUniforme() {
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">Carregando…</TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={4} />
             )}
             {!isLoading && grupos.length === 0 && (
               <TableRow>

@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { exportarCsv } from "@/lib/gemape";
 import { useQuery } from "@tanstack/react-query";
@@ -248,7 +249,7 @@ export function EnderecamentoModulo() {
         </TableRow></TableHeader>
         <TableBody>
           {error ? <TableRow><TableCell colSpan={7} className="text-center text-destructive">Não foi possível carregar: {(error as Error).message}</TableCell></TableRow>
-            : isLoading ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Carregando…</TableCell></TableRow>
+            : isLoading ? <LinhasEsqueleto colunas={7} />
             : linhas.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Nenhum produto encontrado para os filtros.</TableCell></TableRow>
             : linhas.map(({ produto, endereco: e }) => <TableRow key={e?.id ?? `${produto.tabela}-${produto.empresa_id}-${produto.codigo_sku}`}>
               <TableCell className="font-mono text-xs">{produto.codigo_sku}</TableCell>

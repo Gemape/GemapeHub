@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -141,7 +142,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             <TableHead>Alerta</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {isLoading ? <TableRow><TableCell colSpan={ferr ? 12 : 6}>Carregando estoque…</TableCell></TableRow>
+            {isLoading ? <LinhasEsqueleto colunas={ferr ? 12 : 6} />
               : linhas.length === 0 ? <TableRow><TableCell colSpan={ferr ? 12 : 6}>{busca.trim() ? 'Nenhum item para a busca.' : 'Nenhum item cadastrado.'}</TableCell></TableRow>
                 : linhas.map(({ item, estado }) => <TableRow key={item.id} {...(ferr ? linhaClicavel(() => setExtrato({ titulo: `${item.codigo_sku ?? ''} · ${item.nome} (${nomeDaEmpresa(item.empresa_id)})`, ids: [item.id] })) : {})}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>

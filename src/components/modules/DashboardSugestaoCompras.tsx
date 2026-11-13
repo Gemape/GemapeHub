@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { Link } from "@tanstack/react-router";
 import { useMemo, type ReactNode } from "react";
 import { AlertTriangle, ShoppingCart, TrendingDown } from "lucide-react";
@@ -105,9 +106,7 @@ export function DashboardSugestaoCompras({ modulo, cartoes }: { modulo: "epi" | 
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7}>Carregando…</TableCell>
-                </TableRow>
+                <LinhasEsqueleto colunas={7} />
               ) : pedem.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">

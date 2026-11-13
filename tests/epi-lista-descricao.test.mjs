@@ -12,6 +12,7 @@ test("lista de EPIs cadastrados: Descrição só com o texto do item e Unidade e
   assert.match(tela, /<TableCell>\{grupo\.nome\}<\/TableCell>/);
   assert.match(tela, /<TableCell>\{item\.unidade_medida \|\| "Sem unidade"\}<\/TableCell>/);
   assert.doesNotMatch(tela, /descreverEpi|DescricaoEpi|<Badge/);
-  // Seis colunas: carregando e vazio ocupam a linha toda.
-  assert.equal((tela.match(/colSpan=\{6\}/g) ?? []).length, 2);
+  // Seis colunas: o esqueleto de carregamento tem as seis e o aviso de vazio ocupa a linha toda.
+  assert.equal((tela.match(/colSpan=\{6\}/g) ?? []).length, 1);
+  assert.match(tela, /<LinhasEsqueleto colunas=\{6\} \/>/);
 });

@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useState } from "react";
@@ -225,11 +226,7 @@ export function UniformesComprasModulo() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={10} className="text-center">
-                  Carregando...
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={10} />
             ) : compras.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10} className="text-center">

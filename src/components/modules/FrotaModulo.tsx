@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { Printer } from "lucide-react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -252,7 +253,7 @@ export function FrotaModulo() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Carregando...</TableCell></TableRow>}
+            {isLoading && <LinhasEsqueleto colunas={9} />}
             {!isLoading && lista.length === 0 && (
               <TableRow><TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Nenhum veículo encontrado.</TableCell></TableRow>
             )}

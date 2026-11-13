@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { useState, useEffect } from "react";
@@ -319,11 +320,7 @@ export function CaixasFerramentasModulo() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
-                  Carregando…
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={7} />
             ) : caixas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground">

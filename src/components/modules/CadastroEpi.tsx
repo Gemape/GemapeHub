@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { exportarCsv } from "@/lib/gemape";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
@@ -305,9 +306,7 @@ function CatalogoEpi() {
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">Carregando…</TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={6} />
             )}
             {!isLoading && grupos.length === 0 && (
               <TableRow>

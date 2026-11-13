@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { AjudaTermo } from "@/components/AjudaTermo";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -297,9 +298,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={modulo === "epi" ? 12 : 11}>Carregando estoque…</TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={modulo === "epi" ? 12 : 11} />
             ) : lista.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={modulo === "epi" ? 12 : 11} className="py-6 text-center text-muted-foreground">

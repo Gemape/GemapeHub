@@ -21,10 +21,14 @@ type ConsultaMovimentacoes = PromiseLike<{
   error: { message: string } | null;
 }> & { eq: (coluna: string, valor: string) => ConsultaMovimentacoes };
 
+type ConsultaContagem = { eq: (coluna: string, valor: string) => ConsultaContagem } & PromiseLike<{ count: number | null; error?: unknown }>;
+
 /** Lê todas as movimentações de EPI do empregado na empresa, da mais nova para a mais antiga. */
 export async function lerHistoricoEpiEmpregado(
-  cliente: { from: (tabela: "movimentacoes") => { select: (colunas: string) => unknown } },
+  cliente: { from: (tabela: "movimentacoes") => { select: (colunas: string, opcoes?: { count: "exact"; head: boolean }) => unknown } },
   filtro: { empregadoId: string; empresaId: string; comTamanho?: boolean },
+  // Para a barra de progresso: linhas lidas e total (o total vem de uma contagem antes da leitura).
+  aoProgredir?: (lidas: number, total: number) => void,
 ): Promise<MovimentacaoFicha[]> {
   const montar = () =>
     (cliente
@@ -37,7 +41,16 @@ export async function lerHistoricoEpiEmpregado(
       .eq("empregado_id", filtro.empregadoId);
   let data: MovimentacaoFicha[];
   try {
-    data = await lerTodas<MovimentacaoFicha>(montar, (q) => q.order("created_at").order("id"));
+    let total = 0;
+    if (aoProgredir) {
+      // Contagem só do número de linhas (sem trazê-las): é o total da barra de progresso.
+      const { count, error } = (await (cliente.from("movimentacoes").select("id", { count: "exact", head: true }) as unknown as ConsultaContagem)
+        .eq("modulo", "epi").eq("empresa_id", filtro.empresaId).eq("empregado_id", filtro.empregadoId)) as { count: number | null; error?: unknown };
+      // Contagem que falhou não impede a ficha: sem total, a barra usa a estimativa por blocos lidos.
+      total = error ? 0 : count ?? 0;
+      aoProgredir(0, total);
+    }
+    data = await lerTodas<MovimentacaoFicha>(montar, (q) => q.order("created_at").order("id"), aoProgredir ? (lidas) => aoProgredir(lidas, total) : undefined);
   } catch (erro) {
     throw new Error(erro instanceof Error ? erro.message : (erro as { message?: string })?.message ?? "Erro ao ler o histórico.");
   }

@@ -1,3 +1,4 @@
+import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useRef, useState } from "react";
 import { useAbrirDireto } from "@/lib/use-abrir-direto";
@@ -208,7 +209,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        <BlocoEsqueleto cartoes={0} linhas={6} rotulo="Carregando empregados" />
       ) : (
         <>
           <BlocoEmpregados

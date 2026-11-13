@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useQuery } from "@tanstack/react-query";
@@ -243,11 +244,7 @@ export function EpiComprasModulo() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={12} className="text-center">
-                  Carregando...
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={12} />
             ) : compras.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={12} className="text-center">

@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -74,7 +75,7 @@ export function ControleEstoqueModulo({ modulo }: { modulo: "uniforme" }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {carregando ? <TableRow><TableCell colSpan={13}>Carregando…</TableCell></TableRow>
+            {carregando ? <LinhasEsqueleto colunas={13} />
               : linhas.length === 0 ? <TableRow><TableCell colSpan={13}>Nenhum uniforme cadastrado.</TableCell></TableRow>
                 : linhas.map((l) => (
                   <TableRow key={l.itemId}>

@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { useMemo, useState } from "react";
 
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
@@ -130,9 +131,7 @@ export function FerramentasSugestaoCompras() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8}>Carregando…</TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={8} />
             ) : filtradas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-6 text-center text-muted-foreground">

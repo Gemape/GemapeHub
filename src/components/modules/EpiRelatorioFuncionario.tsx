@@ -1,3 +1,4 @@
+import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { PackageCheck, PackageX, Undo2, UserCheck } from "lucide-react";
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { StatCard } from "@/components/StatCard";
@@ -114,7 +115,7 @@ export function EpiRelatorioFuncionario() {
   const parteDoEntregue = (n: number) => (totalEntregue > 0 ? Math.max(0, Math.min(100, Math.round((n / totalEntregue) * 100))) : 0);
 
   if (isError) return <div role="alert">Não foi possível carregar o histórico completo: {error.message}</div>;
-  if (empregado && isLoading) return <div>Carregando histórico completo…</div>;
+  if (empregado && isLoading) return <BlocoEsqueleto rotulo="Carregando histórico completo" />;
 
   return (
     <div className="space-y-6">

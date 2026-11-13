@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useRef, useState } from "react";
 import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
@@ -457,11 +458,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={13} className="text-center text-muted-foreground">
-                  Carregando…
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={13} />
             ) : veiculos.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={13} className="text-center text-muted-foreground">

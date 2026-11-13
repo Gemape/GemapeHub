@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
@@ -241,9 +242,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8}>Carregando…</TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={8} />
             ) : filtradas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-6 text-center text-muted-foreground">
