@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { BlocoEsqueleto } from "@/components/Esqueletos";
+import { useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
 import { useAccess } from "@/lib/access-context";
 import { pendenciasDeHoje, totalPendencias, type GrupoPendencia } from "@/lib/atencao-hoje";
 import { hojeLocal } from "@/lib/empregados";
@@ -16,6 +17,7 @@ const COR: Record<GrupoPendencia["prioridade"], string> = {
   media: "border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-300",
   baixa: "border-border bg-muted/50 text-foreground",
 };
+const CHAVE_FECHADO = "gemape-atencao-hoje-fechado";
 const ROTULO: Record<GrupoPendencia["prioridade"], string> = { alta: "Urgente", media: "Atenção", baixa: "Em breve" };
 
 // Bloco do topo da tela inicial: pendências reais por prioridade. Cada cartão é um botão: ao clicar, a lista abaixo mostra só aqueles itens,
@@ -35,6 +37,13 @@ export function AtencaoHoje() {
   const { data: movsEpi = [], isLoading: l3 } = useMovimentacoes("epi", TODAS, undefined, ler);
   const { data: movsFerramenta = [] } = useMovimentacoes("ferramenta", TODAS, undefined, ler);
   const [aberto, setAberto] = useState<string | null>(null);
+  // O X fecha o bloco nesta sessão do navegador, por usuário. Se aparecer pendência nova (o total cresce), ele volta sozinho.
+  // Lido depois de montar para não divergir do HTML do servidor.
+  const dono = useDonoDosAtalhos();
+  const chave = `${CHAVE_FECHADO}:${dono ?? ""}`;
+  const [fechadoCom, setFechadoCom] = useState<number | null>(null);
+  useEffect(() => { try { const v = sessionStorage.getItem(chave); setFechadoCom(v === null ? null : Number(v)); } catch { setFechadoCom(null); } }, [chave]);
+  const fechar = (total: number) => { setFechadoCom(total); try { sessionStorage.setItem(chave, String(total)); } catch { /* sem armazenamento: fecha só nesta tela */ } };
 
   const grupos = useMemo(
     () => pendenciasDeHoje({ hoje: hojeLocal(), empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, estado: (modulo, item) => estadoEstoqueModulo(parametros, modulo, item as never) }),
@@ -44,14 +53,18 @@ export function AtencaoHoje() {
   if (!pronto || l1 || l2 || l3) return <BlocoEsqueleto cartoes={0} linhas={3} rotulo="Carregando o que precisa da sua atenção" />;
 
   const total = totalPendencias(grupos);
+  if (fechadoCom !== null && total <= fechadoCom) return null;
   const escolhido = grupos.find((g) => g.id === aberto) ?? null;
   return (
     <section aria-labelledby="atencao-hoje" className="vidro-cartao mx-auto w-full max-w-4xl space-y-3 rounded-2xl p-4">
-      <h2 id="atencao-hoje" className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-primary/80">
-        {total > 0 ? <AlertTriangle className="size-4 text-destructive" aria-hidden="true" /> : <CheckCircle2 className="size-4 text-emerald-600" aria-hidden="true" />}
+      <div className="flex items-center gap-2">
+      <h2 id="atencao-hoje" className="flex min-w-0 items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-primary/80">
+        {total > 0 ? <AlertTriangle className="size-4 text-destructive motion-safe:animate-[pulso-icone_1.2s_ease-in-out_4]" aria-hidden="true" /> : <CheckCircle2 className="size-4 text-emerald-600" aria-hidden="true" />}
         O que precisa da sua atenção hoje
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold tracking-normal text-primary">{total}</span>
       </h2>
+        <button type="button" onClick={() => fechar(total)} aria-label="Fechar o aviso de atenção de hoje" title="Fechar" className="ml-auto grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><X className="size-4" aria-hidden="true" /></button>
+      </div>
       {total === 0 && <p className="text-sm text-muted-foreground">Tudo em dia: nenhuma pendência encontrada.</p>}
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {grupos.map((g) => (
@@ -62,7 +75,7 @@ export function AtencaoHoje() {
               aria-controls="atencao-lista"
               disabled={g.itens.length === 0}
               onClick={() => setAberto(aberto === g.id ? null : g.id)}
-              className={`flex h-full w-full flex-col gap-1 rounded-xl border p-3 text-left transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default disabled:opacity-60 disabled:hover:shadow-none ${g.itens.length > 0 ? COR[g.prioridade] : "border-border text-muted-foreground"} ${aberto === g.id ? "ring-2 ring-primary" : ""}`}
+              className={`flex h-full w-full flex-col gap-1 rounded-xl border p-3 text-left transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default disabled:opacity-60 disabled:hover:shadow-none ${g.itens.length > 0 ? COR[g.prioridade] : "border-border text-muted-foreground"} ${aberto === g.id ? "ring-2 ring-primary" : ""} ${g.itens.length > 0 && g.prioridade === "alta" ? "motion-safe:animate-[pulso-atencao_2.4s_ease-in-out_2]" : ""}`}
             >
               <span className="text-2xl font-bold tabular-nums">{g.itens.length}</span>
               <span className="text-sm font-medium leading-tight">{g.titulo}</span>

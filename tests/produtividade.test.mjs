@@ -237,3 +237,13 @@ test("sincronia entre abas e aviso de alterações usam as APIs nativas", () => 
   assert.match(fonte("src/lib/use-aviso-nao-salvo.ts"), /Você tem alterações não salvas\. Deseja sair mesmo assim\?/);
   assert.match(fonte("src/components/layout/SincroniaAbas.tsx"), /getMutationCache\(\)\.subscribe/);
 });
+
+test("bloco de atenção: pulso limitado e sem esconder o foco, X por usuário que reaparece com pendência nova", () => {
+  const b = fonte("src/components/inicio/AtencaoHoje.tsx");
+  assert.doesNotMatch(b, /infinite|animate-ping|animate-pulse/, "nada pulsa para sempre");
+  assert.match(b, /motion-safe:animate-\[pulso-atencao_2\.4s_ease-in-out_2\]/);
+  assert.match(b, /total <= fechadoCom/, "pendência nova reabre o bloco");
+  assert.match(b, /sessionStorage\.getItem\(chave\)/);
+  assert.match(b, /<\/h2>\s*<button/, "o X fica fora do título");
+  assert.match(fonte("src/styles.css"), /@keyframes pulso-atencao \{[^}]*outline/s, "outline, não box-shadow, para não cobrir o anel de foco");
+});
