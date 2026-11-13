@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, BadgeCheck, Briefcase, Wrench } from "lucide-react";
 
 import { formatarCpf } from "@/lib/empregados";
@@ -25,7 +26,7 @@ export function ResumoEmpregado({ empregado, rotuloItens, posse, vencidos, ferra
         : !carregando && <p className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400"><BadgeCheck className="size-3.5" aria-hidden="true" />Nada vencido</p>}
       <div>
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{rotuloItens} em posse</p>
-        {carregando ? <p className="text-xs text-muted-foreground">Carregando…</p>
+        {carregando ? <div role="status" aria-label="Carregando" className="space-y-1.5"><Skeleton className="h-3.5 w-full" /><Skeleton className="h-3.5 w-4/5" /><Skeleton className="h-3.5 w-3/5" /></div>
           : posse.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum no momento.</p>
           : <ul className="space-y-1">{posse.map((p) => {
               const tam = p.tamanhos.map(nomeTamanho).filter(Boolean).join(", ");

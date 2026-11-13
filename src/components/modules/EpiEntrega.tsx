@@ -1,3 +1,4 @@
+import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { AjudaTermo } from "@/components/AjudaTermo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -345,7 +346,7 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
                 </Select>
               </div>
             </div>
-            {historico.isError ? <div role="alert">Não foi possível carregar o histórico: {(historico.error as Error).message}</div> : historico.isLoading ? <div>Carregando histórico completo…</div> : (
+            {historico.isError ? <div role="alert">Não foi possível carregar o histórico: {(historico.error as Error).message}</div> : historico.isLoading ? <BlocoEsqueleto cartoes={0} linhas={5} rotulo="Carregando histórico completo" /> : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>

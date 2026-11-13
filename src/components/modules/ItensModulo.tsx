@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -340,11 +341,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={11} className="text-center text-muted-foreground">
-                  Carregando…
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={11} />
             ) : itens.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={11} className="text-center text-muted-foreground">

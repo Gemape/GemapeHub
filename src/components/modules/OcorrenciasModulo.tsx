@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -195,11 +196,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground">
-                  Carregando…
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={8} />
             ) : ocorrencias.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8}>

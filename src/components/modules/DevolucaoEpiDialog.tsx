@@ -1,3 +1,4 @@
+import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -228,7 +229,7 @@ export function DevolucaoEpiDialog({
             <div className="space-y-2">
               <p className="text-sm font-medium">{modulo === "epi" ? "EPIs" : "Uniformes"} em posse de {empregado.nome}</p>
               {historico.isLoading ? (
-                <p className="text-sm text-muted-foreground">Carregando...</p>
+                <BlocoEsqueleto cartoes={0} linhas={3} rotulo="Carregando o que está em posse" />
               ) : linhasEmPosse.length === 0 ? (
                 <p className="rounded-lg border p-3 text-sm text-muted-foreground">
                   Este funcionário não tem {rotulo} em posse para devolver.

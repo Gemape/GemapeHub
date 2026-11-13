@@ -1,3 +1,4 @@
+import { BlocoEsqueleto, LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -91,7 +92,7 @@ export function FerramentasCaixasModulo() {
 
       <div className="space-y-8">
         {isLoading ? (
-          <div className="text-center py-8">Carregando...</div>
+          <BlocoEsqueleto cartoes={0} linhas={5} rotulo="Carregando caixas" />
         ) : caixas.length === 0 && semCadastro.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             Nenhuma caixa encontrada com os filtros aplicados.
@@ -231,11 +232,7 @@ function CaixaItem({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center">
-                  Carregando itens...
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={9} />
             ) : itens.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground">

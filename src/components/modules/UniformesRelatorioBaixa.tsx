@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, ClipboardList, Package } from "lucide-react";
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
@@ -178,11 +179,7 @@ export function UniformesRelatorioBaixa({ modulo = "uniforme" }: { modulo?: "uni
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={ferramenta ? 7 : 8} className="text-center">
-                  Carregando...
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={ferramenta ? 7 : 8} />
             ) : baixas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={ferramenta ? 7 : 8} className="text-center">

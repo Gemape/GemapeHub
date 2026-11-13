@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { useMemo, type ReactNode } from "react";
 import { AlertTriangle, Archive, Package, UserRound } from "lucide-react";
 
@@ -66,9 +67,7 @@ export function DashboardFerramentas({ cartoes }: { cartoes: ReactNode }) {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7}>Carregando…</TableCell>
-                </TableRow>
+                <LinhasEsqueleto colunas={7} />
               ) : abaixo.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">

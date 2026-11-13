@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
@@ -457,14 +458,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={config.ficha ? 8 : 7}
-                  className="text-center text-muted-foreground"
-                >
-                  Carregando…
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={config.ficha ? 8 : 7} />
             ) : itens.length === 0 ? (
               <TableRow>
                 <TableCell

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { AjudaTermo } from "@/components/AjudaTermo";
+import { ProgressoRelatorio, type EstadoProgresso } from "@/components/ProgressoRelatorio";
+import { percentualDaEtapa } from "@/lib/ler-todas";
 import { ConfirmarFichaAvulsa } from "@/components/modules/ConfirmarFichaAvulsa";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -30,6 +32,7 @@ export function EpiFichaEpiAvulsa() {
   const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
   const [empregadoId, setEmpregadoId] = useState("");
   const [confirmando, setConfirmando] = useState(false);
+  const [progresso, setProgresso] = useState<EstadoProgresso | null>(null);
 
   const { data: empresas = [] } = useEmpresas();
   // Empresa inativa não é escolhida: se o cabeçalho está nela, a escolha começa vazia.
@@ -48,30 +51,41 @@ export function EpiFichaEpiAvulsa() {
       return;
     }
 
-    // Histórico inteiro do empregado nesta empresa, lido do banco na hora de gerar a ficha.
+    // Histórico inteiro do empregado nesta empresa, lido do banco na hora de gerar a ficha. A barra vai até 80% conforme as linhas lidas.
     let historico: MovimentacaoFicha[];
+    setProgresso({ percentual: 0, texto: "Carregando dados de EPIs…" });
     try {
       historico = await lerHistoricoEpiEmpregado(supabase, {
         empregadoId: empregado.id,
         empresaId: empresa.id,
         comTamanho: TAMANHO_DISPONIVEL,
-      });
+      }, (lidas, total) => setProgresso({ percentual: percentualDaEtapa(lidas, total, 0, 80), texto: "Carregando dados de EPIs…" }));
     } catch (erro) {
+      setProgresso(null);
       alert(`Não foi possível carregar o histórico: ${(erro as Error).message}`);
       return;
     }
 
-    const html = montarFichaEpiAvulsaHtml({
-      empresa,
-      empregado,
-      linhas: linhasDaFichaEpi(historico, itens, (tamanhoId) => nomeTamanhoGravado(parametros, tamanhoId)),
-    });
-
-    abrirDocumento({
-      titulo: "Ficha de EPI",
-      html,
-      arquivo: nomeArquivoDocumento("Ficha de EPI", empregado.nome),
-    });
+    // A janela de progresso não tem botão de fechar: qualquer falha daqui em diante precisa fechá-la.
+    try {
+      setProgresso({ percentual: 90, texto: "Montando a ficha…" });
+      await new Promise((r) => setTimeout(r, 0)); // deixa a tela desenhar a etapa antes do trabalho síncrono
+      const html = montarFichaEpiAvulsaHtml({
+        empresa,
+        empregado,
+        linhas: linhasDaFichaEpi(historico, itens, (tamanhoId) => nomeTamanhoGravado(parametros, tamanhoId)),
+      });
+      setProgresso({ percentual: 100, texto: "Abrindo a ficha…" });
+      abrirDocumento({
+        titulo: "Ficha de EPI",
+        html,
+        arquivo: nomeArquivoDocumento("Ficha de EPI", empregado.nome),
+      });
+    } catch (erro) {
+      alert(`Não foi possível gerar a ficha: ${(erro as Error).message}`);
+    } finally {
+      setProgresso(null);
+    }
   }
 
   return (
@@ -123,6 +137,7 @@ export function EpiFichaEpiAvulsa() {
             Gerar Ficha para Impressão
           </Button>
         </div>
+        <ProgressoRelatorio progresso={progresso} titulo="Gerando a Ficha de EPI" />
         <ConfirmarFichaAvulsa
           aberto={confirmando}
           onNao={() => setConfirmando(false)}

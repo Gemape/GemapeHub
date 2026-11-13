@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, ClipboardList, Package } from "lucide-react";
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
@@ -171,11 +172,7 @@ export function EpiRelatorioBaixa() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center">
-                  Carregando...
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={8} />
             ) : baixas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center">

@@ -1,3 +1,4 @@
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { avisarEnderecamentoObrigatorio } from "@/lib/aviso-enderecamento";
@@ -366,14 +367,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={totalColunas}
-                  className="text-center text-muted-foreground"
-                >
-                  Carregando…
-                </TableCell>
-              </TableRow>
+              <LinhasEsqueleto colunas={totalColunas} />
             ) : visiveis.length === 0 ? (
               <TableRow>
                 <TableCell
