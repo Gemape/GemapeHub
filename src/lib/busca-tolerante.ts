@@ -49,3 +49,22 @@ export function pontuaBusca(termo: string, ...campos: (string | null | undefined
 }
 
 export const combinaBuscaTolerante = (termo: string, ...campos: (string | null | undefined)[]): boolean => pontuaBusca(termo, ...campos) > 0;
+
+/** "Você quis dizer…?": o nome da lista mais parecido com o que foi digitado (cada palavra digitada com até 2 letras de diferença, 3 em palavra longa). Nada parecido: undefined. */
+export function sugerirNome(termo: string, nomes: readonly string[]): string | undefined {
+  const procuradas = palavras(termo).filter((p) => p.length >= 3);
+  if (procuradas.length === 0) return undefined;
+  let melhor: { nome: string; custo: number } | undefined;
+  for (const nome of nomes) {
+    const doNome = palavras(nome);
+    let custo = 0;
+    const casou = procuradas.every((p) => {
+      const limite = p.length >= 8 ? 3 : 2;
+      const d = Math.min(...doNome.map((w) => distancia(p, w, limite)));
+      custo += d;
+      return d <= limite;
+    });
+    if (casou && (!melhor || custo < melhor.custo)) melhor = { nome, custo };
+  }
+  return melhor?.nome;
+}

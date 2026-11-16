@@ -51,7 +51,8 @@ import {
   useExcluir,
   type CompraEpi,
 } from "@/lib/hooks-gemape";
-import { escolherFornecedorDaCompra } from "@/lib/compras-fornecedor";
+import { ultimaCompraDoFornecedor } from "@/lib/sugestao-entrada";
+import { escolherFornecedorDaCompra, nomeDoFornecedor } from "@/lib/compras-fornecedor";
 import { listarFornecedores } from "@/lib/fornecedores-demo";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { saldoParaCompra } from "@/lib/estoque-epi-saldos";
@@ -76,6 +77,8 @@ export function EpiComprasModulo() {
   const [empresaCompra, setEmpresaCompra] = useState("");
   const [tamanho, setTamanho] = useState("");
   const [fornecedorId, setFornecedorId] = useState("");
+  // O valor unitário é campo livre; ao aceitar a sugestão ele é recriado com o valor novo (sem prender o que a pessoa digita).
+  const [versaoValor, setVersaoValor] = useState(0);
   // CA da compra (decisão 327): vem preenchido com o do cadastro do EPI, mas é conferido e obrigatório.
   const [ca, setCa] = useState("");
   const [devolucaoAberta, setDevolucaoAberta] = useState(false);
@@ -84,6 +87,22 @@ export function EpiComprasModulo() {
   const { data: compras = [], isLoading } = useComprasEpis(empresaId, busca);
   const { data: empresas = [] } = useEmpresas();
   const { data: itens = [] } = useItens("epi", TODAS);
+
+  // Fornecedor escolhido: sugere os dados da última compra dele (empresa, produto e valor), que a pessoa aceita com um clique.
+  const nomeFornecedor = fornecedorId ? (() => { const f = listarFornecedores().find((x) => x.id === fornecedorId); return f ? nomeDoFornecedor(f) : ""; })() : "";
+  // A última compra vem de todas as compras (sem o filtro de empresa e de busca da lista), só lida com um fornecedor escolhido.
+  const { data: todasAsCompras = [] } = useComprasEpis(TODAS, "", !!fornecedorId);
+  const sugestao = ultimaCompraDoFornecedor(todasAsCompras, nomeFornecedor);
+  const itemSugerido = sugestao ? itens.find((i) => i.id === sugestao.item_id) : undefined;
+  const aplicarSugestao = () => {
+    if (!sugestao || !itemSugerido) return;
+    setEmpresaCompra(itemSugerido.empresa_id ?? "");
+    setItemSel(itemSugerido.id);
+    setTamanho("");
+    setCa(itemSugerido.ca ?? "");
+    setValorUnitario(sugestao.valor_unitario);
+    setVersaoValor((v) => v + 1);
+  };
 
   const salvar = useSalvar("compras_epis", CHAVES);
   const excluir = useExcluir("compras_epis", CHAVES);
@@ -366,6 +385,12 @@ export function EpiComprasModulo() {
               </p>
             </div>
             <SeletorFornecedorCompra categoriaId="cat-epi" valor={fornecedorId} onChange={setFornecedorId} />
+            {sugestao && itemSugerido && itemSugerido.id !== itemSel && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm sm:col-span-2" role="status">
+                <span className="min-w-0 flex-1">Última compra deste fornecedor: <strong>{itemSugerido.nome}</strong> a {formatarMoeda(sugestao.valor_unitario)} a unidade.</span>
+                <Button type="button" size="sm" variant="outline" onClick={aplicarSugestao}>Usar estes dados</Button>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="nota_fiscal">Nota Fiscal</Label>
               <Input id="nota_fiscal" name="nota_fiscal" required placeholder="Número da NF" />
@@ -398,7 +423,9 @@ export function EpiComprasModulo() {
             <div className="space-y-1.5">
               <Label htmlFor="valor_unitario">Valor Unitário (R$)</Label>
               <Input
+                key={versaoValor}
                 id="valor_unitario"
+                defaultValue={versaoValor ? valorUnitario : undefined}
                 name="valor_unitario"
                 type="number"
                 step="0.01"

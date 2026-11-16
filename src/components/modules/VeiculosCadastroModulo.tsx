@@ -1,8 +1,12 @@
+import { marcarDestaque, useDestaque } from "@/lib/destaque-linha";
+import { BarraCompletude } from "@/components/BarraCompletude";
+import { CAMPOS_VEICULO } from "@/lib/completude";
+import { aoDigitarMascarado } from "@/lib/mascaras";
 import { AvisoEdicaoSimultanea } from "@/components/AvisoEdicaoSimultanea";
 import { validarPlacaCampo } from "@/lib/validacao-campos";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { soEmpregadosDeVeiculos } from "@/lib/empregados-veiculos";
 import { useAbrirDireto } from "@/lib/use-abrir-direto";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
@@ -116,6 +120,7 @@ async function todosVeiculos(): Promise<{ id: string; placa: string; codigo_sku?
 // empresa, RENAVAM, data de aquisição, custo, nota fiscal, quilometragem, situação, responsável e
 // observações. A descrição é montada sozinha (decisão 49).
 export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?: boolean; aoConcluir?: () => void } = {}) {
+  const destaque = useDestaque();
   const { empresas, empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   // Km mostrado e conferido como no extrato e na frota: vale o maior entre o cadastro e os registros do veículo.
@@ -190,6 +195,8 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
       ? subcategoriaAtual?.nome
       : subcategorias.find((s) => s.id === subEscolhida)?.nome;
   const temPlaca = subcategoriaTemPlaca(nomeSubEscolhida);
+  // Campo que a subcategoria não mostra não pode contar como pendente.
+  const camposDeCompletude = useMemo(() => (temPlaca ? CAMPOS_VEICULO : CAMPOS_VEICULO.filter((c) => c.id !== "placa")), [temPlaca]);
   const marcas = paraSelecao(
     parametros,
     parametros.marcasVeiculo,
@@ -381,6 +388,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
       { ...(editando ? { id: editando.id } : {}), valores },
       { onSuccess: () => {
         setAberto(false);
+        marcarDestaque(normalizarPlaca(String(valores["placa"] ?? "")));
         void avisarEnderecamentoObrigatorio(parametros, CATEGORIA_VEICULO, empresa,
           String(valores["codigo_sku"] ?? editando?.codigo_sku ?? ""));
       }, onError: destravar },
@@ -487,7 +495,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
               </TableRow>
             ) : (
               veiculos.map((v) => (
-                <TableRow key={v.id}>
+                <TableRow key={v.id} data-destaque={normalizarPlaca(v.placa ?? "")} className={destaque === normalizarPlaca(v.placa ?? "") ? "linha-destacada" : undefined}>
                   <TableCell className="whitespace-nowrap font-mono text-xs">
                     {v.codigo_sku || "—"}
                   </TableCell>
@@ -561,6 +569,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
           </DialogHeader>
           <AvisoEdicaoSimultanea chave={editando ? `veiculo:${editando.id}` : null} />
           <form onSubmit={enviar} onInput={aviso.aoAlterar} onChange={aviso.aoAlterar} className="grid gap-4 sm:grid-cols-2">
+            <BarraCompletude campos={camposDeCompletude} nome="Cadastro" />
             <div className="space-y-1.5">
               <Label htmlFor="codigo_sku">Código</Label>
               <Input
@@ -616,6 +625,7 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
                   className="uppercase"
                   aria-invalid={erroPlaca ? true : undefined}
                   aria-describedby={erroPlaca ? "placa-erro" : undefined}
+                  onInput={aoDigitarMascarado("placa")}
                   onChange={() => setErroPlaca(null)}
                   // Confere ao sair do campo (formato e placa já cadastrada), sem esperar o Salvar.
                   onBlur={(ev) => {

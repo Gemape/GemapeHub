@@ -1,3 +1,5 @@
+import { SemResultadoBusca } from "@/components/SemResultadoBusca";
+import { sugerirNome } from "@/lib/busca-tolerante";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Search, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -119,7 +121,16 @@ export function BuscaRapida({ grupos }: { grupos: readonly GrupoInicio[] }) {
       </div>
       {mostrar && (
         <ul id={idLista} role="listbox" aria-label="Resultados da busca" className="glass-strong absolute inset-x-0 top-full mt-2 max-h-80 overflow-auto rounded-2xl border py-1 shadow-xl animate-in fade-in-0 slide-in-from-top-1 duration-150">
-          {resultados.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground" role="option" aria-selected="false">Nada encontrado para “{termo.trim()}”.</li>}
+          {resultados.length === 0 && (
+            <li role="option" aria-selected="false">
+              <SemResultadoBusca
+                termo={termo}
+                sugestao={sugerirNome(termo, empregados.map((e) => e.nome))}
+                aoSugerir={setTermo}
+                {...(podeVerCaminho("/empregados") ? { rotuloCadastro: `Cadastrar “${termo.trim()}”`, aoCadastrar: () => void navigate({ to: "/empregados", search: { novoNome: termo.trim() } }) } : {})}
+              />
+            </li>
+          )}
           {resultados.map((l, i) => (
             <li key={l.tipo === "tela" ? `${l.r.cartao}/${l.r.titulo}/${l.r.url}/${JSON.stringify(l.r.search ?? {})}` : l.r.chave} id={`${idLista}-${i}`} role="option" aria-selected={i === ativo}>
               {l.tipo === "tela" ? (

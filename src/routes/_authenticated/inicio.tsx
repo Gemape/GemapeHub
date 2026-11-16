@@ -1,3 +1,4 @@
+import { descricaoDoMenu } from "@/lib/descricoes-menu";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChevronsUp, Star, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -103,12 +104,16 @@ function AtalhoDosGrupos({ grupos, temAberto, aoRecolher }: { grupos: readonly s
 
 function AtalhoDoCartao({ sub, cartao, fixado, aoFixar }: { sub: SubitemInicio; cartao: string; fixado: boolean; aoFixar: (a: AtalhoGuardado) => void }) {
   const IconeSub = ICONES[sub.icone];
+  const descricao = descricaoDoMenu(sub.titulo);
   const guardado: AtalhoGuardado = { titulo: sub.titulo, cartao, secao: sub.secao, url: sub.url, ...(sub.search ? { search: sub.search } : {}) };
   return (
     <div className="flex items-center hover:bg-primary/10">
       <Link to={sub.url} search={sub.search as never} className={`flex min-w-0 flex-1 items-center gap-2 py-2.5 pl-4 pr-2 text-sm ${classeFoco}`}>
         <IconeSub className="size-4 shrink-0 text-primary" aria-hidden="true" />
-        <span className="truncate">{sub.titulo}</span>
+        <span className="min-w-0">
+          <span className="block truncate">{sub.titulo}</span>
+          {descricao && <span className="block truncate text-xs text-muted-foreground">{descricao}</span>}
+        </span>
       </Link>
       <button
         type="button"
