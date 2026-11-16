@@ -5,11 +5,17 @@ import { useEffect, useMemo, useState } from "react";
 import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
 import { useAccess } from "@/lib/access-context";
-import { pendenciasDeHoje, totalPendencias, type GrupoPendencia } from "@/lib/atencao-hoje";
+import { pendenciasDeHoje, totalPendencias, type DespesaAbertaViagem, type GrupoPendencia, type OcorrenciaAtencaoEq, type OrdemAtencaoEq } from "@/lib/atencao-hoje";
 import { hojeLocal } from "@/lib/empregados";
 import { TODAS } from "@/lib/empresa-context";
 import { useEmpregados, useItens, useMovimentacoes } from "@/lib/hooks-gemape";
+import { listarEquipamentos } from "@/lib/equipamentos-demo";
 import { estadoEstoqueModulo } from "@/lib/estoque-tamanho";
+import { EVENTO_REGISTROS_EQUIPAMENTO, lerManutencoesEq, lerOcorrenciasEq } from "@/lib/registros-equipamento";
+import { listarRelatorios, relatorioPorDespesa } from "@/lib/relatorios-viagens";
+import { listarRespostas } from "@/lib/respostas-despesas";
+import { lerPrazos } from "@/lib/prazo-viagens";
+import { dadosDoLancamento } from "@/lib/viagens";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 const COR: Record<GrupoPendencia["prioridade"], string> = {
@@ -19,6 +25,20 @@ const COR: Record<GrupoPendencia["prioridade"], string> = {
 };
 const CHAVE_FECHADO = "gemape-atencao-hoje-fechado";
 const ROTULO: Record<GrupoPendencia["prioridade"], string> = { alta: "Urgente", media: "Atenção", baixa: "Em breve" };
+
+// Equipamentos e Viagens ficam só no navegador (modo demonstração): lidos depois de montar e relidos quando os registros de equipamento mudam.
+type RegistrosLocais = { nomes: Map<string, string>; ordens: OrdemAtencaoEq[]; ocorrencias: OcorrenciaAtencaoEq[]; despesas: DespesaAbertaViagem[]; prazoDias: number };
+function lerRegistrosLocais(): RegistrosLocais {
+  const relatorios = relatorioPorDespesa(listarRelatorios());
+  const prazos = lerPrazos();
+  return {
+    nomes: new Map(listarEquipamentos().map((e) => [e.id, e.nome])),
+    ordens: lerManutencoesEq().map((m) => ({ id: m.id, equipamentoId: m.equipamentoId, tipo: m.tipo, ...(m.status ? { status: m.status } : {}), ...(m.dataPrevista ? { dataPrevista: m.dataPrevista } : {}), ...(m.responsavel ? { responsavel: m.responsavel } : {}) })),
+    ocorrencias: lerOcorrenciasEq().map((o) => ({ id: o.id, equipamentoId: o.equipamentoId, tipoNome: o.tipoNome, status: o.status, data: o.data, ...(o.codigo ? { codigo: o.codigo } : {}) })),
+    despesas: prazos.pcmAplica ? listarRespostas().filter((r) => !relatorios.has(r.id)).map((r) => { const d = dadosDoLancamento(r); return { id: r.id, tecnico: d.responsavel ?? d.tecnico ?? "Sem técnico", registradaEm: r.data }; }) : [],
+    prazoDias: prazos.pcm,
+  };
+}
 
 // Bloco do topo da tela inicial: pendências reais por prioridade. Cada cartão é um botão: ao clicar, a lista abaixo mostra só aqueles itens,
 // cada um com o botão da ação (agendar troca, repor estoque...) que já abre a tela certa.
@@ -36,6 +56,20 @@ export function AtencaoHoje() {
   const { data: ferramentas = [] } = useItens("ferramenta", TODAS, "", ler);
   const { data: movsEpi = [], isLoading: l3 } = useMovimentacoes("epi", TODAS, undefined, ler);
   const { data: movsFerramenta = [] } = useMovimentacoes("ferramenta", TODAS, undefined, ler);
+  const podeEquipamentos = podeVerCaminho("/equipamentos");
+  const podeViagens = podeVerCaminho("/viagens");
+  const [locais, setLocais] = useState<RegistrosLocais | null>(null);
+  const [erroLocais, setErroLocais] = useState(false);
+  useEffect(() => {
+    if (!pronto) return;
+    const ler = () => { try { setLocais(lerRegistrosLocais()); setErroLocais(false); } catch { setLocais(null); setErroLocais(true); } };
+    ler();
+    // Relê quando os registros de equipamento mudam, quando outra aba grava (viagens, prazos) e quando a aba volta a ficar em foco.
+    window.addEventListener(EVENTO_REGISTROS_EQUIPAMENTO, ler);
+    window.addEventListener("storage", ler);
+    window.addEventListener("focus", ler);
+    return () => { window.removeEventListener(EVENTO_REGISTROS_EQUIPAMENTO, ler); window.removeEventListener("storage", ler); window.removeEventListener("focus", ler); };
+  }, [pronto]);
   const [aberto, setAberto] = useState<string | null>(null);
   // O X fecha o bloco nesta sessão do navegador, por usuário. Se aparecer pendência nova (o total cresce), ele volta sozinho.
   // Lido depois de montar para não divergir do HTML do servidor.
@@ -46,8 +80,13 @@ export function AtencaoHoje() {
   const fechar = (total: number) => { setFechadoCom(total); try { sessionStorage.setItem(chave, String(total)); } catch { /* sem armazenamento: fecha só nesta tela */ } };
 
   const grupos = useMemo(
-    () => pendenciasDeHoje({ hoje: hojeLocal(), empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, estado: (modulo, item) => estadoEstoqueModulo(parametros, modulo, item as never) }),
-    [empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, parametros],
+    () => pendenciasDeHoje({
+      hoje: hojeLocal(), empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, estado: (modulo, item) => estadoEstoqueModulo(parametros, modulo, item as never),
+      ...(locais ? { equipamentos: { nomes: locais.nomes, ordens: locais.ordens, ocorrencias: locais.ocorrencias }, viagens: { despesasEmAberto: locais.despesas, prazoDias: locais.prazoDias } } : {}),
+    })
+      // Quem não vê o módulo não vê o cartão dele, e os cartões de Equipamentos e Viagens só aparecem depois de lidos (senão mostrariam "0" sem terem sido lidos).
+      .filter((g) => (g.id !== "equipamentos" || (podeEquipamentos && locais !== null)) && (g.id !== "viagens" || (podeViagens && locais !== null))),
+    [empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, parametros, locais, podeEquipamentos, podeViagens],
   );
   if (!pode) return null;
   if (!pronto || l1 || l2 || l3) return <BlocoEsqueleto cartoes={0} linhas={3} rotulo="Carregando o que precisa da sua atenção" />;
@@ -65,7 +104,8 @@ export function AtencaoHoje() {
       </h2>
         <button type="button" onClick={() => fechar(total)} aria-label="Fechar o aviso de atenção de hoje" title="Fechar" className="ml-auto grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><X className="size-4" aria-hidden="true" /></button>
       </div>
-      {total === 0 && <p className="text-sm text-muted-foreground">Tudo em dia: nenhuma pendência encontrada.</p>}
+      {total === 0 && !erroLocais && <p className="text-sm text-muted-foreground">Tudo em dia: nenhuma pendência encontrada.</p>}
+      {erroLocais && (podeEquipamentos || podeViagens) && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">Não foi possível ler os dados de Equipamentos e Viagens neste navegador; esses avisos ficam de fora por enquanto.</p>}
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {grupos.map((g) => (
           <li key={g.id}>

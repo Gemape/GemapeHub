@@ -135,14 +135,18 @@ const base = {
 
 test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e CA vencendo, nesta ordem de prioridade", () => {
   const g = pendenciasDeHoje(base);
-  assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "media", "baixa"]);
+  assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "alta", "media", "media", "media", "media", "baixa"]);
   const porId = Object.fromEntries(g.map((x) => [x.id, x]));
   assert.equal(porId["epi-vencido"].itens.length, 1);
   assert.match(porId["epi-vencido"].itens[0].detalhe, /Luva/);
   assert.equal(porId["epi-vencido"].itens[0].acao.search.empregado, "e1");
   assert.equal(porId["devolucao-atrasada"].itens.length, 1, "só quem foi desligado e não devolveu");
   assert.match(porId["devolucao-atrasada"].itens[0].detalhe, /Furadeira/);
-  assert.equal(porId["estoque-minimo"].itens.length, 3, "Luva (2≤5), Óculos (5≤5) e Camisa (0≤3)");
+  assert.equal(porId["minimo-epi"].itens.length, 2, "Luva (2≤5) e Óculos (5≤5)");
+  assert.equal(porId["minimo-uniforme"].itens.length, 1, "Camisa (0≤3)");
+  assert.equal(porId["minimo-ferramenta"].itens.length, 0);
+  assert.equal(porId["equipamentos"].itens.length, 0);
+  assert.equal(porId["viagens"].itens.length, 0);
   assert.equal(porId["ca-vencendo"].itens.length, 1, "Capacete vence em 18 dias");
   assert.equal(totalPendencias(g), 1 + 1 + 3 + 1);
 });
@@ -154,7 +158,7 @@ test("atenção hoje: usa o saldo e o mínimo da tela de Estoque (tamanhos) e ig
     uniformes: [],
     estado: (_m, item) => (item.id === "a" ? { saldo: 12, minimo: 10, alerta: true } : { saldo: 0, minimo: 5, alerta: true }),
   });
-  const minimo = g.find((x) => x.id === "estoque-minimo");
+  const minimo = g.find((x) => x.id === "minimo-epi");
   assert.equal(minimo.itens.length, 1);
   assert.match(minimo.itens[0].detalhe, /saldo 12 para mínimo 10/);
   assert.equal(g.find((x) => x.id === "ca-vencendo").itens.length, 0, "inativo não entra");
@@ -163,8 +167,44 @@ test("atenção hoje: usa o saldo e o mínimo da tela de Estoque (tamanhos) e ig
 test("atenção hoje: sem mínimo cadastrado não alerta e empregado desligado não entra nos vencidos", () => {
   const g = pendenciasDeHoje({ ...base, epis: [{ id: "a", nome: "Luva", ca_validade: "2026-10-01", estoque_atual: 0, estoque_minimo: 0 }], uniformes: [],
     empregados: [{ id: "e1", nome: "Maria", ativo: true, data_demissao: "2026-11-01" }] });
-  assert.equal(g.find((x) => x.id === "estoque-minimo").itens.length, 0);
+  assert.equal(g.find((x) => x.id === "minimo-epi").itens.length, 0);
   assert.equal(g.find((x) => x.id === "epi-vencido").itens.length, 0);
+});
+
+test("atenção hoje: ferramenta abaixo do mínimo, equipamento com manutenção atrasada ou ocorrência aberta e viagens sem relatório no prazo", () => {
+  const g = pendenciasDeHoje({
+    ...base,
+    ferramentas: [{ id: "f", nome: "Furadeira", estoque_atual: 1, estoque_minimo: 2 }, { id: "g", nome: "Martelo", estoque_atual: 9, estoque_minimo: 2 }],
+    equipamentos: {
+      nomes: new Map([["q1", "Empilhadeira 1"], ["q2", "Compressor 2"]]),
+      ordens: [
+        { id: "o1", equipamentoId: "q1", tipo: "Preventiva", status: "Pendente", dataPrevista: "2026-11-10", responsavel: "Ana" },
+        { id: "o2", equipamentoId: "q2", tipo: "Corretiva", status: "Em andamento", dataPrevista: "2026-12-30" },
+        { id: "o3", equipamentoId: "q2", tipo: "Corretiva", status: "Concluída", dataPrevista: "2026-01-01" },
+      ],
+      ocorrencias: [
+        { id: "c1", equipamentoId: "q2", tipoNome: "Falha mecânica", status: "Aberta", data: "2026-11-12", codigo: "OCO-0001" },
+        { id: "c2", equipamentoId: "q1", tipoNome: "Falha elétrica", status: "Resolvida", data: "2026-11-01" },
+      ],
+    },
+    viagens: {
+      prazoDias: 3,
+      despesasEmAberto: [
+        { id: "d1", tecnico: "Bruno", registradaEm: "2026-11-01" },
+        { id: "d2", tecnico: "Bruno", registradaEm: "2026-11-05" },
+        { id: "d3", tecnico: "Carla", registradaEm: "2026-11-14" },
+        { id: "d4", tecnico: "Dora", registradaEm: "2026-11-13" },
+      ],
+    },
+  });
+  const porId = Object.fromEntries(g.map((x) => [x.id, x]));
+  assert.equal(porId["minimo-ferramenta"].itens.length, 1);
+  assert.equal(porId["equipamentos"].itens.length, 2, "só a ordem aberta e atrasada e a ocorrência não encerrada");
+  assert.match(porId["equipamentos"].itens[0].detalhe, /Manutenção preventiva atrasada \d+ dia\(s\)/);
+  assert.match(porId["equipamentos"].itens[1].detalhe, /OCO-0001 aberta: Falha mecânica/);
+  assert.equal(porId["viagens"].itens.length, 1, "só Bruno passou do prazo; Carla e Dora estão dentro dele");
+  assert.match(porId["viagens"].itens[0].detalhe, /2 despesa\(s\) sem relatório/);
+  assert.equal(porId["viagens"].itens[0].acao.url, "/viagens");
 });
 
 // ---------- peek ----------
