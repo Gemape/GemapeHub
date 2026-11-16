@@ -27,8 +27,8 @@ test("botões e campos têm área de toque maior só no celular (dec 232)", () =
   assert.match(ler("components/ui/input.tsx"), /h-9 max-sm:h-11/);
 });
 
-test("nas janelas, Salvar e Cancelar ficam fixos no rodapé só no celular (dec 232)", () => {
-  assert.match(ler("components/ui/dialog.tsx"), /max-sm:sticky max-sm:bottom-0/);
+test("nas janelas, Salvar e Cancelar ficam fixos no rodapé em qualquer tela (dec 232, ampliada na dec 430)", () => {
+  assert.match(ler("components/ui/dialog.tsx"), /sticky bottom-0/);
 });
 
 test("duas telas que estouravam a largura no celular foram corrigidas (dec 232)", () => {

@@ -129,7 +129,7 @@ test("a tela mostra cartões com ícone, título e Clique para acessar, só os d
   assert.match(pagina, /gruposDoInicio\(isAdmin, podeVerCaminho\)/);
   assert.match(pagina, /Clique para acessar/);
   assert.match(pagina, /focus-visible:ring/);
-  assert.match(pagina, /grid-cols-1[^\"]*min-\[480px\]:grid-cols-2/);
+  assert.match(pagina, /w-full min-\[480px\]:w-\[calc\(\(100%-var\(--gap\)\)\/2\)\] lg:w-\[calc\(\(100%-2\*var\(--gap\)\)\/3\)\]/);
   assert.doesNotMatch(pagina, /dangerouslySetInnerHTML|innerHTML/);
 });
 
@@ -264,4 +264,15 @@ test("navegação: seletor de módulos no canto esquerdo, trilha Início / módu
   assert.match(rota, /<RegistraRecente \/>/);
   assert.match(nav, /aria-label="Trocar de módulo"/);
   assert.match(nav, /to="\/inicio"[^>]*>[\s\S]*?Início/);
+});
+
+test("atalhos dos grupos: o id do atalho e o da seção saem da mesma função, o painel só existe aberto e Recolher tudo conta só cartões visíveis", () => {
+  assert.match(pagina, /const idDoGrupo = \(titulo: string\)/);
+  assert.match(pagina, /id=\{idDoGrupo\(grupo\.titulo\)\}/);
+  assert.match(pagina, /ir\(idDoGrupo\(g\)\)/);
+  assert.equal(pagina.match(/secao-\$\{/g).length, 1, "só a função monta o id");
+  assert.match(pagina, /\{aberto && \(\s*<div id=\{idLista\}/);
+  assert.match(pagina, /temAberto=\{grupos\.some\(/);
+  assert.match(pagina, /Recolher tudo/);
+  assert.doesNotMatch(pagina, /inert=/);
 });

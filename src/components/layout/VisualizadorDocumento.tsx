@@ -65,7 +65,7 @@ export function VisualizadorDocumento() {
             className="min-h-0 w-full flex-1 rounded-md border bg-white"
           />
         )}
-        <DialogFooter className="max-sm:flex-row max-sm:flex-wrap max-sm:justify-end gap-2">
+        <DialogFooter className={`max-sm:flex-row max-sm:flex-wrap max-sm:justify-end gap-2 -mx-4 -mb-4 px-4 ${telaCheia.current ? "sm:-mx-5 sm:-mb-5 sm:px-5" : "sm:-mx-6 sm:-mb-6 sm:px-6"}`}>
           <Button variant="outline" onClick={fecharDocumento}>
             Fechar
           </Button>

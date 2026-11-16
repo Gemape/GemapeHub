@@ -6,7 +6,7 @@ import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { AjudaTermo } from "@/components/AjudaTermo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouteContext } from "@tanstack/react-router";
+import { useRouteContext, useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,9 +60,17 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
   const { user } = useRouteContext({ from: "/_authenticated" });
   const responsavelPadrao = String((user?.user_metadata as { nome?: unknown } | undefined)?.nome ?? user?.email ?? "");
 
-  const [modo, setModo] = useState<"entrega" | "devolucao">("entrega");
-  const [empresaSel, setEmpresaSel] = useState(empresaId !== TODAS ? empresaId : "");
-  const [empregadoId, setEmpregadoId] = useState("");
+  // Vindo da busca da tela inicial ou de um alerta (?empresa=&empregado=&modo=devolucao): já abre com o empregado escolhido e no modo pedido.
+  const pedido = useSearch({ strict: false }) as { empresa?: string; empregado?: string; modo?: string };
+  const [modo, setModo] = useState<"entrega" | "devolucao">(pedido.modo === "devolucao" ? "devolucao" : "entrega");
+  const [empresaSel, setEmpresaSel] = useState(pedido.empresa || (empresaId !== TODAS ? empresaId : ""));
+  const [empregadoId, setEmpregadoId] = useState(pedido.empregado ?? "");
+  // A tela continua aberta quando o pedido muda (outra busca): acompanha.
+  useEffect(() => {
+    if (pedido.empresa) setEmpresaSel(pedido.empresa);
+    if (pedido.empregado) setEmpregadoId(pedido.empregado);
+    if (pedido.modo === "devolucao") setModo("devolucao");
+  }, [pedido.empresa, pedido.empregado, pedido.modo]);
   const [data, setData] = useState(hojeLocal());
   const [observacao, setObservacao] = useState("");
   const [responsavel, setResponsavel] = useState(responsavelPadrao);

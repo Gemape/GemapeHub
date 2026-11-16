@@ -1,5 +1,4 @@
 // "O que precisa da sua atenção hoje": pendências reais, por prioridade, já com o caminho de cada ação. Só lê dados em memória; quem chama busca as listas.
-import { somarDias } from "./consulta-rapida.ts";
 import { resumoEmpregado, type ItemDoResumo } from "./resumo-empregado.ts";
 import type { MovimentacaoEpi } from "./entrega-epi.ts";
 
@@ -117,11 +116,15 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     return { chave: `viag-${tecnico}`, texto: tecnico, detalhe: `${lista.length} despesa(s) sem relatório · a mais antiga lançada em ${dataBr(antiga)} (${diasEntre(antiga, e.hoje)} dias)`, acao: { rotulo: "Gerar relatório", url: "/viagens", search: { aba: "relatorio" } } };
   }).sort((a, b) => a.texto.localeCompare(b.texto, "pt-BR"));
 
-  // 4) CA que vence nos próximos 30 dias (ainda válido): dá tempo de comprar o substituto.
-  const limite = somarDias(e.hoje, 30);
-  const caVencendo: ItemPendencia[] = e.epis
-    .filter((i) => i.status !== "Inativo" && i.ca_validade && i.ca_validade.slice(0, 10) >= e.hoje && i.ca_validade.slice(0, 10) <= limite)
-    .map((i) => ({ chave: `ca-${i.id}`, texto: i.nome, detalhe: `CA vence em ${dataBr(i.ca_validade as string)}`, acao: { rotulo: "Ver no estoque", url: "/epi", search: { aba: "estoque" } } }));
+  // 4) Empregado desligado que ainda está com EPI: o item tem de voltar (ou ser cobrado) antes de fechar o desligamento.
+  const epiComDesligado: ItemPendencia[] = [];
+  for (const [id, movs] of movsEpi) {
+    const emp = nomes.get(id);
+    if (!emp || !(emp.ativo === false || emp.data_demissao)) continue;
+    const lista = resumoEmpregado(movs, e.epis, id, e.hoje).emPosse;
+    if (lista.length === 0) continue;
+    epiComDesligado.push({ chave: `epi-desl-${id}`, texto: emp.nome, detalhe: `${lista.map((p) => `${p.nome} (${p.quantidade})`).join(", ")}${emp.data_demissao ? ` · desligado em ${dataBr(emp.data_demissao)}` : ""}`, acao: { rotulo: "Registrar devolução", url: "/epi", search: { aba: "entrega", modo: "devolucao", ...(emp.empresa_id ? { empresa: emp.empresa_id } : {}), empregado: id } } });
+  }
 
   const grupos: GrupoPendencia[] = [
     { id: "epi-vencido", titulo: "EPIs vencidos com empregados", prioridade: "alta", vazio: "Nenhum EPI vencido em posse.", itens: vencidos },
@@ -131,7 +134,7 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     { id: "minimo-uniforme", titulo: "Uniformes no mínimo ou abaixo", prioridade: "media", vazio: "Nenhum uniforme abaixo do mínimo.", itens: minimoUniforme },
     { id: "minimo-ferramenta", titulo: "Ferramentas no mínimo ou abaixo", prioridade: "media", vazio: "Nenhuma ferramenta abaixo do mínimo.", itens: minimoFerramenta },
     { id: "viagens", titulo: "Viagens: despesas sem relatório no prazo", prioridade: "media", vazio: "Nenhuma despesa fora do prazo.", itens: viagens },
-    { id: "ca-vencendo", titulo: "CAs que vencem em 30 dias", prioridade: "baixa", vazio: "Nenhum CA perto de vencer.", itens: caVencendo },
+    { id: "epi-com-desligado", titulo: "EPIs não devolvidos (empregado desligado)", prioridade: "media", vazio: "Nenhum EPI pendente de desligados.", itens: epiComDesligado },
   ];
   return grupos.sort((a, b) => ORDEM[a.prioridade] - ORDEM[b.prioridade]);
 }

@@ -70,7 +70,7 @@ export function AtalhosPessoais({ fixados, recentes }: { fixados: readonly Atalh
   if (fixados.length === 0 && recentes.length === 0) return null;
   const novos = recentes.filter((r) => !fixados.some((f) => chaveDoAtalho(f) === chaveDoAtalho(r)));
   return (
-    <section aria-label="Atalhos pessoais" className="mx-auto flex w-full max-w-4xl flex-col gap-3">
+    <section aria-label="Atalhos pessoais" className="mx-auto flex w-full max-w-5xl flex-col gap-3">
       {fixados.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-primary/80"><Star className="size-3.5 fill-current" aria-hidden="true" />Fixados</span>

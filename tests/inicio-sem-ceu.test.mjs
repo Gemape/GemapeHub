@@ -36,7 +36,7 @@ test("o topo traz só Gestão de Patrimônio (letras em quadradinhos animados), 
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {
   assert.match(inicio, /bg-primary\/10/);
   assert.match(inicio, /Clique para acessar/);
-  assert.match(inicio, /grid-cols-1[^\"]*min-\[480px\]:grid-cols-2/);
+  assert.match(inicio, /w-full min-\[480px\]:w-\[calc\(\(100%-var\(--gap\)\)\/2\)\] lg:w-\[calc\(\(100%-2\*var\(--gap\)\)\/3\)\]/);
 });
 
 test("a tela inicial não mostra mais o texto de título (Início / Gestão de Patrimônio): começa direto nos cartões", () => {
@@ -83,8 +83,10 @@ test("ciclador de ícones: todo ícone da tela inicial tem par (morph); só os d
   assert.ok(lib.length > 0);
   const css = ler("styles.css");
   assert.match(css, /svg\[data-ciclo="ativo"\] \{\s*opacity: 1;/);
-  assert.match(inicio, /function CicladorDeIcones/);
-  assert.match(inicio, /prefers-reduced-motion: reduce/, "com reduzir movimento, fica só o primeiro ícone");
-  assert.match(inicio, /document\.hidden/, "pausa com a aba escondida");
+  const ciclador = ler("components/CicladorDeIcones.tsx");
+  assert.match(inicio, /<CicladorDeIcones /);
+  assert.match(ciclador, /export function CicladorDeIcones/);
+  assert.match(ciclador, /prefers-reduced-motion: reduce/, "com reduzir movimento, fica só o primeiro ícone");
+  assert.match(ciclador, /document\.hidden/, "pausa com a aba escondida");
   assert.match(inicio, /\[Icone, \.\.\.\(Morph \? \[Morph\] : \[\]\)\]/, "exatamente 2 ícones por cartão");
 });

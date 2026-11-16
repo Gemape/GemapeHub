@@ -133,9 +133,9 @@ const base = {
   ],
 };
 
-test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e CA vencendo, nesta ordem de prioridade", () => {
+test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e EPI com desligado, nesta ordem de prioridade", () => {
   const g = pendenciasDeHoje(base);
-  assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "alta", "media", "media", "media", "media", "baixa"]);
+  assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "alta", "media", "media", "media", "media", "media"]);
   const porId = Object.fromEntries(g.map((x) => [x.id, x]));
   assert.equal(porId["epi-vencido"].itens.length, 1);
   assert.match(porId["epi-vencido"].itens[0].detalhe, /Luva/);
@@ -147,8 +147,8 @@ test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e CA ve
   assert.equal(porId["minimo-ferramenta"].itens.length, 0);
   assert.equal(porId["equipamentos"].itens.length, 0);
   assert.equal(porId["viagens"].itens.length, 0);
-  assert.equal(porId["ca-vencendo"].itens.length, 1, "Capacete vence em 18 dias");
-  assert.equal(totalPendencias(g), 1 + 1 + 3 + 1);
+  assert.equal(porId["epi-com-desligado"].itens.length, 0, "e2 está desligado mas nunca recebeu EPI");
+  assert.equal(totalPendencias(g), 1 + 1 + 3);
 });
 
 test("atenção hoje: usa o saldo e o mínimo da tela de Estoque (tamanhos) e ignora item inativo", () => {
@@ -161,7 +161,24 @@ test("atenção hoje: usa o saldo e o mínimo da tela de Estoque (tamanhos) e ig
   const minimo = g.find((x) => x.id === "minimo-epi");
   assert.equal(minimo.itens.length, 1);
   assert.match(minimo.itens[0].detalhe, /saldo 12 para mínimo 10/);
-  assert.equal(g.find((x) => x.id === "ca-vencendo").itens.length, 0, "inativo não entra");
+});
+
+test("atenção hoje: EPI ainda com empregado desligado entra; devolvido ou de empregado ativo não", () => {
+  const g = pendenciasDeHoje({
+    ...base,
+    movsEpi: [
+      ...base.movsEpi,
+      { item_id: "a", empregado_id: "e2", tipo_movimentacao: "Saida", quantidade: 2, data_movimentacao: "2026-05-01" },
+      { item_id: "b", empregado_id: "e2", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-05-01" },
+      { item_id: "b", empregado_id: "e2", tipo_movimentacao: "Devolucao", quantidade: 1, data_movimentacao: "2026-10-02" },
+    ],
+  });
+  const item = g.find((x) => x.id === "epi-com-desligado").itens;
+  assert.equal(item.length, 1);
+  assert.equal(item[0].texto, "João");
+  assert.match(item[0].detalhe, /Luva \(2\)/);
+  assert.doesNotMatch(item[0].detalhe, /Capacete/);
+  assert.equal(item[0].acao.search.empregado, "e2");
 });
 
 test("atenção hoje: sem mínimo cadastrado não alerta e empregado desligado não entra nos vencidos", () => {

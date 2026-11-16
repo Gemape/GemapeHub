@@ -391,11 +391,8 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   entrega("epi", "epis", epiDe("Capacete", 0).id, 0, 1, 26, null);
   entrega("epi", "epis", epiDe("Luva", 1).id, 0, 1, 12, "tam-m", { responsavel_nome: "Almoxarifado Gemape", observacao: "Luva devolvida sem uso" }, "Devolucao");
   entrega("epi", "epis", epiDe("Botina", 1).id, 0, 1, 8, "tam-40", { motivo_baixa: "Desgaste Natural", observacao: "Solado gasto" });
-  // Alertas da tela inicial ("O que precisa da sua atenção hoje"): o capacete entregue acima está com o CA vencido (EPI vencido com empregado) e a botina e a luva têm o CA
-  // vencendo nos próximos 30 dias. Os CAs vencem por data, em relação a hoje.
+  // Alerta da tela inicial ("O que precisa da sua atenção hoje"): o capacete entregue acima está com a validade vencida (EPI vencido com empregado).
   estoqueDe("epis", epiDe("Capacete", 0).id, empresaIds[0]!)["ca_validade"] = dia(agora, 20);
-  estoqueDe("epis", epiDe("Botina", 1).id, empresaIds[0]!)["ca_validade"] = dia(agora, -25);
-  estoqueDe("epis", epiDe("Luva", 1).id, empresaIds[0]!)["ca_validade"] = dia(agora, -12);
   // Empresa 2 (Carlos).
   entrega("epi", "epis", epiDe("Botina", 2).id, 1, 1, 24, "tam-42");
   entrega("epi", "epis", epiDe("Luva", 2).id, 1, 2, 22, "tam-g");

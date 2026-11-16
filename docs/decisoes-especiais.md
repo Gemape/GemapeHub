@@ -2354,3 +2354,14 @@ Na Entrada no estoque das Ferramentas há o botão **Devolução** (`DevolucaoFe
 O botão Registrar Compra da Entrada no estoque das Ferramentas abre `CompraFerramentaDialog`, copiado da compra de EPI e uniforme: Estoque a alimentar (empresa), Ferramenta (com busca ao digitar, só as da empresa), Fornecedor, Nota Fiscal, Data, Tipo (Nova ou Usada), Quantidade, Valor Unitário e Valor Total calculado. Grava uma entrada que soma no estoque da empresa; no modo demonstração leva também fornecedor, NF, valor unitário e total (as colunas ainda não existem no banco real, Fase 2). A lista Compras mostra Fornecedor, NF e valores. Os links de cadastro são de ida e volta: **Cadastrar ferramenta** abre o cadastro em outra aba e, ao voltar, a lista de ferramentas é lida de novo; **Cadastrar fornecedor** abre o cadastro por cima da compra (decisão 390), sem perder o que foi preenchido.
 
 **Atualização:** o link "Cadastrar ferramenta" não abre mais outra aba: o cadastro (`ItensModulo` com a prop `janela`) abre por cima da compra, como o do fornecedor. Ao salvar, a janela fecha e a ferramenta nova (achada pelo código) já fica escolhida, junto da empresa dela, sem perder o que foi preenchido.
+
+## 430. Navegação inteligente: voltar para onde eu estava, linha do tempo, sumário fixo, busca com ações e anterior/próximo
+
+Pedido do responsável em 16/11. Tudo fica no navegador (sessão, por usuário); nada vai ao Supabase.
+
+- **Voltar contextual:** no alto das telas internas, "← Voltar para Cartão › Tela" (`VoltarContextual`) leva à tela de onde a pessoa veio, na mesma aba (`?aba=`) e na posição da rolagem em que estava. A pilha guarda as últimas 20 telas (`lib/navegacao-contextual.ts`).
+- **Relógio no cabeçalho:** os últimos 10 registros específicos abertos (ficha de empregado, ficha de EPI, veículo), um clique para voltar a um deles. Registra quando a URL traz `?empregado=`, `?veiculo=` ou `?epi=`.
+- **Busca da tela inicial com ações:** além das telas, acha empregado (nome, matrícula ou CPF) e EPI (nome, código ou "CA 12345") e mostra os botões: Ver ficha, + Entregar EPI, Registrar devolução, Ver saldo (N un), Dar entrada. Só aparecem as ações que o perfil pode abrir. "Ver ficha" abre o Histórico do empregado já com ele escolhido.
+- **Anterior / Próximo:** na tratativa de uma ocorrência de veículo, as setas percorrem a lista como está na tela (filtro, busca e período). O componente `SetasEntreRegistros` serve a qualquer lista.
+- **Sumário fixo (`MenuAncora`):** em Configurações, as abas do topo acompanham a rolagem, deslizam até cada bloco e destacam o que está na tela. Vale para qualquer tela que marque seções com `data-ancora`.
+- **Rodapé fixo das janelas:** Salvar e Cancelar ficam fixos na base em qualquer tamanho de tela (antes só no celular, decisão 232).

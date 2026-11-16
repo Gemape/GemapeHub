@@ -857,6 +857,27 @@
   }
 }
 
+/* Ícones alternados (menu de Configurações): como o medalhão dos cartões da tela inicial, sem caixa; o tamanho vem de quem usa (size-*). */
+@utility icone-alternado {
+  display: grid;
+  place-items: center;
+  & > svg {
+    grid-area: 1 / 1;
+    height: 100%;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+  }
+  & > svg[data-ciclo="ativo"] {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    & > svg {
+      transition: none;
+    }
+  }
+}
+
 /* Página inicial pública (glassmorphism): fundo azul com manchas de luz que derivam devagar e vidro fosco por cima. As manchas só usam transform e opacidade; quem
    reduz movimento recebe tudo parado. */
 @keyframes mancha-deriva-a {
