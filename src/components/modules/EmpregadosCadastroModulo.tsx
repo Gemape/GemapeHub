@@ -1,3 +1,6 @@
+import { marcarDestaque, useDestaque } from "@/lib/destaque-linha";
+import { BarraCompletude } from "@/components/BarraCompletude";
+import { CAMPOS_EMPREGADO } from "@/lib/completude";
 import { AvisoSemelhantes } from "@/components/AvisoSemelhantes";
 import { useAvisoNaoSalvo } from "@/lib/use-aviso-nao-salvo";
 import { NomeComResumo } from "@/components/GavetaResumo";
@@ -7,7 +10,12 @@ import { AvisoEdicaoSimultanea } from "@/components/AvisoEdicaoSimultanea";
 import { validarCpfCampo, validarMatriculaCampo } from "@/lib/validacao-campos";
 import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
-import { useRef, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { SemResultadoBusca } from "@/components/SemResultadoBusca";
+import { sugerirNome } from "@/lib/busca-tolerante";
+import { capitalizarTexto } from "@/lib/formatacao-cadastral";
+import type { ReactNode } from "react";
 import { useAbrirDireto } from "@/lib/use-abrir-direto";
 import { toast } from "sonner";
 
@@ -107,14 +115,32 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
   }
 
   // Demonstração (2.8): o cadastro novo abre já preenchido com um empregado fictício; CPF e matrícula saem diferentes dos de todas as empresas.
-  async function abrirNovo() {
+  async function abrirNovo(nome?: string) {
     if (import.meta.env.VITE_DEMO_MODE !== "false") {
       let todos: { cpf?: string | null; matricula?: string | null }[] = empregados;
       try { todos = await lerTodas(() => supabase.from("empregados").select("id,cpf,matricula"), (q) => q.order("id")); } catch { /* fica com a lista da tela */ }
-      return abrir(exemploEmpregado(todos, empresaPadrao) as EmpregadoCadastro, true);
+      const exemplo = exemploEmpregado(todos, empresaPadrao) as EmpregadoCadastro;
+      return abrir(nome ? { ...exemplo, nome } : exemplo, true);
     }
-    abrir(null);
+    abrir(nome ? ({ nome } as EmpregadoCadastro) : null, !!nome);
   }
+
+  // Busca sem resultado nos ativos: sugere o nome parecido e oferece cadastrar com o texto digitado.
+  const semResultado = () => (
+    <SemResultadoBusca
+      termo={busca}
+      sugestao={sugerirNome(busca, empregados.map((e) => e.nome))}
+      aoSugerir={setBusca}
+      rotuloCadastro={`Cadastrar “${busca.trim()}”`}
+      aoCadastrar={() => void abrirNovo(capitalizarTexto(busca))}
+    />
+  );
+  const { novoNome } = useSearch({ strict: false }) as { novoNome?: string };
+  const abriuPorLink = useRef(false);
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (novoNome && !abriuPorLink.current && empresas.length > 0) { abriuPorLink.current = true; void abrirNovo(capitalizarTexto(novoNome)); void navigate({ to: "/empregados", search: {}, replace: true }); }
+  }, [novoNome, empresas.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [erroCpf, setErroCpf] = useState<string | null>(null);
   const [erroMatricula, setErroMatricula] = useState<string | null>(null);
@@ -168,7 +194,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
     salvar.mutate(
       { ...(editando ? { id: editando.id } : {}), valores },
       {
-        onSuccess: () => setAberto(false),
+        onSuccess: () => { setAberto(false); marcarDestaque(String(valores["cpf"] ?? "").replace(/\D/g, "")); },
         onError: () => {
           salvando.current = false;
         },
@@ -250,7 +276,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
           <BlocoEmpregados
             titulo={`Ativos (${ativos.length})`}
             lista={ativos}
-            vazio={busca.trim() ? "Nenhum empregado ativo encontrado para a busca." : "Nenhum empregado ativo."}
+            vazio={busca.trim() ? semResultado : "Nenhum empregado ativo."}
             nomeEmpresa={nomeEmpresa}
             onClonar={(e) => abrir(e, true)}
             onEditar={(e) => abrir(e)}
@@ -318,6 +344,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
           </DialogHeader>
           <AvisoEdicaoSimultanea chave={editando ? `empregado:${editando.id}` : null} />
           <form onSubmit={(e) => void enviar(e)} onInput={aviso.aoAlterar} onChange={aviso.aoAlterar} className="grid gap-4 sm:grid-cols-2">
+            <BarraCompletude campos={CAMPOS_EMPREGADO} nome="Cadastro" />
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="nome">Nome completo</Label>
               <Input id="nome" name="nome" capitalizar="nome" aria-required defaultValue={base?.nome ?? ""} />
@@ -430,7 +457,7 @@ function BlocoEmpregados({
 }: {
   titulo: string;
   lista: EmpregadoCadastro[];
-  vazio: string;
+  vazio: string | (() => ReactNode);
   nomeEmpresa: (id: string | null) => string;
   onClonar: (e: EmpregadoCadastro) => void;
   onEditar: (e: EmpregadoCadastro) => void;
@@ -438,6 +465,7 @@ function BlocoEmpregados({
   onExcluir: (e: EmpregadoCadastro) => void;
   onDemitir?: (e: EmpregadoCadastro) => void;
 }) {
+  const destaque = useDestaque();
   return (
     <section className="space-y-2">
       <h2 className="text-sm font-semibold">{titulo}</h2>
@@ -460,12 +488,12 @@ function BlocoEmpregados({
             {lista.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-muted-foreground">
-                  {vazio}
+                  {typeof vazio === "function" ? vazio() : vazio}
                 </TableCell>
               </TableRow>
             ) : (
               lista.map((e) => (
-                <TableRow key={e.id}>
+                <TableRow key={e.id} data-destaque={e.cpf.replace(/\D/g, "")} className={destaque === e.cpf.replace(/\D/g, "") ? "linha-destacada" : undefined}>
                   <TableCell>
                     <NomeComResumo rotulo={e.nome} aoAbrir={() => onResumo(e)} cartao={<>
                       <p className="font-semibold">{e.nome}</p>

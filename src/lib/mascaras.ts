@@ -1,6 +1,7 @@
 // Máscaras aplicadas enquanto se digita (CNPJ, telefone e CEP). Só mexem no que aparece no
 // campo; a validação e o salvamento continuam em formatacao-cadastral.ts.
 import type { FormEvent } from "react";
+import { buscarCep, preencherEndereco } from "./cep.ts";
 import { mascararCpf } from "./empregados.ts";
 
 const digitos = (valor: string, maximo: number) => valor.replace(/\D/g, "").slice(0, maximo);
@@ -41,10 +42,17 @@ export function mascararTelefone(valor: string): string {
   return saida;
 }
 
+// Placa antiga (ABC-1234) ou Mercosul (ABC1D23): maiúsculas, sem símbolos, no máximo 7 caracteres. O hífen só entra quando o 5º caractere é número (padrão antigo).
+export function mascararPlaca(valor: string): string {
+  const p = valor.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 7);
+  return p.length > 4 && /\d/.test(p[4]!) ? `${p.slice(0, 3)}-${p.slice(3)}` : p;
+}
+
 export function mascaraDoCampo(nome: string): ((valor: string) => string) | undefined {
   if (nome === "cnpj") return mascararCnpj;
   if (nome === "cpf") return mascararCpf;
   if (nome === "cep") return mascararCep;
+  if (nome === "placa") return mascararPlaca;
   if (nome === "telefone" || nome === "telefone2") return mascararTelefone;
   return undefined;
 }
@@ -91,6 +99,16 @@ export function reaplicarMascara(
   return { texto, cursor: texto.length };
 }
 
+// Placa: o cursor fica depois do mesmo caractere (letra ou número) em que estava; o hífen não conta.
+function cursorDaPlaca(campo: HTMLInputElement): { texto: string; cursor: number } {
+  const bruto = campo.value;
+  let antes = bruto.slice(0, campo.selectionStart ?? bruto.length).toUpperCase().replace(/[^A-Z0-9]/g, "").length;
+  const texto = mascararPlaca(bruto);
+  let i = 0;
+  for (; i < texto.length && antes > 0; i += 1) if (texto[i] !== "-") antes -= 1;
+  return { texto, cursor: i };
+}
+
 // Último texto de cada campo, para saber se o backspace só apagou pontuação.
 const ultimoTexto = new WeakMap<HTMLInputElement, string>();
 
@@ -102,7 +120,7 @@ export function aoDigitarMascarado(nome: string) {
     const campo = e.currentTarget;
     const anterior = ultimoTexto.get(campo) ?? campo.defaultValue;
     const apagou = (e.nativeEvent as InputEvent).inputType === "deleteContentBackward";
-    const { texto, cursor } = reaplicarMascara(
+    const { texto, cursor } = nome === "placa" ? cursorDaPlaca(campo) : reaplicarMascara(
       mascara,
       campo.value,
       campo.selectionStart ?? campo.value.length,
@@ -114,5 +132,10 @@ export function aoDigitarMascarado(nome: string) {
       campo.setSelectionRange(cursor, cursor);
     }
     ultimoTexto.set(campo, texto);
+    // CEP completo: já traz rua, bairro, cidade e estado que estiverem em branco.
+    if (nome === "cep" && texto.replace(/\D/g, "").length === 8) {
+      const form = campo.form;
+      void buscarCep(texto).then((e) => { if (e && campo.value === texto) preencherEndereco(form, e); });
+    }
   };
 }

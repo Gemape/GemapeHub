@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { marcarDirecao } from "@/lib/direcao-tela";
 import { useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -113,6 +114,7 @@ export function VoltarContextual() {
   }, [dono, chave]);
   if (!anterior || pathname === "/inicio") return null;
   const voltar = () => {
+    marcarDirecao("voltar");
     recuarPara(armazenamento(), dono, anterior.chave);
     rolagemPendente = { chave: anterior.chave, y: anterior.rolagem, ate: Date.now() + 5000 };
     void navigate({ to: anterior.url, ...(anterior.search ? { search: anterior.search } : {}) } as never);

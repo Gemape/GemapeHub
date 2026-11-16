@@ -1012,8 +1012,20 @@
 @keyframes pagina-entra {
   from { opacity: 0; }
 }
+/* Direção: abrir entra pela direita, voltar entra pela esquerda (o transform só existe durante os 0,25 s da animação). */
+@keyframes pagina-entra-direita { from { opacity: 0; transform: translateX(28px); } }
+@keyframes pagina-entra-esquerda { from { opacity: 0; transform: translateX(-28px); } }
 @media (prefers-reduced-motion: no-preference) {
   .pagina-entra { animation: pagina-entra 0.2s ease-out backwards; }
+  .pagina-entra-direita { animation: pagina-entra-direita 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+  .pagina-entra-esquerda { animation: pagina-entra-esquerda 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) backwards; }
+}
+
+/* Linha recém-criada ou editada: pisca em azul claro por 2 s ao voltar para a lista. Com movimento reduzido fica só o realce fixo (o script o tira em 2,2 s). */
+@keyframes linha-destacada { 0%, 55% { background-color: color-mix(in oklab, var(--primary) 22%, transparent); } 100% { background-color: transparent; } }
+.linha-destacada { animation: linha-destacada 2s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .linha-destacada { animation: none; background-color: color-mix(in oklab, var(--primary) 22%, transparent); }
 }
 
 /* Acessibilidade e ergonomia: dígitos de largura fixa em tabelas e totais (quantidades e valores alinham na vertical),

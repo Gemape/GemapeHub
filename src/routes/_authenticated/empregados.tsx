@@ -16,5 +16,7 @@ export const Route = createFileRoute("/_authenticated/empregados")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  // novoNome: abre o cadastro novo já com o nome que a busca não achou.
+  validateSearch: (s: Record<string, unknown>): { novoNome?: string } => (typeof s["novoNome"] === "string" && s["novoNome"].trim() ? { novoNome: s["novoNome"] } : {}),
   component: EmpregadosCadastroModulo,
 });

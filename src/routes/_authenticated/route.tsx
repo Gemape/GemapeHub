@@ -1,8 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useMemo } from "react";
 import { ArrowLeft, LogOut } from "lucide-react";
 
+import { direcaoDaTroca, marcarDirecao } from "@/lib/direcao-tela";
 import { RedeEFila } from "@/components/layout/RedeEFila";
 import { ReceptorGlobal } from "@/components/layout/ReceptorGlobal";
 import { SincroniaAbas } from "@/components/layout/SincroniaAbas";
@@ -38,6 +39,11 @@ const ConfiguracoesDemo = import.meta.env.VITE_DEMO_MODE !== "false"
   : null;
 
 // Tela sem permissão (modo demonstração): mostra o aviso no lugar do conteúdo. Em produção `semAcesso` é sempre falso.
+// A troca de tela entra pela direita (abrir) ou pela esquerda (voltar): lê a direção marcada e já deixa o padrão pronto para a próxima.
+function classeDaTroca() {
+  return direcaoDaTroca() === "voltar" ? "pagina-entra-esquerda" : "pagina-entra-direita";
+}
+
 function ConteudoComAcesso() {
   const { semAcesso } = useAccess();
   if (!semAcesso) return <Outlet />;
@@ -95,6 +101,13 @@ function LayoutAutenticado() {
   // Remonta só quando troca de tela (rota), não quando só muda o parâmetro da mesma tela: formulários e filtros não se perdem.
   const telaAtual = useRouterState({ select: (s) => s.matches.at(-1)?.routeId ?? "" });
   const noInicio = pathname === "/inicio";
+  // Lida uma vez por troca de tela (não a cada desenho). O botão Voltar do navegador também conta como voltar.
+  const classeTroca = useMemo(() => classeDaTroca(), [telaAtual]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const aoVoltar = () => marcarDirecao("voltar");
+    window.addEventListener("popstate", aoVoltar);
+    return () => window.removeEventListener("popstate", aoVoltar);
+  }, []);
 
   // Só na demonstração: aplica a aparência escolhida em Configurações (tema, cores, fonte, densidade, favicon). Na produção a condição é falsa e o código não é gerado.
   useEffect(() => {
@@ -167,7 +180,7 @@ function LayoutAutenticado() {
           <div id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 p-3 outline-none sm:p-4 md:p-6">
             <VoltarContextual />
             <TrilhaDeNavegacao />
-            <div key={telaAtual} className="pagina-entra"><ConteudoComAcesso /></div>
+            <div key={telaAtual} className={classeTroca}><ConteudoComAcesso /></div>
             <RegistraRecente />
             <PilhaDeNavegacao />
             <RegistraRegistroAberto />

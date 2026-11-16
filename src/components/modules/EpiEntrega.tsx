@@ -4,7 +4,7 @@ import { mensagemHumana, mensagemValidadeVencida } from "@/lib/erros-humanos";
 import { ehErroDeRede, enfileirar } from "@/lib/fila-offline";
 import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { AjudaTermo } from "@/components/AjudaTermo";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouteContext, useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -53,6 +53,7 @@ export const EpiEntrega = () => <EntregaModulo modulo="epi" />;
 export const UniformesEntrega = () => <EntregaModulo modulo="uniforme" />;
 
 function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
+  const idData = useId();
   const rot = ROTULO[modulo];
   const { empresaId } = useEmpresa();
   const { isAdmin, canOperate } = useAccess();
@@ -280,8 +281,8 @@ function EntregaModulo({ modulo }: { modulo: ModuloEntrega }) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>{modo === "entrega" ? "Data da entrega" : "Data da devolução"}</Label>
-            <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            <Label htmlFor={idData}>{modo === "entrega" ? "Data da entrega" : "Data da devolução"}</Label>
+            <Input id={idData} type="date" value={data} onChange={(e) => setData(e.target.value)} />
           </div>
         </div>
 
