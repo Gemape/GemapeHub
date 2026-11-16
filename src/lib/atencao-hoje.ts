@@ -1,5 +1,4 @@
 // "O que precisa da sua atenção hoje": pendências reais, por prioridade, já com o caminho de cada ação. Só lê dados em memória; quem chama busca as listas.
-import { somarDias } from "./consulta-rapida.ts";
 import { resumoEmpregado, type ItemDoResumo } from "./resumo-empregado.ts";
 import type { MovimentacaoEpi } from "./entrega-epi.ts";
 
@@ -31,6 +30,18 @@ export type EntradaAtencao = {
   viagens?: { despesasEmAberto: readonly DespesaAbertaViagem[]; prazoDias: number };
 };
 
+const DIAS_FERRAMENTA_EM_POSSE = 45;
+// Data da entrega mais antiga ainda em posse: as devoluções (e as baixas feitas pelo empregado, como perda) quitam as entregas da mais velha para a mais nova.
+function entregaMaisAntigaEmPosse(movs: readonly MovimentacaoEpi[]): string | null {
+  const entrega = (m: MovimentacaoEpi) => m.tipo_movimentacao === "Saida" && (!m.motivo_baixa || m.motivo_baixa === "Fornecimento ao Empregado");
+  const entregas = movs.filter(entrega).sort((a, b) => a.data_movimentacao.localeCompare(b.data_movimentacao));
+  let quitadas = movs.filter((m) => !entrega(m)).reduce((t, m) => t + (m.tipo_movimentacao === "Devolucao" || m.tipo_movimentacao === "Saida" ? Number(m.quantidade) || 0 : 0), 0);
+  for (const m of entregas) {
+    quitadas -= Number(m.quantidade) || 0;
+    if (quitadas < 0) return m.data_movimentacao.slice(0, 10);
+  }
+  return null;
+}
 const ORDEM = { alta: 0, media: 1, baixa: 2 } as const;
 const dataBr = (d: string) => d.slice(0, 10).split("-").reverse().join("/");
 const diasEntre = (de: string, ate: string): number => Math.round((Date.parse(`${ate.slice(0, 10)}T00:00:00Z`) - Date.parse(`${de.slice(0, 10)}T00:00:00Z`)) / 86_400_000);
@@ -117,11 +128,19 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     return { chave: `viag-${tecnico}`, texto: tecnico, detalhe: `${lista.length} despesa(s) sem relatório · a mais antiga lançada em ${dataBr(antiga)} (${diasEntre(antiga, e.hoje)} dias)`, acao: { rotulo: "Gerar relatório", url: "/viagens", search: { aba: "relatorio" } } };
   }).sort((a, b) => a.texto.localeCompare(b.texto, "pt-BR"));
 
-  // 4) CA que vence nos próximos 30 dias (ainda válido): dá tempo de comprar o substituto.
-  const limite = somarDias(e.hoje, 30);
-  const caVencendo: ItemPendencia[] = e.epis
-    .filter((i) => i.status !== "Inativo" && i.ca_validade && i.ca_validade.slice(0, 10) >= e.hoje && i.ca_validade.slice(0, 10) <= limite)
-    .map((i) => ({ chave: `ca-${i.id}`, texto: i.nome, detalhe: `CA vence em ${dataBr(i.ca_validade as string)}`, acao: { rotulo: "Ver no estoque", url: "/epi", search: { aba: "estoque" } } }));
+  // 4) Ferramenta que continua com um empregado ativo há mais de DIAS_FERRAMENTA_EM_POSSE dias desde a última entrega: hora de conferir se ainda é necessária.
+  // shortcut: limite fixo de 45 dias; vira parâmetro se cada empresa precisar do seu.
+  const emPosseLonga: ItemPendencia[] = [];
+  for (const [id, movs] of movsFer) {
+    const emp = nomes.get(id);
+    if (!emp || emp.ativo === false || emp.data_demissao) continue;
+    const antigas = resumoEmpregado(movs, e.ferramentas, id, e.hoje).emPosse.flatMap((p) => {
+      const entrega = entregaMaisAntigaEmPosse(movs.filter((m) => m.item_id === p.itemId));
+      return entrega && diasEntre(entrega, e.hoje) > DIAS_FERRAMENTA_EM_POSSE ? [`${p.nome} (desde ${dataBr(entrega)})`] : [];
+    });
+    if (antigas.length === 0) continue;
+    emPosseLonga.push({ chave: `posse-${id}`, texto: emp.nome, detalhe: antigas.join(", "), acao: { rotulo: "Conferir ferramenta", url: "/ferramentas", search: { aba: "entrega" } } });
+  }
 
   const grupos: GrupoPendencia[] = [
     { id: "epi-vencido", titulo: "EPIs vencidos com empregados", prioridade: "alta", vazio: "Nenhum EPI vencido em posse.", itens: vencidos },
@@ -131,7 +150,7 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     { id: "minimo-uniforme", titulo: "Uniformes no mínimo ou abaixo", prioridade: "media", vazio: "Nenhum uniforme abaixo do mínimo.", itens: minimoUniforme },
     { id: "minimo-ferramenta", titulo: "Ferramentas no mínimo ou abaixo", prioridade: "media", vazio: "Nenhuma ferramenta abaixo do mínimo.", itens: minimoFerramenta },
     { id: "viagens", titulo: "Viagens: despesas sem relatório no prazo", prioridade: "media", vazio: "Nenhuma despesa fora do prazo.", itens: viagens },
-    { id: "ca-vencendo", titulo: "CAs que vencem em 30 dias", prioridade: "baixa", vazio: "Nenhum CA perto de vencer.", itens: caVencendo },
+    { id: "ferramenta-em-posse", titulo: `Ferramentas com o empregado há mais de ${DIAS_FERRAMENTA_EM_POSSE} dias`, prioridade: "baixa", vazio: "Nenhuma ferramenta parada com empregado.", itens: emPosseLonga },
   ];
   return grupos.sort((a, b) => ORDEM[a.prioridade] - ORDEM[b.prioridade]);
 }

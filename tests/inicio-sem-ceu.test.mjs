@@ -83,8 +83,10 @@ test("ciclador de ícones: todo ícone da tela inicial tem par (morph); só os d
   assert.ok(lib.length > 0);
   const css = ler("styles.css");
   assert.match(css, /svg\[data-ciclo="ativo"\] \{\s*opacity: 1;/);
-  assert.match(inicio, /function CicladorDeIcones/);
-  assert.match(inicio, /prefers-reduced-motion: reduce/, "com reduzir movimento, fica só o primeiro ícone");
-  assert.match(inicio, /document\.hidden/, "pausa com a aba escondida");
+  const ciclador = ler("components/CicladorDeIcones.tsx");
+  assert.match(inicio, /<CicladorDeIcones /);
+  assert.match(ciclador, /export function CicladorDeIcones/);
+  assert.match(ciclador, /prefers-reduced-motion: reduce/, "com reduzir movimento, fica só o primeiro ícone");
+  assert.match(ciclador, /document\.hidden/, "pausa com a aba escondida");
   assert.match(inicio, /\[Icone, \.\.\.\(Morph \? \[Morph\] : \[\]\)\]/, "exatamente 2 ícones por cartão");
 });

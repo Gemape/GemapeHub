@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Star, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
+import { CicladorDeIcones } from "@/components/CicladorDeIcones";
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
 import { AtalhosPessoais, useAtalhosPessoais } from "@/components/inicio/atalhosPessoais";
 import { AtencaoHoje } from "@/components/inicio/AtencaoHoje";
@@ -60,29 +61,6 @@ const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visibl
 const gradeDeCartoes =
   "grade-entra mx-auto grid max-w-4xl grid-cols-1 items-start gap-4 min-[480px]:grid-cols-2 sm:gap-6 min-[480px]:[&>li:last-child:nth-child(odd)]:col-span-2 min-[480px]:[&>li:last-child:nth-child(odd)]:mx-auto min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.5rem)] sm:min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.75rem)]";
 const SECOES: readonly SecaoInicio[] = ["Módulo", "Relatórios", "Parâmetros"];
-
-// Ciclador de ícones: os dois ícones do assunto se alternam no mesmo lugar (um some, o outro aparece).
-// Pausa com a aba escondida; com "reduzir movimento", fica só o primeiro.
-const INTERVALO_CICLO_MS = 2600;
-function CicladorDeIcones({ icones, atrasoMs }: { icones: readonly (typeof Car)[]; atrasoMs: number }) {
-  const [atual, setAtual] = useState(0);
-  useEffect(() => {
-    if (icones.length < 2 || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    let intervalo: number | undefined;
-    // Cada cartão começa num tempo diferente: os medalhões não trocam todos juntos.
-    const inicio = window.setTimeout(() => {
-      intervalo = window.setInterval(() => { if (!document.hidden) setAtual((i) => (i + 1) % icones.length); }, INTERVALO_CICLO_MS);
-    }, atrasoMs);
-    return () => { window.clearTimeout(inicio); window.clearInterval(intervalo); };
-  }, [icones.length, atrasoMs]);
-    return (
-    <>
-      {icones.map((I, i) => (
-        <I key={i} aria-hidden="true" strokeWidth={1.6} data-ciclo={i === atual ? "ativo" : "espera"} />
-      ))}
-    </>
-  );
-}
 
 // Faixa do alto do cartão: degradê azul, duas luzes suaves de fundo e o ícone (dois que se alternam) (mais baixa no celular, para caber mais cartões na tela).
 function FaixaDoCartao({ Icone, tipo, atraso }: { Icone: typeof Car; tipo: IconeInicio | "Settings"; atraso: string }) {

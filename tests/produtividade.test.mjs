@@ -133,7 +133,7 @@ const base = {
   ],
 };
 
-test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e CA vencendo, nesta ordem de prioridade", () => {
+test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e ferramenta parada, nesta ordem de prioridade", () => {
   const g = pendenciasDeHoje(base);
   assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "alta", "media", "media", "media", "media", "baixa"]);
   const porId = Object.fromEntries(g.map((x) => [x.id, x]));
@@ -147,8 +147,8 @@ test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e CA ve
   assert.equal(porId["minimo-ferramenta"].itens.length, 0);
   assert.equal(porId["equipamentos"].itens.length, 0);
   assert.equal(porId["viagens"].itens.length, 0);
-  assert.equal(porId["ca-vencendo"].itens.length, 1, "Capacete vence em 18 dias");
-  assert.equal(totalPendencias(g), 1 + 1 + 3 + 1);
+  assert.equal(porId["ferramenta-em-posse"].itens.length, 0, "a ferramenta de e1 foi devolvida e a de e2 é de desligado");
+  assert.equal(totalPendencias(g), 1 + 1 + 3);
 });
 
 test("atenção hoje: usa o saldo e o mínimo da tela de Estoque (tamanhos) e ignora item inativo", () => {
@@ -161,7 +161,23 @@ test("atenção hoje: usa o saldo e o mínimo da tela de Estoque (tamanhos) e ig
   const minimo = g.find((x) => x.id === "minimo-epi");
   assert.equal(minimo.itens.length, 1);
   assert.match(minimo.itens[0].detalhe, /saldo 12 para mínimo 10/);
-  assert.equal(g.find((x) => x.id === "ca-vencendo").itens.length, 0, "inativo não entra");
+});
+
+test("atenção hoje: ferramenta com empregado ativo há mais de 45 dias entra; recente, devolvida ou de desligado não", () => {
+  const g = pendenciasDeHoje({
+    ...base,
+    ferramentas: [{ id: "f", nome: "Furadeira" }, { id: "g", nome: "Martelo" }, { id: "h", nome: "Chave" }],
+    movsFerramenta: [
+      { item_id: "f", empregado_id: "e1", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-08-01" },
+      { item_id: "g", empregado_id: "e1", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-11-01" },
+      { item_id: "h", empregado_id: "e1", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-07-01" },
+      { item_id: "h", empregado_id: "e1", tipo_movimentacao: "Devolucao", quantidade: 1, data_movimentacao: "2026-07-20" },
+      { item_id: "f", empregado_id: "e2", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-05-01" },
+    ],
+  });
+  const item = g.find((x) => x.id === "ferramenta-em-posse").itens;
+  assert.equal(item.length, 1);
+  assert.match(item[0].detalhe, /Furadeira \(desde 01\/08\/2026\)/);
 });
 
 test("atenção hoje: sem mínimo cadastrado não alerta e empregado desligado não entra nos vencidos", () => {
