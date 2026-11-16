@@ -16,7 +16,7 @@ import { lerTodas } from "@/lib/ler-todas";
 
 type Mensagem = { de: "voce" | "sistema"; texto: string; links?: readonly LinkConsulta[] };
 
-const EXEMPLOS = ["Quem está com a furadeira 04?", "Quais EPIs vencem essa semana?"];
+const EXEMPLOS = ["Quem está com a furadeira 04?", "Quais EPIs vencem essa semana?", "Como entregar EPI?"];
 
 // Campo de pergunta no canto da tela: o gestor ou o almoxarife escreve em linguagem natural e recebe a resposta com o link direto da tela.
 export function ConsultaRapida() {
@@ -79,7 +79,7 @@ function PainelConsulta({ conversa, setConversa, fechar }: { conversa: Mensagem[
       ? { de: "sistema", texto: resposta.texto, links: resposta.links.filter((l) => podeVerCaminho(l.url, l.search)) }
       : telas.length
         ? { de: "sistema", texto: "Não entendi a pergunta, mas estas telas podem ajudar:", links: telas.map((t) => ({ rotulo: t.titulo, url: t.url, ...(t.search ? { search: t.search } : {}) })) }
-        : { de: "sistema", texto: "Não entendi. Tente, por exemplo: “Quem está com a furadeira 04?” ou “Quais EPIs vencem essa semana?”." };
+        : { de: "sistema", texto: "Não entendi. Tente, por exemplo: “Quem está com a furadeira 04?”, “Quais EPIs vencem essa semana?” ou “Como entregar EPI?”." };
     const sua: Mensagem = { de: "voce", texto: pergunta };
     setConversa((c) => [...c, sua, sistema].slice(-12));
     setTexto("");

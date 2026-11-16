@@ -133,9 +133,9 @@ const base = {
   ],
 };
 
-test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e ferramenta parada, nesta ordem de prioridade", () => {
+test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e EPI com desligado, nesta ordem de prioridade", () => {
   const g = pendenciasDeHoje(base);
-  assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "alta", "media", "media", "media", "media", "baixa"]);
+  assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "alta", "media", "media", "media", "media", "media"]);
   const porId = Object.fromEntries(g.map((x) => [x.id, x]));
   assert.equal(porId["epi-vencido"].itens.length, 1);
   assert.match(porId["epi-vencido"].itens[0].detalhe, /Luva/);
@@ -147,7 +147,7 @@ test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e ferra
   assert.equal(porId["minimo-ferramenta"].itens.length, 0);
   assert.equal(porId["equipamentos"].itens.length, 0);
   assert.equal(porId["viagens"].itens.length, 0);
-  assert.equal(porId["ferramenta-em-posse"].itens.length, 0, "a ferramenta de e1 foi devolvida e a de e2 é de desligado");
+  assert.equal(porId["epi-com-desligado"].itens.length, 0, "e2 está desligado mas nunca recebeu EPI");
   assert.equal(totalPendencias(g), 1 + 1 + 3);
 });
 
@@ -163,21 +163,22 @@ test("atenção hoje: usa o saldo e o mínimo da tela de Estoque (tamanhos) e ig
   assert.match(minimo.itens[0].detalhe, /saldo 12 para mínimo 10/);
 });
 
-test("atenção hoje: ferramenta com empregado ativo há mais de 45 dias entra; recente, devolvida ou de desligado não", () => {
+test("atenção hoje: EPI ainda com empregado desligado entra; devolvido ou de empregado ativo não", () => {
   const g = pendenciasDeHoje({
     ...base,
-    ferramentas: [{ id: "f", nome: "Furadeira" }, { id: "g", nome: "Martelo" }, { id: "h", nome: "Chave" }],
-    movsFerramenta: [
-      { item_id: "f", empregado_id: "e1", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-08-01" },
-      { item_id: "g", empregado_id: "e1", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-11-01" },
-      { item_id: "h", empregado_id: "e1", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-07-01" },
-      { item_id: "h", empregado_id: "e1", tipo_movimentacao: "Devolucao", quantidade: 1, data_movimentacao: "2026-07-20" },
-      { item_id: "f", empregado_id: "e2", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-05-01" },
+    movsEpi: [
+      ...base.movsEpi,
+      { item_id: "a", empregado_id: "e2", tipo_movimentacao: "Saida", quantidade: 2, data_movimentacao: "2026-05-01" },
+      { item_id: "b", empregado_id: "e2", tipo_movimentacao: "Saida", quantidade: 1, data_movimentacao: "2026-05-01" },
+      { item_id: "b", empregado_id: "e2", tipo_movimentacao: "Devolucao", quantidade: 1, data_movimentacao: "2026-10-02" },
     ],
   });
-  const item = g.find((x) => x.id === "ferramenta-em-posse").itens;
+  const item = g.find((x) => x.id === "epi-com-desligado").itens;
   assert.equal(item.length, 1);
-  assert.match(item[0].detalhe, /Furadeira \(desde 01\/08\/2026\)/);
+  assert.equal(item[0].texto, "João");
+  assert.match(item[0].detalhe, /Luva \(2\)/);
+  assert.doesNotMatch(item[0].detalhe, /Capacete/);
+  assert.equal(item[0].acao.search.empregado, "e2");
 });
 
 test("atenção hoje: sem mínimo cadastrado não alerta e empregado desligado não entra nos vencidos", () => {

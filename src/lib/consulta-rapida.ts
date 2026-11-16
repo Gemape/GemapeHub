@@ -1,5 +1,6 @@
-// Consulta rápida em linguagem natural: entende poucas perguntas frequentes (quem está com uma ferramenta, o que vence em um período)
-// e responde com o texto e o link direto da tela. Sem serviço externo nem IA: regras simples, sobre os dados que a tela já leu.
+// Consulta rápida em linguagem natural: entende poucas perguntas frequentes (quem está com uma ferramenta, o que vence em um período),
+// explica o funcionamento do sistema (conhecimento-sistema.ts) e responde com o texto e o link direto da tela. Sem serviço externo nem IA: regras simples, sobre os dados que a tela já leu.
+import { responderSobreSistema } from "./conhecimento-sistema.ts";
 import { emPosseEpi, type MovimentacaoEpi } from "./entrega-epi.ts";
 
 export type LinkConsulta = { rotulo: string; url: string; search?: Record<string, string> };
@@ -80,5 +81,6 @@ export function responderConsulta(pergunta: string, ctx: ContextoConsulta): Resp
   const quem = p.match(/^(?:quem|com quem)\s+(?:esta|ta|tem|ficou|levou|pegou)\s+(?:com\s+)?(.+?)\??$/);
   if (quem?.[1]) return quemEstaCom(quem[1], ctx);
   if (/(venc|expir|validade)/.test(p) && /(epi|uniforme|\bca\b)/.test(p)) return vencimentos(p, ctx);
-  return null;
+  // Perguntas sobre o funcionamento do sistema ("como entregar EPI?"): respondidas pela base de conhecimento.
+  return responderSobreSistema(pergunta);
 }
