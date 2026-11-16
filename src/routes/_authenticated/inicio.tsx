@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Star, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { ArrowRight, ChevronsUp, Star, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 import { CicladorDeIcones } from "@/components/CicladorDeIcones";
@@ -56,10 +56,14 @@ const ICONES_MORPH: Record<IconeInicio | "Settings", typeof Car> = {
 
 const classeCartao =
   "vidro-cartao group/cartao overflow-hidden rounded-2xl transition duration-200 ease-out hover:-translate-y-1 hover:shadow-2xl hover:ring-2 hover:ring-primary/30 motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+const classeApertar = "active:scale-[0.99] motion-reduce:active:scale-100";
 const classeFoco = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
-// Dois cartões por linha em qualquer tela (um só em celular bem estreito); com número ímpar, o último fica sozinho e centralizado na largura de um cartão.
-const gradeDeCartoes =
-  "grade-entra mx-auto grid max-w-4xl grid-cols-1 items-start gap-4 min-[480px]:grid-cols-2 sm:gap-6 min-[480px]:[&>li:last-child:nth-child(odd)]:col-span-2 min-[480px]:[&>li:last-child:nth-child(odd)]:mx-auto min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.5rem)] sm:min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.75rem)]";
+// Um cartão por linha em celular estreito, dois a partir de 480 px e três em tela larga. As linhas se centralizam (`justify-center`), então a última, mais curta, fica no meio
+// em vez de colada à esquerda. O espaço entre os cartões é a variável --gap, usada no `gap` e na conta da largura (sem número repetido).
+const gradeDeCartoes = "grade-entra flex flex-wrap items-start justify-center [--gap:1.25rem] gap-[var(--gap)]";
+const larguraDoCartao = "w-full min-[480px]:w-[calc((100%-var(--gap))/2)] lg:w-[calc((100%-2*var(--gap))/3)]";
+// Id do grupo na página (sem espaço nem acento), igual no atalho e na seção.
+const idDoGrupo = (titulo: string) => `secao-${titulo.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 const SECOES: readonly SecaoInicio[] = ["Módulo", "Relatórios", "Parâmetros"];
 
 // Faixa do alto do cartão: degradê azul, duas luzes suaves de fundo e o ícone (dois que se alternam) (mais baixa no celular, para caber mais cartões na tela).
@@ -71,10 +75,29 @@ function FaixaDoCartao({ Icone, tipo, atraso }: { Icone: typeof Car; tipo: Icone
     <span className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-[oklch(0.88_0.06_255)] via-[oklch(0.93_0.04_255)] to-[oklch(0.98_0.015_255)] text-primary min-[480px]:h-32 sm:h-40 lg:h-44">
       <span aria-hidden="true" className="pointer-events-none absolute -left-8 -top-10 size-32 rounded-full bg-white/60 blur-2xl" />
       <span aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-6 size-36 rounded-full bg-primary/15 blur-2xl" />
-      <span className="medalhao-cartao relative" style={{ "--atraso": atraso } as React.CSSProperties}>
+      <span className="medalhao-cartao relative transition-transform duration-300 ease-out group-hover/cartao:scale-110 motion-reduce:transition-none motion-reduce:group-hover/cartao:scale-100" style={{ "--atraso": atraso } as React.CSSProperties}>
         <CicladorDeIcones icones={icones} atrasoMs={atrasoMs} />
       </span>
     </span>
+  );
+}
+
+// Faixa de atalhos para os grupos da página (Visão geral, Módulos, Cadastros): em tela comprida, um toque desliza até o grupo. "Recolher tudo" aparece quando há cartão aberto.
+function AtalhoDosGrupos({ grupos, temAberto, aoRecolher }: { grupos: readonly string[]; temAberto: boolean; aoRecolher: () => void }) {
+  const ir = (id: string) => {
+    const reduz = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(id)?.scrollIntoView({ behavior: reduz ? "auto" : "smooth", block: "start" });
+  };
+  const chip = `rounded-full border bg-background/70 px-3 py-1 text-xs font-medium transition-colors hover:bg-primary/10 ${classeFoco}`;
+  return (
+    <nav aria-label="Ir para um grupo" className="mx-auto flex w-full max-w-xl flex-wrap items-center justify-center gap-2">
+      {grupos.map((g) => <button key={g} type="button" className={chip} onClick={() => ir(idDoGrupo(g))}>{g}</button>)}
+      {temAberto && (
+        <button type="button" className={`${chip} inline-flex items-center gap-1 text-primary`} onClick={aoRecolher}>
+          <ChevronsUp className="size-3.5" aria-hidden="true" />Recolher tudo
+        </button>
+      )}
+    </nav>
   );
 }
 
@@ -128,10 +151,11 @@ function PaginaInicio() {
       <h1 className="sr-only">Início</h1>
       <div className="relative z-10 mx-auto max-w-5xl space-y-8 sm:space-y-10">
       <BuscaRapida grupos={grupos} />
+      <AtalhoDosGrupos grupos={grupos.map((g) => g.titulo)} temAberto={grupos.some((g) => g.cartoes.some((c) => c.itens && abertos.has(`${g.titulo}/${c.titulo}`)))} aoRecolher={() => { const vazio = new Set<string>(); setAbertos(vazio); guardarAbertos(vazio); }} />
       <AtencaoHoje />
       <AtalhosPessoais fixados={fixados.filter((a) => podeVerCaminho(a.url, a.search))} recentes={recentes.filter((a) => podeVerCaminho(a.url, a.search))} />
       {grupos.map((grupo) => (
-        <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} className="mx-auto w-full max-w-4xl space-y-4">
+        <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} id={idDoGrupo(grupo.titulo)} className="mx-auto w-full max-w-5xl scroll-mt-24 space-y-4">
           <h2 id={`grupo-${grupo.titulo}`} className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-primary/80 sm:text-sm">
             {grupo.titulo}
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold tracking-normal text-primary">{grupo.cartoes.length + (comConfiguracoes(grupo.titulo) ? 1 : 0)}</span>
@@ -144,8 +168,8 @@ function PaginaInicio() {
               const faixa = <FaixaDoCartao Icone={Icone} tipo={c.icone} atraso={`${(indice % 6) * -0.8}s`} />;
               if (!c.itens) {
                 return (
-                  <li key={chave} >
-                    <Link to={c.url ?? "/inicio"} className={`flex flex-col ${classeCartao} ${classeFoco}`}>
+                  <li key={chave} className={larguraDoCartao}>
+                    <Link to={c.url ?? "/inicio"} className={`flex flex-col ${classeCartao} ${classeFoco} ${classeApertar}`}>
                       {faixa}
                       <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
                         <span className="transition-colors duration-200 group-hover/cartao:text-primary font-medium">{c.titulo}</span>
@@ -161,25 +185,27 @@ function PaginaInicio() {
               const aberto = abertos.has(chave);
               const idLista = `atalhos-${grupo.titulo}-${c.titulo}`;
               return (
-                <li key={chave} className={classeCartao}>
+                <li key={chave} className={`${larguraDoCartao} ${classeCartao}`}>
                   <button
                     type="button"
                     aria-expanded={aberto}
                     aria-controls={idLista}
                     onClick={() => alternar(chave)}
-                    className={`flex w-full flex-col text-left ${classeFoco}`}
+                    className={`flex w-full flex-col text-left ${classeFoco} ${classeApertar}`}
                   >
                     {faixa}
                     <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
                       <span className="transition-colors duration-200 group-hover/cartao:text-primary font-medium">{c.titulo}</span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         {aberto ? "Clique para recolher" : "Clique para acessar"}
+                        <span aria-hidden="true">·</span>
+                        <span>{c.itens.length} atalhos</span>
                         <ChevronDown className={`size-3.5 transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
                       </span>
                     </span>
                   </button>
                   {aberto && (
-                    <div id={idLista} className="border-t">
+                    <div id={idLista} className="animate-in fade-in-0 slide-in-from-top-2 border-t duration-200 motion-reduce:animate-none">
                       {SECOES.map((secao) => {
                         const doCartao = (c.itens ?? []).filter((i) => i.secao === secao);
                         if (doCartao.length === 0) return null;
@@ -201,8 +227,8 @@ function PaginaInicio() {
             })}
             {/* Configurações é um cartão ao lado do Dashboard (só o Administrador, só no modo demonstração). */}
             {comConfiguracoes(grupo.titulo) && (
-              <li>
-                <button type="button" onClick={() => setConfigAberta(true)} className={`flex w-full flex-col text-left ${classeCartao} ${classeFoco}`}>
+              <li className={larguraDoCartao}>
+                <button type="button" onClick={() => setConfigAberta(true)} className={`flex w-full flex-col text-left ${classeCartao} ${classeFoco} ${classeApertar}`}>
                   <FaixaDoCartao Icone={Settings} tipo="Settings" atraso="-2.4s" />
                   <span className="flex flex-col items-center gap-1 px-4 py-4 text-center">
                     <span className="transition-colors duration-200 group-hover/cartao:text-primary font-medium">Configurações</span>

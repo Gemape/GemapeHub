@@ -95,7 +95,7 @@ export function AtencaoHoje() {
   if (fechadoCom !== null && total <= fechadoCom) return null;
   const escolhido = grupos.find((g) => g.id === aberto) ?? null;
   return (
-    <section aria-labelledby="atencao-hoje" className="vidro-cartao mx-auto w-full max-w-4xl space-y-3 rounded-2xl p-4">
+    <section aria-labelledby="atencao-hoje" className="vidro-cartao mx-auto w-full max-w-5xl space-y-3 rounded-2xl p-4">
       <div className="flex items-center gap-2">
       <h2 id="atencao-hoje" className="flex min-w-0 items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-primary/80">
         {total > 0 ? <AlertTriangle className="size-4 text-destructive motion-safe:animate-[pulso-icone_1.2s_ease-in-out_4]" aria-hidden="true" /> : <CheckCircle2 className="size-4 text-emerald-600" aria-hidden="true" />}

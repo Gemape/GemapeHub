@@ -36,7 +36,7 @@ test("o topo traz só Gestão de Patrimônio (letras em quadradinhos animados), 
 test("os cartões seguem como estavam: faixa em tom da marca, ícone, título e Clique para acessar", () => {
   assert.match(inicio, /bg-primary\/10/);
   assert.match(inicio, /Clique para acessar/);
-  assert.match(inicio, /grid-cols-1[^\"]*min-\[480px\]:grid-cols-2/);
+  assert.match(inicio, /w-full min-\[480px\]:w-\[calc\(\(100%-var\(--gap\)\)\/2\)\] lg:w-\[calc\(\(100%-2\*var\(--gap\)\)\/3\)\]/);
 });
 
 test("a tela inicial não mostra mais o texto de título (Início / Gestão de Patrimônio): começa direto nos cartões", () => {
