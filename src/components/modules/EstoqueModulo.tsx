@@ -15,7 +15,9 @@ import { controleDaFerramenta } from '@/lib/controle-caixa';
 import { posicaoDasFerramentas, type PosicaoDaFerramenta } from '@/lib/estoque-ferramentas-posicao';
 import { combinaBuscaTolerante } from '@/lib/busca-tolerante';
 import { useParametrosBase } from '@/lib/use-parametros-base';
+import { temValorInformativo } from '@/lib/valor-informativo';
 import { AlternarDensidade } from '@/components/AlternarDensidade';
+import { CarimboAtualizacao } from '@/components/CarimboAtualizacao';
 import { BarraDeFiltros } from '@/components/layout/BarraDeFiltros';
 import { MinimoEditavel } from '@/components/modules/MinimoEditavel';
 import { ExtratoFerramenta, type AlvoDoExtrato } from '@/components/modules/ExtratoFerramenta';
@@ -118,6 +120,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
             onChange={(e) => setBusca(e.target.value)}
           />
         </BarraDeFiltros>
+        <CarimboAtualizacao className="self-center" />
         <AlternarDensidade />
         {ferr && <Button type="button" variant={porPosicao ? 'default' : 'outline'} aria-pressed={porPosicao} onClick={() => setPorPosicao((v) => !v)}>{porPosicao ? 'Ver estoque por item' : 'Estoque por posição'}</Button>}
         <Button variant="outline" hidden={porPosicao} disabled={isLoading || linhas.length === 0} onClick={() =>
@@ -175,7 +178,7 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
       </div>}
       {ferr && <GavetaItemMovimentado
         modulo="ferramenta"
-        alvo={resumo ? { id: resumo.id, campo: "item_id", titulo: resumo.nome, subtitulo: `${resumo.codigo ?? "—"} · ${nomeDaEmpresa(resumo.empresa)}`, indicadores: [
+        alvo={resumo ? { id: resumo.id, campo: "item_id", titulo: resumo.nome, subtitulo: [resumo.codigo, nomeDaEmpresa(resumo.empresa)].filter(temValorInformativo).join(" · "), indicadores: [
           { rotulo: "Saldo", valor: posicoes.get(resumo.id)?.saldo ?? 0 },
           { rotulo: "Guardada na caixa", valor: posicoes.get(resumo.id)?.guardada ?? 0 },
           { rotulo: "Com empregado", valor: posicoes.get(resumo.id)?.comEmpregado ?? 0 },

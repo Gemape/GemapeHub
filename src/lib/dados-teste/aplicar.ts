@@ -391,6 +391,11 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   entrega("epi", "epis", epiDe("Capacete", 0).id, 0, 1, 26, null);
   entrega("epi", "epis", epiDe("Luva", 1).id, 0, 1, 12, "tam-m", { responsavel_nome: "Almoxarifado Gemape", observacao: "Luva devolvida sem uso" }, "Devolucao");
   entrega("epi", "epis", epiDe("Botina", 1).id, 0, 1, 8, "tam-40", { motivo_baixa: "Desgaste Natural", observacao: "Solado gasto" });
+  // Alertas da tela inicial ("O que precisa da sua atenção hoje"): o capacete entregue acima está com o CA vencido (EPI vencido com empregado) e a botina e a luva têm o CA
+  // vencendo nos próximos 30 dias. Os CAs vencem por data, em relação a hoje.
+  estoqueDe("epis", epiDe("Capacete", 0).id, empresaIds[0]!)["ca_validade"] = dia(agora, 20);
+  estoqueDe("epis", epiDe("Botina", 1).id, empresaIds[0]!)["ca_validade"] = dia(agora, -25);
+  estoqueDe("epis", epiDe("Luva", 1).id, empresaIds[0]!)["ca_validade"] = dia(agora, -12);
   // Empresa 2 (Carlos).
   entrega("epi", "epis", epiDe("Botina", 2).id, 1, 1, 24, "tam-42");
   entrega("epi", "epis", epiDe("Luva", 2).id, 1, 2, 22, "tam-g");
@@ -685,6 +690,37 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
       id: `${PREFIXO}ocorrencia-ferramenta-${n + 1}`, created_at: criadoEm, data: dia(agora, o.diasAtras), hora: o.hora, responsavel_registro: EMPREGADOS[o.responsavel]!.nome,
       descricao_ocorrencia: o.descricao, tipo_ocorrencia: "Ferramenta", empregado_id: empregado.id, item_id: ferr.id, veiculo_id: null, empresa_id: empregado.empresaId,
       ...(noCaixa ? { caixa_id: noCaixa["caixa_id"] } : {}),
+    });
+  });
+  // Alertas da tela inicial: um empregado desligado há 10 dias ainda está com uma ferramenta (devolução atrasada) e duas ferramentas ficam abaixo do mínimo de estoque
+  // (a diferença sai por baixa por desgaste, para o saldo continuar batendo com as movimentações).
+  const desligado = EMPREGADOS[13]!;
+  const empresaDoDesligado = empresaIds.indexOf(desligado.empresaId);
+  const linhaDoDesligado = tabela("empregados").find((l) => l["id"] === desligado.id);
+  // A ferramenta escolhida não pode estar com mais ninguém: a caixa dela guarda uma unidade só, e a posição (guardada + com empregado + sem caixa) tem de fechar no saldo.
+  const comAlguem = (id: string) => tabela("movimentacoes").filter((m) => m["item_id"] === id && m["empregado_id"] && !m["motivo_baixa"]).reduce((t, m) => t + (m["tipo_movimentacao"] === "Saida" ? 1 : m["tipo_movimentacao"] === "Devolucao" ? -1 : 0), 0);
+  const ferramentaDoDesligado = ferramentasDaEmpresa(empresaDoDesligado).find((x) => comAlguem(x.id) === 0);
+  if (linhaDoDesligado && ferramentaDoDesligado) {
+    linhaDoDesligado["data_demissao"] = dia(agora, 10);
+    linhaDoDesligado["ativo"] = false;
+    tabela("movimentacoes").push({
+      modulo: "ferramenta", item_id: ferramentaDoDesligado.id, empresa_id: empresaIds[empresaDoDesligado], empregado_id: desligado.id, quantidade: 1, tamanho_id: null, onus_baixa: null, tipo_vistoria: null,
+      sinalizar_ocorrencia: false, created_at: criadoEm, id: `${PREFIXO}mov-alerta-ferramenta-1`, tipo_movimentacao: "Saida", motivo_baixa: "Fornecimento ao Empregado", data_movimentacao: dia(agora, 45),
+      observacao: "Ferramenta que continua com o empregado desligado.",
+    });
+  }
+  ferramentas.slice(10, 12).forEach(({ id }, n) => {
+    const linha = tabela("ferramentas").find((l) => l["id"] === id);
+    if (!linha) return;
+    // Mínimo de pelo menos 2 e saldo = mínimo − 1 (nunca abaixo de 1): a caixa da ferramenta guarda uma unidade. Se o saldo já estiver abaixo do mínimo, o alerta já existe e nada muda.
+    const minimo = Math.max(2, Number(linha["estoque_minimo"]) || 0);
+    const baixa = (Number(linha["estoque_atual"]) || 0) - (minimo - 1);
+    if (baixa <= 0) return;
+    linha["estoque_minimo"] = minimo;
+    linha["estoque_atual"] = minimo - 1;
+    tabela("movimentacoes").push({
+      modulo: "ferramenta", item_id: id, empresa_id: linha["empresa_id"], empregado_id: null, quantidade: baixa, tamanho_id: null, onus_baixa: "Da Empresa", tipo_vistoria: null, sinalizar_ocorrencia: false,
+      created_at: criadoEm, id: `${PREFIXO}mov-alerta-ferramenta-baixa-${n + 1}`, tipo_movimentacao: "Saida", motivo_baixa: "Desgaste Natural", data_movimentacao: dia(agora, 2), observacao: "Desgaste no uso; abaixo do mínimo.",
     });
   });
   storage.setItem(CHAVE_DADOS, JSON.stringify(dados));

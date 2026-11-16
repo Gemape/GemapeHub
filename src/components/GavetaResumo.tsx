@@ -4,18 +4,23 @@ import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { temValorInformativo } from "@/lib/valor-informativo";
 
 export type LinhaDaGaveta = { texto: string; valor?: string | number; alerta?: boolean };
 export type SecaoDaGaveta = { titulo: string; vazio: string; linhas: LinhaDaGaveta[] };
 export type IndicadorDaGaveta = { rotulo: string; valor: string | number; alerta?: boolean };
 
 // Gaveta lateral de resumo (peek): o essencial do registro sem sair da lista. "Abrir ficha completa" leva a quem realmente precisa editar.
-export function GavetaResumo({ aberto, onAbertoMudou, titulo, subtitulo, indicadores, secoes, carregando = false, rotuloFicha = "Abrir ficha completa", aoAbrirFicha, aoAbrirLinhaDoTempo }: {
+export function GavetaResumo({ aberto, onAbertoMudou, titulo, subtitulo, indicadores: todosIndicadores, secoes: todasSecoes, carregando = false, rotuloFicha = "Abrir ficha completa", aoAbrirFicha, aoAbrirLinhaDoTempo }: {
   aberto: boolean; onAbertoMudou: (aberto: boolean) => void; titulo: string; subtitulo?: string; indicadores: IndicadorDaGaveta[]; secoes: SecaoDaGaveta[];
   carregando?: boolean; rotuloFicha?: string; aoAbrirFicha?: () => void; aoAbrirLinhaDoTempo?: () => void;
 }) {
   // A ficha completa abre num diálogo: só depois que a gaveta terminou de fechar (e devolveu o foco), para dois modais não ficarem um sobre o outro.
   const fichaPendente = useRef<(() => void) | null>(null);
+  // Só o que tem valor: indicador "R$ 0,00" ou "Não informado" some; linha com valor vazio fica só com o texto (o texto é a informação).
+  const indicadores = todosIndicadores.filter((i) => temValorInformativo(i.valor));
+  const semValorVazio = (l: LinhaDaGaveta): LinhaDaGaveta => (l.valor === undefined || temValorInformativo(l.valor) ? l : { texto: l.texto, ...(l.alerta ? { alerta: l.alerta } : {}) });
+  const secoes = todasSecoes.map((s) => ({ ...s, linhas: s.linhas.filter((l) => temValorInformativo(l.texto)).map(semValorVazio) }));
   return (
     <Sheet open={aberto} onOpenChange={onAbertoMudou}>
       <SheetContent

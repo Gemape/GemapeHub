@@ -1,4 +1,5 @@
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
+import { QuadroKanban, type ColunaKanban } from "@/components/QuadroKanban";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { ArrowLeft, Banknote, CalendarCheck, CircleDashed, ClipboardCheck, ListChecks, Wrench } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
@@ -28,7 +29,7 @@ import { useFocoDaTela } from "@/lib/use-foco-da-tela";
 import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { ExtratoEquipamento } from "./ExtratoEquipamento";
 import { combinaBusca } from "@/lib/parametros-base";
-import { atualizarManutencaoEq, custoDaManutencaoEq, manutencoesConcluidasEq, registrarManutencaoEq, removerManutencaoEq, STATUS_OS_EQ, statusDaOsEq, ultimoHorimetro, type AcaoRealizada, type ManutencaoEquipamentoRegistro, type StatusOsEq } from "@/lib/registros-equipamento";
+import { atualizarManutencaoEq, custoDaManutencaoEq, iniciarManutencaoEq, manutencoesConcluidasEq, podeMoverOsEq, registrarManutencaoEq, removerManutencaoEq, STATUS_OS_EQ, statusDaOsEq, ultimoHorimetro, type AcaoRealizada, type ManutencaoEquipamentoRegistro, type StatusOsEq } from "@/lib/registros-equipamento";
 import { executar } from "@/lib/use-parametros-base";
 import { hoje, horimetroEmTexto, numero, reais, rotuloDoEquipamento, TODOS, faixaEq, pctDe, revisoesDoEquipamento, useEquipamentosDaEmpresa, useOrdensEq } from "./comum";
 
@@ -42,8 +43,15 @@ const COR_STATUS: Record<StatusOsEq, { selo: string; ponto: string }> = {
   "Concluída": { selo: "border-green-200 bg-green-50 text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300", ponto: "bg-green-500" },
   "Cancelada": { selo: "border-border bg-muted text-muted-foreground", ponto: "bg-muted-foreground/60" },
 };
+// Quadro das ordens: Pendente → Em andamento → Concluída. Iniciar é só arrastar; concluir abre o formulário (horímetro, ações e custos).
+const COLUNAS_QUADRO: readonly ColunaKanban<Exclude<StatusOsEq, "Cancelada">>[] = [
+  { id: "Pendente", titulo: "Aguardando início" },
+  { id: "Em andamento", titulo: "Em manutenção" },
+  { id: "Concluída", titulo: "Concluída" },
+];
+
 export function ManutencaoEquipamentoModulo() {
-  const { canDelete } = useAccess();
+  const { canDelete, canWrite } = useAccess();
   const equipamentos = useEquipamentosDaEmpresa();
   const todas = useOrdensEq();
   const { empresas } = useEmpresa();
@@ -56,6 +64,9 @@ export function ManutencaoEquipamentoModulo() {
   const [tipo, setTipo] = useState(TODOS);
   const [situacao, setSituacao] = useState(TODOS);
   const [editando, setEditando] = useState<ManutencaoEquipamentoRegistro | null>(null);
+  // Solto na coluna Concluída do quadro: o formulário abre já em Concluída, para informar horímetro, ações e custos.
+  const [concluindo, setConcluindo] = useState<ManutencaoEquipamentoRegistro | null>(null);
+  const [modoLista, setModoLista] = useState<"tabela" | "quadro">("tabela");
   const [busca, setBusca] = useState("");
   // Cada lista começa com a busca limpa: o texto de uma não filtra a outra em silêncio.
   const setVista = (v: "painel" | "planejadas" | "realizadas") => { setBusca(""); setVistaAtual(v); };
@@ -184,6 +195,11 @@ export function ManutencaoEquipamentoModulo() {
           </div>
           <Input aria-label="Buscar manutenção" placeholder="Buscar por equipamento, técnico, ação ou local" className="max-w-xs" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </BarraDeFiltros>
+        <div className="flex rounded-md border p-0.5" role="group" aria-label="Forma de ver as ordens">
+          {(["tabela", "quadro"] as const).map((m) => (
+            <Button key={m} type="button" size="sm" variant={modoLista === m ? "default" : "ghost"} aria-pressed={modoLista === m} onClick={() => setModoLista(m)}>{m === "tabela" ? "Tabela" : "Quadro"}</Button>
+          ))}
+        </div>
         <Button requiresWrite onClick={() => setAberto(true)} disabled={equipamentos.length === 0}>Nova ordem de serviço</Button>
       </div>
 
@@ -194,7 +210,38 @@ export function ManutencaoEquipamentoModulo() {
         <StatCard titulo="Custo total" subtitulo="Soma do custo das ordens concluídas da lista." valor={reais(custo)} detalhe={`${reais(pecas)} em peças + ${reais(maoDeObra)} em mão de obra`} icone={Banknote} />
       </GradeDeCartoes>
 
-      {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
+      {modoLista === "quadro" ? (() => {
+        const canceladas = linhas.filter((m) => statusDaOsEq(m) === "Cancelada").length;
+        return (
+        <>
+          <QuadroKanban
+            colunas={COLUNAS_QUADRO}
+            itens={canceladas ? linhas.filter((m) => statusDaOsEq(m) !== "Cancelada") : linhas}
+            colunaDe={(m) => statusDaOsEq(m) as Exclude<StatusOsEq, "Cancelada">}
+            rotuloDo={(m) => `a ordem de ${rotulos.get(m.equipamentoId) ?? "equipamento"}`}
+            podeMover={(m, para) => canWrite && podeMoverOsEq(statusDaOsEq(m), para)}
+            aoMover={(m, para) => {
+              if (para === "Em andamento") executar(() => iniciarManutencaoEq(m.id), "Ordem de serviço em andamento");
+              else setConcluindo(m);
+            }}
+            cartao={(m) => {
+              const st = statusDaOsEq(m);
+              const atrasada = st !== "Concluída" && !!m.dataPrevista && m.dataPrevista < hojeIso;
+              return (
+                <div className="space-y-0.5">
+                  <p className="font-medium">{rotulos.get(m.equipamentoId)}</p>
+                  <p className="text-xs text-muted-foreground">{[m.tipo, m.responsavel, `aberta em ${formatarData(m.abertaEm ?? m.data)}`].filter(Boolean).join(" · ")}</p>
+                  {m.dataPrevista && st !== "Concluída" && <p className={`text-xs ${atrasada ? "font-medium text-destructive" : "text-muted-foreground"}`}>Previsão {formatarData(m.dataPrevista)}{atrasada ? " (atrasada)" : ""}</p>}
+                  {st === "Concluída" && <p className="text-xs text-muted-foreground">{reais(custoDaManutencaoEq(m))}</p>}
+                </div>
+              );
+            }}
+          />
+          {canceladas > 0 && <p className="text-xs text-muted-foreground">{canceladas} ordem(ns) cancelada(s) ficam só na tabela.</p>}
+        </>
+        );
+      })() : (
+      /* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */
       <div className="max-h-[max(12rem,calc(100dvh-33rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table>
           <TableHeader>
@@ -231,20 +278,22 @@ export function ManutencaoEquipamentoModulo() {
           </TableBody>
         </Table>
       </div>
+      )}
       </>)}
       <NovaManutencao aberto={aberto} aoMudar={setAberto} equipamentos={equipamentos} />
       {editando && <NovaManutencao key={editando.id} aberto aoMudar={(v) => !v && setEditando(null)} equipamentos={equipamentos} equipamentoInicial={editando.equipamentoId} ordem={editando} />}
+      {concluindo && <NovaManutencao key={`concluir-${concluindo.id}`} aberto aoMudar={(v) => !v && setConcluindo(null)} equipamentos={equipamentos} equipamentoInicial={concluindo.equipamentoId} ordem={concluindo} statusInicial="Concluída" />}
     </div>
   );
 }
 
 // Abre uma ordem de serviço nova ou, com `ordem`, atualiza uma em aberto (dados, situação, ações e custos até concluir).
-export function NovaManutencao({ aberto, aoMudar, equipamentos, equipamentoInicial = "", ordem }: { aberto: boolean; aoMudar: (v: boolean) => void; equipamentos: { id: string; patrimonio: string; nome: string }[]; equipamentoInicial?: string; ordem?: ManutencaoEquipamentoRegistro }) {
+export function NovaManutencao({ aberto, aoMudar, equipamentos, equipamentoInicial = "", ordem, statusInicial }: { aberto: boolean; aoMudar: (v: boolean) => void; equipamentos: { id: string; patrimonio: string; nome: string }[]; equipamentoInicial?: string; ordem?: ManutencaoEquipamentoRegistro; statusInicial?: StatusOsEq }) {
   const acoesDisponiveis = lerManutencaoEquipamento().acoes;
   const [equipamentoId, setEquipamentoId] = useState(equipamentoInicial);
   const [tipo, setTipo] = useState<string>(ordem?.tipo ?? "Preventiva");
   const [local, setLocal] = useState<string>(ordem?.local ?? "empresa");
-  const [status, setStatus] = useState<string>(ordem ? statusDaOsEq(ordem) : "Pendente");
+  const [status, setStatus] = useState<string>(statusInicial ?? (ordem ? statusDaOsEq(ordem) : "Pendente"));
   const [escolhidas, setEscolhidas] = useState<Record<string, string[]>>(() => Object.fromEntries((ordem?.acoes ?? []).map((a) => [a.acaoId, a.subitens])));
   const etapaAtual = ordem ? STATUS_OS_EQ.indexOf(statusDaOsEq(ordem)) : 0;
   const situacoes = STATUS_OS_EQ.filter((st, i) => st === "Cancelada" || i >= etapaAtual);
@@ -252,7 +301,7 @@ export function NovaManutencao({ aberto, aoMudar, equipamentos, equipamentoInici
   const sugestao = equipamentoId ? ultimoHorimetro(equipamentoId) : null;
   // Fechar (cancelar ou salvar) limpa o que foi escolhido: o formulário reabre em branco, ações e equipamento incluídos.
   function fechar(v: boolean) {
-    if (!v) { setEquipamentoId(equipamentoInicial); setTipo(ordem?.tipo ?? "Preventiva"); setLocal(ordem?.local ?? "empresa"); setStatus(ordem ? statusDaOsEq(ordem) : "Pendente"); setEscolhidas(Object.fromEntries((ordem?.acoes ?? []).map((a) => [a.acaoId, a.subitens]))); }
+    if (!v) { setEquipamentoId(equipamentoInicial); setTipo(ordem?.tipo ?? "Preventiva"); setLocal(ordem?.local ?? "empresa"); setStatus(statusInicial ?? (ordem ? statusDaOsEq(ordem) : "Pendente")); setEscolhidas(Object.fromEntries((ordem?.acoes ?? []).map((a) => [a.acaoId, a.subitens]))); }
     aoMudar(v);
   }
 

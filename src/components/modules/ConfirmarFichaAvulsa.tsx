@@ -39,8 +39,8 @@ export function ConfirmarFichaAvulsa({ aberto, onSim, onNao }: { aberto: boolean
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Não</AlertDialogCancel>
-          <AlertDialogAction onClick={onSim}>Sim</AlertDialogAction>
+          <AlertDialogCancel>Voltar sem gerar</AlertDialogCancel>
+          <AlertDialogAction onClick={onSim}>Gerar ficha avulsa</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

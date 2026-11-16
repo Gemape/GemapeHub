@@ -55,6 +55,8 @@ export const ABAS_EPI_RELATORIOS: readonly AbaMenu[] = [
   { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
   { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
   { aba: "baixas", titulo: "Baixas definitivas", icone: "PackageMinus" },
+  { aba: "inventario", titulo: "Inventário (contagem física)", icone: "ClipboardCheck" },
+  { aba: "consulta", titulo: "Monte sua consulta", icone: "ListChecks" },
 ];
 
 // Uniformes > Relatórios (decisão 364): como no EPI, Histórico do empregado e Baixas definitivas saem da lista do Módulo e ficam só aqui, com os mesmos endereços de sempre
@@ -63,6 +65,8 @@ export const ABAS_UNIFORME_RELATORIOS: readonly AbaMenu[] = [
   { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
   { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
   { aba: "baixas", titulo: "Baixas definitivas", icone: "PackageMinus" },
+  { aba: "inventario", titulo: "Inventário (contagem física)", icone: "ClipboardCheck" },
+  { aba: "consulta", titulo: "Monte sua consulta", icone: "ListChecks" },
 ];
 
 export const ABAS_UNIFORME: readonly AbaMenu[] = [
@@ -93,6 +97,8 @@ export const ABAS_FERRAMENTA_RELATORIOS: readonly AbaMenu[] = [
   { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
   { aba: "baixas", titulo: "Baixas definitivas", icone: "PackageMinus" },
   { aba: "ferramentas-por-caixa", titulo: "Ferramentas por caixas", icone: "Archive" },
+  { aba: "inventario", titulo: "Inventário (contagem física)", icone: "ClipboardCheck" },
+  { aba: "consulta", titulo: "Monte sua consulta", icone: "ListChecks" },
 ];
 
 export const ABAS_VEICULO: readonly AbaMenu[] = [
@@ -228,6 +234,8 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     "sugestao-compras": "Indica o que comprar e em que quantidade, com base no consumo, no estoque e nos parâmetros de compra do módulo.",
     historico: "Mostra, por empregado, o que recebeu, devolveu e baixou e o que está em posse dele.",
     baixas: "Lista as baixas definitivas de EPIs, com motivo, quantidade e valor, por período, para consulta e exportação.",
+    consulta: "Relatório sob demanda: marque os campos que quer cruzar e o que somar, veja o resultado na hora e salve a consulta no seu perfil.",
+    inventario: "Inventário em etapas: escolha o setor, conte o que está na prateleira, revise as diferenças com o sistema e baixe o relatório. É conferência: não movimenta o estoque.",
   },
   uniforme: {
     dashboard: "Resumo do estoque de uniformes: itens consultados, saídas recentes, valor em estoque e alertas de reposição.",
@@ -240,6 +248,8 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     "sugestao-compras": "Indica o que comprar e em que quantidade, com base no consumo, no estoque e nos parâmetros de compra dos uniformes.",
     historico: "Mostra, por empregado, o que recebeu, devolveu e baixou e o que está em posse dele.",
     baixas: "Lista as baixas definitivas de uniformes, com motivo, quantidade e valor, por período, para consulta e exportação.",
+    consulta: "Relatório sob demanda: marque os campos que quer cruzar e o que somar, veja o resultado na hora e salve a consulta no seu perfil.",
+    inventario: "Inventário em etapas: escolha o setor, conte o que está na prateleira, revise as diferenças com o sistema e baixe o relatório. É conferência: não movimenta o estoque.",
   },
   ferramenta: {
     dashboard: "Resumo do estoque de ferramentas: quantas estão acima do mínimo, guardadas nas caixas, com empregado ou fora das caixas, e as que pedem reposição.",
@@ -253,6 +263,8 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     "sugestao-compras": "Indica quais ferramentas repor e em que quantidade, pelo estoque mínimo e pelas baixas definitivas dos últimos 12 meses.",
     historico: "Mostra, por empregado, as ferramentas que recebeu, devolveu e baixou e as que estão em posse dele.",
     baixas: "Lista as baixas definitivas de ferramentas, com motivo, quantidade e valor, por período, para consulta e exportação.",
+    consulta: "Relatório sob demanda: marque os campos que quer cruzar e o que somar, veja o resultado na hora e salve a consulta no seu perfil.",
+    inventario: "Inventário em etapas: escolha o setor, conte o que está na prateleira, revise as diferenças com o sistema e baixe o relatório. É conferência: não movimenta o estoque.",
     "ferramentas-por-caixa": "Gera o relatório das caixas de ferramentas: você escolhe as caixas e as seções (ferramentas, histórico e ocorrências) que entram.",
     ocorrencias: OCORR,
   },

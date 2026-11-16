@@ -7,7 +7,7 @@ import { ABAS_EPI, ABAS_EPI_RELATORIOS, abaDoModulo, tituloDaAba } from "../src/
 const le = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 
 test("EPI > Relatórios traz Sugestão de Compras, Histórico do empregado e Baixas definitivas (decisão 359)", () => {
-  assert.deepEqual(ABAS_EPI_RELATORIOS.map((a) => a.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixas definitivas"]);
+  assert.deepEqual(ABAS_EPI_RELATORIOS.map((a) => a.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixas definitivas", "Inventário (contagem física)", "Monte sua consulta"]);
 });
 
 test("as três rotinas foram movidas: saem da lista do Módulo e não se repetem", () => {
@@ -15,7 +15,7 @@ test("as três rotinas foram movidas: saem da lista do Módulo e não se repetem
   for (const a of ["sugestao-compras", "historico", "baixas"]) assert.ok(!modulo.includes(a), `${a} não pode mais estar no Módulo`);
   const titulos = ABAS_EPI.map((a) => a.titulo);
   for (const t of ["Sugestão de Compras", "Histórico do empregado", "Baixas definitivas"]) assert.ok(!titulos.includes(t), t);
-  assert.equal(new Set([...modulo, ...ABAS_EPI_RELATORIOS.map((a) => a.aba)]).size, modulo.length + 3);
+  assert.equal(new Set([...modulo, ...ABAS_EPI_RELATORIOS.map((a) => a.aba)]).size, modulo.length + ABAS_EPI_RELATORIOS.length);
 });
 
 test("os endereços de sempre continuam abrindo as mesmas telas, agora pela seção Relatórios", () => {
@@ -34,8 +34,8 @@ test("o cartão EPIs do menu do topo e da tela Início traz a seção Relatório
   const { GRUPOS_INICIO, areaDaRota } = await import("../src/lib/inicio.ts");
   const epi = GRUPOS_INICIO.flatMap((g) => g.cartoes).find((c) => c.titulo === "EPIs");
   const rel = epi.itens.filter((i) => i.secao === "Relatórios");
-  assert.deepEqual(rel.map((i) => i.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixas definitivas"]);
-  assert.deepEqual(rel.map((i) => i.search.aba), ["sugestao-compras", "historico", "baixas"]);
+  assert.deepEqual(rel.map((i) => i.titulo), ["Sugestão de Compras", "Histórico do empregado", "Baixas definitivas", "Inventário (contagem física)", "Monte sua consulta"]);
+  assert.deepEqual(rel.map((i) => i.search.aba), ["sugestao-compras", "historico", "baixas", "inventario", "consulta"]);
   const modulo = epi.itens.filter((i) => i.secao === "Módulo").map((i) => i.titulo);
   for (const t of ["Sugestão de Compras", "Histórico do empregado", "Baixas definitivas"]) assert.ok(!modulo.includes(t), t);
   assert.equal(areaDaRota("/epi", { aba: "historico" }, true).atual.secao, "Relatórios");

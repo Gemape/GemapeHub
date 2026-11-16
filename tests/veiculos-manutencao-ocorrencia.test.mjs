@@ -302,8 +302,9 @@ test("a lista de restaurar mostra o que o responsável criou: ações novas e su
 test("salvar em Ações de manutenção pergunta Sim ou Não antes de gravar (dec 145)", () => {
   const alerta = readFileSync("src/components/parametros/AlertaPainelManutencao.tsx", "utf8");
   assert.match(alerta, /As alterações feitas modificarão o painel de manutenções na rotina de parâmetros\. Definitivamente\. Tem certeza que deseja fazer isso\?/);
-  assert.match(alerta, /<AlertDialogCancel>Não<\/AlertDialogCancel>/);
-  assert.match(alerta, /<AlertDialogAction onClick=\{onSim\}>Sim<\/AlertDialogAction>/);
+  // Botões dizem o que fazem (não "Sim"/"Não").
+  assert.match(alerta, /<AlertDialogCancel>Voltar sem salvar<\/AlertDialogCancel>/);
+  assert.match(alerta, /<AlertDialogAction onClick=\{onSim\}>Salvar no painel de manutenções<\/AlertDialogAction>/);
   const tela = readFileSync("src/components/parametros/VeiculosListasParametros.tsx", "utf8");
   assert.match(tela, /acaoExtra=\{\(cadastrar\) => <RestaurarPadraoAcoes aoCadastrar=\{cadastrar\} \/>\}\s*alertaPainel/); // cadastrar/editar ação
   const restaurar = tela.slice(tela.indexOf("function RestaurarPadraoAcoes"));

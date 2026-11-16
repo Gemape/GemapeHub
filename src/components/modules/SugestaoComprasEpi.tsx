@@ -340,7 +340,7 @@ export function SugestaoComprasEpi({ modulo = "epi" }: { modulo?: "epi" | "unifo
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={niveis.length === 0}>
-                  Confirmar
+                  Gerar cotação
                 </Button>
               </DialogFooter>
             </form>

@@ -42,5 +42,5 @@ test("Clonar empregado não copia a demissão e a ficha e os códigos deixam que
   for (const a of ["routes/_authenticated/epi-ficha.tsx", "routes/_authenticated/cadastros/gerais/codigo-fabrica.tsx", "routes/_authenticated/cadastros/gerais/codigo-produto.tsx"]) {
     assert.match(ler(a), /<AcoesLinha[\s\S]*?editarLivre/);
   }
-  assert.match(ler("components/parametros/AcoesLinha.tsx"), /requiresWrite=\{!editarLivre\}/);
+  assert.match(ler("components/parametros/AcoesLinha.tsx"), /onEditar && \(editarLivre \|\| canWrite\)/);
 });

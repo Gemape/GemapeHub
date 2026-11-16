@@ -175,7 +175,20 @@ export function atualizarManutencaoEq(id: string, entrada: EntradaManutencaoEq, 
   gravar<ManutencaoEquipamentoRegistro>(CHAVE_MANUTENCOES_EQ, storage, (l) => l.map((m) => (m.id === id ? novo : m)));
   return novo;
 }
-export const removerManutencaoEq = (id: string, storage = storagePadrao()) => gravar<ManutencaoEquipamentoRegistro>(CHAVE_MANUTENCOES_EQ, storage, (l) => l.filter((m) => m.id !== id));
+/** Para onde o cartão da ordem pode ir no quadro: Pendente → Em andamento, e Pendente ou Em andamento → Concluída. Nunca volta. */
+export const podeMoverOsEq = (de: StatusOsEq, para: StatusOsEq) =>
+  (de === "Pendente" && para === "Em andamento") || ((de === "Pendente" || de === "Em andamento") && para === "Concluída");
+// Quadro (Kanban): da coluna Pendente para Em andamento a ordem só muda de situação (o técnico já foi informado ao abrir).
+// Concluir exige horímetro, ações e custos: esse passo vai pelo formulário (atualizarManutencaoEq), nunca por aqui.
+export function iniciarManutencaoEq(id: string, storage = storagePadrao()): ManutencaoEquipamentoRegistro {
+  const atual = lerManutencoesEq(storage).find((m) => m.id === id);
+  if (!atual) throw new Error("A ordem de serviço não existe mais.");
+  if (statusDaOsEq(atual) !== "Pendente") throw new Error("Só a ordem pendente pode ser iniciada pelo quadro.");
+  const novo: ManutencaoEquipamentoRegistro = { ...atual, status: "Em andamento" };
+  gravar<ManutencaoEquipamentoRegistro>(CHAVE_MANUTENCOES_EQ, storage, (l) => l.map((m) => (m.id === id ? novo : m)));
+  return novo;
+}
+export const removerManutencaoEq =(id: string, storage = storagePadrao()) => gravar<ManutencaoEquipamentoRegistro>(CHAVE_MANUTENCOES_EQ, storage, (l) => l.filter((m) => m.id !== id));
 export const custoDaManutencaoEq = (m: Pick<ManutencaoEquipamentoRegistro, "custoPecas" | "custoMaoDeObra">) => m.custoPecas + m.custoMaoDeObra;
 
 // Fotos como as da ocorrência de veículo: até MAX_FOTOS por ocorrência, só imagens, já reduzidas na tela.

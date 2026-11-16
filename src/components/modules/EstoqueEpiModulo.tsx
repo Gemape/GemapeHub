@@ -5,6 +5,9 @@ import { useMemo, useState } from "react";
 
 import { MinimoEditavel } from "@/components/modules/MinimoEditavel";
 import { AlternarDensidade } from "@/components/AlternarDensidade";
+import { CarimboAtualizacao } from "@/components/CarimboAtualizacao";
+import { BarraVidaUtil } from "@/components/BarraVidaUtil";
+import { DIAS_VALIDADE_CA, parteRestanteDaData } from "@/lib/vida-util";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { toast } from "sonner";
 
@@ -234,6 +237,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
           Limpar filtros
         </Button>
         </BarraDeFiltros>
+        <CarimboAtualizacao className="self-center" />
         <AlternarDensidade />
         <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
@@ -321,7 +325,7 @@ export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniform
                     {modulo === "epi" ? (() => {
                       const item = itens.find((i) => i.id === l.itemId) as { ca_validade?: string | null } | undefined;
                       const ca = situacaoDoCa(item?.ca_validade ?? null, hojeLocal());
-                      return <CartaoDoNome titulo={l.descricao} aviso={ca.avisar}><p>CA {l.ca || "—"}</p><p className={ca.avisar ? "font-medium text-destructive" : "text-muted-foreground"}>{ca.texto}</p></CartaoDoNome>;
+                      return <CartaoDoNome titulo={l.descricao} aviso={ca.avisar}>{l.ca && <p>CA {l.ca}</p>}<p className={ca.avisar ? "font-medium text-destructive" : "text-muted-foreground"}>{ca.texto}</p><BarraVidaUtil parte={parteRestanteDaData(item?.ca_validade, DIAS_VALIDADE_CA)} /></CartaoDoNome>;
                     })() : l.descricao}
                   </TableCell>
                   <TableCell>{nomeDaEmpresa(l.empresaId)}</TableCell>

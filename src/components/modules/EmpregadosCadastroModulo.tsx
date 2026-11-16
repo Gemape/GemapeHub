@@ -54,6 +54,7 @@ import { comDesligamento, lerConfig, salvarConfig } from "@/lib/configuracoes-de
 import { usuarioAtivo } from "@/lib/permissoes-demo";
 import { useEmpregados, useExcluir, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 import { lerTodas } from "@/lib/ler-todas";
+import { ImportarEmpregados } from "@/components/modules/ImportarEmpregados";
 import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
 import { exemploEmpregado } from "@/lib/dados-teste/exemplos";
 
@@ -90,6 +91,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
   // Empregado antigo sem empresa: a empresa precisa ser escolhida, não é preenchida sozinha.
   const empresaForm = empresaSel || (base ? "" : empresaPadrao);
   const salvar = useSalvar("empregados", ["empregados", "empregados-total"]);
+  const [importando, setImportando] = useState(false);
   const excluir = useExcluir("empregados", ["empregados", "empregados-total"]);
   const queryClient = useQueryClient();
 
@@ -231,6 +233,9 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                 { id: "situacao", rotulo: "Situação", valor: (e) => (empregadoAtivo(e) ? "Ativo" : "Inativo") },
               ] satisfies CampoRelatorio<EmpregadoCadastro>[]}
             />
+            <Button requiresWrite variant="outline" onClick={() => setImportando(true)}>
+              Importar planilha
+            </Button>
             <Button requiresWrite onClick={() => void abrirNovo()}>
               Novo empregado
             </Button>
@@ -407,6 +412,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
           </form>
         </DialogContent>
       </Dialog>
+      <ImportarEmpregados aberto={importando} aoMudar={setImportando} />
     </div>
   );
 }

@@ -66,20 +66,25 @@ test("o fundo segue o site da Gemape: branco descendo para um azul clarinho, com
   assert.match(css, /--fundo-b: oklch\(0\.97[0-9]* 0\.01/);
 });
 
-test("o ícone dos cartões é um medalhão grande que flutua e brilha, e fica parado para quem reduz movimento", () => {
+test("o ícone dos cartões não tem caixa nem balanço: dois ícones se alternam só por opacidade", () => {
   assert.match(inicio, /medalhao-cartao/);
   const css = ler("styles.css");
-  assert.match(css, /@utility medalhao-cartao \{[\s\S]*?height: 5rem[\s\S]*?cartao-flutua[\s\S]*?cartao-anel-pulso[\s\S]*?prefers-reduced-motion: reduce[\s\S]*?animation: none/);
-  assert.ok(css.includes(".group\\/cartao:hover & > svg"));
+  const m = css.match(/@utility medalhao-cartao \{[\s\S]*?\n\}\n/)[0];
+  assert.doesNotMatch(m, /box-shadow|border|background|animation|transform/);
+  assert.doesNotMatch(css, /cartao-flutua|cartao-icone-bob|onda-cartao|cartao-anel/);
+  assert.doesNotMatch(inicio, /onda-cartao/);
 });
 
-test("o morphing: todo ícone da tela inicial tem um segundo ícone, que só anima sem 'reduzir movimento' e some no celular", () => {
+test("ciclador de ícones: todo ícone da tela inicial tem par (morph); só os dois se alternam", () => {
   const lib = ler("lib/inicio.ts");
   const chaves = [...inicio.match(/const ICONES_MORPH[^{]*\{([\s\S]*?)\};/)[1].matchAll(/(\w+):/g)].map((m) => m[1]);
   const icones = [...inicio.match(/const ICONES_CARTAO[^{]*\{([\s\S]*?)\};/)[1].replace(/:\s*\w+/g, "").matchAll(/\w+/g)].map((m) => m[0]);
   for (const i of icones) assert.ok(chaves.includes(i), `sem morph para ${i}`);
   assert.ok(lib.length > 0);
   const css = ler("styles.css");
-  assert.match(css, /@keyframes ic-morph-a[\s\S]*@keyframes ic-morph-b/);
-  assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?ic-morph-a[\s\S]*?pointer: coarse[\s\S]*?data-morph\] \{ display: none/);
+  assert.match(css, /svg\[data-ciclo="ativo"\] \{\s*opacity: 1;/);
+  assert.match(inicio, /function CicladorDeIcones/);
+  assert.match(inicio, /prefers-reduced-motion: reduce/, "com reduzir movimento, fica só o primeiro ícone");
+  assert.match(inicio, /document\.hidden/, "pausa com a aba escondida");
+  assert.match(inicio, /\[Icone, \.\.\.\(Morph \? \[Morph\] : \[\]\)\]/, "exatamente 2 ícones por cartão");
 });

@@ -3,6 +3,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 
@@ -29,14 +30,50 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+// Primeiro campo da janela, na ordem da tela: de digitação (texto, número, data, área de texto) ou de escolha (as listas do sistema são
+// botões com role=combobox). Fora os de só leitura e os desabilitados.
+const PRIMEIRO_CAMPO =
+  'input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=button]):not([type=submit]):not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly]), [role=combobox]:not([disabled])';
+
+// Retrato dos dados dos formulários da janela (fora as buscas: filtrar uma lista não é dado a perder). Fechar fora só é segurado
+// quando o retrato mudou desde que a janela abriu: digitar e apagar volta ao começo e a janela fecha normalmente.
+function retratoDosFormularios(janela: HTMLElement | null): string {
+  if (!janela) return "";
+  return Array.from(janela.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("form input, form textarea, form select"))
+    .filter((c) => !(c instanceof HTMLInputElement && (c.type === "search" || /^\s*(buscar|pesquisar|filtrar)/i.test(c.placeholder))))
+    .map((c) => (c instanceof HTMLInputElement && (c.type === "checkbox" || c.type === "radio") ? String(c.checked) : c.value))
+    .join("\u0001");
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { telaCheia?: boolean }
->(({ className, children, telaCheia = false, ...props }, ref) => (
+>(({ className, children, telaCheia = false, onOpenAutoFocus, onInteractOutside, onEscapeKeyDown, ...props }, ref) => {
+  // Fechamento seguro: janela só de consulta fecha clicando fora ou com Esc; com dados preenchidos, só pelo Cancelar (ou pelo X).
+  const janela = React.useRef<HTMLElement | null>(null);
+  const inicial = React.useRef<string | null>(null);
+  const segurar = (e: Event) => {
+    if (inicial.current === null || retratoDosFormularios(janela.current) === inicial.current) return;
+    e.preventDefault();
+    toast.info("Há dados preenchidos nesta janela. Use Cancelar para sair sem salvar.", { id: "fechamento-seguro" });
+  };
+  return (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      onOpenAutoFocus={(e) => {
+        janela.current = e.currentTarget as HTMLElement | null;
+        inicial.current = retratoDosFormularios(janela.current);
+        onOpenAutoFocus?.(e);
+        if (e.defaultPrevented) return;
+        // O cursor já aparece no primeiro campo. No celular não: o teclado subiria cobrindo a janela.
+        if (window.matchMedia?.("(pointer: coarse)").matches) return;
+        const campo = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(PRIMEIRO_CAMPO);
+        if (campo) { e.preventDefault(); campo.focus(); }
+      }}
+      onInteractOutside={(e) => { onInteractOutside?.(e); if (!e.defaultPrevented) segurar(e); }}
+      onEscapeKeyDown={(e) => { onEscapeKeyDown?.(e); if (!e.defaultPrevented) segurar(e); }}
       className={cn(
         "fixed left-[50%] top-[50%] z-50 grid grid-cols-[minmax(0,1fr)] w-full max-w-lg translate-x-[-50%] translate-y-[-50%] max-h-[100dvh] gap-4 overflow-x-hidden overflow-y-auto glass-strong p-6 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
         className,
@@ -48,11 +85,12 @@ const DialogContent = React.forwardRef<
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
         <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">Fechar</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
-));
+  );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
