@@ -18,8 +18,9 @@ test("a confirmação traz a mensagem pedida, com o caminho do Termo de Entrega 
   assert.match(c, /Caso deseje entregar itens de maior custo e durabilidade, como botinas, capacetes, óculos, entre outros, utilize a rotina/);
   assert.match(c, /<Link to="\/epi" search=\{\{ aba: "termo-entrega" \} as never\}[^>]*>\s*\{"EPIs >> módulo >> termo de entrega"\}\s*<\/Link>/);
   assert.match(c, /Deseja confirmar a geração da Ficha avulsa de entrega de EPI\?/);
-  assert.match(c, /<AlertDialogCancel>Não<\/AlertDialogCancel>/);
-  assert.match(c, /<AlertDialogAction onClick=\{onSim\}>Sim<\/AlertDialogAction>/);
+  // Botões dizem o que fazem (não "Sim"/"Não").
+  assert.match(c, /<AlertDialogCancel>Voltar sem gerar<\/AlertDialogCancel>/);
+  assert.match(c, /<AlertDialogAction onClick=\{onSim\}>Gerar ficha avulsa<\/AlertDialogAction>/);
 });
 
 test("o link do Termo de Entrega fecha a confirmação ao ser clicado", () => {

@@ -93,7 +93,7 @@ export function GavetaEmpregado({ empregado, aoFechar, aoAbrirFicha }: {
       aberto={empregado !== null}
       onAbertoMudou={(a) => !a && aoFechar()}
       titulo={empregado?.nome ?? ""}
-      subtitulo={empregado ? `${empregado.cargo || "Cargo não informado"} · Matrícula ${empregado.matricula || "—"}${empregado.data_demissao ? ` · Desligado em ${formatarData(empregado.data_demissao)}` : ""}` : ""}
+      subtitulo={empregado ? [empregado.cargo, empregado.matricula && `Matrícula ${empregado.matricula}`, empregado.data_demissao && `Desligado em ${formatarData(empregado.data_demissao)}`].filter(Boolean).join(" · ") : ""}
       carregando={carregando}
       indicadores={[
         { rotulo: "EPIs em posse", valor: dados.epi.emPosse.length },

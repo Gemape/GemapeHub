@@ -36,8 +36,8 @@ export function AlertaPainelManutencao({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Não</AlertDialogCancel>
-          <AlertDialogAction onClick={onSim}>Sim</AlertDialogAction>
+          <AlertDialogCancel>Voltar sem salvar</AlertDialogCancel>
+          <AlertDialogAction onClick={onSim}>Salvar no painel de manutenções</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

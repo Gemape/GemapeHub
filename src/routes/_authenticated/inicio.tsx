@@ -34,13 +34,13 @@ const PaCarregadeira = createLucideIcon("PaCarregadeira", [
   ["path", { d: "M15 6l6 .5-1 6.5h-6z", key: "cacamba" }],
 ]);
 
-// EPIs (máscara e botas de borracha com brilhos) e calça (Uniformes): o lucide não traz; mesmo traço dos outros ícones.
+// EPIs (botina de segurança de cano alto, com cadarço, costura e solado com cravos) e calça (Uniformes): o lucide não traz; mesmo traço dos outros ícones.
 const Botina = createLucideIcon("Botina", [
-  ["path", { d: "M5 2.5h5.5a1 1 0 0 1 1 1V6a4.5 4.5 0 0 1-3.75 4.4A4.5 4.5 0 0 1 4 6V3.5a1 1 0 0 1 1-1z", key: "mascara" }],
-  ["path", { d: "M7.8 6.5h.01", key: "filtro" }],
-  ["path", { d: "M3.5 12.5h4v5l2.9 1c.5.2.8.6.8 1.2V21H3.5z", key: "bota1" }],
-  ["path", { d: "M12.8 12.5h4v5l2.9 1c.5.2.8.6.8 1.2V21h-7.7z", key: "bota2" }],
-  ["path", { d: "M19 2.5v3M17.5 4h3M15 8h.01", key: "brilhos" }],
+  ["path", { d: "M5.5 2.5h6.5v7l6.4 2.5A3.5 3.5 0 0 1 21 15.3V18H3v-6z", key: "cano" }],
+  ["path", { d: "M3 18h18v2.5H3z", key: "solado" }],
+  ["path", { d: "M6.5 20.5v1.5M10.5 20.5v1.5M14.5 20.5v1.5M18.5 20.5v1.5", key: "cravos" }],
+  ["path", { d: "M8.5 4.5l3.5 1M8.5 7l3.5 1M8.5 9.5l4.5 1.5", key: "cadarco" }],
+  ["path", { d: "M3.3 15h13", key: "costura" }],
 ]);
 const Calca = createLucideIcon("Calca", [
   ["path", { d: "M7 3h10l1.5 18h-5L12 10l-1.5 11h-5z", key: "pernas" }],
@@ -61,18 +61,40 @@ const gradeDeCartoes =
   "grade-entra mx-auto grid max-w-4xl grid-cols-1 items-start gap-4 min-[480px]:grid-cols-2 sm:gap-6 min-[480px]:[&>li:last-child:nth-child(odd)]:col-span-2 min-[480px]:[&>li:last-child:nth-child(odd)]:mx-auto min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.5rem)] sm:min-[480px]:[&>li:last-child:nth-child(odd)]:w-[calc(50%-0.75rem)]";
 const SECOES: readonly SecaoInicio[] = ["Módulo", "Relatórios", "Parâmetros"];
 
-// Faixa do alto do cartão: degradê azul, duas luzes suaves de fundo e o medalhão com o ícone (mais baixa no celular, para caber mais cartões na tela).
+// Ciclador de ícones: os dois ícones do assunto se alternam no mesmo lugar (um some, o outro aparece).
+// Pausa com a aba escondida; com "reduzir movimento", fica só o primeiro.
+const INTERVALO_CICLO_MS = 2600;
+function CicladorDeIcones({ icones, atrasoMs }: { icones: readonly (typeof Car)[]; atrasoMs: number }) {
+  const [atual, setAtual] = useState(0);
+  useEffect(() => {
+    if (icones.length < 2 || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    let intervalo: number | undefined;
+    // Cada cartão começa num tempo diferente: os medalhões não trocam todos juntos.
+    const inicio = window.setTimeout(() => {
+      intervalo = window.setInterval(() => { if (!document.hidden) setAtual((i) => (i + 1) % icones.length); }, INTERVALO_CICLO_MS);
+    }, atrasoMs);
+    return () => { window.clearTimeout(inicio); window.clearInterval(intervalo); };
+  }, [icones.length, atrasoMs]);
+    return (
+    <>
+      {icones.map((I, i) => (
+        <I key={i} aria-hidden="true" strokeWidth={1.6} data-ciclo={i === atual ? "ativo" : "espera"} />
+      ))}
+    </>
+  );
+}
+
+// Faixa do alto do cartão: degradê azul, duas luzes suaves de fundo e o ícone (dois que se alternam) (mais baixa no celular, para caber mais cartões na tela).
 function FaixaDoCartao({ Icone, tipo, atraso }: { Icone: typeof Car; tipo: IconeInicio | "Settings"; atraso: string }) {
   const Morph = ICONES_MORPH[tipo];
+  const icones = useMemo(() => [Icone, ...(Morph ? [Morph] : [])], [Icone, Morph]);
+  const atrasoMs = Math.abs(Number.parseFloat(atraso) || 0) * 1000;
   return (
     <span className="relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br from-[oklch(0.88_0.06_255)] via-[oklch(0.93_0.04_255)] to-[oklch(0.98_0.015_255)] text-primary min-[480px]:h-32 sm:h-40 lg:h-44">
       <span aria-hidden="true" className="pointer-events-none absolute -left-8 -top-10 size-32 rounded-full bg-white/60 blur-2xl" />
       <span aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-6 size-36 rounded-full bg-primary/15 blur-2xl" />
-      <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": atraso } as React.CSSProperties} />
-      <span aria-hidden="true" className="onda-cartao" style={{ "--atraso": `calc(${atraso} + 1.55s)` } as React.CSSProperties} />
       <span className="medalhao-cartao relative" style={{ "--atraso": atraso } as React.CSSProperties}>
-        <Icone aria-hidden="true" strokeWidth={1.6} />
-        {Morph && <Morph aria-hidden="true" strokeWidth={1.6} data-morph="" />}
+        <CicladorDeIcones icones={icones} atrasoMs={atrasoMs} />
       </span>
     </span>
   );

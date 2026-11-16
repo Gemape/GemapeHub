@@ -1,5 +1,6 @@
 import { Boxes, PackageCheck, Wallet } from "lucide-react";
 
+import { CarimboAtualizacao } from "@/components/CarimboAtualizacao";
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { DashboardFerramentas } from "@/components/modules/DashboardFerramentas";
 import { DashboardSugestaoCompras } from "@/components/modules/DashboardSugestaoCompras";
@@ -76,6 +77,8 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
 
   return (
     <div className="space-y-5">
+      {/* Carimbo discreto: o operador sabe que o saldo na tela é o de agora, e recarrega com um clique. */}
+      <div className="-mb-3 flex justify-end"><CarimboAtualizacao /></div>
       {/* EPI e Uniformes: os cartões da Sugestão de Compras entram na mesma grade e a lista do que pede compra vem logo abaixo. Ferramentas: os do estoque por posição. */}
       {modulo === "uniforme" || modulo === "epi" ? (
         <DashboardSugestaoCompras modulo={modulo} cartoes={cartoes} />

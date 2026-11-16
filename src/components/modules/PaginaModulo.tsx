@@ -24,6 +24,8 @@ import { FerramentasTermoResponsabilidade } from "@/components/modules/Ferrament
 import { FerramentasTermoEncerramento } from "@/components/modules/FerramentasTermoEncerramento";
 import { FerramentasTermoVistoria } from "@/components/modules/FerramentasTermoVistoria";
 import { OcorrenciasModulo } from "@/components/modules/OcorrenciasModulo";
+import { InventarioContagem } from "@/components/modules/InventarioContagem";
+import { MonteSuaConsulta } from "@/components/modules/MonteSuaConsulta";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { abaDoModulo, descricaoDaAba, tituloDaAba } from "@/lib/menu-parametros";
 import type { Modulo } from "@/lib/gemape";
@@ -58,6 +60,12 @@ export function PaginaModulo({
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />
+        </TabsContent>
+        <TabsContent value="inventario" className="mt-5">
+          <InventarioContagem modulo={modulo} />
+        </TabsContent>
+        <TabsContent value="consulta" className="mt-5">
+          <MonteSuaConsulta modulo={modulo} />
         </TabsContent>
 
         {modulo === "ferramenta" && (

@@ -18,8 +18,9 @@ export function ResumoEmpregado({ empregado, rotuloItens, posse, vencidos, ferra
     <aside aria-label="Resumo do colaborador" className="panel space-y-3 p-4 text-sm lg:sticky lg:top-4">
       <div>
         <p className="font-semibold leading-tight">{empregado.nome}</p>
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Briefcase className="size-3.5" aria-hidden="true" />{empregado.cargo || "Cargo não informado"}</p>
-        <p className="text-xs text-muted-foreground">Matrícula {empregado.matricula || "—"} · CPF {formatarCpf(empregado.cpf)}</p>
+        {/* Só o que existe: sem "Cargo não informado" nem "Matrícula —". */}
+        {empregado.cargo && <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Briefcase className="size-3.5" aria-hidden="true" />{empregado.cargo}</p>}
+        <p className="text-xs text-muted-foreground">{[empregado.matricula && `Matrícula ${empregado.matricula}`, empregado.cpf && `CPF ${formatarCpf(empregado.cpf)}`].filter(Boolean).join(" · ")}</p>
       </div>
       {vencidos > 0
         ? <p role="status" className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive"><AlertTriangle className="size-3.5" aria-hidden="true" />{vencidos} {rotuloItens} com validade vencida</p>

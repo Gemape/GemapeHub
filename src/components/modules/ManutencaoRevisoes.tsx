@@ -6,8 +6,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BarraVidaUtil } from "@/components/BarraVidaUtil";
 import type { StatusSugestao, Sugestao } from "@/lib/extrato-veiculo";
 import { formatarData } from "@/lib/gemape";
+import { menorParte, parteRestante, parteRestanteEntreDatas } from "@/lib/vida-util";
 
 export type RevisaoDoVeiculo = {
   veiculoId: string;
@@ -98,6 +100,8 @@ export function ManutencaoRevisoes({ revisoes, unidade = "km", item = "Veículo"
                   {s.proximaData && s.proximoKm !== null ? (
                     <>
                       {formatarData(s.proximaData)}
+                      {/* Quanto resta até a próxima revisão: vale o que acabar primeiro, a data ou o km. */}
+                      <BarraVidaUtil parte={menorParte(parteRestanteEntreDatas(s.ultima?.data, s.proximaData), parteRestante(s.proximoKm, kmAtual, s.intervaloKm))} />
                       <span className="block text-xs text-muted-foreground">{km(s.proximoKm)}</span>
                       <span className="block text-xs text-muted-foreground">
                         {rotuloMedida} atual: {km(kmAtual)}
