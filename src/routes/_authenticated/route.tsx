@@ -9,6 +9,7 @@ import { SincroniaAbas } from "@/components/layout/SincroniaAbas";
 import { ConsultaRapida } from "@/components/layout/ConsultaRapida";
 import { RegistraRecente } from "@/components/inicio/atalhosPessoais";
 import { TrocaDeModulo, TrilhaDeNavegacao } from "@/components/layout/NavegacaoRapida";
+import { LinhaDoTempoSessao, PilhaDeNavegacao, RegistraRegistroAberto, VoltarContextual } from "@/components/layout/NavegacaoContextual";
 import { MenuDaArea } from "@/components/layout/MenuDaArea";
 import { VisualizadorDocumento } from "@/components/layout/VisualizadorDocumento";
 import { Button } from "@/components/ui/button";
@@ -153,6 +154,7 @@ function LayoutAutenticado() {
             </div>
             {/* No celular os controles ficam em duas colunas (usuário em linha própria, depois testes e empresa); a partir de md voltam a uma linha só. */}
             <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:justify-end lg:flex-nowrap [&_button]:h-8 [&_button]:gap-1.5 [&_button]:px-2.5 [&_button]:text-xs [&_svg]:size-3.5">
+              <div className="col-span-2 flex items-center gap-2 md:col-auto"><LinhaDoTempoSessao /></div>
               {ConfiguracoesDemo && <Suspense fallback={null}><div className="col-span-2 min-w-0 md:col-auto"><ConfiguracoesDemo /></div></Suspense>}
               {MenuDadosDeTeste && <Suspense fallback={null}><div className="min-w-0"><MenuDadosDeTeste /></div></Suspense>}
               <div className="min-w-0"><FiltroEmpresa /></div>
@@ -163,9 +165,12 @@ function LayoutAutenticado() {
             </div>
           </header>
           <div id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 p-3 outline-none sm:p-4 md:p-6">
+            <VoltarContextual />
             <TrilhaDeNavegacao />
             <div key={telaAtual} className="pagina-entra"><ConteudoComAcesso /></div>
             <RegistraRecente />
+            <PilhaDeNavegacao />
+            <RegistraRegistroAberto />
           </div>
           <VisualizadorDocumento />
           <ConsultaRapida />

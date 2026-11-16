@@ -1,8 +1,9 @@
 import { ArrowLeft, Bell, BellRing, Brush, DatabaseBackup, HardDrive, History, KeyRound, Lock, Palette, Plug, ScrollText, ShieldCheck, SlidersHorizontal, Settings, UserCog, Users, type LucideIcon } from "lucide-react";
-import { useState, type ComponentType } from "react";
+import { useRef, useState, type ComponentType } from "react";
 
 import { CicladorDeIcones } from "@/components/CicladorDeIcones";
 import { Button } from "@/components/ui/button";
+import { MenuAncora } from "@/components/MenuAncora";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Aparencia } from "@/components/configuracoes/Aparencia";
 import { Auditoria } from "@/components/configuracoes/Auditoria";
@@ -35,6 +36,7 @@ const IconeDoTitulo = alternado(Settings, SlidersHorizontal, 0);
 // Supabase. Aberta pelo card Configurações do início (só o Administrador), em tela inteira.
 export function ConfiguracoesAcessos({ aberto, onAberto }: { aberto: boolean; onAberto: (aberto: boolean) => void }) {
   const [ativoId, setAtivoId] = useState(SUBMENUS[0]!.id);
+  const conteudo = useRef<HTMLDivElement>(null);
   const ativo = SUBMENUS.find((m) => m.id === ativoId) ?? SUBMENUS[0]!;
   return (
     <Dialog open={aberto} onOpenChange={onAberto}>
@@ -59,7 +61,9 @@ export function ConfiguracoesAcessos({ aberto, onAberto }: { aberto: boolean; on
             {/* key: ao trocar de submenu a tela entra de novo, deslizando e aparecendo */}
             <div key={ativo.id} className="mx-auto w-full max-w-5xl animate-in fade-in-0 slide-in-from-right-2 duration-200 motion-reduce:animate-none">
               <h2 className="mb-5 text-xl font-semibold tracking-tight sm:text-2xl">{ativo.nome}</h2>
-              <ativo.Tela />
+              {/* Sumário fixo: as seções (blocos) da tela aberta, com rolagem suave até cada uma. */}
+              <MenuAncora raiz={conteudo} chave={ativo.id} />
+              <div ref={conteudo}><ativo.Tela /></div>
             </div>
           </div>
         </div>

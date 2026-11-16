@@ -5,7 +5,8 @@ import { StatCard } from "@/components/StatCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { lerEmpregadosRelatorio, lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
-import { useState } from "react";
+import { useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Button } from "@/components/ui/button";
 import { AtalhoPeriodo } from "@/components/AtalhoPeriodo";
@@ -38,8 +39,15 @@ import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documen
 import { montarRelatorioTabelaHtml } from "@/lib/relatorio-padrao";
 
 export function EpiRelatorioFuncionario() {
-  const [empresaSel, setEmpresaSel] = useState(TODAS);
-  const [empregadoId, setEmpregadoId] = useState("");
+  // Vindo da busca da tela inicial ("Ver ficha"), já abre o histórico do empregado escolhido.
+  const pedido = useSearch({ strict: false }) as { empresa?: string; empregado?: string };
+  const [empresaSel, setEmpresaSel] = useState(pedido.empresa || TODAS);
+  const [empregadoId, setEmpregadoId] = useState(pedido.empregado ?? "");
+  // Outra busca com a tela já aberta: acompanha o pedido.
+  useEffect(() => {
+    if (pedido.empresa) setEmpresaSel(pedido.empresa);
+    if (pedido.empregado) setEmpregadoId(pedido.empregado);
+  }, [pedido.empresa, pedido.empregado]);
   const [palavra, setPalavra] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");

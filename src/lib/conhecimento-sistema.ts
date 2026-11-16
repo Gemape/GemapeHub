@@ -152,6 +152,12 @@ export const CONHECIMENTO: readonly Verbete[] = [
     links: [],
   },
   {
+    id: "navegacao", titulo: "Navegação, voltar e busca",
+    chaves: ["voltar", "onde eu estava", "historico de navegacao", "ultimos registros", "relogio", "anterior e proximo", "proximo registro", "buscar empregado", "busca da tela inicial", "atalho", "atalhos", "sumario", "secoes"],
+    resposta: "O botão “Voltar para …” no alto das telas internas leva à tela de onde você veio, na mesma aba e na mesma posição da rolagem. O relógio do cabeçalho lista os últimos 10 registros abertos (ficha de empregado, de EPI, veículo) para voltar a um deles em um clique. Na busca do Início, digite um nome, código ou “CA 12345” para ver os botões diretos (ver ficha, entregar EPI, devolver, ver saldo, dar entrada). Nas ocorrências, as setas Anterior e Próximo percorrem a lista filtrada. Em Configurações, as abas do topo deslizam até cada seção.",
+    links: [{ rotulo: "Início", url: "/inicio" }],
+  },
+  {
     id: "consulta-rapida", titulo: "Consulta rápida",
     chaves: ["consulta rapida", "o que voce sabe", "o que posso perguntar", "exemplos de pergunta", "como perguntar"],
     resposta: "Eu respondo duas coisas sobre os seus dados: quem está com uma ferramenta (“Quem está com a furadeira 04?”) e o que vence (“Quais EPIs vencem essa semana?”, “uniformes que vencem em 15 dias”). E explico como o sistema funciona: pergunte, por exemplo, “como entregar EPI”, “o que é estoque mínimo” ou “como cadastrar ferramenta”.",

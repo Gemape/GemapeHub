@@ -123,7 +123,7 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     if (!emp || !(emp.ativo === false || emp.data_demissao)) continue;
     const lista = resumoEmpregado(movs, e.epis, id, e.hoje).emPosse;
     if (lista.length === 0) continue;
-    epiComDesligado.push({ chave: `epi-desl-${id}`, texto: emp.nome, detalhe: `${lista.map((p) => `${p.nome} (${p.quantidade})`).join(", ")}${emp.data_demissao ? ` · desligado em ${dataBr(emp.data_demissao)}` : ""}`, acao: { rotulo: "Registrar devolução", url: "/epi", search: { aba: "entrega", ...(emp.empresa_id ? { empresa: emp.empresa_id } : {}), empregado: id } } });
+    epiComDesligado.push({ chave: `epi-desl-${id}`, texto: emp.nome, detalhe: `${lista.map((p) => `${p.nome} (${p.quantidade})`).join(", ")}${emp.data_demissao ? ` · desligado em ${dataBr(emp.data_demissao)}` : ""}`, acao: { rotulo: "Registrar devolução", url: "/epi", search: { aba: "entrega", modo: "devolucao", ...(emp.empresa_id ? { empresa: emp.empresa_id } : {}), empregado: id } } });
   }
 
   const grupos: GrupoPendencia[] = [

@@ -3,7 +3,7 @@ import type { ComponentType, ReactNode } from "react";
 // Peças comuns das telas de Configurações: um bloco com título e uma linha "texto à esquerda, controle à direita".
 export function Bloco({ titulo, descricao, children }: { titulo: string; descricao?: string; children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-xl border bg-card p-4">
+    <section data-ancora={titulo} className="scroll-mt-14 space-y-3 rounded-xl border bg-card p-4">
       <header>
         <h3 className="text-sm font-semibold">{titulo}</h3>
         {descricao && <p className="mt-0.5 text-xs text-muted-foreground">{descricao}</p>}

@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SetasEntreRegistros } from "@/components/layout/NavegacaoContextual";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -456,6 +457,8 @@ export function OcorrenciasVeiculoModulo() {
               <DialogHeader>
                 <DialogTitle className="flex flex-wrap items-center gap-2">{atual.codigo} <StatusBadge status={atual.status} /></DialogTitle>
                 <DialogDescription>Cadastrada em {dataHoraBrasilia(atual.cadastradaEm)}.</DialogDescription>
+                {/* Percorre as ocorrências da lista como está na tela (filtro, busca e período), sem voltar à tabela. */}
+                <SetasEntreRegistros ids={lista.map((o) => o.id)} atualId={atual.id} onIr={(id) => setTela({ tipo: "detalhe", id })} />
               </DialogHeader>
               <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
                 <div><dt className="text-xs text-muted-foreground">Veículo</dt><dd>{rotuloVeiculo(atual.veiculoId)}</dd></div>
