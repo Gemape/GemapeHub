@@ -85,3 +85,10 @@ test("telas: máscara de placa, barra de completude, destaque e sem-resultado li
   assert.match(ler("src/routes/_authenticated/route.tsx"), /pagina-entra-esquerda/);
   assert.match(ler("src/lib/mascaras.ts"), /nome === "cep"/);
 });
+
+test("varredura geral: filtros não estouram no celular e a data da entrega tem rótulo ligado ao campo", () => {
+  const ler = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+  assert.match(ler("src/components/layout/BarraDeFiltros.tsx"), /\[&>div>input:not\(\[type=date\]\)\]:max-w-full/);
+  assert.match(ler("src/components/modules/EpiEntrega.tsx"), /<Label htmlFor=\{idData\}>/);
+  assert.match(ler("src/components/modules/EpiEntrega.tsx"), /<Input id=\{idData\} type="date"/);
+});
