@@ -80,7 +80,7 @@ export function alertasDosCartoes(grupos: readonly GrupoPendencia[] | null, veic
     const linhas: LinhaAlerta[] = [
       { chave: "veic-checklist", texto: `Check list vencido (${plural(veiculos.checklistVencido, "veículo", "veículos")})`, quantidade: veiculos.checklistVencido, url: "/veiculos", search: { aba: "checklist" } },
       { chave: "veic-manutencao", texto: `Manutenção vencida (${plural(veiculos.manutencaoVencida, "veículo", "veículos")})`, quantidade: veiculos.manutencaoVencida, url: "/veiculos", search: { aba: "manutencao" } },
-      { chave: "veic-ocorrencias", texto: "Ocorrências em aberto", quantidade: veiculos.ocorrenciasAbertas, url: "/veiculos", search: { aba: "ocorrencias" } },
+      { chave: "veic-ocorrencias", texto: `${plural(veiculos.ocorrenciasAbertas, "ocorrência aberta", "ocorrências abertas")}`, quantidade: veiculos.ocorrenciasAbertas, url: "/veiculos", search: { aba: "ocorrencias" } },
     ].filter((l) => l.quantidade > 0);
     mapa.set("Veículos", { total: linhas.reduce((t, l) => t + l.quantidade, 0), linhas });
   }
