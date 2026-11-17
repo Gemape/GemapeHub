@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { auditoriaEmCsv, baixarArquivo, copiaDosDadosDeTeste, type Frequencia } from "@/lib/configuracoes-demo";
-import { AvisoDeTeste, Bloco, Linha } from "./Campos";
+import { Bloco, Linha } from "./Campos";
 import { useConfig } from "./useConfig";
 
 const dataCurta = (iso: string) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" });
@@ -30,7 +30,6 @@ export function Backup() {
 
   return (
     <div className="space-y-4">
-      <AvisoDeTeste />
       <Bloco titulo="Backup automático" descricao="Simulado: neste teste o agendamento só fica guardado. A exportação manual abaixo funciona de verdade.">
         <Linha rotulo="Backup automático" htmlFor="backup-ativo">
           <Switch id="backup-ativo" checked={i.backupAtivo} onCheckedChange={(v) => trocar({ backupAtivo: v }, "Backup", `Backup automático ${v ? "ativado" : "desativado"}`)} />

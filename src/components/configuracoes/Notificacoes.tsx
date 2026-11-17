@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ALERTAS, CANAIS, emailValido, slackValido, whatsappValido, type Canal, type Frequencia } from "@/lib/configuracoes-demo";
-import { AvisoDeTeste, Bloco, Linha } from "./Campos";
+import { Bloco, Linha } from "./Campos";
 import { useConfig } from "./useConfig";
 
 type Destino = Exclude<Canal, "app">;
@@ -84,7 +84,6 @@ export function Notificacoes() {
 
   return (
     <div className="space-y-4">
-      <AvisoDeTeste />
       <Bloco titulo="Preferências de alerta" descricao="Escolha o que notificar e por qual canal. WhatsApp e Slack dependem de conexão, que não existe neste teste.">
         <div className="overflow-x-auto rounded-lg border">
           <table className="w-full text-sm">

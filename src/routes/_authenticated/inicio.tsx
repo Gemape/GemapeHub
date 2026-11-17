@@ -216,7 +216,11 @@ function PaginaInicio() {
                         if (doCartao.length === 0) return null;
                         return (
                           <section key={secao} aria-label={secao}>
-                            <h3 className="bg-muted/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{secao}</h3>
+                            <h3 className="flex items-center justify-center gap-3 border-y border-primary/20 bg-gradient-to-b from-primary/10 to-primary/5 px-4 py-2.5 text-center text-sm font-bold uppercase tracking-[0.2em] text-primary">
+                              <span aria-hidden="true" className="h-px flex-1 bg-gradient-to-r from-transparent to-primary/50" />
+                              {secao}
+                              <span aria-hidden="true" className="h-px flex-1 bg-gradient-to-l from-transparent to-primary/50" />
+                            </h3>
                             <ul className="divide-y">
                               {doCartao.map((sub) => (
                                 <li key={`${sub.titulo}-${sub.url}-${JSON.stringify(sub.search ?? {})}`}><AtalhoDoCartao sub={sub} cartao={c.titulo} fixado={fixados.some((f) => chaveDoAtalho(f) === chaveDoAtalho({ url: sub.url, search: sub.search }))} aoFixar={alternarFixado} /></li>

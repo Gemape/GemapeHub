@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { CORES_PADRAO, POSICOES_MENU, configPadrao, corValida, type Config, type Densidade, type PosicaoMenu, type Tema } from "@/lib/configuracoes-demo";
-import { AvisoDeTeste, Bloco, Linha } from "./Campos";
+import { Bloco, Linha } from "./Campos";
 import { useConfig } from "./useConfig";
 
 function Cor({ id, rotulo, valor, padrao, aoMudar }: { id: string; rotulo: string; valor: string; padrao: string; aoMudar: (v: string) => void }) {
@@ -29,7 +29,6 @@ export function Aparencia() {
 
   return (
     <div className="space-y-4">
-      <AvisoDeTeste />
       <Bloco titulo="Tema da interface">
         <Linha rotulo="Modo" htmlFor="tema">
           <Select value={a.tema === "escuro" ? "escuro" : "claro"} onValueChange={(v) => trocar({ tema: v as Tema }, `Tema: ${v}`)}>

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { OPCOES_SENHA_MIN, emailValido, problemasDaSenha, type Config } from "@/lib/configuracoes-demo";
-import { AvisoDeTeste, Bloco, Linha } from "./Campos";
+import { Bloco, Linha } from "./Campos";
 import { BloquearUsuario } from "./BloquearUsuario";
 import { useConfig } from "./useConfig";
 
@@ -29,7 +29,6 @@ export function Seguranca() {
 
   return (
     <div className="space-y-4">
-      <AvisoDeTeste />
       <Bloco titulo="Autenticação" descricao="Simulado: nenhum provedor é conectado neste teste.">
         <Linha rotulo="Autenticação em dois fatores (2FA)" ajuda="Pede um código do aplicativo autenticador além da senha" htmlFor="doisfatores">
           <Switch id="doisfatores" checked={s.doisFatores} onCheckedChange={(v) => trocar({ doisFatores: v }, `2FA ${v ? "ativado" : "desativado"}`)} />

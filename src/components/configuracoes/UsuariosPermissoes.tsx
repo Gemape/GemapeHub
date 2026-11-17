@@ -11,7 +11,7 @@ import {
   mudarPerfil, nomeDoPerfil, padraoDe, perfisDoEstado, restaurarPermissoes, salvarPermissoes, usuarioAtivo, voltarAoPerfil, type Acao, type PerfilId,
 } from "@/lib/permissoes-demo";
 import { useEmpresasQuery } from "@/lib/empresa-context";
-import { AvisoDeTeste, Bloco, MenuDeSecoes } from "./Campos";
+import { Bloco, MenuDeSecoes } from "./Campos";
 import { useConfig } from "./useConfig";
 
 const ROTULO_ACAO: Record<Acao, string> = { ver: "Ver", criar: "Criar", editar: "Editar", excluir: "Excluir" };
@@ -340,7 +340,6 @@ export function UsuariosPermissoes() {
   const [secao, setSecao] = useState<(typeof SECOES)[number]["id"]>("usuarios");
   return (
     <div className="space-y-4">
-      <AvisoDeTeste />
       <MenuDeSecoes rotulo="Seções de usuários e permissões" itens={SECOES} ativo={secao} aoEscolher={setSecao} />
       {secao === "usuarios" && <Usuarios />}
       {secao === "perfis" && <Perfis />}
