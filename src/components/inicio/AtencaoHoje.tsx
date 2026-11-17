@@ -42,7 +42,7 @@ export function AtencaoHoje({ pendencias }: { pendencias: Pendencias }) {
         O que precisa da sua atenção hoje
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold tracking-normal text-primary">{total}</span>
       </h2>
-        <button type="button" onClick={() => fechar(total)} aria-label="Fechar o aviso de atenção de hoje" title="Fechar" className="ml-auto grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><X className="size-4" aria-hidden="true" /></button>
+        <button type="button" onClick={() => fechar(total)} aria-label="Fechar o aviso de atenção de hoje" title="Fechar" className="ml-auto grid size-7 max-sm:size-11 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><X className="size-4" aria-hidden="true" /></button>
       </div>
       {total === 0 && !erroLocais && <p className="text-sm text-muted-foreground">Tudo em dia: nenhuma pendência encontrada.</p>}
       {erroLocais && (podeEquipamentos || podeViagens) && <p role="status" className="text-sm text-amber-700 dark:text-amber-300">Não foi possível ler os dados de Equipamentos e Viagens neste navegador; esses avisos ficam de fora por enquanto.</p>}

@@ -164,7 +164,7 @@ function LayoutAutenticado() {
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <p className="text-xs text-muted-foreground">{ROTULO_PAPEL[perfil.papel] ?? perfil.papel}</p>}
             </div>
             {/* No celular os controles ficam em duas colunas (usuário em linha própria, depois testes e empresa); a partir de md voltam a uma linha só. */}
-            <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:justify-end lg:flex-nowrap [&_button]:h-8 [&_button]:gap-1.5 [&_button]:px-2.5 [&_button]:text-xs [&_svg]:size-3.5">
+            <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:justify-end lg:flex-nowrap [&_button]:h-8 max-sm:[&_button]:h-11 [&_button]:gap-1.5 [&_button]:px-2.5 [&_button]:text-xs [&_svg]:size-3.5">
               <div className="col-span-2 flex items-center gap-2 md:col-auto"><LinhaDoTempoSessao /></div>
               {ConfiguracoesDemo && <Suspense fallback={null}><div className="col-span-2 min-w-0 md:col-auto"><ConfiguracoesDemo /></div></Suspense>}
               {MenuDadosDeTeste && <Suspense fallback={null}><div className="min-w-0"><MenuDadosDeTeste /></div></Suspense>}

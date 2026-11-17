@@ -133,7 +133,7 @@ export function VoltarContextual() {
     }
   };
   return (
-    <Button type="button" variant="outline" size="sm" onClick={voltar} title={`Voltar para ${destino}`} aria-label={`Voltar para ${destino}`} className="h-8 shrink-0 gap-1.5 px-2.5 text-xs">
+    <Button type="button" variant="outline" size="sm" onClick={voltar} title={`Voltar para ${destino}`} aria-label={`Voltar para ${destino}`} className="h-8 max-sm:h-11 shrink-0 gap-1.5 px-2.5 text-xs">
       <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
       Voltar
     </Button>
@@ -191,7 +191,7 @@ export function LinhaDoTempoSessao() {
   return (
     <Popover open={aberto} onOpenChange={setAberto}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="icon" aria-label="Últimos registros acessados" title="Últimos registros acessados" className="size-8 shrink-0">
+        <Button type="button" variant="outline" size="icon" aria-label="Últimos registros acessados" title="Últimos registros acessados" className="size-8 max-sm:size-11 shrink-0">
           <Clock className="size-4" aria-hidden="true" />
         </Button>
       </PopoverTrigger>

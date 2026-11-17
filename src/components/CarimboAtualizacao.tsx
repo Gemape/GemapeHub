@@ -33,7 +33,7 @@ export function CarimboAtualizacao({ className }: { className?: string }) {
       <button
         type="button" aria-label="Recarregar os dados desta tela" title="Recarregar"
         disabled={buscando}
-        className="inline-flex size-6 items-center justify-center rounded hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+        className="inline-flex size-6 max-sm:size-11 items-center justify-center rounded hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
         onClick={() => void qc.refetchQueries({ type: "active" })}
       >
         <RotateCw className={cn("size-3.5", buscando && "motion-safe:animate-spin")} aria-hidden="true" />

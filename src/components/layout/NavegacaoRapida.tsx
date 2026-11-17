@@ -27,7 +27,7 @@ export function TrocaDeModulo() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="Trocar de módulo" title="Trocar de módulo" className="size-8 shrink-0">
+        <Button variant="outline" size="icon" aria-label="Trocar de módulo" title="Trocar de módulo" className="size-8 max-sm:size-11 shrink-0">
           <LayoutGrid className="size-4" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>

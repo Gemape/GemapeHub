@@ -136,7 +136,7 @@ function AtalhoDosGrupos({ grupos, temAberto, aoRecolher }: { grupos: readonly s
     const reduz = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     document.getElementById(id)?.scrollIntoView({ behavior: reduz ? "auto" : "smooth", block: "start" });
   };
-  const chip = `rounded-full border bg-background/70 px-3 py-1 text-xs font-medium transition-colors hover:bg-primary/10 ${classeFoco}`;
+  const chip = `rounded-full border bg-background/70 px-3 py-1 max-sm:min-h-11 text-xs font-medium transition-colors hover:bg-primary/10 ${classeFoco}`;
   return (
     <nav aria-label="Ir para um grupo" className="mx-auto flex w-full max-w-xl flex-wrap items-center justify-center gap-2">
       {grupos.map((g) => <button key={g} type="button" className={chip} onClick={() => ir(idDoGrupo(g))}>{g}</button>)}
