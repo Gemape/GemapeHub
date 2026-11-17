@@ -33,7 +33,7 @@ test('cadastro de Ferramentas não exibe nem exporta saldo ou alerta', () => {
 
 test('módulos EPI, Uniformes e Ferramentas têm aba de estoque própria', () => {
   const pagina = ler('components/modules/PaginaModulo.tsx');
-  assert.match(pagina, /<EstoqueModulo modulo={modulo} \/>/);
+  assert.match(pagina, /<EstoqueModulo [^>]*modulo=\{modulo\}/);
   assert.doesNotMatch(pagina, /<CadastroProduto tabela="epis" \/>/);
   assert.match(pagina, /value="estoque"/);
   const estoque = ler('components/modules/EstoqueModulo.tsx');

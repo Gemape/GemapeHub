@@ -3,8 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PaginaModulo } from "@/components/modules/PaginaModulo";
 
 export const Route = createFileRoute("/_authenticated/uniformes")({
-  validateSearch: (search: Record<string, unknown>): { aba?: string } =>
-    typeof search["aba"] === "string" ? { aba: search["aba"] } : {},
+  validateSearch: (search: Record<string, unknown>): { aba?: string; q?: string } => ({
+    ...(typeof search["aba"] === "string" ? { aba: search["aba"] } : {}),
+    // q: o Estoque abre já filtrado pelo item achado na busca global.
+    ...(typeof search["q"] === "string" && search["q"] ? { q: search["q"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Uniformes | Patrimônio GEMAPE" },

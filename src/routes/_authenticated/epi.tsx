@@ -4,13 +4,15 @@ import { PaginaModulo } from "@/components/modules/PaginaModulo";
 
 export const Route = createFileRoute("/_authenticated/epi")({
   // empresa, empregado e ordem: a volta do cadastro da Ordem de Serviço (decisão 388) reabre a tela com a escolha que estava feita.
-  validateSearch: (search: Record<string, unknown>): { aba?: string; empresa?: string; empregado?: string; ordem?: string; funcao?: string; modo?: "devolucao" } => ({
+  validateSearch: (search: Record<string, unknown>): { aba?: string; empresa?: string; empregado?: string; ordem?: string; funcao?: string; modo?: "devolucao"; q?: string } => ({
     ...(typeof search["aba"] === "string" ? { aba: search["aba"] } : {}),
     ...(typeof search["empresa"] === "string" && search["empresa"] ? { empresa: search["empresa"] } : {}),
     ...(typeof search["empregado"] === "string" && search["empregado"] ? { empregado: search["empregado"] } : {}),
     ...(search["modo"] === "devolucao" ? { modo: "devolucao" as const } : {}),
     ...(typeof search["ordem"] === "string" && search["ordem"] ? { ordem: search["ordem"] } : {}),
     ...(typeof search["funcao"] === "string" && search["funcao"] ? { funcao: search["funcao"] } : {}),
+    // q: o Estoque abre já filtrado pelo item achado na busca global.
+    ...(typeof search["q"] === "string" && search["q"] ? { q: search["q"] } : {}),
   }),
   head: () => ({
     meta: [

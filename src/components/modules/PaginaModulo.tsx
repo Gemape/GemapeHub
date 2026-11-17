@@ -1,3 +1,4 @@
+import { useSearch } from "@tanstack/react-router";
 import { TourGuiado } from "@/components/layout/TourGuiado";
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
@@ -40,6 +41,8 @@ export function PaginaModulo({
   aba?: string | undefined;
 }) {
   const abaValida = abaDoModulo(modulo, aba);
+  // Vindo da busca global: o Estoque abre já filtrado pelo item (q) e, nas ferramentas, com o extrato dele aberto (item). O key é só o q: o item sai do endereço depois de atendido e isso não pode remontar a tela.
+  const { q, item } = useSearch({ strict: false }) as { q?: string; item?: string };
   return (
     <div className="space-y-5">
       <TourGuiado modulo={modulo} aba={abaValida} />
@@ -56,7 +59,7 @@ export function PaginaModulo({
         </TabsContent>
         <TabsContent value="estoque" className="mt-5">
           {/* No EPI e nos Uniformes o Estoque é só consulta (decisões 329 e 374): novos e usados, com os filtros e a compra de origem. */}
-          {modulo === "epi" || modulo === "uniforme" ? <EstoqueEpiModulo modulo={modulo} /> : <EstoqueModulo modulo={modulo} />}
+          {modulo === "epi" || modulo === "uniforme" ? <EstoqueEpiModulo key={q ?? ""} modulo={modulo} {...(q ? { buscaInicial: q } : {})} /> : <EstoqueModulo key={q ?? ""} modulo={modulo} {...(q ? { buscaInicial: q } : {})} {...(item ? { abrirItem: item } : {})} />}
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />

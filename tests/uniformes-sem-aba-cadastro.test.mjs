@@ -14,7 +14,7 @@ test("o módulo Uniformes não tem aba Cadastro, que fica só em Cadastros > Uni
   assert.ok(!ids.includes("cadastro"));
   assert.doesNotMatch(pagina, /<CadastroProduto tabela="uniformes" \/>/);
   // EPI mantém a aba Estoque, agora separada do cadastro; Uniformes continua só em Cadastros.
-  assert.match(pagina, /<EstoqueModulo modulo={modulo} \/>/);
+  assert.match(pagina, /<EstoqueModulo [^>]*modulo=\{modulo\}/);
   assert.doesNotMatch(pagina, /<CadastroProduto tabela="epis" \/>/);
   // O cadastro é a tela Cadastrar Uniforme (decisão 48); no banco real continua o cadastro antigo.
   assert.match(ler("components/modules/CadastroUniforme.tsx"), /CadastroProduto tabela="uniformes"/);

@@ -60,13 +60,13 @@ const TODOS = "todos";
 
 // Módulo EPI > Estoque (decisão 329): só a consulta do estoque de EPIs. Dois botões escolhem os novos ou os usados (que vieram de devolução); filtros por empresa, palavra-chave,
 // data da compra, fornecedor, CA e nota fiscal; e, em cada linha, o item de cada empresa (as compras de todos os fornecedores somam num estoque só; data, NF e fornecedor listam todas as compras que o formam), o tamanho, o mínimo, a quantidade disponível, o alerta e a média de consumo mensal.
-export function EstoqueEpiModulo({ modulo = "epi" }: { modulo?: "epi" | "uniforme" }) {
+export function EstoqueEpiModulo({ modulo = "epi", buscaInicial = "" }: { modulo?: "epi" | "uniforme"; buscaInicial?: string }) {
   const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const [condicao, setCondicao] = useState<"novo" | "usado">("novo");
   const [empresaFiltro, setEmpresaFiltro] = useState(TODOS);
-  const [palavra, setPalavra] = useState("");
+  const [palavra, setPalavra] = useState(buscaInicial);
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [fornecedor, setFornecedor] = useState(TODOS);
