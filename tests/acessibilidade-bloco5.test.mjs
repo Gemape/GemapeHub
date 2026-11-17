@@ -25,5 +25,7 @@ test("cores de estado (sucesso/info) com texto branco chegam a 4,5:1", () => {
   const claro = css.split(".dark {")[0];
   assert.match(claro, /--success: oklch\(0\.52 /);
   assert.match(claro, /--info: oklch\(0\.52 /);
-  assert.match(css, /\.dark \.text-primary \{\s*color: oklch\(0\.8 /);
+  // Na coluna 0: fora de @layer, senão a utilidade text-primary do Tailwind (camada posterior) vence.
+  assert.match(css, /\n\.dark \.text-primary \{\s*color: oklch\(0\.8 /);
+  assert.match(css, /:not\(\.animate-spin, \.animate-pulse\)/);
 });
