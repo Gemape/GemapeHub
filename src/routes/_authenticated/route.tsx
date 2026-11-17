@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmarAcaoHost } from "@/components/ConfirmarAcao";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo } from "react";
 import { Building2, LogOut } from "lucide-react";
@@ -186,6 +187,7 @@ function LayoutAutenticado() {
           <RedeEFila />
           <SincroniaAbas />
           <ReceptorGlobal />
+          <ConfirmarAcaoHost />
         </main>
       </SidebarProvider>
     </EmpresaProvider></AccessProvider>
