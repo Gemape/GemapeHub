@@ -1,4 +1,5 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -231,8 +232,8 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
                     <Button requiresWrite
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        if (confirm("Excluir esta ocorrência?")) excluir.mutate(o.id);
+                      onClick={async () => {
+                        if (await confirmarExclusao(`a ocorrência de ${formatarData(o.data)} (${o.tipo_ocorrencia})`)) excluir.mutate(o.id);
                       }}
                     >
                       Excluir

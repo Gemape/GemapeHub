@@ -1,4 +1,5 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { ArrowLeft, CalendarCheck, ClipboardCheck } from "lucide-react";
 import { useState } from "react";
 
@@ -160,8 +161,8 @@ export function ManutencaoVeiculoModulo() {
     });
   }
 
-  function excluir(id: string) {
-    if (!confirm("Excluir esta manutenção?")) return;
+  async function excluir(id: string, nome: string) {
+    if (!(await confirmarExclusao(nome))) return;
     executar(() => removerManutencao(id), "Manutenção excluída");
   }
 
@@ -309,7 +310,7 @@ export function ManutencaoVeiculoModulo() {
                     <Button variant="outline" size="sm" className="rounded-full" aria-label="Relatório da manutenção" onClick={() => gerarRelatorio(m)}>Relatório</Button>
                     <Button requiresWrite variant="outline" size="sm" className="rounded-full" aria-label="Editar manutenção" onClick={() => abrir(m)}>Editar</Button>
                     {isAdmin && (
-                      <Button requiresWrite variant="destructive" size="sm" aria-label="Excluir manutenção" className="rounded-full" onClick={() => excluir(m.id)}>
+                      <Button requiresWrite variant="destructive" size="sm" aria-label="Excluir manutenção" className="rounded-full" onClick={() => void excluir(m.id, `a manutenção de ${formatarData(m.data)}`)}>
                         Excluir
                       </Button>
                     )}

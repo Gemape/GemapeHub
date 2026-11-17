@@ -18,6 +18,13 @@ const MIGRADOS = [
   "routes/_authenticated/cadastros/fornecedores.tsx",
   "routes/_authenticated/cadastros/clientes.tsx",
   "routes/_authenticated/cadastros/equipamentos.tsx",
+  // Lote 3: registros operacionais
+  "components/modules/OcorrenciasModulo.tsx",
+  "components/modules/ManutencaoVeiculoModulo.tsx",
+  "components/modules/AbastecimentoVeiculoModulo.tsx",
+  "components/modules/EpiComprasModulo.tsx",
+  "components/modules/UniformesComprasModulo.tsx",
+  "components/modules/ImportarNfeXml.tsx",
 ];
 
 test("a janela de confirmação existe, está no layout e cita o item no título da exclusão", () => {
