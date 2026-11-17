@@ -76,3 +76,14 @@ test("o Estoque abre filtrado pelo item (q) e a ferramenta abre o extrato (item)
   assert.match(ler("components/modules/EstoqueModulo.tsx"), /useState\(buscaInicial\)/);
   assert.match(ler("components/modules/EstoqueEpiModulo.tsx"), /useState\(buscaInicial\)/);
 });
+
+test("o Estoque aberto pela busca escolhe a condição que o item tem e só mostra 'Todos' com as duas", async () => {
+  const { condicaoInicial } = await import("../src/lib/estoque-epi-visao.ts");
+  assert.equal(condicaoInicial(true, false), "novo");
+  assert.equal(condicaoInicial(false, true), "usado");
+  assert.equal(condicaoInicial(true, true), "todos");
+  const tela = ler("components/modules/EstoqueEpiModulo.tsx");
+  assert.match(tela, /temAsDuas \? \(\["novo", "usado", "todos"\] as const\)/);
+  assert.match(tela, /if \(condicaoEscolhida\.current \|\| carregandoTudo\) return;/, "espera compras e devoluções");
+  assert.match(tela, /condicaoEscolhida\.current = true; setCondicao\(c\)/, "escolha manual é respeitada");
+});

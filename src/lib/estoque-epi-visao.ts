@@ -1,6 +1,9 @@
 // Visão do estoque de EPI (decisões 329 e 408): uma linha por EPI e tamanho, separada em novos e usados. O produto existe uma vez em cada estoque (empresa) e as compras de todos os
 // fornecedores se somam num estoque só; a linha mostra o total e, como informação, o que veio de cada compra (fornecedores, notas, CAs e a data da última). O estoque não guarda de
 // qual compra vem cada unidade: o que é usado vem das devoluções (que mantêm a compra original) e o resto é novo.
+// Condição em que o Estoque abre quando vem da busca global: a que o item tem (só uma) ou "todos" quando tem as duas.
+export const condicaoInicial = (haNovos: boolean, haUsados: boolean): "novo" | "usado" | "todos" => (haNovos && haUsados ? "todos" : haUsados ? "usado" : "novo");
+
 export type CompraDoEstoque = {
   id: string;
   item_id: string | null;
