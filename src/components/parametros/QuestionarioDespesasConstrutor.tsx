@@ -334,7 +334,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 )}
                 <div className="mx-2 h-6 w-px bg-border" />
                 <Label htmlFor={`obrigatoria-${id}`} className="text-sm">Obrigatória</Label>
-                <Switch id={`obrigatoria-${id}`} checked={p.obrigatoria} disabled={travada} onCheckedChange={(v) => executar(() => salvarPergunta(estado, { ...p, obrigatoria: v }, rascunho))} />
+                <Switch id={`obrigatoria-${id}`} checked={p.obrigatoria} disabled={travada} onCheckedChange={(v) => executar(() => salvarPergunta(estado, { ...p, obrigatoria: v }, rascunho), "Pergunta salva.")} />
               </div>
             )}
           </div>

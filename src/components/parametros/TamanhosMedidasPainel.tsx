@@ -90,7 +90,7 @@ export function TamanhosMedidasPainel({ aninhado = false }: { aninhado?: boolean
       }
       onAdicionar={(nome) => executar(() => adicionarOpcao(tipo, nome), "Incluído.")}
       // Renomear muda o nome em todos os cadastros, que guardam a referência.
-      onRenomear={(id, nome) => executar(() => renomearOpcao(tipo, id, nome))}
+      onRenomear={(id, nome) => executar(() => renomearOpcao(tipo, id, nome), "Renomeado.")}
       {...(sequencial
         ? { onMover: (id: string, passo: -1 | 1) => executar(() => moverOpcao(tipo, id, passo)) }
         : {})}

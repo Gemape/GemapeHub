@@ -45,7 +45,7 @@ export function AssociarTamanhosPainel({ categoriaFixa, aninhado = false }: { ca
 
   // Autorizar tamanho ou unidade grava direto, sem aviso (dec 237); só desautorizar confere o uso.
   const autorizarComAviso = (subId: string, tipo: TipoOpcao, ids: string[]) =>
-    conferir(async () => executar(() => autorizar(subId, tipo, ids)));
+    conferir(async () => executar(() => autorizar(subId, tipo, ids), "Autorizado."));
 
   // Desautorizar tamanho ou unidade em uso avisa quais produtos dependem dele.
   const desautorizarComAviso = (subId: string, tipo: TipoOpcao, ids: string[]) =>
@@ -71,7 +71,7 @@ export function AssociarTamanhosPainel({ categoriaFixa, aninhado = false }: { ca
         )
           return false;
       }
-      return executar(() => desautorizar(subId, tipo, ids));
+      return executar(() => desautorizar(subId, tipo, ids), "Desautorizado.");
     });
 
   const bloco = (tipo: TipoOpcao) => {

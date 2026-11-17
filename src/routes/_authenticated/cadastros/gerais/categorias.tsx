@@ -230,7 +230,7 @@ function Categorias() {
             (atual.nome !== nome.trim() && (await marcaImpedeAlteracao(tipo, atual.nome)))
           )
             return false;
-          return executar(() => renomearListaFerramenta(tipo, id, nome));
+          return executar(() => renomearListaFerramenta(tipo, id, nome), "Marca renomeada.");
         }}
         onRemover={(item) =>
           semRepetir(async () => {
@@ -268,7 +268,7 @@ function Categorias() {
           onSelecionar={setEscolhida}
           detalhe={(c) => <Badge variant="secondary">{subcategoriasDa(dados, c.id).length}</Badge>}
           onAdicionar={(nome) => executar(() => adicionarCategoria(nome), "Categoria incluída.")}
-          onRenomear={(id, nome) => executar(() => renomearCategoria(id, nome))}
+          onRenomear={(id, nome) => executar(() => renomearCategoria(id, nome), "Categoria renomeada.")}
           onRemover={async (c) => {
             if (await confirmarExclusao(`a categoria ${c.nome}`))
               executar(() => removerCategoria(c.id), "Categoria excluída.");
@@ -308,7 +308,7 @@ function Categorias() {
               // A ferramenta guarda o nome da categoria, não o id: renomear em uso deixaria o vínculo solto.
               const atual = subcategorias.find((s) => s.id === id);
               if (categoria.id === "cat-ferramentas" && atual && atual.nome !== nome.trim() && (await subcategoriaEmUso(atual, "renomear"))) return false;
-              return executar(() => renomearSubcategoria(id, nome));
+              return executar(() => renomearSubcategoria(id, nome), "Subcategoria renomeada.");
             }}
             onRemover={(s) =>
               semRepetir(async () => {
@@ -341,7 +341,7 @@ function Categorias() {
                 (await vinculoImpedeAlteracao("marcasFerramenta", atual.nome)))
             )
               return false;
-            return executar(() => renomearListaFerramenta("marcasFerramenta", id, nome));
+            return executar(() => renomearListaFerramenta("marcasFerramenta", id, nome), "Marca renomeada.");
           }}
           onRemover={(item) =>
             semRepetir(async () => {
@@ -375,7 +375,7 @@ function Categorias() {
                 (await vinculoImpedeAlteracao("gruposFerramenta", atual.nome)))
             )
               return false;
-            return executar(() => renomearListaFerramenta("gruposFerramenta", id, nome));
+            return executar(() => renomearListaFerramenta("gruposFerramenta", id, nome), "Grupo renomeado.");
           }}
           onRemover={(item) =>
             semRepetir(async () => {
