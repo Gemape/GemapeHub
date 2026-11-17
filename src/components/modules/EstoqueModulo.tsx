@@ -1,5 +1,6 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
-import { useMemo, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -31,12 +32,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 // O EPI tem a sua tela de Estoque (EstoqueEpiModulo, decisão 329): esta é a dos uniformes e das ferramentas.
 type ModuloEstoque = 'uniforme' | 'ferramenta';
 
-export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
+export function EstoqueModulo({ modulo, buscaInicial = '', abrirItem }: { modulo: ModuloEstoque; buscaInicial?: string; abrirItem?: string }) {
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const [itemId, setItemId] = useState<string | null>(null);
   // Busca por palavra-chave (decisão 339): código, nome do item ou empresa, sem acento e sem diferenciar maiúscula.
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useState(buscaInicial);
   // Ferramentas: botão que troca a lista pelo estoque consolidado por posição (guardada na caixa, com empregado, sem caixa).
   const [porPosicao, setPorPosicao] = useState(false);
   const tabela = modulo === 'uniforme' ? 'uniformes' : 'ferramentas';
@@ -77,6 +78,21 @@ export function EstoqueModulo({ modulo }: { modulo: ModuloEstoque }) {
     return { caixasDe, comEmpregados, semCaixa, guardada };
   };
   const codigoDaCaixa = (id: string | null) => caixas.find((c) => c.id === id)?.codigo ?? '—';
+  // Vindo da busca global (ferramentas): abre o extrato da ferramenta achada, uma vez, quando a lista chega.
+  const navegar = useNavigate();
+  const jaAbriu = useRef(false);
+  useEffect(() => {
+    // espera a lista de empresas, para o título do extrato não sair com '—' no lugar do nome
+    if (!abrirItem || jaAbriu.current || empresas.length === 0) return;
+    const alvo = itens.find((i) => i.id === abrirItem);
+    if (!alvo) return;
+    jaAbriu.current = true;
+    setExtrato({ titulo: `${alvo.codigo_sku ?? ''} · ${alvo.nome} (${nomeDaEmpresa(alvo.empresa_id)})`, ids: [alvo.id] });
+    // O pedido foi atendido: tira o ?item= do endereço, para recarregar ou fechar o extrato não reabri-lo.
+    void navegar({ to: '/ferramentas', search: (s: Record<string, unknown>) => ({ ...s, item: undefined }), replace: true } as never);
+    // nomeDaEmpresa muda a cada desenho; só importa quando a lista de itens chega
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abrirItem, itens, empresas]);
   const linhas = itens
     .filter((item) => combinaBuscaTolerante(busca, item.codigo_sku, item.nome, nomeDaEmpresa(item.empresa_id)))
     .map((item) => ({ item, estado: estadoEstoqueModulo(parametros, modulo, item) }));

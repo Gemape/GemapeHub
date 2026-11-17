@@ -88,7 +88,7 @@ test("a tela Entrega leva a origem da compra na devolução de EPI e de uniforme
 test("Uniformes: o Estoque é a consulta de Novos e Usados e a devolução entra como usado, sem CA", () => {
   const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
   const estoque = ler("components/modules/EstoqueEpiModulo.tsx");
-  assert.match(estoque, /EstoqueEpiModulo\(\{ modulo = "epi" \}/);
+  assert.match(estoque, /EstoqueEpiModulo\(\{ modulo = "epi"/);
   assert.match(estoque, /saldosDeEpi\(parametros, porId\.get\(id\)!, modulo\)/);
   assert.match(estoque, /modulo === "epi" && <TableHead>CA<\/TableHead>/);
   const dev = ler("components/modules/DevolucaoEpiDialog.tsx");

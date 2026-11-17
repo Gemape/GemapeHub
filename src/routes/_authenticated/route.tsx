@@ -7,6 +7,7 @@ import { direcaoDaTroca, marcarDirecao } from "@/lib/direcao-tela";
 import { RedeEFila } from "@/components/layout/RedeEFila";
 import { ReceptorGlobal } from "@/components/layout/ReceptorGlobal";
 import { SincroniaAbas } from "@/components/layout/SincroniaAbas";
+import { BuscaGlobal } from "@/components/layout/BuscaGlobal";
 import { ConsultaRapida } from "@/components/layout/ConsultaRapida";
 import { RegistraRecente } from "@/components/inicio/atalhosPessoais";
 import { TrocaDeModulo, TrilhaDeNavegacao } from "@/components/layout/NavegacaoRapida";
@@ -166,7 +167,7 @@ function LayoutAutenticado() {
               <div className="col-span-2 flex items-center gap-2 md:col-auto"><LinhaDoTempoSessao /></div>
               {ConfiguracoesDemo && <Suspense fallback={null}><div className="col-span-2 min-w-0 md:col-auto"><ConfiguracoesDemo /></div></Suspense>}
               {MenuDadosDeTeste && <Suspense fallback={null}><div className="min-w-0"><MenuDadosDeTeste /></div></Suspense>}
-              <div className="min-w-0"><FiltroEmpresa /></div>
+              <div className="flex min-w-0 items-center gap-2"><BuscaGlobal /><div className="min-w-0 flex-1"><FiltroEmpresa /></div></div>
               {import.meta.env["VITE_DEMO_MODE"] === "false" && <><a className="text-xs underline" href="/auth?password=update">Trocar senha</a>
               <Button variant="ghost" size="sm" onClick={sair}>
                 <LogOut className="mr-1 size-4" /> Sair
