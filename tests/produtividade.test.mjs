@@ -283,7 +283,7 @@ test("telas ligadas: gaveta, cartão, colar, soltar, abas e aviso de alteraçõe
   const rota = fonte("src/routes/_authenticated/route.tsx");
   assert.match(rota, /<SincroniaAbas \/>/);
   assert.match(rota, /<ReceptorGlobal \/>/);
-  assert.match(fonte("src/routes/_authenticated/inicio.tsx"), /<AtencaoHoje \/>/);
+  assert.match(fonte("src/routes/_authenticated/inicio.tsx"), /<AtencaoHoje pendencias=\{pendencias\} \/>/);
   assert.match(fonte("src/components/SeletorComBusca.tsx"), /combinaBuscaTolerante/);
 });
 

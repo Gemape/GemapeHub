@@ -1,17 +1,19 @@
 import { descricaoDoMenu } from "@/lib/descricoes-menu";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, ChevronsUp, Star, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, ChevronsUp, Star, ChartPie, createLucideIcon, MapPin, Plane, UserStar, Building2, Car, ChartColumn, Factory, FileText, Fuel, Hammer, ScreenShare, UserCheck, ChevronDown, FolderCog, Forklift, Handshake, HardHat, LayoutDashboard, Luggage, Settings, Shirt, Truck, Users, Wrench } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 import { CicladorDeIcones } from "@/components/CicladorDeIcones";
 import { FundoVidroQuantico } from "@/components/FundoVidroQuantico";
-import { AtalhosPessoais, useAtalhosPessoais } from "@/components/inicio/atalhosPessoais";
+import { AtalhosPessoais, useAtalhosPessoais, useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
 import { AtencaoHoje } from "@/components/inicio/AtencaoHoje";
+import { usePendencias } from "@/components/inicio/usePendencias";
 import { BuscaRapida } from "@/components/inicio/BuscaRapida";
 import { ICONES } from "@/components/layout/AppSidebar";
 import { useAccess } from "@/lib/access-context";
-import { chaveDoAtalho, type AtalhoGuardado } from "@/lib/atalhos-usuario";
-import { gruposDoInicio, lerAbertos, guardarAbertos, type IconeInicio, type SecaoInicio, type SubitemInicio } from "@/lib/inicio";
+import { chaveDoAtalho, maisUsados, type AtalhoGuardado } from "@/lib/atalhos-usuario";
+import { cartaoTemAlerta, type AlertaCartao } from "@/lib/alertas-cartao";
+import { GRUPOS_INICIO, gruposDoInicio, lerAbertos, guardarAbertos, type IconeInicio, type SecaoInicio, type SubitemInicio } from "@/lib/inicio";
 
 // Matriz de acessos por usuário (card Configurações): só no modo demonstração; na produção a condição é falsa na compilação e o código nem é gerado.
 const ConfiguracoesAcessos = import.meta.env.VITE_DEMO_MODE !== "false"
@@ -83,6 +85,51 @@ function FaixaDoCartao({ Icone, tipo, atraso }: { Icone: typeof Car; tipo: Icone
   );
 }
 
+// No lugar de "N atalhos": o que precisa de atenção naquele cartão, ou "Tudo em dia". Só aparece quando os dados do cartão foram lidos.
+function IndicadorDoCartao({ alerta, atalhos, comAlerta }: { alerta: AlertaCartao | undefined; atalhos: number; comAlerta: boolean }) {
+  // Cartão sem fonte de alerta (Gerais...) segue mostrando quantos atalhos tem; o que tem fonte espera a leitura dos dados.
+  if (!alerta) return comAlerta ? null : <><span aria-hidden="true">·</span><span>{atalhos} atalhos</span></>;
+  return alerta.total > 0
+    ? <><span aria-hidden="true">·</span><span className="inline-flex items-center gap-1 font-semibold text-destructive"><AlertTriangle className="size-3.5" aria-hidden="true" />{alerta.total} {alerta.total === 1 ? "alerta" : "alertas"}</span></>
+    : <><span aria-hidden="true">·</span><span className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="size-3.5" aria-hidden="true" />Tudo em dia</span></>;
+}
+
+// Dentro do cartão aberto: os alertas, cada um levando à tela que resolve.
+function AlertasDoCartao({ alerta }: { alerta: AlertaCartao }) {
+  return (
+    <section aria-label="Alertas">
+      <h3 className="flex items-center justify-center gap-3 border-y border-primary/20 bg-gradient-to-b from-primary/10 to-primary/5 px-4 py-2.5 text-center text-sm font-bold uppercase tracking-[0.2em] text-primary">Alertas</h3>
+      {alerta.linhas.length === 0
+        ? <p className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="size-4" aria-hidden="true" />Tudo em dia</p>
+        : (
+          <ul className="divide-y">
+            {alerta.linhas.map((l) => (
+              <li key={l.chave}>
+                <Link to={l.url} search={l.search as never} className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">
+                  <span className="min-w-0">{l.texto}</span>
+                  <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-bold tabular-nums text-destructive">{l.quantidade}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+    </section>
+  );
+}
+
+// Os 3 atalhos que o usuário mais abre naquele cartão, sempre à mostra (fora do botão do cartão, para não ter link dentro de botão).
+function MaisUsadosDoCartao({ atalhos }: { atalhos: readonly AtalhoGuardado[] }) {
+  if (atalhos.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-1.5 border-t px-3 py-2">
+      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Mais usados</span>
+      {atalhos.map((a) => (
+        <Link key={chaveDoAtalho(a)} to={a.url} search={a.search as never} className="max-w-full truncate rounded-full border bg-background/60 px-2.5 py-1 text-xs font-medium hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">{a.titulo}</Link>
+      ))}
+    </div>
+  );
+}
+
 // Faixa de atalhos para os grupos da página (Visão geral, Módulos, Cadastros): em tela comprida, um toque desliza até o grupo. "Recolher tudo" aparece quando há cartão aberto.
 function AtalhoDosGrupos({ grupos, temAberto, aoRecolher }: { grupos: readonly string[]; temAberto: boolean; aoRecolher: () => void }) {
   const ir = (id: string) => {
@@ -146,6 +193,14 @@ function PaginaInicio() {
     guardarAbertos(nova);
   };
   const { fixados, recentes, alternar: alternarFixado } = useAtalhosPessoais();
+  const pendencias = usePendencias();
+  const dono = useDonoDosAtalhos();
+  // Os mais usados de cada cartão ficam neste navegador: lidos depois de montar, a cada vez que a tela abre.
+  const [usos, setUsos] = useState<Record<string, AtalhoGuardado[]>>({});
+  useEffect(() => {
+    if (!dono) return;
+    setUsos(Object.fromEntries(GRUPOS_INICIO.flatMap((g) => g.cartoes).filter((c) => c.itens).map((c) => [c.titulo, maisUsados(dono, c.titulo)])));
+  }, [dono]);
   const grupos = useMemo(() => gruposDoInicio(isAdmin, podeVerCaminho), [isAdmin, podeVerCaminho]);
 
   return (
@@ -157,7 +212,7 @@ function PaginaInicio() {
       <div className="relative z-10 mx-auto max-w-5xl space-y-8 sm:space-y-10">
       <BuscaRapida grupos={grupos} />
       <AtalhoDosGrupos grupos={grupos.map((g) => g.titulo)} temAberto={grupos.some((g) => g.cartoes.some((c) => c.itens && abertos.has(`${g.titulo}/${c.titulo}`)))} aoRecolher={() => { const vazio = new Set<string>(); setAbertos(vazio); guardarAbertos(vazio); }} />
-      <AtencaoHoje />
+      <AtencaoHoje pendencias={pendencias} />
       <AtalhosPessoais fixados={fixados.filter((a) => podeVerCaminho(a.url, a.search))} recentes={recentes.filter((a) => podeVerCaminho(a.url, a.search))} />
       {grupos.map((grupo) => (
         <section key={grupo.titulo} aria-labelledby={`grupo-${grupo.titulo}`} id={idDoGrupo(grupo.titulo)} className="mx-auto w-full max-w-5xl scroll-mt-24 space-y-4">
@@ -189,6 +244,7 @@ function PaginaInicio() {
               }
               const aberto = abertos.has(chave);
               const idLista = `atalhos-${grupo.titulo}-${c.titulo}`;
+              const alertaDoCartao = pendencias.alertas.get(c.titulo);
               return (
                 <li key={chave} className={`${larguraDoCartao} ${classeCartao}`}>
                   <button
@@ -203,14 +259,15 @@ function PaginaInicio() {
                       <span className="transition-colors duration-200 group-hover/cartao:text-primary font-medium">{c.titulo}</span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         {aberto ? "Clique para recolher" : "Clique para acessar"}
-                        <span aria-hidden="true">·</span>
-                        <span>{c.itens.length} atalhos</span>
+                        <IndicadorDoCartao alerta={pendencias.alertas.get(c.titulo)} atalhos={c.itens.length} comAlerta={cartaoTemAlerta(c.titulo)} />
                         <ChevronDown className={`size-3.5 transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
                       </span>
                     </span>
                   </button>
+                  <MaisUsadosDoCartao atalhos={(usos[c.titulo] ?? []).filter((a) => podeVerCaminho(a.url, a.search))} />
                   {aberto && (
                     <div id={idLista} className="animate-in fade-in-0 slide-in-from-top-2 border-t duration-200 motion-reduce:animate-none">
+                      {alertaDoCartao && <AlertasDoCartao alerta={alertaDoCartao} />}
                       {SECOES.map((secao) => {
                         const doCartao = (c.itens ?? []).filter((i) => i.secao === secao);
                         if (doCartao.length === 0) return null;

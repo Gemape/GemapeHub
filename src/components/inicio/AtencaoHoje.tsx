@@ -1,22 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, CheckCircle2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { BlocoEsqueleto } from "@/components/Esqueletos";
 import { useDonoDosAtalhos } from "@/components/inicio/atalhosPessoais";
-import { useAccess } from "@/lib/access-context";
-import { pendenciasDeHoje, totalPendencias, type DespesaAbertaViagem, type GrupoPendencia, type OcorrenciaAtencaoEq, type OrdemAtencaoEq } from "@/lib/atencao-hoje";
-import { hojeLocal } from "@/lib/empregados";
-import { TODAS } from "@/lib/empresa-context";
-import { useEmpregados, useItens, useMovimentacoes } from "@/lib/hooks-gemape";
-import { listarEquipamentos } from "@/lib/equipamentos-demo";
-import { estadoEstoqueModulo } from "@/lib/estoque-tamanho";
-import { EVENTO_REGISTROS_EQUIPAMENTO, lerManutencoesEq, lerOcorrenciasEq } from "@/lib/registros-equipamento";
-import { listarRelatorios, relatorioPorDespesa } from "@/lib/relatorios-viagens";
-import { listarRespostas } from "@/lib/respostas-despesas";
-import { lerPrazos } from "@/lib/prazo-viagens";
-import { dadosDoLancamento } from "@/lib/viagens";
-import { useParametrosBase } from "@/lib/use-parametros-base";
+import type { Pendencias } from "@/components/inicio/usePendencias";
+import { totalPendencias, type GrupoPendencia } from "@/lib/atencao-hoje";
 
 const COR: Record<GrupoPendencia["prioridade"], string> = {
   alta: "border-destructive/50 bg-destructive/10 text-destructive",
@@ -26,50 +15,10 @@ const COR: Record<GrupoPendencia["prioridade"], string> = {
 const CHAVE_FECHADO = "gemape-atencao-hoje-fechado";
 const ROTULO: Record<GrupoPendencia["prioridade"], string> = { alta: "Urgente", media: "Atenção", baixa: "Em breve" };
 
-// Equipamentos e Viagens ficam só no navegador (modo demonstração): lidos depois de montar e relidos quando os registros de equipamento mudam.
-type RegistrosLocais = { nomes: Map<string, string>; ordens: OrdemAtencaoEq[]; ocorrencias: OcorrenciaAtencaoEq[]; despesas: DespesaAbertaViagem[]; prazoDias: number };
-function lerRegistrosLocais(): RegistrosLocais {
-  const relatorios = relatorioPorDespesa(listarRelatorios());
-  const prazos = lerPrazos();
-  return {
-    nomes: new Map(listarEquipamentos().map((e) => [e.id, e.nome])),
-    ordens: lerManutencoesEq().map((m) => ({ id: m.id, equipamentoId: m.equipamentoId, tipo: m.tipo, ...(m.status ? { status: m.status } : {}), ...(m.dataPrevista ? { dataPrevista: m.dataPrevista } : {}), ...(m.responsavel ? { responsavel: m.responsavel } : {}) })),
-    ocorrencias: lerOcorrenciasEq().map((o) => ({ id: o.id, equipamentoId: o.equipamentoId, tipoNome: o.tipoNome, status: o.status, data: o.data, ...(o.codigo ? { codigo: o.codigo } : {}) })),
-    despesas: prazos.pcmAplica ? listarRespostas().filter((r) => !relatorios.has(r.id)).map((r) => { const d = dadosDoLancamento(r); return { id: r.id, tecnico: d.responsavel ?? d.tecnico ?? "Sem técnico", registradaEm: r.data }; }) : [],
-    prazoDias: prazos.pcm,
-  };
-}
-
 // Bloco do topo da tela inicial: pendências reais por prioridade. Cada cartão é um botão: ao clicar, a lista abaixo mostra só aqueles itens,
-// cada um com o botão da ação (agendar troca, repor estoque...) que já abre a tela certa.
-export function AtencaoHoje() {
-  const { podeVerCaminho } = useAccess();
-  const pode = podeVerCaminho("/epi");
-  const parametros = useParametrosBase();
-  // O histórico inteiro é pesado: a leitura começa um instante depois de a tela inicial aparecer, para os cartões do menu não esperarem por ela.
-  const [pronto, setPronto] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setPronto(true), 600); return () => clearTimeout(t); }, []);
-  const ler = pode && pronto;
-  const { data: empregados = [], isLoading: l1 } = useEmpregados(TODAS, false, ler);
-  const { data: epis = [], isLoading: l2 } = useItens("epi", TODAS, "", ler);
-  const { data: uniformes = [] } = useItens("uniforme", TODAS, "", ler);
-  const { data: ferramentas = [] } = useItens("ferramenta", TODAS, "", ler);
-  const { data: movsEpi = [], isLoading: l3 } = useMovimentacoes("epi", TODAS, undefined, ler);
-  const { data: movsFerramenta = [] } = useMovimentacoes("ferramenta", TODAS, undefined, ler);
-  const podeEquipamentos = podeVerCaminho("/equipamentos");
-  const podeViagens = podeVerCaminho("/viagens");
-  const [locais, setLocais] = useState<RegistrosLocais | null>(null);
-  const [erroLocais, setErroLocais] = useState(false);
-  useEffect(() => {
-    if (!pronto) return;
-    const ler = () => { try { setLocais(lerRegistrosLocais()); setErroLocais(false); } catch { setLocais(null); setErroLocais(true); } };
-    ler();
-    // Relê quando os registros de equipamento mudam, quando outra aba grava (viagens, prazos) e quando a aba volta a ficar em foco.
-    window.addEventListener(EVENTO_REGISTROS_EQUIPAMENTO, ler);
-    window.addEventListener("storage", ler);
-    window.addEventListener("focus", ler);
-    return () => { window.removeEventListener(EVENTO_REGISTROS_EQUIPAMENTO, ler); window.removeEventListener("storage", ler); window.removeEventListener("focus", ler); };
-  }, [pronto]);
+// cada um com o botão da ação (agendar troca, repor estoque...) que já abre a tela certa. Os dados vêm de usePendencias (a mesma leitura dos alertas dos cartões).
+export function AtencaoHoje({ pendencias }: { pendencias: Pendencias }) {
+  const { pode, carregando, grupos, erroLocais, podeEquipamentos, podeViagens } = pendencias;
   const [aberto, setAberto] = useState<string | null>(null);
   // O X fecha o bloco nesta sessão do navegador, por usuário. Se aparecer pendência nova (o total cresce), ele volta sozinho.
   // Lido depois de montar para não divergir do HTML do servidor.
@@ -79,17 +28,8 @@ export function AtencaoHoje() {
   useEffect(() => { try { const v = sessionStorage.getItem(chave); setFechadoCom(v === null ? null : Number(v)); } catch { setFechadoCom(null); } }, [chave]);
   const fechar = (total: number) => { setFechadoCom(total); try { sessionStorage.setItem(chave, String(total)); } catch { /* sem armazenamento: fecha só nesta tela */ } };
 
-  const grupos = useMemo(
-    () => pendenciasDeHoje({
-      hoje: hojeLocal(), empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, estado: (modulo, item) => estadoEstoqueModulo(parametros, modulo, item as never),
-      ...(locais ? { equipamentos: { nomes: locais.nomes, ordens: locais.ordens, ocorrencias: locais.ocorrencias }, viagens: { despesasEmAberto: locais.despesas, prazoDias: locais.prazoDias } } : {}),
-    })
-      // Quem não vê o módulo não vê o cartão dele, e os cartões de Equipamentos e Viagens só aparecem depois de lidos (senão mostrariam "0" sem terem sido lidos).
-      .filter((g) => (g.id !== "equipamentos" || (podeEquipamentos && locais !== null)) && (g.id !== "viagens" || (podeViagens && locais !== null))),
-    [empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, parametros, locais, podeEquipamentos, podeViagens],
-  );
   if (!pode) return null;
-  if (!pronto || l1 || l2 || l3) return <BlocoEsqueleto cartoes={0} linhas={3} rotulo="Carregando o que precisa da sua atenção" />;
+  if (carregando) return <BlocoEsqueleto cartoes={0} linhas={3} rotulo="Carregando o que precisa da sua atenção" />;
 
   const total = totalPendencias(grupos);
   if (fechadoCom !== null && total <= fechadoCom) return null;
