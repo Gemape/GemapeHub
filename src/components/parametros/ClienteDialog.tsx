@@ -27,7 +27,7 @@ export function ClienteDialog({ aberto, onAberto, editando, modelo, codigoPrevis
   onSalvo: (cliente: Cliente) => void;
 }) {
   const base = editando ?? modelo;
-  const { erro, campo } = useErrosCampos();
+  const { erro, campo, idErro } = useErrosCampos(`${aberto}-${editando?.id ?? modelo?.id ?? ""}`);
   // A janela fecha com animação: um segundo clique em Salvar nesse intervalo gravaria o cliente de novo.
   const trava = useRef(false);
   useEffect(() => {
@@ -74,13 +74,13 @@ export function ClienteDialog({ aberto, onAberto, editando, modelo, codigoPrevis
           <div className="space-y-1.5"><Label htmlFor="codigo">Código do cliente</Label><Input id="codigo" readOnly tabIndex={-1} className="bg-muted font-mono" value={codigoPrevisto} /><p className="text-xs text-muted-foreground">Gerado automaticamente.</p></div>
           <div className="hidden sm:block" />
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="nome">Nome do cliente</Label><Input id="nome" name="nome" capitalizar="nome" required defaultValue={base?.nome ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="cpf">CPF</Label><Input id="cpf" name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" onInput={aoDigitarMascarado("cpf")} {...campo("cpf", validarCpfSimples)} defaultValue={base?.cpf ?? ""} /><ErroCampo id="cpf" texto={erro("cpf")} /></div>
-          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" maxLength={18} placeholder="00.000.000/0000-00" onInput={aoDigitarMascarado("cnpj")} {...campo("cnpj", validarCnpjCampo)} defaultValue={base?.cnpj ?? ""} /><ErroCampo id="cnpj" texto={erro("cnpj")} /></div>
+          <div className="space-y-1.5"><Label htmlFor="cpf">CPF</Label><Input id="cpf" name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" onInput={aoDigitarMascarado("cpf")} {...campo("cpf", validarCpfSimples)} defaultValue={base?.cpf ?? ""} /><ErroCampo id={idErro("cpf")} texto={erro("cpf")} /></div>
+          <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" maxLength={18} placeholder="00.000.000/0000-00" onInput={aoDigitarMascarado("cnpj")} {...campo("cnpj", validarCnpjCampo)} defaultValue={base?.cnpj ?? ""} /><ErroCampo id={idErro("cnpj")} texto={erro("cnpj")} /></div>
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="contato">Contato</Label><Input id="contato" name="contato" capitalizar="nome" defaultValue={base?.contato ?? ""} /></div>
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="endereco">Endereço</Label><Input id="endereco" name="endereco" capitalizar="texto" defaultValue={base?.endereco ?? ""} /></div>
-          <div className="space-y-1.5"><Label htmlFor="telefone">Telefone</Label><Input id="telefone" name="telefone" inputMode="tel" onInput={aoDigitarMascarado("telefone")} {...campo("telefone", validarTelefoneCampo)} defaultValue={formatarTelefone(base?.telefone ?? "")} /><ErroCampo id="telefone" texto={erro("telefone")} /></div>
-          <div className="space-y-1.5"><Label htmlFor="telefone2">Telefone 2</Label><Input id="telefone2" name="telefone2" inputMode="tel" onInput={aoDigitarMascarado("telefone2")} {...campo("telefone2", validarTelefoneCampo)} defaultValue={formatarTelefone(base?.telefone2 ?? "")} /><ErroCampo id="telefone2" texto={erro("telefone2")} /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="email">E-mail</Label><Input id="email" name="email" type="email" capitalizar="minusculas" {...campo("email", validarEmailCampo)} defaultValue={base?.email ?? ""} /><ErroCampo id="email" texto={erro("email")} /></div>
+          <div className="space-y-1.5"><Label htmlFor="telefone">Telefone</Label><Input id="telefone" name="telefone" inputMode="tel" onInput={aoDigitarMascarado("telefone")} {...campo("telefone", validarTelefoneCampo)} defaultValue={formatarTelefone(base?.telefone ?? "")} /><ErroCampo id={idErro("telefone")} texto={erro("telefone")} /></div>
+          <div className="space-y-1.5"><Label htmlFor="telefone2">Telefone 2</Label><Input id="telefone2" name="telefone2" inputMode="tel" onInput={aoDigitarMascarado("telefone2")} {...campo("telefone2", validarTelefoneCampo)} defaultValue={formatarTelefone(base?.telefone2 ?? "")} /><ErroCampo id={idErro("telefone2")} texto={erro("telefone2")} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="email">E-mail</Label><Input id="email" name="email" type="email" capitalizar="minusculas" {...campo("email", validarEmailCampo)} defaultValue={base?.email ?? ""} /><ErroCampo id={idErro("email")} texto={erro("email")} /></div>
           <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="observacao">Observação</Label><Textarea id="observacao" name="observacao" capitalizar="texto" defaultValue={base?.observacao ?? ""} /></div>
           <DialogFooter className="sm:col-span-2">
             <Button type="button" variant="outline" onClick={() => onAberto(false)}>Cancelar</Button>

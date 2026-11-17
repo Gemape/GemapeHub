@@ -85,7 +85,7 @@ function PaginaEmpresas() {
   // Clonar: dados da empresa de origem num cadastro NOVO (todos os campos copiados, decisão 138).
   const [modelo, setModelo] = useState<Empresa | null>(null);
   const base = editando ?? modelo;
-  const { erro, campo: campoErro } = useErrosCampos();
+  const { erro, campo: campoErro, idErro } = useErrosCampos(`${aberto}-${editando?.id ?? modelo?.id ?? ""}`);
   const salvar = useSalvar("empresas", ["empresas"]);
   const excluir = useExcluir("empresas", ["empresas"]);
 
@@ -235,7 +235,7 @@ function PaginaEmpresas() {
             <div className="space-y-1.5">
               <Label htmlFor="cnpj">CNPJ</Label>
               <Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} {...campoErro("cnpj", validarCnpjCampo)} required defaultValue={base?.cnpj ? formatarCnpj(base.cnpj) : ""} />
-              <ErroCampo id="cnpj" texto={erro("cnpj")} />
+              <ErroCampo id={idErro("cnpj")} texto={erro("cnpj")} />
             </div>
             {MODO_DEMO && (
               <>
@@ -252,7 +252,7 @@ function PaginaEmpresas() {
                         {...(campo.nome === "cep" ? campoErro("cep", validarCepCampo) : {})}
                         defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""}
                       />
-                      {campo.nome === "cep" && <ErroCampo id="cep" texto={erro("cep")} />}
+                      {campo.nome === "cep" && <ErroCampo id={idErro("cep")} texto={erro("cep")} />}
                     </div>
                   ))}
                 </div>

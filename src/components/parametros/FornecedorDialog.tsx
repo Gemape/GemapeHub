@@ -30,6 +30,8 @@ const camposContato = [
   { nome: "contato", rotulo: "Contato" },
 ] as const;
 
+const validadores: Record<string, (v: string) => string | null> = { cep: validarCepCampo, telefone: validarTelefoneCampo };
+
 // Janela de cadastro de fornecedor, usada em Cadastros > Fornecedores e dentro do Novo código de fábrica.
 // `editando` mantém o cadastro existente ao salvar; `modelo` preenche os campos de um cadastro novo (clonagem).
 export function FornecedorDialog({ aberto, onAberto, editando, modelo, codigoPrevisto, onSalvo }: {
@@ -41,8 +43,7 @@ export function FornecedorDialog({ aberto, onAberto, editando, modelo, codigoPre
   onSalvo: (fornecedor: Fornecedor) => void;
 }) {
   const base = editando ?? modelo;
-  const { erro, campo: campoErro } = useErrosCampos();
-  const validadores: Record<string, (v: string) => string | null> = { cep: validarCepCampo, telefone: validarTelefoneCampo };
+  const { erro, campo: campoErro, idErro } = useErrosCampos(`${aberto}-${editando?.id ?? modelo?.id ?? ""}`);
   const propsValidacao = (nome: string) => { const v = validadores[nome]; return v ? campoErro(nome, v) : {}; };
 
   function enviar(evento: React.FormEvent<HTMLFormElement>) {
@@ -91,16 +92,16 @@ export function FornecedorDialog({ aberto, onAberto, editando, modelo, codigoPre
             <div className="hidden sm:block" />
             <div className="space-y-1.5"><Label htmlFor="razao_social">Razão Social</Label><Input id="razao_social" name="razao_social" capitalizar="texto" required defaultValue={base?.razao_social ?? ""} /></div>
             <div className="space-y-1.5"><Label htmlFor="nome_fantasia">Nome Fantasia</Label><Input id="nome_fantasia" name="nome_fantasia" capitalizar="texto" defaultValue={base?.nome_fantasia ?? ""} /></div>
-            <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} {...campoErro("cnpj", validarCnpjCampo)} required defaultValue={formatarCnpj(base?.cnpj ?? "")} /><ErroCampo id="cnpj" texto={erro("cnpj")} /></div>
+            <div className="space-y-1.5"><Label htmlFor="cnpj">CNPJ</Label><Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} {...campoErro("cnpj", validarCnpjCampo)} required defaultValue={formatarCnpj(base?.cnpj ?? "")} /><ErroCampo id={idErro("cnpj")} texto={erro("cnpj")} /></div>
             <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Endereço</h2>
             {camposEndereco.map((campo) => <div key={campo.nome} className="space-y-1.5">
               <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
-              <Input id={campo.nome} name={campo.nome} {...(["rua", "bairro", "cidade", "pais"].includes(campo.nome) ? { capitalizar: "texto" as const } : {})} inputMode={campo.nome === "cep" ? "numeric" : undefined} onInput={aoDigitarMascarado(campo.nome)} {...propsValidacao(campo.nome)} defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""} /><ErroCampo id={campo.nome} texto={erro(campo.nome)} />
+              <Input id={campo.nome} name={campo.nome} {...(["rua", "bairro", "cidade", "pais"].includes(campo.nome) ? { capitalizar: "texto" as const } : {})} inputMode={campo.nome === "cep" ? "numeric" : undefined} onInput={aoDigitarMascarado(campo.nome)} {...propsValidacao(campo.nome)} defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""} /><ErroCampo id={idErro(campo.nome)} texto={erro(campo.nome)} />
             </div>)}
             <h2 className="border-b pb-1 text-sm font-semibold sm:col-span-2">Contato e informações adicionais</h2>
             {camposContato.map((campo) => <div key={campo.nome} className="space-y-1.5">
               <Label htmlFor={campo.nome}>{campo.rotulo}</Label>
-              <Input id={campo.nome} name={campo.nome} {...(campo.nome === "contato" ? { capitalizar: "nome" as const } : {})} inputMode={campo.nome === "telefone" ? "tel" : undefined} onInput={aoDigitarMascarado(campo.nome)} {...propsValidacao(campo.nome)} defaultValue={campo.nome === "telefone" ? formatarTelefone(base?.telefone ?? "") : base?.[campo.nome] ?? ""} /><ErroCampo id={campo.nome} texto={erro(campo.nome)} />
+              <Input id={campo.nome} name={campo.nome} {...(campo.nome === "contato" ? { capitalizar: "nome" as const } : {})} inputMode={campo.nome === "telefone" ? "tel" : undefined} onInput={aoDigitarMascarado(campo.nome)} {...propsValidacao(campo.nome)} defaultValue={campo.nome === "telefone" ? formatarTelefone(base?.telefone ?? "") : base?.[campo.nome] ?? ""} /><ErroCampo id={idErro(campo.nome)} texto={erro(campo.nome)} />
             </div>)}
             <div className="space-y-1.5 sm:col-span-2"><Label htmlFor="observacoes">Observações</Label><Textarea id="observacoes" name="observacoes" capitalizar="texto" defaultValue={base?.observacoes ?? ""} /></div>
             <DialogFooter className="sm:col-span-2">

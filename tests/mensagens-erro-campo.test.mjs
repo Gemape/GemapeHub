@@ -49,3 +49,12 @@ test("esqueleto onde o carregamento é real", () => {
     assert.match(le(p), /<LinhasEsqueleto /, p);
   }
 });
+
+test("chave composta e coluna herdada do Object caem na mensagem genérica", () => {
+  assert.match(mensagemHumana({ message: "duplicate key", details: "Key (empresa_id, nome)=(3f2a, Luva) already exists." }), /código, número ou placa/);
+  assert.match(mensagemHumana({ message: 'null value in column "constructor" violates not-null constraint' }), /campo obrigatório/);
+});
+test("mensagens reescritas passam inteiras por mensagemHumana", () => {
+  for (const m of ["Data de aquisição inválida. Use uma data real.", "Tipo de endereçamento inválido. Escolha X.", "Status do portador inválido. Escolha Ativa ou Inativa.", "Preço de custo inválido. Informe em reais."])
+    assert.equal(mensagemHumana(new Error(m)), m);
+});
