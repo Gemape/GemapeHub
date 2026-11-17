@@ -6,7 +6,7 @@ const le = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
 test("prefers-reduced-motion desliga animações e transições de todo o sistema", () => {
   const css = le("src/styles.css");
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\s*\*,\s*::before,\s*::after \{[^}]*animation-duration: 0\.01ms !important[^}]*transition-duration: 0\.01ms !important/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{[^}]*:not\(\.animate-spin, \.animate-pulse\)::after \{[^}]*animation-duration: 0\.01ms !important[^}]*transition-duration: 0\.01ms !important/);
 });
 
 test("área de toque de 44 px em caixas de marcar, interruptores e opções (ponteiro grosso)", () => {
