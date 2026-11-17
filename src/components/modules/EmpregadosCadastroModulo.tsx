@@ -1,4 +1,5 @@
 import { marcarDestaque, useDestaque } from "@/lib/destaque-linha";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraCompletude } from "@/components/BarraCompletude";
 import { CAMPOS_EMPREGADO } from "@/lib/completude";
 import { AvisoSemelhantes } from "@/components/AvisoSemelhantes";
@@ -281,8 +282,8 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             onClonar={(e) => abrir(e, true)}
             onEditar={(e) => abrir(e)}
             onResumo={setResumo}
-            onExcluir={(e) => {
-              if (confirm(`Excluir ${e.nome}?`)) excluir.mutate(e.id);
+            onExcluir={async (e) => {
+              if (await confirmarExclusao(e.nome)) excluir.mutate(e.id);
             }}
             onDemitir={setDemitindo}
           />
@@ -294,8 +295,8 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             onClonar={(e) => abrir(e, true)}
             onEditar={(e) => abrir(e)}
             onResumo={setResumo}
-            onExcluir={(e) => {
-              if (confirm(`Excluir ${e.nome}?`)) excluir.mutate(e.id);
+            onExcluir={async (e) => {
+              if (await confirmarExclusao(e.nome)) excluir.mutate(e.id);
             }}
           />
         </>

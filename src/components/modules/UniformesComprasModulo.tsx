@@ -1,4 +1,5 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useState } from "react";
@@ -253,10 +254,11 @@ export function UniformesComprasModulo() {
                     <Button requiresWrite
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
-                            "Excluir esta compra? (O estoque não será revertido automaticamente)",
+                          await confirmarExclusao(
+                            `a compra de ${itens.find((i) => i.id === c.item_id)?.nome ?? "item"} (${formatarData(c.data_compra)})`,
+                            "O estoque não será revertido automaticamente.",
                           )
                         ) {
                           excluir.mutate(c.id);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { toast } from "sonner";
 
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
@@ -119,9 +120,9 @@ export function PlanoManutencaoEquipamento({ secao = false, versao, aoMudar }: {
     setTimeout(() => { trava.current = false; }, 400);
   }
 
-  function excluir(plano: PlanoEquipamento) {
+  async function excluir(plano: PlanoEquipamento) {
     const e = porId(plano.equipamentoId);
-    if (!confirm(`Excluir o plano de manutenção de ${e ? rotulo(e) : "equipamento removido"}?`)) return;
+    if (!(await confirmarExclusao(`o plano de manutenção de ${e ? rotulo(e) : "equipamento removido"}`))) return;
     executar(() => removerPlano(plano.equipamentoId), "Plano excluído.", aoMudar);
   }
 

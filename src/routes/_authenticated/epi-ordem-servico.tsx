@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -165,8 +166,8 @@ function OrdemServicoEpiPagina() {
                       onClonar={() => clonar(o)}
                       onEditar={() => abrir(o)}
                       editarLivre
-                      onExcluir={() => {
-                        if (confirm(`Excluir a ordem de serviço de ${o.funcao} (${o.setor})?`)) executar(() => removerOrdem(o.id), "Ordem de serviço excluída");
+                      onExcluir={async () => {
+                        if (await confirmarExclusao(`a ordem de serviço de ${o.funcao} (${o.setor})`)) executar(() => removerOrdem(o.id), "Ordem de serviço excluída");
                       }}
                     />
                   </TableCell>

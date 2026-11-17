@@ -1,4 +1,5 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { exportarCsv } from "@/lib/gemape";
 import { useQuery } from "@tanstack/react-query";
@@ -251,8 +252,8 @@ function FichaEpiPagina() {
                       onClonar={() => clonar(ficha.epiId)}
                       onEditar={() => abrir(ficha.epiId)}
                       editarLivre
-                      onExcluir={() => {
-                        if (confirm(`Excluir a ficha de ${epi.codigo_sku}?`))
+                      onExcluir={async () => {
+                        if (await confirmarExclusao(`a ficha de ${epi.codigo_sku}`))
                           executar(() => removerFicha(ficha.epiId), "Ficha excluída");
                       }}
                     />

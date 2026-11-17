@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { confirmarTexto } from "@/components/ConfirmarAcao";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -29,9 +30,9 @@ export function CadastrarPadraoSelecionado({
 
   const alternar = (nome: string, marcar: boolean) => setMarcados((atual) => (marcar ? [...atual, nome] : atual.filter((n) => n !== nome)));
 
-  function salvar() {
+  async function salvar() {
     if (salvando.current || marcados.length === 0) return;
-    if (!confirm(`Cadastrar ${marcados.length} ${marcados.length === 1 ? singular : plural} do padrão?`)) return;
+    if (!(await confirmarTexto(`Cadastrar ${marcados.length} ${marcados.length === 1 ? singular : plural} do padrão?`, { rotuloConfirmar: "Cadastrar" }))) return;
     salvando.current = true;
     const ok = executar(() => {
       cadastrar(marcados);

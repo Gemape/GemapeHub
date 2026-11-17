@@ -64,6 +64,7 @@ import {
   type CodigoFabrica,
 } from "@/lib/parametros-base";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { SiglaCodigo } from "@/components/modules/SiglaCodigo";
 
 // Cadastro de ferramentas. EPI e uniforme usam CadastroProduto, e todas as listas
@@ -374,7 +375,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
                         setEditando(item);
                         setAberto(true);
                       }}
-                      onExcluir={() => {
+                      onExcluir={async () => {
                         // Lê as associações na hora, para o aviso não usar dados velhos.
                         let vinculos: CodigoFabrica[] = [];
                         try {
@@ -388,7 +389,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
                           return;
                         }
                         const aviso = avisoExclusaoDoProduto(`${item.codigo_sku} ${item.nome}`, vinculos);
-                        if (confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${item.nome}?`)) {
+                        if (await confirmarExclusao(item.nome, aviso || undefined)) {
                           try {
                             reservarCodigoFerramenta(item.codigo_sku);
                           } catch (erro) {

@@ -1,5 +1,6 @@
 import { FlaskConical } from "lucide-react";
 
+import { confirmarTexto } from "@/components/ConfirmarAcao";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { lerControle, pedirLimpar, pedirRestaurar } from "@/lib/dados-teste/aplicar";
@@ -11,13 +12,13 @@ export function MenuDadosDeTeste() {
   const controle = lerControle(localStorage);
   const limpo = controle?.estado === "limpo";
 
-  function restaurar() {
-    if (!confirm("Restaurar os dados de teste? Os dados de teste voltam ao conjunto original, e o que você alterou neles se perde. O que você criou à mão fica.")) return;
+  async function restaurar() {
+    if (!(await confirmarTexto("Restaurar os dados de teste? Os dados de teste voltam ao conjunto original, e o que você alterou neles se perde. O que você criou à mão fica.", { rotuloConfirmar: "Restaurar", destrutivo: true }))) return;
     pedirRestaurar(localStorage);
     location.reload();
   }
-  function limpar() {
-    if (!confirm("Limpar os dados de teste? Eles saem do sistema e não voltam sozinhos até você restaurar. O que você criou à mão fica.")) return;
+  async function limpar() {
+    if (!(await confirmarTexto("Limpar os dados de teste? Eles saem do sistema e não voltam sozinhos até você restaurar. O que você criou à mão fica.", { rotuloConfirmar: "Limpar", destrutivo: true }))) return;
     pedirLimpar(localStorage);
     location.reload();
   }

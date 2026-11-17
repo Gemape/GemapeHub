@@ -1,4 +1,5 @@
 import { CadastrarPadraoSelecionado } from "@/components/parametros/CadastrarPadraoSelecionado";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { useRef } from "react";
 import { toast } from "sonner";
 
@@ -66,7 +67,7 @@ export function TamanhosMedidasPainel({ aninhado = false }: { aninhado?: boolean
         autorizacoes > 0
           ? ` Ele está autorizado em ${autorizacoes} subcategoria(s) e sai de todas.`
           : "";
-      if (confirm(`Excluir ${item.nome}?${aviso}`))
+      if (await confirmarExclusao(item.nome, aviso.trim() || undefined))
         executar(() => removerOpcao(tipo, item.id), "Excluído.");
     } finally {
       ocupado.current = false;

@@ -1,4 +1,5 @@
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { QuadroKanban, type ColunaKanban } from "@/components/QuadroKanban";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { ArrowLeft, Banknote, CalendarCheck, CircleDashed, ClipboardCheck, ListChecks, Wrench } from "lucide-react";
@@ -270,7 +271,7 @@ export function ManutencaoEquipamentoModulo() {
                 <TableCell className="whitespace-nowrap text-right">
                   {st === "Concluída" && <Button variant="outline" size="sm" aria-label="Relatório da ordem de serviço" onClick={() => gerarRelatorio(m)}>Relatório</Button>}
                   {aberta && <Button requiresWrite variant="outline" size="sm" aria-label="Atualizar ordem de serviço" onClick={() => setEditando(m)}>Atualizar</Button>}
-                  {canDelete && <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir manutenção" className="text-destructive hover:text-destructive" onClick={() => { if (confirm("Excluir esta manutenção?")) executar(() => removerManutencaoEq(m.id), "Manutenção excluída"); }}>Excluir</Button>}
+                  {canDelete && <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir manutenção" className="text-destructive hover:text-destructive" onClick={async () => { if (await confirmarExclusao(`a manutenção de ${formatarData(m.abertaEm ?? m.data)} (${m.tipo})`)) executar(() => removerManutencaoEq(m.id), "Manutenção excluída"); }}>Excluir</Button>}
                 </TableCell>
               </TableRow>
               );

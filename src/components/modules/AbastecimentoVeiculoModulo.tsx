@@ -1,4 +1,5 @@
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, Droplets, Fuel, Gauge } from "lucide-react";
 import { EscolherCamposRelatorio } from "@/components/EscolherCamposRelatorio";
@@ -154,8 +155,8 @@ export function AbastecimentoVeiculoModulo() {
     setRelatorioAberto(false);
   }
 
-  function excluir(id: string) {
-    if (!confirm("Excluir este abastecimento?")) return;
+  async function excluir(id: string, nome: string) {
+    if (!(await confirmarExclusao(nome))) return;
     executar(() => removerAbastecimento(id), "Abastecimento excluído");
   }
 
@@ -239,7 +240,7 @@ export function AbastecimentoVeiculoModulo() {
                   <TableCell className="text-right">{a.kmPorLitro === null ? "—" : a.kmPorLitro.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</TableCell>
                   <TableCell className="text-right">
                     {isAdmin && (
-                      <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir abastecimento" className="text-destructive hover:text-destructive" onClick={() => excluir(a.id)}>
+                      <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir abastecimento" className="text-destructive hover:text-destructive" onClick={() => void excluir(a.id, `o abastecimento de ${formatarData(a.data)}`)}>
                         Excluir
                       </Button>
                     )}

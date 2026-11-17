@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { confirmarTexto } from "@/components/ConfirmarAcao";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -135,7 +136,7 @@ export function IndicadoresEquipamentoParametros() {
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex flex-wrap gap-2">
           <Button requiresWrite disabled={!!erro || igual} onClick={() => gravar(config, "Indicadores salvos.")}>Salvar indicadores</Button>
-          <Button requiresWrite variant="outline" disabled={JSON.stringify(salva) === JSON.stringify(CONFIG_KPIS_PADRAO) && igual} onClick={() => { if (confirm("Voltar todos os indicadores aos valores padrão?")) gravar(CONFIG_KPIS_PADRAO, "Indicadores restaurados ao padrão."); }}>Restaurar padrão</Button>
+          <Button requiresWrite variant="outline" disabled={JSON.stringify(salva) === JSON.stringify(CONFIG_KPIS_PADRAO) && igual} onClick={async () => { if (await confirmarTexto("Voltar todos os indicadores aos valores padrão?", { rotuloConfirmar: "Restaurar" })) gravar(CONFIG_KPIS_PADRAO, "Indicadores restaurados ao padrão."); }}>Restaurar padrão</Button>
         </div>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { confirmar } from "@/components/ConfirmarAcao";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -45,7 +46,7 @@ function Usuarios() {
         </select>
         <Button type="submit" variant="outline" disabled={busy || u.id === perfil?.id}>Salvar acesso</Button>
       </form>
-      <Button disabled={busy || u.id === perfil?.id} variant="outline" onClick={() => { if (confirm(`Alterar acesso de ${u.email}?`)) void executar(() => api("PATCH", { ...acesso(u), ativo: !u.ativo })); }}>{u.ativo ? "Desativar" : "Ativar"}</Button>
+      <Button disabled={busy || u.id === perfil?.id} variant="outline" onClick={async () => { if (await confirmar({ titulo: `${u.ativo ? "Desativar" : "Ativar"} o acesso de ${u.email}?`, rotuloConfirmar: u.ativo ? "Desativar" : "Ativar", destrutivo: u.ativo })) void executar(() => api("PATCH", { ...acesso(u), ativo: !u.ativo })); }}>{u.ativo ? "Desativar" : "Ativar"}</Button>
       <Button disabled={busy} variant="outline" onClick={() => void executar(async () => { const { error } = await supabase.auth.resetPasswordForEmail(u.email, { redirectTo: `${window.location.origin}/auth?password=update` }); if (error) throw error; })}>Enviar recuperação</Button>
     </article>)}</div><div className="flex gap-3"><Button disabled={page === 1} onClick={() => setPage(page - 1)}>Anterior</Button><span>Página {page}</span><Button disabled={data.length < 50} onClick={() => setPage(page + 1)}>Próxima</Button></div>
   </section>;

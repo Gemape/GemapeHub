@@ -1,4 +1,5 @@
 import { ArrowLeft, ClipboardList } from "lucide-react";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { exemploViagem } from "@/lib/dados-teste/exemplos";
 import { useId, useMemo, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -237,8 +238,8 @@ export function QuestionarioFormulario({ tipoInicial, semPerguntaTipo, onVoltar 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function excluir(r: RespostaRegistrada) {
-    if (!confirm(`Excluir a resposta de ${r.tipo} (${r.data.split("-").reverse().join("/")} ${r.hora})?`)) return;
+  async function excluir(r: RespostaRegistrada) {
+    if (!(await confirmarExclusao(`a resposta de ${r.tipo} (${r.data.split("-").reverse().join("/")} ${r.hora})`))) return;
     try { removerResposta(r.id); setRegistradas(listarRespostas()); } catch (erro) { toast.error(erro instanceof Error ? erro.message : "Não foi possível excluir."); }
   }
 

@@ -1,4 +1,5 @@
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
+import { confirmarExclusao, confirmarTexto } from "@/components/ConfirmarAcao";
 import { Table } from "@/components/ui/table";
 import { Fragment, useRef, useState } from "react";
 import { useAccess } from "@/lib/access-context";
@@ -212,8 +213,8 @@ export function ListaVeiculos({
                           rotulo={l.nome}
                           onClonar={() => abrir(l, true)}
                           onEditar={() => abrir(l, false)}
-                          onExcluir={() => {
-                            if (confirm(`Excluir ${l.nome}?`)) onExcluir(l);
+                          onExcluir={async () => {
+                            if (await confirmarExclusao(l.nome)) onExcluir(l);
                           }}
                         />
                       </td>
@@ -400,7 +401,7 @@ export function RestaurarPadraoInicial({
 
   const alternar = (nome: string, marcar: boolean) => setMarcados((atual) => (marcar ? [...atual, nome] : atual.filter((n) => n !== nome)));
 
-  function salvar() {
+  async function salvar() {
     if (salvando.current || marcados.length === 0) return;
     const alterados = padroes.filter((p) => marcados.includes(p.nome) && p.situacao === "alterado").length;
     const novos = padroes.filter((p) => marcados.includes(p.nome) && p.situacao === "ausente").length;
@@ -408,7 +409,7 @@ export function RestaurarPadraoInicial({
       `Restaurar ${marcados.length} ${marcados.length === 1 ? singular : plural} ao padrão inicial?` +
       (alterados > 0 ? ` As alterações feitas em ${alterados} ${alterados === 1 ? singular : plural} ${perdas ?? ""}se perdem.` : "") +
       (novos > 0 ? ` ${novos} ${novos === 1 ? singular : plural} ${feminino ? (novos === 1 ? "excluída será cadastrada" : "excluídas serão cadastradas") : novos === 1 ? "excluído será cadastrado" : "excluídos serão cadastrados"} de novo.` : "");
-    if (!confirm(aviso)) return;
+    if (!(await confirmarTexto(aviso, { rotuloConfirmar: "Restaurar" }))) return;
     salvando.current = true;
     setTravado(true);
     const ok = executar(() => {

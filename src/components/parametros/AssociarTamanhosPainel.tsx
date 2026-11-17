@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { confirmar } from "@/components/ConfirmarAcao";
 import { toast } from "sonner";
 
 import { DualList } from "@/components/DualList";
@@ -61,9 +62,12 @@ export function AssociarTamanhosPainel({ categoriaFixa, aninhado = false }: { ca
             ? "O saldo que já existe continua e só pode sair; novas entradas nesse tamanho ficam bloqueadas."
             : "Os produtos continuam com a unidade escolhida até serem editados.";
         if (
-          !confirm(
-            `Dependem desta associação: ${descreverUso(usos)}.\n${efeito}\n\nDesautorizar mesmo assim?`,
-          )
+          !(await confirmar({
+            titulo: "Desautorizar mesmo assim?",
+            descricao: `Dependem desta associação: ${descreverUso(usos)}.\n${efeito}`,
+            rotuloConfirmar: "Desautorizar",
+            destrutivo: true,
+          }))
         )
           return false;
       }

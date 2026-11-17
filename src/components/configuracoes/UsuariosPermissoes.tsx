@@ -1,4 +1,5 @@
 import { useState, useSyncExternalStore } from "react";
+import { confirmarExclusao, confirmarTexto } from "@/components/ConfirmarAcao";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -114,8 +115,8 @@ function Perfis() {
     salvarPermissoes(localStorage, alterarAcaoDoPerfil(estado, proprio.id, tela, acao, valor));
     mudar((c) => c, "Perfil alterado", `${proprio.nome}: ${ROTULO_ACAO[acao]} em ${TELAS.find((t) => t.id === tela)?.nome ?? tela} ${valor ? "liberado" : "retirado"}`);
   }
-  function excluir(id: string, nomePerfil: string, usuarios: number) {
-    if (!confirm(`Excluir o perfil "${nomePerfil}"?${usuarios ? ` ${usuarios} usuário(s) voltam ao perfil Padrão.` : ""}`)) return;
+  async function excluir(id: string, nomePerfil: string, usuarios: number) {
+    if (!(await confirmarExclusao(`o perfil "${nomePerfil}"`, usuarios ? `${usuarios} usuário(s) voltam ao perfil Padrão.` : undefined))) return;
     salvarPermissoes(localStorage, excluirPerfil(estado, id));
     if (editando === id) setEditando(null);
     mudar((c) => c, "Perfil excluído", nomePerfil);
@@ -323,7 +324,7 @@ function Matriz() {
       </div>
       <div className="flex flex-wrap justify-between gap-2">
         <Button type="button" variant="outline" onClick={() => { salvarPermissoes(localStorage, voltarAoPerfil(estado, editado.id)); toast.success("Voltou ao padrão do perfil"); }} disabled={travado}>Voltar ao padrão do perfil</Button>
-        <Button type="button" variant="outline" onClick={() => { if (confirm("Restaurar as permissões originais de todos os usuários de teste? O usuário volta a ser o Administrador.")) { restaurarPermissoes(localStorage); setEditadoId(usuarioAtivo(localStorage).id); toast.success("Permissões originais restauradas"); } }}>Restaurar permissões originais</Button>
+        <Button type="button" variant="outline" onClick={async () => { if (await confirmarTexto("Restaurar as permissões originais de todos os usuários de teste? O usuário volta a ser o Administrador.", { rotuloConfirmar: "Restaurar" })) { restaurarPermissoes(localStorage); setEditadoId(usuarioAtivo(localStorage).id); toast.success("Permissões originais restauradas"); } }}>Restaurar permissões originais</Button>
       </div>
     </div>
   );

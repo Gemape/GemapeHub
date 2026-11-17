@@ -1,4 +1,5 @@
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { Table } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useRef, useState } from "react";
@@ -285,9 +286,9 @@ export function AssociarChecklistVeiculo({ secao = false }: { secao?: boolean } 
     }, 400);
   }
 
-  function excluir(a: AssociacaoChecklist) {
+  async function excluir(a: AssociacaoChecklist) {
     const v = veiculoPorId(a.veiculoId);
-    if (!confirm(`Excluir os itens de check list associados a ${v ? rotuloVeiculo(v) : "veículo removido"}?`)) return;
+    if (!(await confirmarExclusao(`os itens de check list associados a ${v ? rotuloVeiculo(v) : "veículo removido"}`))) return;
     executar(() => removerAssociacao(a.veiculoId), "Associação excluída.");
   }
 

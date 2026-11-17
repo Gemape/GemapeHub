@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -213,7 +214,7 @@ function CodigoProduto() {
                     editarLivre
                     {...(regra
                       ? {
-                          onExcluir: () => {
+                          onExcluir: async () => {
                             // A última regra de categoria-base não sai: a exclusão é recusada com o aviso
                             // de quais cadastros ficariam bloqueados, sem pedir confirmação.
                             const doGrupo = regrasDaCategoria(dados.regrasCodigo, c.id);
@@ -222,7 +223,7 @@ function CodigoProduto() {
                             const proxima = doGrupo[0] === regra ? doGrupo[1] : undefined;
                             if (
                               (CATEGORIAS_BASE[c.id] && ultima) ||
-                              confirm(`Excluir o código ${regra.sigla} de ${c.nome}?${proxima ? ` A sigla ${proxima.sigla} passa a ser a padrão.` : ""}`)
+                              (await confirmarExclusao(`o código ${regra.sigla} de ${c.nome}`, proxima ? `A sigla ${proxima.sigla} passa a ser a padrão.` : undefined))
                             )
                               executar(() => removerRegraCodigo(c.id, undefined, regra.sigla), "Código excluído.");
                           },

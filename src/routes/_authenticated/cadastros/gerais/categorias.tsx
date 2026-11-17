@@ -1,4 +1,5 @@
 import { CadastrarPadraoSelecionado } from "@/components/parametros/CadastrarPadraoSelecionado";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -235,7 +236,7 @@ function Categorias() {
           semRepetir(async () => {
             if (
               !(await marcaImpedeAlteracao(tipo, item.nome, acaoExcluir(item))) &&
-              confirm(`Excluir a marca de ${rotulo} ${item.nome}?`)
+              await confirmarExclusao(`a marca de ${rotulo} ${item.nome}`)
             )
               executar(() => removerListaFerramenta(tipo, item.id), "Marca excluída.");
           })
@@ -268,8 +269,8 @@ function Categorias() {
           detalhe={(c) => <Badge variant="secondary">{subcategoriasDa(dados, c.id).length}</Badge>}
           onAdicionar={(nome) => executar(() => adicionarCategoria(nome), "Categoria incluída.")}
           onRenomear={(id, nome) => executar(() => renomearCategoria(id, nome))}
-          onRemover={(c) => {
-            if (confirm(`Excluir a categoria ${c.nome}?`))
+          onRemover={async (c) => {
+            if (await confirmarExclusao(`a categoria ${c.nome}`))
               executar(() => removerCategoria(c.id), "Categoria excluída.");
           }}
         />
@@ -313,9 +314,7 @@ function Categorias() {
               semRepetir(async () => {
                 if (await subcategoriaEmUso(s)) return;
                 if (
-                  confirm(
-                    `Excluir a subcategoria ${s.nome}? Os tamanhos e unidades autorizados para ela também saem.`,
-                  )
+                  await confirmarExclusao(`a subcategoria ${s.nome}`, "Os tamanhos e unidades autorizados para ela também saem.")
                 ) {
                   executar(() => removerSubcategoria(s.id), "Subcategoria excluída.");
                 }
@@ -348,7 +347,7 @@ function Categorias() {
             semRepetir(async () => {
               if (
                 !(await vinculoImpedeAlteracao("marcasFerramenta", item.nome, acaoExcluir(item))) &&
-                confirm(`Excluir a marca de ferramenta ${item.nome}?`)
+                await confirmarExclusao(`a marca de ferramenta ${item.nome}`)
               )
                 executar(
                   () => removerListaFerramenta("marcasFerramenta", item.id),
@@ -382,7 +381,7 @@ function Categorias() {
             semRepetir(async () => {
               if (
                 !(await vinculoImpedeAlteracao("gruposFerramenta", item.nome, acaoExcluir(item))) &&
-                confirm(`Excluir o grupo de ferramenta ${item.nome}?`)
+                await confirmarExclusao(`o grupo de ferramenta ${item.nome}`)
               )
                 executar(
                   () => removerListaFerramenta("gruposFerramenta", item.id),

@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -78,8 +79,8 @@ export function ListaGrupos({ finalidade, nomeFinalidade, versao, aoMudar }: { f
     setTimeout(() => { trava.current = false; }, 400);
   }
 
-  function excluir(g: GrupoChecklistEquipamento) {
-    if (!confirm(`Excluir o grupo ${g.nome}?`)) return;
+  async function excluir(g: GrupoChecklistEquipamento) {
+    if (!(await confirmarExclusao(`o grupo ${g.nome}`))) return;
     try {
       removerGrupoChecklist(finalidade, g.id);
     } catch (erro) {
@@ -342,9 +343,9 @@ export function AssociarEquipamento({ finalidade, versao, aoMudar, abrirDireto }
     setTimeout(() => { trava.current = false; setTravado(false); }, 400);
   }
 
-  function excluir(a: AssociacaoChecklistEquipamento) {
+  async function excluir(a: AssociacaoChecklistEquipamento) {
     const e = porId(a.equipamentoId);
-    if (!confirm(`Excluir os itens de check list associados a ${e ? rotulo(e) : "equipamento removido"}?`)) return;
+    if (!(await confirmarExclusao(`os itens de check list associados a ${e ? rotulo(e) : "equipamento removido"}`))) return;
     try {
       removerAssociacao(finalidade, a.equipamentoId);
     } catch (erro) {

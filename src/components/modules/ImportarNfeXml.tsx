@@ -1,4 +1,5 @@
 import { avisarOutrasAbas } from "@/lib/sincronia-abas";
+import { confirmar } from "@/components/ConfirmarAcao";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -163,7 +164,7 @@ export function ImportarNfeXml() {
       const pendentes = previa.linhas.length - total;
       if (
         pendentes > 0 &&
-        !confirm(`${pendentes} item(ns) pendente(s) não serão gravados. Gravar os outros ${total}?`)
+        !(await confirmar({ titulo: `Gravar os outros ${total}?`, descricao: `${pendentes} item(ns) pendente(s) não serão gravados.`, rotuloConfirmar: "Gravar" }))
       ) {
         return;
       }
