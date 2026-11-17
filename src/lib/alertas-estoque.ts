@@ -38,7 +38,9 @@ export function linhasDeAlertaEstoque(
     const s = estado(i);
     if (!s.alerta) return [];
     const partes = s.alertas && s.alertas.length > 0 ? s.alertas : [{ nome: null, saldo: s.saldo, minimo: s.minimo }];
-    return partes.flatMap((p) => {
+    return partes.flatMap((parte) => {
+      // Item sem tamanho: o nome "Geral" que a regra de EPI devolve não é um tamanho.
+      const p = { ...parte, nome: parte.nome === "Geral" ? null : parte.nome };
       const nivel = nivelDoAlerta(p.saldo, p.minimo);
       return nivel === "abaixo" || nivel === "minimo"
         ? [{ chave: `min-${modulo}-${i.id}-${p.nome ?? "geral"}`, itemId: i.id, nome: i.nome, empresaId: i.empresa_id ?? null, modulo, tamanho: p.nome, saldo: p.saldo, minimo: p.minimo, nivel }]

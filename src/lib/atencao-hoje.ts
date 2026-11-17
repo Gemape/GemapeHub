@@ -5,7 +5,7 @@ import { estadoGravado, linhasDeAlertaEstoque, type EstadoComTamanhos, type Linh
 
 export type AcaoPendencia = { rotulo: string; url: string; search?: Record<string, string> };
 export type ItemPendencia = { chave: string; texto: string; detalhe: string; acao: AcaoPendencia };
-export type GrupoPendencia = { id: string; titulo: string; prioridade: "alta" | "media" | "baixa"; vazio: string; itens: ItemPendencia[] };
+export type GrupoPendencia = { id: string; titulo: string; prioridade: "alta" | "media" | "baixa"; vazio: string; itens: ItemPendencia[]; /** Módulo dono do grupo de estoque; quem não vê o módulo não vê o grupo. */ modulo?: ModuloEstoque };
 
 type EmpregadoBase = { id: string; nome: string; empresa_id?: string | null; ativo?: boolean | null; data_demissao?: string | null };
 type ItemEstoque = ItemDoResumo & { codigo_sku?: string | null; estoque_atual?: number | null; estoque_minimo?: number | null; status?: string | null };
@@ -135,12 +135,12 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     { id: "epi-vencido", titulo: "EPIs vencidos com empregados", prioridade: "alta", vazio: "Nenhum EPI vencido em posse.", itens: vencidos },
     { id: "devolucao-atrasada", titulo: "Devoluções atrasadas (empregado desligado)", prioridade: "alta", vazio: "Nenhuma ferramenta pendente de desligados.", itens: atrasadas },
     { id: "equipamentos", titulo: "Equipamentos: manutenção atrasada ou ocorrência aberta", prioridade: "alta", vazio: "Nenhum equipamento com pendência.", itens: equipamentos },
-    { id: "abaixo-epi", titulo: "EPIs abaixo do mínimo", prioridade: "media", vazio: "Nenhum EPI abaixo do mínimo.", itens: doNivel(linhasEpi, "abaixo") },
-    { id: "minimo-epi", titulo: "EPIs no estoque mínimo", prioridade: "baixa", vazio: "Nenhum EPI no estoque mínimo.", itens: doNivel(linhasEpi, "minimo") },
-    { id: "abaixo-uniforme", titulo: "Uniformes abaixo do mínimo", prioridade: "media", vazio: "Nenhum uniforme abaixo do mínimo.", itens: doNivel(linhasUniforme, "abaixo") },
-    { id: "minimo-uniforme", titulo: "Uniformes no estoque mínimo", prioridade: "baixa", vazio: "Nenhum uniforme no estoque mínimo.", itens: doNivel(linhasUniforme, "minimo") },
-    { id: "abaixo-ferramenta", titulo: "Ferramentas abaixo do mínimo", prioridade: "media", vazio: "Nenhuma ferramenta abaixo do mínimo.", itens: doNivel(linhasFerramenta, "abaixo") },
-    { id: "minimo-ferramenta", titulo: "Ferramentas no estoque mínimo", prioridade: "baixa", vazio: "Nenhuma ferramenta no estoque mínimo.", itens: doNivel(linhasFerramenta, "minimo") },
+    { id: "abaixo-epi", modulo: "epi", titulo: "EPIs abaixo do mínimo", prioridade: "media", vazio: "Nenhum EPI abaixo do mínimo.", itens: doNivel(linhasEpi, "abaixo") },
+    { id: "minimo-epi", modulo: "epi", titulo: "EPIs no estoque mínimo", prioridade: "baixa", vazio: "Nenhum EPI no estoque mínimo.", itens: doNivel(linhasEpi, "minimo") },
+    { id: "abaixo-uniforme", modulo: "uniforme", titulo: "Uniformes abaixo do mínimo", prioridade: "media", vazio: "Nenhum uniforme abaixo do mínimo.", itens: doNivel(linhasUniforme, "abaixo") },
+    { id: "minimo-uniforme", modulo: "uniforme", titulo: "Uniformes no estoque mínimo", prioridade: "baixa", vazio: "Nenhum uniforme no estoque mínimo.", itens: doNivel(linhasUniforme, "minimo") },
+    { id: "abaixo-ferramenta", modulo: "ferramenta", titulo: "Ferramentas abaixo do mínimo", prioridade: "media", vazio: "Nenhuma ferramenta abaixo do mínimo.", itens: doNivel(linhasFerramenta, "abaixo") },
+    { id: "minimo-ferramenta", modulo: "ferramenta", titulo: "Ferramentas no estoque mínimo", prioridade: "baixa", vazio: "Nenhuma ferramenta no estoque mínimo.", itens: doNivel(linhasFerramenta, "minimo") },
     { id: "viagens", titulo: "Viagens: despesas sem relatório no prazo", prioridade: "media", vazio: "Nenhuma despesa fora do prazo.", itens: viagens },
     { id: "epi-com-desligado", titulo: "EPIs não devolvidos (empregado desligado)", prioridade: "media", vazio: "Nenhum EPI pendente de desligados.", itens: epiComDesligado },
   ];

@@ -326,7 +326,7 @@ function DashboardGeral() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  alertasPorTipo.flatMap((t) => [...t.linhas].sort((x, y) => (x.nivel === y.nivel ? 0 : x.nivel === "abaixo" ? -1 : 1))).slice(0, 10).map((l) => (
+                  [...linhasEstoque].sort((x, y) => (x.nivel === y.nivel ? 0 : x.nivel === "abaixo" ? -1 : 1)).slice(0, 10).map((l) => (
                     <TableRow key={l.chave}>
                       <TableCell className="font-medium">{l.nome}{l.tamanho ? ` · ${l.tamanho}` : ""}</TableCell>
                       <TableCell>{MODULO_LABEL[l.modulo as Modulo] ?? l.modulo}</TableCell>

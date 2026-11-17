@@ -37,3 +37,10 @@ test("Dashboard usa a mesma função de contagem", () => {
   assert.match(src, /linhasDeAlertaEstoque/);
   assert.match(src, /alerta\(s\)/);
 });
+
+test("item sem tamanho não vira tamanho 'Geral' e os grupos de estoque trazem o módulo", () => {
+  const l = linhasDeAlertaEstoque([{ id: "x", nome: "Capacete" }], "epi", () => ({ saldo: 1, minimo: 2, alerta: true, alertas: [{ nome: "Geral", saldo: 1, minimo: 2 }] }));
+  assert.equal(l[0].tamanho, null);
+  const g = pendenciasDeHoje({ hoje: "2026-11-17", empregados: [], epis: [], uniformes: [], ferramentas: [], movsEpi: [], movsFerramenta: [] });
+  assert.deepEqual(g.filter((x) => x.modulo).map((x) => x.id).sort(), ["abaixo-epi", "abaixo-ferramenta", "abaixo-uniforme", "minimo-epi", "minimo-ferramenta", "minimo-uniforme"]);
+});
