@@ -1,4 +1,5 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { exportarCsv } from "@/lib/gemape";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -54,8 +55,8 @@ function PaginaClientes() {
     setAberto(true);
   }
 
-  function excluir(cliente: Cliente) {
-    if (!confirm(`Excluir ${cliente.nome}?`)) return;
+  async function excluir(cliente: Cliente) {
+    if (!(await confirmarExclusao(cliente.nome))) return;
     try {
       removerCliente(cliente.id);
     } catch (erro) {

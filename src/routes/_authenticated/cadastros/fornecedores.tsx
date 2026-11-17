@@ -1,4 +1,5 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { exportarCsv } from "@/lib/gemape";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -70,7 +71,7 @@ function PaginaFornecedores() {
     setAberto(true);
   }
 
-  function excluir(fornecedor: Fornecedor) {
+  async function excluir(fornecedor: Fornecedor) {
     // Lê as associações na hora, para o aviso não usar dados velhos.
     let vinculos: CodigoFabrica[] = [];
     try {
@@ -81,7 +82,7 @@ function PaginaFornecedores() {
     }
     const nome = nomeDoFornecedor(fornecedor);
     const aviso = avisoExclusaoDoFornecedor(nome, vinculos);
-    if (!confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${nome}?`)) return;
+    if (!(await confirmarExclusao(nome, aviso || undefined))) return;
     try {
       // O fornecedor sai primeiro: se a leitura ou a gravação falhar, nada foi apagado e as associações continuam.
       removerFornecedor(fornecedor.id);

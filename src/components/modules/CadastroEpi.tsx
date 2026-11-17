@@ -1,4 +1,5 @@
 import { AvisoSemelhantes } from "@/components/AvisoSemelhantes";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { avisarOutrasAbas } from "@/lib/sincronia-abas";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
@@ -193,7 +194,7 @@ function CatalogoEpi() {
     );
   }
 
-  function excluir(item: EpiCatalogo) {
+  async function excluir(item: EpiCatalogo) {
     // Lê as associações na hora, para o aviso não usar dados velhos.
     let vinculos: CodigoFabrica[] = [];
     try {
@@ -205,7 +206,7 @@ function CatalogoEpi() {
     }
     const rotulo = `${item.codigo_sku} ${item.nome}`;
     const aviso = avisoExclusaoDoProduto(rotulo, vinculos);
-    if (!confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${rotulo}?`)) return;
+    if (!(await confirmarExclusao(rotulo, aviso || undefined))) return;
     void operar("excluir_epi_catalogo", item.id, undefined, `EPI ${item.codigo_sku} excluído`, () => {
       try {
         removerCodigosFabricaPorIds(vinculos.map((c) => c.id));

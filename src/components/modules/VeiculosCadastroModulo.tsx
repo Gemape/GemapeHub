@@ -1,4 +1,5 @@
 import { marcarDestaque, useDestaque } from "@/lib/destaque-linha";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraCompletude } from "@/components/BarraCompletude";
 import { CAMPOS_VEICULO } from "@/lib/completude";
 import { aoDigitarMascarado } from "@/lib/mascaras";
@@ -530,8 +531,8 @@ export function VeiculosCadastroModulo({ direto = false, aoConcluir }: { direto?
                       rotulo={`veículo ${v.codigo_sku || formatarPlaca(v.placa)}`}
                       onClonar={() => void abrirNovo(v)}
                       onEditar={() => editarVeiculo(v)}
-                      onExcluir={() => {
-                        if (confirm(`Excluir ${v.codigo_sku || formatarPlaca(v.placa)}?`)) excluir.mutate(v.id);
+                      onExcluir={async () => {
+                        if (await confirmarExclusao(v.codigo_sku || formatarPlaca(v.placa))) excluir.mutate(v.id);
                       }}
                     />
                   </TableCell>

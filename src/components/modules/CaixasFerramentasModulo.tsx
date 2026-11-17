@@ -1,4 +1,5 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { useState, useEffect } from "react";
@@ -353,10 +354,10 @@ export function CaixasFerramentasModulo() {
                         setNumero(numeroDaCaixa(c));
                         setAberto(true);
                       }}
-                      onExcluir={() => {
+                      onExcluir={async () => {
                         const erroPortador = validarAlteracaoCaixaComPortador(c, portadores, null);
                         if (erroPortador) { toast.error(erroPortador); return; }
-                        if (confirm(`Excluir a caixa ${c.codigo}?`)) excluir.mutate(c.id);
+                        if (await confirmarExclusao(`a caixa ${c.codigo}`)) excluir.mutate(c.id);
                       }}
                     />
                   </TableCell>

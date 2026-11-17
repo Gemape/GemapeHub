@@ -389,7 +389,7 @@ export function ItensModulo({ modulo, janela }: { modulo: "ferramenta"; janela?:
                           return;
                         }
                         const aviso = avisoExclusaoDoProduto(`${item.codigo_sku} ${item.nome}`, vinculos);
-                        if (await confirmarExclusao(item.nome, aviso ? `${aviso}\n\nExcluir mesmo assim?` : undefined)) {
+                        if (await confirmarExclusao(item.nome, aviso || undefined)) {
                           try {
                             reservarCodigoFerramenta(item.codigo_sku);
                           } catch (erro) {

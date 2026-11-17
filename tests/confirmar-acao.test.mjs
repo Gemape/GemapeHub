@@ -5,7 +5,20 @@ import { readFileSync } from "node:fs";
 const ler = (c) => readFileSync(new URL(`../src/${c}`, import.meta.url), "utf8");
 
 // Arquivos já migrados do confirm() do navegador para a janela do sistema; cresce a cada lote do Bloco 4a.
-const MIGRADOS = ["components/modules/ItensModulo.tsx"];
+const MIGRADOS = [
+  "components/modules/ItensModulo.tsx",
+  // Lote 2: cadastros de itens e pessoas
+  "components/modules/CadastroEpi.tsx",
+  "components/modules/CadastroProduto.tsx",
+  "components/modules/CadastroUniforme.tsx",
+  "components/modules/EmpregadosCadastroModulo.tsx",
+  "components/modules/VeiculosCadastroModulo.tsx",
+  "components/modules/CaixasFerramentasModulo.tsx",
+  "components/modules/EnderecamentoModulo.tsx",
+  "routes/_authenticated/cadastros/fornecedores.tsx",
+  "routes/_authenticated/cadastros/clientes.tsx",
+  "routes/_authenticated/cadastros/equipamentos.tsx",
+];
 
 test("a janela de confirmação existe, está no layout e cita o item no título da exclusão", () => {
   const janela = ler("components/ConfirmarAcao.tsx");

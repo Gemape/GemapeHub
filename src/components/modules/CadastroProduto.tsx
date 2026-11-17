@@ -1,4 +1,5 @@
 import { AvisoSemelhantes } from "@/components/AvisoSemelhantes";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Link } from "@tanstack/react-router";
@@ -519,7 +520,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                         );
                         setAberto(true);
                       }}
-                      onExcluir={() => {
+                      onExcluir={async () => {
                         // Lê as associações na hora, para o aviso não usar dados velhos.
                         let vinculos: CodigoFabrica[] = [];
                         try {
@@ -534,7 +535,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
                         }
                         const rotulo = `${item.codigo_sku} ${item.nome}`;
                         const aviso = avisoExclusaoDoProduto(rotulo, vinculos);
-                        if (confirm(aviso ? `${aviso}\n\nExcluir mesmo assim?` : `Excluir ${rotulo}?`))
+                        if (await confirmarExclusao(rotulo, aviso || undefined))
                           excluir.mutate(item.id, {
                             onSuccess: () => {
                               // A ficha do EPI excluído sai junto (só EPI tem ficha).

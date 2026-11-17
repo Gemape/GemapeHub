@@ -1,4 +1,5 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -38,8 +39,8 @@ function PaginaEquipamentos() {
     setAberto(true);
   }
 
-  function excluir(e: Equipamento) {
-    if (!confirm(`Excluir ${e.nome} (${e.patrimonio})?`)) return;
+  async function excluir(e: Equipamento) {
+    if (!(await confirmarExclusao(`${e.nome} (${e.patrimonio})`))) return;
     try {
       removerEquipamento(e.id);
     } catch (erro) {
