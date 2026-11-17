@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { Fragment } from "react";
 import { Car, Forklift, HardHat, House, LayoutGrid, Luggage, Shirt, Wrench } from "lucide-react";
 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAccess } from "@/lib/access-context";
 import { areaDaRota, gruposDoInicio, type IconeInicio } from "@/lib/inicio";
+import { trilhaDaRota } from "@/lib/trilha";
 
 const ICONES_MODULO: Partial<Record<IconeInicio, typeof Car>> = { HardHat, Shirt, Wrench, Car, Luggage, Forklift };
 
@@ -51,42 +53,34 @@ export function TrocaDeModulo() {
   );
 }
 
-// Trilha no alto do conteúdo: Início / módulo / tela, com links para voltar a cada nível. Sem trilha em telas que não são de um cartão com submenu.
+// Trilha no alto do conteúdo: Início › área › tela, com links para subir a cada nível. Sem trilha só no Início e no Dashboard (a raiz).
 export function TrilhaDeNavegacao() {
   const { isAdmin, podeVerCaminho } = useAccess();
   const { pathname, search } = useRotaAtual();
-  const area = areaDaRota(pathname, search, isAdmin, podeVerCaminho);
-  if (!area) return null;
-  const { cartao, atual } = area;
-  const primeiro = cartao.itens?.[0];
+  const niveis = trilhaDaRota(pathname, search, isAdmin, podeVerCaminho);
+  if (!niveis) return null;
   return (
-    <Breadcrumb className="mb-3">
+    <Breadcrumb className="min-w-0">
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link to="/inicio" className="inline-flex items-center gap-1"><House className="size-3.5" aria-hidden="true" />Início</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          {primeiro && primeiro !== atual ? (
-            <BreadcrumbLink asChild>
-              <Link to={primeiro.url} search={primeiro.search as never}>{cartao.titulo}</Link>
-            </BreadcrumbLink>
-          ) : (
-            <span>{cartao.titulo}</span>
-          )}
-        </BreadcrumbItem>
-        {atual.secao !== "Módulo" && (
-          <>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem><span>{atual.secao}</span></BreadcrumbItem>
-          </>
-        )}
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>{atual.titulo}</BreadcrumbPage>
-        </BreadcrumbItem>
+        {niveis.map((n, i) => {
+          const ultimo = i === niveis.length - 1;
+          return (
+            <Fragment key={`${i}-${n.rotulo}`}>
+              {i > 0 && <BreadcrumbSeparator />}
+              <BreadcrumbItem>
+                {ultimo ? (
+                  <BreadcrumbPage>{n.rotulo}</BreadcrumbPage>
+                ) : n.url ? (
+                  <BreadcrumbLink asChild>
+                    <Link to={n.url} search={n.search as never} className="inline-flex items-center gap-1">{i === 0 && <House className="size-3.5" aria-hidden="true" />}{n.rotulo}</Link>
+                  </BreadcrumbLink>
+                ) : (
+                  <span>{n.rotulo}</span>
+                )}
+              </BreadcrumbItem>
+            </Fragment>
+          );
+        })}
       </BreadcrumbList>
     </Breadcrumb>
   );

@@ -10,6 +10,7 @@ import { useAccess } from "@/lib/access-context";
 import { TODAS } from "@/lib/empresa-context";
 import { useEmpregados, useItens, useVeiculos } from "@/lib/hooks-gemape";
 import { areaDaRota } from "@/lib/inicio";
+import { destinoPaiDaTrilha, trilhaDaRota } from "@/lib/trilha";
 import {
   chavePagina, empurrarPagina, guardarRolagem, lerSessao, paginaAnterior, recuarPara, registrarNaSessao, rotularTopo, vizinhosNaLista, type Pagina, type RegistroSessao,
 } from "@/lib/navegacao-contextual";
@@ -32,7 +33,9 @@ function useRota() {
 function useRotuloDoCartao(pathname: string, buscaTexto: string): string | null {
   const { isAdmin, podeVerCaminho } = useAccess();
   const area = areaDaRota(pathname, JSON.parse(buscaTexto) as Record<string, unknown>, isAdmin, podeVerCaminho);
-  return area ? `${area.cartao.titulo} › ${area.atual.titulo}` : null;
+  if (area) return `${area.cartao.titulo} › ${area.atual.titulo}`;
+  // Telas fora de um cartão com submenu (Empresas, Relatórios...): o nome vem da trilha, sem esperar o título da aba.
+  return trilhaDaRota(pathname, JSON.parse(buscaTexto) as Record<string, unknown>, isAdmin, podeVerCaminho)?.at(-1)?.rotulo ?? null;
 }
 
 // Pedido de rolagem do botão Voltar: vale só para a próxima tela aberta (e por poucos segundos). Se a navegação for barrada ou redirecionada, não fica nada pendente.
@@ -99,30 +102,40 @@ export function PilhaDeNavegacao() {
   return null;
 }
 
-// "← Voltar para Histórico de João Silva": leva à tela de onde a pessoa veio, na aba e na posição da rolagem em que estava.
+// Botão Voltar único, sempre no mesmo lugar e com o mesmo rótulo: leva UM nível atrás, à tela de onde a pessoa veio (na aba e na rolagem em que estava).
+// Sem tela anterior na sessão (link aberto direto), sobe um nível da trilha ou vai ao Início. O destino aparece na dica do botão.
 export function VoltarContextual() {
   const dono = useDonoDosAtalhos();
   const navigate = useNavigate();
+  const { isAdmin, podeVerCaminho } = useAccess();
   const { pathname, search } = useRota();
   const chave = chavePagina(pathname, search);
-  const [anterior, setAnterior] = useState<Pagina | null>(null);
+  const [lido, setLido] = useState<{ chave: string; pagina: Pagina | null }>({ chave: "", pagina: null });
   useEffect(() => {
-    const ler = () => setAnterior(dono ? paginaAnterior(armazenamento(), dono, chave) : null);
+    const ler = () => setLido({ chave, pagina: dono ? paginaAnterior(armazenamento(), dono, chave) : null });
     ler();
     window.addEventListener(EVENTO, ler);
     return () => window.removeEventListener(EVENTO, ler);
   }, [dono, chave]);
-  if (!anterior || pathname === "/inicio") return null;
+  // Logo após trocar de tela, o que foi lido ainda é o da tela anterior: só vale o que foi lido para a tela atual.
+  const anterior = lido.chave === chave ? lido.pagina : null;
+  if (pathname === "/inicio") return null;
+  const pai = destinoPaiDaTrilha(trilhaDaRota(pathname, search, isAdmin, podeVerCaminho));
+  const destino = anterior?.rotulo ?? pai.rotulo;
   const voltar = () => {
     marcarDirecao("voltar");
-    recuarPara(armazenamento(), dono, anterior.chave);
-    rolagemPendente = { chave: anterior.chave, y: anterior.rolagem, ate: Date.now() + 5000 };
-    void navigate({ to: anterior.url, ...(anterior.search ? { search: anterior.search } : {}) } as never);
+    if (anterior) {
+      recuarPara(armazenamento(), dono, anterior.chave);
+      rolagemPendente = { chave: anterior.chave, y: anterior.rolagem, ate: Date.now() + 5000 };
+      void navigate({ to: anterior.url, ...(anterior.search ? { search: anterior.search } : {}) } as never);
+    } else {
+      void navigate({ to: pai.url ?? "/inicio", ...(pai.search ? { search: pai.search } : {}) } as never);
+    }
   };
   return (
-    <Button type="button" variant="ghost" size="sm" onClick={voltar} title={`Voltar para ${anterior.rotulo}`} className="mb-2 h-8 max-w-full justify-start gap-1.5 px-2 text-xs">
+    <Button type="button" variant="outline" size="sm" onClick={voltar} title={`Voltar para ${destino}`} aria-label={`Voltar para ${destino}`} className="h-8 shrink-0 gap-1.5 px-2.5 text-xs">
       <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
-      <span className="truncate">Voltar para {anterior.rotulo}</span>
+      Voltar
     </Button>
   );
 }
