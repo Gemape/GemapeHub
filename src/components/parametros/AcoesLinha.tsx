@@ -45,7 +45,7 @@ export function AcoesLinha({
         // modal={false}: a confirmação de Excluir abre por cima sem o menu travar o foco da página.
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="px-2" aria-label={`Mais ações de ${rotulo}`} title="Mais ações">
+            <Button variant="ghost" size="sm" className="px-2 max-sm:min-w-11" aria-label={`Mais ações de ${rotulo}`} title="Mais ações">
               <MoreVertical className="size-4" aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>

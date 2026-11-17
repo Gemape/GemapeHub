@@ -99,11 +99,11 @@
 
   --destructive: oklch(0.57 0.21 27);
   --destructive-foreground: oklch(1 0 0);
-  --success: oklch(0.6 0.13 155);
+  --success: oklch(0.52 0.13 155); /* AA com texto branco (5,2:1) */
   --success-foreground: oklch(1 0 0);
   --warning: oklch(0.79 0.15 78);
   --warning-foreground: oklch(0.24 0.04 70);
-  --info: oklch(0.6 0.12 235);
+  --info: oklch(0.52 0.12 235); /* AA com texto branco (5,3:1) */
   --info-foreground: oklch(1 0 0);
 
   --border: oklch(0.9 0.01 260);
@@ -189,6 +189,43 @@
 @layer base {
   * {
     border-color: var(--color-border);
+  }
+
+  /* Quem pede menos movimento: sem animações e transições (o estado final aparece na hora). */
+  @media (prefers-reduced-motion: reduce) {
+    /* Giro e pulso de "carregando" ficam: são o único sinal de que algo está em andamento. */
+    :not(.animate-spin, .animate-pulse),
+    :not(.animate-spin, .animate-pulse)::before,
+    :not(.animate-spin, .animate-pulse)::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      animation-delay: 0s !important;
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Toque: caixas de marcar, interruptores e opções ganham área de toque de 44 px sem mudar o desenho. */
+  @media (pointer: coarse) {
+    [role="checkbox"],
+    [role="switch"],
+    [role="radio"] {
+      position: relative;
+    }
+    [role="checkbox"]::after,
+    [role="switch"]::after,
+    [role="radio"]::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      min-width: 44px;
+      min-height: 44px;
+      width: 100%;
+      height: 100%;
+      transform: translate(-50%, -50%);
+    }
   }
 
   html {
@@ -1048,4 +1085,9 @@ table, .tabular-nums, [data-numerico] { font-variant-numeric: tabular-nums; }
   [data-densidade="compacta"] > table { font-size: 0.8125rem; }
   [data-densidade="compacta"] td { padding-block: 0.125rem; }
   [data-densidade="compacta"] th { height: 1.75rem; }
+}
+
+/* Tema escuro: o azul da marca some sobre o vidro escuro (1,9:1); texto e ícones em azul claro chegam a 9:1. Fora de @layer para vencer a utilidade text-primary. */
+.dark .text-primary {
+  color: oklch(0.8 0.1 262);
 }

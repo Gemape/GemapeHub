@@ -31,7 +31,7 @@ export function BuscaGlobal() {
   }, []);
   return (
     <>
-      <Button type="button" variant="outline" size="icon" onClick={() => setAberta(true)} aria-label="Buscar em todo o sistema (Ctrl+K)" title="Buscar em todo o sistema (Ctrl+K)" aria-keyshortcuts="Control+K Meta+K" className="size-8 shrink-0">
+      <Button type="button" variant="outline" size="icon" onClick={() => setAberta(true)} aria-label="Buscar em todo o sistema (Ctrl+K)" title="Buscar em todo o sistema (Ctrl+K)" aria-keyshortcuts="Control+K Meta+K" className="size-8 max-sm:size-11 shrink-0">
         <Search className="size-4" aria-hidden="true" />
       </Button>
       <Dialog open={aberta} onOpenChange={setAberta}>

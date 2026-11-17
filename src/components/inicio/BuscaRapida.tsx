@@ -111,10 +111,10 @@ export function BuscaRapida({ grupos }: { grupos: readonly GrupoInicio[] }) {
           }}
           onFocus={() => setAberta(true)}
           onKeyDown={aoTeclar}
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+          className="min-w-0 flex-1 bg-transparent max-sm:min-h-11 text-sm outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
         />
         {termo && (
-          <button type="button" aria-label="Limpar busca" onClick={() => { setTermo(""); campo.current?.focus(); }} className="rounded-full p-0.5 text-muted-foreground hover:text-foreground">
+          <button type="button" aria-label="Limpar busca" onClick={() => { setTermo(""); campo.current?.focus(); }} className="rounded-full p-0.5 max-sm:p-3.5 text-muted-foreground hover:text-foreground">
             <X className="size-4" aria-hidden="true" />
           </button>
         )}
