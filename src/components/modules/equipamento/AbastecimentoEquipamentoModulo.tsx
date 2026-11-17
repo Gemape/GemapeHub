@@ -1,4 +1,5 @@
 import { GradeDeCartoes } from "@/components/GradeDeCartoes";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { Banknote, Droplets, Fuel, Gauge } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
@@ -151,7 +152,7 @@ export function AbastecimentoEquipamentoModulo() {
                 <TableCell className="text-right">{reais(a.precoLitro)}</TableCell>
                 <TableCell className="text-right">{a.litrosPorHora === null ? "—" : numero(a.litrosPorHora)}</TableCell>
                 <TableCell className="text-right">
-                  {canDelete && <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir abastecimento" className="text-destructive hover:text-destructive" onClick={() => { if (confirm("Excluir este abastecimento?")) executar(() => removerAbastecimentoEq(a.id), "Abastecimento excluído"); }}>Excluir</Button>}
+                  {canDelete && <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir abastecimento" className="text-destructive hover:text-destructive" onClick={async () => { if (await confirmarExclusao(`o abastecimento de ${formatarData(a.data)} (${a.rotulo})`)) executar(() => removerAbastecimentoEq(a.id), "Abastecimento excluído"); }}>Excluir</Button>}
                 </TableCell>
               </TableRow>
             ))}

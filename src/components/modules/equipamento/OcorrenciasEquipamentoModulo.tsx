@@ -1,4 +1,5 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -134,7 +135,7 @@ export function OcorrenciasEquipamentoModulo() {
                 <TableCell><Badge variant="outline" className={seloDaSituacao(o.status)}>{o.status}</Badge></TableCell>
                 <TableCell className="whitespace-nowrap text-right">
                   {canWrite && (!ocorrenciaEncerradaEq(o) || isAdmin) && <Button requiresWrite="operar" size="sm" onClick={() => abrirTratativa(o)}>{ocorrenciaEncerradaEq(o) ? "Editar tratativa" : "Tratativa"}</Button>}
-                  {canDelete && <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir ocorrência" className="text-destructive hover:text-destructive" onClick={() => { if (confirm("Excluir esta ocorrência?")) executar(() => removerOcorrenciaEq(o.id), "Ocorrência excluída"); }}>Excluir</Button>}
+                  {canDelete && <Button requiresWrite variant="ghost" size="sm" aria-label="Excluir ocorrência" className="text-destructive hover:text-destructive" onClick={async () => { if (await confirmarExclusao(`a ocorrência de ${formatarData(o.data)} (${o.tipoNome})`)) executar(() => removerOcorrenciaEq(o.id), "Ocorrência excluída"); }}>Excluir</Button>}
                 </TableCell>
               </TableRow>
             ))}
