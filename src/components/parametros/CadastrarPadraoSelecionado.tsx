@@ -32,8 +32,8 @@ export function CadastrarPadraoSelecionado({
 
   async function salvar() {
     if (salvando.current || marcados.length === 0) return;
-    if (!(await confirmarTexto(`Cadastrar ${marcados.length} ${marcados.length === 1 ? singular : plural} do padrão?`, { rotuloConfirmar: "Cadastrar" }))) return;
     salvando.current = true;
+    if (!(await confirmarTexto(`Cadastrar ${marcados.length} ${marcados.length === 1 ? singular : plural} do padrão?`, { rotuloConfirmar: "Cadastrar" }))) { salvando.current = false; return; }
     const ok = executar(() => {
       cadastrar(marcados);
       toast.success(`${marcados.length} ${marcados.length === 1 ? singular : plural} do padrão ${marcados.length === 1 ? "cadastrado" : "cadastrados"}.`);

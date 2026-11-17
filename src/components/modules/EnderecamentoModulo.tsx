@@ -264,7 +264,7 @@ export function EnderecamentoModulo() {
                   rotulo={`endereço de ${e.codigo_produto}`}
                   onClonar={() => { setOrigemClone(""); setClonando(produto); }}
                   onEditar={() => abrir(e, produto)}
-                  onExcluir={async () => { if (!excluir.isPending && await confirmarExclusao(`o endereço de ${e.codigo_produto}`)) excluir.mutate(e.id); }}
+                  onExcluir={async () => { if (!excluir.isPending && await confirmarExclusao(`o endereço de ${e.codigo_produto}`) && !excluir.isPending) excluir.mutate(e.id); }}
                 /> : <div className="flex justify-end gap-1">
                   <Button requiresWrite variant="ghost" size="sm" onClick={() => abrir(null, produto)}>Adicionar endereço</Button>
                   <AcoesLinha rotulo={`endereço de ${produto.codigo_sku}`} onClonar={() => { setOrigemClone(""); setClonando(produto); }} />
