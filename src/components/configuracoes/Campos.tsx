@@ -3,7 +3,7 @@ import type { ComponentType, ReactNode } from "react";
 // Peças comuns das telas de Configurações: um bloco com título e uma linha "texto à esquerda, controle à direita".
 export function Bloco({ titulo, descricao, children }: { titulo: string; descricao?: string; children: ReactNode }) {
   return (
-    <section data-ancora={titulo} className="scroll-mt-14 space-y-3 rounded-xl border bg-card p-4">
+    <section className="space-y-3 rounded-xl border bg-card p-4">
       <header>
         <h3 className="text-sm font-semibold">{titulo}</h3>
         {descricao && <p className="mt-0.5 text-xs text-muted-foreground">{descricao}</p>}
@@ -24,10 +24,6 @@ export function Linha({ rotulo, ajuda, htmlFor, children }: { rotulo: string; aj
     </div>
   );
 }
-
-export const AvisoDeTeste = () => (
-  <p className="rounded-lg border bg-primary/5 px-3 py-2 text-xs text-muted-foreground">Modo de teste: as escolhas ficam gravadas só neste navegador e nada é enviado a ninguém.</p>
-);
 
 // Menu de seções feito de botões (o sistema não usa abas superiores: decisão 43). Em linha rolável no celular; com `vertical`, em coluna a partir do `md`.
 export function MenuDeSecoes<T extends string>({ itens, ativo, aoEscolher, rotulo, vertical = false }: {

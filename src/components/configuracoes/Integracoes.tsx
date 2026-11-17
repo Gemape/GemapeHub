@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { EVENTOS_WEBHOOK, novaChave, urlDeWebhookValida } from "@/lib/configuracoes-demo";
-import { AvisoDeTeste, Bloco } from "./Campos";
+import { Bloco } from "./Campos";
 import { useConfig } from "./useConfig";
 
 const dataCurta = (iso: string) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" });
@@ -36,7 +36,6 @@ export function Integracoes() {
 
   return (
     <div className="space-y-4">
-      <AvisoDeTeste />
       <Bloco titulo="Chaves de API" descricao="Tokens para conectar o sistema a ferramentas externas (n8n, ERPs, automações). As chaves deste teste não autenticam em lugar nenhum.">
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input aria-label="Nome da chave" placeholder="Nome da chave (ex.: Automação n8n)" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} />

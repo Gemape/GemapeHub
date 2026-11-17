@@ -1,12 +1,10 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { auditoriaEmCsv, baixarArquivo } from "@/lib/configuracoes-demo";
-import { AvisoDeTeste } from "./Campos";
 import { useConfig } from "./useConfig";
 
 const dataCurta = (iso: string) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" });
@@ -25,7 +23,6 @@ export function Auditoria() {
 
   return (
     <div className="space-y-4">
-      <AvisoDeTeste />
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input aria-label="Buscar na auditoria" placeholder="Buscar por ação, detalhe ou pessoa" value={busca} onChange={(e) => setBusca(e.target.value)} className="sm:flex-1" />
         <Select value={quem} onValueChange={setQuem}>
@@ -42,7 +39,7 @@ export function Auditoria() {
               <tr key={r.id} className="border-b last:border-0 hover:bg-muted/40">
                 <td className="whitespace-nowrap px-3 py-2 text-xs">{dataCurta(r.quando)}</td>
                 <td className="px-3 py-2">{r.quem}</td>
-                <td className="px-3 py-2"><Badge className="whitespace-normal px-2 py-0 text-left text-[10px] font-medium leading-4">{r.acao}</Badge></td>
+                <td className="px-3 py-2">{r.acao}</td>
                 <td className="px-3 py-2 text-muted-foreground">{r.detalhe}</td>
               </tr>
             ))}
