@@ -1,7 +1,7 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { AjudaTermo } from "@/components/AjudaTermo";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MinimoEditavel } from "@/components/modules/MinimoEditavel";
 import { AlternarDensidade } from "@/components/AlternarDensidade";
@@ -64,7 +64,9 @@ export function EstoqueEpiModulo({ modulo = "epi", buscaInicial = "" }: { modulo
   const rotulo = modulo === "epi" ? "EPI" : "uniforme";
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
-  const [condicao, setCondicao] = useState<"novo" | "usado">("novo");
+  const [condicao, setCondicao] = useState<"novo" | "usado" | "todos">("novo");
+  // Vindo da busca global: abre na condição que o item tem (só uma) ou em "Todos" (as duas), e destaca a linha. Uma vez só, quando os dados chegam.
+  const condicaoEscolhida = useRef(!buscaInicial);
   const [empresaFiltro, setEmpresaFiltro] = useState(TODOS);
   const [palavra, setPalavra] = useState(buscaInicial);
   const [dataInicio, setDataInicio] = useState("");
@@ -123,9 +125,17 @@ export function EstoqueEpiModulo({ modulo = "epi", buscaInicial = "" }: { modulo
     },
     nomeDoTamanho,
   );
-  const doTipo = (c: "novo" | "usado", lista: LinhaEstoqueEpi[]) =>
-    lista.filter((l) => l.condicao === c);
+  const doTipo = (c: "novo" | "usado" | "todos", lista: LinhaEstoqueEpi[]) =>
+    c === "todos" ? lista : lista.filter((l) => l.condicao === c);
   const lista = doTipo(condicao, filtradas);
+  useEffect(() => {
+    if (condicaoEscolhida.current || isLoading) return;
+    condicaoEscolhida.current = true;
+    const novos = filtradas.some((l) => l.condicao === "novo");
+    const usados = filtradas.some((l) => l.condicao === "usado");
+    setCondicao(novos && usados ? "todos" : usados ? "usado" : "novo");
+  }, [isLoading, filtradas]);
+  const destacar = !!buscaInicial && palavra === buscaInicial;
   // Produto com tamanho grava o mínimo do tamanho da linha; sem tamanho, o mínimo único do item (como em Estoque das ferramentas). Devolve false quando o valor não vale.
   function gravarMinimo(l: LinhaEstoqueEpi, texto: string): boolean {
     const item = itens.find((i) => i.id === l.itemId);
@@ -241,7 +251,7 @@ export function EstoqueEpiModulo({ modulo = "epi", buscaInicial = "" }: { modulo
         <AlternarDensidade />
         <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Novos ou usados">
-        {(["novo", "usado"] as const).map((c) => (
+        {(["novo", "usado", "todos"] as const).map((c) => (
           <Button
             key={c}
             type="button"
@@ -249,7 +259,7 @@ export function EstoqueEpiModulo({ modulo = "epi", buscaInicial = "" }: { modulo
             aria-pressed={condicao === c}
             onClick={() => setCondicao(c)}
           >
-            {c === "novo" ? "Novos" : "Usados"} (
+            {c === "novo" ? "Novos" : c === "usado" ? "Usados" : "Todos"} (
             {doTipo(c, filtradas).reduce((t, l) => t + l.disponivel, 0)})
           </Button>
         ))}
@@ -260,7 +270,7 @@ export function EstoqueEpiModulo({ modulo = "epi", buscaInicial = "" }: { modulo
             disabled={lista.length === 0}
             onClick={() =>
               exportarCsv(
-                `estoque-${modulo}-${condicao === "novo" ? "novos" : "usados"}`,
+                `estoque-${modulo}-${condicao === "novo" ? "novos" : condicao === "usado" ? "usados" : "todos"}`,
                 lista.map((l) => ({
                   Código: l.codigo,
                   Descrição: l.descricao,
@@ -314,13 +324,13 @@ export function EstoqueEpiModulo({ modulo = "epi", buscaInicial = "" }: { modulo
                 <TableCell colSpan={modulo === "epi" ? 12 : 11} className="py-6 text-center text-muted-foreground">
                   {condicao === "usado"
                     ? `Nenhum ${rotulo} usado no estoque. Eles entram pela Devolução, na Entrada no Estoque.`
-                    : `Nenhum ${rotulo} novo encontrado.`}
+                    : condicao === "todos" ? `Nenhum ${rotulo} encontrado.` : `Nenhum ${rotulo} novo encontrado.`}
                 </TableCell>
               </TableRow>
             ) : (
               lista.map((l) => (
-                <TableRow key={l.chave}>
-                  <TableCell className="font-mono text-xs">{l.codigo}</TableCell>
+                <TableRow key={l.chave} className={destacar ? "bg-primary/10" : undefined} aria-current={destacar ? "true" : undefined}>
+                  <TableCell className="font-mono text-xs">{l.codigo}{condicao === "todos" && <span className="ml-2 rounded-full border px-1.5 py-0.5 font-sans text-[10px] font-semibold">{l.condicao === "usado" ? "Usado" : "Novo"}</span>}</TableCell>
                   <TableCell>
                     {modulo === "epi" ? (() => {
                       const item = itens.find((i) => i.id === l.itemId) as { ca_validade?: string | null } | undefined;

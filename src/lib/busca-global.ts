@@ -1,7 +1,7 @@
 // Busca global do cabeçalho (Ctrl+K): acha empregado, veículo e item de estoque por nome, código, matrícula ou placa e leva direto à tela do item.
 // Só dados: a tela desenha e confere a permissão de cada destino. Os resultados vêm agrupados por módulo.
 export type DestinoBusca = { url: string; search: Record<string, string> };
-export type ResultadoGlobal = { chave: string; titulo: string; detalhe: string; destino: DestinoBusca };
+export type ResultadoGlobal = { chave: string; titulo: string; detalhe: string; acao: string; destino: DestinoBusca };
 export type ModuloBusca = "Empregados" | "Veículos" | "EPIs" | "Uniformes" | "Ferramentas";
 export type GrupoBusca = { modulo: ModuloBusca; itens: ResultadoGlobal[] };
 
@@ -44,6 +44,7 @@ export function buscarGlobal(termoBruto: string, f: FontesBusca, limite = LIMITE
     chave: `emp-${e.id}`,
     titulo: e.nome,
     detalhe: `${e.matricula ? `Matrícula ${e.matricula} · ` : ""}${e.ativo === false || e.data_demissao ? "Desligado" : "Ativo"}`,
+    acao: "Abrir ficha",
     destino: { url: "/epi", search: { aba: "historico", ...(e.empresa_id ? { empresa: e.empresa_id } : {}), empregado: e.id } },
   })));
 
@@ -51,19 +52,21 @@ export function buscarGlobal(termoBruto: string, f: FontesBusca, limite = LIMITE
     chave: `vei-${v.id}`,
     titulo: v.placa ? `Placa ${v.placa}` : "Veículo sem placa",
     detalhe: [v.marca, v.modelo].filter(Boolean).join(" ") || "Sem marca e modelo",
+    acao: "Abrir extrato",
     destino: { url: "/veiculos", search: { aba: "frota", extrato: v.id } },
   })));
 
-  const itens = (modulo: ModuloBusca, lista: readonly Item[] | undefined, url: string, comCa: boolean, comItem: boolean) =>
+  const itens = (modulo: ModuloBusca, lista: readonly Item[] | undefined, url: string, comCa: boolean, comItem: boolean, acao: string) =>
     add(modulo, (lista ?? []).filter((i) => i.status !== "Inativo" && (casaNome(i.nome, termo) || casaCodigo(i.codigo_sku, codigo) || (comCa && casaCodigo(i.ca, codigo)))).map((i) => ({
       chave: `${modulo}-${i.id}`,
       titulo: i.nome,
       detalhe: [i.codigo_sku, comCa ? (i.ca ? `CA ${i.ca}` : "sem CA") : null].filter(Boolean).join(" · ") || "Sem código",
+      acao,
       // Estoque já filtrado pelo item; a ferramenta ainda abre o extrato dela (?item=).
       destino: { url, search: { aba: "estoque", q: i.codigo_sku || i.nome, ...(comItem ? { item: i.id } : {}) } },
     })));
-  itens("EPIs", f.epis, "/epi", true, false);
-  itens("Uniformes", f.uniformes, "/uniformes", false, false);
-  itens("Ferramentas", f.ferramentas, "/ferramentas", false, true);
+  itens("EPIs", f.epis, "/epi", true, false, "EPI — abrir na lista");
+  itens("Uniformes", f.uniformes, "/uniformes", false, false, "Uniforme — abrir na lista");
+  itens("Ferramentas", f.ferramentas, "/ferramentas", false, true, "Abrir extrato");
   return grupos;
 }

@@ -42,6 +42,13 @@ test("cada resultado leva à tela do item, não à lista do módulo", () => {
   assert.deepEqual(d("furadeira"), { url: "/ferramentas", search: { aba: "estoque", q: "FER-0004", item: "f1" } });
 });
 
+test("o rótulo diz para onde o resultado vai", () => {
+  const a = (t) => buscarGlobal(t, fontes)[0].itens[0].acao;
+  assert.equal(a("luva"), "EPI — abrir na lista");
+  assert.equal(a("polo"), "Uniforme — abrir na lista");
+  assert.equal(a("furadeira"), "Abrir extrato");
+});
+
 test("módulo sem fonte (sem permissão) não aparece; há no máximo 5 por módulo", () => {
   assert.deepEqual(buscarGlobal("silva", { ...fontes, empregados: undefined }), []);
   const muitos = { empregados: Array.from({ length: 12 }, (_, i) => ({ id: `m${i}`, nome: `Pedro ${i}` })) };

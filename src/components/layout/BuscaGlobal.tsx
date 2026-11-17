@@ -133,7 +133,7 @@ function PainelBusca({ aoEscolher }: { aoEscolher: () => void }) {
                     <span className="block truncate font-medium">{r.titulo}</span>
                     <span className="block truncate text-xs text-muted-foreground">{r.detalhe}</span>
                   </span>
-                  <ArrowRight className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-primary">{r.acao}<ArrowRight className="size-3.5" aria-hidden="true" /></span>
                 </button>
               );
             })}
