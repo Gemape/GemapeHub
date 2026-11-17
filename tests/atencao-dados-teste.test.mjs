@@ -35,8 +35,8 @@ test("dados de teste: todos os grupos de atenção de hoje têm ao menos um item
     },
   });
   for (const g of grupos) {
-    if (g.id === "minimo-epi" || g.id === "minimo-uniforme") continue; // sem a regra de tamanhos da tela, o mínimo de EPI e uniforme é conferido à parte
+    if (/^(abaixo|minimo)-/.test(g.id)) continue; // os níveis de estoque (abaixo / no mínimo) dependem dos dados; a soma é conferida à parte
     assert.ok(g.itens.length > 0, `o grupo "${g.titulo}" ficou vazio nos dados de teste`);
   }
-  assert.equal(grupos.length, 8);
+  assert.equal(grupos.length, 11);
 });

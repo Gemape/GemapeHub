@@ -31,6 +31,7 @@ import { kpisDeEmpregados, kpisDeItens, kpisDeValor, kpisDeVeiculos } from "@/li
 import { TAMANHO_DISPONIVEL } from "@/components/SeletorTamanho";
 import { alertasDeMinimoEpi } from "@/lib/estoque-epi-saldos";
 import { controlaModulo } from "@/lib/estoque-tamanho";
+import { estadoGravado, linhasDeAlertaEstoque, ROTULO_NIVEL, type ModuloEstoque } from "@/lib/alertas-estoque";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -129,17 +130,19 @@ function DashboardGeral() {
 
   const totalEmpregados = empregadosAtivos.length;
   const valorTotal = valorTotalEmEstoque(itens);
-  // EPI e uniforme com tamanho e mínimo por tamanho alertam por tamanho; os demais, pelo total.
+  // Alertas de estoque: a mesma contagem da tela inicial e da coluna Alerta das telas de Estoque, uma linha por item e tamanho, separada por tipo.
   const parametros = useParametrosBase();
-  const alertasDe = (i: (typeof itens)[number]) => {
-    if (!TAMANHO_DISPONIVEL || !controlaModulo(i.modulo)) return null;
-    // Mesma regra da aba Estoque e do botão Estoque mínimo (decisão 417): um alerta por tamanho.
-    return alertasDeMinimoEpi(parametros, i as never, i.modulo as "epi" | "uniforme");
-  };
-  const criticos = itens.filter((i) => {
-    const alertas = alertasDe(i);
-    return alertas ? alertas.length > 0 : (i.estoque_atual ?? 0) <= (i.estoque_minimo ?? 0);
-  });
+  const TIPOS_ALERTA: { modulo: ModuloEstoque; rotulo: string }[] = [{ modulo: "epi", rotulo: "EPI" }, { modulo: "uniforme", rotulo: "Uniforme" }, { modulo: "ferramenta", rotulo: "Ferramenta" }];
+  const linhasEstoque = TIPOS_ALERTA.flatMap(({ modulo }) =>
+    linhasDeAlertaEstoque(itens.filter((i) => i.modulo === modulo), modulo, (i) =>
+      TAMANHO_DISPONIVEL && modulo !== "ferramenta" && controlaModulo(modulo)
+        // Mesma regra da aba Estoque e do botão Estoque mínimo (decisão 417): um alerta por tamanho.
+        ? (() => { const alertas = alertasDeMinimoEpi(parametros, i as never, modulo); return { saldo: 0, minimo: 0, alerta: alertas.length > 0, alertas }; })()
+        : estadoGravado(i as never)),
+  );
+  const alertasPorTipo = TIPOS_ALERTA.map((t) => ({ ...t, linhas: linhasEstoque.filter((l) => l.modulo === t.modulo) }));
+  const idsCriticos = new Set(linhasEstoque.map((l) => l.itemId));
+  const criticos = itens.filter((i) => idsCriticos.has(i.id));
 
   const porModulo = MODULOS.map((m) => {
     const doModulo = itens.filter((i) => i.modulo === m);
@@ -155,11 +158,11 @@ function DashboardGeral() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const ocorrenciasDeVeiculos = useMemo(() => lerOcorrenciasVeiculo(), [veiculos, cardAberto, empresaAberta, quadroAberto]);
   // Uma linha por alerta (EPI e uniforme alertam por tamanho): os relatórios dos quadros e das empresas listam as mesmas linhas.
-  const linhasDeAlerta = criticos.flatMap((i) => {
-    const por = alertasDe(i);
-    const base = { id: i.id, nome: i.nome, modulo: i.modulo, empresaId: i.empresa_id };
-    return por ? por.map((a) => ({ ...base, estoque: `${a.nome}: ${a.saldo}`, minimo: `${a.nome}: ${a.minimo}` })) : [{ ...base, estoque: String(i.estoque_atual ?? 0), minimo: String(i.estoque_minimo ?? 0) }];
-  });
+  const linhasDeAlerta = linhasEstoque.map((l) => ({
+    id: l.itemId, nome: l.nome, modulo: l.modulo, empresaId: l.empresaId,
+    estoque: l.tamanho ? `${l.tamanho}: ${l.saldo}` : String(l.saldo),
+    minimo: l.tamanho ? `${l.tamanho}: ${l.minimo}` : String(l.minimo),
+  }));
   const empresasDoPainel = empresas.map((e) => ({ id: e.id, nome: e.nome_fantasia }));
   const kpis = {
     itens: kpisDeItens(itens, new Set(criticos.map((i) => i.id)), empresasDoPainel),
@@ -290,45 +293,52 @@ function DashboardGeral() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="size-4 text-destructive" /> Alertas críticos
-              {criticos.length > 0 && <span className="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-200">{criticos.length} item(ns)</span>}
+              {linhasEstoque.length > 0 && <span className="ml-auto rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-200">{linhasEstoque.length} alerta(s)</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
+            <ul aria-label="Alertas por tipo" className="mb-3 flex flex-wrap gap-2 text-xs">
+              {alertasPorTipo.map((t) => {
+                const abaixo = t.linhas.filter((l) => l.nivel === "abaixo").length;
+                return (
+                  <li key={t.modulo} className="rounded-full border px-2.5 py-1">
+                    <span className="font-semibold">{t.rotulo}: {t.linhas.length}</span>
+                    {t.linhas.length > 0 && <span className="text-muted-foreground"> ({abaixo} abaixo · {t.linhas.length - abaixo} no mínimo)</span>}
+                  </li>
+                );
+              })}
+            </ul>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Item</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Estoque</TableHead>
                   <TableHead className="text-right">Mínimo</TableHead>
+                  <TableHead>Nível</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {criticos.length === 0 ? (
+                {linhasEstoque.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground">
                       Nenhum item abaixo do estoque mínimo.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  criticos.slice(0, 10).map((i) => (
-                    <TableRow key={i.id}>
-                      <TableCell className="font-medium">{i.nome}</TableCell>
-                      <TableCell>{MODULO_LABEL[i.modulo as Modulo] ?? i.modulo}</TableCell>
-                      <TableCell className="text-right">
-                        {alertasDe(i)?.map((a) => `${a.nome}: ${a.saldo}`).join(" · ") ??
-                          i.estoque_atual}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {alertasDe(i)?.map((a) => `${a.nome}: ${a.minimo}`).join(" · ") ??
-                          i.estoque_minimo}
-                      </TableCell>
+                  [...linhasEstoque].sort((x, y) => (x.nivel === y.nivel ? 0 : x.nivel === "abaixo" ? -1 : 1)).slice(0, 10).map((l) => (
+                    <TableRow key={l.chave}>
+                      <TableCell className="font-medium">{l.nome}{l.tamanho ? ` · ${l.tamanho}` : ""}</TableCell>
+                      <TableCell>{MODULO_LABEL[l.modulo as Modulo] ?? l.modulo}</TableCell>
+                      <TableCell className="text-right">{l.saldo}</TableCell>
+                      <TableCell className="text-right">{l.minimo}</TableCell>
+                      <TableCell className={l.nivel === "abaixo" ? "font-bold text-destructive" : "font-bold text-amber-600 dark:text-amber-400"}>{ROTULO_NIVEL[l.nivel]}</TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
             </Table>
-            {criticos.length > 10 && <p className="mt-2 text-xs text-muted-foreground">Mostrando 10 de {criticos.length}. Clique no quadro para ver a lista completa.</p>}
+            {linhasEstoque.length > 10 && <p className="mt-2 text-xs text-muted-foreground">Mostrando 10 de {linhasEstoque.length}. Clique no quadro para ver a lista completa.</p>}
           </CardContent>
         </Card>
         </CardClicavel>
