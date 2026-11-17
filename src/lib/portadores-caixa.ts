@@ -101,7 +101,7 @@ export function registrarPortador(entrada: Entrada, storage: StorageLike = local
     throw new Error("Selecione uma caixa habilitada em Cadastros > Gerais.");
   }
   if (!caixa.empresa_id) throw new Error("A caixa precisa ter uma empresa.");
-  if (status !== "Ativa" && status !== "Inativa") throw new Error("Status do portador inválido.");
+  if (status !== "Ativa" && status !== "Inativa") throw new Error("Status do portador inválido. Escolha Ativa ou Inativa.");
   const historico = lerPortadores(storage);
   const anterior = portadorAtivo(historico, caixa.id);
   const hoje = dataBrasilia(entrada.agora);

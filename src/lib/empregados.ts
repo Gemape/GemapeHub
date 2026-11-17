@@ -84,7 +84,7 @@ export function prepararEmpregado(
   const email = dados.email.trim().toLowerCase();
   if (!nome) throw new Error("Informe o nome completo.");
   const cpfMantido = anterior && cpf.trim() !== "" && digitos(cpf) === digitos(anterior.cpf ?? "");
-  if (!cpfMantido && !cpfValido(cpf)) throw new Error("CPF inválido.");
+  if (!cpfMantido && !cpfValido(cpf)) throw new Error("CPF inválido. Confira os 11 dígitos.");
   if (cpfMantido) cpf = anterior.cpf ?? cpf;
   const matriculaMantida = anterior && matricula === normalizarMatricula(anterior.matricula ?? "");
   if (matriculaMantida) matricula = anterior.matricula ?? matricula;
@@ -92,7 +92,7 @@ export function prepararEmpregado(
     throw new Error("Matrícula no formato LxPx (livro e página), ex.: L3P25.");
   }
   if (!dados.empresa_id) throw new Error("Selecione a empresa.");
-  if (email && !emailValido(email)) throw new Error("E-mail inválido.");
+  if (email && !emailValido(email)) throw new Error("E-mail inválido. Use o formato nome@empresa.com.br.");
   if (dados.data_admissao && dados.data_demissao && dados.data_demissao < dados.data_admissao) {
     throw new Error("A data de demissão não pode ser anterior à admissão.");
   }

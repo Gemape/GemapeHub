@@ -39,6 +39,9 @@ import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { useExcluir, useSalvar } from "@/lib/hooks-gemape";
 import { formatarCnpj, formatarCep } from "@/lib/formatacao-cadastral";
 import { aoDigitarMascarado } from "@/lib/mascaras";
+import { useErrosCampos } from "@/lib/use-erros-campos";
+import { ErroCampo } from "@/components/ErroCampo";
+import { validarCepCampo, validarCnpjCampo } from "@/lib/validacao-campos";
 import { ehExemplo } from "@/lib/dados-teste/exemplo-id";
 import { exemploEmpresa } from "@/lib/dados-teste/exemplos";
 // Endereço e status ainda não existem no banco real (Fase 2): só aparecem na demonstração.
@@ -82,6 +85,7 @@ function PaginaEmpresas() {
   // Clonar: dados da empresa de origem num cadastro NOVO (todos os campos copiados, decisão 138).
   const [modelo, setModelo] = useState<Empresa | null>(null);
   const base = editando ?? modelo;
+  const { erro, campo: campoErro } = useErrosCampos();
   const salvar = useSalvar("empresas", ["empresas"]);
   const excluir = useExcluir("empresas", ["empresas"]);
 
@@ -230,7 +234,8 @@ function PaginaEmpresas() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} required defaultValue={base?.cnpj ? formatarCnpj(base.cnpj) : ""} />
+              <Input id="cnpj" name="cnpj" inputMode="numeric" onInput={aoDigitarMascarado("cnpj")} {...campoErro("cnpj", validarCnpjCampo)} required defaultValue={base?.cnpj ? formatarCnpj(base.cnpj) : ""} />
+              <ErroCampo id="cnpj" texto={erro("cnpj")} />
             </div>
             {MODO_DEMO && (
               <>
@@ -244,8 +249,10 @@ function PaginaEmpresas() {
                         {...(["rua", "bairro", "cidade"].includes(campo.nome) ? { capitalizar: "texto" as const } : {})}
                         inputMode={campo.nome === "cep" ? "numeric" : undefined}
                         onInput={aoDigitarMascarado(campo.nome)}
+                        {...(campo.nome === "cep" ? campoErro("cep", validarCepCampo) : {})}
                         defaultValue={campo.nome === "cep" ? formatarCep(base?.cep ?? "") : base?.[campo.nome] ?? ""}
                       />
+                      {campo.nome === "cep" && <ErroCampo id="cep" texto={erro("cep")} />}
                     </div>
                   ))}
                 </div>

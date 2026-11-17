@@ -74,7 +74,7 @@ export function salvarCliente(
   const cnpj = somenteDigitos(valores.cnpj);
   if (cpf && cpf !== somenteDigitos(existente?.cpf ?? "")) {
     if (cpf.length !== 11) throw new Error("O CPF deve ter 11 dígitos.");
-    if (!cpfValido(cpf)) throw new Error("CPF inválido.");
+    if (!cpfValido(cpf)) throw new Error("CPF inválido. Confira os 11 dígitos.");
     if (clientes.some((item) => item.id !== id && somenteDigitos(item.cpf) === cpf)) throw new Error("CPF já cadastrado.");
   }
   if (cnpj && cnpj !== somenteDigitos(existente?.cnpj ?? "")) {
@@ -86,7 +86,7 @@ export function salvarCliente(
     if (t && !validarTelefone(t) && t !== existente?.[campo]) throw new Error(`${rotulo} deve ter 10 ou 11 dígitos.`);
   }
   const email = valores.email.trim().toLowerCase();
-  if (email && !emailValido(email) && email !== existente?.email) throw new Error("E-mail inválido.");
+  if (email && !emailValido(email) && email !== existente?.email) throw new Error("E-mail inválido. Use o formato nome@empresa.com.br.");
 
   if (!existente) {
     const numero = ultimoNumero(clientes, storage) + 1;

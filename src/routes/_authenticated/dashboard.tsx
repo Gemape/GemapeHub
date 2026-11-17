@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, Boxes, Building2, Car, Users, Wallet } from "lucide-react";
@@ -76,7 +77,7 @@ function DashboardGeral() {
   const [empresaAberta, setEmpresaAberta] = useState<string | null>(null);
   const [quadroAberto, setQuadroAberto] = useState<RelatorioDoPainel | null>(null);
 
-  const { data: itens = [] } = useQuery({
+  const { data: itens = [], isLoading: carregandoItens } = useQuery({
     queryKey: ["itens-todos", empresaId],
     staleTime: 60_000,
     queryFn: async () => {
@@ -256,7 +257,7 @@ function DashboardGeral() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {porModulo.map((linha) => {
+                {carregandoItens ? <LinhasEsqueleto colunas={4} linhas={3} /> : porModulo.map((linha) => {
                   const parte = valorTotal > 0 ? (linha.valor / valorTotal) * 100 : 0;
                   return (
                     <TableRow key={linha.modulo}>

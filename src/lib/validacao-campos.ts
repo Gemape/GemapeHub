@@ -39,3 +39,25 @@ export function validarSerieCampo(valor: string, outros: readonly { id: string; 
   if (!v) return null;
   return outros.some((o) => o.id !== ignorarId && (o.serie ?? "").trim().toUpperCase() === v) ? "Já existe um registro com este número de série." : null;
 }
+
+// Campos de cadastros comuns (Clientes, Fornecedores, Empresas): vazio não é erro aqui; obrigatório é cobrado no Salvar.
+export function validarCpfSimples(valor: string): string | null {
+  if (!valor.trim()) return null;
+  return cpfValido(formatarCpf(valor.trim())) ? null : "CPF inválido. Confira os 11 dígitos.";
+}
+export function validarCnpjCampo(valor: string): string | null {
+  if (!valor.trim()) return null;
+  return digitos(valor).length === 14 ? null : "CNPJ incompleto. Informe os 14 dígitos.";
+}
+export function validarCepCampo(valor: string): string | null {
+  if (!valor.trim()) return null;
+  return digitos(valor).length === 8 ? null : "CEP incompleto. Informe os 8 dígitos.";
+}
+export function validarTelefoneCampo(valor: string): string | null {
+  if (!valor.trim()) return null;
+  return [10, 11].includes(digitos(valor).length) ? null : "Telefone incompleto. Informe DDD e número (10 ou 11 dígitos).";
+}
+export function validarEmailCampo(valor: string): string | null {
+  if (!valor.trim()) return null;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor.trim()) ? null : "E-mail inválido. Use o formato nome@empresa.com.br.";
+}

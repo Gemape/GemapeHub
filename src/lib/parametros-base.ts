@@ -349,7 +349,7 @@ export function salvarEnderecamentoCategoria(
   alterar(storage, (dados) => {
     if (categoriaId !== CATEGORIA_EQUIPAMENTOS) achar(dados.categorias, categoriaId, "Categoria");
     if (tipo !== "nao_usa" && tipo !== "opcional" && tipo !== "obrigatorio") {
-      throw new Error("Tipo de endereçamento inválido.");
+      throw new Error("Tipo de endereçamento inválido. Escolha Não usa, Opcional ou Obrigatório.");
     }
     dados.enderecamentoCategorias[categoriaId] = tipo;
   });
