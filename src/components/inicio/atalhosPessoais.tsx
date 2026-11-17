@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAccess } from "@/lib/access-context";
-import { alternarFixado, chaveDoAtalho, lerFixados, lerRecentes, MAX_FIXADOS, registrarRecente, type AtalhoGuardado } from "@/lib/atalhos-usuario";
+import { alternarFixado, chaveDoAtalho, lerFixados, lerRecentes, MAX_FIXADOS, registrarRecente, registrarUso, type AtalhoGuardado } from "@/lib/atalhos-usuario";
 import { areaDaRota } from "@/lib/inicio";
 import { usuarioAtivo } from "@/lib/permissoes-demo";
 
@@ -49,7 +49,11 @@ export function RegistraRecente() {
     const area = areaDaRota(pathname, JSON.parse(buscaTexto) as Record<string, unknown>, isAdmin, podeVerCaminho);
     if (!area) return;
     const { cartao, atual } = area;
-    registrarRecente(dono, { titulo: atual.titulo, cartao: cartao.titulo, secao: atual.secao, url: atual.url, ...(atual.search ? { search: atual.search } : {}) });
+    const atalho = { titulo: atual.titulo, cartao: cartao.titulo, secao: atual.secao, url: atual.url, ...(atual.search ? { search: atual.search } : {}) };
+    // Conta uma abertura só quando a pessoa chega a um atalho diferente do último (recarregar a tela ou trocar de aba do navegador não conta).
+    const ultimo = lerRecentes(dono)[0];
+    registrarRecente(dono, atalho);
+    if (!ultimo || chaveDoAtalho(ultimo) !== chaveDoAtalho(atalho)) registrarUso(dono, atalho);
     // podeVerCaminho muda de identidade a cada render; o que importa é a tela e o dono
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dono, pathname, buscaTexto, isAdmin]);

@@ -246,9 +246,10 @@ export function useEmpregados(empresaId: string, apenasAtivos = false, ativo = t
   });
 }
 
-export function useVeiculos(empresaId: string) {
+export function useVeiculos(empresaId: string, ativo = true) {
   return useQuery({
     ...opcoesBase,
+    enabled: ativo,
     queryKey: ["veiculos", empresaId],
     queryFn: async () => {
       const montar = () => {

@@ -52,3 +52,41 @@ export function registrarRecente(usuario: string, atalho: AtalhoGuardado): Atalh
   guardar("recentes", usuario, novos);
   return novos;
 }
+
+// Os mais usados: quantas vezes o usuário abriu cada atalho de cartão (neste navegador). Mostra os 3 de cada cartão; empate vale o mais recente.
+export const MAX_MAIS_USADOS = 3;
+const MAX_USOS = 60;
+type Uso = { atalho: AtalhoGuardado; vezes: number; ultimo: number };
+const chaveUso = (usuario: string) => `gemape-inicio-uso:${usuario || "anonimo"}`;
+
+function lerUso(usuario: string): Record<string, Uso> {
+  try {
+    const bruto: unknown = JSON.parse(globalThis.localStorage?.getItem(chaveUso(usuario)) ?? "{}");
+    return bruto && typeof bruto === "object" && !Array.isArray(bruto) ? (bruto as Record<string, Uso>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function registrarUso(usuario: string, atalho: AtalhoGuardado, agora = Date.now()): void {
+  const uso = lerUso(usuario);
+  const chave = chaveDoAtalho(atalho);
+  uso[chave] = { atalho, vezes: (uso[chave]?.vezes ?? 0) + 1, ultimo: agora };
+  // Telas com ?id= diferentes viram chaves diferentes: guarda só as mais usadas para o armazenamento não crescer sem fim.
+  const ordenadas = Object.entries(uso).sort(([, x], [, y]) => y.vezes - x.vezes || y.ultimo - x.ultimo);
+  if (ordenadas.length > MAX_USOS) for (const [k] of ordenadas.slice(MAX_USOS)) delete uso[k];
+  try {
+    globalThis.localStorage?.setItem(chaveUso(usuario), JSON.stringify(uso));
+  } catch {
+    // armazenamento cheio ou bloqueado: segue sem contar
+  }
+}
+
+export function maisUsados(usuario: string, cartao: string, limite = MAX_MAIS_USADOS): AtalhoGuardado[] {
+  return Object.values(lerUso(usuario))
+    .filter((u) => !!u && typeof u.atalho === "object" && !!u.atalho && u.atalho.cartao === cartao && typeof u.vezes === "number" && typeof u.atalho.url === "string" && typeof u.atalho.titulo === "string"
+      && (u.atalho.search === undefined || (typeof u.atalho.search === "object" && u.atalho.search !== null)))
+    .sort((a, b) => b.vezes - a.vezes || b.ultimo - a.ultimo)
+    .slice(0, limite)
+    .map((u) => u.atalho);
+}
