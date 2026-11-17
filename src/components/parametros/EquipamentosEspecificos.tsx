@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { EnderecamentoEquipamentos } from "@/components/parametros/EnderecamentoEquipamentos";
 import { IndicadoresEquipamentoParametros } from "@/components/parametros/IndicadoresEquipamentoParametros";
@@ -119,8 +120,8 @@ export function EquipamentosEspecificos() {
   const [dialogoTipo, setDialogoTipo] = useState<DialogoTipo | null>(null);
   const recarregar = () => setParams(lerParametrosEquipamento());
 
-  function excluir(texto: string, acao: () => void, aviso: string) {
-    if (!confirm(texto)) return;
+  async function excluir(nome: string, acao: () => void, aviso: string) {
+    if (!(await confirmarExclusao(nome))) return;
     try {
       acao();
     } catch (erro) {
@@ -159,7 +160,7 @@ export function EquipamentosEspecificos() {
                 <AcoesLinha
                   rotulo={sub.nome}
                   onEditar={() => setDialogoSub({ editando: sub })}
-                  onExcluir={() => excluir(`Excluir a subcategoria ${sub.nome}?`, () => removerSubcategoria(sub.id), "Subcategoria excluída")}
+                  onExcluir={() => excluir(`a subcategoria ${sub.nome}`, () => removerSubcategoria(sub.id), "Subcategoria excluída")}
                 />
               </div>
             </div>
@@ -176,7 +177,7 @@ export function EquipamentosEspecificos() {
                   <AcoesLinha
                     rotulo={t.nome}
                     onEditar={() => setDialogoTipo({ editando: t, subcategoriaId: t.subcategoriaId })}
-                    onExcluir={() => excluir(`Excluir o tipo ${t.nome}?`, () => removerTipo(t.id, undefined, (id) => listarEquipamentos().filter((e) => e.tipoId === id).length), "Tipo excluído")}
+                    onExcluir={() => excluir(`o tipo ${t.nome}`, () => removerTipo(t.id, undefined, (id) => listarEquipamentos().filter((e) => e.tipoId === id).length), "Tipo excluído")}
                   />
                 </li>
               ))}

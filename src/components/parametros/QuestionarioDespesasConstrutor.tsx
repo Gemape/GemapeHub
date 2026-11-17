@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, GripHorizontal, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
+import { confirmarExclusao, confirmarTexto } from "@/components/ConfirmarAcao";
 import { useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -93,8 +94,8 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
       toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar o formulário.");
     }
   }
-  function descartar() {
-    if (!confirm("Descartar as alterações que ainda não foram salvas?")) return;
+  async function descartar() {
+    if (!(await confirmarTexto("Descartar as alterações que ainda não foram salvas?", { rotuloConfirmar: "Descartar", destrutivo: true }))) return;
     const novo = criarRascunho();
     setRascunho(novo);
     setEstado(lerEstado(novo));
@@ -102,8 +103,8 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
     setAlterado(false);
   }
   // Restaurar configurações iniciais: volta as perguntas e os questionários de todos os cards ao padrão, no rascunho (só vale ao Salvar Formulário).
-  function restaurarIniciais() {
-    if (!confirm("Restaurar as configurações iniciais do formulário? Perguntas, opções, questionários e cards criados por você voltam ao padrão (as respostas já registradas não mudam). Nada vale até clicar em Salvar Formulário.")) return;
+  async function restaurarIniciais() {
+    if (!(await confirmarTexto("Restaurar as configurações iniciais do formulário? Perguntas, opções, questionários e cards criados por você voltam ao padrão (as respostas já registradas não mudam). Nada vale até clicar em Salvar Formulário.", { rotuloConfirmar: "Restaurar", destrutivo: true }))) return;
     if (executar(() => gravarEstado(estadoPadrao(), rascunho), "Configurações iniciais restauradas. Clique em Salvar Formulário para valer.")) setAtivo(null);
   }
   useEffect(() => {
@@ -131,11 +132,11 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   };
 
   // Excluir uma resposta (decisão 299): sai da pergunta e leva as ramificações dela, em todos os questionários, para não sobrar ação requerida.
-  function excluirOpcao(p: Pergunta, opcao: string) {
+  async function excluirOpcao(p: Pergunta, opcao: string) {
     // Condições "se/então" que dependem desta resposta somem junto (limparRegras): o aviso diz quantas perguntas passam a aparecer sempre.
     const condicoes = Object.values(estado.regras).reduce((n, porPergunta) => n + Object.values(porPergunta).filter((r) => r.origem === p.id && r.valor === opcao).length, 0);
     const aviso = condicoes ? ` ${condicoes} condição(ões) que dependem dessa resposta também serão removidas.` : "";
-    if (!confirm(`Excluir a resposta "${opcao}" da pergunta ${numeroDe(p.id)}?${aviso}`)) return;
+    if (!(await confirmarExclusao(`a resposta "${opcao}" da pergunta ${numeroDe(p.id)}`, aviso.trim() || undefined))) return;
     // As ramificações saem junto, de todos os questionários (inclusive de um que já não tem a pergunta), e só se grava tudo de uma vez: se a pergunta não aceitar a
     // exclusão (ex.: era a última resposta), nada muda.
     executar(() => salvarPergunta(semDestinosDaOpcao(estado, p.id, opcao), { ...p, opcoes: p.opcoes.filter((o) => o !== opcao) }, rascunho), "Resposta excluída.");
@@ -144,9 +145,9 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   const mudarDestino = (p: Pergunta, opcao: string, valor: string) =>
     executar(() => gravarDestino(estado, tipoAtual, p.id, opcao, valor === SEM_DESTINO ? null : valor, rascunho), "Ramificação salva.");
 
-  function excluir(p: Pergunta) {
+  async function excluir(p: Pergunta) {
     const usos = Object.values(estado.questionarios).filter((l) => l.includes(p.id)).length;
-    if (!confirm(`Excluir a pergunta ${numeroDe(p.id)} (${p.titulo})?${usos ? ` Ela sai de ${usos} questionário${usos === 1 ? "" : "s"}.` : ""}`)) return;
+    if (!(await confirmarExclusao(`a pergunta ${numeroDe(p.id)} (${p.titulo})`, usos ? `Ela sai de ${usos} questionário${usos === 1 ? "" : "s"}.` : undefined))) return;
     executar(() => excluirPergunta(estado, p.id, rascunho), "Pergunta excluída.");
   }
 
@@ -396,9 +397,9 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         codigoNovo={proximoCodigoPergunta(estado, rascunho)}
         numero={dialogo?.inicial ? numeroDe(dialogo.inicial.id) : String(numeros.size + 1).padStart(2, "0")}
         onFechar={() => setDialogo(null)}
-        onSalvar={(p) => {
+        onSalvar={async (p) => {
           const perdem = p.id === ID_TIPO_DESPESA ? tiposRemovidos(estado, p.opcoes.map((o) => o.trim())) : [];
-          if (perdem.length && !confirm(`Remover ${perdem.length === 1 ? "o tipo" : "os tipos"} ${perdem.join(", ")} apaga ${perdem.length === 1 ? "o questionário dele" : "os questionários deles"}. Continuar?`)) return;
+          if (perdem.length && !(await confirmarTexto(`Remover ${perdem.length === 1 ? "o tipo" : "os tipos"} ${perdem.join(", ")} apaga ${perdem.length === 1 ? "o questionário dele" : "os questionários deles"}. Continuar?`, { rotuloConfirmar: "Remover", destrutivo: true }))) return;
           const nova = dialogo?.modo === "novo" && p.id !== ID_TIPO_DESPESA;
           const gravar = () => {
             const salvo = salvarPergunta(estado, p, rascunho);

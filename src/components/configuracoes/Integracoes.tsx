@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { confirmar, confirmarExclusao } from "@/components/ConfirmarAcao";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,7 @@ export function Integracoes() {
                 <code className="text-xs text-muted-foreground">{t.prefixo}</code>
                 <span className="text-xs text-muted-foreground">criada em {dataCurta(t.criadoEm)}</span>
                 <Badge variant={t.ativo ? "default" : "secondary"} className="ml-auto">{t.ativo ? "Ativa" : "Revogada"}</Badge>
-                <Button type="button" size="sm" variant="outline" disabled={!t.ativo} onClick={() => { if (confirm(`Revogar a chave "${t.nome}"?`)) mudar((c) => ({ ...c, integracoes: { ...c.integracoes, tokens: c.integracoes.tokens.map((x) => (x.id === t.id ? { ...x, ativo: false } : x)) } }), "Chave de API revogada", t.nome); }}>Revogar</Button>
+                <Button type="button" size="sm" variant="outline" disabled={!t.ativo} onClick={async () => { if (await confirmar({ titulo: `Revogar a chave "${t.nome}"?`, rotuloConfirmar: "Revogar", destrutivo: true })) mudar((c) => ({ ...c, integracoes: { ...c.integracoes, tokens: c.integracoes.tokens.map((x) => (x.id === t.id ? { ...x, ativo: false } : x)) } }), "Chave de API revogada", t.nome); }}>Revogar</Button>
               </li>
             ))}
           </ul>
@@ -82,7 +83,7 @@ export function Integracoes() {
                 <div className="min-w-0 flex-1"><p className="truncate font-medium">{w.url}</p><p className="text-xs text-muted-foreground">{w.evento}</p></div>
                 <Switch aria-label={`Webhook ${w.url} ativo`} checked={w.ativo} onCheckedChange={(v) => mudar((c) => ({ ...c, integracoes: { ...c.integracoes, webhooks: c.integracoes.webhooks.map((x) => (x.id === w.id ? { ...x, ativo: v } : x)) } }), "Webhook alterado", `${w.evento}: ${v ? "ativado" : "desativado"}`)} />
                 <Button type="button" size="sm" variant="ghost" onClick={() => toast.success(`Simulação: evento de teste enviado a ${w.url}`)}>Testar</Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => { if (confirm("Excluir este webhook?")) mudar((c) => ({ ...c, integracoes: { ...c.integracoes, webhooks: c.integracoes.webhooks.filter((x) => x.id !== w.id) } }), "Webhook excluído", `${w.evento} → ${w.url}`); }}>Excluir</Button>
+                <Button type="button" size="sm" variant="outline" onClick={async () => { if (await confirmarExclusao(`o webhook ${w.evento}`)) mudar((c) => ({ ...c, integracoes: { ...c.integracoes, webhooks: c.integracoes.webhooks.filter((x) => x.id !== w.id) } }), "Webhook excluído", `${w.evento} → ${w.url}`); }}>Excluir</Button>
               </li>
             ))}
           </ul>

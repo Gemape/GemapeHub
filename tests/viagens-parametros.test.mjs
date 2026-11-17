@@ -73,7 +73,7 @@ test("o card da pergunta mostra todas as respostas com ramificação e excluir, 
   assert.match(c, /canWrite && !travada && aceitaCondicao\(p\) \? \(\s*<OpcoesDaPergunta/);
   for (const t of ["Continuar para a próxima pergunta", "Ir para a próxima seção", "Encerrar o formulário", "Excluir a resposta"]) assert.ok(c.includes(t), t);
   assert.match(c, /gravarDestino\(estado, tipoAtual, p\.id, opcao, valor === SEM_DESTINO \? null : valor, rascunho\)/);
-  assert.match(c, /Excluir a resposta "\$\{opcao\}"/);
+  assert.match(c, /confirmarExclusao\(`a resposta "\$\{opcao\}"/);
 });
 
 test("o painel de Viagens tem o seletor de período também nos resultados dos técnicos e não mostra o valor total no painel geral", () => {

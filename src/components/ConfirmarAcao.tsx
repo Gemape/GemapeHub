@@ -39,6 +39,14 @@ export function confirmar(opcoes: OpcoesConfirmacao): Promise<boolean> {
 export const confirmarExclusao = (nome: string, aviso?: string) =>
   confirmar({ titulo: `Excluir ${nome}?`, ...(aviso ? { descricao: aviso } : {}), rotuloConfirmar: "Excluir", destrutivo: true });
 
+/** Frase pronta ("Restaurar X? Os dados voltam…"): a pergunta vira o título e o resto, a descrição. */
+export function confirmarTexto(texto: string, extra: Pick<OpcoesConfirmacao, "rotuloConfirmar" | "destrutivo"> = {}) {
+  const i = texto.indexOf("?");
+  const titulo = i === -1 ? texto : texto.slice(0, i + 1);
+  const resto = i === -1 ? "" : texto.slice(i + 1).trim();
+  return confirmar({ titulo, ...(resto ? { descricao: resto } : {}), ...extra });
+}
+
 // Montada uma vez no layout autenticado.
 export function ConfirmarAcaoHost() {
   const [pedido, setPedido] = useState<Pedido | null>(null);

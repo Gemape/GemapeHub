@@ -1,4 +1,5 @@
 import { Table } from "@/components/ui/table";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -66,13 +67,13 @@ export function SubgruposFerramenta({ dados }: { dados: ParametrosBase }) {
     }, 400);
   }
 
-  function excluir(grupo: { id: string; nome: string }) {
+  async function excluir(grupo: { id: string; nome: string }) {
     const total = subgruposDe(grupo.id).length;
     if (total === 0) {
       toast.info(`${grupo.nome} não tem subgrupos.`);
       return;
     }
-    if (!confirm(`Excluir os ${total} subgrupos de ${grupo.nome}? O grupo continua na lista Grupos de ferramentas.`)) return;
+    if (!(await confirmarExclusao(`os ${total} subgrupos de ${grupo.nome}`, "O grupo continua na lista Grupos de ferramentas."))) return;
     executar(() => definirSubgruposGrupoFerramenta(grupo.id, [], "substituir"), "Subgrupos excluídos.");
   }
 

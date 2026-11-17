@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 
+import { confirmarTexto } from "@/components/ConfirmarAcao";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -55,7 +56,7 @@ export function Backup() {
 
       <Bloco titulo="Modo manutenção" descricao="Bloqueia temporariamente o acesso dos usuários comuns durante atualizações. O Administrador continua entrando.">
         <Linha rotulo="Manutenção ativa" ajuda={i.manutencao ? "Usuários comuns veriam o aviso de manutenção" : "Todos acessam normalmente"} htmlFor="manutencao">
-          <Switch id="manutencao" checked={i.manutencao} onCheckedChange={(v) => { if (!v || confirm("Ativar o modo manutenção? Usuários comuns seriam bloqueados (simulado).")) trocar({ manutencao: v }, "Modo manutenção", v ? "Ativado" : "Desativado"); }} />
+          <Switch id="manutencao" checked={i.manutencao} onCheckedChange={async (v) => { if (!v || await confirmarTexto("Ativar o modo manutenção? Usuários comuns seriam bloqueados (simulado).", { rotuloConfirmar: "Ativar" })) trocar({ manutencao: v }, "Modo manutenção", v ? "Ativado" : "Desativado"); }} />
         </Linha>
         {i.manutencao && <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">Modo manutenção ligado (simulado): neste teste ninguém é bloqueado de verdade.</p>}
       </Bloco>

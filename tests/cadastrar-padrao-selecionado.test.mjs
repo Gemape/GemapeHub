@@ -65,7 +65,7 @@ test("os quatro botões Cadastrar padrão abrem a seleção item a item, sem imp
     assert.doesNotMatch(s, /cadastrar(TamanhosPadraoFerramentas|TamanhosPadrao|MarcasPadraoVeiculos|PadraoVeiculos)\(\)/, `${f}: não implanta o padrão direto`);
   }
   const janela = ler("components/parametros/CadastrarPadraoSelecionado.tsx");
-  assert.match(janela, /if \(!confirm\(/);
+  assert.match(janela, /if \(!\(await confirmarTexto\(/);
   assert.match(janela, /disabled=\{marcados\.length === 0\}/);
   assert.doesNotMatch(janela, /Marcar todos/);
 });

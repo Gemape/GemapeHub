@@ -193,7 +193,7 @@ test("a lista Ações de manutenção tem o botão Restaurar configurações ini
   assert.match(lista, /acaoExtra=\{\(cadastrar\) => <RestaurarPadraoAcoes aoCadastrar=\{cadastrar\} \/>\}/);
   assert.match(lista, /Restaurar configurações iniciais\n\s*<\/Button>/);
   assert.match(lista, /restaurarAcoesManutencaoEscolhidas\(/);
-  assert.match(lista, /if \(!confirm\(aviso\)\) return;/);
+  assert.match(lista, /if \(!\(await confirmarTexto\(aviso, \{ rotuloConfirmar: "Restaurar" \}\)\)\) return;/);
 });
 
 test("Ações de manutenção e Plano de manutenções ficam numa só página, Manutenção (decisão 112)", () => {

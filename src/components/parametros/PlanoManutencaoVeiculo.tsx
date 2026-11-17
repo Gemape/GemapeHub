@@ -1,4 +1,5 @@
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { Table } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -127,9 +128,9 @@ export function PlanoManutencaoVeiculo({ secao = false }: { secao?: boolean } = 
     }, 400);
   }
 
-  function excluir(plano: PlanoManutencao) {
+  async function excluir(plano: PlanoManutencao) {
     const v = veiculoPorId(plano.veiculoId);
-    if (!confirm(`Excluir o plano de manutenção de ${v ? rotuloVeiculo(v) : "veículo removido"}?`)) return;
+    if (!(await confirmarExclusao(`o plano de manutenção de ${v ? rotuloVeiculo(v) : "veículo removido"}`))) return;
     executar(() => removerPlano(plano.veiculoId), "Plano excluído.");
   }
 

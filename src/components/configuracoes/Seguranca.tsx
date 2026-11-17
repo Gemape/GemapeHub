@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { confirmarTexto } from "@/components/ConfirmarAcao";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -129,7 +130,7 @@ export function Seguranca() {
           <ul className="divide-y rounded-lg border">
             {sessoes.map((x) => <li key={x.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm"><span>{x.onde}</span><span className="text-xs text-muted-foreground">{x.quando}</span></li>)}
           </ul>
-          <Button type="button" variant="outline" disabled={sessoes.length === 0} onClick={() => { if (confirm("Encerrar todas as sessões ativas (simulado)?")) { setSessoes([]); mudar((c) => c, "Sessões encerradas", "Todas as sessões ativas foram encerradas"); toast.success("Simulação: todas as sessões foram encerradas"); } }}>
+          <Button type="button" variant="outline" disabled={sessoes.length === 0} onClick={async () => { if (await confirmarTexto("Encerrar todas as sessões ativas (simulado)?", { rotuloConfirmar: "Encerrar", destrutivo: true })) { setSessoes([]); mudar((c) => c, "Sessões encerradas", "Todas as sessões ativas foram encerradas"); toast.success("Simulação: todas as sessões foram encerradas"); } }}>
             Encerrar todas as sessões
           </Button>
         </div>
