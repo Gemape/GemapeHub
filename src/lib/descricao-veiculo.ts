@@ -32,7 +32,7 @@ export function validarAquisicao(
     return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === d;
   };
   if (data && (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !dataReal(data))) {
-    return { erro: "Data de aquisição inválida.", data: null, custo: null, notaFiscal: null };
+    return { erro: "Data de aquisição inválida. Use uma data real, como 15/03/2026.", data: null, custo: null, notaFiscal: null };
   }
   if (data && data > hoje) {
     return { erro: "A data de aquisição não pode ser futura.", data: null, custo: null, notaFiscal: null };

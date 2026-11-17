@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -68,7 +69,7 @@ function PaginaRelatorios() {
   const [de, setDe] = useState(trintaDias);
   const [ate, setAte] = useState(hoje);
 
-  const { data: linhas = [], isFetching, isError, error } = useQuery({
+  const { data: linhas = [], isFetching, isLoading, isError, error } = useQuery({
     queryKey: ["relatorio", empresaId, modulo, empregadoId, de, ate],
     staleTime: 60_000,
     queryFn: async () => {
@@ -189,7 +190,7 @@ function PaginaRelatorios() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {linhas.length === 0 ? (
+            {isLoading ? <LinhasEsqueleto colunas={8} /> : linhas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Nenhuma movimentação no período selecionado.

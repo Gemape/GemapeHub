@@ -27,7 +27,20 @@ const texto = (erro: unknown): string => {
 };
 
 // Mensagens que o próprio sistema já escreve em português para o usuário: ficam como estão.
-const JA_HUMANA = /^(Informe|Selecione|Já existe|CPF|E-mail|Matrícula|Não foi possível|Escolha|Adicione|A data|O estoque|Somente|Sem conexão)/;
+const JA_HUMANA = /^(Data de|Tipo de|Status do|Preço de|Informe|Selecione|Já existe|CPF|E-mail|Matrícula|Não foi possível|Escolha|Adicione|A data|O estoque|Somente|Sem conexão)/;
+
+// Coluna do banco -> como o operador chama o campo. Coluna fora da lista cai na mensagem genérica.
+const ROTULOS_COLUNAS: Record<string, string> = {
+  nome: "o nome", codigo: "o código", placa: "a placa", cpf: "o CPF", cnpj: "o CNPJ", email: "o e-mail",
+  matricula: "a matrícula", numero_serie: "o número de série", numero: "o número", ca: "o CA",
+  empresa_id: "a empresa", categoria_id: "a categoria", empregado_id: "o empregado", produto_id: "o produto",
+  data_validade: "a validade", quantidade: "a quantidade",
+};
+
+const rotuloColuna = (col?: string) => {
+  const c = col?.trim().toLowerCase();
+  return c && Object.hasOwn(ROTULOS_COLUNAS, c) ? ROTULOS_COLUNAS[c] : undefined;
+};
 
 /** Traduz erro de rede, banco ou servidor para algo que o operador entenda e saiba o que fazer. */
 export function mensagemHumana(erro: unknown): string {
@@ -39,12 +52,19 @@ export function mensagemHumana(erro: unknown): string {
     return "Sem conexão com o servidor. Confira a internet e tente de novo; o que você digitou continua na tela.";
   }
   if (/duplicate key|unique constraint|23505|already exists/.test(baixo)) {
+    // O banco informa a coluna e o valor: "Key (placa)=(ABC1D23) already exists".
+    const dup = /key \(([^)]+)\)=\(([^)]*)\)/i.exec(t);
+    // Só chave de uma coluna: em chave composta o valor traz vários campos e a frase não faria sentido.
+    const rotulo = dup && !dup[1]?.includes(",") ? rotuloColuna(dup[1]) : undefined;
+    if (rotulo && dup) return `Já existe um registro com ${rotulo} ${dup[2] ?? ""}. Confira se ele já foi cadastrado.`;
     return "Já existe um registro com esse código, número ou placa. Confira se ele já foi cadastrado.";
   }
   if (/foreign key|23503|violates foreign/.test(baixo)) {
     return "Este registro está sendo usado em outro cadastro (entregas, ocorrências ou vínculos) e não pode ser apagado ou alterado assim. Inative-o em vez de excluir.";
   }
   if (/not-null|null value|23502/.test(baixo)) {
+    const nome = rotuloColuna(/column "([^"]+)"/i.exec(t)?.[1]);
+    if (nome) return `Falta preencher: ${nome}. Confira o formulário e tente de novo.`;
     return "Falta preencher um campo obrigatório. Confira o formulário e tente de novo.";
   }
   if (/row-level security|permission denied|not authorized|42501|jwt|forbidden|\b(?:http|status|code|erro)\s*:?\s*(?:401|403)\b/.test(baixo)) {

@@ -71,8 +71,8 @@ export function ImportarEmpregados({ aberto, aoMudar }: { aberto: boolean; aoMud
       const demissao = corrigirData(v.data_demissao);
       const valores: Celulas = { ...v, cpf: corrigirCpf(v.cpf), data_admissao: admissao ?? v.data_admissao, data_demissao: demissao ?? v.data_demissao };
       try {
-        if (admissao === null) throw new Error("Data de admissão inválida.");
-        if (demissao === null) throw new Error("Data de demissão inválida.");
+        if (admissao === null) throw new Error("Data de admissão inválida. Use uma data real, como 15/03/2026.");
+        if (demissao === null) throw new Error("Data de demissão inválida. Use uma data real, como 15/03/2026.");
         const pronto = prepararEmpregado(
           { nome: valores.nome, cpf: valores.cpf, matricula: valores.matricula, empresa_id: empresa, email: "", data_admissao: admissao, data_demissao: demissao },
           [...existentes, ...aceitas],

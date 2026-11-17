@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { Etapas } from "@/components/Etapas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +82,7 @@ export function InventarioContagem({ modulo }: { modulo: Extract<Modulo, "epi" |
             <Table>
               <TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Item</TableHead><TableHead className="w-40">Quantidade contada</TableHead></TableRow></TableHeader>
               <TableBody>
-                {linhas.map((l) => (
+                {isLoading ? <LinhasEsqueleto colunas={3} /> : linhas.map((l) => (
                   <TableRow key={l.id}>
                     <TableCell className="font-mono text-xs">{l.codigo}</TableCell>
                     <TableCell><label htmlFor={`inv-${l.id}`}>{l.nome}</label></TableCell>

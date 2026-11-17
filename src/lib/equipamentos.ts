@@ -124,7 +124,7 @@ export function normalizarEquipamento(
   const numeroSerie = exigir(compactar(entrada.numeroSerie), "Informe o número de série.");
   const dataAquisicao = compactar(entrada.dataAquisicao);
   if (!dataAquisicao) throw new Error("Informe a data de aquisição.");
-  if (!dataReal(dataAquisicao)) throw new Error("Data de aquisição inválida.");
+  if (!dataReal(dataAquisicao)) throw new Error("Data de aquisição inválida. Use uma data real, como 15/03/2026.");
   if (dataAquisicao > hoje) throw new Error("A data de aquisição não pode ser futura (depois de hoje).");
   const valorCompra = lerNumero(entrada.valorCompra, 2, 99_999_999.99);
   if (valorCompra === null) throw new Error("Informe o valor de compra em reais (0 ou mais).");

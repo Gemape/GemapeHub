@@ -349,7 +349,7 @@ export function CadastroProduto({ tabela }: { tabela: Tabela }) {
       const preco = String(f.get("preco_unitario") ?? "").trim();
       const precoNumero = Number(preco);
       if (preco && (!Number.isFinite(precoNumero) || precoNumero < 0)) {
-        toast.error("Preço de custo inválido.");
+        toast.error("Preço de custo inválido. Informe em reais, 0 ou mais, ex.: 12.50.");
         return;
       }
       // Centavos: arredonda para 2 casas (preços antigos podem ter mais).
