@@ -1,4 +1,5 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
@@ -301,11 +302,9 @@ function CodigoFabricaPagina() {
                     onClonar={() => abrir(c, true)}
                     onEditar={() => abrir(c)}
                       editarLivre
-                    onExcluir={() => {
+                    onExcluir={async () => {
                       if (
-                        confirm(
-                          `Excluir a associação ${c.codigo_fornecedor} → ${c.codigo_produto}?`,
-                        )
+                        await confirmarExclusao(`a associação ${c.codigo_fornecedor} → ${c.codigo_produto}`)
                       ) {
                         executar(() => removerCodigoFabrica(c.id), "Associação excluída.");
                       }

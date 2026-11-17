@@ -25,6 +25,14 @@ const MIGRADOS = [
   "components/modules/EpiComprasModulo.tsx",
   "components/modules/UniformesComprasModulo.tsx",
   "components/modules/ImportarNfeXml.tsx",
+  // Lote 4: telas de rota
+  "routes/_authenticated/epi-ficha.tsx",
+  "routes/_authenticated/epi-ordem-servico.tsx",
+  "routes/_authenticated/empresas.tsx",
+  "routes/_authenticated/usuarios.tsx",
+  "routes/_authenticated/cadastros/gerais/categorias.tsx",
+  "routes/_authenticated/cadastros/gerais/codigo-produto.tsx",
+  "routes/_authenticated/cadastros/gerais/codigo-fabrica.tsx",
 ];
 
 test("a janela de confirmação existe, está no layout e cita o item no título da exclusão", () => {

@@ -1,4 +1,5 @@
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -189,8 +190,8 @@ function PaginaEmpresas() {
                       setEditando(empresa);
                       setAberto(true);
                     }}
-                    onExcluir={() => {
-                      if (confirm(`Excluir ${empresa.nome_fantasia}?`)) excluir.mutate(empresa.id);
+                    onExcluir={async () => {
+                      if (await confirmarExclusao(empresa.nome_fantasia)) excluir.mutate(empresa.id);
                     }}
                   />
                 </TableCell>
