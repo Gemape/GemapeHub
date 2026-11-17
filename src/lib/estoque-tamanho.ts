@@ -426,6 +426,7 @@ export function estadoEstoqueModulo(
     detalheMinimo: porTamanho || (selecionaTamanho && produto.tamanhos_selecionados?.length)
       ? resumoMinimosPorTamanho(p, produto) : "",
     detalheAlerta: alertas.map((a) => `${a.nome} (${a.saldo}/${a.minimo})`).join(", "),
+    alertas: alertas.map((a) => ({ nome: a.nome, saldo: a.saldo, minimo: a.minimo })),
   };
 }
 

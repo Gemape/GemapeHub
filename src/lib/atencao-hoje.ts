@@ -1,6 +1,7 @@
 // "O que precisa da sua atenção hoje": pendências reais, por prioridade, já com o caminho de cada ação. Só lê dados em memória; quem chama busca as listas.
 import { resumoEmpregado, type ItemDoResumo } from "./resumo-empregado.ts";
 import type { MovimentacaoEpi } from "./entrega-epi.ts";
+import { estadoGravado, linhasDeAlertaEstoque, type EstadoComTamanhos, type LinhaDeEstoqueAlerta, type ModuloEstoque } from "./alertas-estoque.ts";
 
 export type AcaoPendencia = { rotulo: string; url: string; search?: Record<string, string> };
 export type ItemPendencia = { chave: string; texto: string; detalhe: string; acao: AcaoPendencia };
@@ -8,7 +9,7 @@ export type GrupoPendencia = { id: string; titulo: string; prioridade: "alta" | 
 
 type EmpregadoBase = { id: string; nome: string; empresa_id?: string | null; ativo?: boolean | null; data_demissao?: string | null };
 type ItemEstoque = ItemDoResumo & { codigo_sku?: string | null; estoque_atual?: number | null; estoque_minimo?: number | null; status?: string | null };
-export type EstadoDoEstoque = { saldo: number; minimo: number; alerta: boolean };
+export type EstadoDoEstoque = EstadoComTamanhos;
 
 // Equipamentos: ordens de serviço abertas (pendente ou em andamento) e ocorrências ainda sem encerramento.
 export type OrdemAtencaoEq = { id: string; equipamentoId: string; tipo: string; status?: string; dataPrevista?: string; responsavel?: string };
@@ -77,17 +78,21 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     });
   }
 
-  // 3) Estoque no mínimo ou abaixo (EPI, uniforme e ferramenta), um grupo por módulo.
-  const padrao = (i: ItemEstoque): EstadoDoEstoque => ({ saldo: i.estoque_atual ?? 0, minimo: i.estoque_minimo ?? 0, alerta: (i.estoque_minimo ?? 0) > 0 && (i.estoque_atual ?? 0) <= (i.estoque_minimo ?? 0) });
-  const abaixo = (itens: readonly ItemEstoque[], modulo: "epi" | "uniforme" | "ferramenta", url: string, area: string): ItemPendencia[] =>
-    itens.filter((i) => i.status !== "Inativo").flatMap((i) => {
-      // Ferramenta não tem tamanhos: vale o saldo e o mínimo gravados no item (a tela de Estoque de ferramentas lê o mesmo saldo).
-      const s = e.estado && modulo !== "ferramenta" ? e.estado(modulo, i) : padrao(i);
-      return s.alerta ? [{ chave: `min-${area}-${i.id}`, texto: i.nome, detalhe: `${area}: saldo ${s.saldo} para mínimo ${s.minimo}`, acao: { rotulo: "Repor estoque", url, search: { aba: "compras" } } }] : [];
-    });
-  const minimoEpi = abaixo(e.epis, "epi", "/epi", "EPI");
-  const minimoUniforme = abaixo(e.uniformes, "uniforme", "/uniformes", "Uniforme");
-  const minimoFerramenta = abaixo(e.ferramentas, "ferramenta", "/ferramentas", "Ferramenta");
+  // 3) Estoque abaixo do mínimo e no estoque mínimo (EPI, uniforme e ferramenta): uma linha por item e tamanho, a mesma contagem da coluna Alerta das telas de Estoque.
+  const ROTULO_MODULO: Record<ModuloEstoque, { area: string; url: string }> = { epi: { area: "EPI", url: "/epi" }, uniforme: { area: "Uniforme", url: "/uniformes" }, ferramenta: { area: "Ferramenta", url: "/ferramentas" } };
+  const linhasDe = (itens: readonly ItemEstoque[], modulo: ModuloEstoque): LinhaDeEstoqueAlerta[] =>
+    // Ferramenta não tem tamanhos: vale o saldo e o mínimo gravados no item (a tela de Estoque de ferramentas lê o mesmo saldo).
+    linhasDeAlertaEstoque(itens, modulo, (i) => (e.estado && modulo !== "ferramenta" ? e.estado(modulo, i as ItemEstoque) : estadoGravado(i as ItemEstoque)));
+  const comoItens = (linhas: readonly LinhaDeEstoqueAlerta[]): ItemPendencia[] => linhas.map((l) => ({
+    chave: l.chave,
+    texto: l.nome,
+    detalhe: `${ROTULO_MODULO[l.modulo].area}${l.tamanho ? ` tamanho ${l.tamanho}` : ""}: saldo ${l.saldo} para mínimo ${l.minimo}`,
+    acao: { rotulo: "Repor estoque", url: ROTULO_MODULO[l.modulo].url, search: { aba: "compras" } },
+  }));
+  const linhasEpi = linhasDe(e.epis, "epi");
+  const linhasUniforme = linhasDe(e.uniformes, "uniforme");
+  const linhasFerramenta = linhasDe(e.ferramentas, "ferramenta");
+  const doNivel = (linhas: readonly LinhaDeEstoqueAlerta[], nivel: "abaixo" | "minimo") => comoItens(linhas.filter((l) => l.nivel === nivel));
 
   // 5) Equipamentos: ordem de serviço aberta com a previsão vencida e ocorrência ainda sem encerramento (toda ocorrência aberta pede tratativa, por isso entra sem esperar prazo).
   // Registro de equipamento que já não existe no cadastro fica de fora: não há onde resolvê-lo.
@@ -130,9 +135,12 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     { id: "epi-vencido", titulo: "EPIs vencidos com empregados", prioridade: "alta", vazio: "Nenhum EPI vencido em posse.", itens: vencidos },
     { id: "devolucao-atrasada", titulo: "Devoluções atrasadas (empregado desligado)", prioridade: "alta", vazio: "Nenhuma ferramenta pendente de desligados.", itens: atrasadas },
     { id: "equipamentos", titulo: "Equipamentos: manutenção atrasada ou ocorrência aberta", prioridade: "alta", vazio: "Nenhum equipamento com pendência.", itens: equipamentos },
-    { id: "minimo-epi", titulo: "EPI no mínimo ou abaixo", prioridade: "media", vazio: "Nenhum EPI abaixo do mínimo.", itens: minimoEpi },
-    { id: "minimo-uniforme", titulo: "Uniformes no mínimo ou abaixo", prioridade: "media", vazio: "Nenhum uniforme abaixo do mínimo.", itens: minimoUniforme },
-    { id: "minimo-ferramenta", titulo: "Ferramentas no mínimo ou abaixo", prioridade: "media", vazio: "Nenhuma ferramenta abaixo do mínimo.", itens: minimoFerramenta },
+    { id: "abaixo-epi", titulo: "EPIs abaixo do mínimo", prioridade: "media", vazio: "Nenhum EPI abaixo do mínimo.", itens: doNivel(linhasEpi, "abaixo") },
+    { id: "minimo-epi", titulo: "EPIs no estoque mínimo", prioridade: "baixa", vazio: "Nenhum EPI no estoque mínimo.", itens: doNivel(linhasEpi, "minimo") },
+    { id: "abaixo-uniforme", titulo: "Uniformes abaixo do mínimo", prioridade: "media", vazio: "Nenhum uniforme abaixo do mínimo.", itens: doNivel(linhasUniforme, "abaixo") },
+    { id: "minimo-uniforme", titulo: "Uniformes no estoque mínimo", prioridade: "baixa", vazio: "Nenhum uniforme no estoque mínimo.", itens: doNivel(linhasUniforme, "minimo") },
+    { id: "abaixo-ferramenta", titulo: "Ferramentas abaixo do mínimo", prioridade: "media", vazio: "Nenhuma ferramenta abaixo do mínimo.", itens: doNivel(linhasFerramenta, "abaixo") },
+    { id: "minimo-ferramenta", titulo: "Ferramentas no estoque mínimo", prioridade: "baixa", vazio: "Nenhuma ferramenta no estoque mínimo.", itens: doNivel(linhasFerramenta, "minimo") },
     { id: "viagens", titulo: "Viagens: despesas sem relatório no prazo", prioridade: "media", vazio: "Nenhuma despesa fora do prazo.", itens: viagens },
     { id: "epi-com-desligado", titulo: "EPIs não devolvidos (empregado desligado)", prioridade: "media", vazio: "Nenhum EPI pendente de desligados.", itens: epiComDesligado },
   ];

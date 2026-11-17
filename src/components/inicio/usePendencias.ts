@@ -81,7 +81,7 @@ export function usePendencias(): Pendencias {
       ...(locais ? { equipamentos: { nomes: locais.nomes, ordens: locais.ordens, ocorrencias: locais.ocorrencias }, viagens: { despesasEmAberto: locais.despesas, prazoDias: locais.prazoDias } } : {}),
     })
       // Quem não vê o módulo não vê o cartão dele, e os cartões de Equipamentos e Viagens só aparecem depois de lidos (senão mostrariam "0" sem terem sido lidos).
-      .filter((g) => (podeEpi || !g.id.startsWith("epi-") && g.id !== "minimo-epi") && (podeUniformes || g.id !== "minimo-uniforme") && (podeFerramentas || (g.id !== "minimo-ferramenta" && g.id !== "devolucao-atrasada")))
+      .filter((g) => (podeEpi || !g.id.startsWith("epi-") && !g.id.endsWith("-epi")) && (podeUniformes || !g.id.endsWith("-uniforme")) && (podeFerramentas || (!g.id.endsWith("-ferramenta") && g.id !== "devolucao-atrasada")))
       .filter((g) => (g.id !== "equipamentos" || (podeEquipamentos && locais !== null)) && (g.id !== "viagens" || (podeViagens && locais !== null))),
     [empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, parametros, locais, podeEpi, podeUniformes, podeFerramentas, podeEquipamentos, podeViagens],
   );

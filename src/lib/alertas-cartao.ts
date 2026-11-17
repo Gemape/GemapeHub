@@ -13,9 +13,9 @@ export type AlertaCartao = { total: number; linhas: LinhaAlerta[] };
 
 // Quais grupos de pendência alimentam cada cartão (pelo título do cartão).
 const GRUPOS_DO_CARTAO: Record<string, readonly string[]> = {
-  EPIs: ["epi-vencido", "minimo-epi", "epi-com-desligado"],
-  Uniformes: ["minimo-uniforme"],
-  Ferramentas: ["minimo-ferramenta", "devolucao-atrasada"],
+  EPIs: ["epi-vencido", "abaixo-epi", "minimo-epi", "epi-com-desligado"],
+  Uniformes: ["abaixo-uniforme", "minimo-uniforme"],
+  Ferramentas: ["abaixo-ferramenta", "minimo-ferramenta", "devolucao-atrasada"],
   Equipamentos: ["equipamentos"],
   Viagens: ["viagens"],
 };

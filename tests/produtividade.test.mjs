@@ -135,16 +135,17 @@ const base = {
 
 test("atenção hoje: vencidos, devolução atrasada, estoque no mínimo e EPI com desligado, nesta ordem de prioridade", () => {
   const g = pendenciasDeHoje(base);
-  assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "alta", "media", "media", "media", "media", "media"]);
+  assert.deepEqual(g.map((x) => x.prioridade), ["alta", "alta", "alta", "media", "media", "media", "media", "media", "baixa", "baixa", "baixa"]);
   const porId = Object.fromEntries(g.map((x) => [x.id, x]));
   assert.equal(porId["epi-vencido"].itens.length, 1);
   assert.match(porId["epi-vencido"].itens[0].detalhe, /Luva/);
   assert.equal(porId["epi-vencido"].itens[0].acao.search.empregado, "e1");
   assert.equal(porId["devolucao-atrasada"].itens.length, 1, "só quem foi desligado e não devolveu");
   assert.match(porId["devolucao-atrasada"].itens[0].detalhe, /Furadeira/);
-  assert.equal(porId["minimo-epi"].itens.length, 2, "Luva (2≤5) e Óculos (5≤5)");
-  assert.equal(porId["minimo-uniforme"].itens.length, 1, "Camisa (0≤3)");
-  assert.equal(porId["minimo-ferramenta"].itens.length, 0);
+  assert.equal(porId["abaixo-epi"].itens.length, 1, "Luva (2<5)");
+  assert.equal(porId["minimo-epi"].itens.length, 1, "Óculos (5=5)");
+  assert.equal(porId["abaixo-uniforme"].itens.length, 1, "Camisa (0<3)");
+  assert.equal(porId["abaixo-ferramenta"].itens.length + porId["minimo-ferramenta"].itens.length, 0);
   assert.equal(porId["equipamentos"].itens.length, 0);
   assert.equal(porId["viagens"].itens.length, 0);
   assert.equal(porId["epi-com-desligado"].itens.length, 0, "e2 está desligado mas nunca recebeu EPI");
@@ -156,11 +157,11 @@ test("atenção hoje: usa o saldo e o mínimo da tela de Estoque (tamanhos) e ig
     ...base,
     epis: [{ id: "a", nome: "Bota", ca_validade: "2027-12-01", estoque_atual: 0, estoque_minimo: 0 }, { id: "x", nome: "Inativa", status: "Inativo", ca_validade: "2026-11-20", estoque_atual: 0, estoque_minimo: 5 }],
     uniformes: [],
-    estado: (_m, item) => (item.id === "a" ? { saldo: 12, minimo: 10, alerta: true } : { saldo: 0, minimo: 5, alerta: true }),
+    estado: (_m, item) => (item.id === "a" ? { saldo: 10, minimo: 10, alerta: true } : { saldo: 0, minimo: 5, alerta: true }),
   });
   const minimo = g.find((x) => x.id === "minimo-epi");
   assert.equal(minimo.itens.length, 1);
-  assert.match(minimo.itens[0].detalhe, /saldo 12 para mínimo 10/);
+  assert.match(minimo.itens[0].detalhe, /saldo 10 para mínimo 10/);
 });
 
 test("atenção hoje: EPI ainda com empregado desligado entra; devolvido ou de empregado ativo não", () => {
@@ -215,7 +216,7 @@ test("atenção hoje: ferramenta abaixo do mínimo, equipamento com manutenção
     },
   });
   const porId = Object.fromEntries(g.map((x) => [x.id, x]));
-  assert.equal(porId["minimo-ferramenta"].itens.length, 1);
+  assert.equal(porId["abaixo-ferramenta"].itens.length, 1);
   assert.equal(porId["equipamentos"].itens.length, 2, "só a ordem aberta e atrasada e a ocorrência não encerrada");
   assert.match(porId["equipamentos"].itens[0].detalhe, /Manutenção preventiva atrasada \d+ dia\(s\)/);
   assert.match(porId["equipamentos"].itens[1].detalhe, /OCO-0001 aberta: Falha mecânica/);
