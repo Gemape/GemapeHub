@@ -226,7 +226,7 @@ test("a lista Itens check list tem um único botão Restaurar configurações in
   assert.doesNotMatch(checklist, /onPadrao/); // sem Cadastrar padrão (dec 152)
   assert.match(lista, /restaurar=\{restaurarPadroesChecklistVeiculos\}/);
   assert.match(lista, /restaurar\(marcados\)/);
-  assert.match(lista, /if \(!\(await confirmarTexto\(aviso, \{ rotuloConfirmar: "Restaurar" \}\)\)\) return;/);
+  assert.match(lista, /if \(!\(await confirmarTexto\(aviso, \{ rotuloConfirmar: "Restaurar" \}\)\)\) \{ salvando\.current = false; return; \}/);
   assert.doesNotMatch(lista, /onRestaurar|restauravel/);
   const acoes = readFileSync(new URL("../src/components/parametros/AcoesLinha.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(acoes, /Restaurar/);

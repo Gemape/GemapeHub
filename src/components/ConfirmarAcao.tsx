@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   AlertDialog,
@@ -49,14 +49,23 @@ export function confirmarTexto(texto: string, extra: Pick<OpcoesConfirmacao, "ro
 
 // Montada uma vez no layout autenticado.
 export function ConfirmarAcaoHost() {
+  // O conteúdo fica até a animação de saída acabar: só `aberto` muda ao responder.
   const [pedido, setPedido] = useState<Pedido | null>(null);
+  const [aberto, setAberto] = useState(false);
+  const atual = useRef<Pedido | null>(null);
   useEffect(() => {
-    anfitriao = (novo) => setPedido((atual) => { atual?.resolver(false); return novo; });
-    return () => { anfitriao = null; };
+    const meu = (novo: Pedido) => { atual.current?.resolver(false); atual.current = novo; setPedido(novo); setAberto(true); };
+    anfitriao = meu;
+    return () => {
+      // Sai da tela com a janela aberta: quem espera recebe "não" em vez de ficar pendurado.
+      atual.current?.resolver(false);
+      atual.current = null;
+      if (anfitriao === meu) anfitriao = null;
+    };
   }, []);
-  const responder = (ok: boolean) => { pedido?.resolver(ok); setPedido(null); };
+  const responder = (ok: boolean) => { atual.current?.resolver(ok); atual.current = null; setAberto(false); };
   return (
-    <AlertDialog open={!!pedido} onOpenChange={(aberto) => { if (!aberto) responder(false); }}>
+    <AlertDialog open={aberto} onOpenChange={(a) => { if (!a) responder(false); }}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{pedido?.titulo}</AlertDialogTitle>

@@ -33,3 +33,12 @@ test("nenhuma tela usa o confirm() do navegador, fora os avisos de alteração n
   }
   assert.deepEqual(achados, PENDENTES);
 });
+
+test("renomear, autorizar e alternar 'Obrigatória' mostram aviso de sucesso", () => {
+  const cat = ler("routes/_authenticated/cadastros/gerais/categorias.tsx");
+  for (const m of ["Categoria renomeada.", "Subcategoria renomeada.", "Marca renomeada.", "Grupo renomeado."]) assert.ok(cat.includes(m), m);
+  assert.ok(ler("components/parametros/TamanhosMedidasPainel.tsx").includes('"Renomeado."'));
+  const assoc = ler("components/parametros/AssociarTamanhosPainel.tsx");
+  assert.ok(assoc.includes('"Autorizado."') && assoc.includes('"Desautorizado."'));
+  assert.ok(ler("components/parametros/QuestionarioDespesasConstrutor.tsx").includes('"Pergunta salva."'));
+});

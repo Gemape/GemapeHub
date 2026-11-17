@@ -357,7 +357,11 @@ export function CaixasFerramentasModulo() {
                       onExcluir={async () => {
                         const erroPortador = validarAlteracaoCaixaComPortador(c, portadores, null);
                         if (erroPortador) { toast.error(erroPortador); return; }
-                        if (await confirmarExclusao(`a caixa ${c.codigo}`)) excluir.mutate(c.id);
+                        if (!(await confirmarExclusao(`a caixa ${c.codigo}`))) return;
+                        // O portador pode ter mudado enquanto a janela estava aberta.
+                        const erroAgora = validarAlteracaoCaixaComPortador(c, portadores, null);
+                        if (erroAgora) { toast.error(erroAgora); return; }
+                        excluir.mutate(c.id);
                       }}
                     />
                   </TableCell>

@@ -1,7 +1,7 @@
 import { ArrowDown, ArrowUp, GripHorizontal, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
-import { confirmarExclusao, confirmarTexto } from "@/components/ConfirmarAcao";
+import { confirmar, confirmarExclusao, confirmarTexto } from "@/components/ConfirmarAcao";
 import { useBlocker } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
@@ -43,6 +43,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
   const [ativo, setAtivo] = useState<string | null>(null);
   const [arrastando, setArrastando] = useState<string | null>(null);
   const [dialogo, setDialogo] = useState<{ modo: ModoPergunta; inicial: Pergunta | null } | null>(null);
+  const confirmandoTipos = useRef(false);
   // Janela de seção: `inicio` null = criar questionário novo (com nome); senão a seção que começa naquela pergunta.
   const [dialogoSecao, setDialogoSecao] = useState<{ inicio: string | null; inicial: DadosSecao } | null>(null);
   // Janela dos empregados habilitados (decisão 336): o link do card das perguntas de habilitados abre o preenchimento sem sair do formulário.
@@ -334,7 +335,7 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
                 )}
                 <div className="mx-2 h-6 w-px bg-border" />
                 <Label htmlFor={`obrigatoria-${id}`} className="text-sm">Obrigatória</Label>
-                <Switch id={`obrigatoria-${id}`} checked={p.obrigatoria} disabled={travada} onCheckedChange={(v) => executar(() => salvarPergunta(estado, { ...p, obrigatoria: v }, rascunho))} />
+                <Switch id={`obrigatoria-${id}`} checked={p.obrigatoria} disabled={travada} onCheckedChange={(v) => executar(() => salvarPergunta(estado, { ...p, obrigatoria: v }, rascunho), "Pergunta salva.")} />
               </div>
             )}
           </div>
@@ -398,8 +399,19 @@ export function QuestionarioDespesasConstrutor({ tipoInicial }: { tipoInicial?: 
         numero={dialogo?.inicial ? numeroDe(dialogo.inicial.id) : String(numeros.size + 1).padStart(2, "0")}
         onFechar={() => setDialogo(null)}
         onSalvar={async (p) => {
+          if (confirmandoTipos.current) return;
           const perdem = p.id === ID_TIPO_DESPESA ? tiposRemovidos(estado, p.opcoes.map((o) => o.trim())) : [];
-          if (perdem.length && !(await confirmarTexto(`Remover ${perdem.length === 1 ? "o tipo" : "os tipos"} ${perdem.join(", ")} apaga ${perdem.length === 1 ? "o questionário dele" : "os questionários deles"}. Continuar?`, { rotuloConfirmar: "Remover", destrutivo: true }))) return;
+          if (perdem.length) {
+            confirmandoTipos.current = true;
+            const ok = await confirmar({
+              titulo: `Remover ${perdem.length === 1 ? "o tipo" : "os tipos"} ${perdem.join(", ")}?`,
+              descricao: `Isso apaga ${perdem.length === 1 ? "o questionário dele" : "os questionários deles"}.`,
+              rotuloConfirmar: "Remover",
+              destrutivo: true,
+            });
+            confirmandoTipos.current = false;
+            if (!ok) return;
+          }
           const nova = dialogo?.modo === "novo" && p.id !== ID_TIPO_DESPESA;
           const gravar = () => {
             const salvo = salvarPergunta(estado, p, rascunho);

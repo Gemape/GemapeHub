@@ -409,8 +409,8 @@ export function RestaurarPadraoInicial({
       `Restaurar ${marcados.length} ${marcados.length === 1 ? singular : plural} ao padrão inicial?` +
       (alterados > 0 ? ` As alterações feitas em ${alterados} ${alterados === 1 ? singular : plural} ${perdas ?? ""}se perdem.` : "") +
       (novos > 0 ? ` ${novos} ${novos === 1 ? singular : plural} ${feminino ? (novos === 1 ? "excluída será cadastrada" : "excluídas serão cadastradas") : novos === 1 ? "excluído será cadastrado" : "excluídos serão cadastrados"} de novo.` : "");
-    if (!(await confirmarTexto(aviso, { rotuloConfirmar: "Restaurar" }))) return;
     salvando.current = true;
+    if (!(await confirmarTexto(aviso, { rotuloConfirmar: "Restaurar" }))) { salvando.current = false; return; }
     setTravado(true);
     const ok = executar(() => {
       const r = restaurar(marcados);
