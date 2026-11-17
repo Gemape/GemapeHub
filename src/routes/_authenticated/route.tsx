@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo } from "react";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { Building2, LogOut } from "lucide-react";
 
 import { direcaoDaTroca, marcarDirecao } from "@/lib/direcao-tela";
 import { RedeEFila } from "@/components/layout/RedeEFila";
@@ -77,13 +77,14 @@ function FiltroEmpresa() {
   const { empresas, empresaId, setEmpresaId } = useEmpresa();
   return (
     <Select value={empresaId} onValueChange={(v) => { if (v) setEmpresaId(v); }}>
-      <SelectTrigger className="w-full min-w-0 sm:w-[210px]">
+      <SelectTrigger aria-label="Empresa ativa" title="Empresa ativa" className="w-full min-w-0 gap-1.5 sm:w-[210px]">
+        <Building2 className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
         <SelectValue placeholder="Empresa" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={TODAS}>Todas as empresas</SelectItem>
+        <SelectItem value={TODAS} className="data-[state=checked]:bg-primary/10 data-[state=checked]:font-semibold">Todas as empresas</SelectItem>
         {empresas.map((e) => (
-          <SelectItem key={e.id} value={e.id}>
+          <SelectItem key={e.id} value={e.id} className="data-[state=checked]:bg-primary/10 data-[state=checked]:font-semibold">
             {e.nome_fantasia}
           </SelectItem>
         ))}
@@ -152,11 +153,6 @@ function LayoutAutenticado() {
                 style={{ maskImage: `url(${logoSite})`, WebkitMaskImage: `url(${logoSite})` }}
               />
             </Link>
-            {!noInicio && (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/inicio"><ArrowLeft className="mr-1 size-4" aria-hidden="true" />Voltar ao início</Link>
-              </Button>
-            )}
             {!noInicio && <MenuDaArea />}
             </div>
             {/* Título da marca, centralizado no topo; no celular fica numa linha própria, entre o menu e os filtros. */}
@@ -178,8 +174,8 @@ function LayoutAutenticado() {
             </div>
           </header>
           <div id="conteudo-principal" tabIndex={-1} className="min-w-0 flex-1 p-3 outline-none sm:p-4 md:p-6">
-            <VoltarContextual />
-            <TrilhaDeNavegacao />
+            {/* Orientação: o Voltar (sempre no mesmo lugar, com o mesmo rótulo) e a trilha, na mesma linha. */}
+            {!noInicio && <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2"><VoltarContextual /><TrilhaDeNavegacao /></div>}
             <div key={telaAtual} className={classeTroca}><ConteudoComAcesso /></div>
             <RegistraRecente />
             <PilhaDeNavegacao />

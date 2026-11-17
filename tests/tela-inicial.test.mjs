@@ -117,10 +117,10 @@ test("não há menu lateral em nenhuma tela: tudo se acessa pelos cartões da te
   assert.doesNotMatch(layout, /<SidebarTrigger/);
 });
 
-test("em toda tela a logomarca no topo leva à tela inicial, e fora dela há o botão Voltar ao início", () => {
+test("em toda tela a logomarca no topo leva à tela inicial, e fora dela há um único botão Voltar, com o mesmo rótulo", () => {
   assert.match(layout, /<Link to="\/inicio"[^>]*aria-label="GEMAPE, tela inicial"/s);
-  assert.match(layout, /\{!noInicio && \(?\s*<Button[^>]*asChild[^>]*>\s*<Link to="\/inicio">/s);
-  assert.match(layout, /Voltar ao início/);
+  assert.doesNotMatch(layout, /Voltar ao início/);
+  assert.match(layout, /\{!noInicio && <div[^>]*><VoltarContextual \/><TrilhaDeNavegacao \/><\/div>\}/);
 });
 
 
@@ -256,14 +256,14 @@ test("atalhos pessoais: fixar com a estrela, últimos 4 acessados sem repetir, u
   }
 });
 
-test("navegação: seletor de módulos no canto esquerdo, trilha Início / módulo / tela e Voltar ao início no mesmo lugar", () => {
+test("navegação: seletor de módulos no canto esquerdo, trilha Início / módulo / tela e Voltar no mesmo lugar", () => {
   const rota = ler("routes/_authenticated/route.tsx");
   const nav = ler("components/layout/NavegacaoRapida.tsx");
   assert.match(rota, /\{!noInicio && <TrocaDeModulo \/>\}[\s\S]*?<Link to="\/inicio" aria-label="GEMAPE, tela inicial"/);
   assert.match(rota, /<TrilhaDeNavegacao \/>/);
   assert.match(rota, /<RegistraRecente \/>/);
   assert.match(nav, /aria-label="Trocar de módulo"/);
-  assert.match(nav, /to="\/inicio"[^>]*>[\s\S]*?Início/);
+  assert.match(nav, /trilhaDaRota\(/);
 });
 
 test("atalhos dos grupos: o id do atalho e o da seção saem da mesma função, o painel só existe aberto e Recolher tudo conta só cartões visíveis", () => {
