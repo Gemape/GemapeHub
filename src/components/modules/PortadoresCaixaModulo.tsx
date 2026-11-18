@@ -16,7 +16,10 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { formatarData } from "@/lib/gemape";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useCaixasFerramentas, type Empregado } from "@/lib/hooks-gemape";
-import { empregadoElegivelPortador, portadorAtivo, registrarPortador } from "@/lib/portadores-caixa";
+import { dataBrasilia, empregadoElegivelPortador, portadorAtivo, registrarPortador } from "@/lib/portadores-caixa";
+import { lerTextosTermos } from "@/lib/termos-ferramentas-texto";
+import { montarTermoResponsabilidadeHtml } from "@/lib/termo-responsabilidade-html";
+import { abrirDocumento, nomeArquivoDocumento } from "@/lib/visualizador-documento";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { usePortadoresCaixa } from "@/lib/use-portadores-caixa";
 
@@ -74,11 +77,35 @@ export function PortadoresCaixaModulo() {
       setObservacao("");
       setStatus("Ativa");
       toast.success(status === "Ativa" ? "Portador registrado." : "Portador inativado.");
+      // Caixa nova ou troca de portador: o termo de entrega sai na hora, com as ferramentas que a caixa guarda.
+      if (empregado) void gerarTermoDeEntrega(caixa, empregado);
     } catch (erro) {
       toast.error(erro instanceof Error ? erro.message : "Não foi possível salvar o portador.");
     } finally {
       salvando.current = false;
       setPendente(false);
+    }
+  }
+
+  async function gerarTermoDeEntrega(daCaixa: NonNullable<typeof caixa>, portador: Empregado) {
+    try {
+      const empresa = empresas.find((e) => e.id === daCaixa.empresa_id);
+      if (!empresa) return void toast.warning("O portador foi registrado, mas a caixa não tem empresa cadastrada; o termo de entrega não foi gerado.");
+      const { data, error } = await supabase.from("caixa_ferramenta_itens").select("*, ferramenta:ferramentas(*)").eq("caixa_id", daCaixa.id);
+      if (error) throw error;
+      const itens = (data ?? []) as { quantidade: number; ferramenta?: { codigo_sku?: string | null; nome?: string | null; marca?: string | null } | null }[];
+      if (itens.length === 0) return void toast.warning(`A caixa ${daCaixa.codigo} não tem ferramentas; o termo de entrega não foi gerado.`);
+      const hoje = dataBrasilia();
+      abrirDocumento({
+        titulo: "Termo de Responsabilidade",
+        html: montarTermoResponsabilidadeHtml({
+          empresa, empregado: { nome: portador.nome, cpf: portador.cpf ?? "" }, caixaCodigo: daCaixa.codigo, data: hoje, texto: lerTextosTermos().entrega,
+          linhas: itens.map((i) => ({ codigo: i.ferramenta?.codigo_sku, nome: i.ferramenta?.nome, marca: i.ferramenta?.marca, quantidade: i.quantidade, estado: "—" })),
+        }),
+        arquivo: nomeArquivoDocumento("Termo de Responsabilidade", portador.nome, hoje),
+      });
+    } catch (erro) {
+      toast.error(erro instanceof Error ? `O portador foi registrado, mas o termo de entrega falhou: ${erro.message}` : "O portador foi registrado, mas o termo de entrega falhou.");
     }
   }
 

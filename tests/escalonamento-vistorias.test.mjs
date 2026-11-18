@@ -48,7 +48,7 @@ test("o mês-base é guardado por caixa, valor ruim é recusado ou ignorado e nu
 test("a tela está no menu de Ferramentas e na página do módulo", () => {
   assert.ok(ABAS_FERRAMENTA.some((a) => a.aba === "escalonamento-vistorias" && a.titulo === "Escalonamento de Vistorias"));
   assert.match(le("src/components/modules/PaginaModulo.tsx"), /value="escalonamento-vistorias"[\s\S]*<FerramentasEscalonamentoVistorias \/>/);
-  assert.match(le("src/components/modules/FerramentasEscalonamentoVistorias.tsx"), /lerParametrosVistoria\(\)/);
+  assert.match(le("src/lib/use-vistorias-caixas.ts"), /lerParametrosVistoria\(\)/);
 });
 
 test("quinzenal conta duas vistorias por mês e a marca {tabela} aparece uma vez só", async () => {
