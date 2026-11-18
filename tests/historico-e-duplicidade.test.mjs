@@ -91,8 +91,7 @@ test("nomes de empregados: exige quase todas as palavras", () => {
 });
 
 // ---------- ligações nas telas ----------
-test("telas ligadas: linha do tempo no extrato e nas gavetas; aviso de semelhança nos cadastros; termo de baixa sem movimento", () => {
-  assert.match(fonte("src/components/modules/ExtratoFerramenta.tsx"), /LinhaDoTempo/);
+test("telas ligadas: linha do tempo nas gavetas; aviso de semelhança nos cadastros; termo de baixa sem movimento", () => {
   const g = fonte("src/components/modules/GavetasDeResumo.tsx");
   assert.match(g, /DialogoLinhaDoTempo/);
   assert.match(g, /\.limit\(500\)/);

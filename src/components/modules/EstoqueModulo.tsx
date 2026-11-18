@@ -1,6 +1,5 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
-import { useNavigate } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -11,28 +10,23 @@ import { lerItensEstoque } from '@/lib/itens-estoque-modulo';
 import { prepararMinimoUnico } from '@/lib/estoque-configuracao';
 import { CLASSE_DO_NIVEL, nivelDoAlerta, TEXTO_DO_NIVEL_ALERTA } from '@/lib/estoque-epi-visao';
 import { estadoEstoqueModulo } from '@/lib/estoque-tamanho';
-import { useCaixasFerramentas, useEmpregados, useEmpresas, useMovimentacoes, useSalvar, useTodosCaixaItens } from '@/lib/hooks-gemape';
-import { controleDaFerramenta } from '@/lib/controle-caixa';
+import { useCaixasFerramentas, useEmpresas, useMovimentacoes, useSalvar, useTodosCaixaItens } from '@/lib/hooks-gemape';
 import { posicaoDasFerramentas, type PosicaoDaFerramenta } from '@/lib/estoque-ferramentas-posicao';
 import { combinaBuscaTolerante } from '@/lib/busca-tolerante';
 import { useParametrosBase } from '@/lib/use-parametros-base';
-import { temValorInformativo } from '@/lib/valor-informativo';
 import { AlternarDensidade } from '@/components/AlternarDensidade';
 import { CarimboAtualizacao } from '@/components/CarimboAtualizacao';
 import { BarraDeFiltros } from '@/components/layout/BarraDeFiltros';
 import { MinimoEditavel } from '@/components/modules/MinimoEditavel';
-import { ExtratoFerramenta, type AlvoDoExtrato } from '@/components/modules/ExtratoFerramenta';
 import { ControleEstoqueModulo } from '@/components/modules/ControleEstoqueModulo';
 import { Button } from '@/components/ui/button';
-import { NomeComResumo } from '@/components/GavetaResumo';
-import { GavetaItemMovimentado } from '@/components/modules/GavetasDeResumo';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 // O EPI tem a sua tela de Estoque (EstoqueEpiModulo, decisão 329): esta é a dos uniformes e das ferramentas.
 type ModuloEstoque = 'uniforme' | 'ferramenta';
 
-export function EstoqueModulo({ modulo, buscaInicial = '', abrirItem }: { modulo: ModuloEstoque; buscaInicial?: string; abrirItem?: string }) {
+export function EstoqueModulo({ modulo, buscaInicial = '' }: { modulo: ModuloEstoque; buscaInicial?: string }) {
   const { empresaId } = useEmpresa();
   const parametros = useParametrosBase();
   const [itemId, setItemId] = useState<string | null>(null);
@@ -42,7 +36,7 @@ export function EstoqueModulo({ modulo, buscaInicial = '', abrirItem }: { modulo
   const [porPosicao, setPorPosicao] = useState(false);
   const tabela = modulo === 'uniforme' ? 'uniformes' : 'ferramentas';
   const salvar = useSalvar(tabela, ['estoque-modulo']);
-  // Ferramentas (decisão 379): o saldo se reparte entre as caixas, os empregados e o que está sem caixa, e tem de bater com as entradas e as baixas.
+  // Ferramentas (decisão 379): o saldo se reparte entre as caixas, os empregados e o que está sem caixa, e tem de bater com as entradas e as baixas. As entradas e saídas em si ficam em Relatórios > Entradas e saídas.
   const ferr = modulo === 'ferramenta';
   const { data: movimentos = [] } = useMovimentacoes('ferramenta', empresaId);
   const { data: itensDeCaixa = [] } = useTodosCaixaItens();
@@ -52,47 +46,13 @@ export function EstoqueModulo({ modulo, buscaInicial = '', abrirItem }: { modulo
     queryFn: () => lerItensEstoque(supabase, modulo, empresaId),
   });
   const { data: empresas = [] } = useEmpresas();
-  const { data: empregados = [] } = useEmpregados(TODAS);
-  const [extrato, setExtrato] = useState<AlvoDoExtrato | null>(null);
-  const [resumo, setResumo] = useState<{ id: string; nome: string; empresa: string | null; codigo: string | null } | null>(null);
   // Dec 238: o estoque é por empresa; cada linha diz de qual empresa é, para o mesmo código não parecer repetido.
   const nomeDaEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome_fantasia ?? '—';
   const posicoes = useMemo(
     () => new Map<string, PosicaoDaFerramenta>(ferr ? posicaoDasFerramentas(itens, movimentos, itensDeCaixa).map((p) => [p.ferramentaId, p]) : []),
     [ferr, itens, movimentos, itensDeCaixa],
   );
-  // Onde cada ferramenta está: em qual caixa, com qual empregado e quanto está sem caixa (clique na linha).
-  const ondeEsta = (ids: string[]) => {
-    const caixasDe = itensDeCaixa.filter((i) => ids.includes(i.ferramenta_id)).map((i) => ({ codigo: caixas.find((c) => c.id === i.caixa_id)?.codigo ?? '—', quantidade: Number(i.quantidade) || 0 }));
-    const porEmpregado = new Map<string, number>();
-    for (const id of ids) {
-      const doItem = movimentos.filter((m) => m.item_id === id && m.empregado_id);
-      for (const eid of new Set(doItem.map((m) => m.empregado_id as string))) {
-        const q = controleDaFerramenta(doItem.filter((m) => m.empregado_id === eid), id).comEmpregado;
-        if (q > 0) porEmpregado.set(eid, (porEmpregado.get(eid) ?? 0) + q);
-      }
-    }
-    const comEmpregados = [...porEmpregado].map(([eid, quantidade]) => ({ nome: empregados.find((e) => e.id === eid)?.nome ?? 'Empregado não encontrado', quantidade }));
-    const semCaixa = ids.reduce((t, id) => t + (posicoes.get(id)?.semCaixa ?? 0), 0);
-    const guardada = ids.reduce((t, id) => t + (posicoes.get(id)?.guardada ?? 0), 0);
-    return { caixasDe, comEmpregados, semCaixa, guardada };
-  };
   const codigoDaCaixa = (id: string | null) => caixas.find((c) => c.id === id)?.codigo ?? '—';
-  // Vindo da busca global (ferramentas): abre o extrato da ferramenta achada, uma vez, quando a lista chega.
-  const navegar = useNavigate();
-  const jaAbriu = useRef(false);
-  useEffect(() => {
-    // espera a lista de empresas, para o título do extrato não sair com '—' no lugar do nome
-    if (!abrirItem || jaAbriu.current || empresas.length === 0) return;
-    const alvo = itens.find((i) => i.id === abrirItem);
-    if (!alvo) return;
-    jaAbriu.current = true;
-    setExtrato({ titulo: `${alvo.codigo_sku ?? ''} · ${alvo.nome} (${nomeDaEmpresa(alvo.empresa_id)})`, ids: [alvo.id] });
-    // O pedido foi atendido: tira o ?item= do endereço, para recarregar ou fechar o extrato não reabri-lo.
-    void navegar({ to: '/ferramentas', search: (s: Record<string, unknown>) => ({ ...s, item: undefined }), replace: true } as never);
-    // nomeDaEmpresa muda a cada desenho; só importa quando a lista de itens chega
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abrirItem, itens, empresas]);
   const linhas = itens
     .filter((item) => combinaBuscaTolerante(busca, item.codigo_sku, item.nome, nomeDaEmpresa(item.empresa_id)))
     .map((item) => ({ item, estado: estadoEstoqueModulo(parametros, modulo, item) }));
@@ -144,7 +104,7 @@ export function EstoqueModulo({ modulo, buscaInicial = '', abrirItem }: { modulo
             Código: item.codigo_sku,
             Empresa: nomeDaEmpresa(item.empresa_id),
             Item: item.nome,
-            ...(ferr ? (() => { const p = posicoes.get(item.id); return { Caixa: codigoDaCaixa(p?.caixaId ?? null), Entradas: p?.entradas ?? 0, Baixas: p?.baixas ?? 0, 'Guardada na caixa': p?.guardada ?? 0, 'Com empregado': p?.comEmpregado ?? 0, 'Sem caixa': p?.semCaixa ?? 0, Divergência: p?.divergencias.join(' ') ?? '' }; })() : {}),
+            ...(ferr ? (() => { const p = posicoes.get(item.id); return { Caixa: codigoDaCaixa(p?.caixaId ?? null), 'Guardada na caixa': p?.guardada ?? 0, 'Com empregado': p?.comEmpregado ?? 0, 'Sem caixa': p?.semCaixa ?? 0, Divergência: p?.divergencias.join(' ') ?? '' }; })() : {}),
             Saldo: estado.saldo,
             'Saldo histórico fora da seleção': estado.saldoForaDaSelecao,
             'Estoque mínimo': estado.minimo,
@@ -154,28 +114,26 @@ export function EstoqueModulo({ modulo, buscaInicial = '', abrirItem }: { modulo
           })))
         }>Exportar CSV</Button>
       </div>
-      {ferr && porPosicao && <ConsolidadoPorPosicao linhas={linhas.map(({ item }) => item)} posicoes={posicoes} onAbrir={setExtrato} />}
+      {ferr && porPosicao && <ConsolidadoPorPosicao linhas={linhas.map(({ item }) => item)} posicoes={posicoes} />}
       {!(ferr && porPosicao) && <div className="panel overflow-x-auto">
         <Table>
           <TableHeader><TableRow>
             <TableHead>Código</TableHead><TableHead>Item</TableHead><TableHead>Empresa</TableHead>
-            {ferr && <><TableHead>Caixa</TableHead><TableHead className="text-right">Entradas</TableHead><TableHead className="text-right">Baixas</TableHead></>}
+            {ferr && <><TableHead>Caixa</TableHead></>}
             <TableHead className="text-right">Saldo</TableHead>
             {ferr && <><TableHead className="text-right">Guardada na caixa</TableHead><TableHead className="text-right">Com empregado</TableHead><TableHead className="text-right">Sem caixa</TableHead></>}
             <TableHead className="text-right">Estoque mínimo</TableHead>
             <TableHead>Alerta</TableHead>
           </TableRow></TableHeader>
           <TableBody>
-            {isLoading ? <LinhasEsqueleto colunas={ferr ? 12 : 6} />
-              : linhas.length === 0 ? <TableRow><TableCell colSpan={ferr ? 12 : 6}>{busca.trim() ? 'Nenhum item para a busca.' : 'Nenhum item cadastrado.'}</TableCell></TableRow>
-                : linhas.map(({ item, estado }) => <TableRow key={item.id} {...(ferr ? linhaClicavel(() => setExtrato({ titulo: `${item.codigo_sku ?? ''} · ${item.nome} (${nomeDaEmpresa(item.empresa_id)})`, ids: [item.id] })) : {})}>
+            {isLoading ? <LinhasEsqueleto colunas={ferr ? 10 : 6} />
+              : linhas.length === 0 ? <TableRow><TableCell colSpan={ferr ? 10 : 6}>{busca.trim() ? 'Nenhum item para a busca.' : 'Nenhum item cadastrado.'}</TableCell></TableRow>
+                : linhas.map(({ item, estado }) => <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
-                  <TableCell>{ferr ? <NomeComResumo rotulo={item.nome} aoAbrir={() => setResumo({ id: item.id, nome: item.nome, empresa: item.empresa_id, codigo: item.codigo_sku })}>{item.nome}</NomeComResumo> : item.nome}</TableCell>
+                  <TableCell>{item.nome}</TableCell>
                   <TableCell>{nomeDaEmpresa(item.empresa_id)}</TableCell>
                   {ferr && <>
                     <TableCell className="font-mono text-xs">{codigoDaCaixa(posicoes.get(item.id)?.caixaId ?? null)}</TableCell>
-                    <TableCell className="text-right">{posicoes.get(item.id)?.entradas ?? 0}</TableCell>
-                    <TableCell className="text-right">{posicoes.get(item.id)?.baixas ?? 0}</TableCell>
                   </>}
                   <TableCell className="text-right">{estado.saldo}{estado.detalheSaldo && <p className="text-xs text-muted-foreground">{estado.detalheSaldo}</p>}{estado.saldoForaDaSelecao !== 0 && <p className="text-xs text-muted-foreground">Saldo histórico fora da seleção: {estado.saldoForaDaSelecao}</p>}</TableCell>
                   {ferr && <>
@@ -192,19 +150,6 @@ export function EstoqueModulo({ modulo, buscaInicial = '', abrirItem }: { modulo
           </TableBody>
         </Table>
       </div>}
-      {ferr && <GavetaItemMovimentado
-        modulo="ferramenta"
-        alvo={resumo ? { id: resumo.id, campo: "item_id", titulo: resumo.nome, subtitulo: [resumo.codigo, nomeDaEmpresa(resumo.empresa)].filter(temValorInformativo).join(" · "), indicadores: [
-          { rotulo: "Saldo", valor: posicoes.get(resumo.id)?.saldo ?? 0 },
-          { rotulo: "Guardada na caixa", valor: posicoes.get(resumo.id)?.guardada ?? 0 },
-          { rotulo: "Com empregado", valor: posicoes.get(resumo.id)?.comEmpregado ?? 0 },
-          { rotulo: "Sem caixa", valor: posicoes.get(resumo.id)?.semCaixa ?? 0, alerta: (posicoes.get(resumo.id)?.semCaixa ?? 0) < 0 },
-        ] } : null}
-        aoFechar={() => setResumo(null)}
-        aoAbrirFicha={() => { if (resumo) setExtrato({ titulo: `${resumo.codigo ?? ''} · ${resumo.nome} (${nomeDaEmpresa(resumo.empresa)})`, ids: [resumo.id] }); }}
-        rotuloFicha="Abrir extrato completo"
-      />}
-      {ferr && <ExtratoFerramenta alvo={extrato} movimentos={movimentos} saldo={(extrato?.ids ?? []).reduce((t, id) => t + (posicoes.get(id)?.saldo ?? 0), 0)} onde={ondeEsta(extrato?.ids ?? [])} nomeEmpregado={(id) => empregados.find((e) => e.id === id)?.nome ?? 'Empregado não encontrado'} empresa={empresaId === TODAS ? 'Todas as empresas' : nomeDaEmpresa(empresaId)} onFechar={() => setExtrato(null)} />}
       {ferr && !porPosicao && <PosicaoPorCaixa caixas={caixas.filter((c) => itens.some((i) => i.empresa_id === c.empresa_id) || empresaId === TODAS)} itensDeCaixa={itensDeCaixa} itens={itens} posicoes={posicoes} />}
       {modulo !== 'ferramenta' && <ControleEstoqueModulo modulo={modulo} />}
     </div>
@@ -231,7 +176,7 @@ function PosicaoPorCaixa({ caixas, itensDeCaixa, itens, posicoes }: {
         <Table>
           <TableHeader><TableRow>
             <TableHead>Caixa</TableHead><TableHead>Código</TableHead><TableHead>Ferramenta</TableHead>
-            <TableHead className="text-right">Cadastrada</TableHead><TableHead className="text-right">Baixas</TableHead>
+            <TableHead className="text-right">Cadastrada</TableHead>
             <TableHead className="text-right">Com empregado</TableHead><TableHead className="text-right">Guardada</TableHead>
             <TableHead className="text-right">Saldo no estoque</TableHead><TableHead>Confere</TableHead>
           </TableRow></TableHeader>
@@ -243,7 +188,6 @@ function PosicaoPorCaixa({ caixas, itensDeCaixa, itens, posicoes }: {
                   <TableCell className="font-mono text-xs">{item.codigo_sku}</TableCell>
                   <TableCell>{item.nome}</TableCell>
                   <TableCell className="text-right">{cadastrada}</TableCell>
-                  <TableCell className="text-right">{cadastrada - p.naCaixa}</TableCell>
                   <TableCell className="text-right">{p.comEmpregado}</TableCell>
                   <TableCell className="text-right font-semibold">{p.guardada}</TableCell>
                   <TableCell className="text-right">{p.saldo}</TableCell>
@@ -253,7 +197,6 @@ function PosicaoPorCaixa({ caixas, itensDeCaixa, itens, posicoes }: {
               <TableRow key={`${caixa.id}-total`} className="bg-muted/40 font-semibold">
                 <TableCell colSpan={3}>Total da caixa {caixa.codigo}</TableCell>
                 <TableCell className="text-right">{linhas.reduce((t, l) => t + l.cadastrada, 0)}</TableCell>
-                <TableCell className="text-right">{linhas.reduce((t, l) => t + (l.cadastrada - l.p.naCaixa), 0)}</TableCell>
                 <TableCell className="text-right">{linhas.reduce((t, l) => t + l.p.comEmpregado, 0)}</TableCell>
                 <TableCell className="text-right">{linhas.reduce((t, l) => t + l.p.guardada, 0)}</TableCell>
                 <TableCell className="text-right">{linhas.reduce((t, l) => t + l.p.saldo, 0)}</TableCell>
@@ -267,21 +210,13 @@ function PosicaoPorCaixa({ caixas, itensDeCaixa, itens, posicoes }: {
   );
 }
 
-// Linha da tabela que abre o extrato: clique, e Enter ou espaço para quem usa o teclado.
-const linhaClicavel = (abrir: () => void) => ({
-  className: 'cursor-pointer', tabIndex: 0,
-  onClick: abrir,
-  onKeyDown: (e: React.KeyboardEvent) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); abrir(); } },
-});
-
 // Estoque consolidado por posição: cada ferramenta com o saldo somado das empresas e repartido entre guardada na caixa, com empregado e sem caixa.
-function ConsolidadoPorPosicao({ linhas, posicoes, onAbrir }: { linhas: { id: string; codigo_sku: string | null; nome: string }[]; posicoes: Map<string, PosicaoDaFerramenta>; onAbrir: (alvo: AlvoDoExtrato) => void }) {
-  const grupos = new Map<string, { ids: string[]; codigo: string; nome: string; saldo: number; guardada: number; comEmpregado: number; semCaixa: number }>();
+function ConsolidadoPorPosicao({ linhas, posicoes }: { linhas: { id: string; codigo_sku: string | null; nome: string }[]; posicoes: Map<string, PosicaoDaFerramenta> }) {
+  const grupos = new Map<string, { codigo: string; nome: string; saldo: number; guardada: number; comEmpregado: number; semCaixa: number }>();
   for (const item of linhas) {
     const p = posicoes.get(item.id);
     const chave = `${item.codigo_sku ?? ''}|${item.nome}`;
-    const g = grupos.get(chave) ?? { ids: [], codigo: item.codigo_sku ?? '—', nome: item.nome, saldo: 0, guardada: 0, comEmpregado: 0, semCaixa: 0 };
-    g.ids.push(item.id);
+    const g = grupos.get(chave) ?? { codigo: item.codigo_sku ?? '—', nome: item.nome, saldo: 0, guardada: 0, comEmpregado: 0, semCaixa: 0 };
     g.saldo += p?.saldo ?? 0; g.guardada += p?.guardada ?? 0; g.comEmpregado += p?.comEmpregado ?? 0; g.semCaixa += p?.semCaixa ?? 0;
     grupos.set(chave, g);
   }
@@ -300,7 +235,7 @@ function ConsolidadoPorPosicao({ linhas, posicoes, onAbrir }: { linhas: { id: st
           </TableRow></TableHeader>
           <TableBody>
             {lista.length === 0 ? <TableRow><TableCell colSpan={3 + 3}>Nenhum item para mostrar.</TableCell></TableRow> : lista.map((g) => (
-              <TableRow key={`${g.codigo}|${g.nome}`} {...linhaClicavel(() => onAbrir({ titulo: `${g.codigo} · ${g.nome}`, ids: g.ids }))}>
+              <TableRow key={`${g.codigo}|${g.nome}`}>
                 <TableCell className="font-mono text-xs">{g.codigo}</TableCell><TableCell>{g.nome}</TableCell>
                 <TableCell className="text-right">{g.guardada}</TableCell><TableCell className="text-right">{g.comEmpregado}</TableCell>
                 <TableCell className="text-right">{g.semCaixa}</TableCell><TableCell className="text-right font-semibold">{g.saldo}</TableCell>

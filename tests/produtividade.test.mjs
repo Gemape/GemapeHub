@@ -271,7 +271,7 @@ test("arquivo solto: o receptor mais recente que aceita leva; sem receptor, imag
 test("telas ligadas: gaveta, cartão, colar, soltar, abas e aviso de alterações", () => {
   assert.match(fonte("src/components/modules/EmpregadosCadastroModulo.tsx"), /NomeComResumo[\s\S]*GavetaEmpregado[\s\S]*useAvisoNaoSalvo/);
   assert.match(fonte("src/components/modules/VeiculosCadastroModulo.tsx"), /GavetaItemMovimentado[\s\S]*useAvisoNaoSalvo/);
-  assert.match(fonte("src/components/modules/EstoqueModulo.tsx"), /GavetaItemMovimentado/);
+  assert.doesNotMatch(fonte("src/components/modules/EstoqueModulo.tsx"), /GavetaItemMovimentado|ExtratoFerramenta/, "entradas e saídas saíram do Estoque de ferramentas");
   assert.match(fonte("src/components/modules/EstoqueEpiModulo.tsx"), /CartaoDoNome[\s\S]*situacaoDoCa/);
   assert.match(fonte("src/components/modules/MovimentacoesModulo.tsx"), /ColarPlanilhaDialog/);
   assert.match(fonte("src/components/modules/FotosOcorrencia.tsx"), /registrarReceptor/);

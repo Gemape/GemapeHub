@@ -39,14 +39,14 @@ test("cada resultado leva à tela do item, não à lista do módulo", () => {
   assert.deepEqual(d("abc1d23"), { url: "/veiculos", search: { aba: "frota", extrato: "v1" } });
   assert.deepEqual(d("luva"), { url: "/epi", search: { aba: "estoque", q: "EPI-0007" } });
   assert.deepEqual(d("polo"), { url: "/uniformes", search: { aba: "estoque", q: "UNI-01" } });
-  assert.deepEqual(d("furadeira"), { url: "/ferramentas", search: { aba: "estoque", q: "FER-0004", item: "f1" } });
+  assert.deepEqual(d("furadeira"), { url: "/ferramentas", search: { aba: "estoque", q: "FER-0004" } });
 });
 
 test("o rótulo diz para onde o resultado vai", () => {
   const a = (t) => buscarGlobal(t, fontes)[0].itens[0].acao;
   assert.equal(a("luva"), "EPI — abrir na lista");
   assert.equal(a("polo"), "Uniforme — abrir na lista");
-  assert.equal(a("furadeira"), "Abrir extrato");
+  assert.equal(a("furadeira"), "Ferramenta — abrir na lista");
 });
 
 test("módulo sem fonte (sem permissão) não aparece; há no máximo 5 por módulo", () => {
@@ -66,13 +66,13 @@ test("o cabeçalho de todas as telas tem a busca global, aberta por Ctrl+K ou pe
   assert.match(busca, /podeVerCaminho\("\/epi", \{ aba: "historico" \}\)/);
 });
 
-test("o Estoque abre filtrado pelo item (q) e a ferramenta abre o extrato (item)", () => {
+test("o Estoque abre filtrado pelo item (q), inclusive o das ferramentas", () => {
   assert.match(ler("routes/_authenticated/epi.tsx"), /search\["q"\]/);
   assert.match(ler("routes/_authenticated/uniformes.tsx"), /search\["q"\]/);
-  assert.match(ler("routes/_authenticated/ferramentas.tsx"), /search\["item"\]/);
+  assert.match(ler("routes/_authenticated/ferramentas.tsx"), /search\["q"\]/);
   const pagina = ler("components/modules/PaginaModulo.tsx");
   assert.match(pagina, /buscaInicial: q/);
-  assert.match(pagina, /abrirItem: item/);
+  assert.doesNotMatch(pagina, /abrirItem/);
   assert.match(ler("components/modules/EstoqueModulo.tsx"), /useState\(buscaInicial\)/);
   assert.match(ler("components/modules/EstoqueEpiModulo.tsx"), /useState\(buscaInicial\)/);
 });

@@ -3,12 +3,15 @@
 import { escaparHtml } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
 import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
+import { TEXTOS_PADRAO, montarTextoDoTermo } from "./termos-ferramentas-texto.ts";
 
 export interface DadosTermoVistoria {
   empresa: { razao_social: string; cnpj: string };
   caixa: { codigo?: string | null | undefined; nome?: string | null | undefined } | undefined;
   responsavel: string | null | undefined;
   data: string;
+  /** Texto cadastrado em Parâmetros Específicos; sem ele, vale o texto padrão. */
+  texto?: string | undefined;
   linhas: {
     codigo?: string | null | undefined;
     nome?: string | null | undefined;
@@ -43,6 +46,10 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
     year: "numeric",
   });
 
+  const texto = montarTextoDoTermo(dados.texto ?? TEXTOS_PADRAO.vistoria, {
+    empregado: dados.responsavel, empresa: dados.empresa.razao_social, cnpj: formatarCnpj(dados.empresa.cnpj), caixa: caixa?.codigo, data: dataFormatada,
+  });
+
   return paginaRelatorio({
     titulo: `Termo de Vistoria Periódica - Caixa ${caixa?.codigo || ""}`,
     cabecalho: cabecalhoRelatorio({ titulo: "Relatório de Vistoria Periódica de Ferramentas", subtitulos: [`CNPJ: ${formatarCnpj(dados.empresa.cnpj)}`], empresa: dados.empresa.razao_social }),
@@ -55,7 +62,7 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
           </div>
 
           <div class="content">
-            <p>A presente vistoria tem por objetivo verificar as condições de uso, conservação e limpeza das ferramentas e equipamentos que compõem a caixa acima identificada, visando a segurança do trabalho e a durabilidade do patrimônio da empresa.</p>
+            ${texto.antes}
           </div>
 
           <table>
@@ -75,7 +82,7 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
           </table>
 
           <div class="content">
-            <p><strong>PARECER FINAL:</strong> As ferramentas vistoriadas encontram-se em condições adequadas de uso, salvo as observações anotadas acima. O empregado foi orientado sobre a importância da manutenção preventiva e correta guarda dos itens.</p>
+            ${texto.depois}
           </div>
 
           <div class="signatures">

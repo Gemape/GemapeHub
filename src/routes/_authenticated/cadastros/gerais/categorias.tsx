@@ -14,6 +14,7 @@ import { HabilitarEmpregadosVeiculos } from "@/components/parametros/HabilitarEm
 import { IndicadoresViagens } from "@/components/parametros/IndicadoresViagens";
 import { ParametrosEpi } from "@/components/parametros/ParametrosEpi";
 import { ParametrosUniforme } from "@/components/parametros/ParametrosUniforme";
+import { ParametrosFerramentas } from "@/components/parametros/ParametrosFerramentas";
 import { PrazosOcorrenciasVeiculo } from "@/components/parametros/PrazosOcorrenciasVeiculo";
 import { SupervisoresOcorrencias } from "@/components/parametros/SupervisoresOcorrencias";
 import { SubgruposFerramenta } from "@/components/parametros/SubgruposFerramenta";
@@ -406,6 +407,7 @@ function Categorias() {
           </div>}
           {categoria.id === "cat-epi" && <ParametrosEpi voltarParaSugestao={voltar === "sugestao-compras"} />}
           {categoria.id === "cat-uniformes" && <ParametrosUniforme voltarParaSugestao={voltar === "sugestao-uniformes"} />}
+          {categoria.id === "cat-ferramentas" && <ParametrosFerramentas />}
           {categoria.id === "cat-veiculos" && <HabilitarEmpregadosVeiculos />}
           {categoria.id === "cat-veiculos" && <PrazosOcorrenciasVeiculo />}
           {categoria.id === "cat-veiculos" && <SupervisoresOcorrencias />}

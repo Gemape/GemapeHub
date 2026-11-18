@@ -24,6 +24,7 @@ import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { empresasParaEscolha } from "@/lib/empresas";
 import { escaparHtml } from "@/lib/gemape";
 import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "@/lib/relatorio-padrao";
+import { lerTextosTermos, montarTextoDoTermo } from "@/lib/termos-ferramentas-texto";
 import { capitalizarTexto, formatarCnpj } from "@/lib/formatacao-cadastral";
 import {
   useEmpresas,
@@ -234,15 +235,17 @@ export function FerramentasTermoEncerramento() {
       year: "numeric",
     });
 
+    const texto = montarTextoDoTermo(lerTextosTermos().encerramento, {
+      empregado: empregado.nome, cpf: empregado.cpf, empresa: empresa.razao_social, cnpj: formatarCnpj(empresa.cnpj), data: dataFormatada,
+    });
+
     const html = paginaRelatorio({
       titulo: `Termo de Encerramento de Responsabilidade - ${empregado.nome}`,
       cabecalho: cabecalhoRelatorio({ titulo: "Termo de Encerramento de Responsabilidade", subtitulos: [`CNPJ: ${formatarCnpj(empresa.cnpj)}`], empresa: empresa.razao_social }),
       css: CSS_TERMO,
       corpo: `<div class="termo">
           <div class="content">
-            <p>Pelo presente instrumento, a empresa <strong>${escaparHtml(empresa.razao_social)}</strong> declara que o(a) empregado(a) <strong>${escaparHtml(empregado.nome)}</strong>, CPF <strong>${escaparHtml(empregado.cpf)}</strong>, efetuou nesta data a devolução das ferramentas e equipamentos abaixo relacionados, que estavam sob sua responsabilidade conforme termo assinado anteriormente.</p>
-            
-            <p>Após conferência, atesta-se que os itens foram devolvidos conforme o estado de conservação indicado na tabela abaixo, dando-se por encerrada a responsabilidade individual do referido empregado sobre os mesmos.</p>
+            ${texto.antes}
           </div>
           
           <table>
@@ -262,7 +265,7 @@ export function FerramentasTermoEncerramento() {
           </table>
           
           <div class="content">
-            <p>Este termo refere-se apenas aos itens listados, não eximindo o empregado de responsabilidades sobre outros ativos que possam estar em seu poder e que não constem desta relação.</p>
+            ${texto.depois}
           </div>
           
           <p style="text-align: right; margin-top: 30px;">Local e data: ____________________, ${dataFormatada}</p>

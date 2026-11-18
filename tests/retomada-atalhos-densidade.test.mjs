@@ -50,7 +50,7 @@ test("telas ligadas: banner nos dois check lists, atalho nos filtros de período
   const banner = fonte("src/components/BannerLancamentoAberto.tsx");
   assert.match(banner, /Continuar de onde parou/);
   assert.match(banner, /AlertDialog/, "descartar pede confirmação");
-  for (const f of ["AbastecimentoVeiculoModulo", "ExtratoVeiculo", "ExtratoFerramenta", "equipamento/ExtratoEquipamento", "EpiRelatorioFuncionario", "EpiRelatorioBaixa", "EstoqueEpiModulo"]) {
+  for (const f of ["AbastecimentoVeiculoModulo", "ExtratoVeiculo", "equipamento/ExtratoEquipamento", "EpiRelatorioFuncionario", "EpiRelatorioBaixa", "EstoqueEpiModulo"]) {
     assert.match(fonte(`src/components/modules/${f}.tsx`), /<AtalhoPeriodo/, f);
   }
   const input = fonte("src/components/ui/input.tsx");
