@@ -31,7 +31,11 @@ export function salvarTratativa(ocorrenciaId: string, e: EntradaTratativa, agora
   const todas = lerTratativas(storage);
   const atual = todas[ocorrenciaId];
   if (atual?.situacao === "Encerrada" && !admin) return "Tratativa encerrada: só o Administrador pode alterar.";
-  todas[ocorrenciaId] = { situacao: e.encerrar ? "Encerrada" : "Em tratativa", responsavel, descricao, reposta: e.reposta, atualizadaEm: agora, encerradaEm: e.encerrar ? agora : null };
+  // Administrador corrigindo uma tratativa já encerrada sem marcar encerrar: continua encerrada, com a data original.
+  const continuaEncerrada = atual?.situacao === "Encerrada" && !e.encerrar;
+  todas[ocorrenciaId] = continuaEncerrada
+    ? { ...atual, responsavel, descricao, reposta: e.reposta, atualizadaEm: agora }
+    : { situacao: e.encerrar ? "Encerrada" : "Em tratativa", responsavel, descricao, reposta: e.reposta, atualizadaEm: agora, encerradaEm: e.encerrar ? agora : null };
   storage.setItem(CHAVE_TRATATIVAS_FERRAMENTA, JSON.stringify(todas));
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_TRATATIVAS_FERRAMENTA));
   return null;
