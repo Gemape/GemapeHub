@@ -118,7 +118,8 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
     setEditando(clonar ? null : empregado);
     setModelo(clonar ? empregado : null);
     setEmpresaSel(empregado?.empresa_id ?? "");
-    setSupervisorSel(empregado?.supervisor_id ?? "");
+    // Supervisor que já foi desligado não fica escolhido: o campo volta vazio para o cadastro indicar outro.
+    setSupervisorSel(separarEmpregados(empregados).ativos.some((x) => x.id === empregado?.supervisor_id) ? (empregado?.supervisor_id ?? "") : "");
     setErroCpf(null);
     setErroMatricula(null);
     listaParaConferir.current = null;
@@ -353,9 +354,14 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                   efeitos = r.efeitos;
                   salvarConfig(localStorage, r.config);
                   // O supervisor recebe o alerta para substituir o empregado onde ele era responsável por alguma tarefa.
-                  const supervisor = empregados.find((x) => x.id === alvo.supervisor_id);
-                  abrirAlertaDeDesligamento({ empregadoId: alvo.id, empregadoNome: alvo.nome, supervisorId: supervisor?.id ?? null, supervisorNome: supervisor?.nome ?? null, dataDesligamento: data }, new Date().toISOString());
-                  efeitos.push(supervisor ? `alerta a ${supervisor.nome} para substituí-lo(a)` : "sem supervisor cadastrado para substituí-lo(a)");
+                  // Só vale supervisor ainda ativo; sem ele o alerta pede que alguém defina quem substitui.
+                  const supervisor = separarEmpregados(empregados).ativos.find((x) => x.id === alvo.supervisor_id && x.id !== alvo.id);
+                  try {
+                    abrirAlertaDeDesligamento({ empregadoId: alvo.id, empregadoNome: alvo.nome, supervisorId: supervisor?.id ?? null, supervisorNome: supervisor?.nome ?? null, dataDesligamento: data }, new Date().toISOString());
+                    efeitos.push(supervisor ? `alerta a ${supervisor.nome} para substituí-lo(a)` : "sem supervisor ativo para substituí-lo(a)");
+                  } catch {
+                    toast.warning("O desligamento foi registrado, mas o alerta ao supervisor não pôde ser guardado neste navegador.");
+                  }
                 }
                 // Desfazer: volta a data de demissão e a situação de antes (e, na demonstração, os efeitos simulados do desligamento).
                 avisarComDesfazer(`${alvo.nome} desligado(a)${efeitos.length ? ` (simulado: ${efeitos.join(", ")})` : ""}`, async () => {

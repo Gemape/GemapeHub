@@ -14,9 +14,11 @@ type Empregado = { id: string; nome: string; ativo: boolean; data_demissao: stri
 
 // Cadastro de empregados > pendências do desligamento: o supervisor que precisa substituir o empregado desligado e as caixas cujo portador foi desligado (desvincular na hora).
 export function PendenciasDeDesligamento({ empregados }: { empregados: readonly Empregado[] }) {
-  const [alertas, setAlertas] = useState(() => alertasAbertos(lerAlertasDeDesligamento()));
+  // Lido depois de montar (o armazenamento é do navegador), para não divergir do HTML do servidor.
+  const [alertas, setAlertas] = useState<ReturnType<typeof alertasAbertos>>([]);
   useEffect(() => {
     const atualizar = () => setAlertas(alertasAbertos(lerAlertasDeDesligamento()));
+    atualizar();
     window.addEventListener(EVENTO_ALERTAS_DESLIGAMENTO, atualizar);
     window.addEventListener("storage", atualizar);
     return () => { window.removeEventListener(EVENTO_ALERTAS_DESLIGAMENTO, atualizar); window.removeEventListener("storage", atualizar); };

@@ -81,7 +81,7 @@ export function usePendencias(): Pendencias {
   const [desligamentos, setDesligamentos] = useState<{ alertas: ReturnType<typeof alertasAbertos>; portadores: ReturnType<typeof lerPortadores> } | null>(null);
   useEffect(() => {
     if (!pronto) return;
-    const ler = () => { try { setDesligamentos({ alertas: alertasAbertos(lerAlertasDeDesligamento()), portadores: lerPortadores() }); } catch { setDesligamentos({ alertas: alertasAbertos(lerAlertasDeDesligamento()), portadores: [] }); } };
+    const ler = () => { let portadores: ReturnType<typeof lerPortadores> = []; try { portadores = lerPortadores(); } catch { /* histórico inválido: só os alertas */ } setDesligamentos({ alertas: alertasAbertos(lerAlertasDeDesligamento()), portadores }); };
     ler();
     window.addEventListener(EVENTO_ALERTAS_DESLIGAMENTO, ler);
     window.addEventListener(EVENTO_PORTADORES, ler);
@@ -98,8 +98,10 @@ export function usePendencias(): Pendencias {
     })
       // Quem não vê o módulo não vê o cartão dele, e os cartões de Equipamentos e Viagens só aparecem depois de lidos (senão mostrariam "0" sem terem sido lidos).
       .filter((g) => (podeEpi || !g.id.startsWith("epi-") && g.modulo !== "epi") && (podeUniformes || g.modulo !== "uniforme") && (podeFerramentas || (g.modulo !== "ferramenta" && g.id !== "devolucao-atrasada" && g.id !== "portador-desligado")))
+      // O alerta de substituição manda para o cadastro de empregados: só quem pode ver essa tela o recebe.
+      .filter((g) => g.id !== "substituicao-supervisor" || podeVerCaminho("/empregados"))
       .filter((g) => (g.id !== "equipamentos" || (podeEquipamentos && locais !== null)) && (g.id !== "viagens" || (podeViagens && locais !== null))),
-    [empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, parametros, locais, desligamentos, podeEpi, podeUniformes, podeFerramentas, podeEquipamentos, podeViagens],
+    [empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, parametros, locais, desligamentos, podeVerCaminho, podeEpi, podeUniformes, podeFerramentas, podeEquipamentos, podeViagens],
   );
 
   // Veículos: as mesmas regras da Frota (check list, revisões do plano e ocorrências), lidas só para quem pode ver a tela.
