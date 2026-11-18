@@ -4,7 +4,7 @@ import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
 import { EstoqueEpiModulo } from "@/components/modules/EstoqueEpiModulo";
 import { EstoqueModulo } from "@/components/modules/EstoqueModulo";
-import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
+import { FerramentasMovimentacoes } from "@/components/modules/FerramentasMovimentacoes";
 import { UniformesComprasModulo } from "@/components/modules/UniformesComprasModulo";
 import { UniformesRelatorioFuncionario } from "@/components/modules/UniformesRelatorioFuncionario";
 import { UniformesRelatorioBaixa } from "@/components/modules/UniformesRelatorioBaixa";
@@ -19,8 +19,10 @@ import { EpiTermoEntrega } from "@/components/modules/EpiTermoEntrega";
 import { EpiOrdemServico } from "@/components/modules/EpiOrdemServico";
 import { EpiFichaEpiAvulsa } from "@/components/modules/EpiFichaEpiAvulsa";
 import { FerramentasPorCaixas } from "@/components/modules/FerramentasPorCaixas";
+import { FerramentasEntradasSaidas } from "@/components/modules/FerramentasEntradasSaidas";
 import { FerramentasSugestaoCompras } from "@/components/modules/FerramentasSugestaoCompras";
 import { FerramentasCaixasModulo } from "@/components/modules/FerramentasCaixasModulo";
+import { FerramentasEscalonamentoVistorias } from "@/components/modules/FerramentasEscalonamentoVistorias";
 import { FerramentasTermoResponsabilidade } from "@/components/modules/FerramentasTermoResponsabilidade";
 import { FerramentasTermoEncerramento } from "@/components/modules/FerramentasTermoEncerramento";
 import { FerramentasTermoVistoria } from "@/components/modules/FerramentasTermoVistoria";
@@ -41,8 +43,8 @@ export function PaginaModulo({
   aba?: string | undefined;
 }) {
   const abaValida = abaDoModulo(modulo, aba);
-  // Vindo da busca global: o Estoque abre já filtrado pelo item (q) e, nas ferramentas, com o extrato dele aberto (item). O key é só o q: o item sai do endereço depois de atendido e isso não pode remontar a tela.
-  const { q, item } = useSearch({ strict: false }) as { q?: string; item?: string };
+  // Vindo da busca global: o Estoque abre já filtrado pelo item (q).
+  const { q } = useSearch({ strict: false }) as { q?: string };
   return (
     <div className="space-y-5">
       <TourGuiado modulo={modulo} aba={abaValida} />
@@ -59,7 +61,7 @@ export function PaginaModulo({
         </TabsContent>
         <TabsContent value="estoque" className="mt-5">
           {/* No EPI e nos Uniformes o Estoque é só consulta (decisões 329 e 374): novos e usados, com os filtros e a compra de origem. */}
-          {modulo === "epi" || modulo === "uniforme" ? <EstoqueEpiModulo key={q ?? ""} modulo={modulo} {...(q ? { buscaInicial: q } : {})} /> : <EstoqueModulo key={q ?? ""} modulo={modulo} {...(q ? { buscaInicial: q } : {})} {...(item ? { abrirItem: item } : {})} />}
+          {modulo === "epi" || modulo === "uniforme" ? <EstoqueEpiModulo key={q ?? ""} modulo={modulo} {...(q ? { buscaInicial: q } : {})} /> : <EstoqueModulo key={q ?? ""} modulo={modulo} {...(q ? { buscaInicial: q } : {})} />}
         </TabsContent>
         <TabsContent value="ocorrencias" className="mt-5">
           <OcorrenciasModulo modulo={modulo} />
@@ -73,11 +75,8 @@ export function PaginaModulo({
 
         {modulo === "ferramenta" && (
           <>
-            <TabsContent value="entrada-estoque" className="mt-5">
-              <MovimentacoesModulo modulo={modulo} foco="entrada" />
-            </TabsContent>
-            <TabsContent value="entrega" className="mt-5">
-              <MovimentacoesModulo modulo={modulo} foco="entrega" />
+            <TabsContent value="movimentacoes" className="mt-5">
+              <FerramentasMovimentacoes />
             </TabsContent>
           </>
         )}
@@ -151,6 +150,9 @@ export function PaginaModulo({
             <TabsContent value="termo-vistoria" className="mt-5">
               <FerramentasTermoVistoria />
             </TabsContent>
+            <TabsContent value="escalonamento-vistorias" className="mt-5">
+              <FerramentasEscalonamentoVistorias />
+            </TabsContent>
             <TabsContent value="sugestao-compras" className="mt-5">
               <FerramentasSugestaoCompras />
             </TabsContent>
@@ -159,6 +161,9 @@ export function PaginaModulo({
             </TabsContent>
             <TabsContent value="baixas" className="mt-5">
               <UniformesRelatorioBaixa modulo="ferramenta" />
+            </TabsContent>
+            <TabsContent value="entradas-saidas" className="mt-5">
+              <FerramentasEntradasSaidas />
             </TabsContent>
             <TabsContent value="ferramentas-por-caixa" className="mt-5">
               <FerramentasPorCaixas />

@@ -270,30 +270,25 @@ export function DialogBaixaCaixa({
   linhas,
   historico,
 }: Comum & { linhas: LinhaCaixa[]; historico: Movimentacao[] }) {
-  const { data: empregados = [] } = useEmpregados(TODAS, true);
   const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
   const [ferramentaId, setFerramentaId] = useState(linhas[0]?.ferramenta.id ?? "");
   const [quantidade, setQuantidade] = useState(1);
   const [motivo, setMotivo] = useState("");
   const [onus, setOnus] = useState<string>(ONUS_BAIXA[0]);
   const [data, setData] = useState(hojeLocal());
-  const [empregadoId, setEmpregadoId] = useState(SEM_EMPREGADO);
   const [observacao, setObservacao] = useState("");
   const linha = linhas.find((l) => l.ferramenta.id === ferramentaId);
 
   function gravar() {
-    const empregado = empregadoId === SEM_EMPREGADO ? null : empregadoId;
     const erro = validarBaixaDaCaixa({
       ferramentaId,
       quantidade,
       motivo,
       data,
       disponivel: linha?.disponivel ?? 0,
-      // Com empregado, o limite é o que está com ele, não o total da caixa.
-      comEmpregado: empregado
-        ? controleDaFerramenta(historico.filter((m) => m.empregado_id === empregado), ferramentaId).comEmpregado
-        : (linha?.comEmpregado ?? 0),
-      empregadoId: empregado,
+      comEmpregado: 0,
+      // A baixa é da caixa, sem pessoa: o limite é o que está guardado nela.
+      empregadoId: null,
     });
     if (erro || !linha) {
       alert(erro ?? "Escolha a ferramenta.");
@@ -312,7 +307,7 @@ export function DialogBaixaCaixa({
           item_id: ferramentaId,
           veiculo_id: null,
           empresa_id: linha.ferramenta.empresa_id,
-          empregado_id: empregado,
+          empregado_id: null,
           tipo_movimentacao: "Saida",
           motivo_baixa: motivo,
           quantidade,
@@ -338,7 +333,7 @@ export function DialogBaixaCaixa({
         <DialogHeader>
           <DialogTitle>Dar baixa em ferramenta da caixa {caixa.codigo}</DialogTitle>
           <DialogDescription>
-            Sem empregado, a baixa sai do que está guardado na caixa; com empregado, do que está com ele.
+            A baixa sai do que está guardado na caixa e fica registrada nela, sem vínculo com pessoa.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -351,7 +346,7 @@ export function DialogBaixaCaixa({
               <SelectContent>
                 {linhas.map((l) => (
                   <SelectItem key={l.ferramenta.id} value={l.ferramenta.id}>
-                    {l.ferramenta.codigo_sku} — {l.ferramenta.nome}{sufixoTamanhoFerramenta(l.ferramenta)} (guardadas {l.disponivel}, com empregado {l.comEmpregado})
+                    {l.ferramenta.codigo_sku} — {l.ferramenta.nome}{sufixoTamanhoFerramenta(l.ferramenta)} (guardadas {l.disponivel})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -397,22 +392,6 @@ export function DialogBaixaCaixa({
                 {ONUS_BAIXA.map((o) => (
                   <SelectItem key={o} value={o}>
                     {o}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="baixa-empregado">Empregado</Label>
-            <Select value={empregadoId} onValueChange={(v) => { if (v) setEmpregadoId(v); }}>
-              <SelectTrigger id="baixa-empregado">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SEM_EMPREGADO}>Sem empregado (baixa da própria caixa)</SelectItem>
-                {empregados.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.nome}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -3,11 +3,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PaginaModulo } from "@/components/modules/PaginaModulo";
 
 export const Route = createFileRoute("/_authenticated/ferramentas")({
-  validateSearch: (search: Record<string, unknown>): { aba?: string; q?: string; item?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { aba?: string; q?: string } => ({
     ...(typeof search["aba"] === "string" ? { aba: search["aba"] } : {}),
-    // q e item: o Estoque abre filtrado pela ferramenta achada na busca global e já com o extrato dela aberto.
+    // q: o Estoque abre filtrado pela ferramenta achada na busca global.
     ...(typeof search["q"] === "string" && search["q"] ? { q: search["q"] } : {}),
-    ...(typeof search["item"] === "string" && search["item"] ? { item: search["item"] } : {}),
   }),
   head: () => ({
     meta: [

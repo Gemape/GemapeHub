@@ -8,9 +8,9 @@ test("dec 238: Estoque mostra a empresa de cada linha, e no CSV", () => {
   assert.match(tela, /<TableHead>Empresa<\/TableHead>/);
   assert.match(tela, /<TableCell>\{nomeDaEmpresa\(item\.empresa_id\)\}<\/TableCell>/);
   assert.match(tela, /Empresa: nomeDaEmpresa\(item\.empresa_id\)/);
-  // 6 colunas (12 em Ferramentas, com a posição por caixa): o esqueleto de carregando e o aviso de lista vazia ocupam todas.
-  assert.equal((tela.match(/colSpan=\{ferr \? 12 : 6\}/g) ?? []).length, 1);
-  assert.match(tela, /<LinhasEsqueleto colunas=\{ferr \? 12 : 6\} \/>/);
+  // 6 colunas (10 em Ferramentas, com a posição por caixa; entradas e baixas ficam no relatório Entradas e saídas): o esqueleto de carregando e o aviso de lista vazia ocupam todas.
+  assert.equal((tela.match(/colSpan=\{ferr \? 10 : 6\}/g) ?? []).length, 1);
+  assert.match(tela, /<LinhasEsqueleto colunas=\{ferr \? 10 : 6\} \/>/);
   assert.doesNotMatch(tela, /colSpan=\{6\}/);
 });
 

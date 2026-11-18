@@ -47,7 +47,7 @@ export const CONHECIMENTO: readonly Verbete[] = [
     id: "ferramentas-entrega", titulo: "Entregar e devolver ferramenta",
     chaves: ["entregar ferramenta", "entrega de ferramenta", "devolver ferramenta", "devolucao de ferramenta", "termo de responsabilidade", "termo de encerramento", "ferramenta com empregado"],
     resposta: "Em Ferramentas > Entrega de ferramentas a saída vai para o empregado, com o Termo de Responsabilidade individual. Quando ele devolve (inclusive depois de desligado), o Termo de Encerramento registra a devolução e a unidade volta ao estoque uma única vez. Para saber quem está com uma ferramenta, pergunte aqui: “Quem está com a furadeira 04?”.",
-    links: [{ rotulo: "Entrega de ferramentas", url: "/ferramentas", search: { aba: "entrega" } }, { rotulo: "Termo de encerramento", url: "/ferramentas", search: { aba: "termo-encerramento" } }],
+    links: [{ rotulo: "Movimentações", url: "/ferramentas", search: { aba: "movimentacoes" } }, { rotulo: "Termo de encerramento", url: "/ferramentas", search: { aba: "termo-encerramento" } }],
   },
   {
     id: "ferramentas-caixas", titulo: "Caixas e portadores de ferramentas",

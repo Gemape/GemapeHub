@@ -6,13 +6,15 @@
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 const CHAVE = "gemape-demo-supervisores-ocorrencias";
 export const SENHA_DEMONSTRACAO = "demo";
+// Ferramentas têm a lista própria: quem supervisiona as ocorrências dos veículos não vira supervisor das ferramentas sem escolha.
+export const CHAVE_SUPERVISORES_FERRAMENTAS = "gemape-demo-supervisores-ocorrencias-ferramentas";
 
 export type UsuarioDoSistema = { id: string; nome: string; perfil: string };
 
 // null = nada salvo (valem os administradores).
-export function lerSupervisoresSalvos(storage?: StorageLike): string[] | null {
+export function lerSupervisoresSalvos(storage?: StorageLike, chave: string = CHAVE): string[] | null {
   try {
-    const bruto = (storage ?? localStorage).getItem(CHAVE);
+    const bruto = (storage ?? localStorage).getItem(chave);
     if (bruto === null) return null;
     const lido: unknown = JSON.parse(bruto);
     return Array.isArray(lido) ? lido.filter((x): x is string => typeof x === "string") : null;
@@ -21,17 +23,17 @@ export function lerSupervisoresSalvos(storage?: StorageLike): string[] | null {
   }
 }
 
-export function salvarSupervisores(ids: string[], storage?: StorageLike): void {
+export function salvarSupervisores(ids: string[], storage?: StorageLike, chave: string = CHAVE): void {
   try {
-    (storage ?? localStorage).setItem(CHAVE, JSON.stringify([...new Set(ids)]));
+    (storage ?? localStorage).setItem(chave, JSON.stringify([...new Set(ids)]));
   } catch {
     throw new Error("Não foi possível guardar os supervisores neste navegador.");
   }
 }
 
 // Usuários habilitados como supervisor: os escolhidos (que ainda existem) ou, sem escolha salva, os administradores.
-export function supervisoresEfetivos(usuarios: UsuarioDoSistema[], storage?: StorageLike): UsuarioDoSistema[] {
-  const salvos = lerSupervisoresSalvos(storage);
+export function supervisoresEfetivos(usuarios: UsuarioDoSistema[], storage?: StorageLike, chave: string = CHAVE): UsuarioDoSistema[] {
+  const salvos = lerSupervisoresSalvos(storage, chave);
   return salvos === null ? usuarios.filter((u) => u.perfil === "admin") : usuarios.filter((u) => salvos.includes(u.id));
 }
 

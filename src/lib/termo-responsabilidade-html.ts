@@ -3,12 +3,15 @@
 import { escaparHtml } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
 import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
+import { TEXTOS_PADRAO, montarTextoDoTermo } from "./termos-ferramentas-texto.ts";
 
 export interface DadosTermoResponsabilidade {
   empresa: { razao_social: string; cnpj: string };
   empregado: { nome: string; cpf: string };
   caixaCodigo?: string | null | undefined;
   data: string;
+  /** Texto cadastrado em Parâmetros Específicos; sem ele, vale o texto padrão. */
+  texto?: string | undefined;
   linhas: {
     codigo?: string | null | undefined;
     nome?: string | null | undefined;
@@ -42,15 +45,17 @@ export function montarTermoResponsabilidadeHtml(dados: DadosTermoResponsabilidad
     year: "numeric",
   });
 
+  const texto = montarTextoDoTermo(dados.texto ?? TEXTOS_PADRAO.entrega, {
+    empregado: dados.empregado.nome, cpf: dados.empregado.cpf, empresa: dados.empresa.razao_social, cnpj: formatarCnpj(dados.empresa.cnpj), caixa: dados.caixaCodigo, data: dataFormatada,
+  });
+
   return paginaRelatorio({
     titulo: `Termo de Responsabilidade Individual - ${dados.empregado.nome}`,
     cabecalho: cabecalhoRelatorio({ titulo: "Termo de Responsabilidade Individual de Ferramentas", subtitulos: [`CNPJ: ${formatarCnpj(dados.empresa.cnpj)}`], empresa: dados.empresa.razao_social }),
     css: CSS_TERMO,
     corpo: `<div class="termo">
           <div class="content">
-            <p>Pelo presente instrumento, eu <strong>${escaparHtml(dados.empregado.nome)}</strong>, CPF <strong>${escaparHtml(dados.empregado.cpf)}</strong>, declaro que recebi da empresa supra citada, em perfeito estado de conservação e funcionamento, as ferramentas e equipamentos abaixo relacionados, componentes da <strong>CAIXA Nº ${escaparHtml(dados.caixaCodigo || "AVULSA")}</strong>, para uso exclusivo no desempenho de minhas atividades profissionais.</p>
-
-            <p>Comprometo-me a zelar pela guarda, conservação e limpeza das mesmas, assumindo total responsabilidade pelo seu uso correto. Estou ciente de que, em caso de perda, extravio ou danos causados por mau uso ou negligência, poderei ser responsabilizado pelos custos de reparo ou reposição, conforme preceitua o Art. 462, § 1º da CLT.</p>
+            ${texto.antes}
           </div>
 
           <table>
@@ -70,7 +75,7 @@ export function montarTermoResponsabilidadeHtml(dados: DadosTermoResponsabilidad
           </table>
 
           <div class="content">
-            <p>Comprometo-me, ainda, a devolver todos os itens acima relacionados no ato de meu desligamento da empresa ou sempre que me for solicitado, sob as mesmas condições em que foram recebidos.</p>
+            ${texto.depois}
           </div>
 
           <p style="text-align: right; margin-top: 30px;">Local e data: ____________________, ${dataFormatada}</p>

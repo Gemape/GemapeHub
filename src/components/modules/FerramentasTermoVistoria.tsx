@@ -36,6 +36,7 @@ import {
 } from "@/lib/hooks-gemape";
 import { empregadoDoTermo, validarTermoVistoria } from "@/lib/termos-atomicos";
 import { montarTermoVistoriaHtml } from "@/lib/termo-vistoria-html";
+import { lerTextosTermos } from "@/lib/termos-ferramentas-texto";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { hojeLocal } from "@/lib/empregados";
@@ -173,6 +174,7 @@ export function FerramentasTermoVistoria() {
       caixa,
       responsavel: empregado?.nome || (caixa ? portadorNaData(portadores, caixa.id, dataVistoria)?.empregado_nome : undefined),
       data: dataVistoria,
+      texto: lerTextosTermos().vistoria,
       linhas: itensDoTermo.map((it) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return {

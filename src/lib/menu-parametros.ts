@@ -1,5 +1,6 @@
 // Hierarquia do menu Parâmetros (decisões 34 e 38). Só dados: o AppSidebar desenha.
 export type NomeIcone =
+  | "CalendarDays"
   | "Tags"
   | "Ruler"
   | "ListChecks"
@@ -82,12 +83,12 @@ export const ABAS_UNIFORME: readonly AbaMenu[] = [
 export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
   { aba: "dashboard", titulo: "Dashboard", icone: "LayoutDashboard" },
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
-  { aba: "entrada-estoque", titulo: "Entrada no estoque", icone: "ShoppingCart" },
-  { aba: "entrega", titulo: "Entrega de ferramentas", icone: "PackageCheck" },
+  { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
   { aba: "caixas", titulo: "Número da caixa", icone: "Box" },
   { aba: "termo-responsabilidade", titulo: "Termo de responsabilidade individual", icone: "FileSignature" },
   { aba: "termo-encerramento", titulo: "Termo de encerramento responsabilidade", icone: "FileX" },
   { aba: "termo-vistoria", titulo: "Termo de vistoria periódica", icone: "ClipboardCheck" },
+  { aba: "escalonamento-vistorias", titulo: "Escalonamento de Vistorias", icone: "CalendarDays" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
@@ -96,6 +97,7 @@ export const ABAS_FERRAMENTA_RELATORIOS: readonly AbaMenu[] = [
   { aba: "sugestao-compras", titulo: "Sugestão de Compras", icone: "ClipboardList" },
   { aba: "historico", titulo: "Histórico do empregado", icone: "History" },
   { aba: "baixas", titulo: "Baixas definitivas", icone: "PackageMinus" },
+  { aba: "entradas-saidas", titulo: "Entradas e saídas", icone: "ArrowLeftRight" },
   { aba: "ferramentas-por-caixa", titulo: "Ferramentas por caixas", icone: "Archive" },
   { aba: "inventario", titulo: "Inventário (contagem física)", icone: "ClipboardCheck" },
   { aba: "consulta", titulo: "Monte sua consulta", icone: "ListChecks" },
@@ -258,13 +260,14 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     "termo-responsabilidade": "Gera o termo de responsabilidade individual do empregado pelas ferramentas que recebeu.",
     "termo-encerramento": "Gera o termo que encerra a responsabilidade do empregado sobre as ferramentas devolvidas.",
     "termo-vistoria": "Gera o termo da vistoria periódica das ferramentas que estão com o empregado.",
-    "entrada-estoque": "Controla só as entradas de ferramentas no estoque (compra, nota fiscal ou ajuste) e lista as entradas já feitas.",
-    entrega: "Controla a saída das ferramentas do estoque: entrega ao empregado, devolução e baixa (perda, quebra ou desgaste, com o motivo).",
+    movimentacoes: "Controla a entrada no estoque, a entrega da ferramenta à caixa e a baixa (perda, quebra ou desgaste, com o motivo). A ferramenta se liga à caixa, não a uma pessoa.",
     "sugestao-compras": "Indica quais ferramentas repor e em que quantidade, pelo estoque mínimo e pelas baixas definitivas dos últimos 12 meses.",
     historico: "Mostra, por empregado, as ferramentas que recebeu, devolveu e baixou e as que estão em posse dele.",
     baixas: "Lista as baixas definitivas de ferramentas, com motivo, quantidade e valor, por período, para consulta e exportação.",
     consulta: "Relatório sob demanda: marque os campos que quer cruzar e o que somar, veja o resultado na hora e salve a consulta no seu perfil.",
     inventario: "Inventário em etapas: escolha o setor, conte o que está na prateleira, revise as diferenças com o sistema e baixe o relatório. É conferência: não movimenta o estoque.",
+    "escalonamento-vistorias": "Define o mês-base de vistoria de cada caixa e mostra o calendário projetado e a carga de cada mês.",
+    "entradas-saidas": "Entradas e saídas de ferramentas por caixa e por empregado, com o motivo de cada saída.",
     "ferramentas-por-caixa": "Gera o relatório das caixas de ferramentas: você escolhe as caixas e as seções (ferramentas, histórico e ocorrências) que entram.",
     ocorrencias: OCORR,
   },

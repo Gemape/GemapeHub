@@ -74,7 +74,7 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     if (r.emPosse.length === 0) continue;
     atrasadas.push({
       chave: `dev-${id}`, texto: emp.nome, detalhe: `${r.emPosse.map((p) => `${p.nome} (${p.quantidade})`).join(", ")}${emp.data_demissao ? ` · desligado em ${dataBr(emp.data_demissao)}` : ""}`,
-      acao: { rotulo: "Registrar devolução", url: "/ferramentas", search: { aba: "entrega" } },
+      acao: { rotulo: "Abrir caixas", url: "/ferramentas", search: { aba: "caixas" } },
     });
   }
 

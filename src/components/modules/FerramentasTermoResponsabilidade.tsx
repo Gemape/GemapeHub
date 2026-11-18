@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { controleDaFerramenta, disponivelNaCaixa, movimentacoesDaCaixa } from "@/lib/controle-caixa";
 import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { montarTermoResponsabilidadeHtml } from "@/lib/termo-responsabilidade-html";
+import { lerTextosTermos } from "@/lib/termos-ferramentas-texto";
 
 interface ItemTermo {
   id: string;
@@ -219,6 +220,7 @@ export function FerramentasTermoResponsabilidade() {
       empregado,
       caixaCodigo: caixa?.codigo,
       data: dataTermo,
+      texto: lerTextosTermos().entrega,
       linhas: itensDoTermo.map((it) => {
         const itemInfo = itens.find((i) => i.id === it.item_id);
         return {

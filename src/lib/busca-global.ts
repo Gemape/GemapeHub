@@ -56,17 +56,17 @@ export function buscarGlobal(termoBruto: string, f: FontesBusca, limite = LIMITE
     destino: { url: "/veiculos", search: { aba: "frota", extrato: v.id } },
   })));
 
-  const itens = (modulo: ModuloBusca, lista: readonly Item[] | undefined, url: string, comCa: boolean, comItem: boolean, acao: string) =>
+  const itens = (modulo: ModuloBusca, lista: readonly Item[] | undefined, url: string, comCa: boolean, acao: string) =>
     add(modulo, (lista ?? []).filter((i) => i.status !== "Inativo" && (casaNome(i.nome, termo) || casaCodigo(i.codigo_sku, codigo) || (comCa && casaCodigo(i.ca, codigo)))).map((i) => ({
       chave: `${modulo}-${i.id}`,
       titulo: i.nome,
       detalhe: [i.codigo_sku, comCa ? (i.ca ? `CA ${i.ca}` : "sem CA") : null].filter(Boolean).join(" · ") || "Sem código",
       acao,
-      // Estoque já filtrado pelo item; a ferramenta ainda abre o extrato dela (?item=).
-      destino: { url, search: { aba: "estoque", q: i.codigo_sku || i.nome, ...(comItem ? { item: i.id } : {}) } },
+      // Estoque já filtrado pelo item.
+      destino: { url, search: { aba: "estoque", q: i.codigo_sku || i.nome } },
     })));
-  itens("EPIs", f.epis, "/epi", true, false, "EPI — abrir na lista");
-  itens("Uniformes", f.uniformes, "/uniformes", false, false, "Uniforme — abrir na lista");
-  itens("Ferramentas", f.ferramentas, "/ferramentas", false, true, "Abrir extrato");
+  itens("EPIs", f.epis, "/epi", true, "EPI — abrir na lista");
+  itens("Uniformes", f.uniformes, "/uniformes", false, "Uniforme — abrir na lista");
+  itens("Ferramentas", f.ferramentas, "/ferramentas", false, "Ferramenta — abrir na lista");
   return grupos;
 }
