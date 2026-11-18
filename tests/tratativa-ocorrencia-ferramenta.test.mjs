@@ -26,6 +26,9 @@ test("responsável e descrição são obrigatórios; encerrada só o administrad
   assert.match(salvarTratativa("o1", dados(), "y", false, s), /Administrador/);
   assert.equal(salvarTratativa("o1", dados({ descricao: "Corrigida" }), "y", true, s), null);
   assert.equal(lerTratativas(s)["o1"].descricao, "Corrigida");
+  // corrigir o texto sem marcar encerrar não reabre a ocorrência nem apaga a data de encerramento
+  assert.equal(lerTratativas(s)["o1"].situacao, "Encerrada");
+  assert.equal(lerTratativas(s)["o1"].encerradaEm, "x");
 });
 
 test("armazenamento corrompido não derruba a tela", () => {

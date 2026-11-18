@@ -88,12 +88,15 @@ export function FerramentasTermoVistoria() {
     setVistoriaDaCaixa(caixaId);
   }
   useEffect(() => {
-    if (!vistoriaDaCaixa || vistoriaDaCaixa !== caixaSel || !itensCaixaPronto || carregandoItensCaixa) return;
+    if (!vistoriaDaCaixa || vistoriaDaCaixa !== caixaSel) return;
     setVistoriaDaCaixa(null);
-    if (itensCaixa.length === 0) return void alert("Nenhum item encontrado nesta caixa.");
-    setItensVistoria(itensCaixa.map((ci) => ({ id: Math.random().toString(36).slice(2, 11), item_id: ci.ferramenta_id, quantidade: ci.quantidade, estado: "Usado", conformidade: "Conforme" as const, observacao: ci.observacao || "" })));
-    document.getElementById("vistoria-formulario")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [vistoriaDaCaixa, caixaSel, itensCaixa, itensCaixaPronto, carregandoItensCaixa]);
+    // Busca de novo (sem usar o cache) para a vistoria partir das quantidades de agora.
+    void buscarItensCaixa().then(({ data: atuais = [] }) => {
+      if (atuais.length === 0) return void alert("Nenhum item encontrado nesta caixa.");
+      setItensVistoria(atuais.map((ci) => ({ id: Math.random().toString(36).slice(2, 11), item_id: ci.ferramenta_id, quantidade: ci.quantidade, estado: "Usado", conformidade: "Conforme" as const, observacao: ci.observacao || "" })));
+      document.getElementById("vistoria-formulario")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [vistoriaDaCaixa, caixaSel, buscarItensCaixa]);
 
   const registrarVistorias = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
   const salvando = useRef(false);
@@ -195,6 +198,7 @@ export function FerramentasTermoVistoria() {
     // Ferramenta ausente na vistoria: abre a ocorrência de desaparecimento (a reposição é a tratativa, em Movimentações > Reposição).
     const portadorDaData = caixa ? portadorNaData(portadores, caixa.id, dataVistoria) : null;
     const ausentes = itensDoTermo.filter((it) => it.conformidade === "Ausente");
+    let abertas = 0;
     for (const it of ausentes) {
       const ferramenta = itens.find((i) => i.id === it.item_id);
       try {
@@ -211,11 +215,15 @@ export function FerramentasTermoVistoria() {
             ...(MODO_DEMO ? { caixa_id: caixaSel || null } : {}),
           },
         });
+        abertas += 1;
       } catch {
-        // A falha já aparece no aviso da gravação.
+        // Segue para as demais; o aviso abaixo diz quantas não foram abertas.
       }
     }
-    if (ausentes.length > 0) alert(`${ausentes.length === 1 ? "Foi aberta 1 ocorrência" : `Foram abertas ${ausentes.length} ocorrências`} de desaparecimento em Ocorrências. Para repor, use Movimentações > Reposição.`);
+    if (ausentes.length > 0) {
+      const falhas = ausentes.length - abertas;
+      alert(`${abertas === 1 ? "Foi aberta 1 ocorrência" : `Foram abertas ${abertas} ocorrências`} de desaparecimento em Ocorrências. Para repor, use Movimentações > Reposição.${falhas > 0 ? ` ATENÇÃO: ${falhas === 1 ? "1 ocorrência não foi gravada" : `${falhas} ocorrências não foram gravadas`}; abra-${falhas === 1 ? "a" : "as"} manualmente em Ocorrências.` : ""}`);
+    }
 
     const html = montarTermoVistoriaHtml({
       empresa,

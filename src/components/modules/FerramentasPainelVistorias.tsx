@@ -24,7 +24,8 @@ const pct = (n: number, total: number) => (total === 0 ? null : Math.round((n / 
 
 // Termo de vistoria periódica > painel: as caixas com a situação da vistoria (cards no padrão da Frota) e, ao lado de cada uma, o botão que abre a vistoria dela.
 export function FerramentasPainelVistorias({ onFazerVistoria }: { onFazerVistoria: (caixaId: string) => void }) {
-  const [mesesBase] = useState(lerMesesBase);
+  // Lido a cada desenho (é pequeno), para acompanhar o que se definir no Escalonamento.
+  const mesesBase = lerMesesBase();
   const { linhas, isLoading, periodicidade } = useVistoriasDasCaixas(mesesBase);
   const [todas, setTodas] = useState(false);
   const por = (s: SituacaoDaVistoria) => linhas.filter((l) => l.resultado.situacao === s).length;

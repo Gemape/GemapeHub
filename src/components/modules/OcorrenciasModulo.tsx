@@ -4,6 +4,7 @@ import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAccess } from "@/lib/access-context";
+import { MODO_DEMO } from "@/lib/modo-demo";
 import { EVENTO_TRATATIVAS_FERRAMENTA, lerTratativas, salvarTratativa, situacaoDaOcorrencia, type SituacaoOcorrenciaFerramenta } from "@/lib/tratativa-ocorrencia-ferramenta";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,8 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Ocorrencia | null>(null);
   const { isAdmin } = useAccess();
-  const comTratativa = modulo === "ferramenta";
+  // Fase 1: a tratativa fica só no navegador, então só existe em modo demonstração (no banco real faltam os campos).
+  const comTratativa = modulo === "ferramenta" && MODO_DEMO;
   const [tratativas, setTratativas] = useState(lerTratativas);
   useEffect(() => {
     const atualizar = () => setTratativas(lerTratativas());
@@ -104,9 +106,10 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
     return "—";
   };
 
-  function gravarTratativa(e: React.FormEvent<HTMLFormElement>, encerrar: boolean) {
+  function gravarTratativa(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!tratando) return;
+    const encerrar = (e.nativeEvent as SubmitEvent).submitter?.getAttribute("value") === "encerrar";
     const f = new FormData(e.currentTarget);
     const erro = salvarTratativa(tratando.id, { responsavel: String(f.get("responsavel") ?? ""), descricao: capitalizarTexto(String(f.get("descricao") ?? "")), reposta: f.get("reposta") === "on", encerrar }, new Date().toISOString(), isAdmin);
     if (erro) { toast.error(erro); return; }
@@ -401,7 +404,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
             <DialogDescription>Informe o que foi feito (localizar ou repor a ferramenta). Salvar mantém Em tratativa; encerrar fecha a ocorrência.</DialogDescription>
           </DialogHeader>
           {tratando && (
-            <form key={tratando.id} onSubmit={(e) => gravarTratativa(e, false)} className="grid gap-3">
+            <form key={tratando.id} onSubmit={gravarTratativa} className="grid gap-3">
               <p className="text-sm text-muted-foreground">{tratando.descricao_ocorrencia}</p>
               <div className="space-y-1.5">
                 <Label htmlFor="tr_ferr_resp">Responsável pela tratativa</Label>
@@ -415,7 +418,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setTratando(null)}>Cancelar</Button>
                 <Button requiresWrite="operar" type="submit">Salvar tratativa</Button>
-                <Button requiresWrite="operar" type="button" variant="destructive" onClick={(ev) => { const form = ev.currentTarget.closest("form"); if (form?.reportValidity()) gravarTratativa({ preventDefault() {}, currentTarget: form } as unknown as React.FormEvent<HTMLFormElement>, true); }}>Encerrar tratativa</Button>
+                <Button requiresWrite="operar" type="submit" name="acao" value="encerrar" variant="destructive">Encerrar tratativa</Button>
               </DialogFooter>
             </form>
           )}
