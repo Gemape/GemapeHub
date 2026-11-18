@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { FerramentasEntregaCaixa } from "@/components/modules/FerramentasEntregaCaixa";
 import { FerramentasBaixaCaixa } from "@/components/modules/FerramentasBaixaCaixa";
+import { FerramentasReposicaoCaixa } from "@/components/modules/FerramentasReposicaoCaixa";
 
 const VISOES = [
   { id: "entrada", rotulo: "Entrada no estoque" },
   { id: "entrega", rotulo: "Entrega à caixa" },
+  { id: "reposicao", rotulo: "Reposição" },
   { id: "baixa", rotulo: "Baixa" },
 ] as const;
 
@@ -23,6 +25,7 @@ export function FerramentasMovimentacoes() {
       </div>
       {visao === "entrada" && <MovimentacoesModulo modulo="ferramenta" foco="entrada" />}
       {visao === "entrega" && <FerramentasEntregaCaixa />}
+      {visao === "reposicao" && <FerramentasReposicaoCaixa />}
       {visao === "baixa" && <FerramentasBaixaCaixa />}
     </div>
   );
