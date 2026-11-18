@@ -41,6 +41,9 @@ test("situação da vistoria: em dia, pendente dentro do prazo, vencida depois e
   assert.equal(situacaoDaVistoria({ ...d, hoje: "2026-03-06", ultimaVistoria: null }).situacao, "Pendente");
   assert.equal(situacaoDaVistoria({ ...d, hoje: "2026-03-07", ultimaVistoria: null }).situacao, "Vencida");
   assert.equal(situacaoDaVistoria({ ...d, hoje: "2026-03-20", ultimaVistoria: "2026-03-10" }).situacao, "Em dia");
+  // vistoria adiantada em até metade do ciclo (45 dias) vale; antes disso, não
+  assert.equal(situacaoDaVistoria({ ...d, hoje: "2026-03-10", ultimaVistoria: "2026-02-28" }).situacao, "Em dia");
+  assert.equal(situacaoDaVistoria({ ...d, hoje: "2026-03-10", ultimaVistoria: "2026-01-10" }).situacao, "Vencida");
   // a vistoria do ciclo anterior (dezembro) não vale para o de março
   assert.equal(situacaoDaVistoria({ ...d, hoje: "2026-04-20", ultimaVistoria: "2025-12-15" }).situacao, "Vencida");
   // entre ciclos vale o último que começou: em maio ainda é o de março

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { ONUS_BAIXA } from "@/lib/gemape";
+import { ONUS_BAIXA, formatarData } from "@/lib/gemape";
 import { hojeLocal } from "@/lib/empregados";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { MODO_DEMO } from "@/lib/modo-demo";
@@ -91,9 +91,9 @@ export function FerramentasReposicaoCaixa() {
               { ...base, item_id: antigaId, empresa_id: antiga?.empresa_id ?? caixa.empresa_id, tipo_movimentacao: "Saida", motivo_baixa: motivo, onus_baixa: onus, origem_local: null, destino_local: null, observacao: `Reposição na caixa ${caixa.codigo}: baixa.${complemento}`.slice(0, 500) },
               { ...base, item_id: novaId, empresa_id: nova?.empresa_id ?? caixa.empresa_id, tipo_movimentacao: "Transferencia", motivo_baixa: null, onus_baixa: null, origem_local: "Estoque", destino_local: caixa.codigo, observacao: `Reposição na caixa ${caixa.codigo}: entrega da ferramenta nova.${complemento}`.slice(0, 500) },
             ],
-            { onSuccess: () => abrirTermo(novosItens) },
+            // O formulário só é limpo depois de a baixa e a entrega gravarem; se falhar, os dados continuam na tela.
+            { onSuccess: () => { abrirTermo(novosItens); setAntigaId(""); setNovaId(""); setQuantidade(1); setMotivo(""); setObservacao(""); } },
           );
-          setAntigaId(""); setNovaId(""); setQuantidade(1); setMotivo(""); setObservacao("");
         },
       },
     );
@@ -102,23 +102,22 @@ export function FerramentasReposicaoCaixa() {
   // O termo lista a composição da caixa depois da troca; o texto e o portador da data da reposição saem dos parâmetros e do histórico de portadores.
   function abrirTermo(itens: { ferramenta_id: string; quantidade: number }[]) {
     if (!caixa) return;
-    const empresa = empresas.find((e) => e.id === caixa.empresa_id) ?? empresas[0];
-    if (!empresa) return void alert("A reposição foi registrada, mas não achei a empresa da caixa para gerar o termo.");
+    const empresa = empresas.find((e) => e.id === caixa.empresa_id);
+    if (!empresa) return void alert("A reposição foi registrada, mas a caixa não tem empresa cadastrada; o termo não foi gerado.");
     let portador: ReturnType<typeof portadorNaData> = null;
     try { portador = portadorNaData(portadores, caixa.id, data); } catch { portador = null; }
-    const empregado = empregados.find((e) => e.id === portador?.empregado_id);
+    if (!portador) return void alert(`A reposição foi registrada, mas a caixa ${caixa.codigo} não tinha portador em ${formatarData(data)}; o termo não foi gerado. Registre o portador da caixa e gere o termo depois.`);
+    const empregado = empregados.find((e) => e.id === portador.empregado_id);
     const html = montarTermoReposicaoHtml({
       empresa,
-      empregado: { nome: portador?.empregado_nome, cpf: empregado?.cpf },
+      empregado: { nome: portador.empregado_nome, cpf: empregado?.cpf },
       caixaCodigo: caixa.codigo,
       data,
       texto: lerTextosTermos().reposicao,
-      linhas: itens.map((i) => ({ codigo: ferramentaPor(i.ferramenta_id)?.codigo_sku, nome: rotulo(i.ferramenta_id).replace(/^.* — /, ""), quantidade: i.quantidade, reposta: i.ferramenta_id === novaId })),
+      linhas: itens.map((i) => ({ codigo: ferramentaPor(i.ferramenta_id)?.codigo_sku, nome: `${ferramentaPor(i.ferramenta_id)?.nome ?? "—"}${sufixoTamanhoFerramenta(ferramentaPor(i.ferramenta_id) ?? {})}`, quantidade: i.quantidade, reposta: i.ferramenta_id === novaId })),
     });
     abrirDocumento({ titulo: "Termo de Reposição", html, arquivo: nomeArquivoDocumento("Termo de Reposição", caixa.codigo, data) });
   }
-
-  const reposicoes = movimentos.filter((m) => m.tipo_movimentacao === "Saida" && (m.observacao ?? "").startsWith("Reposição na caixa"));
 
   return (
     <div className="space-y-6">
@@ -174,7 +173,7 @@ export function FerramentasReposicaoCaixa() {
           </div>
         </div>
         <Button requiresWrite="operar" type="button" disabled={salvarCaixa.isPending || registrar.isPending} onClick={repor}>Registrar reposição e gerar termo</Button>
-        {reposicoes.length > 0 && <p className="text-xs text-muted-foreground">{reposicoes.length} {reposicoes.length === 1 ? "reposição registrada" : "reposições registradas"}; as baixas aparecem também em Baixa e no relatório de Entradas e saídas.</p>}
+        <p className="text-xs text-muted-foreground">A baixa da reposição aparece também em Baixa e no relatório de Entradas e saídas.</p>
       </section>
     </div>
   );

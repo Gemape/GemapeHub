@@ -1,6 +1,6 @@
 // Situação da vistoria periódica de uma caixa: junta o mês-base (Escalonamento), a periodicidade e o prazo (Parâmetros Específicos) e a última vistoria feita.
 // A vistoria devida é a do ciclo mais recente que já começou (primeiro dia do mês previsto); ela vence `prazoDias` depois desse dia.
-// Feita nesse ciclo (última vistoria no primeiro dia do mês previsto ou depois) = em dia; sem ela, pendente até o limite e vencida depois dele.
+// Feita nesse ciclo (última vistoria no primeiro dia do mês previsto ou depois, ou adiantada em até metade do ciclo) = em dia; sem ela, pendente até o limite e vencida depois dele.
 import { MESES_DA_PERIODICIDADE, type MesBase } from "./escalonamento-vistorias.ts";
 import type { PeriodicidadeVistoria } from "./vistoria-ferramentas-parametros.ts";
 
@@ -18,6 +18,8 @@ export function situacaoDaVistoria(d: { mesBase: MesBase | undefined; periodicid
   while ((((n - (d.mesBase - 1)) % passo) + passo) % passo !== 0) n -= 1;
   const previstaEm = `${Math.floor(n / 12)}-${String((n % 12) + 1).padStart(2, "0")}-01`;
   const limite = somarDias(previstaEm, d.prazoDias);
-  const feita = !!d.ultimaVistoria && d.ultimaVistoria.slice(0, 10) >= previstaEm;
+  // Vale também a vistoria adiantada em até metade do ciclo (15 dias na mensal, 45 na trimestral...).
+  const desde = somarDias(previstaEm, -Math.floor((passo * 30) / 2));
+  const feita = !!d.ultimaVistoria && d.ultimaVistoria.slice(0, 10) >= desde;
   return { situacao: feita ? "Em dia" : d.hoje <= limite ? "Pendente" : "Vencida", previstaEm, limite };
 }
