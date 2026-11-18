@@ -49,7 +49,7 @@ test("motivos de baixa das ferramentas: padrão, salvar e recusar lista vazia", 
 
 test("as telas de baixa e reposição leem os motivos cadastrados e os parâmetros mostram os editores", () => {
   const le = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
-  for (const f of ["CaixaGestaoDialogs", "FerramentasReposicaoCaixa"]) assert.match(le(`src/components/modules/${f}.tsx`), /lerMotivosBaixaFerramenta\(\)\.map/, f);
+  for (const f of ["CaixaGestaoDialogs", "FerramentasReposicaoCaixa"]) assert.match(le(`src/components/modules/${f}.tsx`), /useState\(lerMotivosBaixaFerramenta\)[\s\S]*motivosBaixa\.map/, f);
   assert.match(le("src/components/parametros/ParametrosFerramentas.tsx"), /salvarMotivosBaixaFerramenta/);
   assert.match(le("src/components/parametros/ParametrosUniforme.tsx"), /<TextosTermosUniforme \/>/);
 });
