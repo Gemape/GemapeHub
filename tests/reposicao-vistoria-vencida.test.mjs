@@ -67,5 +67,5 @@ test("a tela de Reposição está em Movimentações e a de Escalonamento mostra
   const r = le("src/components/modules/FerramentasReposicaoCaixa.tsx");
   assert.match(r, /salvarCaixa\.mutate\([\s\S]*onSuccess: \(\) => \{[\s\S]*registrar\.mutate[\s\S]*abrirTermo/);
   assert.match(r, /lerTextosTermos\(\)\.reposicao/);
-  assert.match(le("src/components/modules/FerramentasEscalonamentoVistorias.tsx"), /situacaoDaVistoria\(/);
+  assert.match(le("src/lib/use-vistorias-caixas.ts"), /situacaoDaVistoria\(/);
 });

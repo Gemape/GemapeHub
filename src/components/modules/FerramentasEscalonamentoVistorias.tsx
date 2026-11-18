@@ -4,14 +4,8 @@ import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAccess } from "@/lib/access-context";
-import { TODAS, useEmpresa } from "@/lib/empresa-context";
-import { hojeBrasilia } from "@/lib/checklist-veiculo";
-import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
-import { useCaixasFerramentas, useMovimentacoes } from "@/lib/hooks-gemape";
 import { formatarData } from "@/lib/gemape";
-import { situacaoDaVistoria } from "@/lib/situacao-vistoria";
-import { useParametrosBase } from "@/lib/use-parametros-base";
-import { lerParametrosVistoria } from "@/lib/vistoria-ferramentas-parametros";
+import { useVistoriasDasCaixas } from "@/lib/use-vistorias-caixas";
 import { MESES_DO_ANO, cargaPorMes, lerMesesBase, mesesPrevistos, mesesSobrecarregados, rotuloMes, salvarMesBase } from "@/lib/escalonamento-vistorias";
 
 const SEM_MES = "sem";
@@ -19,27 +13,12 @@ const SEM_MES = "sem";
 // Ferramentas > Escalonamento de Vistorias: cada caixa recebe um mês-base e as vistorias seguintes saem da periodicidade dos Parâmetros Específicos.
 // Os grupos se formam sozinhos pelo mês-base; o resumo mostra quantas caixas vencem em cada mês, para espalhar a carga.
 export function FerramentasEscalonamentoVistorias() {
-  const { empresaId } = useEmpresa();
   const { canWrite } = useAccess();
-  const habilitadas = useParametrosBase().caixasHabilitadas;
-  const { data: todasCaixas = [], isLoading } = useCaixasFerramentas(TODAS, "");
-  const caixas = caixasHabilitadas(todasCaixas, habilitadas)
-    .filter((c) => empresaId === TODAS || c.empresa_id === empresaId)
-    .sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR", { numeric: true }));
-  const { periodicidade, prazoDias } = lerParametrosVistoria();
-  const { data: movimentos = [] } = useMovimentacoes("ferramenta", empresaId);
   const [mesesBase, setMesesBase] = useState(lerMesesBase);
-  const hoje = hojeBrasilia();
-
-  // Última vistoria de cada caixa, pelo histórico (a caixa vem gravada na vistoria em modo demonstração).
-  const ultimaVistoria = new Map<string, string>();
-  for (const m of movimentos) {
-    if (m.tipo_movimentacao !== "Vistoria" || !m.caixa_id) continue;
-    const dia = m.data_movimentacao.slice(0, 10);
-    if (dia > (ultimaVistoria.get(m.caixa_id) ?? "")) ultimaVistoria.set(m.caixa_id, dia);
-  }
-  const situacoes = new Map(caixas.map((c) => [c.id, situacaoDaVistoria({ mesBase: mesesBase[c.id], periodicidade, prazoDias, hoje, ultimaVistoria: ultimaVistoria.get(c.id) })]));
-  const vencidas = [...situacoes.values()].filter((x) => x.situacao === "Vencida").length;
+  const { linhas, isLoading, periodicidade, hoje } = useVistoriasDasCaixas(mesesBase);
+  const caixas = linhas.map((l) => l.caixa);
+  const situacoes = new Map(linhas.map((l) => [l.caixa.id, l.resultado]));
+  const vencidas = linhas.filter((l) => l.resultado.situacao === "Vencida").length;
   const carga = cargaPorMes(caixas.map((c) => mesesBase[c.id]), periodicidade, hoje);
   const sobrecarregados = new Set(mesesSobrecarregados(carga).map(rotuloMes));
   const semMes = caixas.filter((c) => mesesBase[c.id] === undefined).length;
