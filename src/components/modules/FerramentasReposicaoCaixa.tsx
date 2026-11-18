@@ -10,7 +10,7 @@ import { hojeLocal } from "@/lib/empregados";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
-import { MOTIVOS_BAIXA_CAIXA } from "@/lib/controle-caixa";
+import { lerMotivosBaixaFerramenta } from "@/lib/ferramentas-motivos-baixa";
 import { posicaoDasFerramentas } from "@/lib/estoque-ferramentas-posicao";
 import { reporFerramentaNaCaixa } from "@/lib/movimentacoes-caixa";
 import { portadorNaData } from "@/lib/portadores-caixa";
@@ -153,7 +153,7 @@ export function FerramentasReposicaoCaixa() {
             <Label htmlFor="reposicao-motivo">Motivo da baixa</Label>
             <Select value={motivo} onValueChange={setMotivo}>
               <SelectTrigger id="reposicao-motivo"><SelectValue placeholder="Escolha o motivo" /></SelectTrigger>
-              <SelectContent>{MOTIVOS_BAIXA_CAIXA.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+              <SelectContent>{lerMotivosBaixaFerramenta().map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">

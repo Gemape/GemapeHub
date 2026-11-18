@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CartaoDeMotivos } from "@/components/parametros/CartaoDeMotivos";
 import { HabilitarEmpregadosUniforme } from "@/components/parametros/HabilitarEmpregadosUniforme";
 import { SugestaoDeCompra } from "@/components/parametros/SugestaoDeCompra";
+import { TextosTermosUniforme } from "@/components/parametros/TextosTermosUniforme";
 import { lerAreasUniforme, MAX_AREAS_UNIFORME, salvarAreasUniforme } from "@/lib/empregados-uniforme";
 
 // Parâmetros Específicos dos Uniformes: as áreas da oficina, os empregados habilitados a entregar e receber uniformes (mesma lógica do EPI, decisão 357, com listas próprias) e os parâmetros
@@ -18,7 +19,7 @@ export function ParametrosUniforme({ voltarParaSugestao = false }: { voltarParaS
         <h2 id="parametros-uniforme" className="text-lg font-semibold">
           Parâmetros dos uniformes
         </h2>
-        <p className="text-sm text-muted-foreground">Áreas da oficina, empregados habilitados para entregar e receber uniformes e como a sugestão de compra é calculada.</p>
+        <p className="text-sm text-muted-foreground">Áreas da oficina, empregados habilitados para entregar e receber uniformes, como a sugestão de compra é calculada e os textos dos termos de responsabilidade.</p>
       </div>
       <div className="panel max-w-4xl space-y-4 p-4">
         <div className="space-y-3 rounded-lg border p-3">
@@ -41,6 +42,8 @@ export function ParametrosUniforme({ voltarParaSugestao = false }: { voltarParaS
         </div>
 
         <SugestaoDeCompra modulo="uniforme" onSalvou={voltarParaSugestao ? voltar : undefined} />
+
+        <TextosTermosUniforme />
       </div>
     </section>
   );

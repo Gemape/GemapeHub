@@ -22,11 +22,11 @@ import { capitalizarNomePessoa, capitalizarTexto } from "@/lib/formatacao-cadast
 import { hojeLocal } from "@/lib/empregados";
 import { codigoCaixa } from "@/lib/caixas-habilitadas";
 import { MODO_DEMO } from "@/lib/modo-demo";
+import { lerMotivosBaixaFerramenta } from "@/lib/ferramentas-motivos-baixa";
 import {
   controleDaFerramenta,
   ferramentasComEmpregadoRemovidas,
   ferramentasEmOutraCaixa,
-  MOTIVOS_BAIXA_CAIXA,
   validarTransferenciaDeCaixa,
   validarBaixaDaCaixa,
   validarFerramentasDaCaixa,
@@ -374,7 +374,7 @@ export function DialogBaixaCaixa({
                 <SelectValue placeholder="Escolha o motivo" />
               </SelectTrigger>
               <SelectContent>
-                {MOTIVOS_BAIXA_CAIXA.map((m) => (
+                {lerMotivosBaixaFerramenta().map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
                   </SelectItem>
