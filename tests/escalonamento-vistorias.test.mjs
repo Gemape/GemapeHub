@@ -50,3 +50,13 @@ test("a tela está no menu de Ferramentas e na página do módulo", () => {
   assert.match(le("src/components/modules/PaginaModulo.tsx"), /value="escalonamento-vistorias"[\s\S]*<FerramentasEscalonamentoVistorias \/>/);
   assert.match(le("src/components/modules/FerramentasEscalonamentoVistorias.tsx"), /lerParametrosVistoria\(\)/);
 });
+
+test("quinzenal conta duas vistorias por mês e a marca {tabela} aparece uma vez só", async () => {
+  const carga = cargaPorMes([1, 6], "Quinzenal", "2026-01-10", 3);
+  assert.deepEqual(carga.map((c) => c.caixas), [4, 4, 4]);
+  const { textoDoTermoValido, montarTextoDoTermo } = await import("../src/lib/termos-ferramentas-texto.ts");
+  assert.equal(textoDoTermoValido("a {tabela} b {tabela}"), false);
+  assert.equal(textoDoTermoValido("a {tabela} b"), true);
+  assert.doesNotMatch(montarTextoDoTermo("Eu {empregado} **x**", { empregado: "A**B e C**D" }).antes, /<strong>A<strong>/);
+  assert.match(montarTextoDoTermo("Eu {empregado}", { empregado: "A**B e C**D" }).antes, /<strong>A\*\*B e C\*\*D<\/strong>/);
+});

@@ -58,7 +58,7 @@ export function FerramentasEscalonamentoVistorias() {
               <li key={rotulo} className={`panel p-3 ${alto ? "border-destructive" : ""}`}>
                 <p className="text-xs text-muted-foreground">{rotulo}</p>
                 <p className="text-xl font-semibold">{c.caixas}</p>
-                <p className={`text-xs ${alto ? "font-medium text-destructive" : "text-muted-foreground"}`}>{alto ? "Concentração alta" : c.caixas === 1 ? "caixa" : "caixas"}</p>
+                <p className={`text-xs ${alto ? "font-medium text-destructive" : "text-muted-foreground"}`}>{alto ? "Concentração alta" : c.caixas === 1 ? "vistoria" : "vistorias"}</p>
               </li>
             );
           })}

@@ -91,7 +91,8 @@ Conforme análise de responsabilidade, estou ciente que o valor poderá ser desc
 Por ter acompanhado a vistoria e estar de acordo com os termos, assino:`,
 };
 
-export const textoDoTermoValido = (texto: string): boolean => texto.trim().length > 0 && texto.length <= TEXTO_TERMO_MAXIMO;
+// Só uma marca {tabela}: a lista de itens sai uma vez.
+export const textoDoTermoValido = (texto: string): boolean => texto.trim().length > 0 && texto.length <= TEXTO_TERMO_MAXIMO && texto.split("{tabela}").length <= 2;
 
 // Texto ausente, vazio ou longo demais volta ao padrão; armazenamento bloqueado também.
 export function lerTextosTermos(storage?: StorageLike): Record<TermoFerramenta, string> {
@@ -112,7 +113,7 @@ export function lerTextosTermos(storage?: StorageLike): Record<TermoFerramenta, 
 
 export function salvarTextosTermos(textos: Record<TermoFerramenta, string>, storage?: StorageLike): void {
   for (const termo of TERMOS_FERRAMENTA) {
-    if (!textoDoTermoValido(textos[termo])) throw new Error(`${ROTULO_TERMO[termo]}: escreva o texto, com até ${TEXTO_TERMO_MAXIMO} caracteres.`);
+    if (!textoDoTermoValido(textos[termo])) throw new Error(`${ROTULO_TERMO[termo]}: escreva o texto, com até ${TEXTO_TERMO_MAXIMO} caracteres e no máximo uma marca {tabela}.`);
   }
   try {
     (storage ?? localStorage).setItem(CHAVE, JSON.stringify(textos));
@@ -130,9 +131,10 @@ function paragrafos(trecho: string, dados: Record<string, string>): string {
     .map((p) => p.trim())
     .filter(Boolean)
     .map((p) => {
+      // O negrito sai antes das marcas: um ** dentro do dado (nome, por exemplo) não vira negrito.
       const html = escaparHtml(p)
-        .replace(/\{(empregado|cpf|empresa|cnpj|caixa|data)\}/g, (_, nome: string) => `<strong>${escaparHtml(dados[nome] ?? "")}</strong>`)
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\{(empregado|cpf|empresa|cnpj|caixa|data)\}/g, (_, nome: string) => `<strong>${escaparHtml(dados[nome] ?? "")}</strong>`)
         .replace(/\n/g, "<br>");
       return `<p>${html}</p>`;
     })

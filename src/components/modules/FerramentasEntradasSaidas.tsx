@@ -51,11 +51,13 @@ export function FerramentasEntradasSaidas() {
   const doPeriodo = linhasEntradasSaidas(movimentos).filter((l) => l.data >= dataInicial && l.data <= dataFinal);
   // Os motivos oferecidos são os que existem no período, para não listar escolha que daria tela vazia.
   const motivos = [...new Set(doPeriodo.map((l) => l.motivo).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  // Se o período mudou e o motivo escolhido não existe mais nele, o filtro deixa de valer em vez de esvaziar a tabela.
+  const motivoAtivo = motivos.includes(motivo) ? motivo : TODAS;
   const linhas = filtrarEntradasSaidas(doPeriodo, {
     sentido: sentido === TODAS ? undefined : (sentido as SentidoMovimento),
     caixaId: caixaId === TODAS ? undefined : caixaId,
     empregadoId: empregadoId === TODAS ? undefined : empregadoId,
-    motivo: motivo === TODAS ? undefined : motivo,
+    motivo: motivoAtivo === TODAS ? undefined : motivoAtivo,
   });
   const resumo = resumoEntradasSaidas(linhas);
 
@@ -71,7 +73,7 @@ export function FerramentasEntradasSaidas() {
         titulo: TITULO,
         subtitulos: [
           `Período: ${formatarData(dataInicial)} a ${formatarData(dataFinal)}`,
-          [sentido === TODAS ? "Entradas e saídas" : `${sentido}s`, caixaId === TODAS ? "todas as caixas" : `caixa ${codigoCaixa(caixaId)}`, empregadoId === TODAS ? "todos os empregados" : nomeEmpregado(empregadoId), motivo === TODAS ? "todos os motivos" : `motivo: ${motivo}`].join(" · "),
+          [sentido === TODAS ? "Entradas e saídas" : `${sentido}s`, caixaId === TODAS ? "todas as caixas" : `caixa ${codigoCaixa(caixaId)}`, empregadoId === TODAS ? "todos os empregados" : nomeEmpregado(empregadoId), motivoAtivo === TODAS ? "todos os motivos" : `motivo: ${motivoAtivo}`].join(" · "),
         ],
         empresa: empresaId === TODAS ? "Todas as empresas" : nomeEmpresa(empresaId),
         resumo: [["Entradas (unidades)", String(resumo.entradas)], ["Saídas (unidades)", String(resumo.saidas)], ...resumo.saidasPorMotivo.map(([m, q]): [string, string] => [`Saída · ${m}`, String(q)])],

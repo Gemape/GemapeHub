@@ -68,7 +68,7 @@ function TextosDosTermos() {
               </div>
               <p className="text-xs text-muted-foreground">{AJUDA_TERMO[termo]}</p>
               <Textarea id={`termo-${termo}`} rows={9} maxLength={TEXTO_TERMO_MAXIMO} value={textos[termo]} aria-invalid={invalido} onChange={(e) => alterar(termo, e.target.value)} />
-              {invalido && <p role="alert" className="text-xs text-destructive">Escreva o texto do termo.</p>}
+              {invalido && <p role="alert" className="text-xs text-destructive">Escreva o texto do termo, com no máximo uma marca {"{tabela}"}.</p>}
             </div>
           );
         })}

@@ -63,13 +63,14 @@ export const rotuloMes = ({ ano, mes }: MesPrevisto): string => `${ABREVIADOS[me
 
 export type CargaDoMes = MesPrevisto & { caixas: number };
 
-/** Quantas caixas têm vistoria prevista em cada um dos `quantidade` meses seguintes. Caixa sem mês-base não entra. */
+/** Quantas vistorias estão previstas em cada um dos `quantidade` meses seguintes (uma por caixa; duas na quinzenal). Caixa sem mês-base não entra. */
 export function cargaPorMes(mesesBase: (MesBase | undefined)[], periodicidade: PeriodicidadeVistoria, hoje: string, quantidade = 12): CargaDoMes[] {
   const inicio = indice(Number(hoje.slice(0, 4)), Number(hoje.slice(5, 7)));
   const carga: CargaDoMes[] = Array.from({ length: quantidade }, (_, i) => ({ ...dePorIndice(inicio + i), caixas: 0 }));
+  const porMes = periodicidade === "Quinzenal" ? 2 : 1; // quinzenal: duas vistorias por mês
   for (const base of mesesBase) {
     if (base === undefined) continue;
-    for (const m of mesesPrevistos(base, periodicidade, hoje, quantidade)) carga[indice(m.ano, m.mes) - inicio]!.caixas += 1;
+    for (const m of mesesPrevistos(base, periodicidade, hoje, quantidade)) carga[indice(m.ano, m.mes) - inicio]!.caixas += porMes;
   }
   return carga;
 }

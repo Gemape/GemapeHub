@@ -27,7 +27,7 @@ export function FerramentasBaixaCaixa() {
   const [caixaId, setCaixaId] = useState("");
   const [aberto, setAberto] = useState(false);
   const caixa = caixas.find((c) => c.id === caixaId);
-  const baixas = movimentos.filter((m) => m.tipo_movimentacao === "Saida" && ehBaixa(m));
+  const baixas = movimentos.filter((m) => m.tipo_movimentacao === "Saida" && ehBaixa(m) && (!caixaId || m.caixa_id === caixaId));
   const codigoDaCaixa = (id: string | null | undefined) => todasCaixas.find((c) => c.id === id)?.codigo ?? "—";
   const nomeFerramenta = (id: string | null) => { const f = ferramentas.find((x) => x.id === id); return f ? `${f.codigo_sku ? `${f.codigo_sku} — ` : ""}${f.nome}` : "—"; };
 
