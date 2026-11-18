@@ -10,7 +10,7 @@ export const TERMOS_UNIFORME = ["entrega", "baixa"] as const;
 export type TermoUniforme = (typeof TERMOS_UNIFORME)[number];
 export const ROTULO_TERMO_UNIFORME: Record<TermoUniforme, string> = { entrega: "Termo de entrega de uniforme", baixa: "Termo de baixa definitiva de uniforme" };
 export const AJUDA_TERMO_UNIFORME: Record<TermoUniforme, string> = {
-  entrega: "Gerado na entrega de uniformes ao empregado. A lista de itens entra onde estiver {tabela}.",
+  entrega: "Gerado na entrega de uniformes ao empregado. A lista de itens entra onde estiver {tabela}; sem a marca, entra depois do texto. Quem entregou sai logo depois do primeiro trecho.",
   baixa: "Gerado na baixa definitiva de uniformes. A lista de itens entra onde estiver {tabela}; o motivo e o ônus saem logo depois dela.",
 };
 export const MARCAS_TERMO_UNIFORME = ["{empregado}", "{cpf}", "{empresa}", "{cnpj}", "{data}", "{tabela}"] as const;

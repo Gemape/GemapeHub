@@ -27,6 +27,7 @@ import {
 // Ferramentas > Movimentações > Reposição: uma ferramenta da caixa sai (baixa, com motivo e ônus) e uma nova entra no lugar dela.
 // A troca grava a baixa e a entrega à caixa e gera o Termo de reposição, com o texto de Parâmetros Específicos.
 export function FerramentasReposicaoCaixa() {
+  const [motivosBaixa] = useState(lerMotivosBaixaFerramenta);
   const { empresaId } = useEmpresa();
   const habilitadas = useParametrosBase().caixasHabilitadas;
   const { data: todasCaixas = [], isLoading } = useCaixasFerramentas(TODAS, "");
@@ -153,7 +154,7 @@ export function FerramentasReposicaoCaixa() {
             <Label htmlFor="reposicao-motivo">Motivo da baixa</Label>
             <Select value={motivo} onValueChange={setMotivo}>
               <SelectTrigger id="reposicao-motivo"><SelectValue placeholder="Escolha o motivo" /></SelectTrigger>
-              <SelectContent>{lerMotivosBaixaFerramenta().map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+              <SelectContent>{motivosBaixa.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">

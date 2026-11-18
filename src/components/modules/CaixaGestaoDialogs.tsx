@@ -270,6 +270,7 @@ export function DialogBaixaCaixa({
   linhas,
   historico,
 }: Comum & { linhas: LinhaCaixa[]; historico: Movimentacao[] }) {
+  const [motivosBaixa] = useState(lerMotivosBaixaFerramenta);
   const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
   const [ferramentaId, setFerramentaId] = useState(linhas[0]?.ferramenta.id ?? "");
   const [quantidade, setQuantidade] = useState(1);
@@ -374,7 +375,7 @@ export function DialogBaixaCaixa({
                 <SelectValue placeholder="Escolha o motivo" />
               </SelectTrigger>
               <SelectContent>
-                {lerMotivosBaixaFerramenta().map((m) => (
+                {motivosBaixa.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
                   </SelectItem>

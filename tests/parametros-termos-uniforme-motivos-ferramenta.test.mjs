@@ -53,3 +53,9 @@ test("as telas de baixa e reposição leem os motivos cadastrados e os parâmetr
   assert.match(le("src/components/parametros/ParametrosFerramentas.tsx"), /salvarMotivosBaixaFerramenta/);
   assert.match(le("src/components/parametros/ParametrosUniforme.tsx"), /<TextosTermosUniforme \/>/);
 });
+
+test("a marca {cpf} vale no termo de baixa e, sem {tabela}, a lista vem depois do texto", () => {
+  const html = montarTermoBaixaUniformeHtml({ empresa, empregado: { nome: "Ana", cpf: "111.222.333-44" }, data: "2026-11-18", motivo: "Perda", onus: "Empresa", linhas: [{ nome: "Camisa", quantidade: 1, estado: "Novo" }], texto: "Baixa de {empregado}, CPF {cpf}." });
+  assert.match(html, /CPF <strong>111\.222\.333-44<\/strong>/);
+  assert.ok(html.indexOf("CPF <strong>") < html.indexOf("Camisa"));
+});

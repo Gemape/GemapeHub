@@ -8,7 +8,7 @@ import { lerTextosTermosUniforme } from "./uniforme-termos-texto.ts";
 
 export interface DadosTermoBaixaUniforme {
   empresa: { razao_social: string; cnpj: string; nome_fantasia: string } | undefined;
-  empregado: { nome: string } | undefined;
+  empregado: { nome: string; cpf?: string | null | undefined } | undefined;
   data: string;
   motivo: string;
   onus: string;
@@ -41,7 +41,7 @@ export function montarTermoBaixaUniformeHtml(dados: DadosTermoBaixaUniforme): st
     .join("");
 
   const texto = montarTextoDoTermo(dados.texto ?? lerTextosTermosUniforme().baixa, {
-    empregado: empregado?.nome || "N/A", empresa: empresa?.razao_social, cnpj: formatarCnpj(empresa?.cnpj ?? ""), data: formatarData(dados.data),
+    empregado: empregado?.nome || "N/A", cpf: empregado?.cpf, empresa: empresa?.razao_social, cnpj: formatarCnpj(empresa?.cnpj ?? ""), data: formatarData(dados.data),
   });
 
   return paginaRelatorio({
