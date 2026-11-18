@@ -29,7 +29,7 @@ export function SupervisoresOcorrencias({ ambito = "veiculos" }: { ambito?: "vei
   }
 
   return (
-    <section className="space-y-3" aria-labelledby={`supervisores-ocorrencias-${ambito}`}>
+    <section className="flex flex-col space-y-3" aria-labelledby={`supervisores-ocorrencias-${ambito}`}>
       <div className="max-w-3xl">
         <h2 id={`supervisores-ocorrencias-${ambito}`} className="text-lg font-semibold">Supervisores das ocorrências</h2>
         <p className="text-sm text-muted-foreground">
@@ -37,7 +37,7 @@ export function SupervisoresOcorrencias({ ambito = "veiculos" }: { ambito?: "vei
           {lerSupervisoresSalvos(undefined, chave) === null ? " Enquanto nada for salvo, valem os usuários do perfil Administrador." : ""}
         </p>
       </div>
-      <div className="panel max-w-3xl space-y-3 p-4">
+      <div className={`panel flex-1 space-y-3 p-4 ${ambito === "ferramentas" ? "" : "max-w-3xl"}`}>
         <ul className="grid gap-1 sm:grid-cols-2">
           {usuarios.map((u) => (
             <li key={u.id}>
