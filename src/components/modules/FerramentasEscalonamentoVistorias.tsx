@@ -7,7 +7,9 @@ import { useAccess } from "@/lib/access-context";
 import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { hojeBrasilia } from "@/lib/checklist-veiculo";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
-import { useCaixasFerramentas } from "@/lib/hooks-gemape";
+import { useCaixasFerramentas, useMovimentacoes } from "@/lib/hooks-gemape";
+import { formatarData } from "@/lib/gemape";
+import { situacaoDaVistoria } from "@/lib/situacao-vistoria";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { lerParametrosVistoria } from "@/lib/vistoria-ferramentas-parametros";
 import { MESES_DO_ANO, cargaPorMes, lerMesesBase, mesesPrevistos, mesesSobrecarregados, rotuloMes, salvarMesBase } from "@/lib/escalonamento-vistorias";
@@ -24,10 +26,20 @@ export function FerramentasEscalonamentoVistorias() {
   const caixas = caixasHabilitadas(todasCaixas, habilitadas)
     .filter((c) => empresaId === TODAS || c.empresa_id === empresaId)
     .sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR", { numeric: true }));
-  const { periodicidade } = lerParametrosVistoria();
+  const { periodicidade, prazoDias } = lerParametrosVistoria();
+  const { data: movimentos = [] } = useMovimentacoes("ferramenta", empresaId);
   const [mesesBase, setMesesBase] = useState(lerMesesBase);
   const hoje = hojeBrasilia();
 
+  // Última vistoria de cada caixa, pelo histórico (a caixa vem gravada na vistoria em modo demonstração).
+  const ultimaVistoria = new Map<string, string>();
+  for (const m of movimentos) {
+    if (m.tipo_movimentacao !== "Vistoria" || !m.caixa_id) continue;
+    const dia = m.data_movimentacao.slice(0, 10);
+    if (dia > (ultimaVistoria.get(m.caixa_id) ?? "")) ultimaVistoria.set(m.caixa_id, dia);
+  }
+  const situacoes = new Map(caixas.map((c) => [c.id, situacaoDaVistoria({ mesBase: mesesBase[c.id], periodicidade, prazoDias, hoje, ultimaVistoria: ultimaVistoria.get(c.id) })]));
+  const vencidas = [...situacoes.values()].filter((x) => x.situacao === "Vencida").length;
   const carga = cargaPorMes(caixas.map((c) => mesesBase[c.id]), periodicidade, hoje);
   const sobrecarregados = new Set(mesesSobrecarregados(carga).map(rotuloMes));
   const semMes = caixas.filter((c) => mesesBase[c.id] === undefined).length;
@@ -45,6 +57,7 @@ export function FerramentasEscalonamentoVistorias() {
       <p className="max-w-3xl text-sm text-muted-foreground">
         Escolha o mês-base de cada caixa. As vistorias seguintes saem da periodicidade <strong>{periodicidade.toLowerCase()}</strong>, definida em Parâmetros &gt; Ferramentas &gt; Parâmetros Específicos, e se repetem nos anos seguintes.
         {periodicidade === "Quinzenal" && " Na periodicidade quinzenal a caixa cai em todos os meses; o mês-base só marca o início."}
+        {vencidas > 0 && <strong className="text-destructive"> {vencidas} {vencidas === 1 ? "vistoria vencida" : "vistorias vencidas"}.</strong>}
         {semMes > 0 && ` ${semMes} ${semMes === 1 ? "caixa está" : "caixas estão"} sem mês-base e fora do calendário.`}
       </p>
 
@@ -74,12 +87,13 @@ export function FerramentasEscalonamentoVistorias() {
               <TableHead>Localização</TableHead>
               <TableHead>Periodicidade</TableHead>
               <TableHead>Mês-base</TableHead>
+              <TableHead>Situação</TableHead>
               <TableHead>Próximas vistorias</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? <LinhasEsqueleto colunas={6} />
-              : caixas.length === 0 ? <TableRow><TableCell colSpan={6} className="text-center">Nenhuma caixa habilitada.</TableCell></TableRow>
+            {isLoading ? <LinhasEsqueleto colunas={7} />
+              : caixas.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center">Nenhuma caixa habilitada.</TableCell></TableRow>
                 : caixas.map((c) => {
                   const base = mesesBase[c.id];
                   const previstos = base === undefined ? [] : mesesPrevistos(base, periodicidade, hoje, 24).slice(0, 4);
@@ -97,6 +111,14 @@ export function FerramentasEscalonamentoVistorias() {
                             {MESES_DO_ANO.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const x = situacoes.get(c.id)!;
+                          if (x.situacao === "Sem escalonamento") return <span className="text-muted-foreground">Sem escalonamento</span>;
+                          const cor = x.situacao === "Vencida" ? "text-destructive font-medium" : x.situacao === "Pendente" ? "text-amber-600 font-medium" : "text-emerald-600";
+                          return <span className={cor} title={`Prevista para ${formatarData(x.previstaEm!)}; limite ${formatarData(x.limite!)}`}>{x.situacao === "Em dia" ? "Em dia" : x.situacao === "Pendente" ? `Pendente até ${formatarData(x.limite!)}` : `Vencida (limite ${formatarData(x.limite!)})`}</span>;
+                        })()}
                       </TableCell>
                       <TableCell>{previstos.length === 0 ? <span className="text-muted-foreground">Fora do calendário</span> : previstos.map(rotuloMes).join(" · ")}</TableCell>
                     </TableRow>
