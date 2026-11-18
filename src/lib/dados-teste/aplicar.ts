@@ -247,7 +247,10 @@ export function aplicarDadosDeTeste(storage: Armazenamento, base: Dados, agora =
   const criadoEm = agora.toISOString();
   for (const e of EMPRESAS) tabela("empresas").push({ ...e, status: "Ativa", created_at: criadoEm });
   for (const e of EMPREGADOS) {
-    tabela("empregados").push({ id: e.id, empresa_id: e.empresaId, nome: e.nome, cpf: e.cpf, matricula: e.matricula, email: e.email, data_admissao: e.admissao, data_demissao: null, ativo: true, created_at: criadoEm });
+    // Supervisor (só em modo demonstração): o primeiro empregado de cada empresa supervisiona os demais; ele mesmo é supervisionado pelo segundo.
+    const daEmpresa = EMPREGADOS.filter((x) => x.empresaId === e.empresaId);
+    const supervisor = daEmpresa[0]?.id === e.id ? daEmpresa[1] : daEmpresa[0];
+    tabela("empregados").push({ id: e.id, empresa_id: e.empresaId, nome: e.nome, cpf: e.cpf, matricula: e.matricula, email: e.email, supervisor_id: supervisor?.id ?? null, data_admissao: e.admissao, data_demissao: null, ativo: true, created_at: criadoEm });
   }
 
   // Catálogo de EPI e de uniforme: um registro por tamanho; o estoque de cada empresa nasce dele.
