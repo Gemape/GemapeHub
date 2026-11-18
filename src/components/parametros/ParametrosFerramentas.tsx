@@ -21,11 +21,14 @@ const numeroDe = (texto: string): number => (texto.trim() === "" ? Number.NaN : 
 // Parâmetros > Ferramentas > Parâmetros Específicos: os textos dos termos, a periodicidade e o prazo da vistoria e os supervisores das ocorrências.
 export function ParametrosFerramentas() {
   return (
-    <>
+    <div className="space-y-5">
       <TextosDosTermos />
-      <ParametrosDaVistoria />
-      <SupervisoresOcorrencias ambito="ferramentas" />
-    </>
+      {/* Vistoria e supervisores lado a lado, com a mesma altura; em tela estreita ficam um sobre o outro. */}
+      <div className="grid items-stretch gap-5 lg:grid-cols-2">
+        <ParametrosDaVistoria />
+        <SupervisoresOcorrencias ambito="ferramentas" />
+      </div>
+    </div>
   );
 }
 
@@ -57,21 +60,23 @@ function TextosDosTermos() {
           {"{tabela}"} diz onde entra a lista de ferramentas; sem ela, a lista vem depois do texto. Use <code className="rounded bg-muted px-1 text-xs">**assim**</code> para negrito.
         </p>
       </div>
-      <div className="panel max-w-3xl space-y-5 p-4">
+      <div className="panel space-y-4 p-4">
+        <div className="grid gap-4 lg:grid-cols-2">
         {TERMOS_FERRAMENTA.map((termo) => {
           const invalido = !textoDoTermoValido(textos[termo]);
           return (
-            <div key={termo} className="space-y-1.5">
+            <div key={termo} className="space-y-1.5 rounded-lg border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label htmlFor={`termo-${termo}`} className="text-sm font-semibold">{ROTULO_TERMO[termo]}</Label>
                 <Button type="button" variant="link" size="sm" className="h-auto p-0" disabled={textos[termo] === TEXTOS_PADRAO[termo]} onClick={() => alterar(termo, TEXTOS_PADRAO[termo])}>Restaurar texto padrão</Button>
               </div>
               <p className="text-xs text-muted-foreground">{AJUDA_TERMO[termo]}</p>
-              <Textarea id={`termo-${termo}`} rows={9} maxLength={TEXTO_TERMO_MAXIMO} value={textos[termo]} aria-invalid={invalido} onChange={(e) => alterar(termo, e.target.value)} />
+              <Textarea id={`termo-${termo}`} rows={14} maxLength={TEXTO_TERMO_MAXIMO} value={textos[termo]} aria-invalid={invalido} onChange={(e) => alterar(termo, e.target.value)} />
               {invalido && <p role="alert" className="text-xs text-destructive">Escreva o texto do termo, com no máximo uma marca {"{tabela}"}.</p>}
             </div>
           );
         })}
+        </div>
         <Button requiresWrite disabled={!valido || igual} onClick={salvar}>Salvar textos</Button>
       </div>
     </section>
@@ -99,13 +104,13 @@ function ParametrosDaVistoria() {
   }
 
   return (
-    <section className="space-y-3" aria-labelledby="vistoria-ferramentas">
+    <section className="flex flex-col space-y-3" aria-labelledby="vistoria-ferramentas">
       <div className="max-w-3xl">
         <h2 id="vistoria-ferramentas" className="text-lg font-semibold">Vistoria periódica das caixas</h2>
         <p className="text-sm text-muted-foreground">De quanto em quanto tempo cada caixa é vistoriada e em quantos dias, depois da data prevista, a vistoria ainda pode ser feita sem ficar vencida.</p>
       </div>
-      <div className="panel max-w-3xl space-y-3 p-4">
-        <div className="grid gap-3 md:grid-cols-2">
+      <div className="panel flex-1 space-y-3 p-4">
+        <div className="grid gap-3">
           <div className="space-y-2 rounded-lg border p-3">
             <h3 className="text-sm font-semibold">Periodicidade</h3>
             <p className="text-xs text-muted-foreground">Intervalo entre uma vistoria e a data prevista da seguinte.</p>
