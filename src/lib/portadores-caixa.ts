@@ -75,6 +75,16 @@ export function portadorAtivo(registros: PortadorCaixa[], caixaId: string): Port
   return ativos[0] ?? null;
 }
 
+/** Código da caixa seguido do portador ativo ("CX-0001 — Ana"), para as listas de escolha da caixa; sem portador (ou com histórico inválido), só o código. */
+export function rotuloDaCaixaComPortador(registros: PortadorCaixa[], caixa: { id: string; codigo: string }): string {
+  try {
+    const portador = portadorAtivo(registros, caixa.id);
+    return portador ? `${caixa.codigo} — ${portador.empregado_nome}` : caixa.codigo;
+  } catch {
+    return caixa.codigo;
+  }
+}
+
 /** Usa o último vínculo iniciado até a data; trocas no mesmo dia usam o vínculo mais recente. */
 export function portadorNaData(registros: PortadorCaixa[], caixaId: string, data: string): PortadorCaixa | null {
   return registros.filter((registro) =>

@@ -16,6 +16,8 @@ import { posicaoDasFerramentas } from "@/lib/estoque-ferramentas-posicao";
 import { entregarFerramentaNaCaixa } from "@/lib/movimentacoes-caixa";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { rotuloDaCaixaComPortador } from "@/lib/portadores-caixa";
+import { usePortadoresCaixa } from "@/lib/use-portadores-caixa";
 import { useCaixasFerramentas, useItens, useMovimentacoes, useRegistrarMovimentacoesLote, useSalvarCaixa, useTodosCaixaItens } from "@/lib/hooks-gemape";
 
 // Origem gravada na movimentação: é o que separa a entrega à caixa das transferências entre caixas.
@@ -30,6 +32,7 @@ export function FerramentasEntregaCaixa() {
   const { data: itensDeTodas = [] } = useTodosCaixaItens();
   const { data: ferramentas = [] } = useItens("ferramenta", TODAS);
   const { data: movimentos = [] } = useMovimentacoes("ferramenta", empresaId);
+  const portadores = usePortadoresCaixa();
   const salvarCaixa = useSalvarCaixa();
   const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"], false);
   const [caixaId, setCaixaId] = useState("");
@@ -94,7 +97,7 @@ export function FerramentasEntregaCaixa() {
             <Label htmlFor="entrega-caixa">Caixa</Label>
             <Select value={caixaId} onValueChange={(v) => { setCaixaId(v); setFerramentaId(""); }}>
               <SelectTrigger id="entrega-caixa"><SelectValue placeholder={isLoading ? "Carregando..." : "Escolha a caixa"} /></SelectTrigger>
-              <SelectContent>{[...caixas].sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR")).map((c) => <SelectItem key={c.id} value={c.id}>{c.codigo}</SelectItem>)}</SelectContent>
+              <SelectContent>{[...caixas].sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR")).map((c) => <SelectItem key={c.id} value={c.id}>{rotuloDaCaixaComPortador(portadores, c)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
