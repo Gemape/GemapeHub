@@ -18,7 +18,7 @@ import { formatarData } from "@/lib/gemape";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { useCaixaItens, useCaixasFerramentas, useItens, useRegistrarMovimentacoesLote, useSalvar, type Empregado } from "@/lib/hooks-gemape";
 import { MODO_DEMO } from "@/lib/modo-demo";
-import { dataBrasilia, empregadoElegivelPortador, portadorAtivo, registrarPortador } from "@/lib/portadores-caixa";
+import { dataBrasilia, empregadoElegivelPortador, erroDoRegistroDePortador, portadorAtivo, registrarPortador } from "@/lib/portadores-caixa";
 import { lerTextosTermos } from "@/lib/termos-ferramentas-texto";
 import { montarTermoResponsabilidadeHtml } from "@/lib/termo-responsabilidade-html";
 import { montarTermoVistoriaHtml } from "@/lib/termo-vistoria-html";
@@ -65,7 +65,7 @@ export function PortadoresCaixaModulo() {
   const hoje = dataBrasilia();
   const caixa = caixas.find((item) => item.id === caixaId);
   const atual = caixa ? portadorAtivo(historico, caixa.id) : null;
-  const { data: itensDaCaixa = [] } = useCaixaItens(modo === "desvincular" && caixa ? caixa.id : null);
+  const { data: itensDaCaixa = [], isSuccess: itensProntos } = useCaixaItens(modo === "desvincular" && caixa ? caixa.id : null);
   const caixasDoModo = caixas.filter((c) => (modo === "desvincular" ? !!portadorAtivo(historico, c.id) : true));
   const pessoasDaEmpresa = empregados.filter((pessoa) => pessoa.empresa_id === caixa?.empresa_id && empregadoElegivelPortador(pessoa));
   const termos = normalizar(buscaEmpregado).split(/\s+/).filter(Boolean);
@@ -91,14 +91,22 @@ export function PortadoresCaixaModulo() {
       if (!empregadoEscolhido) return void toast.error("Selecione o empregado portador.");
     } else {
       if (!atual) return void toast.error("A caixa não tem portador ativo para desvincular.");
+      if (!itensProntos) return void toast.error("Aguarde: as ferramentas da caixa ainda estão carregando.");
       const faltando = itensDaCaixa.find((i) => !vistoria[i.ferramenta_id]?.conformidade);
       if (faltando) return void toast.error(`Faça a vistoria da caixa: informe a situação de ${nomeDaFerramenta(faltando.ferramenta_id)}.`);
     }
     const erroData = erroDaDataDoVinculo(data, hoje, modo === "desvincular" ? atual?.data_inicio : null);
     if (erroData) return void toast.error(erroData);
+    // Confere o registro inteiro antes de pedir senha ou confirmação: o supervisor nunca autoriza algo que depois seria recusado.
+    const erroRegistro = erroDoRegistroDePortador(entradaDoRegistro());
+    if (erroRegistro) return void toast.error(erroRegistro);
     if (modo === "desvincular") setConfirmando(true);
     else if (ehRetroativa(data, hoje)) setAutorizando(true);
     else void executar();
+  }
+
+  function entradaDoRegistro(autorizadoPor?: string) {
+    return { caixa: caixa!, empregado: modo === "vincular" ? empregadoEscolhido ?? null : null, habilitadas, status: (modo === "vincular" ? "Ativa" : "Inativa") as "Ativa" | "Inativa", observacao: capitalizarTexto(observacao), data, ...(autorizadoPor ? { autorizadoPor } : {}) };
   }
 
   function aposConfirmar() {
@@ -108,7 +116,8 @@ export function PortadoresCaixaModulo() {
   }
 
   function autorizar() {
-    const r = validarSupervisor(nomeSupervisor, senhaSupervisor, empregados, hoje);
+    if (!MODO_DEMO) return void toast.error("A autorização de registro retroativo fica disponível na Fase 2.");
+    const r = validarSupervisor(nomeSupervisor, senhaSupervisor, empregados, hoje, modo === "vincular" ? empregadoId : atual?.empregado_id);
     if ("erro" in r) return void toast.error(r.erro);
     setAutorizando(false); setNomeSupervisor(""); setSenhaSupervisor("");
     void executar(r.supervisor.nome);
@@ -121,7 +130,7 @@ export function PortadoresCaixaModulo() {
     try {
       if (modo === "vincular") {
         if (!empregadoEscolhido) throw new Error("Selecione o empregado portador.");
-        registrarPortador({ caixa, empregado: empregadoEscolhido, habilitadas, status: "Ativa", observacao: capitalizarTexto(observacao), data, ...(autorizadoPor ? { autorizadoPor } : {}) });
+        registrarPortador(entradaDoRegistro(autorizadoPor));
         toast.success("Portador vinculado.");
         void gerarTermoDeEntrega(caixa, empregadoEscolhido, data);
       } else if (atual) {
@@ -158,9 +167,10 @@ export function PortadoresCaixaModulo() {
         abertas += 1;
       } catch { /* o aviso abaixo diz quantas não foram abertas */ }
     }
-    registrarPortador({ caixa, empregado: null, habilitadas, status: "Inativa", observacao: capitalizarTexto(observacao), data, ...(autorizadoPor ? { autorizadoPor } : {}) });
+    registrarPortador(entradaDoRegistro(autorizadoPor));
     toast.success("Portador desvinculado.");
-    if (ausentes.length > 0) toast.warning(`${abertas} de ${ausentes.length} ocorrência(s) de desaparecimento aberta(s). Para repor, use Movimentações > Reposição.`);
+    if (ausentes.length > abertas) toast.error(`ATENÇÃO: só ${abertas} de ${ausentes.length} ocorrência(s) de desaparecimento foram abertas. Registre as demais em Ocorrências de Ferramentas.`);
+    else if (ausentes.length > 0) toast.warning(`${abertas} ocorrência(s) de desaparecimento aberta(s). Para repor, use Movimentações > Reposição.`);
     gerarTermoDeEncerramento(linhas.map((l) => ({ id: l.item.ferramenta_id, conformidade: l.conformidade, observacao: l.observacao })), atual.empregado_id, atual.empregado_nome);
   }
 
@@ -296,7 +306,7 @@ export function PortadoresCaixaModulo() {
           <div className="space-y-3">
             <div className="space-y-1.5"><Label htmlFor="sup-nome">Nome do supervisor</Label><Input id="sup-nome" value={nomeSupervisor} onChange={(e) => setNomeSupervisor(e.target.value)} autoComplete="off" /></div>
             <div className="space-y-1.5"><Label htmlFor="sup-senha">Senha do supervisor</Label><Input id="sup-senha" type="password" value={senhaSupervisor} onChange={(e) => setSenhaSupervisor(e.target.value)} autoComplete="off" /></div>
-            <p className="text-xs text-muted-foreground">Modo demonstração: a senha de teste é “supervisor”. A autenticação real vem na Fase 2.</p>
+            {MODO_DEMO && <p className="text-xs text-muted-foreground">Modo demonstração: a senha de teste é “supervisor”. A autenticação real vem na Fase 2.</p>}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAutorizando(false)}>Cancelar</Button>

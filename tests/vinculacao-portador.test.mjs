@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ehRetroativa, erroDaDataDoVinculo, textoDaAutorizacao, validarSupervisor } from "../src/lib/vinculacao-portador.ts";
-import { registrarPortador } from "../src/lib/portadores-caixa.ts";
+import { erroDoRegistroDePortador, registrarPortador } from "../src/lib/portadores-caixa.ts";
 
 const memoria = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) }; };
 const caixa = { id: "c1", codigo: "CX-0001", codigo_num: 1, empresa_id: "x", status: "Ativa" };
@@ -50,4 +50,17 @@ test("o menu tem Vinculação de portador, com vistoria, confirmação, termo de
   const m = readFileSync(new URL("../src/lib/menu-parametros.ts", import.meta.url), "utf8");
   assert.match(m, /aba: "vinculacao-portador", titulo: "Vinculação de portador"/);
   assert.match(readFileSync(new URL("../src/components/modules/PaginaModulo.tsx", import.meta.url), "utf8"), /value="vinculacao-portador"[\s\S]*<PortadoresCaixaModulo \/>/);
+});
+
+test("o portador não autoriza o próprio registro e nome repetido não vale como autorização", () => {
+  const emp = [pessoa("s1", { nome: "Marta Souza" }), pessoa("s2", { nome: "Marta Souza" }), pessoa("e1", { supervisor_id: "s1" }), pessoa("e2", { supervisor_id: "s2" })];
+  assert.match(validarSupervisor("Marta Souza", "supervisor", emp, "2026-11-18").erro, /mais de um supervisor/);
+  const unico = [pessoa("s1", { nome: "Marta Souza" }), pessoa("e1", { supervisor_id: "s1" })];
+  assert.match(validarSupervisor("Marta Souza", "supervisor", unico, "2026-11-18", "s1").erro, /próprio portador/);
+  assert.ok("supervisor" in validarSupervisor("Marta Souza", "supervisor", unico, "2026-11-18", "e1"));
+});
+
+test("a conferência prévia recusa o registro impossível sem gravar nada", () => {
+  const base = { caixa, habilitadas: [1], observacao: "", agora, empregado: null, status: "Inativa" };
+  assert.match(erroDoRegistroDePortador({ ...base, data: "2026-11-10" }, memoria()), /não tem portador ativo/);
 });

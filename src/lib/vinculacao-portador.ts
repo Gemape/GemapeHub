@@ -18,13 +18,17 @@ export function erroDaDataDoVinculo(data: string, hoje: string, minimo?: string 
 type Pessoa = { id: string; nome: string; ativo: boolean; data_demissao: string | null; supervisor_id?: string | null };
 
 /** Supervisor é o empregado ativo que consta como supervisor de alguém. Devolve o supervisor ou a mensagem do que está errado. */
-export function validarSupervisor(nome: string, senha: string, empregados: readonly Pessoa[], hoje: string): { supervisor: Pessoa } | { erro: string } {
+export function validarSupervisor(nome: string, senha: string, empregados: readonly Pessoa[], hoje: string, impedidoId?: string): { supervisor: Pessoa } | { erro: string } {
   if (!nome.trim()) return { erro: "Informe o nome do supervisor." };
   if (!senha) return { erro: "Informe a senha do supervisor." };
   const ids = new Set(empregados.map((e) => e.supervisor_id).filter((s): s is string => !!s));
   if (ids.size === 0) return { erro: "Nenhum empregado tem supervisor cadastrado. Informe o supervisor de cada empregado no Cadastro de empregados." };
-  const supervisor = empregados.find((e) => ids.has(e.id) && e.ativo && (!e.data_demissao || e.data_demissao > hoje) && normalizar(e.nome) === normalizar(nome));
-  if (!supervisor) return { erro: "Supervisor não encontrado. Informe o nome completo de um supervisor ativo." };
+  const achados = empregados.filter((e) => ids.has(e.id) && e.ativo && (!e.data_demissao || e.data_demissao > hoje) && normalizar(e.nome) === normalizar(nome));
+  if (achados.length === 0) return { erro: "Supervisor não encontrado. Informe o nome completo de um supervisor ativo." };
+  if (achados.length > 1) return { erro: "Há mais de um supervisor com esse nome; a autorização precisa identificar uma pessoa só." };
+  const supervisor = achados[0]!;
+  // Quem é o portador não autoriza o próprio registro retroativo.
+  if (impedidoId && supervisor.id === impedidoId) return { erro: "O próprio portador não pode autorizar o registro. Chame outro supervisor." };
   if (senha !== SENHA_DEMO_SUPERVISOR) return { erro: "Senha do supervisor incorreta." };
   return { supervisor };
 }
