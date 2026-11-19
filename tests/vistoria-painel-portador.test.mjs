@@ -25,7 +25,7 @@ test("o texto do desaparecimento cita a ferramenta, a caixa, a data e a tratativ
 test("as telas usam o portador no campo Caixa, geram o termo de entrega na troca de portador e abrem a ocorrência da ferramenta ausente", () => {
   for (const f of ["FerramentasEntregaCaixa", "FerramentasReposicaoCaixa", "FerramentasBaixaCaixa"]) assert.match(le(`src/components/modules/${f}.tsx`), /rotuloDaCaixaComPortador\(portadores, c\)/, f);
   const p = le("src/components/modules/PortadoresCaixaModulo.tsx");
-  assert.match(p, /registrarPortador\([\s\S]*gerarTermoDeEntrega\(caixa, empregado\)/);
+  assert.match(p, /registrarPortador\([\s\S]*gerarTermoDeEntrega\(caixa, empregadoEscolhido, data\)/);
   assert.match(p, /lerTextosTermos\(\)\.entrega/);
   const v = le("src/components/modules/FerramentasTermoVistoria.tsx");
   assert.match(v, /<FerramentasPainelVistorias onFazerVistoria=\{iniciarVistoria\} \/>/);

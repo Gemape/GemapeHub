@@ -4,6 +4,7 @@ import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
 import { EstoqueEpiModulo } from "@/components/modules/EstoqueEpiModulo";
 import { EstoqueModulo } from "@/components/modules/EstoqueModulo";
+import { PortadoresCaixaModulo } from "@/components/modules/PortadoresCaixaModulo";
 import { FerramentasMovimentacoes } from "@/components/modules/FerramentasMovimentacoes";
 import { UniformesComprasModulo } from "@/components/modules/UniformesComprasModulo";
 import { UniformesRelatorioFuncionario } from "@/components/modules/UniformesRelatorioFuncionario";
@@ -140,6 +141,9 @@ export function PaginaModulo({
           <>
             <TabsContent value="caixas" className="mt-5">
               <FerramentasCaixasModulo />
+            </TabsContent>
+            <TabsContent value="vinculacao-portador" className="mt-5">
+              <PortadoresCaixaModulo />
             </TabsContent>
             <TabsContent value="termo-responsabilidade" className="mt-5">
               <FerramentasTermoResponsabilidade />

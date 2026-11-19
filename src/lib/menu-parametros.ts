@@ -1,6 +1,7 @@
 // Hierarquia do menu Parâmetros (decisões 34 e 38). Só dados: o AppSidebar desenha.
 export type NomeIcone =
   | "CalendarDays"
+  | "UserCheck"
   | "Tags"
   | "Ruler"
   | "ListChecks"
@@ -85,6 +86,7 @@ export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
   { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
   { aba: "caixas", titulo: "Número da caixa", icone: "Box" },
+  { aba: "vinculacao-portador", titulo: "Vinculação de portador", icone: "UserCheck" },
   { aba: "termo-responsabilidade", titulo: "Termo de responsabilidade individual", icone: "FileSignature" },
   { aba: "termo-encerramento", titulo: "Termo de encerramento responsabilidade", icone: "FileX" },
   { aba: "termo-vistoria", titulo: "Termo de vistoria periódica", icone: "ClipboardCheck" },
@@ -266,6 +268,7 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     baixas: "Lista as baixas definitivas de ferramentas, com motivo, quantidade e valor, por período, para consulta e exportação.",
     consulta: "Relatório sob demanda: marque os campos que quer cruzar e o que somar, veja o resultado na hora e salve a consulta no seu perfil.",
     inventario: "Inventário em etapas: escolha o setor, conte o que está na prateleira, revise as diferenças com o sistema e baixe o relatório. É conferência: não movimenta o estoque.",
+    "vinculacao-portador": "Vincula e desvincula o portador de cada caixa. Data anterior a hoje pede nome e senha do supervisor; desvincular exige a vistoria da caixa e gera o termo de encerramento.",
     "escalonamento-vistorias": "Define o mês-base de vistoria de cada caixa e mostra o calendário projetado e a carga de cada mês.",
     "entradas-saidas": "Entradas e saídas de ferramentas por caixa e por empregado, com o motivo de cada saída.",
     "ferramentas-por-caixa": "Gera o relatório das caixas de ferramentas: você escolhe as caixas e as seções (ferramentas, histórico e ocorrências) que entram.",

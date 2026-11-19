@@ -10,6 +10,8 @@ export interface DadosTermoVistoria {
   caixa: { codigo?: string | null | undefined; nome?: string | null | undefined } | undefined;
   responsavel: string | null | undefined;
   data: string;
+  /** Título do relatório; sem ele vale o da vistoria periódica. O encerramento da caixa usa o seu. */
+  titulo?: string | undefined;
   /** Texto cadastrado em Parâmetros Específicos; sem ele, vale o texto padrão. */
   texto?: string | undefined;
   linhas: {
@@ -51,12 +53,12 @@ export function montarTermoVistoriaHtml(dados: DadosTermoVistoria): string {
   });
 
   return paginaRelatorio({
-    titulo: `Termo de Vistoria Periódica - Caixa ${caixa?.codigo || ""}`,
-    cabecalho: cabecalhoRelatorio({ titulo: "Relatório de Vistoria Periódica de Ferramentas", subtitulos: [`CNPJ: ${formatarCnpj(dados.empresa.cnpj)}`], empresa: dados.empresa.razao_social }),
+    titulo: `${dados.titulo ?? "Termo de Vistoria Periódica"} - Caixa ${caixa?.codigo || ""}`,
+    cabecalho: cabecalhoRelatorio({ titulo: dados.titulo ?? "Relatório de Vistoria Periódica de Ferramentas", subtitulos: [`CNPJ: ${formatarCnpj(dados.empresa.cnpj)}`], empresa: dados.empresa.razao_social }),
     css: CSS_TERMO,
     corpo: `<div class="termo">
           <div class="info">
-            <p><strong>DATA DA VISTORIA:</strong> ${dataFormatada}<br>
+            <p><strong>DATA DA VISTORIA${dados.titulo ? " DE ENCERRAMENTO" : ""}:</strong> ${dataFormatada}<br>
             <strong>CAIXA Nº:</strong> ${escaparHtml(caixa?.codigo || "N/A")}<br>
             <strong>RESPONSÁVEL PELA CAIXA (EMPREGADO):</strong> ${escaparHtml(dados.responsavel || "NÃO ATRIBUÍDO")}</p>
           </div>

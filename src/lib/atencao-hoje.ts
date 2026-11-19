@@ -143,7 +143,7 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
   const portadoresDesligados: ItemPendencia[] = (e.desligamentos?.portadores ?? []).map((p) => ({
     chave: `portador-desl-${p.registroId}`, texto: `${p.caixaCodigo} · ${p.empregadoNome}`,
     detalhe: `Portador desligado${p.dataDemissao ? ` em ${dataBr(p.dataDemissao)}` : ""}: desvincule a caixa agora e faça a vistoria de encerramento.`,
-    acao: { rotulo: "Desvincular portador", url: "/ferramentas", search: { aba: "caixas" } },
+    acao: { rotulo: "Desvincular portador", url: "/ferramentas", search: { aba: "vinculacao-portador" } },
   }));
 
   const grupos: GrupoPendencia[] = [

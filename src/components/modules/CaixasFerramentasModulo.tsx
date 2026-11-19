@@ -445,7 +445,7 @@ export function CaixasFerramentasModulo() {
               <div className="space-y-1.5">
                 <Label htmlFor="portador-ativo-caixa">Portador ativo</Label>
                 <Input id="portador-ativo-caixa" readOnly value={editando ? nomePortador(editando.id) : "—"} />
-                <p className="text-xs text-muted-foreground">Gerencie o vínculo na aba Portadores.</p>
+                <p className="text-xs text-muted-foreground">Gerencie o vínculo em Vinculação de portador.</p>
               </div>
 
               <div className="space-y-1.5">
