@@ -42,6 +42,7 @@ import { Route as AuthenticatedCadastrosEquipamentosEspecificosRouteImport } fro
 import { Route as AuthenticatedCadastrosEquipamentosManutencaoRouteImport } from './routes/_authenticated/cadastros/equipamentos-manutencao'
 import { Route as AuthenticatedCadastrosEquipamentosTiposOcorrenciaRouteImport } from './routes/_authenticated/cadastros/equipamentos-tipos-ocorrencia'
 import { Route as AuthenticatedCadastrosFerramentasRouteImport } from './routes/_authenticated/cadastros/ferramentas'
+import { Route as AuthenticatedCadastrosFerramentasPlanoVistoriasRouteImport } from './routes/_authenticated/cadastros/ferramentas-plano-vistorias'
 import { Route as AuthenticatedCadastrosFornecedoresRouteImport } from './routes/_authenticated/cadastros/fornecedores'
 import { Route as AuthenticatedCadastrosGeraisRouteRouteImport } from './routes/_authenticated/cadastros/gerais/route'
 import { Route as AuthenticatedCadastrosUniformesRouteImport } from './routes/_authenticated/cadastros/uniformes'
@@ -248,6 +249,12 @@ const AuthenticatedCadastrosFerramentasRoute =
     path: '/cadastros/ferramentas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCadastrosFerramentasPlanoVistoriasRoute =
+  AuthenticatedCadastrosFerramentasPlanoVistoriasRouteImport.update({
+    id: '/cadastros/ferramentas-plano-vistorias',
+    path: '/cadastros/ferramentas-plano-vistorias',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCadastrosFornecedoresRoute =
   AuthenticatedCadastrosFornecedoresRouteImport.update({
     id: '/cadastros/fornecedores',
@@ -415,6 +422,7 @@ export interface FileRoutesByFullPath {
   '/cadastros/equipamentos-manutencao': typeof AuthenticatedCadastrosEquipamentosManutencaoRoute
   '/cadastros/equipamentos-tipos-ocorrencia': typeof AuthenticatedCadastrosEquipamentosTiposOcorrenciaRoute
   '/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
+  '/cadastros/ferramentas-plano-vistorias': typeof AuthenticatedCadastrosFerramentasPlanoVistoriasRoute
   '/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
@@ -470,6 +478,7 @@ export interface FileRoutesByTo {
   '/cadastros/equipamentos-manutencao': typeof AuthenticatedCadastrosEquipamentosManutencaoRoute
   '/cadastros/equipamentos-tipos-ocorrencia': typeof AuthenticatedCadastrosEquipamentosTiposOcorrenciaRoute
   '/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
+  '/cadastros/ferramentas-plano-vistorias': typeof AuthenticatedCadastrosFerramentasPlanoVistoriasRoute
   '/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
@@ -528,6 +537,7 @@ export interface FileRoutesById {
   '/_authenticated/cadastros/equipamentos-manutencao': typeof AuthenticatedCadastrosEquipamentosManutencaoRoute
   '/_authenticated/cadastros/equipamentos-tipos-ocorrencia': typeof AuthenticatedCadastrosEquipamentosTiposOcorrenciaRoute
   '/_authenticated/cadastros/ferramentas': typeof AuthenticatedCadastrosFerramentasRoute
+  '/_authenticated/cadastros/ferramentas-plano-vistorias': typeof AuthenticatedCadastrosFerramentasPlanoVistoriasRoute
   '/_authenticated/cadastros/fornecedores': typeof AuthenticatedCadastrosFornecedoresRoute
   '/_authenticated/cadastros/uniformes': typeof AuthenticatedCadastrosUniformesRoute
   '/_authenticated/cadastros/veiculos': typeof AuthenticatedCadastrosVeiculosRoute
@@ -586,6 +596,7 @@ export interface FileRouteTypes {
     | '/cadastros/equipamentos-manutencao'
     | '/cadastros/equipamentos-tipos-ocorrencia'
     | '/cadastros/ferramentas'
+    | '/cadastros/ferramentas-plano-vistorias'
     | '/cadastros/fornecedores'
     | '/cadastros/uniformes'
     | '/cadastros/veiculos'
@@ -641,6 +652,7 @@ export interface FileRouteTypes {
     | '/cadastros/equipamentos-manutencao'
     | '/cadastros/equipamentos-tipos-ocorrencia'
     | '/cadastros/ferramentas'
+    | '/cadastros/ferramentas-plano-vistorias'
     | '/cadastros/fornecedores'
     | '/cadastros/uniformes'
     | '/cadastros/veiculos'
@@ -698,6 +710,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cadastros/equipamentos-manutencao'
     | '/_authenticated/cadastros/equipamentos-tipos-ocorrencia'
     | '/_authenticated/cadastros/ferramentas'
+    | '/_authenticated/cadastros/ferramentas-plano-vistorias'
     | '/_authenticated/cadastros/fornecedores'
     | '/_authenticated/cadastros/uniformes'
     | '/_authenticated/cadastros/veiculos'
@@ -960,6 +973,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCadastrosFerramentasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cadastros/ferramentas-plano-vistorias': {
+      id: '/_authenticated/cadastros/ferramentas-plano-vistorias'
+      path: '/cadastros/ferramentas-plano-vistorias'
+      fullPath: '/cadastros/ferramentas-plano-vistorias'
+      preLoaderRoute: typeof AuthenticatedCadastrosFerramentasPlanoVistoriasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cadastros/fornecedores': {
       id: '/_authenticated/cadastros/fornecedores'
       path: '/cadastros/fornecedores'
@@ -1185,6 +1205,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCadastrosEquipamentosManutencaoRoute: typeof AuthenticatedCadastrosEquipamentosManutencaoRoute
   AuthenticatedCadastrosEquipamentosTiposOcorrenciaRoute: typeof AuthenticatedCadastrosEquipamentosTiposOcorrenciaRoute
   AuthenticatedCadastrosFerramentasRoute: typeof AuthenticatedCadastrosFerramentasRoute
+  AuthenticatedCadastrosFerramentasPlanoVistoriasRoute: typeof AuthenticatedCadastrosFerramentasPlanoVistoriasRoute
   AuthenticatedCadastrosFornecedoresRoute: typeof AuthenticatedCadastrosFornecedoresRoute
   AuthenticatedCadastrosUniformesRoute: typeof AuthenticatedCadastrosUniformesRoute
   AuthenticatedCadastrosVeiculosRoute: typeof AuthenticatedCadastrosVeiculosRoute
@@ -1241,6 +1262,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCadastrosEquipamentosTiposOcorrenciaRoute,
   AuthenticatedCadastrosFerramentasRoute:
     AuthenticatedCadastrosFerramentasRoute,
+  AuthenticatedCadastrosFerramentasPlanoVistoriasRoute:
+    AuthenticatedCadastrosFerramentasPlanoVistoriasRoute,
   AuthenticatedCadastrosFornecedoresRoute:
     AuthenticatedCadastrosFornecedoresRoute,
   AuthenticatedCadastrosUniformesRoute: AuthenticatedCadastrosUniformesRoute,
