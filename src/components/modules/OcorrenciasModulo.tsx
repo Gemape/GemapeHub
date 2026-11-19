@@ -1,7 +1,11 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
 import { confirmarExclusao } from "@/components/ConfirmarAcao";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useAccess } from "@/lib/access-context";
+import { MODO_DEMO } from "@/lib/modo-demo";
+import { EVENTO_TRATATIVAS_FERRAMENTA, lerTratativas, salvarTratativa, situacaoDaOcorrencia, type SituacaoOcorrenciaFerramenta } from "@/lib/tratativa-ocorrencia-ferramenta";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,6 +59,17 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Ocorrencia | null>(null);
+  const { isAdmin } = useAccess();
+  // Fase 1: a tratativa fica só no navegador, então só existe em modo demonstração (no banco real faltam os campos).
+  const comTratativa = modulo === "ferramenta" && MODO_DEMO;
+  const [tratativas, setTratativas] = useState(lerTratativas);
+  useEffect(() => {
+    const atualizar = () => setTratativas(lerTratativas());
+    window.addEventListener(EVENTO_TRATATIVAS_FERRAMENTA, atualizar);
+    return () => window.removeEventListener(EVENTO_TRATATIVAS_FERRAMENTA, atualizar);
+  }, []);
+  const [tratando, setTratando] = useState<Ocorrencia | null>(null);
+  const [situacaoFiltro, setSituacaoFiltro] = useState<"todas" | SituacaoOcorrenciaFerramenta>("todas");
   const tipoOcorrencia = { epi: "EPI", uniforme: "Uniforme", ferramenta: "Ferramenta", veiculo: "Veículo" }[modulo];
 
   const { data: todasAsOcorrencias = [], isLoading } = useOcorrencias(busca, modulo);
@@ -62,7 +77,7 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const periodoErrado = !!inicio && !!fim && inicio > fim;
-  const ocorrencias = periodoErrado ? [] : todasAsOcorrencias.filter((o) => (!inicio || o.data >= inicio) && (!fim || o.data <= fim));
+  const ocorrencias = periodoErrado ? [] : todasAsOcorrencias.filter((o) => (!inicio || o.data >= inicio) && (!fim || o.data <= fim) && (!comTratativa || situacaoFiltro === "todas" || situacaoDaOcorrencia(tratativas[o.id]) === situacaoFiltro));
   const { data: empregados = [] } = useEmpregados(TODAS, true);
   // Lista completa para os nomes e para manter o empregado já vinculado, mesmo demitido.
   const { data: todosEmpregados = [] } = useEmpregados(TODAS);
@@ -90,6 +105,17 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
     if (o.item_id) return itens.find((i) => i.id === o.item_id)?.nome ?? "—";
     return "—";
   };
+
+  function gravarTratativa(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!tratando) return;
+    const encerrar = (e.nativeEvent as SubmitEvent).submitter?.getAttribute("value") === "encerrar";
+    const f = new FormData(e.currentTarget);
+    const erro = salvarTratativa(tratando.id, { responsavel: String(f.get("responsavel") ?? ""), descricao: capitalizarTexto(String(f.get("descricao") ?? "")), reposta: f.get("reposta") === "on", encerrar }, new Date().toISOString(), isAdmin);
+    if (erro) { toast.error(erro); return; }
+    toast.success(encerrar ? "Tratativa encerrada." : "Tratativa salva.");
+    setTratando(null);
+  }
 
   function abrirNovo() {
     setEditando(null);
@@ -139,6 +165,15 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
             <Label htmlFor="oc-fim">Fim</Label>
             <Input id="oc-fim" type="date" value={fim} min={inicio || undefined} onChange={(e) => setFim(e.target.value)} />
           </div>
+          {comTratativa && (
+            <div className="space-y-1">
+              <Label htmlFor="oc-situacao">Situação</Label>
+              <Select value={situacaoFiltro} onValueChange={(v) => setSituacaoFiltro(v as typeof situacaoFiltro)}>
+                <SelectTrigger id="oc-situacao" className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="todas">Todas</SelectItem><SelectItem value="Aberta">Abertas</SelectItem><SelectItem value="Em tratativa">Em tratativa</SelectItem><SelectItem value="Encerrada">Encerradas</SelectItem></SelectContent>
+              </Select>
+            </div>
+          )}
           {(inicio || fim) && (
             <Button type="button" variant="ghost" onClick={() => { setInicio(""); setFim(""); }}>
               Limpar período
@@ -192,15 +227,16 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
               <TableHead>{modulo === "veiculo" ? "Veículo" : "Item"}</TableHead>
               <TableHead>Responsável</TableHead>
               <TableHead>Descrição</TableHead>
+              {comTratativa && <TableHead>Situação</TableHead>}
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <LinhasEsqueleto colunas={8} />
+              <LinhasEsqueleto colunas={comTratativa ? 9 : 8} />
             ) : ocorrencias.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8}>
+                <TableCell colSpan={comTratativa ? 9 : 8}>
                   {inicio || fim
                     ? <EstadoVazio titulo="Nenhuma ocorrência no período." dica="Mude as datas ou limpe o período para ver as demais." acao="Limpar período" aoAcionar={() => { setInicio(""); setFim(""); }} />
                     : <EstadoVazio titulo="Nenhuma ocorrência registrada." dica="Registre a primeira para começar o acompanhamento." acao="+ Registrar Primeira Ocorrência" aoAcionar={abrirNovo} />}
@@ -218,7 +254,16 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
                   <TableCell className="font-medium">{descricaoAlvo(o)}</TableCell>
                   <TableCell>{o.responsavel_registro}</TableCell>
                   <TableCell className="max-w-xs truncate">{o.descricao_ocorrencia}</TableCell>
+                  {comTratativa && (
+                    <TableCell>
+                      <Badge variant="outline">{situacaoDaOcorrencia(tratativas[o.id])}</Badge>
+                      {tratativas[o.id]?.reposta && <span className="block text-xs text-muted-foreground">Ferramenta reposta</span>}
+                    </TableCell>
+                  )}
                   <TableCell className="text-right whitespace-nowrap">
+                    {comTratativa && (situacaoDaOcorrencia(tratativas[o.id]) !== "Encerrada" || isAdmin) && (
+                      <Button requiresWrite="operar" variant="ghost" size="sm" onClick={() => setTratando(o)}>{situacaoDaOcorrencia(tratativas[o.id]) === "Encerrada" ? "Editar tratativa" : "Tratativa"}</Button>
+                    )}
                     <Button requiresWrite
                       variant="ghost"
                       size="sm"
@@ -350,6 +395,33 @@ export function OcorrenciasModulo({ modulo }: { modulo: Modulo }) {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!tratando} onOpenChange={(v) => { if (!v) setTratando(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Tratativa da ocorrência</DialogTitle>
+            <DialogDescription>Informe o que foi feito (localizar ou repor a ferramenta). Salvar mantém Em tratativa; encerrar fecha a ocorrência.</DialogDescription>
+          </DialogHeader>
+          {tratando && (
+            <form key={tratando.id} onSubmit={gravarTratativa} className="grid gap-3">
+              <p className="text-sm text-muted-foreground">{tratando.descricao_ocorrencia}</p>
+              <div className="space-y-1.5">
+                <Label htmlFor="tr_ferr_resp">Responsável pela tratativa</Label>
+                <Input id="tr_ferr_resp" name="responsavel" capitalizar="nome" required defaultValue={tratativas[tratando.id]?.responsavel ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="tr_ferr_desc">Tratativa</Label>
+                <Textarea id="tr_ferr_desc" name="descricao" capitalizar="texto" required rows={3} maxLength={2000} defaultValue={tratativas[tratando.id]?.descricao ?? ""} />
+              </div>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="reposta" defaultChecked={tratativas[tratando.id]?.reposta ?? false} /> Ferramenta reposta (registre também em Movimentações &gt; Reposição)</label>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setTratando(null)}>Cancelar</Button>
+                <Button requiresWrite="operar" type="submit">Salvar tratativa</Button>
+                <Button requiresWrite="operar" type="submit" name="acao" value="encerrar" variant="destructive">Encerrar tratativa</Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

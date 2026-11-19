@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { MESES_DA_PERIODICIDADE, cargaPorMes, lerMesesBase, mesesPrevistos, mesesSobrecarregados, rotuloMes, salvarMesBase } from "../src/lib/escalonamento-vistorias.ts";
-import { ABAS_FERRAMENTA } from "../src/lib/menu-parametros.ts";
+import { MESES_DA_PERIODICIDADE, cargaPorMes, lerMesesBase, lerResponsaveisVistoria, salvarResponsavelVistoria, mesesPrevistos, mesesSobrecarregados, rotuloMes, salvarMesBase } from "../src/lib/escalonamento-vistorias.ts";
+import { ABAS_FERRAMENTA, MENU_FERRAMENTAS } from "../src/lib/menu-parametros.ts";
 
 const le = (p) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const memoria = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => void m.set(k, v) }; };
@@ -45,10 +45,32 @@ test("o mês-base é guardado por caixa, valor ruim é recusado ou ignorado e nu
   assert.deepEqual(lerMesesBase(m), { z: 5 });
 });
 
-test("a tela está no menu de Ferramentas e na página do módulo", () => {
-  assert.ok(ABAS_FERRAMENTA.some((a) => a.aba === "escalonamento-vistorias" && a.titulo === "Escalonamento de Vistorias"));
-  assert.match(le("src/components/modules/PaginaModulo.tsx"), /value="escalonamento-vistorias"[\s\S]*<FerramentasEscalonamentoVistorias \/>/);
-  assert.match(le("src/components/modules/FerramentasEscalonamentoVistorias.tsx"), /lerParametrosVistoria\(\)/);
+test("o Plano de vistorias está em Parâmetros > Ferramentas e saiu do menu do módulo", () => {
+  assert.ok(!ABAS_FERRAMENTA.some((a) => a.aba === "escalonamento-vistorias"));
+  assert.ok(MENU_FERRAMENTAS.some((i) => i.titulo === "Plano de vistorias" && i.url === "/cadastros/ferramentas-plano-vistorias"));
+  assert.doesNotMatch(le("src/components/modules/PaginaModulo.tsx"), /escalonamento-vistorias|FerramentasEscalonamentoVistorias/);
+  assert.match(le("src/routes/_authenticated/cadastros/ferramentas-plano-vistorias.tsx"), /<FerramentasPlanoVistorias \/>/);
+  assert.match(le("src/lib/permissoes-demo.ts"), /"\/cadastros\/ferramentas-plano-vistorias"/);
+  assert.match(le("src/lib/use-vistorias-caixas.ts"), /lerParametrosVistoria\(\)/);
+  const plano = le("src/components/modules/FerramentasPlanoVistorias.tsx");
+  assert.match(plano, /Responsável pela vistoria/);
+  assert.match(plano, /Parâmetros Específicos/);
+  // o responsável é usado: aparece no painel das vistorias, vindo do mesmo hook
+  assert.match(le("src/lib/use-vistorias-caixas.ts"), /lerResponsaveisVistoria\(\)/);
+  assert.match(le("src/components/modules/FerramentasPainelVistorias.tsx"), /Responsável pela vistoria/);
+  // o endereço antigo continua levando ao plano
+  assert.match(le("src/routes/_authenticated/ferramentas.tsx"), /escalonamento-vistorias[\s\S]*redirect\(\{ to: "\/cadastros\/ferramentas-plano-vistorias" \}\)/);
+});
+
+test("o responsável pela vistoria de cada caixa é guardado, trocado e retirado", () => {
+  const m = memoria();
+  assert.deepEqual(lerResponsaveisVistoria(m), {});
+  salvarResponsavelVistoria("c1", "e1", m);
+  assert.deepEqual(salvarResponsavelVistoria("c2", "e2", m), { c1: "e1", c2: "e2" });
+  assert.deepEqual(salvarResponsavelVistoria("c1", null, m), { c2: "e2" });
+  m.setItem("gemape-demo-ferramentas-vistoria-responsavel", JSON.stringify({ a: 1, b: "", c: "e3" }));
+  assert.deepEqual(lerResponsaveisVistoria(m), { c: "e3" });
+  assert.deepEqual(lerResponsaveisVistoria({ getItem: () => "{ruim", setItem() {} }), {});
 });
 
 test("quinzenal conta duas vistorias por mês e a marca {tabela} aparece uma vez só", async () => {

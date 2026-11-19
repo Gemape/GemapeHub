@@ -13,7 +13,7 @@ import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
 import { lerMotivosBaixaFerramenta } from "@/lib/ferramentas-motivos-baixa";
 import { posicaoDasFerramentas } from "@/lib/estoque-ferramentas-posicao";
 import { reporFerramentaNaCaixa } from "@/lib/movimentacoes-caixa";
-import { portadorNaData } from "@/lib/portadores-caixa";
+import { portadorNaData, rotuloDaCaixaComPortador } from "@/lib/portadores-caixa";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { lerTextosTermos } from "@/lib/termos-ferramentas-texto";
 import { montarTermoReposicaoHtml } from "@/lib/termo-reposicao-html";
@@ -129,7 +129,7 @@ export function FerramentasReposicaoCaixa() {
             <Label htmlFor="reposicao-caixa">Caixa</Label>
             <Select value={caixaId} onValueChange={(v) => { setCaixaId(v); setAntigaId(""); setNovaId(""); }}>
               <SelectTrigger id="reposicao-caixa"><SelectValue placeholder={isLoading ? "Carregando..." : "Escolha a caixa"} /></SelectTrigger>
-              <SelectContent>{[...caixas].sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR", { numeric: true })).map((c) => <SelectItem key={c.id} value={c.id}>{c.codigo}</SelectItem>)}</SelectContent>
+              <SelectContent>{[...caixas].sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR", { numeric: true })).map((c) => <SelectItem key={c.id} value={c.id}>{rotuloDaCaixaComPortador(portadores, c)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">

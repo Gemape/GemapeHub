@@ -14,6 +14,8 @@ import { controleDaFerramenta, disponivelNaCaixa, movimentacoesDaCaixa } from "@
 import { ehBaixa } from "@/lib/historico-movimentacoes";
 import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { useParametrosBase } from "@/lib/use-parametros-base";
+import { rotuloDaCaixaComPortador } from "@/lib/portadores-caixa";
+import { usePortadoresCaixa } from "@/lib/use-portadores-caixa";
 import { useCaixaItens, useCaixasFerramentas, useItens, useMovimentacoes } from "@/lib/hooks-gemape";
 
 // Ferramentas > Movimentações > Baixa definitiva: a ferramenta sai da caixa com motivo e ônus; a baixa fica na caixa, sem pessoa.
@@ -24,6 +26,7 @@ export function FerramentasBaixaCaixa() {
   const caixas = caixasHabilitadas(todasCaixas, habilitadas).filter((c) => empresaId === TODAS || c.empresa_id === empresaId);
   const { data: ferramentas = [] } = useItens("ferramenta", TODAS);
   const { data: movimentos = [] } = useMovimentacoes("ferramenta", empresaId);
+  const portadores = usePortadoresCaixa();
   const [caixaId, setCaixaId] = useState("");
   const [aberto, setAberto] = useState(false);
   const caixa = caixas.find((c) => c.id === caixaId);
@@ -39,8 +42,8 @@ export function FerramentasBaixaCaixa() {
           <div className="space-y-1.5">
             <Label htmlFor="baixa-caixa">Caixa</Label>
             <Select value={caixaId} onValueChange={setCaixaId}>
-              <SelectTrigger id="baixa-caixa" className="w-56 max-w-full"><SelectValue placeholder={isLoading ? "Carregando..." : "Escolha a caixa"} /></SelectTrigger>
-              <SelectContent>{[...caixas].sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR")).map((c) => <SelectItem key={c.id} value={c.id}>{c.codigo}</SelectItem>)}</SelectContent>
+              <SelectTrigger id="baixa-caixa" className="w-80 max-w-full"><SelectValue placeholder={isLoading ? "Carregando..." : "Escolha a caixa"} /></SelectTrigger>
+              <SelectContent>{[...caixas].sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR")).map((c) => <SelectItem key={c.id} value={c.id}>{rotuloDaCaixaComPortador(portadores, c)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <Button requiresWrite="operar" type="button" disabled={!caixa} onClick={() => setAberto(true)}>Dar baixa</Button>

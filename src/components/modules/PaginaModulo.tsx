@@ -4,6 +4,7 @@ import { EyebrowDoCard } from "@/components/layout/EyebrowDoCard";
 import { DashboardModulo } from "@/components/modules/DashboardModulo";
 import { EstoqueEpiModulo } from "@/components/modules/EstoqueEpiModulo";
 import { EstoqueModulo } from "@/components/modules/EstoqueModulo";
+import { PortadoresCaixaModulo } from "@/components/modules/PortadoresCaixaModulo";
 import { FerramentasMovimentacoes } from "@/components/modules/FerramentasMovimentacoes";
 import { UniformesComprasModulo } from "@/components/modules/UniformesComprasModulo";
 import { UniformesRelatorioFuncionario } from "@/components/modules/UniformesRelatorioFuncionario";
@@ -22,7 +23,6 @@ import { FerramentasPorCaixas } from "@/components/modules/FerramentasPorCaixas"
 import { FerramentasEntradasSaidas } from "@/components/modules/FerramentasEntradasSaidas";
 import { FerramentasSugestaoCompras } from "@/components/modules/FerramentasSugestaoCompras";
 import { FerramentasCaixasModulo } from "@/components/modules/FerramentasCaixasModulo";
-import { FerramentasEscalonamentoVistorias } from "@/components/modules/FerramentasEscalonamentoVistorias";
 import { FerramentasTermoResponsabilidade } from "@/components/modules/FerramentasTermoResponsabilidade";
 import { FerramentasTermoEncerramento } from "@/components/modules/FerramentasTermoEncerramento";
 import { FerramentasTermoVistoria } from "@/components/modules/FerramentasTermoVistoria";
@@ -141,6 +141,9 @@ export function PaginaModulo({
             <TabsContent value="caixas" className="mt-5">
               <FerramentasCaixasModulo />
             </TabsContent>
+            <TabsContent value="vinculacao-portador" className="mt-5">
+              <PortadoresCaixaModulo />
+            </TabsContent>
             <TabsContent value="termo-responsabilidade" className="mt-5">
               <FerramentasTermoResponsabilidade />
             </TabsContent>
@@ -149,9 +152,6 @@ export function PaginaModulo({
             </TabsContent>
             <TabsContent value="termo-vistoria" className="mt-5">
               <FerramentasTermoVistoria />
-            </TabsContent>
-            <TabsContent value="escalonamento-vistorias" className="mt-5">
-              <FerramentasEscalonamentoVistorias />
             </TabsContent>
             <TabsContent value="sugestao-compras" className="mt-5">
               <FerramentasSugestaoCompras />

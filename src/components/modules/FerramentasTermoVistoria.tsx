@@ -33,6 +33,7 @@ import {
   useRegistrarMovimentacoesLote,
   useCaixasFerramentas,
   useCaixaItens,
+  useSalvar,
 } from "@/lib/hooks-gemape";
 import { empregadoDoTermo, validarTermoVistoria } from "@/lib/termos-atomicos";
 import { montarTermoVistoriaHtml } from "@/lib/termo-vistoria-html";
@@ -40,13 +41,15 @@ import { lerTextosTermos } from "@/lib/termos-ferramentas-texto";
 import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { hojeLocal } from "@/lib/empregados";
+import { FerramentasPainelVistorias } from "@/components/modules/FerramentasPainelVistorias";
+import { descricaoDoDesaparecimento } from "@/lib/vistoria-ferramentas-ocorrencia";
 
 interface ItemVistoria {
   id: string;
   item_id: string;
   quantidade: number;
   estado: string;
-  conformidade: "Conforme" | "Não Conforme";
+  conformidade: "Conforme" | "Não Conforme" | "Ausente";
   observacao: string;
 }
 
@@ -70,7 +73,30 @@ export function FerramentasTermoVistoria() {
   const caixas = caixasHabilitadas(todasAsCaixas, useParametrosBase().caixasHabilitadas);
   const portadores = usePortadoresCaixa();
 
-  const { data: itensCaixa = [], refetch: buscarItensCaixa } = useCaixaItens(caixaSel || null);
+  const { data: itensCaixa = [], refetch: buscarItensCaixa, isSuccess: itensCaixaPronto, isFetching: carregandoItensCaixa } = useCaixaItens(caixaSel || null);
+  const salvarOcorrencia = useSalvar("ocorrencias", ["ocorrencias"]);
+
+  // "Fazer vistoria" no painel: escolhe a empresa e a caixa e carrega as ferramentas dela assim que chegam.
+  const [vistoriaDaCaixa, setVistoriaDaCaixa] = useState<string | null>(null);
+  function iniciarVistoria(caixaId: string) {
+    const daCaixa = todasAsCaixas.find((c) => c.id === caixaId);
+    if (!daCaixa) return;
+    if (daCaixa.empresa_id) setEmpresaSel(daCaixa.empresa_id);
+    setEmpregadoId("");
+    setCaixaSel(caixaId);
+    setItensVistoria([]);
+    setVistoriaDaCaixa(caixaId);
+  }
+  useEffect(() => {
+    if (!vistoriaDaCaixa || vistoriaDaCaixa !== caixaSel) return;
+    setVistoriaDaCaixa(null);
+    // Busca de novo (sem usar o cache) para a vistoria partir das quantidades de agora.
+    void buscarItensCaixa().then(({ data: atuais = [] }) => {
+      if (atuais.length === 0) return void alert("Nenhum item encontrado nesta caixa.");
+      setItensVistoria(atuais.map((ci) => ({ id: Math.random().toString(36).slice(2, 11), item_id: ci.ferramenta_id, quantidade: ci.quantidade, estado: "Usado", conformidade: "Conforme" as const, observacao: ci.observacao || "" })));
+      document.getElementById("vistoria-formulario")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [vistoriaDaCaixa, caixaSel, buscarItensCaixa]);
 
   const registrarVistorias = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
   const salvando = useRef(false);
@@ -169,6 +195,36 @@ export function FerramentasTermoVistoria() {
     const itensDoTermo = itensVistoria;
     setItensVistoria([]);
 
+    // Ferramenta ausente na vistoria: abre a ocorrência de desaparecimento (a reposição é a tratativa, em Movimentações > Reposição).
+    const portadorDaData = caixa ? portadorNaData(portadores, caixa.id, dataVistoria) : null;
+    const ausentes = itensDoTermo.filter((it) => it.conformidade === "Ausente");
+    let abertas = 0;
+    for (const it of ausentes) {
+      const ferramenta = itens.find((i) => i.id === it.item_id);
+      try {
+        await salvarOcorrencia.mutateAsync({
+          valores: {
+            data: dataVistoria,
+            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+            responsavel_registro: "Vistoria periódica",
+            descricao_ocorrencia: descricaoDoDesaparecimento({ ferramenta: ferramenta ? `${ferramenta.codigo_sku ? `${ferramenta.codigo_sku} — ` : ""}${ferramenta.nome}` : "Ferramenta", quantidade: it.quantidade, caixa: caixa?.codigo ?? "—", data: dataVistoria, observacao: it.observacao }),
+            tipo_ocorrencia: "Ferramenta",
+            empregado_id: empregadoDoTermo(empregadoId) ?? portadorDaData?.empregado_id ?? null,
+            item_id: it.item_id,
+            veiculo_id: null,
+            ...(MODO_DEMO ? { caixa_id: caixaSel || null } : {}),
+          },
+        });
+        abertas += 1;
+      } catch {
+        // Segue para as demais; o aviso abaixo diz quantas não foram abertas.
+      }
+    }
+    if (ausentes.length > 0) {
+      const falhas = ausentes.length - abertas;
+      alert(`${abertas === 1 ? "Foi aberta 1 ocorrência" : `Foram abertas ${abertas} ocorrências`} de desaparecimento em Ocorrências. Para repor, use Movimentações > Reposição.${falhas > 0 ? ` ATENÇÃO: ${falhas === 1 ? "1 ocorrência não foi gravada" : `${falhas} ocorrências não foram gravadas`}; abra-${falhas === 1 ? "a" : "as"} manualmente em Ocorrências.` : ""}`);
+    }
+
     const html = montarTermoVistoriaHtml({
       empresa,
       caixa,
@@ -196,7 +252,8 @@ export function FerramentasTermoVistoria() {
 
   return (
     <div className="space-y-6">
-      <div className="panel p-6 space-y-4">
+      <FerramentasPainelVistorias onFazerVistoria={iniciarVistoria} />
+      <div id="vistoria-formulario" className="panel p-6 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end">
           <div className="space-y-1.5 lg:col-span-3">
             <Label>Empresa</Label>
@@ -308,7 +365,7 @@ export function FerramentasTermoVistoria() {
                       <TableCell>
                         <Select
                           value={it.conformidade}
-                          onValueChange={(v: "Conforme" | "Não Conforme") =>
+                          onValueChange={(v: "Conforme" | "Não Conforme" | "Ausente") =>
                             atualizarItem(it.id, "conformidade", v)
                           }
                         >
@@ -318,6 +375,7 @@ export function FerramentasTermoVistoria() {
                           <SelectContent>
                             <SelectItem value="Conforme">Conforme</SelectItem>
                             <SelectItem value="Não Conforme">Não Conforme</SelectItem>
+                            <SelectItem value="Ausente">Ausente (perdida)</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>

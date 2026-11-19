@@ -1,4 +1,4 @@
-// Situação da vistoria periódica de uma caixa: junta o mês-base (Escalonamento), a periodicidade e o prazo (Parâmetros Específicos) e a última vistoria feita.
+// Situação da vistoria periódica de uma caixa: junta o mês-base (Plano de vistorias), a periodicidade e o prazo (Parâmetros Específicos) e a última vistoria feita.
 // A vistoria devida é a do ciclo mais recente que já começou (primeiro dia do mês previsto); ela vence `prazoDias` depois desse dia.
 // Feita nesse ciclo (última vistoria no primeiro dia do mês previsto ou depois, ou adiantada em até metade do ciclo) = em dia; sem ela, pendente até o limite e vencida depois dele.
 import { MESES_DA_PERIODICIDADE, type MesBase } from "./escalonamento-vistorias.ts";
