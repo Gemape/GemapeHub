@@ -55,6 +55,7 @@ test("Caixas saiu de Gerais e fica em Parâmetros > Ferramentas, fora de Módulo
     [
       ["Cadastrar Caixa", "/caixas-ferramentas"],
       ["Cadastrar Ferramenta", "/cadastros/ferramentas"],
+      ["Plano de vistorias", "/cadastros/ferramentas-plano-vistorias"],
     ],
   );
   const inicio = sidebar.indexOf('titulo: "Parâmetros"');
@@ -130,7 +131,7 @@ test("não há mais abas superiores em nenhuma tela: cada aba é submenu do menu
   assert.deepEqual(ABAS_VEICULO.map((a) => a.aba), ["frota", "abastecimento", "manutencao", "ocorrencias", "checklist"]);
   assert.equal(ABAS_EPI[0].aba, "dashboard");
   assert.equal(ABAS_UNIFORME.length, 7); // sem Sugestão, Histórico e Baixas definitivas (Relatórios, decisão 364) e sem Movimentações
-  assert.equal(ABAS_FERRAMENTA.length, 10); // com o menu Movimentações (entrada no estoque, saída do estoque e baixa), a Vinculação de portador e o Escalonamento de Vistorias
+  assert.equal(ABAS_FERRAMENTA.length, 8); // com o menu Movimentações (entrada no estoque, saída do estoque e baixa); o Plano de vistorias está em Parâmetros
   // Cada submenu aponta para uma aba que a tela realmente tem.
   const modulos = readFileSync(new URL("../src/components/modules/PaginaModulo.tsx", import.meta.url), "utf8");
   for (const a of [...ABAS_EPI, ...ABAS_EPI_RELATORIOS, ...ABAS_UNIFORME, ...ABAS_UNIFORME_RELATORIOS, ...ABAS_FERRAMENTA]) assert.match(modulos, new RegExp(`value="${a.aba}"`));

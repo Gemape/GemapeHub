@@ -82,3 +82,30 @@ export function mesesSobrecarregados(carga: CargaDoMes[]): CargaDoMes[] {
   const media = comVistoria.reduce((s, c) => s + c.caixas, 0) / comVistoria.length;
   return carga.filter((c) => c.caixas >= 2 && c.caixas > media * 1.5);
 }
+
+const CHAVE_RESPONSAVEL = "gemape-demo-ferramentas-vistoria-responsavel";
+
+/** caixa_id → empregado_id do responsável por fazer a vistoria dela. Valor ruim ou armazenamento bloqueado são ignorados. */
+export function lerResponsaveisVistoria(storage?: StorageLike): Record<string, string> {
+  try {
+    const bruto = (storage ?? localStorage).getItem(CHAVE_RESPONSAVEL);
+    const obj: unknown = bruto === null ? null : JSON.parse(bruto);
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return {};
+    return Object.fromEntries(Object.entries(obj as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === "string" && e[1] !== ""));
+  } catch {
+    return {};
+  }
+}
+
+/** Define (ou, com null, retira) o responsável pela vistoria de uma caixa e devolve o mapa novo. */
+export function salvarResponsavelVistoria(caixaId: string, empregadoId: string | null, storage?: StorageLike): Record<string, string> {
+  const atual = lerResponsaveisVistoria(storage);
+  if (empregadoId === null) delete atual[caixaId];
+  else atual[caixaId] = empregadoId;
+  try {
+    (storage ?? localStorage).setItem(CHAVE_RESPONSAVEL, JSON.stringify(atual));
+  } catch {
+    throw new Error("Não foi possível guardar o responsável neste navegador.");
+  }
+  return atual;
+}

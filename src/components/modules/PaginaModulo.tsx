@@ -23,7 +23,6 @@ import { FerramentasPorCaixas } from "@/components/modules/FerramentasPorCaixas"
 import { FerramentasEntradasSaidas } from "@/components/modules/FerramentasEntradasSaidas";
 import { FerramentasSugestaoCompras } from "@/components/modules/FerramentasSugestaoCompras";
 import { FerramentasCaixasModulo } from "@/components/modules/FerramentasCaixasModulo";
-import { FerramentasEscalonamentoVistorias } from "@/components/modules/FerramentasEscalonamentoVistorias";
 import { FerramentasTermoResponsabilidade } from "@/components/modules/FerramentasTermoResponsabilidade";
 import { FerramentasTermoEncerramento } from "@/components/modules/FerramentasTermoEncerramento";
 import { FerramentasTermoVistoria } from "@/components/modules/FerramentasTermoVistoria";
@@ -153,9 +152,6 @@ export function PaginaModulo({
             </TabsContent>
             <TabsContent value="termo-vistoria" className="mt-5">
               <FerramentasTermoVistoria />
-            </TabsContent>
-            <TabsContent value="escalonamento-vistorias" className="mt-5">
-              <FerramentasEscalonamentoVistorias />
             </TabsContent>
             <TabsContent value="sugestao-compras" className="mt-5">
               <FerramentasSugestaoCompras />

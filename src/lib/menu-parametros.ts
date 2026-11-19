@@ -90,7 +90,6 @@ export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
   { aba: "termo-responsabilidade", titulo: "Termo de responsabilidade individual", icone: "FileSignature" },
   { aba: "termo-encerramento", titulo: "Termo de encerramento responsabilidade", icone: "FileX" },
   { aba: "termo-vistoria", titulo: "Termo de vistoria periódica", icone: "ClipboardCheck" },
-  { aba: "escalonamento-vistorias", titulo: "Escalonamento de Vistorias", icone: "CalendarDays" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
 ];
 
@@ -153,6 +152,8 @@ export const MENU_FERRAMENTAS: readonly ItemMenu[] = [
   { titulo: "Cadastrar Ferramenta", url: "/cadastros/ferramentas", icone: "Wrench" },
   // Sem Tamanho e Medidas de Produto: ferramenta não tem tamanho (decisão 115).
   itemEspecificos("ferramentas"),
+  // Antes "Escalonamento de vistorias", no módulo: é parâmetro, então fica aqui (a periodicidade vem dos Parâmetros Específicos).
+  { titulo: "Plano de vistorias", url: "/cadastros/ferramentas-plano-vistorias", icone: "CalendarDays" },
 ];
 
 // Parâmetros > Uniformes (decisão 48): Cadastrar Uniforme, no mesmo desenho do Cadastrar EPI.
@@ -268,8 +269,6 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     baixas: "Lista as baixas definitivas de ferramentas, com motivo, quantidade e valor, por período, para consulta e exportação.",
     consulta: "Relatório sob demanda: marque os campos que quer cruzar e o que somar, veja o resultado na hora e salve a consulta no seu perfil.",
     inventario: "Inventário em etapas: escolha o setor, conte o que está na prateleira, revise as diferenças com o sistema e baixe o relatório. É conferência: não movimenta o estoque.",
-    "vinculacao-portador": "Vincula e desvincula o portador de cada caixa. Data anterior a hoje pede nome e senha do supervisor; desvincular exige a vistoria da caixa e gera o termo de encerramento.",
-    "escalonamento-vistorias": "Define o mês-base de vistoria de cada caixa e mostra o calendário projetado e a carga de cada mês.",
     "entradas-saidas": "Entradas e saídas de ferramentas por caixa e por empregado, com o motivo de cada saída.",
     "ferramentas-por-caixa": "Gera o relatório das caixas de ferramentas: você escolhe as caixas e as seções (ferramentas, histórico e ocorrências) que entram.",
     ocorrencias: OCORR,
