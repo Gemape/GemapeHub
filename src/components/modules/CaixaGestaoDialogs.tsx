@@ -22,11 +22,11 @@ import { capitalizarNomePessoa, capitalizarTexto } from "@/lib/formatacao-cadast
 import { hojeLocal } from "@/lib/empregados";
 import { codigoCaixa } from "@/lib/caixas-habilitadas";
 import { MODO_DEMO } from "@/lib/modo-demo";
+import { lerMotivosBaixaFerramenta } from "@/lib/ferramentas-motivos-baixa";
 import {
   controleDaFerramenta,
   ferramentasComEmpregadoRemovidas,
   ferramentasEmOutraCaixa,
-  MOTIVOS_BAIXA_CAIXA,
   validarTransferenciaDeCaixa,
   validarBaixaDaCaixa,
   validarFerramentasDaCaixa,
@@ -270,6 +270,7 @@ export function DialogBaixaCaixa({
   linhas,
   historico,
 }: Comum & { linhas: LinhaCaixa[]; historico: Movimentacao[] }) {
+  const [motivosBaixa] = useState(lerMotivosBaixaFerramenta);
   const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"]);
   const [ferramentaId, setFerramentaId] = useState(linhas[0]?.ferramenta.id ?? "");
   const [quantidade, setQuantidade] = useState(1);
@@ -374,7 +375,7 @@ export function DialogBaixaCaixa({
                 <SelectValue placeholder="Escolha o motivo" />
               </SelectTrigger>
               <SelectContent>
-                {MOTIVOS_BAIXA_CAIXA.map((m) => (
+                {motivosBaixa.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
                   </SelectItem>

@@ -22,7 +22,7 @@ export const MAX_MOTIVOS = 30;
 
 const limpar = (t: string) => t.trim().replace(/\s+/g, " ").slice(0, 60);
 
-function lerLista(chave: string, padrao: readonly string[], storage?: StorageLike): string[] {
+export function lerLista(chave: string, padrao: readonly string[], storage?: StorageLike): string[] {
   try {
     const bruto = (storage ?? localStorage).getItem(chave);
     const lido: unknown = bruto === null ? null : JSON.parse(bruto);
@@ -42,7 +42,7 @@ function lerLista(chave: string, padrao: readonly string[], storage?: StorageLik
   }
 }
 
-function salvarLista(chave: string, motivos: string[], storage?: StorageLike): string[] {
+export function salvarLista(chave: string, motivos: string[], storage?: StorageLike): string[] {
   const lista = [...new Set(motivos.map(limpar).filter(Boolean))];
   if (lista.length === 0) throw new Error("Cadastre pelo menos um motivo.");
   if (lista.length > MAX_MOTIVOS) throw new Error(`No máximo ${MAX_MOTIVOS} motivos.`);

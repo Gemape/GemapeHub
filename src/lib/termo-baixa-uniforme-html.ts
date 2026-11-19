@@ -3,13 +3,17 @@
 import { comTamanho, escaparHtml, formatarData, formatarMoeda } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
 import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
+import { montarTextoDoTermo } from "./termos-ferramentas-texto.ts";
+import { lerTextosTermosUniforme } from "./uniforme-termos-texto.ts";
 
 export interface DadosTermoBaixaUniforme {
   empresa: { razao_social: string; cnpj: string; nome_fantasia: string } | undefined;
-  empregado: { nome: string } | undefined;
+  empregado: { nome: string; cpf?: string | null | undefined } | undefined;
   data: string;
   motivo: string;
   onus: string;
+  // Texto cadastrado em Parâmetros > Uniformes > Parâmetros Específicos; sem ele valem o guardado no navegador ou o padrão.
+  texto?: string | undefined;
   linhas: {
     nome?: string | null | undefined;
     tamanho?: string | null | undefined;
@@ -36,15 +40,17 @@ export function montarTermoBaixaUniformeHtml(dados: DadosTermoBaixaUniforme): st
     )
     .join("");
 
+  const texto = montarTextoDoTermo(dados.texto ?? lerTextosTermosUniforme().baixa, {
+    empregado: empregado?.nome || "N/A", cpf: empregado?.cpf, empresa: empresa?.razao_social, cnpj: formatarCnpj(empresa?.cnpj ?? ""), data: formatarData(dados.data),
+  });
+
   return paginaRelatorio({
     titulo: "Termo de Baixa - Uniforme",
     cabecalho: cabecalhoRelatorio({ titulo: "Termo de Baixa Definitiva de Uniforme", subtitulos: [`CNPJ: ${formatarCnpj(empresa?.cnpj ?? "")}`], empresa: empresa?.razao_social }),
     css: CSS_TERMO,
     corpo: `<div class="termo">
             <div class="content">
-              <p>Registramos nesta data, <strong>${formatarData(dados.data)}</strong>, a baixa definitiva
-              dos seguintes itens de uniforme vinculados ao colaborador(a)
-              <strong>${escaparHtml(empregado?.nome || "N/A")}</strong>:</p>
+              ${texto.antes}
 
               <table>
                 <thead>
@@ -69,7 +75,7 @@ export function montarTermoBaixaUniformeHtml(dados: DadosTermoBaixaUniforme): st
                 <strong>Ônus:</strong> ${escaparHtml(dados.onus)}
               </div>
 
-              <p style="margin-top: 30px;">O(A) empregado(a) está ciente da baixa dos itens acima e das responsabilidades financeiras caso o ônus seja do colaborador.</p>
+              ${texto.depois}
             </div>
 
             <div class="signatures">

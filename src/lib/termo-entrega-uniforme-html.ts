@@ -3,6 +3,8 @@
 import { comTamanho, escaparHtml, formatarData } from "./gemape.ts";
 import { formatarCnpj } from "./formatacao-cadastral.ts";
 import { BOTAO_IMPRIMIR, CSS_TERMO, cabecalhoRelatorio, paginaRelatorio } from "./relatorio-padrao.ts";
+import { montarTextoDoTermo } from "./termos-ferramentas-texto.ts";
+import { lerTextosTermosUniforme } from "./uniforme-termos-texto.ts";
 
 type Texto = string | null | undefined;
 
@@ -20,6 +22,8 @@ export interface DadosTermoEntregaUniforme {
     quantidade: number;
     estado: string;
   }[];
+  // Texto cadastrado em Parâmetros > Uniformes > Parâmetros Específicos; sem ele valem o guardado no navegador ou o padrão.
+  texto?: string | undefined;
 }
 
 export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme): string {
@@ -37,14 +41,17 @@ export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme)
     )
     .join("");
 
+  const texto = montarTextoDoTermo(dados.texto ?? lerTextosTermosUniforme().entrega, {
+    empregado: empregado?.nome, cpf: empregado?.cpf, empresa: empresa?.razao_social, cnpj: formatarCnpj(empresa?.cnpj ?? ""), data: formatarData(dados.data),
+  });
+
   return paginaRelatorio({
     titulo: `Termo de Entrega - ${empregado?.nome ?? ""}`,
     cabecalho: cabecalhoRelatorio({ titulo: "Termo de Entrega de Uniforme", subtitulos: [`CNPJ: ${formatarCnpj(empresa?.cnpj ?? "")}`], empresa: empresa?.razao_social }),
     css: CSS_TERMO,
     corpo: `<div class="termo">
         <div class="content">
-          <p>Declaramos que nesta data, <strong>${formatarData(dados.data)}</strong>, entregamos ao colaborador(a)
-          <strong>${escaparHtml(empregado?.nome)}</strong>, CPF nº <strong>${escaparHtml(empregado?.cpf)}</strong>, os seguintes itens de uniforme:</p>
+          ${texto.antes}
           ${dados.responsavel?.nome ? `<p><strong>Entregue por:</strong> ${escaparHtml(dados.responsavel.nome)}</p>` : ""}
 
           <table>
@@ -61,8 +68,7 @@ export function montarTermoEntregaUniformeHtml(dados: DadosTermoEntregaUniforme)
             </tbody>
           </table>
 
-          <p style="margin-top: 30px;">O(A) empregado(a) declara ter recebido os itens acima descritos em perfeito estado de conservação,
-          comprometendo-se a utilizá-los exclusivamente para fins de trabalho e a devolvê-los à empresa quando solicitado ou no ato de desligamento.</p>
+          ${texto.depois}
         </div>
 
         <div class="signatures">

@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { CartaoDeMotivos } from "@/components/parametros/CartaoDeMotivos";
 import { SupervisoresOcorrencias } from "@/components/parametros/SupervisoresOcorrencias";
+import { lerMotivosBaixaFerramenta, salvarMotivosBaixaFerramenta } from "@/lib/ferramentas-motivos-baixa";
 import {
   AJUDA_TERMO, MARCAS_DO_TEXTO, ROTULO_TERMO, TERMOS_FERRAMENTA, TEXTO_TERMO_MAXIMO, TEXTOS_PADRAO, lerTextosTermos, salvarTextosTermos, textoDoTermoValido,
   type TermoFerramenta,
@@ -23,6 +25,15 @@ export function ParametrosFerramentas() {
   return (
     <div className="space-y-5">
       <TextosDosTermos />
+      <section className="space-y-3" aria-labelledby="motivos-baixa-ferramentas">
+        <div className="max-w-3xl">
+          <h2 id="motivos-baixa-ferramentas" className="text-lg font-semibold">Motivos de baixa</h2>
+          <p className="text-sm text-muted-foreground">Os motivos que a baixa e a reposição de ferramentas aceitam.</p>
+        </div>
+        <div className="panel max-w-3xl p-4">
+          <CartaoDeMotivos id="motivos-baixa-ferramenta" titulo="Motivos de baixa das ferramentas" ajuda="Dá para acrescentar e tirar motivos. A baixa pede um deles; o que já foi registrado não muda." inicial={lerMotivosBaixaFerramenta()} salvar={salvarMotivosBaixaFerramenta} />
+        </div>
+      </section>
       {/* Vistoria e supervisores lado a lado, com a mesma altura; em tela estreita ficam um sobre o outro. */}
       <div className="grid items-stretch gap-5 lg:grid-cols-2">
         <ParametrosDaVistoria />
