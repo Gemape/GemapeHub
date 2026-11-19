@@ -1,9 +1,9 @@
-import { GradeDeCartoes } from "@/components/GradeDeCartoes";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { useState } from "react";
 
 import { Info } from "lucide-react";
 import { Cartao as CartaoPadrao } from "@/components/modules/CartoesIndicadoresFrota";
+import { ALTURA_GRAFICO_COMPACTA, COR_DA_FAIXA, COR_GRAFICO, GraficoBarras, PainelGraficos, QuadroGrafico } from "@/components/modules/GraficosPainel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Faixa } from "@/lib/faixas-desempenho";
 import { Badge } from "@/components/ui/badge";
@@ -42,11 +42,11 @@ function Cartao({ pergunta, titulo, valor, detalhe, meta, semaforo, pctBarra, ca
       </PopoverContent>
     </Popover>
   );
-  return <CartaoPadrao titulo={titulo} subtitulo={`${pergunta} ${ROTULO[semaforo]} · ${meta}`} valor={valor} indicador={{ pct: pctBarra, faixa: FAIXA[semaforo], detalhe }} extra={explicacao} compacto />;
+  return <CartaoPadrao titulo={titulo} subtitulo={`${pergunta} ${ROTULO[semaforo]} · ${meta}`} valor={valor} indicador={{ pct: pctBarra, faixa: FAIXA[semaforo], detalhe }} extra={explicacao} compacto enxuto />;
 }
 const Celula = ({ semaforo, children }: { semaforo: Semaforo; children: React.ReactNode }) => <span className={`inline-block rounded-md border px-2 py-0.5 text-xs font-medium ${COR[semaforo]}`}>{children}</span>;
 
-// Módulos > Equipamentos > Indicadores: os cinco KPIs que bastam para gerir os equipamentos, da frota e de cada equipamento (disponibilidade, custo de
+// Módulos > Equipamentos > Dashboard (no desenho da Frota de Veículos: filtros em cima, cartões com os gráficos ao lado e a lista embaixo): os cinco KPIs que bastam para gerir os equipamentos (mais o cartão de equipamentos prontos agora), da frota e de cada equipamento (disponibilidade, custo de
 // manutenção por hora, razão preventiva/corretiva, aderência ao plano de manutenção e conformidade legal), a partir do horímetro, das manutenções,
 // das ocorrências e dos check lists. Só modo demonstração.
 export function IndicadoresEquipamentoModulo() {
@@ -69,9 +69,19 @@ export function IndicadoresEquipamentoModulo() {
     associacoesVistoria: lerChecklistEquipamento().vistoria.associacoes, hoje: hoje(), periodoDias: Number(periodo), config: cfg,
   });
   const custoMedio = frota.custoPorHora;
+  const barras = [
+    { nome: "Disponib.", pct: frota.disponibilidade, semaforo: semaforoPct(frota.disponibilidade, META.disponibilidade) },
+    { nome: "Preventiva", pct: frota.razaoPreventiva, semaforo: semaforoPct(frota.razaoPreventiva, META.preventiva) },
+    { nome: "Aderência", pct: frota.aderencia, semaforo: semaforoPct(frota.aderencia, META.aderencia) },
+    { nome: "Conform.", pct: frota.conformidade, semaforo: semaforoPct(frota.conformidade, META.conformidade) },
+  ];
+  const porTipo = [
+    { nome: "Preventivas", valor: frota.preventivas },
+    { nome: "Corretivas", valor: frota.corretivas },
+  ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-end gap-2">
         <p className="pb-2 text-xs text-muted-foreground">De {formatarData(inicio)} a {formatarData(hoje())} · {frota.total} equipamento{frota.total === 1 ? "" : "s"} · {frota.prontos} pronto{frota.prontos === 1 ? "" : "s"} para trabalhar agora</p>
         <BarraDeFiltros>
@@ -87,7 +97,8 @@ export function IndicadoresEquipamentoModulo() {
         </BarraDeFiltros>
       </div>
 
-      <GradeDeCartoes colunas={5}>
+      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <div className="grid auto-rows-fr gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <Cartao titulo="Disponibilidade" pergunta="Meu equipamento está pronto para trabalhar?" valor={pct(frota.disponibilidade)} pctBarra={frota.disponibilidade} detalhe={`${frota.prontos} de ${frota.total} prontos agora`}
           meta={`meta ≥ ${META.disponibilidade.verde}%`} semaforo={semaforoPct(frota.disponibilidade, META.disponibilidade)}
           calculo={[
@@ -129,9 +140,26 @@ export function IndicadoresEquipamentoModulo() {
             ...(cfg.exigirSemOcorrenciaAberta ? ["Empilhadeiras e máquinas: nenhuma ocorrência de segurança aberta."] : []),
             `Conformidade = requisitos atendidos ÷ requisitos de todos os equipamentos; meta ${META.conformidade.verde}%, amarelo a partir de ${META.conformidade.amarelo}%.`,
           ]} />
-      </GradeDeCartoes>
+          <CartaoPadrao titulo="Prontos agora" subtitulo="Equipamentos prontos para trabalhar ÷ todos." indicador={{ pct: frota.total > 0 ? Math.round((frota.prontos / frota.total) * 1000) / 10 : null, faixa: null, detalhe: `${frota.prontos} de ${frota.total} equipamentos` }} valor={frota.total > 0 ? `${frota.prontos}/${frota.total}` : "—"} compacto enxuto />
+        </div>
+        <PainelGraficos compacto>
+          <QuadroGrafico titulo="Indicadores (%)" formula="cada indicador do período." altura={ALTURA_GRAFICO_COMPACTA} enxuto>
+            <GraficoBarras
+              dados={barras.map((b) => ({ nome: b.nome, valor: b.pct ?? 0 }))}
+              categoria="nome"
+              series={[{ chave: "valor", nome: "Indicador", cor: COR_GRAFICO.azul }]}
+              cores={barras.map((b) => (b.semaforo === "neutro" ? COR_GRAFICO.cinza : COR_DA_FAIXA[b.semaforo]))}
+              sufixo="%"
+            />
+          </QuadroGrafico>
+          <QuadroGrafico titulo="Preventivas x corretivas" formula="manutenções do período por tipo." altura={ALTURA_GRAFICO_COMPACTA} enxuto vazio={frota.preventivas + frota.corretivas === 0}>
+            <GraficoBarras dados={porTipo} categoria="nome" series={[{ chave: "valor", nome: "Manutenções", cor: COR_GRAFICO.azul }]} cores={[COR_GRAFICO.verde, COR_GRAFICO.vermelho]} />
+          </QuadroGrafico>
+        </PainelGraficos>
+      </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar, como na Frota. */}
+      <div className="max-h-[max(8rem,calc(100dvh-36rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table>
           <TableHeader>
             <TableRow>

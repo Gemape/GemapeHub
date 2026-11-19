@@ -1,36 +1,66 @@
 import { LinhasEsqueleto } from "@/components/Esqueletos";
-import { useMemo, type ReactNode } from "react";
-import { AlertTriangle, Archive, Package, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { Printer, Wallet } from "lucide-react";
 
-import { GradeDeCartoes } from "@/components/GradeDeCartoes";
-import { StatCard } from "@/components/StatCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
+import { EtiquetaVencimento } from "@/components/modules/FrotaModulo";
+import { Cartao } from "@/components/modules/CartoesIndicadoresFrota";
+import { ALTURA_GRAFICO_COMPACTA, COR_DA_FAIXA, COR_GRAFICO, GraficoBarras, GraficoRosca, PainelGraficos, QuadroGrafico } from "@/components/modules/GraficosPainel";
+import { InterpretacaoFrota } from "@/components/modules/InterpretacaoFrota";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useEmpresa } from "@/lib/empresa-context";
+import { hojeBrasilia } from "@/lib/checklist-veiculo";
+import { TODAS, useEmpresa } from "@/lib/empresa-context";
+import { lerMesesBase } from "@/lib/escalonamento-vistorias";
 import { ferramentasAbaixoDoMinimo, posicaoDasFerramentas, type PosicaoDaFerramenta } from "@/lib/estoque-ferramentas-posicao";
-import { useEmpresas, useItens, useMovimentacoes, useTodosCaixaItens } from "@/lib/hooks-gemape";
+import { indicadoresDeFerramentas, interpretacoesDeFerramentas, ocorrenciaDaFerramentaParaPrazo, situacaoDasOcorrenciasNaColuna, situacaoDaVistoriaNaColuna } from "@/lib/ferramentas-dashboard";
+import { formatarData, formatarMoeda, valorTotalEmEstoque } from "@/lib/gemape";
+import { useItens, useMovimentacoes, useOcorrencias, useTodosCaixaItens } from "@/lib/hooks-gemape";
 import { indicadorDeEstoque, textoPercentual } from "@/lib/indicador-estoque";
+import { ehDoGrupo, gruposDasFerramentas } from "@/lib/movimentacoes-grupo-caixa";
+import { lerPrazosOcorrencias } from "@/lib/prazo-ocorrencias";
+import { EVENTO_TRATATIVAS_FERRAMENTA, lerTratativas } from "@/lib/tratativa-ocorrencia-ferramenta";
+import { useVistoriasDasCaixas } from "@/lib/use-vistorias-caixas";
 
-// Dashboard de Ferramentas: o que importa do estoque das ferramentas (quantas estão abaixo do mínimo, guardadas nas caixas, com empregado ou sem caixa) e quais pedem reposição.
-// Os cartões ocupam 7/12 da largura em tela larga, como na Frota (os gráficos dela ficam nos outros 5/12), para não esticarem. Os cartões do módulo (`cartoes`) e os daqui ficam numa só grade, como na Frota (decisão 375).
-export function DashboardFerramentas({ cartoes }: { cartoes: ReactNode }) {
+const TODOS_OS_GRUPOS = "__todos__";
+const semAcento = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+// Ferramentas > Módulo > Dashboard: o mesmo desenho da Frota de Veículos. Em cima, filtros e ações; os cartões de indicadores com os gráficos ao lado; embaixo a lista das caixas
+// com a situação da vistoria e das ocorrências de cada uma. Os indicadores são sempre os de todas as caixas; o filtro e a busca só mexem na lista.
+export function DashboardFerramentas() {
   const { empresaId } = useEmpresa();
-  const { data: ferramentas = [], isLoading } = useItens("ferramenta", empresaId);
+  const navegar = useNavigate();
+  const { data: ferramentas = [] } = useItens("ferramenta", empresaId);
   const { data: movimentos = [] } = useMovimentacoes("ferramenta", empresaId);
   const { data: itensDeCaixa = [] } = useTodosCaixaItens();
-  const { data: empresas = [] } = useEmpresas();
-  const nomeDaEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome_fantasia ?? "—";
+  const { data: todasOcorrencias = [] } = useOcorrencias("", "ferramenta");
+  // Lidos depois de montar (o armazenamento é do navegador), como no Plano de vistorias.
+  const [mesesBase, setMesesBase] = useState<ReturnType<typeof lerMesesBase>>({});
+  const [tratativas, setTratativas] = useState<ReturnType<typeof lerTratativas>>({});
+  useEffect(() => {
+    setMesesBase(lerMesesBase());
+    const ler = () => setTratativas(lerTratativas());
+    ler();
+    window.addEventListener(EVENTO_TRATATIVAS_FERRAMENTA, ler);
+    return () => window.removeEventListener(EVENTO_TRATATIVAS_FERRAMENTA, ler);
+  }, []);
+  const { linhas, isLoading } = useVistoriasDasCaixas(mesesBase);
+  const [grupo, setGrupo] = useState(TODOS_OS_GRUPOS);
+  const [busca, setBusca] = useState("");
+  const hoje = hojeBrasilia();
+  const prazos = lerPrazosOcorrencias();
 
   const posicoes = useMemo(
     () => new Map<string, PosicaoDaFerramenta>(posicaoDasFerramentas(ferramentas, movimentos, itensDeCaixa).map((p) => [p.ferramentaId, p])),
     [ferramentas, movimentos, itensDeCaixa],
   );
   const abaixo = useMemo(() => ferramentasAbaixoDoMinimo(ferramentas, posicoes), [ferramentas, posicoes]);
-  const soma = (campo: "guardada" | "comEmpregado") => [...posicoes.values()].reduce((t, p) => t + p[campo], 0);
-  // Valor real, sem esconder a divergência: negativo quer dizer que as caixas guardam mais do que o estoque (a aba Estoque mostra o aviso).
-  const semCaixa = [...posicoes.values()].reduce((t, p) => t + p.semCaixa, 0);
-  // Cada cartão é um percentual com a cor e a seta da faixa, como os da Frota. Com empregado e sem caixa só informam (barra neutra).
-  const saldoTotal = [...posicoes.values()].reduce((t, p) => t + p.saldo, 0);
+  const soma = (campo: "guardada" | "comEmpregado" | "semCaixa" | "saldo") => [...posicoes.values()].reduce((t, p) => t + p[campo], 0);
+  const saldoTotal = soma("saldo");
+  const semCaixa = soma("semCaixa");
   const ativas = ferramentas.filter((f) => f.status !== "Inativo").length;
   const zeradas = abaixo.filter((l) => l.situacao === "Zerado").length;
   const acimaDoMinimo = indicadorDeEstoque(ativas - abaixo.length, ativas);
@@ -38,62 +68,135 @@ export function DashboardFerramentas({ cartoes }: { cartoes: ReactNode }) {
   const comEmpregado = indicadorDeEstoque(soma("comEmpregado"), saldoTotal, false);
   const foraDaCaixa = indicadorDeEstoque(semCaixa, saldoTotal, false);
 
-  return (
-    <>
-      <GradeDeCartoes colunas={4} classe="xl:w-7/12">
-        {cartoes}
-        <StatCard titulo="Estoque · Ferramentas acima do mínimo" subtitulo="Ferramentas ativas acima do estoque mínimo ÷ todas as ativas." valor={textoPercentual(acimaDoMinimo.pct)} {...acimaDoMinimo} detalhe={`${abaixo.length} de ${ativas} no mínimo ou abaixo · ${zeradas} zerada(s)`} icone={AlertTriangle} compacto />
-        <StatCard titulo="Estoque · Guardadas nas caixas" subtitulo="Unidades nas caixas, disponíveis ÷ unidades em estoque." valor={textoPercentual(guardadas.pct)} {...guardadas} detalhe={`${soma("guardada")} de ${saldoTotal} unidades`} icone={Archive} compacto />
-        <StatCard titulo="Estoque · Com empregado" subtitulo="Unidades entregues e ainda não devolvidas ÷ unidades em estoque." valor={textoPercentual(comEmpregado.pct)} {...comEmpregado} detalhe={`${soma("comEmpregado")} de ${saldoTotal} unidades`} icone={UserRound} compacto />
-        <StatCard titulo="Estoque · Sem caixa" subtitulo="Unidades fora das caixas ÷ unidades em estoque." valor={textoPercentual(foraDaCaixa.pct)} {...foraDaCaixa} detalhe={semCaixa < 0 ? `Caixas guardam ${-semCaixa} a mais que o estoque` : `${semCaixa} de ${saldoTotal} unidades`} icone={Package} compacto />
-      </GradeDeCartoes>
+  // Só as ocorrências das ferramentas da empresa escolhida, como o resto da tela; a caixa vem da própria ocorrência ou, sem ela, da caixa onde a ferramenta está.
+  const caixaDaFerramenta = useMemo(() => new Map(itensDeCaixa.map((i) => [i.ferramenta_id, i.caixa_id] as const)), [itensDeCaixa]);
+  const idsDasFerramentas = useMemo(() => new Set(ferramentas.map((f) => f.id)), [ferramentas]);
+  const ocorrenciasParaPrazo = useMemo(
+    () => todasOcorrencias
+      .filter((o) => empresaId === TODAS || (!!o.item_id && idsDasFerramentas.has(o.item_id)))
+      .map((o) => ({ caixaId: o.caixa_id ?? (o.item_id ? caixaDaFerramenta.get(o.item_id) : undefined) ?? null, prazo: ocorrenciaDaFerramentaParaPrazo(o, tratativas[o.id]) })),
+    [todasOcorrencias, tratativas, empresaId, idsDasFerramentas, caixaDaFerramenta],
+  );
+  const ocorrenciasPorCaixa = useMemo(() => {
+    const mapa = new Map<string, typeof ocorrenciasParaPrazo[number]["prazo"][]>();
+    for (const o of ocorrenciasParaPrazo) if (o.caixaId) mapa.set(o.caixaId, [...(mapa.get(o.caixaId) ?? []), o.prazo]);
+    return mapa;
+  }, [ocorrenciasParaPrazo]);
+  const indicadores = indicadoresDeFerramentas({ vistorias: linhas.map((l) => l.resultado.situacao), ocorrencias: ocorrenciasParaPrazo.map((o) => o.prazo), hoje, prazos });
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Ferramentas que pedem reposição</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Empresa</TableHead>
-                <TableHead className="text-right">Estoque</TableHead>
-                <TableHead className="text-right">Mínimo</TableHead>
-                <TableHead className="text-right">Guardadas</TableHead>
-                <TableHead className="text-right">Com empregado</TableHead>
-                <TableHead>Situação</TableHead>
+  const grupos = gruposDasFerramentas(ferramentas);
+  const filtroDoGrupo = grupos.includes(grupo) ? grupo : TODOS_OS_GRUPOS;
+  // Por caixa: quantas ferramentas tem e quais grupos aparecem nela, calculado uma vez e não a cada tecla da busca.
+  const porCaixa = useMemo(() => {
+    const porId = new Map(ferramentas.map((f) => [f.id, f] as const));
+    const mapa = new Map<string, { quantas: number; ferramentas: typeof ferramentas }>();
+    for (const i of itensDeCaixa) {
+      const atual = mapa.get(i.caixa_id) ?? { quantas: 0, ferramentas: [] };
+      const f = porId.get(i.ferramenta_id);
+      mapa.set(i.caixa_id, { quantas: atual.quantas + 1, ferramentas: f ? [...atual.ferramentas, f] : atual.ferramentas });
+    }
+    return mapa;
+  }, [ferramentas, itensDeCaixa]);
+  const quantasFerramentas = (caixaId: string) => porCaixa.get(caixaId)?.quantas ?? 0;
+  const lista = linhas
+    .filter((l) => filtroDoGrupo === TODOS_OS_GRUPOS || (porCaixa.get(l.caixa.id)?.ferramentas ?? []).some((f) => ehDoGrupo(f, filtroDoGrupo)))
+    .filter((l) => semAcento(`${l.caixa.codigo} ${l.caixa.descricao ?? ""} ${l.portador ?? ""} ${l.responsavel ?? ""}`).includes(semAcento(busca.trim())));
+
+  const barras = [
+    { nome: "Vistorias", pct: indicadores.vistorias.pct, faixa: indicadores.vistorias.faixa },
+    { nome: "Ocorr.", pct: indicadores.ocorrencias.pct, faixa: indicadores.ocorrencias.faixa },
+    { nome: "Conform.", pct: indicadores.conformidadeGeral.pct, faixa: indicadores.conformidadeGeral.faixa },
+    { nome: "Estoque", pct: acimaDoMinimo.pct, faixa: acimaDoMinimo.faixa },
+  ];
+  const rosca = [
+    { nome: "Guardadas", valor: Math.max(soma("guardada"), 0), cor: COR_GRAFICO.verde },
+    { nome: "Com empregado", valor: Math.max(soma("comEmpregado"), 0), cor: COR_GRAFICO.azul },
+    { nome: "Sem caixa", valor: Math.max(semCaixa, 0), cor: COR_GRAFICO.cinza },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <section className="space-y-2" aria-label="Indicadores das ferramentas">
+        <div className="flex flex-wrap items-end gap-2">
+          <BarraDeFiltros>
+            <Select value={filtroDoGrupo} onValueChange={setGrupo}>
+              <SelectTrigger aria-label="Filtrar as caixas por grupo de ferramentas" className="h-9 w-56"><SelectValue placeholder="Todos os grupos" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TODOS_OS_GRUPOS}>Todos os grupos</SelectItem>
+                {grupos.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Input aria-label="Buscar caixa por número, descrição ou portador" placeholder="Buscar por caixa ou portador" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          </BarraDeFiltros>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => void navegar({ to: "/ferramentas", search: { aba: "ferramentas-por-caixa" } })}>
+              <Printer className="h-4 w-4" /> Relatório
+            </Button>
+            <InterpretacaoFrota titulo="Interpretação dos indicadores das ferramentas" itens={interpretacoesDeFerramentas(indicadores, acimaDoMinimo)} />
+          </div>
+        </div>
+        <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+          <div className="grid auto-rows-fr gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Cartao titulo="Conformidade geral (SLA)" subtitulo="Vistorias + ocorrências no prazo." indicador={indicadores.conformidadeGeral} compacto enxuto />
+            <Cartao titulo="Vistorias em dia" subtitulo="Feitas no prazo ÷ vencidas + feitas." indicador={indicadores.vistorias} compacto enxuto />
+            <Cartao titulo="Ocorrências no prazo" subtitulo="Tratadas no prazo ÷ tratadas + vencidas." indicador={indicadores.ocorrencias} compacto enxuto />
+            <Cartao titulo="Acima do mínimo" subtitulo="Ativas acima do mínimo ÷ ativas." indicador={{ ...acimaDoMinimo, detalhe: `${abaixo.length} de ${ativas} no mínimo ou abaixo · ${zeradas} zerada(s)` }} compacto enxuto />
+            <Cartao titulo="Guardadas nas caixas" subtitulo="Disponíveis nas caixas ÷ estoque." indicador={{ ...guardadas, detalhe: `${soma("guardada")} de ${saldoTotal} unidades` }} compacto enxuto />
+            <Cartao titulo="Com empregado" subtitulo="Entregues, não devolvidas ÷ estoque." indicador={{ ...comEmpregado, detalhe: `${soma("comEmpregado")} de ${saldoTotal} unidades` }} compacto enxuto />
+            <Cartao titulo="Sem caixa" subtitulo="Fora das caixas ÷ estoque." indicador={{ ...foraDaCaixa, detalhe: semCaixa < 0 ? `Caixas guardam ${-semCaixa} a mais que o estoque` : `${semCaixa} de ${saldoTotal} unidades` }} compacto enxuto />
+            <Cartao titulo="Valor em estoque" subtitulo="Itens × preço; sem preço = 0." indicador={{ pct: null, faixa: null, detalhe: `${saldoTotal} unidades em ${ativas} ferramentas ativas` }} valor={formatarMoeda(valorTotalEmEstoque(ferramentas))} icone={Wallet} compacto enxuto />
+          </div>
+          <PainelGraficos compacto>
+            <QuadroGrafico titulo="Indicadores (%)" formula="no prazo ÷ com desfecho × 100." altura={ALTURA_GRAFICO_COMPACTA} enxuto>
+              <GraficoBarras
+                dados={barras.map((b) => ({ nome: b.nome, valor: b.pct ?? 0 }))}
+                categoria="nome"
+                series={[{ chave: "valor", nome: "Indicador", cor: COR_GRAFICO.azul }]}
+                cores={barras.map((b) => (b.faixa ? COR_DA_FAIXA[b.faixa] : COR_GRAFICO.cinza))}
+                meta={{ valor: 90, rotulo: "Meta 90%" }}
+                sufixo="%"
+              />
+            </QuadroGrafico>
+            <QuadroGrafico titulo="Onde estão as ferramentas" formula="unidades por posição ÷ unidades em estoque." altura={ALTURA_GRAFICO_COMPACTA} enxuto vazio={rosca.every((r) => r.valor === 0)}>
+              <GraficoRosca dados={rosca} />
+            </QuadroGrafico>
+          </PainelGraficos>
+        </div>
+      </section>
+
+      {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar, como na Frota. */}
+      <div className="max-h-[max(8rem,calc(100dvh-40rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+        <Table className="min-w-[1100px] table-fixed">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[26%]">Caixa</TableHead>
+              <TableHead className="w-[16%]">Portador</TableHead>
+              <TableHead className="w-[8%] pr-6 text-right">Ferramentas</TableHead>
+              <TableHead className="w-[10%]">Última vistoria</TableHead>
+              <TableHead className="w-[12%] text-center">Vistoria</TableHead>
+              <TableHead className="w-[12%] text-center">Ocorrências</TableHead>
+              <TableHead className="w-[10%]" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && <LinhasEsqueleto colunas={7} />}
+            {!isLoading && lista.length === 0 && <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Nenhuma caixa encontrada.</TableCell></TableRow>}
+            {lista.map((l) => (
+              <TableRow key={l.caixa.id} className="cursor-pointer" onClick={() => void navegar({ to: "/ferramentas", search: { aba: "caixas" } })}>
+                <TableCell className="font-medium"><span className="font-mono text-xs">{l.caixa.codigo}</span>{l.caixa.descricao ? ` — ${l.caixa.descricao}` : ""}</TableCell>
+                <TableCell className="truncate">{l.portador ?? "—"}</TableCell>
+                <TableCell className="pr-6 text-right tabular-nums">{quantasFerramentas(l.caixa.id)}</TableCell>
+                <TableCell>{l.ultimaVistoria ? formatarData(l.ultimaVistoria) : "—"}</TableCell>
+                <TableCell><EtiquetaVencimento valor={situacaoDaVistoriaNaColuna(l.resultado.situacao)} /></TableCell>
+                <TableCell><EtiquetaVencimento valor={situacaoDasOcorrenciasNaColuna(ocorrenciasPorCaixa.get(l.caixa.id) ?? [], hoje, prazos)} /></TableCell>
+                <TableCell className="text-right">
+                  <Button variant="outline" size="sm" className="rounded-full" onClick={(e) => { e.stopPropagation(); void navegar({ to: "/ferramentas", search: { aba: "caixas" } }); }}>Ver caixa</Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <LinhasEsqueleto colunas={7} />
-              ) : abaixo.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Nenhuma ferramenta pede reposição no momento.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                abaixo.slice(0, 10).map((l) => (
-                  <TableRow key={l.id}>
-                    <TableCell>
-                      <span className="font-mono text-xs text-muted-foreground">{l.codigo}</span> {l.nome}
-                    </TableCell>
-                    <TableCell>{nomeDaEmpresa(l.empresaId)}</TableCell>
-                    <TableCell className="text-right">{l.saldo}</TableCell>
-                    <TableCell className="text-right">{l.minimo}</TableCell>
-                    <TableCell className="text-right">{l.guardada}</TableCell>
-                    <TableCell className="text-right">{l.comEmpregado}</TableCell>
-                    <TableCell className={l.situacao === "Zerado" ? "font-medium text-destructive" : ""}>{l.situacao}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          {abaixo.length > 10 && <p className="mt-2 text-xs text-muted-foreground">Mostrando 10 de {abaixo.length}; o restante está em Estoque.</p>}
-        </CardContent>
-      </Card>
-    </>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 }

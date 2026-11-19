@@ -26,6 +26,12 @@ import {
 import { useEmpregados, useItens, useMovimentacoes } from "@/lib/hooks-gemape";
 
 export function DashboardModulo({ modulo }: { modulo: Modulo }) {
+  // Ferramentas tem o desenho da Frota de Veículos: cartões de indicadores, gráficos e a lista das caixas.
+  if (modulo === "ferramenta") return <DashboardFerramentas />;
+  return <DashboardGeral modulo={modulo} />;
+}
+
+function DashboardGeral({ modulo }: { modulo: Modulo }) {
   const { empresaId } = useEmpresa();
   const { data: itens = [] } = useItens(modulo, empresaId);
   const { data: movimentacoes = [] } = useMovimentacoes(modulo, empresaId, 20);
@@ -79,11 +85,9 @@ export function DashboardModulo({ modulo }: { modulo: Modulo }) {
     <div className="space-y-5">
       {/* Carimbo discreto: o operador sabe que o saldo na tela é o de agora, e recarrega com um clique. */}
       <div className="-mb-3 flex justify-end"><CarimboAtualizacao /></div>
-      {/* EPI e Uniformes: os cartões da Sugestão de Compras entram na mesma grade e a lista do que pede compra vem logo abaixo. Ferramentas: os do estoque por posição. */}
+      {/* EPI e Uniformes: os cartões da Sugestão de Compras entram na mesma grade e a lista do que pede compra vem logo abaixo. */}
       {modulo === "uniforme" || modulo === "epi" ? (
         <DashboardSugestaoCompras modulo={modulo} cartoes={cartoes} />
-      ) : modulo === "ferramenta" ? (
-        <DashboardFerramentas cartoes={cartoes} />
       ) : (
         <GradeDeCartoes colunas={4}>{cartoes}</GradeDeCartoes>
       )}

@@ -46,7 +46,7 @@ function Numero({ id, rotulo, valor, aoMudar, min, max, passo = 1, ajuda }: { id
 }
 
 // Parâmetros > Equipamentos > Parâmetros Específicos > Indicadores (como Indicadores de Viagens em Veículos): só parametriza; o módulo Equipamentos lê estes
-// valores no painel de Indicadores. Metas de cada KPI, jornada, prazos legais, validade da vistoria e o que tira o equipamento de "pronto agora".
+// valores no Dashboard. Metas de cada KPI, jornada, prazos legais, validade da vistoria e o que tira o equipamento de "pronto agora".
 export function IndicadoresEquipamentoParametros() {
   const [salva, setSalva] = useState(lerConfigKpis);
   const [r, setR] = useState(() => rascunhoDe(salva));
@@ -84,10 +84,10 @@ export function IndicadoresEquipamentoParametros() {
     <section className="space-y-4" aria-labelledby="indicadores-equipamentos">
       <div>
         <h2 id="indicadores-equipamentos" className="text-lg font-semibold">Indicadores</h2>
-        <p className="text-sm text-muted-foreground">Metas, jornada e prazos dos cinco indicadores do módulo Equipamentos (disponibilidade, custo de manutenção por hora, razão preventiva/corretiva, aderência ao plano e conformidade legal). Aqui só se configura; os índices aparecem em Módulos &gt; Equipamentos &gt; Indicadores.</p>
+        <p className="text-sm text-muted-foreground">Metas, jornada e prazos dos cinco indicadores do módulo Equipamentos (disponibilidade, custo de manutenção por hora, razão preventiva/corretiva, aderência ao plano e conformidade legal). Aqui só se configura; os índices aparecem em Módulos &gt; Equipamentos &gt; Dashboard.</p>
       </div>
       <div className="panel max-w-5xl space-y-3 p-4">
-        {bloco("geral", "Período", "Período mostrado quando se abre o painel de Indicadores (a pessoa ainda pode trocar).", (
+        {bloco("geral", "Período", "Período mostrado quando se abre o Dashboard (a pessoa ainda pode trocar).", (
           <div className="space-y-1">
             <Label htmlFor="kpi-periodo">Período padrão</Label>
             <Select value={r.periodoPadraoDias} onValueChange={(v) => setR((x) => ({ ...x, periodoPadraoDias: v }))}>

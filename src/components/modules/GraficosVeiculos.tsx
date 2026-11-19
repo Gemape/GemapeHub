@@ -1,4 +1,5 @@
 import {
+  ALTURA_GRAFICO_COMPACTA,
   COR_DA_FAIXA,
   COR_GRAFICO,
   GraficoBarras,
@@ -65,7 +66,7 @@ export function GraficosFrota({
         titulo="PCM x técnicos (%)"
         formula="no prazo ÷ com desfecho × 100."
         formulaDetalhe="Manut.: preventivas não vencidas ÷ preventivas com registro. Check PCM, Técnicos e Ocorr.: realizados ou tratados no prazo ÷ os que já têm desfecho. Conform.: as tarefas de todos os indicadores somadas."
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Cada indicador contra a meta de 90% (faixa verde)." })}
+        {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: "Cada indicador contra a meta de 90% (faixa verde)." })}
       >
         <GraficoBarras
           dados={barras.map((b) => ({ nome: b.nome, valor: b.pct ?? 0 }))}
@@ -80,7 +81,7 @@ export function GraficosFrota({
         titulo="Média de consumo por veículo (km/L)"
         formula="km rodados ÷ litros abastecidos."
         formulaDetalhe="Distância do primeiro ao último abastecimento ÷ litros dos abastecimentos seguintes (o primeiro só marca onde a conta começa)."
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quanto cada veículo roda por litro, do maior para o menor." })}
+        {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: "Quanto cada veículo roda por litro, do maior para o menor." })}
         vazio={consumo.length === 0}
       >
         <GraficoBarras
@@ -93,7 +94,7 @@ export function GraficosFrota({
           titulo="CPK da frota mês a mês (R$/km)"
           formula="(abastecimento + manutenção) ÷ km rodados no mês."
           formulaDetalhe="Os km do mês vão do maior km registrado antes do mês até o maior do mês (sem registro antes, do menor km do mês); nesse caso o abastecimento feito no km de partida não entra na conta. Mês sem km rodados fica sem valor."
-          {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Custo por km rodado (abastecimento + manutenção) de cada mês, para acompanhar a evolução dos custos." })}
+          {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: "Custo por km rodado (abastecimento + manutenção) de cada mês, para acompanhar a evolução dos custos." })}
           vazio={cpkMensal.every((m) => m.cpk === null)}
         >
           <GraficoLinha
@@ -106,10 +107,10 @@ export function GraficosFrota({
           />
         </QuadroGrafico>
       <QuadroGrafico
-        titulo="Custo preventivo x corretivo por mês (100%)"
+        titulo="Custo preventivo x corretivo (100%)"
         formula="custo de cada tipo ÷ custo total de manutenção do mês × 100."
         {...(mesesReativos.length > 0 ? { alerta: `Abaixo de ${LIMITE_REATIVO}% em ${mesesReativos.join(", ")}: frota no modo reativo.` } : {})}
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quanto do gasto de manutenção de cada mês foi preventivo (verde) e corretivo (vermelho). A meta é 80% ou mais de preventivo." })}
+        {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: "Quanto do gasto de manutenção de cada mês foi preventivo (verde) e corretivo (vermelho). A meta é 80% ou mais de preventivo." })}
         vazio={preventivoMensal.every((m) => m.preventiva + m.corretiva === 0)}
       >
         <GraficoBarras
@@ -175,7 +176,7 @@ export function GraficosManutencao({
     <PainelGraficos>
       <QuadroGrafico
         titulo={`Revisões por ${item}`}
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: `Situação das revisões do plano de cada ${item}.` })}
+        {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: `Situação das revisões do plano de cada ${item}.` })}
         vazio={porVeiculo.size === 0}
       >
         <GraficoBarras
@@ -192,7 +193,7 @@ export function GraficosManutencao({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="Preventivas x corretivas por mês"
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Manutenções registradas nos últimos seis meses." })}
+        {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: "Manutenções registradas nos últimos seis meses." })}
       >
         <GraficoBarras
           dados={meses}
@@ -236,12 +237,12 @@ export function GraficosOcorrencias({
     <PainelGraficos colunas={3}>
       <QuadroGrafico
         titulo="Ocorrências por situação"
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Parte de cada situação no total." })}
+        {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: "Parte de cada situação no total." })}
         vazio={rosca.length === 0}
       >
         <GraficoRosca dados={rosca} />
       </QuadroGrafico>
-      <QuadroGrafico titulo="Ocorrências por mês" {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Registradas nos últimos seis meses." })}>
+      <QuadroGrafico titulo="Ocorrências por mês" {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: "Registradas nos últimos seis meses." })}>
         <GraficoBarras
           dados={meses}
           categoria="rotulo"
@@ -250,7 +251,7 @@ export function GraficosOcorrencias({
       </QuadroGrafico>
       <QuadroGrafico
         titulo="Situação por tipo de ocorrência"
-        {...(compacto ? { altura: ALTURA_COMPACTA } : { descricao: "Quantas de cada tipo estão abertas, em tratativa ou encerradas." })}
+        {...(compacto ? { altura: ALTURA_GRAFICO_COMPACTA, enxuto: true } : { descricao: "Quantas de cada tipo estão abertas, em tratativa ou encerradas." })}
         vazio={tipos.length === 0}
       >
         <GraficoBarras
@@ -269,7 +270,6 @@ export function GraficosOcorrencias({
 }
 
 // Check list: técnicos contra PCM (realizados, não realizados e a vencer) e o percentual no prazo de cada responsável.
-const ALTURA_COMPACTA = "h-[clamp(6rem,17vh,9.5rem)]";
 // No painel do Check list os gráficos ficam ainda mais baixos, para o geral, os dois grupos e as tabelas caberem numa tela (decisão 347).
 const ALTURA_CHECKLIST = "h-[clamp(5.5rem,14vh,8.5rem)]";
 

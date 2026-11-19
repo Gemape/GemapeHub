@@ -61,6 +61,7 @@ export function Cartao({
   alerta,
   classe = "",
   compacto = false,
+  enxuto = false,
 }: {
   titulo: string;
   // Uma linha que explica como o indicador é calculado (decisão 342), logo abaixo do título.
@@ -74,22 +75,24 @@ export function Cartao({
   classe?: string;
   // Telas que mostram muitos indicadores de uma vez (Check list): menos folga, número e ícone menores, detalhe em uma linha.
   compacto?: boolean;
+  // Ainda menor que o compacto: a explicação do cálculo vai para a dica (passar o mouse) e o detalhe fica em uma linha, para caber a lista na mesma tela.
+  enxuto?: boolean;
 }) {
   const estilo = indicador.faixa ? ESTILO[indicador.faixa] : null;
   const Icone = estilo?.Icone ?? icone ?? Minus;
   const largura = indicador.pct === null ? 0 : Math.max(0, Math.min(100, indicador.pct));
   return (
     <div
-      className={`${compacto ? "flex h-full flex-col justify-between gap-1.5 rounded-2xl border p-2.5 shadow-sm transition-shadow hover:shadow-md" : "flex h-full flex-col justify-between gap-3 rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4 [@media(max-height:820px)]:sm:p-3"} ${estilo?.cartao ?? "border-border bg-card"} ${classe}`}
+      className={`${enxuto ? "flex h-full flex-col justify-between gap-1 rounded-xl border p-2 shadow-sm transition-shadow hover:shadow-md" : compacto ? "flex h-full flex-col justify-between gap-1.5 rounded-2xl border p-2.5 shadow-sm transition-shadow hover:shadow-md" : "flex h-full flex-col justify-between gap-3 rounded-2xl border p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4 [@media(max-height:820px)]:sm:p-3"} ${estilo?.cartao ?? "border-border bg-card"} ${classe}`}
       data-faixa={indicador.faixa ?? "sem-dado"}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="text-eyebrow">{titulo}</p>
+            <p className={`text-eyebrow ${enxuto ? "!text-[10px] !leading-tight !tracking-normal" : ""}`} title={enxuto ? subtitulo : undefined}>{titulo}</p>
             {extra}
           </div>
-          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{subtitulo}</p>
+          {!enxuto && <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{subtitulo}</p>}
           <p
             className={`${compacto ? "mt-1 break-words font-display text-xl font-bold leading-none tracking-tight" : "mt-1.5 break-words font-display text-2xl font-bold leading-none tracking-tight sm:text-3xl [@media(max-height:820px)]:sm:text-2xl"} ${estilo?.texto ?? (valor ? "text-foreground" : "text-muted-foreground")}`}
           >
@@ -119,7 +122,7 @@ export function Cartao({
           </div>
         )}
         {indicador.detalhe && (
-          <p className={`text-xs text-muted-foreground ${compacto ? "line-clamp-2" : ""}`} title={compacto ? indicador.detalhe : undefined}>
+          <p className={`text-xs text-muted-foreground ${enxuto ? "line-clamp-1" : compacto ? "line-clamp-2" : ""}`} title={compacto ? indicador.detalhe : undefined}>
             {indicador.detalhe}
           </p>
         )}
@@ -147,12 +150,13 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
         </div>
       )}
       <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid auto-rows-fr gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <Cartao
             titulo="Frota · Conformidade geral (SLA)"
             subtitulo="Tarefas no prazo ÷ tarefas atribuídas: preventivas, check lists e ocorrências."
             indicador={indicadores.conformidadeGeral}
             compacto
+            enxuto
           />
           <Cartao
             titulo="Frota · Custo por km rodado (CPK)"
@@ -161,6 +165,7 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
             valor={cpk.valor === null ? "—" : `${reais(cpk.valor)}/km`}
             icone={Coins}
             compacto
+            enxuto
           />
           <Cartao
             titulo="Frota · Custo preventivo (meta 80%)"
@@ -168,36 +173,42 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
             indicador={custoPreventivo}
             {...(noModoReativo(custoPreventivo.pct) ? { alerta: `Abaixo de ${LIMITE_REATIVO}%: modo reativo.` } : {})}
             compacto
+            enxuto
           />
           <Cartao
             titulo="PCM · Índice de manutenções preventivas em dia"
             subtitulo="Preventivas não vencidas ÷ preventivas com registro."
             indicador={indicadores.manutencoes}
             compacto
+            enxuto
           />
           <Cartao
             titulo="PCM · Índice de check lists realizados no prazo"
             subtitulo="Realizados no prazo ÷ os que já venceram (feitos + não feitos)."
             indicador={indicadores.checklistPcm}
             compacto
+            enxuto
           />
           <Cartao
             titulo="PCM · Índice de ocorrências tratadas no prazo"
             subtitulo="Tratadas no prazo ÷ tratadas + vencidas sem tratativa."
             indicador={indicadores.ocorrencias}
             compacto
+            enxuto
           />
           <Cartao
             titulo="Técnicos · Índice de check lists realizados no prazo"
             subtitulo="Realizados no prazo ÷ os que já venceram (feitos + não feitos)."
             indicador={indicadores.tecnicosNoPrazo}
             compacto
+            enxuto
           />
           <Cartao
             titulo="Técnicos · Índice de check lists atrasados"
             subtitulo="Não feitos no prazo ÷ os que já venceram (o oposto do ao lado)."
             indicador={indicadores.tecnicosNaoRealizados}
             compacto
+            enxuto
           />
         </div>
         {graficos}
