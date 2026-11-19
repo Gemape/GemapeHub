@@ -52,8 +52,8 @@ export const CONHECIMENTO: readonly Verbete[] = [
   {
     id: "ferramentas-caixas", titulo: "Caixas e portadores de ferramentas",
     chaves: ["caixa", "caixas", "portador", "portadores", "numero da caixa", "ferramentas por caixa", "habilitar caixa"],
-    resposta: "As caixas de ferramentas são numeradas de 01 a 100; o Administrador marca quais ficam habilitadas (Cadastrar Caixa). Cada caixa tem um portador (empregado), com status ativa ou inativa e histórico. A aba Número da caixa mostra o conteúdo e Ferramentas por caixas lista o que há em cada uma.",
-    links: [{ rotulo: "Número da caixa", url: "/ferramentas", search: { aba: "caixas" } }, { rotulo: "Ferramentas por caixas", url: "/ferramentas", search: { aba: "ferramentas-por-caixa" } }],
+    resposta: "As caixas de ferramentas são numeradas de 01 a 100; o Administrador marca quais ficam habilitadas (Cadastrar Caixa). Cada caixa tem um portador (empregado), com status ativa ou inativa e histórico. A aba Visualizar caixa mostra o conteúdo e Ferramentas por caixas lista o que há em cada uma.",
+    links: [{ rotulo: "Visualizar caixa", url: "/ferramentas", search: { aba: "caixas" } }, { rotulo: "Ferramentas por caixas", url: "/ferramentas", search: { aba: "ferramentas-por-caixa" } }],
   },
   {
     id: "ferramentas-cadastro", titulo: "Cadastrar ferramenta",
