@@ -332,7 +332,7 @@ export function MovimentacoesModulo({ modulo, foco }: { modulo: Modulo; foco?: "
               setAberto(true);
             }}
           >
-            {soEntrada ? "Registrar Compra" : (texto?.novo ?? "Nova movimentação")}
+            {soEntrada ? "Registrar entrada" : (texto?.novo ?? "Nova movimentação")}
           </Button>
         </div>
       </div>

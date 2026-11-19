@@ -21,7 +21,7 @@ import { useCaixasFerramentas, useItens, useMovimentacoes, useRegistrarMovimenta
 // Origem gravada na movimentação: é o que separa a entrega à caixa das transferências entre caixas.
 export const ORIGEM_ENTREGA_CAIXA = "Estoque";
 
-// Ferramentas > Movimentações > Entrega à caixa: a ferramenta do estoque vai para uma caixa, sem pessoa no vínculo.
+// Ferramentas > Movimentações > Saída do estoque (entrega à caixa): a ferramenta do estoque vai para uma caixa, sem pessoa no vínculo.
 export function FerramentasEntregaCaixa() {
   const { empresaId } = useEmpresa();
   const habilitadas = useParametrosBase().caixasHabilitadas;
@@ -87,7 +87,7 @@ export function FerramentasEntregaCaixa() {
 
   return (
     <div className="space-y-6">
-      <section className="panel max-w-3xl space-y-4 p-5" aria-label="Entrega à caixa">
+      <section className="panel max-w-3xl space-y-4 p-5" aria-label="Saída do estoque">
         <p className="text-sm text-muted-foreground">A ferramenta do estoque é entregue a uma caixa. Quem usa a caixa é o portador dela; o vínculo é com a caixa, não com a pessoa.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">

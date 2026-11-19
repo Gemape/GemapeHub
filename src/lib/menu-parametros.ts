@@ -260,7 +260,7 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     "termo-responsabilidade": "Gera o termo de responsabilidade individual do empregado pelas ferramentas que recebeu.",
     "termo-encerramento": "Gera o termo que encerra a responsabilidade do empregado sobre as ferramentas devolvidas.",
     "termo-vistoria": "Gera o termo da vistoria periódica das ferramentas que estão com o empregado.",
-    movimentacoes: "Controla a entrada no estoque, a entrega da ferramenta à caixa e a baixa (perda, quebra ou desgaste, com o motivo). A ferramenta se liga à caixa, não a uma pessoa.",
+    movimentacoes: "Controla a entrada no estoque (nova ou usada), a saída do estoque para a caixa e a baixa definitiva (perda, quebra ou desgaste, com o motivo). A ferramenta se liga à caixa, não a uma pessoa.",
     "sugestao-compras": "Indica quais ferramentas repor e em que quantidade, pelo estoque mínimo e pelas baixas definitivas dos últimos 12 meses.",
     historico: "Mostra, por empregado, as ferramentas que recebeu, devolveu e baixou e as que estão em posse dele.",
     baixas: "Lista as baixas definitivas de ferramentas, com motivo, quantidade e valor, por período, para consulta e exportação.",

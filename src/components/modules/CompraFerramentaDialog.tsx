@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { EnderecoDaEntrada } from "@/components/EnderecoDaEntrada";
 import { SeletorComBusca } from "@/components/SeletorComBusca";
+import { EntradaUsadaFerramenta } from "@/components/modules/EntradaUsadaFerramenta";
 import { ItensModulo } from "@/components/modules/ItensModulo";
 import { SeletorFornecedorCompra } from "@/components/modules/SeletorFornecedorCompra";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,8 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
   const { data: itens = [] } = useItens("ferramenta", TODAS);
   const parametros = useParametrosBase();
   const registrar = useRegistrarMovimentacoesLote(["estoque-modulo"]);
+  // Registrar entrada: a ferramenta é nova (compra) ou usada (volta de um empregado).
+  const [tipoEntrada, setTipoEntrada] = useState<"nova" | "usada">("nova");
   const [empresaCompra, setEmpresaCompra] = useState("");
   // Começa na empresa escolhida no topo, assim que a lista de empresas chega (e só se ainda não houver escolha).
   useEffect(() => {
@@ -53,6 +56,7 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
   }, [novoCodigo, itens]);
   function fechar(a: boolean) {
     if (!a) {
+      setTipoEntrada("nova");
       setItemId("");
       setFornecedorId("");
       setQuantidade(0);
@@ -90,7 +94,7 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
         data_movimentacao: String(f.get("data_compra")), origem_local: null, destino_local: null, observacao,
         // Colunas só do modo demonstração: o banco real ainda não as tem (Fase 2).
         ...(MODO_DEMO ? {
-          condicao: f.get("condicao_entrada") === "usado" ? "usado" : "novo", fornecedor, fornecedor_id: fornecedorGravado, nota_fiscal: nota || null,
+          condicao: "novo", fornecedor, fornecedor_id: fornecedorGravado, nota_fiscal: nota || null,
           valor_unitario: unitario, valor_total: Math.round(qtde * unitario * 100) / 100,
         } : {}),
       }],
@@ -102,12 +106,18 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
     <Dialog open={aberto} onOpenChange={fechar}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Registrar Compra de ferramenta</DialogTitle>
+          <DialogTitle>Registrar entrada de ferramenta</DialogTitle>
           <DialogDescription>
-            Informe todos os dados (empresa, ferramenta, fornecedor, nota fiscal, data, quantidade e valor unitário). Eles atualizam o estoque e geram uma movimentação de entrada. Para ferramenta que volta de um empregado, use Devolução.
+            Escolha se a ferramenta é nova (compra) ou usada (volta de um empregado). Os dados atualizam o estoque e geram a movimentação de entrada.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
+        <div className="flex gap-2" role="group" aria-label="Tipo da entrada">
+          {([["nova", "Nova"], ["usada", "Usada"]] as const).map(([id, rotulo]) => (
+            <Button key={id} type="button" variant={tipoEntrada === id ? "default" : "outline"} aria-pressed={tipoEntrada === id} onClick={() => setTipoEntrada(id)}>{rotulo}</Button>
+          ))}
+        </div>
+        {tipoEntrada === "usada" && <EntradaUsadaFerramenta aoConcluir={() => fechar(false)} aoCancelar={() => fechar(false)} />}
+        {tipoEntrada === "nova" && <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="compra-fer-empresa">Estoque a alimentar (empresa)</Label>
             <Select value={empresaCompra} onValueChange={(v) => { if (!v) return; setEmpresaCompra(v); setItemId(""); }}>
@@ -142,16 +152,6 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
             <Input id="compra-fer-data" name="data_compra" type="date" required defaultValue={hojeLocal()} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="condicao_entrada">Tipo</Label>
-            <Select name="condicao_entrada" defaultValue="novo">
-              <SelectTrigger id="condicao_entrada"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="novo">Nova</SelectItem>
-                <SelectItem value="usado">Usada</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
             <Label htmlFor="compra-fer-qtde">Quantidade</Label>
             <Input id="compra-fer-qtde" name="quantidade" type="number" required min="1" step="1" onChange={(e) => setQuantidade(Number(e.target.value))} />
           </div>
@@ -169,9 +169,9 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
           </div>
           <DialogFooter className="sm:col-span-2">
             <Button type="button" variant="outline" onClick={() => fechar(false)}>Cancelar</Button>
-            <Button requiresWrite="operar" type="submit" disabled={registrar.isPending}>Registrar Compra</Button>
+            <Button requiresWrite="operar" type="submit" disabled={registrar.isPending}>Registrar entrada</Button>
           </DialogFooter>
-        </form>
+        </form>}
         {/* Fora do <form>: o submit do cadastro não pode subir para o da compra. */}
         {aberto && <ItensModulo modulo="ferramenta" janela={{ empresaId: empresaCompra, aberto: cadastrando, onAberto: setCadastrando, onSalvo: setNovoCodigo }} />}
       </DialogContent>
