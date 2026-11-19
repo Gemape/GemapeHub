@@ -1,5 +1,8 @@
 // Ferramentas > Movimentações > Entrega à caixa: a ferramenta do estoque é entregue a uma caixa (vínculo ferramenta-caixa), nunca a uma pessoa.
 // Quem usa a caixa é o portador dela; o relatório do empregado cruza o histórico de portadores com o das caixas.
+// Origem gravada na movimentação: é o que separa a entrega à caixa das transferências entre caixas.
+export const ORIGEM_ENTREGA_CAIXA = "Estoque";
+
 export type ItemDaCaixa = { ferramenta_id: string; quantidade: number; observacao?: string | null | undefined };
 
 export type DadosEntregaNaCaixa = {

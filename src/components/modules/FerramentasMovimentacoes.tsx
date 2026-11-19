@@ -4,15 +4,17 @@ import { MovimentacoesModulo } from "@/components/modules/MovimentacoesModulo";
 import { FerramentasEntregaCaixa } from "@/components/modules/FerramentasEntregaCaixa";
 import { FerramentasBaixaCaixa } from "@/components/modules/FerramentasBaixaCaixa";
 import { FerramentasReposicaoCaixa } from "@/components/modules/FerramentasReposicaoCaixa";
+import { FerramentasTransferenciaCaixa } from "@/components/modules/FerramentasTransferenciaCaixa";
 
 const VISOES = [
   { id: "entrada", rotulo: "Entrada no estoque" },
   { id: "entrega", rotulo: "Saída do estoque" },
   { id: "reposicao", rotulo: "Reposição" },
   { id: "baixa", rotulo: "Baixa definitiva" },
+  { id: "transferencia", rotulo: "Transferência" },
 ] as const;
 
-// Ferramentas > Movimentações: entrada no estoque, saída do estoque (entrega à caixa), reposição e baixa definitiva. A ferramenta se liga à caixa, nunca a uma pessoa;
+// Ferramentas > Movimentações: entrada no estoque, saída do estoque (entrega à caixa), reposição, baixa definitiva e transferência entre caixas. A ferramenta se liga à caixa, nunca a uma pessoa;
 // o que cada empregado portou sai depois, no relatório do empregado, pelo histórico de portadores da caixa.
 export function FerramentasMovimentacoes() {
   const [visao, setVisao] = useState<(typeof VISOES)[number]["id"]>("entrada");
@@ -27,6 +29,7 @@ export function FerramentasMovimentacoes() {
       {visao === "entrega" && <FerramentasEntregaCaixa />}
       {visao === "reposicao" && <FerramentasReposicaoCaixa />}
       {visao === "baixa" && <FerramentasBaixaCaixa />}
+      {visao === "transferencia" && <FerramentasTransferenciaCaixa />}
     </div>
   );
 }
