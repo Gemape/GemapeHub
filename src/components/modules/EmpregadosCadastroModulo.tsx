@@ -58,6 +58,9 @@ import { RelatorioCadastro } from "@/components/RelatorioCadastro";
 import type { CampoRelatorio } from "@/lib/relatorio-cadastro";
 import { AcoesLinha } from "@/components/parametros/AcoesLinha";
 import { DemitirEmpregadoDialog } from "./DemitirEmpregadoDialog";
+import { PendenciasDeDesligamento } from "./PendenciasDeDesligamento";
+import { abrirAlertaDeDesligamento, erroDoSupervisor, retirarAlertaDeDesligamento } from "@/lib/desligamento-pendencias";
+import { hojeLocal } from "@/lib/empregados";
 import { avisarComDesfazer } from "@/lib/toast-desfazer";
 import { comDesligamento, lerConfig, salvarConfig } from "@/lib/configuracoes-demo";
 import { usuarioAtivo } from "@/lib/permissoes-demo";
@@ -71,7 +74,8 @@ import { exemploEmpregado } from "@/lib/dados-teste/exemplos";
 // modo demonstração. A coluna entra na Fase 2.
 const MODO_DEMO = import.meta.env["VITE_DEMO_MODE"] !== "false";
 
-type EmpregadoCadastro = Empregado & { email?: string | null };
+// O e-mail e o supervisor também só existem em modo demonstração por enquanto (colunas na Fase 2).
+type EmpregadoCadastro = Empregado & { email?: string | null; supervisor_id?: string | null };
 
 
 export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { direto?: boolean; aoConcluir?: () => void } = {}) {
@@ -84,6 +88,8 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
   const [modelo, setModelo] = useState<EmpregadoCadastro | null>(null);
   const base = editando ?? modelo;
   const [empresaSel, setEmpresaSel] = useState("");
+  const [supervisorSel, setSupervisorSel] = useState("");
+  const [aba, setAba] = useState<"ativos" | "inativos">("ativos");
   const salvando = useRef(false);
   const [demitindo, setDemitindo] = useState<EmpregadoCadastro | null>(null);
   useAbrirDireto(direto, empresas.length > 0, aberto, abrirNovo, aoConcluir);
@@ -96,6 +102,9 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
     combinaBusca(busca, ...camposDeBusca(e, [empresaDe(e.empresa_id), formatarData(e.data_admissao), formatarData(e.data_demissao), empregadoAtivo(e) ? "Ativo" : "Inativo Demitido", mascararCpf(e.cpf)])),
   );
   const { ativos, inativos } = separarEmpregados(encontrados);
+  // Quem pode ser supervisor: empregados ativos (de toda a lista, não só os da busca), menos o próprio.
+  const supervisoresPossiveis = separarEmpregados(empregados).ativos;
+  const nomeSupervisor = (e: EmpregadoCadastro) => empregados.find((x) => x.id === e.supervisor_id)?.nome ?? "";
   const empresaPadrao = empresaPadraoParaEscolha(empresas, empresaId);
   // Empregado antigo sem empresa: a empresa precisa ser escolhida, não é preenchida sozinha.
   const empresaForm = empresaSel || (base ? "" : empresaPadrao);
@@ -109,6 +118,8 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
     setEditando(clonar ? null : empregado);
     setModelo(clonar ? empregado : null);
     setEmpresaSel(empregado?.empresa_id ?? "");
+    // Supervisor que já foi desligado não fica escolhido: o campo volta vazio para o cadastro indicar outro.
+    setSupervisorSel(separarEmpregados(empregados).ativos.some((x) => x.id === empregado?.supervisor_id) ? (empregado?.supervisor_id ?? "") : "");
     setErroCpf(null);
     setErroMatricula(null);
     listaParaConferir.current = null;
@@ -186,6 +197,12 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
         todos ?? [],
         editando ?? undefined,
       );
+      // Supervisor obrigatório (só em modo demonstração por enquanto; quem já está desligado não precisa de supervisor).
+      if (MODO_DEMO && valores["ativo"] !== false) {
+        const erroSupervisor = erroDoSupervisor(supervisorSel, editando?.id, empregados, hojeLocal());
+        if (erroSupervisor) throw new Error(erroSupervisor);
+      }
+      if (MODO_DEMO && supervisorSel) valores["supervisor_id"] = supervisorSel;
     } catch (erro) {
       salvando.current = false;
       toast.error(erro instanceof Error ? erro.message : "Dados inválidos.");
@@ -218,6 +235,17 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
         </div>
       </header>
 
+      <PendenciasDeDesligamento empregados={empregados} />
+
+      {/* Ativos e inativos, acima da busca e do botão Novo empregado (botões de alternância, não abas: decisão 43). */}
+      <div role="group" aria-label="Situação dos empregados" className="inline-flex gap-1 rounded-lg bg-muted/70 p-1">
+        {(["ativos", "inativos"] as const).map((v) => (
+          <Button key={v} type="button" size="sm" variant={aba === v ? "default" : "ghost"} aria-pressed={aba === v} onClick={() => setAba(v)}>
+            {v === "ativos" ? `Ativos (${ativos.length})` : `Inativos (${inativos.length})`}
+          </Button>
+        ))}
+      </div>
+
       <div className="flex flex-wrap items-end gap-2">
         <BarraDeFiltros>
           <Input aria-label="Buscar empregado por palavra-chave" placeholder="Buscar por palavra-chave" className="max-w-md" value={busca} onChange={(e) => setBusca(e.target.value)} />
@@ -236,6 +264,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                     Empresa: nomeEmpresa(e.empresa_id),
                     Matricula: e.matricula,
                     "E-mail": e.email ?? "",
+                    Supervisor: nomeSupervisor(e),
                     Admissao: formatarData(e.data_admissao),
                     Demissao: formatarData(e.data_demissao),
                     Situacao: empregadoAtivo(e) ? "Ativo" : "Inativo",
@@ -255,6 +284,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                 { id: "matricula", rotulo: "Matrícula", valor: (e) => e.matricula },
                 { id: "empresa", rotulo: "Empresa", valor: (e) => nomeEmpresa(e.empresa_id) },
                 { id: "email", rotulo: "E-mail", valor: (e) => e.email ?? "" },
+                { id: "supervisor", rotulo: "Supervisor", valor: (e) => nomeSupervisor(e) },
                 { id: "admissao", rotulo: "Admissão", valor: (e) => formatarData(e.data_admissao) },
                 { id: "demissao", rotulo: "Demissão", valor: (e) => formatarData(e.data_demissao) },
                 { id: "situacao", rotulo: "Situação", valor: (e) => (empregadoAtivo(e) ? "Ativo" : "Inativo") },
@@ -274,7 +304,7 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
         <BlocoEsqueleto cartoes={0} linhas={6} rotulo="Carregando empregados" />
       ) : (
         <>
-          <BlocoEmpregados
+          {aba === "ativos" && <BlocoEmpregados
             titulo={`Ativos (${ativos.length})`}
             lista={ativos}
             vazio={busca.trim() ? semResultado : "Nenhum empregado ativo."}
@@ -286,8 +316,9 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
               if (await confirmarExclusao(e.nome)) excluir.mutate(e.id);
             }}
             onDemitir={setDemitindo}
-          />
-          <BlocoEmpregados
+            nomeSupervisor={nomeSupervisor}
+          />}
+          {aba === "inativos" && <BlocoEmpregados
             titulo={`Demitidos / inativos (${inativos.length})`}
             lista={inativos}
             vazio={busca.trim() ? "Nenhum empregado inativo encontrado para a busca." : "Nenhum empregado inativo."}
@@ -298,7 +329,8 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
             onExcluir={async (e) => {
               if (await confirmarExclusao(e.nome)) excluir.mutate(e.id);
             }}
-          />
+            nomeSupervisor={nomeSupervisor}
+          />}
         </>
       )}
 
@@ -321,12 +353,22 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                   const r = comDesligamento(configAntes, usuarioAtivo(localStorage).nome, { nome: alvo.nome, motivo, data, pendentes });
                   efeitos = r.efeitos;
                   salvarConfig(localStorage, r.config);
+                  // O supervisor recebe o alerta para substituir o empregado onde ele era responsável por alguma tarefa.
+                  // Só vale supervisor ainda ativo; sem ele o alerta pede que alguém defina quem substitui.
+                  const supervisor = separarEmpregados(empregados).ativos.find((x) => x.id === alvo.supervisor_id && x.id !== alvo.id);
+                  try {
+                    abrirAlertaDeDesligamento({ empregadoId: alvo.id, empregadoNome: alvo.nome, supervisorId: supervisor?.id ?? null, supervisorNome: supervisor?.nome ?? null, dataDesligamento: data }, new Date().toISOString());
+                    efeitos.push(supervisor ? `alerta a ${supervisor.nome} para substituí-lo(a)` : "sem supervisor ativo para substituí-lo(a)");
+                  } catch {
+                    toast.warning("O desligamento foi registrado, mas o alerta ao supervisor não pôde ser guardado neste navegador.");
+                  }
                 }
                 // Desfazer: volta a data de demissão e a situação de antes (e, na demonstração, os efeitos simulados do desligamento).
                 avisarComDesfazer(`${alvo.nome} desligado(a)${efeitos.length ? ` (simulado: ${efeitos.join(", ")})` : ""}`, async () => {
                   const { error } = await supabase.from("empregados").update({ data_demissao: alvo.data_demissao ?? null, ativo: alvo.ativo } as never).eq("id", alvo.id);
                   if (error) throw error;
                   if (configAntes) salvarConfig(localStorage, configAntes);
+                  retirarAlertaDeDesligamento(alvo.id);
                   queryClient.invalidateQueries();
                   avisarOutrasAbas();
                 });
@@ -406,6 +448,22 @@ export function EmpregadosCadastroModulo({ direto = false, aoConcluir }: { diret
                 <Input id="email" name="email" type="email" defaultValue={base?.email ?? ""} />
               </div>
             )}
+            {MODO_DEMO && (
+              <div className="space-y-1.5">
+                <Label htmlFor="supervisor_id">Supervisor</Label>
+                <Select value={supervisorSel} onValueChange={setSupervisorSel}>
+                  <SelectTrigger id="supervisor_id" aria-required>
+                    <SelectValue placeholder="Selecione o supervisor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supervisoresPossiveis.filter((s) => s.id !== editando?.id).map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Obrigatório. Ao desligar o empregado, o supervisor recebe o alerta para substituí-lo onde ele era responsável.</p>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="data_admissao">Data de admissão</Label>
               <Input
@@ -455,6 +513,7 @@ function BlocoEmpregados({
   onResumo,
   onExcluir,
   onDemitir,
+  nomeSupervisor,
 }: {
   titulo: string;
   lista: EmpregadoCadastro[];
@@ -465,6 +524,7 @@ function BlocoEmpregados({
   onResumo: (e: EmpregadoCadastro) => void;
   onExcluir: (e: EmpregadoCadastro) => void;
   onDemitir?: (e: EmpregadoCadastro) => void;
+  nomeSupervisor: (e: EmpregadoCadastro) => string;
 }) {
   const destaque = useDestaque();
   return (
@@ -479,6 +539,7 @@ function BlocoEmpregados({
               <TableHead>Matrícula</TableHead>
               <TableHead>Empresa</TableHead>
               <TableHead>E-mail</TableHead>
+              {MODO_DEMO && <TableHead>Supervisor</TableHead>}
               <TableHead>Admissão</TableHead>
               <TableHead>Demissão</TableHead>
               <TableHead>Situação</TableHead>
@@ -488,7 +549,7 @@ function BlocoEmpregados({
           <TableBody>
             {lista.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground">
+                <TableCell colSpan={MODO_DEMO ? 10 : 9} className="text-center text-muted-foreground">
                   {typeof vazio === "function" ? vazio() : vazio}
                 </TableCell>
               </TableRow>
@@ -507,6 +568,7 @@ function BlocoEmpregados({
                   <TableCell>{e.matricula ?? "—"}</TableCell>
                   <TableCell>{nomeEmpresa(e.empresa_id)}</TableCell>
                   <TableCell>{e.email || "—"}</TableCell>
+                  {MODO_DEMO && <TableCell>{nomeSupervisor(e) || <span className="text-xs text-destructive">Sem supervisor</span>}</TableCell>}
                   <TableCell>{formatarData(e.data_admissao)}</TableCell>
                   <TableCell>{formatarData(e.data_demissao)}</TableCell>
                   <TableCell>

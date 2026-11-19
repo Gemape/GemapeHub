@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useAccess } from "@/lib/access-context";
 import { alertasDosCartoes, resumoDeVeiculos, type AlertaCartao } from "@/lib/alertas-cartao";
 import { pendenciasDeHoje, type DespesaAbertaViagem, type GrupoPendencia, type OcorrenciaAtencaoEq, type OrdemAtencaoEq } from "@/lib/atencao-hoje";
+import { alertasAbertos, EVENTO_ALERTAS_DESLIGAMENTO, lerAlertasDeDesligamento, portadoresDesligados } from "@/lib/desligamento-pendencias";
 import { hojeLocal } from "@/lib/empregados";
+import { EVENTO_PORTADORES, lerPortadores } from "@/lib/portadores-caixa";
 import { TODAS } from "@/lib/empresa-context";
 import { listarEquipamentos } from "@/lib/equipamentos-demo";
 import { estadoEstoqueModulo } from "@/lib/estoque-tamanho";
@@ -75,15 +77,31 @@ export function usePendencias(): Pendencias {
     return () => { window.removeEventListener(EVENTO_REGISTROS_EQUIPAMENTO, ler); window.removeEventListener("storage", ler); window.removeEventListener("focus", ler); };
   }, [pronto]);
 
+  // Desligamentos (alertas ao supervisor e caixas com portador desligado): ficam no navegador e são relidos quando mudam.
+  const [desligamentos, setDesligamentos] = useState<{ alertas: ReturnType<typeof alertasAbertos>; portadores: ReturnType<typeof lerPortadores> } | null>(null);
+  useEffect(() => {
+    if (!pronto) return;
+    const ler = () => { let portadores: ReturnType<typeof lerPortadores> = []; try { portadores = lerPortadores(); } catch { /* histórico inválido: só os alertas */ } setDesligamentos({ alertas: alertasAbertos(lerAlertasDeDesligamento()), portadores }); };
+    ler();
+    window.addEventListener(EVENTO_ALERTAS_DESLIGAMENTO, ler);
+    window.addEventListener(EVENTO_PORTADORES, ler);
+    window.addEventListener("storage", ler);
+    window.addEventListener("focus", ler);
+    return () => { window.removeEventListener(EVENTO_ALERTAS_DESLIGAMENTO, ler); window.removeEventListener(EVENTO_PORTADORES, ler); window.removeEventListener("storage", ler); window.removeEventListener("focus", ler); };
+  }, [pronto]);
+
   const grupos = useMemo(
     () => pendenciasDeHoje({
       hoje: hojeLocal(), empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, estado: (modulo, item) => estadoEstoqueModulo(parametros, modulo, item as never),
+      ...(desligamentos ? { desligamentos: { alertas: desligamentos.alertas, portadores: portadoresDesligados(desligamentos.portadores, empregados, hojeLocal()) } } : {}),
       ...(locais ? { equipamentos: { nomes: locais.nomes, ordens: locais.ordens, ocorrencias: locais.ocorrencias }, viagens: { despesasEmAberto: locais.despesas, prazoDias: locais.prazoDias } } : {}),
     })
       // Quem não vê o módulo não vê o cartão dele, e os cartões de Equipamentos e Viagens só aparecem depois de lidos (senão mostrariam "0" sem terem sido lidos).
-      .filter((g) => (podeEpi || !g.id.startsWith("epi-") && g.modulo !== "epi") && (podeUniformes || g.modulo !== "uniforme") && (podeFerramentas || (g.modulo !== "ferramenta" && g.id !== "devolucao-atrasada")))
+      .filter((g) => (podeEpi || !g.id.startsWith("epi-") && g.modulo !== "epi") && (podeUniformes || g.modulo !== "uniforme") && (podeFerramentas || (g.modulo !== "ferramenta" && g.id !== "devolucao-atrasada" && g.id !== "portador-desligado")))
+      // O alerta de substituição manda para o cadastro de empregados: só quem pode ver essa tela o recebe.
+      .filter((g) => g.id !== "substituicao-supervisor" || podeVerCaminho("/empregados"))
       .filter((g) => (g.id !== "equipamentos" || (podeEquipamentos && locais !== null)) && (g.id !== "viagens" || (podeViagens && locais !== null))),
-    [empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, parametros, locais, podeEpi, podeUniformes, podeFerramentas, podeEquipamentos, podeViagens],
+    [empregados, epis, uniformes, ferramentas, movsEpi, movsFerramenta, parametros, locais, desligamentos, podeVerCaminho, podeEpi, podeUniformes, podeFerramentas, podeEquipamentos, podeViagens],
   );
 
   // Veículos: as mesmas regras da Frota (check list, revisões do plano e ocorrências), lidas só para quem pode ver a tela.

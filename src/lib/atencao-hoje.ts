@@ -1,6 +1,7 @@
 // "O que precisa da sua atenção hoje": pendências reais, por prioridade, já com o caminho de cada ação. Só lê dados em memória; quem chama busca as listas.
 import { resumoEmpregado, type ItemDoResumo } from "./resumo-empregado.ts";
 import type { MovimentacaoEpi } from "./entrega-epi.ts";
+import type { AlertaDesligamento, PortadorDesligado } from "./desligamento-pendencias.ts";
 import { estadoGravado, linhasDeAlertaEstoque, type EstadoComTamanhos, type LinhaDeEstoqueAlerta, type ModuloEstoque } from "./alertas-estoque.ts";
 
 export type AcaoPendencia = { rotulo: string; url: string; search?: Record<string, string> };
@@ -29,6 +30,8 @@ export type EntradaAtencao = {
   estado?: (modulo: "epi" | "uniforme", item: ItemEstoque) => EstadoDoEstoque;
   equipamentos?: { nomes: ReadonlyMap<string, string>; ordens: readonly OrdemAtencaoEq[]; ocorrencias: readonly OcorrenciaAtencaoEq[] };
   viagens?: { despesasEmAberto: readonly DespesaAbertaViagem[]; prazoDias: number };
+  /** Desligamentos: alertas abertos ao supervisor (substituir o empregado) e caixas cujo portador foi desligado (desvincular na hora). */
+  desligamentos?: { alertas: readonly AlertaDesligamento[]; portadores: readonly PortadorDesligado[] };
 };
 
 const ORDEM = { alta: 0, media: 1, baixa: 2 } as const;
@@ -131,7 +134,22 @@ export function pendenciasDeHoje(e: EntradaAtencao): GrupoPendencia[] {
     epiComDesligado.push({ chave: `epi-desl-${id}`, texto: emp.nome, detalhe: `${lista.map((p) => `${p.nome} (${p.quantidade})`).join(", ")}${emp.data_demissao ? ` · desligado em ${dataBr(emp.data_demissao)}` : ""}`, acao: { rotulo: "Registrar devolução", url: "/epi", search: { aba: "entrega", modo: "devolucao", ...(emp.empresa_id ? { empresa: emp.empresa_id } : {}), empregado: id } } });
   }
 
+  // 7) Desligamento: o supervisor substitui o empregado onde ele era responsável; a caixa do portador desligado é desvinculada na hora (e a vistoria de encerramento feita).
+  const substituicoes: ItemPendencia[] = (e.desligamentos?.alertas ?? []).filter((a) => !a.resolvidoEm).map((a) => ({
+    chave: `subst-${a.id}`, texto: a.supervisorNome ? `${a.supervisorNome}: substituir ${a.empregadoNome}` : `Sem supervisor cadastrado para ${a.empregadoNome}`,
+    detalhe: `${a.empregadoNome} foi desligado em ${dataBr(a.dataDesligamento)}; os locais onde era responsável por alguma tarefa precisam de outro responsável.`,
+    acao: { rotulo: "Ver pendências", url: "/empregados" },
+  }));
+  const portadoresDesligados: ItemPendencia[] = (e.desligamentos?.portadores ?? []).map((p) => ({
+    chave: `portador-desl-${p.registroId}`, texto: `${p.caixaCodigo} · ${p.empregadoNome}`,
+    detalhe: `Portador desligado${p.dataDemissao ? ` em ${dataBr(p.dataDemissao)}` : ""}: desvincule a caixa agora e faça a vistoria de encerramento.`,
+    acao: { rotulo: "Desvincular portador", url: "/ferramentas", search: { aba: "caixas" } },
+  }));
+
   const grupos: GrupoPendencia[] = [
+    // Os dois de desligamento só aparecem quando há o que fazer: vêm de um fato (o desligamento), não de uma verificação sempre presente.
+    ...(portadoresDesligados.length > 0 ? [{ id: "portador-desligado", titulo: "Caixa com portador desligado: desvincular agora", prioridade: "alta" as const, vazio: "Nenhuma caixa com portador desligado.", itens: portadoresDesligados }] : []),
+    ...(substituicoes.length > 0 ? [{ id: "substituicao-supervisor", titulo: "Desligamentos: supervisor deve substituir o empregado", prioridade: "alta" as const, vazio: "Nenhuma substituição pendente.", itens: substituicoes }] : []),
     { id: "epi-vencido", titulo: "EPIs vencidos com empregados", prioridade: "alta", vazio: "Nenhum EPI vencido em posse.", itens: vencidos },
     { id: "devolucao-atrasada", titulo: "Devoluções atrasadas (empregado desligado)", prioridade: "alta", vazio: "Nenhuma ferramenta pendente de desligados.", itens: atrasadas },
     { id: "equipamentos", titulo: "Equipamentos: manutenção atrasada ou ocorrência aberta", prioridade: "alta", vazio: "Nenhum equipamento com pendência.", itens: equipamentos },
