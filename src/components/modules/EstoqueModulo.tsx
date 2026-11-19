@@ -85,6 +85,9 @@ export function EstoqueModulo({ modulo, buscaInicial = '' }: { modulo: ModuloEst
     return nivel === 'nenhum' ? '' : `${TEXTO_DO_NIVEL_ALERTA[nivel]}${estado.detalheAlerta ? `: ${estado.detalheAlerta}` : ''}`;
   };
 
+  // Só monta os grupos quando a visão está aberta; o alerta de cada item vem da mesma regra da lista.
+  const grupos = ferr && porGrupo ? agruparEstoquePorGrupo(linhas.map(({ item }) => item), posicoes, new Set(linhas.filter(({ estado }) => nivelDe(estado) !== 'nenhum').map(({ item }) => item.id))) : [];
+
   if (isError) return <p role="alert">Não foi possível carregar o estoque completo: {error.message}</p>;
 
   return (
@@ -101,9 +104,11 @@ export function EstoqueModulo({ modulo, buscaInicial = '' }: { modulo: ModuloEst
         </BarraDeFiltros>
         <CarimboAtualizacao className="self-center" />
         <AlternarDensidade />
-        {ferr && <Button type="button" variant={porGrupo ? 'default' : 'outline'} aria-pressed={porGrupo} onClick={() => { setPorGrupo((v) => !v); setPorPosicao(false); }}>{porGrupo ? 'Ver estoque por item' : 'Estoque por grupo'}</Button>}
+        {ferr && <Button type="button" variant={porGrupo ? 'default' : 'outline'} aria-pressed={porGrupo} onClick={() => { setPorGrupo((v) => !v); setPorPosicao(false); }}>Estoque por grupo</Button>}
         {ferr && <Button type="button" variant={porPosicao ? 'default' : 'outline'} aria-pressed={porPosicao} onClick={() => { setPorPosicao((v) => !v); setPorGrupo(false); }}>{porPosicao ? 'Ver estoque por item' : 'Estoque por posição'}</Button>}
-        <Button variant="outline" hidden={porPosicao || porGrupo} disabled={isLoading || linhas.length === 0} onClick={() =>
+        <Button variant="outline" hidden={porPosicao} disabled={isLoading || linhas.length === 0} onClick={() => porGrupo ? exportarCsv('estoque-ferramenta-por-grupo', grupos.map((g) => ({
+          Grupo: g.grupo, Ferramentas: g.itens.length, 'Guardada na caixa': g.guardada, 'Com empregado': g.comEmpregado, 'Sem caixa': g.semCaixa, 'Saldo total': g.saldo, 'Soma dos mínimos': g.minimo, 'Itens em alerta': g.abaixoDoMinimo,
+        }))) :
           exportarCsv(`estoque-${modulo}`, linhas.map(({ item, estado }) => ({
             Código: item.codigo_sku,
             Empresa: nomeDaEmpresa(item.empresa_id),
@@ -118,7 +123,7 @@ export function EstoqueModulo({ modulo, buscaInicial = '' }: { modulo: ModuloEst
           })))
         }>Exportar CSV</Button>
       </div>
-      {ferr && porGrupo && <EstoquePorGrupo grupos={agruparEstoquePorGrupo(linhas.map(({ item }) => item), posicoes)} />}
+      {ferr && porGrupo && <EstoquePorGrupo grupos={grupos} filtrado={busca.trim() !== ''} />}
       {ferr && porPosicao && <ConsolidadoPorPosicao linhas={linhas.map(({ item }) => item)} posicoes={posicoes} />}
       {!(ferr && (porPosicao || porGrupo)) && <div className="panel overflow-x-auto">
         <Table>
@@ -259,7 +264,7 @@ function ConsolidadoPorPosicao({ linhas, posicoes }: { linhas: { id: string; cod
 }
 
 // Estoque por grupo: cada grupo de ferramentas com o saldo somado e repartido entre guardada na caixa, com empregado e sem caixa; "Ver itens" abre as ferramentas do grupo.
-function EstoquePorGrupo({ grupos }: { grupos: GrupoDeEstoque[] }) {
+function EstoquePorGrupo({ grupos, filtrado }: { grupos: GrupoDeEstoque[]; filtrado: boolean }) {
   const [abertos, setAbertos] = useState<Set<string>>(new Set());
   const alternar = (grupo: string) => setAbertos((a) => { const n = new Set(a); if (n.has(grupo)) n.delete(grupo); else n.add(grupo); return n; });
   const total = (campo: 'saldo' | 'guardada' | 'comEmpregado' | 'semCaixa' | 'minimo') => grupos.reduce((t, g) => t + g[campo], 0);
@@ -273,7 +278,7 @@ function EstoquePorGrupo({ grupos }: { grupos: GrupoDeEstoque[] }) {
             <TableHead>Grupo</TableHead><TableHead className="text-right">Ferramentas</TableHead>
             <TableHead className="text-right">Guardada na caixa</TableHead><TableHead className="text-right">Com empregado</TableHead>
             <TableHead className="text-right">Sem caixa</TableHead><TableHead className="text-right">Saldo total</TableHead>
-            <TableHead className="text-right">Estoque mínimo</TableHead><TableHead>Alerta</TableHead><TableHead><span className="sr-only">Itens do grupo</span></TableHead>
+            <TableHead className="text-right">Soma dos mínimos</TableHead><TableHead>Alerta</TableHead><TableHead><span className="sr-only">Itens do grupo</span></TableHead>
           </TableRow></TableHeader>
           <TableBody>
             {grupos.length === 0 ? <TableRow><TableCell colSpan={9}>Nenhum item para mostrar.</TableCell></TableRow> : grupos.flatMap((g) => [
@@ -283,7 +288,7 @@ function EstoquePorGrupo({ grupos }: { grupos: GrupoDeEstoque[] }) {
                 <TableCell className="text-right">{g.guardada}</TableCell><TableCell className="text-right">{g.comEmpregado}</TableCell>
                 <TableCell className="text-right">{g.semCaixa}</TableCell><TableCell className="text-right font-semibold">{g.saldo}</TableCell>
                 <TableCell className="text-right">{g.minimo}</TableCell>
-                <TableCell className={g.abaixoDoMinimo > 0 ? 'font-bold text-destructive' : ''}>{g.abaixoDoMinimo > 0 ? `${g.abaixoDoMinimo} abaixo do mínimo` : '—'}</TableCell>
+                <TableCell className={g.abaixoDoMinimo > 0 ? 'font-bold text-destructive' : ''}>{g.abaixoDoMinimo > 0 ? `${g.abaixoDoMinimo} em alerta` : '—'}</TableCell>
                 <TableCell><Button type="button" size="sm" variant="outline" aria-expanded={abertos.has(g.grupo)} onClick={() => alternar(g.grupo)}>{abertos.has(g.grupo) ? 'Ocultar itens' : 'Ver itens'}</Button></TableCell>
               </TableRow>,
               ...(abertos.has(g.grupo) ? g.itens.map(({ item, posicao }) => (
@@ -297,7 +302,7 @@ function EstoquePorGrupo({ grupos }: { grupos: GrupoDeEstoque[] }) {
               )) : []),
             ])}
             {grupos.length > 0 && <TableRow className="bg-muted/40 font-semibold">
-              <TableCell>Total</TableCell><TableCell className="text-right">{grupos.reduce((t, g) => t + g.itens.length, 0)}</TableCell>
+              <TableCell>{filtrado ? 'Total da busca' : 'Total'}</TableCell><TableCell className="text-right">{grupos.reduce((t, g) => t + g.itens.length, 0)}</TableCell>
               <TableCell className="text-right">{total('guardada')}</TableCell><TableCell className="text-right">{total('comEmpregado')}</TableCell>
               <TableCell className="text-right">{total('semCaixa')}</TableCell><TableCell className="text-right">{total('saldo')}</TableCell>
               <TableCell className="text-right">{total('minimo')}</TableCell><TableCell /><TableCell />
