@@ -38,3 +38,10 @@ test("ferramenta inativa não entra", () => {
   const l = linhasDaSugestaoFerramentas({ ferramentas: [ferr("a", 2, { status: "Inativo" }), ferr("b", 2)], saldoDe: () => 0, movimentos: [], hoje: "2026-11-11" });
   assert.deepEqual(l.map((x) => x.itemId), ["b"]);
 });
+
+test("a baixa por devolução ao estoque não conta como consumo", () => {
+  const entrada = { ferramentas: [ferr("a", 5)], saldoDe: () => 5, hoje: "2026-11-18" };
+  const consumo = (motivo) => JSON.stringify(linhasDaSugestaoFerramentas({ ...entrada, movimentos: [{ ...baixa("a", 6, "2026-06-01"), motivo_baixa: motivo }] }));
+  assert.notEqual(consumo("Quebra"), consumo("Devolução"));
+  assert.equal(consumo("Devolução"), JSON.stringify(linhasDaSugestaoFerramentas({ ...entrada, movimentos: [] })));
+});

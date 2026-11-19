@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { compraOriginalDaFerramenta, erroDaEntradaUsada, ferramentasDoEmpregado, type MovimentoUsada } from "@/lib/entrada-usada-ferramenta";
 import { TODAS } from "@/lib/empresa-context";
 import { hojeLocal } from "@/lib/empregados";
-import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { formatarData, formatarMoeda } from "@/lib/gemape";
 import { useEmpregados, useItens, useMovimentacoes, useRegistrarMovimentacoesLote, useCaixasFerramentas, useTodosCaixaItens } from "@/lib/hooks-gemape";
 import { MODO_DEMO } from "@/lib/modo-demo";
@@ -58,7 +57,7 @@ export function EntradaUsadaFerramenta({ aoConcluir, aoCancelar }: { aoConcluir:
         { ...base, empregado_id: null, tipo_movimentacao: "Saida", motivo_baixa: MOTIVO_DEVOLUCAO, onus_baixa: "Da Empresa", data_movimentacao: data, observacao: `Baixa pela caixa ${codigoDaCaixa(l.caixaId)}. Devolução ao estoque (entrada usada).`.slice(0, 500), ...(MODO_DEMO ? { caixa_id: l.caixaId } : {}) },
         // A entrada usada guarda a compra original: a data de compra é a da entrada que a trouxe, e a da devolução fica na observação.
         { ...base, empregado_id: null, tipo_movimentacao: "Entrada", motivo_baixa: null, onus_baixa: null, data_movimentacao: compra.dataCompra,
-          observacao: capitalizarTexto(`Entrada usada: ferramenta ${quem}. Compra original: ${compra.fornecedor ?? "—"}${compra.notaFiscal ? ` · NF ${compra.notaFiscal}` : ""}`).slice(0, 500),
+          observacao: `Compra original: ${compra.fornecedor ?? "—"}${compra.notaFiscal ? ` · NF ${compra.notaFiscal}` : ""}. Entrada usada: ferramenta ${quem}.`.slice(0, 500),
           ...(MODO_DEMO ? { condicao: "usado", fornecedor: compra.fornecedor, fornecedor_id: compra.fornecedorId, nota_fiscal: compra.notaFiscal, valor_unitario: compra.valorUnitario, valor_total: Math.round(qtde * compra.valorUnitario * 100) / 100 } : {}) },
       ];
     });

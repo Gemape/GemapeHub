@@ -22,7 +22,8 @@ export function linhasDaSugestaoFerramentas(e: {
   const corte = `${Number(e.hoje.slice(0, 4)) - 1}${e.hoje.slice(4)}`;
   const baixadas = new Map<string, number>();
   for (const m of e.movimentos) {
-    if (!m.item_id || !ehBaixa(m) || m.data_movimentacao < corte || m.data_movimentacao > e.hoje) continue;
+    // A devolução ao estoque (entrada usada) é baixa da caixa, mas a ferramenta não foi consumida: não conta no consumo médio.
+    if (!m.item_id || !ehBaixa(m) || m.motivo_baixa === "Devolução" || m.data_movimentacao < corte || m.data_movimentacao > e.hoje) continue;
     baixadas.set(m.item_id, (baixadas.get(m.item_id) ?? 0) + (Number(m.quantidade) || 0));
   }
   return e.ferramentas
