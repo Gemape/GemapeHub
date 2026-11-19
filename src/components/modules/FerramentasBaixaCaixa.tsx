@@ -16,7 +16,7 @@ import { lerMovimentacoesRelatorio } from "@/lib/relatorios-historico";
 import { useParametrosBase } from "@/lib/use-parametros-base";
 import { useCaixaItens, useCaixasFerramentas, useItens, useMovimentacoes } from "@/lib/hooks-gemape";
 
-// Ferramentas > Movimentações > Baixa: a ferramenta sai da caixa com motivo e ônus; a baixa fica na caixa, sem pessoa.
+// Ferramentas > Movimentações > Baixa definitiva: a ferramenta sai da caixa com motivo e ônus; a baixa fica na caixa, sem pessoa.
 export function FerramentasBaixaCaixa() {
   const { empresaId } = useEmpresa();
   const habilitadas = useParametrosBase().caixasHabilitadas;
@@ -33,7 +33,7 @@ export function FerramentasBaixaCaixa() {
 
   return (
     <div className="space-y-6">
-      <section className="panel max-w-3xl space-y-4 p-5" aria-label="Baixa de ferramenta">
+      <section className="panel max-w-3xl space-y-4 p-5" aria-label="Baixa definitiva de ferramenta">
         <p className="text-sm text-muted-foreground">Escolha a caixa de onde a ferramenta sai. A baixa pede o motivo e o ônus e fica registrada na caixa, sem vínculo com pessoa.</p>
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
