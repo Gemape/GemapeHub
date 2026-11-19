@@ -115,7 +115,7 @@ export const ABAS_VEICULO: readonly AbaMenu[] = [
 // Equipamentos: a mesma lógica dos controles de Veículos, voltada a equipamentos (horímetro no lugar do km).
 export const ABAS_EQUIPAMENTO: readonly AbaMenu[] = [
   { aba: "inventario", titulo: "Inventário dos Equipamentos", icone: "Forklift" },
-  { aba: "indicadores", titulo: "Indicadores", icone: "LayoutDashboard" },
+  { aba: "indicadores", titulo: "Dashboard", icone: "LayoutDashboard" },
   { aba: "abastecimento", titulo: "Abastecimento", icone: "Fuel" },
   { aba: "manutencao", titulo: "Manutenção", icone: "Wrench" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
@@ -287,7 +287,7 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
   },
   equipamento: {
     inventario: "Lista os equipamentos com o extrato de cada um: abastecimentos, manutenções, ocorrências e custo.",
-    indicadores: "Mostra os indicadores de gestão dos equipamentos: disponibilidade, custo de manutenção por hora, aderência ao plano e conformidade legal.",
+    indicadores: "Dashboard dos equipamentos no desenho da Frota: disponibilidade, custo de manutenção por hora, razão preventiva/corretiva, aderência ao plano e conformidade legal, com gráficos e a situação de cada equipamento.",
     abastecimento: "Registra os abastecimentos dos equipamentos e calcula litros, gasto e preço médio por litro.",
     manutencao: "Registra e acompanha as manutenções dos equipamentos, preventivas e corretivas, com o custo de cada uma.",
     ocorrencias: "Registra e acompanha as ocorrências dos equipamentos, com a situação e o tratamento de cada uma.",

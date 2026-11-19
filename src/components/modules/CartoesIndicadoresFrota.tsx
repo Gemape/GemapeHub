@@ -89,7 +89,7 @@ export function Cartao({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="text-eyebrow" title={enxuto ? subtitulo : undefined}>{titulo}</p>
+            <p className={`text-eyebrow ${enxuto ? "!text-[10px] !leading-tight !tracking-normal" : ""}`} title={enxuto ? subtitulo : undefined}>{titulo}</p>
             {extra}
           </div>
           {!enxuto && <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{subtitulo}</p>}
@@ -150,12 +150,13 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
         </div>
       )}
       <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid auto-rows-fr gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <Cartao
             titulo="Frota · Conformidade geral (SLA)"
             subtitulo="Tarefas no prazo ÷ tarefas atribuídas: preventivas, check lists e ocorrências."
             indicador={indicadores.conformidadeGeral}
             compacto
+            enxuto
           />
           <Cartao
             titulo="Frota · Custo por km rodado (CPK)"
@@ -164,6 +165,7 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
             valor={cpk.valor === null ? "—" : `${reais(cpk.valor)}/km`}
             icone={Coins}
             compacto
+            enxuto
           />
           <Cartao
             titulo="Frota · Custo preventivo (meta 80%)"
@@ -171,36 +173,42 @@ export function CartoesIndicadoresFrota({ indicadores, cpk, custoPreventivo, aco
             indicador={custoPreventivo}
             {...(noModoReativo(custoPreventivo.pct) ? { alerta: `Abaixo de ${LIMITE_REATIVO}%: modo reativo.` } : {})}
             compacto
+            enxuto
           />
           <Cartao
             titulo="PCM · Índice de manutenções preventivas em dia"
             subtitulo="Preventivas não vencidas ÷ preventivas com registro."
             indicador={indicadores.manutencoes}
             compacto
+            enxuto
           />
           <Cartao
             titulo="PCM · Índice de check lists realizados no prazo"
             subtitulo="Realizados no prazo ÷ os que já venceram (feitos + não feitos)."
             indicador={indicadores.checklistPcm}
             compacto
+            enxuto
           />
           <Cartao
             titulo="PCM · Índice de ocorrências tratadas no prazo"
             subtitulo="Tratadas no prazo ÷ tratadas + vencidas sem tratativa."
             indicador={indicadores.ocorrencias}
             compacto
+            enxuto
           />
           <Cartao
             titulo="Técnicos · Índice de check lists realizados no prazo"
             subtitulo="Realizados no prazo ÷ os que já venceram (feitos + não feitos)."
             indicador={indicadores.tecnicosNoPrazo}
             compacto
+            enxuto
           />
           <Cartao
             titulo="Técnicos · Índice de check lists atrasados"
             subtitulo="Não feitos no prazo ÷ os que já venceram (o oposto do ao lado)."
             indicador={indicadores.tecnicosNaoRealizados}
             compacto
+            enxuto
           />
         </div>
         {graficos}

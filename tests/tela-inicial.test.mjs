@@ -68,7 +68,7 @@ test("os submenus de módulo são as abas do módulo, as mesmas do menu lateral,
     }
   }
   const doEquipamento = daSecao(cartao(true, AREAS, "Equipamentos"), "Módulo");
-  assert.deepEqual(doEquipamento.map((i) => i.titulo), ["Inventário dos Equipamentos", "Indicadores", "Abastecimento", "Manutenção", "Ocorrências", "Check list de Manutenção", "Check list de vistoria"]);
+  assert.deepEqual(doEquipamento.map((i) => i.titulo), ["Inventário dos Equipamentos", "Dashboard", "Abastecimento", "Manutenção", "Ocorrências", "Check list de Manutenção", "Check list de vistoria"]);
   assert.ok(doEquipamento.every((i) => i.url === "/equipamentos"));
   assert.deepEqual(doEquipamento.map((i) => abaDoModulo("equipamento", i.search.aba)), doEquipamento.map((i) => i.search.aba));
 });

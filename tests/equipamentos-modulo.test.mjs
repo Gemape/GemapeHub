@@ -236,7 +236,7 @@ test("o módulo tem as sete abas, só aparece no demo e não toca o Supabase", (
   const rota = ler("routes/_authenticated/equipamentos.tsx");
   assert.match(rota, /MODO_DEMO \? \(/);
   const menu = ler("lib/menu-parametros.ts");
-  for (const titulo of ["Inventário dos Equipamentos", "Indicadores", "Abastecimento", "Manutenção", "Ocorrências", "Check list de Manutenção", "Check list de vistoria"]) assert.match(menu, new RegExp(`titulo: "${titulo}"`));
+  for (const titulo of ["Inventário dos Equipamentos", "Dashboard", "Abastecimento", "Manutenção", "Ocorrências", "Check list de Manutenção", "Check list de vistoria"]) assert.match(menu, new RegExp(`titulo: "${titulo}"`));
   for (const arq of ["lib/registros-equipamento.ts", "lib/dados-teste/equipamentos-modulo.ts", "components/modules/equipamento/InventarioEquipamentoModulo.tsx", "components/modules/equipamento/ChecklistEquipamentoModulo.tsx"]) assert.doesNotMatch(ler(arq), /supabase|fetch\(|\.from\(/, arq);
 });
 

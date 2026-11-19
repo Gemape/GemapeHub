@@ -237,7 +237,7 @@ export function FrotaModulo() {
         }
       />
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar (decisão 337). */}
-      <div className="max-h-[max(8rem,calc(100dvh-46rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="max-h-[max(8rem,calc(100dvh-40rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1440px] table-fixed">
           <TableHeader>
             <TableRow>

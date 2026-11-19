@@ -57,6 +57,9 @@ export function PainelGraficos({
   );
 }
 
+// Altura dos gráficos nos quadros baixos (enxuto), igual nas telas que cabem numa janela só: Frota, Ferramentas e Equipamentos.
+export const ALTURA_GRAFICO_COMPACTA = "h-[clamp(4.5rem,9.5vh,6rem)]";
+
 export function QuadroGrafico({
   titulo,
   descricao,
@@ -66,6 +69,7 @@ export function QuadroGrafico({
   alerta,
   larga = false,
   altura = "h-[clamp(9rem,24vh,15rem)]",
+  enxuto = false,
   children,
 }: {
   titulo: string;
@@ -78,14 +82,27 @@ export function QuadroGrafico({
   vazio?: boolean;
   larga?: boolean;
   altura?: string;
+  // Quadro baixo: menos folga e a fórmula vai para a dica do quadro e o aviso fica em uma linha (texto inteiro na dica), para a lista caber na mesma tela.
+  enxuto?: boolean;
   children: ReactNode;
 }) {
   return (
-    <figure className={`panel space-y-1 p-3 ${larga ? "lg:col-span-2" : ""}`}>
+    <figure className={`panel ${enxuto ? "min-w-0 space-y-0.5 p-2" : "space-y-1 p-3"} ${larga ? "lg:col-span-2" : ""}`}>
       <figcaption>
-        <p className="text-sm font-semibold">{titulo}</p>
+        {enxuto && formula ? (
+          <BalaoProvider delayDuration={100}>
+            <Balao>
+              <BalaoGatilho asChild>
+                <p tabIndex={0} aria-label={`${titulo}. Fórmula: ${formula} ${formulaDetalhe ?? ""}`} className="cursor-help text-sm font-semibold">{titulo}</p>
+              </BalaoGatilho>
+              <BalaoConteudo className="max-w-xs"><strong>Fórmula:</strong> {formula} {formulaDetalhe}</BalaoConteudo>
+            </Balao>
+          </BalaoProvider>
+        ) : (
+          <p className="text-sm font-semibold">{titulo}</p>
+        )}
         {descricao && <p className="text-xs text-muted-foreground">{descricao}</p>}
-        {formula && (
+        {formula && !enxuto && (
           <BalaoProvider delayDuration={100}>
             <Balao>
               <BalaoGatilho asChild>
@@ -99,9 +116,9 @@ export function QuadroGrafico({
           </BalaoProvider>
         )}
         {alerta && (
-          <p role="alert" className="flex items-start gap-1 text-xs font-semibold text-red-700 dark:text-red-300">
+          <p role="alert" {...(enxuto ? { title: alerta } : {})} className={`flex items-start gap-1 text-xs font-semibold text-red-700 dark:text-red-300 ${enxuto ? "min-w-0" : ""}`}>
             <AlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
-            {alerta}
+            <span className={enxuto ? "line-clamp-2" : ""}>{alerta}</span>
           </p>
         )}
       </figcaption>

@@ -6,7 +6,7 @@ import { Printer, Wallet } from "lucide-react";
 import { BarraDeFiltros } from "@/components/layout/BarraDeFiltros";
 import { EtiquetaVencimento } from "@/components/modules/FrotaModulo";
 import { Cartao } from "@/components/modules/CartoesIndicadoresFrota";
-import { COR_DA_FAIXA, COR_GRAFICO, GraficoBarras, GraficoRosca, PainelGraficos, QuadroGrafico } from "@/components/modules/GraficosPainel";
+import { ALTURA_GRAFICO_COMPACTA, COR_DA_FAIXA, COR_GRAFICO, GraficoBarras, GraficoRosca, PainelGraficos, QuadroGrafico } from "@/components/modules/GraficosPainel";
 import { InterpretacaoFrota } from "@/components/modules/InterpretacaoFrota";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,6 @@ import { EVENTO_TRATATIVAS_FERRAMENTA, lerTratativas } from "@/lib/tratativa-oco
 import { useVistoriasDasCaixas } from "@/lib/use-vistorias-caixas";
 
 const TODOS_OS_GRUPOS = "__todos__";
-const ALTURA_COMPACTA = "h-[clamp(6rem,17vh,9.5rem)]";
 const semAcento = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 // Ferramentas > Módulo > Dashboard: o mesmo desenho da Frota de Veículos. Em cima, filtros e ações; os cartões de indicadores com os gráficos ao lado; embaixo a lista das caixas
@@ -148,7 +147,7 @@ export function DashboardFerramentas() {
             <Cartao titulo="Valor em estoque" subtitulo="Itens × preço; sem preço = 0." indicador={{ pct: null, faixa: null, detalhe: `${saldoTotal} unidades em ${ativas} ferramentas ativas` }} valor={formatarMoeda(valorTotalEmEstoque(ferramentas))} icone={Wallet} compacto enxuto />
           </div>
           <PainelGraficos compacto>
-            <QuadroGrafico titulo="Indicadores (%)" formula="no prazo ÷ com desfecho × 100." altura={ALTURA_COMPACTA}>
+            <QuadroGrafico titulo="Indicadores (%)" formula="no prazo ÷ com desfecho × 100." altura={ALTURA_GRAFICO_COMPACTA} enxuto>
               <GraficoBarras
                 dados={barras.map((b) => ({ nome: b.nome, valor: b.pct ?? 0 }))}
                 categoria="nome"
@@ -158,7 +157,7 @@ export function DashboardFerramentas() {
                 sufixo="%"
               />
             </QuadroGrafico>
-            <QuadroGrafico titulo="Onde estão as ferramentas" formula="unidades por posição ÷ unidades em estoque." altura={ALTURA_COMPACTA} vazio={rosca.every((r) => r.valor === 0)}>
+            <QuadroGrafico titulo="Onde estão as ferramentas" formula="unidades por posição ÷ unidades em estoque." altura={ALTURA_GRAFICO_COMPACTA} enxuto vazio={rosca.every((r) => r.valor === 0)}>
               <GraficoRosca dados={rosca} />
             </QuadroGrafico>
           </PainelGraficos>
@@ -166,7 +165,7 @@ export function DashboardFerramentas() {
       </section>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar, como na Frota. */}
-      <div className="max-h-[max(8rem,calc(100dvh-36rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="max-h-[max(8rem,calc(100dvh-40rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1100px] table-fixed">
           <TableHeader>
             <TableRow>

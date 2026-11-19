@@ -88,7 +88,7 @@ export const CONHECIMENTO: readonly Verbete[] = [
   {
     id: "equipamentos", titulo: "Equipamentos",
     chaves: ["equipamento", "equipamentos", "empilhadeira", "compressor", "manutencao de equipamento", "ordem de servico", "ocorrencia de equipamento", "inventario de equipamentos"],
-    resposta: "Equipamentos tem Inventário, Indicadores, Abastecimento, Manutenção, Ocorrências, Check list de Manutenção e Check list de vistoria. Ordem de serviço pendente ou em andamento com a data prevista vencida, e ocorrência ainda não encerrada, entram no quadro de atenção do Início.",
+    resposta: "Equipamentos tem Inventário, Dashboard, Abastecimento, Manutenção, Ocorrências, Check list de Manutenção e Check list de vistoria. Ordem de serviço pendente ou em andamento com a data prevista vencida, e ocorrência ainda não encerrada, entram no quadro de atenção do Início.",
     links: [{ rotulo: "Inventário dos Equipamentos", url: "/equipamentos", search: { aba: "inventario" } }, { rotulo: "Manutenção", url: "/equipamentos", search: { aba: "manutencao" } }],
   },
   {
