@@ -137,15 +137,15 @@ export function DashboardFerramentas() {
           </div>
         </div>
         <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-          <div className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Cartao titulo="Ferramentas · Conformidade geral (SLA)" subtitulo="Tarefas no prazo ÷ tarefas atribuídas: vistorias e ocorrências." indicador={indicadores.conformidadeGeral} compacto />
-            <Cartao titulo="Almoxarifado · Vistorias periódicas em dia" subtitulo="Vistorias feitas no prazo ÷ as que já venceram (feitas + vencidas)." indicador={indicadores.vistorias} compacto />
-            <Cartao titulo="Almoxarifado · Ocorrências tratadas no prazo" subtitulo="Tratadas no prazo ÷ tratadas + vencidas sem tratativa." indicador={indicadores.ocorrencias} compacto />
-            <Cartao titulo="Estoque · Ferramentas acima do mínimo" subtitulo="Ferramentas ativas acima do estoque mínimo ÷ todas as ativas." indicador={{ ...acimaDoMinimo, detalhe: `${abaixo.length} de ${ativas} no mínimo ou abaixo · ${zeradas} zerada(s)` }} compacto />
-            <Cartao titulo="Estoque · Guardadas nas caixas" subtitulo="Unidades nas caixas, disponíveis ÷ unidades em estoque." indicador={{ ...guardadas, detalhe: `${soma("guardada")} de ${saldoTotal} unidades` }} compacto />
-            <Cartao titulo="Estoque · Com empregado" subtitulo="Unidades entregues e ainda não devolvidas ÷ unidades em estoque." indicador={{ ...comEmpregado, detalhe: `${soma("comEmpregado")} de ${saldoTotal} unidades` }} compacto />
-            <Cartao titulo="Estoque · Sem caixa" subtitulo="Unidades fora das caixas ÷ unidades em estoque." indicador={{ ...foraDaCaixa, detalhe: semCaixa < 0 ? `Caixas guardam ${-semCaixa} a mais que o estoque` : `${semCaixa} de ${saldoTotal} unidades` }} compacto />
-            <Cartao titulo="Estoque · Valor em estoque" subtitulo="Itens × preço informado; sem preço conta como zero." indicador={{ pct: null, faixa: null, detalhe: `${saldoTotal} unidades em ${ativas} ferramentas ativas` }} valor={formatarMoeda(valorTotalEmEstoque(ferramentas))} icone={Wallet} compacto />
+          <div className="grid auto-rows-fr gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Cartao titulo="Conformidade geral (SLA)" subtitulo="Vistorias + ocorrências no prazo." indicador={indicadores.conformidadeGeral} compacto enxuto />
+            <Cartao titulo="Vistorias em dia" subtitulo="Feitas no prazo ÷ vencidas + feitas." indicador={indicadores.vistorias} compacto enxuto />
+            <Cartao titulo="Ocorrências no prazo" subtitulo="Tratadas no prazo ÷ tratadas + vencidas." indicador={indicadores.ocorrencias} compacto enxuto />
+            <Cartao titulo="Acima do mínimo" subtitulo="Ativas acima do mínimo ÷ ativas." indicador={{ ...acimaDoMinimo, detalhe: `${abaixo.length} de ${ativas} no mínimo ou abaixo · ${zeradas} zerada(s)` }} compacto enxuto />
+            <Cartao titulo="Guardadas nas caixas" subtitulo="Disponíveis nas caixas ÷ estoque." indicador={{ ...guardadas, detalhe: `${soma("guardada")} de ${saldoTotal} unidades` }} compacto enxuto />
+            <Cartao titulo="Com empregado" subtitulo="Entregues, não devolvidas ÷ estoque." indicador={{ ...comEmpregado, detalhe: `${soma("comEmpregado")} de ${saldoTotal} unidades` }} compacto enxuto />
+            <Cartao titulo="Sem caixa" subtitulo="Fora das caixas ÷ estoque." indicador={{ ...foraDaCaixa, detalhe: semCaixa < 0 ? `Caixas guardam ${-semCaixa} a mais que o estoque` : `${semCaixa} de ${saldoTotal} unidades` }} compacto enxuto />
+            <Cartao titulo="Valor em estoque" subtitulo="Itens × preço; sem preço = 0." indicador={{ pct: null, faixa: null, detalhe: `${saldoTotal} unidades em ${ativas} ferramentas ativas` }} valor={formatarMoeda(valorTotalEmEstoque(ferramentas))} icone={Wallet} compacto enxuto />
           </div>
           <PainelGraficos compacto>
             <QuadroGrafico titulo="Indicadores (%)" formula="no prazo ÷ com desfecho × 100." altura={ALTURA_COMPACTA}>
@@ -166,7 +166,7 @@ export function DashboardFerramentas() {
       </section>
 
       {/* A lista usa o que sobra da janela e rola por dentro, para a página não rolar, como na Frota. */}
-      <div className="max-h-[max(8rem,calc(100dvh-46rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
+      <div className="max-h-[max(8rem,calc(100dvh-36rem))] flex flex-col overflow-hidden rounded-xl border [&>div]:min-h-0 [&>div]:flex-1 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-card">
         <Table className="min-w-[1100px] table-fixed">
           <TableHeader>
             <TableRow>
