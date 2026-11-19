@@ -10,7 +10,7 @@ import type { Interpretacao } from "@/lib/frota-interpretacao";
 const PONTO: Record<Faixa, string> = { verde: "bg-emerald-500", amarelo: "bg-amber-400", vermelho: "bg-red-500" };
 const ROTULO: Record<Faixa, string> = { verde: "Verde", amarelo: "Amarelo", vermelho: "Vermelho" };
 
-export function InterpretacaoFrota({ itens }: { itens: Interpretacao[] }) {
+export function InterpretacaoFrota({ itens, titulo = "Interpretação dos indicadores da frota" }: { itens: Interpretacao[]; titulo?: string }) {
   const [aberto, setAberto] = useState(false);
   return (
     <>
@@ -21,7 +21,7 @@ export function InterpretacaoFrota({ itens }: { itens: Interpretacao[] }) {
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Interpretação dos indicadores da frota</DialogTitle>
+            <DialogTitle>{titulo}</DialogTitle>
             <DialogDescription>O que cada resultado quer dizer e o que fazer, pela faixa em que o indicador está agora.</DialogDescription>
           </DialogHeader>
           <ul className="space-y-3" aria-label="Interpretação dos indicadores">

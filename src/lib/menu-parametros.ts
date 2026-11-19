@@ -105,7 +105,7 @@ export const ABAS_FERRAMENTA_RELATORIOS: readonly AbaMenu[] = [
 ];
 
 export const ABAS_VEICULO: readonly AbaMenu[] = [
-  { aba: "frota", titulo: "Frota", icone: "Car" },
+  { aba: "frota", titulo: "Dashboard", icone: "Car" },
   { aba: "abastecimento", titulo: "Abastecimento", icone: "Fuel" },
   { aba: "manutencao", titulo: "Manutenção", icone: "Wrench" },
   { aba: "ocorrencias", titulo: "Ocorrências", icone: "TriangleAlert" },
@@ -257,7 +257,7 @@ const DESCRICAO_DAS_ABAS: Record<ModuloComAbas, Record<string, string>> = {
     inventario: "Inventário em etapas: escolha o setor, conte o que está na prateleira, revise as diferenças com o sistema e baixe o relatório. É conferência: não movimenta o estoque.",
   },
   ferramenta: {
-    dashboard: "Resumo do estoque de ferramentas: quantas estão acima do mínimo, guardadas nas caixas, com empregado ou fora das caixas, e as que pedem reposição.",
+    dashboard: "Indicadores das ferramentas no desenho da Frota: conformidade (vistorias e ocorrências no prazo), estoque acima do mínimo, onde estão as ferramentas e a situação de cada caixa.",
     estoque: "Consulta o saldo de cada ferramenta por empresa, a posição de cada uma nas caixas e com os empregados, e permite ajustar o estoque mínimo.",
     caixas: "Mostra as caixas de ferramentas e quais ferramentas estão guardadas em cada uma.",
     "termo-responsabilidade": "Gera o termo de responsabilidade individual do empregado pelas ferramentas que recebeu.",

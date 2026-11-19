@@ -70,7 +70,7 @@ export function gruposDoInicio(isAdmin: boolean, podeVer: (url: string, search?:
 }
 
 // Caminho mostrado no alto de toda página (decisão 314): o card e, depois, se a tela é do Módulo ou dos Parâmetros dele; o título grande da página é o menu aberto.
-// Ex.: "Veículos › Parâmetros" sobre "Tipos de ocorrência", ou "Veículos › Módulo" sobre "Frota".
+// Ex.: "Veículos › Parâmetros" sobre "Tipos de ocorrência", ou "Veículos › Módulo" sobre "Dashboard".
 export const caminhoDoCard = (card: string, secao: SecaoInicio): string => `${card} › ${secao}`;
 
 // Área (cartão) a que uma tela pertence, para o menu do topo levar às outras rotinas dela sem voltar ao início. Telas repetidas
