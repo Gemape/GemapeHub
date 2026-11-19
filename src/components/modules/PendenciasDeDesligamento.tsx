@@ -34,7 +34,7 @@ export function PendenciasDeDesligamento({ empregados }: { empregados: readonly 
           {portadores.map((p) => (
             <li key={p.registroId} className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span><strong>{p.caixaCodigo}</strong>: o portador {p.empregadoNome} foi desligado{p.dataDemissao ? ` em ${formatarData(p.dataDemissao)}` : ""}. Desvincule a caixa agora e faça a vistoria de encerramento.</span>
-              <Button asChild size="sm" variant="outline"><Link to="/ferramentas" search={{ aba: "caixas" }}>Desvincular portador</Link></Button>
+              <Button asChild size="sm" variant="outline"><Link to="/ferramentas" search={{ aba: "vinculacao-portador" }}>Desvincular portador</Link></Button>
             </li>
           ))}
         </ul>

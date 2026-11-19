@@ -45,6 +45,9 @@ type Entrada = {
   status: "Ativa" | "Inativa";
   observacao: string;
   agora?: Date;
+  /** Data do início (vínculo) ou do fim (inativação); sem ela vale hoje. Retroativa só com autorização, que fica na observação. */
+  data?: string;
+  autorizadoPor?: string;
 };
 
 /** Data civil em Brasília, inclusive quando o servidor ou navegador usa UTC. */
@@ -115,6 +118,13 @@ export function registrarPortador(entrada: Entrada, storage: StorageLike = local
   const historico = lerPortadores(storage);
   const anterior = portadorAtivo(historico, caixa.id);
   const hoje = dataBrasilia(entrada.agora);
+  const dia = entrada.data || hoje;
+  if (dia > hoje) throw new Error("A data não pode ser futura.");
+  const ultimoFim = historico.filter((r) => r.caixa_id === caixa.id && r.data_fim).map((r) => r.data_fim as string).sort().at(-1);
+  if (status === "Ativa" && ultimoFim && dia < ultimoFim) throw new Error(`A caixa teve outro portador até ${ultimoFim.split("-").reverse().join("/")}; a data não pode ser anterior.`);
+  if (anterior && dia < anterior.data_inicio) throw new Error("A data não pode ser anterior ao início do portador atual.");
+  const autorizacao = entrada.autorizadoPor ? `Retroativo autorizado por ${entrada.autorizadoPor}.` : "";
+  const junta = (...partes: string[]) => partes.filter(Boolean).join(" ");
   if (status === "Ativa") {
     if (!empregado) throw new Error("Selecione o empregado portador.");
     if (empregado.empresa_id !== caixa.empresa_id) throw new Error("O empregado deve pertencer à empresa da caixa.");
@@ -128,16 +138,27 @@ export function registrarPortador(entrada: Entrada, storage: StorageLike = local
   }
 
   const proximos = historico.map((registro) => registro.id === anterior?.id
-    ? { ...registro, status: "Inativa" as const, data_fim: hoje,
-        observacao: status === "Inativa" && entrada.observacao.trim() ? entrada.observacao.trim() : registro.observacao }
+    ? { ...registro, status: "Inativa" as const, data_fim: dia,
+        observacao: junta(status === "Inativa" && entrada.observacao.trim() ? entrada.observacao.trim() : registro.observacao, status === "Inativa" ? autorizacao : "") }
     : registro);
   if (status === "Ativa" && empregado) proximos.push({
     id: crypto.randomUUID(), caixa_id: caixa.id, caixa_codigo: caixa.codigo ?? codigoCaixa(numero),
     empresa_id: caixa.empresa_id, empregado_id: empregado.id, empregado_nome: empregado.nome,
-    status: "Ativa", observacao: entrada.observacao.trim(),
-    data_inicio: hoje, data_fim: null,
+    status: "Ativa", observacao: junta(entrada.observacao.trim(), autorizacao),
+    data_inicio: dia, data_fim: null,
   });
   storage.setItem(CHAVE, JSON.stringify(proximos));
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_PORTADORES));
   return proximos;
+}
+
+/** Confere se o registro seria aceito, sem gravar nada: é o que a tela usa antes de pedir senha ou confirmação. Devolve a mensagem de erro ou null. */
+export function erroDoRegistroDePortador(entrada: Entrada, origem: StorageLike = localStorage): string | null {
+  const copia = new Map<string, string>([[CHAVE, JSON.stringify(lerPortadores(origem))]]);
+  try {
+    registrarPortador(entrada, { getItem: (k) => copia.get(k) ?? null, setItem: (k, v) => void copia.set(k, v) });
+    return null;
+  } catch (erro) {
+    return erro instanceof Error ? erro.message : "Não foi possível registrar o portador.";
+  }
 }

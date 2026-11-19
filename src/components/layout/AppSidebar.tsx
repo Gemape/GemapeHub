@@ -57,6 +57,7 @@ import {
   ClipboardCheck,
   ArrowLeftRight,
   CalendarDays,
+  UserCheck,
   TriangleAlert,
   Fuel,
   Box,
@@ -124,7 +125,7 @@ type ItemGrupo = { titulo: string; url: string; icone: typeof LayoutDashboard; a
 export const ICONES = {
   Tags, Ruler, ListChecks, Barcode, Factory, MapPin, Hash, Wrench, HardHat, ClipboardList, Archive, Car,
   LayoutDashboard, Boxes, ShoppingCart, History, PackageMinus, PackageCheck, FileSignature, FileMinus, FileCheck, FileX,
-  ClipboardCheck, ArrowLeftRight, CalendarDays, TriangleAlert, Fuel, Box, ListPlus, FileText, Forklift,
+  ClipboardCheck, ArrowLeftRight, CalendarDays, UserCheck, TriangleAlert, Fuel, Box, ListPlus, FileText, Forklift,
 } as const;
 
 function useDeAtual(): string | undefined {

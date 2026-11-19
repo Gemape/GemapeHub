@@ -1,6 +1,7 @@
 // Hierarquia do menu Parâmetros (decisões 34 e 38). Só dados: o AppSidebar desenha.
 export type NomeIcone =
   | "CalendarDays"
+  | "UserCheck"
   | "Tags"
   | "Ruler"
   | "ListChecks"
@@ -85,6 +86,7 @@ export const ABAS_FERRAMENTA: readonly AbaMenu[] = [
   { aba: "estoque", titulo: "Estoque", icone: "Boxes" },
   { aba: "movimentacoes", titulo: "Movimentações", icone: "ArrowLeftRight" },
   { aba: "caixas", titulo: "Número da caixa", icone: "Box" },
+  { aba: "vinculacao-portador", titulo: "Vinculação de portador", icone: "UserCheck" },
   { aba: "termo-responsabilidade", titulo: "Termo de responsabilidade individual", icone: "FileSignature" },
   { aba: "termo-encerramento", titulo: "Termo de encerramento responsabilidade", icone: "FileX" },
   { aba: "termo-vistoria", titulo: "Termo de vistoria periódica", icone: "ClipboardCheck" },
