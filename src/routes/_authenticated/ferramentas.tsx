@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { PaginaModulo } from "@/components/modules/PaginaModulo";
 
@@ -8,6 +8,10 @@ export const Route = createFileRoute("/_authenticated/ferramentas")({
     // q: o Estoque abre filtrado pela ferramenta achada na busca global.
     ...(typeof search["q"] === "string" && search["q"] ? { q: search["q"] } : {}),
   }),
+  // O Escalonamento de vistorias virou o Plano de vistorias, em Parâmetros: o endereço antigo continua levando até ele.
+  beforeLoad: ({ search }) => {
+    if (search.aba === "escalonamento-vistorias") throw redirect({ to: "/cadastros/ferramentas-plano-vistorias" });
+  },
   head: () => ({
     meta: [
       { title: "Ferramentas | Patrimônio GEMAPE" },

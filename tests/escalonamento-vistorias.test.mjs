@@ -55,6 +55,11 @@ test("o Plano de vistorias está em Parâmetros > Ferramentas e saiu do menu do 
   const plano = le("src/components/modules/FerramentasPlanoVistorias.tsx");
   assert.match(plano, /Responsável pela vistoria/);
   assert.match(plano, /Parâmetros Específicos/);
+  // o responsável é usado: aparece no painel das vistorias, vindo do mesmo hook
+  assert.match(le("src/lib/use-vistorias-caixas.ts"), /lerResponsaveisVistoria\(\)/);
+  assert.match(le("src/components/modules/FerramentasPainelVistorias.tsx"), /Responsável pela vistoria/);
+  // o endereço antigo continua levando ao plano
+  assert.match(le("src/routes/_authenticated/ferramentas.tsx"), /escalonamento-vistorias[\s\S]*redirect\(\{ to: "\/cadastros\/ferramentas-plano-vistorias" \}\)/);
 });
 
 test("o responsável pela vistoria de cada caixa é guardado, trocado e retirado", () => {

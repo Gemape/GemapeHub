@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { LinhasEsqueleto } from "@/components/Esqueletos";
@@ -19,10 +19,13 @@ const SEM = "sem";
 // dos Parâmetros Específicos, contada a partir do mês-base. O contador mostra, mês a mês, quantas vistorias estão previstas.
 export function FerramentasPlanoVistorias() {
   const { canWrite } = useAccess();
-  const [mesesBase, setMesesBase] = useState(lerMesesBase);
-  const [responsaveis, setResponsaveis] = useState(lerResponsaveisVistoria);
+  // Lidos depois de montar (o armazenamento é do navegador), para não divergir do HTML do servidor.
+  const [mesesBase, setMesesBase] = useState<ReturnType<typeof lerMesesBase>>({});
+  const [responsaveis, setResponsaveis] = useState<ReturnType<typeof lerResponsaveisVistoria>>({});
+  useEffect(() => { setMesesBase(lerMesesBase()); setResponsaveis(lerResponsaveisVistoria()); }, []);
   const { linhas, isLoading, periodicidade, prazoDias, hoje } = useVistoriasDasCaixas(mesesBase);
-  const { data: empregados = [] } = useEmpregados(TODAS, true);
+  // Todos os empregados: o responsável que foi desligado continua aparecendo (marcado), em vez de a caixa parecer sem responsável.
+  const { data: empregados = [] } = useEmpregados(TODAS);
   const caixas = linhas.map((l) => l.caixa);
   const situacoes = new Map(linhas.map((l) => [l.caixa.id, l.resultado]));
   const vencidas = linhas.filter((l) => l.resultado.situacao === "Vencida").length;
@@ -78,9 +81,8 @@ export function FerramentasPlanoVistorias() {
                   const base = mesesBase[c.id];
                   const previstos = base === undefined ? [] : mesesPrevistos(base, periodicidade, hoje, 24).slice(0, 4);
                   const x = situacoes.get(c.id)!;
-                  const doEmpregado = empregados.filter((e) => !c.empresa_id || e.empresa_id === c.empresa_id);
                   const atual = responsaveis[c.id];
-                  const nomeAtual = empregados.find((e) => e.id === atual)?.nome;
+                  const doEmpregado = empregados.filter((e) => e.id === atual || (e.ativo && (!c.empresa_id || e.empresa_id === c.empresa_id)));
                   return (
                     <TableRow key={c.id}>
                       <TableCell className="font-mono text-xs">{c.codigo}</TableCell>
@@ -96,12 +98,12 @@ export function FerramentasPlanoVistorias() {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Select value={atual && nomeAtual ? atual : SEM} disabled={!canWrite}
+                        <Select value={atual && doEmpregado.some((e) => e.id === atual) ? atual : SEM} disabled={!canWrite}
                           onValueChange={(v) => guardar(() => setResponsaveis(salvarResponsavelVistoria(c.id, v === SEM ? null : v)))}>
                           <SelectTrigger aria-label={`Responsável pela vistoria da caixa ${c.codigo}`} className="w-52"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value={SEM}>Sem responsável</SelectItem>
-                            {doEmpregado.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}
+                            {doEmpregado.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}{e.ativo ? "" : " (desligado)"}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </TableCell>

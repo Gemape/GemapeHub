@@ -53,17 +53,18 @@ export function FerramentasPainelVistorias({ onFazerVistoria }: { onFazerVistori
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Caixa</TableHead><TableHead>Portador</TableHead><TableHead>Mês-base</TableHead><TableHead>Prazo</TableHead>
+              <TableHead>Caixa</TableHead><TableHead>Portador</TableHead><TableHead>Responsável pela vistoria</TableHead><TableHead>Mês-base</TableHead><TableHead>Prazo</TableHead>
               <TableHead>Última vistoria</TableHead><TableHead>Situação</TableHead><TableHead className="text-right">Vistoria</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? <LinhasEsqueleto colunas={7} />
-              : linhas.length === 0 ? <TableRow><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Nenhuma caixa habilitada.</TableCell></TableRow>
-                : visiveis.map(({ caixa, portador, mesBase, ultimaVistoria, resultado }) => (
+            {isLoading ? <LinhasEsqueleto colunas={8} />
+              : linhas.length === 0 ? <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">Nenhuma caixa habilitada.</TableCell></TableRow>
+                : visiveis.map(({ caixa, portador, responsavel, mesBase, ultimaVistoria, resultado }) => (
                   <TableRow key={caixa.id}>
                     <TableCell className="font-mono text-xs">{caixa.codigo}</TableCell>
                     <TableCell>{portador ?? "—"}</TableCell>
+                    <TableCell>{responsavel ?? "—"}</TableCell>
                     <TableCell>{mesBase ? MESES_DO_ANO[mesBase - 1] : "—"}</TableCell>
                     <TableCell className="whitespace-nowrap">{resultado.limite ? `até ${formatarData(resultado.limite)}` : "—"}</TableCell>
                     <TableCell className="whitespace-nowrap">{ultimaVistoria ? formatarData(ultimaVistoria) : "—"}</TableCell>

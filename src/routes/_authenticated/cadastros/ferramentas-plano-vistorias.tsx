@@ -14,9 +14,7 @@ function PaginaPlanoVistorias() {
         <EyebrowDoCard fallback="Parâmetros" />
         <h1 className="text-2xl font-bold">Plano de vistorias</h1>
       </header>
-      {import.meta.env["VITE_DEMO_MODE"] === "false"
-        ? <p>O plano de vistorias será conectado ao banco após a aprovação da demonstração.</p>
-        : <FerramentasPlanoVistorias />}
+      <FerramentasPlanoVistorias />
     </div>
   );
 }
