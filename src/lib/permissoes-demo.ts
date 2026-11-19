@@ -27,7 +27,7 @@ export const TELAS = [
   { id: "dashboard", nome: "Dashboard", grupo: "Visão geral", caminhos: ["/dashboard"], tabelas: [] },
   { id: "epi", nome: "EPIs", grupo: "Módulos", caminhos: ["/epi", "/cadastros/epi"], tabelas: ["epis", "epis_catalogo", "compras_epis"] },
   { id: "uniformes", nome: "Uniformes", grupo: "Módulos", caminhos: ["/uniformes", "/cadastros/uniformes"], tabelas: ["uniformes", "uniformes_catalogo", "compras_uniformes"] },
-  { id: "ferramentas", nome: "Ferramentas e caixas", grupo: "Módulos", caminhos: ["/ferramentas", "/caixas-ferramentas", "/cadastros/ferramentas", "/cadastros/caixas-ferramentas"], tabelas: ["ferramentas", "caixas_ferramentas", "caixa_ferramenta_itens"] },
+  { id: "ferramentas", nome: "Ferramentas e caixas", grupo: "Módulos", caminhos: ["/ferramentas", "/caixas-ferramentas", "/cadastros/ferramentas", "/cadastros/ferramentas-plano-vistorias", "/cadastros/caixas-ferramentas"], tabelas: ["ferramentas", "caixas_ferramentas", "caixa_ferramenta_itens"] },
   { id: "veiculos", nome: "Veículos", grupo: "Módulos", caminhos: ["/veiculos", "/cadastros/veiculos"], tabelas: ["veiculos"] },
   { id: "viagens", nome: "Viagens", grupo: "Módulos", caminhos: ["/viagens", "/cadastros/viagens", "/cadastros/viagens-questionario-despesas", "/cadastros/viagens-especificos"], tabelas: [] },
   { id: "equipamentos", nome: "Equipamentos", grupo: "Módulos", caminhos: ["/equipamentos", "/cadastros/equipamentos"], tabelas: [] },
