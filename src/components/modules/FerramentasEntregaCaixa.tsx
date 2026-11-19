@@ -13,19 +13,18 @@ import { capitalizarTexto } from "@/lib/formatacao-cadastral";
 import { MODO_DEMO } from "@/lib/modo-demo";
 import { caixasHabilitadas } from "@/lib/caixas-habilitadas";
 import { posicaoDasFerramentas } from "@/lib/estoque-ferramentas-posicao";
-import { entregarFerramentaNaCaixa } from "@/lib/movimentacoes-caixa";
+import { ORIGEM_ENTREGA_CAIXA, entregarFerramentaNaCaixa } from "@/lib/movimentacoes-caixa";
 import { sufixoTamanhoFerramenta } from "@/lib/tamanho-ferramenta";
 import { useParametrosBase } from "@/lib/use-parametros-base";
-import { rotuloDaCaixaComPortador } from "@/lib/portadores-caixa";
+import { portadorAtivo, rotuloDaCaixaComPortador } from "@/lib/portadores-caixa";
+import { ehDoGrupo, gruposDasFerramentas } from "@/lib/movimentacoes-grupo-caixa";
+import { abrirTermoDeRecebimento } from "@/lib/termo-recebimento-caixa";
 import { usePortadoresCaixa } from "@/lib/use-portadores-caixa";
-import { useCaixasFerramentas, useItens, useMovimentacoes, useRegistrarMovimentacoesLote, useSalvarCaixa, useTodosCaixaItens } from "@/lib/hooks-gemape";
-
-// Origem gravada na movimentação: é o que separa a entrega à caixa das transferências entre caixas.
-export const ORIGEM_ENTREGA_CAIXA = "Estoque";
+import { useCaixasFerramentas, useEmpregados, useItens, useMovimentacoes, useRegistrarMovimentacoesLote, useSalvarCaixa, useTodosCaixaItens } from "@/lib/hooks-gemape";
 
 // Ferramentas > Movimentações > Saída do estoque (entrega à caixa): a ferramenta do estoque vai para uma caixa, sem pessoa no vínculo.
 export function FerramentasEntregaCaixa() {
-  const { empresaId } = useEmpresa();
+  const { empresaId, empresas } = useEmpresa();
   const habilitadas = useParametrosBase().caixasHabilitadas;
   const { data: todasCaixas = [], isLoading } = useCaixasFerramentas(TODAS, "");
   const caixas = caixasHabilitadas(todasCaixas, habilitadas).filter((c) => empresaId === TODAS || c.empresa_id === empresaId);
@@ -33,9 +32,11 @@ export function FerramentasEntregaCaixa() {
   const { data: ferramentas = [] } = useItens("ferramenta", TODAS);
   const { data: movimentos = [] } = useMovimentacoes("ferramenta", empresaId);
   const portadores = usePortadoresCaixa();
+  const { data: empregados = [] } = useEmpregados(TODAS);
   const salvarCaixa = useSalvarCaixa();
   const registrar = useRegistrarMovimentacoesLote(["movimentacoes", "ferramentas"], false);
   const [caixaId, setCaixaId] = useState("");
+  const [grupo, setGrupo] = useState("");
   const [ferramentaId, setFerramentaId] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [data, setData] = useState(hojeLocal());
@@ -48,6 +49,9 @@ export function FerramentasEntregaCaixa() {
   const nomeFerramenta = (id: string | null) => { const f = ferramentas.find((x) => x.id === id); return f ? `${f.codigo_sku ? `${f.codigo_sku} — ` : ""}${f.nome}` : "—"; };
   // Só as ferramentas ativas da empresa da caixa; as que estão em outra caixa aparecem travadas, como no vínculo da caixa.
   const candidatas = ferramentas.filter((f) => f.status === "Ativo" && (!caixa || !caixa.empresa_id || f.empresa_id === caixa.empresa_id));
+  // O grupo vem antes da ferramenta: reduz a lista a só o que o usuário procura (chave L, chave de fenda...).
+  const grupos = gruposDasFerramentas(candidatas);
+  const doGrupo = candidatas.filter((f) => ehDoGrupo(f, grupo));
   const caixaDaFerramenta = (id: string) => itensDeTodas.find((i) => i.ferramenta_id === id)?.caixa_id ?? null;
   const entregas = movimentos.filter((m) => m.tipo_movimentacao === "Transferencia" && m.origem_local === ORIGEM_ENTREGA_CAIXA);
 
@@ -66,6 +70,9 @@ export function FerramentasEntregaCaixa() {
       semCaixa: posicoes.get(ferramentaId)?.semCaixa ?? 0,
     });
     if ("erro" in resultado) return void alert(resultado.erro);
+    const recebida = { codigo_sku: ferramenta?.codigo_sku, nome: ferramenta?.nome, marca: ferramenta?.marca, quantidade };
+    const portadorId = portadorAtivo(portadores, caixa.id)?.empregado_id;
+    const empresaDoTermo = empresas.find((e) => e.id === caixa.empresa_id);
     salvarCaixa.mutate(
       {
         id: caixa.id,
@@ -75,13 +82,17 @@ export function FerramentasEntregaCaixa() {
       {
         // O registro da movimentação só sai depois de a caixa gravar, para o histórico não ter entrega que não aconteceu.
         onSuccess: () => {
-          registrar.mutate([{
+          const movimentacao = {
             modulo: "ferramenta", item_id: ferramentaId, veiculo_id: null, empresa_id: ferramenta?.empresa_id ?? caixa.empresa_id, empregado_id: null,
             tipo_movimentacao: "Transferencia", motivo_baixa: null, quantidade, onus_baixa: null, tipo_vistoria: null, sinalizar_ocorrencia: false,
             tipo_ocorrencia: null, conducao_ocorrencia: null, data_movimentacao: data, origem_local: ORIGEM_ENTREGA_CAIXA, destino_local: caixa.codigo,
             observacao: `Entrega à caixa ${caixa.codigo}.${observacao.trim() ? ` ${capitalizarTexto(observacao.trim())}` : ""}`.slice(0, 500),
             ...(MODO_DEMO ? { caixa_id: caixa.id } : {}),
-          }]);
+          };
+          // Termo de responsabilidade pelo recebimento: é aqui que começa a posse da ferramenta pelo portador da caixa. Só sai depois de a movimentação gravar.
+          registrar.mutate([movimentacao], {
+            onSuccess: () => abrirTermoDeRecebimento({ empresa: empresaDoTermo, portador: empregados.find((e) => e.id === portadorId), caixaCodigo: caixa.codigo, data, ferramentas: [recebida] }),
+          });
           setFerramentaId(""); setQuantidade(1); setObservacao("");
         },
       },
@@ -91,21 +102,28 @@ export function FerramentasEntregaCaixa() {
   return (
     <div className="space-y-6">
       <section className="panel max-w-3xl space-y-4 p-5" aria-label="Saída do estoque">
-        <p className="text-sm text-muted-foreground">A ferramenta do estoque é entregue a uma caixa. Quem usa a caixa é o portador dela; o vínculo é com a caixa, não com a pessoa.</p>
+        <p className="text-sm text-muted-foreground">A ferramenta do estoque é entregue a uma caixa: escolha a caixa, o grupo e a ferramenta. O estoque sem caixa diminui, a ferramenta entra na composição da caixa e sai o termo de responsabilidade pelo recebimento, para o portador dela.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="entrega-caixa">Caixa</Label>
-            <Select value={caixaId} onValueChange={(v) => { setCaixaId(v); setFerramentaId(""); }}>
+            <Select value={caixaId} onValueChange={(v) => { setCaixaId(v); setGrupo(""); setFerramentaId(""); }}>
               <SelectTrigger id="entrega-caixa"><SelectValue placeholder={isLoading ? "Carregando..." : "Escolha a caixa"} /></SelectTrigger>
               <SelectContent>{[...caixas].sort((a, b) => a.codigo.localeCompare(b.codigo, "pt-BR")).map((c) => <SelectItem key={c.id} value={c.id}>{rotuloDaCaixaComPortador(portadores, c)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
+            <Label htmlFor="entrega-grupo">Grupo de ferramentas</Label>
+            <Select value={grupo} onValueChange={(v) => { setGrupo(v); setFerramentaId(""); }} disabled={!caixa}>
+              <SelectTrigger id="entrega-grupo"><SelectValue placeholder={caixa ? "Escolha o grupo" : "Escolha a caixa primeiro"} /></SelectTrigger>
+              <SelectContent>{grupos.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
             <Label htmlFor="entrega-ferramenta">Ferramenta</Label>
-            <Select value={ferramentaId} onValueChange={setFerramentaId} disabled={!caixa}>
-              <SelectTrigger id="entrega-ferramenta"><SelectValue placeholder={caixa ? "Escolha a ferramenta" : "Escolha a caixa primeiro"} /></SelectTrigger>
+            <Select value={ferramentaId} onValueChange={setFerramentaId} disabled={!caixa || !grupo}>
+              <SelectTrigger id="entrega-ferramenta"><SelectValue placeholder={!caixa ? "Escolha a caixa primeiro" : grupo ? "Escolha a ferramenta" : "Escolha o grupo primeiro"} /></SelectTrigger>
               <SelectContent>
-                {candidatas.map((f) => {
+                {doGrupo.map((f) => {
                   const outra = caixaDaFerramenta(f.id);
                   const travada = !!outra && outra !== caixaId;
                   return <SelectItem key={f.id} value={f.id} disabled={travada}>{f.codigo_sku} — {f.nome}{sufixoTamanhoFerramenta(f)} (sem caixa: {Math.max(posicoes.get(f.id)?.semCaixa ?? 0, 0)}){travada ? ` — já na caixa ${codigoDaCaixa(outra)}` : ""}</SelectItem>;
