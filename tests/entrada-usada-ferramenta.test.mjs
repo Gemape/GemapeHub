@@ -45,3 +45,9 @@ test("os submenus de Movimentações têm os novos nomes e a entrada oferece nov
   assert.match(mm, /"Registrar entrada"/);
   assert.doesNotMatch(mm, /Registrar Compra/);
 });
+
+test("a devolução usada não vira a compra original das próximas devoluções", () => {
+  const real = mov({ fornecedor: "A", valor_unitario: 10, data_movimentacao: "2026-01-10", condicao: "novo" });
+  const usada = mov({ fornecedor: "A", valor_unitario: 10, data_movimentacao: "2026-02-10", condicao: "usado" });
+  assert.equal(compraOriginalDaFerramenta([real, usada], "f1").dataCompra, "2026-01-10");
+});

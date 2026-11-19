@@ -7,7 +7,7 @@ export type ItemDeCaixa = { caixa_id: string; ferramenta_id: string; quantidade:
 export type MovimentoUsada = {
   modulo: string; item_id: string | null; empregado_id: string | null; tipo_movimentacao: string; motivo_baixa: string | null; quantidade: number;
   data_movimentacao: string; caixa_id?: string | null; fornecedor?: string | null; fornecedor_id?: string | null; nota_fiscal?: string | null;
-  valor_unitario?: number | null; created_at?: string;
+  valor_unitario?: number | null; condicao?: string | null; created_at?: string;
 };
 
 export type FerramentaComEmpregado = { caixaId: string; ferramentaId: string; disponivel: number };
@@ -31,14 +31,15 @@ export function ferramentasDoEmpregado(
 
 export type CompraOriginal = { fornecedor: string | null; fornecedorId: string | null; notaFiscal: string | null; dataCompra: string; valorUnitario: number };
 
+// Compra de verdade (não uma devolução usada) e com valor vêm antes; entre iguais vale a mais recente.
+const chaveDaCompra = (m: MovimentoUsada) => `${m.condicao === "usado" ? 0 : 1}${Number(m.valor_unitario) > 0 ? 1 : 0}|${m.data_movimentacao}|${m.created_at ?? ""}`;
+
 /** A entrada mais recente da ferramenta, de preferência a que tem valor: é dela que a devolução herda fornecedor, nota, data e custo. */
 export function compraOriginalDaFerramenta(movimentos: readonly MovimentoUsada[], ferramentaId: string): CompraOriginal | null {
   let melhor: MovimentoUsada | null = null;
   for (const m of movimentos) {
     if (m.modulo !== "ferramenta" || m.item_id !== ferramentaId || m.tipo_movimentacao !== "Entrada") continue;
-    const comValor = Number(m.valor_unitario) > 0;
-    const melhorComValor = !!melhor && Number(melhor.valor_unitario) > 0;
-    if (!melhor || (comValor && !melhorComValor) || (comValor === melhorComValor && `${m.data_movimentacao}|${m.created_at ?? ""}` > `${melhor.data_movimentacao}|${melhor.created_at ?? ""}`)) melhor = m;
+    if (!melhor || chaveDaCompra(m) > chaveDaCompra(melhor)) melhor = m;
   }
   return melhor && { fornecedor: melhor.fornecedor ?? null, fornecedorId: melhor.fornecedor_id ?? null, notaFiscal: melhor.nota_fiscal ?? null, dataCompra: melhor.data_movimentacao, valorUnitario: Number(melhor.valor_unitario) || 0 };
 }

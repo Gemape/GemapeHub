@@ -117,7 +117,8 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
           ))}
         </div>
         {tipoEntrada === "usada" && <EntradaUsadaFerramenta aoConcluir={() => fechar(false)} aoCancelar={() => fechar(false)} />}
-        {tipoEntrada === "nova" && <form onSubmit={enviar} className="grid gap-4 sm:grid-cols-2">
+        {/* Escondido, não desmontado: ao voltar de Usada para Nova, o que foi preenchido continua lá. */}
+        <form onSubmit={enviar} className={`grid gap-4 sm:grid-cols-2${tipoEntrada === "nova" ? "" : " hidden"}`}>
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="compra-fer-empresa">Estoque a alimentar (empresa)</Label>
             <Select value={empresaCompra} onValueChange={(v) => { if (!v) return; setEmpresaCompra(v); setItemId(""); }}>
@@ -171,7 +172,7 @@ export function CompraFerramentaDialog({ aberto, onAbrirMudou }: { aberto: boole
             <Button type="button" variant="outline" onClick={() => fechar(false)}>Cancelar</Button>
             <Button requiresWrite="operar" type="submit" disabled={registrar.isPending}>Registrar entrada</Button>
           </DialogFooter>
-        </form>}
+        </form>
         {/* Fora do <form>: o submit do cadastro não pode subir para o da compra. */}
         {aberto && <ItensModulo modulo="ferramenta" janela={{ empresaId: empresaCompra, aberto: cadastrando, onAberto: setCadastrando, onSalvo: setNovoCodigo }} />}
       </DialogContent>

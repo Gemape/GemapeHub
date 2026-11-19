@@ -94,7 +94,7 @@ export function EntradaUsadaFerramenta({ aoConcluir, aoCancelar }: { aoConcluir:
                     {compra ? ` · compra ${compra.fornecedor ?? "—"}${compra.notaFiscal ? ` NF ${compra.notaFiscal}` : ""}, ${formatarData(compra.dataCompra)}, ${formatarMoeda(compra.valorUnitario)}` : " · sem entrada registrada"}
                   </span>
                 </label>
-                {marcada && <Input aria-label={`Quantidade de ${nome(l.ferramentaId)}`} className="w-20" type="number" min={1} max={l.disponivel} step={1} value={marcadas[chave(l)] ?? 1} onChange={(e) => setMarcadas((m) => ({ ...m, [chave(l)]: e.target.valueAsNumber }))} />}
+                {marcada && <Input aria-label={`Quantidade de ${nome(l.ferramentaId)}`} className="w-20" type="number" min={1} max={l.disponivel} step={1} value={Number.isNaN(marcadas[chave(l)]) ? "" : (marcadas[chave(l)] ?? 1)} onChange={(e) => setMarcadas((m) => ({ ...m, [chave(l)]: e.target.valueAsNumber }))} />}
               </div>
             );
           })}
