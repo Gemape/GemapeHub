@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hojeBrasilia } from "@/lib/checklist-veiculo";
-import { useEmpresa } from "@/lib/empresa-context";
+import { TODAS, useEmpresa } from "@/lib/empresa-context";
 import { lerMesesBase } from "@/lib/escalonamento-vistorias";
 import { ferramentasAbaixoDoMinimo, posicaoDasFerramentas, type PosicaoDaFerramenta } from "@/lib/estoque-ferramentas-posicao";
 import { indicadoresDeFerramentas, interpretacoesDeFerramentas, ocorrenciaDaFerramentaParaPrazo, situacaoDasOcorrenciasNaColuna, situacaoDaVistoriaNaColuna } from "@/lib/ferramentas-dashboard";
@@ -37,7 +37,7 @@ export function DashboardFerramentas() {
   const { data: ferramentas = [] } = useItens("ferramenta", empresaId);
   const { data: movimentos = [] } = useMovimentacoes("ferramenta", empresaId);
   const { data: itensDeCaixa = [] } = useTodosCaixaItens();
-  const { data: ocorrencias = [] } = useOcorrencias("", "ferramenta");
+  const { data: todasOcorrencias = [] } = useOcorrencias("", "ferramenta");
   // Lidos depois de montar (o armazenamento é do navegador), como no Plano de vistorias.
   const [mesesBase, setMesesBase] = useState<ReturnType<typeof lerMesesBase>>({});
   const [tratativas, setTratativas] = useState<ReturnType<typeof lerTratativas>>({});
@@ -69,20 +69,39 @@ export function DashboardFerramentas() {
   const comEmpregado = indicadorDeEstoque(soma("comEmpregado"), saldoTotal, false);
   const foraDaCaixa = indicadorDeEstoque(semCaixa, saldoTotal, false);
 
-  const ocorrenciasParaPrazo = ocorrencias.map((o) => ({ ocorrencia: o, prazo: ocorrenciaDaFerramentaParaPrazo(o, tratativas[o.id]) }));
+  // Só as ocorrências das ferramentas da empresa escolhida, como o resto da tela; a caixa vem da própria ocorrência ou, sem ela, da caixa onde a ferramenta está.
+  const caixaDaFerramenta = useMemo(() => new Map(itensDeCaixa.map((i) => [i.ferramenta_id, i.caixa_id] as const)), [itensDeCaixa]);
+  const idsDasFerramentas = useMemo(() => new Set(ferramentas.map((f) => f.id)), [ferramentas]);
+  const ocorrenciasParaPrazo = useMemo(
+    () => todasOcorrencias
+      .filter((o) => empresaId === TODAS || (!!o.item_id && idsDasFerramentas.has(o.item_id)))
+      .map((o) => ({ caixaId: o.caixa_id ?? (o.item_id ? caixaDaFerramenta.get(o.item_id) : undefined) ?? null, prazo: ocorrenciaDaFerramentaParaPrazo(o, tratativas[o.id]) })),
+    [todasOcorrencias, tratativas, empresaId, idsDasFerramentas, caixaDaFerramenta],
+  );
+  const ocorrenciasPorCaixa = useMemo(() => {
+    const mapa = new Map<string, typeof ocorrenciasParaPrazo[number]["prazo"][]>();
+    for (const o of ocorrenciasParaPrazo) if (o.caixaId) mapa.set(o.caixaId, [...(mapa.get(o.caixaId) ?? []), o.prazo]);
+    return mapa;
+  }, [ocorrenciasParaPrazo]);
   const indicadores = indicadoresDeFerramentas({ vistorias: linhas.map((l) => l.resultado.situacao), ocorrencias: ocorrenciasParaPrazo.map((o) => o.prazo), hoje, prazos });
 
   const grupos = gruposDasFerramentas(ferramentas);
   const filtroDoGrupo = grupos.includes(grupo) ? grupo : TODOS_OS_GRUPOS;
-  const grupoDaFerramenta = new Map(ferramentas.map((f) => [f.id, f] as const));
-  const quantasFerramentas = (caixaId: string) => itensDeCaixa.filter((i) => i.caixa_id === caixaId).length;
+  // Por caixa: quantas ferramentas tem e quais grupos aparecem nela, calculado uma vez e não a cada tecla da busca.
+  const porCaixa = useMemo(() => {
+    const porId = new Map(ferramentas.map((f) => [f.id, f] as const));
+    const mapa = new Map<string, { quantas: number; ferramentas: typeof ferramentas }>();
+    for (const i of itensDeCaixa) {
+      const atual = mapa.get(i.caixa_id) ?? { quantas: 0, ferramentas: [] };
+      const f = porId.get(i.ferramenta_id);
+      mapa.set(i.caixa_id, { quantas: atual.quantas + 1, ferramentas: f ? [...atual.ferramentas, f] : atual.ferramentas });
+    }
+    return mapa;
+  }, [ferramentas, itensDeCaixa]);
+  const quantasFerramentas = (caixaId: string) => porCaixa.get(caixaId)?.quantas ?? 0;
   const lista = linhas
-    .filter((l) => filtroDoGrupo === TODOS_OS_GRUPOS || itensDeCaixa.some((i) => {
-      const f = grupoDaFerramenta.get(i.ferramenta_id);
-      return i.caixa_id === l.caixa.id && !!f && ehDoGrupo(f, filtroDoGrupo);
-    }))
+    .filter((l) => filtroDoGrupo === TODOS_OS_GRUPOS || (porCaixa.get(l.caixa.id)?.ferramentas ?? []).some((f) => ehDoGrupo(f, filtroDoGrupo)))
     .filter((l) => semAcento(`${l.caixa.codigo} ${l.caixa.descricao ?? ""} ${l.portador ?? ""} ${l.responsavel ?? ""}`).includes(semAcento(busca.trim())));
-  const ocorrenciasDaCaixa = (caixaId: string) => ocorrenciasParaPrazo.filter((o) => o.ocorrencia.caixa_id === caixaId).map((o) => o.prazo);
 
   const barras = [
     { nome: "Vistorias", pct: indicadores.vistorias.pct, faixa: indicadores.vistorias.faixa },
@@ -170,7 +189,7 @@ export function DashboardFerramentas() {
                 <TableCell className="pr-6 text-right tabular-nums">{quantasFerramentas(l.caixa.id)}</TableCell>
                 <TableCell>{l.ultimaVistoria ? formatarData(l.ultimaVistoria) : "—"}</TableCell>
                 <TableCell><EtiquetaVencimento valor={situacaoDaVistoriaNaColuna(l.resultado.situacao)} /></TableCell>
-                <TableCell><EtiquetaVencimento valor={situacaoDasOcorrenciasNaColuna(ocorrenciasDaCaixa(l.caixa.id), hoje, prazos)} /></TableCell>
+                <TableCell><EtiquetaVencimento valor={situacaoDasOcorrenciasNaColuna(ocorrenciasPorCaixa.get(l.caixa.id) ?? [], hoje, prazos)} /></TableCell>
                 <TableCell className="text-right">
                   <Button variant="outline" size="sm" className="rounded-full" onClick={(e) => { e.stopPropagation(); void navegar({ to: "/ferramentas", search: { aba: "caixas" } }); }}>Ver caixa</Button>
                 </TableCell>

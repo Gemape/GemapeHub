@@ -13,14 +13,13 @@ import type { TratativaFerramenta } from "./tratativa-ocorrencia-ferramenta.ts";
 export type OcorrenciaDaFerramenta = OcorrenciaDoPrazo & OcorrenciaParaIndicador & { encerradaEm?: string | null };
 
 /**
- * Ocorrência de ferramenta no formato dos prazos. A tratativa só guarda a data da última gravação, então ela marca o início da tratativa:
- * o prazo de iniciar é conferido pela primeira gravação conhecida e o de finalizar, pelo encerramento.
+ * Ocorrência de ferramenta no formato dos prazos. O início da tratativa é `iniciadaEm`; tratativas antigas, sem ele, usam a data da última gravação.
  */
-export function ocorrenciaDaFerramentaParaPrazo(o: { data: string }, tratativa: Pick<TratativaFerramenta, "situacao" | "atualizadaEm" | "encerradaEm"> | undefined): OcorrenciaDaFerramenta {
+export function ocorrenciaDaFerramentaParaPrazo(o: { data: string }, tratativa: Pick<TratativaFerramenta, "situacao" | "atualizadaEm" | "encerradaEm" | "iniciadaEm"> | undefined): OcorrenciaDaFerramenta {
   return {
     ocorridoEm: o.data,
     status: tratativa?.situacao ?? "Aberta",
-    tratativa: tratativa ? { registradaEm: tratativa.atualizadaEm } : null,
+    tratativa: tratativa ? { registradaEm: tratativa.iniciadaEm ?? tratativa.atualizadaEm } : null,
     encerradaEm: tratativa?.encerradaEm ?? null,
   };
 }
@@ -53,8 +52,9 @@ export function indicadoresDeFerramentas(e: { vistorias: readonly SituacaoDaVist
 /** Coluna Vistoria da lista: em dia (verde), pendente dentro do prazo (amarelo), vencida (vermelho); sem plano, não se aplica. */
 export function situacaoDaVistoriaNaColuna(s: SituacaoDaVistoria): SituacaoColuna {
   if (s === "Em dia") return { situacao: "em_dia", quantidade: 0 };
-  if (s === "Pendente") return { situacao: "proximo", quantidade: 1 };
-  if (s === "Vencida") return { situacao: "vencida", quantidade: 1 };
+  // Sem quantidade: a coluna é de situação, não de contagem de itens.
+  if (s === "Pendente") return { situacao: "proximo", quantidade: 0 };
+  if (s === "Vencida") return { situacao: "vencida", quantidade: 0 };
   return null;
 }
 

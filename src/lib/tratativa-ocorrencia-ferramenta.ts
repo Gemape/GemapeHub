@@ -5,7 +5,7 @@ export const CHAVE_TRATATIVAS_FERRAMENTA = "gemape-demo-ferramentas-tratativas";
 export const EVENTO_TRATATIVAS_FERRAMENTA = "gemape-tratativas-ferramenta";
 
 export type SituacaoOcorrenciaFerramenta = "Aberta" | "Em tratativa" | "Encerrada";
-export type TratativaFerramenta = { situacao: "Em tratativa" | "Encerrada"; responsavel: string; descricao: string; reposta: boolean; atualizadaEm: string; encerradaEm: string | null };
+export type TratativaFerramenta = { situacao: "Em tratativa" | "Encerrada"; responsavel: string; descricao: string; reposta: boolean; atualizadaEm: string; encerradaEm: string | null; /** Quando a tratativa começou; não muda ao regravar nem ao encerrar. Tratativas antigas não têm. */ iniciadaEm?: string };
 
 const padrao = (): StorageLike | null => (typeof localStorage === "undefined" ? null : localStorage);
 
@@ -35,7 +35,7 @@ export function salvarTratativa(ocorrenciaId: string, e: EntradaTratativa, agora
   const continuaEncerrada = atual?.situacao === "Encerrada" && !e.encerrar;
   todas[ocorrenciaId] = continuaEncerrada
     ? { ...atual, responsavel, descricao, reposta: e.reposta, atualizadaEm: agora }
-    : { situacao: e.encerrar ? "Encerrada" : "Em tratativa", responsavel, descricao, reposta: e.reposta, atualizadaEm: agora, encerradaEm: e.encerrar ? agora : null };
+    : { situacao: e.encerrar ? "Encerrada" : "Em tratativa", responsavel, descricao, reposta: e.reposta, atualizadaEm: agora, encerradaEm: e.encerrar ? agora : null, iniciadaEm: atual?.iniciadaEm ?? atual?.atualizadaEm ?? agora };
   storage.setItem(CHAVE_TRATATIVAS_FERRAMENTA, JSON.stringify(todas));
   if (typeof window !== "undefined") window.dispatchEvent(new Event(EVENTO_TRATATIVAS_FERRAMENTA));
   return null;

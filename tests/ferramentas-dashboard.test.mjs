@@ -8,7 +8,7 @@ import {
 const prazos = { iniciar: 2, finalizar: 5 };
 const hoje = "2026-11-19";
 const aberta = (data) => ocorrenciaDaFerramentaParaPrazo({ data }, undefined);
-const encerrada = (data, em) => ocorrenciaDaFerramentaParaPrazo({ data }, { situacao: "Encerrada", atualizadaEm: `${em}T12:00:00-03:00`, encerradaEm: `${em}T12:00:00-03:00` });
+const encerrada = (data, em, inicio = em) => ocorrenciaDaFerramentaParaPrazo({ data }, { situacao: "Encerrada", atualizadaEm: `${em}T12:00:00-03:00`, encerradaEm: `${em}T12:00:00-03:00`, iniciadaEm: `${inicio}T12:00:00-03:00` });
 
 test("vistorias: em dia ÷ (em dia + vencidas); pendente e sem plano não entram na conta", () => {
   const r = indicadoresDeFerramentas({ vistorias: ["Em dia", "Em dia", "Vencida", "Pendente", "Sem escalonamento"], ocorrencias: [], hoje, prazos });
@@ -26,6 +26,11 @@ test("ocorrências: encerrada no prazo conta a favor; aberta vencida e encerrada
   });
   assert.match(r.ocorrencias.detalhe, /de 3 ocorrências/);
   assert.equal(r.ocorrencias.pct, 33.3);
+});
+
+test("o prazo de finalizar conta do início da tratativa, não da última gravação", () => {
+  const r = indicadoresDeFerramentas({ vistorias: [], ocorrencias: [encerrada("2026-10-01", "2026-11-18", "2026-10-02")], hoje, prazos });
+  assert.equal(r.ocorrencias.pct, 0);
 });
 
 test("a conformidade geral junta vistorias e ocorrências", () => {
